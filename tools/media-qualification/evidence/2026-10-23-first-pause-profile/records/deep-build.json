@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-cli",
+    "--example",
+    "perf"
+  ],
+  "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22/deep-instrumented-corrected",
+  "target_dir": "/tmp/deadpan-first-pause-profile-2026-10-22/deep-target",
+  "exit": 0,
+  "seconds": 158.72551329247653,
+  "script_sha256": "64e04ac1d5e1b9ead0116d6436887f4fb96f591cba36343c3dee0f9f4ee16ffc",
+  "overlay_sha256": "3b0ab3cdb9c9d147a43c9629f47bb7e25e2fbc94ffe0a5c37853ab48d17e0e9f"
+}

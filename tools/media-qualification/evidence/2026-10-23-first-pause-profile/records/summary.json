@@ -1,0 +1,31 @@
+{
+  "source_and_binary_guards_pass": true,
+  "fresh_packages_only": true,
+  "no_optimization_claim": true,
+  "load_flags": [
+    "baseline-1",
+    "instrumented-1",
+    "baseline-2",
+    "instrumented-2",
+    "baseline-3",
+    "instrumented-3",
+    "baseline-4",
+    "instrumented-4",
+    "baseline-5",
+    "instrumented-5"
+  ],
+  "summary": {
+    "baseline": {
+      "n": 5,
+      "min_ms": 131.185,
+      "median_ms": 132.942,
+      "max_ms": 134.203
+    },
+    "instrumented": {
+      "n": 5,
+      "min_ms": 131.384,
+      "median_ms": 132.646,
+      "max_ms": 137.774
+    }
+  }
+}

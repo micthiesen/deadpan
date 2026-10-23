@@ -1,0 +1,12 @@
+DP24 measure_begin
+DP24 core_capture_for_insertion_ms=19.249
+DP24 core_resume_owner_loop_ms=4.028 owners=8506
+DP24 core_new_binding_validation_ms=3.412
+DP24 core_leaf_insert_ms=2.249 core_reducer_total_ms=38.287
+DP24 core_net_patch_and_result_validation_ms=6.431
+DP24 core_apply_validated_total_ms=56.879
+DP24 store_prepare_command_ms=91.273
+DP24 store_write_plan_ms=18.598
+DP24 store_sqlite_commit_ms=16.488
+DP24 perf_refresh_ms=4.248 perf_commit_plus_refresh_ms=131.014
+DP24 measure_end

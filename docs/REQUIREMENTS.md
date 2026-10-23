@@ -2,6 +2,19 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## First-pause diagnostics, 2026-10-23
+
+Two quiet five-pair batches reproduce the 10,000-Hold first-pause delay at
+128.497 and 131.432 ms uninstrumented medians. The finer profile measures a
+6,416,116-byte history payload, with 26.656 ms for edit round-trip checking,
+14.981 ms for the history write and 16.824 ms for durable transaction commit.
+These overlapping phase and total measurements are short diagnostics, not
+p95 qualification. All existing checks remain intact. A disposable prototype
+tests omitting all-Automatic frozen edge records and updating the exact byte
+counter; production is unchanged and no improvement is claimed. See the
+[profile and retained evidence](qualification/first-pause-profile-2026-10-23.md).
+DP-24 remains partial; no requirement or gate closes.
+
 ## Neutral retained-scope Ungroup, 2026-10-23
 
 Implemented and qualified: remove a neutral unary introduced group without undoing

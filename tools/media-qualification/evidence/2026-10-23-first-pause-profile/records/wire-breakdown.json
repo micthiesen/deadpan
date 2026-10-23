@@ -1,0 +1,14 @@
+{
+  "source_package": "/tmp/deadpan-first-pause-profile-2026-10-22/deep-controlled/instrumented-1.deadpan",
+  "source_database_sha256": "38aa7c7e250e86c17c29891387d57c71e01a8c4764c109dbbf3d7d608d6a9034",
+  "request_at": 17933,
+  "history_edit_bytes": 6416116,
+  "audio_patch_components_bytes": {
+    "timings": 2840426,
+    "bindings": 3294213
+  },
+  "omittable_automatic_edge_records": 10001,
+  "counterfactual_json_bytes": 4515926,
+  "counterfactual_saved_bytes": 1900190,
+  "performance_or_shipping_claim": false
+}

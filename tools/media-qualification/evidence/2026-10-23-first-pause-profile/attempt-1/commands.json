@@ -1,0 +1,29 @@
+[
+  {
+    "name": "extract",
+    "command": [
+      "tar",
+      "-xf",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/source.tar",
+      "-C",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/source"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 2.529833832755685
+  },
+  {
+    "name": "overlay",
+    "command": [
+      "python",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/overlay.py",
+      "--source",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/source",
+      "--dest",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 3.018885999917984
+  }
+]

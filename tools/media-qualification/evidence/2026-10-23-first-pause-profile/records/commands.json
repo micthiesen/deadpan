@@ -1,0 +1,328 @@
+[
+  {
+    "name": "overlay",
+    "command": [
+      "python",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/overlay.py",
+      "--source",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/source",
+      "--dest",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-corrected"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 3.0316791655495763
+  },
+  {
+    "name": "baseline-build",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-cli",
+      "--example",
+      "perf"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "exit": 0,
+    "seconds": 131.76221783272922
+  },
+  {
+    "name": "instrumented-build",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-cli",
+      "--example",
+      "perf"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-corrected",
+    "exit": 0,
+    "seconds": 160.12108554132283
+  },
+  {
+    "name": "baseline-1-make",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+      "make-large",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-1.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 0.21515683270990849
+  },
+  {
+    "name": "baseline-1-edit",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+      "edit",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-1.deadpan",
+      "--cycles",
+      "1",
+      "--kinds",
+      "pause"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 0.4862339999526739
+  },
+  {
+    "name": "instrumented-1-make",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-perf",
+      "make-large",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-1.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 0.19385825004428625
+  },
+  {
+    "name": "instrumented-1-edit",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-perf",
+      "edit",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-1.deadpan",
+      "--cycles",
+      "1",
+      "--kinds",
+      "pause"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 0.48004333302378654
+  },
+  {
+    "name": "baseline-2-make",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+      "make-large",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-2.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 0.19794287532567978
+  },
+  {
+    "name": "baseline-2-edit",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+      "edit",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-2.deadpan",
+      "--cycles",
+      "1",
+      "--kinds",
+      "pause"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 0.49106241669505835
+  },
+  {
+    "name": "instrumented-2-make",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-perf",
+      "make-large",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-2.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 0.1898063337430358
+  },
+  {
+    "name": "instrumented-2-edit",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-perf",
+      "edit",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-2.deadpan",
+      "--cycles",
+      "1",
+      "--kinds",
+      "pause"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 0.49431116692721844
+  },
+  {
+    "name": "baseline-3-make",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+      "make-large",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-3.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 0.1912885420024395
+  },
+  {
+    "name": "baseline-3-edit",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+      "edit",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-3.deadpan",
+      "--cycles",
+      "1",
+      "--kinds",
+      "pause"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 0.48768804129213095
+  },
+  {
+    "name": "instrumented-3-make",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-perf",
+      "make-large",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-3.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 0.18898179102689028
+  },
+  {
+    "name": "instrumented-3-edit",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-perf",
+      "edit",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-3.deadpan",
+      "--cycles",
+      "1",
+      "--kinds",
+      "pause"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 0.4852169584482908
+  },
+  {
+    "name": "baseline-4-make",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+      "make-large",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-4.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 0.1936591248959303
+  },
+  {
+    "name": "baseline-4-edit",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+      "edit",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-4.deadpan",
+      "--cycles",
+      "1",
+      "--kinds",
+      "pause"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 0.4842169163748622
+  },
+  {
+    "name": "instrumented-4-make",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-perf",
+      "make-large",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-4.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 0.1885738344863057
+  },
+  {
+    "name": "instrumented-4-edit",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-perf",
+      "edit",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-4.deadpan",
+      "--cycles",
+      "1",
+      "--kinds",
+      "pause"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 0.4895932078361511
+  },
+  {
+    "name": "baseline-5-make",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+      "make-large",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-5.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 0.1902785412967205
+  },
+  {
+    "name": "baseline-5-edit",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+      "edit",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-5.deadpan",
+      "--cycles",
+      "1",
+      "--kinds",
+      "pause"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 0.48617512453347445
+  },
+  {
+    "name": "instrumented-5-make",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-perf",
+      "make-large",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-5.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 0.19013133365660906
+  },
+  {
+    "name": "instrumented-5-edit",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-perf",
+      "edit",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-5.deadpan",
+      "--cycles",
+      "1",
+      "--kinds",
+      "pause"
+    ],
+    "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22",
+    "exit": 0,
+    "seconds": 0.48518249951303005
+  }
+]

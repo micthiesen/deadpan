@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 172.234,
+  "package": "/tmp/deadpan-first-pause-profile-2026-10-22/instrumented-1.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 182.500042
+}

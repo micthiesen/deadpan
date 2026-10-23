@@ -1,0 +1,2 @@
+instrumented archive copy: /private/tmp/deadpan-first-pause-profile-2026-10-22/instrumented
+Run on a fresh 10k package: perf make-large <fresh-package> --beats 10000; then perf edit <fresh-package> --cycles 1 --kinds pause; retain stderr and binary/source hashes.

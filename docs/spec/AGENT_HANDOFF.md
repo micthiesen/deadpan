@@ -4,6 +4,21 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-22
 
+First-pause profile, 2026-10-23: root scratch is
+`/tmp/deadpan-first-pause-profile-2026-10-22`. Initial and finer controlled
+batches complete with all source/executable guards, no duplicate phase markers
+and edit-start load below 3. Uninstrumented first medians are 128.497 and
+131.432 ms; second medians 32.379 and 33.669 ms. Finer first-pause history is
+6,416,116 bytes: round-trip checking 26.656 ms, history write 14.981 ms and
+SQLite commit 16.824 ms. Keep nested phases separate. These five-pair runs are
+INFO, with no p95 or target PASS. The [record](../qualification/first-pause-profile-2026-10-23.md)
+retains copier and anchor setup failures separately. `compact_edges.py`
+is building/running a disposable one-file prototype from immutable `a18ff654`,
+with its own target directory. It omits only default frozen edge records and
+updates WireCount; no production change, schema decision or improvement claim
+yet. Session 67723 belongs to that driver. Preserve foreign `fuzz/Cargo.lock`
+and `.claude/`.
+
 Neutral Ungroup qualified, 2026-10-23: Core admission removes only a
 neutral unary introduced wrapper around a Source/Hold when every affected
 reference still marks it unpaired. Scope/tables/recipes remain unchanged and

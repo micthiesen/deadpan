@@ -1,0 +1,12 @@
+{
+  "baseline": {
+    "source_path": "/Users/michael/Code/deadpan/target/release/examples/perf",
+    "executed_path": "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+    "sha256": "af725eba81e35a2a005a1b1e6c855684ff1a5e7328c7c093e86c3a5dc6ce6f28"
+  },
+  "instrumented": {
+    "source_path": "/tmp/deadpan-first-pause-profile-2026-10-22/deep-target/release/examples/perf",
+    "executed_path": "/tmp/deadpan-first-pause-profile-2026-10-22/deep-perf",
+    "sha256": "054cd772c0902427928306cc29b844e302e75af01a0eb1588a00666157c8ad48"
+  }
+}

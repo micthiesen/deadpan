@@ -1,0 +1,10 @@
+DP24 core_net_patch_and_result_validation_ms=8.235
+DP24 core_apply_validated_total_ms=13.151
+DP24 store_prepare_command_ms=68.246
+DP24 store_write_plan_ms=25.082
+DP24 store_sqlite_commit_ms=14.451
+DP24 core_net_patch_and_result_validation_ms=0.720
+DP24 core_apply_validated_total_ms=3.343
+DP24 store_prepare_command_ms=5.311
+DP24 store_write_plan_ms=0.732
+DP24 store_sqlite_commit_ms=7.835

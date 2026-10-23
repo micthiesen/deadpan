@@ -1,0 +1,327 @@
+[
+  {
+    "mode": "baseline",
+    "trial": 1,
+    "load_at_start": [
+      3.5927734375,
+      2.88427734375,
+      3.42333984375
+    ],
+    "load_above_three": true,
+    "total_ms": 134.203,
+    "commit_ms": 129.159,
+    "prepare_ms": 0.659,
+    "refresh_ms": 4.385,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15604835,
+      "frames": 120012,
+      "nodes": 10005,
+      "root_children": 10002
+    },
+    "phase_lines": []
+  },
+  {
+    "mode": "instrumented",
+    "trial": 1,
+    "load_at_start": [
+      3.384765625,
+      2.8525390625,
+      3.40869140625
+    ],
+    "load_above_three": true,
+    "total_ms": 131.384,
+    "commit_ms": 126.55,
+    "prepare_ms": 0.652,
+    "refresh_ms": 4.123,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15604835,
+      "frames": 120012,
+      "nodes": 10005,
+      "root_children": 10002
+    },
+    "phase_lines": [
+      "DP24 core_capture_for_insertion_ms=19.381",
+      "DP24 core_resume_owner_loop_ms=4.045 owners=8506",
+      "DP24 core_new_binding_validation_ms=3.363",
+      "DP24 core_leaf_insert_ms=2.261 core_reducer_total_ms=38.497",
+      "DP24 core_net_patch_and_result_validation_ms=6.562",
+      "DP24 core_apply_validated_total_ms=57.306",
+      "DP24 store_prepare_command_ms=91.463",
+      "DP24 store_write_plan_ms=17.977",
+      "DP24 store_sqlite_commit_ms=16.702",
+      "DP24 perf_refresh_ms=4.094 perf_commit_plus_refresh_ms=130.644"
+    ]
+  },
+  {
+    "mode": "baseline",
+    "trial": 2,
+    "load_at_start": [
+      3.384765625,
+      2.8525390625,
+      3.40869140625
+    ],
+    "load_above_three": true,
+    "total_ms": 131.185,
+    "commit_ms": 126.548,
+    "prepare_ms": 0.525,
+    "refresh_ms": 4.111,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15604835,
+      "frames": 120012,
+      "nodes": 10005,
+      "root_children": 10002
+    },
+    "phase_lines": []
+  },
+  {
+    "mode": "instrumented",
+    "trial": 2,
+    "load_at_start": [
+      3.384765625,
+      2.8525390625,
+      3.40869140625
+    ],
+    "load_above_three": true,
+    "total_ms": 137.774,
+    "commit_ms": 132.517,
+    "prepare_ms": 0.548,
+    "refresh_ms": 4.655,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15604835,
+      "frames": 120012,
+      "nodes": 10005,
+      "root_children": 10002
+    },
+    "phase_lines": [
+      "DP24 core_capture_for_insertion_ms=19.202",
+      "DP24 core_resume_owner_loop_ms=4.078 owners=8506",
+      "DP24 core_new_binding_validation_ms=3.391",
+      "DP24 core_leaf_insert_ms=2.269 core_reducer_total_ms=38.268",
+      "DP24 core_net_patch_and_result_validation_ms=6.474",
+      "DP24 core_apply_validated_total_ms=56.991",
+      "DP24 store_prepare_command_ms=91.432",
+      "DP24 store_write_plan_ms=18.380",
+      "DP24 store_sqlite_commit_ms=22.313",
+      "DP24 perf_refresh_ms=4.625 perf_commit_plus_refresh_ms=137.143"
+    ]
+  },
+  {
+    "mode": "baseline",
+    "trial": 3,
+    "load_at_start": [
+      3.384765625,
+      2.8525390625,
+      3.40869140625
+    ],
+    "load_above_three": true,
+    "total_ms": 132.942,
+    "commit_ms": 128.298,
+    "prepare_ms": 0.521,
+    "refresh_ms": 4.123,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15604835,
+      "frames": 120012,
+      "nodes": 10005,
+      "root_children": 10002
+    },
+    "phase_lines": []
+  },
+  {
+    "mode": "instrumented",
+    "trial": 3,
+    "load_at_start": [
+      3.384765625,
+      2.8525390625,
+      3.40869140625
+    ],
+    "load_above_three": true,
+    "total_ms": 131.62,
+    "commit_ms": 126.766,
+    "prepare_ms": 0.522,
+    "refresh_ms": 4.274,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15604835,
+      "frames": 120012,
+      "nodes": 10005,
+      "root_children": 10002
+    },
+    "phase_lines": [
+      "DP24 core_capture_for_insertion_ms=19.249",
+      "DP24 core_resume_owner_loop_ms=4.028 owners=8506",
+      "DP24 core_new_binding_validation_ms=3.412",
+      "DP24 core_leaf_insert_ms=2.249 core_reducer_total_ms=38.287",
+      "DP24 core_net_patch_and_result_validation_ms=6.431",
+      "DP24 core_apply_validated_total_ms=56.879",
+      "DP24 store_prepare_command_ms=91.273",
+      "DP24 store_write_plan_ms=18.598",
+      "DP24 store_sqlite_commit_ms=16.488",
+      "DP24 perf_refresh_ms=4.248 perf_commit_plus_refresh_ms=131.014"
+    ]
+  },
+  {
+    "mode": "baseline",
+    "trial": 4,
+    "load_at_start": [
+      3.384765625,
+      2.8525390625,
+      3.40869140625
+    ],
+    "load_above_three": true,
+    "total_ms": 132.646,
+    "commit_ms": 127.826,
+    "prepare_ms": 0.524,
+    "refresh_ms": 4.296,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15604835,
+      "frames": 120012,
+      "nodes": 10005,
+      "root_children": 10002
+    },
+    "phase_lines": []
+  },
+  {
+    "mode": "instrumented",
+    "trial": 4,
+    "load_at_start": [
+      3.384765625,
+      2.8525390625,
+      3.40869140625
+    ],
+    "load_above_three": true,
+    "total_ms": 133.904,
+    "commit_ms": 129.084,
+    "prepare_ms": 0.515,
+    "refresh_ms": 4.257,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15604835,
+      "frames": 120012,
+      "nodes": 10005,
+      "root_children": 10002
+    },
+    "phase_lines": [
+      "DP24 core_capture_for_insertion_ms=19.125",
+      "DP24 core_resume_owner_loop_ms=4.011 owners=8506",
+      "DP24 core_new_binding_validation_ms=3.425",
+      "DP24 core_leaf_insert_ms=2.217 core_reducer_total_ms=38.187",
+      "DP24 core_net_patch_and_result_validation_ms=6.416",
+      "DP24 core_apply_validated_total_ms=56.750",
+      "DP24 store_prepare_command_ms=91.442",
+      "DP24 store_write_plan_ms=18.773",
+      "DP24 store_sqlite_commit_ms=18.455",
+      "DP24 perf_refresh_ms=4.230 perf_commit_plus_refresh_ms=133.315"
+    ]
+  },
+  {
+    "mode": "baseline",
+    "trial": 5,
+    "load_at_start": [
+      3.2734375,
+      2.83837890625,
+      3.400390625
+    ],
+    "load_above_three": true,
+    "total_ms": 133.607,
+    "commit_ms": 128.779,
+    "prepare_ms": 0.513,
+    "refresh_ms": 4.314,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15604835,
+      "frames": 120012,
+      "nodes": 10005,
+      "root_children": 10002
+    },
+    "phase_lines": []
+  },
+  {
+    "mode": "instrumented",
+    "trial": 5,
+    "load_at_start": [
+      3.2734375,
+      2.83837890625,
+      3.400390625
+    ],
+    "load_above_three": true,
+    "total_ms": 132.646,
+    "commit_ms": 127.725,
+    "prepare_ms": 0.542,
+    "refresh_ms": 4.315,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15604835,
+      "frames": 120012,
+      "nodes": 10005,
+      "root_children": 10002
+    },
+    "phase_lines": [
+      "DP24 core_capture_for_insertion_ms=19.393",
+      "DP24 core_resume_owner_loop_ms=3.982 owners=8506",
+      "DP24 core_new_binding_validation_ms=3.368",
+      "DP24 core_leaf_insert_ms=2.294 core_reducer_total_ms=38.279",
+      "DP24 core_net_patch_and_result_validation_ms=6.635",
+      "DP24 core_apply_validated_total_ms=57.040",
+      "DP24 store_prepare_command_ms=91.291",
+      "DP24 store_write_plan_ms=18.813",
+      "DP24 store_sqlite_commit_ms=17.215",
+      "DP24 perf_refresh_ms=4.286 perf_commit_plus_refresh_ms=132.011"
+    ]
+  }
+]

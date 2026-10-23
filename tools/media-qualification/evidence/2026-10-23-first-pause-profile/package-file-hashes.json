@@ -1,0 +1,662 @@
+{
+  "baseline-1.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 10911744,
+      "sha256": "10a33189744ed852e62e796f6a7c64f063d2165eeb6bf0992aa132ceacc343ab"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "baseline-2.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 10911744,
+      "sha256": "5250fe9bf8c7478a6c6f00668f509c84a223379c2a06fca4b8d6b88133b6aa57"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "baseline-3.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 10911744,
+      "sha256": "19473a881057b67ce6a9102beac513db9a5e1362a452d179ff897fd052e190cd"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "baseline-4.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 10911744,
+      "sha256": "bca42b0880f744260f9d6d019afb1ea49fb6a76aedcf22cda054efa9a94f5482"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "baseline-5.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 10911744,
+      "sha256": "cdf46c14a95a7b05ae23b8b77890ccaf12866d077d0e0942d710a2bd1a74f90b"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "controlled/baseline-1.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 11059200,
+      "sha256": "03e3ce47443120e122d7c9e794005e9e78b274d781af82e7722ed326a3184f61"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "controlled/baseline-2.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 11059200,
+      "sha256": "3e738387431823e7050c9a20e10931ef8c8d08dea5a5aecf1a7350bab35f9b68"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "controlled/baseline-3.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 11059200,
+      "sha256": "f4505f8a7793274a59ba3b65e73acf5594c88ae4265954fcc3d425ac2c7383f3"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "controlled/baseline-4.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 11059200,
+      "sha256": "efa8341a26ef3b22168bd4b8400f4e72d8560b1113bf0727365b7985b7289ec2"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "controlled/baseline-5.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 11059200,
+      "sha256": "0d4f2519027824a3f82535156b5ccf87229aae45008c87cde133322895b7513d"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "controlled/instrumented-1.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 11059200,
+      "sha256": "e5022e9263639d60697532c66e5f735f334d0608246b855e4c644df4f18d9401"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "controlled/instrumented-2.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 11059200,
+      "sha256": "af64ecfbed17182d7d7697148424f18d2e539984ea07d894c2e4d8d8487573fb"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "controlled/instrumented-3.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 11059200,
+      "sha256": "d795a99a969c13c177c710ccba2a861d8aaa2c289316865b0e9d34566d8a4422"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "controlled/instrumented-4.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 11059200,
+      "sha256": "e770ba51a1b81100b0c7790ba90d28dfcd6c3eb73748c7ba49ce43f59fe1dc13"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "controlled/instrumented-5.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 11059200,
+      "sha256": "379ced4e7c75bba87987ea868755efe004112705e0f022c62d48eaac5e7f8282"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "deep-controlled/baseline-1.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 11059200,
+      "sha256": "169608d6a2e822e3f89e03dc1846c8ee31458f1bf39eea7d95cbe937d15d320c"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "deep-controlled/baseline-2.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 11059200,
+      "sha256": "95e986a8e4f861c3cd191b782f4e98ff3b001663a36d4922878b0b645746d4cf"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "deep-controlled/baseline-3.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 11059200,
+      "sha256": "4a62a5b30041c34bfb363f7998ed0813b6280723eb107f971e8e36dd5515ddaf"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "deep-controlled/baseline-4.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 11059200,
+      "sha256": "7b585230f8a7b691b4f1e1fa84684f31d6fe5c2ab1cca8fb622d5ca6b9c3cd77"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "deep-controlled/baseline-5.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 11059200,
+      "sha256": "11dc04e863fec07d012f7d24658d69abef6a22be00e799c1b6a0571de11fa77f"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "deep-controlled/instrumented-1.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 11059200,
+      "sha256": "38aa7c7e250e86c17c29891387d57c71e01a8c4764c109dbbf3d7d608d6a9034"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "deep-controlled/instrumented-2.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 11059200,
+      "sha256": "ef431f10f0d42649429774810203afe52e2f5ae7c2b337eec8d269626c59add6"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "deep-controlled/instrumented-3.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 11059200,
+      "sha256": "87ea670d89027c1f52d42256718d9ae40728998cf765a97ad2d2161aa536b68d"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "deep-controlled/instrumented-4.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 11059200,
+      "sha256": "3494f8b5a49b21f0112ba73c127094ff4d3a22bdc06b8e594f019409923070fc"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "deep-controlled/instrumented-5.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 11059200,
+      "sha256": "585272f347c3a7e0bcf50d70bd9b8ddce8cc5e0e1f0b34257455a65b4cd447e0"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "instrumented-1.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 10911744,
+      "sha256": "ac8b8cf853f073b8fda742dc8cb00f87cb20735d4658acf4a493b09c21080bea"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "instrumented-2.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 10911744,
+      "sha256": "107be516650209ba7e7afe1f539780345a5a5f78c0d1fccb7dd3cf20ebd17290"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "instrumented-3.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 10911744,
+      "sha256": "becb6f8a31c48d4750d91ff4335dbc818ef7b22c0ca69f565b65f8d1757fea1c"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "instrumented-4.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 10911744,
+      "sha256": "62759e9c42a50d0859f4bfb7e1e21b4d1d8109d5f839920866cad1c21a41f214"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "instrumented-5.deadpan": {
+    ".writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest.json": {
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    "project.sqlite": {
+      "bytes": 10911744,
+      "sha256": "2d45ca9a1f3ffe3d1263363e0a2fb4eacd005a6b684d13b683ae636a318960dd"
+    },
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

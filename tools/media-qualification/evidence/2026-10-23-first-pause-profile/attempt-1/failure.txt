@@ -1,0 +1,1 @@
+Before build: KeyError crates/deadpan-playback/src/target/audio_range.rs. copytree ignore_patterns('target', '.git') omitted legitimate nested source modules. Source identity guard caught it. No build, test or measurement occurred.

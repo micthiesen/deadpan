@@ -1,0 +1,24 @@
+DP24 measure_begin
+DP24 core_capture_for_insertion_ms=18.845
+DP24 core_resume_owner_loop_ms=3.969 owners=8506
+DP24 core_new_binding_validation_ms=3.423
+DP24 core_leaf_insert_ms=2.203 core_reducer_total_ms=37.429
+DP24 core_net_patch_and_result_validation_ms=6.218
+DP24 core_apply_validated_total_ms=55.510
+DP24 store_prepare_command_ms=89.084
+DP24 store_write_plan_ms=18.538
+DP24 store_sqlite_commit_ms=16.689
+DP24 perf_refresh_ms=4.036 perf_commit_plus_refresh_ms=128.752
+DP24 measure_end
+DP24 measure_begin
+DP24 core_capture_for_insertion_ms=4.628
+DP24 core_resume_owner_loop_ms=0.686 owners=1259
+DP24 core_new_binding_validation_ms=0.968
+DP24 core_leaf_insert_ms=2.127 core_reducer_total_ms=14.623
+DP24 core_net_patch_and_result_validation_ms=2.106
+DP24 core_apply_validated_total_ms=17.695
+DP24 store_prepare_command_ms=19.355
+DP24 store_write_plan_ms=0.604
+DP24 store_sqlite_commit_ms=7.591
+DP24 perf_refresh_ms=4.009 perf_commit_plus_refresh_ms=31.708
+DP24 measure_end

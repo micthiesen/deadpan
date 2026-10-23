@@ -1,0 +1,30 @@
+DP24 core_net_patch_and_result_validation_ms=7.882
+DP24 core_apply_validated_total_ms=12.750
+DP24 store_transition_admission_ms=0.246
+DP24 store_request_wire_ms=20.677
+DP24 store_edit_serialize_ms=2.995 edit_bytes=2040531
+DP24 store_edit_roundtrip_ms=21.766
+DP24 store_inverse_restore_ms=1.577
+DP24 store_prepare_command_ms=68.095
+DP24 store_writer_checks_ms=16.513
+DP24 store_insert_revision_ms=0.052
+DP24 store_history_write_ms=5.829
+DP24 store_post_history_ms=0.186
+DP24 store_receipt_extend_ms=1.652
+DP24 store_write_plan_ms=25.055
+DP24 store_sqlite_commit_ms=16.673
+DP24 core_net_patch_and_result_validation_ms=0.669
+DP24 core_apply_validated_total_ms=2.804
+DP24 store_transition_admission_ms=0.203
+DP24 store_request_wire_ms=0.026
+DP24 store_edit_serialize_ms=0.342 edit_bytes=280528
+DP24 store_edit_roundtrip_ms=1.033
+DP24 store_inverse_restore_ms=0.355
+DP24 store_prepare_command_ms=4.889
+DP24 store_writer_checks_ms=0.191
+DP24 store_insert_revision_ms=0.029
+DP24 store_history_write_ms=0.158
+DP24 store_post_history_ms=0.097
+DP24 store_receipt_extend_ms=0.267
+DP24 store_write_plan_ms=0.779
+DP24 store_sqlite_commit_ms=8.155

@@ -1,0 +1,837 @@
+[
+  {
+    "mode": "baseline",
+    "trial": 1,
+    "load_at_edit_start": [
+      2.48486328125,
+      2.6865234375,
+      3.33203125
+    ],
+    "load_above_three": false,
+    "first_total_ms": 128.334,
+    "second_total_ms": 32.523,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15611962,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "instrumented",
+    "trial": 1,
+    "load_at_edit_start": [
+      2.48486328125,
+      2.6865234375,
+      3.33203125
+    ],
+    "load_above_three": false,
+    "first_total_ms": 139.373,
+    "second_total_ms": 35.969,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15611962,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [
+      {
+        "edit": 1,
+        "unique_expected_phases": true,
+        "values": {
+          "core_capture_for_insertion_ms": [
+            21.788
+          ],
+          "core_resume_owner_loop_ms": [
+            4.53
+          ],
+          "core_new_binding_validation_ms": [
+            3.844
+          ],
+          "core_leaf_insert_ms": [
+            2.192
+          ],
+          "core_reducer_total_ms": [
+            43.576
+          ],
+          "core_net_patch_and_result_validation_ms": [
+            6.652
+          ],
+          "core_apply_validated_total_ms": [
+            63.206
+          ],
+          "store_prepare_command_ms": [
+            96.513
+          ],
+          "store_write_plan_ms": [
+            20.259
+          ],
+          "store_sqlite_commit_ms": [
+            16.917
+          ],
+          "perf_refresh_ms": [
+            4.662
+          ],
+          "perf_commit_plus_refresh_ms": [
+            138.771
+          ]
+        },
+        "shifted_suffix_owners": [
+          8506
+        ],
+        "lines": [
+          "DP24 core_capture_for_insertion_ms=21.788",
+          "DP24 core_resume_owner_loop_ms=4.530 owners=8506",
+          "DP24 core_new_binding_validation_ms=3.844",
+          "DP24 core_leaf_insert_ms=2.192 core_reducer_total_ms=43.576",
+          "DP24 core_net_patch_and_result_validation_ms=6.652",
+          "DP24 core_apply_validated_total_ms=63.206",
+          "DP24 store_prepare_command_ms=96.513",
+          "DP24 store_write_plan_ms=20.259",
+          "DP24 store_sqlite_commit_ms=16.917",
+          "DP24 perf_refresh_ms=4.662 perf_commit_plus_refresh_ms=138.771"
+        ]
+      },
+      {
+        "edit": 2,
+        "unique_expected_phases": true,
+        "values": {
+          "core_capture_for_insertion_ms": [
+            5.203
+          ],
+          "core_resume_owner_loop_ms": [
+            0.745
+          ],
+          "core_new_binding_validation_ms": [
+            1.134
+          ],
+          "core_leaf_insert_ms": [
+            2.265
+          ],
+          "core_reducer_total_ms": [
+            16.056
+          ],
+          "core_net_patch_and_result_validation_ms": [
+            2.265
+          ],
+          "core_apply_validated_total_ms": [
+            19.426
+          ],
+          "store_prepare_command_ms": [
+            21.211
+          ],
+          "store_write_plan_ms": [
+            0.733
+          ],
+          "store_sqlite_commit_ms": [
+            8.344
+          ],
+          "perf_refresh_ms": [
+            3.629
+          ],
+          "perf_commit_plus_refresh_ms": [
+            34.056
+          ]
+        },
+        "shifted_suffix_owners": [
+          1259
+        ],
+        "lines": [
+          "DP24 core_capture_for_insertion_ms=5.203",
+          "DP24 core_resume_owner_loop_ms=0.745 owners=1259",
+          "DP24 core_new_binding_validation_ms=1.134",
+          "DP24 core_leaf_insert_ms=2.265 core_reducer_total_ms=16.056",
+          "DP24 core_net_patch_and_result_validation_ms=2.265",
+          "DP24 core_apply_validated_total_ms=19.426",
+          "DP24 store_prepare_command_ms=21.211",
+          "DP24 store_write_plan_ms=0.733",
+          "DP24 store_sqlite_commit_ms=8.344",
+          "DP24 perf_refresh_ms=3.629 perf_commit_plus_refresh_ms=34.056"
+        ]
+      }
+    ],
+    "path_anomalies": []
+  },
+  {
+    "mode": "instrumented",
+    "trial": 2,
+    "load_at_edit_start": [
+      2.48486328125,
+      2.6865234375,
+      3.33203125
+    ],
+    "load_above_three": false,
+    "first_total_ms": 128.286,
+    "second_total_ms": 34.14,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15611962,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [
+      {
+        "edit": 1,
+        "unique_expected_phases": true,
+        "values": {
+          "core_capture_for_insertion_ms": [
+            18.776
+          ],
+          "core_resume_owner_loop_ms": [
+            3.992
+          ],
+          "core_new_binding_validation_ms": [
+            3.41
+          ],
+          "core_leaf_insert_ms": [
+            2.154
+          ],
+          "core_reducer_total_ms": [
+            37.406
+          ],
+          "core_net_patch_and_result_validation_ms": [
+            6.442
+          ],
+          "core_apply_validated_total_ms": [
+            55.831
+          ],
+          "store_prepare_command_ms": [
+            89.363
+          ],
+          "store_write_plan_ms": [
+            18.016
+          ],
+          "store_sqlite_commit_ms": [
+            15.868
+          ],
+          "perf_refresh_ms": [
+            4.011
+          ],
+          "perf_commit_plus_refresh_ms": [
+            127.669
+          ]
+        },
+        "shifted_suffix_owners": [
+          8506
+        ],
+        "lines": [
+          "DP24 core_capture_for_insertion_ms=18.776",
+          "DP24 core_resume_owner_loop_ms=3.992 owners=8506",
+          "DP24 core_new_binding_validation_ms=3.410",
+          "DP24 core_leaf_insert_ms=2.154 core_reducer_total_ms=37.406",
+          "DP24 core_net_patch_and_result_validation_ms=6.442",
+          "DP24 core_apply_validated_total_ms=55.831",
+          "DP24 store_prepare_command_ms=89.363",
+          "DP24 store_write_plan_ms=18.016",
+          "DP24 store_sqlite_commit_ms=15.868",
+          "DP24 perf_refresh_ms=4.011 perf_commit_plus_refresh_ms=127.669"
+        ]
+      },
+      {
+        "edit": 2,
+        "unique_expected_phases": true,
+        "values": {
+          "core_capture_for_insertion_ms": [
+            4.802
+          ],
+          "core_resume_owner_loop_ms": [
+            0.717
+          ],
+          "core_new_binding_validation_ms": [
+            1.077
+          ],
+          "core_leaf_insert_ms": [
+            2.054
+          ],
+          "core_reducer_total_ms": [
+            14.975
+          ],
+          "core_net_patch_and_result_validation_ms": [
+            2.279
+          ],
+          "core_apply_validated_total_ms": [
+            18.233
+          ],
+          "store_prepare_command_ms": [
+            20.015
+          ],
+          "store_write_plan_ms": [
+            0.717
+          ],
+          "store_sqlite_commit_ms": [
+            7.421
+          ],
+          "perf_refresh_ms": [
+            3.961
+          ],
+          "perf_commit_plus_refresh_ms": [
+            32.223
+          ]
+        },
+        "shifted_suffix_owners": [
+          1259
+        ],
+        "lines": [
+          "DP24 core_capture_for_insertion_ms=4.802",
+          "DP24 core_resume_owner_loop_ms=0.717 owners=1259",
+          "DP24 core_new_binding_validation_ms=1.077",
+          "DP24 core_leaf_insert_ms=2.054 core_reducer_total_ms=14.975",
+          "DP24 core_net_patch_and_result_validation_ms=2.279",
+          "DP24 core_apply_validated_total_ms=18.233",
+          "DP24 store_prepare_command_ms=20.015",
+          "DP24 store_write_plan_ms=0.717",
+          "DP24 store_sqlite_commit_ms=7.421",
+          "DP24 perf_refresh_ms=3.961 perf_commit_plus_refresh_ms=32.223"
+        ]
+      }
+    ],
+    "path_anomalies": []
+  },
+  {
+    "mode": "baseline",
+    "trial": 2,
+    "load_at_edit_start": [
+      2.36572265625,
+      2.658203125,
+      3.318359375
+    ],
+    "load_above_three": false,
+    "first_total_ms": 128.311,
+    "second_total_ms": 32.379,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15611962,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "baseline",
+    "trial": 3,
+    "load_at_edit_start": [
+      2.36572265625,
+      2.658203125,
+      3.318359375
+    ],
+    "load_above_three": false,
+    "first_total_ms": 128.497,
+    "second_total_ms": 31.853,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15611962,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "instrumented",
+    "trial": 3,
+    "load_at_edit_start": [
+      2.36572265625,
+      2.658203125,
+      3.318359375
+    ],
+    "load_above_three": false,
+    "first_total_ms": 129.352,
+    "second_total_ms": 33.045,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15611962,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [
+      {
+        "edit": 1,
+        "unique_expected_phases": true,
+        "values": {
+          "core_capture_for_insertion_ms": [
+            18.793
+          ],
+          "core_resume_owner_loop_ms": [
+            4.297
+          ],
+          "core_new_binding_validation_ms": [
+            3.33
+          ],
+          "core_leaf_insert_ms": [
+            2.066
+          ],
+          "core_reducer_total_ms": [
+            37.453
+          ],
+          "core_net_patch_and_result_validation_ms": [
+            6.326
+          ],
+          "core_apply_validated_total_ms": [
+            55.805
+          ],
+          "store_prepare_command_ms": [
+            89.58
+          ],
+          "store_write_plan_ms": [
+            17.54
+          ],
+          "store_sqlite_commit_ms": [
+            17.111
+          ],
+          "perf_refresh_ms": [
+            4.105
+          ],
+          "perf_commit_plus_refresh_ms": [
+            128.736
+          ]
+        },
+        "shifted_suffix_owners": [
+          8506
+        ],
+        "lines": [
+          "DP24 core_capture_for_insertion_ms=18.793",
+          "DP24 core_resume_owner_loop_ms=4.297 owners=8506",
+          "DP24 core_new_binding_validation_ms=3.330",
+          "DP24 core_leaf_insert_ms=2.066 core_reducer_total_ms=37.453",
+          "DP24 core_net_patch_and_result_validation_ms=6.326",
+          "DP24 core_apply_validated_total_ms=55.805",
+          "DP24 store_prepare_command_ms=89.580",
+          "DP24 store_write_plan_ms=17.540",
+          "DP24 store_sqlite_commit_ms=17.111",
+          "DP24 perf_refresh_ms=4.105 perf_commit_plus_refresh_ms=128.736"
+        ]
+      },
+      {
+        "edit": 2,
+        "unique_expected_phases": true,
+        "values": {
+          "core_capture_for_insertion_ms": [
+            4.731
+          ],
+          "core_resume_owner_loop_ms": [
+            0.704
+          ],
+          "core_new_binding_validation_ms": [
+            0.965
+          ],
+          "core_leaf_insert_ms": [
+            2.118
+          ],
+          "core_reducer_total_ms": [
+            14.275
+          ],
+          "core_net_patch_and_result_validation_ms": [
+            2.056
+          ],
+          "core_apply_validated_total_ms": [
+            17.285
+          ],
+          "store_prepare_command_ms": [
+            18.871
+          ],
+          "store_write_plan_ms": [
+            0.611
+          ],
+          "store_sqlite_commit_ms": [
+            7.689
+          ],
+          "perf_refresh_ms": [
+            3.849
+          ],
+          "perf_commit_plus_refresh_ms": [
+            31.114
+          ]
+        },
+        "shifted_suffix_owners": [
+          1259
+        ],
+        "lines": [
+          "DP24 core_capture_for_insertion_ms=4.731",
+          "DP24 core_resume_owner_loop_ms=0.704 owners=1259",
+          "DP24 core_new_binding_validation_ms=0.965",
+          "DP24 core_leaf_insert_ms=2.118 core_reducer_total_ms=14.275",
+          "DP24 core_net_patch_and_result_validation_ms=2.056",
+          "DP24 core_apply_validated_total_ms=17.285",
+          "DP24 store_prepare_command_ms=18.871",
+          "DP24 store_write_plan_ms=0.611",
+          "DP24 store_sqlite_commit_ms=7.689",
+          "DP24 perf_refresh_ms=3.849 perf_commit_plus_refresh_ms=31.114"
+        ]
+      }
+    ],
+    "path_anomalies": []
+  },
+  {
+    "mode": "instrumented",
+    "trial": 4,
+    "load_at_edit_start": [
+      2.36572265625,
+      2.658203125,
+      3.318359375
+    ],
+    "load_above_three": false,
+    "first_total_ms": 130.694,
+    "second_total_ms": 33.896,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15611962,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [
+      {
+        "edit": 1,
+        "unique_expected_phases": true,
+        "values": {
+          "core_capture_for_insertion_ms": [
+            19.265
+          ],
+          "core_resume_owner_loop_ms": [
+            3.968
+          ],
+          "core_new_binding_validation_ms": [
+            3.426
+          ],
+          "core_leaf_insert_ms": [
+            2.249
+          ],
+          "core_reducer_total_ms": [
+            37.861
+          ],
+          "core_net_patch_and_result_validation_ms": [
+            6.267
+          ],
+          "core_apply_validated_total_ms": [
+            56.144
+          ],
+          "store_prepare_command_ms": [
+            90.426
+          ],
+          "store_write_plan_ms": [
+            18.433
+          ],
+          "store_sqlite_commit_ms": [
+            16.628
+          ],
+          "perf_refresh_ms": [
+            4.178
+          ],
+          "perf_commit_plus_refresh_ms": [
+            130.074
+          ]
+        },
+        "shifted_suffix_owners": [
+          8506
+        ],
+        "lines": [
+          "DP24 core_capture_for_insertion_ms=19.265",
+          "DP24 core_resume_owner_loop_ms=3.968 owners=8506",
+          "DP24 core_new_binding_validation_ms=3.426",
+          "DP24 core_leaf_insert_ms=2.249 core_reducer_total_ms=37.861",
+          "DP24 core_net_patch_and_result_validation_ms=6.267",
+          "DP24 core_apply_validated_total_ms=56.144",
+          "DP24 store_prepare_command_ms=90.426",
+          "DP24 store_write_plan_ms=18.433",
+          "DP24 store_sqlite_commit_ms=16.628",
+          "DP24 perf_refresh_ms=4.178 perf_commit_plus_refresh_ms=130.074"
+        ]
+      },
+      {
+        "edit": 2,
+        "unique_expected_phases": true,
+        "values": {
+          "core_capture_for_insertion_ms": [
+            4.826
+          ],
+          "core_resume_owner_loop_ms": [
+            0.675
+          ],
+          "core_new_binding_validation_ms": [
+            0.966
+          ],
+          "core_leaf_insert_ms": [
+            2.289
+          ],
+          "core_reducer_total_ms": [
+            15.122
+          ],
+          "core_net_patch_and_result_validation_ms": [
+            2.031
+          ],
+          "core_apply_validated_total_ms": [
+            18.133
+          ],
+          "store_prepare_command_ms": [
+            19.743
+          ],
+          "store_write_plan_ms": [
+            0.608
+          ],
+          "store_sqlite_commit_ms": [
+            7.646
+          ],
+          "perf_refresh_ms": [
+            3.867
+          ],
+          "perf_commit_plus_refresh_ms": [
+            31.974
+          ]
+        },
+        "shifted_suffix_owners": [
+          1259
+        ],
+        "lines": [
+          "DP24 core_capture_for_insertion_ms=4.826",
+          "DP24 core_resume_owner_loop_ms=0.675 owners=1259",
+          "DP24 core_new_binding_validation_ms=0.966",
+          "DP24 core_leaf_insert_ms=2.289 core_reducer_total_ms=15.122",
+          "DP24 core_net_patch_and_result_validation_ms=2.031",
+          "DP24 core_apply_validated_total_ms=18.133",
+          "DP24 store_prepare_command_ms=19.743",
+          "DP24 store_write_plan_ms=0.608",
+          "DP24 store_sqlite_commit_ms=7.646",
+          "DP24 perf_refresh_ms=3.867 perf_commit_plus_refresh_ms=31.974"
+        ]
+      }
+    ],
+    "path_anomalies": []
+  },
+  {
+    "mode": "baseline",
+    "trial": 4,
+    "load_at_edit_start": [
+      2.36572265625,
+      2.658203125,
+      3.318359375
+    ],
+    "load_above_three": false,
+    "first_total_ms": 130.021,
+    "second_total_ms": 32.351,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15611962,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "baseline",
+    "trial": 5,
+    "load_at_edit_start": [
+      2.36572265625,
+      2.658203125,
+      3.318359375
+    ],
+    "load_above_three": false,
+    "first_total_ms": 129.192,
+    "second_total_ms": 32.892,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15611962,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "instrumented",
+    "trial": 5,
+    "load_at_edit_start": [
+      2.36572265625,
+      2.658203125,
+      3.318359375
+    ],
+    "load_above_three": false,
+    "first_total_ms": 129.365,
+    "second_total_ms": 33.624,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15611962,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [
+      {
+        "edit": 1,
+        "unique_expected_phases": true,
+        "values": {
+          "core_capture_for_insertion_ms": [
+            18.845
+          ],
+          "core_resume_owner_loop_ms": [
+            3.969
+          ],
+          "core_new_binding_validation_ms": [
+            3.423
+          ],
+          "core_leaf_insert_ms": [
+            2.203
+          ],
+          "core_reducer_total_ms": [
+            37.429
+          ],
+          "core_net_patch_and_result_validation_ms": [
+            6.218
+          ],
+          "core_apply_validated_total_ms": [
+            55.51
+          ],
+          "store_prepare_command_ms": [
+            89.084
+          ],
+          "store_write_plan_ms": [
+            18.538
+          ],
+          "store_sqlite_commit_ms": [
+            16.689
+          ],
+          "perf_refresh_ms": [
+            4.036
+          ],
+          "perf_commit_plus_refresh_ms": [
+            128.752
+          ]
+        },
+        "shifted_suffix_owners": [
+          8506
+        ],
+        "lines": [
+          "DP24 core_capture_for_insertion_ms=18.845",
+          "DP24 core_resume_owner_loop_ms=3.969 owners=8506",
+          "DP24 core_new_binding_validation_ms=3.423",
+          "DP24 core_leaf_insert_ms=2.203 core_reducer_total_ms=37.429",
+          "DP24 core_net_patch_and_result_validation_ms=6.218",
+          "DP24 core_apply_validated_total_ms=55.510",
+          "DP24 store_prepare_command_ms=89.084",
+          "DP24 store_write_plan_ms=18.538",
+          "DP24 store_sqlite_commit_ms=16.689",
+          "DP24 perf_refresh_ms=4.036 perf_commit_plus_refresh_ms=128.752"
+        ]
+      },
+      {
+        "edit": 2,
+        "unique_expected_phases": true,
+        "values": {
+          "core_capture_for_insertion_ms": [
+            4.628
+          ],
+          "core_resume_owner_loop_ms": [
+            0.686
+          ],
+          "core_new_binding_validation_ms": [
+            0.968
+          ],
+          "core_leaf_insert_ms": [
+            2.127
+          ],
+          "core_reducer_total_ms": [
+            14.623
+          ],
+          "core_net_patch_and_result_validation_ms": [
+            2.106
+          ],
+          "core_apply_validated_total_ms": [
+            17.695
+          ],
+          "store_prepare_command_ms": [
+            19.355
+          ],
+          "store_write_plan_ms": [
+            0.604
+          ],
+          "store_sqlite_commit_ms": [
+            7.591
+          ],
+          "perf_refresh_ms": [
+            4.009
+          ],
+          "perf_commit_plus_refresh_ms": [
+            31.708
+          ]
+        },
+        "shifted_suffix_owners": [
+          1259
+        ],
+        "lines": [
+          "DP24 core_capture_for_insertion_ms=4.628",
+          "DP24 core_resume_owner_loop_ms=0.686 owners=1259",
+          "DP24 core_new_binding_validation_ms=0.968",
+          "DP24 core_leaf_insert_ms=2.127 core_reducer_total_ms=14.623",
+          "DP24 core_net_patch_and_result_validation_ms=2.106",
+          "DP24 core_apply_validated_total_ms=17.695",
+          "DP24 store_prepare_command_ms=19.355",
+          "DP24 store_write_plan_ms=0.604",
+          "DP24 store_sqlite_commit_ms=7.591",
+          "DP24 perf_refresh_ms=4.009 perf_commit_plus_refresh_ms=31.708"
+        ]
+      }
+    ],
+    "path_anomalies": []
+  }
+]
