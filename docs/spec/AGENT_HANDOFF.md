@@ -384,10 +384,18 @@ limit is unreachable for an eligible leaf under four capped 64 MiB traversals;
 no limit was lowered. Retained historical clocks do not add a SEALED dependency.
 Root owns source now. Scoped formatting, all 2,053 Rust paths, 2,039 nonowned
 baseline paths and six inputs verify. The fresh-target build_prototype.py is
-ACTIVE; rustc/cargo 1.97.1 and cargo fmt check pass, Core public refutations are
-compiling. Check build-owner.json/receipts and live process before any restart.
-No prototype test, performance or memory result is claimed yet; main source
-stays unchanged. Qualify correctness and actual speed/retention before adoption.
+ACTIVE; rustc/cargo 1.97.1, cargo fmt check and all six focused test phases pass:
+12 public Core, five private Core, 12 Store, three command-work, four refresh
+and three trim checks, 39 total with zero failed/ignored. The private Core unit
+binary's first compile takes 10m54s; its five tests take 0.87s. The release app
+is compiling. Check build-owner.json/receipts and live process before restart.
+Four test-only warnings remain: unused must-use parity result at public Core
+test line 623, and irrefutable Store error patterns at lines 777/839/902. After
+the driver is terminal, preserve original logs/source/binaries, strengthen the
+first to assert reference success, remove the impossible else clauses, format
+and rerun focused checks against corrected test bytes. Do not alter live inputs.
+No prototype performance or memory result is claimed; main source stays
+unchanged. Qualify actual speed/retention before production adoption.
 No validation, work charge, first-error or durable authority can be weakened
 to make the experiment pass.
 The separate
