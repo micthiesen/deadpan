@@ -384,18 +384,28 @@ limit is unreachable for an eligible leaf under four capped 64 MiB traversals;
 no limit was lowered. Retained historical clocks do not add a SEALED dependency.
 Root owns source now. Scoped formatting, all 2,053 Rust paths, 2,039 nonowned
 baseline paths and six inputs verify. The fresh-target build_prototype.py is
-ACTIVE; rustc/cargo 1.97.1, cargo fmt check and all six focused test phases pass:
+is terminal after initial and corrected runs; rustc/cargo 1.97.1, cargo fmt check
+and all six focused test phases pass:
 12 public Core, five private Core, 12 Store, three command-work, four refresh
 and three trim checks, 39 total with zero failed/ignored. The private Core unit
-binary's first compile takes 10m54s; its five tests take 0.87s. The release app
-is compiling. Check build-owner.json/receipts and live process before restart.
-Four test-only warnings remain: unused must-use parity result at public Core
-test line 623, and irrefutable Store error patterns at lines 777/839/902. After
-the driver is terminal, preserve original logs/source/binaries, strengthen the
-first to assert reference success, remove the impossible else clauses, format
-and rerun focused checks against corrected test bytes. Do not alter live inputs.
-No prototype performance or memory result is claimed; main source stays
-unchanged. Qualify actual speed/retention before production adoption.
+binary's first compile takes 10m54s; its five tests take 0.87s. Both release app
+builds pass with identical SHA-256
+6d1eaa132978c7c796ae1f56bb6d417bb19627511ce48cdb2e2b48724ccde73b.
+The four test warnings are corrected: explicit reference-mode success and three
+unreachable Infallible else clauses. All 39 selected checks pass again with no
+compiler warnings. All 2,051 other Rust files, production code and six inputs
+remain byte-identical. Separate correction review has no findings. Initial
+build logs/sources/executable copies are in initial-build/. A resumed wrapper
+first failed before any command on redundant TARGET.mkdir; its exact failure
+and corrected script are retained in resume-preflight-failure/.
+measure.py is ACTIVE: five alternating control/candidate timing pairs, then
+five separate owned-memory pairs. Candidate6d1e compares qualified controla9ce,
+observerd1166, with exact source/binary/fixture/WAL/Kestrel/power/load guards.
+Both launch from the pinned source directory, so runtime toolchain metadata is
+Rust 1.97.1. No temporary profiling marker may appear. Check measurement-owner
+and command/trial receipts plus live process before restarting anything.
+No prototype performance or memory result is claimed; main stays unchanged.
+Qualify actual speed/retention before production adoption.
 No validation, work charge, first-error or durable authority can be weakened
 to make the experiment pass.
 The separate
