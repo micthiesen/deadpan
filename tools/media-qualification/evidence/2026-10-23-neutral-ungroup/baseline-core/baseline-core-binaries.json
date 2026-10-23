@@ -1,0 +1,16 @@
+{
+  "deadpan-core": {
+    "path": "/private/tmp/deadpan-neutral-ungroup-2026-10-22/baseline-core-extracted/target/debug/deps/deadpan_core-b3aaf031552acdd6",
+    "sha256": "e758ef3c44c3fd41dc4f637f99aa0468584202409e6ce9677ee968b9bcf4a52b",
+    "tests": [
+      "sound_clock::tests::edits::neutral_ungroup::group_captions_and_cutaways_remain_invalid_before_ungroup_admission",
+      "sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_prepared_admission_is_bound_to_project_revision_and_command",
+      "sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_preserves_other_explicit_introduced_groups",
+      "sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_proof_budget_exhaustion_does_not_publish_partial_relations",
+      "sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_refuses_a_genuine_later_group_pair_and_group_scoped_copy",
+      "sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_refuses_owned_sounds_treatments_edges_and_framing_atomically",
+      "sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_rejects_repeat_and_retime_ancestry_even_with_explicit_marker",
+      "sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_source_and_room_tone_preserves_history_after_unrelated_edits"
+    ]
+  }
+}

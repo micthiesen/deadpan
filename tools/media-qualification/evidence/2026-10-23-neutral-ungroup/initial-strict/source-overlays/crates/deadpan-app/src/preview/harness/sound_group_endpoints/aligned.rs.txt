@@ -1,0 +1,292 @@
+//! Retained ancestor context through aligned grouping, explicit Split and Move.
+use super::*;
+use crate::preview::copied::Content;
+use std::collections::BTreeSet;
+
+mod neutral_ungroup;
+
+fn id(name: &str) -> Result<NodeId, String> {
+    NodeId::new(name).map_err(|e| e.to_string())
+}
+
+fn scope_at(d: &mut Driver<'_>, frame: u64) -> Result<(), String> {
+    d.command("sequence")?;
+    if d.app().edit_range.has_bounds() {
+        d.key(Key::Escape)?;
+    }
+    super::super::transcript::focus_your_edit(d)?;
+    d.chord(&[Key::G, Key::G])?;
+    let offset = frame
+        .checked_sub(d.app().scope_start)
+        .ok_or("Frame precedes group")?;
+    if offset != 0 {
+        motion(d, offset)?;
+    }
+    d.settled()?;
+    d.check(
+        "Aligned trial motion keeps the exact global Edit frame",
+        d.app().sequence_cursor == frame,
+        json!(frame),
+        d.snapshot(),
+    )
+}
+
+fn command(d: &mut Driver<'_>, text: &str) -> Result<(), String> {
+    let revision = d.revision();
+    d.command(text)?;
+    d.changed(&revision)?;
+    idle(d)
+}
+
+fn forest(
+    document: &ProjectDocument,
+    top: &NodeId,
+    group: &NodeId,
+    owner: &NodeId,
+    event: &BeatSound,
+    clocks: usize,
+) -> Result<bool, String> {
+    let sound = SoundId::new("ui-sound-group-event").map_err(|e| e.to_string())?;
+    let NodeKind::Sequence { children } = &document.nodes()[group].kind else {
+        return Ok(false);
+    };
+    if children.len() != 2 || document.beat_sounds().len() != 2 {
+        return Ok(false);
+    }
+    let mut pieces = Vec::new();
+    for partition in children {
+        let NodeKind::Retime {
+            child,
+            purpose: deadpan_core::RetimePurpose::Partition,
+            ..
+        } = &document.nodes()[partition].kind
+        else {
+            return Ok(false);
+        };
+        pieces.push(deadpan_core::SoundClockSplitPiece {
+            partition: partition.clone(),
+            full_owner: child.clone(),
+        });
+    }
+    for (live, events) in document.beat_sounds() {
+        let journal = &document.audio_bindings().sound_clocks()[live][&sound];
+        if events.get(&sound) != Some(event)
+            || journal.scope() != top
+            || journal.clocks().len() != clocks
+        {
+            return Ok(false);
+        }
+        for (index, reference) in journal.clocks().iter().enumerate() {
+            let groups = if index == 0 {
+                BTreeSet::from([group.clone()])
+            } else {
+                BTreeSet::new()
+            };
+            // The first two layouts precede the explicit Source Split.
+            // A later Move captures each existing full owner independently.
+            let expected_owner = if index < 2 { owner } else { live };
+            if reference.scope() != top
+                || reference.owner() != expected_owner
+                || reference.introduced_groups() != &groups
+            {
+                return Ok(false);
+            }
+            if index < 2 {
+                if reference.introduced_splits().len() != 1
+                    || reference.introduced_splits()[0].historical_node != *owner
+                    || reference.introduced_splits()[0].pieces != pieces
+                {
+                    return Ok(false);
+                }
+            } else if !reference.introduced_splits().is_empty() {
+                return Ok(false);
+            }
+        }
+    }
+    Ok(true)
+}
+
+pub(super) fn exercise(d: &mut Driver<'_>) -> Result<(), String> {
+    let baseline = document(d)?.clone();
+    let top = id("ui-sound-group-top")?;
+    let owner = baseline
+        .beat_sounds()
+        .keys()
+        .next()
+        .ok_or("Missing aligned Source sound owner")?
+        .clone();
+    let sound = SoundId::new("ui-sound-group-event").map_err(|e| e.to_string())?;
+    let event = baseline.beat_sounds()[&owner][&sound].clone();
+    let prior = baseline.audio_bindings().sound_clocks()[&owner][&sound].clone();
+    d.check(
+        "Aligned trial retains the old Top EQ and broad sound capture before New G exists",
+        prior.scope() == &top
+            && prior.clocks().len() == 1
+            && prior.clocks()[0].introduced_groups().is_empty()
+            && baseline.nodes()[&top].audio_treatments == fixture::treatment([4500, -2500, 1500])?,
+        json!({"scope":top,"clocks":1,"Top_EQ":true}),
+        d.snapshot(),
+    )?;
+    at(d, 1)?;
+    d.key(Key::Enter)?;
+    d.settled()?;
+    d.check(
+        "Production Enter opens Top before grouping its complete Source",
+        d.app().sequence_scope.groups() == [top.clone()]
+            && d.app().scope_start == 1
+            && d.app().scope_end == 121,
+        json!({"scope":[top],"range":[1,121]}),
+        d.snapshot(),
+    )?;
+    command(d, "group name=\"New G\"")?;
+    let group = d
+        .app()
+        .selected_beat
+        .clone()
+        .ok_or("No aligned New G selection")?;
+    let grouped = document(d)?.clone();
+    let journal = &grouped.audio_bindings().sound_clocks()[&owner][&sound];
+    d.check("Aligned production grouping preserves tables and broad journals while recording only the fresh group relation", grouped.audio_bindings().timings() == baseline.audio_bindings().timings() && grouped.beat_sounds() == baseline.beat_sounds() && journal.scope() == &top && journal.clocks().len() == 1 && journal.clocks()[0].timing() == prior.clocks()[0].timing() && journal.clocks()[0].introduced_groups() == &BTreeSet::from([group.clone()]) && grouped.nodes()[&group].label == "New G", json!({"group":group,"scope":top,"new_tables":0}), d.snapshot())?;
+    neutral_ungroup::exercise(d, &grouped, &top, &group, &owner)?;
+    command(d, "eq bass=3dB middle=-6dB treble=1.5dB")?;
+    command(d, "saturate 6dB")?;
+    let treated = document(d)?.clone();
+    let treatment = &treated.nodes()[&group].audio_treatments;
+    d.check(
+        "New G has live EQ and saturation before its Source is split",
+        treatment.equalizer().is_some()
+            && treatment.saturation().is_some()
+            && treated.audio_bindings() == grouped.audio_bindings()
+            && treated.nodes()[&top] == grouped.nodes()[&top],
+        json!({"New_G_EQ":true,"New_G_saturation":true,"old_Top":"unchanged"}),
+        d.snapshot(),
+    )?;
+    d.key(Key::Enter)?;
+    d.settled()?;
+    scope_at(d, 61)?;
+    let revision = d.revision();
+    d.key(Key::S)?;
+    d.changed(&revision)?;
+    idle(d)?;
+    let split = document(d)?.clone();
+    d.check("Production Split preserves broad Top context and complete explicit Source forest on both sound aliases", forest(&split, &top, &group, &owner, &event, 2)? && split.nodes()[&group].audio_treatments == *treatment && split.nodes()[&top] == treated.nodes()[&top] && split.duration().map_err(|e| e.to_string())? == baseline.duration().map_err(|e| e.to_string())?, json!({"scope":top,"owners":2,"complete_forests":2,"clocks":2}), d.snapshot())?;
+    d.key(Key::Backspace)?;
+    d.key(Key::Backspace)?;
+    d.settled()?;
+    at(d, 1)?;
+    visual(d, 120)?;
+    d.key(Key::Y)?;
+    d.wait_for("Production y captures the complete old Top for Move", |app| !app.service.is_busy() && !app.copied.is_pending() && matches!(app.copied.content(), Some(Content::Edited(copied)) if copied.slice().range().start() == ProjectFrame(1) && copied.slice().range().end() == ProjectFrame(121)))?;
+    at(d, 0)?;
+    d.command("splice")?;
+    ready(d)?;
+    d.key(Key::M)?;
+    ready(d)?;
+    let prepared = d
+        .app()
+        .splice
+        .as_ref()
+        .and_then(|draft| draft.prepared_for_check())
+        .cloned()
+        .ok_or("No aligned Move proposal")?;
+    d.check(
+        "Production Move previews the same complete Top and certified forest before commit",
+        prepared.node == top
+            && prepared.movement.is_some()
+            && prepared.range.start() == ProjectFrame(0)
+            && prepared.range.end() == ProjectFrame(120)
+            && forest(&prepared.snapshot.document, &top, &group, &owner, &event, 3)?,
+        json!({"Move":"Top","before":[1,121],"after":[0,120],"clocks":3}),
+        d.snapshot(),
+    )?;
+    let revision = d.revision();
+    d.key(Key::Enter)?;
+    d.changed(&revision)?;
+    idle(d)?;
+    let moved = document(d)?.clone();
+    d.check(
+        "Committed Move retains exact recipes, forest witnesses and independent Original state",
+        moved == *prepared.snapshot.document
+            && forest(&moved, &top, &group, &owner, &event, 3)?
+            && moved.assets() == baseline.assets()
+            && moved.nodes()[&owner] == baseline.nodes()[&owner]
+            && d.app().source_cursor == ORIGINAL_CURSOR,
+        json!({"scope":top,"clocks":3,"Original":ORIGINAL_CURSOR,"recipes":"unchanged"}),
+        d.snapshot(),
+    )?;
+    undo(d, &split)?;
+    redo(d, &moved)?;
+    let saved = document(d)?.clone();
+    let path = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("No aligned workspace")?
+        .path
+        .clone();
+    d.app().service.submit(ProjectRequest::Close)?;
+    d.wait_for("Release aligned writer before durable reopen", |app| {
+        app.workspace.is_none() && !app.service.is_busy()
+    })?;
+    open(d, &path, ORIGINAL_CURSOR)?;
+    d.check(
+        "Service reopen preserves exact Split/Move journals and independent Original cursor",
+        document(d)? == &saved
+            && forest(document(d)?, &top, &group, &owner, &event, 3)?
+            && d.app().source_cursor == ORIGINAL_CURSOR
+            && reader(d)?.validate().is_ok(),
+        json!({"document":"exact durable state","Original":ORIGINAL_CURSOR}),
+        d.snapshot(),
+    )?;
+    undo(d, &split)?;
+    redo(d, &moved)
+}
+
+fn ready(d: &mut Driver<'_>) -> Result<(), String> {
+    d.wait_for("Aligned production splice proposal is prepared", |app| {
+        app.splice
+            .as_ref()
+            .is_some_and(|draft| draft.ready_for_check())
+            && !app.service.is_busy()
+    })?;
+    let draft = d.app().splice.as_ref().ok_or("No aligned proposal")?;
+    let id = draft.proposal_for_check().id.clone();
+    let prepared = draft
+        .prepared_for_check()
+        .ok_or("No prepared aligned proposal")?
+        .clone();
+    let content = deadpan_playback::ContentIdentity::Proposed {
+        base_revision: id.base_revision.clone(),
+        draft: id.draft,
+        change: id.change,
+    };
+    d.check(
+        "Aligned proposal keeps the current base and distinct prepared revision",
+        prepared.snapshot.session == id.session
+            && prepared.snapshot.document.project_id() == &id.project
+            && document(d)?.revision_id() == &id.base_revision
+            && prepared.snapshot.document.revision_id() != &id.base_revision
+            && prepared.snapshot.content == content,
+        json!({"base":id.base_revision,"content":format!("{content:?}")}),
+        json!({"revision":prepared.snapshot.document.revision_id(),"content":format!("{:?}",prepared.snapshot.content)}),
+    )?;
+    d.wait_for(
+        "Aligned proposal picture is decoded and submitted for its exact identity",
+        |app| {
+            app.splice
+                .as_ref()
+                .is_some_and(|draft| draft.ready_for_check() && draft.proposal_for_check().id == id)
+                && app
+                    .presentation
+                    .stable_proposed_ticket(
+                        prepared.snapshot.session,
+                        prepared.snapshot.document.project_id(),
+                        prepared.snapshot.document.revision_id(),
+                        &content,
+                        ProjectFrame(0),
+                    )
+                    .is_some()
+                && app.presentation.displayed_source_frame() == Some(SourceFrameId(0))
+        },
+    )
+}

@@ -1,0 +1,63 @@
+   Compiling find-msvc-tools v0.1.13
+   Compiling shlex v2.0.1
+   Compiling proc-macro2 v1.0.107
+   Compiling libc v0.2.189
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
+   Compiling cfg-if v1.0.5
+   Compiling serde_core v1.0.229
+   Compiling simd-adler32 v0.3.10
+   Compiling zmij v1.0.23
+   Compiling serde v1.0.229
+   Compiling typenum v1.20.1
+   Compiling bitflags v2.13.2
+   Compiling autocfg v1.5.1
+   Compiling serde_json v1.0.151
+   Compiling thiserror v2.0.20
+   Compiling crc32fast v1.5.2
+   Compiling adler2 v2.0.1
+   Compiling memchr v2.8.3
+   Compiling itoa v1.0.18
+   Compiling cc v1.4.7
+   Compiling rustix v1.1.5
+   Compiling miniz_oxide v0.9.1
+   Compiling getrandom v0.3.4
+   Compiling fdeflate v0.3.7
+   Compiling miniz_oxide v0.8.9
+   Compiling arrayvec v0.7.8
+   Compiling num-traits v0.2.19
+   Compiling pxfm v0.1.30
+   Compiling getrandom v0.4.3
+   Compiling constant_time_eq v0.4.2
+   Compiling once_cell v1.21.4
+   Compiling deadpan-diagnostics v0.1.0 (/private/tmp/deadpan-neutral-ungroup-2026-10-22/baseline/crates/deadpan-diagnostics)
+   Compiling fastrand v2.5.0
+   Compiling bytemuck v1.25.2
+   Compiling byteorder-lite v0.1.0
+   Compiling flate2 v1.1.10
+   Compiling hybrid-array v0.4.15
+   Compiling errno v0.3.14
+   Compiling cpufeatures v0.3.1
+   Compiling syn v3.0.6
+   Compiling png v0.18.1
+   Compiling uuid v1.26.1
+   Compiling blake3 v1.8.7
+   Compiling deadpan-source v0.1.0 (/private/tmp/deadpan-neutral-ungroup-2026-10-22/baseline/native/deadpan-source)
+   Compiling deadpan-dsp v0.1.0 (/private/tmp/deadpan-neutral-ungroup-2026-10-22/baseline/native/deadpan-dsp)
+   Compiling block-buffer v0.12.1
+   Compiling crypto-common v0.2.2
+   Compiling digest v0.11.3
+   Compiling sha2 v0.11.0
+   Compiling tempfile v3.27.0
+   Compiling deadpan-native-process v0.1.0 (/private/tmp/deadpan-neutral-ungroup-2026-10-22/baseline/native/deadpan-process)
+   Compiling thiserror-impl v2.0.20
+   Compiling serde_derive v1.0.229
+   Compiling moxcms v0.8.1
+   Compiling deadpan-audio v0.1.0 (/private/tmp/deadpan-neutral-ungroup-2026-10-22/baseline/crates/deadpan-audio)
+   Compiling deadpan-core v0.1.0 (/private/tmp/deadpan-neutral-ungroup-2026-10-22/baseline/crates/deadpan-core)
+   Compiling image v0.25.10
+   Compiling deadpan-plan v0.1.0 (/private/tmp/deadpan-neutral-ungroup-2026-10-22/baseline/crates/deadpan-plan)
+   Compiling deadpan-media v0.1.0 (/private/tmp/deadpan-neutral-ungroup-2026-10-22/baseline/crates/deadpan-media)
+    Finished `test` profile [optimized + debuginfo] target(s) in 34.65s
+   Archiving 1 binary, 1 build script output directory, 4 linked paths, and 1 standard library to /tmp/deadpan-neutral-ungroup-2026-10-22/baseline-pcm.tar.zst
+    Archived 22 files to /tmp/deadpan-neutral-ungroup-2026-10-22/baseline-pcm.tar.zst in 0.03s

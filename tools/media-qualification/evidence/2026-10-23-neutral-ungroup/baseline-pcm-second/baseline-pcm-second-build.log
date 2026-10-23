@@ -1,0 +1,4 @@
+   Compiling deadpan-audio v0.1.0 (/private/tmp/deadpan-neutral-ungroup-2026-10-22/baseline/crates/deadpan-audio)
+    Finished `test` profile [optimized + debuginfo] target(s) in 15.01s
+   Archiving 1 binary, 1 build script output directory, 4 linked paths, and 1 standard library to /tmp/deadpan-neutral-ungroup-2026-10-22/baseline-pcm-second.tar.zst
+    Archived 22 files to /tmp/deadpan-neutral-ungroup-2026-10-22/baseline-pcm-second.tar.zst in 0.05s

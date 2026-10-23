@@ -1,0 +1,4052 @@
+use std::collections::{BTreeMap, BTreeSet};
+use std::{error::Error, fmt};
+
+use serde::{Deserialize, Serialize};
+
+use crate::document::unique_map;
+
+mod patch_wire;
+use crate::{
+    AcceptedGeneration, AnchorLossPolicy, AssetId, AssetRecord, AudioSample, BeatNode,
+    BoundaryAnchor, DocumentError, DocumentErrorCode, FrameDuration, FrameRateOrigin,
+    GeneratedArtifact, GeometryOrigin, HoldAudio, HoldFallback, HoldRecipe, HoldVideo,
+    InstancePath, IterationId, IterationOrder, MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, Mark,
+    MarkId, MarkState, NodeId, NodeKind, OccurrenceEdit, OccurrenceIdentities, PlayOverrides,
+    PresentationChange, PrimarySource, PrimarySourceImport, ProjectDocument, ProjectId, RevisionId,
+    SourceAudioMapping, SourceNode, SourceVideo, SourceVideoMapping, WrapAnchorPolicy,
+};
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Subtree {
+    pub root: NodeId,
+    #[serde(deserialize_with = "crate::audio_gain::node_map")]
+    pub nodes: BTreeMap<NodeId, BeatNode>,
+    #[serde(default, deserialize_with = "unique_map")]
+    pub overrides: BTreeMap<NodeId, PlayOverrides>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "unique_map"
+    )]
+    pub gap_overrides: BTreeMap<NodeId, PlayOverrides>,
+}
+
+/// One source beat inserted atomically with its immutable asset registration.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SourceInsertion {
+    pub parent: NodeId,
+    pub index: usize,
+    pub node: NodeId,
+    pub label: String,
+    pub source: SourceNode,
+}
+
+/// Structural node selectors are explicit. Range/text/occurrence resolution is
+/// deliberately not inferred from absent UI context.
+// Keep the public enum and its private serde mirror in one declaration. The
+// outer reader must bound a compound before serde buffers tagged-enum fields.
+macro_rules! define_commands {
+    ($($variants:tt)*) => {
+        #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+        #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
+        pub enum Command { $($variants)* }
+        #[derive(Deserialize)]
+        #[serde(remote = "Command", tag = "command", rename_all = "snake_case", deny_unknown_fields)]
+        enum CommandWire { $($variants)* }
+    };
+}
+define_commands! {
+    /// Restore an exact immutable authored snapshot. The store separately proves
+    /// that this snapshot is an earlier committed revision of this project.
+    RestoreSnapshot {
+        #[serde(deserialize_with = "crate::document::deserialize_snapshot")]
+        snapshot: Box<ProjectDocument>,
+    },
+    /// Replay the unchanged base command, then restore exact accepted providers.
+    WithBoundaryReplacements {
+        edit: crate::BoundaryReplacementEdit,
+    },
+    /// One resolved, bounded sequence with frozen register inputs.
+    Compound {
+        transaction: crate::ResolvedTransaction,
+    },
+    /// Install one complete accepted Source Trim intent from its entry revision.
+    ApplySourceTrim {
+        parent: NodeId,
+        node: NodeId,
+        right: Option<NodeId>,
+        intent: crate::SourceTrimIntent,
+        resources: crate::SourceTrimResources,
+    },
+    /// Move one explicitly captured adjacent seam without changing pair duration.
+    /// Only a contracting direct Source requires a fresh wrapper.
+    RollSources {
+        parent: NodeId,
+        left: NodeId,
+        right: NodeId,
+        delta_frames: i64,
+        left_wrapper: Option<NodeId>,
+        right_wrapper: Option<NodeId>,
+        timing: crate::AudioTimingId,
+    },
+    /// Move one linked Source edge under an explicit time-placement policy.
+    /// A fresh wrapper is supplied exactly when a direct Source needs a crop.
+    TrimSource {
+        parent: NodeId,
+        node: NodeId,
+        edge: crate::SourceTrimEdge,
+        delta_frames: i64,
+        mode: crate::SourceTrimMode,
+        wrapper: Option<NodeId>,
+        timing: crate::AudioTimingId,
+    },
+    /// Shift linked Original material while retaining output position/duration.
+    /// The target is a direct Source or one neutral unity Partition in an
+    /// ordinary Sequence scope. Positive delta selects later Original material.
+    SlipSource {
+        parent: NodeId,
+        node: NodeId,
+        delta_frames: i64,
+    },
+    /// Add or replace one independent sound without changing picture duration.
+    SetSound {
+        id: crate::SoundId,
+        event: crate::SoundEvent,
+    },
+    /// Add or replace one independent sound in a beat owner's local clock.
+    SetBeatSound {
+        owner: NodeId,
+        id: crate::SoundId,
+        event: crate::BeatSound,
+    },
+    DeleteBeatSound {
+        owner: NodeId,
+        id: crate::SoundId,
+    },
+    /// Explicitly replace a sound recipe and discard its previous routing intent.
+    ReplaceSound {
+        id: crate::SoundId,
+        event: crate::SoundEvent,
+    },
+    DeleteSound {
+        id: crate::SoundId,
+    },
+    /// Add or replace one attention target. Targets carry no picture time.
+    SetTarget {
+        id: crate::TargetId,
+        target: crate::AttentionTarget,
+    },
+    DeleteTarget {
+        id: crate::TargetId,
+    },
+    /// Change how immutable original picture samples are decoded. `None`
+    /// restores the qualified source interpretation without changing timing.
+    SetSourceInterpretation {
+        asset: AssetId,
+        interpretation: Option<crate::SourceInterpretation>,
+    },
+    /// Permit one sound through one current silent-Hold occurrence.
+    SetSoundAllowance {
+        sound: crate::SoundId,
+        issuer: crate::SoundHoldIssuer,
+        allowed: bool,
+    },
+    /// Insert deterministic time at a project boundary while retaining the
+    /// sampled phase of each shifted physical allocation.
+    InsertTime {
+        at: crate::ProjectFrame,
+        hold: HoldRecipe,
+        id: NodeId,
+        identities: crate::SplitIdentities,
+        timing: crate::AudioTimingId,
+    },
+    /// Insert the same deterministic silent pause as InsertTime and retain
+    /// explicit AI preparation intent in history. The host queues work in the
+    /// same transaction; the document contains only the usable fallback.
+    InsertAiTime {
+        at: crate::ProjectFrame,
+        hold: HoldRecipe,
+        id: NodeId,
+        identities: crate::SplitIdentities,
+        timing: crate::AudioTimingId,
+    },
+    /// Insert time into one concrete Repeat play or gap, isolating shared
+    /// branches outside-in before capturing its temporal placement.
+    InsertOccurrenceTime {
+        at: crate::ProjectFrame,
+        /// Explicit inspected occurrence, including ownership of its edges.
+        /// None keeps ordinary project-boundary descent and its left bias.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        within: Option<InstancePath>,
+        /// Explicit default/play authority, independent of its concrete presentation.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        target: Option<crate::ScopedNodeTarget>,
+        hold: HoldRecipe,
+        id: NodeId,
+        identities: crate::OccurrencePauseIdentities,
+        timing: crate::AudioTimingId,
+        ai: bool,
+        /// Insert into the Repeat's default definition, so every default play
+        /// grows (specification §5.2: default edits affect every iteration).
+        /// Overridden plays keep their own branches.
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        all_plays: bool,
+    },
+    /// Insert one Source at an explicit ordinary Sequence slot, preserving the
+    /// sampled entry of every shifted physical owner. Ancestors stay live.
+    SpliceSource {
+        parent: NodeId,
+        index: usize,
+        source: SourceNode,
+        id: NodeId,
+        label: String,
+        timing: crate::AudioTimingId,
+    },
+    /// Paste a captured editable forest at an explicit ordinary Sequence seam.
+    SpliceSlice {
+        parent: NodeId,
+        index: usize,
+        slice: crate::CapturedEditSlice,
+        identities: crate::SlicePasteIdentities,
+        timing: crate::AudioTimingId,
+    },
+    /// Paste one complete copied union at an ordinary Sequence seam. Its
+    /// components concatenate under one neutral group with shared ownership.
+    SpliceEditSet {
+        parent: NodeId,
+        index: usize,
+        set: crate::CapturedEditSet,
+        identities: crate::EditSetPasteIdentities,
+        timing: crate::AudioTimingId,
+    },
+    /// Paste edited contents strictly inside one named ordinary Sequence child.
+    SpliceSliceAt {
+        parent: NodeId,
+        target: NodeId,
+        at: FrameDuration,
+        slice: crate::CapturedEditSlice,
+        identities: crate::SlicePasteIdentities,
+        split_identities: crate::SplitIdentities,
+        timing: crate::AudioTimingId,
+    },
+    /// Replace one nonempty global ordinary Sequence range with edited contents.
+    ReplaceSlice {
+        parent: NodeId,
+        range: crate::FrameRange,
+        slice: crate::CapturedEditSlice,
+        identities: crate::SlicePasteIdentities,
+        split_identities: crate::SplitIdentities,
+        timing: crate::AudioTimingId,
+    },
+    /// Replace an inclusive direct-child span, including empty endpoint owners.
+    ReplaceSliceChildren {
+        parent: NodeId,
+        first: NodeId,
+        last: NodeId,
+        slice: crate::CapturedEditSlice,
+        identities: crate::SlicePasteIdentities,
+        timing: crate::AudioTimingId,
+    },
+    /// Insert one Source strictly inside an explicitly named direct Sequence
+    /// child, retaining both split contexts in one atomic edit.
+    SpliceSourceAt {
+        parent: NodeId,
+        target: NodeId,
+        at: FrameDuration,
+        source: SourceNode,
+        id: NodeId,
+        label: String,
+        identities: crate::SplitIdentities,
+        timing: crate::AudioTimingId,
+    },
+    /// Replace a nonempty global range in an explicitly named ordinary
+    /// Sequence with one linked Source, retaining both endpoint contexts.
+    ReplaceSource {
+        parent: NodeId,
+        range: crate::FrameRange,
+        source: SourceNode,
+        id: NodeId,
+        label: String,
+        identities: crate::SplitIdentities,
+        timing: crate::AudioTimingId,
+    },
+    /// Replace an inclusive direct-child span with one linked Source.
+    ReplaceSourceChildren {
+        parent: NodeId,
+        first: NodeId,
+        last: NodeId,
+        source: SourceNode,
+        id: NodeId,
+        label: String,
+        timing: crate::AudioTimingId,
+    },
+    /// Split an interior local output boundary without changing rendered time.
+    Split {
+        node: NodeId,
+        at: FrameDuration,
+        identities: crate::SplitIdentities,
+    },
+    Insert {
+        parent: NodeId,
+        index: usize,
+        subtree: Subtree,
+    },
+    Delete {
+        node: NodeId,
+    },
+    /// Ripple-delete an ordinary Sequence child while retaining the old sample
+    /// entries of all following physical owners. `Delete` is historical replay.
+    DeleteRipple {
+        node: NodeId,
+        timing: crate::AudioTimingId,
+    },
+    /// Remove an inclusive contiguous sibling span, retaining empty endpoint
+    /// children which cannot be identified by a picture-time range alone.
+    DeleteChildren {
+        parent: NodeId,
+        first: NodeId,
+        last: NodeId,
+        timing: crate::AudioTimingId,
+    },
+    /// Remove a nonempty, global half-open range from an ordinary Sequence.
+    DeleteRange {
+        parent: NodeId,
+        range: crate::FrameRange,
+        identities: crate::SplitIdentities,
+        timing: crate::AudioTimingId,
+    },
+    /// Move current linked content. Both addresses use the pre-edit revision.
+    MoveRange {
+        source_revision: RevisionId,
+        source_parent: NodeId,
+        range: crate::FrameRange,
+        destination: crate::MoveRangeDestination,
+        identities: crate::SplitIdentities,
+        timing: crate::AudioTimingId,
+    },
+    /// Destination index is measured after removal from the old parent.
+    Move {
+        node: NodeId,
+        parent: NodeId,
+        index: usize,
+    },
+    /// Groups the nonempty half-open child-index range [start, end).
+    Group {
+        parent: NodeId,
+        start: usize,
+        end: usize,
+        id: NodeId,
+        label: String,
+    },
+    /// Group an exact ordinary Sequence child or range without changing clocks.
+    GroupSelection {
+        parent: NodeId,
+        selection: crate::SliceCaptureSelection,
+        label: String,
+        identities: crate::GroupSelectionIdentities,
+        timing: crate::AudioTimingId,
+    },
+    Ungroup {
+        node: NodeId,
+    },
+    WrapRepeat {
+        node: NodeId,
+        id: NodeId,
+        plays: u32,
+        gap: Option<HoldRecipe>,
+        #[serde(default)]
+        anchor_policy: WrapAnchorPolicy,
+    },
+    SetRepeat {
+        node: NodeId,
+        plays: u32,
+        gap: Option<HoldRecipe>,
+    },
+    /// Wrap an exact ordinary Sequence child or range, retaining its first play
+    /// and the sampled entry of following contents.
+    RepeatSelection {
+        parent: NodeId,
+        selection: crate::SliceCaptureSelection,
+        plays: u32,
+        identities: crate::RepeatSelectionIdentities,
+        timing: crate::AudioTimingId,
+    },
+    /// Change only total plays of an ordinary Sequence child. Preserve its gap,
+    /// surviving stable plays, and the suffix's retained sampling clocks.
+    SetRepeatPlays {
+        node: NodeId,
+        plays: u32,
+        timing: crate::AudioTimingId,
+    },
+    /// Set a Repeat's complete gap set in one transaction: the default gap and
+    /// independent Holds after the named plays; other explicit branches end.
+    /// Total plays and stable play identities survive, and every moved entry
+    /// inside the Repeat and after it keeps its pre-edit sampling clock.
+    SetRepeatGaps {
+        node: NodeId,
+        gap: Option<HoldRecipe>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        branches: Vec<crate::RepeatGapHold>,
+        timing: crate::AudioTimingId,
+    },
+    /// Map the complete selected child's output into a new authored duration.
+    WrapRetime {
+        node: NodeId,
+        id: NodeId,
+        duration: FrameDuration,
+        pitch: crate::PitchPolicy,
+    },
+    /// Change an ordinary Retime's output, retaining its child selection.
+    /// A changed output starts on the current allocation clock; child timing
+    /// bindings remain intact. Identical parameters retain the old output clock.
+    SetRetime {
+        node: NodeId,
+        duration: FrameDuration,
+        pitch: crate::PitchPolicy,
+    },
+    InsertPlays {
+        node: NodeId,
+        index: u32,
+        count: u32,
+    },
+    /// Moves [start,end); destination is measured after removal.
+    MovePlays {
+        node: NodeId,
+        start: u32,
+        end: u32,
+        destination: u32,
+    },
+    SetHoldDuration {
+        node: NodeId,
+        duration: FrameDuration,
+    },
+    /// Resize one mixed Default/Play Hold definition after exact temporal isolation.
+    SetScopedHoldDuration {
+        target: crate::ScopedNodeTarget,
+        duration: FrameDuration,
+        identities: OccurrenceIdentities,
+    },
+    /// Replace one Hold's audio recipe without changing its picture or timing.
+    SetHoldAudio {
+        node: NodeId,
+        audio: HoldAudio,
+    },
+    /// Changes picture rate and endpoint behavior without changing beat or audio time.
+    /// An actual mapping change clears the common editorial window; a
+    /// value-identical assignment retains it.
+    SetSourceVideoMapping {
+        node: NodeId,
+        mapping: SourceVideoMapping,
+    },
+    /// Changes audio alignment and extent without changing picture or beat time.
+    /// A mapping or independent offset change clears the common editorial
+    /// window; a value-identical assignment retains it.
+    SetSourceAudioMapping {
+        node: NodeId,
+        mapping: SourceAudioMapping,
+        offset: AudioSample,
+    },
+    SetHoldProvider {
+        node: NodeId,
+        video: HoldVideo,
+    },
+    SetHoldPictureContext {
+        node: NodeId,
+        context: Option<crate::CapturedFraming>,
+    },
+    AcceptGeneratedHold {
+        node: NodeId,
+        artifact: GeneratedArtifact,
+        #[serde(deserialize_with = "unique_map")]
+        assets: BTreeMap<AssetId, AssetRecord>,
+    },
+    RevertGeneratedHold {
+        node: NodeId,
+    },
+    Rename {
+        node: NodeId,
+        label: String,
+    },
+    /// Changes one boundary exception without changing any temporal coordinate.
+    SetAudioEdge {
+        node: NodeId,
+        edge: crate::AudioBoundaryKind,
+        policy: crate::AudioEdgePolicy,
+    },
+    /// Mark a split fragment's (Partition's) sides as editorial edges, so
+    /// their `node_start`/`node_end` policy applies there: a short creative
+    /// fade when automatic, a cut when hard. Unmarked fragment sides add no
+    /// fade. Timing, sampling support and every clock are unchanged.
+    SetEditorialEdges {
+        node: NodeId,
+        edges: crate::AudioEditorialEdges,
+    },
+    SetFraming {
+        node: NodeId,
+        framing: Option<crate::Framing>,
+    },
+    /// Replace a beat's picture-only cutaways. Timing, sound and every
+    /// retained clock are unchanged.
+    SetCutaways {
+        node: NodeId,
+        cutaways: Vec<crate::Cutaway>,
+    },
+    /// Replace a beat's captions. Timing, pictures, sound and every retained
+    /// clock are unchanged.
+    SetCaptions {
+        node: NodeId,
+        captions: Vec<crate::Caption>,
+    },
+    /// Replace a Repeat's per-play escalation. Timing, plays, gaps and every
+    /// retained clock are unchanged.
+    SetRepeatEscalation {
+        node: NodeId,
+        escalation: Option<crate::RepeatEscalation>,
+    },
+    /// Replace postmapping gain intent without changing any raw audio clock.
+    SetAudioTreatments {
+        node: NodeId,
+        treatments: crate::AudioTreatments,
+    },
+    AddAsset {
+        id: AssetId,
+        asset: AssetRecord,
+    },
+    /// Host-qualified source registration with optional one-beat insertion.
+    ImportSource {
+        id: AssetId,
+        asset: AssetRecord,
+        insertion: Option<Box<SourceInsertion>>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        primary: Option<PrimarySourceImport>,
+    },
+    SetCanvas {
+        width: u32,
+        height: u32,
+    },
+    AdoptPrimaryGeometry {
+        width: u32,
+        height: u32,
+    },
+    SetMark {
+        id: MarkId,
+        owner: NodeId,
+        label: String,
+        boundary: BoundaryAnchor,
+        loss_policy: AnchorLossPolicy,
+    },
+    DeleteMark {
+        id: MarkId,
+    },
+    SetPlayOverride {
+        node: NodeId,
+        iteration: IterationId,
+        subtree: Subtree,
+    },
+    ClearPlayOverride {
+        node: NodeId,
+        iteration: IterationId,
+    },
+    SetGapOverride {
+        node: NodeId,
+        iteration: IterationId,
+        subtree: Subtree,
+    },
+    /// Materialize one current default gap without changing its output clocks.
+    IsolateGap {
+        node: NodeId,
+        iteration: IterationId,
+        id: NodeId,
+        timing: crate::AudioTimingId,
+    },
+    ClearGapOverride {
+        node: NodeId,
+        iteration: IterationId,
+    },
+    EditOccurrence {
+        instance: InstancePath,
+        edit: OccurrenceEdit,
+        identities: OccurrenceIdentities,
+    },
+    /// Value edit with explicit Default/Play choices at every Repeat ancestor.
+    EditScoped {
+        target: crate::ScopedNodeTarget,
+        edit: crate::ScopedNodeEdit,
+        identities: OccurrenceIdentities,
+    },
+    /// Value edits on several explicit scoped targets in one transaction, such
+    /// as one node in plays 2 and 3 only. Each target has its own value and
+    /// fresh pool, sized by `scoped_many_requirements`; unchanged targets
+    /// take an empty pool. Partial-range values (a ranged gain envelope)
+    /// apply inside each selected play only.
+    EditScopedMany {
+        edits: Vec<crate::ScopedTargetEdit>,
+        identities: Vec<OccurrenceIdentities>,
+    },
+    /// Keep a freshly wrapped beat's owned temporal attachments on its first
+    /// play. The remaining shared definition keeps pictures, linked audio and
+    /// effects. Exact node identities come from `first_play_attachment_nodes`;
+    /// logical mark identities are moved, never duplicated.
+    KeepFirstPlayAttachments {
+        node: NodeId,
+        identities: OccurrenceIdentities,
+    },
+    /// Convert a Repeat into an ordinary Sequence of independent plays,
+    /// preserving every current picture, sample, timing, override and
+    /// attachment. `timing` names a materialized default gap's captured clock.
+    Explode {
+        node: NodeId,
+        identities: OccurrenceIdentities,
+        timing: crate::AudioTimingId,
+    },
+    /// Copy a direct child, sibling span or range of an ordinary Sequence
+    /// immediately after itself, with fresh identities and shared media.
+    Duplicate {
+        parent: NodeId,
+        selection: crate::SliceCaptureSelection,
+        identities: crate::SlicePasteIdentities,
+        #[serde(default, skip_serializing_if = "crate::SplitIdentities::is_empty")]
+        split_identities: crate::SplitIdentities,
+        timing: crate::AudioTimingId,
+    },
+
+}
+impl<'de> Deserialize<'de> for Command {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let value = crate::compound::wire::read(deserializer)?;
+        CommandWire::deserialize(value).map_err(serde::de::Error::custom)
+    }
+}
+
+impl Command {
+    /// The explicit command beneath the one permitted automatic-effect envelope.
+    /// This classifies admissions and user intent; execution replays the envelope.
+    pub fn base_command(&self) -> &Self {
+        match self {
+            Self::WithBoundaryReplacements { edit } => edit.command(),
+            command => command,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CommandRequest {
+    pub project_id: ProjectId,
+    pub expected_revision: RevisionId,
+    /// Hosts allocate unique durable revision IDs, including for undo and redo.
+    pub new_revision: RevisionId,
+    pub command: Command,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ValueChange<T> {
+    pub before: Option<T>,
+    pub after: Option<T>,
+}
+
+#[derive(Deserialize)]
+#[serde(transparent)]
+struct UniqueBeatSoundMap(
+    #[serde(deserialize_with = "unique_map")] BTreeMap<crate::SoundId, crate::BeatSound>,
+);
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct BeatSoundMapChangeWire {
+    before: Option<UniqueBeatSoundMap>,
+    after: Option<UniqueBeatSoundMap>,
+}
+
+type BeatSoundChanges = BTreeMap<NodeId, ValueChange<BTreeMap<crate::SoundId, crate::BeatSound>>>;
+
+fn unique_beat_sound_changes<'de, D>(deserializer: D) -> Result<BeatSoundChanges, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    unique_map::<D, NodeId, BeatSoundMapChangeWire>(deserializer).map(|changes| {
+        changes
+            .into_iter()
+            .map(|(owner, change)| {
+                (
+                    owner,
+                    ValueChange {
+                        before: change.before.map(|map| map.0),
+                        after: change.after.map(|map| map.0),
+                    },
+                )
+            })
+            .collect()
+    })
+}
+
+/// Granular authored changes, with before-values guarding patch preconditions.
+/// No media, undo stack, worker handle, or external resource is embedded here.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct DocumentPatch {
+    pub project_id: ProjectId,
+    pub from_revision: RevisionId,
+    pub to_revision: RevisionId,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub presentation: Option<PresentationChange>,
+    #[serde(
+        serialize_with = "patch_wire::serialize_nodes",
+        deserialize_with = "patch_wire::deserialize_nodes"
+    )]
+    pub nodes: BTreeMap<NodeId, ValueChange<BeatNode>>,
+    #[serde(deserialize_with = "unique_map")]
+    pub assets: BTreeMap<AssetId, ValueChange<AssetRecord>>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "unique_map"
+    )]
+    pub source_interpretations: BTreeMap<AssetId, ValueChange<crate::SourceInterpretation>>,
+    #[serde(deserialize_with = "unique_map")]
+    pub marks: BTreeMap<MarkId, ValueChange<Mark>>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "unique_map"
+    )]
+    pub sounds: BTreeMap<crate::SoundId, ValueChange<crate::SoundEvent>>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "unique_beat_sound_changes"
+    )]
+    pub beat_sounds: BTreeMap<NodeId, ValueChange<BTreeMap<crate::SoundId, crate::BeatSound>>>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "unique_map"
+    )]
+    pub sound_routes: BTreeMap<crate::SoundId, ValueChange<crate::RootSoundRoute>>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "unique_map"
+    )]
+    pub sound_allowances: BTreeMap<crate::SoundId, ValueChange<crate::SoundHoldAllowances>>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "unique_map"
+    )]
+    pub targets: BTreeMap<crate::TargetId, ValueChange<crate::AttentionTarget>>,
+    #[serde(deserialize_with = "unique_map")]
+    pub overrides: BTreeMap<NodeId, ValueChange<PlayOverrides>>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "unique_map"
+    )]
+    pub gap_overrides: BTreeMap<NodeId, ValueChange<PlayOverrides>>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "unique_map"
+    )]
+    pub audio_lineage: BTreeMap<NodeId, ValueChange<crate::AudioLineageId>>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "unique_map"
+    )]
+    pub derived_clocks: BTreeMap<NodeId, ValueChange<crate::DerivedRetimeClock>>,
+    /// Guarded changed timing tables and owner bindings, applied atomically
+    /// with the rest of the patch; the complete result is validated together.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub audio_bindings: Option<crate::AudioBindingPatch>,
+}
+
+impl DocumentPatch {
+    /// Used when recording undo/redo as new revisions. Hosts must never reuse a
+    /// committed revision ID: that would defeat optimistic concurrency checks.
+    pub fn rebased(&self, from: RevisionId, to: RevisionId) -> Self {
+        Self {
+            from_revision: from,
+            to_revision: to,
+            ..self.clone()
+        }
+    }
+
+    fn check_bounds(&self, document: &ProjectDocument) -> Result<(), EditError> {
+        check_revision(
+            document,
+            &self.project_id,
+            &self.from_revision,
+            &self.to_revision,
+        )?;
+        if self.nodes.len() > MAX_DOCUMENT_NODES
+            || self.assets.len() > MAX_DOCUMENT_NODES
+            || self.source_interpretations.len() > crate::MAX_DOCUMENT_ASSETS
+            || self.marks.len() > MAX_DOCUMENT_MARKS
+            || self.sounds.len() > 2 * crate::MAX_DOCUMENT_SOUNDS
+            || self.beat_sounds.len() > 2 * crate::MAX_DOCUMENT_SOUNDS
+            || self.sound_routes.len() > 2 * crate::MAX_DOCUMENT_SOUNDS
+            || self.sound_allowances.len() > 2 * crate::MAX_DOCUMENT_SOUNDS
+            || self.targets.len() > 2 * crate::MAX_DOCUMENT_TARGETS
+            || self.overrides.len() > MAX_DOCUMENT_NODES
+            || self.gap_overrides.len() > MAX_DOCUMENT_NODES
+            || self.audio_lineage.len() > MAX_DOCUMENT_NODES
+            || self.derived_clocks.len() > MAX_DOCUMENT_NODES
+        {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "patch exceeds document limits",
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn apply(&self, document: &ProjectDocument) -> Result<ProjectDocument, EditError> {
+        self.check_bounds(document)?;
+        crate::framing::validate_nodes(
+            self.nodes
+                .values()
+                .filter_map(|change| change.before.as_ref()),
+        )?;
+        crate::framing::validate_nodes(
+            self.nodes
+                .values()
+                .filter_map(|change| change.after.as_ref()),
+        )?;
+        crate::picture_context::validate_nodes(
+            self.nodes
+                .values()
+                .filter_map(|change| change.before.as_ref()),
+        )?;
+        crate::picture_context::validate_nodes(
+            self.nodes
+                .values()
+                .filter_map(|change| change.after.as_ref())
+                .chain(
+                    document
+                        .nodes
+                        .iter()
+                        .filter_map(|(id, node)| (!self.nodes.contains_key(id)).then_some(node)),
+                ),
+        )?;
+        crate::audio_gain::validate_nodes(
+            self.nodes
+                .values()
+                .filter_map(|change| change.before.as_ref()),
+        )?;
+        crate::audio_gain::validate_nodes(
+            self.nodes
+                .values()
+                .filter_map(|change| change.after.as_ref())
+                .chain(
+                    document
+                        .nodes
+                        .iter()
+                        .filter_map(|(id, node)| (!self.nodes.contains_key(id)).then_some(node)),
+                ),
+        )?;
+        let result = self.apply_stored(document)?;
+        result.validate()?;
+        Ok(result)
+    }
+
+    /// Guarded application of a patch that the store already admitted, for
+    /// reconstructing an elided historical revision from its nearest stored
+    /// snapshot. Every before-value is still checked; per-value and complete
+    /// document validation is left to the caller, which validates the final
+    /// reconstructed revision once rather than every intermediate one.
+    pub fn apply_stored(&self, document: &ProjectDocument) -> Result<ProjectDocument, EditError> {
+        let mut result = document.clone();
+        self.apply_stored_in_place(&mut result)?;
+        Ok(result)
+    }
+
+    /// [`Self::apply_stored`] without copying the document. On error the
+    /// document may be partly changed, so callers discard it; reconstruction
+    /// of an elided revision uses this to avoid one whole-document copy per
+    /// applied patch.
+    pub fn apply_stored_in_place(&self, result: &mut ProjectDocument) -> Result<(), EditError> {
+        self.check_bounds(result)?;
+        if let Some(change) = &self.presentation {
+            if result.presentation_state() != change.before {
+                return Err(EditError::new(
+                    EditErrorCode::PatchConflict,
+                    "presentation patch before-value does not match the current document",
+                ));
+            }
+            result.presentation_basis = change.after.basis.clone();
+            result.basis_state = change.after.state.clone();
+        }
+        apply_changes(&mut result.nodes, &self.nodes)?;
+        apply_changes(&mut result.beat_sounds, &self.beat_sounds)?;
+        for change in self.assets.values() {
+            if let (Some(before), Some(after)) = (&change.before, &change.after)
+                && before != after
+            {
+                return Err(EditError::new(
+                    EditErrorCode::ImmutableAsset,
+                    "asset identity and stream metadata cannot be changed in place",
+                ));
+            }
+        }
+        apply_changes(&mut result.assets, &self.assets)?;
+        apply_changes(
+            &mut result.source_interpretations,
+            &self.source_interpretations,
+        )?;
+        apply_changes(&mut result.marks, &self.marks)?;
+        apply_changes(&mut result.sounds, &self.sounds)?;
+        apply_changes(&mut result.sound_routes, &self.sound_routes)?;
+        apply_changes(&mut result.sound_allowances, &self.sound_allowances)?;
+        apply_changes(&mut result.targets, &self.targets)?;
+        apply_changes(&mut result.overrides, &self.overrides)?;
+        apply_changes(&mut result.gap_overrides, &self.gap_overrides)?;
+        apply_changes(&mut result.audio_lineage, &self.audio_lineage)?;
+        apply_changes(&mut result.derived_clocks, &self.derived_clocks)?;
+        if let Some(change) = &self.audio_bindings {
+            result.audio_bindings = change.apply(&result.audio_bindings)?;
+        }
+        result.revision_id = self.to_revision.clone();
+        Ok(())
+    }
+
+    /// Exactly `self.apply_stored(from).map(|result| result == *to)`: the same
+    /// guards in the same order with the same errors, then a field-by-field
+    /// comparison of the would-be result, without copying `from`.
+    pub fn restores(
+        &self,
+        from: &ProjectDocument,
+        to: &ProjectDocument,
+    ) -> Result<bool, EditError> {
+        if !crate::command_work::local() {
+            return self.apply_stored(from).map(|result| result == *to);
+        }
+        self.check_bounds(from)?;
+        if let Some(change) = &self.presentation
+            && from.presentation_state() != change.before
+        {
+            return Err(EditError::new(
+                EditErrorCode::PatchConflict,
+                "presentation patch before-value does not match the current document",
+            ));
+        }
+        check_changes(&from.nodes, &self.nodes)?;
+        check_changes(&from.beat_sounds, &self.beat_sounds)?;
+        for change in self.assets.values() {
+            if let (Some(before), Some(after)) = (&change.before, &change.after)
+                && before != after
+            {
+                return Err(EditError::new(
+                    EditErrorCode::ImmutableAsset,
+                    "asset identity and stream metadata cannot be changed in place",
+                ));
+            }
+        }
+        check_changes(&from.assets, &self.assets)?;
+        check_changes(&from.source_interpretations, &self.source_interpretations)?;
+        check_changes(&from.marks, &self.marks)?;
+        check_changes(&from.sounds, &self.sounds)?;
+        check_changes(&from.sound_routes, &self.sound_routes)?;
+        check_changes(&from.sound_allowances, &self.sound_allowances)?;
+        check_changes(&from.targets, &self.targets)?;
+        check_changes(&from.overrides, &self.overrides)?;
+        check_changes(&from.gap_overrides, &self.gap_overrides)?;
+        check_changes(&from.audio_lineage, &self.audio_lineage)?;
+        check_changes(&from.derived_clocks, &self.derived_clocks)?;
+        let bindings_equal = match &self.audio_bindings {
+            Some(change) => change.restores(&from.audio_bindings, &to.audio_bindings)?,
+            None => from.audio_bindings == to.audio_bindings,
+        };
+        // Every field, so a new document field cannot be left uncompared.
+        let ProjectDocument {
+            schema_version,
+            project_id,
+            revision_id,
+            presentation_basis,
+            basis_state,
+            root,
+            nodes,
+            assets,
+            source_interpretations,
+            marks,
+            sounds,
+            beat_sounds,
+            sound_routes,
+            sound_allowances,
+            overrides,
+            gap_overrides,
+            audio_lineage,
+            derived_clocks,
+            audio_bindings: _,
+            targets,
+        } = to;
+        let (basis, state) = match &self.presentation {
+            Some(change) => (&change.after.basis, &change.after.state),
+            None => (&from.presentation_basis, &from.basis_state),
+        };
+        Ok(bindings_equal
+            && from.schema_version == *schema_version
+            && from.project_id == *project_id
+            && self.to_revision == *revision_id
+            && basis == presentation_basis
+            && state == basis_state
+            && from.root == *root
+            && patched_equals(&from.nodes, &self.nodes, nodes)
+            && patched_equals(&from.assets, &self.assets, assets)
+            && patched_equals(
+                &from.source_interpretations,
+                &self.source_interpretations,
+                source_interpretations,
+            )
+            && patched_equals(&from.marks, &self.marks, marks)
+            && patched_equals(&from.sounds, &self.sounds, sounds)
+            && patched_equals(&from.beat_sounds, &self.beat_sounds, beat_sounds)
+            && patched_equals(&from.sound_routes, &self.sound_routes, sound_routes)
+            && patched_equals(
+                &from.sound_allowances,
+                &self.sound_allowances,
+                sound_allowances,
+            )
+            && patched_equals(&from.overrides, &self.overrides, overrides)
+            && patched_equals(&from.gap_overrides, &self.gap_overrides, gap_overrides)
+            && patched_equals(&from.audio_lineage, &self.audio_lineage, audio_lineage)
+            && patched_equals(&from.derived_clocks, &self.derived_clocks, derived_clocks)
+            && patched_equals(&from.targets, &self.targets, targets))
+    }
+
+    pub fn inverse(&self) -> Self {
+        Self {
+            project_id: self.project_id.clone(),
+            from_revision: self.to_revision.clone(),
+            to_revision: self.from_revision.clone(),
+            presentation: self.presentation.as_ref().map(|change| PresentationChange {
+                before: change.after.clone(),
+                after: change.before.clone(),
+            }),
+            nodes: inverse_changes(&self.nodes),
+            assets: inverse_changes(&self.assets),
+            source_interpretations: inverse_changes(&self.source_interpretations),
+            marks: inverse_changes(&self.marks),
+            sounds: inverse_changes(&self.sounds),
+            beat_sounds: inverse_changes(&self.beat_sounds),
+            sound_routes: inverse_changes(&self.sound_routes),
+            sound_allowances: inverse_changes(&self.sound_allowances),
+            targets: inverse_changes(&self.targets),
+            overrides: inverse_changes(&self.overrides),
+            gap_overrides: inverse_changes(&self.gap_overrides),
+            audio_lineage: inverse_changes(&self.audio_lineage),
+            derived_clocks: inverse_changes(&self.derived_clocks),
+            audio_bindings: self
+                .audio_bindings
+                .as_ref()
+                .map(crate::AudioBindingPatch::inverse),
+        }
+    }
+}
+
+/// Stored in the compact form of `patch_wire`, which decodes to the same value.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EditTransaction {
+    pub forward: DocumentPatch,
+    pub inverse: DocumentPatch,
+    pub changed_ids: Vec<NodeId>,
+    pub duration_delta: i64,
+    pub description: String,
+}
+
+/// Calculate one atomic transaction without mutating the input. Calling this for
+/// a dry-run follows exactly the same validation and reduction path as a commit.
+pub fn apply(
+    document: &ProjectDocument,
+    request: &CommandRequest,
+) -> Result<EditTransaction, EditError> {
+    apply_with_result(document, request).map(|(edit, _)| edit)
+}
+
+/// [`apply_with_result`] on an already validated document. Validation queries
+/// on the input reuse its retained proof; the result is validated once.
+pub fn apply_validated(
+    document: &crate::ValidatedDocument,
+    request: &CommandRequest,
+) -> Result<(EditTransaction, crate::ValidatedDocument), EditError> {
+    document
+        .scope(|| apply_with_durations(document.document(), request, Some(document)))
+        .map(|(edit, result, (durations, bindings))| {
+            (
+                edit,
+                crate::ValidatedDocument::from_validation(result, durations, bindings),
+            )
+        })
+}
+
+/// [`apply`], also returning the validated result document.
+///
+/// The result is exactly `edit.forward.apply_stored(document)`: the forward
+/// patch is the complete difference of every field it carries, and the
+/// remaining identity fields (schema, project and root) never change. A host
+/// that keeps the current revision in memory can therefore adopt it without
+/// applying and validating the patch a second time.
+pub fn apply_with_result(
+    document: &ProjectDocument,
+    request: &CommandRequest,
+) -> Result<(EditTransaction, ProjectDocument), EditError> {
+    apply_with_durations(document, request, None).map(|(edit, result, _)| (edit, result))
+}
+
+pub(crate) type Durations = BTreeMap<NodeId, crate::FrameDuration>;
+pub(crate) type Validation = (Durations, crate::audio_binding::BindingProof);
+/// Structural durations computed once for one exact structure and shared by
+/// the steps that read that structure.
+pub(crate) type SharedDurations = std::sync::Arc<Durations>;
+
+/// The structural durations of `document`, computed on first use and then
+/// shared. Callers pass one slot per structure and never change the nodes,
+/// overrides, assets, basis or root of `document` while the slot is live.
+pub(crate) fn shared_structure(
+    document: &ProjectDocument,
+    slot: &mut Option<SharedDurations>,
+) -> Result<SharedDurations, DocumentError> {
+    if let Some(durations) = slot {
+        #[cfg(debug_assertions)]
+        assert!(
+            document.structural_durations().as_ref() == Ok(&**durations),
+            "shared structural durations describe another structure"
+        );
+        return Ok(std::sync::Arc::clone(durations));
+    }
+    let durations = std::sync::Arc::new(document.structural_durations()?);
+    *slot = Some(std::sync::Arc::clone(&durations));
+    Ok(durations)
+}
+
+/// What a leaf edit already proved about its result before the transaction's
+/// shared post-processing (sound restoration, pruning, compaction, basis).
+pub(crate) enum KnownValidation {
+    Nothing,
+    /// The structural durations of the result's nodes.
+    Structure(SharedDurations),
+    /// The result's complete validation.
+    Complete(Validation),
+}
+
+fn apply_with_durations(
+    document: &ProjectDocument,
+    request: &CommandRequest,
+    previous: Option<&crate::ValidatedDocument>,
+) -> Result<(EditTransaction, ProjectDocument, Validation), EditError> {
+    apply_with_durations_captured(document, request, previous, None)
+}
+
+pub(crate) fn apply_with_isolation(
+    document: &ProjectDocument,
+    request: &CommandRequest,
+) -> Result<
+    (
+        EditTransaction,
+        ProjectDocument,
+        Vec<crate::ScopedIsolationStep>,
+    ),
+    EditError,
+> {
+    let mut steps = Vec::new();
+    let (edit, result, _) =
+        apply_with_durations_captured(document, request, None, Some(&mut steps))?;
+    Ok((edit, result, steps))
+}
+
+fn apply_with_durations_captured(
+    document: &ProjectDocument,
+    request: &CommandRequest,
+    previous: Option<&crate::ValidatedDocument>,
+    mut isolation: Option<&mut Vec<crate::ScopedIsolationStep>>,
+) -> Result<(EditTransaction, ProjectDocument, Validation), EditError> {
+    // Ordinary commands read integral recipes, which equal exact extents
+    // outside clocked speed changes; each leaf refuses changes inside them.
+    if !document.derived_clocks.is_empty() && !crate::derived_clock::sealed_active() {
+        return crate::derived_clock::with_sealed(|| {
+            apply_with_durations_captured(document, request, previous, isolation)
+        });
+    }
+    // A failed earlier leaf on this thread must not exempt this one.
+    crate::insert_time::retimed::take_exact_edit();
+    check_revision(
+        document,
+        &request.project_id,
+        &request.expected_revision,
+        &request.new_revision,
+    )?;
+    if let Command::RestoreSnapshot { snapshot } = &request.command {
+        if snapshot.project_id() != document.project_id()
+            || snapshot.root() != document.root()
+            || snapshot.schema_version() != document.schema_version()
+        {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "restored snapshot must retain the project, root and document format",
+            ));
+        }
+        let mut result = (**snapshot).clone();
+        result.revision_id = request.new_revision.clone();
+        // Do not run ordinary edit transforms: every authored clock, provider,
+        // mark and sound already belongs to this exact saved composition.
+        let (edit, validation) = net_transaction_with_durations(
+            document,
+            &result,
+            description(&request.command),
+            previous,
+        )?;
+        return Ok((edit, result, validation));
+    }
+    // Until their temporal transforms consume exact clocks, ordinary reducers
+    // must not operate on a shadow integral timeline. Exact snapshot restore
+    // and guarded reversible patches retain the complete clocks above.
+    // A pause inside a FollowSpeed speed change authors exact clocks itself.
+    let exact_retime = matches!(&request.command, Command::SetRetime { node, .. }
+        if crate::insert_time::retimed::clocked_retime_target(document, node));
+    if !matches!(request.command, Command::InsertTime { .. }) && !exact_retime {
+        document.require_integral_clocks()?;
+    }
+    if let Command::WithBoundaryReplacements { edit } = &request.command {
+        let base = CommandRequest {
+            project_id: request.project_id.clone(),
+            expected_revision: request.expected_revision.clone(),
+            new_revision: request.new_revision.clone(),
+            command: edit.command().clone(),
+        };
+        let (_, mut result, _) =
+            apply_with_durations_captured(document, &base, previous, isolation)?;
+        edit.restore(&mut result)?;
+        let (transaction, validation) = net_transaction_with_durations(
+            document,
+            &result,
+            description(edit.command()),
+            previous,
+        )?;
+        return Ok((transaction, result, validation));
+    }
+    if let Command::Duplicate {
+        parent,
+        selection,
+        identities,
+        split_identities,
+        timing,
+    } = &request.command
+    {
+        // Duplicate is paste of this exact revision's own capture. Resolving it
+        // here lets every placement transform (marks, clocks, root sounds,
+        // allowances) run once through the established slice path.
+        let command = crate::duplicate::resolve(
+            document,
+            parent,
+            selection,
+            identities,
+            split_identities,
+            timing,
+        )?;
+        let resolved = CommandRequest {
+            command,
+            ..request.clone()
+        };
+        let (mut edit, result, validation) = apply_with_durations(document, &resolved, previous)?;
+        edit.description = description(&request.command).into();
+        return Ok((edit, result, validation));
+    }
+    if matches!(request.command, Command::Compound { .. }) {
+        let outcome = crate::compound::replay_compound_captured::<EditError>(
+            document,
+            request,
+            |_| Ok(()),
+            isolation.as_deref_mut(),
+        )?;
+        let validated = crate::ValidatedDocument::new(std::sync::Arc::new(outcome.document))?;
+        let validation = (
+            validated.recipe_durations().clone(),
+            validated.binding_proof().clone(),
+        );
+        let document = std::sync::Arc::unwrap_or_clone(validated.into_document());
+        return Ok((outcome.edit, document, validation));
+    }
+    // Validate caller-owned context before cloning either the document or an
+    // isolated occurrence. Public structs can be constructed without serde.
+    crate::picture_context::validate_command(&request.command)?;
+    crate::audio_gain::validate_command(&request.command)?;
+    let sound_grouping = crate::sound_clock::grouping::prepare(document, request)?;
+    crate::sound_events::validate_command_with_grouping(
+        document,
+        &request.command,
+        sound_grouping.as_ref(),
+    )?;
+    if let Some(prepared) =
+        crate::scoped_edit::prepare_fixed_occurrence_hold_duration_command(document, request)?
+    {
+        if let Some(steps) = isolation.as_deref_mut() {
+            steps.extend(prepared.isolation);
+        }
+        let resolved = CommandRequest {
+            command: prepared.command,
+            ..request.clone()
+        };
+        let (_, result, _) =
+            apply_with_durations_captured(&prepared.document, &resolved, None, isolation)?;
+        let parent = result.parent_of(&prepared.root).ok_or_else(|| {
+            EditError::new(
+                EditErrorCode::InvalidCommand,
+                "fixed Hold duration lost its Repeat parent",
+            )
+        })?;
+        result.fixed_occurrence_hold_duration_visibility(
+            &parent,
+            &prepared.root,
+            &prepared.presentation,
+        )?;
+        if result.structural_duration()? != document.structural_duration()? {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "fixed Hold duration changed project duration",
+            ));
+        }
+        let (transaction, validation) = net_transaction_with_durations(
+            document,
+            &result,
+            description(&request.command),
+            previous,
+        )?;
+        return Ok((transaction, result, validation));
+    }
+    if let Some(prepared) =
+        crate::scoped_edit::prepare_mixed_hold_duration_command(document, request)?
+    {
+        if let Some(steps) = isolation.as_deref_mut() {
+            steps.extend(prepared.isolation);
+        }
+        let resolved = CommandRequest {
+            command: prepared.command,
+            ..request.clone()
+        };
+        let (_, result, _) =
+            apply_with_durations_captured(&prepared.document, &resolved, None, isolation)?;
+        if let Some((target, before_dormant)) = prepared.fixed_target {
+            let after =
+                crate::scoped_edit::fixed_mixed_preflight(&result, &target)?.ok_or_else(|| {
+                    EditError::new(
+                        EditErrorCode::InvalidCommand,
+                        "mixed fixed duration lost its Retime",
+                    )
+                })?;
+            if after.dormant != before_dormant
+                || result.structural_duration()? != document.structural_duration()?
+            {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "mixed fixed duration changed project duration or definition visibility",
+                ));
+            }
+        }
+        let (transaction, validation) = net_transaction_with_durations(
+            document,
+            &result,
+            description(&request.command),
+            previous,
+        )?;
+        return Ok((transaction, result, validation));
+    }
+    if let Some(prepared) = crate::insert_time::occurrence::prepare(document, request)? {
+        if let Some(steps) = isolation.as_deref_mut() {
+            steps.extend(prepared.isolation);
+        }
+        let resolved = CommandRequest {
+            command: prepared.command,
+            ..request.clone()
+        };
+        let (_, result, _) =
+            apply_with_durations_captured(&prepared.document, &resolved, None, isolation)?;
+        let (transaction, validation) = net_transaction_with_durations(
+            document,
+            &result,
+            description(&request.command),
+            previous,
+        )?;
+        return Ok((transaction, result, validation));
+    }
+    let mut beat_sound_edit = crate::sound_clock::edit::SoundClockEditCapture::prepare(
+        document,
+        &request.command,
+        &request.new_revision,
+    )?;
+    let sound_edit =
+        crate::sound_routing::RootSoundEditCapture::prepare(document, &request.command)?;
+    let mut allowance_edit =
+        crate::sound_allowance::SoundAllowanceEdit::capture(document, &request.command);
+    let mut structural = sound_edit
+        .as_ref()
+        .map(|capture| capture.structural_document(document))
+        .or_else(|| allowance_edit.as_ref().map(|_| document.clone()))
+        .or_else(|| beat_sound_edit.as_ref().map(|_| document.clone()));
+    if let Some(capture) = &beat_sound_edit {
+        capture.detach(structural.as_mut().expect("beat sound structural view"));
+    }
+    if allowance_edit.is_some()
+        && let Some(structural) = &mut structural
+    {
+        structural.sound_allowances.clear();
+    }
+    let input = structural.as_ref().unwrap_or(document);
+    let mut context = EditContext {
+        allocation: &request.new_revision,
+        allowances: allowance_edit.as_mut(),
+        sound_clocks: beat_sound_edit.as_mut(),
+    };
+    let mut known = KnownValidation::Nothing;
+    let mut result = match &request.command {
+        command @ Command::InsertOccurrenceTime { .. } => {
+            crate::insert_time::occurrence::apply(input, command, context)?
+        }
+        Command::InsertTime {
+            at,
+            hold,
+            id,
+            identities,
+            timing,
+        }
+        | Command::InsertAiTime {
+            at,
+            hold,
+            id,
+            identities,
+            timing,
+        } => {
+            if matches!(&request.command, Command::InsertAiTime { .. })
+                && (!matches!(hold.video, HoldVideo::Background | HoldVideo::Freeze { .. })
+                    || hold.audio != crate::HoldAudio::Silence)
+            {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "an AI pause requires a silent deterministic fallback",
+                ));
+            }
+            // A beat sound clock installs the complete pre-edit layout under
+            // this command's timing identity, so its table must stay complete.
+            let scoped = beat_sound_edit.is_none();
+            let saved_allowances = scoped.then(|| allowance_edit.clone()).flatten();
+            let scoped_result = crate::command_work::with_scoped_timing_captures(scoped, || {
+                crate::insert_time::apply_known(
+                    input,
+                    *at,
+                    hold,
+                    id,
+                    identities,
+                    timing,
+                    EditContext {
+                        allocation: &request.new_revision,
+                        allowances: allowance_edit.as_mut(),
+                        sound_clocks: beat_sound_edit.as_mut(),
+                    },
+                )
+            })?;
+            // Both insertion paths extend a provisional table to every alias
+            // their templates read. Should one ever not, repeat the leaf with
+            // complete captures rather than refuse what that path accepts.
+            let (result, structure) = if scoped
+                && !crate::audio_binding_lifecycle::provisional_tables_project_references(
+                    &scoped_result.0.audio_bindings,
+                ) {
+                debug_assert!(
+                    false,
+                    "a provisional timing table missed a referenced alias"
+                );
+                allowance_edit = saved_allowances;
+                crate::insert_time::apply_known(
+                    input,
+                    *at,
+                    hold,
+                    id,
+                    identities,
+                    timing,
+                    EditContext {
+                        allocation: &request.new_revision,
+                        allowances: allowance_edit.as_mut(),
+                        sound_clocks: beat_sound_edit.as_mut(),
+                    },
+                )?
+            } else {
+                scoped_result
+            };
+            if let Some(structure) = structure {
+                known = KnownValidation::Structure(structure);
+            }
+            result
+        }
+        Command::SetRetime {
+            node,
+            duration,
+            pitch,
+        } if crate::insert_time::retimed::clocked_retime_target(input, node) => {
+            crate::insert_time::retimed::set_retime(
+                input,
+                node,
+                *duration,
+                *pitch,
+                &request.new_revision,
+            )?
+        }
+        Command::SetHoldDuration { node, duration }
+            if crate::insert_time::retimed::inside_clocked(input, node) =>
+        {
+            crate::insert_time::retimed::set_hold_duration(
+                input,
+                node,
+                *duration,
+                &request.new_revision,
+            )?
+        }
+        Command::SetHoldDuration { node, duration } => {
+            crate::insert_time::hold_duration::apply(input, node, *duration, &request.new_revision)?
+        }
+        Command::SpliceSource {
+            parent,
+            index,
+            source,
+            id,
+            label,
+            timing,
+        } => crate::insert_time::splice_source(
+            input,
+            parent,
+            *index,
+            id,
+            BeatNode {
+                audio_treatments: Default::default(),
+                label: label.clone(),
+                framing: None,
+                audio_editorial_edges: Default::default(),
+                audio_edges: Default::default(),
+                kind: NodeKind::Source {
+                    source: source.clone(),
+                },
+                cutaways: Vec::new(),
+                captions: Vec::new(),
+            },
+            timing,
+            &request.new_revision,
+        )?,
+        Command::SpliceSlice { .. }
+        | Command::SpliceSliceAt { .. }
+        | Command::ReplaceSlice { .. }
+        | Command::ReplaceSliceChildren { .. } => {
+            crate::edit_slice::apply(input, &request.command, context)?
+        }
+        Command::SpliceEditSet { .. } => {
+            crate::edit_slice::apply_set(input, &request.command, context)?
+        }
+        Command::MoveRange { .. } => crate::move_range::apply(input, &request.command, context)?,
+        Command::GroupSelection { .. } => crate::group_selection::apply(
+            input,
+            &request.command,
+            context,
+            sound_grouping.as_ref(),
+        )?,
+        Command::RepeatSelection { .. }
+        | Command::SetRepeatPlays { .. }
+        | Command::SetRepeatGaps { .. } => {
+            crate::repeat_selection::apply(input, &request.command, context)?
+        }
+        Command::ApplySourceTrim { .. } => {
+            crate::source_trim_edit::apply(input, &request.command, context)?
+        }
+        Command::TrimSource { .. } => {
+            crate::source_trim::apply(input, &request.command, &request.new_revision)?
+        }
+        Command::RollSources { .. } => {
+            crate::source_roll::apply(input, &request.command, &request.new_revision)?
+        }
+        Command::SpliceSourceAt {
+            parent,
+            target,
+            at,
+            source,
+            id,
+            label,
+            identities,
+            timing,
+        } => crate::insert_time::splice_source_at(
+            input,
+            parent,
+            target,
+            *at,
+            crate::insert_time::SourceSpliceInsertion {
+                node: BeatNode {
+                    audio_treatments: Default::default(),
+                    label: label.clone(),
+                    framing: None,
+                    audio_editorial_edges: Default::default(),
+                    audio_edges: Default::default(),
+                    kind: NodeKind::Source {
+                        source: source.clone(),
+                    },
+                    cutaways: Vec::new(),
+                    captions: Vec::new(),
+                },
+                id,
+                identities,
+                timing,
+            },
+            context,
+        )?,
+        Command::ReplaceSource {
+            parent,
+            range,
+            source,
+            id,
+            label,
+            identities,
+            timing,
+        } => crate::insert_time::replace_source(
+            input,
+            parent,
+            *range,
+            crate::insert_time::SourceSpliceInsertion {
+                node: BeatNode {
+                    audio_treatments: Default::default(),
+                    label: label.clone(),
+                    framing: None,
+                    audio_editorial_edges: Default::default(),
+                    audio_edges: Default::default(),
+                    kind: NodeKind::Source {
+                        source: source.clone(),
+                    },
+                    cutaways: Vec::new(),
+                    captions: Vec::new(),
+                },
+                id,
+                identities,
+                timing,
+            },
+            context,
+        )?,
+        Command::ReplaceSourceChildren {
+            parent,
+            first,
+            last,
+            source,
+            id,
+            label,
+            timing,
+        } => crate::insert_time::replace_source_children(
+            input,
+            parent,
+            (first, last),
+            BeatNode {
+                audio_treatments: Default::default(),
+                label: label.clone(),
+                framing: None,
+                audio_editorial_edges: Default::default(),
+                audio_edges: Default::default(),
+                kind: NodeKind::Source {
+                    source: source.clone(),
+                },
+                cutaways: Vec::new(),
+                captions: Vec::new(),
+            },
+            id,
+            timing,
+            context,
+        )?,
+        Command::DeleteRipple { node, timing } => {
+            crate::insert_time::delete(input, node, timing, &request.new_revision)?
+        }
+        Command::DeleteChildren {
+            parent,
+            first,
+            last,
+            timing,
+        } => crate::insert_time::delete_children(
+            input,
+            parent,
+            first,
+            last,
+            timing,
+            &request.new_revision,
+        )?,
+        Command::DeleteRange {
+            parent,
+            range,
+            identities,
+            timing,
+        } => crate::insert_time::delete_range(input, parent, *range, identities, timing, context)?,
+        Command::Split {
+            node,
+            at,
+            identities,
+        } => {
+            let (result, validation) =
+                crate::split::apply_validated(input, node, *at, identities, context)?;
+            known = KnownValidation::Complete(validation);
+            result
+        }
+        Command::IsolateGap {
+            node,
+            iteration,
+            id,
+            timing,
+        } => {
+            crate::gap_override::isolate(input, node, iteration, id, timing, &request.new_revision)?
+        }
+        Command::EditOccurrence {
+            instance,
+            edit,
+            identities,
+        } => crate::occurrence_edit::apply_captured(
+            input,
+            instance,
+            edit,
+            identities,
+            context,
+            isolation.as_deref_mut(),
+        )?,
+        Command::EditScoped {
+            target,
+            edit,
+            identities,
+        } => {
+            let (result, mappings) =
+                crate::scoped_edit::apply_mapped(input, target, edit, identities, context)?;
+            if let Some(steps) = isolation.as_deref_mut() {
+                steps.extend(mappings.into_iter().map(|mapping| mapping.proof()));
+            }
+            result
+        }
+        Command::EditScopedMany { edits, identities } => {
+            let (result, mappings) =
+                crate::scoped_edit::apply_many_mapped(input, edits, identities, context)?;
+            if let Some(steps) = isolation.as_deref_mut() {
+                steps.extend(mappings.into_iter().map(|mapping| mapping.proof()));
+            }
+            result
+        }
+        Command::KeepFirstPlayAttachments { node, identities } => {
+            crate::beat_attachments::apply(input, node, identities, context, isolation)?
+        }
+        Command::Explode {
+            node,
+            identities,
+            timing,
+        } => crate::explode::apply(input, node, identities, timing, context)?,
+        command => {
+            let mut result = input.clone();
+            reduce(&mut result, command, &request.new_revision)?;
+            if let Some(prepared) = sound_grouping.as_ref() {
+                prepared.install(&mut result, command)?;
+            }
+            if let Some(allowances) = context.allowances.as_deref_mut() {
+                allowances.apply_hold_audio_command(command);
+            }
+            // Lineage and marks read the same new structure; compute it once.
+            let mut structure = None;
+            crate::audio_lineage::reconcile_shared(input, &mut result, command, &mut structure)?;
+            if !matches!(
+                command,
+                Command::SetMark { .. } | Command::DeleteMark { .. }
+            ) {
+                result.marks =
+                    crate::marks::transform_marks_shared(input, &result, command, &mut structure)?;
+            }
+            if let Some(structure) = structure {
+                known = KnownValidation::Structure(structure);
+            }
+            result
+        }
+    };
+    // Sound, beat-sound and allowance restoration are not audited here as
+    // structure-preserving, so their transactions validate from scratch.
+    if sound_edit.is_some() || beat_sound_edit.is_some() || allowance_edit.is_some() {
+        known = KnownValidation::Nothing;
+    }
+    if let Some(capture) = sound_edit {
+        capture.restore(&mut result)?;
+    }
+    if let Some(capture) = beat_sound_edit {
+        capture.restore(&mut result)?;
+    }
+    if let Some(allowances) = allowance_edit {
+        allowances.restore(&mut result)?;
+    }
+    // Removed Retimes take their clocks with them; only the retimed pause
+    // path may change timing inside a clocked speed change.
+    result
+        .derived_clocks
+        .retain(|id, _| result.nodes.contains_key(id));
+    if !crate::insert_time::retimed::take_exact_edit() {
+        crate::derived_clock::sealed_preserved(document, &result)?;
+    }
+    // Pruning only removes entries and compaction only rewrites tables new
+    // in this transaction, so equal counts and no new table mean neither
+    // changed anything. Neither touches the structure.
+    let counts = binding_entry_counts(&result.audio_bindings);
+    let new_tables = result
+        .audio_bindings
+        .timings
+        .keys()
+        .any(|timing| !document.audio_bindings.timings.contains_key(timing));
+    crate::audio_binding_lifecycle::prune(&mut result);
+    crate::audio_binding_lifecycle::compact_new_timings(
+        &document.audio_bindings,
+        &mut result.audio_bindings,
+    )?;
+    let basis = result.basis_state.clone();
+    result.lock_timed_basis(document)?;
+    result.revision_id = request.new_revision.clone();
+    // Validation reads neither the revision identity nor anything the
+    // unchanged steps above could have changed.
+    if let KnownValidation::Complete((durations, _)) = &known
+        && (new_tables
+            || counts != binding_entry_counts(&result.audio_bindings)
+            || basis != result.basis_state)
+    {
+        known = KnownValidation::Structure(std::sync::Arc::new(durations.clone()));
+    }
+    if !crate::command_work::local() {
+        known = KnownValidation::Nothing;
+    }
+    let (edit, validation) = net_transaction_known(
+        document,
+        &result,
+        description(&request.command),
+        previous,
+        known,
+    )?;
+    if result.schema_version != document.schema_version
+        || result.project_id != document.project_id
+        || result.root != document.root
+    {
+        return Err(EditError::new(
+            EditErrorCode::InvalidCommand,
+            "an edit cannot change the document identity outside its patch",
+        ));
+    }
+    Ok((edit, result, validation))
+}
+
+/// Build one reversible net patch. Leaf edits have already transformed sounds,
+/// allowances and clocks; aggregation must not run those transforms again.
+pub(crate) fn net_transaction(
+    document: &ProjectDocument,
+    result: &ProjectDocument,
+    description: &str,
+) -> Result<EditTransaction, EditError> {
+    net_transaction_with_durations(document, result, description, None).map(|(edit, _)| edit)
+}
+
+/// [`net_transaction`], also returning the result's validation. With the
+/// validated `previous` input, binding owners the patch leaves unchanged reuse
+/// their proved checks; the result is otherwise validated completely.
+fn net_transaction_with_durations(
+    document: &ProjectDocument,
+    result: &ProjectDocument,
+    description: &str,
+    previous: Option<&crate::ValidatedDocument>,
+) -> Result<(EditTransaction, Validation), EditError> {
+    net_transaction_known(
+        document,
+        result,
+        description,
+        previous,
+        KnownValidation::Nothing,
+    )
+}
+
+/// Entry counts of every binding collection pruning can shrink.
+fn binding_entry_counts(state: &crate::AudioBindingState) -> [usize; 5] {
+    [
+        state.bindings.len(),
+        state.gap_bindings.len(),
+        state.sound_clocks.len(),
+        state.sound_clocks.values().map(BTreeMap::len).sum(),
+        state.timings.len(),
+    ]
+}
+
+/// [`net_transaction_with_durations`] for a result whose validation is
+/// partly or completely `known` already.
+fn net_transaction_known(
+    document: &ProjectDocument,
+    result: &ProjectDocument,
+    description: &str,
+    previous: Option<&crate::ValidatedDocument>,
+    known: KnownValidation,
+) -> Result<(EditTransaction, Validation), EditError> {
+    // The entry revision was admitted and validated already; only the result
+    // needs the complete (binding-inclusive) validation here.
+    let before_duration = match document.retained_durations() {
+        Some(durations) if crate::command_work::local() && document.derived_clocks.is_empty() => {
+            durations
+                .get(document.root())
+                .copied()
+                .ok_or_else(|| EditError::new(EditErrorCode::InvalidCommand, "root is missing"))?
+        }
+        _ => document.structural_duration()?,
+    }
+    .frames();
+    let forward = DocumentPatch {
+        project_id: document.project_id.clone(),
+        from_revision: document.revision_id.clone(),
+        to_revision: result.revision_id.clone(),
+        presentation: (document.presentation_state() != result.presentation_state()).then(|| {
+            PresentationChange {
+                before: document.presentation_state(),
+                after: result.presentation_state(),
+            }
+        }),
+        nodes: diff(&document.nodes, &result.nodes),
+        assets: diff(&document.assets, &result.assets),
+        source_interpretations: diff(
+            &document.source_interpretations,
+            &result.source_interpretations,
+        ),
+        marks: diff(&document.marks, &result.marks),
+        sounds: diff(&document.sounds, &result.sounds),
+        beat_sounds: diff(&document.beat_sounds, &result.beat_sounds),
+        sound_routes: diff(&document.sound_routes, &result.sound_routes),
+        sound_allowances: diff(&document.sound_allowances, &result.sound_allowances),
+        targets: diff(&document.targets, &result.targets),
+        overrides: diff(&document.overrides, &result.overrides),
+        gap_overrides: diff(&document.gap_overrides, &result.gap_overrides),
+        audio_lineage: diff(&document.audio_lineage, &result.audio_lineage),
+        derived_clocks: diff(&document.derived_clocks, &result.derived_clocks),
+        audio_bindings: crate::AudioBindingPatch::between(
+            &document.audio_bindings,
+            &result.audio_bindings,
+        ),
+    };
+    let previous = previous.filter(|previous| std::ptr::eq(previous.document().as_ref(), document));
+    let structure = match known {
+        KnownValidation::Complete(validation) => {
+            #[cfg(debug_assertions)]
+            assert!(
+                result.validated_with_proof().as_ref() == Ok(&validation),
+                "a reused leaf validation differs from complete validation"
+            );
+            Some(Err(validation))
+        }
+        KnownValidation::Structure(durations) => Some(Ok(durations)),
+        KnownValidation::Nothing => None,
+    };
+    let validation = match (structure, previous) {
+        (Some(Err(validation)), _) => validation,
+        (structure, Some(previous)) => result.validate_after_with(
+            previous,
+            forward.audio_bindings.as_ref(),
+            structure.and_then(Result::ok),
+        )?,
+        (structure, None) => result.validated_with_structure(structure.and_then(Result::ok))?,
+    };
+    let after_duration = if result.derived_clocks.is_empty() {
+        validation
+            .0
+            .get(result.root())
+            .copied()
+            .ok_or_else(|| EditError::new(EditErrorCode::InvalidCommand, "result root is missing"))?
+            .frames()
+    } else {
+        result.structural_duration()?.frames()
+    };
+    let binding_changed_ids =
+        changed_audio_binding_owners_in(&document.audio_bindings, forward.audio_bindings.as_ref());
+    debug_assert_eq!(
+        binding_changed_ids,
+        changed_audio_binding_owners(&document.audio_bindings, &result.audio_bindings)
+    );
+    let edit = EditTransaction {
+        changed_ids: forward
+            .nodes
+            .keys()
+            .chain(forward.overrides.keys())
+            .chain(forward.gap_overrides.keys())
+            .chain(forward.audio_lineage.keys())
+            .chain(forward.derived_clocks.keys())
+            .chain(forward.beat_sounds.keys())
+            .chain(binding_changed_ids.iter())
+            .chain(
+                forward
+                    .sound_routes
+                    .keys()
+                    .filter_map(|id| document.sounds.get(id).or_else(|| result.sounds.get(id)))
+                    .map(|event| &event.owner),
+            )
+            .chain(forward.sounds.values().flat_map(|change| {
+                change
+                    .before
+                    .iter()
+                    .chain(change.after.iter())
+                    .map(|event| &event.owner)
+            }))
+            .chain(forward.sound_allowances.keys().filter_map(|id| {
+                document
+                    .sounds
+                    .get(id)
+                    .or_else(|| result.sounds.get(id))
+                    .map(|event| &event.owner)
+            }))
+            .chain(forward.sound_allowances.values().flat_map(|change| {
+                change
+                    .before
+                    .iter()
+                    .chain(change.after.iter())
+                    .flat_map(|allowances| allowances.iter().map(|issuer| &issuer.instance().node))
+            }))
+            .cloned()
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect(),
+        inverse: forward.inverse(),
+        forward,
+        // Both durations are nonnegative i64, so their difference always fits.
+        duration_delta: after_duration - before_duration,
+        description: description.to_owned(),
+    };
+    Ok((edit, validation))
+}
+
+/// Scoped identity transforms share the outer transaction's detached allowance
+/// and sound-clock captures. Nested Split helpers report exact copies; only the
+/// outer reducer restores either relation into the completed structure.
+pub(crate) struct EditContext<'a> {
+    pub(crate) allocation: &'a RevisionId,
+    pub(crate) allowances: Option<&'a mut crate::sound_allowance::SoundAllowanceEdit>,
+    pub(crate) sound_clocks: Option<&'a mut crate::sound_clock::edit::SoundClockEditCapture>,
+}
+
+/// [`changed_audio_binding_owners`] from the exact binding patch between the
+/// two states: its changed owners, and owners whose binding names a changed
+/// timing table. An owner whose binding is unchanged names the same tables in
+/// both states, so scanning the previous owners suffices.
+fn changed_audio_binding_owners_in(
+    before: &crate::AudioBindingState,
+    patch: Option<&crate::AudioBindingPatch>,
+) -> BTreeSet<NodeId> {
+    let Some(patch) = patch else {
+        return BTreeSet::new();
+    };
+    let mut changed: BTreeSet<NodeId> = patch
+        .bindings
+        .keys()
+        .chain(patch.gap_bindings.keys())
+        .cloned()
+        .collect();
+    if !patch.timings.is_empty() {
+        let timings: BTreeSet<_> = patch.timings.iter().map(|change| &change.id).collect();
+        for (_, owner, binding) in before.owners() {
+            if binding
+                .placements()
+                .any(|template| timings.contains(&template.reference.timing))
+            {
+                changed.insert(owner.clone());
+            }
+        }
+    }
+    changed
+}
+
+fn changed_audio_binding_owners(
+    before: &crate::AudioBindingState,
+    after: &crate::AudioBindingState,
+) -> BTreeSet<NodeId> {
+    // Compare each retained layout once; many owners can share a large clock.
+    let changed_timings: BTreeSet<_> = before
+        .timings()
+        .iter()
+        .filter(|(timing, layout)| Some(*layout) != after.timings().get(*timing))
+        .map(|(timing, _)| timing)
+        .chain(
+            after
+                .timings()
+                .keys()
+                .filter(|timing| !before.timings().contains_key(*timing)),
+        )
+        .collect();
+    before
+        .owners()
+        .chain(after.owners())
+        .filter(|(kind, owner, _)| {
+            let (before, after) = match kind {
+                crate::AudioRecipeKind::Node => (before.bindings(), after.bindings()),
+                crate::AudioRecipeKind::RepeatGap => (before.gap_bindings(), after.gap_bindings()),
+            };
+            let previous = before.get(*owner);
+            let next = after.get(*owner);
+            if previous != next {
+                return true;
+            }
+            previous.is_some_and(|binding| {
+                binding
+                    .placements()
+                    .any(|template| changed_timings.contains(&template.reference.timing))
+            })
+        })
+        .map(|(_, owner, _)| owner.clone())
+        .collect()
+}
+
+pub(crate) fn check_revision(
+    document: &ProjectDocument,
+    project: &ProjectId,
+    expected: &RevisionId,
+    next: &RevisionId,
+) -> Result<(), EditError> {
+    if project != &document.project_id {
+        return Err(EditError::new(
+            EditErrorCode::ProjectConflict,
+            "command targets a different project",
+        ));
+    }
+    if expected != &document.revision_id {
+        return Err(EditError {
+            code: EditErrorCode::RevisionConflict,
+            message: format!(
+                "expected revision {expected}; current revision is {}",
+                document.revision_id
+            ),
+            current_revision: Some(document.revision_id.clone()),
+        });
+    }
+    if expected == next {
+        return Err(EditError::new(
+            EditErrorCode::InvalidCommand,
+            "new revision must differ from the current revision",
+        ));
+    }
+    Ok(())
+}
+
+pub(crate) fn reduce(
+    document: &mut ProjectDocument,
+    command: &Command,
+    allocation: &RevisionId,
+) -> Result<(), EditError> {
+    match command {
+        Command::SetScopedHoldDuration { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "mixed Hold duration requires the complete replay entrypoint",
+            ));
+        }
+        Command::RestoreSnapshot { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "snapshot restores require the complete replay entrypoint",
+            ));
+        }
+        Command::WithBoundaryReplacements { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "boundary replacements require the complete replay entrypoint",
+            ));
+        }
+        Command::Compound { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "compound commands require the sequential replay entrypoint",
+            ));
+        }
+        Command::SetSound { id, event } | Command::ReplaceSound { id, event } => {
+            let replace = matches!(command, Command::ReplaceSound { .. });
+            if replace && !document.sounds.contains_key(id) {
+                return Err(EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "sound event is absent",
+                ));
+            }
+            if !replace
+                && document.sound_routes.contains_key(id)
+                && let Some(old) = document.sounds.get(id)
+                && (old.owner != event.owner
+                    || old.source != event.source
+                    || old.mapping != event.mapping
+                    || old.offset != event.offset)
+            {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "use ReplaceSound to replace a routed sound recipe or placement",
+                ));
+            }
+            if event.owner != document.root {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "sound events currently require the root Sequence owner",
+                ));
+            }
+            let total_sounds = document.sounds.len()
+                + document
+                    .beat_sounds
+                    .values()
+                    .map(BTreeMap::len)
+                    .sum::<usize>();
+            if !document.sounds.contains_key(id) && total_sounds >= crate::MAX_DOCUMENT_SOUNDS {
+                return Err(EditError::new(
+                    EditErrorCode::LimitExceeded,
+                    "document exceeds 64 live sound events",
+                ));
+            }
+            if replace {
+                document.sound_routes.remove(id);
+            }
+            document.sounds.insert(id.clone(), event.clone());
+        }
+        Command::SetBeatSound { owner, id, event } => {
+            if !document.nodes.contains_key(owner) {
+                return Err(EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "beat sound owner is absent",
+                ));
+            }
+            let exists = document
+                .beat_sounds
+                .get(owner)
+                .is_some_and(|events| events.contains_key(id));
+            let total = document.sounds.len()
+                + document
+                    .beat_sounds
+                    .values()
+                    .map(BTreeMap::len)
+                    .sum::<usize>();
+            if !exists && total >= crate::MAX_DOCUMENT_SOUNDS {
+                return Err(EditError::new(
+                    EditErrorCode::LimitExceeded,
+                    "document exceeds 64 live sound events",
+                ));
+            }
+            // Gain, labels and edges remain live over the retained placement.
+            // A replacement recipe starts on the current clock deliberately.
+            if document
+                .beat_sounds
+                .get(owner)
+                .and_then(|events| events.get(id))
+                .is_some_and(|old| {
+                    old.source != event.source
+                        || old.mapping != event.mapping
+                        || old.offset != event.offset
+                })
+                && let Some(journals) = document.audio_bindings.sound_clocks.get_mut(owner)
+            {
+                journals.remove(id);
+            }
+            document
+                .beat_sounds
+                .entry(owner.clone())
+                .or_default()
+                .insert(id.clone(), event.clone());
+        }
+        Command::DeleteBeatSound { owner, id } => {
+            let events = document.beat_sounds.get_mut(owner).ok_or_else(|| {
+                EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "beat sound owner has no sounds",
+                )
+            })?;
+            if events.remove(id).is_none() {
+                return Err(EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "beat sound event is absent",
+                ));
+            }
+            if events.is_empty() {
+                document.beat_sounds.remove(owner);
+            }
+        }
+        Command::SetTarget { id, target } => {
+            document.targets.insert(id.clone(), target.clone());
+        }
+        Command::SetSourceInterpretation {
+            asset,
+            interpretation,
+        } => {
+            crate::source_interpretation::validate_asset(document, asset)?;
+            match interpretation {
+                Some(interpretation) => {
+                    document
+                        .source_interpretations
+                        .insert(asset.clone(), *interpretation);
+                }
+                None => {
+                    document.source_interpretations.remove(asset);
+                }
+            }
+        }
+        Command::DeleteTarget { id } => {
+            if document.targets.remove(id).is_none() {
+                return Err(EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "target is absent",
+                ));
+            }
+        }
+        Command::DeleteSound { id } => {
+            document.sound_routes.remove(id);
+            if document.sounds.remove(id).is_none() {
+                return Err(EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "sound event is absent",
+                ));
+            }
+        }
+        Command::SetSoundAllowance {
+            sound,
+            issuer,
+            allowed,
+        } => {
+            crate::sound_allowance::set(document, sound, issuer, *allowed)?;
+        }
+        Command::IsolateGap { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "gap isolation requires the retained-clock entrypoint",
+            ));
+        }
+        Command::InsertTime { .. }
+        | Command::InsertAiTime { .. }
+        | Command::InsertOccurrenceTime { .. }
+        | Command::SpliceSource { .. }
+        | Command::SpliceSlice { .. }
+        | Command::SpliceEditSet { .. }
+        | Command::SpliceSliceAt { .. }
+        | Command::ReplaceSlice { .. }
+        | Command::ReplaceSliceChildren { .. }
+        | Command::ReplaceSource { .. }
+        | Command::ReplaceSourceChildren { .. }
+        | Command::DeleteRipple { .. }
+        | Command::DeleteChildren { .. }
+        | Command::DeleteRange { .. }
+        | Command::MoveRange { .. }
+        | Command::RepeatSelection { .. }
+        | Command::SetRepeatPlays { .. }
+        | Command::SetRepeatGaps { .. }
+        | Command::GroupSelection { .. }
+        | Command::SpliceSourceAt { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "time insertion requires the retained-clock entrypoint",
+            ));
+        }
+        Command::Split { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "splits require the retained-context entrypoint",
+            ));
+        }
+        Command::EditOccurrence { .. }
+        | Command::EditScoped { .. }
+        | Command::KeepFirstPlayAttachments { .. }
+        | Command::EditScopedMany { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "occurrence edits require the isolation entrypoint",
+            ));
+        }
+        Command::Explode { .. } | Command::Duplicate { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "explode and duplicate require their retained-clock entrypoints",
+            ));
+        }
+        Command::Insert {
+            parent,
+            index,
+            subtree,
+        } => {
+            let prepared = prepare_subtree(document, subtree, allocation)?;
+            insert_child(document, parent, *index, prepared.root.clone())?;
+            install_subtree(document, prepared);
+        }
+        Command::Delete { node } => {
+            detach(document, node)?;
+            remove_subtree(document, node)?;
+        }
+
+        Command::Move {
+            node,
+            parent,
+            index,
+        } => {
+            detach(document, node)?;
+            insert_child(document, parent, *index, node.clone())?;
+        }
+        Command::Group {
+            parent,
+            start,
+            end,
+            id,
+            label,
+        } => {
+            unused(document, id)?;
+            let siblings = children_mut(document, parent)?;
+            if start >= end || *end > siblings.len() {
+                return Err(EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "group requires a nonempty child range inside the selected sequence",
+                ));
+            }
+            let children = siblings[*start..*end].to_vec();
+            siblings.splice(*start..*end, [id.clone()]);
+            document
+                .nodes
+                .insert(id.clone(), BeatNode::sequence(label, children));
+        }
+        Command::Ungroup { node } => {
+            let parent = sequence_parent(document, node)?;
+            let beat = document.nodes.get(node).ok_or_else(|| missing(node))?;
+            if !beat.audio_editorial_edges.is_empty() {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "ungroup cannot yet preserve this Sequence's editorial audio edges; retain the group",
+                ));
+            }
+            let children = match &beat.kind {
+                NodeKind::Sequence { children } => children.clone(),
+                _ => {
+                    return Err(EditError::new(
+                        EditErrorCode::WrongNodeKind,
+                        "ungroup requires a Sequence",
+                    ));
+                }
+            };
+            if beat.audio_edges != crate::AudioEdgePolicies::default() {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "reset this Sequence's explicit audio edge choices before ungrouping",
+                ));
+            }
+            // The group's camera path moves to each child, windowed to that
+            // child's own interval of the same path, so it renders unchanged.
+            let mut pushed = Vec::new();
+            if let Some(framing) = beat.framing.clone() {
+                if children.iter().any(|child| {
+                    document
+                        .nodes
+                        .get(child)
+                        .is_some_and(|node| node.framing.is_some())
+                }) {
+                    return Err(EditError::new(
+                        EditErrorCode::InvalidCommand,
+                        "ungroup cannot combine this Sequence's framing with a child's own framing; retain the group or clear one of them",
+                    ));
+                }
+                let extents = document.exact_durations()?;
+                let (mut offset, duration) = match framing.clock {
+                    crate::FramingClock::OwnerOutput => (crate::ExactRatio::ZERO, extents[node]),
+                    crate::FramingClock::RetainedOutput { offset, duration } => (offset, duration),
+                };
+                for child in &children {
+                    let mut moved = framing.clone();
+                    moved.clock = crate::FramingClock::RetainedOutput { offset, duration };
+                    moved.validate().map_err(|error| {
+                        EditError::new(EditErrorCode::InvalidCommand, error.to_string())
+                    })?;
+                    pushed.push((child.clone(), moved));
+                    offset = offset
+                        .checked_add(extents[child])
+                        .map_err(DocumentError::from)?;
+                }
+            }
+            if !beat.audio_treatments.is_empty() {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "ungroup cannot yet preserve this Sequence's audio treatments; retain the group or explicitly clear its treatments",
+                ));
+            }
+            let siblings = children_mut(document, &parent)?;
+            let position = siblings
+                .iter()
+                .position(|id| id == node)
+                .ok_or_else(|| missing(node))?;
+            siblings.splice(position..=position, children);
+            document.nodes.remove(node);
+            for (child, framing) in pushed {
+                node_mut(document, &child)?.framing = Some(framing);
+            }
+        }
+        Command::WrapRepeat {
+            node,
+            id,
+            plays,
+            gap,
+            ..
+        } => {
+            unused(document, id)?;
+            let parent = document.parent_of(node).ok_or_else(|| {
+                EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "wrap-repeat requires an existing non-root node",
+                )
+            })?;
+            replace_child(document, &parent, node, id.clone())?;
+            document.nodes.insert(
+                id.clone(),
+                BeatNode {
+                    audio_treatments: Default::default(),
+                    framing: None,
+                    audio_editorial_edges: Default::default(),
+                    audio_edges: Default::default(),
+                    label: "Repeat".into(),
+                    kind: NodeKind::Repeat {
+                        child: node.clone(),
+                        iterations: IterationOrder::new(allocation.clone(), *plays)?,
+                        gap: gap.clone(),
+                        escalation: None,
+                    },
+                    cutaways: Vec::new(),
+                    captions: Vec::new(),
+                },
+            );
+        }
+        Command::SetRepeat { node, plays, gap } => {
+            let NodeKind::Repeat {
+                iterations,
+                gap: old_gap,
+                ..
+            } = &mut node_mut(document, node)?.kind
+            else {
+                return Err(EditError::new(
+                    EditErrorCode::WrongNodeKind,
+                    "set-repeat updates an existing Repeat; use wrap-repeat to insert a wrapper",
+                ));
+            };
+            *iterations = iterations.resized(*plays, allocation.clone())?;
+            *old_gap = gap.clone();
+            let retained = iterations.clone();
+            let retired: Vec<_> = document
+                .overrides
+                .get(node)
+                .into_iter()
+                .flat_map(|entries| entries.iter())
+                .filter(|(identity, _)| retained.position(identity).is_none())
+                .map(|(identity, root)| (identity.clone(), root.clone()))
+                .collect();
+            for (identity, root) in retired {
+                remove_override(document, node, &identity);
+                remove_subtree(document, &root)?;
+            }
+            let retired: Vec<_> = document
+                .gap_overrides
+                .get(node)
+                .into_iter()
+                .flat_map(|entries| entries.iter())
+                .filter(|(identity, _)| retained.position(identity).is_none())
+                .map(|(identity, root)| (identity.clone(), root.clone()))
+                .collect();
+            for (identity, root) in retired {
+                remove_gap_override(document, node, &identity);
+                remove_subtree(document, &root)?;
+            }
+        }
+        Command::WrapRetime {
+            node,
+            id,
+            duration,
+            pitch,
+        } => {
+            unused(document, id)?;
+            let parent = document.parent_of(node).ok_or_else(|| {
+                EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "wrap-retime requires an existing non-root node",
+                )
+            })?;
+            let selected = document.structural_durations()?[node];
+            let mapping = crate::FrameRange::new(
+                crate::ProjectFrame(0),
+                crate::ProjectFrame(selected.frames()),
+            )
+            .map_err(DocumentError::from)?;
+            check_preserve_bound(document, selected, *duration, *pitch)?;
+            replace_child(document, &parent, node, id.clone())?;
+            document.nodes.insert(
+                id.clone(),
+                BeatNode {
+                    audio_treatments: Default::default(),
+                    framing: None,
+                    audio_editorial_edges: Default::default(),
+                    audio_edges: Default::default(),
+                    label: "Retime".into(),
+                    kind: NodeKind::Retime {
+                        child: node.clone(),
+                        duration: *duration,
+                        mapping,
+                        pitch: *pitch,
+                        purpose: crate::RetimePurpose::Edit,
+                    },
+                    cutaways: Vec::new(),
+                    captions: Vec::new(),
+                },
+            );
+        }
+        Command::SetRetime {
+            node,
+            duration,
+            pitch,
+        } => {
+            if let Some(NodeKind::Retime { mapping, .. }) =
+                document.nodes.get(node).map(|beat| &beat.kind)
+            {
+                check_preserve_bound(document, mapping.duration(), *duration, *pitch)?;
+            }
+            let NodeKind::Retime {
+                duration: current_duration,
+                pitch: current_pitch,
+                purpose: crate::RetimePurpose::Edit,
+                ..
+            } = &mut node_mut(document, node)?.kind
+            else {
+                return Err(EditError::new(
+                    EditErrorCode::WrongNodeKind,
+                    "set-retime updates an ordinary Retime; wrap a transparent partition to preserve its retained context",
+                ));
+            };
+            if *current_duration != *duration || *current_pitch != *pitch {
+                *current_duration = *duration;
+                *current_pitch = *pitch;
+                // The changed processing output starts on its current clock.
+                // Retained child recipes keep their own sampling lattices and
+                // resumes; an old output binding must not turn a policy change
+                // into reuse of the previous processing output's phase.
+                document.audio_bindings.bindings.remove(node);
+            }
+        }
+        Command::InsertPlays { node, index, count } => {
+            let iterations = iterations_mut(document, node)?;
+            *iterations = iterations.inserted(*index, *count, allocation.clone())?;
+        }
+        Command::MovePlays {
+            node,
+            start,
+            end,
+            destination,
+        } => {
+            let iterations = iterations_mut(document, node)?;
+            *iterations = iterations.moved(*start, *end, *destination)?;
+        }
+        Command::ApplySourceTrim { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "combined Source trim requires the atomic timing and sound path",
+            ));
+        }
+        Command::RollSources { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "source roll requires the atomic timing and sound path",
+            ));
+        }
+        Command::TrimSource { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "source trim requires the atomic timing and sound path",
+            ));
+        }
+        Command::SlipSource {
+            parent,
+            node,
+            delta_frames,
+        } => {
+            let resolved = document.source_slip(parent, node, *delta_frames)?;
+            if resolved.applied_delta_frames == 0 {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "source slip resolves to no change",
+                ));
+            }
+            let NodeKind::Source { source } =
+                &mut node_mut(document, &resolved.physical_source)?.kind
+            else {
+                unreachable!()
+            };
+            *source = resolved.after;
+            crate::source_edit::mark_edges(
+                document,
+                parent,
+                node,
+                crate::AudioEditorialEdges {
+                    start: true,
+                    end: true,
+                },
+            )?;
+        }
+        Command::SetSourceVideoMapping { node, mapping } => {
+            let NodeKind::Source { source } = &mut node_mut(document, node)?.kind else {
+                return Err(EditError::new(
+                    EditErrorCode::WrongNodeKind,
+                    "video mapping requires a Source beat",
+                ));
+            };
+            if !matches!(source.video, SourceVideo::Stream { .. }) {
+                return Err(EditError::new(
+                    EditErrorCode::SourceRangeInvalid,
+                    "video mapping requires selected video",
+                ));
+            }
+            if source.video_mapping != *mapping {
+                source.edit_window = None;
+            }
+            source.video_mapping = *mapping;
+        }
+        Command::SetSourceAudioMapping {
+            node,
+            mapping,
+            offset,
+        } => {
+            let NodeKind::Source { source } = &mut node_mut(document, node)?.kind else {
+                return Err(EditError::new(
+                    EditErrorCode::WrongNodeKind,
+                    "audio mapping requires a Source beat",
+                ));
+            };
+            if source.audio.is_none() {
+                return Err(EditError::new(
+                    EditErrorCode::SourceRangeInvalid,
+                    "audio mapping requires selected audio",
+                ));
+            }
+            if source.audio_mapping != *mapping || source.audio_offset != *offset {
+                source.edit_window = None;
+            }
+            source.audio_mapping = *mapping;
+            source.audio_offset = *offset;
+        }
+        Command::SetHoldDuration { node, duration } => {
+            let recipe = hold_mut(document, node)?;
+            if let HoldVideo::Generated { accepted } = &recipe.video
+                && *duration > accepted.artifact.sampling.output_frame_count()
+            {
+                recipe.video = fallback_video(&accepted.fallback);
+            }
+            recipe.duration = *duration;
+            // A tail rings at most for the whole Hold; shortening the Hold
+            // shortens the permitted tail with it.
+            if let HoldAudio::Tail { maximum, .. } = &mut recipe.audio
+                && *maximum > *duration
+            {
+                *maximum = *duration;
+            }
+        }
+        Command::SetHoldAudio { node, audio } => {
+            hold_mut(document, node)?.audio = audio.clone();
+        }
+        Command::SetHoldProvider { node, video } => {
+            if matches!(video, HoldVideo::Generated { .. }) {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "generated media must be accepted with AcceptGeneratedHold",
+                ));
+            }
+            hold_mut(document, node)?.video = video.clone();
+        }
+        Command::SetHoldPictureContext { node, context } => {
+            hold_mut(document, node)?.picture_context = context.clone();
+        }
+        Command::AcceptGeneratedHold {
+            node,
+            artifact,
+            assets,
+        } => accept_generated_hold(document, node, artifact, assets)?,
+        Command::RevertGeneratedHold { node } => {
+            let recipe = hold_mut(document, node)?;
+            recipe.video = reverted_hold_video(&recipe.video)?;
+            // Reasserting an active fallback is explicit provider intent. The
+            // host records it so pending generation cannot replace that choice.
+        }
+        Command::Rename { node, label } => {
+            node_mut(document, node)?.label.clone_from(label);
+        }
+        Command::AddAsset { id, asset } => {
+            if document.assets.contains_key(id) {
+                return Err(EditError::new(
+                    EditErrorCode::ImmutableAsset,
+                    format!("asset {id} already exists; asset records are immutable"),
+                ));
+            }
+            document.assets.insert(id.clone(), asset.clone());
+        }
+        Command::ImportSource {
+            id,
+            asset,
+            insertion,
+            primary,
+        } => {
+            if asset.source_qualification.is_none() {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "source import requires a qualification receipt binding",
+                ));
+            }
+            if let Some(existing) = document.assets.get(id) {
+                if existing != asset {
+                    return Err(EditError::new(
+                        EditErrorCode::ImmutableAsset,
+                        format!("asset {id} already has different immutable metadata"),
+                    ));
+                }
+            } else {
+                document.assets.insert(id.clone(), asset.clone());
+            }
+            if let Some(primary) = primary {
+                if document.basis_state.primary.is_some()
+                    || !insertion.as_ref().is_some_and(|insertion| matches!(&insertion.source.video, SourceVideo::Stream { asset, .. } if asset == id))
+                {
+                    return Err(EditError::new(EditErrorCode::InvalidCommand, "first-primary designation requires an inserted stream from the supplied qualified asset and no prior primary"));
+                }
+                match primary {
+                    PrimarySourceImport::Adopt { basis } => {
+                        if document.basis_state.rate_origin != FrameRateOrigin::Provisional {
+                            return Err(EditError::new(
+                                EditErrorCode::InvalidCommand,
+                                "primary basis adoption requires a provisional project",
+                            ));
+                        }
+                        crate::basis::validate_canvas(basis.width, basis.height)?;
+                        document.presentation_basis = basis.clone();
+                        document.basis_state.rate_origin = FrameRateOrigin::PrimarySource;
+                        document.basis_state.geometry_origin = GeometryOrigin::PrimarySource;
+                    }
+                    PrimarySourceImport::KeepBasis => {
+                        if document.basis_state.rate_origin == FrameRateOrigin::Provisional {
+                            return Err(EditError::new(
+                                EditErrorCode::InvalidCommand,
+                                "a provisional first primary must adopt its measured basis",
+                            ));
+                        }
+                    }
+                }
+                document.basis_state.primary = Some(PrimarySource {
+                    asset: id.clone(),
+                    qualification: asset.source_qualification.clone().ok_or_else(|| {
+                        EditError::new(
+                            EditErrorCode::InvalidCommand,
+                            "primary source requires qualification",
+                        )
+                    })?,
+                });
+            }
+            if let Some(insertion) = insertion {
+                let video_matches = match &insertion.source.video {
+                    SourceVideo::Stream { asset, .. } | SourceVideo::Still { asset } => asset == id,
+                    SourceVideo::Blank => true,
+                };
+                if !video_matches
+                    || insertion
+                        .source
+                        .audio
+                        .as_ref()
+                        .is_some_and(|audio| &audio.asset != id)
+                {
+                    return Err(EditError::new(
+                        EditErrorCode::SourceRangeInvalid,
+                        "imported source selections must reference the supplied asset",
+                    ));
+                }
+                unused(document, &insertion.node)?;
+                insert_child(
+                    document,
+                    &insertion.parent,
+                    insertion.index,
+                    insertion.node.clone(),
+                )?;
+                document.nodes.insert(
+                    insertion.node.clone(),
+                    BeatNode {
+                        audio_treatments: Default::default(),
+                        framing: None,
+                        audio_editorial_edges: Default::default(),
+                        audio_edges: Default::default(),
+                        label: insertion.label.clone(),
+                        kind: NodeKind::Source {
+                            source: insertion.source.clone(),
+                        },
+                        cutaways: Vec::new(),
+                        captions: Vec::new(),
+                    },
+                );
+            }
+        }
+        Command::SetFraming { node, framing } => {
+            if let Some(framing) = framing {
+                framing.validate().map_err(|error| {
+                    EditError::new(EditErrorCode::InvalidCommand, error.to_string())
+                })?;
+            }
+            node_mut(document, node)?.framing = framing.clone();
+        }
+        Command::SetCaptions { node, captions } => {
+            node_mut(document, node)?.captions = captions.clone();
+        }
+        Command::SetCutaways { node, cutaways } => {
+            node_mut(document, node)?.cutaways = cutaways.clone();
+        }
+        Command::SetRepeatEscalation { node, escalation } => {
+            let NodeKind::Repeat {
+                escalation: current,
+                ..
+            } = &mut node_mut(document, node)?.kind
+            else {
+                return Err(EditError::new(
+                    EditErrorCode::WrongNodeKind,
+                    "escalation belongs to a Repeat",
+                ));
+            };
+            current.clone_from(escalation);
+        }
+        Command::SetAudioTreatments { node, treatments } => {
+            treatments.validate().map_err(crate::audio_gain::invalid)?;
+            node_mut(document, node)?.audio_treatments = treatments.clone();
+        }
+        Command::SetAudioEdge { node, edge, policy } => {
+            let beat = node_mut(document, node)?;
+            if !edge.supports(&beat.kind) {
+                return Err(EditError::new(
+                    EditErrorCode::WrongNodeKind,
+                    "selected audio boundary does not belong to this node kind",
+                ));
+            }
+            beat.audio_edges.set(*edge, *policy);
+        }
+        Command::SetEditorialEdges { node, edges } => {
+            let beat = node_mut(document, node)?;
+            if !matches!(
+                beat.kind,
+                NodeKind::Retime {
+                    purpose: crate::RetimePurpose::Partition,
+                    ..
+                }
+            ) {
+                return Err(EditError::new(
+                    EditErrorCode::WrongNodeKind,
+                    "editorial edge marks are set on a split fragment",
+                ));
+            }
+            beat.audio_editorial_edges = *edges;
+        }
+        Command::SetCanvas { width, height } => {
+            crate::basis::validate_canvas(*width, *height)?;
+            document.presentation_basis.width = *width;
+            document.presentation_basis.height = *height;
+            document.basis_state.geometry_origin = GeometryOrigin::Explicit;
+            if document.basis_state.rate_origin == FrameRateOrigin::Provisional {
+                document.basis_state.rate_origin = FrameRateOrigin::Explicit;
+            }
+        }
+        Command::AdoptPrimaryGeometry { width, height } => {
+            crate::basis::validate_canvas(*width, *height)?;
+            if document.basis_state.primary.is_none() {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "primary geometry adoption requires a recorded primary source",
+                ));
+            }
+            document.presentation_basis.width = *width;
+            document.presentation_basis.height = *height;
+            document.basis_state.geometry_origin = GeometryOrigin::PrimarySource;
+        }
+        Command::SetPlayOverride {
+            node,
+            iteration,
+            subtree,
+        } => {
+            require_play(document, node, iteration)?;
+            // Check fresh identities before retiring the prior override. A
+            // replacement cannot quietly resurrect that subtree's marks.
+            let prepared = prepare_subtree(document, subtree, allocation)?;
+            if let Some(old) = remove_override(document, node, iteration) {
+                remove_subtree(document, &old)?;
+            }
+            let root = prepared.root.clone();
+            install_subtree(document, prepared);
+            document
+                .overrides
+                .entry(node.clone())
+                .or_default()
+                .insert(iteration.clone(), root);
+        }
+        Command::ClearPlayOverride { node, iteration } => {
+            require_play(document, node, iteration)?;
+            let root = remove_override(document, node, iteration).ok_or_else(|| {
+                EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "selected play has no override",
+                )
+            })?;
+            remove_subtree(document, &root)?;
+        }
+        Command::SetGapOverride {
+            node,
+            iteration,
+            subtree,
+        } => {
+            require_play(document, node, iteration)?;
+            let prepared = prepare_subtree(document, subtree, allocation)?;
+            if let Some(old) = remove_gap_override(document, node, iteration) {
+                remove_subtree(document, &old)?;
+            }
+            let root = prepared.root.clone();
+            install_subtree(document, prepared);
+            document
+                .gap_overrides
+                .entry(node.clone())
+                .or_default()
+                .insert(iteration.clone(), root);
+        }
+        Command::ClearGapOverride { node, iteration } => {
+            require_play(document, node, iteration)?;
+            let root = remove_gap_override(document, node, iteration).ok_or_else(|| {
+                EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "selected gap has no override",
+                )
+            })?;
+            remove_subtree(document, &root)?;
+        }
+
+        Command::SetMark {
+            id,
+            owner,
+            label,
+            boundary,
+            loss_policy,
+        } => {
+            document.marks.insert(
+                id.clone(),
+                Mark {
+                    fragments: Vec::new(),
+                    owner: owner.clone(),
+                    label: label.clone(),
+                    boundary: boundary.clone(),
+                    loss_policy: *loss_policy,
+                    state: MarkState::Bound,
+                },
+            );
+        }
+        Command::DeleteMark { id } => {
+            if document.marks.remove(id).is_none() {
+                return Err(EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    format!("mark {id} does not exist"),
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn prepare_subtree(
+    document: &ProjectDocument,
+    subtree: &Subtree,
+    allocation: &RevisionId,
+) -> Result<Subtree, EditError> {
+    if !subtree.nodes.contains_key(&subtree.root) {
+        return Err(EditError::new(
+            EditErrorCode::SelectionUnavailable,
+            "inserted subtree root is missing",
+        ));
+    }
+    if subtree.nodes.len() > MAX_DOCUMENT_NODES
+        || subtree.overrides.len() > MAX_DOCUMENT_NODES
+        || subtree.gap_overrides.len() > MAX_DOCUMENT_NODES
+    {
+        return Err(EditError::new(
+            EditErrorCode::InvalidCommand,
+            "inserted subtree exceeds node limit",
+        ));
+    }
+    for id in subtree.nodes.keys() {
+        unused(document, id)?;
+    }
+    crate::framing::validate_nodes(subtree.nodes.values())?;
+    // A replacement can retire old context. Bound the incoming inventory before
+    // cloning it; final document validation charges the exact retained union.
+    crate::audio_gain::validate_nodes(subtree.nodes.values())?;
+    let mut prepared = subtree.clone();
+    for (is_gap, id, entries) in subtree
+        .overrides
+        .iter()
+        .map(|(id, entries)| (false, id, entries))
+        .chain(
+            subtree
+                .gap_overrides
+                .iter()
+                .map(|(id, entries)| (true, id, entries)),
+        )
+    {
+        let Some(BeatNode {
+            kind: NodeKind::Repeat { iterations, .. },
+            ..
+        }) = subtree.nodes.get(id)
+        else {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "inserted override owner is not an inserted Repeat",
+            ));
+        };
+        let normalized = IterationOrder::new(allocation.clone(), iterations.len())?;
+        let mut remapped = Vec::with_capacity(entries.len());
+        for (identity, root) in entries.iter() {
+            let position = iterations.position(identity).ok_or_else(|| {
+                EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "inserted override names a retired play",
+                )
+            })?;
+            remapped.push(crate::PlayOverride {
+                iteration: normalized.at(position).ok_or_else(|| missing(id))?,
+                root: root.clone(),
+            });
+        }
+        let destination = if is_gap {
+            &mut prepared.gap_overrides
+        } else {
+            &mut prepared.overrides
+        };
+        destination.insert(id.clone(), PlayOverrides::try_from(remapped)?);
+    }
+    for node in prepared.nodes.values_mut() {
+        if let NodeKind::Repeat { iterations, .. } = &mut node.kind {
+            *iterations = IterationOrder::new(allocation.clone(), iterations.len())?;
+        }
+    }
+    Ok(prepared)
+}
+fn install_subtree(document: &mut ProjectDocument, subtree: Subtree) {
+    document.nodes.extend(subtree.nodes);
+    document.overrides.extend(subtree.overrides);
+    document.gap_overrides.extend(subtree.gap_overrides);
+}
+pub(crate) fn remove_subtree(
+    document: &mut ProjectDocument,
+    root: &NodeId,
+) -> Result<(), EditError> {
+    let mut pending = vec![root.clone()];
+    while let Some(id) = pending.pop() {
+        pending.extend(document.children(&id).cloned());
+        document.nodes.remove(&id).ok_or_else(|| missing(&id))?;
+        document.overrides.remove(&id);
+        document.gap_overrides.remove(&id);
+        document.derived_clocks.remove(&id);
+    }
+    Ok(())
+}
+fn require_play(
+    document: &ProjectDocument,
+    node: &NodeId,
+    iteration: &IterationId,
+) -> Result<(), EditError> {
+    let Some(BeatNode {
+        kind: NodeKind::Repeat { iterations, .. },
+        ..
+    }) = document.nodes.get(node)
+    else {
+        return Err(EditError::new(
+            EditErrorCode::WrongNodeKind,
+            "play override requires a Repeat",
+        ));
+    };
+    if iterations.position(iteration).is_none() {
+        return Err(EditError::new(
+            EditErrorCode::SelectionUnavailable,
+            "override names a missing or retired play",
+        ));
+    }
+    Ok(())
+}
+fn remove_override(
+    document: &mut ProjectDocument,
+    node: &NodeId,
+    iteration: &IterationId,
+) -> Option<NodeId> {
+    let entries = document.overrides.get_mut(node)?;
+    let root = entries.remove(iteration);
+    if entries.is_empty() {
+        document.overrides.remove(node);
+    }
+    root
+}
+
+fn remove_gap_override(
+    document: &mut ProjectDocument,
+    node: &NodeId,
+    iteration: &IterationId,
+) -> Option<NodeId> {
+    let entries = document.gap_overrides.get_mut(node)?;
+    let root = entries.remove(iteration);
+    if entries.is_empty() {
+        document.gap_overrides.remove(node);
+    }
+    root
+}
+
+fn iterations_mut<'a>(
+    document: &'a mut ProjectDocument,
+    id: &NodeId,
+) -> Result<&'a mut IterationOrder, EditError> {
+    match &mut node_mut(document, id)?.kind {
+        NodeKind::Repeat { iterations, .. } => Ok(iterations),
+        _ => Err(EditError::new(
+            EditErrorCode::WrongNodeKind,
+            "play editing requires a Repeat",
+        )),
+    }
+}
+
+fn unused(document: &ProjectDocument, id: &NodeId) -> Result<(), EditError> {
+    if document.nodes.contains_key(id) {
+        return Err(EditError::new(
+            EditErrorCode::IdentityConflict,
+            format!("node {id} already exists"),
+        ));
+    }
+    Ok(())
+}
+
+fn missing(id: &NodeId) -> EditError {
+    EditError::new(
+        EditErrorCode::SelectionUnavailable,
+        format!("node {id} does not exist"),
+    )
+}
+
+fn node_mut<'a>(
+    document: &'a mut ProjectDocument,
+    id: &NodeId,
+) -> Result<&'a mut BeatNode, EditError> {
+    document.nodes.get_mut(id).ok_or_else(|| missing(id))
+}
+
+fn children_mut<'a>(
+    document: &'a mut ProjectDocument,
+    id: &NodeId,
+) -> Result<&'a mut Vec<NodeId>, EditError> {
+    let NodeKind::Sequence { children } = &mut node_mut(document, id)?.kind else {
+        return Err(EditError::new(
+            EditErrorCode::WrongNodeKind,
+            format!("node {id} must be a Sequence"),
+        ));
+    };
+    Ok(children)
+}
+
+fn hold_mut<'a>(
+    document: &'a mut ProjectDocument,
+    id: &NodeId,
+) -> Result<&'a mut HoldRecipe, EditError> {
+    let NodeKind::Hold { recipe } = &mut node_mut(document, id)?.kind else {
+        return Err(EditError::new(
+            EditErrorCode::WrongNodeKind,
+            "hold setters require an existing Hold; insert a new hold with insert",
+        ));
+    };
+    Ok(recipe)
+}
+
+fn fallback_video(fallback: &HoldFallback) -> HoldVideo {
+    match fallback {
+        HoldFallback::Background => HoldVideo::Background,
+        HoldFallback::Freeze { asset, timestamp } => HoldVideo::Freeze {
+            asset: asset.clone(),
+            timestamp: *timestamp,
+        },
+    }
+}
+
+pub(crate) fn reverted_hold_video(video: &HoldVideo) -> Result<HoldVideo, EditError> {
+    match video {
+        HoldVideo::Generated { accepted } => Ok(fallback_video(&accepted.fallback)),
+        HoldVideo::Background | HoldVideo::Freeze { .. } => Ok(video.clone()),
+        HoldVideo::Accepted { .. } | HoldVideo::Reverse { .. } | HoldVideo::Play { .. } => {
+            Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "this Hold has no saved generated-picture fallback to restore",
+            ))
+        }
+    }
+}
+
+pub(crate) fn accept_generated_hold(
+    document: &mut ProjectDocument,
+    node: &NodeId,
+    artifact: &GeneratedArtifact,
+    assets: &BTreeMap<AssetId, AssetRecord>,
+) -> Result<(), EditError> {
+    let fallback = match &hold_mut(document, node)?.video {
+        HoldVideo::Background => HoldFallback::Background,
+        HoldVideo::Freeze { asset, timestamp } => HoldFallback::Freeze {
+            asset: asset.clone(),
+            timestamp: *timestamp,
+        },
+        HoldVideo::Generated { accepted } => accepted.fallback.clone(),
+        HoldVideo::Accepted { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "legacy accepted Holds have no explicit fallback and cannot accept generated media",
+            ));
+        }
+        HoldVideo::Reverse { .. } | HoldVideo::Play { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "this Hold already plays Original pictures; it cannot accept generated media",
+            ));
+        }
+    };
+    let referenced = BTreeSet::from([
+        artifact.sampled_asset.clone(),
+        artifact.native_asset.clone(),
+    ]);
+    if assets.keys().any(|id| !referenced.contains(id)) {
+        return Err(EditError::new(
+            EditErrorCode::InvalidCommand,
+            "generated acceptance may register only artifact-referenced assets",
+        ));
+    }
+    for id in &referenced {
+        match (document.assets.get(id), assets.get(id)) {
+            (Some(existing), Some(supplied)) if existing != supplied => {
+                return Err(EditError::new(
+                    EditErrorCode::ImmutableAsset,
+                    format!("asset {id} already exists with different immutable metadata"),
+                ));
+            }
+            (None, None) => {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    format!("generated artifact asset {id} is not registered or supplied"),
+                ));
+            }
+            _ => {}
+        }
+    }
+    for (id, asset) in assets {
+        document
+            .assets
+            .entry(id.clone())
+            .or_insert_with(|| asset.clone());
+    }
+    hold_mut(document, node)?.video = HoldVideo::Generated {
+        accepted: Box::new(AcceptedGeneration {
+            artifact: artifact.clone(),
+            fallback,
+        }),
+    };
+    Ok(())
+}
+
+fn sequence_parent(document: &ProjectDocument, id: &NodeId) -> Result<NodeId, EditError> {
+    let parent = document.parent_of(id).ok_or_else(|| {
+        EditError::new(
+            EditErrorCode::SelectionUnavailable,
+            "operation requires an existing non-root node",
+        )
+    })?;
+    if !matches!(
+        document.nodes.get(&parent).map(|node| &node.kind),
+        Some(NodeKind::Sequence { .. })
+    ) {
+        return Err(EditError::new(
+            EditErrorCode::WrongNodeKind,
+            "operation requires a Sequence child; select its enclosing Repeat or Retime to remove that structure",
+        ));
+    }
+    Ok(parent)
+}
+
+fn detach(document: &mut ProjectDocument, id: &NodeId) -> Result<(), EditError> {
+    let parent = sequence_parent(document, id)?;
+    let children = children_mut(document, &parent)?;
+    let position = children
+        .iter()
+        .position(|child| child == id)
+        .ok_or_else(|| missing(id))?;
+    children.remove(position);
+    Ok(())
+}
+
+fn insert_child(
+    document: &mut ProjectDocument,
+    parent: &NodeId,
+    index: usize,
+    node: NodeId,
+) -> Result<(), EditError> {
+    let children = children_mut(document, parent)?;
+    if index > children.len() {
+        return Err(EditError::new(
+            EditErrorCode::SelectionUnavailable,
+            "insertion index is outside the sequence",
+        ));
+    }
+    children.insert(index, node);
+    Ok(())
+}
+
+pub(crate) fn replace_child(
+    document: &mut ProjectDocument,
+    parent: &NodeId,
+    old: &NodeId,
+    new: NodeId,
+) -> Result<(), EditError> {
+    for entries in document
+        .overrides
+        .get_mut(parent)
+        .into_iter()
+        .chain(document.gap_overrides.get_mut(parent))
+    {
+        let identity = entries
+            .iter()
+            .find(|(_, root)| *root == old)
+            .map(|(identity, _)| identity.clone());
+        if let Some(identity) = identity {
+            entries.insert(identity, new);
+            return Ok(());
+        }
+    }
+    let kind = &mut node_mut(document, parent)?.kind;
+    let children = match kind {
+        NodeKind::Sequence { children } => children.as_mut_slice(),
+        NodeKind::Repeat { child, .. } | NodeKind::Retime { child, .. } => {
+            std::slice::from_mut(child)
+        }
+        _ => {
+            return Err(EditError::new(
+                EditErrorCode::WrongNodeKind,
+                "selected parent cannot own children",
+            ));
+        }
+    };
+    let child = children
+        .iter_mut()
+        .find(|id| *id == old)
+        .ok_or_else(|| missing(old))?;
+    *child = new;
+    Ok(())
+}
+
+/// Every key whose value differs, in key order. Both maps are sorted, so one
+/// merged pass visits each entry once; the reference path collected the key
+/// union and looked each key up in both maps, with the same result.
+pub(crate) fn diff<K: Ord + Clone, V: Eq + Clone>(
+    before: &BTreeMap<K, V>,
+    after: &BTreeMap<K, V>,
+) -> BTreeMap<K, ValueChange<V>> {
+    if !crate::command_work::local() {
+        return reference_diff(before, after);
+    }
+    let mut changes = Vec::new();
+    let mut old = before.iter().peekable();
+    let mut new = after.iter().peekable();
+    loop {
+        let change = match (old.peek(), new.peek()) {
+            (None, None) => break,
+            (Some((key, value)), None) => {
+                let change = ((*key).clone(), Some(*value), None);
+                old.next();
+                change
+            }
+            (None, Some((key, value))) => {
+                let change = ((*key).clone(), None, Some(*value));
+                new.next();
+                change
+            }
+            (Some((a, x)), Some((b, y))) => match a.cmp(b) {
+                std::cmp::Ordering::Less => {
+                    let change = ((*a).clone(), Some(*x), None);
+                    old.next();
+                    change
+                }
+                std::cmp::Ordering::Greater => {
+                    let change = ((*b).clone(), None, Some(*y));
+                    new.next();
+                    change
+                }
+                std::cmp::Ordering::Equal => {
+                    let change = (x != y).then(|| ((*a).clone(), Some(*x), Some(*y)));
+                    old.next();
+                    new.next();
+                    match change {
+                        Some(change) => change,
+                        None => continue,
+                    }
+                }
+            },
+        };
+        let (key, before, after) = change;
+        changes.push((
+            key,
+            ValueChange {
+                before: before.cloned(),
+                after: after.cloned(),
+            },
+        ));
+    }
+    // Keys arrive strictly increasing, so the map builds in bulk.
+    changes.into_iter().collect()
+}
+
+fn reference_diff<K: Ord + Clone, V: Eq + Clone>(
+    before: &BTreeMap<K, V>,
+    after: &BTreeMap<K, V>,
+) -> BTreeMap<K, ValueChange<V>> {
+    before
+        .keys()
+        .chain(after.keys())
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .filter_map(|key| {
+            let old = before.get(key);
+            let new = after.get(key);
+            (old != new).then(|| {
+                (
+                    key.clone(),
+                    ValueChange {
+                        before: old.cloned(),
+                        after: new.cloned(),
+                    },
+                )
+            })
+        })
+        .collect()
+}
+
+fn inverse_changes<K: Clone + Ord, V: Clone>(
+    changes: &BTreeMap<K, ValueChange<V>>,
+) -> BTreeMap<K, ValueChange<V>> {
+    changes
+        .iter()
+        .map(|(key, change)| {
+            (
+                key.clone(),
+                ValueChange {
+                    before: change.after.clone(),
+                    after: change.before.clone(),
+                },
+            )
+        })
+        .collect()
+}
+
+/// The guard of [`apply_changes`] alone, with its error.
+fn check_changes<K: Ord, V: Eq>(
+    values: &BTreeMap<K, V>,
+    changes: &BTreeMap<K, ValueChange<V>>,
+) -> Result<(), EditError> {
+    for (key, change) in changes {
+        if values.get(key) != change.before.as_ref() {
+            return Err(EditError::new(
+                EditErrorCode::PatchConflict,
+                "patch before-value does not match the current document",
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Whether `values` with `changes` applied equals `expected`: each changed
+/// key holds its after-value, and every other entry is unchanged.
+pub(crate) fn patched_equals<K: Ord, V: Eq>(
+    values: &BTreeMap<K, V>,
+    changes: &BTreeMap<K, ValueChange<V>>,
+    expected: &BTreeMap<K, V>,
+) -> bool {
+    changes
+        .iter()
+        .all(|(key, change)| expected.get(key) == change.after.as_ref())
+        && unchanged_entries_equal(values, |key| changes.contains_key(key), expected)
+}
+
+/// Whether the entries of `values` and `expected` outside `changed` are equal.
+pub(crate) fn unchanged_entries_equal<K: Ord, V: Eq>(
+    values: &BTreeMap<K, V>,
+    changed: impl Fn(&K) -> bool,
+    expected: &BTreeMap<K, V>,
+) -> bool {
+    values
+        .iter()
+        .filter(|(key, _)| !changed(key))
+        .eq(expected.iter().filter(|(key, _)| !changed(key)))
+}
+
+fn apply_changes<K: Ord + Clone, V: Eq + Clone>(
+    values: &mut BTreeMap<K, V>,
+    changes: &BTreeMap<K, ValueChange<V>>,
+) -> Result<(), EditError> {
+    for (key, change) in changes {
+        if values.get(key) != change.before.as_ref() {
+            return Err(EditError::new(
+                EditErrorCode::PatchConflict,
+                "patch before-value does not match the current document",
+            ));
+        }
+        match &change.after {
+            Some(value) => {
+                values.insert(key.clone(), value.clone());
+            }
+            None => {
+                values.remove(key);
+            }
+        }
+    }
+    Ok(())
+}
+
+fn description(command: &Command) -> &'static str {
+    match command {
+        Command::RestoreSnapshot { .. } => "Restore named take",
+        Command::WithBoundaryReplacements { edit } => description(edit.command()),
+        Command::Compound { .. } => "Apply resolved transaction",
+        Command::SetSound { .. } => "Set sound event",
+        Command::SetBeatSound { .. } => "Set beat sound event",
+        Command::DeleteBeatSound { .. } => "Delete beat sound event",
+        Command::ReplaceSound { .. } => "Replace sound recipe",
+        Command::DeleteSound { .. } => "Delete sound event",
+        Command::SetTarget { .. } => "Set target",
+        Command::SetSourceInterpretation { .. } => "Interpret source",
+        Command::DeleteTarget { .. } => "Delete target",
+        Command::SetSoundAllowance { .. } => "Set sound Hold allowance",
+        Command::InsertTime { .. } => "Insert pause",
+        Command::InsertAiTime { .. } => "Insert AI pause",
+        Command::InsertOccurrenceTime { ai: true, .. } => "Insert AI pause in this play",
+        Command::InsertOccurrenceTime { .. } => "Insert pause in this play",
+        Command::SpliceSource { .. } => "Paste source moment",
+        Command::SpliceSlice { .. } => "Paste edited slice",
+        Command::SpliceEditSet { .. } => "Paste copied selection set",
+        Command::SpliceSliceAt { .. } => "Paste edited slice inside beat",
+        Command::ReplaceSlice { .. } => "Replace with edited slice",
+        Command::ReplaceSliceChildren { .. } => "Replace selected children with edited slice",
+        Command::SpliceSourceAt { .. } => "Splice source moment inside beat",
+        Command::ReplaceSource { .. } => "Replace selection with source moment",
+        Command::ReplaceSourceChildren { .. } => "Replace selected children with source moment",
+        Command::Split { .. } => "Split beat",
+        Command::Insert { .. } => "Insert beats",
+        Command::Delete { .. } => "Delete beat",
+        Command::DeleteRipple { .. } => "Ripple-delete beat",
+        Command::DeleteChildren { .. } => "Delete selected children",
+        Command::DeleteRange { .. } => "Delete selected range",
+        Command::MoveRange { .. } => "Move selected range",
+        Command::Move { .. } => "Move beat",
+        Command::Group { .. } | Command::GroupSelection { .. } => "Group beats",
+        Command::Ungroup { .. } => "Ungroup beats",
+        Command::WrapRepeat { .. } => "Wrap repeat",
+        Command::SetRepeat { .. } => "Set repeat parameters",
+        Command::RepeatSelection { .. } => "Repeat selection",
+        Command::SetRepeatPlays { .. } => "Set repeat plays",
+        Command::SetRepeatGaps { .. } => "Set repeat gaps",
+        Command::WrapRetime { .. } => "Wrap retime",
+        Command::SetRetime { .. } => "Set retime parameters",
+        Command::InsertPlays { .. } => "Insert repeat plays",
+        Command::MovePlays { .. } => "Move repeat plays",
+        Command::SetHoldDuration { .. } | Command::SetScopedHoldDuration { .. } => {
+            "Change hold duration"
+        }
+        Command::SetHoldAudio { .. } => "Change hold audio",
+        Command::SetSourceAudioMapping { .. } => "Change source audio mapping",
+        Command::SetSourceVideoMapping { .. } => "Change source video mapping",
+        Command::SlipSource { .. } => "Slip source material",
+        Command::TrimSource { .. } => "Ripple trim source edge",
+        Command::RollSources { .. } => "Roll adjacent source boundary",
+        Command::ApplySourceTrim { .. } => "Apply complete Source trim",
+        Command::SetHoldProvider { .. } => "Change hold provider",
+        Command::SetHoldPictureContext { .. } => "Change captured picture context",
+        Command::AcceptGeneratedHold { .. } => "Accept generated hold",
+        Command::RevertGeneratedHold { .. } => "Revert generated hold",
+        Command::Rename { .. } => "Rename beat",
+        Command::SetAudioEdge { .. } => "Change audio edge policy",
+        Command::SetEditorialEdges { .. } => "Mark fragment sound edges",
+        Command::SetFraming { .. } => "Change framing",
+        Command::SetRepeatEscalation { .. } => "Change Repeat escalation",
+        Command::SetCutaways { .. } => "Change cutaways",
+        Command::SetCaptions { .. } => "Change captions",
+        Command::SetAudioTreatments { .. } => "Change audio treatments",
+        Command::AddAsset { .. } => "Register media asset",
+        Command::ImportSource { .. } => "Import source media",
+        Command::SetCanvas { .. } => "Change canvas geometry",
+        Command::AdoptPrimaryGeometry { .. } => "Adopt primary source geometry",
+        Command::SetMark { .. } => "Set mark",
+        Command::DeleteMark { .. } => "Delete mark",
+        Command::SetPlayOverride { .. } => "Set play override",
+        Command::ClearPlayOverride { .. } => "Clear play override",
+        Command::SetGapOverride { .. } => "Set gap override",
+        Command::IsolateGap { .. } => "Isolate repeat gap",
+        Command::ClearGapOverride { .. } => "Clear gap override",
+        Command::EditOccurrence { .. } => "Edit selected occurrence",
+        Command::EditScoped { .. } => "Edit scoped value",
+        Command::EditScopedMany { .. } => "Edit scoped value in several plays",
+        Command::KeepFirstPlayAttachments { .. } => "Keep beat attachments on first play",
+        Command::Explode { .. } => "Explode repeat",
+        Command::Duplicate { .. } => "Duplicate",
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub enum EditErrorCode {
+    ProjectConflict,
+    RevisionConflict,
+    PatchConflict,
+    SelectionUnavailable,
+    WrongNodeKind,
+    IdentityConflict,
+    ImmutableAsset,
+    InvalidCommand,
+    InvalidDocument,
+    InvalidDuration,
+    SourceRangeInvalid,
+    TimingOverflow,
+    LimitExceeded,
+}
+
+impl EditErrorCode {
+    /// Stable wire spelling, shared by the domain and every host protocol.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::ProjectConflict => "ProjectConflict",
+            Self::RevisionConflict => "RevisionConflict",
+            Self::PatchConflict => "PatchConflict",
+            Self::SelectionUnavailable => "SelectionUnavailable",
+            Self::WrongNodeKind => "WrongNodeKind",
+            Self::IdentityConflict => "IdentityConflict",
+            Self::ImmutableAsset => "ImmutableAsset",
+            Self::InvalidCommand => "InvalidCommand",
+            Self::InvalidDocument => "InvalidDocument",
+            Self::InvalidDuration => "InvalidDuration",
+            Self::SourceRangeInvalid => "SourceRangeInvalid",
+            Self::TimingOverflow => "TimingOverflow",
+            Self::LimitExceeded => "LimitExceeded",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct EditError {
+    pub code: EditErrorCode,
+    pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub current_revision: Option<RevisionId>,
+}
+
+impl EditError {
+    pub(crate) fn new(code: EditErrorCode, message: impl Into<String>) -> Self {
+        Self {
+            code,
+            message: message.into(),
+            current_revision: None,
+        }
+    }
+}
+impl From<DocumentError> for EditError {
+    fn from(value: DocumentError) -> Self {
+        let code = match value.code {
+            DocumentErrorCode::InvalidDuration => EditErrorCode::InvalidDuration,
+            DocumentErrorCode::SourceRangeInvalid => EditErrorCode::SourceRangeInvalid,
+            DocumentErrorCode::TimingOverflow => EditErrorCode::TimingOverflow,
+            DocumentErrorCode::LimitExceeded => EditErrorCode::LimitExceeded,
+            DocumentErrorCode::MissingNode => EditErrorCode::SelectionUnavailable,
+            DocumentErrorCode::UnsupportedSchema | DocumentErrorCode::InvalidJson => {
+                EditErrorCode::InvalidDocument
+            }
+            DocumentErrorCode::InvalidIdentity
+            | DocumentErrorCode::InvalidPresentation
+            | DocumentErrorCode::InvalidAsset
+            | DocumentErrorCode::InvalidRoot
+            | DocumentErrorCode::InvalidTree
+            | DocumentErrorCode::MissingAsset => EditErrorCode::InvalidCommand,
+            DocumentErrorCode::InvalidAnchor => EditErrorCode::InvalidCommand,
+        };
+        Self::new(code, value.to_string())
+    }
+}
+impl fmt::Display for EditError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.message)
+    }
+}
+impl Error for EditError {}
+
+/// Streamed input is work, rather than resident PCM. The shared preparation
+/// budget counts input plus output; long outputs occupy a bounded disk cache.
+pub const MAX_PRESERVE_INPUT_SAMPLES: i128 = 86_400_000;
+pub const MAX_PRESERVE_OUTPUT_SAMPLES: i128 = 86_400_000;
+pub const MAX_PRESERVE_WORK_SAMPLES: i128 = 134_217_728;
+
+/// Refuse a pitch-preserving or pitch-shifting stage the processor cannot
+/// prepare, at edit time rather than at playback or export.
+pub(crate) fn check_preserve_bound(
+    document: &ProjectDocument,
+    input: crate::FrameDuration,
+    output: crate::FrameDuration,
+    pitch: crate::PitchPolicy,
+) -> Result<(), EditError> {
+    if !pitch.processes(input == output) {
+        return Ok(());
+    }
+    let rate = document.presentation_basis().frame_rate;
+    let samples = |frames: crate::FrameDuration| {
+        let numerator = i128::from(frames.frames())
+            * i128::from(crate::MIX_SAMPLE_RATE)
+            * i128::from(rate.denominator());
+        let denominator = i128::from(rate.numerator());
+        (numerator + denominator - 1) / denominator
+    };
+    if samples(input) > MAX_PRESERVE_INPUT_SAMPLES
+        || samples(output) > MAX_PRESERVE_OUTPUT_SAMPLES
+        || samples(input) + samples(output) > MAX_PRESERVE_WORK_SAMPLES
+    {
+        return Err(EditError::new(
+            EditErrorCode::LimitExceeded,
+            "pitch-preserving processing exceeds its preparation budget (30 minutes input or output, about 46 minutes combined); shorten the stage or choose pitch=tape",
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod binding_patch_tests {
+    use super::*;
+
+    fn bound_document() -> ProjectDocument {
+        let mut document = ProjectDocument::new(
+            ProjectId::new("bound-patch").unwrap(),
+            RevisionId::new("initial").unwrap(),
+            crate::PresentationBasis {
+                width: 16,
+                height: 16,
+                frame_rate: crate::FrameRate::new(30, 1).unwrap(),
+                color_policy: crate::ColorPolicy::SdrRec709,
+            },
+            NodeId::new("root").unwrap(),
+        )
+        .unwrap();
+        let owners: Vec<_> = ["first", "second"]
+            .into_iter()
+            .map(|name| NodeId::new(name).unwrap())
+            .collect();
+        for owner in &owners {
+            document.nodes.insert(
+                owner.clone(),
+                BeatNode::hold(
+                    "Pause",
+                    HoldRecipe {
+                        picture_context: None,
+                        duration: FrameDuration::new(4).unwrap(),
+                        video: crate::HoldVideo::Background,
+                        audio: crate::HoldAudio::Silence,
+                    },
+                ),
+            );
+        }
+        document.nodes.insert(
+            document.root.clone(),
+            BeatNode::sequence("Root", owners.clone()),
+        );
+        let layout = crate::FrozenAudioLayout::capture(&document).unwrap();
+        let records = owners
+            .iter()
+            .map(|owner| crate::AudioTimingRecord {
+                id: crate::AudioTimingId {
+                    allocation: RevisionId::new(owner.as_str()).unwrap(),
+                    ordinal: 0,
+                },
+                layout: layout.clone(),
+            })
+            .collect::<Vec<_>>();
+        let bindings = owners
+            .into_iter()
+            .zip(&records)
+            .map(|(owner, record)| {
+                (
+                    owner.clone(),
+                    crate::OwnedAudioBinding {
+                        reanchors: Vec::new(),
+                        lattice: crate::AudioPlacementTemplate {
+                            reference_local_offset: crate::ExactRatio::ZERO,
+                            gap_after: None,
+                            reference: crate::AudioReferenceClock {
+                                recipe: crate::AudioRecipeKind::Node,
+                                timing: record.id.clone(),
+                                root: crate::AudioClockRoot::ProjectRootRoundEven,
+                                physical: owner,
+                            },
+                            arguments: vec![],
+                            births: vec![],
+                        },
+                        resume: None,
+                    },
+                )
+            })
+            .collect();
+        document.audio_bindings = crate::AudioBindingState::new(records, bindings).unwrap();
+        document.validate().unwrap();
+        document
+    }
+
+    #[test]
+    fn changed_binding_owners_exclude_untouched_values_and_clocks() {
+        let document = bound_document();
+        let before = document.audio_bindings();
+        let first = NodeId::new("first").unwrap();
+        assert!(changed_audio_binding_owners(before, before).is_empty());
+        let mut changed = before.clone();
+        changed.bindings.get_mut(&first).unwrap().resume = Some(crate::AudioResume {
+            local_boundary: crate::ExactRatio::ZERO,
+            phase: crate::AudioLocalPhase::default(),
+        });
+        assert_eq!(
+            changed_audio_binding_owners(before, &changed),
+            BTreeSet::from([first.clone()])
+        );
+        let mut changed_document = document.clone();
+        let NodeKind::Hold { recipe } = &mut changed_document.nodes.get_mut(&first).unwrap().kind
+        else {
+            panic!("fixture is a Hold");
+        };
+        recipe.duration = FrameDuration::new(5).unwrap();
+        let mut changed_clock = before.clone();
+        let timing = before.bindings()[&first].lattice.reference.timing.clone();
+        changed_clock.timings.insert(
+            timing,
+            crate::FrozenAudioLayout::capture(&changed_document).unwrap(),
+        );
+        assert_eq!(
+            changed_audio_binding_owners(before, &changed_clock),
+            BTreeSet::from([first])
+        );
+    }
+
+    #[test]
+    fn changed_step_only_clock_marks_its_owner_as_changed() {
+        let document = bound_document();
+        let first = NodeId::new("first").unwrap();
+        let second = NodeId::new("second").unwrap();
+        let mut before = document.audio_bindings().clone();
+        let placement = before.bindings[&second].lattice.clone();
+        before
+            .bindings
+            .get_mut(&first)
+            .unwrap()
+            .reanchors
+            .push(crate::AudioReanchorStep {
+                anchor: Default::default(),
+                placement: placement.clone(),
+                window: None,
+            });
+        let mut changed_document = document.clone();
+        let NodeKind::Hold { recipe } = &mut changed_document.nodes.get_mut(&second).unwrap().kind
+        else {
+            panic!("fixture is a Hold");
+        };
+        recipe.duration = FrameDuration::new(5).unwrap();
+        let mut after = before.clone();
+        after.timings.insert(
+            placement.reference.timing,
+            crate::FrozenAudioLayout::capture(&changed_document).unwrap(),
+        );
+        assert_eq!(
+            changed_audio_binding_owners(&before, &after),
+            BTreeSet::from([first, second])
+        );
+    }
+
+    #[test]
+    fn binding_patch_rejects_stale_before_state_without_mutation() {
+        let document = bound_document();
+        let tx = apply(
+            &document,
+            &CommandRequest {
+                project_id: document.project_id().clone(),
+                expected_revision: document.revision_id().clone(),
+                new_revision: RevisionId::new("renamed").unwrap(),
+                command: Command::Rename {
+                    node: document.root().clone(),
+                    label: "Renamed".into(),
+                },
+            },
+        )
+        .unwrap();
+        let mut forged = tx.forward;
+        forged.audio_bindings = crate::AudioBindingPatch::between(
+            &crate::AudioBindingState::default(),
+            document.audio_bindings(),
+        );
+        assert_eq!(
+            forged.apply(&document).unwrap_err().code,
+            EditErrorCode::PatchConflict
+        );
+        assert_eq!(document, bound_document());
+    }
+
+    #[test]
+    fn binding_patch_records_only_changed_entries_and_roundtrips() {
+        let bound = bound_document();
+        let empty = crate::AudioBindingState::default();
+        let first = NodeId::new("first").unwrap();
+        // An empty change is never a valid transaction entry.
+        let mut patch = DocumentPatch {
+            project_id: bound.project_id().clone(),
+            from_revision: bound.revision_id().clone(),
+            to_revision: RevisionId::new("next").unwrap(),
+            presentation: None,
+            nodes: BTreeMap::new(),
+            assets: BTreeMap::new(),
+            marks: BTreeMap::new(),
+            sounds: BTreeMap::new(),
+            beat_sounds: BTreeMap::new(),
+            sound_routes: BTreeMap::new(),
+            sound_allowances: BTreeMap::new(),
+            targets: BTreeMap::new(),
+            source_interpretations: BTreeMap::new(),
+            overrides: BTreeMap::new(),
+            gap_overrides: BTreeMap::new(),
+            audio_lineage: BTreeMap::new(),
+            derived_clocks: BTreeMap::new(),
+            audio_bindings: Some(crate::AudioBindingPatch::default()),
+        };
+        assert_eq!(
+            patch.apply(&bound).unwrap_err().code,
+            EditErrorCode::InvalidCommand
+        );
+        assert!(
+            serde_json::from_str::<crate::AudioBindingPatch>("{}").is_err(),
+            "an empty wire patch is rejected"
+        );
+        // Changing one owner's resume records that owner alone, with no
+        // timing table and no other binding.
+        let mut changed = bound.audio_bindings().clone();
+        changed.bindings.get_mut(&first).unwrap().resume = Some(crate::AudioResume {
+            local_boundary: crate::ExactRatio::ZERO,
+            phase: crate::AudioLocalPhase::default(),
+        });
+        let single = crate::AudioBindingPatch::between(bound.audio_bindings(), &changed).unwrap();
+        assert!(single.timings.is_empty());
+        assert_eq!(single.bindings.keys().collect::<Vec<_>>(), vec![&first]);
+        patch.audio_bindings = Some(single.clone());
+        let after = patch.apply(&bound).unwrap();
+        assert_eq!(after.audio_bindings(), &changed);
+        assert_eq!(patch.inverse().apply(&after).unwrap(), bound);
+        // A complete installation still round-trips through the bounded wire.
+        let install = crate::AudioBindingPatch::between(&empty, bound.audio_bindings()).unwrap();
+        assert_eq!(
+            install.timings.len(),
+            bound.audio_bindings().timings().len()
+        );
+        assert_eq!(install.apply(&empty).unwrap(), *bound.audio_bindings());
+        assert_eq!(
+            install.inverse().apply(bound.audio_bindings()).unwrap(),
+            empty
+        );
+        let wire = serde_json::to_string(&install).unwrap();
+        assert_eq!(
+            serde_json::from_str::<crate::AudioBindingPatch>(&wire).unwrap(),
+            install
+        );
+        // Every before-value is a guard.
+        assert_eq!(
+            single.apply(&empty).unwrap_err().code,
+            EditErrorCode::PatchConflict
+        );
+        assert_eq!(
+            install.apply(bound.audio_bindings()).unwrap_err().code,
+            EditErrorCode::PatchConflict
+        );
+    }
+}

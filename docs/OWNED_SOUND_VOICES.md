@@ -289,6 +289,20 @@ in references that predate it. The wrapper has no historical alias before its
 birth. Later captures include its real processing clock. Endpoint Splits,
 composite selections and Repeat/Retime paths do not gain this permission.
 
+`Ungroup` can remove that unary wrapper while every affected reference still
+records it as introduced. The group must remain neutral: no owned sounds,
+treatments, explicit or editorial edges, framing, captions or cutaways. Its
+direct child must still be a Source or Hold under ordinary Sequence ancestry.
+Later labels and descendant sound parameters survive; removing the wrapper
+does not undo those edits. Every retained scope, timing table, recipe and alias
+stays intact, with only that group's introduced marker removed. The proof is
+bounded and the change is one reversible transaction.
+
+A later timing capture that genuinely pairs the group prevents this removal,
+as does a copied group whose captured history contains its real processing
+clock. Neutral current values do not erase that history. Broader Ungroup inside
+retained sound scopes remains unsupported.
+
 A subsequent explicit `Split` retains an ordered certificate connecting the
 complete historical Source or Hold to its adjacent delivery Partitions. The
 certificate admits repeated refinement only while the pieces cover that same

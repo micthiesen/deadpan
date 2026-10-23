@@ -1,0 +1,512 @@
+use super::*;
+
+fn group(document: &ProjectDocument) -> ProjectDocument {
+    edit(
+        document,
+        "grouped",
+        Command::GroupSelection {
+            parent: node("top"),
+            selection: SliceCaptureSelection::Child {
+                node: node("owner"),
+            },
+            label: "Temporary group".into(),
+            identities: GroupSelectionIdentities {
+                group: node("group"),
+                split: SplitIdentities::default(),
+            },
+            timing: timing("grouped"),
+        },
+    )
+}
+
+fn retained(source: bool) -> ProjectDocument {
+    let mut document = fixture();
+    let source_audio = document.beat_sounds[&node("owner")][&sound("effect")]
+        .source
+        .clone();
+    let owner = document.nodes.get_mut(&node("owner")).unwrap();
+    if source {
+        owner.kind = NodeKind::Source { source: blank(4) };
+    } else {
+        let NodeKind::Hold { recipe } = &mut owner.kind else {
+            unreachable!()
+        };
+        recipe.audio = HoldAudio::RoomTone {
+            source: source_audio,
+        };
+    }
+    owner.audio_treatments = AudioTreatments::default()
+        .with_trim(GainDb::new(-3000).unwrap())
+        .unwrap();
+    document
+        .nodes
+        .get_mut(&node("top"))
+        .unwrap()
+        .audio_treatments = AudioTreatments::default()
+        .with_equalizer(Some(
+            EqualizerRecipe::new(
+                [3000, -1500, 1000].map(|gain| GainDb::new(gain).unwrap()),
+                None,
+                None,
+            )
+            .unwrap(),
+        ))
+        .unwrap();
+    document.validate().unwrap();
+    let first = edit(&document, "prefix-one", insert("prefix-one", 0, 1));
+    edit(&first, "prefix-two", insert("prefix-two", 0, 1))
+}
+
+fn saved(document: &ProjectDocument) -> &SoundClockJournal {
+    &document.audio_bindings.sound_clocks[&node("owner")][&sound("effect")]
+}
+
+fn assert_only_marker_removed(before: &ProjectDocument, after: &ProjectDocument) {
+    assert!(!after.nodes.contains_key(&node("group")));
+    assert_eq!(after.duration().unwrap(), before.duration().unwrap());
+    assert_eq!(after.beat_sounds, before.beat_sounds);
+    let mut expected = before.audio_bindings.clone();
+    for events in expected.sound_clocks.values_mut() {
+        for journal in events.values_mut() {
+            let references = journal
+                .clocks()
+                .iter()
+                .map(|reference| {
+                    let mut groups = reference.introduced_groups().clone();
+                    groups.remove(&node("group"));
+                    reference.clone().with_introduced_groups(groups).unwrap()
+                })
+                .collect();
+            *journal = SoundClockJournal::new(journal.scope().clone(), references).unwrap();
+        }
+    }
+    assert_eq!(after.audio_bindings, expected);
+    assert_eq!(saved(after).scope(), &node("top"));
+    assert_eq!(
+        clock_ids(saved(after)),
+        vec![timing("prefix-one"), timing("prefix-two")]
+    );
+    for name in ["owner", "sibling", "lead", "prefix-one", "prefix-two"] {
+        assert_eq!(after.nodes[&node(name)], before.nodes[&node(name)]);
+    }
+}
+
+#[test]
+fn neutral_ungroup_source_and_room_tone_preserves_history_after_unrelated_edits() {
+    for source in [true, false] {
+        let original = retained(source);
+        let grouped = group(&original);
+        assert_eq!(
+            grouped.audio_bindings.timings,
+            original.audio_bindings.timings
+        );
+        assert!(
+            saved(&grouped)
+                .clocks()
+                .iter()
+                .all(|reference| reference.introduced_groups() == &BTreeSet::from([node("group")]))
+        );
+        let renamed = edit(
+            &grouped,
+            "renamed",
+            Command::Rename {
+                node: node("group"),
+                label: "Changed after grouping".into(),
+            },
+        );
+        let mut event = renamed.beat_sounds[&node("owner")][&sound("effect")].clone();
+        event.label = "Later sound label".into();
+        event.treatments = event
+            .treatments
+            .with_trim(GainDb::new(-4500).unwrap())
+            .unwrap();
+        let parameters = edit(
+            &renamed,
+            "parameters",
+            Command::SetBeatSound {
+                owner: node("owner"),
+                id: sound("effect"),
+                event,
+            },
+        );
+        let before = edit(
+            &parameters,
+            "sibling-label",
+            Command::Rename {
+                node: node("sibling"),
+                label: "Unrelated later sibling edit".into(),
+            },
+        );
+        assert_eq!(before.audio_bindings, grouped.audio_bindings);
+        let after = edit(
+            &before,
+            "ungrouped",
+            Command::Ungroup {
+                node: node("group"),
+            },
+        );
+        assert_only_marker_removed(&before, &after);
+        assert_eq!(after.nodes[&node("top")], original.nodes[&node("top")]);
+        assert_eq!(
+            after.beat_sounds[&node("owner")][&sound("effect")].label,
+            "Later sound label"
+        );
+        assert_eq!(
+            after.nodes[&node("sibling")].label,
+            "Unrelated later sibling edit"
+        );
+        // The common helper verifies exact inverse and JSON. Apply the forward
+        // patch a second time to the restored entry as a distinct redo check.
+        let transaction = apply(
+            &before,
+            &request(
+                &before,
+                "ungrouped",
+                Command::Ungroup {
+                    node: node("group"),
+                },
+            ),
+        )
+        .unwrap();
+        let restored = transaction.inverse.apply(&after).unwrap();
+        assert_eq!(restored, before);
+        assert_eq!(transaction.forward.apply(&restored).unwrap(), after);
+    }
+}
+
+fn refuses(document: &ProjectDocument, name: &str, command: Command) {
+    document.validate().unwrap();
+    let snapshot = document.to_json().unwrap();
+    assert!(
+        apply(document, &request(document, name, command)).is_err(),
+        "{name}"
+    );
+    assert_eq!(document.to_json().unwrap(), snapshot, "{name}");
+}
+
+#[test]
+fn neutral_ungroup_refuses_owned_sounds_treatments_edges_and_framing_atomically() {
+    for variation in 0..5 {
+        let mut document = group(&retained(true));
+        let beat = document.nodes.get_mut(&node("group")).unwrap();
+        match variation {
+            0 => {
+                document
+                    .beat_sounds
+                    .insert(node("group"), document.beat_sounds[&node("owner")].clone());
+            }
+            1 => beat.audio_treatments = AudioTreatments::from_clip_gain(ClipGain::default()),
+            2 => beat.audio_edges.node_start = AudioEdgePolicy::Hard,
+            3 => beat.audio_editorial_edges.start = true,
+            _ => beat.framing = Some(Framing::static_pose(FramingPose::default()).unwrap()),
+        }
+        refuses(
+            &document,
+            "nonneutral",
+            Command::Ungroup {
+                node: node("group"),
+            },
+        );
+    }
+}
+
+#[test]
+fn group_captions_and_cutaways_remain_invalid_before_ungroup_admission() {
+    let grouped = group(&retained(true));
+    for caption in [true, false] {
+        let mut invalid = grouped.clone();
+        let group = invalid.nodes.get_mut(&node("group")).unwrap();
+        if caption {
+            group.captions.push(Caption {
+                range: range(0, 1),
+                text: "An attachment cannot belong to a Sequence".into(),
+                placement: CaptionPlacement::Bottom,
+                reveal: None,
+            });
+        } else {
+            let source = &grouped.beat_sounds[&node("owner")][&sound("effect")].source;
+            group.cutaways.push(Cutaway {
+                range: range(0, 1),
+                asset: source.asset.clone(),
+                selection: source.span.into(),
+                fit: CutawayFit::Hold,
+                removed: true,
+            });
+        }
+        let wire = invalid.to_json().unwrap();
+        let error = ProjectDocument::from_json(&wire).unwrap_err();
+        assert!(
+            error
+                .message
+                .contains("cutaways and captions belong to a Source or Hold"),
+            "{error}"
+        );
+    }
+}
+
+#[test]
+fn neutral_ungroup_refuses_a_genuine_later_group_pair_and_captured_copy() {
+    let grouped = group(&retained(false));
+    let captured = edit(&grouped, "later-capture", insert("later-capture", 0, 1));
+    assert_eq!(saved(&captured).clocks().len(), 3);
+    assert!(saved(&captured).clocks()[2].introduced_groups().is_empty());
+    assert!(
+        captured.audio_bindings.timings[&timing("later-capture")]
+            .nodes()
+            .contains_key(&node("group"))
+    );
+    refuses(
+        &captured,
+        "paired-refused",
+        Command::Ungroup {
+            node: node("group"),
+        },
+    );
+
+    let slice = CapturedEditSlice::capture_selection(
+        &grouped,
+        &node("top"),
+        &SliceCaptureSelection::Child {
+            node: node("group"),
+        },
+        timing("copy-group"),
+    )
+    .unwrap();
+    let pasted = edit(&grouped, "pasted", paste_command(&slice, "pasted", 0));
+    let copied_owner = pasted
+        .beat_sounds
+        .keys()
+        .find(|owner| *owner != &node("owner"))
+        .unwrap();
+    let copied = &pasted.audio_bindings.sound_clocks[copied_owner][&sound("effect")];
+    let copied_group = pasted
+        .nodes
+        .iter()
+        .find_map(|(id, beat)| {
+            (id != &node("group")
+                && beat.label == "Temporary group"
+                && matches!(&beat.kind, NodeKind::Sequence { children } if children == &[copied_owner.clone()]))
+            .then(|| id.clone())
+        })
+        .expect("paste retains the captured unary group around its copied owner");
+    assert_ne!(copied_group, node("group"));
+    let live = FrozenAudioLayout::capture(&pasted).unwrap();
+    assert!(copied.clocks().iter().any(|reference| {
+        if reference.introduced_groups().contains(&copied_group) {
+            return false;
+        }
+        let historical = &pasted.audio_bindings.timings[reference.timing()];
+        let proof = historical
+            .sound_owner_clock_correspondence_with_relations(
+                &live,
+                (reference.scope(), copied.scope()),
+                (reference.owner(), copied_owner),
+                reference.repeats(),
+                (reference.introduced_groups(), reference.introduced_splits()),
+                MAX_DOCUMENT_NODES,
+            )
+            .unwrap();
+        proof
+            .historical_node(&copied_group)
+            .is_some_and(|alias| historical.nodes().contains_key(alias))
+    }));
+    refuses(
+        &pasted,
+        "captured-group-refused",
+        Command::Ungroup { node: copied_group },
+    );
+}
+
+#[test]
+fn neutral_ungroup_prepared_admission_is_bound_to_project_revision_and_command() {
+    let grouped = group(&retained(true));
+    let command = Command::Ungroup {
+        node: node("group"),
+    };
+    let prepared = crate::sound_clock::grouping::prepare(
+        &grouped,
+        &request(&grouped, "ungrouped", command.clone()),
+    )
+    .unwrap()
+    .expect("neutral ungroup needs a prepared historical correspondence");
+    assert!(prepared.matches(&grouped, &command));
+    assert!(!prepared.matches(&grouped, &Command::Ungroup { node: node("top") }));
+    let mut other = grouped.clone();
+    other.revision_id = revision("another-revision");
+    assert!(!prepared.matches(&other, &command));
+    other = grouped.clone();
+    other.project_id = ProjectId::new("another-project").unwrap();
+    assert!(!prepared.matches(&other, &command));
+}
+
+#[test]
+fn neutral_ungroup_preserves_other_explicit_introduced_groups() {
+    let first = group(&retained(true));
+    let both = edit(
+        &first,
+        "other-grouped",
+        Command::GroupSelection {
+            parent: node("top"),
+            selection: SliceCaptureSelection::Child {
+                node: node("sibling"),
+            },
+            label: "Other introduced group".into(),
+            identities: GroupSelectionIdentities {
+                group: node("other-group"),
+                split: SplitIdentities::default(),
+            },
+            timing: timing("other-grouped"),
+        },
+    );
+    assert!(saved(&both).clocks().iter().all(|reference| {
+        reference.introduced_groups() == &BTreeSet::from([node("group"), node("other-group")])
+    }));
+    let after = edit(
+        &both,
+        "one-ungrouped",
+        Command::Ungroup {
+            node: node("group"),
+        },
+    );
+    assert_only_marker_removed(&both, &after);
+    assert!(after.nodes.contains_key(&node("other-group")));
+    assert!(saved(&after).clocks().iter().all(|reference| {
+        reference.introduced_groups() == &BTreeSet::from([node("other-group")])
+    }));
+}
+
+#[test]
+fn unpaired_group_history_under_repeat_or_retime_is_rejected_at_ingress() {
+    for repeated in [true, false] {
+        // Existing correspondence admission rejects this imported relation
+        // before any command is considered. Do not claim an Ungroup refusal
+        // for a document that cannot enter the editor.
+        let mut old = fixture();
+        old.nodes.insert(
+            node("top"),
+            BeatNode::sequence("Top", vec![node("processor"), node("sibling")]),
+        );
+        old.nodes.insert(
+            node("processor"),
+            BeatNode {
+                kind: if repeated {
+                    NodeKind::Repeat {
+                        child: node("owner"),
+                        iterations: IterationOrder::new(revision("ancestry-plays"), 2).unwrap(),
+                        gap: None,
+                        escalation: None,
+                    }
+                } else {
+                    NodeKind::Retime {
+                        child: node("owner"),
+                        duration: frames(4),
+                        mapping: range(0, 4),
+                        pitch: PitchPolicy::Preserve,
+                        purpose: RetimePurpose::Edit,
+                    }
+                },
+                ..BeatNode::sequence("Processor", vec![])
+            },
+        );
+        old.validate().unwrap();
+        let mut current = old.clone();
+        match &mut current.nodes.get_mut(&node("processor")).unwrap().kind {
+            NodeKind::Repeat { child, .. } | NodeKind::Retime { child, .. } => {
+                *child = node("group");
+            }
+            _ => unreachable!(),
+        }
+        current.nodes.insert(
+            node("group"),
+            BeatNode::sequence("Imported unpaired group", vec![node("owner")]),
+        );
+        current.audio_bindings = state(
+            vec![record(&old, 0)],
+            BTreeMap::from([(
+                node("owner"),
+                BTreeMap::from([(
+                    sound("effect"),
+                    SoundClockJournal::new(
+                        node("top"),
+                        vec![
+                            reference(clock(0))
+                                .with_introduced_groups(BTreeSet::from([node("group")]))
+                                .unwrap(),
+                        ],
+                    )
+                    .unwrap(),
+                )]),
+            )]),
+        );
+        let wire = current.to_json().unwrap();
+        let error = current.validate().unwrap_err();
+        assert_eq!(error.code, DocumentErrorCode::InvalidTree);
+        assert!(
+            error
+                .message
+                .contains("sound clock processing subtree changed"),
+            "{error}"
+        );
+        assert!(ProjectDocument::from_json(&wire).is_err());
+        assert_eq!(current.to_json().unwrap(), wire);
+
+        // A genuine historical group under the same processor is a valid
+        // command-negative fixture. Its real pairing must remain protected.
+        let mut paired = current;
+        paired.audio_bindings = AudioBindingState::default();
+        paired.validate().unwrap();
+        paired.audio_bindings = state(vec![record(&paired, 0)], clocks(vec![clock(0)]));
+        refuses(
+            &paired,
+            if repeated {
+                "paired-repeat-refused"
+            } else {
+                "paired-retime-refused"
+            },
+            Command::Ungroup {
+                node: node("group"),
+            },
+        );
+    }
+}
+
+#[test]
+fn neutral_ungroup_proof_budget_exhaustion_does_not_publish_partial_relations() {
+    let mut document = group(&retained(true));
+    let NodeKind::Sequence { children } = &mut document.nodes.get_mut(&node("root")).unwrap().kind
+    else {
+        unreachable!()
+    };
+    // Validation charges the live capture and parent scan. Ungroup additionally
+    // charges its staged result, so this valid width exhausts that edit's proof.
+    let extra: Vec<_> = (0..MAX_DOCUMENT_NODES * 2 / 5)
+        .map(|index| node(&format!("wide-{index}")))
+        .collect();
+    children.extend(extra.iter().cloned());
+    for id in extra {
+        document
+            .nodes
+            .insert(id, BeatNode::sequence("Empty", vec![]));
+    }
+    document.validate().unwrap();
+    let snapshot = document.to_json().unwrap();
+    let command = request(
+        &document,
+        "budget-refused",
+        Command::Ungroup {
+            node: node("group"),
+        },
+    );
+    let prepared_error = crate::sound_clock::grouping::prepare(&document, &command)
+        .err()
+        .expect("Ungroup preparation must refuse an exhausted proof budget");
+    assert_eq!(prepared_error.code, EditErrorCode::LimitExceeded);
+    assert!(
+        prepared_error
+            .message
+            .contains("sound grouping proof work limit")
+    );
+    let error = apply(&document, &command).unwrap_err();
+    assert_eq!(error.code, EditErrorCode::LimitExceeded);
+    assert_eq!(document.to_json().unwrap(), snapshot);
+}

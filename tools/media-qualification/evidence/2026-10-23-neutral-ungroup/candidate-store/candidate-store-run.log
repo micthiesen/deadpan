@@ -1,0 +1,9 @@
+  Extracting 1 binary, 1 build script output directory, and 3 linked paths to /private/tmp/deadpan-neutral-ungroup-2026-10-22/candidate-store-extracted
+   Extracted 15 files to /private/tmp/deadpan-neutral-ungroup-2026-10-22/candidate-store-extracted in 0.05s
+────────────
+ Nextest run ID bb9dc6e0-7c54-48bf-872f-6a7e453721a5 with nextest profile: default
+    Starting 2 tests across 1 binary (66 tests skipped)
+        PASS [   0.300s] (1/2) deadpan-store::source_registration sounds::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_rechecks_unchanged_sound_media_before_commit
+        PASS [   0.885s] (2/2) deadpan-store::source_registration sounds::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_is_atomic_durable_and_portable_after_intervening_edits
+────────────
+     Summary [   0.886s] 2 tests run: 2 passed, 66 skipped

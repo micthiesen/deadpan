@@ -1,0 +1,1 @@
+{"controls_valid":true,"error_code":"InvalidCommand","error_message":"group ownership changes inside a retained beat sound scope are not yet supported","request":{"command":{"command":"ungroup","node":"neutral-g"},"expected_revision":"neutral-owner-edit","new_revision":"neutral-ungroup","project_id":"definition-project"}}

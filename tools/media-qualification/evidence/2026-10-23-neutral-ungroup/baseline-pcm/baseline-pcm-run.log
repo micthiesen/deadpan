@@ -1,0 +1,89 @@
+  Extracting 1 binary, 1 build script output directory, and 4 linked paths to /private/tmp/deadpan-neutral-ungroup-2026-10-22/baseline-pcm-extracted
+   Extracted 22 files to /private/tmp/deadpan-neutral-ungroup-2026-10-22/baseline-pcm-extracted in 0.03s
+────────────
+ Nextest run ID 88ae8c0c-a776-416a-9085-29e05c6559ab with nextest profile: default
+    Starting 5 tests across 1 binary (166 tests skipped)
+        FAIL [   1.089s] (1/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_label_preserves_complete_pcm
+  stdout ───
+
+    running 1 test
+    test voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_label_preserves_complete_pcm ... FAILED
+
+    failures:
+
+    failures:
+        voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_label_preserves_complete_pcm
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 170 filtered out; finished in 1.08s
+
+  stderr ───
+
+    thread 'voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_label_preserves_complete_pcm' (175585683) panicked at crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs:183:9:
+    assertion failed: raw_provider.fixture.context_calls > 0
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        FAIL [   1.101s] (2/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_trim_preserves_complete_pcm
+  stdout ───
+
+    running 1 test
+    test voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_trim_preserves_complete_pcm ... FAILED
+
+    failures:
+
+    failures:
+        voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_trim_preserves_complete_pcm
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 170 filtered out; finished in 1.09s
+
+  stderr ───
+
+    thread 'voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_trim_preserves_complete_pcm' (175585682) panicked at crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs:183:9:
+    assertion failed: raw_provider.fixture.context_calls > 0
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        FAIL [   0.568s] (3/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_label_preserves_complete_pcm
+  stdout ───
+
+    running 1 test
+    test voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_label_preserves_complete_pcm ... FAILED
+
+    failures:
+
+    failures:
+        voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_label_preserves_complete_pcm
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 170 filtered out; finished in 0.56s
+
+  stderr ───
+
+    thread 'voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_label_preserves_complete_pcm' (175585853) panicked at crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs:183:9:
+    assertion failed: raw_provider.fixture.context_calls > 0
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        FAIL [   0.563s] (4/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_trim_preserves_complete_pcm
+  stdout ───
+
+    running 1 test
+    test voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_trim_preserves_complete_pcm ... FAILED
+
+    failures:
+
+    failures:
+        voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_trim_preserves_complete_pcm
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 170 filtered out; finished in 0.55s
+
+  stderr ───
+
+    thread 'voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_trim_preserves_complete_pcm' (175585856) panicked at crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs:183:9:
+    assertion failed: raw_provider.fixture.context_calls > 0
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        PASS [   0.013s] (5/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_still_refuses_a_genuine_later_group_capture
+────────────
+     Summary [   1.672s] 5 tests run: 1 passed, 4 failed, 166 skipped
+        FAIL [   1.089s] (1/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_label_preserves_complete_pcm
+        FAIL [   1.101s] (2/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_trim_preserves_complete_pcm
+        FAIL [   0.568s] (3/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_label_preserves_complete_pcm
+        FAIL [   0.563s] (4/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_trim_preserves_complete_pcm
+error: test run failed

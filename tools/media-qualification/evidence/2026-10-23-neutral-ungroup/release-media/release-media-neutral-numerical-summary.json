@@ -1,0 +1,19 @@
+{
+  "phase": "release-media",
+  "comparisons": {
+    "authored_bits": {
+      "samples": 24024,
+      "changed": 0
+    },
+    "limited_bits": {
+      "samples": 24024,
+      "changed": 0
+    },
+    "limiter_gain_bits": {
+      "samples": 24024,
+      "changed": 0
+    }
+  },
+  "later_edit_changed_samples": 3888,
+  "history_equality": true
+}

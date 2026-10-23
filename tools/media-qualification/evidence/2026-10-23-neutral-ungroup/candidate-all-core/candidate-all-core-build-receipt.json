@@ -1,0 +1,15 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "archive",
+    "--locked",
+    "-p",
+    "deadpan-core",
+    "--archive-file",
+    "/tmp/deadpan-neutral-ungroup-2026-10-22/candidate-all-core.tar.zst",
+    "--zstd-level=-1"
+  ],
+  "exit": 0,
+  "seconds": 354.16319362446666
+}

@@ -1,0 +1,2238 @@
+{
+  "source_base": "c72abe12965b08f7705e0c9a61ab2298d5a562ae",
+  "phases": [
+    "baseline-core",
+    "baseline-pcm",
+    "baseline-pcm-second",
+    "candidate-all-core",
+    "candidate-broad",
+    "candidate-core",
+    "candidate-pcm",
+    "candidate-store",
+    "candidate-ui",
+    "debug-media",
+    "initial-strict",
+    "release-media",
+    "release-native",
+    "second-strict",
+    "third-strict"
+  ],
+  "files": {
+    "README.md": {
+      "bytes": 1672,
+      "sha256": "53dd2edae1463bd50714508762070c2a82ca488f2625901d54d1d50fdbdb8dab"
+    },
+    "baseline-core/baseline-core-binaries.json": {
+      "bytes": 1271,
+      "sha256": "aa8c5aca6645c2d289dac4e8289b3cb9c70aa971b4038cd1748cab28fab825c5"
+    },
+    "baseline-core/baseline-core-build-receipt.json": {
+      "bytes": 366,
+      "sha256": "2517ed7a5fa931094d7d4155e762598e3a89ebc91c7a889b44255a4eabf00475"
+    },
+    "baseline-core/baseline-core-build.log": {
+      "bytes": 1221,
+      "sha256": "c33a5d9d4d1e5285d598120ce40598b75f70bb42e224e72a06bc9cd014ee271c"
+    },
+    "baseline-core/baseline-core-inputs.json": {
+      "bytes": 583,
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+    },
+    "baseline-core/baseline-core-list.log": {
+      "bytes": 202,
+      "sha256": "d5085ed52dc3b18bdb8d52220e4557556800c34d111224f9ec1f2aa1a73fa431"
+    },
+    "baseline-core/baseline-core-result.json": {
+      "bytes": 191,
+      "sha256": "390672440e3dfbe0bcdfe9ac75c2fd2242dc82de97614bdd609b4fe8cf2f162d"
+    },
+    "baseline-core/baseline-core-run-receipt.json": {
+      "bytes": 491,
+      "sha256": "1c4054570c31491298e4e40d835bfec7f883a45326d5e1a62008d426888057e3"
+    },
+    "baseline-core/baseline-core-run.log": {
+      "bytes": 8283,
+      "sha256": "76397eb837acc1dd323572960f0b823c5145c62c33e78188bdeb1bbd015ab368"
+    },
+    "baseline-core/source-identities.json": {
+      "bytes": 251913,
+      "sha256": "6d6f4293a6389b4e867e6cfe26a6356c38dd53914f07baa5b4163640b05296a3"
+    },
+    "baseline-core/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 21841,
+      "sha256": "215521becc8501fb977b0a8421ae3d7b9aecf8d7db59de53f24e7c6620550b6a"
+    },
+    "baseline-core/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs.txt": {
+      "bytes": 37535,
+      "sha256": "4cfe707372dcd8f4699c945e5af451098646591c115e508a88ea52f8eab8ba23"
+    },
+    "baseline-core/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs.txt": {
+      "bytes": 15879,
+      "sha256": "c8ea500f15ad7b7f23e0e4dab26a2521b06bb7d8f227764a9fdbcb47911531e3"
+    },
+    "baseline-core/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits.rs.txt": {
+      "bytes": 26456,
+      "sha256": "aeb12e6247a8138b5776a41c506c9d503a2ce5b9b379197f2632478b4a0f400b"
+    },
+    "baseline-pcm/baseline-pcm-binaries.json": {
+      "bytes": 199,
+      "sha256": "4433d815d1bad34e64eeed975084a5b7c28e6688b14841e3620b247f8c0221b5"
+    },
+    "baseline-pcm/baseline-pcm-build-receipt.json": {
+      "bytes": 391,
+      "sha256": "a8072795bdb8008f41b271f67dee3526429c36e359d6b3718206214086b080b7"
+    },
+    "baseline-pcm/baseline-pcm-build.log": {
+      "bytes": 2803,
+      "sha256": "f82c5c2e4746d3c60dff55e6b95481df075584fe861f7649b400b7c2d4e87ff6"
+    },
+    "baseline-pcm/baseline-pcm-inputs.json": {
+      "bytes": 583,
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+    },
+    "baseline-pcm/baseline-pcm-run-receipt.json": {
+      "bytes": 489,
+      "sha256": "2bb7ed0da750000afb3ec12adfd18cd19fd055f76c32e2a2a6f154af9c89f782"
+    },
+    "baseline-pcm/baseline-pcm-run.log": {
+      "bytes": 5608,
+      "sha256": "c7632781c1680921d610938587358b7ca312043ec6a5ac2b8c1fbde816848b2c"
+    },
+    "baseline-pcm/source-identities.json": {
+      "bytes": 251773,
+      "sha256": "a916be3c3d24c850b17b4ebd47e3eff32f482583abb8f9af4dfe3fae1ee9bd37"
+    },
+    "baseline-pcm/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 15748,
+      "sha256": "a2e1b8b44bea5c36e8add40c3c22fc8cee2e60cf9d35543cd7c0810b1c4a1fd4"
+    },
+    "baseline-pcm/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs.txt": {
+      "bytes": 37535,
+      "sha256": "26be3f3b65e45ddaae5b8d5c361911754270cab159cd7427775ef0b3e2d7cf29"
+    },
+    "baseline-pcm-second/baseline-pcm-second-binaries.json": {
+      "bytes": 943,
+      "sha256": "5e2f96e92af9938b2ee789155ac0018ee31808430df0e02be7ddb3fee915a541"
+    },
+    "baseline-pcm-second/baseline-pcm-second-build-receipt.json": {
+      "bytes": 399,
+      "sha256": "0b89fa69fd6a95147c9df874ec315c48855fecd152fc809d837ff3cf726a6f56"
+    },
+    "baseline-pcm-second/baseline-pcm-second-build.log": {
+      "bytes": 454,
+      "sha256": "04fd7fae5ec5e6fab63f680b52481a2ae0e769b0c7a5630a786ee74cc8165fa2"
+    },
+    "baseline-pcm-second/baseline-pcm-second-evidence/neutral-ungroup-RoomTone-Label/before-ungroup-controls.json.gz": {
+      "bytes": 201551,
+      "sha256": "b4ea4fdfcb60a5147090c45363e472bcb12a1598c3e7a3066609421ce7272d41"
+    },
+    "baseline-pcm-second/baseline-pcm-second-evidence/neutral-ungroup-RoomTone-Label/ungroup-admission-failure.json": {
+      "bytes": 323,
+      "sha256": "0f6d1b787f5d99c1ced39f3c6e034787726d88046cd5f118c438adb728991707"
+    },
+    "baseline-pcm-second/baseline-pcm-second-evidence/neutral-ungroup-RoomTone-Trim/before-ungroup-controls.json.gz": {
+      "bytes": 196464,
+      "sha256": "92b97c9ccd4600617ec1ad443f546adc363b6e193af93c8ae85403140d1cea9e"
+    },
+    "baseline-pcm-second/baseline-pcm-second-evidence/neutral-ungroup-RoomTone-Trim/ungroup-admission-failure.json": {
+      "bytes": 323,
+      "sha256": "0f6d1b787f5d99c1ced39f3c6e034787726d88046cd5f118c438adb728991707"
+    },
+    "baseline-pcm-second/baseline-pcm-second-evidence/neutral-ungroup-Source-Label/before-ungroup-controls.json.gz": {
+      "bytes": 208952,
+      "sha256": "6cd52dda261d516d8b96864797751659c9613943ebf88ee7cc247549d493b58f"
+    },
+    "baseline-pcm-second/baseline-pcm-second-evidence/neutral-ungroup-Source-Label/ungroup-admission-failure.json": {
+      "bytes": 323,
+      "sha256": "0f6d1b787f5d99c1ced39f3c6e034787726d88046cd5f118c438adb728991707"
+    },
+    "baseline-pcm-second/baseline-pcm-second-evidence/neutral-ungroup-Source-Trim/before-ungroup-controls.json.gz": {
+      "bytes": 202827,
+      "sha256": "398cf28e976797d5356a951158e8232ebf3f8f7ef4c5b72197e06b80e7e55860"
+    },
+    "baseline-pcm-second/baseline-pcm-second-evidence/neutral-ungroup-Source-Trim/ungroup-admission-failure.json": {
+      "bytes": 323,
+      "sha256": "0f6d1b787f5d99c1ced39f3c6e034787726d88046cd5f118c438adb728991707"
+    },
+    "baseline-pcm-second/baseline-pcm-second-inputs.json": {
+      "bytes": 583,
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+    },
+    "baseline-pcm-second/baseline-pcm-second-list.log": {
+      "bytes": 268,
+      "sha256": "16dc16201bb67024d8f1e924c345239e859197abbef4f1ca1353813f274093d9"
+    },
+    "baseline-pcm-second/baseline-pcm-second-result.json": {
+      "bytes": 191,
+      "sha256": "6e8071ab4be03cfa4659e186f42dc9739b952812a845d85ac639e03ea9f4a54d"
+    },
+    "baseline-pcm-second/baseline-pcm-second-run-receipt.json": {
+      "bytes": 503,
+      "sha256": "e1d6db7bc9b24caf6829f4361d8b51e043e1aa65658056d18dd7a8755c793a9d"
+    },
+    "baseline-pcm-second/baseline-pcm-second-run.log": {
+      "bytes": 6212,
+      "sha256": "e18938da027f917862a4ae35d28ebfb165fcbe4ff24a394d496153b09e28ad92"
+    },
+    "baseline-pcm-second/source-identities.json": {
+      "bytes": 251773,
+      "sha256": "77904a25c29de22112963ac1939aa6a08b81d684e70e20a554c3b954a5bf6a3e"
+    },
+    "baseline-pcm-second/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 21841,
+      "sha256": "215521becc8501fb977b0a8421ae3d7b9aecf8d7db59de53f24e7c6620550b6a"
+    },
+    "baseline-pcm-second/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs.txt": {
+      "bytes": 37535,
+      "sha256": "4cfe707372dcd8f4699c945e5af451098646591c115e508a88ea52f8eab8ba23"
+    },
+    "candidate-all-core/candidate-all-core-binaries.json": {
+      "bytes": 164833,
+      "sha256": "a2437042bdfcb09286a26040886581ffc23c58acecb4f31360ac0f59c2780276"
+    },
+    "candidate-all-core/candidate-all-core-build-receipt.json": {
+      "bytes": 276,
+      "sha256": "2646e8c33d00b380a734d5f989175a701a699af2dd82e4d1d2c7cfe6d3fe297e"
+    },
+    "candidate-all-core/candidate-all-core-build.log": {
+      "bytes": 374,
+      "sha256": "46d22dc110be21ed525b7a38e6c8322f25b8b8200a32ba1c44feebb1fd7aeddb"
+    },
+    "candidate-all-core/candidate-all-core-inputs.json": {
+      "bytes": 583,
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+    },
+    "candidate-all-core/candidate-all-core-list.log": {
+      "bytes": 216,
+      "sha256": "632f173966e3479d8dc64ca3baf88a280186c22ea78b09bc123b5a40b2d9dadf"
+    },
+    "candidate-all-core/candidate-all-core-result.json": {
+      "bytes": 189,
+      "sha256": "c6884d41a4d17ce1e57037f5b13f10ffa9931b11198d7048a51134d9a25d9418"
+    },
+    "candidate-all-core/candidate-all-core-run-receipt.json": {
+      "bytes": 461,
+      "sha256": "e9bcda2ffc9d531f016ebc025610f8ceed15937fd5696b688fc86a2dc4db40a2"
+    },
+    "candidate-all-core/candidate-all-core-run.log": {
+      "bytes": 219549,
+      "sha256": "50a613029ac029f172f74a1bdb47d8cd1afde4c53f6bc7e0eb2fa6325db0147b"
+    },
+    "candidate-all-core/source-identities.json": {
+      "bytes": 252501,
+      "sha256": "06116ec293e04f8f96f84ed0cfc1cb8aeaeef85ffc25ee8e08c67b5f6c6c41fa"
+    },
+    "candidate-all-core/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned/neutral_ungroup.rs.txt": {
+      "bytes": 6465,
+      "sha256": "c9b27772b24863ffc8ece167048db85d615dcbd106311bd925002865d7faa9cf"
+    },
+    "candidate-all-core/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned.rs.txt": {
+      "bytes": 11719,
+      "sha256": "d34963063de79cea5ae712fe5a1456e85ec025a562fcd0a69ba4030ee0dd83fe"
+    },
+    "candidate-all-core/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 21916,
+      "sha256": "d4c2ba6f31a9daddcd54342e0ae6627c470dd2afca118044af3a6e9fd8553989"
+    },
+    "candidate-all-core/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs.txt": {
+      "bytes": 37535,
+      "sha256": "4cfe707372dcd8f4699c945e5af451098646591c115e508a88ea52f8eab8ba23"
+    },
+    "candidate-all-core/source-overlays/crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs.txt": {
+      "bytes": 28302,
+      "sha256": "2d69409017da2c31486d2de8b059018dce398d0ffa94b53d169a572e99993cdf"
+    },
+    "candidate-all-core/source-overlays/crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs.txt": {
+      "bytes": 9422,
+      "sha256": "13363c532b6bbcb6db246bec458c04705f458861ae0ef159ee32c1fefe28a572"
+    },
+    "candidate-all-core/source-overlays/crates/deadpan-cli/tests/preview_export/neutral_ungroup_recipe.rs.txt": {
+      "bytes": 12406,
+      "sha256": "dc75f688695e730957cbf490e299c3582982eda3a3c3f4aae0c1ac6a050825f9"
+    },
+    "candidate-all-core/source-overlays/crates/deadpan-core/src/command.rs.txt": {
+      "bytes": 154563,
+      "sha256": "37e364c3e02ab670d372a7bdc37f7d53b9979347b5821303047a4fef61b563b5"
+    },
+    "candidate-all-core/source-overlays/crates/deadpan-core/src/sound_clock/grouping/ungroup.rs.txt": {
+      "bytes": 9588,
+      "sha256": "44f9a83822c73be79af65637e0dcd550f13a393f75e225331cf396291c6ec30b"
+    },
+    "candidate-all-core/source-overlays/crates/deadpan-core/src/sound_clock/grouping.rs.txt": {
+      "bytes": 13062,
+      "sha256": "7413968e5dddf5a801b1e8257d8eda012ba077c0a8d8991d2fac116627013da1"
+    },
+    "candidate-all-core/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs.txt": {
+      "bytes": 18083,
+      "sha256": "fc3f4d670cacd7abf4fd54b45b1b2a115394232227fb934884947149f4918fed"
+    },
+    "candidate-all-core/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits.rs.txt": {
+      "bytes": 26456,
+      "sha256": "aeb12e6247a8138b5776a41c506c9d503a2ce5b9b379197f2632478b4a0f400b"
+    },
+    "candidate-all-core/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/introduced_groups.rs.txt": {
+      "bytes": 28486,
+      "sha256": "9640ba0bc0c9606bb48ab7684972eaac6f4e9fffaa800ab42c068a5d7dbd22ff"
+    },
+    "candidate-all-core/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 10588,
+      "sha256": "673f01124385f15a722ad57258a511b3cc4169bc5fc1e8dd70946d089fdff13d"
+    },
+    "candidate-all-core/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks.rs.txt": {
+      "bytes": 23513,
+      "sha256": "9840671aff7a892537324177fe06df3094219ba71d91b9c66ebb64ceef9ca7bf"
+    },
+    "candidate-broad/candidate-broad-binaries.json": {
+      "bytes": 369781,
+      "sha256": "ed278ea447a9b3982f4b86d89afdcbd4be912cb93698ce21b9d15632092f9e3d"
+    },
+    "candidate-broad/candidate-broad-build-receipt.json": {
+      "bytes": 481,
+      "sha256": "dba1659632387fc95b4aa4e3c0e50db780113fbd8a5f1771d923ff75a7f9efa7"
+    },
+    "candidate-broad/candidate-broad-build.log": {
+      "bytes": 1730,
+      "sha256": "cac0af5e783391a6197bdeea96db7aaf600859ed2074ff317b7370db6c02cb6b"
+    },
+    "candidate-broad/candidate-broad-evidence/neutral-ungroup-RoomTone-Label/after-ungroup.json.gz": {
+      "bytes": 201102,
+      "sha256": "f4cfa937abe0da7f5baab3365d09b60ecdd75d12be3dedbc393a5bceff3e3eea"
+    },
+    "candidate-broad/candidate-broad-evidence/neutral-ungroup-RoomTone-Label/before-ungroup-controls.json.gz": {
+      "bytes": 201551,
+      "sha256": "b4ea4fdfcb60a5147090c45363e472bcb12a1598c3e7a3066609421ce7272d41"
+    },
+    "candidate-broad/candidate-broad-evidence/neutral-ungroup-RoomTone-Label/later-phase-and-return.json.gz": {
+      "bytes": 403025,
+      "sha256": "dae41de584e1ecb69ff40a2f4be11e5ff569311e55bb687054439f751700b1f9"
+    },
+    "candidate-broad/candidate-broad-evidence/neutral-ungroup-RoomTone-Trim/after-ungroup.json.gz": {
+      "bytes": 196042,
+      "sha256": "7a6a729b10088d33504d73d6d5cab2cfed25d4c442f5a94fca3a2587aa2767dc"
+    },
+    "candidate-broad/candidate-broad-evidence/neutral-ungroup-RoomTone-Trim/before-ungroup-controls.json.gz": {
+      "bytes": 196464,
+      "sha256": "92b97c9ccd4600617ec1ad443f546adc363b6e193af93c8ae85403140d1cea9e"
+    },
+    "candidate-broad/candidate-broad-evidence/neutral-ungroup-RoomTone-Trim/later-phase-and-return.json.gz": {
+      "bytes": 392937,
+      "sha256": "9b76ae044fd143cebf7dcfd3357156d2f0a130a26b8f2f9421ebeb7719e0e2d6"
+    },
+    "candidate-broad/candidate-broad-evidence/neutral-ungroup-Source-Label/after-ungroup.json.gz": {
+      "bytes": 208513,
+      "sha256": "b35fa6c0fd8f413f52330ac5ad7fa6864bd0f49df4b76c3003c83a5f09fa2d42"
+    },
+    "candidate-broad/candidate-broad-evidence/neutral-ungroup-Source-Label/before-ungroup-controls.json.gz": {
+      "bytes": 208952,
+      "sha256": "6cd52dda261d516d8b96864797751659c9613943ebf88ee7cc247549d493b58f"
+    },
+    "candidate-broad/candidate-broad-evidence/neutral-ungroup-Source-Label/later-phase-and-return.json.gz": {
+      "bytes": 418082,
+      "sha256": "5bec0bc0789b08da9b2155b7c7b810ab359aac653dd1de114e043b9387efc2f6"
+    },
+    "candidate-broad/candidate-broad-evidence/neutral-ungroup-Source-Trim/after-ungroup.json.gz": {
+      "bytes": 202399,
+      "sha256": "28ea242668bbaa1913e95d58f52380ee46934b9a955b6c34f244abff03f8bc6e"
+    },
+    "candidate-broad/candidate-broad-evidence/neutral-ungroup-Source-Trim/before-ungroup-controls.json.gz": {
+      "bytes": 202827,
+      "sha256": "398cf28e976797d5356a951158e8232ebf3f8f7ef4c5b72197e06b80e7e55860"
+    },
+    "candidate-broad/candidate-broad-evidence/neutral-ungroup-Source-Trim/later-phase-and-return.json.gz": {
+      "bytes": 405468,
+      "sha256": "e4b8c7c84990f8c3f32478ad759aa280b2966f63054dc9d110187e3d930f7db8"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth/after-group-before-eq.json": {
+      "bytes": 5173,
+      "sha256": "97bd462d315c36583d2c3400395eb582285ff24508d51ee0edf6a264075e9acd"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth/before-group.json": {
+      "bytes": 5065,
+      "sha256": "febf42775c270802f61e9408843c30ab761454ffd3da3f8b9d3eb1372afa6c4f"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth/birth-delivered-input.json.gz": {
+      "bytes": 90043,
+      "sha256": "976fee06fd5e34aba9487f638db81ceb6ccfe1366db09fe5b82f2fe120a233d4"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth/birth.json": {
+      "bytes": 5287,
+      "sha256": "a323351839ec87a080b53ea92503105fcf075edd16f092707990e78e6b10a828"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth/captured-slice.json": {
+      "bytes": 6330,
+      "sha256": "58543c7a21739515b34ad3a25d65f24911090813972c87a8c8bdd94701ca1f9f"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth/copied-input.json.gz": {
+      "bytes": 90439,
+      "sha256": "b4dfd43acf481cbf5990f15534df436d50a3c7c6a176e4ca80107c0c687f4ac0"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth/expected-input.json.gz": {
+      "bytes": 90083,
+      "sha256": "80c9f441b6e4e279dc622aaf98f4abb9f3acdfa9259fb3d38772b3d7d96ebcdd"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth/paste-identities.json": {
+      "bytes": 421,
+      "sha256": "a651fcf25f5b8799831e2aeb215118c19d823e6659be7dfa2cb32f49ff242bd0"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth/pasted.json": {
+      "bytes": 12195,
+      "sha256": "6cf892a3bf4e346ef2378c57cf38bd47123406837204c10a2d7a0cca3d001caa"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth/public-aliases.json": {
+      "bytes": 513,
+      "sha256": "a18504ebcdbcd545bb33a2bd11917d6fcecf2ab4eb83e97ec9f5bccd021acb6d"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth/result.json.gz": {
+      "bytes": 1114255,
+      "sha256": "881e69d22b0540148ba8ec84e113f5e0e05d21eec98c7a575bea795c1a40e5df"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth/summary.json": {
+      "bytes": 340,
+      "sha256": "6b7d75a14b161f53ce65e099183fd29b3e2201d57e662e3e92d99605d07235e7"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-authority/after-group-before-eq.json": {
+      "bytes": 5173,
+      "sha256": "97bd462d315c36583d2c3400395eb582285ff24508d51ee0edf6a264075e9acd"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-authority/authority-pasted.json": {
+      "bytes": 12227,
+      "sha256": "1c5cfb9d4046f91e289d2515b215499be6e78af6acc90ae090337eb050676ed0"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-authority/before-group.json": {
+      "bytes": 5065,
+      "sha256": "febf42775c270802f61e9408843c30ab761454ffd3da3f8b9d3eb1372afa6c4f"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-authority/birth.json": {
+      "bytes": 5287,
+      "sha256": "a323351839ec87a080b53ea92503105fcf075edd16f092707990e78e6b10a828"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-authority/result.json": {
+      "bytes": 1872,
+      "sha256": "742bcd037b0a87b6dbf3e7ebb833a99170f21a44355ab27f2789c245956c4612"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-authority/after-group-before-eq.json": {
+      "bytes": 5173,
+      "sha256": "97bd462d315c36583d2c3400395eb582285ff24508d51ee0edf6a264075e9acd"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-authority/before-group.json": {
+      "bytes": 5065,
+      "sha256": "febf42775c270802f61e9408843c30ab761454ffd3da3f8b9d3eb1372afa6c4f"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-authority/birth.json": {
+      "bytes": 5287,
+      "sha256": "a323351839ec87a080b53ea92503105fcf075edd16f092707990e78e6b10a828"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-authority/live-policy-events.json": {
+      "bytes": 10049,
+      "sha256": "0256153edf712c6f1f6553319fc2bb5ad1578a7ce89d109d81904d303b971a80"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-authority/replacement-source.json": {
+      "bytes": 9322,
+      "sha256": "3c8144d722e6ffbdf4e327819e0166dfbb8a3590f2311405fd8dc0fd1b71c9fc"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-authority/result.json": {
+      "bytes": 1166,
+      "sha256": "b12cc2741699c9901a521fe424544e823d8fd0fc08c75d33f9a6cd5a2317f97f"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-authority/split.json": {
+      "bytes": 9912,
+      "sha256": "608a8733f79569a5e26ca789c1fb23df7ede7d62fe5e6413e9dcba9b604913ed"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-authority/whole-G-copy.json": {
+      "bytes": 24191,
+      "sha256": "aa2cfa7fa9f3096502db98b0ef93f88528e7f524f5fdf15ca26f3143027e1d50"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-live-policy/after-group-before-eq.json": {
+      "bytes": 5173,
+      "sha256": "97bd462d315c36583d2c3400395eb582285ff24508d51ee0edf6a264075e9acd"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-live-policy/before-group.json": {
+      "bytes": 5065,
+      "sha256": "febf42775c270802f61e9408843c30ab761454ffd3da3f8b9d3eb1372afa6c4f"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-live-policy/birth.json": {
+      "bytes": 5287,
+      "sha256": "a323351839ec87a080b53ea92503105fcf075edd16f092707990e78e6b10a828"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-live-policy/policy-before.json": {
+      "bytes": 9954,
+      "sha256": "22baaffd31aa495728f61ef09dd8b2cab25d287bb733640ad5c15fa70470b090"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-live-policy/policy-input-before.json.gz": {
+      "bytes": 90177,
+      "sha256": "670fb74b39d423c5f366e62b4c0dd292a7203f520b768df8a45f97e8460679a0"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-live-policy/policy-input-renamed.json.gz": {
+      "bytes": 90437,
+      "sha256": "e6b0c9786856008b292b4381b0135f5b7b36c7b3f129503a8f26ed1dbca19f65"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-live-policy/policy-input-trimmed.json.gz": {
+      "bytes": 92399,
+      "sha256": "c8d0eac0917152c707f5132d8749e9f947644e3f8eae0ac18dfd95946118de4f"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-live-policy/policy-pieces.json": {
+      "bytes": 402,
+      "sha256": "79899529ea20c86206cba51b8218c4d7a534a7f928b9ebdc9d5fa896db208b2e"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-live-policy/policy-renamed.json": {
+      "bytes": 9977,
+      "sha256": "3e7985764075dbd0fb67e429e59e2eff9659679739ad3f35525c0903f6791736"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-live-policy/policy-trimmed.json": {
+      "bytes": 10086,
+      "sha256": "f0c655cb1edd5813681b29d484cf8b9a2a3c8e05363a4e0ac920d5cf1a243331"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-live-policy/result.json.gz": {
+      "bytes": 470142,
+      "sha256": "c02f39b458b8a7e592245ebf5812970d7cd36dc653966e0dc4cb61dd2b49cf4a"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-pcm/after-group-before-eq.json": {
+      "bytes": 5173,
+      "sha256": "97bd462d315c36583d2c3400395eb582285ff24508d51ee0edf6a264075e9acd"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-pcm/after.json": {
+      "bytes": 10062,
+      "sha256": "8d6887ade6968b7f3b4e64dd3cf590b19ba67154998eeeb556627a9b4f0a4560"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-pcm/before-group.json": {
+      "bytes": 5065,
+      "sha256": "febf42775c270802f61e9408843c30ab761454ffd3da3f8b9d3eb1372afa6c4f"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-pcm/before.json": {
+      "bytes": 5338,
+      "sha256": "bdfb400f3e54713e5bebbbd08ae8b7aa4f39cb0701d23f57ea7b8e4dbef9449e"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-pcm/birth.json": {
+      "bytes": 5287,
+      "sha256": "a323351839ec87a080b53ea92503105fcf075edd16f092707990e78e6b10a828"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-pcm/raw-after.json.gz": {
+      "bytes": 90437,
+      "sha256": "e6b0c9786856008b292b4381b0135f5b7b36c7b3f129503a8f26ed1dbca19f65"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-pcm/raw-before.json.gz": {
+      "bytes": 90177,
+      "sha256": "670fb74b39d423c5f366e62b4c0dd292a7203f520b768df8a45f97e8460679a0"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-family-pcm/result.json.gz": {
+      "bytes": 364744,
+      "sha256": "0448a9606c786dc3bdc5424c93cc19a446bc806718aa49a2520a38d2f0b97c64"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-later/before-group.json": {
+      "bytes": 5059,
+      "sha256": "1c91de16302e5455ed6b07133db435f3113c9ee361faf0b4e3e34d0b6c18b383"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-later/before-pad.json": {
+      "bytes": 5289,
+      "sha256": "b1842ee11fe45433f403f1b42e63b6c465e7b30d6b6866f2dfb1324e5bd3bb49"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-later/birth.json": {
+      "bytes": 6611,
+      "sha256": "4db31cb12dc75a76126934d8caa4810a8e67f5e2022b4175eee5aeb705e033be"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-later/captured-slice.json": {
+      "bytes": 6623,
+      "sha256": "859e55fcd44397c330541be57dc7a3a46eac7b5f9b30a8036dd7a9026dbc93c1"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-later/copied-input.json.gz": {
+      "bytes": 90434,
+      "sha256": "724167fb8b2965f575c27142eaa91e696b72cb4cce9650c614a78c920cd570f3"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-later/delivered-birth-input.json.gz": {
+      "bytes": 90063,
+      "sha256": "35e0ab80465c8a811464d29587fcfed55ee319727c7f88020dcad09eee1a85a3"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-later/expected-input.json.gz": {
+      "bytes": 90082,
+      "sha256": "2a18bfd8c1e239cb6a122882d0b887e8d22aababd4477a37c12e8ccdf10882ad"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-later/independent-delivery-mask.json.gz": {
+      "bytes": 13916,
+      "sha256": "f7b5935ee231628235a9109a5893e7997cf5f78bbcfa205e6a11c3cf008b6281"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-later/initial.json": {
+      "bytes": 2621,
+      "sha256": "4af6b6d943f63707fbe39a47d199e6e715181ad352438cf251ea4e04ab7e4318"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-later/lost-at-birth.json": {
+      "bytes": 158,
+      "sha256": "15aa5d04a8fda48f6a7c6a58779d19cd807c772ac4b08d17e699e75216c787a7"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-later/pad-capture.json": {
+      "bytes": 2563,
+      "sha256": "eaabb7f0298c9e9e666ed6d787a537bb7fe899dd9226c80b62f985517d57811e"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-later/pasted.json": {
+      "bytes": 13661,
+      "sha256": "6cb8a7ef16788cd84a4d11b3b90becebbdf2048c04a1181ff7893bd1025c07df"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-later/result.json.gz": {
+      "bytes": 587782,
+      "sha256": "de215a3c89ba2762db5fd2484abb8712f2f646bb3157aa89862bcc3146648fe9"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-later/source-terminal.json": {
+      "bytes": 149,
+      "sha256": "6bdfbe105394c560ed97b0989540d0193f9ff1719a4cff46bc746b258f30b792"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-neutral-split/after-group-before-eq.json": {
+      "bytes": 5173,
+      "sha256": "97bd462d315c36583d2c3400395eb582285ff24508d51ee0edf6a264075e9acd"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-neutral-split/after-split.json": {
+      "bytes": 10108,
+      "sha256": "9d765729e303143694dae2b1affaf56f996bfcf8e514c1ccb293c5254e760e71"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-neutral-split/before-group.json": {
+      "bytes": 5065,
+      "sha256": "febf42775c270802f61e9408843c30ab761454ffd3da3f8b9d3eb1372afa6c4f"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-neutral-split/before-split.json": {
+      "bytes": 5287,
+      "sha256": "a323351839ec87a080b53ea92503105fcf075edd16f092707990e78e6b10a828"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-neutral-split/birth.json": {
+      "bytes": 5287,
+      "sha256": "a323351839ec87a080b53ea92503105fcf075edd16f092707990e78e6b10a828"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-neutral-split/raw-after-halo.json.gz": {
+      "bytes": 90437,
+      "sha256": "e6b0c9786856008b292b4381b0135f5b7b36c7b3f129503a8f26ed1dbca19f65"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-neutral-split/raw-before-halo.json.gz": {
+      "bytes": 90177,
+      "sha256": "670fb74b39d423c5f366e62b4c0dd292a7203f520b768df8a45f97e8460679a0"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-neutral-split/result.json.gz": {
+      "bytes": 234472,
+      "sha256": "11c26128060f92a7539f674a962340f685dc11e6c3784a94763744477092bdd2"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-neutral-split/summary.json": {
+      "bytes": 314,
+      "sha256": "3f12bb8f3884692e3630ea49c6c9d0ad749a840350b42fedfba7bf7ce6a79216"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-split/after-group-before-eq.json": {
+      "bytes": 5173,
+      "sha256": "97bd462d315c36583d2c3400395eb582285ff24508d51ee0edf6a264075e9acd"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-split/before-group.json": {
+      "bytes": 5065,
+      "sha256": "febf42775c270802f61e9408843c30ab761454ffd3da3f8b9d3eb1372afa6c4f"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-split/birth.json": {
+      "bytes": 5287,
+      "sha256": "a323351839ec87a080b53ea92503105fcf075edd16f092707990e78e6b10a828"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-split/raw-birth.json.gz": {
+      "bytes": 90043,
+      "sha256": "976fee06fd5e34aba9487f638db81ceb6ccfe1366db09fe5b82f2fe120a233d4"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-split/raw-candidate.json.gz": {
+      "bytes": 90450,
+      "sha256": "cfe0ef05196fd83b8d865a9dc81c0d7614bee50984f74e930a3aedebe7b7a291"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-split/raw-control.json.gz": {
+      "bytes": 90179,
+      "sha256": "4281bfb39aa2d40d89859555b08e0bdec3ff01cd3abd07986674c3384c3f5250"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-split/result.json.gz": {
+      "bytes": 248447,
+      "sha256": "03f11ed7169bfe02fa0c2fc06763606f0554017afde1216b6c9efe2ba0cf55ac"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-split/split-at-birth.json": {
+      "bytes": 10052,
+      "sha256": "9d9f54b9605728b77110e165ecf7ad0bd24067be08aad86843f56f6928e1b01c"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-split/split-moved.json": {
+      "bytes": 14021,
+      "sha256": "b1cc2d22ecc86997d45d7222bae134a27d9fd73e6cf2ccb1e6e2fa508fe6c4ce"
+    },
+    "candidate-broad/candidate-broad-evidence/new-group-birth-split/unsplit-moved.json": {
+      "bytes": 7743,
+      "sha256": "1b06e01b4d6b56a01f2815f7b1fbdb62c3b8a38ac92fe0ab6cb1bcd10c3d6b21"
+    },
+    "candidate-broad/candidate-broad-helpers.json": {
+      "bytes": 1462,
+      "sha256": "a312b5e91a70d827d2bcead80c880c1768eba42fc15f70425861f87deb508dd2"
+    },
+    "candidate-broad/candidate-broad-inputs.json": {
+      "bytes": 583,
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+    },
+    "candidate-broad/candidate-broad-list.log": {
+      "bytes": 299,
+      "sha256": "00eb060c0d16f7df8ff73d94c646fecf451b9e48406042de25f50aec7a2e6fa6"
+    },
+    "candidate-broad/candidate-broad-result.json": {
+      "bytes": 190,
+      "sha256": "3af5d6c8e9d7982346ea17327b1e758d5c105f1f56abee78ec52323202abfdce"
+    },
+    "candidate-broad/candidate-broad-run-receipt.json": {
+      "bytes": 855,
+      "sha256": "51b8cd85b92d5124ec263ef6ec6b562ca5029c6dba1fd750db6eba52b74162ad"
+    },
+    "candidate-broad/candidate-broad-run.log": {
+      "bytes": 528986,
+      "sha256": "5ec7ec9c5eaeeb5d062f9f79b30b3ca3b86ebd244546f3efbea9526ee5d0405c"
+    },
+    "candidate-broad/source-identities.json": {
+      "bytes": 252501,
+      "sha256": "ed7f19fd804fda3862cc5e2a93e39f46c93a0ef67237b0164c293787a7824be9"
+    },
+    "candidate-broad/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned/neutral_ungroup.rs.txt": {
+      "bytes": 6465,
+      "sha256": "c9b27772b24863ffc8ece167048db85d615dcbd106311bd925002865d7faa9cf"
+    },
+    "candidate-broad/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned.rs.txt": {
+      "bytes": 11719,
+      "sha256": "d34963063de79cea5ae712fe5a1456e85ec025a562fcd0a69ba4030ee0dd83fe"
+    },
+    "candidate-broad/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 21916,
+      "sha256": "d4c2ba6f31a9daddcd54342e0ae6627c470dd2afca118044af3a6e9fd8553989"
+    },
+    "candidate-broad/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs.txt": {
+      "bytes": 37535,
+      "sha256": "4cfe707372dcd8f4699c945e5af451098646591c115e508a88ea52f8eab8ba23"
+    },
+    "candidate-broad/source-overlays/crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs.txt": {
+      "bytes": 28302,
+      "sha256": "2d69409017da2c31486d2de8b059018dce398d0ffa94b53d169a572e99993cdf"
+    },
+    "candidate-broad/source-overlays/crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs.txt": {
+      "bytes": 9422,
+      "sha256": "13363c532b6bbcb6db246bec458c04705f458861ae0ef159ee32c1fefe28a572"
+    },
+    "candidate-broad/source-overlays/crates/deadpan-cli/tests/preview_export/neutral_ungroup_recipe.rs.txt": {
+      "bytes": 12406,
+      "sha256": "dc75f688695e730957cbf490e299c3582982eda3a3c3f4aae0c1ac6a050825f9"
+    },
+    "candidate-broad/source-overlays/crates/deadpan-core/src/command.rs.txt": {
+      "bytes": 154563,
+      "sha256": "37e364c3e02ab670d372a7bdc37f7d53b9979347b5821303047a4fef61b563b5"
+    },
+    "candidate-broad/source-overlays/crates/deadpan-core/src/sound_clock/grouping/ungroup.rs.txt": {
+      "bytes": 9588,
+      "sha256": "44f9a83822c73be79af65637e0dcd550f13a393f75e225331cf396291c6ec30b"
+    },
+    "candidate-broad/source-overlays/crates/deadpan-core/src/sound_clock/grouping.rs.txt": {
+      "bytes": 13062,
+      "sha256": "7413968e5dddf5a801b1e8257d8eda012ba077c0a8d8991d2fac116627013da1"
+    },
+    "candidate-broad/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs.txt": {
+      "bytes": 18083,
+      "sha256": "fc3f4d670cacd7abf4fd54b45b1b2a115394232227fb934884947149f4918fed"
+    },
+    "candidate-broad/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits.rs.txt": {
+      "bytes": 26456,
+      "sha256": "aeb12e6247a8138b5776a41c506c9d503a2ce5b9b379197f2632478b4a0f400b"
+    },
+    "candidate-broad/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/introduced_groups.rs.txt": {
+      "bytes": 28486,
+      "sha256": "9640ba0bc0c9606bb48ab7684972eaac6f4e9fffaa800ab42c068a5d7dbd22ff"
+    },
+    "candidate-broad/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 10588,
+      "sha256": "673f01124385f15a722ad57258a511b3cc4169bc5fc1e8dd70946d089fdff13d"
+    },
+    "candidate-broad/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks.rs.txt": {
+      "bytes": 23513,
+      "sha256": "9840671aff7a892537324177fe06df3094219ba71d91b9c66ebb64ceef9ca7bf"
+    },
+    "candidate-core/candidate-core-binaries.json": {
+      "bytes": 1272,
+      "sha256": "d9f27941688c6c1ba704b342f56b2ef071d0687e67ac4f19d51a36707da85bb2"
+    },
+    "candidate-core/candidate-core-build-receipt.json": {
+      "bytes": 284,
+      "sha256": "062b0ce1c682bd8e646064601c31a7b967372a5cce137dd683b300595b391041"
+    },
+    "candidate-core/candidate-core-build.log": {
+      "bytes": 362,
+      "sha256": "b0f0aaad7b280986c415678386d2b66b4ab9bad6b0ee9dcf26e2664488f3be69"
+    },
+    "candidate-core/candidate-core-inputs.json": {
+      "bytes": 583,
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+    },
+    "candidate-core/candidate-core-list.log": {
+      "bytes": 204,
+      "sha256": "805e95ff468da3f0ff802adc4d57d58f61f18baaa190dd6339ff476d85504b62"
+    },
+    "candidate-core/candidate-core-result.json": {
+      "bytes": 187,
+      "sha256": "95aeab517676ba572f9ef8592a01a9914ef7bfd7a30f2945593581c86f46af09"
+    },
+    "candidate-core/candidate-core-run-receipt.json": {
+      "bytes": 473,
+      "sha256": "2971531d56e357f808f21553e68c514fa0622d54dd736de084c0fbb8d18e7b89"
+    },
+    "candidate-core/candidate-core-run.log": {
+      "bytes": 5093,
+      "sha256": "6f2d3b7e4abaf177cfeb87aca5d4e350a2ffef124234f9ebfa256f46b8e12a4c"
+    },
+    "candidate-core/source-identities.json": {
+      "bytes": 252201,
+      "sha256": "17b3da186fc39ec56822a6791d8abd5d3438ac52ab00b54b09ce9d440947f8f2"
+    },
+    "candidate-core/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 21841,
+      "sha256": "215521becc8501fb977b0a8421ae3d7b9aecf8d7db59de53f24e7c6620550b6a"
+    },
+    "candidate-core/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs.txt": {
+      "bytes": 37535,
+      "sha256": "4cfe707372dcd8f4699c945e5af451098646591c115e508a88ea52f8eab8ba23"
+    },
+    "candidate-core/source-overlays/crates/deadpan-core/src/command.rs.txt": {
+      "bytes": 154563,
+      "sha256": "37e364c3e02ab670d372a7bdc37f7d53b9979347b5821303047a4fef61b563b5"
+    },
+    "candidate-core/source-overlays/crates/deadpan-core/src/sound_clock/grouping/ungroup.rs.txt": {
+      "bytes": 9588,
+      "sha256": "44f9a83822c73be79af65637e0dcd550f13a393f75e225331cf396291c6ec30b"
+    },
+    "candidate-core/source-overlays/crates/deadpan-core/src/sound_clock/grouping.rs.txt": {
+      "bytes": 13062,
+      "sha256": "7413968e5dddf5a801b1e8257d8eda012ba077c0a8d8991d2fac116627013da1"
+    },
+    "candidate-core/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs.txt": {
+      "bytes": 15879,
+      "sha256": "c8ea500f15ad7b7f23e0e4dab26a2521b06bb7d8f227764a9fdbcb47911531e3"
+    },
+    "candidate-core/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits.rs.txt": {
+      "bytes": 26456,
+      "sha256": "aeb12e6247a8138b5776a41c506c9d503a2ce5b9b379197f2632478b4a0f400b"
+    },
+    "candidate-core/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/introduced_groups.rs.txt": {
+      "bytes": 28486,
+      "sha256": "9640ba0bc0c9606bb48ab7684972eaac6f4e9fffaa800ab42c068a5d7dbd22ff"
+    },
+    "candidate-core/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 10588,
+      "sha256": "673f01124385f15a722ad57258a511b3cc4169bc5fc1e8dd70946d089fdff13d"
+    },
+    "candidate-core/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks.rs.txt": {
+      "bytes": 23513,
+      "sha256": "9840671aff7a892537324177fe06df3094219ba71d91b9c66ebb64ceef9ca7bf"
+    },
+    "candidate-pcm/candidate-pcm-binaries.json": {
+      "bytes": 937,
+      "sha256": "21e142415969209c466186c69f77752bccec7cb02b83dc6fdd6342f11442010e"
+    },
+    "candidate-pcm/candidate-pcm-build-receipt.json": {
+      "bytes": 310,
+      "sha256": "728107145c39f457ae0995da11b1f884ece089c7ab0d1f8731cf92760fb130c8"
+    },
+    "candidate-pcm/candidate-pcm-build.log": {
+      "bytes": 751,
+      "sha256": "317db411cca5cbf46b5e10f4ca59273d0a3b78b465bfac00aa7354512a786daf"
+    },
+    "candidate-pcm/candidate-pcm-evidence/neutral-ungroup-RoomTone-Label/after-ungroup.json.gz": {
+      "bytes": 201102,
+      "sha256": "f4cfa937abe0da7f5baab3365d09b60ecdd75d12be3dedbc393a5bceff3e3eea"
+    },
+    "candidate-pcm/candidate-pcm-evidence/neutral-ungroup-RoomTone-Label/before-ungroup-controls.json.gz": {
+      "bytes": 201551,
+      "sha256": "b4ea4fdfcb60a5147090c45363e472bcb12a1598c3e7a3066609421ce7272d41"
+    },
+    "candidate-pcm/candidate-pcm-evidence/neutral-ungroup-RoomTone-Label/later-phase-and-return.json.gz": {
+      "bytes": 403025,
+      "sha256": "dae41de584e1ecb69ff40a2f4be11e5ff569311e55bb687054439f751700b1f9"
+    },
+    "candidate-pcm/candidate-pcm-evidence/neutral-ungroup-RoomTone-Trim/after-ungroup.json.gz": {
+      "bytes": 196042,
+      "sha256": "7a6a729b10088d33504d73d6d5cab2cfed25d4c442f5a94fca3a2587aa2767dc"
+    },
+    "candidate-pcm/candidate-pcm-evidence/neutral-ungroup-RoomTone-Trim/before-ungroup-controls.json.gz": {
+      "bytes": 196464,
+      "sha256": "92b97c9ccd4600617ec1ad443f546adc363b6e193af93c8ae85403140d1cea9e"
+    },
+    "candidate-pcm/candidate-pcm-evidence/neutral-ungroup-RoomTone-Trim/later-phase-and-return.json.gz": {
+      "bytes": 392937,
+      "sha256": "9b76ae044fd143cebf7dcfd3357156d2f0a130a26b8f2f9421ebeb7719e0e2d6"
+    },
+    "candidate-pcm/candidate-pcm-evidence/neutral-ungroup-Source-Label/after-ungroup.json.gz": {
+      "bytes": 208513,
+      "sha256": "b35fa6c0fd8f413f52330ac5ad7fa6864bd0f49df4b76c3003c83a5f09fa2d42"
+    },
+    "candidate-pcm/candidate-pcm-evidence/neutral-ungroup-Source-Label/before-ungroup-controls.json.gz": {
+      "bytes": 208952,
+      "sha256": "6cd52dda261d516d8b96864797751659c9613943ebf88ee7cc247549d493b58f"
+    },
+    "candidate-pcm/candidate-pcm-evidence/neutral-ungroup-Source-Label/later-phase-and-return.json.gz": {
+      "bytes": 418082,
+      "sha256": "5bec0bc0789b08da9b2155b7c7b810ab359aac653dd1de114e043b9387efc2f6"
+    },
+    "candidate-pcm/candidate-pcm-evidence/neutral-ungroup-Source-Trim/after-ungroup.json.gz": {
+      "bytes": 202399,
+      "sha256": "28ea242668bbaa1913e95d58f52380ee46934b9a955b6c34f244abff03f8bc6e"
+    },
+    "candidate-pcm/candidate-pcm-evidence/neutral-ungroup-Source-Trim/before-ungroup-controls.json.gz": {
+      "bytes": 202827,
+      "sha256": "398cf28e976797d5356a951158e8232ebf3f8f7ef4c5b72197e06b80e7e55860"
+    },
+    "candidate-pcm/candidate-pcm-evidence/neutral-ungroup-Source-Trim/later-phase-and-return.json.gz": {
+      "bytes": 405468,
+      "sha256": "e4b8c7c84990f8c3f32478ad759aa280b2966f63054dc9d110187e3d930f7db8"
+    },
+    "candidate-pcm/candidate-pcm-inputs.json": {
+      "bytes": 583,
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+    },
+    "candidate-pcm/candidate-pcm-list.log": {
+      "bytes": 256,
+      "sha256": "072774db71584a1224ac083e55bd7e871ea37f14f5bae16b14712e3c64f759c9"
+    },
+    "candidate-pcm/candidate-pcm-result.json": {
+      "bytes": 185,
+      "sha256": "afaccb16a7e32cecb63a2af21a9dd8f7bd0d4ca42661ad4428939d357233d768"
+    },
+    "candidate-pcm/candidate-pcm-run-receipt.json": {
+      "bytes": 467,
+      "sha256": "653cf4c6e033f36229abcefbb4dc84b82421585b33478ce3c5fcecddeaadb9ef"
+    },
+    "candidate-pcm/candidate-pcm-run.log": {
+      "bytes": 1449,
+      "sha256": "992843bc0fc7eea8c6cf3171e3ef8ae5445dbbd6d948d8b09fd0883307f1b1a3"
+    },
+    "candidate-pcm/source-identities.json": {
+      "bytes": 252501,
+      "sha256": "2bee267b8ab3306ad1689cedc2a81db09d76419d2036e44b143c6fd40d9fd4ff"
+    },
+    "candidate-pcm/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned/neutral_ungroup.rs.txt": {
+      "bytes": 6465,
+      "sha256": "c9b27772b24863ffc8ece167048db85d615dcbd106311bd925002865d7faa9cf"
+    },
+    "candidate-pcm/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned.rs.txt": {
+      "bytes": 11719,
+      "sha256": "d34963063de79cea5ae712fe5a1456e85ec025a562fcd0a69ba4030ee0dd83fe"
+    },
+    "candidate-pcm/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 21916,
+      "sha256": "d4c2ba6f31a9daddcd54342e0ae6627c470dd2afca118044af3a6e9fd8553989"
+    },
+    "candidate-pcm/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs.txt": {
+      "bytes": 37535,
+      "sha256": "4cfe707372dcd8f4699c945e5af451098646591c115e508a88ea52f8eab8ba23"
+    },
+    "candidate-pcm/source-overlays/crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs.txt": {
+      "bytes": 28302,
+      "sha256": "2d69409017da2c31486d2de8b059018dce398d0ffa94b53d169a572e99993cdf"
+    },
+    "candidate-pcm/source-overlays/crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs.txt": {
+      "bytes": 9422,
+      "sha256": "13363c532b6bbcb6db246bec458c04705f458861ae0ef159ee32c1fefe28a572"
+    },
+    "candidate-pcm/source-overlays/crates/deadpan-cli/tests/preview_export/neutral_ungroup_recipe.rs.txt": {
+      "bytes": 12406,
+      "sha256": "dc75f688695e730957cbf490e299c3582982eda3a3c3f4aae0c1ac6a050825f9"
+    },
+    "candidate-pcm/source-overlays/crates/deadpan-core/src/command.rs.txt": {
+      "bytes": 154563,
+      "sha256": "37e364c3e02ab670d372a7bdc37f7d53b9979347b5821303047a4fef61b563b5"
+    },
+    "candidate-pcm/source-overlays/crates/deadpan-core/src/sound_clock/grouping/ungroup.rs.txt": {
+      "bytes": 9588,
+      "sha256": "44f9a83822c73be79af65637e0dcd550f13a393f75e225331cf396291c6ec30b"
+    },
+    "candidate-pcm/source-overlays/crates/deadpan-core/src/sound_clock/grouping.rs.txt": {
+      "bytes": 13062,
+      "sha256": "7413968e5dddf5a801b1e8257d8eda012ba077c0a8d8991d2fac116627013da1"
+    },
+    "candidate-pcm/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs.txt": {
+      "bytes": 18083,
+      "sha256": "fc3f4d670cacd7abf4fd54b45b1b2a115394232227fb934884947149f4918fed"
+    },
+    "candidate-pcm/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits.rs.txt": {
+      "bytes": 26456,
+      "sha256": "aeb12e6247a8138b5776a41c506c9d503a2ce5b9b379197f2632478b4a0f400b"
+    },
+    "candidate-pcm/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/introduced_groups.rs.txt": {
+      "bytes": 28486,
+      "sha256": "9640ba0bc0c9606bb48ab7684972eaac6f4e9fffaa800ab42c068a5d7dbd22ff"
+    },
+    "candidate-pcm/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 10588,
+      "sha256": "673f01124385f15a722ad57258a511b3cc4169bc5fc1e8dd70946d089fdff13d"
+    },
+    "candidate-pcm/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks.rs.txt": {
+      "bytes": 23513,
+      "sha256": "9840671aff7a892537324177fe06df3094219ba71d91b9c66ebb64ceef9ca7bf"
+    },
+    "candidate-store/candidate-store-binaries.json": {
+      "bytes": 550,
+      "sha256": "2ff3194c8eb6940ce7be5d0baba1b30fcfd3ac25bb24f1d5f4605d9bcab235c5"
+    },
+    "candidate-store/candidate-store-build-receipt.json": {
+      "bytes": 314,
+      "sha256": "6b91fe5c252d699a165d07ccd060064320bce9f5e8df44d95ba6a9c22e83bb7f"
+    },
+    "candidate-store/candidate-store-build.log": {
+      "bytes": 591,
+      "sha256": "7c06e00b3e5b8656c90d1d0790c367fb1498ec30f7fc3692338149ae3ac05299"
+    },
+    "candidate-store/candidate-store-inputs.json": {
+      "bytes": 583,
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+    },
+    "candidate-store/candidate-store-list.log": {
+      "bytes": 260,
+      "sha256": "2cef2ab4e2e62d28ddb43b4e17f902bc15deeb795797d763846049db2d96c98b"
+    },
+    "candidate-store/candidate-store-result.json": {
+      "bytes": 185,
+      "sha256": "33326fbf69e5b2249270581f9e86a5c670a5ab02bf34b29a82cc85d406ca75d2"
+    },
+    "candidate-store/candidate-store-run-receipt.json": {
+      "bytes": 471,
+      "sha256": "09f06b196b255b6985f58a4f8577d87ca220eb7d8dd66d241b0573e169eb9656"
+    },
+    "candidate-store/candidate-store-run.log": {
+      "bytes": 900,
+      "sha256": "dc4296d533f2f630d5065eda675afc790934bd66d219bb8d2503f62e838858c1"
+    },
+    "candidate-store/source-identities.json": {
+      "bytes": 252501,
+      "sha256": "7ee61c7a763ceb3c5bdb0e478e75180f9fc188c0898db7bcfbc3b07f04cf6fc2"
+    },
+    "candidate-store/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned/neutral_ungroup.rs.txt": {
+      "bytes": 6465,
+      "sha256": "c9b27772b24863ffc8ece167048db85d615dcbd106311bd925002865d7faa9cf"
+    },
+    "candidate-store/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned.rs.txt": {
+      "bytes": 11719,
+      "sha256": "d34963063de79cea5ae712fe5a1456e85ec025a562fcd0a69ba4030ee0dd83fe"
+    },
+    "candidate-store/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 21916,
+      "sha256": "d4c2ba6f31a9daddcd54342e0ae6627c470dd2afca118044af3a6e9fd8553989"
+    },
+    "candidate-store/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs.txt": {
+      "bytes": 37535,
+      "sha256": "4cfe707372dcd8f4699c945e5af451098646591c115e508a88ea52f8eab8ba23"
+    },
+    "candidate-store/source-overlays/crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs.txt": {
+      "bytes": 28302,
+      "sha256": "2d69409017da2c31486d2de8b059018dce398d0ffa94b53d169a572e99993cdf"
+    },
+    "candidate-store/source-overlays/crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs.txt": {
+      "bytes": 9422,
+      "sha256": "13363c532b6bbcb6db246bec458c04705f458861ae0ef159ee32c1fefe28a572"
+    },
+    "candidate-store/source-overlays/crates/deadpan-cli/tests/preview_export/neutral_ungroup_recipe.rs.txt": {
+      "bytes": 12406,
+      "sha256": "dc75f688695e730957cbf490e299c3582982eda3a3c3f4aae0c1ac6a050825f9"
+    },
+    "candidate-store/source-overlays/crates/deadpan-core/src/command.rs.txt": {
+      "bytes": 154563,
+      "sha256": "37e364c3e02ab670d372a7bdc37f7d53b9979347b5821303047a4fef61b563b5"
+    },
+    "candidate-store/source-overlays/crates/deadpan-core/src/sound_clock/grouping/ungroup.rs.txt": {
+      "bytes": 9588,
+      "sha256": "44f9a83822c73be79af65637e0dcd550f13a393f75e225331cf396291c6ec30b"
+    },
+    "candidate-store/source-overlays/crates/deadpan-core/src/sound_clock/grouping.rs.txt": {
+      "bytes": 13062,
+      "sha256": "7413968e5dddf5a801b1e8257d8eda012ba077c0a8d8991d2fac116627013da1"
+    },
+    "candidate-store/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs.txt": {
+      "bytes": 18083,
+      "sha256": "fc3f4d670cacd7abf4fd54b45b1b2a115394232227fb934884947149f4918fed"
+    },
+    "candidate-store/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits.rs.txt": {
+      "bytes": 26456,
+      "sha256": "aeb12e6247a8138b5776a41c506c9d503a2ce5b9b379197f2632478b4a0f400b"
+    },
+    "candidate-store/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/introduced_groups.rs.txt": {
+      "bytes": 28486,
+      "sha256": "9640ba0bc0c9606bb48ab7684972eaac6f4e9fffaa800ab42c068a5d7dbd22ff"
+    },
+    "candidate-store/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 10588,
+      "sha256": "673f01124385f15a722ad57258a511b3cc4169bc5fc1e8dd70946d089fdff13d"
+    },
+    "candidate-store/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks.rs.txt": {
+      "bytes": 23513,
+      "sha256": "9840671aff7a892537324177fe06df3094219ba71d91b9c66ebb64ceef9ca7bf"
+    },
+    "candidate-ui/candidate-ui-binaries.json": {
+      "bytes": 134525,
+      "sha256": "994cf88e7776220092803016c6d2a1470c8d565af8f86537882d43da97c0d994"
+    },
+    "candidate-ui/candidate-ui-build-receipt.json": {
+      "bytes": 304,
+      "sha256": "68e6d3885888facfb3432f8f4c53482d3b0a56990c15567cdc241c6bfce7011c"
+    },
+    "candidate-ui/candidate-ui-build.log": {
+      "bytes": 1521,
+      "sha256": "6b8acac098a40ec20650e95d0500a79782f18fcb47a313c9e106d157a120d1bb"
+    },
+    "candidate-ui/candidate-ui-helpers.json": {
+      "bytes": 1447,
+      "sha256": "0f6efc435a50636ef2c6f9217da7f58b0c31a5e4bbdb6b8414584fd86bc7084b"
+    },
+    "candidate-ui/candidate-ui-inputs.json": {
+      "bytes": 583,
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+    },
+    "candidate-ui/candidate-ui-list.log": {
+      "bytes": 252,
+      "sha256": "abfe9c26035a95d648ff1bb6e1279c55b392f8701eb12dc2e24a45d0b796787f"
+    },
+    "candidate-ui/candidate-ui-result.json": {
+      "bytes": 188,
+      "sha256": "ca35a302c5c31896e89678af0ce2d2ce9bdc8cf95fc1df2375d4ac4a726340b4"
+    },
+    "candidate-ui/candidate-ui-run-receipt.json": {
+      "bytes": 449,
+      "sha256": "9644dcd3545b6a752493e93ad2e2199f369b271247ad6fdf561ffe942c0a42cb"
+    },
+    "candidate-ui/candidate-ui-run.log": {
+      "bytes": 208131,
+      "sha256": "d5647492894546fdd798080dadbf41c0ae612b195c68d509f654981bae47d150"
+    },
+    "candidate-ui/source-identities.json": {
+      "bytes": 252501,
+      "sha256": "1bf834be60cc3eb2ba307ffa5cc60ec6c7cabb9021e30bb83070506df7370277"
+    },
+    "candidate-ui/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned/neutral_ungroup.rs.txt": {
+      "bytes": 6465,
+      "sha256": "c9b27772b24863ffc8ece167048db85d615dcbd106311bd925002865d7faa9cf"
+    },
+    "candidate-ui/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned.rs.txt": {
+      "bytes": 11719,
+      "sha256": "d34963063de79cea5ae712fe5a1456e85ec025a562fcd0a69ba4030ee0dd83fe"
+    },
+    "candidate-ui/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 21916,
+      "sha256": "d4c2ba6f31a9daddcd54342e0ae6627c470dd2afca118044af3a6e9fd8553989"
+    },
+    "candidate-ui/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs.txt": {
+      "bytes": 37535,
+      "sha256": "4cfe707372dcd8f4699c945e5af451098646591c115e508a88ea52f8eab8ba23"
+    },
+    "candidate-ui/source-overlays/crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs.txt": {
+      "bytes": 28302,
+      "sha256": "2d69409017da2c31486d2de8b059018dce398d0ffa94b53d169a572e99993cdf"
+    },
+    "candidate-ui/source-overlays/crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs.txt": {
+      "bytes": 9422,
+      "sha256": "13363c532b6bbcb6db246bec458c04705f458861ae0ef159ee32c1fefe28a572"
+    },
+    "candidate-ui/source-overlays/crates/deadpan-cli/tests/preview_export/neutral_ungroup_recipe.rs.txt": {
+      "bytes": 12406,
+      "sha256": "dc75f688695e730957cbf490e299c3582982eda3a3c3f4aae0c1ac6a050825f9"
+    },
+    "candidate-ui/source-overlays/crates/deadpan-core/src/command.rs.txt": {
+      "bytes": 154563,
+      "sha256": "37e364c3e02ab670d372a7bdc37f7d53b9979347b5821303047a4fef61b563b5"
+    },
+    "candidate-ui/source-overlays/crates/deadpan-core/src/sound_clock/grouping/ungroup.rs.txt": {
+      "bytes": 9588,
+      "sha256": "44f9a83822c73be79af65637e0dcd550f13a393f75e225331cf396291c6ec30b"
+    },
+    "candidate-ui/source-overlays/crates/deadpan-core/src/sound_clock/grouping.rs.txt": {
+      "bytes": 13062,
+      "sha256": "7413968e5dddf5a801b1e8257d8eda012ba077c0a8d8991d2fac116627013da1"
+    },
+    "candidate-ui/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs.txt": {
+      "bytes": 18083,
+      "sha256": "fc3f4d670cacd7abf4fd54b45b1b2a115394232227fb934884947149f4918fed"
+    },
+    "candidate-ui/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits.rs.txt": {
+      "bytes": 26456,
+      "sha256": "aeb12e6247a8138b5776a41c506c9d503a2ce5b9b379197f2632478b4a0f400b"
+    },
+    "candidate-ui/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/introduced_groups.rs.txt": {
+      "bytes": 28486,
+      "sha256": "9640ba0bc0c9606bb48ab7684972eaac6f4e9fffaa800ab42c068a5d7dbd22ff"
+    },
+    "candidate-ui/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 10588,
+      "sha256": "673f01124385f15a722ad57258a511b3cc4169bc5fc1e8dd70946d089fdff13d"
+    },
+    "candidate-ui/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks.rs.txt": {
+      "bytes": 23513,
+      "sha256": "9840671aff7a892537324177fe06df3094219ba71d91b9c66ebb64ceef9ca7bf"
+    },
+    "debug-media/debug-media-binaries.json": {
+      "bytes": 1324,
+      "sha256": "bc3104617086b5000031c6fda09b69912746219666d8a1bd081b016ba9ea5eed"
+    },
+    "debug-media/debug-media-build-receipt.json": {
+      "bytes": 344,
+      "sha256": "2e4a0a917fc878518862cb506b5ea57fbe78220ee92be2d004bc3fc813a0501c"
+    },
+    "debug-media/debug-media-build.log": {
+      "bytes": 1193,
+      "sha256": "f1bb6b5c33906fb365562f0e2de686570d6136f817b840b54ef7006cea9d1149"
+    },
+    "debug-media/debug-media-list.log": {
+      "bytes": 250,
+      "sha256": "af1552d98b3ebec7a1d451a2e66d6d2add673165c04895b6401a6d190055551b"
+    },
+    "debug-media/debug-media-lock.json": {
+      "bytes": 583,
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+    },
+    "debug-media/debug-media-neutral-fixture.json": {
+      "bytes": 2672,
+      "sha256": "b987345b3478d26011fbe1b6e5560a4769161bda4b30cfb32f3a3393eccbcb51"
+    },
+    "debug-media/debug-media-neutral-numerical-summary.json": {
+      "bytes": 340,
+      "sha256": "f631645b845f7ccfc600ade1bb84cf77e6b3068e31241b176ee78418bb10b94c"
+    },
+    "debug-media/debug-media-neutral-receipt.json": {
+      "bytes": 559,
+      "sha256": "4f54e4127bae8fa35ce9c9f90f0751a7296ea6da61bd43466376a0c4d4b78615"
+    },
+    "debug-media/debug-media-neutral.log": {
+      "bytes": 683,
+      "sha256": "58c899f34cf47870110d6274b5e7ec83c204718735b9ccf5a8e17a15e887ef5a"
+    },
+    "debug-media/source-identities.json": {
+      "bytes": 252501,
+      "sha256": "711e314820b111f1c6d05823e262f959e2f8aff4a611892e0141f848892ee1e6"
+    },
+    "debug-media/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned/neutral_ungroup.rs.txt": {
+      "bytes": 6465,
+      "sha256": "c9b27772b24863ffc8ece167048db85d615dcbd106311bd925002865d7faa9cf"
+    },
+    "debug-media/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned.rs.txt": {
+      "bytes": 11719,
+      "sha256": "d34963063de79cea5ae712fe5a1456e85ec025a562fcd0a69ba4030ee0dd83fe"
+    },
+    "debug-media/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 21916,
+      "sha256": "d4c2ba6f31a9daddcd54342e0ae6627c470dd2afca118044af3a6e9fd8553989"
+    },
+    "debug-media/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs.txt": {
+      "bytes": 37535,
+      "sha256": "4cfe707372dcd8f4699c945e5af451098646591c115e508a88ea52f8eab8ba23"
+    },
+    "debug-media/source-overlays/crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs.txt": {
+      "bytes": 28302,
+      "sha256": "2d69409017da2c31486d2de8b059018dce398d0ffa94b53d169a572e99993cdf"
+    },
+    "debug-media/source-overlays/crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs.txt": {
+      "bytes": 9422,
+      "sha256": "13363c532b6bbcb6db246bec458c04705f458861ae0ef159ee32c1fefe28a572"
+    },
+    "debug-media/source-overlays/crates/deadpan-cli/tests/preview_export/neutral_ungroup_recipe.rs.txt": {
+      "bytes": 12406,
+      "sha256": "dc75f688695e730957cbf490e299c3582982eda3a3c3f4aae0c1ac6a050825f9"
+    },
+    "debug-media/source-overlays/crates/deadpan-core/src/command.rs.txt": {
+      "bytes": 154563,
+      "sha256": "37e364c3e02ab670d372a7bdc37f7d53b9979347b5821303047a4fef61b563b5"
+    },
+    "debug-media/source-overlays/crates/deadpan-core/src/sound_clock/grouping/ungroup.rs.txt": {
+      "bytes": 9588,
+      "sha256": "44f9a83822c73be79af65637e0dcd550f13a393f75e225331cf396291c6ec30b"
+    },
+    "debug-media/source-overlays/crates/deadpan-core/src/sound_clock/grouping.rs.txt": {
+      "bytes": 13062,
+      "sha256": "7413968e5dddf5a801b1e8257d8eda012ba077c0a8d8991d2fac116627013da1"
+    },
+    "debug-media/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs.txt": {
+      "bytes": 18083,
+      "sha256": "fc3f4d670cacd7abf4fd54b45b1b2a115394232227fb934884947149f4918fed"
+    },
+    "debug-media/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits.rs.txt": {
+      "bytes": 26456,
+      "sha256": "aeb12e6247a8138b5776a41c506c9d503a2ce5b9b379197f2632478b4a0f400b"
+    },
+    "debug-media/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/introduced_groups.rs.txt": {
+      "bytes": 28486,
+      "sha256": "9640ba0bc0c9606bb48ab7684972eaac6f4e9fffaa800ab42c068a5d7dbd22ff"
+    },
+    "debug-media/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 10588,
+      "sha256": "673f01124385f15a722ad57258a511b3cc4169bc5fc1e8dd70946d089fdff13d"
+    },
+    "debug-media/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks.rs.txt": {
+      "bytes": 23513,
+      "sha256": "9840671aff7a892537324177fe06df3094219ba71d91b9c66ebb64ceef9ca7bf"
+    },
+    "host.json": {
+      "bytes": 338,
+      "sha256": "472a5e4df7f7953163e5e498edc07e126ddfc27b17ca753b99665300af03014a"
+    },
+    "initial-strict/initial-strict-check-receipt.json": {
+      "bytes": 187,
+      "sha256": "9e3a8ad243f96030837d8d8b31a6bf7a84254f7a8c66c39051637b0c8c3c4767"
+    },
+    "initial-strict/initial-strict-check.log": {
+      "bytes": 2500,
+      "sha256": "06af222ebbf81d7984de6aea69315ef32d7e0d9a4f41872446eae9e4b0c3853b"
+    },
+    "initial-strict/initial-strict-inputs.json": {
+      "bytes": 583,
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+    },
+    "initial-strict/source-identities.json": {
+      "bytes": 252501,
+      "sha256": "d826db3580ec6b6745adc667139b3ea8e708b1a3b5744feaf39696c7cac200b6"
+    },
+    "initial-strict/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned/neutral_ungroup.rs.txt": {
+      "bytes": 6465,
+      "sha256": "c9b27772b24863ffc8ece167048db85d615dcbd106311bd925002865d7faa9cf"
+    },
+    "initial-strict/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned.rs.txt": {
+      "bytes": 11719,
+      "sha256": "d34963063de79cea5ae712fe5a1456e85ec025a562fcd0a69ba4030ee0dd83fe"
+    },
+    "initial-strict/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 21841,
+      "sha256": "215521becc8501fb977b0a8421ae3d7b9aecf8d7db59de53f24e7c6620550b6a"
+    },
+    "initial-strict/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs.txt": {
+      "bytes": 37535,
+      "sha256": "4cfe707372dcd8f4699c945e5af451098646591c115e508a88ea52f8eab8ba23"
+    },
+    "initial-strict/source-overlays/crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs.txt": {
+      "bytes": 28302,
+      "sha256": "2d69409017da2c31486d2de8b059018dce398d0ffa94b53d169a572e99993cdf"
+    },
+    "initial-strict/source-overlays/crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs.txt": {
+      "bytes": 9422,
+      "sha256": "13363c532b6bbcb6db246bec458c04705f458861ae0ef159ee32c1fefe28a572"
+    },
+    "initial-strict/source-overlays/crates/deadpan-cli/tests/preview_export/neutral_ungroup_recipe.rs.txt": {
+      "bytes": 12406,
+      "sha256": "dc75f688695e730957cbf490e299c3582982eda3a3c3f4aae0c1ac6a050825f9"
+    },
+    "initial-strict/source-overlays/crates/deadpan-core/src/command.rs.txt": {
+      "bytes": 154563,
+      "sha256": "37e364c3e02ab670d372a7bdc37f7d53b9979347b5821303047a4fef61b563b5"
+    },
+    "initial-strict/source-overlays/crates/deadpan-core/src/sound_clock/grouping/ungroup.rs.txt": {
+      "bytes": 9588,
+      "sha256": "44f9a83822c73be79af65637e0dcd550f13a393f75e225331cf396291c6ec30b"
+    },
+    "initial-strict/source-overlays/crates/deadpan-core/src/sound_clock/grouping.rs.txt": {
+      "bytes": 13062,
+      "sha256": "7413968e5dddf5a801b1e8257d8eda012ba077c0a8d8991d2fac116627013da1"
+    },
+    "initial-strict/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs.txt": {
+      "bytes": 18072,
+      "sha256": "38ee2d14bdf5fc38ab392a360fa1d5261f50e7944fa9eae626c9f76f39706f2f"
+    },
+    "initial-strict/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits.rs.txt": {
+      "bytes": 26456,
+      "sha256": "aeb12e6247a8138b5776a41c506c9d503a2ce5b9b379197f2632478b4a0f400b"
+    },
+    "initial-strict/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/introduced_groups.rs.txt": {
+      "bytes": 28486,
+      "sha256": "9640ba0bc0c9606bb48ab7684972eaac6f4e9fffaa800ab42c068a5d7dbd22ff"
+    },
+    "initial-strict/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 10588,
+      "sha256": "673f01124385f15a722ad57258a511b3cc4169bc5fc1e8dd70946d089fdff13d"
+    },
+    "initial-strict/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks.rs.txt": {
+      "bytes": 23513,
+      "sha256": "9840671aff7a892537324177fe06df3094219ba71d91b9c66ebb64ceef9ca7bf"
+    },
+    "media/debug-media/neutral/fixture/aligned-before-document.json": {
+      "bytes": 6480,
+      "sha256": "82c450f24e72bea6ba0ce2643fda7eaf46a07439196ace68727104c1714c2b38"
+    },
+    "media/debug-media/neutral/fixture/aligned-before-pcm.json.gz": {
+      "bytes": 132717,
+      "sha256": "3c2de96de8f956649eb383c65f70e8f10bfb1d509ee098954d43d67c0b4b7df5"
+    },
+    "media/debug-media/neutral/fixture/aligned-event-control.json": {
+      "bytes": 295,
+      "sha256": "08e78cf9bc180874348d1cc2e3088f66f203837c79b6079cddb882e398995d91"
+    },
+    "media/debug-media/neutral/fixture/aligned-event-off-document.json": {
+      "bytes": 5621,
+      "sha256": "d19f86bad29894ad31ef80b1b762e1d4d71a32f42a8f492f264c13756171b9fe"
+    },
+    "media/debug-media/neutral/fixture/aligned-event-off-pcm.json.gz": {
+      "bytes": 93315,
+      "sha256": "5fe1a0d2152fe3dc3c0922d375cfa3a443b1874b6d78a46496e7a8d8732ede2f"
+    },
+    "media/debug-media/neutral/fixture/aligned-group-macro.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "media/debug-media/neutral/fixture/aligned-group-macro.stdout.json": {
+      "bytes": 2118,
+      "sha256": "9725ff9f93dd641f079e19ec07a08215f7046bfd0c04590781bf8a1992e5bf39"
+    },
+    "media/debug-media/neutral/fixture/macro-request.json": {
+      "bytes": 324,
+      "sha256": "012f4444aa3ecb7381204198a6f25db55f4bc5086e00f2cc67ec74561b8a3b8d"
+    },
+    "media/debug-media/neutral/fixture/neutral-ungroup-after-document.json": {
+      "bytes": 6551,
+      "sha256": "122949932295ac143f56abbf8446f169380c1719cfe6ff8bd83a5760d7e85cd9"
+    },
+    "media/debug-media/neutral/fixture/neutral-ungroup-after-pcm.json.gz": {
+      "bytes": 132443,
+      "sha256": "98a2021d26543d8b8ee9349ea84116a5cc11c1dea432c319d1ddde3f76fb7122"
+    },
+    "media/debug-media/neutral/fixture/neutral-ungroup-before-document.json": {
+      "bytes": 6767,
+      "sha256": "98d13744867271fbd353199af4d71b8e617bb8fbf4ee2d0536564f6760a8e7d2"
+    },
+    "media/debug-media/neutral/fixture/neutral-ungroup-before-pcm.json.gz": {
+      "bytes": 132443,
+      "sha256": "98a2021d26543d8b8ee9349ea84116a5cc11c1dea432c319d1ddde3f76fb7122"
+    },
+    "media/debug-media/neutral/fixture/neutral-ungroup-dry-run.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "media/debug-media/neutral/fixture/neutral-ungroup-dry-run.stdout.json": {
+      "bytes": 1961,
+      "sha256": "22bffc5e9526db5db6b017b9467c839a9635d279078efe3a169c7076116befad"
+    },
+    "media/debug-media/neutral/fixture/neutral-ungroup-history.json": {
+      "bytes": 591,
+      "sha256": "640eee3295e1d2fdbfbc891e8065c295fb58b8a0058624fcb3d10b6be9ddaf3b"
+    },
+    "media/debug-media/neutral/fixture/neutral-ungroup-later-edit-control.json": {
+      "bytes": 265,
+      "sha256": "ef3dd90e0d3395e72a83a67b9688a98af7a33eeb737385c306a38c8b6172bcd6"
+    },
+    "media/debug-media/neutral/fixture/neutral-ungroup-macro.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "media/debug-media/neutral/fixture/neutral-ungroup-macro.stdout.json": {
+      "bytes": 1994,
+      "sha256": "8ca023bdf8213c8dcf38cfe8c9c94787045b15e364fe9b52fa5d477fbd08a4a9"
+    },
+    "media/debug-media/neutral/fixture/neutral-ungroup-portable-copy.json": {
+      "bytes": 732,
+      "sha256": "9887cd764be66e6cfd8d37cf383571bdee5c99c3f26898dec68d90eba784794e"
+    },
+    "media/debug-media/neutral/fixture/request-neutral-sound-ungroup-r01.json": {
+      "bytes": 373,
+      "sha256": "d3dccee8bed88ab069f88986b96fba325536137eb684f1ae132da41471a4d359"
+    },
+    "media/debug-media/neutral/fixture/request-neutral-sound-ungroup-r02.json": {
+      "bytes": 463,
+      "sha256": "71dcb3063bb52e05674fe68710ee6cebd510d99f20e4c154107f228f57220a58"
+    },
+    "media/debug-media/neutral/fixture/request-neutral-sound-ungroup-r03.json": {
+      "bytes": 451,
+      "sha256": "7f923be46d8557a04544154fa86cf7dacfdae5db3a62e2f2a54a60d7d21f6316"
+    },
+    "media/debug-media/neutral/fixture/request-neutral-sound-ungroup-r04.json": {
+      "bytes": 304,
+      "sha256": "bdda90fc294d8fc1e298ce039863bcd952b3eea4fb6475c8e95cc7d38b9c764e"
+    },
+    "media/debug-media/neutral/fixture/request-neutral-sound-ungroup-r05.json": {
+      "bytes": 332,
+      "sha256": "f7de2d1c23ed269e9d9b983a07108f56f9e8a0b4be3c9950b87346666532d04c"
+    },
+    "media/debug-media/neutral/fixture/request-neutral-sound-ungroup-r06.json": {
+      "bytes": 800,
+      "sha256": "3fa2c633acdda671ae5d84f07f5e1d2fab36301b663cd5077e3b078c53176c52"
+    },
+    "media/debug-media/neutral/fixture/request-neutral-sound-ungroup-r07.json": {
+      "bytes": 391,
+      "sha256": "d5a1a52b6e2b6ad32c78307dbb2c38029b3e62f453799471dd9aa7f34c653d0a"
+    },
+    "media/debug-media/neutral/fixture/request-neutral-sound-ungroup-r08.json": {
+      "bytes": 270,
+      "sha256": "45694f4851177bef3a002d25a77f9b2a9cef5de679479ce08052a47884763568"
+    },
+    "media/debug-media/neutral/fixture/request-neutral-sound-ungroup-r09.json": {
+      "bytes": 291,
+      "sha256": "4f6a60da60a4163f058ba5cb527dce1a44b9d78f9d5a662b239f17ce39692097"
+    },
+    "media/debug-media/neutral/fixture/request-neutral-sound-ungroup-r10.json": {
+      "bytes": 244,
+      "sha256": "7f19ff7ea7f157e41d51cc12529be60516483dfc0d3f52cc6b4813b75438cf9b"
+    },
+    "media/debug-media/neutral/fixture/request-neutral-sound-ungroup-r11.json": {
+      "bytes": 862,
+      "sha256": "1f7c2f940c3c1d5a13668b02891fa0b8700dfb2e483486e04e95cc3a51e3a6d2"
+    },
+    "media/debug-media/neutral/neutral-sound-ungroup.mp4": {
+      "bytes": 7857,
+      "sha256": "382250d8b55ab1c60e8c8be953451266c09d0cefa6d37e14d19637b5d6d9156d"
+    },
+    "media/debug-media/neutral/portable-package-checksums.json": {
+      "bytes": 2057,
+      "sha256": "faa25e602db7ed62a9a30027128690d18bef13955fed11e2f7fbc32852c3fef7"
+    },
+    "media/debug-media/neutral/portable-package.tar.gz": {
+      "bytes": 65845,
+      "sha256": "15841eb3d6aae256c60a3062286870b2d525d7ad70c47e8a30a6c89df283e2e6"
+    },
+    "media/debug-media/neutral/summary.json": {
+      "bytes": 2673,
+      "sha256": "4ab212d3dafc18f51a1113ffb4fbca04cdcc34183688b8b0a72fe24ddd992a09"
+    },
+    "media/release-media/aligned/aligned-sound-scope.mp4": {
+      "bytes": 14718,
+      "sha256": "f5772a3c060939317519a33004e91b25cc0a3b0870882f06883d8a1498902d74"
+    },
+    "media/release-media/aligned/fixture/aligned-before-document.json": {
+      "bytes": 6470,
+      "sha256": "85f29dc0331718aea7697bbe354203a5b9d6d2326bd348e26d83c31ecf240a76"
+    },
+    "media/release-media/aligned/fixture/aligned-before-pcm.json.gz": {
+      "bytes": 132717,
+      "sha256": "3c2de96de8f956649eb383c65f70e8f10bfb1d509ee098954d43d67c0b4b7df5"
+    },
+    "media/release-media/aligned/fixture/aligned-copy-macro.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "media/release-media/aligned/fixture/aligned-copy-macro.stdout.json": {
+      "bytes": 4099,
+      "sha256": "141466dd4645664a9fc126baf14086120f57af68cc8aa56612b748fc1b1ebbcb"
+    },
+    "media/release-media/aligned/fixture/aligned-event-control.json": {
+      "bytes": 295,
+      "sha256": "b945bf42ccd726b188869dfdf484a1c9397aed65fa54774f1a921fc9b08d9ed2"
+    },
+    "media/release-media/aligned/fixture/aligned-event-off-document.json": {
+      "bytes": 5611,
+      "sha256": "7ad14dcd6dc3a0affdc790c5e0dac91fe3d423a53b6b7e50d458932266afbf33"
+    },
+    "media/release-media/aligned/fixture/aligned-event-off-pcm.json.gz": {
+      "bytes": 93315,
+      "sha256": "5fe1a0d2152fe3dc3c0922d375cfa3a443b1874b6d78a46496e7a8d8732ede2f"
+    },
+    "media/release-media/aligned/fixture/aligned-final-document.json": {
+      "bytes": 48315,
+      "sha256": "d5f3ccbb9f120a25271bd8b02610af6cc9935d5c578f0dac86101612f517db06"
+    },
+    "media/release-media/aligned/fixture/aligned-final-pcm.json.gz": {
+      "bytes": 374521,
+      "sha256": "2641b75a3767c61c580237e615556928fef659837cd7c7ac25d0e9d9e73ea9cf"
+    },
+    "media/release-media/aligned/fixture/aligned-group-macro.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "media/release-media/aligned/fixture/aligned-group-macro.stdout.json": {
+      "bytes": 2118,
+      "sha256": "c13c98d029b516a7fa866e8079453fc3df38ab18abfec8cf26ac89af5994ff77"
+    },
+    "media/release-media/aligned/fixture/aligned-history-evidence.json": {
+      "bytes": 1096,
+      "sha256": "47f99ba92fba22d824fcdf05c651225ceaf8a1086c3d484748e78ce918f81075"
+    },
+    "media/release-media/aligned/fixture/aligned-moved-document.json": {
+      "bytes": 22741,
+      "sha256": "4eb679757c9f1bc5069349657f9878f55a0cd97281f985ecd63e4d156b4d21df"
+    },
+    "media/release-media/aligned/fixture/aligned-moved-pcm.json.gz": {
+      "bytes": 196666,
+      "sha256": "d7560aea0b3eaf2e3fe2f0d34201635408f8a22e114c50b6ad9c966cabd5360a"
+    },
+    "media/release-media/aligned/fixture/aligned-portable-copy.json": {
+      "bytes": 734,
+      "sha256": "0bb9788257b3441b22ae0e94cc60bb614891109a65998ae49051ff044394307b"
+    },
+    "media/release-media/aligned/fixture/aligned-split-document.json": {
+      "bytes": 13407,
+      "sha256": "7f340cffbebc4468ddc11e4b4f47fb3e6b4d83db4868d37eb33ba97280405bfd"
+    },
+    "media/release-media/aligned/fixture/aligned-treated-document.json": {
+      "bytes": 6821,
+      "sha256": "4f1390e50e65a25c36000cd32483ce573c6e2310d33f9a1632a06ab72dc48930"
+    },
+    "media/release-media/aligned/fixture/aligned-treated-pcm.json.gz": {
+      "bytes": 196563,
+      "sha256": "8f5af18bea4c97ade7c7221d51ea5951c827250c18c10f078b45b489d5cde117"
+    },
+    "media/release-media/aligned/fixture/macro-request.json": {
+      "bytes": 479,
+      "sha256": "85f84c3222021cdb4520c0ba58a654d5666316dbcc464fee49fde777e6c43f8f"
+    },
+    "media/release-media/aligned/fixture/request-aligned-sound-scope-r01.json": {
+      "bytes": 369,
+      "sha256": "bd245c5927b15bfd124ec52ce0e1279b062a01a99479c4d21a1d2cb166af01cc"
+    },
+    "media/release-media/aligned/fixture/request-aligned-sound-scope-r02.json": {
+      "bytes": 461,
+      "sha256": "0725afeaff1f5431a9f2a4313426edfe164528cca13ba17f6315998c597b567e"
+    },
+    "media/release-media/aligned/fixture/request-aligned-sound-scope-r03.json": {
+      "bytes": 447,
+      "sha256": "ad72e725c2389c0eee3fc5ef570a91d800c583342def23268f462f72b24a33b5"
+    },
+    "media/release-media/aligned/fixture/request-aligned-sound-scope-r04.json": {
+      "bytes": 300,
+      "sha256": "95dca869f58721b26b20158b60d01d8f1bad3bb24f0c17862ab39a799f57c37f"
+    },
+    "media/release-media/aligned/fixture/request-aligned-sound-scope-r05.json": {
+      "bytes": 328,
+      "sha256": "417bd26af71a6700c7e4f6454aa75118d02a838666a96a16800621e1f454d51a"
+    },
+    "media/release-media/aligned/fixture/request-aligned-sound-scope-r06.json": {
+      "bytes": 796,
+      "sha256": "31d545d937dfc294c1b85a3d444bd57e0d05a11938b221d9c2689b015e0256f9"
+    },
+    "media/release-media/aligned/fixture/request-aligned-sound-scope-r07.json": {
+      "bytes": 385,
+      "sha256": "716de7ab8af8c737cb3e12d40425b9deddd61066f7c73d9f627d8a70ee23facc"
+    },
+    "media/release-media/aligned/fixture/request-aligned-sound-scope-r08.json": {
+      "bytes": 266,
+      "sha256": "6b8881da2a15ef4ee9cc4f98db19bfa67b1af259c1168fc77d9d63751dcca1de"
+    },
+    "media/release-media/aligned/fixture/request-aligned-sound-scope-r09.json": {
+      "bytes": 366,
+      "sha256": "b88f473aba80d69befaf02e36ea0ff0b82c0391bfdebfba82df05742159ef37a"
+    },
+    "media/release-media/aligned/fixture/request-aligned-sound-scope-r10.json": {
+      "bytes": 394,
+      "sha256": "f7b91237680026150a207aa160dc4fe16c8eb3665f9b1f13dc33fbe82e4ace2c"
+    },
+    "media/release-media/aligned/fixture/request-aligned-sound-scope-r11.json": {
+      "bytes": 668,
+      "sha256": "6f3a8146ac740b29f89e55f5da86395527d497c9cc5e596862d5d49a10530170"
+    },
+    "media/release-media/aligned/fixture/request-aligned-sound-scope-r12.json": {
+      "bytes": 620,
+      "sha256": "74b101a31ab70043e87b31654dc32aa07c19cfaf175872a96841425c0efd91f6"
+    },
+    "media/release-media/aligned/portable-package-checksums.json": {
+      "bytes": 2096,
+      "sha256": "7179cf77a8be504062da4fb255c5fbe609c225fd4ed7c8295507e132ec984757"
+    },
+    "media/release-media/aligned/portable-package.tar.gz": {
+      "bytes": 84475,
+      "sha256": "2eb3d44d4fed316d222e2c0b5399cc6742d78ec1898a3e4522c2c083de287bb1"
+    },
+    "media/release-media/aligned/summary.json": {
+      "bytes": 2748,
+      "sha256": "23cd4ff46268afb5bc18b4af89d436d0b2eef451d1b82dc37ccf94c18df01a64"
+    },
+    "media/release-media/neutral/fixture/aligned-before-document.json": {
+      "bytes": 6480,
+      "sha256": "7dcc2d3a27ad239a6255660a027ac4b000da38df6c5c9aad7d9e29d0e129c4e0"
+    },
+    "media/release-media/neutral/fixture/aligned-before-pcm.json.gz": {
+      "bytes": 132717,
+      "sha256": "3c2de96de8f956649eb383c65f70e8f10bfb1d509ee098954d43d67c0b4b7df5"
+    },
+    "media/release-media/neutral/fixture/aligned-event-control.json": {
+      "bytes": 295,
+      "sha256": "bef93852ad2c33b4af84dd4e409518c3b5ab9101a7e54dd1a4b2e026aa390a47"
+    },
+    "media/release-media/neutral/fixture/aligned-event-off-document.json": {
+      "bytes": 5621,
+      "sha256": "129e9a21d3571b719295289f849a0b7adf6ba36748fcaf2d7fb551ed5a216790"
+    },
+    "media/release-media/neutral/fixture/aligned-event-off-pcm.json.gz": {
+      "bytes": 93315,
+      "sha256": "5fe1a0d2152fe3dc3c0922d375cfa3a443b1874b6d78a46496e7a8d8732ede2f"
+    },
+    "media/release-media/neutral/fixture/aligned-group-macro.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "media/release-media/neutral/fixture/aligned-group-macro.stdout.json": {
+      "bytes": 2118,
+      "sha256": "4f267a93612355d30d128839a4dc1ff6465c1c7605430693c778381b621e97f5"
+    },
+    "media/release-media/neutral/fixture/macro-request.json": {
+      "bytes": 324,
+      "sha256": "5be12253def7eec51da00c6204d7838e70ef44393d28ad8b8032726ada5d97b3"
+    },
+    "media/release-media/neutral/fixture/neutral-ungroup-after-document.json": {
+      "bytes": 6551,
+      "sha256": "e66fa1a613535f09f33329aa6708ca9ecdcb19d1ad927c471f11142d6b0f3c24"
+    },
+    "media/release-media/neutral/fixture/neutral-ungroup-after-pcm.json.gz": {
+      "bytes": 132443,
+      "sha256": "98a2021d26543d8b8ee9349ea84116a5cc11c1dea432c319d1ddde3f76fb7122"
+    },
+    "media/release-media/neutral/fixture/neutral-ungroup-before-document.json": {
+      "bytes": 6767,
+      "sha256": "b78e65a2c3dd9a54b75ea734cdbb03c70eabb9e07b6466a76fcfc0247b85479e"
+    },
+    "media/release-media/neutral/fixture/neutral-ungroup-before-pcm.json.gz": {
+      "bytes": 132443,
+      "sha256": "98a2021d26543d8b8ee9349ea84116a5cc11c1dea432c319d1ddde3f76fb7122"
+    },
+    "media/release-media/neutral/fixture/neutral-ungroup-dry-run.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "media/release-media/neutral/fixture/neutral-ungroup-dry-run.stdout.json": {
+      "bytes": 1961,
+      "sha256": "dd39ffbe4ead627d716e99b512f78a1aa0e16d711df8e33d15d01dc383cea9b6"
+    },
+    "media/release-media/neutral/fixture/neutral-ungroup-history.json": {
+      "bytes": 591,
+      "sha256": "442e2e6f95418ffa743b2f42a4fc1cd425171ae3dbe0071a0dfb1cc10f0a494e"
+    },
+    "media/release-media/neutral/fixture/neutral-ungroup-later-edit-control.json": {
+      "bytes": 265,
+      "sha256": "ef3dd90e0d3395e72a83a67b9688a98af7a33eeb737385c306a38c8b6172bcd6"
+    },
+    "media/release-media/neutral/fixture/neutral-ungroup-macro.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "media/release-media/neutral/fixture/neutral-ungroup-macro.stdout.json": {
+      "bytes": 1994,
+      "sha256": "8e2825995bce875d45f134f4cf1f0540adf27d262ba582cf66616132889e84d1"
+    },
+    "media/release-media/neutral/fixture/neutral-ungroup-portable-copy.json": {
+      "bytes": 732,
+      "sha256": "6b8013ff30e199126af7aff205860db9eb1f49028851efae5bd327533e9f57ee"
+    },
+    "media/release-media/neutral/fixture/request-neutral-sound-ungroup-r01.json": {
+      "bytes": 373,
+      "sha256": "8407d1caeb647294517e49a792bec548642d166b4984717deb096820b86a888d"
+    },
+    "media/release-media/neutral/fixture/request-neutral-sound-ungroup-r02.json": {
+      "bytes": 463,
+      "sha256": "2ac030e110b802ace11906465edb4914370c2e446c9e3048f01c381498f7e972"
+    },
+    "media/release-media/neutral/fixture/request-neutral-sound-ungroup-r03.json": {
+      "bytes": 451,
+      "sha256": "af9f822b3b4325f5927da9f9e50f9948c84a463be3500e7dec8a0f0bed87854a"
+    },
+    "media/release-media/neutral/fixture/request-neutral-sound-ungroup-r04.json": {
+      "bytes": 304,
+      "sha256": "0c34b918a37a782f07cc67f99f97ff0ff533f86d537a26c9b0886744875bdd02"
+    },
+    "media/release-media/neutral/fixture/request-neutral-sound-ungroup-r05.json": {
+      "bytes": 332,
+      "sha256": "ea5e4751adf85d83394a0f57f8fdff46ffa44c4c1c73efc744afbda15f16111c"
+    },
+    "media/release-media/neutral/fixture/request-neutral-sound-ungroup-r06.json": {
+      "bytes": 800,
+      "sha256": "d574ea96f9952a070ef183a55b7ba2678bf5c15c08b581fc0e68eedd7b20ca77"
+    },
+    "media/release-media/neutral/fixture/request-neutral-sound-ungroup-r07.json": {
+      "bytes": 391,
+      "sha256": "154fab1a9356c3b5cfa82bcb1f68e52ef605c5b13a71c5a7f87eb3e793f799c7"
+    },
+    "media/release-media/neutral/fixture/request-neutral-sound-ungroup-r08.json": {
+      "bytes": 270,
+      "sha256": "09e2c8e49fb5cc084be89d062a00a279cb2f76aded8e3f0869d2de98ecf39a65"
+    },
+    "media/release-media/neutral/fixture/request-neutral-sound-ungroup-r09.json": {
+      "bytes": 291,
+      "sha256": "bc35cffc642d3801b499c93ae9df1b103db8a04bdf18a79f6f22d2bfeddec511"
+    },
+    "media/release-media/neutral/fixture/request-neutral-sound-ungroup-r10.json": {
+      "bytes": 244,
+      "sha256": "0d312830d63fa578c4de25906d7164b87a8b7d86393a637707ab436e604e725a"
+    },
+    "media/release-media/neutral/fixture/request-neutral-sound-ungroup-r11.json": {
+      "bytes": 862,
+      "sha256": "5177151c9432047a5ae27e4acc46460f43d42f110e52b814a530f2916d77512f"
+    },
+    "media/release-media/neutral/neutral-sound-ungroup.mp4": {
+      "bytes": 7857,
+      "sha256": "6185aa8154f3471927511d5a6d61dc712c925d72c7c397e9138582d208b968cf"
+    },
+    "media/release-media/neutral/portable-package-checksums.json": {
+      "bytes": 2059,
+      "sha256": "9b5902eaac3c8c3475771ea5fbd860f6cd8a1f4d884d27a06905a76c6739b08d"
+    },
+    "media/release-media/neutral/portable-package.tar.gz": {
+      "bytes": 65855,
+      "sha256": "e3b7514643c78a2c71a648d9e6a2d6142b673c4630f85ea342963ff3cc4ae452"
+    },
+    "media/release-media/neutral/summary.json": {
+      "bytes": 2673,
+      "sha256": "f238326f872db4058e241ac7580f602411d0b1cd96cf1b008bf0085dff8c4fe8"
+    },
+    "owner-portable-check/aligned-doctor.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "owner-portable-check/aligned-doctor.stdout.json": {
+      "bytes": 15571,
+      "sha256": "49b566e63417432b98515056d99f983bdb949ffcf3484906ac5d930cd22c0138"
+    },
+    "owner-portable-check/aligned-validate.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "owner-portable-check/aligned-validate.stdout.json": {
+      "bytes": 714,
+      "sha256": "c25560447b88cd23fa2ad6427c2ed07fadd55167c0d163d76f2c174e84460c4a"
+    },
+    "owner-portable-check/neutral-doctor.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "owner-portable-check/neutral-doctor.stdout.json": {
+      "bytes": 15561,
+      "sha256": "969d46f6cd4a945f10c6dcd08d5e2bbdd0074bb31783650613d1f9f693e9e3d7"
+    },
+    "owner-portable-check/neutral-validate.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "owner-portable-check/neutral-validate.stdout.json": {
+      "bytes": 713,
+      "sha256": "73b70ed7eb3a1d0cb82daeee857316d8f874ff66200501182f5efcc619a3dbef"
+    },
+    "owner-portable-check/receipt.json": {
+      "bytes": 2708,
+      "sha256": "a222a61556ea6dc384c44be3e78c4497cf865130fd388a5f1e68ffb3b6a184a7"
+    },
+    "procedure/baseline-pcm-setup-failure.json": {
+      "bytes": 210,
+      "sha256": "c64795325ac668e16b22e0a675c39eb0ba7a241b74dad26585a1bc2a342c8410"
+    },
+    "procedure/broad-isolated-leak-receipt.json": {
+      "bytes": 18042,
+      "sha256": "02f1042f3bc7a97271d98e33779206442c3e21bf24f86babb649184f35ca8fc2"
+    },
+    "procedure/broad-isolated-leak.log": {
+      "bytes": 705,
+      "sha256": "f6b2acbdff9d8619d2215a01f0c167e76ba17539635acdba7b59d87ae98b7544"
+    },
+    "procedure/candidate-pcm-numerical-summary.json": {
+      "bytes": 2732,
+      "sha256": "cb1d31a421162d66244b9e8a01bc56ef6d4fe8565c87a2ffcb880ab10a0ad51b"
+    },
+    "procedure/check_leak.py": {
+      "bytes": 1792,
+      "sha256": "4e73d474939b4369276cd6ef083be47263951fd9af5c1b48b607a0cff84d59e7"
+    },
+    "procedure/finish-qualification-receipt.json": {
+      "bytes": 842,
+      "sha256": "d10ced472586d5873555593878fcebecbd215e81df504ab96517e9fdc733d11f"
+    },
+    "procedure/finish_qualification.py": {
+      "bytes": 734,
+      "sha256": "9ff9c7f184a8863a7774d9ea68ecda1d6c919445e71c8fcc8509d34d9295a528"
+    },
+    "procedure/freeze.py": {
+      "bytes": 974,
+      "sha256": "43c2336c850a15785d8fb1d63d6d1737daa42ee7154aa58d486639c236036f2d"
+    },
+    "procedure/guard.py": {
+      "bytes": 687,
+      "sha256": "fdf628482c5950367a8edfff50020831615b5aa7b626552338e69c6947e78d51"
+    },
+    "procedure/matrix-receipt.json": {
+      "bytes": 445,
+      "sha256": "2d01cb6f15ca20577b7ed45df5e19efa8583e90dc58681c1c063f692df12a764"
+    },
+    "procedure/qualify.py": {
+      "bytes": 5526,
+      "sha256": "dbd9f8b055c647ebe8858f03e0c01b5edab926281929e8cba9b17ca24d6ef724"
+    },
+    "procedure/qualify_native_media.py": {
+      "bytes": 4870,
+      "sha256": "43c6da3175430c7548313983eff235554a9ceee69d5875887d82b9d8159d2a1e"
+    },
+    "procedure/retain_evidence.py": {
+      "bytes": 4794,
+      "sha256": "f62eee7d581a6c76dc1247d29000785345c5b6384e4bbb22f75beed806b0f309"
+    },
+    "procedure/retain_media_and_check.py": {
+      "bytes": 4237,
+      "sha256": "0706a2432ff98c348f9933d182fb5711cf502726315237c2058db6412cf35869"
+    },
+    "procedure/reviews.json": {
+      "bytes": 1076,
+      "sha256": "a305416e7f1e1873de04f2c608b50d4f653987acae50ebad92f655df4df843d1"
+    },
+    "procedure/run_baseline_pcm.py": {
+      "bytes": 2906,
+      "sha256": "db458dd36d3563e01947d1e905a228487e859695fe37505f5ed626de316d7c17"
+    },
+    "procedure/run_matrix.py": {
+      "bytes": 594,
+      "sha256": "f9ba601b5cc07acfeacfef3e9baaf1dba9ecc25908ff4e9a5973ddbc10860f21"
+    },
+    "release-media/release-media-aligned-fixture.json": {
+      "bytes": 2747,
+      "sha256": "68ca1dba4d65ea451f4542aa2bc4a8e151192d92350b02523e78061101bbedf2"
+    },
+    "release-media/release-media-aligned-receipt.json": {
+      "bytes": 570,
+      "sha256": "947aa47e733c16d3673ddb028d35b2443d5a13541a17c3f9d1f623552692ee9f"
+    },
+    "release-media/release-media-aligned.log": {
+      "bytes": 1227,
+      "sha256": "1cd580a61243bf189a4dd14117406356f686060301ee3445132c0609fbb59b00"
+    },
+    "release-media/release-media-binaries.json": {
+      "bytes": 1352,
+      "sha256": "4987e5455e1b354ace59dafe41e52d47019a58228f30a3367a4b0e21cb501a32"
+    },
+    "release-media/release-media-build-receipt.json": {
+      "bytes": 365,
+      "sha256": "4f2c86202d241c5e79b73f09b3474a46faa63f43bed8bf645b091f19ddd9dbc3"
+    },
+    "release-media/release-media-build.log": {
+      "bytes": 1433,
+      "sha256": "1cef71f5cd228b0b7b32cd3924070ea01777cb15bb1d6f187bf34cad8e00fd1f"
+    },
+    "release-media/release-media-list.log": {
+      "bytes": 254,
+      "sha256": "8d38bbe1eab5e908f255e3b71259a6c146acb947dc8c9dfdbbad5f8545e340bf"
+    },
+    "release-media/release-media-lock.json": {
+      "bytes": 583,
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+    },
+    "release-media/release-media-neutral-fixture.json": {
+      "bytes": 2672,
+      "sha256": "6b70cf196ce2bccbc6686b539097cbf04c251a9bfb7dc3401efedb774d958fe6"
+    },
+    "release-media/release-media-neutral-numerical-summary.json": {
+      "bytes": 342,
+      "sha256": "8e15ff851f23abcc1af66c72788ddcacb3a45d20711bc3c21fbf67a04c5d53d0"
+    },
+    "release-media/release-media-neutral-receipt.json": {
+      "bytes": 563,
+      "sha256": "b288ae7761cdeb4e5e8d94e956d8f789973c0ac42736666a7613ed86e17c138b"
+    },
+    "release-media/release-media-neutral.log": {
+      "bytes": 687,
+      "sha256": "15206b708f22dc0b54864821100fa4f558a92f0ecc6533e3e6ad511711408be0"
+    },
+    "release-media/source-identities.json": {
+      "bytes": 252501,
+      "sha256": "d11a25b7b644785e860b4e441dab1a6749b620bf6645651b216bb496b4a13893"
+    },
+    "release-media/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned/neutral_ungroup.rs.txt": {
+      "bytes": 6465,
+      "sha256": "c9b27772b24863ffc8ece167048db85d615dcbd106311bd925002865d7faa9cf"
+    },
+    "release-media/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned.rs.txt": {
+      "bytes": 11719,
+      "sha256": "d34963063de79cea5ae712fe5a1456e85ec025a562fcd0a69ba4030ee0dd83fe"
+    },
+    "release-media/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 21916,
+      "sha256": "d4c2ba6f31a9daddcd54342e0ae6627c470dd2afca118044af3a6e9fd8553989"
+    },
+    "release-media/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs.txt": {
+      "bytes": 37535,
+      "sha256": "4cfe707372dcd8f4699c945e5af451098646591c115e508a88ea52f8eab8ba23"
+    },
+    "release-media/source-overlays/crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs.txt": {
+      "bytes": 28302,
+      "sha256": "2d69409017da2c31486d2de8b059018dce398d0ffa94b53d169a572e99993cdf"
+    },
+    "release-media/source-overlays/crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs.txt": {
+      "bytes": 9422,
+      "sha256": "13363c532b6bbcb6db246bec458c04705f458861ae0ef159ee32c1fefe28a572"
+    },
+    "release-media/source-overlays/crates/deadpan-cli/tests/preview_export/neutral_ungroup_recipe.rs.txt": {
+      "bytes": 12406,
+      "sha256": "dc75f688695e730957cbf490e299c3582982eda3a3c3f4aae0c1ac6a050825f9"
+    },
+    "release-media/source-overlays/crates/deadpan-core/src/command.rs.txt": {
+      "bytes": 154563,
+      "sha256": "37e364c3e02ab670d372a7bdc37f7d53b9979347b5821303047a4fef61b563b5"
+    },
+    "release-media/source-overlays/crates/deadpan-core/src/sound_clock/grouping/ungroup.rs.txt": {
+      "bytes": 9588,
+      "sha256": "44f9a83822c73be79af65637e0dcd550f13a393f75e225331cf396291c6ec30b"
+    },
+    "release-media/source-overlays/crates/deadpan-core/src/sound_clock/grouping.rs.txt": {
+      "bytes": 13062,
+      "sha256": "7413968e5dddf5a801b1e8257d8eda012ba077c0a8d8991d2fac116627013da1"
+    },
+    "release-media/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs.txt": {
+      "bytes": 18083,
+      "sha256": "fc3f4d670cacd7abf4fd54b45b1b2a115394232227fb934884947149f4918fed"
+    },
+    "release-media/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits.rs.txt": {
+      "bytes": 26456,
+      "sha256": "aeb12e6247a8138b5776a41c506c9d503a2ce5b9b379197f2632478b4a0f400b"
+    },
+    "release-media/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/introduced_groups.rs.txt": {
+      "bytes": 28486,
+      "sha256": "9640ba0bc0c9606bb48ab7684972eaac6f4e9fffaa800ab42c068a5d7dbd22ff"
+    },
+    "release-media/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 10588,
+      "sha256": "673f01124385f15a722ad57258a511b3cc4169bc5fc1e8dd70946d089fdff13d"
+    },
+    "release-media/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks.rs.txt": {
+      "bytes": 23513,
+      "sha256": "9840671aff7a892537324177fe06df3094219ba71d91b9c66ebb64ceef9ca7bf"
+    },
+    "release-native/release-native-binaries.json": {
+      "bytes": 1124,
+      "sha256": "3241d32abd441843b56df989bbb0693193b50851ecad969737af7b04ddad1f7a"
+    },
+    "release-native/release-native-build-receipt.json": {
+      "bytes": 224,
+      "sha256": "88796aa03bb7eca2221025c1405c03e48fcb9937e05d0dd4498cae2448b7d8fa"
+    },
+    "release-native/release-native-build.log": {
+      "bytes": 1259,
+      "sha256": "ea2794ac09d55854cde1bb5762b980d44001e2ece7681ab7b5293ca551a20444"
+    },
+    "release-native/release-native-kestrel.json": {
+      "bytes": 161,
+      "sha256": "473ba39a195a338f17d42177928069b8032305b7a15e9b58bc2d7c6a7241c796"
+    },
+    "release-native/release-native-lock.json": {
+      "bytes": 583,
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+    },
+    "release-native/release-native-performance/report.html": {
+      "bytes": 6738410,
+      "sha256": "52b05115c2321d9878db341930a7740074b2e91dc04458dd64ab376b177b2b39"
+    },
+    "release-native/release-native-performance/report.json.gz": {
+      "bytes": 172460,
+      "sha256": "0ba2d5b78e986ceaf0c2c385963405da71e67822f132c028dffb3815fd60fe81"
+    },
+    "release-native/release-native-performance-receipt.json": {
+      "bytes": 430,
+      "sha256": "b1c240f55746edaa79e8436f10986338068a9736dd0165aad3f7e45854e3a00b"
+    },
+    "release-native/release-native-performance.log": {
+      "bytes": 120,
+      "sha256": "4af62c6db9adba3a3f022a7238f249a7f59476f3f08a09f0abead6cfe161007b"
+    },
+    "release-native/release-native-power.txt": {
+      "bytes": 107,
+      "sha256": "582c1fd411baffd9a49b7680243886a0e0e40c7f8b74a4ca56a56596355ff979"
+    },
+    "release-native/release-native-pre-performance-processes.json": {
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "release-native/source-identities.json": {
+      "bytes": 252501,
+      "sha256": "9f8e8e7b969e008568c17d7ca08acedb9e2ac65431cd935454e8f7a111b0b321"
+    },
+    "release-native/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned/neutral_ungroup.rs.txt": {
+      "bytes": 6465,
+      "sha256": "c9b27772b24863ffc8ece167048db85d615dcbd106311bd925002865d7faa9cf"
+    },
+    "release-native/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned.rs.txt": {
+      "bytes": 11719,
+      "sha256": "d34963063de79cea5ae712fe5a1456e85ec025a562fcd0a69ba4030ee0dd83fe"
+    },
+    "release-native/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 21916,
+      "sha256": "d4c2ba6f31a9daddcd54342e0ae6627c470dd2afca118044af3a6e9fd8553989"
+    },
+    "release-native/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs.txt": {
+      "bytes": 37535,
+      "sha256": "4cfe707372dcd8f4699c945e5af451098646591c115e508a88ea52f8eab8ba23"
+    },
+    "release-native/source-overlays/crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs.txt": {
+      "bytes": 28302,
+      "sha256": "2d69409017da2c31486d2de8b059018dce398d0ffa94b53d169a572e99993cdf"
+    },
+    "release-native/source-overlays/crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs.txt": {
+      "bytes": 9422,
+      "sha256": "13363c532b6bbcb6db246bec458c04705f458861ae0ef159ee32c1fefe28a572"
+    },
+    "release-native/source-overlays/crates/deadpan-cli/tests/preview_export/neutral_ungroup_recipe.rs.txt": {
+      "bytes": 12406,
+      "sha256": "dc75f688695e730957cbf490e299c3582982eda3a3c3f4aae0c1ac6a050825f9"
+    },
+    "release-native/source-overlays/crates/deadpan-core/src/command.rs.txt": {
+      "bytes": 154563,
+      "sha256": "37e364c3e02ab670d372a7bdc37f7d53b9979347b5821303047a4fef61b563b5"
+    },
+    "release-native/source-overlays/crates/deadpan-core/src/sound_clock/grouping/ungroup.rs.txt": {
+      "bytes": 9588,
+      "sha256": "44f9a83822c73be79af65637e0dcd550f13a393f75e225331cf396291c6ec30b"
+    },
+    "release-native/source-overlays/crates/deadpan-core/src/sound_clock/grouping.rs.txt": {
+      "bytes": 13062,
+      "sha256": "7413968e5dddf5a801b1e8257d8eda012ba077c0a8d8991d2fac116627013da1"
+    },
+    "release-native/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs.txt": {
+      "bytes": 18083,
+      "sha256": "fc3f4d670cacd7abf4fd54b45b1b2a115394232227fb934884947149f4918fed"
+    },
+    "release-native/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits.rs.txt": {
+      "bytes": 26456,
+      "sha256": "aeb12e6247a8138b5776a41c506c9d503a2ce5b9b379197f2632478b4a0f400b"
+    },
+    "release-native/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/introduced_groups.rs.txt": {
+      "bytes": 28486,
+      "sha256": "9640ba0bc0c9606bb48ab7684972eaac6f4e9fffaa800ab42c068a5d7dbd22ff"
+    },
+    "release-native/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 10588,
+      "sha256": "673f01124385f15a722ad57258a511b3cc4169bc5fc1e8dd70946d089fdff13d"
+    },
+    "release-native/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks.rs.txt": {
+      "bytes": 23513,
+      "sha256": "9840671aff7a892537324177fe06df3094219ba71d91b9c66ebb64ceef9ca7bf"
+    },
+    "second-strict/second-strict-check-receipt.json": {
+      "bytes": 186,
+      "sha256": "8a94dce8f0491456304216b9e036aa4039b58814da62dbf9fef364127c0fa63b"
+    },
+    "second-strict/second-strict-check.log": {
+      "bytes": 2026,
+      "sha256": "bcd0b4090515ae839db81bfdae6812a7220819a8348a5dec1ea486e3c494b9d5"
+    },
+    "second-strict/second-strict-inputs.json": {
+      "bytes": 583,
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+    },
+    "second-strict/source-identities.json": {
+      "bytes": 252501,
+      "sha256": "196587e42f57f6aaaba9a68bb74743a5cd0a5e9ef885eab752068919358e0c7f"
+    },
+    "second-strict/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned/neutral_ungroup.rs.txt": {
+      "bytes": 6465,
+      "sha256": "c9b27772b24863ffc8ece167048db85d615dcbd106311bd925002865d7faa9cf"
+    },
+    "second-strict/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned.rs.txt": {
+      "bytes": 11719,
+      "sha256": "d34963063de79cea5ae712fe5a1456e85ec025a562fcd0a69ba4030ee0dd83fe"
+    },
+    "second-strict/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 21841,
+      "sha256": "215521becc8501fb977b0a8421ae3d7b9aecf8d7db59de53f24e7c6620550b6a"
+    },
+    "second-strict/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs.txt": {
+      "bytes": 37535,
+      "sha256": "4cfe707372dcd8f4699c945e5af451098646591c115e508a88ea52f8eab8ba23"
+    },
+    "second-strict/source-overlays/crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs.txt": {
+      "bytes": 28302,
+      "sha256": "2d69409017da2c31486d2de8b059018dce398d0ffa94b53d169a572e99993cdf"
+    },
+    "second-strict/source-overlays/crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs.txt": {
+      "bytes": 9422,
+      "sha256": "13363c532b6bbcb6db246bec458c04705f458861ae0ef159ee32c1fefe28a572"
+    },
+    "second-strict/source-overlays/crates/deadpan-cli/tests/preview_export/neutral_ungroup_recipe.rs.txt": {
+      "bytes": 12406,
+      "sha256": "dc75f688695e730957cbf490e299c3582982eda3a3c3f4aae0c1ac6a050825f9"
+    },
+    "second-strict/source-overlays/crates/deadpan-core/src/command.rs.txt": {
+      "bytes": 154563,
+      "sha256": "37e364c3e02ab670d372a7bdc37f7d53b9979347b5821303047a4fef61b563b5"
+    },
+    "second-strict/source-overlays/crates/deadpan-core/src/sound_clock/grouping/ungroup.rs.txt": {
+      "bytes": 9588,
+      "sha256": "44f9a83822c73be79af65637e0dcd550f13a393f75e225331cf396291c6ec30b"
+    },
+    "second-strict/source-overlays/crates/deadpan-core/src/sound_clock/grouping.rs.txt": {
+      "bytes": 13062,
+      "sha256": "7413968e5dddf5a801b1e8257d8eda012ba077c0a8d8991d2fac116627013da1"
+    },
+    "second-strict/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs.txt": {
+      "bytes": 18083,
+      "sha256": "fc3f4d670cacd7abf4fd54b45b1b2a115394232227fb934884947149f4918fed"
+    },
+    "second-strict/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits.rs.txt": {
+      "bytes": 26456,
+      "sha256": "aeb12e6247a8138b5776a41c506c9d503a2ce5b9b379197f2632478b4a0f400b"
+    },
+    "second-strict/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/introduced_groups.rs.txt": {
+      "bytes": 28486,
+      "sha256": "9640ba0bc0c9606bb48ab7684972eaac6f4e9fffaa800ab42c068a5d7dbd22ff"
+    },
+    "second-strict/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 10588,
+      "sha256": "673f01124385f15a722ad57258a511b3cc4169bc5fc1e8dd70946d089fdff13d"
+    },
+    "second-strict/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks.rs.txt": {
+      "bytes": 23513,
+      "sha256": "9840671aff7a892537324177fe06df3094219ba71d91b9c66ebb64ceef9ca7bf"
+    },
+    "source-base.json": {
+      "bytes": 297,
+      "sha256": "8f339d5b6a064795eff3bf421fc8a677939d56301cf469259ffe2f5a73a3fd1b"
+    },
+    "third-strict/source-identities.json": {
+      "bytes": 252501,
+      "sha256": "0130918dc274b8fa57360c1afc1b6da28f6aa654c38e48cd22ea60b572f5f297"
+    },
+    "third-strict/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned/neutral_ungroup.rs.txt": {
+      "bytes": 6465,
+      "sha256": "c9b27772b24863ffc8ece167048db85d615dcbd106311bd925002865d7faa9cf"
+    },
+    "third-strict/source-overlays/crates/deadpan-app/src/preview/harness/sound_group_endpoints/aligned.rs.txt": {
+      "bytes": 11719,
+      "sha256": "d34963063de79cea5ae712fe5a1456e85ec025a562fcd0a69ba4030ee0dd83fe"
+    },
+    "third-strict/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 21916,
+      "sha256": "d4c2ba6f31a9daddcd54342e0ae6627c470dd2afca118044af3a6e9fd8553989"
+    },
+    "third-strict/source-overlays/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs.txt": {
+      "bytes": 37535,
+      "sha256": "4cfe707372dcd8f4699c945e5af451098646591c115e508a88ea52f8eab8ba23"
+    },
+    "third-strict/source-overlays/crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs.txt": {
+      "bytes": 28302,
+      "sha256": "2d69409017da2c31486d2de8b059018dce398d0ffa94b53d169a572e99993cdf"
+    },
+    "third-strict/source-overlays/crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs.txt": {
+      "bytes": 9422,
+      "sha256": "13363c532b6bbcb6db246bec458c04705f458861ae0ef159ee32c1fefe28a572"
+    },
+    "third-strict/source-overlays/crates/deadpan-cli/tests/preview_export/neutral_ungroup_recipe.rs.txt": {
+      "bytes": 12406,
+      "sha256": "dc75f688695e730957cbf490e299c3582982eda3a3c3f4aae0c1ac6a050825f9"
+    },
+    "third-strict/source-overlays/crates/deadpan-core/src/command.rs.txt": {
+      "bytes": 154563,
+      "sha256": "37e364c3e02ab670d372a7bdc37f7d53b9979347b5821303047a4fef61b563b5"
+    },
+    "third-strict/source-overlays/crates/deadpan-core/src/sound_clock/grouping/ungroup.rs.txt": {
+      "bytes": 9588,
+      "sha256": "44f9a83822c73be79af65637e0dcd550f13a393f75e225331cf396291c6ec30b"
+    },
+    "third-strict/source-overlays/crates/deadpan-core/src/sound_clock/grouping.rs.txt": {
+      "bytes": 13062,
+      "sha256": "7413968e5dddf5a801b1e8257d8eda012ba077c0a8d8991d2fac116627013da1"
+    },
+    "third-strict/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs.txt": {
+      "bytes": 18083,
+      "sha256": "fc3f4d670cacd7abf4fd54b45b1b2a115394232227fb934884947149f4918fed"
+    },
+    "third-strict/source-overlays/crates/deadpan-core/src/sound_clock/tests/edits.rs.txt": {
+      "bytes": 26456,
+      "sha256": "aeb12e6247a8138b5776a41c506c9d503a2ce5b9b379197f2632478b4a0f400b"
+    },
+    "third-strict/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/introduced_groups.rs.txt": {
+      "bytes": 28486,
+      "sha256": "9640ba0bc0c9606bb48ab7684972eaac6f4e9fffaa800ab42c068a5d7dbd22ff"
+    },
+    "third-strict/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/neutral_ungroup.rs.txt": {
+      "bytes": 10588,
+      "sha256": "673f01124385f15a722ad57258a511b3cc4169bc5fc1e8dd70946d089fdff13d"
+    },
+    "third-strict/source-overlays/crates/deadpan-store/tests/source_registration/sounds/sound_clocks.rs.txt": {
+      "bytes": 23513,
+      "sha256": "9840671aff7a892537324177fe06df3094219ba71d91b9c66ebb64ceef9ca7bf"
+    },
+    "third-strict/third-strict-check-receipt.json": {
+      "bytes": 187,
+      "sha256": "d8f155ad3a72937d5f74f2bb74ce6db1a318f206fc5b26df942b4fdabd92f1a9"
+    },
+    "third-strict/third-strict-check.log": {
+      "bytes": 2071,
+      "sha256": "386271ea755ab841af03179cad38b024a57d36cb592952bcca0998354b948142"
+    },
+    "third-strict/third-strict-format-receipt.json": {
+      "bytes": 129,
+      "sha256": "424edf65163574f2fb2e1fcb35a03d0ab01d895139a20b5657f74d7f649aca6e"
+    },
+    "third-strict/third-strict-format.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "third-strict/third-strict-inputs.json": {
+      "bytes": 583,
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+    }
+  }
+}

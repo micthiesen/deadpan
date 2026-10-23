@@ -193,8 +193,24 @@ fn durable_roundtrip(
     Ok(restored)
 }
 
+#[path = "neutral_ungroup_recipe.rs"]
+mod neutral_ungroup;
+
 pub fn build(directory: &Path) -> Result<Fixture> {
-    let mut project = Project::create(directory, "aligned-sound-scope")?;
+    build_mode(directory, false)
+}
+
+pub fn build_neutral_ungroup(directory: &Path) -> Result<Fixture> {
+    build_mode(directory, true)
+}
+
+fn build_mode(directory: &Path, neutral_ungroup: bool) -> Result<Fixture> {
+    let name = if neutral_ungroup {
+        "neutral-sound-ungroup"
+    } else {
+        "aligned-sound-scope"
+    };
+    let mut project = Project::create(directory, name)?;
     // Obtain this four-frame Source through the exact public Original moment
     // path. The measured source receipt and retained bytes remain authoritative.
     project.yank_original('o', 27, 31)?;
@@ -435,6 +451,9 @@ pub fn build(directory: &Path) -> Result<Fixture> {
         &baseline,
         "aligned group",
     )?;
+    if neutral_ungroup {
+        return self::neutral_ungroup::finish(project, directory, owner, top, group, &baseline);
+    }
     let eq = equalizer([4500, -2500, 1500])?;
     project.apply(|_, _, _| {
         Ok(Command::SetAudioTreatments {

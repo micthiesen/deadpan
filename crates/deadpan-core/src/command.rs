@@ -1737,6 +1737,9 @@ fn apply_with_durations_captured(
         command => {
             let mut result = input.clone();
             reduce(&mut result, command, &request.new_revision)?;
+            if let Some(prepared) = sound_grouping.as_ref() {
+                prepared.install(&mut result, command)?;
+            }
             if let Some(allowances) = context.allowances.as_deref_mut() {
                 allowances.apply_hold_audio_command(command);
             }

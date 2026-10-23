@@ -1,0 +1,89 @@
+  Extracting 1 binary, 1 build script output directory, and 4 linked paths to /private/tmp/deadpan-neutral-ungroup-2026-10-22/baseline-pcm-second-extracted
+   Extracted 22 files to /private/tmp/deadpan-neutral-ungroup-2026-10-22/baseline-pcm-second-extracted in 0.03s
+────────────
+ Nextest run ID c9856104-668c-48e7-8496-dfe6de00075e with nextest profile: default
+    Starting 5 tests across 1 binary (166 tests skipped)
+        FAIL [  10.969s] (1/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_label_preserves_complete_pcm
+  stdout ───
+
+    running 1 test
+    test voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_label_preserves_complete_pcm ... FAILED
+
+    failures:
+
+    failures:
+        voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_label_preserves_complete_pcm
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 170 filtered out; finished in 10.96s
+
+  stderr ───
+
+    thread 'voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_label_preserves_complete_pcm' (175601919) panicked at crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs:527:9:
+    neutral Ungroup admission after valid PCM controls: EditError { code: InvalidCommand, message: "group ownership changes inside a retained beat sound scope are not yet supported", current_revision: None }
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        FAIL [  10.976s] (2/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_trim_preserves_complete_pcm
+  stdout ───
+
+    running 1 test
+    test voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_trim_preserves_complete_pcm ... FAILED
+
+    failures:
+
+    failures:
+        voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_trim_preserves_complete_pcm
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 170 filtered out; finished in 10.97s
+
+  stderr ───
+
+    thread 'voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_trim_preserves_complete_pcm' (175601920) panicked at crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs:527:9:
+    neutral Ungroup admission after valid PCM controls: EditError { code: InvalidCommand, message: "group ownership changes inside a retained beat sound scope are not yet supported", current_revision: None }
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        FAIL [   5.048s] (3/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_label_preserves_complete_pcm
+  stdout ───
+
+    running 1 test
+    test voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_label_preserves_complete_pcm ... FAILED
+
+    failures:
+
+    failures:
+        voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_label_preserves_complete_pcm
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 170 filtered out; finished in 5.04s
+
+  stderr ───
+
+    thread 'voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_label_preserves_complete_pcm' (175602662) panicked at crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs:527:9:
+    neutral Ungroup admission after valid PCM controls: EditError { code: InvalidCommand, message: "group ownership changes inside a retained beat sound scope are not yet supported", current_revision: None }
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        PASS [   0.015s] (4/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_still_refuses_a_genuine_later_group_capture
+        FAIL [   5.063s] (5/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_trim_preserves_complete_pcm
+  stdout ───
+
+    running 1 test
+    test voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_trim_preserves_complete_pcm ... FAILED
+
+    failures:
+
+    failures:
+        voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_trim_preserves_complete_pcm
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 170 filtered out; finished in 5.05s
+
+  stderr ───
+
+    thread 'voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_trim_preserves_complete_pcm' (175602664) panicked at crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs:527:9:
+    neutral Ungroup admission after valid PCM controls: EditError { code: InvalidCommand, message: "group ownership changes inside a retained beat sound scope are not yet supported", current_revision: None }
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+────────────
+     Summary [  16.040s] 5 tests run: 1 passed, 4 failed, 166 skipped
+        FAIL [  10.969s] (1/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_label_preserves_complete_pcm
+        FAIL [  10.976s] (2/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_trim_preserves_complete_pcm
+        FAIL [   5.048s] (3/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_label_preserves_complete_pcm
+        FAIL [   5.063s] (5/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_trim_preserves_complete_pcm
+error: test run failed

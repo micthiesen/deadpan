@@ -1,0 +1,21 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--archive-file",
+    "/tmp/deadpan-neutral-ungroup-2026-10-22/candidate-broad.tar.zst",
+    "--extract-to",
+    "/tmp/deadpan-neutral-ungroup-2026-10-22/candidate-broad-extracted",
+    "--extract-overwrite",
+    "--workspace-remap",
+    "/Users/michael/Code/deadpan",
+    "-E",
+    "package(deadpan-plan) | package(deadpan-audio) | package(deadpan-analysis) | package(deadpan-store) | package(deadpan-app) | test(macros) | test(semantic) | test(mark) | test(project_commands) | test(selection) | test(nodes_cli) | test(ranges_cli) | test(transcript_search) | test(provider_clock_coverage) | binary(transcript_search) | binary(project_commands) | test(speech::) | test(sound) | test(group)",
+    "--test-threads",
+    "8",
+    "--no-fail-fast"
+  ],
+  "exit": 0,
+  "seconds": 292.5517930407077
+}

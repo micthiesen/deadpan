@@ -18,6 +18,9 @@ mod group_endpoints;
 #[path = "sound_clocks/introduced_groups.rs"]
 mod introduced_groups;
 
+#[path = "sound_clocks/neutral_ungroup.rs"]
+mod neutral_ungroup;
+
 fn capture_child(
     document: &ProjectDocument,
     parent: &NodeId,

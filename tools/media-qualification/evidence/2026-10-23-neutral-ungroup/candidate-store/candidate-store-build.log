@@ -1,0 +1,6 @@
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1m 09s
+   Archiving 1 binary, 1 build script output directory, 3 linked paths, and 1 standard library to /tmp/deadpan-neutral-ungroup-2026-10-22/candidate-store.tar.zst
+    Archived 15 files to /tmp/deadpan-neutral-ungroup-2026-10-22/candidate-store.tar.zst in 0.05s

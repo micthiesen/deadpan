@@ -59,6 +59,13 @@ independent root sounds. Split-remapped silent-Hold permissions remain attached
 to their exact issuers. Grouping and neutral Ungroup do not ripple the root sound
 bus or allocate a new clock when no split requires it.
 
+Inside a retained independent sound scope, an aligned unary group can be
+ungrouped while every affected historical reference still identifies it as an
+introduced neutral wrapper. Later label and descendant audio edits are retained.
+The removal preserves the old scope and all sound clocks; a genuine later
+capture of the group, or group-owned processing, keeps Ungroup unavailable.
+See [sound ownership](OWNED_SOUND_VOICES.md#neutral-grouping) for the exact scope.
+
 Marks inside grouped contents keep their existing exact transforms. A mark
 hosted on a removed group becomes explicitly unresolved under the existing
 removed-host rule. The operation does not invent a new mark host. The headless

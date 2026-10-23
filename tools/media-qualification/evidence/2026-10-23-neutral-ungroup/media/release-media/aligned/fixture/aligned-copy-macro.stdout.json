@@ -1,0 +1,143 @@
+{
+  "bank_version": 2,
+  "before_bank_version": 1,
+  "before_revision": "93a5ea10-5380-41b3-97e9-d82ed04ffcec",
+  "committed": true,
+  "committed_registers": {
+    "bank_version": 2,
+    "project_id": "70ad911b-d9cd-4752-b750-11240cb2cb41",
+    "revision_id": "b40b1bcd-3c2e-4459-9ac5-24bc41bc1663"
+  },
+  "committed_revision": "b40b1bcd-3c2e-4459-9ac5-24bc41bc1663",
+  "context": {
+    "cursor": 15,
+    "original": null,
+    "parent": "7e5fe962-146f-48ad-9fbc-65ea69bb6228",
+    "scoped": null,
+    "selected_child": "90e4a0fe-1cc5-4b29-b3db-7613774e1156",
+    "visual_selection": null
+  },
+  "edit": {
+    "changed_ids": [
+      "207c9704-d2cd-42d0-9f6f-90bb5c39b2e8",
+      "34221567-e5af-4698-a1b0-3e681ae8d8ad",
+      "4affed43-da79-4a1d-9eeb-829c161704c5",
+      "590df348-2aba-4232-8829-6aa3ff26f0e3",
+      "7a472f6d-6ad8-4f77-9e2b-5983215abc7a",
+      "7e5fe962-146f-48ad-9fbc-65ea69bb6228",
+      "90e4a0fe-1cc5-4b29-b3db-7613774e1156"
+    ],
+    "description": "Apply resolved transaction",
+    "duration_delta": 4,
+    "new_revision": "b40b1bcd-3c2e-4459-9ac5-24bc41bc1663"
+  },
+  "generation_preparation_notices": [],
+  "generation_preparations": [],
+  "instruction_count": 2,
+  "mark_changes": [],
+  "operation": "apply",
+  "project_id": "70ad911b-d9cd-4752-b750-11240cb2cb41",
+  "protocol": 1,
+  "register_writes": [
+    "\"",
+    "c"
+  ],
+  "trace": [
+    {
+      "after_cursor": 15,
+      "after_original": null,
+      "after_parent": "7e5fe962-146f-48ad-9fbc-65ea69bb6228",
+      "after_scoped": null,
+      "after_selected_child": "aligned-sound-scope-n18",
+      "after_visual_selection": null,
+      "before_cursor": 15,
+      "before_original": null,
+      "before_revision": "93a5ea10-5380-41b3-97e9-d82ed04ffcec",
+      "before_scope": {
+        "end": 15,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "aligned-sound-scope-n18",
+      "before_visual_selection": null,
+      "capture": {
+        "bounds": {
+          "end": 14,
+          "start": 8
+        },
+        "parent": "aligned-top",
+        "scope": [
+          "aligned-top"
+        ],
+        "scope_labels": [
+          "Retained ancestor Top"
+        ],
+        "timing": {
+          "allocation": "5db567a7-eee9-442e-b937-a7e854017142",
+          "ordinal": 0
+        }
+      },
+      "capture_set": null,
+      "captured_child_label": "New processing G",
+      "depth": 0,
+      "instruction": {
+        "register": "c",
+        "selector": {
+          "node": "f106b2b7-7685-4dfb-a2ab-fb6c0430f15c",
+          "type": "node"
+        },
+        "type": "yank"
+      },
+      "parent": "7e5fe962-146f-48ad-9fbc-65ea69bb6228",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": "aligned-top",
+      "resolved_range": {
+        "end": 12,
+        "start": 8
+      },
+      "resolved_ranges": [],
+      "resolved_selection": {
+        "node": "f106b2b7-7685-4dfb-a2ab-fb6c0430f15c",
+        "type": "child"
+      }
+    },
+    {
+      "after_cursor": 15,
+      "after_original": null,
+      "after_parent": "7e5fe962-146f-48ad-9fbc-65ea69bb6228",
+      "after_scoped": null,
+      "after_selected_child": "90e4a0fe-1cc5-4b29-b3db-7613774e1156",
+      "after_visual_selection": null,
+      "before_cursor": 15,
+      "before_original": null,
+      "before_revision": "93a5ea10-5380-41b3-97e9-d82ed04ffcec",
+      "before_scope": {
+        "end": 15,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "aligned-sound-scope-n18",
+      "before_visual_selection": null,
+      "capture": null,
+      "capture_set": null,
+      "captured_child_label": null,
+      "depth": 0,
+      "instruction": {
+        "before": false,
+        "register": "c",
+        "type": "paste"
+      },
+      "parent": "7e5fe962-146f-48ad-9fbc-65ea69bb6228",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": "7e5fe962-146f-48ad-9fbc-65ea69bb6228",
+      "resolved_range": {
+        "end": 19,
+        "start": 15
+      },
+      "resolved_ranges": [],
+      "resolved_selection": null
+    }
+  ]
+}

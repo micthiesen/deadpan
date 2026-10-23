@@ -1,0 +1,30 @@
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.07s
+     Running `target/debug/xtask check --since c72abe12965b08f7705e0c9a61ab2298d5a562ae --no-test`
+check: packages changed since c72abe12965b08f7705e0c9a61ab2298d5a562ae: deadpan-app, deadpan-audio, deadpan-cli, deadpan-core, deadpan-store
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+error: identical args used in this `assert_eq!` macro call
+   --> crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs:485:16
+    |
+485 |     assert_eq!(20_821 - 14_414, 6407);
+    |                ^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#eq_op
+    = note: `-D clippy::eq-op` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::eq_op)]`
+
+error: identical args used in this `assert_eq!` macro call
+   --> crates/deadpan-audio/tests/audio_definition/sound_clocks/neutral_ungroup.rs:486:16
+    |
+486 |     assert_eq!(22_422 - 16_016, 6406);
+    |                ^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#eq_op
+
+error: could not compile `deadpan-audio` (test "audio_definition") due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...
+xtask: cargo clippy -p deadpan-app -p deadpan-audio -p deadpan-cli -p deadpan-core -p deadpan-store --all-targets --locked --features deadpan-cli/synthetic-worker -- -D warnings exited with exit status: 101

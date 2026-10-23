@@ -25,6 +25,9 @@ mod aligned_scope;
 #[path = "sound_clocks/new_group_birth.rs"]
 mod new_group_birth;
 
+#[path = "sound_clocks/neutral_ungroup.rs"]
+mod neutral_ungroup;
+
 struct ClockProvider {
     fixture: FixtureProvider,
     revision: RevisionId,

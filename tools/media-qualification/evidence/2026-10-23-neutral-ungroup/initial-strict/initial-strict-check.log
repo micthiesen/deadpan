@@ -1,0 +1,32 @@
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.05s
+     Running `target/debug/xtask check --since c72abe12965b08f7705e0c9a61ab2298d5a562ae --no-test`
+check: packages changed since c72abe12965b08f7705e0c9a61ab2298d5a562ae: deadpan-app, deadpan-audio, deadpan-cli, deadpan-core, deadpan-store
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling ring v0.17.14
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling rustls v0.23.45
+    Checking rustls-webpki v0.103.16
+    Checking deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+    Checking deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking rustls-platform-verifier v0.7.1
+    Checking ureq v3.4.2
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+error: unnecessary use of `clone` to create a slice from a reference
+   --> crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs:288:88
+    |
+288 |                 && matches!(&beat.kind, NodeKind::Sequence { children } if children == &[copied_owner.clone()]))
+    |                                                                                        ^^^^^^^^^^^^^^^^^^^^^^^ help: try: `std::slice::from_ref(copied_owner)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#cloned_ref_to_slice_refs
+    = note: `-D clippy::cloned-ref-to-slice-refs` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::cloned_ref_to_slice_refs)]`
+
+error: could not compile `deadpan-core` (lib test) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+xtask: cargo clippy -p deadpan-app -p deadpan-audio -p deadpan-cli -p deadpan-core -p deadpan-store --all-targets --locked --features deadpan-cli/synthetic-worker -- -D warnings exited with exit status: 101

@@ -1,0 +1,70 @@
+{
+  "executed_cli": {
+    "source": "target/release/deadpan-cli",
+    "path": "/tmp/deadpan-neutral-ungroup-2026-10-22/release-media-extracted/target/release/deadpan-cli",
+    "sha256": "bc85eaf5e9d656655384cc46b13d50cb842a54c533554b7d738407cbc736663b"
+  },
+  "safe_relative_regular_files_only": true,
+  "cases": [
+    {
+      "label": "neutral",
+      "package": "/tmp/deadpan-neutral-ungroup-2026-10-22/owner-portable-check/neutral/neutral-ungroup-portable.deadpan",
+      "regular_files": 9,
+      "archive_sha256": "e3b7514643c78a2c71a648d9e6a2d6142b673c4630f85ea342963ff3cc4ae452",
+      "commands": [
+        {
+          "command": [
+            "/tmp/deadpan-neutral-ungroup-2026-10-22/release-media-extracted/target/release/deadpan-cli",
+            "project",
+            "validate",
+            "/tmp/deadpan-neutral-ungroup-2026-10-22/owner-portable-check/neutral/neutral-ungroup-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.04556924942880869,
+          "package_paths_and_bytes_unchanged": true
+        },
+        {
+          "command": [
+            "/tmp/deadpan-neutral-ungroup-2026-10-22/release-media-extracted/target/release/deadpan-cli",
+            "doctor",
+            "--project",
+            "/tmp/deadpan-neutral-ungroup-2026-10-22/owner-portable-check/neutral/neutral-ungroup-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.03546333406120539,
+          "package_paths_and_bytes_unchanged": true
+        }
+      ]
+    },
+    {
+      "label": "aligned",
+      "package": "/tmp/deadpan-neutral-ungroup-2026-10-22/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan",
+      "regular_files": 9,
+      "archive_sha256": "2eb3d44d4fed316d222e2c0b5399cc6742d78ec1898a3e4522c2c083de287bb1",
+      "commands": [
+        {
+          "command": [
+            "/tmp/deadpan-neutral-ungroup-2026-10-22/release-media-extracted/target/release/deadpan-cli",
+            "project",
+            "validate",
+            "/tmp/deadpan-neutral-ungroup-2026-10-22/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.07384145725518465,
+          "package_paths_and_bytes_unchanged": true
+        },
+        {
+          "command": [
+            "/tmp/deadpan-neutral-ungroup-2026-10-22/release-media-extracted/target/release/deadpan-cli",
+            "doctor",
+            "--project",
+            "/tmp/deadpan-neutral-ungroup-2026-10-22/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.03937516640871763,
+          "package_paths_and_bytes_unchanged": true
+        }
+      ]
+    }
+  ]
+}

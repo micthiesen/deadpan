@@ -1,0 +1,336 @@
+//! Removing an unpaired unary group preserves the surviving Top's real PCM.
+//! The oracle takes the same public edits on an independently built branch
+//! which never contained G. No retained scope, recipe or timing table is patched.
+use super::*;
+use std::collections::BTreeSet;
+
+#[derive(Clone, Copy, Debug)]
+enum Carrier {
+    Source,
+    RoomTone,
+}
+
+#[derive(Clone, Copy, Debug)]
+enum Intervening {
+    Label,
+    Trim,
+}
+
+#[derive(Debug, PartialEq, serde::Serialize)]
+struct PcmBits {
+    authored: Vec<[u32; 2]>,
+    limited: Vec<[u32; 2]>,
+    gain: Vec<u64>,
+}
+
+fn timing(name: &str) -> AudioTimingId {
+    AudioTimingId {
+        allocation: RevisionId::new(name).unwrap(),
+        ordinal: 0,
+    }
+}
+
+fn top_treatments() -> AudioTreatments {
+    AudioTreatments::default()
+        .with_equalizer(Some(
+            EqualizerRecipe::new(
+                [4500, -2500, 1500].map(|db| GainDb::new(db).unwrap()),
+                None,
+                None,
+            )
+            .unwrap(),
+        ))
+        .unwrap()
+        .with_trim(GainDb::new(6000).unwrap())
+        .unwrap()
+}
+
+fn prefix(document: &ProjectDocument, name: &str, frames: i64) -> ProjectDocument {
+    let NodeKind::Hold { recipe } = hold(frames, HoldAudio::Silence).kind else {
+        unreachable!()
+    };
+    edit(
+        document,
+        name,
+        Command::InsertTime {
+            at: ProjectFrame(0),
+            hold: recipe,
+            id: id(name),
+            identities: SplitIdentities::default(),
+            timing: timing(name),
+        },
+    )
+}
+
+fn initial(carrier: Carrier) -> ProjectDocument {
+    // Reuse the admitted actual-WAV finite event and SelectedPlacement mapping.
+    let mut wire = serde_json::to_value(ntsc(AudioEdgePolicy::Hard)).unwrap();
+    wire["nodes"]["lead"] = serde_json::to_value(hold(4, HoldAudio::Silence)).unwrap();
+    if matches!(carrier, Carrier::RoomTone) {
+        wire["nodes"]["owner"] = serde_json::to_value(hold(
+            4,
+            HoldAudio::RoomTone {
+                source: audio(512..640),
+            },
+        ))
+        .unwrap();
+    }
+    let before = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    assert!(before.audio_bindings().is_empty());
+    let event = &before.beat_sounds()[&id("owner")][&sound_id("effect")];
+    assert_eq!(event.source, audio(1024..7432));
+    assert_eq!(event.offset, AudioSample(0));
+    assert!(matches!(event.mapping, SourceAudioMapping::SelectedPlacement { .. }));
+    let top = edit(
+        &before,
+        "neutral-top",
+        Command::Group {
+            parent: id("root"),
+            start: 1,
+            end: 3,
+            id: id("top"),
+            label: "Surviving ordinary Top".into(),
+        },
+    );
+    let treated = edit(
+        &top,
+        "neutral-top-eq",
+        Command::SetAudioTreatments {
+            node: id("top"),
+            treatments: top_treatments(),
+        },
+    );
+    let before = prefix(&treated, "neutral-prefix-five", 5);
+    assert_eq!(before.duration().unwrap().frames(), 15);
+    let journal = &before.audio_bindings().sound_clocks()[&id("owner")][&sound_id("effect")];
+    assert_eq!(journal.scope(), &id("top"));
+    assert_eq!(journal.clocks().len(), 1);
+    assert_eq!(journal.clocks()[0].timing(), &timing("neutral-prefix-five"));
+    assert_eq!(journal.clocks()[0].scope(), &id("top"));
+    assert_eq!(journal.clocks()[0].owner(), &id("owner"));
+    assert!(journal.clocks()[0].introduced_groups().is_empty());
+    before
+}
+
+fn grouped(before: &ProjectDocument) -> ProjectDocument {
+    let selection = SliceCaptureSelection::Child { node: id("owner") };
+    assert_eq!(before.group_selection(&id("top"), &selection).unwrap().required_split_ids, 0);
+    let after = edit(
+        before,
+        "neutral-group",
+        Command::GroupSelection {
+            parent: id("top"),
+            selection,
+            label: "New neutral G".into(),
+            identities: GroupSelectionIdentities {
+                group: id("neutral-g"),
+                split: SplitIdentities::default(),
+            },
+            timing: timing("neutral-group"),
+        },
+    );
+    let journal = &after.audio_bindings().sound_clocks()[&id("owner")][&sound_id("effect")];
+    assert_eq!(journal.scope(), &id("top"));
+    assert_eq!(journal.clocks().len(), 1);
+    assert_eq!(journal.clocks()[0].scope(), &id("top"));
+    assert_eq!(journal.clocks()[0].introduced_groups(), &BTreeSet::from([id("neutral-g")]));
+    assert_eq!(after.nodes()[&id("neutral-g")].audio_treatments, AudioTreatments::default());
+    after
+}
+
+fn intervening(before: &ProjectDocument, change: Intervening) -> ProjectDocument {
+    let after = edit(
+        before,
+        "neutral-sibling-label",
+        Command::Rename { node: id("tail"), label: "Retained sibling rename".into() },
+    );
+    let command = match change {
+        Intervening::Label => Command::Rename { node: id("owner"), label: "Retained owner rename".into() },
+        Intervening::Trim => Command::SetAudioTreatments {
+            node: id("owner"),
+            treatments: AudioTreatments::default().with_trim(GainDb::new(-3000).unwrap()).unwrap(),
+        },
+    };
+    edit(&after, "neutral-owner-edit", command)
+}
+
+fn read(document: &ProjectDocument, first: i64, end: i64, partitions: &[u32]) -> PcmBits {
+    assert!(!partitions.is_empty() && partitions.iter().all(|count| *count > 0));
+    let plan = compile(document, false);
+    let mut stages = StageAudio::new(plan.clone());
+    let mut limited = LimitedAudio::new(plan);
+    let mut raw_provider = ClockProvider::new(document);
+    let mut limited_provider = ClockProvider::new(document);
+    let mut result = PcmBits { authored: vec![], limited: vec![], gain: vec![] };
+    let mut at = first;
+    let mut index = 0;
+    while at < end {
+        let count = u32::try_from((end - at).min(i64::from(partitions[index % partitions.len()]))).unwrap();
+        let raw = bus(&mut stages, &mut raw_provider, at, count);
+        let mastered = limited.read(&mut limited_provider, AudioSample(at), count, TIMEOUT, &AtomicBool::new(false)).unwrap();
+        assert_eq!(raw.samples.len(), count as usize);
+        assert_eq!(mastered.samples.len(), count as usize);
+        assert_eq!(mastered.gain.len(), count as usize);
+        assert!(raw.samples.iter().chain(&mastered.samples).flatten().all(|sample| sample.is_finite()));
+        assert!(mastered.gain.iter().all(|gain| gain.is_finite() && (0.0..=1.0).contains(gain)));
+        result.authored.extend(raw.samples.iter().map(|sample| sample.map(f32::to_bits)));
+        result.limited.extend(mastered.samples.iter().map(|sample| sample.map(f32::to_bits)));
+        result.gain.extend(mastered.gain.iter().map(|gain| gain.to_bits()));
+        at += i64::from(count);
+        index += 1;
+    }
+    if first == 0 {
+        assert!(raw_provider.fixture.context_calls > 0);
+        assert!(limited_provider.fixture.context_calls > 0);
+    }
+    result
+}
+
+fn complete(document: &ProjectDocument) -> PcmBits {
+    read(document, 0, frame_sample_boundary(document.duration().unwrap().frames()), &[4093])
+}
+
+fn assert_read_modes(document: &ProjectDocument, expected: &PcmBits) {
+    let end = frame_sample_boundary(document.duration().unwrap().frames());
+    assert_eq!(&complete(document), expected, "whole authored/limited/gain bits");
+    assert_eq!(read(document, 0, end, &[1021, 2047, 4093]), *expected, "partitioned bits");
+    // Cold windows inspect the source/event onsets, both NTSC allocation ends,
+    // FIR tile seams and the final project terminal. Each owns fresh readers.
+    for first in [14_413, 14_414, 16_015, 20_820, 22_421, 16_383, end - 3] {
+        let last = (first + 3).min(end);
+        let actual = read(document, first, last, &[2, 1]);
+        let range = usize::try_from(first).unwrap()..usize::try_from(last).unwrap();
+        assert_eq!(actual.authored, expected.authored[range.clone()]);
+        assert_eq!(actual.limited, expected.limited[range.clone()]);
+        assert_eq!(actual.gain, expected.gain[range]);
+    }
+}
+
+fn controls(document: &ProjectDocument, expected: &PcmBits, carrier: Carrier) {
+    let no_eq = edit(document, "neutral-ablate-top-eq", Command::SetAudioTreatments {
+        node: id("top"),
+        treatments: top_treatments().with_equalizer(None).unwrap(),
+    });
+    let no_event = edit(document, "neutral-ablate-event", Command::DeleteBeatSound {
+        owner: id("owner"), id: sound_id("effect"),
+    });
+    assert_ne!(complete(&no_eq).authored, expected.authored, "Top EQ must be active");
+    let carrier_pcm = complete(&no_event);
+    assert_ne!(carrier_pcm.authored, expected.authored, "finite independent WAV event must be audible");
+    if matches!(carrier, Carrier::RoomTone) {
+        assert!(carrier_pcm.authored.iter().flatten().any(|sample| f32::from_bits(*sample) != 0.0), "RoomTone carrier must be audible independently");
+    }
+    assert!(expected.gain.iter().any(|gain| f64::from_bits(*gain) < 1.0), "limiter gain comparison must exercise reduction");
+    let mut renderer = StageAudio::new(compile(document, false));
+    let mut provider = ClockProvider::new(document);
+    let active = bus(&mut renderer, &mut provider, 17_000, 32);
+    assert!(active.samples.iter().any(|sample| *sample != [0.0; 2]));
+    let mut limited = LimitedAudio::new(compile(document, false));
+    limited.read(&mut provider, AudioSample(17_000), 32, TIMEOUT, &AtomicBool::new(false)).unwrap();
+    provider.fixture.unavailable = true;
+    assert!(matches!(renderer.prepare_authored_bus(&mut provider, AudioSample(17_000), 32, TIMEOUT, &AtomicBool::new(false)), Err(StageAudioError::Preparation(PreparationError::SourceUnavailable(_)))));
+    assert!(limited.read(&mut provider, AudioSample(17_000), 32, TIMEOUT, &AtomicBool::new(false)).is_err());
+}
+
+fn exercise(carrier: Carrier, change: Intervening) {
+    assert_eq!((frame_sample_boundary(9), frame_sample_boundary(13)), (14_414, 20_821));
+    assert_eq!((frame_sample_boundary(10), frame_sample_boundary(14)), (16_016, 22_422));
+    assert_eq!(20_821 - 14_414, 6407);
+    assert_eq!(22_422 - 16_016, 6406);
+    // Construct the expected branch independently, with no G in its chronology.
+    let expected_document = intervening(&initial(carrier), change);
+    let expected = complete(&expected_document);
+    controls(&expected_document, &expected, carrier);
+    assert_read_modes(&expected_document, &expected);
+    let before = intervening(&grouped(&initial(carrier)), change);
+    assert_read_modes(&before, &expected);
+    controls(&before, &expected, carrier);
+    let directory = std::env::var_os("DEADPAN_SCOPE_PROBE_EVIDENCE").map(std::path::PathBuf::from)
+        .unwrap_or_else(|| std::env::temp_dir().join(format!("deadpan-neutral-ungroup-{}", std::process::id())))
+        .join(format!("neutral-ungroup-{carrier:?}-{change:?}"));
+    std::fs::create_dir_all(&directory).unwrap();
+    std::fs::write(directory.join("before-ungroup-controls.json"), serde_json::to_vec(&serde_json::json!({
+        "controls_valid":true, "never_grouped":expected_document, "grouped":before, "pcm_bits":expected,
+        "runtime_claim":"Only this completed test invocation establishes these controls"
+    })).unwrap()).unwrap();
+    // The old implementation must reach this exact admission failure only after
+    // the actual WAV, both active controls and independent read modes passed.
+    let request = CommandRequest {
+        project_id: before.project_id().clone(),
+        expected_revision: before.revision_id().clone(),
+        new_revision: RevisionId::new("neutral-ungroup").unwrap(),
+        command: Command::Ungroup { node: id("neutral-g") },
+    };
+    let transaction = apply(&before, &request).unwrap_or_else(|error| {
+        std::fs::write(directory.join("ungroup-admission-failure.json"), serde_json::to_vec(&serde_json::json!({
+            "controls_valid":true, "request":request,
+            "error_code":format!("{:?}",error.code), "error_message":error.message,
+        })).unwrap()).unwrap();
+        panic!("neutral Ungroup admission after valid PCM controls: {error:?}");
+    });
+    let after = transaction.forward.apply(&before).unwrap();
+    assert_eq!(transaction.inverse.apply(&after).unwrap(), before);
+    assert_eq!(ProjectDocument::from_json(&after.to_json().unwrap()).unwrap(), after);
+    assert!(!after.nodes().contains_key(&id("neutral-g")));
+    assert_eq!(after.nodes(), expected_document.nodes());
+    assert_eq!(after.beat_sounds(), expected_document.beat_sounds());
+    assert_eq!(after.audio_bindings(), expected_document.audio_bindings());
+    assert_read_modes(&after, &expected);
+    std::fs::write(directory.join("after-ungroup.json"), serde_json::to_vec(&serde_json::json!({
+        "candidate":after, "pcm_bits":complete(&after),
+    })).unwrap()).unwrap();
+    {
+        let shifted = prefix(&after, "neutral-later-prefix", 1);
+        let oracle = prefix(&expected_document, "neutral-later-prefix", 1);
+        let expected = complete(&oracle);
+        assert_read_modes(&shifted, &expected);
+        controls(&shifted, &expected, carrier);
+        // Re-expand6406 to6407: earlier clipping must not be recovered by G's
+        // removal or by a later placement with a larger sample allocation.
+        let remove = |document: &ProjectDocument| edit(document, "neutral-later-return", Command::DeleteRipple {
+            node: id("neutral-later-prefix"), timing: timing("neutral-later-return"),
+        });
+        let returned = remove(&shifted);
+        let returned_oracle = remove(&oracle);
+        assert_read_modes(&returned, &complete(&returned_oracle));
+        std::fs::write(directory.join("later-phase-and-return.json"), serde_json::to_vec(&serde_json::json!({
+            "shifted":shifted, "shifted_oracle":oracle, "shifted_pcm_bits":expected,
+            "returned":returned, "returned_oracle":returned_oracle, "returned_pcm_bits":complete(&returned),
+        })).unwrap()).unwrap();
+    }
+}
+
+#[test]
+fn neutral_ungroup_source_after_label_preserves_complete_pcm() { exercise(Carrier::Source, Intervening::Label); }
+
+#[test]
+fn neutral_ungroup_source_after_trim_preserves_complete_pcm() { exercise(Carrier::Source, Intervening::Trim); }
+
+#[test]
+fn neutral_ungroup_roomtone_after_label_preserves_complete_pcm() { exercise(Carrier::RoomTone, Intervening::Label); }
+
+#[test]
+fn neutral_ungroup_roomtone_after_trim_preserves_complete_pcm() { exercise(Carrier::RoomTone, Intervening::Trim); }
+
+#[test]
+fn neutral_ungroup_still_refuses_a_genuine_later_group_capture() {
+    let before = grouped(&initial(Carrier::Source));
+    let slice = capture_repeat_slice(&before, "top", &id("neutral-g"), "neutral-g-capture");
+    slice.validate_capture(&before).unwrap();
+    let copied = paste_repeat_slice(&before, "root", before.children(&id("root")).count(), &slice, "neutral-g-copy");
+    let wrapper = copied.children(&id("root")).last().unwrap();
+    let group = copied.children(wrapper).next().unwrap();
+    let owner = copied.children(group).next().unwrap();
+    let journal = &copied.audio_bindings().sound_clocks()[owner][&sound_id("effect")];
+    assert_eq!(journal.scope(), group);
+    assert_eq!(journal.clocks().len(), 2);
+    assert!(journal.clocks().iter().any(|reference| reference.introduced_groups().is_empty()));
+    let frozen = copied.to_json().unwrap();
+    let error = apply(&copied, &CommandRequest {
+        project_id: copied.project_id().clone(), expected_revision: copied.revision_id().clone(),
+        new_revision: RevisionId::new("neutral-g-refused").unwrap(),
+        command: Command::Ungroup { node: group.clone() },
+    }).unwrap_err();
+    assert_eq!(error.code, EditErrorCode::InvalidCommand);
+    assert_eq!(copied.to_json().unwrap(), frozen);
+}

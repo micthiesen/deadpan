@@ -1,0 +1,43 @@
+[
+  {
+    "command": [
+      "python",
+      "/tmp/deadpan-neutral-ungroup-2026-10-22/qualify.py",
+      "candidate-ui",
+      "live",
+      "ui"
+    ],
+    "exit": 0,
+    "seconds": 169.8437892915681
+  },
+  {
+    "command": [
+      "python",
+      "/tmp/deadpan-neutral-ungroup-2026-10-22/qualify_native_media.py",
+      "debug-media",
+      "preflight"
+    ],
+    "exit": 0,
+    "seconds": 106.33994337450713
+  },
+  {
+    "command": [
+      "python",
+      "/tmp/deadpan-neutral-ungroup-2026-10-22/qualify_native_media.py",
+      "release-media",
+      "release-media"
+    ],
+    "exit": 0,
+    "seconds": 443.82746712490916
+  },
+  {
+    "command": [
+      "python",
+      "/tmp/deadpan-neutral-ungroup-2026-10-22/qualify_native_media.py",
+      "release-native",
+      "native"
+    ],
+    "exit": 0,
+    "seconds": 282.3468664996326
+  }
+]

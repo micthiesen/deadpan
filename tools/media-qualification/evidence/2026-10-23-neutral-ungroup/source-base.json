@@ -1,0 +1,5 @@
+{
+  "git_commit": "c72abe12965b08f7705e0c9a61ab2298d5a562ae",
+  "archive_sha256": "2e1893faa1003a3af8b39bdb83a5849ec2e2e0b35f0db85645f0275402db7778",
+  "reconstruction": "Git archive of the immutable base plus each phase source-overlays; Rust paths use .rs.txt only in this evidence directory."
+}

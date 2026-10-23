@@ -3,6 +3,8 @@ use super::*;
 use crate::preview::copied::Content;
 use std::collections::BTreeSet;
 
+mod neutral_ungroup;
+
 fn id(name: &str) -> Result<NodeId, String> {
     NodeId::new(name).map_err(|e| e.to_string())
 }
@@ -145,6 +147,7 @@ pub(super) fn exercise(d: &mut Driver<'_>) -> Result<(), String> {
     let grouped = document(d)?.clone();
     let journal = &grouped.audio_bindings().sound_clocks()[&owner][&sound];
     d.check("Aligned production grouping preserves tables and broad journals while recording only the fresh group relation", grouped.audio_bindings().timings() == baseline.audio_bindings().timings() && grouped.beat_sounds() == baseline.beat_sounds() && journal.scope() == &top && journal.clocks().len() == 1 && journal.clocks()[0].timing() == prior.clocks()[0].timing() && journal.clocks()[0].introduced_groups() == &BTreeSet::from([group.clone()]) && grouped.nodes()[&group].label == "New G", json!({"group":group,"scope":top,"new_tables":0}), d.snapshot())?;
+    neutral_ungroup::exercise(d, &grouped, &top, &group, &owner)?;
     command(d, "eq bass=3dB middle=-6dB treble=1.5dB")?;
     command(d, "saturate 6dB")?;
     let treated = document(d)?.clone();

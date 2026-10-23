@@ -1,0 +1,26 @@
+[
+  {
+    "phase": "candidate-pcm",
+    "kind": "pcm",
+    "exit": 0,
+    "seconds": 81.99488266650587
+  },
+  {
+    "phase": "candidate-store",
+    "kind": "store",
+    "exit": 0,
+    "seconds": 71.56264933291823
+  },
+  {
+    "phase": "candidate-all-core",
+    "kind": "allcore",
+    "exit": 0,
+    "seconds": 362.62224550079554
+  },
+  {
+    "phase": "candidate-broad",
+    "kind": "broad",
+    "exit": 0,
+    "seconds": 666.5410342505202
+  }
+]

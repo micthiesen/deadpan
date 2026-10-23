@@ -2,6 +2,38 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Neutral retained-scope Ungroup, 2026-10-23
+
+Implemented and qualified: remove a neutral unary introduced group without undoing
+later labels, descendant gain or sound parameters. Every affected historical
+reference must still treat the group as introduced and unpaired. Scope, timing
+tables, recipes and exact aliases remain intact; genuine later captures stay
+protected. Core 56 and SQLite 85 are unchanged.
+
+All five focused PCM cases and both actual-media Store cases pass, with frozen
+source/input and executed-binary guards. Complete 24,024-sample authored,
+limited and limiter-gain comparisons remain exact, including cold/partitioned
+reads, later fractional-rate displacement and return. Store verifies forced
+rollback, media admission, durable history, registers and portable copies.
+Independent reviews, strict ordinary/UI checks and formatting pass. All 1,497
+Core tests across 67 binaries pass with zero skipped after correcting three
+invalid test assumptions without changing production admission. All 3,499 broader
+selected tests pass with 740 ignored or unselected. One passing output-handle
+warning does not reproduce in an isolated same-archive run; both are retained.
+The UI-feature archive passes 1,292 tests with eleven skipped. The debug
+semantic CLI fixture preserves complete PCM/history and verifies all fifteen
+pictures and 24,024 audio samples at zero offset. Release passes the same
+Ungroup case and the previous nineteen-picture / 30,430-sample grouping,
+Split, Move and copy regression at zero offset. Native replay passes 197
+workflow checks plus Kestrel, including later gain, Undo/Redo and reopening.
+Both nine-file extracted release packages pass validation and doctor unchanged.
+Two layout warning findings remain. Input-to-state p99 is 1.578334 ms over
+330 samples; commit p95 is 90.700292 ms over nine, so the complete 50 ms target
+is not established. Retained
+baseline failures, controls and qualification status are in the
+[qualification record](qualification/neutral-ungroup-2026-10-23.md). No requirement or
+gate closes.
+
 ## Aligned sound scopes, 2026-10-23
 
 Implemented, qualified and pushed in `c72abe12`. Scope remains bounded to an

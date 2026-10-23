@@ -1,0 +1,13 @@
+{
+  "deadpan-audio::audio_definition": {
+    "path": "/private/tmp/deadpan-neutral-ungroup-2026-10-22/baseline-pcm-second-extracted/target/debug/deps/audio_definition-e48f9731e36fc4f6",
+    "sha256": "d0e974bea9d81ef8dc245aa3efd88769b6ea9b11f4779c757e49687b4ada95a1",
+    "tests": [
+      "voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_label_preserves_complete_pcm",
+      "voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_trim_preserves_complete_pcm",
+      "voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_label_preserves_complete_pcm",
+      "voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_trim_preserves_complete_pcm",
+      "voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_still_refuses_a_genuine_later_group_capture"
+    ]
+  }
+}

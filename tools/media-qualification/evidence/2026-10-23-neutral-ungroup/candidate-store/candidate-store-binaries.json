@@ -1,0 +1,10 @@
+{
+  "deadpan-store::source_registration": {
+    "path": "/private/tmp/deadpan-neutral-ungroup-2026-10-22/candidate-store-extracted/target/debug/deps/source_registration-9dc8c89f5f7a9079",
+    "sha256": "b5f7415153a31777e71157c3e2b7a46931eb9dc24d9e871a410375ec9ca3340b",
+    "tests": [
+      "sounds::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_is_atomic_durable_and_portable_after_intervening_edits",
+      "sounds::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_rechecks_unchanged_sound_media_before_commit"
+    ]
+  }
+}

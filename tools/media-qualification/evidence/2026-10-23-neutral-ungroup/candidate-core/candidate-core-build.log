@@ -1,0 +1,4 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Finished `test` profile [optimized + debuginfo] target(s) in 6m 58s
+   Archiving 1 binary and 1 standard library to /tmp/deadpan-neutral-ungroup-2026-10-22/candidate-core.tar.zst
+    Archived 4 files to /tmp/deadpan-neutral-ungroup-2026-10-22/candidate-core.tar.zst in 0.05s

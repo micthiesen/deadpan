@@ -1,0 +1,13 @@
+{
+  "scope": "Neutral introduced unary Ungroup and integrated Core, Audio, Store, CLI and native regression/qualification changes",
+  "production_review": {"agent": "explicit_node_cli_media", "result": "no concrete defect", "scope": "Admission, proof reuse, staged reducer, token binding and guards", "runtime_claim": false},
+  "native_draft_review": {"agent": "neutral_ungroup_history", "result": "no concrete defect", "scope": "Scope navigation, expected JSON, gain and Ungroup routing, reopen, Undo/Redo", "runtime_claim": false},
+  "check": [
+    {"agent": "neutral_ungroup_general_review", "role": "check", "result": "no findings"},
+    {"agent": "neutral_ungroup_clock_review", "role": "check-focused", "lens": "retained clocks, proof identity, budgets and atomic admission", "result": "no findings"},
+    {"agent": "neutral_ungroup_test_review", "role": "check-focused", "lens": "test and qualification correctness", "result": "no findings"}
+  ],
+  "review_base": "origin/main",
+  "excluded_foreign_changes": ["fuzz/Cargo.lock", ".claude/"],
+  "runtime_claim": false
+}

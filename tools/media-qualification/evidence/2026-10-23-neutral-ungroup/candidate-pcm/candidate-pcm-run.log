@@ -1,0 +1,12 @@
+  Extracting 1 binary, 1 build script output directory, and 4 linked paths to /private/tmp/deadpan-neutral-ungroup-2026-10-22/candidate-pcm-extracted
+   Extracted 22 files to /private/tmp/deadpan-neutral-ungroup-2026-10-22/candidate-pcm-extracted in 0.04s
+────────────
+ Nextest run ID 42dafdb5-f588-4d03-b2d4-7733bf9a9f11 with nextest profile: default
+    Starting 5 tests across 1 binary (166 tests skipped)
+        PASS [  21.952s] (1/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_label_preserves_complete_pcm
+        PASS [  22.156s] (2/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_trim_preserves_complete_pcm
+        PASS [  12.629s] (3/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_label_preserves_complete_pcm
+        PASS [   0.014s] (4/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_still_refuses_a_genuine_later_group_capture
+        PASS [  12.595s] (5/5) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_trim_preserves_complete_pcm
+────────────
+     Summary [  34.751s] 5 tests run: 5 passed, 166 skipped

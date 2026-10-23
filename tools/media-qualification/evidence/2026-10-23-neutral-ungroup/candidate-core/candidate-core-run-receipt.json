@@ -1,0 +1,21 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--archive-file",
+    "/tmp/deadpan-neutral-ungroup-2026-10-22/candidate-core.tar.zst",
+    "--extract-to",
+    "/tmp/deadpan-neutral-ungroup-2026-10-22/candidate-core-extracted",
+    "--extract-overwrite",
+    "--workspace-remap",
+    "/Users/michael/Code/deadpan",
+    "-E",
+    "test(neutral_ungroup)",
+    "--test-threads",
+    "8",
+    "--no-fail-fast"
+  ],
+  "exit": 100,
+  "seconds": 0.20293449983000755
+}

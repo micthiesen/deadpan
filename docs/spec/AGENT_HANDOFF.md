@@ -4,6 +4,33 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-22
 
+Neutral Ungroup qualified, 2026-10-23: Core admission removes only a
+neutral unary introduced wrapper around a Source/Hold when every affected
+reference still marks it unpaired. Scope/tables/recipes remain unchanged and
+later edits survive. All five PCM and two actual-media Store cases pass;
+strict ordinary/UI checks and formatting pass after two fixture lint cleanups.
+All 1,497 Core tests across 67 binaries pass with zero skipped, and all 3,499
+broader selected tests pass with 740 ignored or unselected. One passing output
+handle warning does not recur in an isolated same-archive run. Initial Core
+failures were test setup assumptions, retained separately. All integrated
+reviews report no findings. The UI-feature archive passes 1,292 tests with
+eleven skipped. Debug and release CLI media pass full canonical PCM/history
+and all fifteen pictures and 24,024 encoded audio samples at zero offset.
+The old nineteen-picture / 30,430-sample release regression also passes.
+Native production replay passes 197 workflow checks plus Kestrel. Both nine-file
+release portable packages pass independent extraction, full validation and
+doctor without changing any path or byte. Keep two native layout warnings;
+input-to-state p99 is 1.578334 ms over 330 samples and commit p95 is 90.700292 ms
+over nine, so the complete 50 ms target remains open. All source/input and
+executable guards pass. Scratch: `/tmp/deadpan-neutral-ungroup-2026-10-22`.
+The [qualification](../qualification/neutral-ungroup-2026-10-23.md) and durable
+evidence inventory retain 554 payload files / 32,125,159 bytes; inventory SHA-256
+`fc5f842248c2aef881bf1daed024dd4c6594d3fd7e7663d0f5a7d9d905750634`.
+The next DP-24 experiment is scratch-only in `next-performance-map/`: measure
+fresh first-pause binding before choosing an optimization. Its timer overlay
+dry-applies but has not been compiled or executed. No performance improvement
+is claimed. The progress artifact refresh follows the scoped implementation commit.
+
 Current checkpoint, 2026-10-23: fresh `integrated-final-core` passes all 1,489
 tests across 67 binaries, zero skipped; library SHA-256
 `1c69c724a70b193d5e311d4a9089b280c5f6f355a19774c5f1befffd48392bf9`.

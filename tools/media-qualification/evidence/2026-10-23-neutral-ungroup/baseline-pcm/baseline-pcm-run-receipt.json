@@ -1,0 +1,21 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--archive-file",
+    "/tmp/deadpan-neutral-ungroup-2026-10-22/baseline-pcm.tar.zst",
+    "--extract-to",
+    "/tmp/deadpan-neutral-ungroup-2026-10-22/baseline-pcm-extracted",
+    "--extract-overwrite",
+    "--workspace-remap",
+    "/tmp/deadpan-neutral-ungroup-2026-10-22/baseline",
+    "-E",
+    "test(neutral_ungroup)",
+    "--test-threads",
+    "2",
+    "--no-fail-fast"
+  ],
+  "exit": 100,
+  "seconds": 1.7405060417950153
+}

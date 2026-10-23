@@ -1,4 +1,4 @@
-//! Prepared admission for a fresh ordinary wrapper in retained sound scopes.
+//! Prepared admission for neutral wrapper changes in retained sound scopes.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -7,6 +7,8 @@ use crate::{
     Command, CommandRequest, EditError, EditErrorCode, FrozenAudioKind, FrozenAudioLayout,
     MAX_DOCUMENT_NODES, NodeKind, ProjectDocument, ProjectId, RevisionId, SliceCaptureSelection,
 };
+
+mod ungroup;
 
 /// Only preparation constructs this token. Its exact command and entry
 /// identities prevent a proof for one group from admitting another edit.
@@ -41,6 +43,9 @@ pub(crate) fn prepare(
     document: &ProjectDocument,
     request: &CommandRequest,
 ) -> Result<Option<PreparedSoundGrouping>, EditError> {
+    if let Command::Ungroup { node } = &request.command {
+        return ungroup::prepare(document, request, node);
+    }
     let Command::GroupSelection {
         parent,
         selection,

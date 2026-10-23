@@ -59,7 +59,7 @@ fn hold(duration: i64, audio: HoldAudio) -> BeatNode {
 
 // The existing group_endpoints/fixed_retime_output fixture admission path:
 // register the actual video and independent 44.1kHz WAV, never a made-up receipt.
-fn setup(parent: &Path, source_owner: bool) -> Result<(PathBuf, ProjectStore)> {
+pub(super) fn setup(parent: &Path, source_owner: bool) -> Result<(PathBuf, ProjectStore)> {
     let (path, mut store) = project(parent)?;
     let original = retain(&mut store, "cfr-bframes.mp4")?;
     let decoded = decode(&store, &original)?;
@@ -220,7 +220,7 @@ fn setup(parent: &Path, source_owner: bool) -> Result<(PathBuf, ProjectStore)> {
     Ok((path, store))
 }
 
-fn group(document: &ProjectDocument) -> Result<CommandRequest> {
+pub(super) fn group(document: &ProjectDocument) -> Result<CommandRequest> {
     let selection = SliceCaptureSelection::Child {
         node: node("owner"),
     };
@@ -246,7 +246,7 @@ fn group(document: &ProjectDocument) -> Result<CommandRequest> {
     ))
 }
 
-fn tables(path: &Path) -> Result<BTreeMap<String, Vec<Vec<String>>>> {
+pub(super) fn tables(path: &Path) -> Result<BTreeMap<String, Vec<Vec<String>>>> {
     let database = Connection::open(path.join("project.sqlite"))?;
     let names = database
         .prepare("SELECT name FROM sqlite_schema WHERE type='table' ORDER BY name")?

@@ -1,0 +1,134 @@
+  Extracting 1 binary to /private/tmp/deadpan-neutral-ungroup-2026-10-22/baseline-core-extracted
+   Extracted 4 files to /private/tmp/deadpan-neutral-ungroup-2026-10-22/baseline-core-extracted in 0.06s
+────────────
+ Nextest run ID e1cb3b59-11d2-4d7d-97a3-617fe375f071 with nextest profile: default
+    Starting 8 tests across 1 binary (695 tests skipped)
+        FAIL [   0.017s] (1/8) deadpan-core sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_preserves_other_explicit_introduced_groups
+  stdout ───
+
+    running 1 test
+    test sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_preserves_other_explicit_introduced_groups ... FAILED
+
+    failures:
+
+    failures:
+        sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_preserves_other_explicit_introduced_groups
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 702 filtered out; finished in 0.00s
+
+  stderr ───
+
+    thread 'sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_preserves_other_explicit_introduced_groups' (175628711) panicked at crates/deadpan-core/src/sound_clock/tests/edits.rs:26:74:
+    called `Result::unwrap()` on an `Err` value: EditError { code: InvalidCommand, message: "group ownership changes inside a retained beat sound scope are not yet supported", current_revision: None }
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        FAIL [   0.017s] (2/8) deadpan-core sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_rejects_repeat_and_retime_ancestry_even_with_explicit_marker
+  stdout ───
+
+    running 1 test
+    test sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_rejects_repeat_and_retime_ancestry_even_with_explicit_marker ... FAILED
+
+    failures:
+
+    failures:
+        sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_rejects_repeat_and_retime_ancestry_even_with_explicit_marker
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 702 filtered out; finished in 0.00s
+
+  stderr ───
+
+    thread 'sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_rejects_repeat_and_retime_ancestry_even_with_explicit_marker' (175628726) panicked at crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs:178:25:
+    called `Result::unwrap()` on an `Err` value: DocumentError { code: InvalidTree, message: "sound clock processing subtree changed" }
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        FAIL [   0.017s] (3/8) deadpan-core sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_prepared_admission_is_bound_to_project_revision_and_command
+  stdout ───
+
+    running 1 test
+    test sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_prepared_admission_is_bound_to_project_revision_and_command ... FAILED
+
+    failures:
+
+    failures:
+        sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_prepared_admission_is_bound_to_project_revision_and_command
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 702 filtered out; finished in 0.01s
+
+  stderr ───
+
+    thread 'sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_prepared_admission_is_bound_to_project_revision_and_command' (175628697) panicked at crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs:305:6:
+    neutral ungroup needs a prepared historical correspondence
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        PASS [   0.017s] (4/8) deadpan-core sound_clock::tests::edits::neutral_ungroup::group_captions_and_cutaways_remain_invalid_before_ungroup_admission
+        FAIL [   0.018s] (5/8) deadpan-core sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_refuses_a_genuine_later_group_pair_and_group_scoped_copy
+  stdout ───
+
+    running 1 test
+    test sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_refuses_a_genuine_later_group_pair_and_group_scoped_copy ... FAILED
+
+    failures:
+
+    failures:
+        sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_refuses_a_genuine_later_group_pair_and_group_scoped_copy
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 702 filtered out; finished in 0.00s
+
+  stderr ───
+
+    thread 'sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_refuses_a_genuine_later_group_pair_and_group_scoped_copy' (175628706) panicked at crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs:284:5:
+    assertion failed: copied.clocks().iter().any(|reference|
+            {
+                reference.scope() == &copied_group &&
+                    !reference.introduced_groups().contains(&copied_group)
+            })
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        PASS [   0.020s] (6/8) deadpan-core sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_refuses_owned_sounds_treatments_edges_and_framing_atomically
+        FAIL [   0.023s] (7/8) deadpan-core sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_source_and_room_tone_preserves_history_after_unrelated_edits
+  stdout ───
+
+    running 1 test
+    test sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_source_and_room_tone_preserves_history_after_unrelated_edits ... FAILED
+
+    failures:
+
+    failures:
+        sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_source_and_room_tone_preserves_history_after_unrelated_edits
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 702 filtered out; finished in 0.00s
+
+  stderr ───
+
+    thread 'sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_source_and_room_tone_preserves_history_after_unrelated_edits' (175628746) panicked at crates/deadpan-core/src/sound_clock/tests/edits.rs:26:74:
+    called `Result::unwrap()` on an `Err` value: EditError { code: InvalidCommand, message: "group ownership changes inside a retained beat sound scope are not yet supported", current_revision: None }
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        FAIL [   0.112s] (8/8) deadpan-core sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_proof_budget_exhaustion_does_not_publish_partial_relations
+  stdout ───
+
+    running 1 test
+    test sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_proof_budget_exhaustion_does_not_publish_partial_relations ... FAILED
+
+    failures:
+
+    failures:
+        sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_proof_budget_exhaustion_does_not_publish_partial_relations
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 702 filtered out; finished in 0.10s
+
+  stderr ───
+
+    thread 'sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_proof_budget_exhaustion_does_not_publish_partial_relations' (175628684) panicked at crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs:447:25:
+    called `Result::unwrap()` on an `Err` value: DocumentError { code: LimitExceeded, message: "audio binding work exhausted" }
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+────────────
+     Summary [   0.113s] 8 tests run: 2 passed, 6 failed, 695 skipped
+        FAIL [   0.017s] (1/8) deadpan-core sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_preserves_other_explicit_introduced_groups
+        FAIL [   0.017s] (2/8) deadpan-core sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_rejects_repeat_and_retime_ancestry_even_with_explicit_marker
+        FAIL [   0.017s] (3/8) deadpan-core sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_prepared_admission_is_bound_to_project_revision_and_command
+        FAIL [   0.018s] (5/8) deadpan-core sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_refuses_a_genuine_later_group_pair_and_group_scoped_copy
+        FAIL [   0.023s] (7/8) deadpan-core sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_source_and_room_tone_preserves_history_after_unrelated_edits
+        FAIL [   0.112s] (8/8) deadpan-core sound_clock::tests::edits::neutral_ungroup::neutral_ungroup_proof_budget_exhaustion_does_not_publish_partial_relations
+error: test run failed

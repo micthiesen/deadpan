@@ -1,0 +1,62 @@
+{
+  "cases": [
+    {
+      "case": "neutral-ungroup-RoomTone-Label",
+      "initial_samples": 24024,
+      "changed_authored_stereo_samples": 0,
+      "changed_limited_stereo_samples": 0,
+      "changed_gain_samples": 0,
+      "shifted_samples": 25626,
+      "returned_samples": 24024
+    },
+    {
+      "case": "neutral-ungroup-RoomTone-Trim",
+      "initial_samples": 24024,
+      "changed_authored_stereo_samples": 0,
+      "changed_limited_stereo_samples": 0,
+      "changed_gain_samples": 0,
+      "shifted_samples": 25626,
+      "returned_samples": 24024
+    },
+    {
+      "case": "neutral-ungroup-Source-Label",
+      "initial_samples": 24024,
+      "changed_authored_stereo_samples": 0,
+      "changed_limited_stereo_samples": 0,
+      "changed_gain_samples": 0,
+      "shifted_samples": 25626,
+      "returned_samples": 24024
+    },
+    {
+      "case": "neutral-ungroup-Source-Trim",
+      "initial_samples": 24024,
+      "changed_authored_stereo_samples": 0,
+      "changed_limited_stereo_samples": 0,
+      "changed_gain_samples": 0,
+      "shifted_samples": 25626,
+      "returned_samples": 24024
+    }
+  ],
+  "binaries": {
+    "deadpan-audio::audio_definition": {
+      "path": "/private/tmp/deadpan-neutral-ungroup-2026-10-22/candidate-pcm-extracted/target/debug/deps/audio_definition-e48f9731e36fc4f6",
+      "sha256": "8538926a9fc2f89f3f113fb811d049288562bf5e5d0d47775c08d581329200e2",
+      "tests": [
+        "voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_label_preserves_complete_pcm",
+        "voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_roomtone_after_trim_preserves_complete_pcm",
+        "voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_label_preserves_complete_pcm",
+        "voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_source_after_trim_preserves_complete_pcm",
+        "voice_occurrence::beat_sounds::sound_clocks::neutral_ungroup::neutral_ungroup_still_refuses_a_genuine_later_group_capture"
+      ]
+    }
+  },
+  "rust_sources": 2045,
+  "inputs": {
+    "Cargo.lock": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+    "Cargo.toml": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+    ".cargo/config.toml": "b906738cab8f6f289180e1bcf32826d3e2996899cb5055dc7f0c6838655c340d",
+    "crates/deadpan-app/src/navigation/registry/baseline-routing.txt": "a181ba1d3f2db1c030fbdf1feaf2d5ae8efd5edd885114bcea9c161ac774cd8d",
+    "docs/COMMANDS.md": "b4fc50fffbb6d96406593dda90a56ee6c9f3b89a3790b6e7f69b87863f57beec"
+  }
+}
