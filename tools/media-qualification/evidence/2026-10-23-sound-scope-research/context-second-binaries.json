@@ -1,0 +1,10 @@
+{
+  "audio_definition": {
+    "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+    "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+  },
+  "aligned_sound_scope_counterfactual": {
+    "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/aligned_sound_scope_counterfactual-3e1f1cd7fd1d0c5e",
+    "sha256": "b1149a357373fcea0f2e74a29b59b3c33b2087402886807c90c181287e8cf37b"
+  }
+}

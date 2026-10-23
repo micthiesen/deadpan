@@ -1,0 +1,41 @@
+{
+  "cases": [
+    {
+      "case": "Source-prefix2-AfterGrouping-terminaltrue",
+      "file": "context-third-evidence/partition-crop/Source-prefix2-AfterGrouping-terminaltrue.json",
+      "sha256": "19bba352d29a145755beb10934b8c1521d89e09006d8901379aff9122b468d91",
+      "samples": 11211,
+      "top_eq_numerically_changed_samples": 3203,
+      "event_numerically_changed_samples": 3203
+    },
+    {
+      "case": "RoomTone-prefix2-BeforeCapture-terminaltrue",
+      "file": "context-third-evidence/partition-crop/RoomTone-prefix2-BeforeCapture-terminaltrue.json",
+      "sha256": "60924ac0517202dff590d5e63def9957d0bac10d013e3aa1cdae37ca8f8df45a",
+      "samples": 11211,
+      "top_eq_numerically_changed_samples": 3203,
+      "event_numerically_changed_samples": 4804
+    },
+    {
+      "case": "Source-prefix2-BeforeCapture-terminaltrue",
+      "file": "context-third-evidence/partition-crop/Source-prefix2-BeforeCapture-terminaltrue.json",
+      "sha256": "b77a20dc80be20e468c2f072570ab1df3d01a27d0f8334044d84043f6d9c45a5",
+      "samples": 11211,
+      "top_eq_numerically_changed_samples": 3203,
+      "event_numerically_changed_samples": 3203
+    },
+    {
+      "case": "RoomTone-prefix2-AfterGrouping-terminaltrue",
+      "file": "context-third-evidence/partition-crop/RoomTone-prefix2-AfterGrouping-terminaltrue.json",
+      "sha256": "b11a44a07c00f0a7b5e676bfd463037bbe31ed9e89f9754bfe666adb267856ba",
+      "samples": 11211,
+      "top_eq_numerically_changed_samples": 3203,
+      "event_numerically_changed_samples": 4804
+    }
+  ],
+  "all_complete_pcm_and_signed_contexts_match": true,
+  "production_changed": false,
+  "supported_edit_evidence": false,
+  "implementation_evidence": false,
+  "source_phase": "context-third"
+}

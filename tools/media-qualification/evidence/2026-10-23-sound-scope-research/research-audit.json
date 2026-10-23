@@ -1,0 +1,448 @@
+{
+  "base_commit": "4e357bc573a269782f4515b456fa5e080c37352c",
+  "implementation_evidence": false,
+  "production_changed": false,
+  "complete_pcm_and_signed_context_matches": 40,
+  "independently_audited_ablation_controls": 40,
+  "total_compared_stereo_samples": 1409408,
+  "serial_first_run_timeout_seconds": 600,
+  "completed_before_timeout": 30,
+  "remaining_individually_passed": 10,
+  "unsupported_partial_top_captures": [
+    {
+      "case": "RoomTone-prefix2-AfterGrouping-terminaltrue",
+      "error": "capture ROOT[14,17): InvalidCommand: Range endpoints require a Source, ordinary Hold or supported fragment; enter the intended group for other structures",
+      "file": "context-second-evidence/crop/RoomTone-prefix2-AfterGrouping-terminaltrue/crop/summary.json",
+      "sha256": "ace73080cca9bc959dc3d6f9e00a1008ccbbbb8775333ccf88eb2128f31949ae"
+    },
+    {
+      "case": "Source-prefix2-AfterGrouping-terminaltrue",
+      "error": "capture ROOT[14,17): InvalidCommand: Range endpoints require a Source, ordinary Hold or supported fragment; enter the intended group for other structures",
+      "file": "context-second-evidence/crop/Source-prefix2-AfterGrouping-terminaltrue/crop/summary.json",
+      "sha256": "0db6a5e78cdcb65baa2d18b11c86dd657c44210471058bd0c50ac1752d337c5f"
+    },
+    {
+      "case": "RoomTone-prefix2-BeforeCapture-terminaltrue",
+      "error": "capture ROOT[14,17): InvalidCommand: Range endpoints require a Source, ordinary Hold or supported fragment; enter the intended group for other structures",
+      "file": "context-second-evidence/crop/RoomTone-prefix2-BeforeCapture-terminaltrue/crop/summary.json",
+      "sha256": "7dbe335b2af986129d95fba645d8d56780239cd4e5537354fe64ae65464ffe8d"
+    },
+    {
+      "case": "Source-prefix2-BeforeCapture-terminaltrue",
+      "error": "capture ROOT[14,17): InvalidCommand: Range endpoints require a Source, ordinary Hold or supported fragment; enter the intended group for other structures",
+      "file": "context-second-evidence/crop/Source-prefix2-BeforeCapture-terminaltrue/crop/summary.json",
+      "sha256": "7f509e974e8791c729eb7efc2f621ef8325b812f75da7d73fd2627538315063a"
+    }
+  ],
+  "corrected_core_negative": {
+    "test": "real_retime_repeat_and_partition_placement_histories_still_refuse_scope_narrowing",
+    "exit": 0,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/aligned_sound_scope_counterfactual-3e1f1cd7fd1d0c5e",
+      "sha256": "b1149a357373fcea0f2e74a29b59b3c33b2087402886807c90c181287e8cf37b"
+    }
+  },
+  "cases": [
+    {
+      "case": "RoomTone-prefix1-AfterGrouping-terminalfalse",
+      "samples": 32032,
+      "case_file": "context-first-evidence/RoomTone-prefix1-AfterGrouping-terminalfalse.json",
+      "sha256": "85b077f31214dbd14469c397d62c1f7d6644ae170cfd8117f2e1689912f276fb",
+      "ablation_file": "context-second-evidence/ablation/RoomTone-prefix1-AfterGrouping-terminalfalse/ablations/RoomTone-prefix1-AfterGrouping-terminalfalse.json",
+      "ablation_sha256": "dac4cb575787eb3864c94b0dbaf62f0093291247613b4814600523a51feaa1b3",
+      "top_eq_changed_channels": 38438,
+      "event_changed_channels": 21594
+    },
+    {
+      "case": "RoomTone-prefix1-AfterGrouping-terminaltrue",
+      "samples": 32032,
+      "case_file": "context-first-evidence/RoomTone-prefix1-AfterGrouping-terminaltrue.json",
+      "sha256": "ed55c37d33e2af70615232b59ec2ccdb3576f95e238a992bff26e4135c900c53",
+      "ablation_file": "context-second-evidence/ablation/RoomTone-prefix1-AfterGrouping-terminaltrue/ablations/RoomTone-prefix1-AfterGrouping-terminaltrue.json",
+      "ablation_sha256": "beadf882e64d9ce81a7ec1a4a6193b0336b5c52400a4a1b72eca18cad069433a",
+      "top_eq_changed_channels": 38438,
+      "event_changed_channels": 21594
+    },
+    {
+      "case": "RoomTone-prefix1-BeforeCapture-terminalfalse",
+      "samples": 32032,
+      "case_file": "context-first-evidence/RoomTone-prefix1-BeforeCapture-terminalfalse.json",
+      "sha256": "3efb1af253ad3d671e3b2cda75383b55969d3becccc4afcd3a2425e5e34657b0",
+      "ablation_file": "context-second-evidence/ablation/RoomTone-prefix1-BeforeCapture-terminalfalse/ablations/RoomTone-prefix1-BeforeCapture-terminalfalse.json",
+      "ablation_sha256": "a1848f0abb5791d11f03aedda57cff8cc43337c0adcf31f72d21d55af9fb327a",
+      "top_eq_changed_channels": 38438,
+      "event_changed_channels": 21594
+    },
+    {
+      "case": "RoomTone-prefix1-BeforeCapture-terminaltrue",
+      "samples": 32032,
+      "case_file": "context-first-evidence/RoomTone-prefix1-BeforeCapture-terminaltrue.json",
+      "sha256": "c8ff4e0018aadb2e3c9e124d78fea032bdf5133fefea60e73a0960b483905b52",
+      "ablation_file": "context-second-evidence/ablation/RoomTone-prefix1-BeforeCapture-terminaltrue/ablations/RoomTone-prefix1-BeforeCapture-terminaltrue.json",
+      "ablation_sha256": "167c5a21e0f1c65b5cc96dcb717bbed1ab5d1d1bc24280685c2eb22e4ddf5e59",
+      "top_eq_changed_channels": 38438,
+      "event_changed_channels": 21594
+    },
+    {
+      "case": "RoomTone-prefix2-AfterGrouping-terminalfalse",
+      "samples": 33634,
+      "case_file": "context-first-evidence/RoomTone-prefix2-AfterGrouping-terminalfalse.json",
+      "sha256": "63d2462212e5eed9ae462b7daf4736bddee0d398c904ff3c46d74c54acd300bf",
+      "ablation_file": "context-second-evidence/ablation/RoomTone-prefix2-AfterGrouping-terminalfalse/ablations/RoomTone-prefix2-AfterGrouping-terminalfalse.json",
+      "ablation_sha256": "39432700cb2fabb28d1c157cffa98d20f5409efa24855024f0a65fa14b0c7085",
+      "top_eq_changed_channels": 38438,
+      "event_changed_channels": 22469
+    },
+    {
+      "case": "RoomTone-prefix2-AfterGrouping-terminaltrue",
+      "samples": 33634,
+      "case_file": "context-first-evidence/RoomTone-prefix2-AfterGrouping-terminaltrue.json",
+      "sha256": "2853fbde61767f2a90b52d83997eedc210163bd903aafe7a239c4df6e0d16e14",
+      "ablation_file": "context-second-evidence/ablation/RoomTone-prefix2-AfterGrouping-terminaltrue/ablations/RoomTone-prefix2-AfterGrouping-terminaltrue.json",
+      "ablation_sha256": "83302894a7abc7f88e7489861842a1cce2a303ffce72f06c50499f0fb740de13",
+      "top_eq_changed_channels": 38438,
+      "event_changed_channels": 22469
+    },
+    {
+      "case": "RoomTone-prefix2-BeforeCapture-terminalfalse",
+      "samples": 33634,
+      "case_file": "context-first-evidence/RoomTone-prefix2-BeforeCapture-terminalfalse.json",
+      "sha256": "5d6b87abd0b5cb0ef985db03cd5fbcdd12198c08fd813901450018c21960ed10",
+      "ablation_file": "context-second-evidence/ablation/RoomTone-prefix2-BeforeCapture-terminalfalse/ablations/RoomTone-prefix2-BeforeCapture-terminalfalse.json",
+      "ablation_sha256": "a8493f3cde24eb16529a00c4cd591fe504ec9b8f1da277e0e3ec4eb4770609be",
+      "top_eq_changed_channels": 38438,
+      "event_changed_channels": 22469
+    },
+    {
+      "case": "RoomTone-prefix2-BeforeCapture-terminaltrue",
+      "samples": 33634,
+      "case_file": "context-first-evidence/RoomTone-prefix2-BeforeCapture-terminaltrue.json",
+      "sha256": "d2a4d259c2f7367bca139ce597ea1ac3b82ed8ffdc901333efcf8249d633bb6d",
+      "ablation_file": "context-second-evidence/ablation/RoomTone-prefix2-BeforeCapture-terminaltrue/ablations/RoomTone-prefix2-BeforeCapture-terminaltrue.json",
+      "ablation_sha256": "d14ffcebbc9d8da0d415e8b95c3b47bbdc74d432b8ad25775e80402f9627b34d",
+      "top_eq_changed_channels": 38438,
+      "event_changed_channels": 22469
+    },
+    {
+      "case": "RoomTone-prefix3-AfterGrouping-terminalfalse",
+      "samples": 35235,
+      "case_file": "context-second-evidence/matrix/RoomTone-prefix3-AfterGrouping-terminalfalse/RoomTone-prefix3-AfterGrouping-terminalfalse.json",
+      "sha256": "a0fb0e8fddce50233192ea1de1aa72041921a4753bd9e53b05cc5e2f45191c48",
+      "ablation_file": "context-second-evidence/ablation/RoomTone-prefix3-AfterGrouping-terminalfalse/ablations/RoomTone-prefix3-AfterGrouping-terminalfalse.json",
+      "ablation_sha256": "d732f27c5b81b74d2c2424d945d8aea4aaae2556182444219bedb2b2ef909927",
+      "top_eq_changed_channels": 38438,
+      "event_changed_channels": 21331
+    },
+    {
+      "case": "RoomTone-prefix3-AfterGrouping-terminaltrue",
+      "samples": 35235,
+      "case_file": "context-second-evidence/matrix/RoomTone-prefix3-AfterGrouping-terminaltrue/RoomTone-prefix3-AfterGrouping-terminaltrue.json",
+      "sha256": "f7cda4587bfd47aa0c38d5f16d90c500df808728b11feb209aa0d4f716cca87f",
+      "ablation_file": "context-second-evidence/ablation/RoomTone-prefix3-AfterGrouping-terminaltrue/ablations/RoomTone-prefix3-AfterGrouping-terminaltrue.json",
+      "ablation_sha256": "191ef9ffef440bf085bc40e583ad54b2c9818ac506492250745d44df99b775e6",
+      "top_eq_changed_channels": 38438,
+      "event_changed_channels": 21331
+    },
+    {
+      "case": "RoomTone-prefix3-BeforeCapture-terminalfalse",
+      "samples": 35235,
+      "case_file": "context-first-evidence/RoomTone-prefix3-BeforeCapture-terminalfalse.json",
+      "sha256": "16c73e8a131dcdc2c56417800e658371768fa61910df122225f42c943bbce662",
+      "ablation_file": "context-second-evidence/ablation/RoomTone-prefix3-BeforeCapture-terminalfalse/ablations/RoomTone-prefix3-BeforeCapture-terminalfalse.json",
+      "ablation_sha256": "814dcc76df74b5ec4cec4ffa0def7a770c3be2e71c3fc924c7c2dd846fbb6f20",
+      "top_eq_changed_channels": 38438,
+      "event_changed_channels": 21331
+    },
+    {
+      "case": "RoomTone-prefix3-BeforeCapture-terminaltrue",
+      "samples": 35235,
+      "case_file": "context-first-evidence/RoomTone-prefix3-BeforeCapture-terminaltrue.json",
+      "sha256": "743e832490fc9977045f4364acd5416d9add548144339e6af7cae055d316c43c",
+      "ablation_file": "context-second-evidence/ablation/RoomTone-prefix3-BeforeCapture-terminaltrue/ablations/RoomTone-prefix3-BeforeCapture-terminaltrue.json",
+      "ablation_sha256": "da13813784bdcff3c285eb2b28b3ed6485c4d5e535ad90c06cf25cb605e2ab3e",
+      "top_eq_changed_channels": 38438,
+      "event_changed_channels": 21331
+    },
+    {
+      "case": "RoomTone-prefix4-AfterGrouping-terminalfalse",
+      "samples": 36837,
+      "case_file": "context-second-evidence/matrix/RoomTone-prefix4-AfterGrouping-terminalfalse/RoomTone-prefix4-AfterGrouping-terminalfalse.json",
+      "sha256": "f2b2f7b56383dc666bf92c1b6d10a7289c5fe02d7376b932cbe26f1aac78cf9b",
+      "ablation_file": "context-second-evidence/ablation/RoomTone-prefix4-AfterGrouping-terminalfalse/ablations/RoomTone-prefix4-AfterGrouping-terminalfalse.json",
+      "ablation_sha256": "4efe6f417269bbdb4baf62b92fcb8ecf19422eeda16ddbb50a364714c522da46",
+      "top_eq_changed_channels": 38438,
+      "event_changed_channels": 22209
+    },
+    {
+      "case": "RoomTone-prefix4-AfterGrouping-terminaltrue",
+      "samples": 36837,
+      "case_file": "context-second-evidence/matrix/RoomTone-prefix4-AfterGrouping-terminaltrue/RoomTone-prefix4-AfterGrouping-terminaltrue.json",
+      "sha256": "42df7bbe19fd6bcd5dc4bce204349590062e66793de4a86df879315660261f02",
+      "ablation_file": "context-second-evidence/ablation/RoomTone-prefix4-AfterGrouping-terminaltrue/ablations/RoomTone-prefix4-AfterGrouping-terminaltrue.json",
+      "ablation_sha256": "d25f80a1e84c90d0e4c055074d281a9ee0b489d0a96d0ec14163c299dffabc2a",
+      "top_eq_changed_channels": 38438,
+      "event_changed_channels": 22209
+    },
+    {
+      "case": "RoomTone-prefix4-BeforeCapture-terminalfalse",
+      "samples": 36837,
+      "case_file": "context-second-evidence/matrix/RoomTone-prefix4-BeforeCapture-terminalfalse/RoomTone-prefix4-BeforeCapture-terminalfalse.json",
+      "sha256": "0b62adc7138112b023cc86580ad21d6ac3b1020a18ce5adbf93ad75de83d3749",
+      "ablation_file": "context-second-evidence/ablation/RoomTone-prefix4-BeforeCapture-terminalfalse/ablations/RoomTone-prefix4-BeforeCapture-terminalfalse.json",
+      "ablation_sha256": "f50ecdf527867cb4a799747ecce4ff46823629d2af38a91f5517c1bacc6e295f",
+      "top_eq_changed_channels": 38438,
+      "event_changed_channels": 22209
+    },
+    {
+      "case": "RoomTone-prefix4-BeforeCapture-terminaltrue",
+      "samples": 36837,
+      "case_file": "context-second-evidence/matrix/RoomTone-prefix4-BeforeCapture-terminaltrue/RoomTone-prefix4-BeforeCapture-terminaltrue.json",
+      "sha256": "017a8294facb62bcf12af81dd24ab259e66a568bdd8de96f423f1d157853f390",
+      "ablation_file": "context-second-evidence/ablation/RoomTone-prefix4-BeforeCapture-terminaltrue/ablations/RoomTone-prefix4-BeforeCapture-terminaltrue.json",
+      "ablation_sha256": "f5ba50efb02bafb19749b970a323594170b308dcb30c0229fcd30cc9349ec49d",
+      "top_eq_changed_channels": 38438,
+      "event_changed_channels": 22209
+    },
+    {
+      "case": "RoomTone-prefix5-AfterGrouping-terminalfalse",
+      "samples": 38438,
+      "case_file": "context-second-evidence/matrix/RoomTone-prefix5-AfterGrouping-terminalfalse/RoomTone-prefix5-AfterGrouping-terminalfalse.json",
+      "sha256": "23c237d1c7d4a7198e3836ce33ad13234c6fb00526c3cd128ae8be086e6f2c7e",
+      "ablation_file": "context-second-evidence/ablation/RoomTone-prefix5-AfterGrouping-terminalfalse/ablations/RoomTone-prefix5-AfterGrouping-terminalfalse.json",
+      "ablation_sha256": "7a79ac4c402751398b5951d3d4da54044bf1684b3eee6e40f8f06dd3d95e0e33",
+      "top_eq_changed_channels": 38438,
+      "event_changed_channels": 21069
+    },
+    {
+      "case": "RoomTone-prefix5-AfterGrouping-terminaltrue",
+      "samples": 38438,
+      "case_file": "context-second-evidence/matrix/RoomTone-prefix5-AfterGrouping-terminaltrue/RoomTone-prefix5-AfterGrouping-terminaltrue.json",
+      "sha256": "0f7572a8c418ef8ce38d30c2a1ba5c67c85d92f7a7423d6d211262cfda14cb71",
+      "ablation_file": "context-second-evidence/ablation/RoomTone-prefix5-AfterGrouping-terminaltrue/ablations/RoomTone-prefix5-AfterGrouping-terminaltrue.json",
+      "ablation_sha256": "950c251facb747c4626b390f6feedd5bdee5e889fe0651e43e163998bc0eb1a9",
+      "top_eq_changed_channels": 38438,
+      "event_changed_channels": 21069
+    },
+    {
+      "case": "RoomTone-prefix5-BeforeCapture-terminalfalse",
+      "samples": 38438,
+      "case_file": "context-second-evidence/matrix/RoomTone-prefix5-BeforeCapture-terminalfalse/RoomTone-prefix5-BeforeCapture-terminalfalse.json",
+      "sha256": "574e6fc7f48002b8c733a0399a168338c2727a263a6497595bb49ef6231f9195",
+      "ablation_file": "context-second-evidence/ablation/RoomTone-prefix5-BeforeCapture-terminalfalse/ablations/RoomTone-prefix5-BeforeCapture-terminalfalse.json",
+      "ablation_sha256": "86aaf13923b01153987975309670a80560f23007cb9b558b2064119c9f93a761",
+      "top_eq_changed_channels": 38438,
+      "event_changed_channels": 21069
+    },
+    {
+      "case": "RoomTone-prefix5-BeforeCapture-terminaltrue",
+      "samples": 38438,
+      "case_file": "context-second-evidence/matrix/RoomTone-prefix5-BeforeCapture-terminaltrue/RoomTone-prefix5-BeforeCapture-terminaltrue.json",
+      "sha256": "88955699854981bb79158bbb587ca0892018e3dbbf5113873512a2e7d4e0e25a",
+      "ablation_file": "context-second-evidence/ablation/RoomTone-prefix5-BeforeCapture-terminaltrue/ablations/RoomTone-prefix5-BeforeCapture-terminaltrue.json",
+      "ablation_sha256": "140d477af941b3e209c8ba298d3e5eb210a6195ba5cbf87826200e959ddf70b9",
+      "top_eq_changed_channels": 38438,
+      "event_changed_channels": 21069
+    },
+    {
+      "case": "Source-prefix1-AfterGrouping-terminalfalse",
+      "samples": 32032,
+      "case_file": "context-first-evidence/Source-prefix1-AfterGrouping-terminalfalse.json",
+      "sha256": "d9f6486f15c2aad2fcac814fec8e2b7743c9c970601d778ea2c8fdf2818e66a0",
+      "ablation_file": "context-second-evidence/ablation/Source-prefix1-AfterGrouping-terminalfalse/ablations/Source-prefix1-AfterGrouping-terminalfalse.json",
+      "ablation_sha256": "7237fbbcecf875b99300ed01fed0c0f4b62928d41d5ea933c8797ba90c0be44e",
+      "top_eq_changed_channels": 16394,
+      "event_changed_channels": 16394
+    },
+    {
+      "case": "Source-prefix1-AfterGrouping-terminaltrue",
+      "samples": 32032,
+      "case_file": "context-first-evidence/Source-prefix1-AfterGrouping-terminaltrue.json",
+      "sha256": "ef9d43fbf3e93b6854393c838658993d845f019bddb9c9958d76294e27154bb7",
+      "ablation_file": "context-second-evidence/ablation/Source-prefix1-AfterGrouping-terminaltrue/ablations/Source-prefix1-AfterGrouping-terminaltrue.json",
+      "ablation_sha256": "fc91c4842a5ef66ffe186b2427357bd3df7850306ef6c99a9755c248e3134890",
+      "top_eq_changed_channels": 16394,
+      "event_changed_channels": 16394
+    },
+    {
+      "case": "Source-prefix1-BeforeCapture-terminalfalse",
+      "samples": 32032,
+      "case_file": "context-first-evidence/Source-prefix1-BeforeCapture-terminalfalse.json",
+      "sha256": "10e318cc3b3e03cd1a9e737a1b86c4c31e6bb20444cd28334b96004f4d264ee9",
+      "ablation_file": "context-second-evidence/ablation/Source-prefix1-BeforeCapture-terminalfalse/ablations/Source-prefix1-BeforeCapture-terminalfalse.json",
+      "ablation_sha256": "f8d64fe7bdf46be0bf8dae3987f0f1c49a6fc15de1ca9f53444f5e31185c5743",
+      "top_eq_changed_channels": 16394,
+      "event_changed_channels": 16394
+    },
+    {
+      "case": "Source-prefix1-BeforeCapture-terminaltrue",
+      "samples": 32032,
+      "case_file": "context-first-evidence/Source-prefix1-BeforeCapture-terminaltrue.json",
+      "sha256": "59f2294dd380609a1158f2358a260f19df9b411e748c2223b83c5c7b9f20e399",
+      "ablation_file": "context-second-evidence/ablation/Source-prefix1-BeforeCapture-terminaltrue/ablations/Source-prefix1-BeforeCapture-terminaltrue.json",
+      "ablation_sha256": "7c6e333d3552c82ebff2b0b5fd67625703fa9ddf658dcf6475286048f62a87c1",
+      "top_eq_changed_channels": 16394,
+      "event_changed_channels": 16394
+    },
+    {
+      "case": "Source-prefix2-AfterGrouping-terminalfalse",
+      "samples": 33634,
+      "case_file": "context-first-evidence/Source-prefix2-AfterGrouping-terminalfalse.json",
+      "sha256": "ae6084fa16b69257f17d6c22429e82cd225b5d791b6987f11c6077d048d6c9d8",
+      "ablation_file": "context-second-evidence/ablation/Source-prefix2-AfterGrouping-terminalfalse/ablations/Source-prefix2-AfterGrouping-terminalfalse.json",
+      "ablation_sha256": "8e657525346a528a181d07e6ca3102f169442e44d29045250a847597d9cfb01d",
+      "top_eq_changed_channels": 16394,
+      "event_changed_channels": 16394
+    },
+    {
+      "case": "Source-prefix2-AfterGrouping-terminaltrue",
+      "samples": 33634,
+      "case_file": "context-first-evidence/Source-prefix2-AfterGrouping-terminaltrue.json",
+      "sha256": "3d558539aa3126049f5486604d0adf41b571d9dd9b369dcd351b6d7ecad75d55",
+      "ablation_file": "context-second-evidence/ablation/Source-prefix2-AfterGrouping-terminaltrue/ablations/Source-prefix2-AfterGrouping-terminaltrue.json",
+      "ablation_sha256": "484afcf49f43bfdc4b35ea5493a47794d1acc50cd835513571a091f4bf4d8e7b",
+      "top_eq_changed_channels": 16394,
+      "event_changed_channels": 16394
+    },
+    {
+      "case": "Source-prefix2-BeforeCapture-terminalfalse",
+      "samples": 33634,
+      "case_file": "context-first-evidence/Source-prefix2-BeforeCapture-terminalfalse.json",
+      "sha256": "0e939d1e85ac3f5ab82710dc56aac4170b6be89f6f3a6638eefc5a33fb4ed5b1",
+      "ablation_file": "context-second-evidence/ablation/Source-prefix2-BeforeCapture-terminalfalse/ablations/Source-prefix2-BeforeCapture-terminalfalse.json",
+      "ablation_sha256": "8f8cb01266d898b66c11cae451d5258bd084f1b227935d32fb35d452791fb4b2",
+      "top_eq_changed_channels": 16394,
+      "event_changed_channels": 16394
+    },
+    {
+      "case": "Source-prefix2-BeforeCapture-terminaltrue",
+      "samples": 33634,
+      "case_file": "context-first-evidence/Source-prefix2-BeforeCapture-terminaltrue.json",
+      "sha256": "b80bf1f2ee59c864a6b1b81ca0dd7ea7c6cd84dd07f409fe5010790f4ccab272",
+      "ablation_file": "context-second-evidence/ablation/Source-prefix2-BeforeCapture-terminaltrue/ablations/Source-prefix2-BeforeCapture-terminaltrue.json",
+      "ablation_sha256": "b9e69e7431c05f9232ac7f4381875b3ecc1ef0a1af201fe2663332c4673f2b45",
+      "top_eq_changed_channels": 16394,
+      "event_changed_channels": 16394
+    },
+    {
+      "case": "Source-prefix3-AfterGrouping-terminalfalse",
+      "samples": 35235,
+      "case_file": "context-first-evidence/Source-prefix3-AfterGrouping-terminalfalse.json",
+      "sha256": "47dd1e2b6e6f28fd9d3497a55bd0e670ad0b785e4669926fd8af981c9b695865",
+      "ablation_file": "context-second-evidence/ablation/Source-prefix3-AfterGrouping-terminalfalse/ablations/Source-prefix3-AfterGrouping-terminalfalse.json",
+      "ablation_sha256": "50c97cb2df52f8cee9cfcbdfebad7b8b689f3fdfabb54bdda1e96c61691196be",
+      "top_eq_changed_channels": 16394,
+      "event_changed_channels": 16394
+    },
+    {
+      "case": "Source-prefix3-AfterGrouping-terminaltrue",
+      "samples": 35235,
+      "case_file": "context-first-evidence/Source-prefix3-AfterGrouping-terminaltrue.json",
+      "sha256": "1a2e5bedcc8191d829353d0c191d6b8723119af9d052ec34bbb6e1e6b5f871cb",
+      "ablation_file": "context-second-evidence/ablation/Source-prefix3-AfterGrouping-terminaltrue/ablations/Source-prefix3-AfterGrouping-terminaltrue.json",
+      "ablation_sha256": "f812b41e6217ec5fd41e34bb173dfebfbb2b89bc24e05d16b6cf2406d54c4c80",
+      "top_eq_changed_channels": 16394,
+      "event_changed_channels": 16394
+    },
+    {
+      "case": "Source-prefix3-BeforeCapture-terminalfalse",
+      "samples": 35235,
+      "case_file": "context-first-evidence/Source-prefix3-BeforeCapture-terminalfalse.json",
+      "sha256": "adee4505ddc109eda2c1783b6fb963bae39c1dc918c7599ab5066ad889594783",
+      "ablation_file": "context-second-evidence/ablation/Source-prefix3-BeforeCapture-terminalfalse/ablations/Source-prefix3-BeforeCapture-terminalfalse.json",
+      "ablation_sha256": "44f9f439d8e4b4c09f0bf3083aa0521b018421ae2b751f4b0b295b01bf2eb79b",
+      "top_eq_changed_channels": 16394,
+      "event_changed_channels": 16394
+    },
+    {
+      "case": "Source-prefix3-BeforeCapture-terminaltrue",
+      "samples": 35235,
+      "case_file": "context-first-evidence/Source-prefix3-BeforeCapture-terminaltrue.json",
+      "sha256": "707881f7b60ec00e979c9f2ce466a59856d8de3379911e9ea98ad1461a8471b2",
+      "ablation_file": "context-second-evidence/ablation/Source-prefix3-BeforeCapture-terminaltrue/ablations/Source-prefix3-BeforeCapture-terminaltrue.json",
+      "ablation_sha256": "e3c9ea8d0937573ffb253b5c52b8d8377033989b58af3d4be6e6f808ad1db458",
+      "top_eq_changed_channels": 16394,
+      "event_changed_channels": 16394
+    },
+    {
+      "case": "Source-prefix4-AfterGrouping-terminalfalse",
+      "samples": 36837,
+      "case_file": "context-first-evidence/Source-prefix4-AfterGrouping-terminalfalse.json",
+      "sha256": "34f15c5991485e880c15dc7003881860dda71ceb473872b9f6dd1cfa246a40f8",
+      "ablation_file": "context-second-evidence/ablation/Source-prefix4-AfterGrouping-terminalfalse/ablations/Source-prefix4-AfterGrouping-terminalfalse.json",
+      "ablation_sha256": "b080b7014f4ad5dc9437a8ddd3ed65f9c165495e319e72068dfe703241efca05",
+      "top_eq_changed_channels": 16394,
+      "event_changed_channels": 16394
+    },
+    {
+      "case": "Source-prefix4-AfterGrouping-terminaltrue",
+      "samples": 36837,
+      "case_file": "context-first-evidence/Source-prefix4-AfterGrouping-terminaltrue.json",
+      "sha256": "f2f1872154d2e9540cc18185769fcbc3002e1b6fcd0ed6f7b182ce479d55a696",
+      "ablation_file": "context-second-evidence/ablation/Source-prefix4-AfterGrouping-terminaltrue/ablations/Source-prefix4-AfterGrouping-terminaltrue.json",
+      "ablation_sha256": "dba3f707f2d0c1988abba6207fc4435a1a9c0ad9ed1fe5aaef935b41c50ed94c",
+      "top_eq_changed_channels": 16394,
+      "event_changed_channels": 16394
+    },
+    {
+      "case": "Source-prefix4-BeforeCapture-terminalfalse",
+      "samples": 36837,
+      "case_file": "context-first-evidence/Source-prefix4-BeforeCapture-terminalfalse.json",
+      "sha256": "19ae9bf2bd36eb08e1bcefa3e16cff896a1a1212d7491aba41d31e114ae87aee",
+      "ablation_file": "context-second-evidence/ablation/Source-prefix4-BeforeCapture-terminalfalse/ablations/Source-prefix4-BeforeCapture-terminalfalse.json",
+      "ablation_sha256": "3f0bea8d7453f4cb662804619e665c0c85073643d3dec4b3ef1b0315f58e76c7",
+      "top_eq_changed_channels": 16394,
+      "event_changed_channels": 16394
+    },
+    {
+      "case": "Source-prefix4-BeforeCapture-terminaltrue",
+      "samples": 36837,
+      "case_file": "context-first-evidence/Source-prefix4-BeforeCapture-terminaltrue.json",
+      "sha256": "3f4ffd1dce12865d4b14d523171f9c8c8da10d03f84c0ab2b254414ef2d035dd",
+      "ablation_file": "context-second-evidence/ablation/Source-prefix4-BeforeCapture-terminaltrue/ablations/Source-prefix4-BeforeCapture-terminaltrue.json",
+      "ablation_sha256": "59aa6a576b823876fa3922b38630f84686ef83f757240761a0493223f5f1a0a5",
+      "top_eq_changed_channels": 16394,
+      "event_changed_channels": 16394
+    },
+    {
+      "case": "Source-prefix5-AfterGrouping-terminalfalse",
+      "samples": 38438,
+      "case_file": "context-first-evidence/Source-prefix5-AfterGrouping-terminalfalse.json",
+      "sha256": "d4f8d9f657c4c151b0a5097f0e509577fdf2b6bc00cb543dbcfe2fd752fc6f3d",
+      "ablation_file": "context-second-evidence/ablation/Source-prefix5-AfterGrouping-terminalfalse/ablations/Source-prefix5-AfterGrouping-terminalfalse.json",
+      "ablation_sha256": "d3c6f48db8141e81359a373a464e35ec8979a28d962f3e370b85979214ec89f0",
+      "top_eq_changed_channels": 16394,
+      "event_changed_channels": 16394
+    },
+    {
+      "case": "Source-prefix5-AfterGrouping-terminaltrue",
+      "samples": 38438,
+      "case_file": "context-first-evidence/Source-prefix5-AfterGrouping-terminaltrue.json",
+      "sha256": "f935f026fd7b19a004582f25448f2bc15e6fd46d7888e2b49c9e52279826382c",
+      "ablation_file": "context-second-evidence/ablation/Source-prefix5-AfterGrouping-terminaltrue/ablations/Source-prefix5-AfterGrouping-terminaltrue.json",
+      "ablation_sha256": "4db6157cc7287b8b53f5fc39d753ab99ca5ce74e883ad129d146aaafbfe1bc8d",
+      "top_eq_changed_channels": 16394,
+      "event_changed_channels": 16394
+    },
+    {
+      "case": "Source-prefix5-BeforeCapture-terminalfalse",
+      "samples": 38438,
+      "case_file": "context-first-evidence/Source-prefix5-BeforeCapture-terminalfalse.json",
+      "sha256": "cd0c925cc8cb7ccd4ef1dd53f0abd366ffea4381bebecfb5e3baeb30fb03143c",
+      "ablation_file": "context-second-evidence/ablation/Source-prefix5-BeforeCapture-terminalfalse/ablations/Source-prefix5-BeforeCapture-terminalfalse.json",
+      "ablation_sha256": "11f4b6ca10bea21fbe62f67f1c4423a7d772584f0f0361b8ce29c96852671103",
+      "top_eq_changed_channels": 16394,
+      "event_changed_channels": 16394
+    },
+    {
+      "case": "Source-prefix5-BeforeCapture-terminaltrue",
+      "samples": 38438,
+      "case_file": "context-first-evidence/Source-prefix5-BeforeCapture-terminaltrue.json",
+      "sha256": "cc5e59b05e803cf8952c61e515f3bb47b47c94aa9fcf6775fd2e4344c7fc7236",
+      "ablation_file": "context-second-evidence/ablation/Source-prefix5-BeforeCapture-terminaltrue/ablations/Source-prefix5-BeforeCapture-terminaltrue.json",
+      "ablation_sha256": "8c1a51f449b07e3f689fb773b4041170f203e8d8606428952d5a3f74115ab1af",
+      "top_eq_changed_channels": 16394,
+      "event_changed_channels": 16394
+    }
+  ],
+  "limits": "Constrained representation research only; no feature implemented and no general crop/context or newly introduced processing-owner contract established."
+}

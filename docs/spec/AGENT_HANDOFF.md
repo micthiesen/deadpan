@@ -27,18 +27,22 @@ SQLite 84/core 55 stay unchanged. No requirement or gate is newly complete.
 Scratch sources, logs and orchestration are under
 `/tmp/deadpan-sound-group-endpoints-2026-10-22/`. A read-only next-scope design is
 there too; it is not implemented or verified. Aligned grouping inside a broad
-ordinary Sequence journal scope remains under investigation. All 40 constrained
-scope-narrowing representation comparisons match complete PCM and signed context;
-40 independent ablations prove that Top EQ and the attached event affect PCM.
-The serial probe timed out after 30 completed cases; the remaining ten pass as
-individual cases. Four attempted partial Top captures refuse before audio at the
-existing supported-endpoint guard. These are research results, not implementation.
-Scratch evidence and an independent bit-array audit are under
-`/tmp/deadpan-aligned-sound-scope-2026-10-22/`. Scope narrowing drops old ancestor
-aliases, so keep production unchanged while qualifying cropped context and the
-birth of a new group processing owner. A draft explicit per-reference introduced
-group relation preserves old aliases without inventing historical group contexts;
-its capture, copy and mixed-history lifecycle is not yet established. Do not admit actual
+ordinary Sequence journal scope remains under investigation. Scope narrowing is
+now refuted: after two placements it loses retained sample 22422 from Top input
+and changes 1,899 canonical PCM channel samples, despite passing 40 single-move
+comparisons, 40 active ablations and four JSON-admitted exterior crops. See
+[research qualification](../qualification/sound-scope-research-2026-10-23.md).
+Production guards remain unchanged. Full failing PCM/input evidence and exact
+sources are retained; broader positive-case arrays remain in the task scratch.
+
+Continue under `/tmp/deadpan-aligned-sound-scope-2026-10-22/`. A separate
+`proof-checkout` source copy passes seven v1 correspondence/serialization tests.
+The v2 draft adds unpaired unary live-scope roots for copying a newly introduced
+single-owner group; it is not compiled or integrated. Preserve old journal scopes,
+timing tables and ancestor aliases with explicit per-reference introduced-group
+relations. Do not invent a historical alias for a group that did not exist.
+Capture/copy renaming, mixed-history terminal support, reducer admission, planner,
+Store and vertical verification remain owed. Do not admit actual
 processor interiors or cropped/Repeat/Retime histories by dropping the guard.
 Partial copy, DeleteRange,
 MoveRange, pause insertion and RepeatSelection already work. Remaining temporal

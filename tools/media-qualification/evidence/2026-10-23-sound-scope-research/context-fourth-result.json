@@ -1,0 +1,8 @@
+{
+  "test": "voice_occurrence::beat_sounds::sound_clocks::aligned_scope::context_probe::terminal_two_moves_probe::experimental_two_placements_retain_birth_terminal_in_top_context",
+  "exit": 101,
+  "timeout": false,
+  "seconds": 1.332603375427425,
+  "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-fourth-extracted/target/debug/deps/audio_definition-e48f9731e36fc4f6",
+  "sha256": "532f0b6d19b38bf33a81ee5cf66492709f37b66acbbbeb46b72f7502867c52b4"
+}

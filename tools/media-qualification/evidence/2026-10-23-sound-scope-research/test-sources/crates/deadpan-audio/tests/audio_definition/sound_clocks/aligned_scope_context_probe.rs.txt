@@ -1,0 +1,414 @@
+//! DRAFT EXPERIMENT ONLY: uncompiled and unexecuted.
+//! Child of aligned_scope.rs. Manually changes journal representation, then
+//! invokes already-supported neutral grouping. This is NOT feature evidence.
+use super::*;
+
+#[path = "ablation_additions.rs"]
+mod ablations;
+
+#[path = "crop_probe.rs"]
+mod crop_probe;
+
+#[path = "crop_partition_probe.rs"]
+mod crop_partition_probe;
+
+#[path = "terminal_two_moves_probe.rs"]
+mod terminal_two_moves_probe;
+
+fn selected_case(label: &str) -> bool {
+    std::env::var("DEADPAN_SCOPE_PROBE_CASE").map_or(true, |selected| selected == label)
+}
+
+#[derive(Clone, Copy, Debug)]
+enum EqWhen {
+    BeforeCapture,
+    AfterGrouping,
+}
+
+fn top_eq(document: &ProjectDocument, name: &str) -> ProjectDocument {
+    edit(
+        document,
+        name,
+        Command::SetAudioTreatments {
+            node: id("top"),
+            treatments: eq([4500, -2500, 1500]),
+        },
+    )
+}
+
+fn prefix(document: &ProjectDocument, count: i64) -> ProjectDocument {
+    let NodeKind::Hold { recipe } = hold(count, HoldAudio::Silence).kind else {
+        unreachable!()
+    };
+    edit(
+        document,
+        &format!("probe-prefix-{count}"),
+        Command::InsertTime {
+            at: ProjectFrame(0),
+            hold: recipe,
+            id: id("probe-prefix"),
+            identities: SplitIdentities::default(),
+            timing: timing(&format!("probe-prefix-{count}")),
+        },
+    )
+}
+
+/// Deliberate test-only representation rewrite, not the proposed Core proof.
+/// Full public JSON revalidation is required before any audio or group call.
+fn manually_narrow(document: &ProjectDocument) -> ProjectDocument {
+    let owner = id("owner");
+    let event = sound_id("effect");
+    let old = &document.audio_bindings().sound_clocks()[&owner][&event];
+    assert_eq!(old.scope(), &id("top"));
+    let clocks = old
+        .clocks()
+        .iter()
+        .map(|reference| {
+            assert_eq!(reference.scope(), &id("top"));
+            assert_eq!(reference.owner(), &owner);
+            assert!(reference.repeats().is_empty());
+            SoundClockReference::new(
+                reference.timing().clone(),
+                reference.owner().clone(),
+                reference.owner().clone(),
+            )
+            .with_repeats(reference.repeats().clone())
+        })
+        .collect();
+    let mut journals = document.audio_bindings().sound_clocks().clone();
+    journals
+        .get_mut(&owner)
+        .unwrap()
+        .insert(event, SoundClockJournal::new(owner, clocks).unwrap());
+    let bindings = AudioBindingState::new_with_sound_clocks(
+        document
+            .audio_bindings()
+            .timings()
+            .iter()
+            .map(|(id, layout)| AudioTimingRecord {
+                id: id.clone(),
+                layout: layout.clone(),
+            })
+            .collect(),
+        document.audio_bindings().bindings().clone(),
+        document.audio_bindings().gap_bindings().clone(),
+        journals,
+    )
+    .unwrap();
+    let mut wire = serde_json::to_value(document).unwrap();
+    wire["audio_bindings"] = serde_json::to_value(bindings).unwrap();
+    let changed = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    assert_eq!(changed.revision_id(), document.revision_id());
+    assert_eq!(changed.nodes(), document.nodes());
+    assert_eq!(changed.beat_sounds(), document.beat_sounds());
+    assert_eq!(
+        changed.audio_bindings().timings(),
+        document.audio_bindings().timings()
+    );
+    assert_eq!(
+        changed.audio_bindings().bindings(),
+        document.audio_bindings().bindings()
+    );
+    assert_eq!(
+        changed.audio_bindings().gap_bindings(),
+        document.audio_bindings().gap_bindings()
+    );
+    changed
+}
+
+fn fixture(owner: OwnerPolicy, terminal_event: bool) -> ProjectDocument {
+    let mut document = initial(Case {
+        owner,
+        event_eq: true,
+        owner_eq: true,
+    });
+    if terminal_event {
+        // Entire event is still inside the authored 12-frame owner:
+        // old rounded allocation B14-B2=19219; 11022+8197=19219<19219.2.
+        // Actual decoded media remains exactly audio(0..8197).
+        let mut event = document.beat_sounds()[&id("owner")][&sound_id("effect")].clone();
+        event.offset = AudioSample(11_022);
+        document = edit(
+            &document,
+            "probe-terminal-event",
+            Command::SetBeatSound {
+                owner: id("owner"),
+                id: sound_id("effect"),
+                event,
+            },
+        );
+    }
+    document
+}
+
+fn pair(
+    owner: OwnerPolicy,
+    phase: i64,
+    when: EqWhen,
+    terminal_event: bool,
+) -> (ProjectDocument, ProjectDocument) {
+    let mut initial = fixture(owner, terminal_event);
+    if matches!(when, EqWhen::BeforeCapture) {
+        initial = top_eq(&initial, "probe-existing-top-eq");
+    }
+    // Control has the final neutral wrapper BEFORE any sound clock capture.
+    // It retains its complete Top alias in the normal broad journal.
+    let grouped_first = edit(
+        &initial,
+        "probe-inner",
+        group(&initial, "probe-inner", "top", "owner"),
+    );
+    let mut control = prefix(&grouped_first, phase);
+    let broad = prefix(&initial, phase);
+    assert_eq!(broad.duration().unwrap().frames(), 19 + phase);
+    assert_eq!(
+        broad.audio_bindings().sound_clocks()[&id("owner")][&sound_id("effect")].scope(),
+        &id("top"),
+    );
+    let narrowed = manually_narrow(&broad);
+    // This existing command is accepted because its parent Top is now outside
+    // every manually narrowed current scope. No new admission code is invoked.
+    let mut probe = edit(
+        &narrowed,
+        "probe-inner",
+        group(&narrowed, "probe-inner", "top", "owner"),
+    );
+    assert_eq!(probe.audio_bindings(), narrowed.audio_bindings());
+    if matches!(when, EqWhen::AfterGrouping) {
+        control = top_eq(&control, "probe-added-top-eq");
+        probe = top_eq(&probe, "probe-added-top-eq");
+    }
+    assert_eq!(probe.nodes(), control.nodes());
+    assert_eq!(probe.beat_sounds(), control.beat_sounds());
+    let before = compile(&control, false);
+    let after = compile(&probe, false);
+    for frame in 0..19 + phase {
+        assert_eq!(
+            before.picture(ProjectFrame(frame)).unwrap().picture,
+            after.picture(ProjectFrame(frame)).unwrap().picture,
+            "experimental pair's picture identity at {frame}",
+        );
+    }
+    if phase == 2 {
+        assert_eq!(frame_sample_boundary(14) - frame_sample_boundary(2), 19_219);
+        assert_eq!(frame_sample_boundary(16) - frame_sample_boundary(4), 19_220);
+    }
+    (control, probe)
+}
+
+fn full(document: &ProjectDocument, partitions: &[u32]) -> Vec<[f32; 2]> {
+    read(
+        document,
+        0,
+        frame_sample_boundary(document.duration().unwrap().frames()),
+        partitions,
+    )
+}
+
+fn differences32(expected: &[[f32; 2]], actual: &[[f32; 2]]) -> serde_json::Value {
+    assert_eq!(actual.len(), expected.len());
+    let mut count = 0usize;
+    let mut differences = Vec::new();
+    for (sample, (a, b)) in expected.iter().zip(actual).enumerate() {
+        for channel in 0..2 {
+            if a[channel].to_bits() != b[channel].to_bits() {
+                count += 1;
+                differences.push(serde_json::json!({
+                    "stage":"authored_bus","sample":sample,"channel":channel,
+                    "expected":a[channel],"actual":b[channel],
+                    "expected_bits":a[channel].to_bits(),"actual_bits":b[channel].to_bits(),
+                }));
+            }
+        }
+    }
+    serde_json::json!({"different_channel_samples":count,"differences":differences})
+}
+
+fn input_windows(document: &ProjectDocument, context_node: &str, phase: i64) -> serde_json::Value {
+    let plan = compile(document, false);
+    let context = plan
+        .audio_sound_instance_context(
+            &InstancePath {
+                node: id(context_node),
+                repeats: vec![],
+            },
+            Default::default(),
+        )
+        .unwrap();
+    let owner_start = frame_sample_boundary(2 + phase);
+    let owner_end = frame_sample_boundary(14 + phase);
+    let top_end = frame_sample_boundary(19 + phase);
+    let mut windows = Vec::new();
+    // Use signed windows and preserve raw suppression ranges. Owner-input
+    // excludes Original/RoomTone, so full-bus RoomTone comparison is separate.
+    for first in [
+        -128,
+        owner_start - 128,
+        owner_end - 256,
+        owner_end - 128,
+        owner_end,
+        top_end - 128,
+    ] {
+        let mut renderer = StageAudio::new(plan.clone());
+        let block = renderer
+            .read_beat_sound_owner_input(
+                &mut ClockProvider::new(document),
+                &context,
+                AudioSample(first),
+                256,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+        windows.push(serde_json::json!({
+            "start":first,"samples":block.samples,
+            "sample_bits":block.samples.iter().map(|s| s.map(f64::to_bits)).collect::<Vec<_>>(),
+            "suppressed":block.suppressed,
+        }));
+    }
+    serde_json::json!({
+        "context":context_node,
+        "samples":[context.samples().start.0,context.samples().end.0],
+        "windows":windows,
+    })
+}
+
+fn input_differences(
+    expected: &serde_json::Value,
+    actual: &serde_json::Value,
+) -> serde_json::Value {
+    let expected_windows = expected["windows"].as_array().unwrap();
+    let actual_windows = actual["windows"].as_array().unwrap();
+    assert_eq!(actual_windows.len(), expected_windows.len());
+    let mut differences = Vec::new();
+    let mut suppression = Vec::new();
+    for (expected, actual) in expected_windows.iter().zip(actual_windows) {
+        assert_eq!(actual["start"], expected["start"]);
+        let start = expected["start"].as_i64().unwrap();
+        let expected_bits = expected["sample_bits"].as_array().unwrap();
+        let actual_bits = actual["sample_bits"].as_array().unwrap();
+        assert_eq!(actual_bits.len(), expected_bits.len());
+        for (offset, (expected_bits, actual_bits)) in
+            expected_bits.iter().zip(actual_bits).enumerate()
+        {
+            for channel in 0..2 {
+                if expected_bits[channel] != actual_bits[channel] {
+                    differences.push(serde_json::json!({
+                        "stage":"beat_sound_owner_input_before_owner_treatments",
+                        "sample":start+i64::try_from(offset).unwrap(), "channel":channel,
+                        "expected":expected["samples"][offset][channel],
+                        "actual":actual["samples"][offset][channel],
+                        "expected_bits":expected_bits[channel],"actual_bits":actual_bits[channel],
+                    }));
+                }
+            }
+        }
+        if expected["suppressed"] != actual["suppressed"] {
+            suppression.push(serde_json::json!({
+                "window_start":start,"expected":expected["suppressed"],"actual":actual["suppressed"],
+            }));
+        }
+    }
+    let support_equal = expected["samples"] == actual["samples"];
+    serde_json::json!({
+        "passed":support_equal && differences.is_empty() && suppression.is_empty(),
+        "context":expected["context"],"support_equal":support_equal,
+        "expected_support":expected["samples"],"actual_support":actual["samples"],
+        "differences":differences,"suppression_differences":suppression,
+    })
+}
+
+#[test]
+fn experimental_narrow_scope_top_equalizer_context_probe_all_prefix_phases() {
+    let evidence = std::env::var_os("DEADPAN_SCOPE_PROBE_EVIDENCE").map(std::path::PathBuf::from);
+    if let Some(directory) = &evidence {
+        std::fs::create_dir_all(directory).unwrap();
+    }
+    let mut rows = Vec::new();
+    let mut all_equal = true;
+    for owner in [OwnerPolicy::Source, OwnerPolicy::RoomTone] {
+        for phase in 1..=5 {
+            for when in [EqWhen::BeforeCapture, EqWhen::AfterGrouping] {
+                for terminal_event in [false, true] {
+                    let label =
+                        format!("{owner:?}-prefix{phase}-{when:?}-terminal{terminal_event}");
+                    if !selected_case(&label) {
+                        continue;
+                    }
+                    let (control, probe) = pair(owner, phase, when, terminal_event);
+                    let expected = full(&control, &[1021]);
+                    let repeated = full(&control, &[37, 509, 1021, 173]);
+                    let control_partitions = differences32(&expected, &repeated);
+                    let actual = full(&probe, &[37, 509, 1021, 173]);
+                    let repeated_probe = full(&probe, &[1021]);
+                    let probe_partitions = differences32(&actual, &repeated_probe);
+                    let comparison = differences32(&expected, &actual);
+                    let control_top = input_windows(&control, "top", phase);
+                    let probe_top = input_windows(&probe, "top", phase);
+                    let control_owner = input_windows(&control, "owner", phase);
+                    let probe_owner = input_windows(&probe, "owner", phase);
+                    let top_comparison = input_differences(&control_top, &probe_top);
+                    let owner_comparison = input_differences(&control_owner, &probe_owner);
+                    let top_equal = top_comparison["passed"] == true;
+                    let owner_equal = owner_comparison["passed"] == true;
+                    let carrier_audible = if matches!(owner, OwnerPolicy::RoomTone) {
+                        let end = usize::try_from(frame_sample_boundary(14 + phase)).unwrap();
+                        let carrier = edit(
+                            &control,
+                            "probe-carrier-only",
+                            Command::DeleteBeatSound {
+                                owner: id("owner"),
+                                id: sound_id("effect"),
+                            },
+                        );
+                        let carrier = full(&carrier, &[1021]);
+                        carrier[end - 16..end].iter().any(|s| *s != [0.0; 2])
+                    } else {
+                        true
+                    };
+                    let equal = comparison["different_channel_samples"] == 0
+                        && control_partitions["different_channel_samples"] == 0
+                        && probe_partitions["different_channel_samples"] == 0
+                        && top_equal
+                        && owner_equal
+                        && carrier_audible;
+                    all_equal &= equal;
+                    let row = serde_json::json!({
+                        "case":label,"passed":equal,"pcm":comparison,
+                        "top_input_equal":top_equal,"owner_input_equal":owner_equal,
+                        "top_input":top_comparison,"owner_input":owner_comparison,
+                        "control_partition_comparison":control_partitions,
+                        "probe_partition_comparison":probe_partitions,
+                        "terminal_carrier_witness_valid":carrier_audible,
+                        "sample_count":expected.len(),
+                        "implementation_evidence":false,
+                    });
+                    eprintln!("{row}");
+                    if let Some(directory) = &evidence {
+                        std::fs::write(directory.join(format!("{label}.json")),
+                            serde_json::to_vec(&serde_json::json!({
+                                "summary":row,"control":control,"manually_narrowed_probe":probe,
+                                "expected_pcm_bits":expected.iter().map(|s| s.map(f32::to_bits)).collect::<Vec<_>>(),
+                                "actual_pcm_bits":actual.iter().map(|s| s.map(f32::to_bits)).collect::<Vec<_>>(),
+                                "control_top_input":control_top,"probe_top_input":probe_top,
+                                "control_owner_input":control_owner,"probe_owner_input":probe_owner,
+                            })).unwrap(),
+                        ).unwrap();
+                    }
+                    rows.push(row);
+                }
+            }
+        }
+    }
+    if let Some(directory) = &evidence {
+        std::fs::write(
+            directory.join("summary.json"),
+            serde_json::to_vec_pretty(&rows).unwrap(),
+        )
+        .unwrap();
+    }
+    assert!(
+        !rows.is_empty() && all_equal,
+        "manual scope narrowing changed full PCM, raw context, or suppression; inspect all printed rows"
+    );
+}

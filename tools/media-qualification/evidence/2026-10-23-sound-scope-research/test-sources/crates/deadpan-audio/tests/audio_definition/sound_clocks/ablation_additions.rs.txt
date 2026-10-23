@@ -1,0 +1,193 @@
+//! TEST-ONLY DRAFT: uncompiled and unexecuted; no implementation evidence.
+//!
+//! Copy beside aligned_scope_context_probe.rs and register INSIDE that module:
+//! #[path = "ablation_additions.rs"]
+//! mod ablations;
+//!
+//! Filter: experimental_scope_probe_controls_have_active_top_eq_and_attached_event
+//! Set DEADPAN_SCOPE_PROBE_EVIDENCE; full output goes in its ablations child.
+//! Does not alter or depend on successful manual scope narrowing.
+use super::*;
+
+/// Same independently built control branch as pair(), without constructing its
+/// experimental manually narrowed representation.
+fn control(owner: OwnerPolicy, phase: i64, when: EqWhen, terminal_event: bool) -> ProjectDocument {
+    let mut original = fixture(owner, terminal_event);
+    if matches!(when, EqWhen::BeforeCapture) {
+        original = top_eq(&original, "probe-existing-top-eq");
+    }
+    let grouped = edit(
+        &original,
+        "probe-inner",
+        group(&original, "probe-inner", "top", "owner"),
+    );
+    let mut control = prefix(&grouped, phase);
+    if matches!(when, EqWhen::AfterGrouping) {
+        control = top_eq(&control, "probe-added-top-eq");
+    }
+    assert_eq!(
+        control.nodes()[&id("top")].audio_treatments,
+        eq([4500, -2500, 1500])
+    );
+    assert_eq!(
+        control.beat_sounds()[&id("owner")][&sound_id("effect")].offset,
+        AudioSample(if terminal_event { 11_022 } else { 37 })
+    );
+    assert_eq!(control.duration().unwrap().frames(), 19 + phase);
+    control
+}
+
+fn summary_difference(baseline: &[[f32; 2]], ablated: &[[f32; 2]]) -> serde_json::Value {
+    assert_eq!(baseline.len(), ablated.len());
+    let mut bit_channels = 0usize;
+    let mut numerical_channels = 0usize;
+    let mut bit_frames = 0usize;
+    let mut numerical_frames = 0usize;
+    let mut first_bit = None;
+    let mut last_bit = None;
+    let mut first_numerical = None;
+    let mut last_numerical = None;
+    for (index, (expected, actual)) in baseline.iter().zip(ablated).enumerate() {
+        assert!(
+            expected
+                .iter()
+                .chain(actual)
+                .all(|sample| sample.is_finite())
+        );
+        let mut frame_bit = false;
+        let mut frame_numerical = false;
+        for channel in 0..2 {
+            if expected[channel].to_bits() != actual[channel].to_bits() {
+                bit_channels += 1;
+                frame_bit = true;
+                first_bit.get_or_insert(index);
+                last_bit = Some(index);
+                let numerical = expected[channel] != actual[channel];
+                if numerical {
+                    numerical_channels += 1;
+                    frame_numerical = true;
+                    first_numerical.get_or_insert(index);
+                    last_numerical = Some(index);
+                }
+            }
+        }
+        bit_frames += usize::from(frame_bit);
+        numerical_frames += usize::from(frame_numerical);
+    }
+    serde_json::json!({
+        "sample_count":baseline.len(),"bit_different_channel_samples":bit_channels,
+        "bit_different_stereo_samples":bit_frames,
+        "first_bit_different_sample":first_bit,"last_bit_different_sample":last_bit,
+        "numerically_different_channel_samples":numerical_channels,
+        "numerically_different_stereo_samples":numerical_frames,
+        "first_numerically_different_sample":first_numerical,
+        "last_numerically_different_sample":last_numerical,
+        "changes_numerical_pcm":numerical_channels > 0,
+        "full_difference_reconstruction":"compare retained baseline/ablated PCM bit arrays at every index",
+    })
+}
+
+#[test]
+fn experimental_scope_probe_controls_have_active_top_eq_and_attached_event() {
+    let evidence = std::env::var_os("DEADPAN_SCOPE_PROBE_EVIDENCE")
+        .map(std::path::PathBuf::from)
+        .expect("set DEADPAN_SCOPE_PROBE_EVIDENCE to retain every ablation case")
+        .join("ablations");
+    std::fs::create_dir_all(&evidence).unwrap();
+    let mut rows = Vec::new();
+    let mut all_valid = true;
+    for owner in [OwnerPolicy::Source, OwnerPolicy::RoomTone] {
+        for phase in 1..=5 {
+            for when in [EqWhen::BeforeCapture, EqWhen::AfterGrouping] {
+                for terminal_event in [false, true] {
+                    let label =
+                        format!("{owner:?}-prefix{phase}-{when:?}-terminal{terminal_event}");
+                    if !selected_case(&label) {
+                        continue;
+                    }
+                    let original = control(owner, phase, when, terminal_event);
+                    let no_top_eq = edit(
+                        &original,
+                        "ablate-top-eq",
+                        Command::SetAudioTreatments {
+                            node: id("top"),
+                            treatments: AudioTreatments::default(),
+                        },
+                    );
+                    // Removing only the ancestor's treatment cannot mutate the
+                    // independent event, owner treatment or any retained table.
+                    assert_eq!(no_top_eq.audio_bindings(), original.audio_bindings());
+                    assert_eq!(no_top_eq.beat_sounds(), original.beat_sounds());
+                    assert_eq!(
+                        no_top_eq.nodes()[&id("owner")],
+                        original.nodes()[&id("owner")]
+                    );
+                    let no_event = edit(
+                        &original,
+                        "ablate-attached-event",
+                        Command::DeleteBeatSound {
+                            owner: id("owner"),
+                            id: sound_id("effect"),
+                        },
+                    );
+                    assert_eq!(no_event.nodes(), original.nodes());
+                    assert!(!no_event.beat_sounds().contains_key(&id("owner")));
+                    let baseline = full(&original, &[1021]);
+                    let no_top_pcm = full(&no_top_eq, &[37, 509, 1021, 173]);
+                    let no_event_pcm = full(&no_event, &[173, 1021, 37, 509]);
+                    let top_comparison = summary_difference(&baseline, &no_top_pcm);
+                    let event_comparison = summary_difference(&baseline, &no_event_pcm);
+                    // Signed-zero bit changes alone cannot establish an active
+                    // stage/event. Require at least one exact numeric change.
+                    let top_active = top_comparison["changes_numerical_pcm"] == true;
+                    let event_active = event_comparison["changes_numerical_pcm"] == true;
+                    let valid = top_active && event_active;
+                    all_valid &= valid;
+                    let row = serde_json::json!({
+                        "case":label,"passed":valid,"top_eq_active":top_active,
+                        "attached_event_contributes_pcm":event_active,
+                        "top_eq_ablation":top_comparison,"event_ablation":event_comparison,
+                        "interpretation":if valid {
+                            "control has an active ancestor EQ and nonzero attached contribution"
+                        } else {
+                            "control questionable: exact missing-effect evidence retained; do not infer representation safety"
+                        },
+                        "epsilon":0,"listening_claim":false,"implementation_evidence":false,
+                    });
+                    // Complete bit arrays retain every exact difference without
+                    // logging thousands of deliberately changed EQ samples.
+                    std::fs::write(evidence.join(format!("{label}.json")),
+                        serde_json::to_vec(&serde_json::json!({
+                            "summary":row,
+                            "original_control":original,
+                            "top_eq_removed_control":no_top_eq,
+                            "attached_event_removed_control":no_event,
+                            "baseline_pcm_bits":baseline.iter().map(|s| s.map(f32::to_bits)).collect::<Vec<_>>(),
+                            "no_top_eq_pcm_bits":no_top_pcm.iter().map(|s| s.map(f32::to_bits)).collect::<Vec<_>>(),
+                            "no_event_pcm_bits":no_event_pcm.iter().map(|s| s.map(f32::to_bits)).collect::<Vec<_>>(),
+                        })).unwrap(),
+                    ).unwrap();
+                    eprintln!("{row}");
+                    rows.push(row);
+                }
+            }
+        }
+    }
+    assert_eq!(
+        rows.len(),
+        if std::env::var_os("DEADPAN_SCOPE_PROBE_CASE").is_some() {
+            1
+        } else {
+            40
+        }
+    );
+    std::fs::write(
+        evidence.join("summary.json"),
+        serde_json::to_vec_pretty(&rows).unwrap(),
+    )
+    .unwrap();
+    assert!(
+        all_valid,
+        "some control does not prove active Top EQ or an attached contribution; inspect all retained exact comparisons"
+    );
+}

@@ -1,0 +1,8 @@
+{
+  "test": "voice_occurrence::beat_sounds::sound_clocks::aligned_scope::context_probe::crop_partition_probe::experimental_json_partition_preserves_top_context_after_scope_narrowing",
+  "exit": 0,
+  "timeout": false,
+  "seconds": 30.916389250196517,
+  "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-third-extracted/target/debug/deps/audio_definition-e48f9731e36fc4f6",
+  "sha256": "e00a4c15ed125447ffbe7498619ba4bcec74b52a3f9fbd6b6db4e70201d8754f"
+}

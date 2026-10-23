@@ -1,0 +1,4 @@
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [optimized + debuginfo] target(s) in 9.17s
+   Archiving 1 binary, 1 build script output directory, 4 linked paths, and 1 standard library to /tmp/deadpan-aligned-sound-scope-2026-10-22/context-fourth.tar.zst
+    Archived 22 files to /tmp/deadpan-aligned-sound-scope-2026-10-22/context-fourth.tar.zst in 0.04s

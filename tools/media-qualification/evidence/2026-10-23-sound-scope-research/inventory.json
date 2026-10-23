@@ -1,0 +1,181 @@
+{
+  "files": {
+    "base-commit.txt": {
+      "bytes": 41,
+      "sha256": "d857e32f70504c472bb23615f23de5f6ed31ba78f8a5111239673ab858059d78"
+    },
+    "baseline-first-base-git-audit.json": {
+      "bytes": 463592,
+      "sha256": "bd20c139ae8c05cb33463b11e1a3d1f51ec2603ec045bc218e4b906550e387d9"
+    },
+    "baseline-first-binary.json": {
+      "bytes": 627,
+      "sha256": "c56456b0e86ebb147b4655f5fb19668ddfd9a12779b2a874393b7af8eafd403a"
+    },
+    "baseline-first-results.json": {
+      "bytes": 942,
+      "sha256": "80abee55f1d5a486f208c0defe1c3cf0d1b6a92a9ed75db47e09178c97ed82a4"
+    },
+    "baseline-negatives-results.json": {
+      "bytes": 928,
+      "sha256": "0b13bef3005c057028b8caf540ea92f9581be023d13d869425005bcdf93baddb"
+    },
+    "context-first-build-result.json": {
+      "bytes": 486,
+      "sha256": "8560c01a7d84292a148859cde4ae554cdb477b1ab3b756067ab8583c023a80af"
+    },
+    "context-first-control-identities.json": {
+      "bytes": 706,
+      "sha256": "05439eb956d271ded02c51b5d3ab823ab0b4498c4e3d35d64f3e6ff72fc56c4e"
+    },
+    "context-first-list.log": {
+      "bytes": 280,
+      "sha256": "309d7654c3f8139918f107e5e4ca29b52d2d7aabf5fe45f07b0699f4782f06c4"
+    },
+    "context-first-results.json": {
+      "bytes": 422,
+      "sha256": "ac2cceafccee1266a5c352275edb8009cd902a3ba837b2a2decf4128f4a7b4f4"
+    },
+    "context-first-timeout-receipt.json": {
+      "bytes": 37536,
+      "sha256": "01b4a9f4589712022e6c661b7eb395f699d40ad9b27e34c709d0e071c2221952"
+    },
+    "context-fourth-build-result.json": {
+      "bytes": 399,
+      "sha256": "d539fe404f4d03cb2481ff26c166a8df3b0e505414f6808ca762b38af18f10ab"
+    },
+    "context-fourth-build.log": {
+      "bytes": 422,
+      "sha256": "61adf4886612f656ce0bf3831fc19e644d2a0ba980686a6c2c6f2ab295c4b026"
+    },
+    "context-fourth-control-identities.json": {
+      "bytes": 1322,
+      "sha256": "327be46bd33507a0035af65a673b9218fcd5a474ae89b32111b5f62df1da0bde"
+    },
+    "context-fourth-lock.json": {
+      "bytes": 583,
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+    },
+    "context-fourth-result.json": {
+      "bytes": 471,
+      "sha256": "5276bfd8e01476223dce7f0bb957a3875e880a81c4970575ea4a8d2ae14a1e5a"
+    },
+    "context-fourth-source-identities.json": {
+      "bytes": 249825,
+      "sha256": "ba8d011dea95288f06ab0e67ca17a74cc99e64165f0cb40c1560c266fdc404cb"
+    },
+    "context-fourth.stderr": {
+      "bytes": 751,
+      "sha256": "bab4d0d28a2e9e08f184d6be180ce9afe63a992c1ce8efe96ab3490afa40d473"
+    },
+    "context-fourth.stdout": {
+      "bytes": 492,
+      "sha256": "1bbed4f77f34590faaa032f6e86e31ec5eae72fb3cd78a81fb403e3e555f3620"
+    },
+    "context-second-binaries.json": {
+      "bytes": 547,
+      "sha256": "950e251ed6131909aef1461d3fa6b7f6cf49feca745d11c85cc6992f6e6eb11c"
+    },
+    "context-second-control-identities.json": {
+      "bytes": 1006,
+      "sha256": "75b9a603ce12a08da1a70217d19120b5360fe82db84d0c35deb2011c6cba1808"
+    },
+    "context-second-core-negative.json": {
+      "bytes": 373,
+      "sha256": "2a4ad6dc44098eed4b025cedc6bb7d0527d05a52932583afccce24b3cfcd7466"
+    },
+    "context-second-core-negative.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "context-second-core-negative.stdout": {
+      "bytes": 356,
+      "sha256": "00de72b431762384aa90bc9f1807f19f6e4dcd844048efa36770a4c8bb19a4de"
+    },
+    "context-second-results.json": {
+      "bytes": 22353,
+      "sha256": "5df67719fa8a8eb68b46300640c71e97f05d7563080b0618df3a24e34dfab6c5"
+    },
+    "context-third-control-identities.json": {
+      "bytes": 1162,
+      "sha256": "0337c20befa7ec398946d460a19a6c0c3171d3cdd47e397480c3befb4ff79b4a"
+    },
+    "context-third-result.json": {
+      "bytes": 472,
+      "sha256": "80442ce84997e71e40f43b488bf2a21066dacb352232003bea95948e062d629b"
+    },
+    "decision.md": {
+      "bytes": 3001,
+      "sha256": "5fc90a16a5958a5e68865a0797903603f2ef4348d180eba203472256b6a3de4a"
+    },
+    "partition-research-audit.json": {
+      "bytes": 1740,
+      "sha256": "d339093747717a6d60dce23ef1a89b38aa5acff7cecacb03e8935ee8ecd1b04e"
+    },
+    "preserve-context-design.md": {
+      "bytes": 15532,
+      "sha256": "1facf200c0b716c2d3450a5fee54ce496d1dc22bc3282e042f4bf93153c487af"
+    },
+    "research-audit.json": {
+      "bytes": 27579,
+      "sha256": "d7fef726081e2c8ffb86f57884698e90ee21b57395dea8d6fa4514bc8532fe91"
+    },
+    "root-wrapper-addendum.md": {
+      "bytes": 6205,
+      "sha256": "a0e5b760df92c584d4b240406f4712945a85da74df96bfc887881889381c1088"
+    },
+    "terminal-research-audit.json": {
+      "bytes": 2408,
+      "sha256": "f1e9b34138e877f5239a5832dcde48507806c6c6e4744a3df235e19031123b93"
+    },
+    "terminal-two-moves/prepared-documents.json": {
+      "bytes": 40157,
+      "sha256": "ead54533c1b79ee40a7f2071e594891334b00f2b628751f9a61555fdda6da5e8"
+    },
+    "terminal-two-moves/result.json": {
+      "bytes": 5212043,
+      "sha256": "9e850fe6236d0871609c6270bb073259953c64b20bdd32bc26725e1882d24dbf"
+    },
+    "terminal-two-moves/summary.json": {
+      "bytes": 370,
+      "sha256": "25ff9a5a21ec98e9489b6c853b52846e50730a4c1b2dde1cd034c8a0aa959835"
+    },
+    "test-sources/crates/deadpan-audio/tests/audio_definition/sound_clocks/ablation_additions.rs.txt": {
+      "bytes": 8973,
+      "sha256": "2ff9bb472efd128dd392ac721a6fd68f28d9a59f47dc8662cea16f7270e68e6c"
+    },
+    "test-sources/crates/deadpan-audio/tests/audio_definition/sound_clocks/aligned_scope.rs.txt": {
+      "bytes": 17515,
+      "sha256": "dbc444c9f13cbc8827f91b55382ea02f5306bbbf3d0abfd3cef9dcd198172a28"
+    },
+    "test-sources/crates/deadpan-audio/tests/audio_definition/sound_clocks/aligned_scope_context_probe.rs.txt": {
+      "bytes": 16694,
+      "sha256": "8e429bab0271bd203a9536704646fefdd3e4a14b58159522d7f47ba214db0d6f"
+    },
+    "test-sources/crates/deadpan-audio/tests/audio_definition/sound_clocks/crop_partition_probe.rs.txt": {
+      "bytes": 14588,
+      "sha256": "65da0032a70b9ba96254fc5f1fa98c03eddf86341b79fe93cda73a29b63334e1"
+    },
+    "test-sources/crates/deadpan-audio/tests/audio_definition/sound_clocks/crop_probe.rs.txt": {
+      "bytes": 16578,
+      "sha256": "7d4db1d16c9984069ebc37d611d26f6d4fbd4789fb663cb783a4979b5fff60ff"
+    },
+    "test-sources/crates/deadpan-audio/tests/audio_definition/sound_clocks/terminal_two_moves_probe.rs.txt": {
+      "bytes": 19817,
+      "sha256": "07a0ab8865ae8f5f09ac82c8e0b1435d3152cd52bb05a36338ac57a609ded492"
+    },
+    "test-sources/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs.txt": {
+      "bytes": 37403,
+      "sha256": "12a9c9103a0a73cf3b8d01b4f0094f0e835b040a76c54f1663fc03143bb8d123"
+    },
+    "test-sources/crates/deadpan-core/tests/aligned_sound_scope_counterfactual.rs.txt": {
+      "bytes": 22404,
+      "sha256": "a8bb3bbff0dd0d34c6158ab7f8cb9cbe4a2652df0c65cb6e1ce9f04f323fb7eb"
+    }
+  },
+  "count": 43,
+  "bytes": 6249101,
+  "implementation_evidence": false,
+  "production_source_changed": false,
+  "limits": "All 40 full positive-case and ablation arrays remain in the task scratch directory; this durable record retains their independent hash audit and the complete failing two-placement counterexample. Existing baseline production sources are pinned by Git blob audit."
+}

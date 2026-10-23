@@ -1,0 +1,521 @@
+//! DRAFT ONLY: uncompiled/unexecuted representation research, not implementation evidence.
+//! Child of context_probe:
+//! #[path = "terminal_two_moves_probe.rs"]
+//! mod terminal_two_moves_probe;
+//! Filter: experimental_two_placements_retain_birth_terminal_in_top_context
+//! Requires DEADPAN_SCOPE_PROBE_EVIDENCE; writes terminal-two-moves/.
+use super::*;
+
+type Trial<T> = std::result::Result<T, serde_json::Value>;
+
+fn fail(stage: &str, error: impl std::fmt::Display) -> serde_json::Value {
+    serde_json::json!({"stage":stage,"error":error.to_string()})
+}
+
+fn command(document: &ProjectDocument, name: &str, command: Command) -> Trial<ProjectDocument> {
+    let request = CommandRequest {
+        project_id: document.project_id().clone(),
+        expected_revision: document.revision_id().clone(),
+        new_revision: RevisionId::new(name).map_err(|e| fail("revision", e))?,
+        command,
+    };
+    let applied = apply(document, &request).map_err(|e| {
+        serde_json::json!({
+            "stage":name,"error_code":format!("{:?}",e.code),"error_message":e.message,
+            "request":request,
+        })
+    })?;
+    let after = applied.forward.apply(document).map_err(|e| fail(name, e))?;
+    if applied
+        .inverse
+        .apply(&after)
+        .map_err(|e| fail("inverse", e))?
+        != *document
+    {
+        return Err(fail(name, "inverse differs from pre-command document"));
+    }
+    ProjectDocument::from_json(&after.to_json().map_err(|e| fail("JSON", e))?)
+        .map_err(|e| fail("JSON admission", e))
+}
+
+fn insert_prefix(
+    document: &ProjectDocument,
+    frames: i64,
+    node: &str,
+    revision: &str,
+) -> Trial<ProjectDocument> {
+    let NodeKind::Hold { recipe } = hold(frames, HoldAudio::Silence).kind else {
+        unreachable!()
+    };
+    command(
+        document,
+        revision,
+        Command::InsertTime {
+            at: ProjectFrame(0),
+            hold: recipe,
+            id: id(node),
+            identities: SplitIdentities::default(),
+            timing: timing(revision),
+        },
+    )
+}
+
+fn group_owner(document: &ProjectDocument, revision: &str) -> Trial<ProjectDocument> {
+    let selection = SliceCaptureSelection::Child { node: id("owner") };
+    let plan = document
+        .group_selection(&id("top"), &selection)
+        .map_err(|e| fail("aligned group preflight", e))?;
+    if plan.required_split_ids != 0 {
+        return Err(fail("group", "unexpected endpoint Splits"));
+    }
+    command(
+        document,
+        revision,
+        Command::GroupSelection {
+            parent: id("top"),
+            selection,
+            label: "Whole owner".into(),
+            identities: GroupSelectionIdentities {
+                group: id("terminal-inner"),
+                split: SplitIdentities::default(),
+            },
+            timing: timing(revision),
+        },
+    )
+}
+
+fn base() -> Trial<ProjectDocument> {
+    // Established actual WAV event is source1024..7432, SelectedPlacement4f,
+    // offset0. Do not replace it with a natural-rate event that overflows4f.
+    let original = ntsc(AudioEdgePolicy::Hard);
+    let mut wire = serde_json::to_value(&original).map_err(|e| fail("fixture JSON", e))?;
+    wire["nodes"]["lead"] = serde_json::to_value(hold(4, HoldAudio::Silence)).unwrap();
+    let initial = ProjectDocument::from_json(&wire.to_string())
+        .map_err(|e| fail("lead4 JSON admission", e))?;
+    if !initial.audio_bindings().is_empty() {
+        return Err(fail("fixture", "journals exist before setup"));
+    }
+    let event = &initial.beat_sounds()[&id("owner")][&sound_id("effect")];
+    if event.offset != AudioSample(0)
+        || event.source != audio(1024..7432)
+        || !matches!(event.mapping, SourceAudioMapping::SelectedPlacement { .. })
+    {
+        return Err(fail(
+            "fixture",
+            "established SelectedPlacement event changed",
+        ));
+    }
+    let top = command(
+        &initial,
+        "terminal-top",
+        Command::Group {
+            parent: initial.root().clone(),
+            start: 1,
+            end: 3,
+            id: id("top"),
+            label: "Top".into(),
+        },
+    )?;
+    command(
+        &top,
+        "terminal-top-eq",
+        Command::SetAudioTreatments {
+            node: id("top"),
+            treatments: eq([4500, -2500, 1500]),
+        },
+    )
+}
+
+/// Explicit test-only scope rewrite. It does not implement or claim a Core proof.
+fn narrow(document: &ProjectDocument) -> Trial<ProjectDocument> {
+    let owner = id("owner");
+    let sound = sound_id("effect");
+    let old = &document.audio_bindings().sound_clocks()[&owner][&sound];
+    if old.scope() != &id("top") || old.clocks().len() != 1 {
+        return Err(fail("manual narrowing", "expected one broad Top journal"));
+    }
+    let mut references = Vec::new();
+    for reference in old.clocks() {
+        if reference.scope() != &id("top")
+            || reference.owner() != &owner
+            || !reference.repeats().is_empty()
+        {
+            return Err(fail(
+                "manual narrowing",
+                "unexpected historical identity or Repeat map",
+            ));
+        }
+        references.push(
+            SoundClockReference::new(
+                reference.timing().clone(),
+                owner.clone(),
+                reference.owner().clone(),
+            )
+            .with_repeats(reference.repeats().clone()),
+        );
+    }
+    let mut journals = document.audio_bindings().sound_clocks().clone();
+    journals.get_mut(&owner).unwrap().insert(
+        sound,
+        SoundClockJournal::new(owner, references).map_err(|e| fail("narrow journal", e))?,
+    );
+    let bindings = AudioBindingState::new_with_sound_clocks(
+        document
+            .audio_bindings()
+            .timings()
+            .iter()
+            .map(|(id, layout)| AudioTimingRecord {
+                id: id.clone(),
+                layout: layout.clone(),
+            })
+            .collect(),
+        document.audio_bindings().bindings().clone(),
+        document.audio_bindings().gap_bindings().clone(),
+        journals,
+    )
+    .map_err(|e| fail("narrow bindings", e))?;
+    let mut wire = serde_json::to_value(document).map_err(|e| fail("narrow JSON", e))?;
+    wire["audio_bindings"] = serde_json::to_value(bindings).map_err(|e| fail("narrow JSON", e))?;
+    ProjectDocument::from_json(&wire.to_string()).map_err(|e| {
+        serde_json::json!({
+            "stage":"manual narrowing JSON admission","error_code":format!("{:?}",e.code),
+            "error_message":e.message,"attempted_document":wire,
+        })
+    })
+}
+
+fn check_journal(document: &ProjectDocument, scope: &str) -> Trial<()> {
+    let journal = &document.audio_bindings().sound_clocks()[&id("owner")][&sound_id("effect")];
+    if journal.scope() != &id(scope) || journal.clocks().len() != 2 {
+        return Err(fail("journal order", format!("unexpected {journal:?}")));
+    }
+    for (reference, expected) in journal
+        .clocks()
+        .iter()
+        .zip(["terminal-move-five", "terminal-move-one"])
+    {
+        if reference.timing() != &timing(expected)
+            || reference.scope() != &id(scope)
+            || reference.owner() != &id("owner")
+            || !reference.repeats().is_empty()
+        {
+            return Err(fail(
+                "journal order",
+                format!("unexpected reference {reference:?}"),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn read_all(document: &ProjectDocument, partitions: &[u32]) -> Trial<Vec<[f32; 2]>> {
+    let plan = std::sync::Arc::new(
+        deadpan_plan::RenderPlan::compile(document).map_err(|e| fail("compile audio plan", e))?,
+    );
+    let mut renderer = StageAudio::new(plan);
+    let mut provider = ClockProvider::new(document);
+    let end = frame_sample_boundary(
+        document
+            .duration()
+            .map_err(|e| fail("duration", e))?
+            .frames(),
+    );
+    let mut samples = Vec::new();
+    let mut at = 0;
+    let mut partition = 0;
+    while at < end {
+        let count = u32::try_from((end - at).min(i64::from(partitions[partition]))).unwrap();
+        let block = renderer
+            .prepare_authored_bus(
+                &mut provider,
+                AudioSample(at),
+                count,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .map_err(|e| fail(&format!("full authored read at{at}"), e))?;
+        if block
+            .samples
+            .iter()
+            .flatten()
+            .any(|value| !value.is_finite())
+        {
+            return Err(fail("PCM", "non-finite sample"));
+        }
+        samples.extend(block.samples);
+        at += i64::from(count);
+        partition = (partition + 1) % partitions.len();
+    }
+    Ok(samples)
+}
+
+fn raw(document: &ProjectDocument, node: &str) -> Trial<serde_json::Value> {
+    let plan = std::sync::Arc::new(
+        deadpan_plan::RenderPlan::compile(document).map_err(|e| fail("compile raw plan", e))?,
+    );
+    let context = plan
+        .audio_sound_instance_context(
+            &InstancePath {
+                node: id(node),
+                repeats: vec![],
+            },
+            Default::default(),
+        )
+        .map_err(|e| fail("raw context", e))?;
+    let mut windows = Vec::new();
+    for (first, count) in [
+        (-128, 256),
+        (16016 - 128, 256),
+        (22422 - 128, 256),
+        (22422, 1),
+        (22423, 256),
+        (25626 - 128, 256),
+    ] {
+        let mut renderer = StageAudio::new(plan.clone());
+        let block = renderer
+            .read_beat_sound_owner_input(
+                &mut ClockProvider::new(document),
+                &context,
+                AudioSample(first),
+                count,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .map_err(|e| fail(&format!("raw {node} at{first}"), e))?;
+        windows.push(serde_json::json!({
+            "start":first,"samples":block.samples,
+            "sample_bits":block.samples.iter().map(|s|s.map(f64::to_bits)).collect::<Vec<_>>(),
+            "suppressed":block.suppressed,
+        }));
+    }
+    Ok(serde_json::json!({
+        "context":node,"samples":[context.samples().start.0,context.samples().end.0],"windows":windows,
+    }))
+}
+
+fn terminal_nonzero(raw: &serde_json::Value) -> bool {
+    raw["windows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|window| window["start"] == 22422)
+        .unwrap()["samples"][0]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|value| value.as_f64().unwrap() != 0.0)
+}
+
+fn cold(document: &ProjectDocument, first: i64, count: u32) -> Trial<Vec<[f32; 2]>> {
+    let plan = std::sync::Arc::new(
+        deadpan_plan::RenderPlan::compile(document).map_err(|e| fail("compile cold plan", e))?,
+    );
+    StageAudio::new(plan)
+        .prepare_authored_bus(
+            &mut ClockProvider::new(document),
+            AudioSample(first),
+            count,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        )
+        .map(|block| block.samples)
+        .map_err(|e| fail(&format!("cold bus at{first}"), e))
+}
+
+fn run(directory: &std::path::Path) -> Trial<serde_json::Value> {
+    let initial = base()?;
+    let grouped = group_owner(&initial, "terminal-group-before")?;
+    let control_first = insert_prefix(&grouped, 5, "terminal-first-prefix", "terminal-move-five")?;
+    let probe_broad = insert_prefix(&initial, 5, "terminal-first-prefix", "terminal-move-five")?;
+    let probe_narrow = narrow(&probe_broad)?;
+    let probe_first = group_owner(&probe_narrow, "terminal-group-after")?;
+    let control = insert_prefix(
+        &control_first,
+        1,
+        "terminal-second-prefix",
+        "terminal-move-one",
+    )?;
+    let probe = insert_prefix(
+        &probe_first,
+        1,
+        "terminal-second-prefix",
+        "terminal-move-one",
+    )?;
+    std::fs::write(
+        directory.join("prepared-documents.json"),
+        serde_json::to_vec(&serde_json::json!({
+            "initial":initial,"control_first":control_first,"probe_broad":probe_broad,
+            "probe_narrow":probe_narrow,"probe_first":probe_first,
+            "control":control,"probe":probe,"implementation_evidence":false,
+        }))
+        .unwrap(),
+    )
+    .map_err(|e| fail("retain prepared documents", e))?;
+    if control.nodes() != probe.nodes()
+        || control.beat_sounds() != probe.beat_sounds()
+        || control.duration().unwrap().frames() != 16
+        || probe.duration().unwrap().frames() != 16
+    {
+        return Err(fail(
+            "final structure",
+            "no identical authored-node/event oracle",
+        ));
+    }
+    check_journal(&control, "top")?;
+    check_journal(&probe, "owner")?;
+    let arithmetic = serde_json::json!({
+        "birth_owner_samples":[6406,12813],"birth_allocation":12813-6406,
+        "first_owner_samples":[14414,20821],"first_allocation":20821-14414,
+        "final_owner_samples":[16016,22422],"final_allocation":22422-16016,
+        "birth_terminal":12812,"first_shift":14414-6406,"second_shift":16016-14414,
+        "transported_terminal":12812+(14414-6406)+(16016-14414),
+    });
+    if frame_sample_boundary(4) != 6406
+        || frame_sample_boundary(8) != 12813
+        || frame_sample_boundary(9) != 14414
+        || frame_sample_boundary(13) != 20821
+        || frame_sample_boundary(10) != 16016
+        || frame_sample_boundary(14) != 22422
+        || 12812 + (14414 - 6406) + (16016 - 14414) != 22422
+    {
+        return Err(fail("literal oracle arithmetic", "unexpected sample grid"));
+    }
+    let expected = read_all(&control, &[1021])?;
+    let actual = read_all(&probe, &[37, 509, 1021, 173])?;
+    let whole = differences32(&expected, &actual);
+    let control_partitions = differences32(&expected, &read_all(&control, &[37, 509, 1021, 173])?);
+    let probe_partitions = differences32(&actual, &read_all(&probe, &[1021])?);
+    let mut cold_rows = Vec::new();
+    for first in [16015, 22421, 25623] {
+        let a = cold(&control, first, 3)?;
+        let b = cold(&probe, first, 3)?;
+        let start = usize::try_from(first).unwrap();
+        cold_rows.push(serde_json::json!({
+            "sample_origin":first,"sample_count":3,
+            "control_vs_full":differences32(&expected[start..start+3],&a),
+            "probe_vs_full":differences32(&actual[start..start+3],&b),
+            "control_vs_probe":differences32(&a,&b),
+        }));
+    }
+    let control_top = raw(&control, "top")?;
+    let probe_top = raw(&probe, "top")?;
+    let control_owner = raw(&control, "owner")?;
+    let probe_owner = raw(&probe, "owner")?;
+    let top_diff = input_differences(&control_top, &probe_top);
+    let owner_diff = input_differences(&control_owner, &probe_owner);
+    let witness = terminal_nonzero(&control_top);
+    let probe_terminal = terminal_nonzero(&probe_top);
+    let no_top = command(
+        &control,
+        "terminal-ablate-top",
+        Command::SetAudioTreatments {
+            node: id("top"),
+            treatments: AudioTreatments::default(),
+        },
+    )?;
+    let no_event = command(
+        &control,
+        "terminal-ablate-event",
+        Command::DeleteBeatSound {
+            owner: id("owner"),
+            id: sound_id("effect"),
+        },
+    )?;
+    let no_top_pcm = read_all(&no_top, &[1021])?;
+    let no_event_pcm = read_all(&no_event, &[1021])?;
+    let numeric_changes = |a: &[[f32; 2]], b: &[[f32; 2]]| {
+        a.iter()
+            .zip(b)
+            .filter(|(a, b)| a[0] != b[0] || a[1] != b[1])
+            .count()
+    };
+    let top_active = numeric_changes(&expected, &no_top_pcm);
+    let event_active = numeric_changes(&expected, &no_event_pcm);
+    let controls_valid = witness
+        && top_active > 0
+        && event_active > 0
+        && control_partitions["different_channel_samples"] == 0
+        && probe_partitions["different_channel_samples"] == 0
+        && cold_rows.iter().all(|row| {
+            ["control_vs_full", "probe_vs_full"]
+                .iter()
+                .all(|key| row[*key]["different_channel_samples"] == 0)
+        });
+    let equal = whole["different_channel_samples"] == 0
+        && top_diff["passed"] == true
+        && owner_diff["passed"] == true
+        && cold_rows
+            .iter()
+            .all(|row| row["control_vs_probe"]["different_channel_samples"] == 0);
+    let classification = if !controls_valid {
+        "terminal witness or active-stage controls not established"
+    } else if equal {
+        "representations match for this terminal witness"
+    } else {
+        "representations differ for an established terminal witness"
+    };
+    Ok(serde_json::json!({
+        "classification":classification,"controls_valid":controls_valid,"representations_equal":equal,
+        "arithmetic":arithmetic,"whole_pcm":whole,
+        "control_partitions":control_partitions,"probe_partitions":probe_partitions,
+        "cold_bus":cold_rows,
+        "top_input":top_diff,"owner_input":owner_diff,
+        "control_terminal_top_nonzero":witness,"probe_terminal_top_nonzero":probe_terminal,
+        "top_eq_active_samples":top_active,"event_active_samples":event_active,
+        "top_eq_ablation":differences32(&expected,&no_top_pcm),
+        "event_ablation":differences32(&expected,&no_event_pcm),
+        "expected_pcm_bits":expected.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
+        "actual_pcm_bits":actual.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
+        "no_top_eq_pcm_bits":no_top_pcm.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
+        "no_event_pcm_bits":no_event_pcm.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
+        "control_top_raw":control_top,"probe_top_raw":probe_top,
+        "control_owner_raw":control_owner,"probe_owner_raw":probe_owner,
+        "implementation_evidence":false,"listening_claim":false,
+    }))
+}
+
+#[test]
+fn experimental_two_placements_retain_birth_terminal_in_top_context() {
+    let directory = std::env::var_os("DEADPAN_SCOPE_PROBE_EVIDENCE")
+        .map(std::path::PathBuf::from)
+        .expect("set evidence directory")
+        .join("terminal-two-moves");
+    std::fs::create_dir_all(&directory).unwrap();
+    let result = match run(&directory) {
+        Ok(result) => result,
+        Err(error) => serde_json::json!({
+            "classification":"guard, admission, or setup failure; no DSP conclusion",
+            "failure":error,"controls_valid":false,"representations_equal":false,
+            "implementation_evidence":false,
+        }),
+    };
+    std::fs::write(
+        directory.join("result.json"),
+        serde_json::to_vec(&result).unwrap(),
+    )
+    .unwrap();
+    let summary = serde_json::json!({
+        "classification":result["classification"],"controls_valid":result["controls_valid"],
+        "representations_equal":result["representations_equal"],
+        "whole_pcm_differences":result["whole_pcm"]["different_channel_samples"],
+        "top_input_passed":result["top_input"]["passed"],"owner_input_passed":result["owner_input"]["passed"],
+        "control_terminal_top_nonzero":result["control_terminal_top_nonzero"],
+        "probe_terminal_top_nonzero":result["probe_terminal_top_nonzero"],"failure":result["failure"],
+        "implementation_evidence":false,
+    });
+    std::fs::write(
+        directory.join("summary.json"),
+        serde_json::to_vec_pretty(&summary).unwrap(),
+    )
+    .unwrap();
+    eprintln!("{summary}");
+    // No expected outcome is assumed or asserted until complete evidence exists.
+    assert!(
+        result["controls_valid"] == true,
+        "terminal/ablation witness not established; retained result"
+    );
+    assert!(
+        result["representations_equal"] == true,
+        "recorded representation difference; inspect result"
+    );
+}

@@ -1,0 +1,5 @@
+{"classification":"representations differ for an established terminal witness","control_terminal_top_nonzero":true,"controls_valid":true,"failure":null,"implementation_evidence":false,"owner_input_passed":true,"probe_terminal_top_nonzero":false,"representations_equal":false,"top_input_passed":false,"whole_pcm_differences":1899}
+
+thread 'voice_occurrence::beat_sounds::sound_clocks::aligned_scope::context_probe::terminal_two_moves_probe::experimental_two_placements_retain_birth_terminal_in_top_context' (174826054) panicked at crates/deadpan-audio/tests/audio_definition/sound_clocks/terminal_two_moves_probe.rs:517:5:
+recorded representation difference; inspect result
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

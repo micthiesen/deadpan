@@ -1,0 +1,9 @@
+
+running 1 test
+CONTROL retained Retime placement refusal passed
+CONTROL retained Repeat placement refusal passed
+CONTROL retained Partition placement refusal passed
+test real_retime_repeat_and_partition_placement_histories_still_refuse_scope_narrowing ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+

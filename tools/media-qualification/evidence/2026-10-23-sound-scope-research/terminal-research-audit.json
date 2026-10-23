@@ -1,0 +1,96 @@
+{
+  "proposal_refuted": "Manual journal scope narrowing loses existing ancestor EQ context",
+  "production_changed": false,
+  "implementation_evidence": false,
+  "arithmetic": {
+    "birth_allocation": 6407,
+    "birth_owner_samples": [
+      6406,
+      12813
+    ],
+    "birth_terminal": 12812,
+    "final_allocation": 6406,
+    "final_owner_samples": [
+      16016,
+      22422
+    ],
+    "first_allocation": 6407,
+    "first_owner_samples": [
+      14414,
+      20821
+    ],
+    "first_shift": 8008,
+    "second_shift": 1602,
+    "transported_terminal": 22422
+  },
+  "different_channel_samples": 1899,
+  "first_difference": [
+    20421,
+    1,
+    3119141745,
+    3119141747
+  ],
+  "last_difference": [
+    22421,
+    1,
+    956682402,
+    960822158
+  ],
+  "terminal_windows": [
+    {
+      "window_start": 22294,
+      "sample": 22422,
+      "expected_bits": [
+        0,
+        4562262886470123520
+      ],
+      "actual_bits": [
+        0,
+        0
+      ],
+      "expected": [
+        0.0,
+        0.0010018165921792388
+      ],
+      "actual": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "window_start": 22422,
+      "sample": 22422,
+      "expected_bits": [
+        0,
+        4562262886470123520
+      ],
+      "actual_bits": [
+        0,
+        0
+      ],
+      "expected": [
+        0.0,
+        0.0010018165921792388
+      ],
+      "actual": [
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "top_eq_active_samples": 6406,
+  "event_active_samples": 6406,
+  "files": {
+    "context-fourth-evidence/terminal-two-moves/summary.json": "25ff9a5a21ec98e9489b6c853b52846e50730a4c1b2dde1cd034c8a0aa959835",
+    "context-fourth-evidence/terminal-two-moves/result.json": "9e850fe6236d0871609c6270bb073259953c64b20bdd32bc26725e1882d24dbf",
+    "context-fourth-evidence/terminal-two-moves/prepared-documents.json": "ead54533c1b79ee40a7f2071e594891334b00f2b628751f9a61555fdda6da5e8"
+  },
+  "executed_binary": {
+    "test": "voice_occurrence::beat_sounds::sound_clocks::aligned_scope::context_probe::terminal_two_moves_probe::experimental_two_placements_retain_birth_terminal_in_top_context",
+    "exit": 101,
+    "timeout": false,
+    "seconds": 1.332603375427425,
+    "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-fourth-extracted/target/debug/deps/audio_definition-e48f9731e36fc4f6",
+    "sha256": "532f0b6d19b38bf33a81ee5cf66492709f37b66acbbbeb46b72f7502867c52b4"
+  }
+}

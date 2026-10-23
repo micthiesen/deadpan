@@ -1,0 +1,1541 @@
+{
+  "test": "experimental_narrow_scope_top_equalizer_context_probe_all_prefix_phases",
+  "timeout_seconds": 600,
+  "assertion_failure": false,
+  "completed_cases": 30,
+  "completed_passed": true,
+  "binary_sha256": "5aa2dbf1fb63e993935fb66360edc33bf692e6645f1082c3c2bbf34dc60b6d54",
+  "partial_cases": [
+    {
+      "case": "RoomTone-prefix1-AfterGrouping-terminalfalse",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          4805,
+          24024
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          4805,
+          24024
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 32032,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          4805,
+          32032
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          4805,
+          32032
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "RoomTone-prefix1-AfterGrouping-terminaltrue",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          4805,
+          24024
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          4805,
+          24024
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 32032,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          4805,
+          32032
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          4805,
+          32032
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "RoomTone-prefix1-BeforeCapture-terminalfalse",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          4805,
+          24024
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          4805,
+          24024
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 32032,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          4805,
+          32032
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          4805,
+          32032
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "RoomTone-prefix1-BeforeCapture-terminaltrue",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          4805,
+          24024
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          4805,
+          24024
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 32032,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          4805,
+          32032
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          4805,
+          32032
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "RoomTone-prefix2-AfterGrouping-terminalfalse",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          6406,
+          25626
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          6406,
+          25626
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 33634,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          6406,
+          33634
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          6406,
+          33634
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "RoomTone-prefix2-AfterGrouping-terminaltrue",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          6406,
+          25626
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          6406,
+          25626
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 33634,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          6406,
+          33634
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          6406,
+          33634
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "RoomTone-prefix2-BeforeCapture-terminalfalse",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          6406,
+          25626
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          6406,
+          25626
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 33634,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          6406,
+          33634
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          6406,
+          33634
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "RoomTone-prefix2-BeforeCapture-terminaltrue",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          6406,
+          25626
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          6406,
+          25626
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 33634,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          6406,
+          33634
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          6406,
+          33634
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "RoomTone-prefix3-BeforeCapture-terminalfalse",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          8008,
+          27227
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          8008,
+          27227
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 35235,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          8008,
+          35235
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          8008,
+          35235
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "RoomTone-prefix3-BeforeCapture-terminaltrue",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          8008,
+          27227
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          8008,
+          27227
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 35235,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          8008,
+          35235
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          8008,
+          35235
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "Source-prefix1-AfterGrouping-terminalfalse",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          4805,
+          24024
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          4805,
+          24024
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 32032,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          4805,
+          32032
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          4805,
+          32032
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "Source-prefix1-AfterGrouping-terminaltrue",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          4805,
+          24024
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          4805,
+          24024
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 32032,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          4805,
+          32032
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          4805,
+          32032
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "Source-prefix1-BeforeCapture-terminalfalse",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          4805,
+          24024
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          4805,
+          24024
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 32032,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          4805,
+          32032
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          4805,
+          32032
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "Source-prefix1-BeforeCapture-terminaltrue",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          4805,
+          24024
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          4805,
+          24024
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 32032,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          4805,
+          32032
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          4805,
+          32032
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "Source-prefix2-AfterGrouping-terminalfalse",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          6406,
+          25626
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          6406,
+          25626
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 33634,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          6406,
+          33634
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          6406,
+          33634
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "Source-prefix2-AfterGrouping-terminaltrue",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          6406,
+          25626
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          6406,
+          25626
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 33634,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          6406,
+          33634
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          6406,
+          33634
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "Source-prefix2-BeforeCapture-terminalfalse",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          6406,
+          25626
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          6406,
+          25626
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 33634,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          6406,
+          33634
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          6406,
+          33634
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "Source-prefix2-BeforeCapture-terminaltrue",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          6406,
+          25626
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          6406,
+          25626
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 33634,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          6406,
+          33634
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          6406,
+          33634
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "Source-prefix3-AfterGrouping-terminalfalse",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          8008,
+          27227
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          8008,
+          27227
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 35235,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          8008,
+          35235
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          8008,
+          35235
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "Source-prefix3-AfterGrouping-terminaltrue",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          8008,
+          27227
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          8008,
+          27227
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 35235,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          8008,
+          35235
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          8008,
+          35235
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "Source-prefix3-BeforeCapture-terminalfalse",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          8008,
+          27227
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          8008,
+          27227
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 35235,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          8008,
+          35235
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          8008,
+          35235
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "Source-prefix3-BeforeCapture-terminaltrue",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          8008,
+          27227
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          8008,
+          27227
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 35235,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          8008,
+          35235
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          8008,
+          35235
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "Source-prefix4-AfterGrouping-terminalfalse",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          9610,
+          28829
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          9610,
+          28829
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 36837,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          9610,
+          36837
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          9610,
+          36837
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "Source-prefix4-AfterGrouping-terminaltrue",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          9610,
+          28829
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          9610,
+          28829
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 36837,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          9610,
+          36837
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          9610,
+          36837
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "Source-prefix4-BeforeCapture-terminalfalse",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          9610,
+          28829
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          9610,
+          28829
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 36837,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          9610,
+          36837
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          9610,
+          36837
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "Source-prefix4-BeforeCapture-terminaltrue",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          9610,
+          28829
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          9610,
+          28829
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 36837,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          9610,
+          36837
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          9610,
+          36837
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "Source-prefix5-AfterGrouping-terminalfalse",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          11211,
+          30430
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          11211,
+          30430
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 38438,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          11211,
+          38438
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          11211,
+          38438
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "Source-prefix5-AfterGrouping-terminaltrue",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          11211,
+          30430
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          11211,
+          30430
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 38438,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          11211,
+          38438
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          11211,
+          38438
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "Source-prefix5-BeforeCapture-terminalfalse",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          11211,
+          30430
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          11211,
+          30430
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 38438,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          11211,
+          38438
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          11211,
+          38438
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    },
+    {
+      "case": "Source-prefix5-BeforeCapture-terminaltrue",
+      "control_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "implementation_evidence": false,
+      "owner_input": {
+        "actual_support": [
+          11211,
+          30430
+        ],
+        "context": "owner",
+        "differences": [],
+        "expected_support": [
+          11211,
+          30430
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "owner_input_equal": true,
+      "passed": true,
+      "pcm": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "probe_partition_comparison": {
+        "differences": [],
+        "different_channel_samples": 0
+      },
+      "sample_count": 38438,
+      "terminal_carrier_witness_valid": true,
+      "top_input": {
+        "actual_support": [
+          11211,
+          38438
+        ],
+        "context": "top",
+        "differences": [],
+        "expected_support": [
+          11211,
+          38438
+        ],
+        "passed": true,
+        "support_equal": true,
+        "suppression_differences": []
+      },
+      "top_input_equal": true
+    }
+  ],
+  "interpretation": "Incomplete serial test; retain timeout, run remaining exact cases separately. RoomTone cases were CPU-active. No production changes."
+}

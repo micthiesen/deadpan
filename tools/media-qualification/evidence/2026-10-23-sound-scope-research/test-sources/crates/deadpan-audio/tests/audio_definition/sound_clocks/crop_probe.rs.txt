@@ -1,0 +1,409 @@
+//! DRAFT EXPERIMENT ONLY: uncompiled and unexecuted, not implementation evidence.
+//! Child of context_probe: #[path = "crop_probe.rs"] mod crop_probe;
+//! Filter: experimental_top_preserving_partial_copy_after_scope_narrowing
+//! Set DEADPAN_SCOPE_PROBE_EVIDENCE; output is retained in its crop child.
+use super::*;
+
+type ProbeResult<T> = std::result::Result<T, String>;
+
+fn capture(document: &ProjectDocument) -> ProbeResult<CapturedEditSlice> {
+    let range = FrameRange::new(ProjectFrame(14), ProjectFrame(17)).map_err(|e| e.to_string())?;
+    let slice =
+        CapturedEditSlice::capture(document, document.root(), range, timing("crop-capture"))
+            .map_err(|e| format!("capture ROOT[14,17): {:?}: {}", e.code, e.message))?;
+    slice
+        .validate_capture(document)
+        .map_err(|e| format!("validate capture: {e}"))?;
+    let json = slice.to_json().map_err(|e| e.to_string())?;
+    let wire: serde_json::Value = serde_json::from_str(&json).map_err(|e| e.to_string())?;
+    let top = serde_json::to_value(&document.nodes()[&id("top")]).map_err(|e| e.to_string())?;
+    if wire["nodes"]["top"] != top {
+        return Err(format!(
+            "captured Top recipe/stage changed: {}",
+            wire["nodes"]["top"]
+        ));
+    }
+    if wire["nodes"]
+        .as_object()
+        .is_none_or(|nodes| nodes.len() != 4)
+    {
+        return Err(format!(
+            "capture must retain complete Top/inner/owner/sibling subtree: {}",
+            wire["nodes"]
+        ));
+    }
+    if wire["parts"]
+        != serde_json::json!([{
+            "root":"top","mapping":{"start":10,"end":13},"source_start":4
+        }])
+    {
+        return Err(format!(
+            "wrong direct-child Top crop structure: {}",
+            wire["parts"]
+        ));
+    }
+    if slice.duration().frames() != 3 {
+        return Err(format!("crop duration {}", slice.duration().frames()));
+    }
+    CapturedEditSlice::from_json(&json).map_err(|e| format!("capture JSON revalidation: {e}"))
+}
+
+fn paste(document: &ProjectDocument, slice: &CapturedEditSlice) -> ProbeResult<ProjectDocument> {
+    let request = CommandRequest {
+        project_id: document.project_id().clone(),
+        expected_revision: document.revision_id().clone(),
+        new_revision: RevisionId::new("crop-paste").map_err(|e| e.to_string())?,
+        command: Command::SpliceSlice {
+            parent: document.root().clone(),
+            index: document.children(document.root()).count(),
+            slice: slice.clone(),
+            identities: slice_identities(slice, "crop-copy"),
+            timing: timing("crop-paste"),
+        },
+    };
+    let transaction =
+        apply(document, &request).map_err(|e| format!("paste: {:?}: {}", e.code, e.message))?;
+    let after = transaction
+        .forward
+        .apply(document)
+        .map_err(|e| e.to_string())?;
+    if transaction
+        .inverse
+        .apply(&after)
+        .map_err(|e| e.to_string())?
+        != *document
+    {
+        return Err("paste inverse did not restore original document".into());
+    }
+    ProjectDocument::from_json(&after.to_json().map_err(|e| e.to_string())?)
+        .map_err(|e| format!("pasted document JSON: {e}"))
+}
+
+/// Locate the one public paste-created Partition and its complete copied Top.
+/// No wrapper or treatment is fabricated to get a successful comparison.
+fn copied_nodes(
+    before: &ProjectDocument,
+    after: &ProjectDocument,
+) -> ProbeResult<(NodeId, NodeId, NodeId)> {
+    let partitions = after
+        .nodes()
+        .iter()
+        .filter_map(|(node, value)| {
+            if before.nodes().contains_key(node) {
+                return None;
+            }
+            let NodeKind::Retime {
+                purpose: RetimePurpose::Partition,
+                child,
+                duration,
+                mapping,
+                ..
+            } = &value.kind
+            else {
+                return None;
+            };
+            Some((node.clone(), child.clone(), *duration, *mapping))
+        })
+        .collect::<Vec<_>>();
+    if partitions.len() != 1 {
+        return Err(format!(
+            "expected one new delivery Partition, found {partitions:?}"
+        ));
+    }
+    let (partition, top, duration, mapping) = &partitions[0];
+    if duration.frames() != 3
+        || mapping.start() != ProjectFrame(10)
+        || mapping.end() != ProjectFrame(13)
+    {
+        return Err(format!(
+            "new Partition has incorrect delivery window: {:?}",
+            partitions[0]
+        ));
+    }
+    let top_node = after.nodes().get(top).ok_or("copied Top missing")?;
+    if top_node.audio_treatments != before.nodes()[&id("top")].audio_treatments {
+        return Err(format!(
+            "copied Top lost its EQ: {:?}",
+            top_node.audio_treatments
+        ));
+    }
+    let NodeKind::Sequence { children } = &top_node.kind else {
+        return Err("delivery Partition did not retain complete Top Sequence".into());
+    };
+    if children.len() != 2 {
+        return Err("copied Top did not retain inner group and sibling".into());
+    }
+    let NodeKind::Sequence { children: inner } = &after.nodes()[&children[0]].kind else {
+        return Err("copied inner group missing".into());
+    };
+    if inner.len() != 1 {
+        return Err("copied group must contain its whole unchanged owner".into());
+    }
+    let owner = inner[0].clone();
+    if after
+        .node_duration(&owner)
+        .map_err(|e| e.to_string())?
+        .frames()
+        != 12
+        || after
+            .node_duration(top)
+            .map_err(|e| e.to_string())?
+            .frames()
+            != 17
+        || after.beat_sounds().get(&owner) != before.beat_sounds().get(&id("owner"))
+    {
+        return Err("copied complete owner/duration/attachment changed".into());
+    }
+    Ok((partition.clone(), top.clone(), owner))
+}
+
+fn signed_inputs(
+    document: &ProjectDocument,
+    node: &NodeId,
+    starts: &[i64],
+) -> ProbeResult<serde_json::Value> {
+    let plan = compile(document, false);
+    let context = plan
+        .audio_sound_instance_context(
+            &InstancePath {
+                node: node.clone(),
+                repeats: vec![],
+            },
+            Default::default(),
+        )
+        .map_err(|e| format!("context {node}: {e}"))?;
+    let mut windows = Vec::new();
+    for first in starts {
+        let mut renderer = StageAudio::new(plan.clone());
+        let block = renderer
+            .read_beat_sound_owner_input(
+                &mut ClockProvider::new(document),
+                &context,
+                AudioSample(*first),
+                256,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .map_err(|e| format!("signed input {node} at {first}: {e}"))?;
+        windows.push(serde_json::json!({
+            "start":first,"samples":block.samples,
+            "sample_bits":block.samples.iter().map(|s|s.map(f64::to_bits)).collect::<Vec<_>>(),
+            "suppressed":block.suppressed,
+        }));
+    }
+    Ok(serde_json::json!({
+        "context":node,"samples":[context.samples().start.0,context.samples().end.0],"windows":windows,
+    }))
+}
+
+fn run_case(control: &ProjectDocument, probe: &ProjectDocument) -> ProbeResult<serde_json::Value> {
+    if control.duration().map_err(|e| e.to_string())?.frames() != 21 {
+        return Err("phase2 original must be 21 frames".into());
+    }
+    let control_slice = capture(control)?;
+    let probe_slice = capture(probe)?;
+    let a = control_slice
+        .identity_requirements()
+        .map_err(|e| e.to_string())?;
+    let b = probe_slice
+        .identity_requirements()
+        .map_err(|e| e.to_string())?;
+    // Historical alias pools may differ; authored pools and actual final nodes
+    // must match. Separate named authored/alias pools prevent ordinal coupling.
+    if a.nodes != b.nodes || a.marks != b.marks {
+        return Err(format!(
+            "authored identity requirements differ: {a:?} versus {b:?}"
+        ));
+    }
+    let after_control = paste(control, &control_slice)?;
+    let after_probe = paste(probe, &probe_slice)?;
+    if after_control.nodes() != after_probe.nodes()
+        || after_control.beat_sounds() != after_probe.beat_sounds()
+    {
+        return Err(
+            "paired final authored nodes or event recipes differ; no same-node PCM oracle".into(),
+        );
+    }
+    if after_control
+        .duration()
+        .map_err(|e| e.to_string())?
+        .frames()
+        != 24
+        || after_probe.duration().map_err(|e| e.to_string())?.frames() != 24
+    {
+        return Err("pasted projects must both be 24 frames".into());
+    }
+    let (_, top, owner) = copied_nodes(control, &after_control)?;
+    let (_, probe_top, probe_owner) = copied_nodes(probe, &after_probe)?;
+    if (top.clone(), owner.clone()) != (probe_top.clone(), probe_owner.clone()) {
+        return Err("copied Top/owner identities differ".into());
+    }
+    let control_plan = compile(&after_control, false);
+    let probe_plan = compile(&after_probe, false);
+    for frame in 0..24 {
+        if control_plan
+            .picture(ProjectFrame(frame))
+            .map_err(|e| e.to_string())?
+            .picture
+            != probe_plan
+                .picture(ProjectFrame(frame))
+                .map_err(|e| e.to_string())?
+                .picture
+        {
+            return Err(format!("paired picture identity differs at frame{frame}"));
+        }
+    }
+    let old_control = full(control, &[1021]);
+    let old_probe = full(probe, &[37, 509, 1021, 173]);
+    let expected = full(&after_control, &[1021]);
+    let actual = full(&after_probe, &[37, 509, 1021, 173]);
+    let control_partitions = differences32(&expected, &full(&after_control, &[37, 509, 1021, 173]));
+    let probe_partitions = differences32(&actual, &full(&after_probe, &[1021]));
+    let prefix = usize::try_from(frame_sample_boundary(21)).map_err(|e| e.to_string())?;
+    let old_pair = differences32(&old_control, &old_probe);
+    let retained_control = differences32(&old_control, &expected[..prefix]);
+    let retained_probe = differences32(&old_probe, &actual[..prefix]);
+    let whole = differences32(&expected, &actual);
+    let mut copied = differences32(&expected[prefix..], &actual[prefix..]);
+    copied["sample_origin"] = serde_json::json!(frame_sample_boundary(21));
+    let mut cold = Vec::new();
+    for (first, last) in [
+        (frame_sample_boundary(21) - 1, frame_sample_boundary(21) + 2),
+        (frame_sample_boundary(23) - 1, frame_sample_boundary(23) + 2),
+        (frame_sample_boundary(24) - 3, frame_sample_boundary(24)),
+    ] {
+        let a = read(&after_control, first, last, &[1021]);
+        let b = read(&after_probe, first, last, &[1021]);
+        let range = usize::try_from(first).map_err(|e| e.to_string())?
+            ..usize::try_from(last).map_err(|e| e.to_string())?;
+        cold.push(serde_json::json!({
+            "sample_origin":first,"sample_end":last,
+            "control_vs_full":differences32(&expected[range.clone()],&a),
+            "probe_vs_full":differences32(&actual[range],&b),
+            "control_vs_probe":differences32(&a,&b),
+        }));
+    }
+    // Paste at21, Top local[10,13) means complete copied Top begins11,
+    // copied owner ends23, copied Top ends28 while project delivery ends24.
+    // These signed contexts therefore include hidden history beyond delivery.
+    let starts = [
+        -128,
+        frame_sample_boundary(11) - 128,
+        frame_sample_boundary(21) - 128,
+        frame_sample_boundary(23) - 256,
+        frame_sample_boundary(23) - 128,
+        frame_sample_boundary(24) - 128,
+        frame_sample_boundary(24),
+        frame_sample_boundary(28) - 128,
+    ];
+    let control_top = signed_inputs(&after_control, &top, &starts)?;
+    let probe_top = signed_inputs(&after_probe, &probe_top, &starts)?;
+    let control_owner = signed_inputs(&after_control, &owner, &starts)?;
+    let probe_owner = signed_inputs(&after_probe, &probe_owner, &starts)?;
+    let top_diff = input_differences(&control_top, &probe_top);
+    let owner_diff = input_differences(&control_owner, &probe_owner);
+    let comparisons = [
+        &old_pair,
+        &retained_control,
+        &retained_probe,
+        &whole,
+        &copied,
+        &control_partitions,
+        &probe_partitions,
+    ];
+    let passed = comparisons
+        .iter()
+        .all(|c| c["different_channel_samples"] == 0)
+        && cold.iter().all(|row| {
+            ["control_vs_full", "probe_vs_full", "control_vs_probe"]
+                .iter()
+                .all(|key| row[*key]["different_channel_samples"] == 0)
+        })
+        && top_diff["passed"] == true
+        && owner_diff["passed"] == true;
+    Ok(serde_json::json!({
+        "passed":passed,"implementation_evidence":false,
+        "whole_pcm":whole,"copied_delivery_pcm":copied,"old_pair_pcm":old_pair,
+        "existing_control_retained":retained_control,"existing_probe_retained":retained_probe,
+        "control_partitions":control_partitions,"probe_partitions":probe_partitions,
+        "cold_bus":cold,
+        "copied_top_input":top_diff,"copied_owner_input":owner_diff,
+        "copy_start_sample":frame_sample_boundary(21),
+        "copy_terminal_sample":frame_sample_boundary(24),
+        "control_slice":control_slice,"probe_slice":probe_slice,
+        "after_control":after_control,"after_probe":after_probe,
+        "expected_pcm_bits":expected.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
+        "actual_pcm_bits":actual.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
+        "control_top_raw":control_top,"probe_top_raw":probe_top,
+        "control_owner_raw":control_owner,"probe_owner_raw":probe_owner,
+    }))
+}
+
+#[test]
+fn experimental_top_preserving_partial_copy_after_scope_narrowing() {
+    let directory = std::env::var_os("DEADPAN_SCOPE_PROBE_EVIDENCE")
+        .map(std::path::PathBuf::from)
+        .expect("set DEADPAN_SCOPE_PROBE_EVIDENCE to retain crop-probe evidence")
+        .join("crop");
+    std::fs::create_dir_all(&directory).unwrap();
+    let mut rows = Vec::new();
+    let mut all_passed = true;
+    for owner in [OwnerPolicy::Source, OwnerPolicy::RoomTone] {
+        for when in [EqWhen::BeforeCapture, EqWhen::AfterGrouping] {
+            let label = format!("{owner:?}-prefix2-{when:?}-terminaltrue");
+            if !selected_case(&label) {
+                continue;
+            }
+            let (control, probe) = pair(owner, 2, when, true);
+            let result = run_case(&control, &probe);
+            let row = match result {
+                Ok(result) => {
+                    all_passed &= result["passed"] == true;
+                    std::fs::write(directory.join(format!("{label}.json")),
+                        serde_json::to_vec(&serde_json::json!({
+                            "case":label,"before_control":control,"before_probe":probe,"result":result,
+                        })).unwrap()).unwrap();
+                    // Full per-sample diagnostics remain in the case file.
+                    serde_json::json!({
+                        "case":label,"passed":result["passed"],
+                        "whole_pcm":result["whole_pcm"],"copied_delivery_pcm":result["copied_delivery_pcm"],
+                        "top_input":result["copied_top_input"],"owner_input":result["copied_owner_input"],
+                        "implementation_evidence":false,
+                    })
+                }
+                Err(error) => {
+                    all_passed = false;
+                    let failure = serde_json::json!({
+                        "case":label,"passed":false,"structural_or_api_failure":error,
+                        "before_control":control,"before_probe":probe,"implementation_evidence":false,
+                    });
+                    std::fs::write(
+                        directory.join(format!("{label}.json")),
+                        serde_json::to_vec(&failure).unwrap(),
+                    )
+                    .unwrap();
+                    failure
+                }
+            };
+            eprintln!("{row}");
+            rows.push(row);
+        }
+    }
+    std::fs::write(
+        directory.join("summary.json"),
+        serde_json::to_vec_pretty(&rows).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        rows.len(),
+        if std::env::var_os("DEADPAN_SCOPE_PROBE_CASE").is_some() {
+            1
+        } else {
+            4
+        }
+    );
+    assert!(
+        all_passed,
+        "Top-preserving crop representation probe failed; all four case files retained"
+    );
+}

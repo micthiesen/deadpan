@@ -1,0 +1,26 @@
+[
+  {
+    "test": "endpoint_splits_direct_group_and_ungroup_within_retained_scope_still_refuse_atomically",
+    "exit": 0,
+    "seconds": 0.0043619172647595406,
+    "sha256": "559f4b746e243e5f86f99270a92b31a714f095ff3d10e4a923c92ca275979910"
+  },
+  {
+    "test": "real_retime_repeat_and_partition_placement_histories_still_refuse_scope_narrowing",
+    "exit": 101,
+    "seconds": 0.0034952498972415924,
+    "sha256": "559f4b746e243e5f86f99270a92b31a714f095ff3d10e4a923c92ca275979910"
+  },
+  {
+    "test": "root_owned_attachment_transport_still_refuses_atomically",
+    "exit": 0,
+    "seconds": 0.002934541553258896,
+    "sha256": "559f4b746e243e5f86f99270a92b31a714f095ff3d10e4a923c92ca275979910"
+  },
+  {
+    "test": "missing_historical_owner_is_rejected_at_public_document_admission",
+    "exit": 0,
+    "seconds": 0.0032783756032586098,
+    "sha256": "559f4b746e243e5f86f99270a92b31a714f095ff3d10e4a923c92ca275979910"
+  }
+]

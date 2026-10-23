@@ -1,0 +1,10 @@
+{
+  "files": {
+    "crates/deadpan-audio/tests/audio_definition/sound_clocks.rs": "12a9c9103a0a73cf3b8d01b4f0094f0e835b040a76c54f1663fc03143bb8d123",
+    "crates/deadpan-audio/tests/audio_definition/sound_clocks/aligned_scope_context_probe.rs": "ddd75afc5e0acd88fd0663778aca589c8a9cb780ff825e2b5735385241cb931d",
+    "crates/deadpan-audio/tests/audio_definition/sound_clocks/aligned_scope.rs": "dbc444c9f13cbc8827f91b55382ea02f5306bbbf3d0abfd3cef9dcd198172a28",
+    "crates/deadpan-core/tests/aligned_sound_scope_counterfactual.rs": "a8bb3bbff0dd0d34c6158ab7f8cb9cbe4a2652df0c65cb6e1ce9f04f323fb7eb"
+  },
+  "production_source_unchanged": true,
+  "base_commit": "4e357bc573a269782f4515b456fa5e080c37352c"
+}

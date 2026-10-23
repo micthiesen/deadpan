@@ -1,0 +1,9 @@
+[
+  {
+    "test": "voice_occurrence::beat_sounds::sound_clocks::aligned_scope::aligned_scope_old_controls_preserve_all_source_and_hold_pcm",
+    "exit": 0,
+    "seconds": 16.92899208329618,
+    "binary": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-first-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+    "sha256": "5aa2dbf1fb63e993935fb66360edc33bf692e6645f1082c3c2bbf34dc60b6d54"
+  }
+]

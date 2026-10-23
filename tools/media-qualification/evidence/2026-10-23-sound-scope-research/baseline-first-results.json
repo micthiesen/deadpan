@@ -1,0 +1,23 @@
+[
+  {
+    "test": "aligned_room_tone_hold_group_narrows_only_preexisting_scope_after_old_code_controls",
+    "exit": 101,
+    "seconds": 0.009276792407035828,
+    "expected_exact_retained_scope_refusal_after_positive_controls": true,
+    "sha256": "559f4b746e243e5f86f99270a92b31a714f095ff3d10e4a923c92ca275979910"
+  },
+  {
+    "test": "aligned_silence_hold_group_keeps_suppression_recipe_and_scope_history",
+    "exit": 101,
+    "seconds": 0.005374250002205372,
+    "expected_exact_retained_scope_refusal_after_positive_controls": true,
+    "sha256": "559f4b746e243e5f86f99270a92b31a714f095ff3d10e4a923c92ca275979910"
+  },
+  {
+    "test": "aligned_source_owner_group_narrows_only_preexisting_scope_after_old_code_controls",
+    "exit": 101,
+    "seconds": 0.0054413750767707825,
+    "expected_exact_retained_scope_refusal_after_positive_controls": true,
+    "sha256": "559f4b746e243e5f86f99270a92b31a714f095ff3d10e4a923c92ca275979910"
+  }
+]

@@ -1,0 +1,7 @@
+error: error extracting archive `/tmp/deadpan-aligned-sound-scope-2026-10-22/context-first.tar.zst`
+
+Caused by:
+  error canonicalizing destination directory `/tmp/deadpan-aligned-sound-scope-2026-10-22/context-first-extracted`
+
+Caused by:
+  No such file or directory (os error 2)

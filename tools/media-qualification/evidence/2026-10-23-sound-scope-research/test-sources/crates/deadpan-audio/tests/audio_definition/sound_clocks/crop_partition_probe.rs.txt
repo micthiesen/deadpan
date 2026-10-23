@@ -1,0 +1,332 @@
+//! TEST-ONLY REPRESENTATION RESEARCH: uncompiled and unexecuted.
+//! Public capture cannot create this crop. This experiment manually authors an
+//! exterior Partition through public JSON admission on BOTH paired states.
+//! It is not a supported editing workflow, a Core proof, or implementation evidence.
+//!
+//! Child of context_probe:
+//! #[path = "crop_partition_probe.rs"]
+//! mod crop_partition_probe;
+//! Filter: experimental_json_partition_preserves_top_context_after_scope_narrowing
+//! Requires DEADPAN_SCOPE_PROBE_EVIDENCE; saves to its partition-crop child.
+use super::*;
+
+fn partition(
+    document: &ProjectDocument,
+) -> std::result::Result<ProjectDocument, serde_json::Value> {
+    let partition_id = id("json-partition-probe");
+    if document.nodes().contains_key(&partition_id)
+        || document
+            .children(document.root())
+            .cloned()
+            .collect::<Vec<_>>()
+            != vec![id("probe-prefix"), id("lead"), id("top")]
+    {
+        return Err(serde_json::json!({
+            "stage":"partition fixture structure",
+            "error":"unexpected node inventory or root children; no replacement attempted",
+        }));
+    }
+    let mut wrapper = retime("top", 3, 10..13, PitchPolicy::FollowSpeed);
+    let NodeKind::Retime { purpose, .. } = &mut wrapper.kind else {
+        unreachable!()
+    };
+    *purpose = RetimePurpose::Partition;
+    let mut wire = serde_json::to_value(document).unwrap();
+    wire["nodes"][partition_id.as_str()] = serde_json::to_value(&wrapper).unwrap();
+    wire["nodes"][document.root().as_str()]["kind"]["children"] =
+        serde_json::json!(["probe-prefix", "lead", "json-partition-probe"]);
+    match ProjectDocument::from_json(&wire.to_string()) {
+        Ok(admitted) => {
+            // Requiring explicit public validation is intentional even though
+            // from_json already validates. No field/guard is repaired on error.
+            if let Err(error) = admitted.validate() {
+                return Err(serde_json::json!({
+                    "stage":"explicit document validate",
+                    "error_code":format!("{:?}",error.code),"error_message":error.message,
+                    "attempted_document":wire,
+                }));
+            }
+            if admitted.audio_bindings() != document.audio_bindings()
+                || admitted.beat_sounds() != document.beat_sounds()
+                || admitted.nodes()[&id("top")] != document.nodes()[&id("top")]
+                || admitted.nodes()[&id("owner")] != document.nodes()[&id("owner")]
+                || admitted.duration().unwrap().frames() != 7
+            {
+                return Err(serde_json::json!({
+                    "stage":"post-admission representation invariants",
+                    "error":"admission changed protected intent or unexpected duration",
+                    "attempted_document":wire,"admitted_document":admitted,
+                }));
+            }
+            Ok(admitted)
+        }
+        Err(error) => Err(serde_json::json!({
+            "stage":"public ProjectDocument::from_json",
+            "error_code":format!("{:?}",error.code),"error_message":error.message,
+            "attempted_document":wire,
+        })),
+    }
+}
+
+fn raw_context(
+    document: &ProjectDocument,
+    node: &str,
+) -> std::result::Result<serde_json::Value, String> {
+    let plan = compile(document, false);
+    let context = plan
+        .audio_sound_instance_context(
+            &InstancePath {
+                node: id(node),
+                repeats: vec![],
+            },
+            Default::default(),
+        )
+        .map_err(|e| format!("context {node}: {e}"))?;
+    let mut windows = Vec::new();
+    // Partition is delivered at [4,7); local[10,13) places complete Top at
+    // [-6,11), with complete owner [-6,6). Read both negative and hidden tails.
+    for first in [
+        frame_sample_boundary(-6) - 128,
+        -128,
+        frame_sample_boundary(4) - 128,
+        frame_sample_boundary(6) - 256,
+        frame_sample_boundary(6) - 128,
+        frame_sample_boundary(7) - 128,
+        frame_sample_boundary(7),
+        frame_sample_boundary(11) - 128,
+    ] {
+        let mut renderer = StageAudio::new(plan.clone());
+        let block = renderer
+            .read_beat_sound_owner_input(
+                &mut ClockProvider::new(document),
+                &context,
+                AudioSample(first),
+                256,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .map_err(|e| format!("signed input {node} at{first}: {e}"))?;
+        windows.push(serde_json::json!({
+            "start":first,"samples":block.samples,
+            "sample_bits":block.samples.iter().map(|s|s.map(f64::to_bits)).collect::<Vec<_>>(),
+            "suppressed":block.suppressed,
+        }));
+    }
+    Ok(serde_json::json!({
+        "context":node,"samples":[context.samples().start.0,context.samples().end.0],"windows":windows,
+    }))
+}
+
+fn numeric_changes(a: &[[f32; 2]], b: &[[f32; 2]]) -> usize {
+    assert_eq!(a.len(), b.len());
+    a.iter()
+        .zip(b)
+        .filter(|(a, b)| a[0] != b[0] || a[1] != b[1])
+        .count()
+}
+
+fn audio_probe(
+    control: &ProjectDocument,
+    probe: &ProjectDocument,
+) -> std::result::Result<serde_json::Value, String> {
+    if control.nodes() != probe.nodes() || control.beat_sounds() != probe.beat_sounds() {
+        return Err(
+            "admitted paired authored nodes/events differ; no same-structure oracle".into(),
+        );
+    }
+    let control_plan = compile(control, false);
+    let probe_plan = compile(probe, false);
+    for frame in 0..7 {
+        if control_plan
+            .picture(ProjectFrame(frame))
+            .map_err(|e| e.to_string())?
+            .picture
+            != probe_plan
+                .picture(ProjectFrame(frame))
+                .map_err(|e| e.to_string())?
+                .picture
+        {
+            return Err(format!("picture identity mismatch at{frame}"));
+        }
+    }
+    let expected = full(control, &[1021]);
+    let actual = full(probe, &[37, 509, 1021, 173]);
+    let whole = differences32(&expected, &actual);
+    let control_partitions = differences32(&expected, &full(control, &[37, 509, 1021, 173]));
+    let probe_partitions = differences32(&actual, &full(probe, &[1021]));
+    let mut cold = Vec::new();
+    for (first, last) in [
+        (frame_sample_boundary(4) - 1, frame_sample_boundary(4) + 2),
+        (frame_sample_boundary(6) - 1, frame_sample_boundary(6) + 2),
+        (frame_sample_boundary(7) - 3, frame_sample_boundary(7)),
+    ] {
+        let a = read(control, first, last, &[1021]);
+        let b = read(probe, first, last, &[1021]);
+        let start = usize::try_from(first).map_err(|e| e.to_string())?;
+        let end = usize::try_from(last).map_err(|e| e.to_string())?;
+        cold.push(serde_json::json!({
+            "sample_origin":first,"sample_end":last,
+            "control_vs_full":differences32(&expected[start..end],&a),
+            "probe_vs_full":differences32(&actual[start..end],&b),
+            "control_vs_probe":differences32(&a,&b),
+        }));
+    }
+    let control_top = raw_context(control, "top")?;
+    let probe_top = raw_context(probe, "top")?;
+    let control_owner = raw_context(control, "owner")?;
+    let probe_owner = raw_context(probe, "owner")?;
+    let top = input_differences(&control_top, &probe_top);
+    let owner = input_differences(&control_owner, &probe_owner);
+
+    // Positive controls: the visible crop actually uses Top's stage and event.
+    // Exact numeric changes are required; signed-zero-only changes do not count.
+    let no_top = edit(
+        control,
+        "partition-ablate-top",
+        Command::SetAudioTreatments {
+            node: id("top"),
+            treatments: AudioTreatments::default(),
+        },
+    );
+    let no_event = edit(
+        control,
+        "partition-ablate-event",
+        Command::DeleteBeatSound {
+            owner: id("owner"),
+            id: sound_id("effect"),
+        },
+    );
+    let no_top_pcm = full(&no_top, &[1021]);
+    let no_event_pcm = full(&no_event, &[1021]);
+    let top_changes = numeric_changes(&expected, &no_top_pcm);
+    let event_changes = numeric_changes(&expected, &no_event_pcm);
+    let passed = whole["different_channel_samples"] == 0
+        && control_partitions["different_channel_samples"] == 0
+        && probe_partitions["different_channel_samples"] == 0
+        && cold.iter().all(|row| {
+            ["control_vs_full", "probe_vs_full", "control_vs_probe"]
+                .iter()
+                .all(|key| row[*key]["different_channel_samples"] == 0)
+        })
+        && top["passed"] == true
+        && owner["passed"] == true
+        && top_changes > 0
+        && event_changes > 0;
+    Ok(serde_json::json!({
+        "passed":passed,"implementation_evidence":false,"supported_edit_evidence":false,
+        "whole_pcm":whole,"control_partitions":control_partitions,"probe_partitions":probe_partitions,
+        "cold_bus":cold,"top_input":top,"owner_input":owner,
+        "top_eq_ablation_numerically_changed_samples":top_changes,
+        "event_ablation_numerically_changed_samples":event_changes,
+        "top_eq_ablation":differences32(&expected,&no_top_pcm),
+        "event_ablation":differences32(&expected,&no_event_pcm),
+        "expected_pcm_bits":expected.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
+        "actual_pcm_bits":actual.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
+        "no_top_eq_pcm_bits":no_top_pcm.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
+        "no_event_pcm_bits":no_event_pcm.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
+        "control_top_raw":control_top,"probe_top_raw":probe_top,
+        "control_owner_raw":control_owner,"probe_owner_raw":probe_owner,
+    }))
+}
+
+#[test]
+fn experimental_json_partition_preserves_top_context_after_scope_narrowing() {
+    let directory = std::env::var_os("DEADPAN_SCOPE_PROBE_EVIDENCE")
+        .map(std::path::PathBuf::from)
+        .expect("set DEADPAN_SCOPE_PROBE_EVIDENCE to retain representation-only evidence")
+        .join("partition-crop");
+    std::fs::create_dir_all(&directory).unwrap();
+    let mut prepared = Vec::new();
+    // Validate ALL paired documents first, before any audio read. A refused
+    // JSON state is exact admission evidence and ends this test without forcing.
+    for owner in [OwnerPolicy::Source, OwnerPolicy::RoomTone] {
+        for when in [EqWhen::BeforeCapture, EqWhen::AfterGrouping] {
+            let label = format!("{owner:?}-prefix2-{when:?}-terminaltrue");
+            let (old_control, old_probe) = pair(owner, 2, when, true);
+            let (control, probe) = match (partition(&old_control), partition(&old_probe)) {
+                (Ok(control), Ok(probe)) => (control, probe),
+                (control, probe) => {
+                    let outcome =
+                        |result: std::result::Result<ProjectDocument, serde_json::Value>| {
+                            match result {
+                                Ok(document) => {
+                                    serde_json::json!({"admitted":true,"document":document})
+                                }
+                                Err(error) => serde_json::json!({"admitted":false,"failure":error}),
+                            }
+                        };
+                    let failure = serde_json::json!({
+                        "case":label,"control":outcome(control),"probe":outcome(probe),
+                        "audio_run":false,"stopped_on_admission_refusal":true,
+                        "implementation_evidence":false,"supported_edit_evidence":false,
+                    });
+                    std::fs::write(
+                        directory.join(format!("{label}-admission-refusal.json")),
+                        serde_json::to_vec_pretty(&failure).unwrap(),
+                    )
+                    .unwrap();
+                    std::fs::write(
+                        directory.join("summary.json"),
+                        serde_json::to_vec_pretty(&failure).unwrap(),
+                    )
+                    .unwrap();
+                    panic!(
+                        "public JSON Partition admission refused; exact error retained, no audio/forcing"
+                    );
+                }
+            };
+            std::fs::write(
+                directory.join(format!("{label}-admitted.json")),
+                serde_json::to_vec(&serde_json::json!({
+                    "case":label,"control":control,"probe":probe,
+                    "implementation_evidence":false,"supported_edit_evidence":false,
+                }))
+                .unwrap(),
+            )
+            .unwrap();
+            prepared.push((label, control, probe));
+        }
+    }
+    let mut rows = Vec::new();
+    let mut all_passed = true;
+    for (label, control, probe) in prepared {
+        let result = match audio_probe(&control, &probe) {
+            Ok(result) => result,
+            Err(error) => serde_json::json!({
+                "passed":false,"audio_api_or_structure_failure":error,
+                "implementation_evidence":false,"supported_edit_evidence":false,
+            }),
+        };
+        all_passed &= result["passed"] == true;
+        std::fs::write(
+            directory.join(format!("{label}.json")),
+            serde_json::to_vec(&serde_json::json!({
+                "case":label,"control":control,"probe":probe,"result":result,
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        let row = serde_json::json!({
+            "case":label,"passed":result["passed"],
+            "whole_pcm_differences":result["whole_pcm"]["different_channel_samples"],
+            "top_input_passed":result["top_input"]["passed"],
+            "owner_input_passed":result["owner_input"]["passed"],
+            "top_eq_active_samples":result["top_eq_ablation_numerically_changed_samples"],
+            "event_active_samples":result["event_ablation_numerically_changed_samples"],
+            "audio_api_or_structure_failure":result["audio_api_or_structure_failure"],
+            "implementation_evidence":false,"supported_edit_evidence":false,
+        });
+        eprintln!("{row}");
+        rows.push(row);
+    }
+    std::fs::write(
+        directory.join("summary.json"),
+        serde_json::to_vec_pretty(&rows).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(rows.len(), 4);
+    assert!(
+        all_passed,
+        "representation-only Partition probe differs; all admitted cases retained"
+    );
+}

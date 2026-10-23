@@ -2,6 +2,17 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Aligned sound-scope research, 2026-10-23
+
+[Research qualification](qualification/sound-scope-research-2026-10-23.md)
+refutes manual journal-scope narrowing. A two-placement test loses retained
+terminal sample 22422 from an existing ancestor EQ's input and changes 1,899
+canonical PCM channel samples. The earlier 40 single-placement comparisons,
+40 audible-effect controls and four JSON-admitted exterior crops pass. Complete
+failure evidence is retained; production grouping guards remain unchanged.
+A context-preserving correspondence prototype is not yet integrated or qualified
+as an edit. No requirement or gate is newly complete; SQLite 84/core 55 remain.
+
 ## Attached-sound endpoint grouping, 2026-10-22
 
 [Qualification](qualification/sound-group-endpoints-2026-10-22.md) adds ordinary

@@ -1,0 +1,11 @@
+
+running 1 test
+test voice_occurrence::beat_sounds::sound_clocks::aligned_scope::context_probe::terminal_two_moves_probe::experimental_two_placements_retain_birth_terminal_in_top_context ... FAILED
+
+failures:
+
+failures:
+    voice_occurrence::beat_sounds::sound_clocks::aligned_scope::context_probe::terminal_two_moves_probe::experimental_two_placements_retain_birth_terminal_in_top_context
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 162 filtered out; finished in 1.33s
+

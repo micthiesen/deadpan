@@ -1,0 +1,596 @@
+[
+  {
+    "kind": "ablation",
+    "case": "Source-prefix1-BeforeCapture-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 3.8736606249585748,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "Source-prefix1-BeforeCapture-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 3.792960749939084,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "Source-prefix1-AfterGrouping-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 3.8585811257362366,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "Source-prefix1-AfterGrouping-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 3.8191101253032684,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "Source-prefix2-BeforeCapture-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 3.9232062501832843,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "Source-prefix2-BeforeCapture-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 3.8876784164458513,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "crop",
+    "case": "Source-prefix2-BeforeCapture-terminaltrue",
+    "exit": 101,
+    "timeout": false,
+    "seconds": 0.016276666894555092,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "Source-prefix2-AfterGrouping-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 3.9223166657611728,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "Source-prefix2-AfterGrouping-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 3.90351099986583,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "crop",
+    "case": "Source-prefix2-AfterGrouping-terminaltrue",
+    "exit": 101,
+    "timeout": false,
+    "seconds": 0.01571887545287609,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "Source-prefix3-BeforeCapture-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 3.942582458257675,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "Source-prefix3-BeforeCapture-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 3.9166614580899477,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "Source-prefix3-AfterGrouping-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 3.9300121255218983,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "Source-prefix3-AfterGrouping-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 3.9160941671580076,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "Source-prefix4-BeforeCapture-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 3.9492015838623047,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "Source-prefix4-BeforeCapture-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 3.98499933257699,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "Source-prefix4-AfterGrouping-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 3.964408583007753,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "Source-prefix4-AfterGrouping-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 3.9821052914485335,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "Source-prefix5-BeforeCapture-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 3.986081415787339,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "Source-prefix5-BeforeCapture-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 4.029061499983072,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "Source-prefix5-AfterGrouping-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 3.9777144165709615,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "Source-prefix5-AfterGrouping-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 4.007993332110345,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "RoomTone-prefix1-BeforeCapture-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 13.312438833527267,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "RoomTone-prefix1-BeforeCapture-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 13.005642875097692,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "RoomTone-prefix1-AfterGrouping-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 13.302701291628182,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "RoomTone-prefix1-AfterGrouping-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 12.981355708092451,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "RoomTone-prefix2-BeforeCapture-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 13.677353458479047,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "RoomTone-prefix2-BeforeCapture-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 13.377394333481789,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "crop",
+    "case": "RoomTone-prefix2-BeforeCapture-terminaltrue",
+    "exit": 101,
+    "timeout": false,
+    "seconds": 0.01598762534558773,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "RoomTone-prefix2-AfterGrouping-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 13.585627540946007,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "RoomTone-prefix2-AfterGrouping-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 13.395190041512251,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "crop",
+    "case": "RoomTone-prefix2-AfterGrouping-terminaltrue",
+    "exit": 101,
+    "timeout": false,
+    "seconds": 0.016280749812722206,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "RoomTone-prefix3-BeforeCapture-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 13.653941792435944,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "RoomTone-prefix3-BeforeCapture-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 13.389128458686173,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "matrix",
+    "case": "RoomTone-prefix3-AfterGrouping-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 38.352906874381006,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "RoomTone-prefix3-AfterGrouping-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 13.629966457374394,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "matrix",
+    "case": "RoomTone-prefix3-AfterGrouping-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 37.66263899952173,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "RoomTone-prefix3-AfterGrouping-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 13.486940708011389,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "matrix",
+    "case": "RoomTone-prefix4-BeforeCapture-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 38.60340141598135,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "RoomTone-prefix4-BeforeCapture-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 13.853267833590508,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "matrix",
+    "case": "RoomTone-prefix4-BeforeCapture-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 38.14169616624713,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "RoomTone-prefix4-BeforeCapture-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 13.757910875603557,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "matrix",
+    "case": "RoomTone-prefix4-AfterGrouping-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 39.44495637528598,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "RoomTone-prefix4-AfterGrouping-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 14.128243583254516,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "matrix",
+    "case": "RoomTone-prefix4-AfterGrouping-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 38.25570537522435,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "RoomTone-prefix4-AfterGrouping-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 13.848561459220946,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "matrix",
+    "case": "RoomTone-prefix5-BeforeCapture-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 38.164574917405844,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "RoomTone-prefix5-BeforeCapture-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 13.76122233364731,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "matrix",
+    "case": "RoomTone-prefix5-BeforeCapture-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 37.668307417072356,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "RoomTone-prefix5-BeforeCapture-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 13.76060620881617,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "matrix",
+    "case": "RoomTone-prefix5-AfterGrouping-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 38.16867133323103,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "RoomTone-prefix5-AfterGrouping-terminalfalse",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 14.034141832962632,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "matrix",
+    "case": "RoomTone-prefix5-AfterGrouping-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 34.90475216601044,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  },
+  {
+    "kind": "ablation",
+    "case": "RoomTone-prefix5-AfterGrouping-terminaltrue",
+    "exit": 0,
+    "timeout": false,
+    "seconds": 13.391715375706553,
+    "binary": {
+      "path": "/private/tmp/deadpan-aligned-sound-scope-2026-10-22/context-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+      "sha256": "4b8db4c032107720b5b1890714a4cac6f12da8f89599d3056887d14eefb25ad2"
+    }
+  }
+]
