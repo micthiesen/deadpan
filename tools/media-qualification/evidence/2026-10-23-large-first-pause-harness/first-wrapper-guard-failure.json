@@ -1,0 +1,20 @@
+{
+  "native_replay_exit": 0,
+  "native_replay_failed": false,
+  "wrapper_assertion_failed": "all physical input paths/bytes unchanged",
+  "main_database_sha256_before": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+  "main_database_sha256_after": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+  "main_database_unchanged": true,
+  "observed_sqlite_sidecars": {
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "original_full_file_hash_map_not_persisted": true,
+  "no_target_pass_claim": true
+}

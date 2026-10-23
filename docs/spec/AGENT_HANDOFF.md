@@ -35,19 +35,36 @@ expected-value fixture changed after the final Core pass. The final report
 retains initial test borrow errors, malformed negative fixture, old literal
 range expectation, output-handle warning and old-witness toolchain mismatch.
 
-Next: integrate the scratch-only large-first-pause harness draft at
-/tmp/deadpan-large-pause-harness-2026-10-23/large-first-pause.patch. It is not
-applied, formatted, compiled or run. source-hashes.json records the two existing
-file identities and the new module; NOTES.md describes behavior and limits.
-A pre-integration measurement review found no concrete defect. Re-read current
-targets before applying, then format, run targeted/UI tests and strict checks,
-build release, and run one diagnostic before collecting forty independent
-fresh-package trials. The scenario must remain offscreen acceptance, with no
-native-window/scanout claim. It uses hold 12f at frame 17933, not hold-duration.
-Pristine make-large has three revisions/two setup commits and undo available;
-it has no source media. Split neighbors retain Partition contexts with
-durations [5,12,7], rather than shortened Hold recipes. Require a new matching
-ticket/revision through decode, submission and composition.
+The new [large-first-pause harness](../qualification/large-first-pause-harness-2026-10-23.md)
+is implemented and verified: 1,295 UI tests pass, eleven skipped; strict UI
+Clippy/format and seven replay checks pass. General review added a pinned
+1920×1080 /24 fps /SDR Rec.709 basis guard with negative tests. Final release
+SHA-256: 3bf2d47c6fbc7eade3a259fc8e9ffc275043af2bd62e698a0b98c0937dcfd9bd.
+One diagnostic sample measures 393.681375 ms input to commit and 396.208834 ms
+through offscreen Background composition. Earlier quiet 389.723625 /392.35325
+and compile-adjacent 398.122959 /400.7225 ms samples remain separate n=1
+diagnostics, not formal percentiles or target PASSes. Two second-retry frames
+and one distinct-cause retry run remain recorded. Do not collect forty trials
+to imply a PASS; profile and improve the actual semantic-service path first.
+
+The scenario uses hold 12f at frame 17933, not hold-duration. Pristine make-large
+has three revisions/two setup commits and undo available, with no source media.
+It edits only a private portable copy and verifies [5,12,7] neighbor durations,
+full retained Partition contexts and matching new picture ticket/revision.
+Final authored-input byte/path guards pass; read-only SQLite creates only
+project.sqlite-shm and an empty project.sqlite-wal. The initial wrapper's
+full-path equality assertion failed on those files; its full before-map was
+not retained, while its original main DB hash matched. Keep that failure.
+
+Scratch harness final driver is terminal, all rows zero:
+/tmp/deadpan-large-pause-harness-2026-10-23/qualify_final.py. Do not restart it.
+Next, build the reviewed temporary service instrumentation in the isolated
+/tmp/deadpan-ui-pause-profile-2026-10-23/source with its separate target.
+Its source is the e9be3a8d archive plus the exact final harness and profiling
+overlays. Root owns Cargo and runtime. The env-gated diagnostic measures
+disjoint service phases, explicitly excluding queue wait. Preserve source,
+binary and input hashes and unchanged replay checks; never ship the timers or
+attribute the roughly 396 ms UI measurement to store time without evidence.
 
 Refresh/verify progress artifact a3ysikxugbmr4 from the next pushed
 docs/progress.json after this implementation commit. Preserve foreign

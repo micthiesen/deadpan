@@ -1,0 +1,56 @@
+{
+  "n": 1,
+  "diagnostic_only": true,
+  "no_budget_or_percentile_pass": true,
+  "checks": 7,
+  "failed": false,
+  "metrics": {
+    "large_first_pause_input_to_commit_ms": {
+      "completed": {
+        "max_ms": 393.681375,
+        "n": 1,
+        "p50_ms": 393.681375,
+        "p95_ms": 393.681375,
+        "p99_ms": 393.681375
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    },
+    "large_first_pause_input_to_offscreen_background_composition_ms": {
+      "completed": {
+        "max_ms": 396.208834,
+        "n": 1,
+        "p50_ms": 396.208834,
+        "p95_ms": 396.208834,
+        "p99_ms": 396.208834
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  "load_at_start": [
+    2.943359375,
+    2.61083984375,
+    2.20751953125
+  ],
+  "all_authored_input_paths_and_bytes_unchanged": true,
+  "empty_wal": true,
+  "sqlite_coordination_sidecars_observed": {
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "binary": {
+    "source": "target/release/deadpan-app",
+    "executed": "/tmp/deadpan-large-pause-harness-2026-10-23/release-final-bin/deadpan-app",
+    "sha256": "3bf2d47c6fbc7eade3a259fc8e9ffc275043af2bd62e698a0b98c0937dcfd9bd",
+    "freshly_built": true
+  }
+}

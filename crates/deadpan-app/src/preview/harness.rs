@@ -38,6 +38,7 @@ mod groups;
 mod hold_effects;
 mod jobs;
 mod keymap;
+mod large_first_pause;
 mod layouts;
 mod linked_original;
 mod macros;
@@ -269,6 +270,11 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                 scratch.as_ref().ok_or("Missing temporary replay root")?.path().join("Documents")
             };
             // Accepting edits the project: replay a private copy, never the fixture.
+            // Large first-pause fixtures contain only the two generator setup
+            // commits. Validate before any production writer can open them.
+            let large_first_pause_baseline = if name == "large-first-pause" {
+                Some(large_first_pause::preflight(fixture)?)
+            } else { None };
             let fixture = if name == "ai-pause-ready" {
                 let copy = documents
                     .parent()
@@ -276,10 +282,10 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                     .join("ai-pause-ready.deadpan");
                 copy_package(fixture, &copy)?;
                 copy
-            } else if ui_harness::real_playback(name) {
+            } else if ui_harness::real_playback(name) || name == "large-first-pause" {
                 let root = documents.parent().ok_or("Replay Documents root has no parent")?;
                 std::fs::create_dir_all(root).map_err(|error| error.to_string())?;
-                let copy = root.join("generated-playback.deadpan");
+                let copy = root.join(if name == "large-first-pause" { "large-first-pause.deadpan" } else { "generated-playback.deadpan" });
                 deadpan_store::portable::copy_portable(fixture, &copy, &AtomicBool::new(false))
                     .map_err(|error| error.to_string())?;
                 copy
@@ -517,6 +523,13 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                         app.workspace.is_some() && !app.service.is_busy()
                     })?;
                     return ai_pause::ready(&mut driver);
+                }
+                if name == "large-first-pause" {
+                    driver.click("Open project…  ⌘O")?;
+                    driver.wait_for("Private 10,000-Hold fixture opened", |app| {
+                        app.workspace.is_some() && !app.service.is_busy()
+                    })?;
+                    return large_first_pause::run(&mut driver, large_first_pause_baseline.as_ref().ok_or("Missing pristine fixture evidence")?);
                 }
                 if name == "youtube" {
                     return youtube::run(&mut driver);

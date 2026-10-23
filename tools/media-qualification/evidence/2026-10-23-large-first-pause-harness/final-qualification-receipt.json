@@ -1,0 +1,99 @@
+[
+  {
+    "name": "final-all-ui",
+    "command": [
+      "python",
+      "/tmp/deadpan-large-pause-harness-2026-10-23/qualify_all_ui.py",
+      "candidate-all-ui-final",
+      "candidate",
+      "ui"
+    ],
+    "exit": 0,
+    "seconds": 72.00489266589284
+  },
+  {
+    "name": "final-strict",
+    "command": [
+      "python",
+      "/tmp/deadpan-large-pause-harness-2026-10-23/ui_lint_final.py"
+    ],
+    "exit": 0,
+    "seconds": 19.54391091596335
+  },
+  {
+    "name": "final-freeze",
+    "command": [
+      "python",
+      "/tmp/deadpan-large-pause-harness-2026-10-23/freeze.py",
+      "release-final"
+    ],
+    "exit": 0,
+    "seconds": 0.34372624941170216
+  },
+  {
+    "name": "final-build",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--bin",
+      "deadpan-app"
+    ],
+    "exit": 0,
+    "seconds": 151.09020629059523
+  },
+  {
+    "name": "final-build-guard",
+    "command": [
+      "python",
+      "/tmp/deadpan-large-pause-harness-2026-10-23/guard.py",
+      "release-final"
+    ],
+    "exit": 0,
+    "seconds": 0.10441654175519943
+  },
+  {
+    "name": "final-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-large-pause-harness-2026-10-23/final-diagnostic-input.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.21544645819813013
+  },
+  {
+    "name": "final-pilot",
+    "command": [
+      "/tmp/deadpan-large-pause-harness-2026-10-23/release-final-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-large-pause-harness-2026-10-23/final-diagnostic-input.deadpan",
+      "--output",
+      "/tmp/deadpan-large-pause-harness-2026-10-23/final-diagnostic-report"
+    ],
+    "exit": 0,
+    "seconds": 13.864683625288308
+  },
+  {
+    "name": "final-source-guard",
+    "command": [
+      "python",
+      "/tmp/deadpan-large-pause-harness-2026-10-23/guard.py",
+      "release-final"
+    ],
+    "exit": 0,
+    "seconds": 0.10317112505435944
+  }
+]

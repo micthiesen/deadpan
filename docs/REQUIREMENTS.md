@@ -2,6 +2,24 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Large-project first-pause measurement, 2026-10-23
+
+The verified `large-first-pause` replay measures one production `hold 12f`
+insertion at frame 17,933 in a fresh 10,000-Hold package. Its final release
+sample takes 393.681375 ms to commit and 396.208834 ms through new-revision,
+same-ticket offscreen Background composition. This is one diagnostic sample,
+not a percentile or target PASS. No native-window, scanout, source-decode or
+PCM claim follows. The 100 ms fallback and 50 ms ordinary-edit targets remain
+open. Direct store-and-refresh measurements have different boundaries.
+
+All 1,295 UI-feature tests pass (11 skipped), strict UI Clippy and formatting
+pass, and seven replay checks pass. The original authored inputs remain
+unchanged; the final full-file guard accounts only for SQLite shared-memory
+and empty-WAL coordination files. Retain the initial wrapper's failed full-path
+assertion and the two-frame layout retry warning. See
+[qualification and evidence](qualification/large-first-pause-harness-2026-10-23.md).
+Coverage remains 89%, 8/24 sections complete; no requirement or gate closes.
+
 ## Compact bindings and full-capture fallback, 2026-10-23
 
 Implemented and qualified: Core 58 / SQLite 87 omits six exact binding defaults,

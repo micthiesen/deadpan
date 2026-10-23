@@ -1,0 +1,394 @@
+--- a/crates/deadpan-app/src/ui_harness.rs
++++ b/crates/deadpan-app/src/ui_harness.rs
+@@ -26,6 +26,7 @@
+     "terminal-playback",
+     "large-project",
+     "edit-latency",
++    "large-first-pause",
+     "nested-pause",
+     "original-moment",
+     "transcript",
+@@ -178,7 +179,7 @@
+             .is_some_and(|name| PROJECT_FIXTURE_SCENARIOS.contains(&name));
+         if project.is_some() && !fixture_scenario {
+             return Err(
+-                "--project requires generated-picture, generated-playback, generated-loop, ai-playback-interference or ai-pause-ready".into(),
++                "--project requires generated-picture, generated-playback, generated-loop, ai-playback-interference, ai-pause-ready or large-first-pause".into(),
+             );
+         }
+         if fixture_scenario && project.is_none() {
+@@ -272,6 +273,7 @@
+     "generated-loop",
+     "ai-playback-interference",
+     "ai-pause-ready",
++    "large-first-pause",
+ ];
+ 
+ pub(crate) fn real_playback(name: &str) -> bool {
+@@ -303,7 +305,7 @@
+     }
+     if arguments == ["--help"] {
+         println!(
+-            "Usage: deadpan-app --ui-check --output NEW_DIRECTORY [--mode visual|performance] [--scenario NAME] [--hz 60|120] [--kestrel-source Shortcuts.swift] [--baseline PRIOR_DIRECTORY] [--retain-projects]\n       deadpan-app --ui-check --list-scenarios\n\nScenarios: {}\nVisual mode writes report.json, report.html and actual offscreen PNG frames.\nPerformance mode submits full UI + picture GPU work without screenshot readback.\nUse --release for performance. Projects use private temporary storage by default.\n--retain-projects keeps each scenario's Documents root under output/projects/NAME for native QA after replay exits.\nGenerated picture replay requires --scenario generated-picture --project /absolute/accepted.deadpan, exported by the real bundle qualification test with DEADPAN_GENERATED_PICTURE_FIXTURE_ROOT. It opens the generic compatibility fixture without editing it.\nai-pause-ready requires --project /absolute/project.deadpan whose last edit accepted real AI pictures; it replays a private copy.\ngenerated-playback requires --mode performance --project and runs real device audio at 5% monitor gain on a private copy of a <=32-second accepted project. generated-loop uses the same real-audio setup, selects from the first through last Generated picture (at most eight seconds), and loops for at least 30 seconds. ai-playback-interference requires --mode performance --project with a fresh full-source Original of at least 40 seconds and the installed Extension model; it uses real inference, production scheduling and device audio at 5% monitor gain on a private project copy. All other scenarios simulate audio delivery. Native pickers are scripted; no desktop window is opened.",
++            "Usage: deadpan-app --ui-check --output NEW_DIRECTORY [--mode visual|performance] [--scenario NAME] [--hz 60|120] [--kestrel-source Shortcuts.swift] [--baseline PRIOR_DIRECTORY] [--retain-projects]\n       deadpan-app --ui-check --list-scenarios\n\nScenarios: {}\nVisual mode writes report.json, report.html and actual offscreen PNG frames.\nPerformance mode submits full UI + picture GPU work without screenshot readback.\nUse --release for performance. Projects use private temporary storage by default.\n--retain-projects keeps each scenario's Documents root under output/projects/NAME for native QA after replay exits.\nGenerated picture replay requires --scenario generated-picture --project /absolute/accepted.deadpan, exported by the real bundle qualification test with DEADPAN_GENERATED_PICTURE_FIXTURE_ROOT. It opens the generic compatibility fixture without editing it.\nlarge-first-pause requires --project /absolute/fresh.deadpan made by perf make-large --beats 10000; one hold 12f at frame 17933 on a private copy. Timings describe offscreen Background acceptance/composition, n=1 diagnostic only; no percentile or latency-budget PASS.\nai-pause-ready requires --project /absolute/project.deadpan whose last edit accepted real AI pictures; it replays a private copy.\ngenerated-playback requires --mode performance --project and runs real device audio at 5% monitor gain on a private copy of a <=32-second accepted project. generated-loop uses the same real-audio setup, selects from the first through last Generated picture (at most eight seconds), and loops for at least 30 seconds. ai-playback-interference requires --mode performance --project with a fresh full-source Original of at least 40 seconds and the installed Extension model; it uses real inference, production scheduling and device audio at 5% monitor gain on a private project copy. All other scenarios simulate audio delivery. Native pickers are scripted; no desktop window is opened.",
+             SCENARIOS.join(", ")
+         );
+         return Ok(());
+@@ -329,13 +331,14 @@
+         })
+         .canonicalize()
+         .map_err(|error| format!("Resolve replay fixture: {error}"))?;
++    let large_first_pause = options.scenario.as_deref() == Some("large-first-pause");
+     let ready_fixture = matches!(
+         options.scenario.as_deref(),
+         Some(
+             "ai-pause-ready" | "generated-playback" | "generated-loop" | "ai-playback-interference"
+         )
+     );
+-    let fixture_identity = if ready_fixture {
++    let fixture_identity = if ready_fixture || large_first_pause {
+         fixture.join("project.sqlite")
+     } else if options.project.is_some() {
+         fixture
+@@ -345,7 +348,7 @@
+     } else {
+         fixture.clone()
+     };
+-    let fixture_hash = if ready_fixture {
++    let fixture_hash = if ready_fixture || large_first_pause {
+         let mut bytes = Vec::new();
+         std::fs::File::open(&fixture_identity)
+             .map_err(|error| error.to_string())?
+@@ -387,14 +390,14 @@
+             "hardware": command_output("sysctl", &["-n", "machdep.cpu.brand_string"]),
+             "os": command_output("sw_vers", &["-productVersion"]),
+             "rust": command_output("rustc", &["--version"]),
+-            "fixture": if interference { "full-source Original project (replayed from a private portable copy)" } else if ready_fixture { "project with real accepted AI pictures (replayed from a private copy)" } else if options.project.is_some() { "accepted Generated compatibility project" } else { "cfr-bframes.mp4" },
++            "fixture": if large_first_pause { "pristine perf make-large --beats 10000 Background/Silence Holds (private portable copy; no source media)" } else if interference { "full-source Original project (replayed from a private portable copy)" } else if ready_fixture { "project with real accepted AI pictures (replayed from a private copy)" } else if options.project.is_some() { "accepted Generated compatibility project" } else { "cfr-bframes.mp4" },
+             "fixture_identity_file": fixture_identity,
+             "fixture_sha256": fixture_hash,
+             "replay_hz": options.hz, "viewport_points": [1280,820],
+             "physical_display_measured": false, "gpu_readback_in_timing_run": false,
+             "wait_strategy": "egui_repaint_callback_v1",
+             "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+-            "cache_state": if interference { "baseline precedes inference in the same process; decoder and model caches are not reset; OS file cache uncontrolled" } else if options.project.is_some() { "first six-object generated admission/index cold, subsequent navigation warm; OS file cache uncontrolled" } else { "first import/index cold, subsequent operations warm; OS file cache uncontrolled" },
++            "cache_state": if large_first_pause { "one first pause in a fresh process/private project copy; initial Background settled; OS file cache uncontrolled" } else if interference { "baseline precedes inference in the same process; decoder and model caches are not reset; OS file cache uncontrolled" } else if options.project.is_some() { "first six-object generated admission/index cold, subsequent navigation warm; OS file cache uncontrolled" } else { "first import/index cold, subsequent operations warm; OS file cache uncontrolled" },
+             "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+         }),
+     );
+@@ -510,6 +513,28 @@
+                 .iter()
+                 .all(|name| SCENARIOS.contains(name))
+         );
++    }
++
++    #[test]
++    fn large_first_pause_requires_an_absolute_explicit_project() {
++        let arguments = |tail: &[&str]| {
++            ["--output", "/tmp/example", "--scenario", "large-first-pause"]
++                .into_iter()
++                .chain(tail.iter().copied())
++                .map(str::to_owned)
++                .collect::<Vec<_>>()
++        };
++        assert!(Options::parse(&arguments(&[
++            "--mode", "performance", "--project", "/tmp/fresh.deadpan",
++        ])).is_ok());
++        for tail in [
++            vec![],
++            vec!["--project", "fresh.deadpan"],
++            vec!["--project", "/tmp/fresh"],
++            vec!["--project", "/tmp/fresh.deadpan", "--retain-projects"],
++        ] {
++            assert!(Options::parse(&arguments(&tail)).is_err());
++        }
+     }
+ 
+     #[test]
+--- a/crates/deadpan-app/src/preview/harness.rs
++++ b/crates/deadpan-app/src/preview/harness.rs
+@@ -39,6 +39,7 @@
+ mod jobs;
+ mod keymap;
+ mod layouts;
++mod large_first_pause;
+ mod linked_original;
+ mod macros;
+ mod marks;
+@@ -269,6 +270,11 @@
+                 scratch.as_ref().ok_or("Missing temporary replay root")?.path().join("Documents")
+             };
+             // Accepting edits the project: replay a private copy, never the fixture.
++            // Large first-pause fixtures contain only the two generator setup
++            // commits. Validate before any production writer can open them.
++            let large_first_pause_baseline = if name == "large-first-pause" {
++                Some(large_first_pause::preflight(fixture)?)
++            } else { None };
+             let fixture = if name == "ai-pause-ready" {
+                 let copy = documents
+                     .parent()
+@@ -276,10 +282,10 @@
+                     .join("ai-pause-ready.deadpan");
+                 copy_package(fixture, &copy)?;
+                 copy
+-            } else if ui_harness::real_playback(name) {
++            } else if ui_harness::real_playback(name) || name == "large-first-pause" {
+                 let root = documents.parent().ok_or("Replay Documents root has no parent")?;
+                 std::fs::create_dir_all(root).map_err(|error| error.to_string())?;
+-                let copy = root.join("generated-playback.deadpan");
++                let copy = root.join(if name == "large-first-pause" { "large-first-pause.deadpan" } else { "generated-playback.deadpan" });
+                 deadpan_store::portable::copy_portable(fixture, &copy, &AtomicBool::new(false))
+                     .map_err(|error| error.to_string())?;
+                 copy
+@@ -518,6 +524,13 @@
+                     })?;
+                     return ai_pause::ready(&mut driver);
+                 }
++                if name == "large-first-pause" {
++                    driver.click("Open project…  ⌘O")?;
++                    driver.wait_for("Private 10,000-Hold fixture opened", |app| {
++                        app.workspace.is_some() && !app.service.is_busy()
++                    })?;
++                    return large_first_pause::run(&mut driver, large_first_pause_baseline.as_ref().ok_or("Missing pristine fixture evidence")?);
++                }
+                 if name == "youtube" {
+                     return youtube::run(&mut driver);
+                 }
+--- /dev/null
++++ b/crates/deadpan-app/src/preview/harness/large_first_pause.rs
+@@ -0,0 +1,235 @@
++//! One independent first insertion into the pristine 10k-Hold fixture.
++//! Diagnostic offscreen app acceptance/composition, never display scanout.
++
++use deadpan_core::{HoldAudio, HoldVideo, ProjectDocument};
++
++use super::*;
++
++const BEATS: usize = 10_000;
++const AT: u64 = 17_933;
++const INDEX: usize = 1_494;
++
++/// Generator commits are setup, not measured edits. A changed/undone fixture
++/// has a different head and is not a fresh first-pause trial.
++pub(super) fn preflight(package: &Path) -> Result<Value, String> {
++    let store = deadpan_store::ProjectStore::open(package, deadpan_store::AccessMode::ReadOnly)
++        .map_err(|error| format!("Large first-pause read-only preflight: {error}"))?;
++    let document = store.snapshot().map_err(|error| error.to_string())?;
++    let history = store.validate_report(true).map_err(|e| e.to_string())?;
++    let availability = store.history_availability().map_err(|e| e.to_string())?;
++    if !pristine(&document) || availability != (true, false) || history.revisions != 3 {
++        return Err("large-first-pause requires a fresh perf make-large --beats 10000 package at large-ungrouped, with no subsequent edits".into());
++    }
++    use sha2::Digest as _;
++    let document_json = document.to_json().map_err(|error| error.to_string())?;
++    let document_sha256 = sha2::Sha256::digest(document_json.as_bytes())
++        .iter().map(|byte| format!("{byte:02x}")).collect::<String>();
++    Ok(json!({
++        "document_sha256":document_sha256,"revision":document.revision_id(),
++        "head_revision":store.head_revision().map_err(|e| e.to_string())?,
++        "nodes":document.nodes().len(),"root_beats":BEATS,"frames":120000,
++        "audio_bindings_empty":document.audio_bindings().is_empty(),
++        "history":history,"can_undo":availability.0,"can_redo":availability.1,
++        "setup_commits":2,"prior_user_edits":0,
++    }))
++}
++
++fn pristine(document: &ProjectDocument) -> bool {
++    let NodeKind::Sequence { children } = &document.nodes()[document.root()].kind else {
++        return false;
++    };
++    document.project_id().as_str() == "perf-large-10000"
++        && document.revision_id().as_str() == "large-ungrouped"
++        && document.root().as_str() == "large-root"
++        && document.nodes().len() == BEATS + 1
++        && document.assets().is_empty()
++        && document.audio_bindings().is_empty()
++        && children.len() == BEATS
++        && children.iter().enumerate().all(|(index, id)| {
++            id.as_str() == format!("hold-{index:06}")
++                && document.nodes().get(id) == Some(&deadpan_core::BeatNode::hold(
++                    format!("Scale fixture {:06}", index + 1),
++                    deadpan_core::HoldRecipe {
++                        picture_context: None,
++                        duration: deadpan_core::FrameDuration::new(12).expect("constant positive duration"),
++                        video: HoldVideo::Background,
++                        audio: HoldAudio::Silence,
++                    },
++                ))
++        })
++}
++
++fn background_hold(node: Option<&deadpan_core::BeatNode>, frames: i64) -> bool {
++    node.is_some_and(|node| matches!(&node.kind, NodeKind::Hold { recipe }
++        if recipe.duration.frames() == frames
++            && recipe.video == HoldVideo::Background
++            && recipe.audio == HoldAudio::Silence))
++}
++
++pub(super) fn run(d: &mut Driver<'_>, baseline: &Value) -> Result<(), String> {
++    d.report.skipped.push(
++        "One fresh first-pause trial (n=1), diagnostic only. Scripted production input to durable commit and new-revision Background acceptance through offscreen GPU composition. No percentile, 100 ms budget PASS, physical display/scanout, source decode or PCM claim. Aggregate 40 fresh independent invocations under PERFORMANCE.md before a UI target claim.".into(),
++    );
++    d.command("sequence")?;
++    super::transcript::focus_your_edit(d)?;
++    d.key(egui::Key::Escape)?;
++    d.chord(&[egui::Key::G, egui::Key::G])?;
++    for digit in AT.to_string().chars() {
++        d.key(egui::Key::from_name(&digit.to_string()).ok_or("Invalid cursor digit")?)?;
++    }
++    d.key(egui::Key::L)?;
++    // Drain initial Background delivery/composition before arming the trial.
++    d.settled()?;
++    let app = d.app();
++    let workspace = app.workspace.as_ref().ok_or("No large first-pause workspace")?;
++    let before = d.revision();
++    let roots = root_children(workspace).to_vec();
++    let picture_before = app.presentation.diagnostic_snapshot();
++    let containing = app.beat_rows.get(INDEX);
++    d.check(
++        "Pristine 10,001-node / 120,000-frame baseline at ordinary root Hold index 1494 offset 5, without prior user or replay edits",
++        pristine(&workspace.document)
++            && app.sequence_length() == 120_000
++            && app.sequence_cursor == AT
++            && app.view == View::Sequence
++            && app.pane == Pane::Sequence
++            && app.sequence_scope.groups().is_empty()
++            && app.scoped_target()?.is_none()
++            && !app.edit_range.active
++            && !app.moment.active
++            && app.selected_edit_range().is_none()
++            && app.edit_selection() == navigation::EditSelection::None
++            && containing.is_some_and(|row| row.id == roots[INDEX] && row.start == AT - 5)
++            && app.presentation.picture().is_some_and(|picture| picture.frame.is_none()),
++        json!({"nodes":10001,"frames":120000,"revision":"large-ungrouped","cursor":AT,"root_hold":1494,"offset":5,"selection":"none","picture":"accepted Background"}),
++        d.snapshot(),
++    )?;
++
++    if let Some(step) = d.report.steps.last_mut() {
++        step.semantic["large_first_pause_baseline"] = baseline.clone();
++    }
++    let trace_start = d.report.steps.len();
++    let commit_start = sample_count(d, "input_to_commit_ms");
++    let picture_start = sample_count(d, "input_to_picture_complete_ms");
++    d.command("hold 12f")?;
++    d.changed(&before)?;
++
++    let commit_ms = exactly_one_sample(d, "input_to_commit_ms", commit_start)?;
++    let composition_ms = exactly_one_sample(d, "input_to_picture_complete_ms", picture_start)?;
++    let app = d.app();
++    let workspace = app.workspace.as_ref().ok_or("Insertion lost the workspace")?;
++    let after_roots = root_children(workspace);
++    let selected = app.selected_beat.as_ref();
++    let selected_node = selected.and_then(|id| workspace.document.nodes().get(id));
++    let picture = app.presentation.diagnostic_snapshot();
++    let ticket = &picture["displayed"]["ticket"];
++    let events = d.report.steps[trace_start..]
++        .iter()
++        .flat_map(|step| step.semantic["stages"].as_array().into_iter().flatten())
++        .collect::<Vec<_>>();
++    let count = |stage| events.iter().filter(|event| event["stage"] == stage).count();
++    let admitted = count("command_admitted");
++    let committed = count("command_committed");
++    let rejected = count("command_rejected");
++    let ordinary_suffix_preserved = after_roots.len() == BEATS + 2
++        && after_roots[..INDEX] == roots[..INDEX]
++        && after_roots[INDEX + 3..] == roots[INDEX + 1..];
++    let durations = workspace.document.durations().map_err(|e| e.to_string())?;
++    let split_and_inserted = after_roots.get(INDEX..INDEX + 3).is_some_and(|split| {
++        // Split retains the full original Hold under partition owners.
++        durations.get(&split[0]).is_some_and(|value| value.frames() == 5)
++            && selected == Some(&split[1])
++            && background_hold(workspace.document.nodes().get(&split[1]), 12)
++            && durations.get(&split[2]).is_some_and(|value| value.frames() == 7)
++    });
++    let background_seams = [AT - 1, AT, AT + 11, AT + 12].into_iter().all(|frame| {
++        i64::try_from(frame).ok().and_then(|frame| workspace.plan.picture(ProjectFrame(frame)).ok())
++            .is_some_and(|sample| matches!(sample.picture, deadpan_plan::Picture::Background))
++    });
++    d.check(
++        "Exactly one admitted/committed insertion creates a selected 12-frame Background/Silence Hold and accepts its new revision offscreen",
++        admitted == 1 && committed == 1 && rejected == 0
++            && d.revision() != before
++            && app.sequence_length() == 120_012
++            && ordinary_suffix_preserved && split_and_inserted && background_seams
++            && background_hold(selected_node, 12)
++            && app.presentation.picture().is_some_and(|value| value.frame.is_none())
++            && picture["displayed"] != picture_before["displayed"]
++            && !ticket.is_null()
++            && ticket != &picture_before["displayed"]["ticket"]
++            && completed_ticket(&events, ticket),
++        json!({"admitted":1,"committed":1,"rejected":0,"frames":120012,"split_frames":[5,12,7],"new_ticket":true,"new_revision":true,"completion":"decoded/submitted/composed same-ticket Background; offscreen acceptance"}),
++        json!({"admitted":admitted,"committed":committed,"rejected":rejected,"revision":d.revision(),"frames":app.sequence_length(),"picture":picture,"input_to_commit_ms":commit_ms,"input_to_offscreen_background_composition_ms":composition_ms}),
++    )?;
++    d.metric("large_first_pause_input_to_commit_ms", commit_ms, SampleOutcome::Completed);
++    d.metric(
++        "large_first_pause_input_to_offscreen_background_composition_ms",
++        composition_ms,
++        SampleOutcome::Completed,
++    );
++    if let Some(step) = d.report.steps.last_mut() {
++        step.semantic["large_first_pause"] = json!({
++            "samples":1,"diagnostic_only":true,"percentile":null,"budget_pass":null,
++            "command":"hold 12f","cursor_before":AT,"containing_hold_index":INDEX,
++            "offset":5,"before_revision":before,"offscreen_acceptance":true,
++            "input_to_commit_ms":commit_ms,
++            "input_to_offscreen_background_composition_ms":composition_ms,
++        });
++    }
++    Ok(())
++}
++
++fn completed_ticket(events: &[&Value], ticket: &Value) -> bool {
++    [
++        ("picture_requested", "requested"),
++        ("picture_received", "decoded"),
++        ("picture_submitted", "submitted"),
++        ("picture_composed", "completed"),
++    ].into_iter().all(|(stage, outcome)| {
++        events.iter().filter(|event| {
++            event["ticket"] == *ticket && event["stage"] == stage && event["outcome"] == outcome
++        }).count() == 1
++    })
++}
++
++fn sample_count(d: &Driver<'_>, name: &str) -> usize {
++    d.report.timings.iter().find(|metric| metric.name == name)
++        .map_or(0, |metric| metric.samples.len())
++}
++
++fn exactly_one_sample(d: &Driver<'_>, name: &str, start: usize) -> Result<f64, String> {
++    let samples = d.report.timings.iter().find(|metric| metric.name == name)
++        .and_then(|metric| metric.samples.get(start..))
++        .ok_or_else(|| format!("First pause has no {name} sample"))?;
++    match samples {
++        [sample] if sample.outcome == SampleOutcome::Completed
++            && sample.elapsed_ms.is_finite() => Ok(sample.elapsed_ms),
++        _ => Err(format!("First pause expected one completed {name} sample; observed {samples:?}")),
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn retained_or_stale_background_cannot_complete_the_new_ticket() {
++        let events = [
++            json!({"stage":"picture_requested","outcome":"requested","ticket":"new"}),
++            json!({"stage":"picture_received","outcome":"decoded","ticket":"new"}),
++            json!({"stage":"picture_submitted","outcome":"submitted","ticket":"new"}),
++            json!({"stage":"picture_composed","outcome":"completed","ticket":"new"}),
++        ];
++        let references = events.iter().collect::<Vec<_>>();
++        assert!(completed_ticket(&references, &json!("new")));
++        assert!(!completed_ticket(&references, &json!("old")));
++        for stage in ["picture_received", "picture_submitted", "picture_composed"] {
++            let mut stale = events.clone();
++            stale.iter_mut().find(|event| event["stage"] == stage).unwrap()["ticket"] = json!("old");
++            assert!(!completed_ticket(&stale.iter().collect::<Vec<_>>(), &json!("new")));
++        }
++        let mut retained = events;
++        retained[2]["outcome"] = json!("retained_or_repeated");
++        assert!(!completed_ticket(&retained.iter().collect::<Vec<_>>(), &json!("new")));
++    }
++}

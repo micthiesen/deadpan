@@ -1,0 +1,50 @@
+{
+  "failed": false,
+  "checks": 7,
+  "metrics": {
+    "large_first_pause_input_to_commit_ms": {
+      "completed": {
+        "max_ms": 389.723625,
+        "n": 1,
+        "p50_ms": 389.723625,
+        "p95_ms": 389.723625,
+        "p99_ms": 389.723625
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    },
+    "large_first_pause_input_to_offscreen_background_composition_ms": {
+      "completed": {
+        "max_ms": 392.35325,
+        "n": 1,
+        "p50_ms": 392.35325,
+        "p95_ms": 392.35325,
+        "p99_ms": 392.35325
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  "main_manifest_media_and_other_authored_files_unchanged": true,
+  "sqlite_coordination_sidecars_observed": {
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "empty_wal": true,
+  "n": 1,
+  "diagnostic_only": true,
+  "no_budget_or_percentile_pass": true,
+  "load_at_start": [
+    1.177734375,
+    1.76904296875,
+    2.109375
+  ]
+}

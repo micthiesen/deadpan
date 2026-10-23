@@ -200,6 +200,19 @@ five quiet current-format pairs, with second medians 32.896 → 28.906 ms. These
 short batches exclude picture display and establish neither a percentile nor
 the complete visible-Hold target.
 
+The [large first-pause replay](qualification/large-first-pause-harness-2026-10-23.md)
+adds `large-first-pause` with an explicit fresh `perf make-large --beats 10000`
+package. It opens a private portable copy, settles the initial Background,
+routes `hold 12f` at frame 17,933, and requires one committed insertion plus
+matching new-revision requested/decoded/submitted/composed picture identity.
+Its final release diagnostic measures 393.681375 ms to commit and 396.208834 ms
+through offscreen Background composition. Each invocation has one sample;
+forty independent fresh invocations are required before a UI percentile claim.
+These measurements include native semantic-command/service work absent from
+the direct 93.633 ms store-and-refresh median. They do not attribute the delay
+to the store, establish either edit target, or measure a physical display,
+source decoding or PCM. App-service profiling is the next diagnostic step.
+
 | Section 25 target | Measurement | Notes |
 | --- | --- | --- |
 | Key event to command-state update, p95 < 8 ms | ui `rapid-input` `warm_navigation_input_cpu_ms` | Whole egui input frame CPU: an upper bound on the state update. Small replay fixture. |
