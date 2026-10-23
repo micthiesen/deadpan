@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T12:29:46Z",
+  "updated_at": "2026-10-23T13:03:39Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "The uncommitted exact JSON size-count candidate passes all 1,517 Core tests (zero skipped), all 3,506 broader selected tests (740 skipped), all 1,296 UI tests (eleven skipped), strict Core/Store and UI Clippy, and formatting. The one UI leak warning does not recur in an isolated rerun from the same archive with the required hardware/synthetic environment preserved. Both source reviews report no findings and exact source/input/executable guards pass. Media verification is running; actual release/native, portable and final paired production timings remain owed. The separate private prototype remains diagnostic, with no percentile, peak-memory or 100 ms/50 ms target PASS. Coverage stays 89%, with 8 Complete and 16 Partial requirements.",
+  "focus": "Exact compact JSON size counting is implemented, reviewed, fully qualified and pushed. All 1,517 Core tests (zero skipped), 3,506 broader tests (740 skipped), 1,296 UI tests (eleven skipped), strict Core/Store/UI checks, actual debug/release media, six native workflows and both portable checks pass. The UI leak warning does not recur in its isolated archive rerun. Five quiet final pairs give offscreen medians 268.773292/261.593583 ms, a 7.179709 ms diagnostic difference of about 2.67%. All 467 retained evidence files verify, including three emitted movies and decoder/control reports. Peak memory and formal latency percentiles remain unqualified. Next is a separate Store-only profile; its 33 planned phases have no measurements yet. Coverage stays 89%, with 8 Complete and 16 Partial requirements and the 100 ms/50 ms targets open.",
   "features": [
     {
       "id": "editing",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "Shared Compound preparation avoids a separate native preview replay while preserving transactional authority and fallible runtime preparation before writes. Its five quiet native pairs improve offscreen first-pause median from 393.261916 to 275.697709 ms, about 29.9%. A later isolated profile locates remaining cost in semantic planning and Store preparation. One-site validated leaf-result reuse is now qualified through complete Core, broader/UI, strict, actual media/history, native and portable checks. A separate final five-pair comparison gives offscreen control/candidate medians 275.099042/267.862584 ms, a 7.236458 ms difference of about 2.63%. The batches are not pooled. Five samples establish neither percentiles nor the 100 ms fallback/50 ms ordinary-edit target. A separate size-only JSON prototype passes twelve focused tests and five guarded pairs: offscreen medians 266.491583/257.379000 ms, about 3.42% apart. Its identical five-file production candidate is uncommitted; all 1,517 Core, 3,506 broader and 1,296 UI tests plus strict checks pass, while actual media/native, portable and final production timings remain owed. Neither this separate diagnostic batch nor buffer removal establishes percentile or peak-memory targets. Native latency, worker-memory and sleep qualification remain open."
+      "note": "Shared Compound preparation is qualified: five quiet native pairs improve offscreen first-pause medians from 393.261916 to 275.697709 ms, about 29.9%. Subsequent separate qualified batches measure leaf-result reuse at 275.099042/267.862584 ms and exact JSON size counting at 268.773292/261.593583 ms, about 2.63% and 2.67% apart. These independent n=5 batches are not pooled and establish no percentile or 100 ms fallback/50 ms ordinary-edit target PASS. Current Core, broader/UI, strict, actual media/history, native and portable checks pass. Complete output buffers are removed only where exact size is needed; captured bytes and every work charge remain. Peak memory remains unmeasured. Finer Store-only profiling is planned before more API changes; native latency, worker-memory and sleep qualification remain open."
     },
     {
       "id": "models",
@@ -1101,6 +1101,14 @@
       "revision": "b45a247c28522123be2b06d1f7d5790d683a993f",
       "retrospective": false,
       "summary": "The five-file exact compact JSON size-count candidate passes all 1,517 Core tests across 69 binaries with zero skipped. The complete source/input/executable guards pass, and both current-source reviews report no findings. The 18-file/362,018-byte Core checkpoint inventory verifies independently. This includes the new counter escaping/limit/overflow and nested-binding size tests plus all existing Core properties and codecs. Broader checks are building; UI, strict, actual media/native, portable and final paired production timings remain owed. The private twelve-case/five-pair prototype remains separate and does not qualify the production candidate or establish percentiles, peak memory, physical display or the 100 ms/50 ms targets. No requirement or gate closes."
+    },
+    {
+      "date": "2026-10-23",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "ca40995b64fc4acdc0a5e046660a36a1faa7cee5",
+      "retrospective": false,
+      "summary": "Exact compact JSON size counting is implemented and qualified without schema changes, size caching or validation/history shortcuts. All 1,517 Core tests pass with zero skipped; 3,506 broader tests pass with 740 skipped and 1,296 UI tests with 11 skipped. Strict Core/Store/UI checks and formatting pass. The single UI leak warning does not recur in an isolated same-archive rerun with required environment and guards. Debug/release verifies 15 pictures/24,024 samples and release 19 pictures/30,430 samples, all at zero offset with canonical PCM/history controls. Six native scenarios pass 1,340 workflow plus 6 Kestrel checks; both 9-file portable copies validate/doctor unchanged. Five final quiet pairs measure commit 266.145459/259.015416 ms and offscreen composition 268.773292/261.593583 ms, a 7.179709 ms/~2.67% diagnostic difference. The 467-file/15,051,302-byte inventory verifies independently and retains all 3 emitted movies with decoder/control evidence. Native warnings and false independent-DSP/listening/ordinary Move PCM claims remain. No percentile, peak-memory target, requirement or gate closes. A separate Store-only 33-phase profile is planned and remains unmeasured."
     }
   ]
 }
