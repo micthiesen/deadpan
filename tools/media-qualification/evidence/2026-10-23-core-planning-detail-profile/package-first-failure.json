@@ -1,0 +1,7 @@
+{
+  "stage": "packaging only, after full build/parser/trial validation",
+  "cause": "Root added a required REPORT-outline.md payload that did not exist",
+  "runtime_or_source_impact": false,
+  "first_partial_stage_preserved": "/tmp/deadpan-core-planning-detail-profile-package-2026-10-23/first-partial-staging",
+  "correction": "remove nonexistent optional outline; retain original script/error and retry from fresh staging"
+}

@@ -1,0 +1,214 @@
+{
+  "diagnostic_only": true,
+  "no_percentile_or_target_pass": true,
+  "n_per_kind": 3,
+  "kinds": {
+    "root-control": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 256.59008300000005,
+        "median": 257.32379199999997,
+        "max": 257.707625
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 259.398417,
+        "median": 259.902375,
+        "max": 260.3895
+      }
+    },
+    "off": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 255.453875,
+        "median": 256.84670900000003,
+        "max": 257.754292
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 258.230583,
+        "median": 259.529792,
+        "max": 260.30150000000003
+      }
+    },
+    "on": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 253.66699999999997,
+        "median": 255.83208299999998,
+        "max": 256.875459
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 256.427791,
+        "median": 258.31725,
+        "max": 259.647875
+      }
+    }
+  },
+  "phase_ms": {
+    "app_service_total": {
+      "min": 247.382708,
+      "median": 249.355584,
+      "max": 250.347334
+    },
+    "app_semantic_call": {
+      "min": 102.289417,
+      "median": 103.196292,
+      "max": 103.267667
+    },
+    "app_publication": {
+      "min": 3.93525,
+      "median": 4.005875,
+      "max": 4.127583
+    },
+    "app_refresh_succeeded": {
+      "min": 0.0,
+      "median": 0.0,
+      "max": 0.0
+    },
+    "semantic_total": {
+      "min": 102.275334,
+      "median": 103.18125,
+      "max": 103.249667
+    },
+    "semantic_entry_setup": {
+      "min": 12.959875,
+      "median": 13.082292,
+      "max": 13.310583
+    },
+    "semantic_execute": {
+      "min": 84.291667,
+      "median": 84.772,
+      "max": 85.345542
+    },
+    "semantic_leaf_apply_call": {
+      "min": 49.143667,
+      "median": 49.150125,
+      "max": 49.214958
+    },
+    "semantic_after_leaf_size": {
+      "min": 4.857083,
+      "median": 4.9715,
+      "max": 4.980459
+    },
+    "semantic_outer_finish": {
+      "min": 4.821792,
+      "median": 4.8655,
+      "max": 5.019875
+    },
+    "replay_total": {
+      "min": 75.047166,
+      "median": 75.157458,
+      "max": 75.74525
+    },
+    "replay_host_visit": {
+      "min": 5.008042,
+      "median": 5.030959,
+      "max": 5.134917
+    },
+    "replay_wire_size_checks": {
+      "min": 13.021334,
+      "median": 13.194459,
+      "max": 13.439458
+    },
+    "replay_leaf_apply_call": {
+      "min": 48.345208,
+      "median": 48.381125,
+      "max": 48.663375
+    },
+    "replay_aggregate_call": {
+      "min": 7.741625,
+      "median": 7.800334,
+      "max": 7.877208
+    },
+    "leaf_apply_total": {
+      "min": 96.777417,
+      "median": 96.856333,
+      "max": 97.099626
+    },
+    "leaf_preflight": {
+      "min": 0.005125,
+      "median": 0.005541,
+      "max": 0.005625
+    },
+    "leaf_reduce": {
+      "min": 64.725542,
+      "median": 64.732208,
+      "max": 64.874459
+    },
+    "leaf_postprocess": {
+      "min": 17.759167,
+      "median": 17.760625,
+      "max": 17.932083
+    },
+    "leaf_net_call": {
+      "min": 14.105834,
+      "median": 14.363041,
+      "max": 14.45925
+    },
+    "net_total": {
+      "min": 21.840375,
+      "median": 22.131668,
+      "max": 22.1705
+    },
+    "net_before_and_patch": {
+      "min": 10.012125,
+      "median": 10.021166,
+      "max": 10.239625
+    },
+    "net_validation": {
+      "min": 7.827583,
+      "median": 7.899125,
+      "max": 8.092916
+    },
+    "net_finish": {
+      "min": 3.897542,
+      "median": 3.930126,
+      "max": 3.937417
+    }
+  },
+  "residual_ms": {
+    "app_service_total_minus_disjoint_children_and_overhead": {
+      "min": 66.110875,
+      "median": 66.995959,
+      "max": 67.206834
+    },
+    "app_semantic_call_minus_disjoint_children_and_overhead": {
+      "min": 0.014083,
+      "median": 0.015042,
+      "max": 0.018
+    },
+    "semantic_total_minus_disjoint_children_and_overhead": {
+      "min": 0.07875,
+      "median": 0.078792,
+      "max": 0.079583
+    },
+    "semantic_execute_minus_disjoint_children_and_overhead": {
+      "min": 30.219626,
+      "median": 30.641416,
+      "max": 31.230375
+    },
+    "replay_total_minus_disjoint_children_and_overhead": {
+      "min": 0.759457,
+      "median": 0.765875,
+      "max": 0.786498
+    },
+    "semantic_leaf_apply_call+replay_leaf_apply_call_minus_disjoint_children_and_overhead": {
+      "min": 0.707416,
+      "median": 0.717916,
+      "max": 0.73975
+    },
+    "leaf_apply_total_minus_disjoint_children_and_overhead": {
+      "min": 0.001584,
+      "median": 0.001625,
+      "max": 0.001667
+    },
+    "leaf_net_call+replay_aggregate_call_minus_disjoint_children_and_overhead": {
+      "min": 0.065793,
+      "median": 0.069207,
+      "max": 0.069749
+    },
+    "net_total_minus_disjoint_children_and_overhead": {
+      "min": 0.094084,
+      "median": 0.094333,
+      "max": 0.096501
+    }
+  },
+  "instrumentation_overhead_unqualified": true,
+  "no_production_optimization_in_this_profile": true
+}

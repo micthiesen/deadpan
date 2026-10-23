@@ -281,6 +281,16 @@ takes 19.017083 ms. The 71.226624 ms replay-minus-visitor residual still needs
 internal attribution. Three samples per condition establish no percentile,
 calibrated timer overhead, further production improvement or target PASS.
 
+The subsequent [Core planning/replay profile](qualification/core-planning-detail-profile-2026-10-23.md)
+passes another nine rotated trials. Three enabled traces validate 24 exact
+phase counts and nine containment equations, including sums across two leaf
+applications and three net transactions. Leaf reduction totals 64.732208 ms
+and postprocessing 17.760625 ms median across both calls. Semantic execution
+has a 30.641416 ms residual outside its leaf call and after-leaf size/charge.
+Those inclusive groups still need attribution to a concrete repeated operation
+before choosing a fix. This separate n=3 diagnostic adds no production gain,
+calibrated overhead, percentile or target PASS.
+
 | Section 25 target | Measurement | Notes |
 | --- | --- | --- |
 | Key event to command-state update, p95 < 8 ms | ui `rapid-input` `warm_navigation_input_cpu_ms` | Whole egui input frame CPU: an upper bound on the state update. Small replay fixture. |

@@ -1,0 +1,8 @@
+{
+  "base": "90850b096d87d3e8142b76cda4d0c95591df73d3",
+  "qualified_implementation": "ca40995b64fc4acdc0a5e046660a36a1faa7cee5",
+  "archive_sha256": "0535f94749d95f8fea8c6b6f3f97f475fd117491060d230599ed3b1b58aa33cd",
+  "rust_files": 2050,
+  "qualified_control_app_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037",
+  "scope": "isolated Core planning/replay diagnostic; no production changes"
+}

@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 165.679,
+  "package": "/tmp/deadpan-core-planning-detail-profile-2026-10-23/2-on.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 175.223125
+}

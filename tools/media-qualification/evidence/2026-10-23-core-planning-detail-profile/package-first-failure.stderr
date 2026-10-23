@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/tmp/deadpan-core-planning-detail-profile-2026-10-23/packaging-draft/package_profile.py", line 309, in <module>
+    main()
+    ~~~~^^
+  File "/tmp/deadpan-core-planning-detail-profile-2026-10-23/packaging-draft/package_profile.py", line 239, in main
+    copy_payload(Path(__file__).parent / 'REPORT-outline.md', 'packaging-draft-review.md')
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/deadpan-core-planning-detail-profile-2026-10-23/packaging-draft/package_profile.py", line 55, in copy_payload
+    require(src.is_file(), f"missing required payload: {src}")
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/deadpan-core-planning-detail-profile-2026-10-23/packaging-draft/package_profile.py", line 52, in require
+    raise RuntimeError(why)
+RuntimeError: missing required payload: /tmp/deadpan-core-planning-detail-profile-2026-10-23/packaging-draft/REPORT-outline.md

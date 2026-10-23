@@ -1,0 +1,9 @@
+crates/deadpan-app/src/project/service.rs
+crates/deadpan-app/src/project/service/macros.rs
+crates/deadpan-core/src/command.rs
+crates/deadpan-core/src/compound.rs
+crates/deadpan-core/src/lib.rs
+crates/deadpan-core/src/semantic/planner.rs
+crates/deadpan-core/src/semantic/planner/pause.rs
+crates/deadpan-core/src/work_profile.rs
+crates/deadpan-store/src/compound.rs

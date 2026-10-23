@@ -1,0 +1,8 @@
+{
+  "instrumentation.patch": "506e9b3efeebf5195db2bab119d81dd4e630deabb366f79d5a904ee0ad0d9c8c",
+  "source-hashes.json": "47438f6c0bdc7f331446d47a16c6846f18318a8e2bb71895ae4afac956c36d67",
+  "INSTRUMENTATION.md": "69b06a296e42579a8ac67cf1fdfce81410ab74f6d01eb8c15b334db7655a0a7c",
+  "schema.json": "904f177b179a6fe40ca7b097b218bd7627fc07bce6ac7031dcd2871fa666a1f0",
+  "changed-files.txt": "d09039bd8f0bbc9e348c2a0ad46a93352da25add1596d3e093cf06e40029d189",
+  "source-review.json": "ef0c5bfab8dfaba9ba3ece7c33977573132c9ab39e2c386ebbc5700c2df94c5a"
+}

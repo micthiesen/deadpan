@@ -1,0 +1,293 @@
+[
+  {
+    "name": "1-root-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/1-root-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18862287513911724
+  },
+  {
+    "name": "1-root-control",
+    "command": [
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/1-root-control.deadpan",
+      "--output",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/1-root-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.90197829157114
+  },
+  {
+    "name": "1-off-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/1-off.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1841582078486681
+  },
+  {
+    "name": "1-off",
+    "command": [
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/1-off.deadpan",
+      "--output",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/1-off-report"
+    ],
+    "exit": 0,
+    "seconds": 14.070154166780412
+  },
+  {
+    "name": "1-on-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/1-on.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1853926246985793
+  },
+  {
+    "name": "1-on",
+    "command": [
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/1-on.deadpan",
+      "--output",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/1-on-report"
+    ],
+    "exit": 0,
+    "seconds": 13.841400458477437
+  },
+  {
+    "name": "1-on-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/1-on.stderr"
+    ],
+    "exit": 0,
+    "seconds": 0.020780124701559544
+  },
+  {
+    "name": "2-off-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/2-off.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18673687521368265
+  },
+  {
+    "name": "2-off",
+    "command": [
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/2-off.deadpan",
+      "--output",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/2-off-report"
+    ],
+    "exit": 0,
+    "seconds": 13.725773707963526
+  },
+  {
+    "name": "2-on-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/2-on.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18849054165184498
+  },
+  {
+    "name": "2-on",
+    "command": [
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/2-on.deadpan",
+      "--output",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/2-on-report"
+    ],
+    "exit": 0,
+    "seconds": 14.227947999723256
+  },
+  {
+    "name": "2-on-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/2-on.stderr"
+    ],
+    "exit": 0,
+    "seconds": 0.020828917622566223
+  },
+  {
+    "name": "2-root-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/2-root-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18681954219937325
+  },
+  {
+    "name": "2-root-control",
+    "command": [
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/2-root-control.deadpan",
+      "--output",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/2-root-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.42797483317554
+  },
+  {
+    "name": "3-on-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/3-on.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18462504167109728
+  },
+  {
+    "name": "3-on",
+    "command": [
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/3-on.deadpan",
+      "--output",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/3-on-report"
+    ],
+    "exit": 0,
+    "seconds": 13.789050832390785
+  },
+  {
+    "name": "3-on-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/3-on.stderr"
+    ],
+    "exit": 0,
+    "seconds": 0.02086541708558798
+  },
+  {
+    "name": "3-root-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/3-root-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18946033343672752
+  },
+  {
+    "name": "3-root-control",
+    "command": [
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/3-root-control.deadpan",
+      "--output",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/3-root-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.811131957918406
+  },
+  {
+    "name": "3-off-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/3-off.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18377937469631433
+  },
+  {
+    "name": "3-off",
+    "command": [
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/3-off.deadpan",
+      "--output",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/3-off-report"
+    ],
+    "exit": 0,
+    "seconds": 13.754550958052278
+  }
+]

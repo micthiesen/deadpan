@@ -65,6 +65,16 @@ remain separate historical records. No requirement or gate closes.
 
 ## Remaining preparation cost, 2026-10-23
 
+The subsequent [Core detail profile](qualification/core-planning-detail-profile-2026-10-23.md)
+passes nine rotated control/off/on trials with all pause/shortcut and identity
+guards. Its three enabled traces validate 24 phase counts and nine containment
+equations. Across two leaf applications, median reduction totals 64.732208 ms
+and postprocessing 17.760625 ms. Semantic execution has a 30.641416 ms residual
+outside the leaf call and after-leaf size/charge. These contain multiple
+operations and overhead; the next study must identify a concrete repeated
+operation before changing it. The 152-file /3,434,107-byte evidence inventory
+verifies. No production change, target PASS or requirement closure follows.
+
 The later [Store detail profile](qualification/store-preparation-detail-profile-2026-10-23.md)
 passes nine rotated control/off/on runs with seven pause checks and one
 Kestrel check each. All three enabled traces pass exact 33-phase counts and

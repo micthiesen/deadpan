@@ -1,0 +1,48 @@
+{
+  "result": "no_findings",
+  "findings": [],
+  "base": "90850b096d87d3e8142b76cda4d0c95591df73d3",
+  "baseline_originals_match_archive": [
+    "crates/deadpan-app/src/project/service.rs",
+    "crates/deadpan-app/src/project/service/macros.rs",
+    "crates/deadpan-core/src/command.rs",
+    "crates/deadpan-core/src/compound.rs",
+    "crates/deadpan-core/src/lib.rs",
+    "crates/deadpan-core/src/semantic/planner.rs",
+    "crates/deadpan-core/src/semantic/planner/pause.rs",
+    "crates/deadpan-store/src/compound.rs"
+  ],
+  "reviewed_files_sha256": {
+    "crates/deadpan-app/src/project/service.rs": "4f19ce7351f3b6b2c916b26795304c27a025089683b83bb5fe9c71f80c05f1dc",
+    "crates/deadpan-app/src/project/service/macros.rs": "c6b563fb86eb60f0d1a8408ef0e0a859e78cf6d88c3bda6662165b1c2d4e9606",
+    "crates/deadpan-core/src/command.rs": "1b712a27f347559addf91cde5f897172532dd63c420e9031712d30d1ecdc4e6e",
+    "crates/deadpan-core/src/compound.rs": "b5cfc217861710823574cff3ed49ebd43d62e2e1996509812ffcfd40c29bd4e4",
+    "crates/deadpan-core/src/lib.rs": "240e62949c3b4060b5f35feb39025c08c1be767a317515ed5cdab38756395a20",
+    "crates/deadpan-core/src/semantic/planner.rs": "0fe9fa2a36b4fca35c4acbd107392d4799046651546001d0c5b7fbb17a70bc10",
+    "crates/deadpan-core/src/semantic/planner/pause.rs": "9bc025dc04bf3f8f684f7b557fa2242903bb1e304558c0bead4aa1b61bfe0f95",
+    "crates/deadpan-core/src/work_profile.rs": "ec21b0e940cb15bf8ae99358788c7c52c3b77e924942d374109f79b51403902a",
+    "crates/deadpan-store/src/compound.rs": "3dded75b87918d3afbdb93bbdfa2ab5933e50bf9c11fbcda4df61b769d0ec715"
+  },
+  "profile_schema_sha256": "904f177b179a6fe40ca7b097b218bd7627fc07bce6ac7031dcd2871fa666a1f0",
+  "checked": [
+    "evaluation and refusal order",
+    "first-local RAII totals and disjoint children",
+    "two shared apply and three shared net call expectations",
+    "four replay size guard expectations",
+    "sum-union containment equations",
+    "numeric-only Core buffer with no env or output",
+    "app finish after publication and outer drop with success marker"
+  ],
+  "limits": [
+    "source review only",
+    "release first-pause counts only",
+    "runtime counts/containment and control/off/on overhead not qualified here"
+  ],
+  "commands_not_run": [
+    "Cargo",
+    "formatter",
+    "Git",
+    "app runtime",
+    "profile"
+  ]
+}

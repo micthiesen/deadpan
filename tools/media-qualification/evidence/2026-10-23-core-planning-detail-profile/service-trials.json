@@ -1,0 +1,404 @@
+[
+  {
+    "round": 1,
+    "kind": "root-control",
+    "load": [
+      2.97412109375,
+      2.44287109375,
+      2.03369140625
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 256.59008300000005,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 259.398417
+    },
+    "profile": null,
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_and_binary_guards": true,
+    "input_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 1,
+    "kind": "off",
+    "load": [
+      2.68994140625,
+      2.404296875,
+      2.0263671875
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 257.754292,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 260.30150000000003
+    },
+    "profile": null,
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_and_binary_guards": true,
+    "input_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "d6cfd57bbb4b5a622353e16e31bb3bc45b6d48021c5ccbbdff8746aeb13524ac",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 1,
+    "kind": "on",
+    "load": [
+      2.39501953125,
+      2.3515625,
+      2.01318359375
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 256.875459,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 259.647875
+    },
+    "profile": {
+      "matched_macro_reports": 1,
+      "profile_lines": 26,
+      "phase_counts": {
+        "app_service_total": 1,
+        "app_semantic_call": 1,
+        "app_publication": 1,
+        "app_refresh_succeeded": 1,
+        "semantic_total": 1,
+        "semantic_entry_setup": 1,
+        "semantic_execute": 1,
+        "semantic_leaf_apply_call": 1,
+        "semantic_after_leaf_size": 1,
+        "semantic_outer_finish": 1,
+        "replay_total": 1,
+        "replay_host_visit": 1,
+        "replay_wire_size_checks": 4,
+        "replay_leaf_apply_call": 1,
+        "replay_aggregate_call": 1,
+        "leaf_apply_total": 2,
+        "leaf_preflight": 2,
+        "leaf_reduce": 2,
+        "leaf_postprocess": 2,
+        "leaf_net_call": 2,
+        "net_total": 3,
+        "net_before_and_patch": 3,
+        "net_validation": 3,
+        "net_finish": 3
+      },
+      "nanoseconds": {
+        "app_service_total": 250347334,
+        "app_semantic_call": 103267667,
+        "app_publication": 4127583,
+        "app_refresh_succeeded": 0,
+        "semantic_total": 103249667,
+        "semantic_entry_setup": 12959875,
+        "semantic_execute": 85345542,
+        "semantic_leaf_apply_call": 49143667,
+        "semantic_after_leaf_size": 4971500,
+        "semantic_outer_finish": 4865500,
+        "replay_total": 75745250,
+        "replay_host_visit": 5134917,
+        "replay_wire_size_checks": 13439458,
+        "replay_leaf_apply_call": 48663375,
+        "replay_aggregate_call": 7741625,
+        "leaf_apply_total": 97099626,
+        "leaf_preflight": 5125,
+        "leaf_reduce": 64874459,
+        "leaf_postprocess": 17759167,
+        "leaf_net_call": 14459250,
+        "net_total": 22131668,
+        "net_before_and_patch": 10012125,
+        "net_validation": 8092916,
+        "net_finish": 3930126
+      },
+      "residual_nanoseconds": {
+        "app_service_total_minus_disjoint_children_and_overhead": 67206834,
+        "app_semantic_call_minus_disjoint_children_and_overhead": 18000,
+        "semantic_total_minus_disjoint_children_and_overhead": 78750,
+        "semantic_execute_minus_disjoint_children_and_overhead": 31230375,
+        "replay_total_minus_disjoint_children_and_overhead": 765875,
+        "semantic_leaf_apply_call+replay_leaf_apply_call_minus_disjoint_children_and_overhead": 707416,
+        "leaf_apply_total_minus_disjoint_children_and_overhead": 1625,
+        "leaf_net_call+replay_aggregate_call_minus_disjoint_children_and_overhead": 69207,
+        "net_total_minus_disjoint_children_and_overhead": 96501
+      },
+      "parser_only_not_workload_or_target_pass": true,
+      "sum_of_calls_and_residuals_are_not_individual_invocations": true
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_and_binary_guards": true,
+    "input_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "d6cfd57bbb4b5a622353e16e31bb3bc45b6d48021c5ccbbdff8746aeb13524ac",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 2,
+    "kind": "off",
+    "load": [
+      2.18017578125,
+      2.306640625,
+      2.00048828125
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 256.84670900000003,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 259.529792
+    },
+    "profile": null,
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_and_binary_guards": true,
+    "input_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "d6cfd57bbb4b5a622353e16e31bb3bc45b6d48021c5ccbbdff8746aeb13524ac",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 2,
+    "kind": "on",
+    "load": [
+      2.12158203125,
+      2.2900390625,
+      1.9990234375
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 255.83208299999998,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 258.31725
+    },
+    "profile": {
+      "matched_macro_reports": 1,
+      "profile_lines": 26,
+      "phase_counts": {
+        "app_service_total": 1,
+        "app_semantic_call": 1,
+        "app_publication": 1,
+        "app_refresh_succeeded": 1,
+        "semantic_total": 1,
+        "semantic_entry_setup": 1,
+        "semantic_execute": 1,
+        "semantic_leaf_apply_call": 1,
+        "semantic_after_leaf_size": 1,
+        "semantic_outer_finish": 1,
+        "replay_total": 1,
+        "replay_host_visit": 1,
+        "replay_wire_size_checks": 4,
+        "replay_leaf_apply_call": 1,
+        "replay_aggregate_call": 1,
+        "leaf_apply_total": 2,
+        "leaf_preflight": 2,
+        "leaf_reduce": 2,
+        "leaf_postprocess": 2,
+        "leaf_net_call": 2,
+        "net_total": 3,
+        "net_before_and_patch": 3,
+        "net_validation": 3,
+        "net_finish": 3
+      },
+      "nanoseconds": {
+        "app_service_total": 249355584,
+        "app_semantic_call": 103196292,
+        "app_publication": 4005875,
+        "app_refresh_succeeded": 0,
+        "semantic_total": 103181250,
+        "semantic_entry_setup": 13310583,
+        "semantic_execute": 84772000,
+        "semantic_leaf_apply_call": 49150125,
+        "semantic_after_leaf_size": 4980459,
+        "semantic_outer_finish": 5019875,
+        "replay_total": 75157458,
+        "replay_host_visit": 5030959,
+        "replay_wire_size_checks": 13194459,
+        "replay_leaf_apply_call": 48345208,
+        "replay_aggregate_call": 7800334,
+        "leaf_apply_total": 96777417,
+        "leaf_preflight": 5625,
+        "leaf_reduce": 64732208,
+        "leaf_postprocess": 17932083,
+        "leaf_net_call": 14105834,
+        "net_total": 21840375,
+        "net_before_and_patch": 10021166,
+        "net_validation": 7827583,
+        "net_finish": 3897542
+      },
+      "residual_nanoseconds": {
+        "app_service_total_minus_disjoint_children_and_overhead": 66995959,
+        "app_semantic_call_minus_disjoint_children_and_overhead": 15042,
+        "semantic_total_minus_disjoint_children_and_overhead": 78792,
+        "semantic_execute_minus_disjoint_children_and_overhead": 30641416,
+        "replay_total_minus_disjoint_children_and_overhead": 786498,
+        "semantic_leaf_apply_call+replay_leaf_apply_call_minus_disjoint_children_and_overhead": 717916,
+        "leaf_apply_total_minus_disjoint_children_and_overhead": 1667,
+        "leaf_net_call+replay_aggregate_call_minus_disjoint_children_and_overhead": 65793,
+        "net_total_minus_disjoint_children_and_overhead": 94084
+      },
+      "parser_only_not_workload_or_target_pass": true,
+      "sum_of_calls_and_residuals_are_not_individual_invocations": true
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_and_binary_guards": true,
+    "input_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "d6cfd57bbb4b5a622353e16e31bb3bc45b6d48021c5ccbbdff8746aeb13524ac",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 2,
+    "kind": "root-control",
+    "load": [
+      1.87255859375,
+      2.22607421875,
+      1.9814453125
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 257.32379199999997,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 259.902375
+    },
+    "profile": null,
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_and_binary_guards": true,
+    "input_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 3,
+    "kind": "on",
+    "load": [
+      1.8935546875,
+      2.21435546875,
+      1.9814453125
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 253.66699999999997,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 256.427791
+    },
+    "profile": {
+      "matched_macro_reports": 1,
+      "profile_lines": 26,
+      "phase_counts": {
+        "app_service_total": 1,
+        "app_semantic_call": 1,
+        "app_publication": 1,
+        "app_refresh_succeeded": 1,
+        "semantic_total": 1,
+        "semantic_entry_setup": 1,
+        "semantic_execute": 1,
+        "semantic_leaf_apply_call": 1,
+        "semantic_after_leaf_size": 1,
+        "semantic_outer_finish": 1,
+        "replay_total": 1,
+        "replay_host_visit": 1,
+        "replay_wire_size_checks": 4,
+        "replay_leaf_apply_call": 1,
+        "replay_aggregate_call": 1,
+        "leaf_apply_total": 2,
+        "leaf_preflight": 2,
+        "leaf_reduce": 2,
+        "leaf_postprocess": 2,
+        "leaf_net_call": 2,
+        "net_total": 3,
+        "net_before_and_patch": 3,
+        "net_validation": 3,
+        "net_finish": 3
+      },
+      "nanoseconds": {
+        "app_service_total": 247382708,
+        "app_semantic_call": 102289417,
+        "app_publication": 3935250,
+        "app_refresh_succeeded": 0,
+        "semantic_total": 102275334,
+        "semantic_entry_setup": 13082292,
+        "semantic_execute": 84291667,
+        "semantic_leaf_apply_call": 49214958,
+        "semantic_after_leaf_size": 4857083,
+        "semantic_outer_finish": 4821792,
+        "replay_total": 75047166,
+        "replay_host_visit": 5008042,
+        "replay_wire_size_checks": 13021334,
+        "replay_leaf_apply_call": 48381125,
+        "replay_aggregate_call": 7877208,
+        "leaf_apply_total": 96856333,
+        "leaf_preflight": 5541,
+        "leaf_reduce": 64725542,
+        "leaf_postprocess": 17760625,
+        "leaf_net_call": 14363041,
+        "net_total": 22170500,
+        "net_before_and_patch": 10239625,
+        "net_validation": 7899125,
+        "net_finish": 3937417
+      },
+      "residual_nanoseconds": {
+        "app_service_total_minus_disjoint_children_and_overhead": 66110875,
+        "app_semantic_call_minus_disjoint_children_and_overhead": 14083,
+        "semantic_total_minus_disjoint_children_and_overhead": 79583,
+        "semantic_execute_minus_disjoint_children_and_overhead": 30219626,
+        "replay_total_minus_disjoint_children_and_overhead": 759457,
+        "semantic_leaf_apply_call+replay_leaf_apply_call_minus_disjoint_children_and_overhead": 739750,
+        "leaf_apply_total_minus_disjoint_children_and_overhead": 1584,
+        "leaf_net_call+replay_aggregate_call_minus_disjoint_children_and_overhead": 69749,
+        "net_total_minus_disjoint_children_and_overhead": 94333
+      },
+      "parser_only_not_workload_or_target_pass": true,
+      "sum_of_calls_and_residuals_are_not_individual_invocations": true
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_and_binary_guards": true,
+    "input_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "d6cfd57bbb4b5a622353e16e31bb3bc45b6d48021c5ccbbdff8746aeb13524ac",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 3,
+    "kind": "root-control",
+    "load": [
+      1.85546875,
+      2.1875,
+      1.9755859375
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 257.707625,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 260.3895
+    },
+    "profile": null,
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_and_binary_guards": true,
+    "input_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 3,
+    "kind": "off",
+    "load": [
+      1.7451171875,
+      2.14501953125,
+      1.9638671875
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 255.453875,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 258.230583
+    },
+    "profile": null,
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_and_binary_guards": true,
+    "input_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "d6cfd57bbb4b5a622353e16e31bb3bc45b6d48021c5ccbbdff8746aeb13524ac",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  }
+]

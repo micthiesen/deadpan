@@ -1,0 +1,43 @@
+[
+  {
+    "name": "clone-release-cache",
+    "command": [
+      "cp",
+      "-cR",
+      "/Users/michael/Code/deadpan/target/release",
+      "/tmp/deadpan-core-planning-detail-profile-2026-10-23/target/release"
+    ],
+    "cwd": "/tmp/deadpan-core-planning-detail-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.41963037475943565
+  },
+  {
+    "name": "format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/tmp/deadpan-core-planning-detail-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 6.236766708083451
+  },
+  {
+    "name": "build",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--bin",
+      "deadpan-app"
+    ],
+    "cwd": "/tmp/deadpan-core-planning-detail-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 266.0307473745197
+  }
+]

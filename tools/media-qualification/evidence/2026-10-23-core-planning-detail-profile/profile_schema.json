@@ -1,0 +1,259 @@
+{
+  "state": "design only; every proposed subphase cost unmeasured",
+  "prefix": "DEADPAN_CORE_WORK_PROFILE",
+  "gate": "DEADPAN_CORE_WORK_PROFILE=1 (read only by app)",
+  "expected_profile_lines": 26,
+  "workload": "one native ordinary first InsertPause, fresh 10000-Hold root fixture at frame17933, release",
+  "phases": [
+    {
+      "name": "app_service_total",
+      "expected_count": 1,
+      "kind": "inclusive_native_route",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "app_semantic_call",
+      "expected_count": 1,
+      "kind": "inclusive_cli_semantic_call",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "app_publication",
+      "expected_count": 1,
+      "kind": "disjoint_native_child",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "app_refresh_succeeded",
+      "expected_count": 1,
+      "kind": "zero_time_success_marker",
+      "expected_elapsed_ns": 0
+    },
+    {
+      "name": "semantic_total",
+      "expected_count": 1,
+      "kind": "inclusive_core_semantic",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "semantic_entry_setup",
+      "expected_count": 1,
+      "kind": "disjoint_semantic_child",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "semantic_execute",
+      "expected_count": 1,
+      "kind": "inclusive_semantic_child",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "semantic_leaf_apply_call",
+      "expected_count": 1,
+      "kind": "inclusive_leaf_call_in_semantics",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "semantic_after_leaf_size",
+      "expected_count": 1,
+      "kind": "disjoint_semantic_execute_child",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "semantic_outer_finish",
+      "expected_count": 1,
+      "kind": "disjoint_semantic_child",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "replay_total",
+      "expected_count": 1,
+      "kind": "inclusive_core_replay",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "replay_host_visit",
+      "expected_count": 1,
+      "kind": "inclusive_store_visitor",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "replay_wire_size_checks",
+      "expected_count": 4,
+      "kind": "sum_disjoint_replay_counts",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "replay_leaf_apply_call",
+      "expected_count": 1,
+      "kind": "inclusive_leaf_call_in_replay",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "replay_aggregate_call",
+      "expected_count": 1,
+      "kind": "inclusive_final_net_call",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "leaf_apply_total",
+      "expected_count": 2,
+      "kind": "sum_two_disjoint_apply_calls",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "leaf_preflight",
+      "expected_count": 2,
+      "kind": "sum_disjoint_apply_children",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "leaf_reduce",
+      "expected_count": 2,
+      "kind": "sum_disjoint_apply_children",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "leaf_postprocess",
+      "expected_count": 2,
+      "kind": "sum_disjoint_apply_children",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "leaf_net_call",
+      "expected_count": 2,
+      "kind": "sum_two_disjoint_net_calls",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "net_total",
+      "expected_count": 3,
+      "kind": "sum_three_disjoint_net_calls",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "net_before_and_patch",
+      "expected_count": 3,
+      "kind": "sum_disjoint_net_children",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "net_validation",
+      "expected_count": 3,
+      "kind": "sum_disjoint_net_children",
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "net_finish",
+      "expected_count": 3,
+      "kind": "sum_disjoint_net_children",
+      "expected_elapsed_ns": null
+    }
+  ],
+  "containment": [
+    {
+      "sum_parent_spans": [
+        "app_service_total"
+      ],
+      "sum_disjoint_child_spans": [
+        "app_semantic_call",
+        "replay_total",
+        "app_publication"
+      ],
+      "nonnegative_residual": true
+    },
+    {
+      "sum_parent_spans": [
+        "app_semantic_call"
+      ],
+      "sum_disjoint_child_spans": [
+        "semantic_total"
+      ],
+      "nonnegative_residual": true
+    },
+    {
+      "sum_parent_spans": [
+        "semantic_total"
+      ],
+      "sum_disjoint_child_spans": [
+        "semantic_entry_setup",
+        "semantic_execute",
+        "semantic_outer_finish"
+      ],
+      "nonnegative_residual": true
+    },
+    {
+      "sum_parent_spans": [
+        "semantic_execute"
+      ],
+      "sum_disjoint_child_spans": [
+        "semantic_leaf_apply_call",
+        "semantic_after_leaf_size"
+      ],
+      "nonnegative_residual": true
+    },
+    {
+      "sum_parent_spans": [
+        "replay_total"
+      ],
+      "sum_disjoint_child_spans": [
+        "replay_wire_size_checks",
+        "replay_leaf_apply_call",
+        "replay_host_visit",
+        "replay_aggregate_call"
+      ],
+      "nonnegative_residual": true
+    },
+    {
+      "sum_parent_spans": [
+        "semantic_leaf_apply_call",
+        "replay_leaf_apply_call"
+      ],
+      "sum_disjoint_child_spans": [
+        "leaf_apply_total"
+      ],
+      "nonnegative_residual": true
+    },
+    {
+      "sum_parent_spans": [
+        "leaf_apply_total"
+      ],
+      "sum_disjoint_child_spans": [
+        "leaf_preflight",
+        "leaf_reduce",
+        "leaf_postprocess",
+        "leaf_net_call"
+      ],
+      "nonnegative_residual": true
+    },
+    {
+      "sum_parent_spans": [
+        "leaf_net_call",
+        "replay_aggregate_call"
+      ],
+      "sum_disjoint_child_spans": [
+        "net_total"
+      ],
+      "nonnegative_residual": true
+    },
+    {
+      "sum_parent_spans": [
+        "net_total"
+      ],
+      "sum_disjoint_child_spans": [
+        "net_before_and_patch",
+        "net_validation",
+        "net_finish"
+      ],
+      "nonnegative_residual": true
+    }
+  ],
+  "parser": "one exact BEGIN/END; constant ordered full-matched rows; reject missing/duplicate/extra rows, counts, nonzero success marker and negative residuals",
+  "important_counts": {
+    "shared_apply_calls": 2,
+    "shared_net_calls": 3,
+    "replay_size_checks": 4
+  },
+  "control_off_on_overhead_qualified": false,
+  "queue_wait_measured": false
+}

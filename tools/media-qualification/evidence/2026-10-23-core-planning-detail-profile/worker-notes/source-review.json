@@ -1,0 +1,11 @@
+{
+  "source_review": "complete diff read",
+  "compile_run": false,
+  "format_run": false,
+  "runtime_run": false,
+  "ordered_schema_pairs_match": true,
+  "phase_variants_and_references_match": true,
+  "existing_before_snapshots": 8,
+  "proposed_after_snapshots": 9,
+  "all_nonowned_unchanged": true
+}

@@ -237,9 +237,28 @@ is 71.226624 ms. Stored-edit decode/equality is 19.017083 ms. These are nested
 diagnostics, not a further production gain or target PASS. Overhead, queue wait
 and memory remain unqualified. Evidence verifies 141 files /2,997,706 bytes,
 inventory SHA-256 e5ec3de077a87bd85be45ee772bba3521fe34ae8485a4cdcb4fc92b0837904e4.
-Next: attribute semantic planning and Core replay/apply/aggregate costs in a
-new isolated profile before choosing an algorithmic change. Keep all existing
-serialization, validation, historical-reader, inverse and host checks. The separate
+The subsequent [Core detail profile](../qualification/core-planning-detail-profile-2026-10-23.md)
+is complete in /tmp/deadpan-core-planning-detail-profile-2026-10-23. Its build
+and measurement drivers are terminal, all three build steps and 21 measurement
+commands successful. Nine rotated trials pass seven pause plus one Kestrel
+check each. Three enabled traces validate 24 phases, two leaf applications,
+three net transactions, four replay size checks and nine containment equations.
+Do not restart them. Instrumented app SHA-256:
+d6cfd57bbb4b5a622353e16e31bb3bc45b6d48021c5ccbbdff8746aeb13524ac.
+The qualified production control remains c36b8944. Median two-call leaf
+reduction totals 64.732208 ms and postprocessing 17.760625 ms. Semantic
+execution has a 30.641416 ms residual outside leaf apply and after-leaf size.
+These are operation groups, not identified individual bottlenecks. The fresh
+152-file /3,434,107-byte inventory verifies, SHA-256
+e18d6c4cd8fe64665af5e21cf0fecb5a90a4411adf214fe80ed85c4197a7fc78.
+The first packager failed after trial validation on Root's nonexistent optional
+outline requirement; original script/error and partial staging are preserved.
+The corrected fresh run succeeds without changing source or measurements.
+Next: finish next-optimization-study/ in that scratch, identify a concrete
+repeated reducer/postprocessing or semantic operation, then qualify an isolated
+prototype. Preserve all serialization, validation, historical-reader, inverse
+and host checks. There is no new production change or latency target PASS.
+The separate
 next-replay-count-study.md describes immutable borrowed count pairs and a
 post-validation finalizer; bare counts on mutable public outcomes are
 insufficient. Do not implement that API or skip validation/history work

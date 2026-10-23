@@ -1,0 +1,479 @@
+--- a/crates/deadpan-app/src/project/service.rs
++++ b/crates/deadpan-app/src/project/service.rs
+@@ -6,6 +6,7 @@
+ use std::thread::JoinHandle;
+ use std::time::Duration;
+ 
++use deadpan_core::work_profile as core_profile;
+ use deadpan_core::{
+     AssetId, Command, CommandRequest, NodeId, NodeKind, ProjectDocument, ProjectId, RevisionId,
+ };
+@@ -27,6 +28,63 @@
+ };
+ 
+ type Result<T> = std::result::Result<T, String>;
++
++fn finish_core_work_profile() {
++    use std::io::Write;
++
++    const PHASES: [(&str, &str); core_profile::PHASE_COUNT] = [
++        ("app_service_total", "inclusive_native_route"),
++        ("app_semantic_call", "inclusive_cli_semantic_call"),
++        ("app_publication", "disjoint_native_child"),
++        ("app_refresh_succeeded", "zero_time_success_marker"),
++        ("semantic_total", "inclusive_core_semantic"),
++        ("semantic_entry_setup", "disjoint_semantic_child"),
++        ("semantic_execute", "inclusive_semantic_child"),
++        (
++            "semantic_leaf_apply_call",
++            "inclusive_leaf_call_in_semantics",
++        ),
++        (
++            "semantic_after_leaf_size",
++            "disjoint_semantic_execute_child",
++        ),
++        ("semantic_outer_finish", "disjoint_semantic_child"),
++        ("replay_total", "inclusive_core_replay"),
++        ("replay_host_visit", "inclusive_store_visitor"),
++        ("replay_wire_size_checks", "sum_disjoint_replay_counts"),
++        ("replay_leaf_apply_call", "inclusive_leaf_call_in_replay"),
++        ("replay_aggregate_call", "inclusive_final_net_call"),
++        ("leaf_apply_total", "sum_two_disjoint_apply_calls"),
++        ("leaf_preflight", "sum_disjoint_apply_children"),
++        ("leaf_reduce", "sum_disjoint_apply_children"),
++        ("leaf_postprocess", "sum_disjoint_apply_children"),
++        ("leaf_net_call", "sum_two_disjoint_net_calls"),
++        ("net_total", "sum_three_disjoint_net_calls"),
++        ("net_before_and_patch", "sum_disjoint_net_children"),
++        ("net_validation", "sum_disjoint_net_children"),
++        ("net_finish", "sum_disjoint_net_children"),
++    ];
++
++    let Some(measurements) = core_profile::take() else {
++        return;
++    };
++    if measurements[core_profile::Phase::AppRefreshSucceeded as usize].count != 1 {
++        return;
++    }
++    // Only this app route prints, after shared publication and its outer span.
++    // Diagnostic I/O failure must not change the completed save's result.
++    let stderr = std::io::stderr();
++    let mut output = stderr.lock();
++    let _ = writeln!(output, "DEADPAN_CORE_WORK_PROFILE BEGIN count=1");
++    for ((phase, kind), measurement) in PHASES.into_iter().zip(measurements) {
++        let _ = writeln!(
++            output,
++            "DEADPAN_CORE_WORK_PROFILE PHASE phase={phase} kind={kind} elapsed_ns={} count={}",
++            measurement.elapsed_ns, measurement.count,
++        );
++    }
++    let _ = writeln!(output, "DEADPAN_CORE_WORK_PROFILE END count=1");
++}
+ 
+ mod backups;
+ mod cut_slice;
+@@ -340,7 +398,15 @@
+                 service.publish();
+             }
+             Ok(request) => {
+-                if service.dispatch_request(request) {
++                let profiling_macro = matches!(&request, ProjectRequest::Macro(_))
++                    && std::env::var_os("DEADPAN_CORE_WORK_PROFILE").as_deref()
++                        == Some(std::ffi::OsStr::new("1"))
++                    && core_profile::begin();
++                let total_profile = core_profile::Span::start(core_profile::Phase::AppServiceTotal);
++                let completed = service.dispatch_request(request);
++                let publication_profile =
++                    core_profile::Span::start(core_profile::Phase::AppPublication);
++                if completed {
+                     #[cfg(test)]
+                     service.shared.request_completed(crate::project::Lane::User);
+                     service.shared.busy.store(false, Ordering::Release);
+@@ -349,6 +415,11 @@
+                 service.reconcile_slip();
+                 service.reconcile_trim();
+                 service.publish();
++                drop(publication_profile);
++                drop(total_profile);
++                if profiling_macro {
++                    finish_core_work_profile();
++                }
+             }
+             Err(RecvTimeoutError::Disconnected) => {
+                 requests_connected = false;
+--- a/crates/deadpan-app/src/project/service/macros.rs
++++ b/crates/deadpan-app/src/project/service/macros.rs
+@@ -710,6 +710,8 @@
+                     context,
+                 )?;
+                 let invocation = SemanticProgram::new(vec![instruction]).map_err(display)?;
++                let semantic_profile =
++                    core_profile::Span::start(core_profile::Phase::AppSemanticCall);
+                 let plan = deadpan_cli::macros::plan_program_with_transcript_guard(
+                     self.store.as_ref().ok_or("Open a project first")?,
+                     &document,
+@@ -720,6 +722,7 @@
+                     id.transcript_guard.as_deref(),
+                 )
+                 .map_err(display)?;
++                drop(semantic_profile);
+                 if let Some(consumed) = &plan.transcript_guard {
+                     let displayed = self
+                         .workspace
+@@ -867,7 +870,11 @@
+                         .render_commit_refresh_failure
+                         .swap(false, Ordering::AcqRel);
+                 }
+-                match self.refresh() {
++                let refresh_result = self.refresh();
++                if refresh_result.is_ok() {
++                    core_profile::mark_refresh_success();
++                }
++                match refresh_result {
+                     Ok(()) => {
+                         self.message = Some(if committed.is_some() {
+                             format!("{label} saved as one edit; Undo restores it")
+--- a/crates/deadpan-core/src/lib.rs
++++ b/crates/deadpan-core/src/lib.rs
+@@ -28,6 +28,7 @@
+ mod command_work;
+ mod equalizer;
+ mod tail_sends;
++pub mod work_profile;
+ #[cfg(any(test, feature = "test-support"))]
+ pub use command_work::{
+     binding_wire_check_for_tests, diff_for_tests, provisional_captures_for_tests,
+--- a/crates/deadpan-core/src/semantic/planner.rs
++++ b/crates/deadpan-core/src/semantic/planner.rs
+@@ -651,6 +651,9 @@
+         &SemanticFramingSite,
+     ) -> Result<SemanticFramingState, EditError>,
+ ) -> Result<SemanticPlan, EditError> {
++    let _total = crate::work_profile::Span::start(crate::work_profile::Phase::SemanticTotal);
++    let entry_profile =
++        crate::work_profile::Span::start(crate::work_profile::Phase::SemanticEntrySetup);
+     program.validate()?;
+     document.validate()?;
+     crate::command::check_revision(
+@@ -715,7 +718,13 @@
+         speech: None,
+         original_index,
+     };
++    drop(entry_profile);
++    let execute_profile =
++        crate::work_profile::Span::start(crate::work_profile::Phase::SemanticExecute);
+     planner.execute(program)?;
++    drop(execute_profile);
++    let finish_profile =
++        crate::work_profile::Span::start(crate::work_profile::Phase::SemanticOuterFinish);
+     let selected_child = planner.context.selected_child.clone();
+     let request = if planner.steps.is_empty() {
+         None
+@@ -742,6 +751,7 @@
+             },
+         })
+     };
++    drop(finish_profile);
+     Ok(SemanticPlan {
+         request,
+         document: planner.current,
+--- a/crates/deadpan-core/src/semantic/planner/pause.rs
++++ b/crates/deadpan-core/src/semantic/planner/pause.rs
+@@ -1067,13 +1067,19 @@
+ 
+     /// Apply one leaf to the staged document within the byte limits.
+     pub(super) fn commit_leaf(&mut self, edit: LeafEdit) -> Result<(), EditError> {
++        let apply_profile =
++            crate::work_profile::Span::start(crate::work_profile::Phase::SemanticLeafApplyCall);
+         let (_, next) = crate::apply_with_result(&self.current, &edit.request(&self.current))?;
++        drop(apply_profile);
++        let size_profile =
++            crate::work_profile::Span::start(crate::work_profile::Phase::SemanticAfterLeafSize);
+         charge(
+             &mut self.document_bytes,
+             wire::size(&next, MAX_DOCUMENT_JSON_BYTES)?,
+             MAX_COMPOUND_DOCUMENT_BYTES,
+             "macro staged document byte limit",
+         )?;
++        drop(size_profile);
+         self.current = next;
+         self.steps.push(ResolvedStep::Edit { edit });
+         self.refresh_children()
+--- a/crates/deadpan-core/src/compound.rs
++++ b/crates/deadpan-core/src/compound.rs
+@@ -245,6 +245,7 @@
+     mut visit: impl FnMut(CompoundVisit<'_>) -> Result<(), E>,
+     mut isolation: Option<&mut Vec<crate::ScopedIsolationStep>>,
+ ) -> Result<CompoundOutcome, E> {
++    let _total = crate::work_profile::Span::start(crate::work_profile::Phase::ReplayTotal);
+     crate::command::check_revision(
+         document,
+         &request.project_id,
+@@ -261,7 +262,10 @@
+             return Err(identity("leaf revision must differ from base and outer revisions").into());
+         }
+     }
++    let initial_size_profile =
++        crate::work_profile::Span::start(crate::work_profile::Phase::ReplayWireSizeChecks);
+     let mut bytes = wire::size(document, crate::MAX_DOCUMENT_JSON_BYTES)?;
++    drop(initial_size_profile);
+     let mut captured_bytes = 0usize;
+     let mut captures = BTreeSet::new();
+     let mut identities = identities::Ledger::new(document);
+@@ -311,6 +315,8 @@
+         let leaf = step.edit().map(|edit| edit.request(&current));
+         let next = if let Some(leaf) = &leaf {
+             identities.reserve(&current, &leaf.command)?;
++            let before_size_profile =
++                crate::work_profile::Span::start(crate::work_profile::Phase::ReplayWireSizeChecks);
+             let size = wire::size(&current, crate::MAX_DOCUMENT_JSON_BYTES)?;
+             charge(
+                 &mut bytes,
+@@ -318,14 +324,22 @@
+                 MAX_COMPOUND_DOCUMENT_BYTES,
+                 "staged document work byte limit",
+             )?;
++            drop(before_size_profile);
+             // The validated result equals its forward patch applied to `current`.
+             let next = if let Some(isolation) = isolation.as_deref_mut() {
+                 let (_, next, steps) = crate::command::apply_with_isolation(&current, leaf)?;
+                 isolation.extend(steps);
+                 next
+             } else {
+-                crate::apply_with_result(&current, leaf)?.1
++                let apply_profile = crate::work_profile::Span::start(
++                    crate::work_profile::Phase::ReplayLeafApplyCall,
++                );
++                let next = crate::apply_with_result(&current, leaf)?.1;
++                drop(apply_profile);
++                next
+             };
++            let after_size_profile =
++                crate::work_profile::Span::start(crate::work_profile::Phase::ReplayWireSizeChecks);
+             let size = wire::size(&next, crate::MAX_DOCUMENT_JSON_BYTES)?;
+             charge(
+                 &mut bytes,
+@@ -333,6 +347,7 @@
+                 MAX_COMPOUND_DOCUMENT_BYTES,
+                 "staged document work byte limit",
+             )?;
++            drop(after_size_profile);
+             identities.observe(&current, &next)?;
+             Some(next)
+         } else {
+@@ -355,6 +370,8 @@
+         }
+     }
+     current.revision_id = request.new_revision.clone();
++    let final_size_profile =
++        crate::work_profile::Span::start(crate::work_profile::Phase::ReplayWireSizeChecks);
+     let final_size = wire::size(&current, crate::MAX_DOCUMENT_JSON_BYTES)?;
+     charge(
+         &mut bytes,
+@@ -362,7 +379,11 @@
+         MAX_COMPOUND_DOCUMENT_BYTES,
+         "staged document work byte limit",
+     )?;
++    drop(final_size_profile);
++    let aggregate_profile =
++        crate::work_profile::Span::start(crate::work_profile::Phase::ReplayAggregateCall);
+     let edit = crate::command::net_transaction(document, &current, "Apply resolved transaction")?;
++    drop(aggregate_profile);
+     Ok(CompoundOutcome {
+         edit,
+         document: current,
+--- a/crates/deadpan-core/src/command.rs
++++ b/crates/deadpan-core/src/command.rs
+@@ -1163,6 +1163,9 @@
+     previous: Option<&crate::ValidatedDocument>,
+     mut isolation: Option<&mut Vec<crate::ScopedIsolationStep>>,
+ ) -> Result<(EditTransaction, ProjectDocument, Validation), EditError> {
++    let _total = crate::work_profile::Span::start(crate::work_profile::Phase::LeafApplyTotal);
++    let preflight_profile =
++        crate::work_profile::Span::start(crate::work_profile::Phase::LeafPreflight);
+     // Ordinary commands read integral recipes, which equal exact extents
+     // outside clocked speed changes; each leaf refuses changes inside them.
+     if !document.derived_clocks.is_empty() && !crate::derived_clock::sealed_active() {
+@@ -1400,6 +1403,8 @@
+         sound_clocks: beat_sound_edit.as_mut(),
+     };
+     let mut known = KnownValidation::Nothing;
++    drop(preflight_profile);
++    let reduce_profile = crate::work_profile::Span::start(crate::work_profile::Phase::LeafReduce);
+     let mut result = match &request.command {
+         command @ Command::InsertOccurrenceTime { .. } => {
+             crate::insert_time::occurrence::apply(input, command, context)?
+@@ -1759,6 +1764,9 @@
+             result
+         }
+     };
++    drop(reduce_profile);
++    let postprocess_profile =
++        crate::work_profile::Span::start(crate::work_profile::Phase::LeafPostprocess);
+     // Sound, beat-sound and allowance restoration are not audited here as
+     // structure-preserving, so their transactions validate from scratch.
+     if sound_edit.is_some() || beat_sound_edit.is_some() || allowance_edit.is_some() {
+@@ -1810,6 +1818,8 @@
+     if !crate::command_work::local() {
+         known = KnownValidation::Nothing;
+     }
++    drop(postprocess_profile);
++    let net_profile = crate::work_profile::Span::start(crate::work_profile::Phase::LeafNetCall);
+     let (edit, validation) = net_transaction_known(
+         document,
+         &result,
+@@ -1817,6 +1827,7 @@
+         previous,
+         known,
+     )?;
++    drop(net_profile);
+     if result.schema_version != document.schema_version
+         || result.project_id != document.project_id
+         || result.root != document.root
+@@ -1877,6 +1888,9 @@
+     previous: Option<&crate::ValidatedDocument>,
+     known: KnownValidation,
+ ) -> Result<(EditTransaction, Validation), EditError> {
++    let _total = crate::work_profile::Span::start(crate::work_profile::Phase::NetTotal);
++    let patch_profile =
++        crate::work_profile::Span::start(crate::work_profile::Phase::NetBeforeAndPatch);
+     // The entry revision was admitted and validated already; only the result
+     // needs the complete (binding-inclusive) validation here.
+     let before_duration = match document.retained_durations() {
+@@ -1920,6 +1934,9 @@
+             &result.audio_bindings,
+         ),
+     };
++    drop(patch_profile);
++    let validation_profile =
++        crate::work_profile::Span::start(crate::work_profile::Phase::NetValidation);
+     let previous = previous.filter(|previous| std::ptr::eq(previous.document().as_ref(), document));
+     let structure = match known {
+         KnownValidation::Complete(validation) => {
+@@ -1942,6 +1959,8 @@
+         )?,
+         (structure, None) => result.validated_with_structure(structure.and_then(Result::ok))?,
+     };
++    drop(validation_profile);
++    let finish_profile = crate::work_profile::Span::start(crate::work_profile::Phase::NetFinish);
+     let after_duration = if result.derived_clocks.is_empty() {
+         validation
+             .0
+@@ -2006,6 +2025,7 @@
+         duration_delta: after_duration - before_duration,
+         description: description.to_owned(),
+     };
++    drop(finish_profile);
+     Ok((edit, validation))
+ }
+ 
+--- a/crates/deadpan-core/src/work_profile.rs
++++ b/crates/deadpan-core/src/work_profile.rs
+@@ -0,0 +1,95 @@
++//! Temporary numeric diagnostic buffer for an isolated source copy only.
++//! The app owns activation policy and output.
++
++use std::cell::RefCell;
++use std::time::Instant;
++
++#[derive(Clone, Copy)]
++pub enum Phase {
++    AppServiceTotal,
++    AppSemanticCall,
++    AppPublication,
++    AppRefreshSucceeded,
++    SemanticTotal,
++    SemanticEntrySetup,
++    SemanticExecute,
++    SemanticLeafApplyCall,
++    SemanticAfterLeafSize,
++    SemanticOuterFinish,
++    ReplayTotal,
++    ReplayHostVisit,
++    ReplayWireSizeChecks,
++    ReplayLeafApplyCall,
++    ReplayAggregateCall,
++    LeafApplyTotal,
++    LeafPreflight,
++    LeafReduce,
++    LeafPostprocess,
++    LeafNetCall,
++    NetTotal,
++    NetBeforeAndPatch,
++    NetValidation,
++    NetFinish,
++}
++
++pub const PHASE_COUNT: usize = 24;
++
++#[derive(Default)]
++pub struct Measurement {
++    pub elapsed_ns: u128,
++    pub count: u64,
++}
++
++thread_local! {
++    static ACTIVE: RefCell<Option<[Measurement; PHASE_COUNT]>> = const { RefCell::new(None) };
++}
++
++pub fn begin() -> bool {
++    ACTIVE.with(|active| {
++        let mut active = active.borrow_mut();
++        if active.is_some() {
++            return false;
++        }
++        *active = Some(std::array::from_fn(|_| Measurement::default()));
++        true
++    })
++}
++
++pub struct Span {
++    phase: Phase,
++    started: Option<Instant>,
++}
++
++impl Span {
++    pub fn start(phase: Phase) -> Self {
++        let started = ACTIVE.with(|active| active.borrow().is_some().then(Instant::now));
++        Self { phase, started }
++    }
++}
++
++impl Drop for Span {
++    fn drop(&mut self) {
++        let Some(started) = self.started else {
++            return;
++        };
++        record(self.phase, started.elapsed().as_nanos());
++    }
++}
++
++fn record(phase: Phase, elapsed_ns: u128) {
++    ACTIVE.with(|active| {
++        if let Some(measurements) = active.borrow_mut().as_mut() {
++            let measurement = &mut measurements[phase as usize];
++            measurement.elapsed_ns = measurement.elapsed_ns.saturating_add(elapsed_ns);
++            measurement.count = measurement.count.saturating_add(1);
++        }
++    });
++}
++
++pub fn mark_refresh_success() {
++    record(Phase::AppRefreshSucceeded, 0);
++}
++
++pub fn take() -> Option<[Measurement; PHASE_COUNT]> {
++    ACTIVE.with(|active| active.borrow_mut().take())
++}
+--- a/crates/deadpan-store/src/compound.rs
++++ b/crates/deadpan-store/src/compound.rs
+@@ -476,6 +476,9 @@
+     let mut original_pastes = OriginalPasteMappings::default();
+     let outcome =
+         deadpan_core::replay_compound(current, request, |visit| -> Result<(), StoreError> {
++            let _visit_profile = deadpan_core::work_profile::Span::start(
++                deadpan_core::work_profile::Phase::ReplayHostVisit,
++            );
+             if matches!(
+                 visit.step,
+                 ResolvedStep::Yank { .. } | ResolvedStep::Cut { .. }
