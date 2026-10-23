@@ -29,7 +29,10 @@ evidence inventory retain 554 payload files / 32,125,159 bytes; inventory SHA-25
 The next DP-24 experiment is scratch-only in `next-performance-map/`: measure
 fresh first-pause binding before choosing an optimization. Its timer overlay
 dry-applies but has not been compiled or executed. No performance improvement
-is claimed. The progress artifact refresh follows the scoped implementation commit.
+is claimed. Implementation `a18ff65443aa8fd1aa5ab63fa33678c9afd88220` is pushed.
+Progress commit `5765991730d5b38afc572200efcd0574792eb3d9` is pushed and the
+private artifact is pinned to its immutable JSON URL. All 939 lines compare
+equal to the canonical file and the phone render passes.
 
 Current checkpoint, 2026-10-23: fresh `integrated-final-core` passes all 1,489
 tests across 67 binaries, zero skipped; library SHA-256
