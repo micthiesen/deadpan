@@ -4,45 +4,60 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-23
 
-The qualified one-leaf implementation is 5fdae748; documentation/progress baseline
-is 40959c5e. Its full production qualification remains in
-[one-leaf replay reuse](../qualification/one-leaf-replay-reuse-2026-10-23.md).
-Keep executed production App SHA-256
+Qualified code remains 5fdae748; current main documentation baseline is f319cfd8.
+The [production replay qualification](../qualification/one-leaf-replay-reuse-2026-10-23.md)
+remains separate. Keep production App SHA-256
 0cb2931562108a68b57915c6135f448bc74293ba20623c7484053152566d31ff
-as control, not a private instrumented executable.
+as control. Do not substitute a private instrumented App.
 
-The [current route study](../qualification/current-pause-route-profile-2026-10-23.md)
-is terminal: eight helper, twelve transaction and eighteen parser tests,
-strict release Core/Store/App all-target Clippy/format, nine fresh native
-trials, 63 workflow/nine Kestrel checks. Eighteen layout warnings remain.
-All source/input/binary/authored-byte guards and thirteen-phase conservation
-checks pass. No source-decode, display, percentile, memory, latency-target or
-requirement claim closes.
+The [fine route study](../qualification/current-pause-detail-profile-2026-10-23.md)
+is terminal: eight exact-helper scalar tests, twelve release Store tests,
+twenty parser tests, release App and strict release Core/Store/App all-target
+Clippy/format pass. Nine fresh trials pass 63 workflow/nine Kestrel checks;
+eighteen layout warnings remain. Every source/input/binary/authored-byte guard
+and all 26-phase sums/counts pass, including zero-count/zero-time checkpoint.
 
-Three enabled exclusive worker intervals are 186.788500, 188.710583 and
-189.302458 ms. Semantic planning median is 91.664125 ms; Store preparation
-60.879542 ms. Control/off/on commit medians 195.230667 /194.561208 /
-195.100625 ms have overlapping spread. These current regions need direct finer
-measurements; old inclusive costs and residual subtractions are not substitutes.
+Median ms: pure semantic leaf application 43.467459, semantic residual 33.948583,
+history codec/readback 22.490084. The eleven named document-size sites total a
+same-trial median 38.098416 ms, not all serialization. Capability snapshot is
+0.004750 ms, so optimizing that snapshot is not a useful next step. Worker
+median 188.133125 ms; control/off/on commit 194.051000 /194.373417 /194.426958 ms
+overlap without proving overhead or targets. Original coarse-region totals
+must be reconstructed from same-trial disjoint children, not residual alone.
 
-Scratch /tmp/deadpan-current-pause-route-profile-2026-10-23 has terminal build
-session 33992 and measurement session 62750, both exit zero. Do not restart.
-Private App SHA-256 is
-1bac97db7cdb7830592fe8f896e6c54f509b998501a3ae047e60746a7decafcb.
-The primary package has 184 payload files /4,143,448 bytes, inventory SHA-256
-769b2da713cc347640af179acacf7f0785d5f041f6d254511793569fd46ee63b.
-The separate verifier supplement preserves three corrected archive assumptions;
-final independent checks reread every hash, 23 gzip streams and nine safe
-authored fixture archives with 27 files. Root sidecars are excluded only after
-checking the WAL empty. The full development goal remains active at 89%.
+Scratch /tmp/deadpan-current-pause-detail-profile-2026-10-23 has terminal build
+session 84772 and measurement session 79988, both exit zero. Do not restart.
+Private App SHA-256:
+90ba5b33b06a5a27213942c6b636ea18c4df5f266df3149aa7621dba282faaf1.
+Source map e58e62f5 has 2,054 Rust files, nine changes relative to coarse
+12acb331 and 2,045 nonowned files/six inputs unchanged. Hooks remain private.
+The std-only helper tests compile from their exact frozen source instead of
+recompiling the complete Core unit-test binary merely to filter eight tests;
+this does not claim a new full Core suite pass. Release integration still ran.
 
-The next private fine study is being prepared in
-/tmp/deadpan-current-pause-detail-profile-2026-10-23, copied from the immutable
-coarse 2,054-file source map 12acb331. Only the two dominant regions are being
-refined; no optimization is authorized by an attributed guess. Root owns
-format/build/runtime and will test the exact scalar helper source separately
-instead of recompiling all Core unit tests merely to filter eight cases.
-Release native integration and strict Core/Store/App checks remain required.
+Primary evidence: 195 payload files /4,749,341 bytes; inventory SHA-256
+492b02231d9f450427d2e6be3cf22f168d1207cf389090a921c4462dd9b4cf34.
+First packager and independent-verifier executions both pass. Every payload
+hash/size, 25 gzip streams (sixteen decoded source-hash comparisons) and nine
+safe root-relative authored-fixture archives with 27 files verify. Only the
+two root SQLite sidecars are omitted after WAL-empty checks. The supplement
+retains the verifier and reproducible same-trial grouping calculation.
+
+The [coarse predecessor](../qualification/current-pause-route-profile-2026-10-23.md)
+is also terminal in /tmp/deadpan-current-pause-route-profile-2026-10-23:
+build 33992 /measurement 62750. Keep its separate 184-payload inventory and
+three corrected independent-verifier assumptions. Never pool batches.
+
+Next: the fine root's next-action-analysis.md maps current validation, scope
+indexes, occupied IDs, real provider plans, refresh, Split/diff/result work.
+Their subcosts are unknown and exact-address proofs do not transfer to clones.
+Root chose one nine-child microprofile in the fresh private
+/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23, copied from fine e58e62.
+Seven source paths are being instrumented; no optimization/API bypass yet.
+Root owns review, standalone helper tests, release App/strict integration and
+new rotated measurements. No guessed attribution, validation shortcut, memory
+result, source/PCM/display qualification, target, requirement or gate closes.
+The full goal remains active at estimated 89%, eight Complete/sixteen Partial.
 Do not ship temporary diagnostic hooks.
 
 ## Earlier qualification history, 2026-10-23

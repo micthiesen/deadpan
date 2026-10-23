@@ -1,0 +1,26 @@
+{
+  "helper-unit": [
+    "tests::pause_route_profile_nested_exclusive_durations_conserve_and_resume_without_counts",
+    "tests::pause_route_profile_live_success_clears_before_returning_scalars",
+    "tests::pause_route_profile_failure_and_cancel_leave_no_finished_block",
+    "tests::pause_route_profile_out_of_order_drop_and_reentrant_activation_discard",
+    "tests::pause_route_profile_borrow_conflict_invalidates_without_panicking",
+    "tests::pause_route_profile_invalid_counters_markers_clock_and_stack_are_rejected",
+    "tests::pause_route_profile_wrong_counts_missing_success_and_broken_conservation_discard",
+    "tests::pause_route_profile_inactive_hooks_do_not_create_a_session"
+  ],
+  "store-preparation": [
+    "host_failure_rolls_back_authored_and_register_only_preparation_and_allows_retry",
+    "authoritative_refusals_happen_before_host_preparation",
+    "prepared_commit_matches_preview_commit_history_and_reopening",
+    "one_leaf_replay_prepared_commit_retains_exact_history_undo_redo_and_copy",
+    "one_leaf_replay_store_refusals_precede_callback_and_leave_no_writes",
+    "one_leaf_replay_host_and_sql_failures_roll_back_even_after_a_hit",
+    "one_leaf_replay_transcript_guard_is_current_authority_before_preparation",
+    "one_leaf_replay_admitted_reverse_audio_rechecks_stored_qualification",
+    "one_leaf_replay_changed_corrections_invalidate_admitted_transcript_guard",
+    "one_leaf_replay_historical_allocations_refuse_before_preparation",
+    "write_failure_discards_host_state_and_rolls_back_before_retry",
+    "unavailable_transcript_authority_refuses_before_host_preparation"
+  ]
+}

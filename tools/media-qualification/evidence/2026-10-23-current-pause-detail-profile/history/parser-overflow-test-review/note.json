@@ -1,0 +1,5 @@
+{
+  "static_finding": "sum-overflow negative case had nonzero elapsed in zero-count checkpoint row and could reject before reaching the overflow gate",
+  "correction": "set checkpoint elapsed0 and require precise sum-overflow ProfileError message",
+  "product_or_runtime_failure": false
+}

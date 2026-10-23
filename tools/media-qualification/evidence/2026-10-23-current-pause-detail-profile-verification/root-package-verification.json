@@ -1,0 +1,18 @@
+{
+  "inventory_sha256": "492b02231d9f450427d2e6be3cf22f168d1207cf389090a921c4462dd9b4cf34",
+  "payload_files": 195,
+  "payload_bytes": 4749341,
+  "all_files": 197,
+  "gzip_streams_decoded": 25,
+  "decoded_payloads_equal_live_source_hashes": 16,
+  "safe_fixture_archives": 9,
+  "archive_regular_members": 27,
+  "all_payload_sizes_and_hashes_reread": true,
+  "all_tar_members_match_authored_after_maps": true,
+  "excluded_root_sidecars": [
+    "project.sqlite-shm",
+    "project.sqlite-wal"
+  ],
+  "each_wal_verified_empty": true,
+  "public_host_matches_pin_and_omits_private_fields": true
+}

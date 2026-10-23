@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T21:38:52.771Z",
+  "updated_at": "2026-10-23T22:15:31.448Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Current pause-route profiling is complete on the qualified one-leaf implementation. Three enabled runs measure exclusive semantic planning at 91.664125 ms and Store preparation at 60.879542 ms within a 188.710583 ms median worker route. All nine rotated control/off/on replays and source/input/binary guards pass. The temporary timers remain outside main. Finer direct measurements of those two dominant regions are underway before another optimization. Coverage remains 89%, eight Complete and sixteen Partial; the 100 ms/50 ms targets and full goal stay open.",
+  "focus": "Fine pause-route measurements are complete: pure leaf application 43.467459 ms, remaining semantic planning 33.948583 ms, history codec/readback 22.490084 ms, and eleven named size sites 38.098416 ms per trial. Capability snapshot construction is only 0.004750 ms. All nine trials and 26-phase accounting checks pass; hooks remain private. A bounded nine-child microprofile is next to distinguish current validation, context/provider and leaf work before another optimization. Coverage stays 89%, eight Complete/sixteen Partial; the full goal and 100 ms/50 ms targets remain open.",
   "features": [
     {
       "id": "editing",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "Qualified one-leaf replay reuse remains the production baseline. A private current-route study passes eight helper, twelve transaction and eighteen parser tests, strict release checks, and nine native trials (63 workflow/nine Kestrel checks). Planning/preparation medians are 91.664125/60.879542 ms; control/off/on commit observations overlap. Every phase sum and authored-input guard passes. No percentile, memory, physical-display or 100 ms/50 ms target closes. Refine the two dominant regions next."
+      "note": "Fine private profiling passes eight exact-helper tests, twelve release Store tests, twenty parser tests, release App/strict checks and nine native trials (63 workflow/nine Kestrel checks). Leaf application, semantic residual and history codec/readback are 43.467459/33.948583/22.490084 ms. Capability snapshot is 0.004750 ms; it is not the bottleneck. Exact 26-phase accounting and authored-input guards pass. No target, overhead bound, memory result or gate closes; refine the remaining application/planning internals next."
     },
     {
       "id": "models",
@@ -1189,6 +1189,14 @@
       "revision": "40959c5e26f5fc9713eda5a02ccd61377cc65a28",
       "retrospective": false,
       "summary": "Private current-route profiling of qualified one-leaf code 5fdae748 is complete on baseline 40959c5e. Eight helper, twelve transaction and eighteen parser tests plus strict release Core/Store/App all-target checks pass. Nine fresh rotated control/off/on trials pass 63 workflow/nine Kestrel checks and retain eighteen layout warnings. Control/off/on commit medians are 195.230667/194.561208/195.100625 ms with overlapping spread, not an overhead bound. Three enabled worker intervals conserve exactly across thirteen exclusive phases; planning/preparation medians are 91.664125/60.879542 ms and worker median 188.710583 ms. Independent rereading verifies 184 payload files/4,143,448 bytes, 23 gzip streams and nine safe authored-fixture archives. Three corrected independent-verifier assumptions remain in a separate supplement. Timers stay outside main; finer direct measurement of the two dominant regions is next. No target, memory claim, requirement or gate closes."
+    },
+    {
+      "date": "2026-10-23",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "f319cfd83d772425c0bb333b4a28f04a21b2163e",
+      "retrospective": false,
+      "summary": "Fine private pause profiling on baseline f319cfd8 completes with eight exact std-helper tests, twelve release Store tests, twenty parser tests, release App and strict Core/Store/App all-target checks. Nine fresh rotated trials pass 63 workflow/nine Kestrel checks and retain eighteen layout warnings. All 26 exclusive rows/counts conserve; checkpoint is count/time zero. Leaf application is 43.467459 ms, semantic residual 33.948583 ms, history codec/readback 22.490084 ms; eleven named size sites total same-trial median 38.098416 ms. Snapshot construction is 0.004750 ms, ruling out that call as the bottleneck. Control/off/on commit medians 194.051000/194.373417/194.426958 ms overlap; worker median is 188.133125 ms. Independent checks verify 195 payload files/4,749,341 bytes, 25 gzip streams and nine safe authored archives. Current-code inspection recommends one bounded validation/context/provider/leaf microprofile before an API change. Hooks remain outside main; coverage89/8 and all targets/gates unchanged."
     }
   ]
 }

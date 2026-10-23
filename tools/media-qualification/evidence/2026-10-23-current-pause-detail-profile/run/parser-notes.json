@@ -1,0 +1,64 @@
+{
+  "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V2",
+  "trace_block": {
+    "line_count": 28,
+    "begin": "DEADPAN_PAUSE_ROUTE_PROFILE_V2 BEGIN count=1",
+    "phase_template": "DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=<fixed-name> elapsed_ns=<u64-decimal> count=<fixed-expected-count>",
+    "end": "DEADPAN_PAUSE_ROUTE_PROFILE_V2 END count=1 elapsed_ns=<u64-decimal> committed=1 refreshed=1 published=1"
+  },
+  "phases": {
+    "coarse_names_count_each_one": [
+      "native_admission",
+      "semantic_plan",
+      "native_continuation",
+      "store_entry_misc",
+      "store_prepare",
+      "host_runtime_bank",
+      "store_write",
+      "sqlite_commit",
+      "store_cache_publication",
+      "native_postcommit",
+      "workspace_refresh",
+      "native_finish",
+      "native_publication"
+    ],
+    "detail_names_and_expected_counts": {
+      "semantic_document_wire": 4,
+      "semantic_leaf_apply": 1,
+      "capability_snapshot": 1,
+      "replay_document_wire": 4,
+      "reuse_eligibility_eq": 1,
+      "reuse_clone_exit": 1,
+      "replay_net_aggregate": 1,
+      "replay_misc": 1,
+      "store_compact_size": 3,
+      "store_checkpoint_wire": 0,
+      "store_visitor_authority": 1,
+      "history_codec_readback": 1,
+      "history_inverse_restore": 1
+    },
+    "order": "The 13 coarse rows precede the 13 detail rows in the exact order listed by check_profile.py.",
+    "accounting": "All 26 durations are exclusive and disjoint. Refined coarse rows measure their remaining exclusive miscellaneous time while fine spans run; sum of all 26 rows must equal END elapsed_ns. A count-zero phase must have elapsed_ns=0.",
+    "detail_order": [
+      "semantic_document_wire",
+      "semantic_leaf_apply",
+      "capability_snapshot",
+      "replay_document_wire",
+      "reuse_eligibility_eq",
+      "reuse_clone_exit",
+      "replay_net_aggregate",
+      "replay_misc",
+      "store_compact_size",
+      "store_checkpoint_wire",
+      "store_visitor_authority",
+      "history_codec_readback",
+      "history_inverse_restore"
+    ]
+  },
+  "selection": "Multiple complete blocks are parsed, and the first in stream order is selected. Timestamps do not determine command identity.",
+  "claims": [
+    "This is parser schema documentation only; no phase timings are asserted.",
+    "Clock/helper overhead remains in measured buckets.",
+    "No p95, target-pass, memory, physical-display, source-decode, or PCM claim follows from the parser."
+  ]
+}

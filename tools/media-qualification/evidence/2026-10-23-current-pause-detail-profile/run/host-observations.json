@@ -1,0 +1,51 @@
+{
+  "hardware": {
+    "command": [
+      "system_profiler",
+      "SPHardwareDataType"
+    ],
+    "exit": 0,
+    "stdout": "      Model Name: MacBook Pro\n      Model Identifier: Mac17,7\n      Chip: Apple M5 Max\n      Total Number of Cores: 18 (6 Super and 12 Performance)\n      Memory: 128 GB"
+  },
+  "os": {
+    "command": [
+      "sw_vers"
+    ],
+    "exit": 0,
+    "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n"
+  },
+  "machine": {
+    "command": [
+      "uname",
+      "-msr"
+    ],
+    "exit": 0,
+    "stdout": "Darwin 25.5.0 arm64\n"
+  },
+  "power": {
+    "command": [
+      "pmset",
+      "-g",
+      "batt"
+    ],
+    "exit": 0,
+    "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=redacted)\t80%; AC attached; not charging present: true\n"
+  },
+  "thermal": {
+    "command": [
+      "pmset",
+      "-g",
+      "therm"
+    ],
+    "exit": 0,
+    "stdout": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n"
+  },
+  "captured_at": "2026-10-23T21:48:40.324093+00:00",
+  "redactions": [
+    "Hardware model/chip/core/memory whitelist only",
+    "Command stderr omitted; full observation stays private",
+    "Battery numeric id redacted",
+    "uname -msr omits hostname"
+  ],
+  "raw_private_sha256": "d618ffa6053b45dddf62d6a5c5bbf3b5eba4c965f114d14617952d67d11d6fb2"
+}

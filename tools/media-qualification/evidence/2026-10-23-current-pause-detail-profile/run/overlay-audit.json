@@ -1,0 +1,19 @@
+{
+  "base_coarse_map_sha256": "12acb33168d093a788cba673ba98c532c6729c6f73564ee75d57d7c473e8ab41",
+  "source_map_sha256": "e58e62f56f0859cb184e54c56ac0def09b6ec9315b72838feafe1f9ae6c76351",
+  "source_files": 2054,
+  "changed": [
+    "crates/deadpan-app/src/project/service.rs",
+    "crates/deadpan-core/src/compound.rs",
+    "crates/deadpan-core/src/one_leaf_replay.rs",
+    "crates/deadpan-core/src/pause_route_profile.rs",
+    "crates/deadpan-core/src/semantic/planner.rs",
+    "crates/deadpan-core/src/semantic/planner/content.rs",
+    "crates/deadpan-core/src/semantic/planner/pause.rs",
+    "crates/deadpan-store/src/compound.rs",
+    "crates/deadpan-store/src/lib.rs"
+  ],
+  "nonowned_unchanged": 2045,
+  "inputs_unchanged": 6,
+  "patch_sha256": "246588331baeb9664b6c701d13b9cc935fd9f5e60c100338a0a69aecd8ec38a8"
+}

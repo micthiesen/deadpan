@@ -1,0 +1,680 @@
+//! Temporary private-study scalar timing. Activation and output belong to the
+//! native service; inactive calls read no clock and retain no authored values.
+
+use std::cell::{Cell, RefCell};
+use std::marker::PhantomData;
+use std::rc::Rc;
+use std::time::Instant;
+
+pub const PHASE_COUNT: usize = 26;
+pub const EXPECTED_COUNTS: [u64; PHASE_COUNT] = [
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    4, 1, 1, 4, 1, 1, 1, 1, 3, 0, 1, 1, 1,
+];
+const STACK_LIMIT: usize = 8;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(usize)]
+pub enum Phase {
+    NativeAdmission,
+    SemanticPlan,
+    NativeContinuation,
+    StoreEntryMisc,
+    StorePrepare,
+    HostRuntimeBank,
+    StoreWrite,
+    SqliteCommit,
+    StoreCachePublication,
+    NativePostcommit,
+    WorkspaceRefresh,
+    NativeFinish,
+    NativePublication,
+    SemanticDocumentWire,
+    SemanticLeafApply,
+    CapabilitySnapshot,
+    ReplayDocumentWire,
+    ReuseEligibilityEq,
+    ReuseCloneExit,
+    ReplayNetAggregate,
+    ReplayMisc,
+    StoreCompactSize,
+    StoreCheckpointWire,
+    StoreVisitorAuthority,
+    HistoryCodecReadback,
+    HistoryInverseRestore,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Snapshot {
+    pub elapsed_ns: [u64; PHASE_COUNT],
+    pub counts: [u64; PHASE_COUNT],
+    pub total_ns: u64,
+}
+
+#[derive(Clone, Copy)]
+struct Frame {
+    phase: Phase,
+    token: u64,
+}
+
+const EMPTY_FRAME: Frame = Frame {
+    phase: Phase::NativeAdmission,
+    token: 0,
+};
+
+struct Counters {
+    elapsed_ns: [u64; PHASE_COUNT],
+    counts: [u64; PHASE_COUNT],
+    stack: [Frame; STACK_LIMIT],
+    depth: usize,
+    next_token: u64,
+    last_ns: u64,
+    markers: [u64; 3],
+    invalid: bool,
+}
+
+impl Counters {
+    const fn empty() -> Self {
+        Self {
+            elapsed_ns: [0; PHASE_COUNT],
+            counts: [0; PHASE_COUNT],
+            stack: [EMPTY_FRAME; STACK_LIMIT],
+            depth: 0,
+            next_token: 0,
+            last_ns: 0,
+            markers: [0; 3],
+            invalid: false,
+        }
+    }
+
+    fn started() -> Self {
+        let mut counters = Self::empty();
+        counters.stack[0] = Frame {
+            phase: Phase::NativeAdmission,
+            token: 1,
+        };
+        counters.depth = 1;
+        counters.next_token = 1;
+        counters.counts[Phase::NativeAdmission as usize] = 1;
+        counters
+    }
+
+    fn charge(&mut self, now: u64) -> bool {
+        let frame = self
+            .depth
+            .checked_sub(1)
+            .and_then(|index| self.stack.get(index));
+        let Some(frame) = frame.filter(|_| !self.invalid) else {
+            self.invalid = true;
+            return false;
+        };
+        let index = frame.phase as usize;
+        let next = now
+            .checked_sub(self.last_ns)
+            .and_then(|delta| self.elapsed_ns[index].checked_add(delta));
+        let Some(next) = next else {
+            self.invalid = true;
+            return false;
+        };
+        self.elapsed_ns[index] = next;
+        self.last_ns = now;
+        true
+    }
+
+    fn count(&mut self, phase: Phase) -> bool {
+        let count = &mut self.counts[phase as usize];
+        match count.checked_add(1) {
+            Some(next) => {
+                *count = next;
+                true
+            }
+            None => {
+                self.invalid = true;
+                false
+            }
+        }
+    }
+
+    fn set_at(&mut self, phase: Phase, now: u64) {
+        if self.depth != 1 {
+            self.invalid = true;
+            return;
+        }
+        if self.charge(now) && self.count(phase) {
+            self.stack[0].phase = phase;
+        }
+    }
+
+    fn enter_at(&mut self, phase: Phase, now: u64) -> Option<(u64, usize)> {
+        if self.depth == 0 || self.depth >= STACK_LIMIT {
+            self.invalid = true;
+            return None;
+        }
+        let Some(token) = self.next_token.checked_add(1) else {
+            self.invalid = true;
+            return None;
+        };
+        if !self.charge(now) || !self.count(phase) {
+            return None;
+        }
+        self.stack[self.depth] = Frame { phase, token };
+        self.depth += 1;
+        self.next_token = token;
+        Some((token, self.depth))
+    }
+
+    fn leave_at(&mut self, token: u64, depth: usize, now: u64) {
+        let top = self
+            .depth
+            .checked_sub(1)
+            .and_then(|index| self.stack.get(index));
+        if self.depth != depth || depth < 2 || top.is_none_or(|frame| frame.token != token) {
+            self.invalid = true;
+            return;
+        }
+        if self.charge(now) {
+            self.depth -= 1;
+        }
+    }
+
+    fn mark(&mut self, index: usize) {
+        let Some(marker) = self.markers.get_mut(index) else {
+            self.invalid = true;
+            return;
+        };
+        match marker.checked_add(1) {
+            Some(next) => *marker = next,
+            None => self.invalid = true,
+        }
+    }
+
+    fn finish_at(mut self, now: u64) -> Option<Snapshot> {
+        if self.invalid
+            || self.depth != 1
+            || self.stack[0].phase != Phase::NativePublication
+            || self.counts != EXPECTED_COUNTS
+            || self.elapsed_ns.iter().zip(EXPECTED_COUNTS)
+                .any(|(elapsed, count)| count == 0 && *elapsed != 0)
+            || self.markers != [1; 3]
+            || !self.charge(now)
+        {
+            return None;
+        }
+        let sum = self
+            .elapsed_ns
+            .iter()
+            .try_fold(0u64, |sum, value| sum.checked_add(*value))?;
+        (sum == now).then_some(Snapshot {
+            elapsed_ns: self.elapsed_ns,
+            counts: self.counts,
+            total_ns: now,
+        })
+    }
+}
+
+struct State {
+    generation: u64,
+    origin: Option<Instant>,
+    counters: Counters,
+}
+
+impl State {
+    const fn empty() -> Self {
+        Self {
+            generation: 0,
+            origin: None,
+            counters: Counters::empty(),
+        }
+    }
+
+    fn now(&mut self) -> Option<u64> {
+        if self.counters.invalid {
+            return None;
+        }
+        // The origin is absent on every inactive path, before any clock read.
+        let origin = self.origin.as_ref()?;
+        match u64::try_from(origin.elapsed().as_nanos()) {
+            Ok(now) => Some(now),
+            Err(_) => {
+                self.counters.invalid = true;
+                None
+            }
+        }
+    }
+
+    fn clear(&mut self) {
+        self.origin = None;
+        self.counters = Counters::empty();
+    }
+}
+
+struct Local {
+    state: RefCell<State>,
+    fault: Cell<bool>,
+    cancelled: Cell<Option<u64>>,
+}
+
+thread_local! {
+    static LOCAL: Local = const { Local {
+        state: RefCell::new(State::empty()), fault: Cell::new(false), cancelled: Cell::new(None),
+    } };
+}
+
+fn access<T>(operation: impl FnOnce(&mut State, &Cell<bool>) -> Option<T>) -> Option<T> {
+    LOCAL
+        .try_with(|local| {
+            let Ok(mut state) = local.state.try_borrow_mut() else {
+                local.fault.set(true);
+                return None;
+            };
+            if local
+                .cancelled
+                .take()
+                .is_some_and(|generation| generation == state.generation)
+            {
+                state.clear();
+                local.fault.set(false);
+            }
+            if local.fault.get() {
+                state.counters.invalid = true;
+            }
+            operation(&mut state, &local.fault)
+        })
+        .ok()
+        .flatten()
+}
+
+fn cancel(generation: u64) {
+    let _ = LOCAL.try_with(|local| local.cancelled.set(Some(generation)));
+    // If another diagnostic hook holds the borrow, the next access performs
+    // this generation's pending clear before starting any fresh activation.
+    let _ = access(|_, _| Some(()));
+}
+
+/// A service-owned activation. It cannot move to a different thread. Dropping
+/// it without finishing cancels and clears this diagnostic only.
+pub struct Profile {
+    generation: Option<u64>,
+    _local: PhantomData<Rc<()>>,
+}
+
+impl Profile {
+    pub fn begin() -> Self {
+        let generation = access(|state, fault| {
+            if state.origin.is_some() {
+                state.counters.invalid = true;
+                return None;
+            }
+            let generation = state.generation.checked_add(1)?;
+            state.generation = generation;
+            state.counters = Counters::started();
+            fault.set(false);
+            state.origin = Some(Instant::now());
+            Some(generation)
+        });
+        Self {
+            generation,
+            _local: PhantomData,
+        }
+    }
+
+    /// Called only after the native service's store_update and wake return.
+    pub fn published(&self) {
+        let Some(generation) = self.generation else {
+            return;
+        };
+        let _ = access(|state, _| {
+            if state.generation == generation && state.origin.is_some() {
+                state.counters.mark(2);
+            }
+            Some(())
+        });
+    }
+
+    pub fn finish(mut self) -> Option<Snapshot> {
+        let generation = self.generation.take()?;
+        let result = access(|state, fault| {
+            if state.generation != generation || state.origin.is_none() {
+                return None;
+            }
+            let now = state.now();
+            let counters = std::mem::replace(&mut state.counters, Counters::empty());
+            state.origin = None;
+            fault.set(false);
+            now.and_then(|now| counters.finish_at(now))
+        });
+        cancel(generation);
+        result
+    }
+}
+
+impl Drop for Profile {
+    fn drop(&mut self) {
+        let Some(generation) = self.generation else {
+            return;
+        };
+        cancel(generation);
+    }
+}
+
+/// Replace the native root category. Resuming a parent never calls this.
+pub fn set(phase: Phase) {
+    let _ = access(|state, _| {
+        let now = state.now()?;
+        state.counters.set_at(phase, now);
+        Some(())
+    });
+}
+
+/// A disjoint child category. Invalid or inactive entries remain no-ops.
+pub struct Span {
+    identity: Option<(u64, u64, usize)>,
+    _local: PhantomData<Rc<()>>,
+}
+
+pub fn enter(phase: Phase) -> Span {
+    let identity = access(|state, _| {
+        let now = state.now()?;
+        let (token, depth) = state.counters.enter_at(phase, now)?;
+        Some((state.generation, token, depth))
+    });
+    Span {
+        identity,
+        _local: PhantomData,
+    }
+}
+
+impl Drop for Span {
+    fn drop(&mut self) {
+        let Some((generation, token, depth)) = self.identity else {
+            return;
+        };
+        let _ = access(|state, _| {
+            if state.generation == generation {
+                let now = state.now()?;
+                state.counters.leave_at(token, depth, now);
+            }
+            Some(())
+        });
+    }
+}
+
+pub fn committed() {
+    mark(0);
+}
+pub fn refreshed() {
+    mark(1);
+}
+
+fn mark(index: usize) {
+    let _ = access(|state, _| {
+        if state.origin.is_some() {
+            state.counters.mark(index);
+        }
+        Some(())
+    });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn counter_span(counters: &mut Counters, phase: Phase, now: &mut u64,
+        body: impl FnOnce(&mut Counters, &mut u64)) {
+        let (token, depth) = counters.enter_at(phase, *now).unwrap();
+        *now += 1;
+        body(counters, now);
+        counters.leave_at(token, depth, *now);
+        *now += 1;
+    }
+
+    fn counter_leaf(counters: &mut Counters, phase: Phase, now: &mut u64) {
+        counter_span(counters, phase, now, |_, _| {});
+    }
+
+    fn complete_counters() -> Counters {
+        let mut counters = Counters::started();
+        let mut now = 1;
+        counters.set_at(Phase::SemanticPlan, now);
+        now += 1;
+        for phase in [Phase::SemanticDocumentWire, Phase::SemanticDocumentWire,
+            Phase::SemanticLeafApply, Phase::SemanticDocumentWire,
+            Phase::CapabilitySnapshot, Phase::SemanticDocumentWire] {
+            counter_leaf(&mut counters, phase, &mut now);
+        }
+        counters.set_at(Phase::NativeContinuation, now);
+        now += 1;
+        counter_span(&mut counters, Phase::StoreEntryMisc, &mut now, |counters, now| {
+            counter_span(counters, Phase::StorePrepare, now, |counters, now| {
+                counter_leaf(counters, Phase::StoreCompactSize, now);
+                counter_span(counters, Phase::ReplayMisc, now, |counters, now| {
+                    for phase in [Phase::ReplayDocumentWire, Phase::ReplayDocumentWire,
+                        Phase::ReuseEligibilityEq, Phase::ReuseCloneExit, Phase::ReplayDocumentWire] {
+                        counter_leaf(counters, phase, now);
+                    }
+                    counter_span(counters, Phase::StoreVisitorAuthority, now, |counters, now| {
+                        counter_leaf(counters, Phase::StoreCompactSize, now);
+                    });
+                    counter_leaf(counters, Phase::ReplayDocumentWire, now);
+                    counter_leaf(counters, Phase::ReplayNetAggregate, now);
+                });
+                for phase in [Phase::StoreCompactSize, Phase::HistoryCodecReadback,
+                    Phase::HistoryInverseRestore] {
+                    counter_leaf(counters, phase, now);
+                }
+            });
+            for phase in [Phase::HostRuntimeBank, Phase::StoreWrite,
+                Phase::SqliteCommit, Phase::StoreCachePublication] {
+                counter_leaf(counters, phase, now);
+            }
+        });
+        counters.set_at(Phase::NativePostcommit, now);
+        now += 1;
+        counters.mark(0);
+        counters.set_at(Phase::WorkspaceRefresh, now);
+        now += 1;
+        counters.set_at(Phase::NativeFinish, now);
+        now += 1;
+        counters.mark(1);
+        counters.set_at(Phase::NativePublication, now);
+        counters.mark(2);
+        counters
+    }
+
+    fn finish_complete(counters: Counters) -> Option<Snapshot> {
+        let now = counters.last_ns + 1;
+        counters.finish_at(now)
+    }
+
+    fn live_leaf(phase: Phase) {
+        drop(enter(phase));
+    }
+
+    fn complete_live(profile: Profile) -> Option<Snapshot> {
+        set(Phase::SemanticPlan);
+        for phase in [Phase::SemanticDocumentWire, Phase::SemanticDocumentWire,
+            Phase::SemanticLeafApply, Phase::SemanticDocumentWire,
+            Phase::CapabilitySnapshot, Phase::SemanticDocumentWire] {
+            live_leaf(phase);
+        }
+        set(Phase::NativeContinuation);
+        let store = enter(Phase::StoreEntryMisc);
+        let prepare = enter(Phase::StorePrepare);
+        live_leaf(Phase::StoreCompactSize);
+        let replay = enter(Phase::ReplayMisc);
+        for phase in [Phase::ReplayDocumentWire, Phase::ReplayDocumentWire,
+            Phase::ReuseEligibilityEq, Phase::ReuseCloneExit, Phase::ReplayDocumentWire] {
+            live_leaf(phase);
+        }
+        let visitor = enter(Phase::StoreVisitorAuthority);
+        live_leaf(Phase::StoreCompactSize);
+        drop(visitor);
+        live_leaf(Phase::ReplayDocumentWire);
+        live_leaf(Phase::ReplayNetAggregate);
+        drop(replay);
+        live_leaf(Phase::StoreCompactSize);
+        live_leaf(Phase::HistoryCodecReadback);
+        live_leaf(Phase::HistoryInverseRestore);
+        drop(prepare);
+        for phase in [
+            Phase::HostRuntimeBank,
+            Phase::StoreWrite,
+            Phase::SqliteCommit,
+            Phase::StoreCachePublication,
+        ] {
+            let span = enter(phase);
+            drop(span);
+        }
+        drop(store);
+        set(Phase::NativePostcommit);
+        committed();
+        set(Phase::WorkspaceRefresh);
+        refreshed();
+        set(Phase::NativeFinish);
+        set(Phase::NativePublication);
+        profile.published();
+        profile.finish()
+    }
+
+    #[test]
+    fn pause_route_profile_nested_exclusive_durations_conserve_and_resume_without_counts() {
+        let snapshot = finish_complete(complete_counters()).unwrap();
+        assert_eq!(snapshot.counts, EXPECTED_COUNTS);
+        for (phase, duration) in [(Phase::SemanticDocumentWire, 4),
+            (Phase::ReplayDocumentWire, 4), (Phase::StoreCompactSize, 3),
+            (Phase::StoreCheckpointWire, 0)] {
+            assert_eq!(snapshot.elapsed_ns[phase as usize], duration);
+        }
+        assert_eq!(
+            snapshot.elapsed_ns.into_iter().sum::<u64>(),
+            snapshot.total_ns
+        );
+    }
+
+    #[test]
+    fn pause_route_profile_live_success_clears_before_returning_scalars() {
+        let snapshot = complete_live(Profile::begin()).unwrap();
+        assert_eq!(snapshot.counts, EXPECTED_COUNTS);
+        assert_eq!(
+            snapshot.elapsed_ns.into_iter().sum::<u64>(),
+            snapshot.total_ns
+        );
+        assert!(access(|state, _| Some(state.origin.is_none())).unwrap());
+    }
+
+    #[test]
+    fn pause_route_profile_failure_and_cancel_leave_no_finished_block() {
+        let failed = Profile::begin();
+        set(Phase::SemanticPlan);
+        assert!(failed.finish().is_none());
+        let cancelled = Profile::begin();
+        let stale_span = enter(Phase::StoreEntryMisc);
+        drop(cancelled);
+        let next = Profile::begin();
+        drop(stale_span);
+        assert!(complete_live(next).is_some());
+    }
+
+    #[test]
+    fn pause_route_profile_out_of_order_drop_and_reentrant_activation_discard() {
+        let profile = Profile::begin();
+        let parent = enter(Phase::StoreEntryMisc);
+        let child = enter(Phase::StorePrepare);
+        drop(parent);
+        drop(child);
+        assert!(profile.finish().is_none());
+        let outer = Profile::begin();
+        let inner = Profile::begin();
+        assert!(inner.finish().is_none());
+        assert!(outer.finish().is_none());
+        assert!(complete_live(Profile::begin()).is_some());
+    }
+
+    #[test]
+    fn pause_route_profile_borrow_conflict_invalidates_without_panicking() {
+        let profile = Profile::begin();
+        LOCAL.with(|local| {
+            let _held = local.state.borrow_mut();
+            set(Phase::SemanticPlan);
+        });
+        assert!(profile.finish().is_none());
+        assert!(complete_live(Profile::begin()).is_some());
+        let finishing = Profile::begin();
+        LOCAL.with(|local| {
+            let _held = local.state.borrow_mut();
+            assert!(finishing.finish().is_none());
+        });
+        assert!(complete_live(Profile::begin()).is_some());
+        let cancelling = Profile::begin();
+        LOCAL.with(|local| {
+            let _held = local.state.borrow_mut();
+            drop(cancelling);
+        });
+        assert!(complete_live(Profile::begin()).is_some());
+    }
+
+    #[test]
+    fn pause_route_profile_invalid_counters_markers_clock_and_stack_are_rejected() {
+        let mut overflow = Counters::started();
+        overflow.elapsed_ns[0] = u64::MAX;
+        overflow.set_at(Phase::SemanticPlan, 1);
+        assert!(overflow.invalid);
+        let mut count = Counters::started();
+        count.counts[Phase::SemanticPlan as usize] = u64::MAX;
+        count.set_at(Phase::SemanticPlan, 0);
+        assert!(count.invalid);
+        let mut marker = complete_counters();
+        marker.markers[0] = u64::MAX;
+        marker.mark(0);
+        assert!(finish_complete(marker).is_none());
+        let mut backwards = Counters::started();
+        backwards.set_at(Phase::SemanticPlan, 2);
+        backwards.set_at(Phase::NativeContinuation, 1);
+        assert!(backwards.invalid);
+        let mut stack = Counters::started();
+        for _ in 1..STACK_LIMIT {
+            assert!(stack.enter_at(Phase::StorePrepare, 0).is_some());
+        }
+        assert!(stack.enter_at(Phase::StorePrepare, 0).is_none());
+        assert!(stack.invalid);
+    }
+
+    #[test]
+    fn pause_route_profile_wrong_counts_missing_success_and_broken_conservation_discard() {
+        let mut counts = complete_counters();
+        counts.counts[Phase::StorePrepare as usize] = 2;
+        assert!(finish_complete(counts).is_none());
+        for phase in [Phase::SemanticDocumentWire, Phase::ReplayDocumentWire,
+            Phase::StoreCompactSize, Phase::StoreCheckpointWire] {
+            let mut counts = complete_counters();
+            counts.counts[phase as usize] += 1;
+            assert!(finish_complete(counts).is_none());
+        }
+        for marker in 0..3 {
+            let mut missing = complete_counters();
+            missing.markers[marker] = 0;
+            assert!(finish_complete(missing).is_none());
+        }
+        let mut sum = complete_counters();
+        sum.elapsed_ns[0] += 1;
+        assert!(finish_complete(sum).is_none());
+        let mut zero = complete_counters();
+        zero.elapsed_ns[Phase::StoreCheckpointWire as usize] = 1;
+        zero.elapsed_ns[Phase::NativeAdmission as usize] -= 1;
+        assert!(finish_complete(zero).is_none());
+    }
+
+    #[test]
+    fn pause_route_profile_inactive_hooks_do_not_create_a_session() {
+        set(Phase::SemanticPlan);
+        drop(enter(Phase::StorePrepare));
+        committed();
+        refreshed();
+        assert!(
+            access(|state, _| Some(
+                state.origin.is_none() && state.counters.counts == [0; PHASE_COUNT]
+            ))
+            .unwrap()
+        );
+    }
+}

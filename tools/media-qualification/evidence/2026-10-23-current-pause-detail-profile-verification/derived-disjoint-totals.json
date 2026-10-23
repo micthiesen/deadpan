@@ -1,0 +1,59 @@
+{
+  "basis": "same-trial sums of directly measured exclusive rows; no old-run subtraction",
+  "groups": {
+    "semantic_region": {
+      "phases": [
+        "semantic_plan",
+        "semantic_document_wire",
+        "semantic_leaf_apply",
+        "capability_snapshot"
+      ],
+      "trial_ns": [
+        90780333,
+        91215209,
+        90830916
+      ],
+      "min_ns": 90780333,
+      "median_ns": 90830916,
+      "max_ns": 91215209
+    },
+    "store_prepare_region": {
+      "phases": [
+        "store_prepare",
+        "replay_document_wire",
+        "reuse_eligibility_eq",
+        "reuse_clone_exit",
+        "replay_net_aggregate",
+        "replay_misc",
+        "store_compact_size",
+        "store_checkpoint_wire",
+        "store_visitor_authority",
+        "history_codec_readback",
+        "history_inverse_restore"
+      ],
+      "trial_ns": [
+        60740917,
+        60955167,
+        61198584
+      ],
+      "min_ns": 60740917,
+      "median_ns": 60955167,
+      "max_ns": 61198584
+    },
+    "named_document_size_sites": {
+      "phases": [
+        "semantic_document_wire",
+        "replay_document_wire",
+        "store_compact_size"
+      ],
+      "trial_ns": [
+        38098416,
+        38054125,
+        38168501
+      ],
+      "min_ns": 38054125,
+      "median_ns": 38098416,
+      "max_ns": 38168501
+    }
+  }
+}

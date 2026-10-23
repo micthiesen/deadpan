@@ -1,0 +1,11 @@
+{
+  "method": "reviewed coarse drivers with exact-root substitution, standalone exact helper-source compiler/test step and eight-stage count; remaining guards/rotations/terminal receipts unchanged",
+  "standalone_test_flags": [
+    "--test",
+    "-Copt-level=2",
+    "-Cdebug-assertions=no",
+    "-Coverflow-checks=on",
+    "-Funsafe_code"
+  ],
+  "why": "same helper test source; avoids recompiling the entire Core unit-test executable to run only eight scalar tests; release App and strict all-target integration remain"
+}

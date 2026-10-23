@@ -1,0 +1,43 @@
+{
+  "status": "no_findings",
+  "findings": [],
+  "review_kind": "independent_static_fine_driver_review",
+  "source_map_sha256": "e58e62f56f0859cb184e54c56ac0def09b6ec9315b72838feafe1f9ae6c76351",
+  "reviewed_files": {
+    "build.py": "45f9eac8e86f932c6bc844e9618f077c4645f2c6ec76b75c4832e6824f0a0387",
+    "measure.py": "f04c22086245126f9c18e79cae4b1dc2bff149c92013387941b1a3431cfd40bd",
+    "expected-tests.json": "a675b04be1d59013290e93152e82a247326b538919c68b82b1c4cd9e7f4c05b9",
+    "baseline.json": "1d368aa2557e2d32bd523eb25f0ff254dff8976648e44d11382fb523d8b64308",
+    "driver-preparation.json": "97fb3396c89578d50765aaca3ed3b88122702c9bfba6fe5a4eaa3b366f5f5a57",
+    "source-review.json": "f700a022f1447e4b9267902aa4136d7bb244d599deb87e911d4955f4a596218d",
+    "parser-review.json": "c4f1889adf27fe63a5021442820ee8b0e6ac8930f62f5ab095f3fa8fae2bb8d8",
+    "check_profile.py": "69e9da0bb407af531c44f67e9136048580d06dce182cdd0ac89f1d94e929f49f",
+    "test_profile_parser.py": "2d434814ee652791e37af3314aa318b233048323297344df34a11792f58c202e",
+    "parser-test-receipt.json": "d5f20279a1736c773be1ac5ef1272091c1fe3cb4de39e91497992865ea9e1b7f",
+    "frozen-sources.json": "e58e62f56f0859cb184e54c56ac0def09b6ec9315b72838feafe1f9ae6c76351",
+    "baseline-inputs.json": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+  },
+  "verified": [
+    "Compared complete build and measure texts to the final reviewed coarse drivers. Build differences are fine-root substitution, an explicit standalone helper-compile stage, direct helper-unit execution and its artifact adapter. Measure differs only in fine root and expected build-stage count8; all other guard, rotation, terminal and summary logic is preserved.",
+    "Build requires a fresh distinct private target and no earlier command receipt. Source tree and six input identities plus source-review map/status and future driver-pins are checked before/after every stage. Eight stages are toolchain2, format, helper compile, helper tests, Store preparation, release App and strict Core/Store/App all-target release Clippy.",
+    "Standalone compiler consumes the exact frozen pause_route_profile.rs file directly, edition2024, crate-name pause_route_profile, --test, opt-level2, debug-assertions=no, overflow-checks=on and forbid unsafe_code. The source is std-only and test module compiles at crate root, so expected names correctly use tests:: rather than pause_route_profile::tests::. No alternate helper copy or generated test body is substituted.",
+    "Independent source-name extraction matches exactly all8standalone helper tests and12Store integration tests in expected-tests.json. Nonempty exact successful test-name multiset and one matching summary with0failed/0ignored remain required, eliminating zero-test/filter false passes.",
+    "Helper compile must exit successfully before its exact output path is executed. After successful test run, helper adapter rejects Cargo artifacts and hashes/copies that direct binary. Store adapter still requires one Cargo test artifact and hashes/copies it. Release App comes from the new private release target; qualified reused native helpers and copied executable hashes retain existing checks.",
+    "Main baseline f319cfd83d772425c0bb333b4a28f04a21b2163e, implementation5fdae748 and qualified control0cb29315 remain distinct from the2054-file coarse/fine overlays. Baseline accurately records2053main Rust files, private coarse2054 and parent map12acb331.",
+    "Measurement requires successful8row build plus complete build terminal. It checks future pin manifest before importing the V2 parser, verifies all copied app/helpers, exact frozen source/input maps and fixture-maker hash, and retains trial/postcommand/quiet-preflight failure stages and observations.",
+    "Nine fresh equivalent10000beat fixtures follow balanced control/off/on rotations; eighteen make/app calls, gate clearing/setting, exact raw report identities/checks, authored-file/empty-WAL parity and exact2finite nonnegative metrics remain required.",
+    "On trials require one complete strict V2 block. Summary enumerates parser.PHASES dynamically, so all26fine/coarse exclusive rows are summarized, including explicit zero checkpoint row; it does not retain a hardcoded13phase limit. Off/control reject any profile-family output.",
+    "Terminal failure/complete receipts preserve actual state; summary remains diagnostic with n3, exclusive accounting/helper overhead included, and no percentile target, physical display or memory claim."
+  ],
+  "pending_before_execution": [
+    "Root must generate driver-pins.json after this review from the exact reviewed driver/source/parser/test identities and review receipts, including expected-tests and parser receipt; manifest self-hash is excluded.",
+    "Root will create fresh public host metadata without machine/battery identifiers and pin it. This file is not yet claimed to exist or have passed review.",
+    "Build, standalone helper tests, Store tests, strict checks, release native integration, actual fine phase counts and all measurements remain pending Root execution."
+  ],
+  "limitations": [
+    "Static review only; no reviewed function/script, compiler, Cargo, test, formatter, runtime, browser or Git command executed.",
+    "No Main/source/foreign-file writes or package work.",
+    "Direct standalone helper test is scalar-helper coverage; release App and strict all-target integration remain separately required and are not implied by it.",
+    "No fine timing attribution values or optimization/overhead results are established."
+  ]
+}

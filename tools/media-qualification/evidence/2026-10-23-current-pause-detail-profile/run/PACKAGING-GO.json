@@ -1,0 +1,17 @@
+{
+  "authorized": true,
+  "packager_sha256": "8dfe2d52ad30b330a16dc13862870fa2528cf968266a55441393a2f9a6454ce8",
+  "packager_review_sha256": "bd9ed7e4e604eb467ba7760b11c87563597f70a54b50d570301c2fde0bfa9558",
+  "source_map_sha256": "e58e62f56f0859cb184e54c56ac0def09b6ec9315b72838feafe1f9ae6c76351",
+  "source_review_sha256": "f700a022f1447e4b9267902aa4136d7bb244d599deb87e911d4955f4a596218d",
+  "driver_review_sha256": "f7f208e41e4980d34cb64cbda259bcc4d71153990eb17f6b1bbf153c43675f94",
+  "driver_pins_sha256": "087cda4db00adaf276ba43b3344268a45388bbef5e04c4df9c704d95c523917b",
+  "parser_review_sha256": "c4f1889adf27fe63a5021442820ee8b0e6ac8930f62f5ab095f3fa8fae2bb8d8",
+  "parser_test_receipt_sha256": "d5f20279a1736c773be1ac5ef1272091c1fe3cb4de39e91497992865ea9e1b7f",
+  "host_observations_sha256": "edfba4ff04e2174742c72c4c7fb5a7156cb93247ea1392dac3505956d8a6c7c4",
+  "freeze_provenance_sha256": "39a676c039dfd17d1319528817a9af6cc7cdf767e590a9ed03e8c5c204d3be6f",
+  "build_terminal_sha256": "e815a588ac254995147062fa843da36f88ff0984ff607b02728df5a7e55d4a2a",
+  "measurement_terminal_sha256": "0275f9fe394c86390f5ea5d437d5f5ced65332e649f7d8a33e0f917c028cfea9",
+  "retain_fixture_archives": true,
+  "scope": "Retain completed fine private timing diagnostic only; no mainline source patch, optimization or target claim."
+}

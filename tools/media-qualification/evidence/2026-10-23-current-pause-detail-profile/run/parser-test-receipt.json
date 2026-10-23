@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python",
+    "-m",
+    "unittest",
+    "-v",
+    "test_profile_parser.py"
+  ],
+  "cwd": "/tmp/deadpan-current-pause-detail-profile-2026-10-23",
+  "exit": 0,
+  "seconds": 0.053681000135838985,
+  "tests": 20,
+  "test_source_sha256": "2d434814ee652791e37af3314aa318b233048323297344df34a11792f58c202e"
+}

@@ -1,0 +1,28 @@
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 BEGIN count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=native_admission elapsed_ns=5542000 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=semantic_plan elapsed_ns=33815543 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=native_continuation elapsed_ns=7289750 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=store_entry_misc elapsed_ns=21250 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=store_prepare elapsed_ns=3233125 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=host_runtime_bank elapsed_ns=1083 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=store_write elapsed_ns=7231833 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=sqlite_commit elapsed_ns=7123667 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=store_cache_publication elapsed_ns=1042 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=native_postcommit elapsed_ns=301833 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=workspace_refresh elapsed_ns=4120500 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=native_finish elapsed_ns=972084 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=native_publication elapsed_ns=4173625 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=semantic_document_wire elapsed_ns=13628957 count=4
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=semantic_leaf_apply elapsed_ns=43331083 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=capability_snapshot elapsed_ns=4750 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=replay_document_wire elapsed_ns=12998792 count=4
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=reuse_eligibility_eq elapsed_ns=172166 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=reuse_clone_exit elapsed_ns=1125 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=replay_net_aggregate elapsed_ns=7569875 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=replay_misc elapsed_ns=722166 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=store_compact_size elapsed_ns=11470667 count=3
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=store_checkpoint_wire elapsed_ns=0 count=0
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=store_visitor_authority elapsed_ns=211750 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=history_codec_readback elapsed_ns=22490084 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name=history_inverse_restore elapsed_ns=1871167 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V2 END count=1 elapsed_ns=188299917 committed=1 refreshed=1 published=1

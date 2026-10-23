@@ -1,0 +1,11 @@
+{
+  "commit": "40959c5e26f5fc9713eda5a02ccd61377cc65a28",
+  "code_commit": "5fdae748ac2fdc67e1a11793c5ab69f6b61da833",
+  "source_files": 2053,
+  "input_files": 6,
+  "control": {
+    "path": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-native-bin/deadpan-app",
+    "sha256": "0cb2931562108a68b57915c6135f448bc74293ba20623c7484053152566d31ff"
+  },
+  "exclusions": "foreign .claude, fuzz/Cargo.lock; bulk evidence omitted except pinned source inputs"
+}

@@ -1,0 +1,12 @@
+{
+  "command": [
+    "python",
+    "-m",
+    "unittest",
+    "-v",
+    "test_profile_parser.py"
+  ],
+  "cwd": "/tmp/deadpan-current-pause-detail-profile-2026-10-23",
+  "exit": 0,
+  "tests": 20
+}

@@ -1,0 +1,44 @@
+{
+  "status": "no_findings",
+  "findings": [],
+  "review_kind": "independent_static_fine_private_overlay_review",
+  "source_map_sha256": "e58e62f56f0859cb184e54c56ac0def09b6ec9315b72838feafe1f9ae6c76351",
+  "coarse_source_map_sha256": "12acb33168d093a788cba673ba98c532c6729c6f73564ee75d57d7c473e8ab41",
+  "patch_sha256": "246588331baeb9664b6c701d13b9cc935fd9f5e60c100338a0a69aecd8ec38a8",
+  "reviewed_paths": {
+    "crates/deadpan-app/src/project/service.rs": "73616d17199c35b9a373b6ab411a6541b79052dcd6592f2f1569607855dd6290",
+    "crates/deadpan-core/src/compound.rs": "8de491f0015a9c1d1bc25723d28bb2e8821d445abdedbc989aceb9ee43811c9a",
+    "crates/deadpan-core/src/one_leaf_replay.rs": "952e5157a7a5bc23e40faa5140c705d8d84d2d3e456333cd9a79f219bd30b0e7",
+    "crates/deadpan-core/src/pause_route_profile.rs": "2a1e139b641150b56cb62c801d6d2c542ba60e22ca4803d2375f704c632b286e",
+    "crates/deadpan-core/src/semantic/planner.rs": "853f0bc214ea412feea69497421ac851abb725b1483f18c336d18e1bcc4dbd7d",
+    "crates/deadpan-core/src/semantic/planner/content.rs": "367e4778a6b328599a9e619631902a33c32e3986576fc777f2e5b1d9bf701ec6",
+    "crates/deadpan-core/src/semantic/planner/pause.rs": "3e5becb488709b1e3a42b60fa9d9ff7b58edb9d128a7a20ffcee218cdb987b4a",
+    "crates/deadpan-store/src/compound.rs": "1bab2023a4e5d257eff0771fabf619e61579171b6fc259a2f895b5f3f54a1bbd",
+    "crates/deadpan-store/src/lib.rs": "ff94eb1d3901b928be4838d03344a752a047356329283aa48fde112d057e1a41"
+  },
+  "scope": {
+    "private_rust_files": 2054,
+    "changed_existing": 9,
+    "unchanged_nonowned": 2045,
+    "unchanged_inputs": 6,
+    "helper_tests": 8,
+    "fine_measurements_claimed": false
+  },
+  "verified": [
+    "Complete private inventory matches frozen2054map. Relative to the coarse2054map only the nine assigned paths change; all2045others and six pinned inputs match. All nine retained before/after snapshots hash to their respective maps.",
+    "Coarse activation gate/native selection/success/error/publication lifecycle is byte-preserved. App changes only V2 names/counts/prefix output. Core helper state/access/cancel/span mechanics remain unchanged except26phases, exact expected counts and zero-count-zero-duration validation; no TLS borrow crosses a measured call or callback.",
+    "SemanticDocumentWire brackets exactly the existing initial wire size, pre-leaf wire plus charge, post-leaf admission wire plus charge and final outer-revision wire plus charge. SemanticLeafApply brackets the original apply_with_result statement. CapabilitySnapshot begins only inside the original successful then closure, after post-leaf admission, and contains only the existing entry/request/next clones.",
+    "ReplayMisc wraps existing replay authority/bookkeeping exclusively. Four ReplayDocumentWire spans retain original initial/pre/post/final order; reserve precedes lookup, post-size charge precedes ledger observe and visitor, outer revision precedes final size/charge and net aggregate. ReuseEligibilityEq brackets existing mode/value/request equality including short-circuit misses; ReuseCloneExit retains exact destructive TLS clear, leaf revision check, clone, exit consume and sealed-preserved order.",
+    "StoreCompactSize brackets exactly three existing ordinary no-capture sites, including the existing final byte-limit check. StoreCheckpointWire only brackets the existing conditional capture serialization, so its count and duration are zero on this target. StoreVisitorAuthority wraps the unchanged visitor and is paused during its size/checkpoint child. No extra serialization, validation or retiming is added.",
+    "HistoryCodecReadback starts at the existing command_plan body after unchanged argument evaluation, covers existing request/edit encoding, sizes, decode and equality, then drops before inverse.restore. HistoryInverseRestore covers only the existing inverse restoration guard. Existing debug-only forward/full-validation checks remain outside it. Original call/argument/result and early-return/drop ordering are preserved.",
+    "Patch::restores directly checks/applies stored patch fields and does not re-enter compound replay; command_plan/visitor/replay spans therefore have the documented successful ordinary one-leaf provenance. Maximum successful target nesting is6, below fixed stack8.",
+    "All26 categories remain exclusive. Exact expected counts are thirteen ones plus4,1,1,4,1,1,1,1,3,0,1,1,1. Parent categories are residual exclusive time while children run; named4+4+3 sites do not claim all internal serialization.",
+    "Emitter names/order/counts match helper constants and schema. Independently recomputed maximum expected-count trace2774bytes and hypothetical20digit-count trace3268bytes both fit4096. Formatting/output remains after deactivation and best effort.",
+    "Eight updated helper test bodies retain cancellation, borrow/reentrancy, overflow/clock/stack, inactive-state and conservation cases, with refined nested shape/counts and explicit zero-count-duration rejection."
+  ],
+  "limitations": [
+    "Source-only review; no Cargo/rustc/compiler/formatter/test/native runtime/Git/Main/source writes by reviewer.",
+    "Standalone exact-helper test, strict all-target lint, release App integration, actual enabled counts and disabled-path parity remain Root-owned gates.",
+    "No fine phase cost, optimization, overhead or target-pass evidence is established."
+  ]
+}

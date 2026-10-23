@@ -1,0 +1,607 @@
+--- a/crates/deadpan-app/src/project/service.rs
++++ b/crates/deadpan-app/src/project/service.rs
+@@ -451,27 +451,44 @@
+         "workspace_refresh",
+         "native_finish",
+         "native_publication",
++        "semantic_document_wire",
++        "semantic_leaf_apply",
++        "capability_snapshot",
++        "replay_document_wire",
++        "reuse_eligibility_eq",
++        "reuse_clone_exit",
++        "replay_net_aggregate",
++        "replay_misc",
++        "store_compact_size",
++        "store_checkpoint_wire",
++        "store_visitor_authority",
++        "history_codec_readback",
++        "history_inverse_restore",
+     ];
+-    if snapshot.counts != [1; pause_route_profile::PHASE_COUNT] {
++    if snapshot.counts != pause_route_profile::EXPECTED_COUNTS {
+         return;
+     }
+     let mut bytes = [0u8; 4096];
+     let length = {
+         let mut output = std::io::Cursor::new(&mut bytes[..]);
+-        if writeln!(output, "DEADPAN_PAUSE_ROUTE_PROFILE_V1 BEGIN count=1").is_err() {
++        if writeln!(output, "DEADPAN_PAUSE_ROUTE_PROFILE_V2 BEGIN count=1").is_err() {
+             return;
+         }
+-        for (name, elapsed) in NAMES.into_iter().zip(snapshot.elapsed_ns) {
++        for ((name, elapsed), count) in NAMES
++            .into_iter()
++            .zip(snapshot.elapsed_ns)
++            .zip(snapshot.counts)
++        {
+             if writeln!(
+                 output,
+-                "DEADPAN_PAUSE_ROUTE_PROFILE_V1 PHASE name={name} elapsed_ns={elapsed} count=1"
++                "DEADPAN_PAUSE_ROUTE_PROFILE_V2 PHASE name={name} elapsed_ns={elapsed} count={count}"
+             )
+             .is_err()
+             {
+                 return;
+             }
+         }
+-        if writeln!(output, "DEADPAN_PAUSE_ROUTE_PROFILE_V1 END count=1 elapsed_ns={} committed=1 refreshed=1 published=1", snapshot.total_ns).is_err() {
++        if writeln!(output, "DEADPAN_PAUSE_ROUTE_PROFILE_V2 END count=1 elapsed_ns={} committed=1 refreshed=1 published=1", snapshot.total_ns).is_err() {
+             return;
+         }
+         let Ok(length) = usize::try_from(output.position()) else {
+--- a/crates/deadpan-core/src/compound.rs
++++ b/crates/deadpan-core/src/compound.rs
+@@ -266,6 +266,8 @@
+     mut isolation: Option<&mut Vec<crate::ScopedIsolationStep>>,
+     candidate: Option<&crate::OneLeafReplay>,
+ ) -> Result<CompoundOutcome, E> {
++    let _pause_replay =
++        crate::pause_route_profile::enter(crate::pause_route_profile::Phase::ReplayMisc);
+     crate::command::check_revision(
+         document,
+         &request.project_id,
+@@ -282,7 +284,10 @@
+             return Err(identity("leaf revision must differ from base and outer revisions").into());
+         }
+     }
++    let pause_wire =
++        crate::pause_route_profile::enter(crate::pause_route_profile::Phase::ReplayDocumentWire);
+     let mut bytes = wire::size(document, crate::MAX_DOCUMENT_JSON_BYTES)?;
++    drop(pause_wire);
+     let mut captured_bytes = 0usize;
+     let mut captures = BTreeSet::new();
+     let mut identities = identities::Ledger::new(document);
+@@ -332,6 +337,9 @@
+         let leaf = step.edit().map(|edit| edit.request(&current));
+         let next = if let Some(leaf) = &leaf {
+             identities.reserve(&current, &leaf.command)?;
++            let pause_wire = crate::pause_route_profile::enter(
++                crate::pause_route_profile::Phase::ReplayDocumentWire,
++            );
+             let size = wire::size(&current, crate::MAX_DOCUMENT_JSON_BYTES)?;
+             charge(
+                 &mut bytes,
+@@ -339,6 +347,7 @@
+                 MAX_COMPOUND_DOCUMENT_BYTES,
+                 "staged document work byte limit",
+             )?;
++            drop(pause_wire);
+             // The validated result equals its forward patch applied to `current`.
+             let next = if let Some(isolation) = isolation.as_deref_mut() {
+                 let (_, next, steps) = crate::command::apply_with_isolation(&current, leaf)?;
+@@ -358,6 +367,9 @@
+                     None => crate::apply_with_result(&current, leaf)?.1,
+                 }
+             };
++            let pause_wire = crate::pause_route_profile::enter(
++                crate::pause_route_profile::Phase::ReplayDocumentWire,
++            );
+             let size = wire::size(&next, crate::MAX_DOCUMENT_JSON_BYTES)?;
+             charge(
+                 &mut bytes,
+@@ -365,6 +377,7 @@
+                 MAX_COMPOUND_DOCUMENT_BYTES,
+                 "staged document work byte limit",
+             )?;
++            drop(pause_wire);
+             identities.observe(&current, &next)?;
+             Some(next)
+         } else {
+@@ -387,6 +400,8 @@
+         }
+     }
+     current.revision_id = request.new_revision.clone();
++    let pause_wire =
++        crate::pause_route_profile::enter(crate::pause_route_profile::Phase::ReplayDocumentWire);
+     let final_size = wire::size(&current, crate::MAX_DOCUMENT_JSON_BYTES)?;
+     charge(
+         &mut bytes,
+@@ -394,7 +409,11 @@
+         MAX_COMPOUND_DOCUMENT_BYTES,
+         "staged document work byte limit",
+     )?;
++    drop(pause_wire);
++    let pause_net =
++        crate::pause_route_profile::enter(crate::pause_route_profile::Phase::ReplayNetAggregate);
+     let edit = crate::command::net_transaction(document, &current, "Apply resolved transaction")?;
++    drop(pause_net);
+     Ok(CompoundOutcome {
+         edit,
+         document: current,
+--- a/crates/deadpan-core/src/one_leaf_replay.rs
++++ b/crates/deadpan-core/src/one_leaf_replay.rs
+@@ -43,17 +43,25 @@
+     retain: bool,
+     admit_next: impl FnOnce(&ProjectDocument) -> Result<(), EditError>,
+ ) -> Result<(ProjectDocument, Option<OneLeafReplay>), EditError> {
++    let pause_apply =
++        crate::pause_route_profile::enter(crate::pause_route_profile::Phase::SemanticLeafApply);
+     let (_, next) = crate::apply_with_result(entry, request)?;
++    drop(pause_apply);
+     admit_next(&next)?;
+     let candidate = (retain
+         && eligible_mode()
+         && eligible_value(entry)
+         && eligible_value(&next)
+         && matches!(&request.command, Command::InsertTime { .. }))
+-    .then(|| OneLeafReplay {
+-        entry: entry.clone(),
+-        request: request.clone(),
+-        next: next.clone(),
++    .then(|| {
++        let _pause_snapshot = crate::pause_route_profile::enter(
++            crate::pause_route_profile::Phase::CapabilitySnapshot,
++        );
++        OneLeafReplay {
++            entry: entry.clone(),
++            request: request.clone(),
++            next: next.clone(),
++        }
+     });
+     Ok((next, candidate))
+ }
+@@ -66,6 +74,9 @@
+         entry: &ProjectDocument,
+         request: &CommandRequest,
+     ) -> Result<Option<ProjectDocument>, EditError> {
++        let pause_match = crate::pause_route_profile::enter(
++            crate::pause_route_profile::Phase::ReuseEligibilityEq,
++        );
+         if !eligible_mode()
+             || !eligible_value(entry)
+             || !eligible_value(&self.entry)
+@@ -75,6 +86,9 @@
+         {
+             return Ok(None);
+         }
++        drop(pause_match);
++        let _pause_exit =
++            crate::pause_route_profile::enter(crate::pause_route_profile::Phase::ReuseCloneExit);
+         // Ordinary apply clears this destructive TLS before leaf revision
+         // admission and consumes it again before preserving exact clocks.
+         crate::insert_time::retimed::take_exact_edit();
+--- a/crates/deadpan-core/src/pause_route_profile.rs
++++ b/crates/deadpan-core/src/pause_route_profile.rs
+@@ -6,7 +6,10 @@
+ use std::rc::Rc;
+ use std::time::Instant;
+ 
+-pub const PHASE_COUNT: usize = 13;
++pub const PHASE_COUNT: usize = 26;
++pub const EXPECTED_COUNTS: [u64; PHASE_COUNT] = [
++    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4, 1, 1, 4, 1, 1, 1, 1, 3, 0, 1, 1, 1,
++];
+ const STACK_LIMIT: usize = 8;
+ 
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+@@ -25,6 +28,19 @@
+     WorkspaceRefresh,
+     NativeFinish,
+     NativePublication,
++    SemanticDocumentWire,
++    SemanticLeafApply,
++    CapabilitySnapshot,
++    ReplayDocumentWire,
++    ReuseEligibilityEq,
++    ReuseCloneExit,
++    ReplayNetAggregate,
++    ReplayMisc,
++    StoreCompactSize,
++    StoreCheckpointWire,
++    StoreVisitorAuthority,
++    HistoryCodecReadback,
++    HistoryInverseRestore,
+ }
+ 
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+@@ -175,7 +191,12 @@
+         if self.invalid
+             || self.depth != 1
+             || self.stack[0].phase != Phase::NativePublication
+-            || self.counts != [1; PHASE_COUNT]
++            || self.counts != EXPECTED_COUNTS
++            || self
++                .elapsed_ns
++                .iter()
++                .zip(EXPECTED_COUNTS)
++                .any(|(elapsed, count)| count == 0 && *elapsed != 0)
+             || self.markers != [1; 3]
+             || !self.charge(now)
+         {
+@@ -400,38 +421,145 @@
+ mod tests {
+     use super::*;
+ 
++    fn counter_span(
++        counters: &mut Counters,
++        phase: Phase,
++        now: &mut u64,
++        body: impl FnOnce(&mut Counters, &mut u64),
++    ) {
++        let (token, depth) = counters.enter_at(phase, *now).unwrap();
++        *now += 1;
++        body(counters, now);
++        counters.leave_at(token, depth, *now);
++        *now += 1;
++    }
++
++    fn counter_leaf(counters: &mut Counters, phase: Phase, now: &mut u64) {
++        counter_span(counters, phase, now, |_, _| {});
++    }
++
+     fn complete_counters() -> Counters {
+         let mut counters = Counters::started();
+-        counters.set_at(Phase::SemanticPlan, 1);
+-        counters.set_at(Phase::NativeContinuation, 2);
+-        let (store, store_depth) = counters.enter_at(Phase::StoreEntryMisc, 3).unwrap();
+-        for (phase, start) in [
+-            (Phase::StorePrepare, 4),
+-            (Phase::HostRuntimeBank, 6),
+-            (Phase::StoreWrite, 8),
+-            (Phase::SqliteCommit, 10),
+-            (Phase::StoreCachePublication, 12),
++        let mut now = 1;
++        counters.set_at(Phase::SemanticPlan, now);
++        now += 1;
++        for phase in [
++            Phase::SemanticDocumentWire,
++            Phase::SemanticDocumentWire,
++            Phase::SemanticLeafApply,
++            Phase::SemanticDocumentWire,
++            Phase::CapabilitySnapshot,
++            Phase::SemanticDocumentWire,
+         ] {
+-            let (token, depth) = counters.enter_at(phase, start).unwrap();
+-            counters.leave_at(token, depth, start + 1);
+-        }
+-        counters.leave_at(store, store_depth, 14);
+-        counters.set_at(Phase::NativePostcommit, 15);
++            counter_leaf(&mut counters, phase, &mut now);
++        }
++        counters.set_at(Phase::NativeContinuation, now);
++        now += 1;
++        counter_span(
++            &mut counters,
++            Phase::StoreEntryMisc,
++            &mut now,
++            |counters, now| {
++                counter_span(counters, Phase::StorePrepare, now, |counters, now| {
++                    counter_leaf(counters, Phase::StoreCompactSize, now);
++                    counter_span(counters, Phase::ReplayMisc, now, |counters, now| {
++                        for phase in [
++                            Phase::ReplayDocumentWire,
++                            Phase::ReplayDocumentWire,
++                            Phase::ReuseEligibilityEq,
++                            Phase::ReuseCloneExit,
++                            Phase::ReplayDocumentWire,
++                        ] {
++                            counter_leaf(counters, phase, now);
++                        }
++                        counter_span(
++                            counters,
++                            Phase::StoreVisitorAuthority,
++                            now,
++                            |counters, now| {
++                                counter_leaf(counters, Phase::StoreCompactSize, now);
++                            },
++                        );
++                        counter_leaf(counters, Phase::ReplayDocumentWire, now);
++                        counter_leaf(counters, Phase::ReplayNetAggregate, now);
++                    });
++                    for phase in [
++                        Phase::StoreCompactSize,
++                        Phase::HistoryCodecReadback,
++                        Phase::HistoryInverseRestore,
++                    ] {
++                        counter_leaf(counters, phase, now);
++                    }
++                });
++                for phase in [
++                    Phase::HostRuntimeBank,
++                    Phase::StoreWrite,
++                    Phase::SqliteCommit,
++                    Phase::StoreCachePublication,
++                ] {
++                    counter_leaf(counters, phase, now);
++                }
++            },
++        );
++        counters.set_at(Phase::NativePostcommit, now);
++        now += 1;
+         counters.mark(0);
+-        counters.set_at(Phase::WorkspaceRefresh, 16);
+-        counters.set_at(Phase::NativeFinish, 17);
++        counters.set_at(Phase::WorkspaceRefresh, now);
++        now += 1;
++        counters.set_at(Phase::NativeFinish, now);
++        now += 1;
+         counters.mark(1);
+-        counters.set_at(Phase::NativePublication, 18);
++        counters.set_at(Phase::NativePublication, now);
+         counters.mark(2);
+         counters
+     }
+ 
++    fn finish_complete(counters: Counters) -> Option<Snapshot> {
++        let now = counters.last_ns + 1;
++        counters.finish_at(now)
++    }
++
++    fn live_leaf(phase: Phase) {
++        drop(enter(phase));
++    }
++
+     fn complete_live(profile: Profile) -> Option<Snapshot> {
+         set(Phase::SemanticPlan);
++        for phase in [
++            Phase::SemanticDocumentWire,
++            Phase::SemanticDocumentWire,
++            Phase::SemanticLeafApply,
++            Phase::SemanticDocumentWire,
++            Phase::CapabilitySnapshot,
++            Phase::SemanticDocumentWire,
++        ] {
++            live_leaf(phase);
++        }
+         set(Phase::NativeContinuation);
+         let store = enter(Phase::StoreEntryMisc);
++        let prepare = enter(Phase::StorePrepare);
++        live_leaf(Phase::StoreCompactSize);
++        let replay = enter(Phase::ReplayMisc);
+         for phase in [
+-            Phase::StorePrepare,
++            Phase::ReplayDocumentWire,
++            Phase::ReplayDocumentWire,
++            Phase::ReuseEligibilityEq,
++            Phase::ReuseCloneExit,
++            Phase::ReplayDocumentWire,
++        ] {
++            live_leaf(phase);
++        }
++        let visitor = enter(Phase::StoreVisitorAuthority);
++        live_leaf(Phase::StoreCompactSize);
++        drop(visitor);
++        live_leaf(Phase::ReplayDocumentWire);
++        live_leaf(Phase::ReplayNetAggregate);
++        drop(replay);
++        live_leaf(Phase::StoreCompactSize);
++        live_leaf(Phase::HistoryCodecReadback);
++        live_leaf(Phase::HistoryInverseRestore);
++        drop(prepare);
++        for phase in [
+             Phase::HostRuntimeBank,
+             Phase::StoreWrite,
+             Phase::SqliteCommit,
+@@ -453,10 +581,16 @@
+ 
+     #[test]
+     fn pause_route_profile_nested_exclusive_durations_conserve_and_resume_without_counts() {
+-        let snapshot = complete_counters().finish_at(19).unwrap();
+-        assert_eq!(snapshot.counts, [1; PHASE_COUNT]);
+-        assert_eq!(snapshot.elapsed_ns, [1, 1, 2, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+-        assert_eq!(snapshot.total_ns, 19);
++        let snapshot = finish_complete(complete_counters()).unwrap();
++        assert_eq!(snapshot.counts, EXPECTED_COUNTS);
++        for (phase, duration) in [
++            (Phase::SemanticDocumentWire, 4),
++            (Phase::ReplayDocumentWire, 4),
++            (Phase::StoreCompactSize, 3),
++            (Phase::StoreCheckpointWire, 0),
++        ] {
++            assert_eq!(snapshot.elapsed_ns[phase as usize], duration);
++        }
+         assert_eq!(
+             snapshot.elapsed_ns.into_iter().sum::<u64>(),
+             snapshot.total_ns
+@@ -466,7 +600,7 @@
+     #[test]
+     fn pause_route_profile_live_success_clears_before_returning_scalars() {
+         let snapshot = complete_live(Profile::begin()).unwrap();
+-        assert_eq!(snapshot.counts, [1; PHASE_COUNT]);
++        assert_eq!(snapshot.counts, EXPECTED_COUNTS);
+         assert_eq!(
+             snapshot.elapsed_ns.into_iter().sum::<u64>(),
+             snapshot.total_ns
+@@ -538,7 +672,7 @@
+         let mut marker = complete_counters();
+         marker.markers[0] = u64::MAX;
+         marker.mark(0);
+-        assert!(marker.finish_at(19).is_none());
++        assert!(finish_complete(marker).is_none());
+         let mut backwards = Counters::started();
+         backwards.set_at(Phase::SemanticPlan, 2);
+         backwards.set_at(Phase::NativeContinuation, 1);
+@@ -555,15 +689,29 @@
+     fn pause_route_profile_wrong_counts_missing_success_and_broken_conservation_discard() {
+         let mut counts = complete_counters();
+         counts.counts[Phase::StorePrepare as usize] = 2;
+-        assert!(counts.finish_at(19).is_none());
++        assert!(finish_complete(counts).is_none());
++        for phase in [
++            Phase::SemanticDocumentWire,
++            Phase::ReplayDocumentWire,
++            Phase::StoreCompactSize,
++            Phase::StoreCheckpointWire,
++        ] {
++            let mut counts = complete_counters();
++            counts.counts[phase as usize] += 1;
++            assert!(finish_complete(counts).is_none());
++        }
+         for marker in 0..3 {
+             let mut missing = complete_counters();
+             missing.markers[marker] = 0;
+-            assert!(missing.finish_at(19).is_none());
++            assert!(finish_complete(missing).is_none());
+         }
+         let mut sum = complete_counters();
+         sum.elapsed_ns[0] += 1;
+-        assert!(sum.finish_at(19).is_none());
++        assert!(finish_complete(sum).is_none());
++        let mut zero = complete_counters();
++        zero.elapsed_ns[Phase::StoreCheckpointWire as usize] = 1;
++        zero.elapsed_ns[Phase::NativeAdmission as usize] -= 1;
++        assert!(finish_complete(zero).is_none());
+     }
+ 
+     #[test]
+--- a/crates/deadpan-core/src/semantic/planner.rs
++++ b/crates/deadpan-core/src/semantic/planner.rs
+@@ -670,7 +670,10 @@
+     )?;
+     let bounds = validate_context(document, context)?;
+     validate_original_context(document, context, original_index.as_deref())?;
++    let pause_wire =
++        crate::pause_route_profile::enter(crate::pause_route_profile::Phase::SemanticDocumentWire);
+     let document_bytes = wire::size(document, MAX_DOCUMENT_JSON_BYTES)?;
++    drop(pause_wire);
+     let mut revisions: BTreeSet<_> = document
+         .audio_bindings()
+         .allocation_ids()
+@@ -732,12 +735,16 @@
+     } else {
+         if planner.steps.iter().any(|step| step.edit().is_some()) {
+             planner.current.revision_id = new_revision.clone();
++            let pause_wire = crate::pause_route_profile::enter(
++                crate::pause_route_profile::Phase::SemanticDocumentWire,
++            );
+             charge(
+                 &mut planner.document_bytes,
+                 wire::size(&planner.current, MAX_DOCUMENT_JSON_BYTES)?,
+                 MAX_COMPOUND_DOCUMENT_BYTES,
+                 "macro staged document byte limit",
+             )?;
++            drop(pause_wire);
+         }
+         Some(CommandRequest {
+             project_id: document.project_id().clone(),
+--- a/crates/deadpan-core/src/semantic/planner/content.rs
++++ b/crates/deadpan-core/src/semantic/planner/content.rs
+@@ -625,6 +625,9 @@
+         if self.steps.len() == MAX_COMPOUND_STEPS {
+             return Err(limit("macro exceeds 1024 resolved editing steps"));
+         }
++        let pause_wire = crate::pause_route_profile::enter(
++            crate::pause_route_profile::Phase::SemanticDocumentWire,
++        );
+         let size = wire::size(&self.current, MAX_DOCUMENT_JSON_BYTES)?;
+         charge(
+             &mut self.document_bytes,
+@@ -632,6 +635,7 @@
+             MAX_COMPOUND_DOCUMENT_BYTES,
+             "macro staged document byte limit",
+         )?;
++        drop(pause_wire);
+         if capture {
+             charge(
+                 &mut self.captured_bytes,
+--- a/crates/deadpan-core/src/semantic/planner/pause.rs
++++ b/crates/deadpan-core/src/semantic/planner/pause.rs
+@@ -1073,6 +1073,9 @@
+             &edit.request(&self.current),
+             self.steps.is_empty() && self.inputs.is_empty() && self.writes.is_empty(),
+             |next| {
++                let _pause_wire = crate::pause_route_profile::enter(
++                    crate::pause_route_profile::Phase::SemanticDocumentWire,
++                );
+                 charge(
+                     document_bytes,
+                     wire::size(next, MAX_DOCUMENT_JSON_BYTES)?,
+--- a/crates/deadpan-store/src/compound.rs
++++ b/crates/deadpan-store/src/compound.rs
+@@ -502,12 +502,15 @@
+     }
+     let mut steps: Vec<StepRecord> = Vec::new();
+     let mut checkpoint_bytes = 0_usize;
++    let pause_size = pause_route_profile::enter(PausePhase::StoreCompactSize);
+     let mut processed_bytes = current.compact_json_size()?;
++    drop(pause_size);
+     let mut original_pastes = OriginalPasteMappings::default();
+     let outcome = deadpan_core::replay_compound_with_one_leaf(
+         current,
+         request,
+         |visit| -> Result<(), StoreError> {
++            let _pause_visitor = pause_route_profile::enter(PausePhase::StoreVisitorAuthority);
+             if matches!(
+                 visit.step,
+                 ResolvedStep::Yank { .. } | ResolvedStep::Cut { .. }
+@@ -579,11 +582,18 @@
+                 // Other stages need their exact byte charge, not an output buffer.
+                 let document = capture_states
+                     .contains(&leaf.new_revision)
+-                    .then(|| visit.after.to_compact_json())
++                    .then(|| {
++                        let _pause_checkpoint =
++                            pause_route_profile::enter(PausePhase::StoreCheckpointWire);
++                        visit.after.to_compact_json()
++                    })
+                     .transpose()?;
+                 let bytes = match &document {
+                     Some(json) => json.len(),
+-                    None => visit.after.compact_json_size()?,
++                    None => {
++                        let _pause_size = pause_route_profile::enter(PausePhase::StoreCompactSize);
++                        visit.after.compact_json_size()?
++                    }
+                 };
+                 processed_bytes = processed_bytes
+                     .checked_add(bytes)
+@@ -607,7 +617,9 @@
+         },
+         candidate,
+     )?;
++    let pause_size = pause_route_profile::enter(PausePhase::StoreCompactSize);
+     crate::check_document_size_bytes(outcome.document.compact_json_size()?)?;
++    drop(pause_size);
+     Ok((outcome, steps))
+ }
+ 
+--- a/crates/deadpan-store/src/lib.rs
++++ b/crates/deadpan-store/src/lib.rs
+@@ -1449,6 +1449,9 @@
+     request: &CommandRequest,
+     compound: Option<compound::Prepared>,
+ ) -> Result<CommandPlan, StoreError> {
++    let pause_codec = deadpan_core::pause_route_profile::enter(
++        deadpan_core::pause_route_profile::Phase::HistoryCodecReadback,
++    );
+     let request_json = serde_json::to_string(request)?;
+     check_document_size(&request_json)?;
+     // Typed native callers bypass JSON ingress. Admit their exact stored wire
+@@ -1470,11 +1473,16 @@
+             "edit changes meaning when decoded for history replay".into(),
+         ));
+     }
++    drop(pause_codec);
++    let pause_inverse = deadpan_core::pause_route_profile::enter(
++        deadpan_core::pause_route_profile::Phase::HistoryInverseRestore,
++    );
+     if !edit.inverse.restores(&next, &current)? {
+         return Err(StoreError::History(
+             "inverse does not restore the preceding revision".into(),
+         ));
+     }
++    drop(pause_inverse);
+     // The adopted result must be exactly what history replay reconstructs
+     // from the stored patch, and its retained validation must equal complete
+     // validation. Debug builds (every test) check both on every commit.

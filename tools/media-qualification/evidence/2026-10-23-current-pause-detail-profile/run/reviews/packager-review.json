@@ -1,0 +1,60 @@
+{
+  "status": "findings",
+  "review_kind": "independent_static_fine_packager_review",
+  "draft": {
+    "path": "packaging-draft/package.py",
+    "sha256": "c5112ec75e30be4ae6bbd835d38d236bb9a83762436e78cb20ae475e48c2305f"
+  },
+  "reviewed_basis": {
+    "build.py": "45f9eac8e86f932c6bc844e9618f077c4645f2c6ec76b75c4832e6824f0a0387",
+    "measure.py": "f04c22086245126f9c18e79cae4b1dc2bff149c92013387941b1a3431cfd40bd",
+    "expected-tests.json": "a675b04be1d59013290e93152e82a247326b538919c68b82b1c4cd9e7f4c05b9",
+    "baseline.json": "1d368aa2557e2d32bd523eb25f0ff254dff8976648e44d11382fb523d8b64308",
+    "driver-pins.json": "087cda4db00adaf276ba43b3344268a45388bbef5e04c4df9c704d95c523917b",
+    "source-review.json": "f700a022f1447e4b9267902aa4136d7bb244d599deb87e911d4955f4a596218d",
+    "parser-review.json": "c4f1889adf27fe63a5021442820ee8b0e6ac8930f62f5ab095f3fa8fae2bb8d8",
+    "driver-review.json": "f7f208e41e4980d34cb64cbda259bcc4d71153990eb17f6b1bbf153c43675f94",
+    "coarse-frozen-sources.json": "12acb33168d093a788cba673ba98c532c6729c6f73564ee75d57d7c473e8ab41",
+    "frozen-sources.json": "e58e62f56f0859cb184e54c56ac0def09b6ec9315b72838feafe1f9ae6c76351",
+    "host-observations.json": "edfba4ff04e2174742c72c4c7fb5a7156cb93247ea1392dac3505956d8a6c7c4",
+    "test-binaries.json": "79ef6356a18d4a7ebb4ab2a762de152c05ce403273bbd210765a79cdcb3dc7b7"
+  },
+  "findings": [
+    {
+      "id": "FINEPKG01",
+      "severity": "must_fix",
+      "anchor": "package.py:449",
+      "problem": "The required payload list contains freeze.py, but this fine study has no such producer file. Root performed the actual freeze as an inline Python call. Packaging will stop when gathering this nonexistent file.",
+      "required_change": "Remove the invented freeze.py requirement and retain truthful inline-freeze provenance plus its actual output maps/audit/patch/snapshot hashes. Do not manufacture a compatibility script or claim it executed."
+    },
+    {
+      "id": "FINEPKG02",
+      "severity": "must_fix",
+      "anchor": "package.py:418-433",
+      "problem": "GO binds script/source/driver/parser identities but does not bind or validate the final independent packager review, despite that being a required final gate. The script can run with only this historical findings review present.",
+      "required_change": "Designate packager-final-review.json; before any dynamic parser import require its no_findings status, empty findings and exact reviewed draft SHA equal the running script. Require GO.packager_review_sha256 to equal that report hash and retain the report. Keep the script self-hash in GO rather than embedding report hash in source, avoiding a circular hash dependency."
+    },
+    {
+      "id": "FINEPKG03",
+      "severity": "must_fix",
+      "anchor": "package.py:165-183",
+      "problem": "Standalone helper test adapter hashes the path supplied by test-binaries.json but only checks its suffix /helper-test-bin, without requiring it equal the actual compile output/helper-unit command path. It also drops the reviewed driver assertion that direct rustc output has no Cargo compiler artifacts. This weakens executed artifact provenance relative to the current producer.",
+      "required_change": "Require exact executed S/helper-test-bin and exact retained S/test-bin/helper-unit/helper-test-bin paths, hash the actual direct compiler output and compare it with recorded/retained hashes, and require cargo_artifacts empty for helper-unit. Keep exact compile argv and direct execution argv checks. Current genuine receipts already satisfy these bindings."
+    }
+  ],
+  "non_findings": [
+    "Source scope correctly compares equal2054coarse/fine sets, exactninechangedpaths,2045unchanged files, six inputs and nine before/after snapshots. Full maps bind to reviewed/pinned coarse12acb331 and finee58e62f5.",
+    "Final source/driver/parser reports and driver pins are verified before dynamic parser execution. Pinned current main baseline f319cfd8, implementation5fdae748 and production control0cb29315 retain their distinct roles.",
+    "Eight build stages, exact standalone compiler flags, Store12/test8 name+zeroignored summaries, strict all-target argv and actual command receipt schemas match the reviewed producers.",
+    "Fine V2 checking requires26ordered names, exact4/4/3/0aggregatecounts, zero checkpoint duration and strict raw/saved/trial profile equality. Exacttwofinite raw native metrics bind to trial rows and complete recomputed summary. Nine fresh balanced trials/eighteencommands remain required.",
+    "GO is required before work, pins self/source/reviews/host/terminal identities and explicitly approves bounded fixtures. Missing terminal build/measurement success prevents packaging. No future result is assumed.",
+    "Public host metadata is already sanitized on creation and pinned; private raw host file is excluded. No obsolete coarse sanitizer alias/import is added.",
+    "Safe bounded regular-only fixture archives, current-after-map equality, normalized metadata/member rereads, gzip decoded validation, full command logs/history/text-source retention and inventory hash reread retain the reviewed coarse behavior.",
+    "Only the new fine destination is used; coarse evidence remains separate. Executables/targets/private source trees are not intentionally packed."
+  ],
+  "limitations": [
+    "Static reads and review-note write only. No packager/parser/driver function, build/runtime/Git/Main/source write.",
+    "At review build was still running and measurement had not started. Static gaps are not actual runtime packaging failures.",
+    "This pins only draftc5112ec7; amendments require a final pinned follow-up review before GO."
+  ]
+}

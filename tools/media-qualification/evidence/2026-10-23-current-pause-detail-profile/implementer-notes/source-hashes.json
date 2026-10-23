@@ -1,0 +1,46 @@
+{
+  "files": {
+    "crates/deadpan-app/src/project/service.rs": {
+      "before": "c1ac96c2cd6d051ef70a4f60a2063a53a0e15e8208f8d9ad4a79e28f537dbb89",
+      "proposed": "cd83b9860fbfb40d24b00faa74e74b66e7d401f4b1b7017f54cb5720115cbf92"
+    },
+    "crates/deadpan-core/src/compound.rs": {
+      "before": "1de3788b9f6b1275a8ca34e4e607f6a7b18eb8982aee1486399dcf95abbf62d0",
+      "proposed": "29ea937758bf98e7b52c9a31ebcf454985408dedecd54d2825972391986d4138"
+    },
+    "crates/deadpan-core/src/one_leaf_replay.rs": {
+      "before": "03954fddb62d5e9ede2c7577d533ce90911e214067cdd027cde88e2adfe655c4",
+      "proposed": "12b0ec56a4eb9aee033b89b21aa8cbb99e5f88df34ee5c71ffccdf64e66cc8cd"
+    },
+    "crates/deadpan-core/src/pause_route_profile.rs": {
+      "before": "f81aba8c05922daeb062fcb7a74e1fb8560f9713a52455d2b8124c103226a19e",
+      "proposed": "bad834a496f2db7ed8fb53ee906c6485954a1475c54e04fc45997432e11715ba"
+    },
+    "crates/deadpan-core/src/semantic/planner.rs": {
+      "before": "dbf214faab9294a40902be007262723972862451a39e0d6769cb2b395479b3cf",
+      "proposed": "13ec247f1725f804a62797dc6a93bfb732dbf08dd0f585a567c7d7362718b9cb"
+    },
+    "crates/deadpan-core/src/semantic/planner/content.rs": {
+      "before": "168b2b5a2b1a93361d72aa2ccf2c71eeb763d62931840b243d01f4b1519fcb5d",
+      "proposed": "b4e8f50d13c5cd4abf535fb988ccde11a07343f0ffcede0c9318ce0bb9bba52f"
+    },
+    "crates/deadpan-core/src/semantic/planner/pause.rs": {
+      "before": "3875f474af99770066bb34d44b5f003529494f20ff34ffb8a95fe70e4387f056",
+      "proposed": "ca55bd1b31ca6093a520140e3b38be8216fe42039fcc4d2e1a1a8a07bc15fd6f"
+    },
+    "crates/deadpan-store/src/compound.rs": {
+      "before": "aee0f2d5066b9e86afe3ac9475714abb06381f191e12604a8ef565b9ec9c645d",
+      "proposed": "8b413ae93dc0e9c64f5e5bd74fa49dbd66fd9a940ad8b05e68f6a05d2486e36a"
+    },
+    "crates/deadpan-store/src/lib.rs": {
+      "before": "6cac4fccb2112473fd9143f3ac0b50bb5d97dc2eeb2b6988d8336d45071fd010",
+      "proposed": "b3d952d4e586435cb2efaff54c88a9bfd65989514a64b18077908a79bd7e6558"
+    }
+  },
+  "rust_files": 2054,
+  "nonowned_rust_byte_identical": 2045,
+  "six_inputs_byte_identical": true,
+  "unformatted": true,
+  "uncompiled": true,
+  "unexecuted": true
+}

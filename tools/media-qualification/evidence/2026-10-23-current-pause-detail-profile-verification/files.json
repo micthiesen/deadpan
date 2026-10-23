@@ -1,0 +1,30 @@
+{
+  "scope": "Independent verifier, disjoint-group derivation and read-only follow-up analysis; separate from immutable primary package inventory",
+  "files": [
+    {
+      "path": "derive_totals.py",
+      "bytes": 1415,
+      "sha256": "6cba298ec7bd5d5994802a298a13db51f206ab0d1e1c12d19113655c8cb4b042"
+    },
+    {
+      "path": "derived-disjoint-totals.json",
+      "bytes": 1342,
+      "sha256": "6db66a352a5cb19072ddcdf0b884c63cc6e0e9a0f272d15cc99dedbfe0aea7b2"
+    },
+    {
+      "path": "next-action-analysis.md",
+      "bytes": 12602,
+      "sha256": "5096f444ed844c646195a817aacb3eb4e1d9a60ae7b806b5d4fb768beeed90b6"
+    },
+    {
+      "path": "root-package-verification.json",
+      "bytes": 590,
+      "sha256": "d9791a1b6d24f154a09dccca5e620d66ae6bd701e53f0045d98b9f92405d327f"
+    },
+    {
+      "path": "verify_package.py",
+      "bytes": 4479,
+      "sha256": "00cf78a73bb4661f746a021c454d2e2320f4ad560eac978e4cca2340a8c14f06"
+    }
+  ]
+}

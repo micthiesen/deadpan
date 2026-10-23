@@ -1,0 +1,281 @@
+[
+  {
+    "name": "rotation-1-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-1-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19443316664546728,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-1-control",
+    "command": [
+      "/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-1-control.deadpan",
+      "--output",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-1-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.755411124788225,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-1-off-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-1-off.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19649083260446787,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-1-off",
+    "command": [
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-1-off.deadpan",
+      "--output",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-1-off-report"
+    ],
+    "exit": 0,
+    "seconds": 13.55721745826304,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-1-on-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-1-on.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1880967915058136,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-1-on",
+    "command": [
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-1-on.deadpan",
+      "--output",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-1-on-report"
+    ],
+    "exit": 0,
+    "seconds": 13.575759207829833,
+    "profile_gate": "1"
+  },
+  {
+    "name": "rotation-2-off-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-2-off.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.189451708458364,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-2-off",
+    "command": [
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-2-off.deadpan",
+      "--output",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-2-off-report"
+    ],
+    "exit": 0,
+    "seconds": 13.803726125508547,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-2-on-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-2-on.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19035570789128542,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-2-on",
+    "command": [
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-2-on.deadpan",
+      "--output",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-2-on-report"
+    ],
+    "exit": 0,
+    "seconds": 13.825172458775342,
+    "profile_gate": "1"
+  },
+  {
+    "name": "rotation-2-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-2-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19076787494122982,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-2-control",
+    "command": [
+      "/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-2-control.deadpan",
+      "--output",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-2-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.639693415723741,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-3-on-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-3-on.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18823458347469568,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-3-on",
+    "command": [
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-3-on.deadpan",
+      "--output",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-3-on-report"
+    ],
+    "exit": 0,
+    "seconds": 13.902766624465585,
+    "profile_gate": "1"
+  },
+  {
+    "name": "rotation-3-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-3-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1866589579731226,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-3-control",
+    "command": [
+      "/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-3-control.deadpan",
+      "--output",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-3-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.787401917390525,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-3-off-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-3-off.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18715637549757957,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-3-off",
+    "command": [
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-3-off.deadpan",
+      "--output",
+      "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-3-off-report"
+    ],
+    "exit": 0,
+    "seconds": 13.71684370841831,
+    "profile_gate": null
+  }
+]

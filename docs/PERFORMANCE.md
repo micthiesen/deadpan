@@ -7,16 +7,17 @@ complete picture coverage and no underruns, faults or padding. Its seek/edit
 samples are smoke checks; broader effects, rendering and latency distributions
 remain unqualified by that workload.
 
-The [current first-pause route diagnostic](qualification/current-pause-route-profile-2026-10-23.md)
-uses the qualified one-leaf implementation as control and a separate private
-source/target for thirteen exclusive timing categories. Three enabled runs give
-worker-route median 188.710583 ms, including semantic planning 91.664125 ms and
-Store preparation 60.879542 ms. All nine rotated control/off/on replays pass;
-their commit medians 195.230667 /194.561208 /195.100625 ms overlap in observed
-spread. This neither resolves profiler overhead nor closes the 100 ms/50 ms
-targets. Direct finer measurements of the two dominant regions are next. The
-temporary timers are not production code; earlier inclusive phase costs are
-historical and must not be substituted for these current exclusive results.
+The [fine first-pause diagnostic](qualification/current-pause-detail-profile-2026-10-23.md)
+refines the [coarse route study](qualification/current-pause-route-profile-2026-10-23.md)
+with 26 exclusive rows in a separate private source/target. Pure leaf application
+is 43.467459 ms, remaining semantic planning 33.948583 ms and history codec/readback
+22.490084 ms. The eleven named size sites take a same-trial median 38.098416 ms;
+capability snapshot construction is 0.004750 ms. Nine rotated trials pass with
+exact conservation, worker median 188.133125 ms and overlapping control/off/on
+commit observations. These neither resolve overhead nor close the 100 ms/50 ms
+targets. Inspect remaining application/planning work before choosing a bounded
+change. Temporary hooks are not production code; residuals after adding child
+categories cannot be compared directly with the earlier unpartitioned rows.
 
 [Specification Section 25](spec/DEADPAN_SPEC.md#25-performance-requirements-and-instrumentation)
 sets engineering targets. This page maps each target to the measurement that

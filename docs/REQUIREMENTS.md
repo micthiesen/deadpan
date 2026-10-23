@@ -2,7 +2,32 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
-## Current first-pause route costs, 2026-10-23
+## Detailed first-pause costs, 2026-10-23
+
+The [private fine diagnostic](qualification/current-pause-detail-profile-2026-10-23.md)
+refines the two dominant regions while reporting 26 exclusive rows for the
+whole worker route. Eight tests of the
+exact scalar helper, twelve release transaction tests, twenty parser tests,
+release native integration, strict Core/Store/App all-target Clippy and
+formatting pass. Nine fresh rotated trials pass 63 workflow/nine Kestrel checks
+with eighteen layout warnings and unchanged authored inputs.
+
+Median pure leaf application is 43.467459 ms, semantic planning residual
+33.948583 ms and history codec/readback 22.490084 ms. The 4+4+3 named document-size
+sites take a same-trial median 38.098416 ms, not every serialization. Capability
+snapshot construction is only 0.004750 ms. All 26-phase sums/counts conserve;
+the checkpoint row is exactly count zero/time zero. Worker median is
+188.133125 ms. Control/off/on commit medians 194.051000 /194.373417 /
+194.426958 ms overlap and establish no overhead bound.
+
+The independently checked primary package has 195 payload files /4,749,341 bytes,
+25 decoded gzip streams and nine safe authored-fixture archives. Both packager
+and independent verifier pass on their first execution. Inspect the remaining
+planning/application work before selecting a bounded optimization. Temporary
+hooks remain outside main; no target, memory claim, requirement or gate closes.
+Coverage stays 89%, eight Complete and sixteen Partial; the full goal is active.
+
+## Coarse first-pause route costs, 2026-10-23
 
 The [private current-route diagnostic](qualification/current-pause-route-profile-2026-10-23.md)
 measures the qualified one-leaf implementation with thirteen disjoint worker

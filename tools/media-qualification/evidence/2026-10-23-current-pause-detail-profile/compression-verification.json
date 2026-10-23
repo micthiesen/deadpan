@@ -1,0 +1,116 @@
+{
+  "verified_gzip_payloads": [
+    {
+      "decoded_bytes": 253495,
+      "decoded_sha256": "0b61b120b75aa6bbcf350f7642a5fb731c711b8e6985c8fa61709229ed12696f",
+      "source": "/tmp/deadpan-current-pause-detail-profile-2026-10-23/coarse-baseline-sources.json",
+      "stored": "run/coarse-baseline-sources.json.gz",
+      "stored_sha256": "183ca1c3e3777775c09d768753a90085e5ca9bb1129aa031bed0e500ec22a2e2"
+    },
+    {
+      "decoded_bytes": 253615,
+      "decoded_sha256": "12acb33168d093a788cba673ba98c532c6729c6f73564ee75d57d7c473e8ab41",
+      "source": "/tmp/deadpan-current-pause-detail-profile-2026-10-23/coarse-frozen-sources.json",
+      "stored": "run/coarse-frozen-sources.json.gz",
+      "stored_sha256": "9b3ddb9c43bfeb44394e1d8e165f6a8df5d12e7aa607800999b131b64e7b1ae0"
+    },
+    {
+      "decoded_bytes": 253615,
+      "decoded_sha256": "e58e62f56f0859cb184e54c56ac0def09b6ec9315b72838feafe1f9ae6c76351",
+      "source": "/tmp/deadpan-current-pause-detail-profile-2026-10-23/frozen-sources.json",
+      "stored": "run/frozen-sources.json.gz",
+      "stored_sha256": "d24a4a7fc07243849164e3951b39d618f919ee4d9b70eb97081e21fbc305f07d"
+    },
+    {
+      "decoded_bytes": 101887,
+      "decoded_sha256": "c1ac96c2cd6d051ef70a4f60a2063a53a0e15e8208f8d9ad4a79e28f537dbb89",
+      "source": "/tmp/deadpan-current-pause-detail-profile-2026-10-23/source-retention/before/crates/deadpan-app/src/project/service.rs.txt",
+      "stored": "source-retention/before/crates/deadpan-app/src/project/service.rs.txt.gz",
+      "stored_sha256": "2e814945aad9bcc7289b3d6f813f2ec0714b0a62bb85dee5151b5cc25279d7d0"
+    },
+    {
+      "decoded_bytes": 102379,
+      "decoded_sha256": "73616d17199c35b9a373b6ab411a6541b79052dcd6592f2f1569607855dd6290",
+      "source": "/tmp/deadpan-current-pause-detail-profile-2026-10-23/source-retention/after/crates/deadpan-app/src/project/service.rs.txt",
+      "stored": "source-retention/after/crates/deadpan-app/src/project/service.rs.txt.gz",
+      "stored_sha256": "32354ee988d8535eff6c727e4e582bf0a88095468c6ab71934e695dd1549d956"
+    },
+    {
+      "decoded_bytes": 102332,
+      "decoded_sha256": "cd83b9860fbfb40d24b00faa74e74b66e7d401f4b1b7017f54cb5720115cbf92",
+      "source": "/tmp/deadpan-current-pause-detail-profile-2026-10-23/implementer-notes/after/crates/deadpan-app/src/project/service.rs.txt",
+      "stored": "implementer-notes/after/crates/deadpan-app/src/project/service.rs.txt.gz",
+      "stored_sha256": "62f504acf3bf3028ce98d310eb0e35a7ff6efadcdb80011062fdd860e5023a9f"
+    },
+    {
+      "decoded_bytes": 101887,
+      "decoded_sha256": "c1ac96c2cd6d051ef70a4f60a2063a53a0e15e8208f8d9ad4a79e28f537dbb89",
+      "source": "/tmp/deadpan-current-pause-detail-profile-2026-10-23/implementer-notes/before/crates/deadpan-app/src/project/service.rs.txt",
+      "stored": "implementer-notes/before/crates/deadpan-app/src/project/service.rs.txt.gz",
+      "stored_sha256": "2e814945aad9bcc7289b3d6f813f2ec0714b0a62bb85dee5151b5cc25279d7d0"
+    },
+    {
+      "decoded_bytes": 1709492,
+      "decoded_sha256": "c83cd0324d1dd6bdb55ac9c861533d6fb9a832039bd3af20b02d14b6f716e3eb",
+      "source": "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-1-control-report/report.json",
+      "stored": "trials/rotation-1-control-report/report.json.gz",
+      "stored_sha256": "c6bebb1d21c5399065a5403cd6f4f65f387aad245468c02cccef5b8357ca550f"
+    },
+    {
+      "decoded_bytes": 1696041,
+      "decoded_sha256": "f1e92659cbc77a2f1d59854bca100c229e93dca0a48953d1ca86e49ca0d50ad3",
+      "source": "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-1-off-report/report.json",
+      "stored": "trials/rotation-1-off-report/report.json.gz",
+      "stored_sha256": "31538590ee1332f88a9fbe63d57c52cf87c8a26352d1f07c1d7270fc0d970efc"
+    },
+    {
+      "decoded_bytes": 1686476,
+      "decoded_sha256": "84279424a866ab088d69e4169752d734d1f878b1da5ca449f0b0f6cea1b4d8e4",
+      "source": "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-1-on-report/report.json",
+      "stored": "trials/rotation-1-on-report/report.json.gz",
+      "stored_sha256": "d9dcd838d2cd1d6e6d0410cfb30caaab56bdc0e58b20d5fd4e146ca0e06f7e7a"
+    },
+    {
+      "decoded_bytes": 1681708,
+      "decoded_sha256": "4628b138f1c8f7c72d44dd1e275084a7466414e974ca6f4d0e185e77cb631a61",
+      "source": "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-2-off-report/report.json",
+      "stored": "trials/rotation-2-off-report/report.json.gz",
+      "stored_sha256": "f70ab2c9ed79a64f527be3ba73c4041d33b35fd0151c41578a113124c6a51f03"
+    },
+    {
+      "decoded_bytes": 1680541,
+      "decoded_sha256": "43fbb6c8622d0295792d41ee720d32fab7cbc357f0e5e13af79f596709c9e002",
+      "source": "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-2-on-report/report.json",
+      "stored": "trials/rotation-2-on-report/report.json.gz",
+      "stored_sha256": "f27a91b6d56a52153fc2489414e8931358cfe4ad792969685d35ef1ac33d5494"
+    },
+    {
+      "decoded_bytes": 1672000,
+      "decoded_sha256": "f6ea4ee152c0cf44f7d30ca025e60f609a393591e6be1ffc7d8d620bb76025e4",
+      "source": "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-2-control-report/report.json",
+      "stored": "trials/rotation-2-control-report/report.json.gz",
+      "stored_sha256": "e2a13893e30ef2b5c33a63f83204498d8c83c0999d61923e0ce4f53a9c4bc67c"
+    },
+    {
+      "decoded_bytes": 1700510,
+      "decoded_sha256": "36cbdc3dc43a445f9a67d0a4f29525d8e46a0f438e060c1006c19de07d39f795",
+      "source": "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-3-on-report/report.json",
+      "stored": "trials/rotation-3-on-report/report.json.gz",
+      "stored_sha256": "465a44ba8530308ef48f35a640ea9005038fc2601035e42d621e3c9eb3db1ac1"
+    },
+    {
+      "decoded_bytes": 1663230,
+      "decoded_sha256": "f0e05136ba00627a0b4e53406955ab2d69c4f6fe2d5232f2308e6936b2de8abe",
+      "source": "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-3-control-report/report.json",
+      "stored": "trials/rotation-3-control-report/report.json.gz",
+      "stored_sha256": "b1d40d89a7567579795114bcae49da46ea72b3714d6972a4a1214bea8a615e73"
+    },
+    {
+      "decoded_bytes": 1703063,
+      "decoded_sha256": "8114f7c04169d5da588aa24b2217429fe1c87d7032ad2fc1a0247a2537a2ad06",
+      "source": "/tmp/deadpan-current-pause-detail-profile-2026-10-23/rotation-3-off-report/report.json",
+      "stored": "trials/rotation-3-off-report/report.json.gz",
+      "stored_sha256": "48a4d24631595210d9ca5d01c39cf7b3889ce53516e8f62c3a3575adcaea3d69"
+    }
+  ]
+}
