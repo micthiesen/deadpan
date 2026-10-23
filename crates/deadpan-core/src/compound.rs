@@ -242,8 +242,29 @@ pub fn replay_compound<E: From<EditError>>(
 pub(crate) fn replay_compound_captured<E: From<EditError>>(
     document: &ProjectDocument,
     request: &CommandRequest,
+    visit: impl FnMut(CompoundVisit<'_>) -> Result<(), E>,
+    isolation: Option<&mut Vec<crate::ScopedIsolationStep>>,
+) -> Result<CompoundOutcome, E> {
+    replay_compound_inner(document, request, visit, isolation, None)
+}
+
+/// Replay with an optional immutable result of Core's own exact semantic leaf.
+/// Every replay prefix charge, host visit and final aggregate still executes.
+pub fn replay_compound_with_one_leaf<E: From<EditError>>(
+    document: &ProjectDocument,
+    request: &CommandRequest,
+    visit: impl FnMut(CompoundVisit<'_>) -> Result<(), E>,
+    candidate: Option<&crate::OneLeafReplay>,
+) -> Result<CompoundOutcome, E> {
+    replay_compound_inner(document, request, visit, None, candidate)
+}
+
+fn replay_compound_inner<E: From<EditError>>(
+    document: &ProjectDocument,
+    request: &CommandRequest,
     mut visit: impl FnMut(CompoundVisit<'_>) -> Result<(), E>,
     mut isolation: Option<&mut Vec<crate::ScopedIsolationStep>>,
+    candidate: Option<&crate::OneLeafReplay>,
 ) -> Result<CompoundOutcome, E> {
     crate::command::check_revision(
         document,
@@ -324,7 +345,18 @@ pub(crate) fn replay_compound_captured<E: From<EditError>>(
                 isolation.extend(steps);
                 next
             } else {
-                crate::apply_with_result(&current, leaf)?.1
+                let reused = if crate::one_leaf_replay::eligible_compound(request) {
+                    match candidate {
+                        Some(candidate) => candidate.reuse(&current, leaf)?,
+                        None => None,
+                    }
+                } else {
+                    None
+                };
+                match reused {
+                    Some(next) => next,
+                    None => crate::apply_with_result(&current, leaf)?.1,
+                }
             };
             let size = wire::size(&next, crate::MAX_DOCUMENT_JSON_BYTES)?;
             charge(

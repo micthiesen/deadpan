@@ -215,3 +215,61 @@ fn aligned_sound_scope_group_split_move_copy_preserves_canonical_pcm_and_verifie
     assert!(passed, "{report}");
     Ok(())
 }
+
+/// One real-media semantic leaf publishes the same exact PCM and durable
+/// history with its opaque result borrowed through the native host path.
+#[test]
+#[cfg_attr(
+    debug_assertions,
+    ignore = "slow in debug builds; run with --release (see docs/PREVIEW_EXPORT_VERIFICATION.md)"
+)]
+fn one_leaf_replay_qualified_media_commit_export_matches_uncached() -> Result {
+    const FRAMES: u64 = 45;
+    const SAMPLES: i64 = 72_072;
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    eprintln!("one-leaf qualified media evidence: {}", root.display());
+    let (cached_fixture, plain_fixture, mut summary) =
+        recipes::group_endpoints::aligned::one_leaf_replay_qualified_media_fixture(&root)?;
+    check(&cached_fixture)?;
+    check(&plain_fixture)?;
+    if skip_without_physical_mac("one-leaf cached and uncached encoded Render") {
+        return Ok(());
+    }
+    let mut evidence = Vec::new();
+    for (label, fixture) in [("cached", &cached_fixture), ("uncached", &plain_fixture)] {
+        let movie = render(fixture, &root.join(format!("exports-{label}")))?;
+        let (report, passed) = verify(
+            fixture,
+            &movie,
+            &fixture.revision,
+            &["--every", "1", "--samples", "0:72072"],
+        )?;
+        fs::write(
+            root.join(format!("one-leaf-{label}-verification.json")),
+            serde_json::to_vec(&report)?,
+        )?;
+        check_provenance(fixture, &report)?;
+        assert_eq!(report["summary"]["pictures_checked"], FRAMES);
+        assert_eq!(report["summary"]["pictures_failed"], 0);
+        assert_eq!(report["summary"]["nonzero_offsets"], 0);
+        let audio = report["audio"].as_array().ok_or("complete decoded audio")?;
+        assert_eq!(audio.len(), 1);
+        assert_eq!(audio[0]["project_samples"], json!([0, SAMPLES]));
+        assert_eq!(audio[0]["flags"], json!([]));
+        assert_eq!(audio[0]["uncovered_samples"], 0);
+        assert_eq!(audio[0]["blocks"]["low_snr_blocks"], 0);
+        assert_eq!(audio[0]["offset_status"], "verified_zero");
+        assert_eq!(audio[0]["measured_offset_samples"], 0);
+        assert!(passed, "{label}: {report}");
+        evidence.push(json!({"leg":label,"package":fixture.package,"movie":movie,"revision":fixture.revision,"verification":report}));
+    }
+    summary["exports"] = json!(evidence);
+    fs::write(
+        root.join("one-leaf-media-summary.json"),
+        serde_json::to_vec(&summary)?,
+    )?;
+    if let Some(path) = std::env::var_os("DEADPAN_PREVIEW_EXPORT_RESULTS") {
+        fs::write(path, serde_json::to_vec_pretty(&summary)?)?;
+    }
+    Ok(())
+}

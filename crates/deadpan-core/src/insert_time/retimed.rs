@@ -985,3 +985,185 @@ pub(crate) fn set_hold_duration(
     EXACT_EDIT.with(|flag| flag.set(true));
     Ok(result)
 }
+
+#[cfg(test)]
+mod one_leaf_replay_tests {
+    use super::*;
+
+    #[test]
+    fn one_leaf_replay_consumes_stale_exact_edit_at_both_ordinary_boundaries() {
+        let id = |name: &str| NodeId::new(name).unwrap();
+        let revision = |name: &str| crate::RevisionId::new(name).unwrap();
+        let mut entry = ProjectDocument::new(
+            crate::ProjectId::new("exact-cache").unwrap(),
+            revision("entry"),
+            crate::basis::default_basis(),
+            id("root"),
+        )
+        .unwrap();
+        entry.nodes.insert(
+            id("hold"),
+            BeatNode::hold(
+                "Hold",
+                HoldRecipe {
+                    duration: FrameDuration::new(8).unwrap(),
+                    picture_context: None,
+                    video: crate::HoldVideo::Background,
+                    audio: crate::HoldAudio::Silence,
+                },
+            ),
+        );
+        entry
+            .nodes
+            .insert(id("root"), BeatNode::sequence("Root", vec![id("hold")]));
+        let planned = crate::plan_semantic_with_speech(
+            &entry,
+            &crate::SemanticContext {
+                original: None,
+                scoped: None,
+                hold_duration: None,
+                shared_hold_duration: None,
+                mixed_hold_duration: None,
+                selected_hold_duration: None,
+                parent: id("root"),
+                cursor: ProjectFrame(3),
+                selected_child: None,
+                visual_selection: None,
+            },
+            &crate::SemanticProgram::new(vec![crate::SemanticInstruction::InsertPause {
+                length: crate::PauseLength::Frames {
+                    frames: std::num::NonZeroU32::new(2).unwrap(),
+                },
+                black: false,
+            }])
+            .unwrap(),
+            crate::SemanticRegisterBank {
+                entries: &BTreeMap::new(),
+                version: 0,
+            },
+            revision("outer"),
+            |request| {
+                let crate::SemanticAllocationRequest::InsertPause {
+                    required_split_ids, ..
+                } = request
+                else {
+                    panic!("pause")
+                };
+                Ok(crate::SemanticAllocation::InsertPause {
+                    new_revision: revision("leaf"),
+                    id: id("pause"),
+                    split: crate::SplitIdentities {
+                        nodes: (0..required_split_ids)
+                            .map(|n| id(&format!("split-{n}")))
+                            .collect(),
+                    },
+                })
+            },
+            |_, _| panic!("no Original"),
+            |_| panic!("no speech"),
+            |_, _| {
+                Ok(crate::PauseProvider {
+                    video: crate::HoldVideo::Background,
+                    picture_context: None,
+                    audio: crate::HoldAudio::Silence,
+                })
+            },
+        )
+        .unwrap();
+        let request = planned.request.as_ref().unwrap();
+        let candidate = planned.one_leaf_replay().unwrap();
+        EXACT_EDIT.with(|flag| flag.set(true));
+        let cached = crate::replay_compound_with_one_leaf::<EditError>(
+            &entry,
+            request,
+            |_| Ok(()),
+            Some(candidate),
+        )
+        .unwrap();
+        assert!(!take_exact_edit());
+        EXACT_EDIT.with(|flag| flag.set(true));
+        let plain = crate::replay_compound::<EditError>(&entry, request, |_| Ok(())).unwrap();
+        assert!(!take_exact_edit());
+        assert_eq!(cached.document, plain.document);
+        assert_eq!(cached.edit, plain.edit);
+        let crate::Command::Compound { transaction } = &request.command else {
+            panic!("compound")
+        };
+        let mut fallback = request.clone();
+        let mut steps = transaction.steps().to_vec();
+        let crate::ResolvedStep::Edit { edit } = &mut steps[0] else {
+            panic!("Edit")
+        };
+        let mut command = edit.command.as_command().clone();
+        let Command::InsertTime { hold, .. } = &mut command else {
+            panic!("InsertTime")
+        };
+        hold.duration = FrameDuration::new(3).unwrap();
+        edit.command = crate::AtomicCommand::new(command).unwrap();
+        fallback.command = Command::Compound {
+            transaction: crate::ResolvedTransaction::new(
+                transaction.expected_bank_version(),
+                transaction.inputs().clone(),
+                steps,
+            )
+            .unwrap(),
+        };
+        for permitted in [false, true] {
+            crate::command_work::with_scoped_timing_captures(permitted, || {
+                assert_eq!(crate::command_work::scoped_timing_captures(), permitted);
+                for request in [request, &fallback] {
+                    let cached = crate::replay_compound_with_one_leaf::<EditError>(
+                        &entry,
+                        request,
+                        |_| Ok(()),
+                        Some(candidate),
+                    )
+                    .unwrap();
+                    assert_eq!(crate::command_work::scoped_timing_captures(), permitted);
+                    let plain =
+                        crate::replay_compound::<EditError>(&entry, request, |_| Ok(())).unwrap();
+                    assert_eq!(crate::command_work::scoped_timing_captures(), permitted);
+                    assert_eq!(
+                        cached.document.to_compact_json(),
+                        plain.document.to_compact_json()
+                    );
+                    assert_eq!(cached.edit, plain.edit);
+                    assert_eq!(cached.register_writes, plain.register_writes);
+                    assert!(!take_exact_edit());
+                }
+            });
+        }
+        // A later ordinary refusal also clears the same destructive flag.
+        let mut stale = transaction.steps()[0].edit().unwrap().request(&entry);
+        stale.expected_revision = revision("wrong");
+        EXACT_EDIT.with(|flag| flag.set(true));
+        let cached_later = crate::apply_with_result(&entry, &stale).unwrap_err();
+        assert!(!take_exact_edit());
+        let plain_later = crate::apply_with_result(&entry, &stale).unwrap_err();
+        assert_eq!(cached_later, plain_later);
+        // Outer-prefix refusal never enters a leaf, so it must not consume a
+        // stale flag early merely because a witness was supplied.
+        let mut wrong_outer = request.clone();
+        wrong_outer.expected_revision = revision("wrong-outer");
+        EXACT_EDIT.with(|flag| flag.set(true));
+        let cached_error = match crate::replay_compound_with_one_leaf::<EditError>(
+            &entry,
+            &wrong_outer,
+            |_| panic!("prefix refused"),
+            Some(candidate),
+        ) {
+            Err(error) => error,
+            Ok(_) => panic!("outer revision conflict unexpectedly succeeded"),
+        };
+        assert!(take_exact_edit());
+        EXACT_EDIT.with(|flag| flag.set(true));
+        let plain_error = match crate::replay_compound::<EditError>(&entry, &wrong_outer, |_| {
+            panic!("prefix refused")
+        }) {
+            Err(error) => error,
+            Ok(_) => panic!("outer revision conflict unexpectedly succeeded"),
+        };
+        assert!(take_exact_edit());
+        assert_eq!(cached_error, plain_error);
+    }
+}

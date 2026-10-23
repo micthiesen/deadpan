@@ -11,9 +11,28 @@ fn retain(directory: &Path, name: &str, value: &impl serde::Serialize) -> Result
 }
 
 fn read_exact(path: &Path, partitions: &[u32]) -> Result<CanonicalPcm> {
+    read_exact_with_stage(path, partitions, "authored_bus_pcm_before_mastering")
+}
+
+fn read_one_leaf_exact(path: &Path, partitions: &[u32]) -> Result<CanonicalPcm> {
+    read_exact_with_stage(path, partitions, "edge_faded_pcm_before_voice_effects")
+}
+
+fn read_exact_with_stage(
+    path: &Path,
+    partitions: &[u32],
+    expected_stage: &'static str,
+) -> Result<CanonicalPcm> {
     assert!(!partitions.is_empty());
     assert!(partitions.iter().all(|count| (1..=256).contains(count)));
     let mut session = ProjectAudioSession::open(path)?;
+    if expected_stage == "edge_faded_pcm_before_voice_effects" {
+        // Prove the canonical authored-bus fast path on the same immutable
+        // session that supplies this fixture's PCM, before reading any block.
+        assert!(session.plan().sounds().is_empty());
+        assert!(session.plan().beat_sounds().is_empty());
+        assert!(!session.plan().has_audio_treatments());
+    }
     let total = session.plan().audio_duration()?.0;
     let cancelled = AtomicBool::new(false);
     let mut result = CanonicalPcm {
@@ -30,7 +49,7 @@ fn read_exact(path: &Path, partitions: &[u32]) -> Result<CanonicalPcm> {
         assert_eq!(authored.samples.len(), usize::try_from(count)?);
         assert_eq!(limited.samples.len(), usize::try_from(count)?);
         assert_eq!(limited.gain.len(), usize::try_from(count)?);
-        assert_eq!(authored.stage, "authored_bus_pcm_before_mastering");
+        assert_eq!(authored.stage, expected_stage);
         assert!(
             authored
                 .samples
@@ -771,4 +790,328 @@ fn build_mode(directory: &Path, neutral_ungroup: bool) -> Result<Fixture> {
         vec!["Actual qualified cfr-bframes Original moment [27,31), finite independent Original audio [48000,52096) at +37 samples, event EQ and ancestor Top EQ. A public event-off control proves that the finite BeatSound affects actual PCM, and durable Undo restores every authored field and journal. A five-frame root prefix creates a broad retained Top journal. Native-equivalent semantic GroupSelectedBeat wraps the complete Source as new G without Split identities, preserving every authored/limited PCM and limiter-gain bit. New G EQ and saturation affect actual PCM; a subsequent neutral Source Split preserves every bit. The complete Top moves from Root [9,15) into the lead at global frame 8, retaining G at [8,12); G's editable copy appends at Root frame 15. Cold/partition reads, durable Undo/Redo, reopened history, portable owned media, literal picture provenance and complete emitted-file comparison are checked. The unselected Top treatment is not part of the copied G. This is not an independent DSP or naive PCM-translation oracle and makes no listening claim.".into()])?;
     fixture.package = portable;
     Ok(fixture)
+}
+
+/// One real-media semantic leaf publishes the same exact PCM and durable
+/// history with its opaque result borrowed through the native host path.
+pub fn one_leaf_replay_qualified_media_fixture(root: &Path) -> Result<(Fixture, Fixture, Value)> {
+    use deadpan_core::{PauseLength, SemanticContext, SemanticInstruction, SemanticProgram};
+    use std::{cell::Cell, num::NonZeroU32};
+
+    const FRAMES: u64 = 45;
+    const SAMPLES: i64 = 72_072;
+    let directory = root.join("cached");
+    let mut project = Project::create(&directory, "one-leaf-cached-media")?;
+    let before = project.shorten()?;
+    assert_eq!(before.duration()?.frames(), 30);
+    assert!(before.derived_clocks().is_empty());
+    let before_pcm = read_one_leaf_exact(&project.package, &[256])?;
+    assert_eq!(before_pcm.authored_bits.len(), 48_048);
+    assert!(
+        before_pcm
+            .authored_bits
+            .iter()
+            .flatten()
+            .any(|sample| f32::from_bits(*sample).abs() > 0.001)
+    );
+    let uncached = root.join("uncached.deadpan");
+    let copied = success(&[
+        "project",
+        "copy-portable",
+        project.path(),
+        uncached.to_str().ok_or("UTF-8 package")?,
+    ])?;
+    assert_eq!(
+        copied["portable_copy"]["revision_id"],
+        before.revision_id().as_str()
+    );
+    same_exact(
+        &before_pcm,
+        &read_one_leaf_exact(&uncached, &[37, 173, 251])?,
+        "portable entry",
+    );
+
+    let mut cached_store = ProjectStore::open(&project.package, AccessMode::ReadWrite)?;
+    let mut plain_store = ProjectStore::open(&uncached, AccessMode::ReadWrite)?;
+    let (entry, bank) = cached_store.snapshot_with_registers()?;
+    assert_eq!(entry, before);
+    assert_eq!(
+        plain_store.snapshot_with_registers()?,
+        (entry.clone(), bank.clone())
+    );
+    let history_before = cached_store.validate_report(true)?;
+    assert_eq!(plain_store.validate_report(true)?, history_before);
+    let Some(SingleSourceState::Ready {
+        asset,
+        baseline_revision,
+        qualification,
+        ..
+    }) = cached_store.single_source_state()?
+    else {
+        return Err("one-leaf test requires a qualified Original".into());
+    };
+    let receipt = cached_store.registered_source(&baseline_revision, &asset)?;
+    assert_eq!(receipt.id(), &qualification);
+    assert_eq!(
+        receipt
+            .snapshot()
+            .video()
+            .ok_or("qualified pictures")?
+            .index()
+            .index()
+            .frames()
+            .len(),
+        120
+    );
+    assert!(receipt.snapshot().audio().is_some());
+    let host = deadpan_cli::macros::plan_program(
+        &cached_store,
+        &entry,
+        &bank,
+        &SemanticContext {
+            original: None,
+            scoped: None,
+            hold_duration: None,
+            shared_hold_duration: None,
+            mixed_hold_duration: None,
+            selected_hold_duration: None,
+            parent: entry.root().clone(),
+            cursor: ProjectFrame(15),
+            selected_child: None,
+            visual_selection: None,
+        },
+        &SemanticProgram::new(vec![SemanticInstruction::InsertPause {
+            length: PauseLength::Frames {
+                frames: NonZeroU32::new(15).unwrap(),
+            },
+            black: false,
+        }])?,
+        RevisionId::new("one-leaf-media-committed")?,
+    )
+    .map_err(|error| format!("qualified semantic planning: {error:?}"))?;
+    assert!(host.plan.one_leaf_replay().is_some());
+    assert!(host.plan.document.derived_clocks().is_empty());
+    let request = host.request.as_ref().ok_or("one authored Compound")?;
+    let Command::Compound { transaction } = &request.command else {
+        return Err("Compound".into());
+    };
+    let [deadpan_core::ResolvedStep::Edit { edit }] = transaction.steps() else {
+        return Err("one ordinary Edit".into());
+    };
+    let Command::InsertTime { hold, .. } = edit.command.as_command() else {
+        return Err("InsertTime".into());
+    };
+    assert!(matches!(hold.video, HoldVideo::Freeze { .. }));
+    assert_eq!(hold.audio, HoldAudio::Silence);
+    assert_eq!(hold.duration.frames(), 15);
+    let cached_calls = Cell::new(0);
+    let plain_calls = Cell::new(0);
+    let (cached_outcome, cached_bank) = host
+        .commit_compound_prepared(&mut cached_store, |prepared| {
+            cached_calls.set(cached_calls.get() + 1);
+            assert_eq!(prepared, &bank);
+            Ok::<_, std::convert::Infallible>(prepared.clone())
+        })
+        .map_err(|error| format!("cached media publication: {error:?}"))?;
+    let (plain_outcome, plain_bank) = plain_store
+        .commit_compound_prepared_with_one_leaf(
+            request,
+            None,
+            host.transcript_guard.as_ref(),
+            None,
+            |prepared| {
+                plain_calls.set(plain_calls.get() + 1);
+                assert_eq!(prepared, &bank);
+                Ok::<_, std::convert::Infallible>(prepared.clone())
+            },
+        )
+        .map_err(|error| format!("uncached media publication: {error:?}"))?;
+    assert_eq!((cached_calls.get(), plain_calls.get()), (1, 1));
+    assert_eq!(
+        serde_json::to_vec(&cached_outcome)?,
+        serde_json::to_vec(&plain_outcome)?
+    );
+    assert!(cached_outcome.committed.is_some());
+    assert_eq!(cached_bank, plain_bank);
+    assert_eq!(cached_bank, bank);
+    let after = cached_store.snapshot()?;
+    assert_eq!(after, plain_store.snapshot()?);
+    assert_eq!(
+        serde_json::to_vec(&after)?,
+        serde_json::to_vec(&plain_store.snapshot()?)?
+    );
+    assert_eq!(after, host.plan.document);
+    assert_eq!(after.duration()?.frames(), i64::try_from(FRAMES)?);
+    assert_eq!(cached_store.registers()?, bank);
+    assert_eq!(plain_store.registers()?, bank);
+    let committed = cached_outcome
+        .committed
+        .as_ref()
+        .ok_or("authored publication")?;
+    assert_eq!(committed.edit.forward.apply(&entry)?, after);
+    assert_eq!(committed.edit.inverse.apply(&after)?, entry);
+    let history_after = cached_store.validate_report(true)?;
+    assert_eq!(history_after.revisions, history_before.revisions + 1);
+    assert_eq!(plain_store.validate_report(true)?, history_after);
+    drop(cached_store);
+    drop(plain_store);
+
+    let after_pcm = read_one_leaf_exact(&project.package, &[256])?;
+    assert_eq!(after_pcm.authored_bits.len(), usize::try_from(SAMPLES)?);
+    for path in [&project.package, &uncached] {
+        same_exact(
+            &after_pcm,
+            &read_one_leaf_exact(path, &[37, 173, 251])?,
+            "published pause complete PCM",
+        );
+        cold_exact(
+            path,
+            &after_pcm,
+            &[boundary(15)?, boundary(30)?, SAMPLES],
+            "published pause seams",
+        )?;
+    }
+    let quiet = usize::try_from(boundary(15)? + 256)?..usize::try_from(boundary(30)? - 256)?;
+    assert!(
+        after_pcm.authored_bits[quiet.clone()]
+            .iter()
+            .flatten()
+            .all(|sample| f32::from_bits(*sample) == 0.0)
+    );
+    assert!(
+        after_pcm.limited_bits[quiet]
+            .iter()
+            .flatten()
+            .all(|sample| f32::from_bits(*sample) == 0.0)
+    );
+    assert!(
+        after_pcm.authored_bits[usize::try_from(boundary(30)?)?..]
+            .iter()
+            .flatten()
+            .any(|sample| f32::from_bits(*sample).abs() > 0.001)
+    );
+
+    let mut cached_store = ProjectStore::open(&project.package, AccessMode::ReadWrite)?;
+    let mut plain_store = ProjectStore::open(&uncached, AccessMode::ReadWrite)?;
+    let undone = cached_store.undo(
+        after.revision_id(),
+        RevisionId::new("one-leaf-media-undone")?,
+    )?;
+    let plain_undone = plain_store.undo(
+        after.revision_id(),
+        RevisionId::new("one-leaf-media-undone")?,
+    )?;
+    assert_eq!(
+        serde_json::to_vec(&undone)?,
+        serde_json::to_vec(&plain_undone)?
+    );
+    let undone_document = cached_store.snapshot()?;
+    assert_eq!(undone_document, plain_store.snapshot()?);
+    same_authored(&undone_document, &before)?;
+    assert_eq!(cached_store.registers()?, bank);
+    assert_eq!(plain_store.registers()?, bank);
+    drop(cached_store);
+    drop(plain_store);
+    for path in [&project.package, &uncached] {
+        same_exact(
+            &before_pcm,
+            &read_one_leaf_exact(path, &[251, 37, 173])?,
+            "durable pause undo",
+        );
+    }
+    let mut cached_store = ProjectStore::open(&project.package, AccessMode::ReadWrite)?;
+    let mut plain_store = ProjectStore::open(&uncached, AccessMode::ReadWrite)?;
+    let restored = cached_store.redo(
+        undone_document.revision_id(),
+        RevisionId::new("one-leaf-media-restored")?,
+    )?;
+    let plain_restored = plain_store.redo(
+        undone_document.revision_id(),
+        RevisionId::new("one-leaf-media-restored")?,
+    )?;
+    assert_eq!(
+        serde_json::to_vec(&restored)?,
+        serde_json::to_vec(&plain_restored)?
+    );
+    let final_document = cached_store.snapshot()?;
+    assert_eq!(final_document, plain_store.snapshot()?);
+    assert_eq!(
+        serde_json::to_vec(&final_document)?,
+        serde_json::to_vec(&plain_store.snapshot()?)?
+    );
+    same_authored(&final_document, &after)?;
+    assert_eq!(cached_store.registers()?, bank);
+    assert_eq!(plain_store.registers()?, bank);
+    drop(cached_store);
+    drop(plain_store);
+    let mut reopened_history = Vec::new();
+    for (label, path) in [("cached", &project.package), ("uncached", &uncached)] {
+        let reopened = ProjectStore::open(path, AccessMode::ReadOnly)?;
+        assert_eq!(reopened.snapshot()?, final_document);
+        assert_eq!(reopened.registers()?, bank);
+        let history = reopened.validate_report(true)?;
+        assert_eq!(history.revisions, history_before.revisions + 3);
+        assert_eq!(history.verified_by_receipt, 0);
+        assert_eq!(history.replayed + 1, history.revisions);
+        reopened_history.push(json!({"leg":label,"history":history}));
+        drop(reopened);
+        same_exact(
+            &after_pcm,
+            &read_one_leaf_exact(path, &[173, 251, 37])?,
+            "reopened pause redo",
+        );
+        cold_exact(
+            path,
+            &after_pcm,
+            &[boundary(15)?, boundary(30)?, SAMPLES],
+            "reopened pause seams",
+        )?;
+    }
+    retain(root, "one-leaf-before-document.json", &before)?;
+    retain(root, "one-leaf-after-document.json", &final_document)?;
+    retain(root, "one-leaf-before-pcm.json", &before_pcm)?;
+    retain(root, "one-leaf-after-pcm.json", &after_pcm)?;
+    retain(root, "one-leaf-commit.json", &cached_outcome)?;
+    retain(root, "one-leaf-undo.json", &undone)?;
+    retain(root, "one-leaf-redo.json", &restored)?;
+    let pictures = (0..FRAMES)
+        .map(|frame| {
+            (
+                frame,
+                original(if frame < 15 {
+                    12 + frame
+                } else if frame < 30 {
+                    26
+                } else {
+                    frame - 3
+                }),
+            )
+        })
+        .collect();
+    let cached_fixture = project.finish(
+        vec!["Hold (insert time)"], pictures,
+        vec!["Qualified cfr-bframes Original [12,42); actual Host one-leaf result and explicit None publication retain identical documents, transactions, banks, complete authored/limited PCM and limiter bits through durable undo/redo/reopen. Every emitted picture and the complete emitted audio window are verified. No independent DSP, listening or compressed-byte identity claim.".into()],
+    )?;
+    let mut plain_fixture = cached_fixture.clone();
+    plain_fixture.package = uncached;
+    plain_fixture.name = "one-leaf-uncached-media";
+    let summary = json!({
+        "schema":"deadpan-one-leaf-media-parity-1","root":root,"evidence_dir":root,
+        "capability_present":true,"callback_counts":[cached_calls.get(),plain_calls.get()],
+        "pictures":FRAMES,"samples":SAMPLES,"channels":2,
+        "canonical_comparison":{
+            "document_bytes_equal":true,"commit_undo_redo_bytes_equal":true,"register_banks_equal":true,
+            "authored_limited_and_limiter_gain_bits_equal":true,"partition_and_cold_reads_equal":true,
+            "source_pcm_nonzero":true,"pause_interior_silent":true,
+            "before_document":root.join("one-leaf-before-document.json"),
+            "after_document":root.join("one-leaf-after-document.json"),
+            "before_pcm":root.join("one-leaf-before-pcm.json"),"after_pcm":root.join("one-leaf-after-pcm.json"),
+        },
+        "history":{
+            "before":history_before,"after_commit":history_after,"reopened":reopened_history,
+            "undo_redo_reopen_checked":true,"full_replay_checked":true,"receipt_shortcut_used":false,
+        },
+        "independent_DSP_claim":false,"listening_claim":false,"compressed_byte_identity_claim":false,
+    });
+    Ok((cached_fixture, plain_fixture, summary))
 }

@@ -1289,6 +1289,24 @@ fn prepare_command(
     prepare_admitted_command(connection, documents, request, None)
 }
 
+fn prepare_command_with_one_leaf(
+    connection: &Connection,
+    documents: &document_cache::DocumentCache,
+    request: &CommandRequest,
+    candidate: Option<&deadpan_core::OneLeafReplay>,
+) -> Result<CommandPlan, StoreError> {
+    let current = read_command_snapshot(connection, documents, request)?;
+    prepare_current_command_with_one_leaf(
+        connection,
+        documents,
+        current,
+        (request, candidate),
+        None,
+        None,
+        None,
+    )
+}
+
 fn prepare_admitted_command(
     connection: &Connection,
     documents: &document_cache::DocumentCache,
@@ -1330,6 +1348,30 @@ fn prepare_current_command_with_admission(
     source: Option<(&deadpan_core::AssetId, &deadpan_core::AssetRecord)>,
     geometry: Option<(u32, u32)>,
 ) -> Result<CommandPlan, StoreError> {
+    prepare_current_command_with_one_leaf(
+        connection,
+        documents,
+        current,
+        (request, None),
+        generated,
+        source,
+        geometry,
+    )
+}
+
+fn prepare_current_command_with_one_leaf(
+    connection: &Connection,
+    documents: &document_cache::DocumentCache,
+    current: deadpan_core::ValidatedDocument,
+    request: (&CommandRequest, Option<&deadpan_core::OneLeafReplay>),
+    generated: Option<(
+        &deadpan_core::GeneratedArtifact,
+        &generation_origins::AcceptedOriginReceipt,
+    )>,
+    source: Option<(&deadpan_core::AssetId, &deadpan_core::AssetRecord)>,
+    geometry: Option<(u32, u32)>,
+) -> Result<CommandPlan, StoreError> {
+    let (request, candidate) = request;
     let base = CommandRequest {
         command: request.command.base_command().clone(),
         ..request.clone()
@@ -1338,7 +1380,7 @@ fn prepare_current_command_with_admission(
         connection,
         documents,
         current.clone(),
-        &base,
+        (&base, candidate),
         generated.map(|(artifact, _)| artifact),
         source,
         geometry,
@@ -1356,11 +1398,12 @@ fn prepare_base_command(
     connection: &Connection,
     documents: &document_cache::DocumentCache,
     current: deadpan_core::ValidatedDocument,
-    request: &CommandRequest,
+    request: (&CommandRequest, Option<&deadpan_core::OneLeafReplay>),
     generated: Option<&deadpan_core::GeneratedArtifact>,
     source: Option<(&deadpan_core::AssetId, &deadpan_core::AssetRecord)>,
     geometry: Option<(u32, u32)>,
 ) -> Result<CommandPlan, StoreError> {
+    let (request, candidate) = request;
     if matches!(
         &request.command,
         deadpan_core::Command::RestoreSnapshot { .. }
@@ -1376,7 +1419,7 @@ fn prepare_base_command(
                 "compound commands require per-leaf admission".into(),
             ));
         }
-        return compound::prepare(connection, documents, current, request);
+        return compound::prepare(connection, documents, current, request, candidate);
     }
     // The core validates the result once; it equals the forward patch applied
     // to `current`, so the store neither reapplies nor revalidates it, and the

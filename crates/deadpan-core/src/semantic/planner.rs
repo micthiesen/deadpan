@@ -411,6 +411,7 @@ pub struct SemanticTrace {
 
 #[derive(Debug)]
 pub struct SemanticPlan {
+    one_leaf_replay: Option<crate::OneLeafReplay>,
     /// Motion-only programs produce no request. A Yank-only request updates the
     /// bank without changing `document`'s revision or creating authored history.
     pub request: Option<CommandRequest>,
@@ -421,6 +422,14 @@ pub struct SemanticPlan {
     /// Final writes only, including the unnamed alias of each named cut.
     pub register_writes: BTreeMap<RegisterName, Arc<RegisterValue>>,
     pub trace: Vec<SemanticTrace>,
+}
+
+impl SemanticPlan {
+    /// Optional immutable result of Core's own exact ordinary one-leaf apply.
+    /// Public plan mutations cannot modify its private entry/request/result.
+    pub fn one_leaf_replay(&self) -> Option<&crate::OneLeafReplay> {
+        self.one_leaf_replay.as_ref()
+    }
 }
 
 /// Resolve and apply each instruction once against the preceding staged state.
@@ -692,6 +701,7 @@ pub fn plan_semantic_with_provider(
     let child_ends = child_ends(document, &context.parent, bounds)?;
     let mut planner = Planner {
         current: document.clone(),
+        one_leaf_replay: None,
         context: context.clone(),
         bounds,
         child_indices: child_indices(&child_ends),
@@ -742,7 +752,17 @@ pub fn plan_semantic_with_provider(
             },
         })
     };
+    let one_leaf_replay = if planner.writes.is_empty()
+        && request
+            .as_ref()
+            .is_some_and(crate::one_leaf_replay::eligible_compound)
+    {
+        planner.one_leaf_replay
+    } else {
+        None
+    };
     Ok(SemanticPlan {
+        one_leaf_replay,
         request,
         document: planner.current,
         context: planner.context,
@@ -754,6 +774,7 @@ pub fn plan_semantic_with_provider(
 
 struct Planner<'a, F, R, S, P> {
     current: ProjectDocument,
+    one_leaf_replay: Option<crate::OneLeafReplay>,
     context: SemanticContext,
     bounds: (ProjectFrame, ProjectFrame),
     /// Updated only after an authored leaf. Frame motions use a binary search

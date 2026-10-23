@@ -194,20 +194,22 @@ impl HostSemanticPlan {
                 "Selection-only plan has no Compound",
             ))
         })?;
-        match &self.transcript_guard {
-            Some(guard) => {
-                store.commit_compound_with_transcript_guard_prepared(request, None, guard, prepare)
-            }
-            None => store.commit_compound_prepared(request, None, prepare),
-        }
-        .map_err(|error| match error {
-            deadpan_store::CompoundPreparationError::Store(error) => {
-                PreparedCommitError::Commit(LiveError::store(error))
-            }
-            deadpan_store::CompoundPreparationError::Preparation(error) => {
-                PreparedCommitError::Preparation(error)
-            }
-        })
+        store
+            .commit_compound_prepared_with_one_leaf(
+                request,
+                None,
+                self.transcript_guard.as_ref(),
+                self.plan.one_leaf_replay(),
+                prepare,
+            )
+            .map_err(|error| match error {
+                deadpan_store::CompoundPreparationError::Store(error) => {
+                    PreparedCommitError::Commit(LiveError::store(error))
+                }
+                deadpan_store::CompoundPreparationError::Preparation(error) => {
+                    PreparedCommitError::Preparation(error)
+                }
+            })
     }
 
     pub fn validate_selection_at(

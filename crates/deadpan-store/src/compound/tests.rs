@@ -950,7 +950,7 @@ fn compact_size_counting_retains_exact_staged_checkpoint_bytes_and_history() {
         2
     );
     let before = cells(&store);
-    let (counted, staged) = execute(&store.connection, &initial, &command, None).unwrap();
+    let (counted, staged) = execute(&store.connection, &initial, &command, None, None).unwrap();
     assert_eq!(counted.document, reference.document);
     assert_eq!(counted.edit, reference.edit);
     assert_eq!(counted.register_writes, reference.register_writes);

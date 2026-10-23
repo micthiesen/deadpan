@@ -1067,13 +1067,21 @@ where
 
     /// Apply one leaf to the staged document within the byte limits.
     pub(super) fn commit_leaf(&mut self, edit: LeafEdit) -> Result<(), EditError> {
-        let (_, next) = crate::apply_with_result(&self.current, &edit.request(&self.current))?;
-        charge(
-            &mut self.document_bytes,
-            wire::size(&next, MAX_DOCUMENT_JSON_BYTES)?,
-            MAX_COMPOUND_DOCUMENT_BYTES,
-            "macro staged document byte limit",
+        let document_bytes = &mut self.document_bytes;
+        let (next, candidate) = crate::one_leaf_replay::apply_semantic_leaf(
+            &self.current,
+            &edit.request(&self.current),
+            self.steps.is_empty() && self.inputs.is_empty() && self.writes.is_empty(),
+            |next| {
+                charge(
+                    document_bytes,
+                    wire::size(next, MAX_DOCUMENT_JSON_BYTES)?,
+                    MAX_COMPOUND_DOCUMENT_BYTES,
+                    "macro staged document byte limit",
+                )
+            },
         )?;
+        self.one_leaf_replay = candidate;
         self.current = next;
         self.steps.push(ResolvedStep::Edit { edit });
         self.refresh_children()

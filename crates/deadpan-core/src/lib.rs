@@ -34,6 +34,8 @@ pub use command_work::{
     with_reference_command_work,
 };
 mod compound;
+mod one_leaf_replay;
+pub use one_leaf_replay::OneLeafReplay;
 mod cutaway;
 mod derived_clock;
 mod document;

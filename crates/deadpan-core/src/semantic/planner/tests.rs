@@ -913,6 +913,7 @@ fn cumulative_document_and_capture_budgets_refuse_before_another_leaf_allocation
             Err(invalid("work-budget fixture does not resolve framing"))
         };
         let mut planner = Planner {
+            one_leaf_replay: None,
             current: document.clone(),
             context: context("root", 0),
             bounds: (ProjectFrame(0), ProjectFrame(8)),

@@ -3585,6 +3585,131 @@ mod scoped_capture_property {
         assert!(!Arc::ptr_eq(&rebuilt.inner, &layout.inner));
     }
 
+    #[test]
+    fn one_leaf_replay_equal_provisional_value_cannot_bypass_wire_admission() {
+        let mut entry = reuse_wide_document(64);
+        let alias = reuse_id("hold-00032");
+        let timing = crate::AudioTimingId {
+            allocation: RevisionId::new("captured").unwrap(),
+            ordinal: 0,
+        };
+        let provisional =
+            FrozenAudioLayout::capture_scoped(&entry, &BTreeSet::from([alias.clone()]))
+                .unwrap()
+                .unwrap();
+        let normal = provisional.sliced(provisional.nodes.keys()).unwrap();
+        assert_eq!(provisional, normal);
+        assert!(provisional.to_json().is_err());
+        assert!(normal.to_json().is_ok());
+        let (mut bindings, _) =
+            crate::audio_binding_lifecycle::capture_for_insertion(&entry, timing.clone()).unwrap();
+        bindings.bindings.retain(|owner, _| owner == &alias);
+        bindings.timings.insert(timing.clone(), normal);
+        entry.audio_bindings = bindings;
+        entry.validate().unwrap();
+        let mut intermediate = entry.clone();
+        intermediate
+            .audio_bindings
+            .timings
+            .insert(timing, provisional);
+        assert_eq!(entry, intermediate);
+        assert!(entry.to_compact_json().is_ok());
+        assert!(intermediate.to_compact_json().is_err());
+        let plan = |document: &ProjectDocument| {
+            crate::plan_semantic_with_speech(
+                document,
+                &crate::SemanticContext {
+                    original: None,
+                    scoped: None,
+                    hold_duration: None,
+                    shared_hold_duration: None,
+                    mixed_hold_duration: None,
+                    selected_hold_duration: None,
+                    parent: reuse_id("root"),
+                    cursor: crate::ProjectFrame(129),
+                    selected_child: None,
+                    visual_selection: None,
+                },
+                &crate::SemanticProgram::new(vec![crate::SemanticInstruction::InsertPause {
+                    length: crate::PauseLength::Frames {
+                        frames: std::num::NonZeroU32::new(2).unwrap(),
+                    },
+                    black: false,
+                }])
+                .unwrap(),
+                crate::SemanticRegisterBank {
+                    entries: &BTreeMap::new(),
+                    version: 0,
+                },
+                RevisionId::new("reuse-outer").unwrap(),
+                |request| {
+                    let crate::SemanticAllocationRequest::InsertPause {
+                        required_split_ids, ..
+                    } = request
+                    else {
+                        panic!("pause")
+                    };
+                    Ok(crate::SemanticAllocation::InsertPause {
+                        new_revision: RevisionId::new("reuse-leaf").unwrap(),
+                        id: reuse_id("reuse-pause"),
+                        split: crate::SplitIdentities {
+                            nodes: (0..required_split_ids)
+                                .map(|index| reuse_id(&format!("reuse-split-{index}")))
+                                .collect(),
+                        },
+                    })
+                },
+                |_, _| panic!("no Original lookup"),
+                |_| panic!("no speech"),
+                |_, _| {
+                    Ok(crate::PauseProvider {
+                        video: HoldVideo::Background,
+                        picture_context: None,
+                        audio: HoldAudio::Silence,
+                    })
+                },
+            )
+        };
+        let planned = plan(&entry).unwrap();
+        let candidate = planned.one_leaf_replay().unwrap();
+        let request = planned.request.as_ref().unwrap();
+        let crate::Command::Compound { transaction } = &request.command else {
+            panic!("compound")
+        };
+        let leaf = transaction.steps()[0].edit().unwrap().request(&entry);
+        assert!(candidate.reuse(&entry, &leaf).unwrap().is_some());
+        assert!(candidate.reuse(&intermediate, &leaf).unwrap().is_none());
+        let expected =
+            crate::compound::wire::size(&intermediate, MAX_DOCUMENT_JSON_BYTES).unwrap_err();
+        // Successful normal planning cannot expose a candidate from the
+        // nonserializable equal intermediate, regardless of equality.
+        assert_eq!(plan(&intermediate).unwrap_err(), expected);
+        let mut visits = 0;
+        let cached = match crate::replay_compound_with_one_leaf::<crate::EditError>(
+            &intermediate,
+            request,
+            |_| {
+                visits += 1;
+                Ok(())
+            },
+            Some(candidate),
+        ) {
+            Err(error) => error,
+            Ok(_) => panic!("provisional replay unexpectedly succeeded"),
+        };
+        assert_eq!(visits, 0);
+        let plain = match crate::replay_compound::<crate::EditError>(&intermediate, request, |_| {
+            visits += 1;
+            Ok(())
+        }) {
+            Err(error) => error,
+            Ok(_) => panic!("provisional replay unexpectedly succeeded"),
+        };
+        assert_eq!(visits, 0);
+        assert_eq!(cached, expected);
+        assert_eq!(cached, plain);
+    }
+
     /// A random valid tree of Sequences (some empty), Holds, Repeats and
     /// unity Partitions, returning the document and its node identities.
     fn document(random: &mut Lcg) -> (ProjectDocument, Vec<NodeId>) {

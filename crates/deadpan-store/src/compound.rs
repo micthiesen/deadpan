@@ -131,7 +131,7 @@ impl ProjectStore {
         relevance: Option<&crate::generation::RelevancePlan>,
         prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
     ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
-        self.commit_compound_prepared_inner(request, relevance, None, prepare)
+        self.commit_compound_prepared_inner(request, relevance, None, None, prepare)
     }
 
     /// Check consumed analysis inside the publication transaction before
@@ -143,7 +143,21 @@ impl ProjectStore {
         guard: &crate::TranscriptSelectionGuard,
         prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
     ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
-        self.commit_compound_prepared_inner(request, relevance, Some(guard), prepare)
+        self.commit_compound_prepared_inner(request, relevance, Some(guard), None, prepare)
+    }
+
+    /// The optional Core-created witness replaces only one exact pure leaf
+    /// application. All current Store authority and host preparation still run
+    /// inside the same Immediate transaction as ordinary Compound commits.
+    pub fn commit_compound_prepared_with_one_leaf<T, E>(
+        &mut self,
+        request: &CommandRequest,
+        relevance: Option<&crate::generation::RelevancePlan>,
+        guard: Option<&crate::TranscriptSelectionGuard>,
+        candidate: Option<&deadpan_core::OneLeafReplay>,
+        prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
+    ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
+        self.commit_compound_prepared_inner(request, relevance, guard, candidate, prepare)
     }
 
     fn commit_compound_inner(
@@ -152,7 +166,7 @@ impl ProjectStore {
         relevance: Option<&crate::generation::RelevancePlan>,
         guard: Option<&crate::TranscriptSelectionGuard>,
     ) -> Result<CompoundCommitOutcome, StoreError> {
-        self.commit_compound_prepared_inner(request, relevance, guard, |_| {
+        self.commit_compound_prepared_inner(request, relevance, guard, None, |_| {
             Ok::<(), std::convert::Infallible>(())
         })
         .map(|(outcome, ())| outcome)
@@ -167,6 +181,7 @@ impl ProjectStore {
         request: &CommandRequest,
         relevance: Option<&crate::generation::RelevancePlan>,
         guard: Option<&crate::TranscriptSelectionGuard>,
+        candidate: Option<&deadpan_core::OneLeafReplay>,
         prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
     ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
         self.require_writer()?;
@@ -179,7 +194,8 @@ impl ProjectStore {
         if let Some(guard) = guard {
             crate::transcript_selection::check_guard(&transaction, documents, guard)?;
         }
-        let plan = crate::prepare_command(&transaction, documents, request)?;
+        let plan =
+            crate::prepare_command_with_one_leaf(&transaction, documents, request, candidate)?;
         let prepared = plan.compound.as_ref().expect("compound plan");
         let register_bank = prepared.registers.bank.clone();
         let host = prepare(&register_bank).map_err(CompoundPreparationError::Preparation)?;
@@ -388,6 +404,7 @@ pub(crate) fn prepare(
     documents: &crate::document_cache::DocumentCache,
     current: deadpan_core::ValidatedDocument,
     request: &CommandRequest,
+    candidate: Option<&deadpan_core::OneLeafReplay>,
 ) -> Result<CommandPlan, StoreError> {
     let Command::Compound { transaction } = &request.command else {
         return Err(invalid("expected compound"));
@@ -411,7 +428,7 @@ pub(crate) fn prepare(
         )
         .collect();
     crate::ensure_unused_revisions(connection, documents, &allocations)?;
-    let (outcome, steps) = execute(connection, &current, request, None)?;
+    let (outcome, steps) = execute(connection, &current, request, None, candidate)?;
     let writes = !outcome.register_writes.is_empty();
     let registers = crate::registers::prepare_writes_from(bank, &outcome.register_writes)?;
     crate::command_plan(
@@ -432,6 +449,7 @@ fn execute(
     current: &ProjectDocument,
     request: &CommandRequest,
     admitted: Option<&BTreeSet<RevisionId>>,
+    candidate: Option<&deadpan_core::OneLeafReplay>,
 ) -> Result<(deadpan_core::CompoundOutcome, Vec<StepRecord>), StoreError> {
     let Command::Compound { transaction } = &request.command else {
         return Err(invalid("expected compound"));
@@ -474,8 +492,10 @@ fn execute(
     let mut checkpoint_bytes = 0_usize;
     let mut processed_bytes = current.compact_json_size()?;
     let mut original_pastes = OriginalPasteMappings::default();
-    let outcome =
-        deadpan_core::replay_compound(current, request, |visit| -> Result<(), StoreError> {
+    let outcome = deadpan_core::replay_compound_with_one_leaf(
+        current,
+        request,
+        |visit| -> Result<(), StoreError> {
             if matches!(
                 visit.step,
                 ResolvedStep::Yank { .. } | ResolvedStep::Cut { .. }
@@ -572,7 +592,9 @@ fn execute(
                 });
             }
             Ok(())
-        })?;
+        },
+        candidate,
+    )?;
     crate::check_document_size_bytes(outcome.document.compact_json_size()?)?;
     Ok((outcome, steps))
 }
@@ -711,7 +733,7 @@ pub(crate) fn replay(
     request: &CommandRequest,
     admitted: &BTreeSet<RevisionId>,
 ) -> Result<EditTransaction, StoreError> {
-    let (outcome, expected) = execute(connection, current, request, Some(admitted))?;
+    let (outcome, expected) = execute(connection, current, request, Some(admitted), None)?;
     if expected.is_empty() {
         return Err(invalid("history contains a register-only compound"));
     }

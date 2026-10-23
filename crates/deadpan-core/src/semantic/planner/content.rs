@@ -640,6 +640,11 @@ where
                 "macro captured document byte limit",
             )?;
         }
+        // A second resolved operation cannot retain or replace the first
+        // leaf's witness, including non-editing register captures.
+        if !self.steps.is_empty() {
+            self.one_leaf_replay = None;
+        }
         Ok(())
     }
 
