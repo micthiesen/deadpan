@@ -29,6 +29,9 @@ mod hold_follow_creep;
 #[path = "framing/sequence_follow_creep.rs"]
 mod sequence_follow_creep;
 
+#[path = "framing/repeat_follow_creep.rs"]
+mod repeat_follow_creep;
+
 #[cfg(all(target_os = "macos", feature = "synthetic-worker"))]
 #[allow(dead_code)]
 #[path = "../../preview_export/recipes.rs"]

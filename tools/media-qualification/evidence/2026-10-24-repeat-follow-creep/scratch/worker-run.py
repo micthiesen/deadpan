@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+import hashlib, json, os, re, subprocess, sys, time
+from datetime import datetime, timezone
+from pathlib import Path
+ROOT = Path('/Users/michael/Code/deadpan')
+SCRATCH = Path(__file__).resolve().parent
+OWNED = [
+ 'crates/deadpan-core/src/framing_zoom.rs',
+ 'crates/deadpan-core/src/framing_zoom/tests.rs',
+ 'crates/deadpan-core/src/semantic/planner/framing.rs',
+ 'crates/deadpan-core/src/semantic/planner/tests/framing.rs',
+ 'crates/deadpan-cli/tests/project_commands/macros/framing.rs',
+ 'crates/deadpan-cli/tests/project_commands/macros/framing/sequence_follow_creep.rs',
+ 'crates/deadpan-cli/tests/project_commands/macros/framing/repeat_follow_creep.rs',
+]
+def pins(names):
+ return {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in names}
+def basis():
+ return sorted(str(p.relative_to(ROOT)) for crate in ['deadpan-core','deadpan-plan','deadpan-cli']
+               for p in (ROOT / 'crates' / crate / 'src').rglob('*.rs'))
+label, *command = sys.argv[1:]
+receipt = SCRATCH / (label + '.json')
+assert not receipt.exists()
+record = {'command': command, 'cwd': str(ROOT), 'started_at': datetime.now(timezone.utc).isoformat(),
+ 'environment': {k:os.environ[k] for k in ['CARGO_TARGET_DIR','DEADPAN_FFMPEG_PREFIX']},
+ 'owned_before': pins(OWNED), 'basis_before': pins(basis()),
+ 'global_source_before': pins(json.loads((SCRATCH/'source-files.json').read_text())),
+ 'basis_scope': 'All Core/Plan/CLI src Rust paths only; App and other concurrent files excluded'}
+copies = SCRATCH / (label + '-source')
+copies.mkdir()
+for name in OWNED:
+ destination = copies / (name + '.txt')
+ destination.parent.mkdir(parents=True, exist_ok=True)
+ destination.write_bytes((ROOT / name).read_bytes())
+record['source_copies'] = str(copies)
+receipt.write_text(json.dumps(record,indent=2)+'\n')
+start = time.monotonic()
+with (SCRATCH / (label+'.stdout')).open('xb') as out, (SCRATCH / (label+'.stderr')).open('xb') as err:
+ child = subprocess.Popen(command, cwd=ROOT, stdout=out, stderr=err)
+ record['pid'] = child.pid
+ receipt.write_text(json.dumps(record,indent=2)+'\n')
+ code = child.wait()
+record.update(exit_code=code, elapsed_seconds=time.monotonic()-start,
+ finished_at=datetime.now(timezone.utc).isoformat(), owned_after=pins(OWNED),basis_after=pins(basis()))
+record['global_source_after'] = pins(json.loads((SCRATCH/'source-files.json').read_text()))
+record['global_source_unchanged'] = record['global_source_before'] == record['global_source_after']
+record['owned_unchanged'] = record['owned_before'] == record['owned_after']
+record['basis_unchanged'] = record['basis_before'] == record['basis_after']
+stderr = (SCRATCH / (label+'.stderr')).read_text()
+record['executed_binary_pins'] = {p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+ for p in re.findall(r'Running [^\n]*\((/[^)]+)\)',stderr) if Path(p).exists()}
+record['stream_pins'] = {suffix: hashlib.sha256((SCRATCH/(label+suffix)).read_bytes()).hexdigest()
+ for suffix in ['.stdout','.stderr']}
+receipt.write_text(json.dumps(record,indent=2)+'\n')
+print(json.dumps({k:record[k] for k in ['exit_code','elapsed_seconds','owned_unchanged','basis_unchanged','global_source_unchanged']}),flush=True)
+sys.exit(code)

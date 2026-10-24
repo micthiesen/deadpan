@@ -20,6 +20,8 @@ mod follow;
 mod generated_extension;
 #[path = "picture_plan/provider_clock_coverage.rs"]
 mod provider_clock_coverage;
+#[path = "picture_plan/repeat_follow_creep.rs"]
+mod repeat_follow_creep;
 #[path = "picture_plan/retained_framing.rs"]
 mod retained_framing;
 #[path = "picture_plan/sequence_follow_creep.rs"]

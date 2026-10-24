@@ -1,0 +1,6 @@
+{
+  "path": "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_app-c75853e20f9b0baa",
+  "bytes": 245292416,
+  "sha256": "ca1c96a16f08fee0a8c006d8f473936d0e8194febb4b797dba74856b8f5b9462",
+  "scope": "Observed after terminal App1304 pass/11ignored. No live hash before or during execution was captured; mutable Cargo binary is not archived or substituted for source21 receipts."
+}

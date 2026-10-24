@@ -1,0 +1,8 @@
+{
+  "base": "cb89b8b79a01a4ad59fc29dc572ed65015a3c3af",
+  "scope": "All21 product/test source paths in source-files.json, full new files and live clipping behavior. Foreign fuzz/Cargo.lock and .claude excluded.",
+  "general": "Fresh check role found no actionable findings.",
+  "clock": "Fresh check-focused role found no actionable clock, gap, escalation or authority findings.",
+  "test_quality": "Fresh check-focused role found no actionable oracle, refusal or qualification findings; reviewers did not execute runtime tests.",
+  "review_routes": "Prescribed Luna check/check-focused roles; no model fallback."
+}

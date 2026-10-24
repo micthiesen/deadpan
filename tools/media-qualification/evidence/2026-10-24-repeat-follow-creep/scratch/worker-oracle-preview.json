@@ -1,0 +1,419 @@
+{
+  "scope": "Independent mathematical fixture preview, not a product run",
+  "variants": {
+    "plain": [
+      {
+        "frame": 0,
+        "play": 0,
+        "local": 0,
+        "gap": null,
+        "expected_center_x": "1/2",
+        "expected_scale": "552661233/268435456"
+      },
+      {
+        "frame": 1,
+        "play": 0,
+        "local": 1,
+        "gap": null,
+        "expected_center_x": "1288490189/2147483648",
+        "expected_scale": "4673934999/2147483648"
+      },
+      {
+        "frame": 2,
+        "play": 0,
+        "local": 2,
+        "gap": null,
+        "expected_center_x": "1288490189/2147483648",
+        "expected_scale": "2463290067/1073741824"
+      },
+      {
+        "frame": 3,
+        "play": 0,
+        "local": 3,
+        "gap": null,
+        "expected_center_x": "1932735283/4294967296",
+        "expected_scale": "5179225269/2147483648"
+      },
+      {
+        "frame": 4,
+        "play": 0,
+        "local": null,
+        "gap": "default",
+        "expected_center_x": "1288490189/2147483648",
+        "expected_scale": "1357967601/536870912"
+      },
+      {
+        "frame": 5,
+        "play": 0,
+        "local": null,
+        "gap": "default",
+        "expected_center_x": "1288490189/2147483648",
+        "expected_scale": "5684515539/2147483648"
+      },
+      {
+        "frame": 6,
+        "play": 1,
+        "local": 0,
+        "gap": null,
+        "expected_center_x": "1/2",
+        "expected_scale": "2968580337/1073741824"
+      },
+      {
+        "frame": 7,
+        "play": 1,
+        "local": 1,
+        "gap": null,
+        "expected_center_x": "1288490189/2147483648",
+        "expected_scale": "6189805809/2147483648"
+      },
+      {
+        "frame": 8,
+        "play": 1,
+        "local": 2,
+        "gap": null,
+        "expected_center_x": "1288490189/2147483648",
+        "expected_scale": "3"
+      },
+      {
+        "frame": 9,
+        "play": 1,
+        "local": 3,
+        "gap": null,
+        "expected_center_x": "1932735283/4294967296",
+        "expected_scale": "6695096079/2147483648"
+      },
+      {
+        "frame": 10,
+        "play": 1,
+        "local": null,
+        "gap": "owned",
+        "expected_center_x": "1/3",
+        "expected_scale": "3473870607/4294967296"
+      },
+      {
+        "frame": 11,
+        "play": 1,
+        "local": null,
+        "gap": "owned",
+        "expected_center_x": "1/3",
+        "expected_scale": "1800096587/2147483648"
+      },
+      {
+        "frame": 12,
+        "play": 1,
+        "local": null,
+        "gap": "owned",
+        "expected_center_x": "1/3",
+        "expected_scale": "1863257871/2147483648"
+      },
+      {
+        "frame": 13,
+        "play": 2,
+        "local": 0,
+        "gap": null,
+        "expected_center_x": "1/2",
+        "expected_scale": "7705676619/2147483648"
+      },
+      {
+        "frame": 14,
+        "play": 2,
+        "local": 1,
+        "gap": null,
+        "expected_center_x": "1288490189/2147483648",
+        "expected_scale": "3979160877/1073741824"
+      },
+      {
+        "frame": 15,
+        "play": 2,
+        "local": 2,
+        "gap": null,
+        "expected_center_x": "1288490189/2147483648",
+        "expected_scale": "8210966889/2147483648"
+      },
+      {
+        "frame": 16,
+        "play": 2,
+        "local": 3,
+        "gap": null,
+        "expected_center_x": "1932735283/4294967296",
+        "expected_scale": "1057951503/268435456"
+      }
+    ],
+    "centered": [
+      {
+        "frame": 0,
+        "play": 0,
+        "local": 0,
+        "gap": null,
+        "expected_center_x": "1/2",
+        "expected_scale": "552661233/268435456"
+      },
+      {
+        "frame": 1,
+        "play": 0,
+        "local": 1,
+        "gap": null,
+        "expected_center_x": "1288490189/2147483648",
+        "expected_scale": "4673934999/2147483648"
+      },
+      {
+        "frame": 2,
+        "play": 0,
+        "local": 2,
+        "gap": null,
+        "expected_center_x": "1288490189/2147483648",
+        "expected_scale": "2463290067/1073741824"
+      },
+      {
+        "frame": 3,
+        "play": 0,
+        "local": 3,
+        "gap": null,
+        "expected_center_x": "1932735283/4294967296",
+        "expected_scale": "5179225269/2147483648"
+      },
+      {
+        "frame": 4,
+        "play": 0,
+        "local": null,
+        "gap": "default",
+        "expected_center_x": "1288490189/2147483648",
+        "expected_scale": "1357967601/536870912"
+      },
+      {
+        "frame": 5,
+        "play": 0,
+        "local": null,
+        "gap": "default",
+        "expected_center_x": "1288490189/2147483648",
+        "expected_scale": "5684515539/2147483648"
+      },
+      {
+        "frame": 6,
+        "play": 1,
+        "local": 0,
+        "gap": null,
+        "expected_center_x": "1/2",
+        "expected_scale": "2968580337/1073741824"
+      },
+      {
+        "frame": 7,
+        "play": 1,
+        "local": 1,
+        "gap": null,
+        "expected_center_x": "2630667469/4294967296",
+        "expected_scale": "6189805809/2147483648"
+      },
+      {
+        "frame": 8,
+        "play": 1,
+        "local": 2,
+        "gap": null,
+        "expected_center_x": "2630667469/4294967296",
+        "expected_scale": "3"
+      },
+      {
+        "frame": 9,
+        "play": 1,
+        "local": 3,
+        "gap": null,
+        "expected_center_x": "952945869/2147483648",
+        "expected_scale": "6695096079/2147483648"
+      },
+      {
+        "frame": 10,
+        "play": 1,
+        "local": null,
+        "gap": "owned",
+        "expected_center_x": "1/3",
+        "expected_scale": "3473870607/4294967296"
+      },
+      {
+        "frame": 11,
+        "play": 1,
+        "local": null,
+        "gap": "owned",
+        "expected_center_x": "1/3",
+        "expected_scale": "1800096587/2147483648"
+      },
+      {
+        "frame": 12,
+        "play": 1,
+        "local": null,
+        "gap": "owned",
+        "expected_center_x": "1/3",
+        "expected_scale": "1863257871/2147483648"
+      },
+      {
+        "frame": 13,
+        "play": 2,
+        "local": 0,
+        "gap": null,
+        "expected_center_x": "1/2",
+        "expected_scale": "7705676619/2147483648"
+      },
+      {
+        "frame": 14,
+        "play": 2,
+        "local": 1,
+        "gap": null,
+        "expected_center_x": "5/8",
+        "expected_scale": "3979160877/1073741824"
+      },
+      {
+        "frame": 15,
+        "play": 2,
+        "local": 2,
+        "gap": null,
+        "expected_center_x": "5/8",
+        "expected_scale": "8210966889/2147483648"
+      },
+      {
+        "frame": 16,
+        "play": 2,
+        "local": 3,
+        "gap": null,
+        "expected_center_x": "7/16",
+        "expected_scale": "1057951503/268435456"
+      }
+    ],
+    "targeted": [
+      {
+        "frame": 0,
+        "play": 0,
+        "local": 0,
+        "gap": null,
+        "expected_center_x": "1/2",
+        "expected_scale": "552661233/268435456"
+      },
+      {
+        "frame": 1,
+        "play": 0,
+        "local": 1,
+        "gap": null,
+        "expected_center_x": "1288490189/2147483648",
+        "expected_scale": "4673934999/2147483648"
+      },
+      {
+        "frame": 2,
+        "play": 0,
+        "local": 2,
+        "gap": null,
+        "expected_center_x": "1288490189/2147483648",
+        "expected_scale": "2463290067/1073741824"
+      },
+      {
+        "frame": 3,
+        "play": 0,
+        "local": 3,
+        "gap": null,
+        "expected_center_x": "1932735283/4294967296",
+        "expected_scale": "5179225269/2147483648"
+      },
+      {
+        "frame": 4,
+        "play": 0,
+        "local": null,
+        "gap": "owned",
+        "expected_center_x": "1/3",
+        "expected_scale": "1357967601/2147483648"
+      },
+      {
+        "frame": 5,
+        "play": 0,
+        "local": null,
+        "gap": "owned",
+        "expected_center_x": "1/3",
+        "expected_scale": "1421128885/2147483648"
+      },
+      {
+        "frame": 6,
+        "play": 0,
+        "local": null,
+        "gap": "owned",
+        "expected_center_x": "1/3",
+        "expected_scale": "2968580337/4294967296"
+      },
+      {
+        "frame": 7,
+        "play": 1,
+        "local": 0,
+        "gap": null,
+        "expected_center_x": "1/2",
+        "expected_scale": "6189805809/2147483648"
+      },
+      {
+        "frame": 8,
+        "play": 1,
+        "local": 1,
+        "gap": null,
+        "expected_center_x": "2362232013/4294967296",
+        "expected_scale": "3"
+      },
+      {
+        "frame": 9,
+        "play": 1,
+        "local": 2,
+        "gap": null,
+        "expected_center_x": "2362232013/4294967296",
+        "expected_scale": "6695096079/2147483648"
+      },
+      {
+        "frame": 10,
+        "play": 1,
+        "local": 3,
+        "gap": null,
+        "expected_center_x": "1/2",
+        "expected_scale": "3473870607/1073741824"
+      },
+      {
+        "frame": 11,
+        "play": 1,
+        "local": null,
+        "gap": "default",
+        "expected_center_x": "2362232013/4294967296",
+        "expected_scale": "7200386349/2147483648"
+      },
+      {
+        "frame": 12,
+        "play": 1,
+        "local": null,
+        "gap": "default",
+        "expected_center_x": "2362232013/4294967296",
+        "expected_scale": "1863257871/536870912"
+      },
+      {
+        "frame": 13,
+        "play": 2,
+        "local": 0,
+        "gap": null,
+        "expected_center_x": "1/2",
+        "expected_scale": "7705676619/2147483648"
+      },
+      {
+        "frame": 14,
+        "play": 2,
+        "local": 1,
+        "gap": null,
+        "expected_center_x": "1/2",
+        "expected_scale": "3979160877/1073741824"
+      },
+      {
+        "frame": 15,
+        "play": 2,
+        "local": 2,
+        "gap": null,
+        "expected_center_x": "1/2",
+        "expected_scale": "8210966889/2147483648"
+      },
+      {
+        "frame": 16,
+        "play": 2,
+        "local": 3,
+        "gap": null,
+        "expected_center_x": "1/2",
+        "expected_scale": "1057951503/268435456"
+      }
+    ]
+  }
+}

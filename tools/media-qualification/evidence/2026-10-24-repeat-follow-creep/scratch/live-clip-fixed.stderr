@@ -1,0 +1,4 @@
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.79s
+     Running tests/follow_letterbox.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/follow_letterbox-d62c0bd3c941b715)

@@ -1,0 +1,21 @@
+{
+  "claim": "Stable retained bytes and identities; no automatic requirement certification.",
+  "final_source_paths": 21,
+  "limitations": [
+    "Twenty-one scoped final source paths and five sibling executable identities, not an attestation of every repository file.",
+    "One release candidate. First/final source and all five binary bytes are identical; native-repeat-run is the final workflow and is not counted twice.",
+    "Early focused Core/CLI and renderer receipts precede two App explanatory-string changes only. Their actual sources and before/fixed clipping snapshots are retained; final broad suites and all native/media runs bind current21 sources.",
+    "The before-fix renderer oracle failed on the old live-clipping helper and passes after the correction. No old-source product build or media comparison is claimed.",
+    "The first native wrapper invocation failed before app spawn because argparse consumed --binary. A repeated --scenario invocation exercised Sequence only; separate Zoom/Hold receipts establish their actual runs.",
+    "Native Repeat uses production keys and manually authored/corrected points. CLI-derived clipping changes only the correction on a portable copy and is explicitly distinguished from native authoring.",
+    "Offscreen Metal and scripted native input; no physical display/input, OS IME delivery, VoiceOver speech, listening or latency qualification.",
+    "Export comparisons use the committed shared picture/DSP reference. Neighbor observability limits, warnings, failures and existing opt-in ignores remain explicit.",
+    "Mutable Cargo test executable hashes are observations, not archived runtime bytes. App unit binary was observed only after terminal tests, with no live pre-run hash claim.",
+    "Actual native and portable projects, immutable history and complete media verification with explicit encoder-delay metadata are retained.",
+    "Collector output and later package-verification receipts remain separate to avoid recursive publication."
+  ],
+  "plan_sha256": "29092583575de1907fcf3987169497a3d551989b53023139e538969ed06afc83",
+  "raw_payload_bytes": 156028443,
+  "schema_version": 1,
+  "script_sha256": "320e79dbf00568d68d7657e3c31d968402772533071529e7c9c494f9aacc6f0e"
+}

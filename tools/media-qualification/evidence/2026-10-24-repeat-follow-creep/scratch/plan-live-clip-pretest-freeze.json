@@ -1,0 +1,14 @@
+{
+  "frozen_at": "2026-10-24T10:31:00.529296+00:00",
+  "sources": {
+    "crates/deadpan-plan/tests/picture_plan.rs": {
+      "bytes": 90937,
+      "sha256": "27fd5159ade0098c02e66616e5ff6ed5ad870bfd94cab11cf51f3e98e12ba584"
+    },
+    "crates/deadpan-plan/tests/picture_plan/repeat_follow_creep.rs": {
+      "bytes": 18811,
+      "sha256": "6f266c4f9fc23b5da753e5882626d5c119ac4b4953a014deb8d4e35048902c32"
+    }
+  },
+  "status": "refrozen with mathematical live clipping fallback and irreversible child clip witness; no tests run"
+}

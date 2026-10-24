@@ -1766,7 +1766,7 @@ impl RenderPlan {
 /// carried outward through every inner layer's pose (innermost first,
 /// `p' = (p - center) * scale + 1/2` per axis), at `scale`, quantized to the
 /// framing grid. `None` where the picture is not the target's asset, lies
-/// outside its span, or the centered pose is out of range; the layer then
+/// outside its span, clipped by an inner scope, or the centered pose is out of range; the layer then
 /// keeps its fallback. Hosts previewing a changed inner pose use this to
 /// re-resolve a follow exactly as the plan does.
 pub fn follow_pose(
@@ -1783,7 +1783,7 @@ pub fn follow_pose(
 /// Resolve a target through retained, clipped Hold canvases before the live
 /// framing scopes. Captured geometry needs the target's measured source aspect;
 /// absent aspect, clipped targets and arithmetic overflow retain the fallback.
-/// Without a context this has exactly the original [`follow_pose`] behavior.
+/// Live inner scopes clip identically with or without a retained context.
 pub fn follow_pose_in_context(
     target: &deadpan_core::AttentionTarget,
     asset: &AssetId,
@@ -1827,9 +1827,9 @@ pub fn follow_pose_in_context(
             }
             None => position,
         };
-        // Live scopes after retained geometry still clip. Keep the historical
-        // context-free API unchanged, including its exterior-center behavior.
-        (context.is_none() || follow_context::visible(result)).then_some(result)
+        // Every live scope clips, including identity scopes. A later parent
+        // transform cannot recover a point removed from a child's canvas.
+        follow_context::visible(result).then_some(result)
     })?;
     deadpan_core::FramingPose::new(x, y, scale)
         .and_then(|pose| pose.quantized())

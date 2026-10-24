@@ -1,0 +1,475 @@
+{
+  "actual_clipped_wrapper_exit": 1,
+  "archives": [
+    {
+      "archived_rust_named_snapshot_members": [],
+      "members": 21,
+      "metadata_omissions": {},
+      "path": "archives/first-source.tar.gz",
+      "retained_member_bytes": 898490,
+      "retained_sidecars": [],
+      "source_bytes": 898490,
+      "source_files": 21
+    },
+    {
+      "archived_rust_named_snapshot_members": [],
+      "members": 7,
+      "metadata_omissions": {},
+      "path": "archives/worker-core-source.tar.gz",
+      "retained_member_bytes": 142374,
+      "retained_sidecars": [],
+      "source_bytes": 142374,
+      "source_files": 7
+    },
+    {
+      "archived_rust_named_snapshot_members": [],
+      "members": 7,
+      "metadata_omissions": {},
+      "path": "archives/worker-cli-source.tar.gz",
+      "retained_member_bytes": 142374,
+      "retained_sidecars": [],
+      "source_bytes": 142374,
+      "source_files": 7
+    },
+    {
+      "archived_rust_named_snapshot_members": [
+        "crates/deadpan-app/src/preview/harness.rs",
+        "crates/deadpan-app/src/preview/harness/repeat_follow_creep.rs",
+        "crates/deadpan-app/src/preview/harness/scenarios.rs",
+        "crates/deadpan-app/src/preview/harness/sequence_follow_creep.rs",
+        "crates/deadpan-app/src/ui_harness.rs"
+      ],
+      "members": 5,
+      "metadata_omissions": {},
+      "path": "archives/native-worker-source.tar.gz",
+      "retained_member_bytes": 226813,
+      "retained_sidecars": [],
+      "source_bytes": 226813,
+      "source_files": 5
+    },
+    {
+      "archived_rust_named_snapshot_members": [],
+      "members": 5,
+      "metadata_omissions": {},
+      "path": "archives/before-live-clip-fix.tar.gz",
+      "retained_member_bytes": 111673,
+      "retained_sidecars": [],
+      "source_bytes": 111673,
+      "source_files": 5
+    },
+    {
+      "archived_rust_named_snapshot_members": [],
+      "members": 30,
+      "metadata_omissions": {},
+      "path": "archives/final-native-repeat-project-and-export.tar.gz",
+      "retained_member_bytes": 1716136,
+      "retained_sidecars": [
+        "portable.deadpan/Snapshots/.tmp3Df8Vs-shm",
+        "portable.deadpan/Snapshots/.tmp3Df8Vs-wal"
+      ],
+      "source_bytes": 1716136,
+      "source_files": 30
+    },
+    {
+      "archived_rust_named_snapshot_members": [],
+      "members": 13,
+      "metadata_omissions": {
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "reason": "paired SQLite WAL observed empty; nonauthored sidecar",
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "reason": "paired SQLite WAL observed empty; nonauthored sidecar",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "path": "archives/actual-native-repeat-project.tar.gz",
+      "retained_member_bytes": 2031356,
+      "retained_sidecars": [
+        "Snapshots/.tmp25zSgi-shm",
+        "Snapshots/.tmp25zSgi-wal"
+      ],
+      "source_bytes": 2064124,
+      "source_files": 15
+    },
+    {
+      "archived_rust_named_snapshot_members": [],
+      "members": 385,
+      "metadata_omissions": {
+        "cli-derived-clipped.deadpan/project.sqlite-shm": {
+          "bytes": 32768,
+          "reason": "paired SQLite WAL observed empty; nonauthored sidecar",
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "cli-derived-clipped.deadpan/project.sqlite-wal": {
+          "bytes": 0,
+          "reason": "paired SQLite WAL observed empty; nonauthored sidecar",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "path": "archives/clipped-media-final.tar.gz",
+      "retained_member_bytes": 3582957,
+      "retained_sidecars": [
+        "cli-derived-history-portable.deadpan/Snapshots/.tmp0mosCo-shm",
+        "cli-derived-history-portable.deadpan/Snapshots/.tmp0mosCo-wal"
+      ],
+      "source_bytes": 3615725,
+      "source_files": 387
+    }
+  ],
+  "authored_omissions": 0,
+  "budget_bytes": 268435456,
+  "clipped_frames": [
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    68,
+    69,
+    70,
+    71,
+    72,
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+  ],
+  "clipped_guard_reconciliation_sha256": "fbb489090c84c6445dc06e35d5eb35be0a3105bb7649324f632da5776d729d8e",
+  "collector_sha256": "320e79dbf00568d68d7657e3c31d968402772533071529e7c9c494f9aacc6f0e",
+  "copied_history_and_all_revision_rows_preserved": true,
+  "current_scoped_sources_unchanged": true,
+  "decoded_ledger_bytes": 156306254,
+  "derived_history_counts": {
+    "history": 13,
+    "history_receipt": 1,
+    "redo": 0,
+    "revision_patches": 7,
+    "revisions": 21,
+    "state": 1,
+    "transaction_steps": 7
+  },
+  "derived_media": {
+    "audio_offset": 0,
+    "audio_window": [
+      0,
+      128128
+    ],
+    "movie": {
+      "bytes": 91654,
+      "sha256": "8e0c0ef23d90b74d05427e6f791defe7bc05bb1071706cc97b5bd622dd421f66"
+    },
+    "movie_metadata": {
+      "audio": {
+        "first_pts": -2048,
+        "gaps": [],
+        "physical_samples": 131072,
+        "presented_end": 128128
+      },
+      "audio_edits": {
+        "edits": 1,
+        "empty_edits": 0,
+        "media_time": 2048,
+        "presented_media_ticks": 128128
+      },
+      "audio_track": 1,
+      "bytes": 91654,
+      "color": {
+        "chroma_location": "Left",
+        "container": [
+          1,
+          1,
+          1
+        ],
+        "container_full_range": false,
+        "decoded": "ColorMetadata { range: Limited, matrix: Bt709, transfer: Bt709, primaries: Bt709, mastering: None, content_light: None, ignored_static: IgnoredStaticMetadata { mastering: false, content_light: false } }",
+        "problems": []
+      },
+      "expected_audio_samples": 128128,
+      "expected_video_frames": 80,
+      "path": "/private/tmp/deadpan-repeat-follow-creep-2026-10-24/clipped-media-final/cli-derived-clipped-repeat.mp4",
+      "picture_anomalies": [],
+      "video_edits": {
+        "edits": 1,
+        "empty_edits": 0,
+        "media_time": 0,
+        "presented_media_ticks": 80080
+      },
+      "video_frames": 80
+    },
+    "observability": {
+      "observable": 104,
+      "unobservable": 54
+    },
+    "pictures": 80
+  },
+  "derived_portable_after_undo_redo_counts": {
+    "history": 13,
+    "history_receipt": 1,
+    "redo": 0,
+    "revision_patches": 9,
+    "revisions": 23,
+    "state": 1,
+    "transaction_steps": 7
+  },
+  "derived_product_commands": 181,
+  "earlier_audit_files_unchanged": true,
+  "embedded_raw_audit_sha256": "7b01c81a5c2a3efcdc70b05931c8752d621dd2c7adc5739214b3e4057a7515b8",
+  "encoded_ledger_stored_bytes": 10914655,
+  "encoding_records": 162,
+  "encodings": {
+    "gzip": 26,
+    "identity": 128,
+    "tar+gzip": 8
+  },
+  "final_source_paths": 21,
+  "findings": [],
+  "finished_utc": "2026-10-24T11:21:31.946470+00:00",
+  "gzip_streams": 34,
+  "inventory_sha256": "dcee080990be595f9826917c3d55dceee8a402600432f55b9804085710db049d",
+  "inventory_unchanged": true,
+  "limitations": [
+    "No collector, payload script, product, Cargo, test, worker, decoder, model or Git command executed.",
+    "Twenty-one scoped sources and relevant historical subsets are checked, not compilation of every repository file.",
+    "Root's image review is bound by bytes; PNG integrity is not independent visual or physical-display qualification.",
+    "Shared picture/limited-audio references do not establish independent DSP, listening, encoded bit equality, tracking accuracy or latency/requirement completion.",
+    "The old live-clipping helper failure and pre-spawn wrapper failure remain explicit. Derived clipping wrapper exited1 after181 successful product commands; separate offline reconciliation permits only newly created empty WAL. App unit hash was terminal-only."
+  ],
+  "metadata_omissions": 4,
+  "native": [
+    {
+      "checks": 129,
+      "kestrel": 1,
+      "name": "native-repeat-run",
+      "skips": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warnings": 3
+    },
+    {
+      "checks": 96,
+      "kestrel": 1,
+      "name": "native-regressions",
+      "skips": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warnings": 3
+    },
+    {
+      "checks": 213,
+      "kestrel": 1,
+      "name": "native-zoom-final",
+      "skips": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warnings": 3
+    },
+    {
+      "checks": 67,
+      "kestrel": 1,
+      "name": "native-hold-follow-creep-final",
+      "skips": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warnings": 2
+    }
+  ],
+  "native_history_counts": {
+    "history": 12,
+    "history_receipt": 1,
+    "redo": 0,
+    "revision_patches": 7,
+    "revisions": 20,
+    "state": 1,
+    "transaction_steps": 7
+  },
+  "native_media": {
+    "audio_offset": 0,
+    "audio_window": [
+      0,
+      128128
+    ],
+    "movie": {
+      "bytes": 105129,
+      "sha256": "9c8b9d241299e9c4e50ce48cc66849285ab637d06ceb27853f9d71a50cfc5915"
+    },
+    "movie_metadata": {
+      "audio": {
+        "first_pts": -2048,
+        "gaps": [],
+        "physical_samples": 131072,
+        "presented_end": 128128
+      },
+      "audio_edits": {
+        "edits": 1,
+        "empty_edits": 0,
+        "media_time": 2048,
+        "presented_media_ticks": 128128
+      },
+      "audio_track": 1,
+      "bytes": 105129,
+      "color": {
+        "chroma_location": "Left",
+        "container": [
+          1,
+          1,
+          1
+        ],
+        "container_full_range": false,
+        "decoded": "ColorMetadata { range: Limited, matrix: Bt709, transfer: Bt709, primaries: Bt709, mastering: None, content_light: None, ignored_static: IgnoredStaticMetadata { mastering: false, content_light: false } }",
+        "problems": []
+      },
+      "expected_audio_samples": 128128,
+      "expected_video_frames": 80,
+      "path": "/tmp/deadpan-repeat-follow-creep-2026-10-24/media-final/repeat-follow-creep.mp4",
+      "picture_anomalies": [],
+      "video_edits": {
+        "edits": 1,
+        "empty_edits": 0,
+        "media_time": 0,
+        "presented_media_ticks": 80080
+      },
+      "video_frames": 80
+    },
+    "observability": {
+      "observable": 114,
+      "unobservable": 44
+    },
+    "pictures": 80
+  },
+  "native_portable_history_all_tables_equal": true,
+  "omitted_metadata_bytes": 65536,
+  "payload_bytes": 11068281,
+  "payloads": 165,
+  "plan_sha256": "29092583575de1907fcf3987169497a3d551989b53023139e538969ed06afc83",
+  "primary_bytes_including_inventory": 11092815,
+  "primary_files": 166,
+  "primary_tree_unchanged": true,
+  "prior_audit_file_pins": {
+    "audit-repeat-evidence.json": {
+      "bytes": 290321,
+      "sha256": "7b01c81a5c2a3efcdc70b05931c8752d621dd2c7adc5739214b3e4057a7515b8"
+    },
+    "audit-repeat-evidence.py": {
+      "bytes": 35370,
+      "sha256": "ebb3ad46689d5c77d0a1bbc526432fc082ea5c58372eb3ba912fb38513995239"
+    },
+    "audit-repeat-evidence.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "audit-repeat-evidence.stdout": {
+      "bytes": 110,
+      "sha256": "0414f0b096ca1ec1c65ab3ef39318388b8578b8cc282a9eb07da9a49bfa78feb"
+    },
+    "clipped-media-reconciliation.json": {
+      "bytes": 97648,
+      "sha256": "fbb489090c84c6445dc06e35d5eb35be0a3105bb7649324f632da5776d729d8e"
+    },
+    "clipped-media-reconciliation.py": {
+      "bytes": 20670,
+      "sha256": "0642f7e50073489c22a3e7b1dc3770f96d0b79efcfc6cc848044aee786742bc0"
+    }
+  },
+  "raw_archive_source_bytes": 8917709,
+  "raw_payload_bytes": 156028443,
+  "raw_regular_bytes": 147110734,
+  "raw_tests": {
+    "app-units-final": [
+      1304,
+      0,
+      11
+    ],
+    "core-plan-final": [
+      2053,
+      0,
+      0
+    ],
+    "live-clip-before": [
+      0,
+      1,
+      0
+    ],
+    "live-clip-fixed": [
+      3,
+      0,
+      0
+    ],
+    "plan-focused-1": [
+      3,
+      0,
+      0
+    ],
+    "worker-cli-1": [
+      14,
+      0,
+      0
+    ],
+    "worker-core-1": [
+      2,
+      0,
+      0
+    ]
+  },
+  "schema_version": 1,
+  "selected_pngs": {
+    "images/native-repeat-run-repeat-follow-creep-017.png": {
+      "bytes": 311264,
+      "dimensions": [
+        1280,
+        820
+      ],
+      "sha256": "ab8d5e4a46d2aee1da3fb83dae992e327e8f78b5e61ba53f530353478094432a"
+    },
+    "images/native-repeat-run-repeat-follow-creep-070.png": {
+      "bytes": 330115,
+      "dimensions": [
+        1280,
+        820
+      ],
+      "sha256": "f55317161b7a5c044c20583116b81a5eb7a681b1e9324bdae13f5e3f71d1c2f2"
+    },
+    "images/native-repeat-run-repeat-follow-creep-121.png": {
+      "bytes": 365410,
+      "dimensions": [
+        1280,
+        820
+      ],
+      "sha256": "8cf3128103900f68996cab8ccc2a4c65cf8c17d06267246a12ba3049e20a13f4"
+    },
+    "images/native-repeat-run-repeat-follow-creep-124.png": {
+      "bytes": 359374,
+      "dimensions": [
+        1280,
+        820
+      ],
+      "sha256": "dce7a914d767e619941c80d3120b01d89fd9cbbb87253bef5740e39336362360"
+    }
+  },
+  "started_utc": "2026-10-24T11:21:27.995118+00:00",
+  "status": "no_findings",
+  "tar_member_bytes": 8852173,
+  "tar_members": 473,
+  "unit_binary_terminal_only": true,
+  "verifier_sha256": "b1e208945ddb97a7037ade165a0c5beac488e3f969a38aa7cf16f145a0261588"
+}

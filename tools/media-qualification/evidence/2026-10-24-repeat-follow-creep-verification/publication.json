@@ -1,0 +1,33 @@
+{
+  "collector_exit_code": 0,
+  "primary_inventory_sha256": "dcee080990be595f9826917c3d55dceee8a402600432f55b9804085710db049d",
+  "publisher_sha256": "834bf9403598f553a516730b1a1e00c21c0b5ed9abdef0def692260a19a22f9c",
+  "scope": "Post-publication receipts only; no Primary changes or product/build rerun.",
+  "source_files": {
+    "collect.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "collect.stdout": {
+      "bytes": 235,
+      "sha256": "3e76493b1bafeba060b1533db85c69245d49e282f58554e02166d3463571beea"
+    },
+    "package-verification.json": {
+      "bytes": 13913,
+      "sha256": "0319a245f5c0db913d22ce52f002ff144b36f3063c7f1e94041a3900d2f599b6"
+    },
+    "package-verification.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "package-verification.stdout": {
+      "bytes": 369,
+      "sha256": "bd9ec568a65184ccc1ad3d5736985184d91a9626fedc1f9d7d182e1a4f9fdf3b"
+    },
+    "verify-repeat-package.py": {
+      "bytes": 35280,
+      "sha256": "b1e208945ddb97a7037ade165a0c5beac488e3f969a38aa7cf16f145a0261588"
+    }
+  },
+  "verification_receipt_sha256": "0319a245f5c0db913d22ce52f002ff144b36f3063c7f1e94041a3900d2f599b6"
+}

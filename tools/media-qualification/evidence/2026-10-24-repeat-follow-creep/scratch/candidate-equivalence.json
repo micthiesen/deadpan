@@ -1,0 +1,6 @@
+{
+  "source_paths": 21,
+  "all_source_bytes_identical": true,
+  "all_five_binary_bytes_identical": true,
+  "note": "One candidate build. Passing native-repeat-run uses the same source and executable bytes as final snapshots; no duplicate workflow claimed."
+}

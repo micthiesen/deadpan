@@ -1,0 +1,6 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.28s
+     Running tests/follow_letterbox.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/follow_letterbox-d62c0bd3c941b715)
+error: test failed, to rerun pass `-p deadpan-render --test follow_letterbox`

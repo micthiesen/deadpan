@@ -1,0 +1,153 @@
+<ctx task="Repeat FollowScaleTransition PictureFraming escalation gaps crates/deadpan-plan/tests/picture_plan.rs repeat_follow_creep.rs" route=" [routed: subtoken+body BM25 — name-exact declined: anchor &apos;repeat&apos; is a common name (4261 name-carriers, 58 defs); conceptual ranker used]" bundle="auto" bodies="6"><!-- ripwire lens for "Repeat FollowScaleTransition PictureFraming escalation gaps crates/deadpan-plan/tests/picture_plan.rs repeat_follow_creep.rs" [mention anchor: 1 file + 3 symbols named in the task lifted near the top] [doc mentions: 2 docs discussing 1 top-ranked symbol surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="3601" --><sigs capped="1"><f p="/Users/michael/Code/deadpan/crates/deadpan-core/src/framing.rs"><d l="204" n="FramingValue" cx="0" ccx="0" in="0" churn="7" amp="41">pub enum FramingValue</d><d l="227" n="FollowScaleTransition" cx="0" ccx="0" in="0" churn="7" amp="41">pub struct FollowScaleTransition</d><d l="381" n="record_count" id="/Users/michael/Code/deadpan/crates/deadpan-core/src/framing.rs::Framing::record_count" cx="5" ccx="5" in="2" churn="7" amp="43" tested="1">pub fn record_count(&amp;self) -&gt; usize</d><d l="850" n="follow_transition_typed_aggregate_admission_uses_the_real_record_limit" id="/Users/michael/Code/deadpan/crates/deadpan-core/src/framing.rs::follow_transition_tests::follow_transition_typed_aggregate_admission_uses_the_real_record_limit" cx="2" ccx="1" in="0" churn="7" amp="41">fn follow_transition_typed_aggregate_admission_uses_the_real_record_limit()</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-plan/tests/picture_plan.rs" layer="test"><d l="299" n="escalation_scales_each_later_play_and_its_gap_inside_the_repeat_framing" cx="1" ccx="0" in="0" churn="35" amp="149">fn escalation_scales_each_later_play_and_its_gap_inside_the_repeat_framing()</d><d l="641" n="repeat_gap_retains_shared_picture_context" cx="1" ccx="0" in="0" churn="35" amp="149">fn repeat_gap_retains_shared_picture_context()</d><d l="2110" n="accepted_repeat_gap_maps_exact_fractional_positions_without_a_trailing_gap" cx="2" ccx="1" in="0" churn="35" amp="149">fn accepted_repeat_gap_maps_exact_fractional_positions_without_a_trailing_gap()</d></f></sigs><bodies shown="6" total="6" capped="0"><b t="method" l="850" p="/Users/michael/Code/deadpan/crates/deadpan-core/src/framing.rs" n="follow_transition_typed_aggregate_admission_uses_the_real_record_limit"><![CDATA[fn follow_transition_typed_aggregate_admission_uses_the_real_record_limit() {
+        let mut node = crate::BeatNode::sequence("Follow owner", Vec::new());
+        node.framing = Some(framing(ZoomCurve::Linear));
+        assert_eq!(
+            validate_nodes(std::iter::repeat_n(&node, MAX_FRAMING_RECORDS / 2)).unwrap(),
+            MAX_FRAMING_RECORDS
+        );
+        assert!(validate_nodes(std::iter::repeat_n(&node, MAX_FRAMING_RECORDS / 2 + 1)).is_err());
+        if let Some(Framing {
+            value: FramingValue::Follow {
+                scale_transition, ..
+            },
+            ..
+        }) = &mut node.framing
+        {
+            *scale_transition = None;
+        }
+        assert_eq!(
+            validate_nodes(std::iter::repeat_n(&node, MAX_FRAMING_RECORDS)).unwrap(),
+            MAX_FRAMING_RECORDS
+        );
+        assert!(validate_nodes(std::iter::repeat_n(&node, MAX_FRAMING_RECORDS + 1)).is_err());
+    }]]><calls total="2"><c n="sequence" l="567">pub fn sequence(label: impl Into&lt;String&gt;, children: Vec&lt;NodeId&gt;) -&gt; Self</c><c n="framing" l="693">fn framing(curve: ZoomCurve) -&gt; Framing</c></calls></b><b t="cls" l="227" p="/Users/michael/Code/deadpan/crates/deadpan-core/src/framing.rs" n="FollowScaleTransition"><![CDATA[pub struct FollowScaleTransition {
+    pub factor: ExactRatio,
+    pub curve: crate::framing_zoom::ZoomCurve,
+}]]></b><b t="fn" l="299" p="/Users/michael/Code/deadpan/crates/deadpan-plan/tests/picture_plan.rs" n="escalation_scales_each_later_play_and_its_gap_inside_the_repeat_framing"><![CDATA[fn escalation_scales_each_later_play_and_its_gap_inside_the_repeat_framing() {
+    let mut escalating = framed(repeat("source", 3, 1, "plays"), 2);
+    let NodeKind::Repeat { escalation, .. } = &mut escalating.kind else {
+        unreachable!()
+    };
+    *escalation = Some(RepeatEscalation {
+        gain_step: GainDb::UNITY,
+        zoom: Some(ZoomStep {
+            step: ExactRatio::new(1, 4).unwrap(),
+            progression: ZoomProgression::Add,
+            target: None,
+        }),
+    });
+    let document = document(
+        &["repeat"],
+        vec![("repeat", escalating), ("source", source(4, 0, 4000))],
+    );
+    let plan = RenderPlan::compile(&document).unwrap();
+    // Plays occupy 0..4, 5..9 and 10..14 with one-frame gaps at 4 and 9.
+    let scales = |frame: i64| {
+        plan.picture(ProjectFrame(frame))
+            .unwrap()
+            .framing
+            .iter()
+            .filter(|layer| layer.escalation)
+            .map(|layer| layer.pose.unwrap().scale)
+            .collect::<Vec<_>>()
+    };
+    assert!(scales(1).is_empty(), "the first play is unchanged");
+    assert_eq!(scales(6), [ExactRatio::new(5, 4).unwrap()]);
+    assert_eq!(scales(9), [ExactRatio::new(5, 4).unwrap()], "its gap");
+    assert_eq!(scales(12), [ExactRatio::new(3, 2).unwrap()]);
+    let sample = plan.picture(ProjectFrame(12)).unwrap();
+    let names: Vec<_> = sample
+        .framing
+        .iter()
+        .map(|layer| (layer.instance.node.as_str(), layer.escalation))
+        .collect();
+    assert_eq!(
+        names,
+        [
+            ("source", false),
+            ("repeat", true),
+            ("repeat", false),
+            ("root", false)
+        ],
+        "escalation applies inside the Repeat's own framing"
+    );
+    assert_eq!(sample.framing[1].instance, sample.framing[2].instance);
+    sample.framing[1].instance.validate(&document).unwrap();
+}]]><calls total="7"><c n="filter" l="30">pub fn filter(&amp;mut self, events: Vec&lt;Event&gt;) -&gt; Vec&lt;Event&gt;</c><c n="new" l="52">pub fn new(numerator: i128, denominator: i128) -&gt; Result&lt;Self, TimeError&gt;</c><c n="ProjectFrame" l="9">pub struct ProjectFrame</c><c n="compile" l="701">pub fn compile(document: &amp;ProjectDocument) -&gt; Result&lt;Self, PlanError&gt;</c><c n="repeat" l="118">fn repeat(child: &amp;str, plays: u32, gap: i64, allocation: &amp;str) -&gt; BeatNode</c><c n="document" l="126">fn document(roots: &amp;[&amp;str], nodes: Vec&lt;(&amp;str, BeatNode)&gt;) -&gt; ProjectDocument</c><c n="framed" l="208">fn framed(mut node: BeatNode, end_scale: i64) -&gt; BeatNode</c></calls></b><b t="fn" l="641" p="/Users/michael/Code/deadpan/crates/deadpan-plan/tests/picture_plan.rs" n="repeat_gap_retains_shared_picture_context"><![CDATA[fn repeat_gap_retains_shared_picture_context() {
+    let mut gap = background(1);
+    gap.picture_context = Some(retained_picture_context());
+    let repeat = node(NodeKind::Repeat {
+        child: id("child"),
+        iterations: IterationOrder::new(revision("captured-gap-plays"), 3).unwrap(),
+        gap: Some(gap),
+        escalation: None,
+    });
+    let document = document(
+        &["repeat"],
+        vec![("repeat", repeat), ("child", source(1, 0, 1))],
+    );
+    let plan = RenderPlan::compile(&document).unwrap();
+    let first_gap = plan.picture(ProjectFrame(1)).unwrap();
+    let second_gap = plan.picture(ProjectFrame(3)).unwrap();
+    assert!(first_gap.gap_after.is_some());
+    assert!(second_gap.gap_after.is_some());
+    assert_eq!(first_gap.picture, Picture::Background);
+    assert_eq!(
+        first_gap.picture_context.as_deref(),
+        second_gap.picture_context.as_deref()
+    );
+    assert!(std::sync::Arc::ptr_eq(
+        first_gap.picture_context.as_ref().unwrap(),
+        second_gap.picture_context.as_ref().unwrap()
+    ));
+}]]><calls total="9"><c n="new" l="64">pub fn new(allocation: RevisionId, plays: u32) -&gt; Result&lt;Self, DocumentError&gt;</c><c n="ProjectFrame" l="9">pub struct ProjectFrame</c><c n="compile" l="701">pub fn compile(document: &amp;ProjectDocument) -&gt; Result&lt;Self, PlanError&gt;</c><c n="id" l="28">fn id(value: &amp;str) -&gt; NodeId</c><c n="revision" l="34">fn revision(value: &amp;str) -&gt; RevisionId</c><c n="node" l="59">fn node(kind: NodeKind) -&gt; BeatNode</c><c n="background" l="71">fn background(frames: i64) -&gt; HoldRecipe</c><c n="document" l="126">fn document(roots: &amp;[&amp;str], nodes: Vec&lt;(&amp;str, BeatNode)&gt;) -&gt; ProjectDocument</c><c n="retained_picture_context" l="577">fn retained_picture_context() -&gt; CapturedFraming</c></calls></b><b t="fn" l="2110" p="/Users/michael/Code/deadpan/crates/deadpan-plan/tests/picture_plan.rs" n="accepted_repeat_gap_maps_exact_fractional_positions_without_a_trailing_gap"><![CDATA[fn accepted_repeat_gap_maps_exact_fractional_positions_without_a_trailing_gap() {
+    let recipe = HoldRecipe {
+        duration: duration(3),
+        video: HoldVideo::Accepted {
+            asset: asset_id("video"),
+            frames: range(20, 23),
+        },
+        picture_context: None,
+        audio: HoldAudio::Silence,
+    };
+    let document = document(
+        &["retime"],
+        vec![
+            ("child", hold(2)),
+            (
+                "repeat",
+                node(NodeKind::Repeat {
+                    child: id("child"),
+                    iterations: IterationOrder::new(revision("plays"), 2).unwrap(),
+                    gap: Some(recipe),
+                    escalation: None,
+                }),
+            ),
+            ("retime", retime("repeat", 14, 0, 7)),
+        ],
+    );
+    let plan = RenderPlan::compile(&document).unwrap();
+    for (frame, expected) in [(4, 20), (5, 20), (6, 21), (7, 21), (8, 22), (9, 22)] {
+        let sample = plan.picture(ProjectFrame(frame)).unwrap();
+        assert_eq!(sample.instance.node, id("repeat"));
+        sample.instance.validate(&document).unwrap();
+        assert_eq!(sample.gap_after.unwrap().ordinal, 0);
+        let Picture::Accepted {
+            position,
+            frame: original,
+            generated: None,
+            ..
+        } = sample.picture
+        else {
+            panic!("accepted gap")
+        };
+        assert_eq!(original, SourceFrameId(expected));
+        assert_eq!(
+            position,
+            ExactRatio::new(80 + i128::from(frame * 2 - 7), 4).unwrap()
+        );
+    }
+    assert!(plan.picture(ProjectFrame(10)).unwrap().gap_after.is_none());
+    assert!(plan.picture(ProjectFrame(13)).unwrap().gap_after.is_none());
+    assert!(plan.picture(ProjectFrame(14)).is_err());
+}]]><calls total="6"><c n="ProjectFrame" l="9">pub struct ProjectFrame</c><c n="compile" l="701">pub fn compile(document: &amp;ProjectDocument) -&gt; Result&lt;Self, PlanError&gt;</c><c n="asset_id" l="31">fn asset_id(value: &amp;str) -&gt; AssetId</c><c n="duration" l="37">fn duration(value: i64) -&gt; FrameDuration</c><c n="range" l="40">fn range(start: i64, end: i64) -&gt; FrameRange</c><c n="document" l="126">fn document(roots: &amp;[&amp;str], nodes: Vec&lt;(&amp;str, BeatNode)&gt;) -&gt; ProjectDocument</c></calls></b><b t="var" l="7" p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-24-sequence-follow-creep/scratch/plan-run.py" n="owned"><![CDATA[owned=['crates/deadpan-plan/tests/picture_plan.rs','crates/deadpan-plan/tests/picture_plan/sequence_follow_creep.rs']]]></b></bodies></ctx>

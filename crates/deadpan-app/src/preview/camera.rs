@@ -877,6 +877,7 @@ impl CameraSession {
             Some(deadpan_core::NodeKind::Source { .. }) => Some(OrdinaryFollowOwner::Source),
             Some(deadpan_core::NodeKind::Hold { .. }) => Some(OrdinaryFollowOwner::Hold),
             Some(deadpan_core::NodeKind::Sequence { .. }) => Some(OrdinaryFollowOwner::Sequence),
+            Some(deadpan_core::NodeKind::Repeat { .. }) => Some(OrdinaryFollowOwner::Repeat),
             _ => None,
         }
     }
@@ -3242,9 +3243,9 @@ impl DeadpanApp {
                                 ui.weak("t stops following and removes the scale animation.");
                             }
                             ui.weak(if camera.follow.as_ref().is_some_and(|follow| follow.scale_transition.is_some()) {
-                                "Centered on the target at each picture's Original time. Outside its range or when clipped by a captured view, the fallback center is retained and scale animation continues."
+                                "Centered on the target at each picture's Original time. Outside its range or when an earlier crop hides it, the fallback center is retained and scale animation continues."
                             } else {
-                                "Centered on the target at each picture's Original time. Outside its range or when clipped by a captured view, the framing holds its fallback pose."
+                                "Centered on the target at each picture's Original time. Outside its range or when an earlier crop hides it, the framing holds its fallback pose."
                             });
                             if camera.replaces_curve() {
                                 ui.colored_label(style::WARNING, "Saving replaces the beat's camera curve.");

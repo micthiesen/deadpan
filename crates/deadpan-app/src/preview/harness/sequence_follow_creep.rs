@@ -483,20 +483,19 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!(framing(d, &group)),
     )?;
 
-    // Outer composite owners retain their explicit admission boundary.
-    for command in ["wrap-repeat 2", "wrap-retime 2 pitch=tape"] {
-        edit(d, command)?;
-        edit(d, "zoom 2 target=target-1")?;
-        refused(
-            d,
-            "Repeat and Retime owners refuse Keep Follow creep without a write",
-        )?;
-        edit(d, "undo")?;
-        edit(d, "undo")?;
-        d.check("Undoing the temporary wrapper restores the selected live group",
-            d.app().selected_beat.as_ref()==Some(&group) && framing(d,&group)==animated && d.app().sequence_length()==80,
-            json!({"selected":group,"frames":80,"framing":animated}),json!({"selected":d.app().selected_beat,"frames":d.app().sequence_length(),"framing":framing(d,&group)}))?;
-    }
+    // Retime owners retain their explicit admission boundary. Whole Repeat
+    // admission and nested occurrence refusals have their own native replay.
+    edit(d, "wrap-retime 2 pitch=tape")?;
+    edit(d, "zoom 2 target=target-1")?;
+    refused(
+        d,
+        "A Retime owner refuses Keep Follow creep without a write",
+    )?;
+    edit(d, "undo")?;
+    edit(d, "undo")?;
+    d.check("Undoing the temporary wrapper restores the selected live group",
+        d.app().selected_beat.as_ref()==Some(&group) && framing(d,&group)==animated && d.app().sequence_length()==80,
+        json!({"selected":group,"frames":80,"framing":animated}),json!({"selected":d.app().selected_beat,"frames":d.app().sequence_length(),"framing":framing(d,&group)}))?;
     at(d, 40)?;
     let final_workspace = d
         .app()

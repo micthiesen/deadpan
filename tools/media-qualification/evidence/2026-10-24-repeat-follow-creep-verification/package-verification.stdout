@@ -1,0 +1,1 @@
+{"authored_omissions": 0, "earlier_audit_files_unchanged": true, "findings": [], "inventory_sha256": "dcee080990be595f9826917c3d55dceee8a402600432f55b9804085710db049d", "metadata_omissions": 4, "payload_bytes": 11068281, "payloads": 165, "primary_files": 166, "primary_tree_unchanged": true, "raw_payload_bytes": 156028443, "status": "no_findings", "tar_members": 473}

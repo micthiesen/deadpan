@@ -57,6 +57,7 @@ mod recipes;
 mod recovery;
 mod registers;
 mod render;
+mod repeat_follow_creep;
 mod repeat_input;
 mod repeat_operator;
 mod retime;

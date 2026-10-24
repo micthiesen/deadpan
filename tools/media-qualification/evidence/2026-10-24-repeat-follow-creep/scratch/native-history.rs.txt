@@ -1,0 +1,80 @@
+    at(d, 0)?;
+    undo_to(d, &repeat, &fixed)?;
+    edit(d, "redo")?;
+    d.check(
+        "Redo restores the complete repeat Follow creep",
+        framing(d, &repeat) == animated,
+        json!(animated),
+        json!(framing(d, &repeat)),
+    )?;
+    let revision = d.revision();
+    open_camera(d)?;
+    d.key(Key::Enter)?;
+    idle(d)?;
+    d.check(
+        "Unchanged Camera Enter preserves repeat animation without history",
+        d.app().camera.is_none() && d.revision() == revision && framing(d, &repeat) == animated,
+        json!({"revision":revision,"framing":animated}),
+        json!({"revision":d.revision(),"framing":framing(d,&repeat)}),
+    )?;
+    open_camera(d)?;
+    d.chord(&[Key::Plus, Key::Escape])?;
+    idle(d)?;
+    d.check(
+        "Camera cancel preserves the complete repeat Follow",
+        d.revision() == revision && framing(d, &repeat) == animated,
+        json!(animated),
+        json!(framing(d, &repeat)),
+    )?;
+    let installed = current
+        .plan
+        .picture(ProjectFrame(0))
+        .map_err(|error| error.to_string())?
+        .framing
+        .into_iter()
+        .find(|layer| !layer.escalation && layer.instance.node == repeat)
+        .and_then(|layer| layer.pose)
+        .ok_or("No installed repeat pose")?;
+    open_camera(d)?;
+    d.key(Key::T)?;
+    d.settled()?;
+    d.check(
+        "Explicit release explains the removal of repeat scale animation",
+        d.app().message.as_deref().is_some_and(|message| {
+            message.contains("Scale animation removed") && message.contains("static framing")
+        }),
+        json!("Scale animation removed; Enter saves this static framing"),
+        json!(d.app().message),
+    )?;
+    d.key(Key::Enter)?;
+    d.changed(&revision)?;
+    idle(d)?;
+    d.check("Explicit repeat release commits exactly its displayed static pose",
+        matches!(framing(d,&repeat),Some(Framing {value:FramingValue::Static {pose},..}) if pose==installed),json!(installed),json!(framing(d,&repeat)))?;
+    undo_to(d, &repeat, &animated)?;
+
+    undo_to(d, &repeat, &fixed)?;
+    let revision = d.revision();
+    super::macros::execute(d, 'x', None)?;
+    d.changed(&revision)?;
+    idle(d)?;
+    d.check(
+        "Named replay re-resolves Keep for the selected whole repeat",
+        framing(d, &repeat) == animated,
+        json!(animated),
+        json!(framing(d, &repeat)),
+    )?;
+    undo_to(d, &repeat, &fixed)?;
+    edit(d, "creep from=1.1 to=2.2 curve=linear")?;
+    undo_to(d, &repeat, &fixed)?;
+    let revision = d.revision();
+    d.key(Key::Period)?;
+    d.changed(&revision)?;
+    idle(d)?;
+    d.check(
+        "Dot after Undo repeats whole-repeat semantic Keep",
+        framing(d, &repeat) == animated,
+        json!(animated),
+        json!(framing(d, &repeat)),
+    )?;
+

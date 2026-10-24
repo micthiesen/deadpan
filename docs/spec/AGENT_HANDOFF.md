@@ -4,6 +4,107 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-24
 
+[Whole-Repeat following creep and live clipping](../qualification/repeat-follow-creep-2026-10-24.md)
+are implemented and locally verified. A directly selected whole Repeat
+outside enclosing Repeat/explicit occurrence scope accepts Keep creep. Scale
+uses the complete owner clock across all plays and only intervening gaps;
+target time resets to each provider's actual Original point. Separate inner
+escalation, stable iterations/layouts/branches, gap ownership, child framing,
+provider/audio and duration remain. Retime, Visual including full range,
+nested/selected occurrences and implicit animated-path replacement still refuse.
+The earlier CLI Sequence test now proves Repeat success and exact Undo. Native
+Sequence removes its obsolete ordinary-Repeat refusal; the dedicated Repeat
+scenario supplies positive assertions. Scoped and Retime negatives remain.
+
+Root's independent 600-case live renderer comparison failed against the old
+helper: context-free Follow ignored intermediate live crops. All live scopes
+now clip irreversibly, consistently with captured geometry. A later zoom-out
+cannot restore a removed target; fallback scale keeps animating. Legacy
+no-aspect coordinate placement remains. Core 58 / SQLite 87, schema, curves,
+Q32 numerics and dependencies are unchanged.
+
+Focused Core two, CLI framing fourteen, Plan three and full renderer three
+tests pass, including 960 captured and 600 live geometry cases. The Plan
+36-combination matrix and two shape-specific non-resurrection cases cover
+default/owned gaps, loss/correction and escalation. The targeted clamp's `1/6`
+margin rounds up, putting the source-edge point at `-1/2^32`; it correctly
+falls back without epsilon. App all-target and strict checks, all 2,053
+Core/Plan and 1,304 App tests, scoped formatting and release build pass.
+Eleven existing App opt-in cases remain ignored. Three fresh general/clock/
+test reviews cover all twenty-one paths with no findings.
+
+Core/CLI/render inputs remained unchanged during their runs. Two Camera hint
+strings changed afterward; exact old App text/delta are retained and the other
+twenty paths match. Current Plan/App/strict and full Core/Plan/App, format and
+release receipts bind all twenty-one final paths unchanged.
+App unit binary `ca1c96a1…` was hashed only after terminal completion, with no
+pre-run/live hash. Do not claim unchanged executable bytes during that unit
+run; the twenty-one-source before/after guards stand. This is a provenance
+limit, not a test failure. Actual host measurements are retained in `host.json`.
+Old-helper failed execution has five exact old source copies. Older Plan
+fixture drafts were never executed; do not call them failed checks.
+
+Native `repeat-follow-creep` passes 129 checks. An earlier
+wrapper invocation put `--binary` in the command remainder and failed before
+App spawn; it is not a product failure or replay result. The scenario retains
+Original `[0,24)`, point `.58` corrected to `.68` at indexed Original 12,
+three plays starting 0/28/56, default Freeze four-frame gaps at 24/52 holding
+Original 23, and inner escalation 1, 9/8, 5/4. All eighty independent frame
+oracles, sixteen stopped boundaries and history/Camera/scope assertions pass.
+Owned gaps are pure/CLI coverage, not this native fixture. First/final twenty-one
+source paths and all five executable bytes match: one candidate build and one
+Repeat workflow, not duplicate first/final runs. App `16e7ee4a…`, CLI `bf3b5e5f…`.
+Root inspected Camera017/070, gap121 and final124; Camera070 is after Repeat
+construction, before creep. No obscured controls/overlapping labels observed.
+
+The repeated-scenario regression invocation only ran Sequence (96 checks).
+Separate zoom and Hold runs pass 213/67; each actual replay includes the live
+Kestrel audit. Repeat/Sequence/zoom/Hold warnings are 3/3/3/2, with distinct
+layout causes and screenshot capacity retained. The native project has eighty
+frames; its actual export verifies all eighty pictures and full `[0,128128)`
+stereo audio at zero offset/gaps. Movie `9c8b9d24…`, 105,129 bytes; all nine
+CLI commands pass and the portable document is exactly equal. Its picture
+comparisons have 114 observable/44 unobservable neighbors; audio edit media
+time is 2,048 with no empty edit.
+
+The CLI-derived case changes only Original12's correction from .68 to .98.
+All eighty independent pose checks pass, including 28 clipped frames and the
+actual fallback x center `311385129/536870912` (about .58, not .5; y=.5). Its movie
+`8e0c0ef2…`, 91,654 bytes, verifies eighty pictures/full128128 audio with zero
+offset/gaps and 104 observable/54 unobservable picture-neighbor comparisons.
+All 181 product commands return zero, including portable target Undo/Redo.
+The wrapper still exits one afterward on absent-to-empty WAL metadata. Its
+receipt, failure and missing historical result remain; guarded persistent
+files and authored documents match, with the original SHM exclusion retained.
+Read-only reconciliation `fbb48909…` passes with no new product run, checking
+362 stream pins, all source/binary pins and the retained outputs. Do not turn
+that reconciliation into a successful original wrapper exit.
+
+First raw audit `7b01c81a…` has no findings. Native/original portable history
+is twenty revisions/twelve rows; derived is twenty-one/thirteen, and derived
+portable after Undo/Redo is twenty-three/thirteen. Exact immutable copies and
+expected traversal/history/redo/transaction steps are verified.
+The immutable [Primary](../../tools/media-qualification/evidence/2026-10-24-repeat-follow-creep)
+has 165 payloads, 11,068,281 bytes plus inventory `dcee0809…`, with 473 regular
+TAR members. Four explicit metadata omissions are paired 32,768-byte SHM and
+empty WAL files in native/derived roots; zero authored omissions. The first
+package verifier passes with no findings/empty stderr, receipt `0319a245…`;
+Primary, all twenty-one current sources and audit receipts remain unchanged.
+The [supplement](../../tools/media-qualification/evidence/2026-10-24-repeat-follow-creep-verification)
+has eight payloads, 53,834 bytes plus inventory `9af2236a…`. Root's complete
+file/name/hash readback passes for both packages. Staged source/evidence diff
+check retains eight blank-at-EOF warnings in exact raw logs/source fragments;
+authored code/docs check passes. Do not trim immutable evidence.
+
+Base `cb89b8b79a01a4ad59fc29dc572ed65015a3c3af`; scratch
+`/tmp/deadpan-repeat-follow-creep-2026-10-24`. Preserve foreign
+`fuzz/Cargo.lock`, `.claude/` and preceding immutable evidence. Root owns
+qualification, Git, progress and artifact writes. Coverage remains 89%, eight
+Complete and sixteen Partial. No requirement or gate closes; Retime/scoped
+following, non-face proposals and the full normative goal stay open.
+
+## Earlier whole-Sequence continuation, 2026-10-24
+
 [Whole-Sequence following creep](../qualification/sequence-follow-creep-2026-10-24.md)
 is implemented and locally verified. The typed ordinary owner enum
 and actual selected-node classification now admit a direct-child Sequence

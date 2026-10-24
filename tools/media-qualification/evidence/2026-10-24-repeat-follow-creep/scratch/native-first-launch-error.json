@@ -1,0 +1,6 @@
+{
+  "receipt": "native-repeat-first.json",
+  "failure": "Wrapper argparse REMAINDER consumed --binary placed after label; subprocess tried to execute --binary and raised FileNotFoundError before app launch.",
+  "classification": "Qualification invocation error, no product run or failure claimed.",
+  "correction": "Options precede label in native-repeat-run. Raw original receipt and empty streams retained."
+}

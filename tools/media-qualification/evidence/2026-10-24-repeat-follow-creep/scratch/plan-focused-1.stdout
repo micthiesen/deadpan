@@ -1,0 +1,8 @@
+
+running 3 tests
+test repeat_follow_creep::repeat_follow_creep_cannot_restore_a_child_clipped_target_by_later_escalation_zoom_out ... ok
+test repeat_follow_creep::repeat_follow_creep_keeps_one_clock_across_three_plays_default_and_owned_gaps ... ok
+test repeat_follow_creep::repeat_follow_creep_composes_centered_and_target_clamped_escalation_in_play_order ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 130 filtered out; finished in 0.08s
+

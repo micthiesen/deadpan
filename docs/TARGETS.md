@@ -66,13 +66,16 @@ picture time. The document map is `targets`; patches carry `targets` changes.
 
 `FramingValue::Follow { target, scale, fallback }` centers a framing layer on
 the target at the source time of the picture shown, at its evaluated scale.
-A whole ordinary Source, Hold or Sequence can retain a live-target scale transition
+A whole ordinary Source, Hold, Sequence or Repeat can retain a live-target scale transition
 ([following creep](FRAMING.md#zoom-and-creep-commands)). The plan
 resolves it after descending to the picture (`RenderPlan::resolve_follows`): the
 target point is carried outward through every inner posed layer, innermost
 first (`p' = (p - center) * scale + 1/2`), so an outer follow sees the subject
 where inner framing put it. On a Sequence the target uses each child's current
 Original time across cuts, while scale uses the complete group's output clock.
+On a Repeat selected from outside, the same owner clock spans all plays and
+intervening gaps while the provider clock resets or holds. Per-play escalation
+remains an inner scope and applies to the following gap.
 Before that, a target with a `display_aspect` has
 its center placed on the presentation canvas exactly where the renderer fits
 the whole picture (`deadpan_core::fit_source_point`, the `Fit` letterbox or
@@ -84,12 +87,15 @@ rational arithmetic. A 16:9 Original on a 1080x1920 Shorts canvas covers
 the same `follow_pose_in_context` with the canvas from the presentation basis.
 Resolved poses are quantized to the framing grid.
 The fallback applies where the picture is not the target's asset, lies outside
-its span, or the centered pose is out of range (including arithmetic overflow);
+its span, is clipped by a live inner scope, or the centered pose is out of range
+(including arithmetic overflow);
 evaluated on its own, a follow is its fallback. An endpoint-held Source picture
 uses its selection's last moment. Under a pause, the target center traverses
 each retained canvas's Fit/Fill, ordered poses and clips, then the current
 canvas and live inner framing. A later zoom-out cannot restore a point clipped
-by an earlier captured stage. Captured projection requires the target's
+by an earlier captured or live scope. This also applies without captured
+geometry; the earlier context-free exterior-center behavior is corrected.
+Captured projection requires the target's
 measured display aspect; absent aspect, lost coverage or arithmetic overflow
 uses the fallback. The retained crop, provider and Original clock do not change.
 Copies of a followed beat

@@ -1,0 +1,14 @@
+{
+  "crates/deadpan-plan/src/plan.rs": {
+    "bytes": 74905,
+    "sha256": "65757b3999ce03d8760960af1ee1f8d1740932ef4dcc5656885e56886211579d"
+  },
+  "crates/deadpan-render/tests/follow_letterbox.rs": {
+    "bytes": 4625,
+    "sha256": "8630d5ae971d0089d83f1d2c269f0bccbe9dc434b46b0dab48624643c8a354e6"
+  },
+  "crates/deadpan-render/tests/follow_letterbox/live.rs": {
+    "bytes": 3982,
+    "sha256": "400004ee451238570aad79192bbb23215aef06a090818dc6f2ba3f0e954748b4"
+  }
+}

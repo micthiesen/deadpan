@@ -1,0 +1,8 @@
+{
+  "receipt": "native-regressions.json",
+  "actual_scope": [
+    "sequence-follow-creep",
+    "kestrel-shortcuts"
+  ],
+  "note": "Repeated --scenario flags select only final value. Successful run qualifies Sequence96checks only; zoom and Hold run separately with distinct receipts. No failed product assertion."
+}

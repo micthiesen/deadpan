@@ -459,7 +459,9 @@ fn whole_sequence_follow_creep_crosses_source_cuts_and_replays_staged_keep_with_
         },
         "repeat-follow",
     )?;
-    let error = reject(
+    // The whole ordinary Repeat is now also admitted. Its Sequence child still
+    // carries its independent path; only the selected outer owner changes.
+    invoke(
         &package,
         &input,
         &invocation(
@@ -469,15 +471,26 @@ fn whole_sequence_follow_creep_crosses_source_cuts_and_replays_staged_keep_with_
             "repeat",
             11,
             None,
-            "repeat-refused",
+            "repeat-creep",
         ),
+        false,
     )?;
-    assert!(
-        error["error"]["message"]
-            .as_str()
-            .unwrap()
-            .ends_with(deadpan_core::framing_zoom::FOLLOW_CREEP_REFUSAL)
-    );
+    let animated = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    let mut expected = serde_json::to_value(&repeated)?;
+    expected["revision_id"] = json!(animated.revision_id());
+    expected["nodes"]["repeat"]["framing"] =
+        serde_json::to_value(&animated.nodes()[&node("repeat")].framing)?;
+    assert_eq!(serde_json::to_value(&animated)?, expected);
+    assert!(matches!(&animated.nodes()[&node("repeat")].framing,
+        Some(Framing { value: FramingValue::Follow { target, scale, scale_transition: Some(FollowScaleTransition { factor, .. }), .. }, .. })
+        if target.as_str() == "subject" && *scale == ratio(3, 2) && *factor == ratio(2, 1)));
+    let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    writer.undo(
+        animated.revision_id(),
+        RevisionId::new("repeat-creep-undo")?,
+    )?;
+    same_document(&writer.snapshot()?, &repeated)?;
+    drop(writer);
     let retimed = command(
         &package,
         &input,

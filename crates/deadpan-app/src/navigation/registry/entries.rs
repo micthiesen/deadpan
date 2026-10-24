@@ -1015,7 +1015,7 @@ pub static SPECS: &[Spec] = &[
             "set_framing / zoom instruction; scoped invocation context for one play",
             CAM,
         ),
-        help: "Creep over the selected beat, or the Edit range inside it, from the current (or from=) scale to to= (1.35× for {creep}), toward the target's position at the creep's last frame. curve=smoothstep (default) or linear. On a whole ordinary Source, Hold or Sequence already following a target, keeping that target animates scale while the target supplies the center. A ranged creep arrives at the range end and holds its end pose to the end of the beat. Paths and follows are never flattened implicitly. Keep-center and target=center intent support macros and dot over ordinary ranges or a whole play chosen at every enclosing Repeat. Sampled-target recording refuses. One Undo.",
+        help: "Creep over the selected beat, or the Edit range inside it, from the current (or from=) scale to to= (1.35× for {creep}), toward the target's position at the creep's last frame. curve=smoothstep (default) or linear. On a whole ordinary Source, Hold, Sequence or Repeat already following a target, keeping that target animates scale while the target supplies the center. A Repeat uses one clock across its plays and intervening gaps; select it from outside to frame the whole Repeat. A ranged creep arrives at the range end and holds its end pose to the end of the beat. Paths and follows are never flattened implicitly. Keep-center and target=center intent support macros and dot over ordinary ranges or a whole play chosen at every enclosing Repeat. Sampled-target recording refuses. One Undo.",
     },
     Spec {
         id: "framing.save",

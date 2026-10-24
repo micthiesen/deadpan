@@ -216,7 +216,7 @@ construction and its numeric tests live in
 | `,c` | `:creep to=1.35`. |
 | `:zoom S [target=…] [curve=step]` | Smash zoom. On the whole beat with a target: `Follow { target, scale: S, fallback }`, a live step onto the target. Otherwise a static pose at scale `S`. |
 | `:zoom S curve=linear\|smoothstep` | An eased change from the current pose, as `:creep to=S`. |
-| `:creep [from=S] [to=S] [target=…] [curve=smoothstep\|linear]` | Eases from `from` (default: current scale) to `to` (default 1.35). With no `target=`, a whole ordinary Source, Hold or Sequence with a fixed Follow retains live targeting and animates scale. Other cases use a fixed-center envelope. |
+| `:creep [from=S] [to=S] [target=…] [curve=smoothstep\|linear]` | Eases from `from` (default: current scale) to `to` (default 1.35). With no `target=`, a whole ordinary Source, Hold, Sequence or Repeat with a fixed Follow retains live targeting and animates scale. Other cases use a fixed-center envelope. |
 | `:zoom S target=face:N …`, `:creep … target=face:N` | Face `N` (1 to 64, left to right) proposed in the displayed picture, saved as a target together with the framing ([face proposals](#face-proposals)). |
 | `:zoom off` | Abrupt return: no framing on the whole beat, or a step out to the full picture over the Edit range. |
 
@@ -234,7 +234,7 @@ Nothing flattens an existing path implicitly. On the whole beat:
 
 - a fixed Follow keeps following when `:zoom S` or `,z` changes only its scale
   (the fallback keeps its center; the clock is kept);
-- a whole ordinary Source, Hold or Sequence with a fixed Follow accepts `,c` or `:creep` without
+- a whole ordinary Source, Hold, Sequence or Repeat with a fixed Follow accepts `,c` or `:creep` without
   `target=`. Its center keeps following the target at each picture's Original
   time while scale changes on that owner's output clock. A frozen Hold keeps
   its exact Original moment while scale progresses over the Hold's duration.
@@ -242,6 +242,10 @@ Nothing flattens an existing path implicitly. On the whole beat:
   continuously over the complete group. Select the group from its parent
   Sequence; this does not add root-Sequence selection or occurrence authority.
   Child framing, sound and duration remain unchanged.
+  Select a Repeat from outside it to frame all plays and intervening gaps with
+  one output clock. The target follows each play or gap's actual Original point;
+  per-play escalation stays a separate inner layer, including its owning gap.
+  No time is added after the last play.
   Clear Visual selection
   first, including a full-length range. Single-play and other owner authoring
   currently refuse this operation;
@@ -253,7 +257,7 @@ Animated Follow stores one optional `scale_transition` with a terminal `factor`
 and `linear`, `smoothstep` or raw `step` curve. The live scale and fallback scale
 retain separate initial values; each terminal value is its own initial scale
 times the factor. An explicit `from=` proportionally adjusts both bases before
-creating the transition. New creep spans the current whole Source, Hold or Sequence; later
+creating the transition. New creep spans the current whole Source, Hold, Sequence or Repeat; later
 structural edits retain its authored normalization clock. Interpolation uses the
 existing Q32 round-even numeric contract. Fallback centers and exact endpoint
 scales stay exact; resolved target poses use the existing whole-pose grid.
@@ -264,7 +268,10 @@ Outside the target's span, or when existing target projection cannot resolve,
 the fallback center applies and its own scale continues changing. A captured
 Hold projects the target through its retained Fit/Fill canvases and every
 ordered clip, then through current live framing. Clipped targets cannot be
-restored by a later zoom-out. Legacy targets without a measured display aspect
+restored by a later zoom-out. Every live child scope also clips, even without
+captured geometry: a point hidden by a child crop uses the fallback rather than
+recentering missing pixels. This corrects the earlier context-free projection
+that retained exterior centers. Legacy targets without a measured display aspect
 use the fallback under captured geometry. Provider, crop and sound recipes stay
 unchanged.
 
@@ -409,7 +416,7 @@ recipe boundary and migration fixture.
 Saved point and region targets, keyboard creation, following and selected-region
 tracking are implemented (above, [targets](TARGETS.md), [tracking](TRACKING.md)).
 General non-face region proposals and pointer dragging of
-rectangles remain required. Whole ordinary Source, Hold and Sequence following creep animates
+rectangles remain required. Whole ordinary Source, Hold, Sequence and Repeat following creep animates
 scale while retaining the live target, as described above; broader authoring
 scopes remain open. Follow centers are placed on a letterboxed or
 pillarboxed canvas for targets that record their display aspect

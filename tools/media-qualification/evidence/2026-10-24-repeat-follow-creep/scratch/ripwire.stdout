@@ -1,0 +1,227 @@
+<ctx task="OrdinaryFollowOwner::Repeat whole Repeat Keep-center following creep; CameraSession::ordinary_follow_owner, semantic/planner/framing.rs, plan.rs Repeat local_position effective_duration default and owned gaps, RepeatEscalation composition." route=" [routed: subtoken+body BM25 (--for&apos;s default) — no strong name hit, multi-word conceptual query]" bundle="auto" bodies="3"><!-- ripwire lens for "OrdinaryFollowOwner::Repeat whole Repeat Keep-center following creep; CameraSession::ordinary_follow_owner, semantic/planner/framing.rs, plan.rs Repeat local_position effective_duration default and owned gaps, RepeatEscalation composition." [mention anchor: 1 file + 3 symbols named in the task lifted near the top] [doc mentions: 4 docs discussing 2 top-ranked symbols surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="4346" --><sigs capped="1"><f p="/Users/michael/Code/deadpan/crates/deadpan-core/src/framing_zoom/tests.rs"><d l="309" n="whole_beat_keep_retains_a_follow_and_refuses_to_flatten_a_path" cx="2" ccx="1" in="0" churn="4">fn whole_beat_keep_retains_a_follow_and_refuses_to_flatten_a_path()</d><d l="503" n="follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_source_hold_or_sequence" cx="3" ccx="3" in="0" churn="4">fn follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_source_hold_or_sequence()</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/framing.rs"><d l="6" n="validate_scoped_context" cx="11" ccx="10" in="7" churn="12" amp="7" tested="1">pub(super) fn validate_scoped_context( document: &amp;ProjectDocument, context: &amp;SemanticContext, ) -&gt; Result&lt;(), EditError&gt;</d><d l="83" n="zoom" id="/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/framing.rs::Planner::zoom" cx="19" ccx="11" in="0" churn="12">pub(super) fn zoom( &amp;mut self, trace_index: usize, kind: framing_zoom::ZoomKind, center: SemanticZoomCenter, ) -&gt; Result&lt;(), EditError&gt;</d><d l="221" n="zoom_scoped" id="/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/framing.rs::Planner::zoom_scoped" cx="12" ccx="13" in="1" churn="12" amp="1">fn zoom_scoped( &amp;mut self, trace_index: usize, kind: framing_zoom::ZoomKind, center: SemanticZoomCenter, scoped: SemanticScopedContext, ) -&gt; Result&lt;(), EditErro…</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-cli/src/framing/tests.rs"><d l="397" n="semantic_framing_projects_through_default_gap_provider_clip_before_ordinary_owner" cx="1" ccx="0" in="0" churn="4">fn semantic_framing_projects_through_default_gap_provider_clip_before_ordinary_owner() -&gt; Result</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-plan/src/picture.rs"><d l="162" n="PictureFraming" cx="0" ccx="0" in="0" churn="11" amp="21">pub struct PictureFraming</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-plan/src/audio_owners/input_tests.rs"><d l="302" n="repeat_play_gap_and_whole_repeat_have_distinct_contexts" cx="1" ccx="0" in="0" churn="3" amp="42">fn repeat_play_gap_and_whole_repeat_have_distinct_contexts()</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-core/src/audio_binding/repeat_rates/tests.rs"><d l="234" n="current_owned_branches_exclude_defaults_and_final_gap_is_dormant" cx="2" ccx="1" in="0" churn="1" amp="28">fn current_owned_branches_exclude_defaults_and_final_gap_is_dormant()</d><d l="450" n="overridden_default_gaps_and_zero_extent_owned_gaps_are_dormant" cx="2" ccx="1" in="0" churn="1" amp="28">fn overridden_default_gaps_and_zero_extent_owned_gaps_are_dormant()</d></f></sigs><bodies shown="3" total="6" capped="1"><b t="fn" l="503" p="/Users/michael/Code/deadpan/crates/deadpan-core/src/framing_zoom/tests.rs" n="follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_source_hold_or_sequence"><![CDATA[fn follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_source_hold_or_sequence() {
+    let fallback = FramingPose::new(ratio(1, 3), ratio(2, 7), ratio(1, 2)).unwrap();
+    let entry = Framing {
+        clock: FramingClock::RetainedOutput {
+            offset: ratio(-2, 1),
+            duration: ratio(7, 1),
+        },
+        value: FramingValue::Follow {
+            target: TargetId::new("speaker").unwrap(),
+            scale: ratio(2, 1),
+            fallback,
+            scale_transition: None,
+        },
+    };
+    let kind = ZoomKind::Creep {
+        from: None,
+        to: ratio(4, 1),
+        curve: ZoomCurve::Linear,
+    };
+    for owner in [
+        OrdinaryFollowOwner::Source,
+        OrdinaryFollowOwner::Hold,
+        OrdinaryFollowOwner::Sequence,
+    ] {
+        let admitted = Shot {
+            entry: Some(&entry),
+            ordinary_owner: Some(owner),
+            ..shot(None)
+        };
+        let result = build(kind, &Center::Keep, &admitted).unwrap().unwrap();
+        assert_eq!(result.clock, FramingClock::OwnerOutput);
+        let value = result
+            .evaluate_with_follow_exact(ratio(1, 1), ratio(4, 1))
+            .unwrap();
+        assert_eq!(value.follow.unwrap().1, ratio(5, 2));
+        assert_eq!(value.pose.scale, ratio(5, 8));
+        assert_eq!(
+            [value.pose.center_x, value.pose.center_y],
+            [ratio(1, 3), ratio(2, 7)]
+        );
+        let explicit = build(
+            ZoomKind::Creep {
+                from: Some(ratio(3, 1)),
+                to: ratio(4, 1),
+                curve: ZoomCurve::Linear,
+            },
+            &Center::Keep,
+            &admitted,
+        )
+        .unwrap()
+        .unwrap();
+        let initial = explicit
+            .evaluate_with_follow_exact(ExactRatio::ZERO, ratio(4, 1))
+            .unwrap();
+        assert_eq!(initial.follow.unwrap().1, ratio(3, 1));
+        assert_eq!(initial.pose.scale, ratio(3, 4));
+        for range in [Some((0, 10)), Some((1, 9))] {
+            assert!(build(kind, &Center::Keep, &Shot { range, ..admitted }).is_err());
+        }
+        assert!(
+            build(
+                kind,
+                &Center::Keep,
+                &Shot {
+                    ordinary_owner: None,
+                    ..admitted
+                }
+            )
+            .is_err()
+        );
+        assert!(
+            build(
+                kind,
+                &Center::Keep,
+                &Shot {
+                    entry: Some(&result),
+                    ..admitted
+                }
+            )
+            .is_err()
+        );
+        assert!(
+            build(
+                ZoomKind::Smash { scale: ratio(3, 1) },
+                &Center::Keep,
+                &Shot {
+                    entry: Some(&result),
+                    ..admitted
+                }
+            )
+            .is_err()
+        );
+        // Explicit target selection continues to author a sampled ordinary path.
+        assert!(matches!(
+            build(
+                kind,
+                &Center::Point([ratio(1, 2), ratio(1, 2)]),
+                &Shot {
+                    explicit: true,
+                    entry: Some(&result),
+                    ..admitted
+                }
+            )
+            .unwrap()
+            .unwrap()
+            .value,
+            FramingValue::Envelope { .. }
+        ));
+    }
+}]]><calls total="4"><c n="new" l="76">pub fn new( center_x: ExactRatio, center_y: ExactRatio, scale: ExactRatio, ) -&gt; Result&lt;Self, FramingError&gt;</c><c n="evaluate_with_follow_exact" l="427">pub fn evaluate_with_follow_exact( &amp;self, local: ExactRatio, duration: ExactRatio, ) -&gt; Result&lt;EvaluatedFraming&lt;&apos;_&gt;, FramingError&gt;</c><c n="ratio" l="3">fn ratio(n: i128, d: i128) -&gt; ExactRatio</c><c n="shot" l="103">fn shot(range: Option&lt;(u64, u64)&gt;) -&gt; Shot&lt;&apos;static&gt;</c></calls></b><b t="fn" l="6" p="/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/framing.rs" n="validate_scoped_context"><![CDATA[pub(super) fn validate_scoped_context(
+    document: &ProjectDocument,
+    context: &SemanticContext,
+) -> Result<(), EditError> {
+    let Some(scoped) = &context.scoped else {
+        return Ok(());
+    };
+    if context.original.is_some()
+        || context.visual_selection.is_some()
+        || context.selected_hold_duration.is_some()
+    {
+        return Err(unavailable(
+            "single-play editing requires Your edit with no Visual selection",
+        ));
+    }
+    let Some(NodeKind::Sequence { children }) =
+        document.nodes().get(&context.parent).map(|node| &node.kind)
+    else {
+        return Err(unavailable(
+            "single-play editing requires an ordinary Sequence parent",
+        ));
+    };
+    if !children.contains(&scoped.root)
+        || !matches!(
+            document.nodes().get(&scoped.root).map(|node| &node.kind),
+            Some(NodeKind::Repeat { .. } | NodeKind::Retime { .. })
+        )
+    {
+        return Err(unavailable(
+            "single-play editing root must be a direct Repeat or Retime child",
+        ));
+    }
+    if scoped.target.repeats.is_empty()
+        || scoped
+            .target
+            .repeats
+            .iter()
+            .any(|step| !matches!(step.branch, crate::RepeatEditBranch::Play { .. }))
+    {
+        return Err(unavailable(
+            "single-play editing requires every Repeat ancestor to name one explicit Play",
+        ));
+    }
+    if !scoped
+        .target
+        .matches_instance(document, &scoped.presentation)?
+    {
+        return Err(unavailable(
+            "single-play editing presentation differs from its authoring target",
+        ));
+    }
+    let mut node = scoped.target.node.clone();
+    for _ in 0..=crate::MAX_DOCUMENT_DEPTH {
+        if node == scoped.root {
+            return Ok(());
+        }
+        let Some(parent) = document.parent_of(&node) else {
+            break;
+        };
+        node = parent;
+    }
+    Err(unavailable(
+        "single-play editing target lies outside its captured inspector root",
+    ))
+}]]><calls total="5"><c n="any" l="174">const fn any(self) -&gt; bool</c><c n="parent_of" l="1023">pub(crate) fn parent_of(&amp;self, id: &amp;NodeId) -&gt; Option&lt;NodeId&gt;</c><c n="matches_instance" l="109">pub fn matches_instance( &amp;self, document: &amp;ProjectDocument, instance: &amp;InstancePath, ) -&gt; Result&lt;bool, EditError&gt;</c><c n="unavailable" l="72">fn unavailable(message: &amp;str) -&gt; EditError</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><!-- body omitted (over budget): zoom --><!-- body omitted (over budget): zoom_scoped --><b t="fn" l="397" p="/Users/michael/Code/deadpan/crates/deadpan-cli/src/framing/tests.rs" n="semantic_framing_projects_through_default_gap_provider_clip_before_ordinary_owner"><![CDATA[fn semantic_framing_projects_through_default_gap_provider_clip_before_ordinary_owner() -> Result {
+    let fixture = Fixture::source("cfr-bframes.mp4")?;
+    let document = fixture.store.snapshot()?;
+    let gap_frame = RenderPlan::compile(&document)?.duration().frames();
+    let repeated = staged(
+        &document,
+        Command::WrapRepeat {
+            node: node("source"),
+            id: node("repeat"),
+            plays: 2,
+            gap: Some(HoldRecipe {
+                duration: frames(2),
+                picture_context: None,
+                video: HoldVideo::Freeze {
+                    asset: asset("original"),
+                    timestamp: fixture.decoded_metadata.pts,
+                },
+                audio: HoldAudio::Silence,
+            }),
+            anchor_policy: Default::default(),
+        },
+        "repeated",
+    );
+    let grouped = staged(
+        &repeated,
+        Command::Group {
+            parent: node("root"),
+            start: 0,
+            end: 1,
+            id: node("owner"),
+            label: "Owner".into(),
+        },
+        "gap-grouped",
+    );
+    let framed = staged(
+        &grouped,
+        Command::SetFraming {
+            node: node("repeat"),
+            framing: Some(Framing::static_pose(FramingPose::new(
+                q(1, 4),
+                q(1, 2),
+                ExactRatio::ONE,
+            )?)?),
+        },
+        "repeat-framed",
+    );
+    std::fs::remove_file(&fixture.source)?;
+    let sample = RenderPlan::compile(&framed)?.picture(ProjectFrame(gap_frame))?;
+    assert!(sample.gap_after.is_some());
+    let state = resolve(&fixture.store, &framed, &site("owner", gap_frame, true))?;
+    assert_eq!(state.original_center, Some([q(3, 4), q(1, 2)]));
+    assert_eq!(state.current, FramingPose::identity());
+    Ok(())
+}]]><calls total="11"><c n="node" l="31">fn node(value: &amp;str) -&gt; NodeId</c><c n="asset" l="34">fn asset(value: &amp;str) -&gt; AssetId</c><c n="frames" l="40">fn frames(value: i64) -&gt; FrameDuration</c><c n="q" l="43">fn q(n: i128, d: i128) -&gt; ExactRatio</c><c n="staged" l="63">fn staged(document: &amp;ProjectDocument, command: Command, name: &amp;str) -&gt; ProjectDocument</c><c n="site" l="76">fn site(owner: &amp;str, frame: i64, original_center: bool) -&gt; SemanticFramingSite</c><c n="source" l="95">fn source(name: &amp;str) -&gt; Result&lt;Self&gt;</c><c n="new" l="76">pub fn new( center_x: ExactRatio, center_y: ExactRatio, scale: ExactRatio, ) -&gt; Result&lt;Self, FramingError&gt;</c><c n="static_pose" l="268">pub fn static_pose(pose: FramingPose) -&gt; Result&lt;Self, FramingError&gt;</c><c n="ProjectFrame" l="9">pub struct ProjectFrame</c><c n="compile" l="701">pub fn compile(document: &amp;ProjectDocument) -&gt; Result&lt;Self, PlanError&gt;</c></calls></b><!-- body omitted (over budget): PictureFraming --></bodies></ctx>

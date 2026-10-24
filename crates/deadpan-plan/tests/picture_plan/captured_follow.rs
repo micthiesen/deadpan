@@ -165,7 +165,7 @@ fn captured_follow_maps_complete_canvases_between_stages_and_honors_all_clips() 
     ];
     // The first live child crop removes x=.1; an outer zoom-out cannot recover it.
     assert_eq!(projected(&square, &identity, [100, 100], &inner), None);
-    // This deliberately keeps the context-free public API's prior semantics.
+    // The context-free API observes the same irreversible live clip.
     assert_eq!(
         follow_pose(
             &square,
@@ -175,7 +175,7 @@ fn captured_follow_maps_complete_canvases_between_stages_and_honors_all_clips() 
             inner,
             ExactRatio::ONE
         ),
-        Some(expected(q(1, 10), q(1, 2)))
+        None
     );
 }
 

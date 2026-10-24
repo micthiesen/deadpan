@@ -1,0 +1,14 @@
+{
+  "frozen_at": "2026-10-24T10:27:32.830460+00:00",
+  "sources": {
+    "crates/deadpan-plan/tests/picture_plan.rs": {
+      "bytes": 90937,
+      "sha256": "27fd5159ade0098c02e66616e5ff6ed5ad870bfd94cab11cf51f3e98e12ba584"
+    },
+    "crates/deadpan-plan/tests/picture_plan/repeat_follow_creep.rs": {
+      "bytes": 15127,
+      "sha256": "f5f34e758591249344eace0f841ed58a13944d50e67dac49c4405c6d605cbfff"
+    }
+  },
+  "status": "written and scoped-formatted; tests unrun pending Core/Plan freeze and Root Cargo allocation"
+}

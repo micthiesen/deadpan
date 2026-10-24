@@ -1,0 +1,176 @@
+{
+  "frozen_at": "2026-10-24T10:31:45.491988+00:00",
+  "base_supplied_by_root": "cb89b8b79a01a4ad59fc29dc572ed65015a3c3af",
+  "source_frozen": true,
+  "changed_paths": [
+    {
+      "path": "crates/deadpan-app/src/preview/harness/repeat_follow_creep.rs",
+      "bytes": 27787,
+      "sha256": "5fb0e16387351c0a5d951e56a8187811b3e51d5c30f3eafaf75f6648ac2339ce",
+      "source_copy": "/tmp/deadpan-repeat-follow-creep-2026-10-24/native-source/crates/deadpan-app/src/preview/harness/repeat_follow_creep.rs"
+    },
+    {
+      "path": "crates/deadpan-app/src/preview/harness/sequence_follow_creep.rs",
+      "bytes": 20709,
+      "sha256": "fd34ccdbb0d26a2ff69319a45c428dbbcf1acea1ead504368bd84ccd966b1874",
+      "source_copy": "/tmp/deadpan-repeat-follow-creep-2026-10-24/native-source/crates/deadpan-app/src/preview/harness/sequence_follow_creep.rs"
+    },
+    {
+      "path": "crates/deadpan-app/src/preview/harness.rs",
+      "bytes": 59292,
+      "sha256": "810383d8493a36a61db423ca87850758438a5cb66c6afeca8a54d6310a451cb0",
+      "source_copy": "/tmp/deadpan-repeat-follow-creep-2026-10-24/native-source/crates/deadpan-app/src/preview/harness.rs"
+    },
+    {
+      "path": "crates/deadpan-app/src/preview/harness/scenarios.rs",
+      "bytes": 89365,
+      "sha256": "683a6173fd3e2b2c80b358632c5bb07f51aca87401b5159f2e9f778cce6d8614",
+      "source_copy": "/tmp/deadpan-repeat-follow-creep-2026-10-24/native-source/crates/deadpan-app/src/preview/harness/scenarios.rs"
+    },
+    {
+      "path": "crates/deadpan-app/src/ui_harness.rs",
+      "bytes": 29660,
+      "sha256": "a7d27c25cc52b6af7c6133934de45c2ac7dc331e4a4a531813d08cf82b6a52aa",
+      "source_copy": "/tmp/deadpan-repeat-follow-creep-2026-10-24/native-source/crates/deadpan-app/src/ui_harness.rs"
+    }
+  ],
+  "format_command": "rustfmt --edition 2024 --config skip_children=true crates/deadpan-app/src/preview/harness/repeat_follow_creep.rs crates/deadpan-app/src/preview/harness/sequence_follow_creep.rs",
+  "format_exit": 0,
+  "registration_count_checks": "one each; old Sequence retains Retime-only negative",
+  "executed_cargo": false,
+  "executed_product_runtime": false,
+  "executed_git": false,
+  "verification_owner": "Root",
+  "final_output_frames": 80,
+  "canonical_48k_audio_samples": 128128,
+  "boundaries": [
+    {
+      "edit": 0,
+      "play": 0,
+      "gap": false,
+      "original_ordinal": 0,
+      "scale": "4753991927/4294967296",
+      "center_x": "311385129/536870912"
+    },
+    {
+      "edit": 11,
+      "play": 0,
+      "gap": false,
+      "original_ordinal": 11,
+      "scale": "2701802865/2147483648",
+      "center_x": "311385129/536870912"
+    },
+    {
+      "edit": 12,
+      "play": 0,
+      "gap": false,
+      "original_ordinal": 12,
+      "scale": "2731330765/2147483648",
+      "center_x": "2920577761/4294967296"
+    },
+    {
+      "edit": 23,
+      "play": 0,
+      "gap": false,
+      "original_ordinal": 23,
+      "scale": "6112275333/4294967296",
+      "center_x": "2920577761/4294967296"
+    },
+    {
+      "edit": 24,
+      "play": 0,
+      "gap": true,
+      "original_ordinal": 23,
+      "scale": "6171331133/4294967296",
+      "center_x": "2920577761/4294967296"
+    },
+    {
+      "edit": 27,
+      "play": 0,
+      "gap": true,
+      "original_ordinal": 23,
+      "scale": "6348498535/4294967296",
+      "center_x": "2920577761/4294967296"
+    },
+    {
+      "edit": 28,
+      "play": 1,
+      "gap": false,
+      "original_ordinal": 0,
+      "scale": "6407554335/4294967296",
+      "center_x": "2534030705/4294967296"
+    },
+    {
+      "edit": 39,
+      "play": 1,
+      "gap": false,
+      "original_ordinal": 11,
+      "scale": "3528584069/2147483648",
+      "center_x": "2534030705/4294967296"
+    },
+    {
+      "edit": 40,
+      "play": 1,
+      "gap": false,
+      "original_ordinal": 12,
+      "scale": "7116223939/4294967296",
+      "center_x": "3017214525/4294967296"
+    },
+    {
+      "edit": 51,
+      "play": 1,
+      "gap": false,
+      "original_ordinal": 23,
+      "scale": "3882918871/2147483648",
+      "center_x": "3017214525/4294967296"
+    },
+    {
+      "edit": 52,
+      "play": 1,
+      "gap": true,
+      "original_ordinal": 23,
+      "scale": "3912446771/2147483648",
+      "center_x": "3017214525/4294967296"
+    },
+    {
+      "edit": 55,
+      "play": 1,
+      "gap": true,
+      "original_ordinal": 23,
+      "scale": "500128809/268435456",
+      "center_x": "3017214525/4294967296"
+    },
+    {
+      "edit": 56,
+      "play": 2,
+      "gap": false,
+      "original_ordinal": 0,
+      "scale": "1007639593/536870912",
+      "center_x": "1288490189/2147483648"
+    },
+    {
+      "edit": 67,
+      "play": 2,
+      "gap": false,
+      "original_ordinal": 11,
+      "scale": "8710730547/4294967296",
+      "center_x": "1288490189/2147483648"
+    },
+    {
+      "edit": 68,
+      "play": 2,
+      "gap": false,
+      "original_ordinal": 12,
+      "scale": "8769786347/4294967296",
+      "center_x": "1556925645/2147483648"
+    },
+    {
+      "edit": 79,
+      "play": 2,
+      "gap": false,
+      "original_ordinal": 23,
+      "scale": "4709700075/2147483648",
+      "center_x": "1556925645/2147483648"
+    }
+  ]
+}

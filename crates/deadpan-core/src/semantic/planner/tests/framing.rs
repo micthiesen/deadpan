@@ -383,7 +383,7 @@ fn zoom_ordinary_owner_remains_available_with_retained_nested_tape_pause_clocks(
 }
 
 #[test]
-fn whole_hold_and_sequence_follow_creep_resolve_actual_owner_with_atomic_refusals() {
+fn whole_hold_sequence_and_repeat_follow_creep_resolve_actual_owner_with_atomic_refusals() {
     let mut document = fixture(8);
     let tb = crate::SourceTimeBase::new(1, 30).unwrap();
     let span = crate::SourceSpan::new(
@@ -582,12 +582,105 @@ fn whole_hold_and_sequence_follow_creep_resolve_actual_owner_with_atomic_refusal
             .is_err()
         );
     }
-    // Raw generic Retime Follow remains valid, but does not gain ordinary-owner
-    // authoring admission through its Sequence child.
     document.nodes.insert(
         node("inside"),
         BeatNode::sequence("Inside", vec![node("inside-a"), node("inside-b")]),
     );
+    document.nodes.get_mut(&node("held")).unwrap().kind = NodeKind::Repeat {
+        child: node("inside"),
+        iterations: crate::IterationOrder::new(revision("retained-plays"), 3).unwrap(),
+        gap: Some(match hold(2).kind {
+            NodeKind::Hold { recipe } => recipe,
+            _ => unreachable!(),
+        }),
+        escalation: Some(crate::RepeatEscalation {
+            gain_step: crate::GainDb::UNITY,
+            zoom: Some(crate::ZoomStep {
+                step: ExactRatio::new(1, 8).unwrap(),
+                progression: crate::ZoomProgression::Add,
+                target: None,
+            }),
+        }),
+    };
+    document.validate().unwrap();
+    assert_eq!(document.duration().unwrap().frames(), 28);
+    let repeat = document.clone();
+    let planned = resolve(
+        &repeat,
+        &selected(13, None),
+        vec![instruction.clone()],
+        &BTreeMap::new(),
+        resolver,
+    )
+    .unwrap();
+    let value = planned.document.nodes()[&node("held")]
+        .framing
+        .as_ref()
+        .unwrap()
+        .evaluate_with_follow_exact(ExactRatio::integer(14), ExactRatio::integer(28))
+        .unwrap();
+    assert_eq!(value.follow.unwrap().1, ExactRatio::integer(3));
+    assert_eq!(value.pose.scale, ExactRatio::new(3, 4).unwrap());
+    let replay =
+        crate::replay_compound::<EditError>(&repeat, planned.request.as_ref().unwrap(), |_| Ok(()))
+            .unwrap();
+    assert_eq!(replay.document, planned.document);
+    assert_eq!(
+        replay.edit.inverse.apply(&planned.document).unwrap(),
+        repeat
+    );
+    let mut only_framing = repeat.clone();
+    only_framing.revision_id = planned.document.revision_id().clone();
+    only_framing.nodes.get_mut(&node("held")).unwrap().framing =
+        planned.document.nodes()[&node("held")].framing.clone();
+    assert_eq!(planned.document, only_framing);
+    for selection in [visual(0, 28), visual(1, 27), visual(28, 0)] {
+        assert!(
+            resolve(
+                &repeat,
+                &selected(13, selection),
+                vec![instruction.clone()],
+                &BTreeMap::new(),
+                resolver
+            )
+            .is_err()
+        );
+    }
+    // An inner Repeat cannot acquire ordinary authority by omitting the
+    // occurrence context and naming its containing Sequence directly.
+    let mut nested = repeat.clone();
+    nested.nodes.insert(
+        node("container"),
+        BeatNode::sequence("Container", vec![node("held")]),
+    );
+    let mut outer = BeatNode::sequence("Outer", vec![]);
+    outer.kind = NodeKind::Repeat {
+        child: node("container"),
+        iterations: crate::IterationOrder::new(revision("outer-plays"), 2).unwrap(),
+        gap: None,
+        escalation: None,
+    };
+    nested.nodes.insert(node("outer"), outer);
+    nested.nodes.get_mut(&node("root")).unwrap().kind = NodeKind::Sequence {
+        children: vec![node("outer")],
+    };
+    nested.validate().unwrap();
+    let context = SemanticContext {
+        parent: node("container"),
+        ..selected(13, None)
+    };
+    assert!(
+        resolve(
+            &nested,
+            &context,
+            vec![instruction.clone()],
+            &BTreeMap::new(),
+            resolver
+        )
+        .is_err()
+    );
+    // Raw generic Retime Follow remains valid, but does not gain ordinary-owner
+    // authoring admission through its Sequence child.
     document.nodes.get_mut(&node("held")).unwrap().kind = NodeKind::Retime {
         child: node("inside"),
         duration: FrameDuration::new(8).unwrap(),

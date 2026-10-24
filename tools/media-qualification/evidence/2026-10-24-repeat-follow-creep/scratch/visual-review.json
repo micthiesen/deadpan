@@ -1,0 +1,27 @@
+{
+  "observed_at": "2026-10-24T11:05:38.365992+00:00",
+  "method": "Root inspected actual offscreen native Metal PNGs through view_image.",
+  "result": "Camera017 presents explicit draft controls, focus and field units. Camera070 shows the selected whole Repeat following the authored point before creep, with center58 and readable fallback help. Seam121 shows selected Repeat at first silent gap boundary24 with fixed Original23 picture; final124 shows third play boundary56,80Edit versus120Originalframes,3plays,two4framegaps,+0.125perplay escalation and Follow Target1 1.100x to2.200x. Keycaps and inspector readable; no overlapping labels or hidden controls observed. Later Camera round trips after creep are semantically checked; no unretained screenshot is claimed.",
+  "images": {
+    "native-repeat-run/repeat-follow-creep-017.png": {
+      "bytes": 311264,
+      "sha256": "ab8d5e4a46d2aee1da3fb83dae992e327e8f78b5e61ba53f530353478094432a"
+    },
+    "native-repeat-run/repeat-follow-creep-070.png": {
+      "bytes": 330115,
+      "sha256": "f55317161b7a5c044c20583116b81a5eb7a681b1e9324bdae13f5e3f71d1c2f2"
+    },
+    "native-repeat-run/repeat-follow-creep-121.png": {
+      "bytes": 365410,
+      "sha256": "8cf3128103900f68996cab8ccc2a4c65cf8c17d06267246a12ba3049e20a13f4"
+    },
+    "native-repeat-run/repeat-follow-creep-124.png": {
+      "bytes": 359374,
+      "sha256": "dce7a914d767e619941c80d3120b01d89fd9cbbb87253bef5740e39336362360"
+    }
+  },
+  "limits": [
+    "Offscreen Metal and scripted native input do not establish physical display/input, OS IME delivery, VoiceOver speech, listening or latency.",
+    "One candidate build; first/final21source and five executable bytes identical, not two workflow runs."
+  ]
+}

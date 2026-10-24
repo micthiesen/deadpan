@@ -1,0 +1,17 @@
+{
+  "path": "crates/deadpan-app/src/preview/camera.rs",
+  "before": {
+    "bytes": 168852,
+    "sha256": "976e5dcbc00cb32ada21abb8b8db5675f453afb45aa093570b3500618ff1f6bb"
+  },
+  "change": "Two explanatory strings replace captured-view-specific clipping with earlier-crop visibility. No functional App/Core/Plan/CLI change. Earlier focused Core/CLI and render receipts retain their true full scope; final broad checks bind the final App text.",
+  "after": {
+    "bytes": 168848,
+    "sha256": "30b0de41ef385ee91d3cc5ed430a479f4e47f423ec7a6670240b12fcbdee2ccd"
+  },
+  "exact_text_replacement_verified": true,
+  "exact_changed_paths_since_core_cli_pass": [
+    "crates/deadpan-app/src/preview/camera.rs"
+  ],
+  "other_20_scoped_paths_unchanged": true
+}

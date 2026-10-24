@@ -117,3 +117,6 @@ fn plan_follow_centers_agree_with_the_renderers_fit_on_other_canvases() {
 
 #[path = "follow_letterbox/captured.rs"]
 mod captured;
+
+#[path = "follow_letterbox/live.rs"]
+mod live;

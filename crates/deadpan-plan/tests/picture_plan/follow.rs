@@ -101,7 +101,7 @@ fn outside_the_target_the_fallback_applies() {
 }
 
 #[test]
-fn an_outer_follow_sees_the_subject_through_inner_framing() {
+fn an_outer_follow_uses_fallback_when_inner_framing_clips_the_subject() {
     let mut zoomed = source(10, 0, 10010);
     zoomed.framing = Some(
         Framing::static_pose(
@@ -116,12 +116,32 @@ fn an_outer_follow_sees_the_subject_through_inner_framing() {
         &[("g", 1)],
     );
     let plan = RenderPlan::compile(&document).unwrap();
-    // Inner zoom 2× about the middle moves x=0.2 to (0.2-0.5)*2+0.5 = -0.1.
-    assert_eq!(pose(&plan, 0, 1).center_x, grid(-1, 10));
+    // The child crop moves x=.2 to -.1 and x=.8 to 1.1. Those points
+    // were clipped before the outer Follow; its fallback is the visible pose.
+    assert_eq!(pose(&plan, 0, 1), FramingPose::identity());
+    assert_eq!(pose(&plan, 6, 1), FramingPose::identity());
     // A target removed from the document refuses the framing that follows it.
     let mut value = serde_json::to_value(&document).unwrap();
     value.as_object_mut().unwrap().remove("targets");
     assert!(ProjectDocument::from_json(&value.to_string()).is_err());
+}
+
+#[test]
+fn an_outer_follow_sees_visible_subjects_through_inner_framing() {
+    let mut zoomed = source(10, 0, 10010);
+    zoomed.framing = Some(
+        Framing::static_pose(FramingPose::new(ratio(1, 2), ratio(1, 2), ratio(1, 2)).unwrap())
+            .unwrap(),
+    );
+    let group = BeatNode::sequence("Group", vec![id("a")]);
+    let document = with_target(
+        document(&["g"], vec![("g", group), ("a", zoomed)]),
+        10010,
+        &[("g", 1)],
+    );
+    let plan = RenderPlan::compile(&document).unwrap();
+    assert_eq!(pose(&plan, 0, 1).center_x, grid(7, 20));
+    assert_eq!(pose(&plan, 6, 1).center_x, grid(13, 20));
 }
 
 /// `document` on a `width`x`height` canvas, its target recording `aspect`

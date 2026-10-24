@@ -1,0 +1,9 @@
+{
+  "hw.model": "Mac17,7",
+  "hw.memsize": "137438953472",
+  "hw.ncpu": "18",
+  "kern.hv_vmm_present": "0",
+  "macos": "26.5.2",
+  "observed_at": "2026-10-24T11:09:56.637010+00:00",
+  "note": "Read-only host measurements; uncontrolled power/thermal and file-cache state remain native report limitations."
+}

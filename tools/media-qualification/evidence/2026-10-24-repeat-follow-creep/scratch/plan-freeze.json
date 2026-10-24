@@ -1,0 +1,26 @@
+{
+  "frozen_at": "2026-10-24T10:40:34.167099+00:00",
+  "base_supplied_by_root": "cb89b8b79a01a4ad59fc29dc572ed65015a3c3af",
+  "sources": {
+    "crates/deadpan-plan/tests/picture_plan.rs": {
+      "bytes": 90937,
+      "sha256": "27fd5159ade0098c02e66616e5ff6ed5ad870bfd94cab11cf51f3e98e12ba584"
+    },
+    "crates/deadpan-plan/tests/picture_plan/repeat_follow_creep.rs": {
+      "bytes": 18811,
+      "sha256": "6f266c4f9fc23b5da753e5882626d5c119ac4b4953a014deb8d4e35048902c32"
+    }
+  },
+  "focused_receipt": "plan-focused-1.json",
+  "actual_tests": 3,
+  "result": "3passed0failed130filtered terminal0",
+  "all21_manifest_unchanged": true,
+  "core_plan_production_basis_unchanged": true,
+  "executed_binary": {
+    "path": "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/picture_plan-8377682556489926",
+    "bytes": 63232224,
+    "sha256": "fce52dedbfe3defcbe4c619f7df439bd8978d554a19dfcbcf23f2edb852595aa"
+  },
+  "active_processes": [],
+  "cargo_target": "released to Root"
+}

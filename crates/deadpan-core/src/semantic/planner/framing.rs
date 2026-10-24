@@ -181,6 +181,7 @@ where
                     NodeKind::Source { .. } => Some(framing_zoom::OrdinaryFollowOwner::Source),
                     NodeKind::Hold { .. } => Some(framing_zoom::OrdinaryFollowOwner::Hold),
                     NodeKind::Sequence { .. } => Some(framing_zoom::OrdinaryFollowOwner::Sequence),
+                    NodeKind::Repeat { .. } => Some(framing_zoom::OrdinaryFollowOwner::Repeat),
                     _ => None,
                 },
                 entry,
