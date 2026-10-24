@@ -1,0 +1,22 @@
+{
+  "schema": "deadpan-single-leaf-net-media-static-1",
+  "source_map_sha256": "0bf07513646ffdfee5aec03bb1b64b6fff757196512aeea883226c675b15ed02",
+  "source_count": 2054,
+  "qualified_base_map_sha256": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+  "test": "group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached",
+  "fixture": {
+    "path": "source/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+    "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+  },
+  "nextest_config": {
+    "path": "source/.config/nextest.toml",
+    "sha256": "0fe01c7d7f266b630a39474d9a33901bdf9d64ca3f4ab8db4ce4885bb209e677"
+  },
+  "qualified_control_sha256": "e6abcd3a521697f504901f156df445e41681cfc824ff97793f62f4e0865802e1",
+  "qualified_helper_sha256": {
+    "deadpan-media-worker": "70114641de62f0c9c839734f3dddab1221b01888661a43ed5583e40ca9ed90fe",
+    "deadpan-transcribe": "a75e83e94c073fa7419fea1ffc4621ab56adba020d402435c65622dababbe8b3",
+    "deadpan-track": "97564bc5d9aee093aa7e3fa5e8a89aa5da68134f92f34032a407f27778c1eab4"
+  },
+  "baseline_inputs_sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+}

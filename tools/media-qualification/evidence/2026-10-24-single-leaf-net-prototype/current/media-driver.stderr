@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/qualify_media.py", line 282, in <module>
+    main()
+    ~~~~^^
+  File "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/qualify_media.py", line 188, in main
+    guard()
+    ~~~~~^^
+  File "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/qualify_media.py", line 80, in guard
+    assert {'qualify_media.py', 'media-static-pins.json', 'driver-pins.json',
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+            'baseline.json', 'baseline-provenance.json'} <= media_pins.keys()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

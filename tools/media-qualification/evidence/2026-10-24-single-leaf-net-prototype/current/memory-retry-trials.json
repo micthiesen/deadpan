@@ -1,0 +1,242 @@
+[
+  {
+    "lane": "owned-observer-memory-only",
+    "round": 1,
+    "kind": "baseline",
+    "binary_sha256": "ffbaf7273f10e1a67041b3645d027be525bce4cc82d04985707ba781c63ee655",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "checks": {
+      "large-first-pause": 7,
+      "kestrel-shortcuts": 1
+    },
+    "findings_count": 2,
+    "warnings_count": 2,
+    "reported_runtime_rust_field": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "physical_display_measured": false,
+    "gpu_readback_in_timing_run": false,
+    "expected_pinned_build_rust": "1.97.1",
+    "profile_gate_absent": true,
+    "profile_output_absent": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "memory": {
+      "observed_max_phys_footprint_bytes": 683623576,
+      "observed_max_resident_size_bytes": 647249920,
+      "sample_count": 1794,
+      "first_sample_start_elapsed_ns": 518416,
+      "last_sample_start_elapsed_ns": 13452085541,
+      "maximum_sample_start_gap_ns": 7565166,
+      "sample_query_sum_ns": 3309770,
+      "sampling_window_elapsed_ns": 13459616625
+    },
+    "load_at_start": [
+      2.06005859375,
+      2.14599609375,
+      2.26611328125
+    ],
+    "receipt": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/memory-retry-1-baseline-observer-receipt.json",
+    "samples": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/memory-retry-1-baseline-samples.json",
+    "report": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/memory-retry-1-baseline-report/report.json"
+  },
+  {
+    "lane": "owned-observer-memory-only",
+    "round": 1,
+    "kind": "candidate",
+    "binary_sha256": "1a12c2e9f866de1cef3ec64ea3997b26a1baafa194a95e3eef9b4587607d288a",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "checks": {
+      "large-first-pause": 7,
+      "kestrel-shortcuts": 1
+    },
+    "findings_count": 2,
+    "warnings_count": 2,
+    "reported_runtime_rust_field": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "physical_display_measured": false,
+    "gpu_readback_in_timing_run": false,
+    "expected_pinned_build_rust": "1.97.1",
+    "profile_gate_absent": true,
+    "profile_output_absent": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "memory": {
+      "observed_max_phys_footprint_bytes": 703399064,
+      "observed_max_resident_size_bytes": 652427264,
+      "sample_count": 1853,
+      "first_sample_start_elapsed_ns": 460583,
+      "last_sample_start_elapsed_ns": 13896789500,
+      "maximum_sample_start_gap_ns": 7604084,
+      "sample_query_sum_ns": 3377538,
+      "sampling_window_elapsed_ns": 13904319500
+    },
+    "load_at_start": [
+      1.89208984375,
+      2.10546875,
+      2.24853515625
+    ],
+    "receipt": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/memory-retry-1-candidate-observer-receipt.json",
+    "samples": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/memory-retry-1-candidate-samples.json",
+    "report": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/memory-retry-1-candidate-report/report.json"
+  },
+  {
+    "lane": "owned-observer-memory-only",
+    "round": 2,
+    "kind": "candidate",
+    "binary_sha256": "1a12c2e9f866de1cef3ec64ea3997b26a1baafa194a95e3eef9b4587607d288a",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "checks": {
+      "large-first-pause": 7,
+      "kestrel-shortcuts": 1
+    },
+    "findings_count": 2,
+    "warnings_count": 2,
+    "reported_runtime_rust_field": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "physical_display_measured": false,
+    "gpu_readback_in_timing_run": false,
+    "expected_pinned_build_rust": "1.97.1",
+    "profile_gate_absent": true,
+    "profile_output_absent": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "memory": {
+      "observed_max_phys_footprint_bytes": 701449392,
+      "observed_max_resident_size_bytes": 652476416,
+      "sample_count": 1805,
+      "first_sample_start_elapsed_ns": 441083,
+      "last_sample_start_elapsed_ns": 13505884750,
+      "maximum_sample_start_gap_ns": 7527375,
+      "sample_query_sum_ns": 3136839,
+      "sampling_window_elapsed_ns": 13513414666
+    },
+    "load_at_start": [
+      1.77392578125,
+      2.0673828125,
+      2.232421875
+    ],
+    "receipt": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/memory-retry-2-candidate-observer-receipt.json",
+    "samples": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/memory-retry-2-candidate-samples.json",
+    "report": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/memory-retry-2-candidate-report/report.json"
+  },
+  {
+    "lane": "owned-observer-memory-only",
+    "round": 2,
+    "kind": "baseline",
+    "binary_sha256": "ffbaf7273f10e1a67041b3645d027be525bce4cc82d04985707ba781c63ee655",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "checks": {
+      "large-first-pause": 7,
+      "kestrel-shortcuts": 1
+    },
+    "findings_count": 2,
+    "warnings_count": 2,
+    "reported_runtime_rust_field": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "physical_display_measured": false,
+    "gpu_readback_in_timing_run": false,
+    "expected_pinned_build_rust": "1.97.1",
+    "profile_gate_absent": true,
+    "profile_output_absent": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "memory": {
+      "observed_max_phys_footprint_bytes": 682280112,
+      "observed_max_resident_size_bytes": 649347072,
+      "sample_count": 1792,
+      "first_sample_start_elapsed_ns": 528959,
+      "last_sample_start_elapsed_ns": 13419174834,
+      "maximum_sample_start_gap_ns": 13419167,
+      "sample_query_sum_ns": 3257403,
+      "sampling_window_elapsed_ns": 13426695334
+    },
+    "load_at_start": [
+      2.63671875,
+      2.22998046875,
+      2.28662109375
+    ],
+    "receipt": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/memory-retry-2-baseline-observer-receipt.json",
+    "samples": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/memory-retry-2-baseline-samples.json",
+    "report": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/memory-retry-2-baseline-report/report.json"
+  },
+  {
+    "lane": "owned-observer-memory-only",
+    "round": 3,
+    "kind": "baseline",
+    "binary_sha256": "ffbaf7273f10e1a67041b3645d027be525bce4cc82d04985707ba781c63ee655",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "checks": {
+      "large-first-pause": 7,
+      "kestrel-shortcuts": 1
+    },
+    "findings_count": 2,
+    "warnings_count": 2,
+    "reported_runtime_rust_field": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "physical_display_measured": false,
+    "gpu_readback_in_timing_run": false,
+    "expected_pinned_build_rust": "1.97.1",
+    "profile_gate_absent": true,
+    "profile_output_absent": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "memory": {
+      "observed_max_phys_footprint_bytes": 682968240,
+      "observed_max_resident_size_bytes": 649641984,
+      "sample_count": 1787,
+      "first_sample_start_elapsed_ns": 610208,
+      "last_sample_start_elapsed_ns": 13380465083,
+      "maximum_sample_start_gap_ns": 7603917,
+      "sample_query_sum_ns": 3093097,
+      "sampling_window_elapsed_ns": 13387993666
+    },
+    "load_at_start": [
+      2.4208984375,
+      2.2021484375,
+      2.27490234375
+    ],
+    "receipt": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/memory-retry-3-baseline-observer-receipt.json",
+    "samples": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/memory-retry-3-baseline-samples.json",
+    "report": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/memory-retry-3-baseline-report/report.json"
+  },
+  {
+    "lane": "owned-observer-memory-only",
+    "round": 3,
+    "kind": "candidate",
+    "binary_sha256": "1a12c2e9f866de1cef3ec64ea3997b26a1baafa194a95e3eef9b4587607d288a",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "checks": {
+      "large-first-pause": 7,
+      "kestrel-shortcuts": 1
+    },
+    "findings_count": 2,
+    "warnings_count": 2,
+    "reported_runtime_rust_field": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "physical_display_measured": false,
+    "gpu_readback_in_timing_run": false,
+    "expected_pinned_build_rust": "1.97.1",
+    "profile_gate_absent": true,
+    "profile_output_absent": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "memory": {
+      "observed_max_phys_footprint_bytes": 651379840,
+      "observed_max_resident_size_bytes": 625704960,
+      "sample_count": 1817,
+      "first_sample_start_elapsed_ns": 457958,
+      "last_sample_start_elapsed_ns": 13592461917,
+      "maximum_sample_start_gap_ns": 7665917,
+      "sample_query_sum_ns": 3560083,
+      "sampling_window_elapsed_ns": 13599991875
+    },
+    "load_at_start": [
+      2.900390625,
+      2.3193359375,
+      2.31396484375
+    ],
+    "receipt": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/memory-retry-3-candidate-observer-receipt.json",
+    "samples": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/memory-retry-3-candidate-samples.json",
+    "report": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/memory-retry-3-candidate-report/report.json"
+  }
+]

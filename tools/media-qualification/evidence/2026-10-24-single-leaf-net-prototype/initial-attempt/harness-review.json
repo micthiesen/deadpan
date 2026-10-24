@@ -1,0 +1,35 @@
+{
+  "status": "approved",
+  "reviewer": "Root",
+  "drivers_executed": false,
+  "source_review": "no_findings",
+  "pins": {
+    "build.py": "12eb7320ed9f5dbb75fe92f6638b6545caa055e38089524607499d5d4cd81d25",
+    "measure.py": "1f445ae82bb1a3f13ce305114985f271b64b93ee3f0d15addad646d9a754342f",
+    "memory.py": "594e5893f33e4ef3c3fc9037b7a38be8948e0a4bae2b6f8911645f1614fec2b7",
+    "observer-provenance.json": "689fb148dc8374b70532c93b3c407fecdf374070c3c4db951c69846ec25aeb32",
+    "expected-build-stages.json": "4e5ecd34168f3bb8fdbbf567a4276dac0fdb832b3bc5f0cc76d5ce757dc8b8f3",
+    "expected-tests.json": "e7e663b3bdbe2f1326811215f7039f6f93370c919be81bafcca1b342e3fad198",
+    "check_profile.py": "d7856844d550b05207cc75391a810008da0b44adeafeb38e70ec95892c9a4f61",
+    "baseline.json": "389ca083868e2b253dc7920be1319db2b7d8838e8eb6f83cc1ca7b1ea1dd334c",
+    "baseline-provenance.json": "06d8a81ab9ff9029c0dfe52cb05da2de5d0fc18cd43f7f1aa5c63109dae9ce67",
+    "baseline-sources.json": "ddf4b90c48877c24206c09cf4cf89f9f51c233b8b6fd158b95d5e08c15f31bf1",
+    "baseline-inputs.json": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317",
+    "frozen-sources.json": "4b9e8d330891d76e537db30c5d0a912d9b0e49ba84f9b8a690fe0141cb0d5577",
+    "source-review.json": "f2a64b4ca42f3da367059270f972dbfa5a586e090d5a4696bc40a5a911f83ea2",
+    "design.md": "bb78826817225e12d279a1ea07f049960f57b007a470128ee7a947d752dda22f",
+    "prototype.patch": "2d22ace807bf8b26ea4091db6004f4dca5031d380c2e4163f94f6555f16a0f50"
+  },
+  "checks": [
+    "fresh distinct target and outputs",
+    "whole Core lib binary plus4Core integration executables",
+    "12 actual release Store preparation tests",
+    "release App and strict Clippy",
+    "existing35phase parser exact counts and conservation",
+    "6permutations18timingtrials36commands; no observer",
+    "separate6memorytrials only after timing complete",
+    "observer owns unreaped Child and validates teardown/sole reap",
+    "actual source/helper/binary/toolchain and fixture byte guards",
+    "real64MiB and512MiB production limits unchanged"
+  ]
+}

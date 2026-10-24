@@ -1,0 +1,58 @@
+   Compiling log v0.4.34
+   Compiling smallvec v1.16.1
+   Compiling dispatch2 v0.3.1
+   Compiling syn v2.0.119
+   Compiling bytemuck_derive v1.12.1
+   Compiling naga-types v30.0.1
+   Compiling raw-window-handle v0.6.2
+   Compiling tempfile v3.27.0
+   Compiling wgpu-hal v30.0.1
+   Compiling wgpu-core v30.0.1
+   Compiling uuid v1.26.1
+   Compiling wgpu v30.0.1
+   Compiling deadpan-dsp v0.1.0 (/private/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/source/native/deadpan-dsp)
+   Compiling deadpan-encode v0.1.0 (/private/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/source/native/deadpan-encode)
+   Compiling rustls v0.23.45
+   Compiling ureq-proto v0.6.4
+   Compiling parking_lot_core v0.9.12
+   Compiling rusqlite v0.40.2
+   Compiling deadpan-jobs v0.1.0 (/private/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/source/crates/deadpan-jobs)
+   Compiling objc2-core-foundation v0.3.2
+   Compiling parking_lot v0.12.5
+   Compiling bytemuck v1.25.2
+   Compiling wgpu-types v30.0.1
+   Compiling image v0.25.10
+   Compiling font-types v0.12.5
+   Compiling deadpan-sqlite-status v0.1.0 (/private/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/source/native/deadpan-sqlite-status)
+   Compiling read-fonts v0.41.0
+   Compiling zerocopy-derive v0.8.57
+   Compiling objc2-foundation v0.3.2
+   Compiling objc2-core-graphics v0.3.2
+   Compiling zerocopy v0.8.57
+   Compiling deadpan-media v0.1.0 (/private/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/source/crates/deadpan-media)
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling objc2-metal v0.3.2
+   Compiling objc2-core-audio v0.3.2
+   Compiling deadpan-filesystem v0.1.0 (/private/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/source/native/deadpan-filesystem)
+   Compiling objc2-app-kit v0.3.2
+   Compiling objc2-audio-toolbox v0.3.2
+   Compiling coreaudio-rs v0.14.2
+   Compiling cpal v0.18.2
+   Compiling deadpan-output v0.1.0 (/private/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/source/native/deadpan-output)
+   Compiling half v2.7.1
+   Compiling deadpan-store v0.1.0 (/private/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/source/crates/deadpan-store)
+   Compiling deadpan-audio v0.1.0 (/private/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/source/crates/deadpan-audio)
+   Compiling deadpan-models v0.1.0 (/private/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/source/crates/deadpan-models)
+   Compiling naga v30.0.1
+   Compiling skrifa v0.44.0
+   Compiling objc2-quartz-core v0.3.2
+   Compiling raw-window-metal v1.1.0
+   Compiling wgpu-naga-bridge v30.0.1
+   Compiling wgpu-core-deps-apple v30.0.1
+   Compiling deadpan-playback v0.1.0 (/private/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/source/crates/deadpan-playback)
+   Compiling deadpan-render v0.1.0 (/private/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/source/crates/deadpan-render)
+   Compiling deadpan-cli v0.1.0 (/private/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/source/crates/deadpan-cli)
+    Finished `release` profile [optimized] target(s) in 3m 03s
+   Archiving 2 binaries (including 1 non-test binary), 7 linked paths, and 1 standard library to /tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/media-retry-one-leaf.tar.zst
+    Archived 51 files to /tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/media-retry-one-leaf.tar.zst in 0.06s

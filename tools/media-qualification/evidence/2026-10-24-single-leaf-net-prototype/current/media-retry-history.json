@@ -1,0 +1,124 @@
+{
+  "prior_failure": "Missing baseline.json and baseline-provenance.json in separate media pins; refused before hardware/archive/test",
+  "tests_executed": 0,
+  "archive_built": false,
+  "prior_hashes": {
+    "qualify_media.py": "d5341a6fa6759196accb28ed5bba8a120ec19ce7c3abd6f0c52d56dd524ce64c",
+    "media-driver-pins.json": "2d488657389e458f3a85f9b955a0efd0e82e50c4c75e71f9cb604e7cea5aeaa3",
+    "media-static-pins.json": "302c024a9868c1a700d5d94ae35f037e8fe4f85b6314031ac96d2cf42bec260d",
+    "media-terminal.json": "8bcf77170b2563fdfa9312c7b27a75d3a7ff304f8bf76964a0bc3c6a1fa37726",
+    "media-owner.json": "4b83d39789a7a3544b72260c439d8f9b1651ce846747585e17c7b84ddfb54fb6",
+    "media-driver.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "media-driver.stderr": "efa7cf786d24fffbe20dab202407238cb5f27efefeff215f188a52f7fd2758a2"
+  },
+  "AST_string_changes": [
+    [
+      "media-one-leaf.tar.zst",
+      "media-retry-one-leaf.tar.zst"
+    ],
+    [
+      "media-one-leaf-extracted",
+      "media-retry-one-leaf-extracted"
+    ],
+    [
+      "media-one-leaf-fixture.json",
+      "media-retry-one-leaf-fixture.json"
+    ],
+    [
+      "media-static-pins.json",
+      "media-retry-static-pins.json"
+    ],
+    [
+      "media-driver-pins.json",
+      "media-retry-driver-pins.json"
+    ],
+    [
+      "qualify_media.py",
+      "qualify_media_retry.py"
+    ],
+    [
+      "media-static-pins.json",
+      "media-retry-static-pins.json"
+    ],
+    [
+      "media-",
+      "media-retry-"
+    ],
+    [
+      "media-",
+      "media-retry-"
+    ],
+    [
+      "media-receipt.json",
+      "media-retry-receipt.json"
+    ],
+    [
+      "media-",
+      "media-retry-"
+    ],
+    [
+      "media-",
+      "media-retry-"
+    ],
+    [
+      "media-evidence-inventory.json",
+      "media-retry-evidence-inventory.json"
+    ],
+    [
+      "media-extract-created.json",
+      "media-retry-extract-created.json"
+    ],
+    [
+      "media-receipt.json",
+      "media-retry-receipt.json"
+    ],
+    [
+      "media-terminal.json",
+      "media-retry-terminal.json"
+    ],
+    [
+      "media-binaries.json",
+      "media-retry-binaries.json"
+    ],
+    [
+      "media-evidence-inventory.json",
+      "media-retry-evidence-inventory.json"
+    ],
+    [
+      "media-owner.json",
+      "media-retry-owner.json"
+    ],
+    [
+      "media-static-pins.json",
+      "media-retry-static-pins.json"
+    ],
+    [
+      "media-hardware.json",
+      "media-retry-hardware.json"
+    ],
+    [
+      "media-extract-created.json",
+      "media-retry-extract-created.json"
+    ],
+    [
+      "media-retained-bin",
+      "media-retry-retained-bin"
+    ],
+    [
+      "media-retained-bin",
+      "media-retry-retained-bin"
+    ],
+    [
+      "media-binaries.json",
+      "media-retry-binaries.json"
+    ],
+    [
+      "media-terminal.json",
+      "media-retry-terminal.json"
+    ],
+    [
+      "media-terminal.json",
+      "media-retry-terminal.json"
+    ]
+  ]
+}

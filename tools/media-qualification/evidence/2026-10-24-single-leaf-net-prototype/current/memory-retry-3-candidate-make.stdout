@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 177.379,
+  "package": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/memory-retry-3-candidate.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 187.03675
+}

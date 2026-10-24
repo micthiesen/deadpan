@@ -1,0 +1,7 @@
+{
+  "status": "failed",
+  "stage": "post-command validation",
+  "trial": "rotation-1-control",
+  "exception": "AssertionError",
+  "message": ""
+}

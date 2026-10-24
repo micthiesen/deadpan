@@ -1,0 +1,4 @@
+{"name": "rustc", "command": ["rustc", "--version", "--verbose"], "cwd": "/tmp/deadpan-single-leaf-net-prototype-2026-10-24/source", "exit": 0, "seconds": 0.025244083255529404, "validation": "pending"}
+{"name": "cargo", "command": ["cargo", "--version"], "cwd": "/tmp/deadpan-single-leaf-net-prototype-2026-10-24/source", "exit": 0, "seconds": 0.019964000210165977, "validation": "pending"}
+{"name": "format", "command": ["cargo", "fmt", "--all", "--check"], "cwd": "/tmp/deadpan-single-leaf-net-prototype-2026-10-24/source", "exit": 0, "seconds": 6.633337000384927, "validation": "pending"}
+{"name": "core-unit-build", "command": ["cargo", "test", "--locked", "-p", "deadpan-core", "--lib", "--no-run", "--message-format=json-render-diagnostics"], "cwd": "/tmp/deadpan-single-leaf-net-prototype-2026-10-24/source", "exit": 0, "seconds": 56.84163412451744, "validation": "pending"}

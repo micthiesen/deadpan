@@ -1,0 +1,8 @@
+{
+  "pid": 82800,
+  "started_unix": 1792803139.815455,
+  "script": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/qualify_media.py",
+  "source": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/source",
+  "target": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/target",
+  "one_test_only": true
+}

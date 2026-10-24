@@ -1,0 +1,381 @@
+{
+  "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V3",
+  "block_count": 1,
+  "selected_block_index": 0,
+  "selected": {
+    "phases": [
+      {
+        "name": "native_admission",
+        "elapsed_ns": 5565541,
+        "count": 1
+      },
+      {
+        "name": "semantic_plan",
+        "elapsed_ns": 215791,
+        "count": 1
+      },
+      {
+        "name": "native_continuation",
+        "elapsed_ns": 7176834,
+        "count": 1
+      },
+      {
+        "name": "store_entry_misc",
+        "elapsed_ns": 18957,
+        "count": 1
+      },
+      {
+        "name": "store_prepare",
+        "elapsed_ns": 3530042,
+        "count": 1
+      },
+      {
+        "name": "host_runtime_bank",
+        "elapsed_ns": 6709,
+        "count": 1
+      },
+      {
+        "name": "store_write",
+        "elapsed_ns": 7516083,
+        "count": 1
+      },
+      {
+        "name": "sqlite_commit",
+        "elapsed_ns": 7245209,
+        "count": 1
+      },
+      {
+        "name": "store_cache_publication",
+        "elapsed_ns": 834,
+        "count": 1
+      },
+      {
+        "name": "native_postcommit",
+        "elapsed_ns": 395250,
+        "count": 1
+      },
+      {
+        "name": "workspace_refresh",
+        "elapsed_ns": 4190125,
+        "count": 1
+      },
+      {
+        "name": "native_finish",
+        "elapsed_ns": 1242416,
+        "count": 1
+      },
+      {
+        "name": "native_publication",
+        "elapsed_ns": 3896834,
+        "count": 1
+      },
+      {
+        "name": "semantic_document_wire",
+        "elapsed_ns": 13520000,
+        "count": 4
+      },
+      {
+        "name": "semantic_leaf_apply",
+        "elapsed_ns": 3342417,
+        "count": 1
+      },
+      {
+        "name": "capability_snapshot",
+        "elapsed_ns": 4625,
+        "count": 1
+      },
+      {
+        "name": "replay_document_wire",
+        "elapsed_ns": 13600957,
+        "count": 4
+      },
+      {
+        "name": "reuse_eligibility_eq",
+        "elapsed_ns": 183792,
+        "count": 1
+      },
+      {
+        "name": "reuse_clone_exit",
+        "elapsed_ns": 958,
+        "count": 1
+      },
+      {
+        "name": "replay_net_aggregate",
+        "elapsed_ns": 1674417,
+        "count": 1
+      },
+      {
+        "name": "replay_misc",
+        "elapsed_ns": 734293,
+        "count": 1
+      },
+      {
+        "name": "store_compact_size",
+        "elapsed_ns": 11765667,
+        "count": 3
+      },
+      {
+        "name": "store_checkpoint_wire",
+        "elapsed_ns": 0,
+        "count": 0
+      },
+      {
+        "name": "store_visitor_authority",
+        "elapsed_ns": 194666,
+        "count": 1
+      },
+      {
+        "name": "history_codec_readback",
+        "elapsed_ns": 22570125,
+        "count": 1
+      },
+      {
+        "name": "history_inverse_restore",
+        "elapsed_ns": 1885541,
+        "count": 1
+      },
+      {
+        "name": "semantic_head_validate",
+        "elapsed_ns": 1461917,
+        "count": 1
+      },
+      {
+        "name": "semantic_context_admission",
+        "elapsed_ns": 7421500,
+        "count": 1
+      },
+      {
+        "name": "semantic_planner_setup",
+        "elapsed_ns": 2188375,
+        "count": 1
+      },
+      {
+        "name": "semantic_pause_target",
+        "elapsed_ns": 4353000,
+        "count": 1
+      },
+      {
+        "name": "semantic_pause_provider",
+        "elapsed_ns": 9763792,
+        "count": 1
+      },
+      {
+        "name": "semantic_children_refresh",
+        "elapsed_ns": 8777042,
+        "count": 1
+      },
+      {
+        "name": "leaf_insert_known",
+        "elapsed_ns": 28659250,
+        "count": 1
+      },
+      {
+        "name": "leaf_input_durations",
+        "elapsed_ns": 1267458,
+        "count": 1
+      },
+      {
+        "name": "leaf_net_construction",
+        "elapsed_ns": 7357708,
+        "count": 1
+      }
+    ],
+    "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V3",
+    "begin_count": 1,
+    "end_count": 1,
+    "elapsed_ns": 181728125,
+    "phase_sum_ns": 181728125,
+    "committed": 1,
+    "refreshed": 1,
+    "published": 1
+  },
+  "blocks": [
+    {
+      "phases": [
+        {
+          "name": "native_admission",
+          "elapsed_ns": 5565541,
+          "count": 1
+        },
+        {
+          "name": "semantic_plan",
+          "elapsed_ns": 215791,
+          "count": 1
+        },
+        {
+          "name": "native_continuation",
+          "elapsed_ns": 7176834,
+          "count": 1
+        },
+        {
+          "name": "store_entry_misc",
+          "elapsed_ns": 18957,
+          "count": 1
+        },
+        {
+          "name": "store_prepare",
+          "elapsed_ns": 3530042,
+          "count": 1
+        },
+        {
+          "name": "host_runtime_bank",
+          "elapsed_ns": 6709,
+          "count": 1
+        },
+        {
+          "name": "store_write",
+          "elapsed_ns": 7516083,
+          "count": 1
+        },
+        {
+          "name": "sqlite_commit",
+          "elapsed_ns": 7245209,
+          "count": 1
+        },
+        {
+          "name": "store_cache_publication",
+          "elapsed_ns": 834,
+          "count": 1
+        },
+        {
+          "name": "native_postcommit",
+          "elapsed_ns": 395250,
+          "count": 1
+        },
+        {
+          "name": "workspace_refresh",
+          "elapsed_ns": 4190125,
+          "count": 1
+        },
+        {
+          "name": "native_finish",
+          "elapsed_ns": 1242416,
+          "count": 1
+        },
+        {
+          "name": "native_publication",
+          "elapsed_ns": 3896834,
+          "count": 1
+        },
+        {
+          "name": "semantic_document_wire",
+          "elapsed_ns": 13520000,
+          "count": 4
+        },
+        {
+          "name": "semantic_leaf_apply",
+          "elapsed_ns": 3342417,
+          "count": 1
+        },
+        {
+          "name": "capability_snapshot",
+          "elapsed_ns": 4625,
+          "count": 1
+        },
+        {
+          "name": "replay_document_wire",
+          "elapsed_ns": 13600957,
+          "count": 4
+        },
+        {
+          "name": "reuse_eligibility_eq",
+          "elapsed_ns": 183792,
+          "count": 1
+        },
+        {
+          "name": "reuse_clone_exit",
+          "elapsed_ns": 958,
+          "count": 1
+        },
+        {
+          "name": "replay_net_aggregate",
+          "elapsed_ns": 1674417,
+          "count": 1
+        },
+        {
+          "name": "replay_misc",
+          "elapsed_ns": 734293,
+          "count": 1
+        },
+        {
+          "name": "store_compact_size",
+          "elapsed_ns": 11765667,
+          "count": 3
+        },
+        {
+          "name": "store_checkpoint_wire",
+          "elapsed_ns": 0,
+          "count": 0
+        },
+        {
+          "name": "store_visitor_authority",
+          "elapsed_ns": 194666,
+          "count": 1
+        },
+        {
+          "name": "history_codec_readback",
+          "elapsed_ns": 22570125,
+          "count": 1
+        },
+        {
+          "name": "history_inverse_restore",
+          "elapsed_ns": 1885541,
+          "count": 1
+        },
+        {
+          "name": "semantic_head_validate",
+          "elapsed_ns": 1461917,
+          "count": 1
+        },
+        {
+          "name": "semantic_context_admission",
+          "elapsed_ns": 7421500,
+          "count": 1
+        },
+        {
+          "name": "semantic_planner_setup",
+          "elapsed_ns": 2188375,
+          "count": 1
+        },
+        {
+          "name": "semantic_pause_target",
+          "elapsed_ns": 4353000,
+          "count": 1
+        },
+        {
+          "name": "semantic_pause_provider",
+          "elapsed_ns": 9763792,
+          "count": 1
+        },
+        {
+          "name": "semantic_children_refresh",
+          "elapsed_ns": 8777042,
+          "count": 1
+        },
+        {
+          "name": "leaf_insert_known",
+          "elapsed_ns": 28659250,
+          "count": 1
+        },
+        {
+          "name": "leaf_input_durations",
+          "elapsed_ns": 1267458,
+          "count": 1
+        },
+        {
+          "name": "leaf_net_construction",
+          "elapsed_ns": 7357708,
+          "count": 1
+        }
+      ],
+      "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V3",
+      "begin_count": 1,
+      "end_count": 1,
+      "elapsed_ns": 181728125,
+      "phase_sum_ns": 181728125,
+      "committed": 1,
+      "refreshed": 1,
+      "published": 1
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "status": "approved",
+  "reviewer": "Root",
+  "executed": false,
+  "pins": {
+    "qualify_media.py": "d5341a6fa6759196accb28ed5bba8a120ec19ce7c3abd6f0c52d56dd524ce64c",
+    "media-static-pins.json": "302c024a9868c1a700d5d94ae35f037e8fe4f85b6314031ac96d2cf42bec260d",
+    "driver-pins.json": "2b77071cb40af280a6c193c30289f3bef22ac3aea4e6bee74a99f0cbdc204666",
+    "frozen-sources.json": "0bf07513646ffdfee5aec03bb1b64b6fff757196512aeea883226c675b15ed02",
+    "qualified-base-sources.json": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+    "baseline-inputs.json": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317",
+    "expected-build-stages.json": "4e5ecd34168f3bb8fdbbf567a4276dac0fdb832b3bc5f0cc76d5ce757dc8b8f3",
+    "expected-tests.json": "e7e663b3bdbe2f1326811215f7039f6f93370c919be81bafcca1b342e3fad198",
+    "source-review.json": "62b2913d3c4634f6e93156c9dae74cfe0ebfce07fb935e91a1293cfd63aa647c"
+  },
+  "checks": [
+    "fresh same-source release archive",
+    "empty extraction directory created before list",
+    "exact one nonignored matched test plus actual PASS required",
+    "2054candidate and2053currentMain ee77 guards",
+    "actual CLI/test/extracted CLI/helper hashes retained",
+    "2actual MP4 verified and canonical PCM/history parity",
+    "private old map draft corrected before execution"
+  ]
+}

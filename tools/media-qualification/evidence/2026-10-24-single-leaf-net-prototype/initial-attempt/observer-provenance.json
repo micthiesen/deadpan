@@ -1,0 +1,32 @@
+{
+  "observer": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+  "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+  "actual_source": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory_observer.rs",
+  "actual_source_sha256": "81062e249112b7c9d698b77f6041b6fda1795f8aa9de8553387a6c96c69cb97b",
+  "reviewed_source": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory_observer.reviewed.rs.txt",
+  "reviewed_source_sha256": "4f2d35f88576cebea29427ca75fc6b18cf9050bc1af322487f07d7f29e5abd09",
+  "adapter_rlib": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/target/release/deps/libdeadpan_native_process-b790c355f0d48650.rlib",
+  "adapter_rlib_sha256": "7e82ce27e23d61df9f00fc986fb6b901c9eda84cd4a323d31d067c6679eeb1c4",
+  "actual_native_process_source_sha256": "e41aaa69620973871c492554b3cd9b978dc455e9f95cdca9c8509f8279d23d52",
+  "actual_source_vs_reviewed": "Different bytes. Full retained diff inspected: line wrapping/indentation, equivalent match-arm expression braces, and optional trailing comma formatting only. No executable behavior, limits, ownership, cleanup, or receipt schema change found. No formatter/build/runtime executed for this review.",
+  "retained_smokes": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/summary.json",
+  "retained_smokes_passed": 5,
+  "smokes_reexecuted": false,
+  "observer_rebuilt": false,
+  "limitations": [
+    "Group-failure/leader-fallback and reap-error paths have source review only.",
+    "Injected sample refusal does not establish real libproc permission refusal.",
+    "Sampled whole-app lower bounds, not hard peaks, phase attribution, retained cache cost or ceilings."
+  ],
+  "pins": {
+    "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory_observer.rs": "81062e249112b7c9d698b77f6041b6fda1795f8aa9de8553387a6c96c69cb97b",
+    "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory_observer.reviewed.rs.txt": "4f2d35f88576cebea29427ca75fc6b18cf9050bc1af322487f07d7f29e5abd09",
+    "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/target/release/deps/libdeadpan_native_process-b790c355f0d48650.rlib": "7e82ce27e23d61df9f00fc986fb6b901c9eda84cd4a323d31d067c6679eeb1c4",
+    "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-binary.json": "38b182a4d3f5c223ba4a872435963f493354a22c36a4909e64882ab28f580b98",
+    "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/summary.json": "74028fad4ba2c133d11d1a4617de34929add03ea9cd25582fd3d5adbd24d4e23",
+    "/Users/michael/Code/deadpan/native/deadpan-process/src/lib.rs": "e41aaa69620973871c492554b3cd9b978dc455e9f95cdca9c8509f8279d23d52",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2",
+    "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf": "fa11b331dcd9b2f5645cb011af6f07a54986fa0c0055bcce63bd4af6a4ba3166"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 167.375,
+  "package": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/retry-rotation-6-candidate.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 176.675792
+}

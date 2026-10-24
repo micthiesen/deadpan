@@ -1,0 +1,118 @@
+{
+  "lane": "owned-observer-memory-only",
+  "n_per_kind": 3,
+  "trials": 6,
+  "separate_from_timing_lane": true,
+  "profile_gate": "absent for all six",
+  "sampled_whole_main_app_lifetime_lower_bound_only": true,
+  "exact_peak": false,
+  "per_leaf_memory": false,
+  "memory_ceiling": false,
+  "worker_or_external_gpu_memory": false,
+  "kinds": {
+    "baseline": {
+      "observed_max_phys_footprint_bytes": {
+        "values": [
+          683623576,
+          682280112,
+          682968240
+        ],
+        "min": 682280112,
+        "median": 682968240,
+        "max": 683623576
+      },
+      "observed_max_resident_size_bytes": {
+        "values": [
+          647249920,
+          649347072,
+          649641984
+        ],
+        "min": 647249920,
+        "median": 649347072,
+        "max": 649641984
+      },
+      "maximum_sample_start_gap_ns": {
+        "values": [
+          7565166,
+          13419167,
+          7603917
+        ],
+        "min": 7565166,
+        "median": 7603917,
+        "max": 13419167
+      },
+      "sampling_window_elapsed_ns": {
+        "values": [
+          13459616625,
+          13426695334,
+          13387993666
+        ],
+        "min": 13387993666,
+        "median": 13426695334,
+        "max": 13459616625
+      },
+      "sample_count": {
+        "values": [
+          1794,
+          1792,
+          1787
+        ],
+        "min": 1787,
+        "median": 1792,
+        "max": 1794
+      }
+    },
+    "candidate": {
+      "observed_max_phys_footprint_bytes": {
+        "values": [
+          703399064,
+          701449392,
+          651379840
+        ],
+        "min": 651379840,
+        "median": 701449392,
+        "max": 703399064
+      },
+      "observed_max_resident_size_bytes": {
+        "values": [
+          652427264,
+          652476416,
+          625704960
+        ],
+        "min": 625704960,
+        "median": 652427264,
+        "max": 652476416
+      },
+      "maximum_sample_start_gap_ns": {
+        "values": [
+          7604084,
+          7527375,
+          7665917
+        ],
+        "min": 7527375,
+        "median": 7604084,
+        "max": 7665917
+      },
+      "sampling_window_elapsed_ns": {
+        "values": [
+          13904319500,
+          13513414666,
+          13599991875
+        ],
+        "min": 13513414666,
+        "median": 13599991875,
+        "max": 13904319500
+      },
+      "sample_count": {
+        "values": [
+          1853,
+          1805,
+          1817
+        ],
+        "min": 1805,
+        "median": 1817,
+        "max": 1853
+      }
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "status": "draft_not_executed",
+  "scope": "private build and measurement driver adaptation only",
+  "expected_build_stages": [
+    "rustc",
+    "cargo",
+    "format",
+    "core-unit-build",
+    "core-unit-all",
+    "core-integration",
+    "store-preparation",
+    "release-app",
+    "strict"
+  ],
+  "unit_run": "Directly executes the retained Core lib test binary with --test-threads=8 and no test-name filter; dynamically records every passing test name and requires the three new leaf-net regression cases.",
+  "integration_targets": [
+    "semantic_refresh",
+    "command_work",
+    "audio_reference",
+    "semantic_leaf_replay"
+  ],
+  "timing_lanes": ["control", "baseline", "candidate"],
+  "timing_plan": "Six unique rotations, 18 fresh 10,000-beat fixtures, 36 make/run commands; baseline and candidate profile gates on, control gate off.",
+  "profile_contract": "Existing DEADPAN_PAUSE_ROUTE_PROFILE_V3 parser and exact 35 phases are asserted; no phase changes are introduced by this driver.",
+  "source_guards": {
+    "candidate_map": "frozen-sources.json",
+    "matched_profile_map": "baseline-sources.json, bound by baseline-provenance.json matched_source_map_sha256",
+    "inputs": "baseline-inputs.json, all six checked in both source trees",
+    "source_review": "source-review.json must be no_findings and bind the candidate map",
+    "driver_pins": "Root must freeze build.py, measure.py, expected-build-stages.json, expected-tests.json, and check_profile.py before execution"
+  },
+  "binary_identities": {
+    "control": "baseline.json control, expected e6abcd3a521697f504901f156df445e41681cfc824ff97793f62f4e0865802e1",
+    "matched_profile": "baseline-provenance.json matched_app/matched_app_sha256, expected ffbaf7273f10e1a67041b3645d027be525bce4cc82d04985707ba781c63ee655",
+    "candidate": "Fresh private release App recorded in binaries.json"
+  },
+  "fixed_fixture_maker": {
+    "path": "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+    "sha256": "fa11b331dcd9b2f5645cb011af6f07a54986fa0c0055bcce63bd4af6a4ba3166"
+  },
+  "remaining_before_execution": [
+    "Root source review and source-review.json",
+    "Root driver-pins.json plus matching build and measurement approvals",
+    "Root runtime owners and terminal completion gates",
+    "Review of this draft, especially expected added-test names and report metadata schema"
+  ],
+  "explicit_limits": [
+    "Do not execute this build or measurement driver from the draft task.",
+    "The proposed timing comparison remains a diagnostic experiment; no gain, target, percentile, memory, physical display, source decode, or PCM claim is made."
+  ]
+}

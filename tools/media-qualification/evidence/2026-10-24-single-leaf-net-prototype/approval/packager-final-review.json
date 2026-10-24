@@ -1,0 +1,61 @@
+{
+  "status": "no_findings",
+  "findings": [],
+  "script_sha256": "7d3b11e720211c4970dbee1dbbe8a603652a805774a6de0bd88871011f71318c",
+  "manifest_sha256": "fb07107cf2ea6408ba7436bd0008879da04e4945a1f2add6bce86da4226d598b",
+  "review_kind": "independent static final copier and approved-input audit",
+  "verified": {
+    "payloads": 511,
+    "raw_payload_bytes": 92968285,
+    "fixture_roots": 25,
+    "fixture_authored_files": 75,
+    "fixture_authored_bytes": 112231950,
+    "media_file_rows": 35,
+    "source_changes": 15,
+    "initial_source_snapshots": 15,
+    "Main_rg_Rust_paths": 2053,
+    "candidate_source_map_sha256": "0bf07513646ffdfee5aec03bb1b64b6fff757196512aeea883226c675b15ed02",
+    "qualified_base_source_map_sha256": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+    "four_terminal_sha256": {
+      "build": "48b98c8a82d12099cb966691cb95bb05fee81910b066adae702588188339a866",
+      "measurement": "2e713143427e45e6eb03d486fe92c445a21d4ea5c24aa3c18fe1ff243944a28a",
+      "media": "d4ccd29b97cf0c0a8ac3a4940604b8f841e52540a80eb58b15c2443da02056ae",
+      "memory": "5e927729ce1088a7983c2d6101b47f58faf762f193a37ec55e1a1d2d01ce1b72"
+    },
+    "actual_executable_hashes": {
+      "candidate_app": "1a12c2e9f866de1cef3ec64ea3997b26a1baafa194a95e3eef9b4587607d288a",
+      "matched_profile_app": "ffbaf7273f10e1a67041b3645d027be525bce4cc82d04985707ba781c63ee655",
+      "control_app": "e6abcd3a521697f504901f156df445e41681cfc824ff97793f62f4e0865802e1",
+      "observer": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+      "real_media_test": "d3210a244854be52aaf5bb73ad27bfbf470789cee0a39e973427f92ff8bc9582",
+      "real_media_cli": "5a0f376535cb5553843dd1cf5d562cbdc44e44c0202182c27820925ffa3c54fa"
+    },
+    "payload_source_regular_files_and_hashes": true,
+    "no_executable_magic_in_payloads": true,
+    "no_target_destination_or_bare_rs_source": true,
+    "script_AST_valid": true,
+    "canonical_unique_destinations_no_ancestor_collisions": true,
+    "fixture_before_after_actual_authored_bytes_equal": true,
+    "fixture_root_WAL_empty": true,
+    "six_source_inputs_verified": true,
+    "actual_App_CLI_test_helpers_observer_pins_verified": true,
+    "current_Main_rg_equals_qualified_ee77_map": true,
+    "destination_absent_at_review": true
+  },
+  "notes": [
+    "Read the complete frozen package.py and actual approved manifest. Independently hashed all 511 regular payload inputs, all 25 fixture trees against their uniquely approved before/after maps, all executable/helper/observer pins, candidate and immutable qualified-base source maps, six inputs, review records and four exact terminal records. All observed rows match the approved hashes.",
+    "Exact terminal schemas remain distinct: nine named build stages, 18 timing trials/36 commands/126 workflow checks/18 Kestrel checks, one selected real-media test with its actual test and CLI identities, and six separately labeled memory trials. Build steps and source-path counts are not represented as test counts. The copier does not invent a SourceTest count or promote private prototype results to production qualification.",
+    "All 15 actual candidate-versus-qualified-base source differences have exact before/after pins and .rs.txt destinations; all 15 retained initial-attempt source snapshots match their own frozen map and bytes. There are no bare .rs source payload destinations, target-tree destinations, or Mach-O/ELF executable payload bytes. Scripts are copied as non-executable ordinary bytes.",
+    "Every media_files row exactly matches a payload row. The two media package root WAL files are explicitly zero length. Fixture allowance names are exact root SQLite sidecars only; excluded WAL is zero, actual authored paths/bytes equal both recorded maps, and each fixture is below the 200 MB bound. No source/fixture symlink or special file was admitted.",
+    "Approved payload/fixture/envelope/inventory destinations are canonical, unique and have no ancestor/file collisions. Current destination is absent. Even if a destination appears or is a dangling symlink later, Darwin renameatx_np with RENAME_EXCL rejects replacement atomically. Local SDK confirms AT_FDCWD=-2 and RENAME_EXCL=0x00000004.",
+    "Copier stages privately under the destination parent, verifies each gzip round trip, creates only regular safe relative TAR members, reopens TAR data without extracting to disk and verifies member bytes against the fixture map. It rechecks payloads, fixture authored maps and approval envelope before publication, inventories stored bytes, re-reads inventory and atomically publishes once.",
+    "Approval envelope intentionally avoids output self-pinning: review binds script/manifest, Root GO binds review and terminal/source/binary inputs, and generated inventory excludes itself. package.py is also duplicated as an immutable provenance payload with the same hash; that is not a cyclic output hash and the copier never rewrites that source.",
+    "The metadata collector provenance uses the immutable qualified source ee77 map after its retained initial rglob/Main assertion failure. Independent current Main comparison used rg --files, never rglob on Main, and verified exactly 2053 authored Rust paths against ee77."
+  ],
+  "limits": [
+    "No copier execution, compression/archive generation, GO creation, Main publication, image/UI work, compiler/build, benchmark or Git action performed. Only this final review JSON is written.",
+    "No new tests, latency measurements, memory measurements or production qualification are established by a metadata copier audit. Existing terminal and analysis evidence are verified as retained inputs.",
+    "Atomic no-replace publication was source/header reviewed, not fault-injected here. The script does not claim fsync-based power-loss durability. Existing approved path spellings and fixtures were checked; this is not a generic certification of arbitrary future manifests.",
+    "Current source/hash/destination observations are a bounded read-only snapshot. Root owns the final GO and execution; script rechecks its approved bytes and inputs at execution."
+  ]
+}

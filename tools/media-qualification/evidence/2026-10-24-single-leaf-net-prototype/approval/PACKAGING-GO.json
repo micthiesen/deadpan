@@ -1,0 +1,12 @@
+{
+  "status": "approved_for_packaging",
+  "package_script_sha256": "7d3b11e720211c4970dbee1dbbe8a603652a805774a6de0bd88871011f71318c",
+  "approved_manifest_sha256": "fb07107cf2ea6408ba7436bd0008879da04e4945a1f2add6bce86da4226d598b",
+  "packager_review_sha256": "2b82f8d4bac8ec135f0fc7c57d7550301fc167a64b7ba7946a11b34c85671602",
+  "source_map_sha256": "0bf07513646ffdfee5aec03bb1b64b6fff757196512aeea883226c675b15ed02",
+  "binary_manifest_sha256": "ae446f7879e96fed03a2c93768493d74ed745090c7d9771705ff6684e042d45a",
+  "build_terminal_sha256": "48b98c8a82d12099cb966691cb95bb05fee81910b066adae702588188339a866",
+  "measurement_terminal_sha256": "2e713143427e45e6eb03d486fe92c445a21d4ea5c24aa3c18fe1ff243944a28a",
+  "media_terminal_sha256": "d4ccd29b97cf0c0a8ac3a4940604b8f841e52540a80eb58b15c2443da02056ae",
+  "memory_terminal_sha256": "5e927729ce1088a7983c2d6101b47f58faf762f193a37ec55e1a1d2d01ce1b72"
+}

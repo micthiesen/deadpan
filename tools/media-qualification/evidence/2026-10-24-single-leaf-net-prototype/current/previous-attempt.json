@@ -1,0 +1,10 @@
+{
+  "root": "/tmp/deadpan-single-leaf-net-prototype-2026-10-24",
+  "terminal": {
+    "status": "failed",
+    "stage": "core-unit-all",
+    "exception": "KeyboardInterrupt",
+    "message": ""
+  },
+  "reason": "Root intentionally interrupted first attempt after unused Result warning in one new unit test. Original source/logs/partial tests preserved. No performance trials ran. V2 strengthens the test assertion; no production logic change."
+}

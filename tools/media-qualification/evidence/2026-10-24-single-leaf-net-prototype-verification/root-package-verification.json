@@ -1,0 +1,52 @@
+{
+  "status": "complete",
+  "verification": "independent published-package reread",
+  "verifier_sha256": "392b29aaf7c7333393ab3e364b8ecd619dedd6759223817b3b9bd0cd02bdcb0c",
+  "root": "/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-24-single-leaf-net-prototype",
+  "inventory_sha256": "c7fba9c46c455740c45ff7bccea188fbc3c9e8eb8ee470846e24c677ee551f0a",
+  "inventory_files_excluding_itself": 541,
+  "all_stored_files": 542,
+  "inventory_bytes_excluding_itself": 17670651,
+  "approved_manifest_sha256": "fb07107cf2ea6408ba7436bd0008879da04e4945a1f2add6bce86da4226d598b",
+  "package_script_sha256": "7d3b11e720211c4970dbee1dbbe8a603652a805774a6de0bd88871011f71318c",
+  "packager_review_sha256": "2b82f8d4bac8ec135f0fc7c57d7550301fc167a64b7ba7946a11b34c85671602",
+  "packaging_GO_sha256": "827a80255d315162da8ff054605d4cc139fdec044585e30920679fd41d547833",
+  "payloads_decoded_verified": 511,
+  "gzip_payloads": 73,
+  "identity_payloads": 438,
+  "raw_payload_bytes": 92968285,
+  "fixtures_verified": 25,
+  "safe_regular_TAR_members": 75,
+  "fixture_authored_bytes": 112231950,
+  "media_file_rows_verified": 35,
+  "actual_export_MP4s": [
+    {
+      "leg": "cached",
+      "destination": "media-evidence/exports-cached/one-leaf-cached-media.mp4",
+      "sha256": "905792305d5818fa0e6f84f95490c8aa15b169e7085ef90c1f8326c0736a2909",
+      "bytes": 13232
+    },
+    {
+      "leg": "uncached",
+      "destination": "media-evidence/exports-uncached/one-leaf-uncached-media.mp4",
+      "sha256": "747f5d80c7ee82c7351034b75f55d6c0291b11beb03e0eca2acc80cff2e73fed",
+      "bytes": 13232
+    }
+  ],
+  "live_approved_payload_hashes_verified": 511,
+  "live_fixture_maps_and_root_WAL_zero_verified": 25,
+  "terminal_hashes_verified": {
+    "build": "48b98c8a82d12099cb966691cb95bb05fee81910b066adae702588188339a866",
+    "measurement": "2e713143427e45e6eb03d486fe92c445a21d4ea5c24aa3c18fe1ff243944a28a",
+    "media": "d4ccd29b97cf0c0a8ac3a4940604b8f841e52540a80eb58b15c2443da02056ae",
+    "memory": "5e927729ce1088a7983c2d6101b47f58faf762f193a37ec55e1a1d2d01ce1b72"
+  },
+  "no_bare_rs_target_or_executable_payload_leak": true,
+  "primary_package_unchanged_by_verifier": true,
+  "notes": [
+    "The immutable package.py bytes occur as both provenance payload and approval envelope input. Both match the same pinned bytes; this duplication is intentional and is not an output hash cycle.",
+    "Root SQLite sidecars are excluded from fixture TAR members exactly as approved. Captured and live root WAL sizes are zero; the 35 explicit media payload rows separately retain their exact sidecar bytes.",
+    "TAR streams were read without extracting members. Gzip payloads were decoded under their approved source byte limit.",
+    "Verification establishes retained paths/bytes/hash agreement, not new correctness, latency, memory, production qualification or crash-durability results."
+  ]
+}

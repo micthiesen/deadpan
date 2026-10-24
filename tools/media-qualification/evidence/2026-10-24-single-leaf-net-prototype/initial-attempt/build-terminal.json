@@ -1,0 +1,6 @@
+{
+  "status": "failed",
+  "stage": "core-unit-all",
+  "exception": "KeyboardInterrupt",
+  "message": ""
+}

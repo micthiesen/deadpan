@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/measure.py", line 399, in <module>
+    main()
+    ~~~~^^
+  File "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/measure.py", line 291, in main
+    assert len(metric_rows) == 2 and {row['name'] for row in metric_rows} == METRICS
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

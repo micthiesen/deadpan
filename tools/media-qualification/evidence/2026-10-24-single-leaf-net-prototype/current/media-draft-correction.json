@@ -1,0 +1,6 @@
+{
+  "executed": false,
+  "correction": "Draft had original 0b61 Main map. Root replaced it with current qualified ee77 map before execution, as required by brief. Candidate source/runner unchanged.",
+  "old_map_sha256": "0b61b120b75aa6bbcf350f7642a5fb731c711b8e6985c8fa61709229ed12696f",
+  "new_map_sha256": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e"
+}

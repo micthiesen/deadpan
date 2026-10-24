@@ -1,0 +1,14 @@
+{
+  "measure_retry.py": "de25e0580b0d758beef1ba4038b4e3cc41c4c9e49d9bc6dad76ad6d65bcec38a",
+  "driver-pins.json": "2b77071cb40af280a6c193c30289f3bef22ac3aea4e6bee74a99f0cbdc204666",
+  "measurement-retry-history.json": "93fe91aeef64d23170858137469b3a5bdbfefd96bab0bd525380fcb12522a367",
+  "measure.py": "161fffcc750fd85a77e3d48690813f36a43347e9181e70e5e5f33a2b9409b1c8",
+  "measurement-terminal.json": "f5780ab0861df2719203205cc4fe47d4be6b96954d029decdd0eb6cebb76fb87",
+  "measurement-owner.json": "ece8ba164250414b61f7ab226be87c5b762970b33b38b2e9d5e4caed5e90ccd9",
+  "measurement-receipt.json": "6d52247c31554b0697a775ca641c39bdcd674d155e57fb52db992a4eaffe1eed",
+  "measurement-driver.stdout": "49bffa5d0dc9b36b285f4c1800faaa525bca79895fd8b43575050388eb425e15",
+  "measurement-driver.stderr": "529c54af38d885db52e77204b72b3fa14624ee66746353b26efadb6cc77d8087",
+  "rotation-1-control-report/report.json": "9d373aa570998349d1e81c1871673df841a0c82509c0f0e6ab9348445141bcef",
+  "rotation-1-control.stdout": "8da8e5fa2f3db561a541508697577c299be7b218f42cc60909bf3c2ba3e2bacd",
+  "rotation-1-control.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

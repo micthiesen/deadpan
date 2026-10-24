@@ -2,6 +2,24 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Single-leaf net reuse: private qualification, 2026-10-24
+
+The [private prototype](qualification/single-leaf-net-prototype-2026-10-24.md)
+retains the successful leaf edit and changes only its outer revision headers
+and description after final admission. Release Core avoids repeated aggregate
+validation, diff and inverse work; Store still checks the actual result,
+encoded edit, readback and inverse. All 734 Core unit tests, 35 integration
+tests, 12 release Store tests, strict checks and the real-media history/PCM
+case pass, including two verified 45-picture, 72,072-sample zero-offset exports.
+
+Six matched timing pairs show a 6.047542 ms median commit reduction. Separate
+whole-app memory samples show median observed maxima of 651.329 MiB for the
+baseline and 668.954 MiB for the candidate; they do not isolate retained edit
+memory or establish a ceiling. The 541-payload package and independent reread
+are retained. This is private diagnostic evidence, separate from uninstrumented
+qualification. No code is promoted by this record, no gate or target closes,
+and coverage remains 89%, eight Complete and sixteen Partial.
+
 ## Insert-split proof prototype, 2026-10-23
 
 The [private prototype](qualification/insert-split-proof-prototype-2026-10-23.md)

@@ -1,0 +1,30 @@
+{
+  "deadpan-app": {
+    "source": "/private/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/target/release/deadpan-app",
+    "executed": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/bin/deadpan-app",
+    "sha256": "1a12c2e9f866de1cef3ec64ea3997b26a1baafa194a95e3eef9b4587607d288a",
+    "freshly_built": true,
+    "qualified_helper_reuse": false
+  },
+  "deadpan-media-worker": {
+    "source": "/private/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-native-bin/deadpan-media-worker",
+    "executed": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/bin/deadpan-media-worker",
+    "sha256": "70114641de62f0c9c839734f3dddab1221b01888661a43ed5583e40ca9ed90fe",
+    "freshly_built": false,
+    "qualified_helper_reuse": true
+  },
+  "deadpan-transcribe": {
+    "source": "/private/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-native-bin/deadpan-transcribe",
+    "executed": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/bin/deadpan-transcribe",
+    "sha256": "a75e83e94c073fa7419fea1ffc4621ab56adba020d402435c65622dababbe8b3",
+    "freshly_built": false,
+    "qualified_helper_reuse": true
+  },
+  "deadpan-track": {
+    "source": "/private/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-native-bin/deadpan-track",
+    "executed": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/bin/deadpan-track",
+    "sha256": "97564bc5d9aee093aa7e3fa5e8a89aa5da68134f92f34032a407f27778c1eab4",
+    "freshly_built": false,
+    "qualified_helper_reuse": true
+  }
+}

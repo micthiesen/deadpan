@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-24T00:07:43.000Z",
+  "updated_at": "2026-10-24T01:28:01.647Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Pause insertion now reuses one validation result. Tests, history, PCM and two exports passed; five paired runs saved about 2.4 ms to commit. The 100 ms and 50 ms latency targets remain open.",
+  "focus": "A pause-edit reuse candidate passes tests and real media. Five uninstrumented pairs save about 5.36 ms to commit; its final memory check is pending. Main runtime code is unchanged and the 100 ms/50 ms targets remain open.",
   "features": [
     {
       "id": "editing",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "A narrow InsertTime interior-split change is promoted and passes 724 Core unit tests, 22 integration tests, 12 Store tests, strict/format checks, one cached/uncached media-history case and five uninstrumented timing pairs. Paired medians improve 2.380874 ms to commit and 2.504043 ms to offscreen composition. These samples are diagnostic, not a percentile or target pass; 100 ms/50 ms targets and broader performance work remain open."
+      "note": "A private net-edit reuse prototype passes 734 Core unit tests, 35 integration tests, 12 Store tests and real-media/history/PCM checks; six matched timing pairs save 6.047542 ms. Separate whole-app sampled maxima have medians of 651.329/668.954 MiB and do not isolate retained edit memory. The uninstrumented candidate passes 726 Core unit, 35 integration and 12 Store tests, strict/format, real media and five timing pairs with a 5.355917 ms paired median reduction. Final memory verification is pending; no Main runtime change, percentile or 100 ms/50 ms target pass is claimed."
     },
     {
       "id": "models",
@@ -1221,6 +1221,14 @@
       "revision": "5fdae748ac2fdc67e1a11793c5ab69f6b61da833",
       "retrospective": false,
       "summary": "The narrow InsertTime interior-split reuse change is promoted to Main after production qualification. Nine build stages pass: 724 Core unit tests, 22 Core integration tests, 12 Store tests, release App, strict checks and formatting. Five fresh uninstrumented control/candidate pairs pass 70 pause checks and 10 Kestrel checks; all inputs and WAL guards hold. Median paired reductions are 2.380874 ms to commit and 2.504043 ms to offscreen composition, diagnostic only. One cached/uncached release-media and history test passes from the same fresh release archive after the extraction setup correction, verifying two 45-picture, 72,072-sample zero-offset exports. The 238-payload package and independent reread are retained. Coverage stays 89%, eight Complete/sixteen Partial; no gate, percentile or latency target closes."
+    },
+    {
+      "date": "2026-10-24",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "9211db7043d14e57e06782342aa7defd1313a8b6",
+      "retrospective": false,
+      "summary": "A private single-leaf net-edit reuse prototype retains Core-created patches and rebases only aggregate revision headers and description after final admission. All 734 Core unit tests, 35 integration tests, 12 Store tests, strict/format checks and one actual media/history/PCM case pass; two 45-picture, 72,072-sample exports verify at zero offset. Eighteen timing trials and six separate memory trials complete; six matched pairs save a median 6.047542 ms to commit, while median sampled whole-app maximum footprint is 651.329 MiB baseline and 668.954 MiB candidate, with no per-leaf or ceiling claim. The independently reread 541-payload evidence package verifies all hashes, 25 safe archives and both movies. The uninstrumented candidate separately passes 726 Core unit/35 integration/12 Store tests, strict/format, real media and five timing pairs saving a paired median 5.355917 ms; its memory check remains pending. Main runtime is unchanged. Coverage remains 89%, eight Complete/sixteen Partial; no gate, percentile or latency target closes."
     }
   ]
 }

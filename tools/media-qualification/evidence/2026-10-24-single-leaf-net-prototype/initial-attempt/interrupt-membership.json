@@ -1,0 +1,23 @@
+{
+  "owner": [
+    "69496",
+    "88250",
+    "69496",
+    "/opt/homebrew/Cellar/python@3.15/3.15.0_1/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python"
+  ],
+  "pgid": 69496,
+  "members": [
+    [
+      "69496",
+      "88250",
+      "69496",
+      "/opt/homebrew/Cellar/python@3.15/3.15.0_1/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python"
+    ],
+    [
+      "70381",
+      "69496",
+      "69496",
+      "/tmp/deadpan-single-leaf-net-prototype-2026-10-24/test-bin/core-unit-build/deadpan_core-bf7ceed176dd1c4c"
+    ]
+  ]
+}

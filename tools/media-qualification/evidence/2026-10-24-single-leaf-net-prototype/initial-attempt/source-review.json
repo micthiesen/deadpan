@@ -1,0 +1,55 @@
+{
+  "status": "no_findings",
+  "findings": [],
+  "source_map_sha256": "4b9e8d330891d76e537db30c5d0a912d9b0e49ba84f9b8a690fe0141cb0d5577",
+  "baseline_source_map_sha256": "ddf4b90c48877c24206c09cf4cf89f9f51c233b8b6fd158b95d5e08c15f31bf1",
+  "reviewed_path_hashes": {
+    "crates/deadpan-core/src/one_leaf_replay.rs": "4d5aa406b19714c523b9a3f61c02430eb35bef6758f2abd6f04caae7c1252b21",
+    "crates/deadpan-core/src/compound.rs": "7a89813ac9f91e3d1234167ad629fd4c8252b4e90c4c44e321763e3c8d35677a",
+    "crates/deadpan-core/tests/semantic_leaf_replay.rs": "648ae62b2ae50fee4a6bfa98fb3fe69e7d5039df44a18a9a89e14daa100b8b42"
+  },
+  "baseline_path_hashes": {
+    "crates/deadpan-core/src/one_leaf_replay.rs": "952e5157a7a5bc23e40faa5140c705d8d84d2d3e456333cd9a79f219bd30b0e7",
+    "crates/deadpan-core/src/compound.rs": "8de491f0015a9c1d1bc25723d28bb2e8821d445abdedbc989aceb9ee43811c9a",
+    "crates/deadpan-core/tests/semantic_leaf_replay.rs": "0836e272bb2594e6cdcceaf7273a0773504d286a3ace91cd7ea1b059e8a9b561"
+  },
+  "input_hashes": {
+    "design.md": "bb78826817225e12d279a1ea07f049960f57b007a470128ee7a947d752dda22f",
+    "baseline-provenance.json": "06d8a81ab9ff9029c0dfe52cb05da2de5d0fc18cd43f7f1aa5c63109dae9ce67",
+    "baseline-inputs.json": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317",
+    "baseline-sources.json": "ddf4b90c48877c24206c09cf4cf89f9f51c233b8b6fd158b95d5e08c15f31bf1",
+    "prototype.patch": "2d22ace807bf8b26ea4091db6004f4dca5031d380c2e4163f94f6555f16a0f50"
+  },
+  "external_design_sha256": "bb78826817225e12d279a1ea07f049960f57b007a470128ee7a947d752dda22f",
+  "scope": {
+    "rust_files": 2054,
+    "changed_files": 3,
+    "unchanged_nonowned_rust_files": 2051,
+    "six_source_inputs_unchanged": true,
+    "Store_changed": false,
+    "Main_changed_by_reviewer": false
+  },
+  "proof_review": [
+    "Capability still has only private immutable Core-created entry/request/next/edit values, no public constructor/Clone/serde/accessors. Real apply_with_result succeeds first; original admit_next must succeed before capability construction. Mode/value/ordinaryInsertTime eligibility is unchanged.",
+    "reuse returns a borrow of edit only after exact entry/request comparisons, original EXACT_EDIT reset, revision admission and sealed-preserved behavior. Compound carries this borrow only from an actual eligible one-ordinary-step hit with no inputs/isolation. Miss/reference/derived/provisional/extra-step/register/capture/AI/occurrence paths retain old fallback.",
+    "Original revision/transaction/leaf-separation/initialwire/Ledger reserve/prewire+charge/postwire+charge/Ledger observe/visitor/current assignment/finalouterrevision/finalwire+charge order remains. Cached aggregate is constructed only after final admission; visitor receives immutable authored references.",
+    "After actual hit only current.revision_id changes. Rebased forward.to_revision/inverse.from_revision and compound description match original aggregate factory; authored leaf timing allocations, patch data, changedIDs and durationDelta stay identical. Each patch cloned once via rebased, not whole-edit-then-patch copies.",
+    "Complete debug_assertions oracle recomputes old net_transaction and compares wholeEditTransaction. Release intentionally skips final Core aggregate validation/diff/inverse/changedIDs work; it does not claim that factory still executes. Successful leaf result validation remains, and unchanged Store independently validates actual next, serializes actual outerrequest/rebasededit, checks real size/decode readback and inverse restoration.",
+    "Test-only net selection TLS holds no borrow across calls; nested observations/error/unwind restore prior state. No production counter/globalcache/encodedbyte cache or new serializer is introduced."
+  ],
+  "test_review": [
+    "Private actual-selection witness asserts Some hit constructs cached net; None/reference representations/modes/changedsame-revisionentry/changedleaf/input/extra-step/isolation miss. Visitor refusal has onevisit/no cachedconstruction and succeeds on later recovery.",
+    "New public integration uses actual planned capability in bound/unbound fixtures and two outerrevision lengths; parity compares wholeedit/document/registerwrites/visitorsequence and actualwire against explicitNone+legacy API. Exact forward/inverse headers, description, authoredleaf timing IDs and forward/inverse restoration are asserted.",
+    "Known serialization expectation is corrected: canonical inverse omitted by EditTransaction wire, so editwire length delta equals one outerheader length delta; whole in-memory inverse equality remains separately asserted.",
+    "Real64MiB initial/post/finalouter boundary cases retain original exact errors and visitor0/0/1, with no cachedaggregate construction before refusal. Exactcap candidate is genuinely sealed/reused. Singleleaf4x64MiB cannot hit512MiB cumulative cap.",
+    "New multistep fallback pads legal12002node document to real60MiB, uses no lowered limits, expects512MiB stagedwork refusal at step4post after3visits, exactSome/None error+count parity, and no cachednetselection. These fixtures and tests are source-only unexecuted here."
+  ],
+  "memory_and_limits": [
+    "OneLeafReplay now retains successful sparse forward+inverse patch state for its lifetime; this can be wide on firstpause. Aggregate rebasing clones patch maps and changedIDs once; next remains the existing document clone. Memory/latency benefit is unknown and must be measured, not inferred from sparse naming.",
+    "For retain=false/nonInsertTime, edit is dropped before admission as before. For ineligible retain=trueInsertTime it may live through admission before being discarded; acknowledge that transient memory extension.",
+    "No new genuineStore aggregate64MiB boundary fixture was added; existing authoritative Store size/readback/inverse checks remain byte-identical. Root must run focused/fulloracle tests and realmediaSome/None before any promotion or performance conclusion."
+  ],
+  "limitations": [
+    "Independent static source/diff/test review only. No build/compiler/formatter/test/runtime/Git/Main/source edits. No pass, timing, peak/retained-memory or production qualification claim."
+  ]
+}
