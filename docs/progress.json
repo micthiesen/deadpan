@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-24T03:16:15.935Z",
+  "updated_at": "2026-10-24T04:29:00.000Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Pause count reuse is implemented and verified. Five uninstrumented pairs saved a median 5.74 ms to commit; every pair improved. The 100 ms/50 ms targets remain open.",
+  "focus": "Target-following creep is implemented in the working tree and under verification. The first complete Core/Plan run passes 2,020 tests. Native Camera, structural edge cases and actual-media export checks are still in progress; no requirement closes yet.",
   "features": [
     {
       "id": "editing",
