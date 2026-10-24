@@ -1,0 +1,6 @@
+{
+  "source_paths": 17,
+  "all_source_bytes_identical": true,
+  "all_five_binary_bytes_identical": true,
+  "note": "One candidate build. Passing native-retime-first is final; first/final copies have identical source and executable bytes, with no duplicate workflow run claimed."
+}

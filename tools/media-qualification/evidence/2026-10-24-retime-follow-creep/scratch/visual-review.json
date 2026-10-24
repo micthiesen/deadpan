@@ -1,0 +1,27 @@
+{
+  "observed_at": "2026-10-24T11:52:34.582560+00:00",
+  "method": "Root inspected four actual offscreen native Metal PNGs through view_image.",
+  "result": "Camera 081 names the selected Retime and live Target 1 at 58 percent, with readable draft and fallback controls. Seams 121/122 show Original counters 39 to 80 at Edit boundaries 59 to 60, separate 120-frame Original and Edit clocks, Speed 80/120x and Tape pitch, and continuous Target 1 scale from 1.100x to 2.200x linear. Final 123 retains the selected whole Retime and correct picture after the cut. Keycaps, footer and inspector are readable; no overlapping labels or obscured controls observed.",
+  "images": {
+    "native-retime-first/retime-follow-creep-081.png": {
+      "bytes": 330813,
+      "sha256": "b8844405dace2dd6e9fed49b5e65f7ca7a83cdff3691861abe720840d99d0ea1"
+    },
+    "native-retime-first/retime-follow-creep-121.png": {
+      "bytes": 357479,
+      "sha256": "5d4a763674d37779dee63720efa7b0d55e8d10dc77a0899c724ef807f5f3a668"
+    },
+    "native-retime-first/retime-follow-creep-122.png": {
+      "bytes": 359770,
+      "sha256": "9c6e62c2035d36e94efa2b41d5dcf970254c02fde5949fd37c6c0e5195e5b2d5"
+    },
+    "native-retime-first/retime-follow-creep-123.png": {
+      "bytes": 359516,
+      "sha256": "af3f334412a39e906b3ca2dc9ebb6bd0c0ee8c528b1240f545daa1e677f027a3"
+    }
+  },
+  "limits": [
+    "Offscreen Metal and scripted input do not establish physical display/input, OS IME delivery, VoiceOver speech, listening or latency.",
+    "One candidate build. First/final copies have identical seventeen source files and all five executable bytes; no duplicate workflow run is claimed."
+  ]
+}

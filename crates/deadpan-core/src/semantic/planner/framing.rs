@@ -182,7 +182,7 @@ where
                     NodeKind::Hold { .. } => Some(framing_zoom::OrdinaryFollowOwner::Hold),
                     NodeKind::Sequence { .. } => Some(framing_zoom::OrdinaryFollowOwner::Sequence),
                     NodeKind::Repeat { .. } => Some(framing_zoom::OrdinaryFollowOwner::Repeat),
-                    _ => None,
+                    NodeKind::Retime { .. } => Some(framing_zoom::OrdinaryFollowOwner::Retime),
                 },
                 entry,
                 current: state.current,

@@ -1,0 +1,65 @@
+    let baseline = d
+        .app()
+        .workspace
+        .clone()
+        .ok_or("No fixed Follow workspace")?;
+    let original_cursor = d.app().source_cursor;
+    let edit_cursor = d.app().sequence_cursor;
+    let audio_end = baseline
+        .plan
+        .audio_duration()
+        .map_err(|error| error.to_string())?;
+    let audio_before = baseline
+        .plan
+        .audio(AudioSample(0)..audio_end, Default::default())
+        .map_err(|error| error.to_string())?;
+    d.chord(&[Key::Q, Key::X])?;
+    edit(d, "creep from=1.1 to=2.2 curve=linear")?;
+    let animated = framing(d, &retime);
+    d.key(Key::Q)?;
+    d.wait_for("Retime creep recording saves", |app| {
+        !app.service.is_busy() && !app.macros.is_pending() && !app.macros.recording()
+    })?;
+    let program = d
+        .app()
+        .copied
+        .entries()
+        .find_map(|(name, content)| match content {
+            Content::Macro(program) if name == 'x' => Some(program.instructions().to_vec()),
+            _ => None,
+        });
+    let expected_program = vec![SemanticInstruction::Zoom {
+        kind: ZoomKind::Creep {
+            from: Some(ratio(11, 10)),
+            to: ratio(11, 5),
+            curve: ZoomCurve::Linear,
+        },
+        center: SemanticZoomCenter::Keep,
+    }];
+    let current = d.app().workspace.clone().ok_or("No animated workspace")?;
+    let audio_after = current
+        .plan
+        .audio(AudioSample(0)..audio_end, Default::default())
+        .map_err(|error| error.to_string())?;
+    let other_nodes_unchanged = baseline
+        .document
+        .nodes()
+        .iter()
+        .filter(|(id, _)| *id != &retime)
+        .all(|(id, node)| current.document.nodes().get(id) == Some(node));
+    let mut expected_retime = baseline.document.nodes()[&retime].clone();
+    expected_retime.framing = animated.clone();
+    d.check("One Keep creep changes only the retime framing and records invocation-relative intent",
+        matches!(&animated, Some(Framing {clock:FramingClock::OwnerOutput,value:FramingValue::Follow {
+            target,scale,fallback,scale_transition:Some(FollowScaleTransition {factor,curve:ZoomCurve::Linear})}})
+            if target.as_str()=="target-1" && *scale==ratio(11,10) && fallback.scale==ratio(11,10) && *factor==ExactRatio::integer(2))
+            && other_nodes_unchanged && current.document.nodes().get(&retime)==Some(&expected_retime)
+            && baseline.document.nodes().len()==current.document.nodes().len()
+            && baseline.document.targets()==current.document.targets() && audio_before.spans==audio_after.spans
+            && audio_end==AudioSample(192192)
+            && current.plan.audio_duration().is_ok_and(|end| end==audio_end) && d.app().sequence_length()==120
+            && d.app().source_cursor==original_cursor && d.app().sequence_cursor==edit_cursor
+            && program==Some(expected_program.clone()),
+        json!({"owner_frames":120,"from":"1.1","to":"2.2","factor":2,"audio":"unchanged","macro":expected_program}),
+        json!({"framing":animated,"other_nodes_unchanged":other_nodes_unchanged,"macro":program,"audio_samples":audio_end}))?;
+

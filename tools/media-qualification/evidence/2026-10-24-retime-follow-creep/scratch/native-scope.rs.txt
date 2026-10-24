@@ -1,0 +1,62 @@
+    at(d, 0)?;
+    edit(d, "wrap-repeat 2")?;
+    let enclosing = d
+        .app()
+        .selected_beat
+        .clone()
+        .ok_or("No enclosing Repeat selected")?;
+    let enclosing_second = match &d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("No workspace")?
+        .document
+        .nodes()[&enclosing]
+        .kind
+    {
+        NodeKind::Repeat { iterations, .. } => {
+            iterations.at(1).ok_or("No enclosing second play")?
+        }
+        _ => return Err("The temporary wrapper is not a Repeat".into()),
+    };
+    d.key(Key::Enter)?;
+    idle(d)?;
+    for choice in ["scope all", "scope play 2"] {
+        d.command(choice)?;
+        idle(d)?;
+        let scoped = d
+            .app()
+            .scoped_target()?
+            .ok_or("Nested Repeat authority is absent")?;
+        d.check("Nested inspection targets the inner fixed-Follow Retime rather than a Source or the outer owner",
+            scoped.root==enclosing && scoped.target.node==retime && framing(d,&retime)==fixed
+                && scoped.target.repeats.len()==1 && scoped.target.repeats[0].repeat==enclosing
+                && if choice=="scope all" {
+                    matches!(&scoped.target.repeats[0].branch,deadpan_core::RepeatEditBranch::Default)
+                } else {
+                    matches!(&scoped.target.repeats[0].branch,deadpan_core::RepeatEditBranch::Play {iteration} if iteration==&enclosing_second)
+                },
+            json!({"inner_retime":retime,"enclosing":enclosing,"scope":choice}),json!({"target":scoped.target,"scope":choice}))?;
+        refused(
+            d,
+            "A Retime under enclosing all-play or one-play authority refuses Keep creep",
+        )?;
+    }
+    d.key(Key::Backspace)?;
+    idle(d)?;
+    d.check(
+        "Leaving the enclosing Repeat returns to ordinary owner selection",
+        d.app().scoped.is_none(),
+        json!({"scoped":false}),
+        json!({"scoped":d.app().scoped.is_some()}),
+    )?;
+    edit(d, "undo")?;
+    d.check(
+        "Undoing the temporary outer Repeat restores the fixed original owner",
+        d.app().selected_beat.as_ref() == Some(&retime)
+            && framing(d, &retime) == fixed
+            && d.app().sequence_length() == 120,
+        json!({"owner":retime,"frames":120}),
+        json!({"owner":d.app().selected_beat,"frames":d.app().sequence_length()}),
+    )?;
+

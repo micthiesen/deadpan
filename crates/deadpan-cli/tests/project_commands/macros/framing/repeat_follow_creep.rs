@@ -605,7 +605,8 @@ fn whole_repeat_follow_creep_preserves_plays_gaps_escalation_and_invocation_rela
             Some(Framing { value: FramingValue::Follow { target, scale, scale_transition: Some(FollowScaleTransition { factor, .. }), .. }, .. })
             if target.as_str() == "other" && *scale == ratio(1, 1) && *factor == ratio(4, 1)));
         if variant == "plain" {
-            // Valid raw Follow on Retime stays generic, but is not an authoring owner.
+            // The selected ordinary Retime is now an authoring owner too; its
+            // independently animated Repeat child and all timing stay intact.
             command(
                 &package,
                 &input,
@@ -626,7 +627,7 @@ fn whole_repeat_follow_creep_preserves_plays_gaps_escalation_and_invocation_rela
                 },
                 "retime-follow",
             )?;
-            let error = reject(
+            invoke(
                 &package,
                 &input,
                 &invocation(
@@ -636,15 +637,26 @@ fn whole_repeat_follow_creep_preserves_plays_gaps_escalation_and_invocation_rela
                     "retime",
                     2,
                     None,
-                    "retime-refused",
+                    "retime-creep",
                 ),
+                false,
             )?;
-            assert!(
-                error["error"]["message"]
-                    .as_str()
-                    .unwrap()
-                    .ends_with(deadpan_core::framing_zoom::FOLLOW_CREEP_REFUSAL)
-            );
+            let animated = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+            let mut expected = serde_json::to_value(&retimed)?;
+            expected["revision_id"] = json!(animated.revision_id());
+            expected["nodes"]["retime"]["framing"] =
+                serde_json::to_value(&animated.nodes()[&node("retime")].framing)?;
+            assert_eq!(serde_json::to_value(&animated)?, expected);
+            assert!(matches!(&animated.nodes()[&node("retime")].framing,
+                Some(Framing { value: FramingValue::Follow { target, scale, scale_transition: Some(FollowScaleTransition { factor, .. }), .. }, .. })
+                if target.as_str() == "subject" && *scale == ratio(2, 1) && *factor == ratio(2, 1)));
+            let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+            writer.undo(
+                animated.revision_id(),
+                RevisionId::new("retime-creep-undo")?,
+            )?;
+            same_document(&writer.snapshot()?, &retimed)?;
+            drop(writer);
             command(
                 &package,
                 &input,

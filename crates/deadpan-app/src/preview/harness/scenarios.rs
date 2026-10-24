@@ -33,6 +33,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "hold-follow-creep" => super::hold_follow_creep::run(d),
         "sequence-follow-creep" => super::sequence_follow_creep::run(d),
         "repeat-follow-creep" => super::repeat_follow_creep::run(d),
+        "retime-follow-creep" => super::retime_follow_creep::run(d),
         "tail-sends" => super::tail_sends::run(d),
         "wet-returns" => super::wet_returns::run(d),
         "audio-treatments" => super::audio_treatments::run(d),

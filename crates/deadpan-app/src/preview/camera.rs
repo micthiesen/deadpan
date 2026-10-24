@@ -878,6 +878,7 @@ impl CameraSession {
             Some(deadpan_core::NodeKind::Hold { .. }) => Some(OrdinaryFollowOwner::Hold),
             Some(deadpan_core::NodeKind::Sequence { .. }) => Some(OrdinaryFollowOwner::Sequence),
             Some(deadpan_core::NodeKind::Repeat { .. }) => Some(OrdinaryFollowOwner::Repeat),
+            Some(deadpan_core::NodeKind::Retime { .. }) => Some(OrdinaryFollowOwner::Retime),
             _ => None,
         }
     }

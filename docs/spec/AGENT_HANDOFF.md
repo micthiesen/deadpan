@@ -4,6 +4,83 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-24
 
+[Whole-Retime following creep](../qualification/retime-follow-creep-2026-10-24.md)
+is implemented and locally verified. Retime is the fifth ordinary
+whole owner. The actual selected direct child of an ordinary Sequence must
+remain outside every enclosing Repeat and explicit occurrence scope, without
+any Visual range. Descendants remain unrestricted; root self-selection
+authority is unchanged. Scale uses owner output while the center follows the
+mapped exact Original point, preserving fractional time separately from decode
+ordinal/PTS. Raw schema, curves/numerics, Core 58 / SQLite 87 and dependencies
+are unchanged. Child framing, pitch/audio, timing maps and identities remain.
+
+Earlier Core/CLI ordinary-Retime negatives now prove transition success,
+complete nonframing preservation and exact Undo. Their occurrence negatives
+remain; the older native Sequence positive wrapper now passes too.
+Focused Core two, CLI framing fifteen and Plan three pass. The Plan ten-case
+matrix checks 78 owner and forty neighbor samples (118 total), with fast/slow
+nonzero maps, retained clocks/endpoints, Freeze seams, interpolation/loss/
+correction, fallback and irreversible live clips using independent oracles.
+It rejects decoded-ordinal lookup at an actually fractional provider point.
+
+During Core's run only the concurrently prepared Plan test changed within
+the broad seventeen-path snapshot. Eight owned and nine named basis paths
+stayed stable. CLI and Plan have all seventeen current paths unchanged;
+Plan additionally retains 287 production-basis snapshots. Formatting, App
+check and strict Clippy pass on all seventeen current paths. Three fresh general/
+clock/test-quality reviews have no findings. The command-reference writer's
+intentional exit 101 and debug linker warning remain retained. Full Core/Plan
+2,056 and App 1,304 (eleven existing ignored), ordinary command-reference check
+and release build pass with all seventeen sources unchanged. App unit binary
+`ae505efa…` has matching live 11:44:47 UTC and terminal observations; these
+are not a pre-run capture or archived executable.
+
+The native fixture retains Original `[0,40)` and `[80,120)`, groups
+eighty input frames and wraps at 2/3 tape speed into 120 output frames. A point
+changes .58 to .68 at indexed Original 80. For output `j`, group coordinate
+is `(2j+1)/3`; add forty Original frames after mapped cut Edit 60. Edit 59/60
+uses exact `119/3` / `241/3`, decoded 39 / 80, with eighty fractional provider
+points in the full edit. All-frame oracles, Camera/history/macros/dot, stopped
+seams and exact scope refusals pass in 129 native Retime checks. Sequence101,
+Repeat129 and zoom213 regressions pass on the same candidate; all include
+the live Kestrel audit and retain three layout/screenshot warnings each.
+First/final seventeen source paths and five executable bytes are identical;
+one candidate/workflow, not duplicate first/final runs. App `fb540703…`, CLI
+`b1b5b6b0…`. Root inspected Camera081, mapped-cut121/122 and final123, with
+readable owner/target/clock/pitch controls and no overlaps/obscured controls.
+Fresh host measurements are retained. Actual media verifies all 120 pictures
+and full `[0,192192)` stereo audio at zero offset/gaps. MP4 172,802 bytes,
+SHA `6fac1365…`; 150 observable/88 unobservable neighbors and explicit audio
+edit time 2,048/no empty edit remain. All nine CLI commands pass; portable
+document is exactly equal and both packages are checkpointed.
+
+Base `aa80624cbafda91a1c9d6f8d13b749586133be41`; scratch
+`/tmp/deadpan-retime-follow-creep-2026-10-24`, seventeen scoped source paths.
+Selected immutable history tables match exactly: 21 revisions, thirteen
+history rows, seven revision patches and six transaction steps. All21 revisions
+verify by receipt without replay. Final raw audit `ba51734a…` passes with no
+findings/empty stderr. Its first attempt confused empty missing-path lists with
+numeric zero; four original files plus preservation manifest remain in
+`audit-history/first-global-missing-schema-stop`. This is an audit retry, not
+first-pass0; no product inputs changed or product/fixture run was repeated.
+The immutable [Primary](../../tools/media-qualification/evidence/2026-10-24-retime-follow-creep)
+has 141 payloads, 11,811,693 bytes plus inventory `488348a4…`; eight archives
+retain 386 regular members with zero metadata/authored omissions. It includes
+the complete focused Plan snapshot and first auditor-stop archive. Independent
+package verifier passes on its first execution, receipt `5a8af7c4…`, with
+Primary, current sources, final raw audit and preserved failed first attempt
+unchanged. The [supplement](../../tools/media-qualification/evidence/2026-10-24-retime-follow-creep-verification)
+has eight payloads, 44,125 bytes plus inventory `11a506bb…`. Root's complete
+file/name/hash readback passes for both packages. Staged product/evidence diff
+check retains ten immutable raw blank-at-EOF warnings; authored code/docs check
+is clean. Do not trim those evidence bytes. Preserve foreign
+`fuzz/Cargo.lock`, `.claude/` and all earlier
+immutable evidence. Root owns Git/progress/artifact delivery. Coverage stays
+89%, eight Complete and sixteen Partial; no requirement or gate closes.
+Scoped/ranged live following, non-face proposals and the full goal stay open.
+
+## Earlier whole-Repeat continuation, 2026-10-24
+
 [Whole-Repeat following creep and live clipping](../qualification/repeat-follow-creep-2026-10-24.md)
 are implemented and locally verified. A directly selected whole Repeat
 outside enclosing Repeat/explicit occurrence scope accepts Keep creep. Scale

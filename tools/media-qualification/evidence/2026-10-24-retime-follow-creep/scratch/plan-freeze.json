@@ -1,0 +1,26 @@
+{
+  "frozen_at": "2026-10-24T11:40:33.169132+00:00",
+  "base_supplied_by_root": "aa80624cbafda91a1c9d6f8d13b749586133be41",
+  "owned_sources": {
+    "crates/deadpan-plan/tests/picture_plan.rs": {
+      "bytes": 91010,
+      "sha256": "c79623e8b6e0452ab118240031fc0a6e4c8ae9915629729bd819e42ebf554b01"
+    },
+    "crates/deadpan-plan/tests/picture_plan/retime_follow_creep.rs": {
+      "bytes": 18427,
+      "sha256": "3fba182c5c07571e5dbfbda4f532ae2c259f2191c07e85508f982ad1f2c5880c"
+    }
+  },
+  "focused_receipt": "plan-focused-1.json",
+  "result": "3passed0failed0ignored133filtered terminal0",
+  "actual_global17_unchanged_during_focused_run": true,
+  "all_core_plan_source_basis_unchanged": true,
+  "executed_binary": {
+    "path": "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/picture_plan-8377682556489926",
+    "bytes": 63308800,
+    "sha256": "c2e52bd68d04f6c6030d206e83691f03775369cfcd2a4c7fc9111ff0d175407b"
+  },
+  "active_processes": [],
+  "cargo_target": "released to Root",
+  "scope_limit": "Root owns final17freeze, full/broad/native/media/authoring/history verification; this lane only generic pure Plan tests."
+}

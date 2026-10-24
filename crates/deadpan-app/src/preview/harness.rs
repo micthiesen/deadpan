@@ -61,6 +61,7 @@ mod repeat_follow_creep;
 mod repeat_input;
 mod repeat_operator;
 mod retime;
+mod retime_follow_creep;
 mod room_tone;
 mod scale;
 mod scenarios;

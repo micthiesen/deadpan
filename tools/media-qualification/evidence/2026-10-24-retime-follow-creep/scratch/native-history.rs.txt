@@ -1,0 +1,80 @@
+    at(d, 0)?;
+    undo_to(d, &retime, &fixed)?;
+    edit(d, "redo")?;
+    d.check(
+        "Redo restores the complete retime Follow creep",
+        framing(d, &retime) == animated,
+        json!(animated),
+        json!(framing(d, &retime)),
+    )?;
+    let revision = d.revision();
+    open_camera(d)?;
+    d.key(Key::Enter)?;
+    idle(d)?;
+    d.check(
+        "Unchanged Camera Enter preserves retime animation without history",
+        d.app().camera.is_none() && d.revision() == revision && framing(d, &retime) == animated,
+        json!({"revision":revision,"framing":animated}),
+        json!({"revision":d.revision(),"framing":framing(d,&retime)}),
+    )?;
+    open_camera(d)?;
+    d.chord(&[Key::Plus, Key::Escape])?;
+    idle(d)?;
+    d.check(
+        "Camera cancel preserves the complete retime Follow",
+        d.revision() == revision && framing(d, &retime) == animated,
+        json!(animated),
+        json!(framing(d, &retime)),
+    )?;
+    let installed = current
+        .plan
+        .picture(ProjectFrame(0))
+        .map_err(|error| error.to_string())?
+        .framing
+        .into_iter()
+        .find(|layer| !layer.escalation && layer.instance.node == retime)
+        .and_then(|layer| layer.pose)
+        .ok_or("No installed retime pose")?;
+    open_camera(d)?;
+    d.key(Key::T)?;
+    d.settled()?;
+    d.check(
+        "Explicit release explains the removal of retime scale animation",
+        d.app().message.as_deref().is_some_and(|message| {
+            message.contains("Scale animation removed") && message.contains("static framing")
+        }),
+        json!("Scale animation removed; Enter saves this static framing"),
+        json!(d.app().message),
+    )?;
+    d.key(Key::Enter)?;
+    d.changed(&revision)?;
+    idle(d)?;
+    d.check("Explicit retime release commits exactly its displayed static pose",
+        matches!(framing(d,&retime),Some(Framing {value:FramingValue::Static {pose},..}) if pose==installed),json!(installed),json!(framing(d,&retime)))?;
+    undo_to(d, &retime, &animated)?;
+
+    undo_to(d, &retime, &fixed)?;
+    let revision = d.revision();
+    super::macros::execute(d, 'x', None)?;
+    d.changed(&revision)?;
+    idle(d)?;
+    d.check(
+        "Named replay re-resolves Keep for the selected whole retime",
+        framing(d, &retime) == animated,
+        json!(animated),
+        json!(framing(d, &retime)),
+    )?;
+    undo_to(d, &retime, &fixed)?;
+    edit(d, "creep from=1.1 to=2.2 curve=linear")?;
+    undo_to(d, &retime, &fixed)?;
+    let revision = d.revision();
+    d.key(Key::Period)?;
+    d.changed(&revision)?;
+    idle(d)?;
+    d.check(
+        "Dot after Undo repeats whole-retime semantic Keep",
+        framing(d, &retime) == animated,
+        json!(animated),
+        json!(framing(d, &retime)),
+    )?;
+

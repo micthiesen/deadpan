@@ -1,0 +1,7 @@
+{
+  "path": "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_app-c75853e20f9b0baa",
+  "bytes": 245292416,
+  "sha256": "ae505efaf475bdbc5b43c3c8616deb3b8400dc5157aef02fe4f4ec3a43fea29c",
+  "observed_at": "2026-10-24T11:44:47.659279+00:00",
+  "running_trace": "Running unittests src/main.rs is present; wrapper is still active, no terminal receipt yet."
+}

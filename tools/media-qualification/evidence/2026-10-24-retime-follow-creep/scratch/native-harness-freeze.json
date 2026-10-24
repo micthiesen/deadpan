@@ -1,0 +1,122 @@
+{
+  "frozen_at": "2026-10-24T11:37:52.002152+00:00",
+  "base_supplied_by_root": "aa80624cbafda91a1c9d6f8d13b749586133be41",
+  "source_frozen": true,
+  "changed_paths": [
+    {
+      "path": "crates/deadpan-app/src/preview/harness/retime_follow_creep.rs",
+      "bytes": 27149,
+      "sha256": "a8c7b868da9ddc9e91497185de3b8d2f446e89b90fbe46fb84db29f565cd2a91",
+      "source_copy": "/tmp/deadpan-retime-follow-creep-2026-10-24/native-source/crates/deadpan-app/src/preview/harness/retime_follow_creep.rs.txt"
+    },
+    {
+      "path": "crates/deadpan-app/src/preview/harness/sequence_follow_creep.rs",
+      "bytes": 24180,
+      "sha256": "9bbfeaa3d6ca938b3b9d3aef80a153a1c13c6bf3290fd56f6553ad7fd2044960",
+      "source_copy": "/tmp/deadpan-retime-follow-creep-2026-10-24/native-source/crates/deadpan-app/src/preview/harness/sequence_follow_creep.rs.txt"
+    },
+    {
+      "path": "crates/deadpan-app/src/preview/harness.rs",
+      "bytes": 59317,
+      "sha256": "db27c94abaa1f25fcd685e75c152b6c391939849a823332e99994a61f064009e",
+      "source_copy": "/tmp/deadpan-retime-follow-creep-2026-10-24/native-source/crates/deadpan-app/src/preview/harness.rs.txt"
+    },
+    {
+      "path": "crates/deadpan-app/src/preview/harness/scenarios.rs",
+      "bytes": 89434,
+      "sha256": "1084f3295d8e1c5a5725d8aaf294a87d6edd8162760fc894ad393aab6c9c3617",
+      "source_copy": "/tmp/deadpan-retime-follow-creep-2026-10-24/native-source/crates/deadpan-app/src/preview/harness/scenarios.rs.txt"
+    },
+    {
+      "path": "crates/deadpan-app/src/ui_harness.rs",
+      "bytes": 29687,
+      "sha256": "f2d16a8f97352fc699abce80f3c8a86b6d9d28b55ee0ceae4427a90932c7fa56",
+      "source_copy": "/tmp/deadpan-retime-follow-creep-2026-10-24/native-source/crates/deadpan-app/src/ui_harness.rs.txt"
+    }
+  ],
+  "format_command": "rustfmt --edition 2024 --config skip_children=true crates/deadpan-app/src/preview/harness/retime_follow_creep.rs crates/deadpan-app/src/preview/harness/sequence_follow_creep.rs",
+  "format_exit": 0,
+  "registration_checks": "one each",
+  "old_sequence_reconciliation": "Positive ordinary Retime wrapper; preserve only wrapper framing plus all nodes/maps/targets/audio/cursors; Undo creep, Follow and wrapper restore original scenario.",
+  "executed_cargo": false,
+  "executed_product_runtime": false,
+  "executed_git": false,
+  "verification_owner": "Root",
+  "final_output_frames": 120,
+  "canonical_48k_audio_samples": 192192,
+  "fractional_provider_coordinates": 80,
+  "boundaries": [
+    {
+      "edit": 0,
+      "mapped_group_frame": "1/3",
+      "original_coordinate": "1/3",
+      "decoded_ordinal": 0,
+      "scale": "4744149293/4294967296",
+      "center_x": "311385129/536870912"
+    },
+    {
+      "edit": 1,
+      "mapped_group_frame": "1",
+      "original_coordinate": "1",
+      "decoded_ordinal": 1,
+      "scale": "2391759913/2147483648",
+      "center_x": "311385129/536870912"
+    },
+    {
+      "edit": 2,
+      "mapped_group_frame": "5/3",
+      "original_coordinate": "5/3",
+      "decoded_ordinal": 1,
+      "scale": "4822890359/4294967296",
+      "center_x": "311385129/536870912"
+    },
+    {
+      "edit": 58,
+      "mapped_group_frame": "39",
+      "original_coordinate": "39",
+      "decoded_ordinal": 39,
+      "scale": "3513820119/2147483648",
+      "center_x": "311385129/536870912"
+    },
+    {
+      "edit": 59,
+      "mapped_group_frame": "119/3",
+      "original_coordinate": "119/3",
+      "decoded_ordinal": 39,
+      "scale": "1766752693/1073741824",
+      "center_x": "311385129/536870912"
+    },
+    {
+      "edit": 60,
+      "mapped_group_frame": "121/3",
+      "original_coordinate": "241/3",
+      "decoded_ordinal": 80,
+      "scale": "7106381305/4294967296",
+      "center_x": "2920577761/4294967296"
+    },
+    {
+      "edit": 61,
+      "mapped_group_frame": "41",
+      "original_coordinate": "81",
+      "decoded_ordinal": 81,
+      "scale": "7145751839/4294967296",
+      "center_x": "2920577761/4294967296"
+    },
+    {
+      "edit": 118,
+      "mapped_group_frame": "79",
+      "original_coordinate": "119",
+      "decoded_ordinal": 119,
+      "scale": "9389872251/4294967296",
+      "center_x": "2920577761/4294967296"
+    },
+    {
+      "edit": 119,
+      "mapped_group_frame": "239/3",
+      "original_coordinate": "359/3",
+      "decoded_ordinal": 119,
+      "scale": "294663837/134217728",
+      "center_x": "2920577761/4294967296"
+    }
+  ]
+}

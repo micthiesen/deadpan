@@ -524,6 +524,7 @@ fn follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_admitted_owner() 
         OrdinaryFollowOwner::Hold,
         OrdinaryFollowOwner::Sequence,
         OrdinaryFollowOwner::Repeat,
+        OrdinaryFollowOwner::Retime,
     ] {
         let admitted = Shot {
             entry: Some(&entry),

@@ -1,0 +1,213 @@
+<ctx task="OrdinaryFollowOwner::Retime in framing_zoom.rs, semantic/planner/framing.rs and framing tests; new retime_follow_creep.rs CLI owner Q32 and SourcePoint mapping; reconcile sequence_follow_creep.rs and repeat_follow_creep.rs ordinary Retime refusal" route=" [routed: subtoken+body BM25 (--for&apos;s default) — no strong name hit, multi-word conceptual query]" bundle="auto" bodies="4"><!-- ripwire lens for "OrdinaryFollowOwner::Retime in framing_zoom.rs, semantic/planner/framing.rs and framing tests; new retime_follow_creep.rs CLI owner Q32 and SourcePoint mapping; reconcile sequence_follow_creep.rs and repeat_follow_creep.rs ordinary Retime refusal" [mention anchor: 1 file + 3 symbols named in the task lifted near the top] [doc mentions: 2 docs discussing 1 top-ranked symbol surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="4251" --><sigs capped="1"><f p="/Users/michael/Code/deadpan/crates/deadpan-core/src/framing_zoom/tests.rs"><d l="268" n="abrupt_return_steps_out_over_a_range_and_never_flattens_a_path" cx="1" ccx="0" in="0" churn="5">fn abrupt_return_steps_out_over_a_range_and_never_flattens_a_path()</d><d l="309" n="whole_beat_keep_retains_a_follow_and_refuses_to_flatten_a_path" cx="2" ccx="1" in="0" churn="5">fn whole_beat_keep_retains_a_follow_and_refuses_to_flatten_a_path()</d><d l="503" n="follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_admitted_owner" cx="3" ccx="3" in="0" churn="5">fn follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_admitted_owner()</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/framing.rs"><d l="6" n="validate_scoped_context" cx="11" ccx="10" in="7" churn="13" amp="7" tested="1">pub(super) fn validate_scoped_context( document: &amp;ProjectDocument, context: &amp;SemanticContext, ) -&gt; Result&lt;(), EditError&gt;</d><d l="83" n="zoom" id="/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/framing.rs::Planner::zoom" cx="20" ccx="11" in="0" churn="13">pub(super) fn zoom( &amp;mut self, trace_index: usize, kind: framing_zoom::ZoomKind, center: SemanticZoomCenter, ) -&gt; Result&lt;(), EditError&gt;</d><d l="222" n="zoom_scoped" id="/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/framing.rs::Planner::zoom_scoped" cx="12" ccx="13" in="1" churn="13" amp="1">fn zoom_scoped( &amp;mut self, trace_index: usize, kind: framing_zoom::ZoomKind, center: SemanticZoomCenter, scoped: SemanticScopedContext, ) -&gt; Result&lt;(), EditErro…</d></f><f p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-24-repeat-follow-creep/scratch/worker-run.py"><d l="7" n="OWNED" cx="0" ccx="0" in="0" churn="1">OWNED = [ &apos;crates/deadpan-core/src/framing_zoom.rs&apos;, &apos;crates/deadpan-core/src/framing_zoom/tests.rs&apos;, &apos;crates/deadpan-core/src/semantic/planner/framing.rs&apos;, &apos;cr…</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera.rs"><d l="853" n="ordinary_follow_owner" id="/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera.rs::CameraSession::ordinary_follow_owner" cx="9" ccx="4" in="2" churn="32" amp="65" tested="1">fn ordinary_follow_owner( &amp;self, document: &amp;deadpan_core::ProjectDocument, ) -&gt; Option&lt;deadpan_core::framing_zoom::OrdinaryFollowOwner&gt;</d><d l="1158" n="finish_camera_entry" id="/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera.rs::DeadpanApp::finish_camera_entry" cx="39" ccx="30" in="2" churn="32" amp="65" tested="1">pub(super) fn finish_camera_entry(&amp;mut self, context: &amp;egui::Context)</d></f></sigs><bodies shown="4" total="6" capped="1"><b t="fn" l="503" p="/Users/michael/Code/deadpan/crates/deadpan-core/src/framing_zoom/tests.rs" n="follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_admitted_owner"><![CDATA[fn follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_admitted_owner() {
+    let fallback = FramingPose::new(ratio(1, 3), ratio(2, 7), ratio(1, 2)).unwrap();
+    let entry = Framing {
+        clock: FramingClock::RetainedOutput {
+            offset: ratio(-2, 1),
+            duration: ratio(7, 1),
+        },
+        value: FramingValue::Follow {
+            target: TargetId::new("speaker").unwrap(),
+            scale: ratio(2, 1),
+            fallback,
+            scale_transition: None,
+        },
+    };
+    let kind = ZoomKind::Creep {
+        from: None,
+        to: ratio(4, 1),
+        curve: ZoomCurve::Linear,
+    };
+    for owner in [
+        OrdinaryFollowOwner::Source,
+        OrdinaryFollowOwner::Hold,
+        OrdinaryFollowOwner::Sequence,
+        OrdinaryFollowOwner::Repeat,
+    ] {
+        let admitted = Shot {
+            entry: Some(&entry),
+            ordinary_owner: Some(owner),
+            ..shot(None)
+        };
+        let result = build(kind, &Center::Keep, &admitted).unwrap().unwrap();
+        assert_eq!(result.clock, FramingClock::OwnerOutput);
+        let value = result
+            .evaluate_with_follow_exact(ratio(1, 1), ratio(4, 1))
+            .unwrap();
+        assert_eq!(value.follow.unwrap().1, ratio(5, 2));
+        assert_eq!(value.pose.scale, ratio(5, 8));
+        assert_eq!(
+            [value.pose.center_x, value.pose.center_y],
+            [ratio(1, 3), ratio(2, 7)]
+        );
+        let explicit = build(
+            ZoomKind::Creep {
+                from: Some(ratio(3, 1)),
+                to: ratio(4, 1),
+                curve: ZoomCurve::Linear,
+            },
+            &Center::Keep,
+            &admitted,
+        )
+        .unwrap()
+        .unwrap();
+        let initial = explicit
+            .evaluate_with_follow_exact(ExactRatio::ZERO, ratio(4, 1))
+            .unwrap();
+        assert_eq!(initial.follow.unwrap().1, ratio(3, 1));
+        assert_eq!(initial.pose.scale, ratio(3, 4));
+        for range in [Some((0, 10)), Some((1, 9))] {
+            assert!(build(kind, &Center::Keep, &Shot { range, ..admitted }).is_err());
+        }
+        assert!(
+            build(
+                kind,
+                &Center::Keep,
+                &Shot {
+                    ordinary_owner: None,
+                    ..admitted
+                }
+            )
+            .is_err()
+        );
+        assert!(
+            build(
+                kind,
+                &Center::Keep,
+                &Shot {
+                    entry: Some(&result),
+                    ..admitted
+                }
+            )
+            .is_err()
+        );
+        assert!(
+            build(
+                ZoomKind::Smash { scale: ratio(3, 1) },
+                &Center::Keep,
+                &Shot {
+                    entry: Some(&result),
+                    ..admitted
+                }
+            )
+            .is_err()
+        );
+        // Explicit target selection continues to author a sampled ordinary path.
+        assert!(matches!(
+            build(
+                kind,
+                &Center::Point([ratio(1, 2), ratio(1, 2)]),
+                &Shot {
+                    explicit: true,
+                    entry: Some(&result),
+                    ..admitted
+                }
+            )
+            .unwrap()
+            .unwrap()
+            .value,
+            FramingValue::Envelope { .. }
+        ));
+    }
+}]]><calls total="4"><c n="new" l="76">pub fn new( center_x: ExactRatio, center_y: ExactRatio, scale: ExactRatio, ) -&gt; Result&lt;Self, FramingError&gt;</c><c n="evaluate_with_follow_exact" l="427">pub fn evaluate_with_follow_exact( &amp;self, local: ExactRatio, duration: ExactRatio, ) -&gt; Result&lt;EvaluatedFraming&lt;&apos;_&gt;, FramingError&gt;</c><c n="ratio" l="3">fn ratio(n: i128, d: i128) -&gt; ExactRatio</c><c n="shot" l="103">fn shot(range: Option&lt;(u64, u64)&gt;) -&gt; Shot&lt;&apos;static&gt;</c></calls></b><b t="fn" l="6" p="/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/framing.rs" n="validate_scoped_context"><![CDATA[pub(super) fn validate_scoped_context(
+    document: &ProjectDocument,
+    context: &SemanticContext,
+) -> Result<(), EditError> {
+    let Some(scoped) = &context.scoped else {
+        return Ok(());
+    };
+    if context.original.is_some()
+        || context.visual_selection.is_some()
+        || context.selected_hold_duration.is_some()
+    {
+        return Err(unavailable(
+            "single-play editing requires Your edit with no Visual selection",
+        ));
+    }
+    let Some(NodeKind::Sequence { children }) =
+        document.nodes().get(&context.parent).map(|node| &node.kind)
+    else {
+        return Err(unavailable(
+            "single-play editing requires an ordinary Sequence parent",
+        ));
+    };
+    if !children.contains(&scoped.root)
+        || !matches!(
+            document.nodes().get(&scoped.root).map(|node| &node.kind),
+            Some(NodeKind::Repeat { .. } | NodeKind::Retime { .. })
+        )
+    {
+        return Err(unavailable(
+            "single-play editing root must be a direct Repeat or Retime child",
+        ));
+    }
+    if scoped.target.repeats.is_empty()
+        || scoped
+            .target
+            .repeats
+            .iter()
+            .any(|step| !matches!(step.branch, crate::RepeatEditBranch::Play { .. }))
+    {
+        return Err(unavailable(
+            "single-play editing requires every Repeat ancestor to name one explicit Play",
+        ));
+    }
+    if !scoped
+        .target
+        .matches_instance(document, &scoped.presentation)?
+    {
+        return Err(unavailable(
+            "single-play editing presentation differs from its authoring target",
+        ));
+    }
+    let mut node = scoped.target.node.clone();
+    for _ in 0..=crate::MAX_DOCUMENT_DEPTH {
+        if node == scoped.root {
+            return Ok(());
+        }
+        let Some(parent) = document.parent_of(&node) else {
+            break;
+        };
+        node = parent;
+    }
+    Err(unavailable(
+        "single-play editing target lies outside its captured inspector root",
+    ))
+}]]><calls total="5"><c n="any" l="174">const fn any(self) -&gt; bool</c><c n="parent_of" l="1023">pub(crate) fn parent_of(&amp;self, id: &amp;NodeId) -&gt; Option&lt;NodeId&gt;</c><c n="matches_instance" l="109">pub fn matches_instance( &amp;self, document: &amp;ProjectDocument, instance: &amp;InstancePath, ) -&gt; Result&lt;bool, EditError&gt;</c><c n="unavailable" l="72">fn unavailable(message: &amp;str) -&gt; EditError</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><!-- body omitted (over budget): zoom --><!-- body omitted (over budget): zoom_scoped --><b t="var" l="7" p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-24-repeat-follow-creep/scratch/worker-run.py" n="OWNED"><![CDATA[OWNED = [
+ 'crates/deadpan-core/src/framing_zoom.rs',
+ 'crates/deadpan-core/src/framing_zoom/tests.rs',
+ 'crates/deadpan-core/src/semantic/planner/framing.rs',
+ 'crates/deadpan-core/src/semantic/planner/tests/framing.rs',
+ 'crates/deadpan-cli/tests/project_commands/macros/framing.rs',
+ 'crates/deadpan-cli/tests/project_commands/macros/framing/sequence_follow_creep.rs',
+ 'crates/deadpan-cli/tests/project_commands/macros/framing/repeat_follow_creep.rs',
+]]]></b><b t="method" l="853" p="/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera.rs" n="ordinary_follow_owner"><![CDATA[fn ordinary_follow_owner(
+        &self,
+        document: &deadpan_core::ProjectDocument,
+    ) -> Option<deadpan_core::framing_zoom::OrdinaryFollowOwner> {
+        use deadpan_core::framing_zoom::OrdinaryFollowOwner;
+        if self.scoped.is_some() || !self.scope.repeats.is_empty() {
+            return None;
+        }
+        let parent = self
+            .navigation_scope
+            .groups()
+            .last()
+            .unwrap_or(document.root());
+        if !document.nodes().get(parent).is_some_and(|node| {
+            matches!(&node.kind,
+            deadpan_core::NodeKind::Sequence { children } if children.contains(&self.scope.node))
+        }) {
+            return None;
+        }
+        match document
+            .nodes()
+            .get(&self.scope.node)
+            .map(|node| &node.kind)
+        {
+            Some(deadpan_core::NodeKind::Source { .. }) => Some(OrdinaryFollowOwner::Source),
+            Some(deadpan_core::NodeKind::Hold { .. }) => Some(OrdinaryFollowOwner::Hold),
+            Some(deadpan_core::NodeKind::Sequence { .. }) => Some(OrdinaryFollowOwner::Sequence),
+            Some(deadpan_core::NodeKind::Repeat { .. }) => Some(OrdinaryFollowOwner::Repeat),
+            _ => None,
+        }
+    }]]><calls total="5"><c n="get" l="176">fn get( &amp;self, workspace: &amp;Workspace, candidate: &amp;Candidate, variant: &amp;crate::project::generation::Variant, context: &amp;egui::Context, ) -&gt; Option&lt;Reading&gt;</c><c n="nodes" l="101">pub(super) fn nodes(&amp;self) -&gt; Option&lt;&amp;[NodeId]&gt;</c><c n="matches" l="244">pub(super) fn matches(&amp;self, app: &amp;DeadpanApp) -&gt; bool</c><c n="matches" l="38">fn matches(&amp;self, workspace: Option&lt;&amp;Workspace&gt;) -&gt; bool</c><c n="get" l="87">fn get(&amp;mut self, key: &amp;Key) -&gt; Option&lt;(&amp;T, bool, u64)&gt;</c></calls></b></bodies></ctx>

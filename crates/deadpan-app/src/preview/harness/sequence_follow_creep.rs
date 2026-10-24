@@ -483,13 +483,71 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!(framing(d, &group)),
     )?;
 
-    // Retime owners retain their explicit admission boundary. Whole Repeat
-    // admission and nested occurrence refusals have their own native replay.
+    // Ordinary Retime owners now share whole-owner admission. Preserve this
+    // wrapper witness as a positive case, then restore the original group.
     edit(d, "wrap-retime 2 pitch=tape")?;
     edit(d, "zoom 2 target=target-1")?;
-    refused(
-        d,
-        "A Retime owner refuses Keep Follow creep without a write",
+    let retime = d
+        .app()
+        .selected_beat
+        .clone()
+        .ok_or("No Retime wrapper selected")?;
+    let wrapped = d
+        .app()
+        .workspace
+        .clone()
+        .ok_or("No Retime wrapper workspace")?;
+    let fixed_retime = framing(d, &retime);
+    let wrapper_audio_end = wrapped
+        .plan
+        .audio_duration()
+        .map_err(|error| error.to_string())?;
+    let wrapper_audio = wrapped
+        .plan
+        .audio(AudioSample(0)..wrapper_audio_end, Default::default())
+        .map_err(|error| error.to_string())?;
+    let wrapper_original_cursor = d.app().source_cursor;
+    let wrapper_edit_cursor = d.app().sequence_cursor;
+    d.check("The former refusal fixture selects an actual fixed-Follow Retime above the animated group",
+        matches!(&wrapped.document.nodes()[&retime].kind,NodeKind::Retime {child,duration,..} if child==&group&&duration.frames()==40)
+            && matches!(&fixed_retime,Some(Framing {value:FramingValue::Follow {scale_transition:None,..},..}))
+            && framing(d,&group)==animated && d.app().scoped.is_none(),
+        json!({"owner":retime,"child":group,"frames":40}),json!({"owner":d.app().selected_beat,"framing":fixed_retime}))?;
+    edit(d, "creep from=1.1 to=2.2 curve=linear")?;
+    let retime_creep = framing(d, &retime);
+    let changed = d
+        .app()
+        .workspace
+        .clone()
+        .ok_or("No animated Retime wrapper")?;
+    let changed_audio = changed
+        .plan
+        .audio(AudioSample(0)..wrapper_audio_end, Default::default())
+        .map_err(|error| error.to_string())?;
+    let mut expected_wrapper = wrapped.document.nodes()[&retime].clone();
+    expected_wrapper.framing = retime_creep.clone();
+    d.check("The ordinary Retime wrapper accepts Keep creep while preserving the complete group, maps and audio",
+        matches!(&retime_creep,Some(Framing {clock:FramingClock::OwnerOutput,value:FramingValue::Follow {
+            target,scale,fallback,scale_transition:Some(FollowScaleTransition {factor,curve:ZoomCurve::Linear})}})
+            if target.as_str()=="target-1"&&*scale==ratio(11,10)&&fallback.scale==ratio(11,10)&&*factor==ExactRatio::integer(2))
+            && changed.document.nodes().get(&retime)==Some(&expected_wrapper)
+            && wrapped.document.nodes().iter().filter(|(id,_)|*id!=&retime).all(|(id,node)|changed.document.nodes().get(id)==Some(node))
+            && wrapped.document.nodes().len()==changed.document.nodes().len()
+            && wrapped.document.targets()==changed.document.targets()
+            && wrapped.document.overrides()==changed.document.overrides()&&wrapped.document.gap_overrides()==changed.document.gap_overrides()
+            && changed_audio.spans==wrapper_audio.spans&&changed.plan.audio_duration().is_ok_and(|end|end==wrapper_audio_end)
+            && d.app().sequence_length()==40&&d.app().source_cursor==wrapper_original_cursor&&d.app().sequence_cursor==wrapper_edit_cursor,
+        json!({"owner":retime,"child":"unchanged","frames":40,"audio":"unchanged","from":"1.1","to":"2.2"}),json!(retime_creep))?;
+    edit(d, "undo")?;
+    d.check(
+        "One Undo restores the former refusal fixture's complete fixed Retime Follow",
+        framing(d, &retime) == fixed_retime
+            && d.app().workspace.as_ref().is_some_and(|workspace| {
+                workspace.document.nodes() == wrapped.document.nodes()
+                    && workspace.document.targets() == wrapped.document.targets()
+            }),
+        json!(fixed_retime),
+        json!(framing(d, &retime)),
     )?;
     edit(d, "undo")?;
     edit(d, "undo")?;

@@ -1,0 +1,24 @@
+    at(d, 0)?;
+    open_camera(d)?;
+    d.chord(&[Key::F, Key::Num1, Key::T])?;
+    d.settled()?;
+    let draft: FramingPose = serde_json::from_value(camera(d)["draft_pose"].clone())
+        .map_err(|error| error.to_string())?;
+    d.check(
+        "Camera previews Follow on the selected retime at the early target center",
+        d.app().selected_beat.as_ref() == Some(&retime)
+            && draft.center_x == center(58)
+            && camera(d)["follow"] == "target-1",
+        json!({"owner":retime,"center":".58","target":"target-1"}),
+        camera(d),
+    )?;
+    d.capture("Camera follows the actual whole Retime owner")?;
+    let revision = d.revision();
+    d.key(Key::Enter)?;
+    d.changed(&revision)?;
+    idle(d)?;
+    let fixed = framing(d, &retime);
+    d.check("Follow is authored on the Retime rather than either Source child",
+        matches!(&fixed, Some(Framing {value:FramingValue::Follow {target,scale_transition:None,..},..}) if target.as_str()=="target-1")
+            && children.iter().all(|id| framing(d,id).is_none()), json!(fixed), json!(framing(d,&retime)))?;
+

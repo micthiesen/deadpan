@@ -1,0 +1,8 @@
+
+running 3 tests
+test retime_follow_creep::retime_follow_creep_retained_endpoints_hold_without_freezing_provider_target_time ... ok
+test retime_follow_creep::retime_follow_creep_slow_retained_clock_crosses_exact_freeze_and_source_boundaries ... ok
+test retime_follow_creep::retime_follow_creep_fast_output_clock_keeps_fractional_target_points_and_child_clips ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 133 filtered out; finished in 0.02s
+

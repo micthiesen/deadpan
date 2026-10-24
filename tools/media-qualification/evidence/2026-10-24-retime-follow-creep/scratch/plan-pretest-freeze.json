@@ -1,0 +1,15 @@
+{
+  "frozen_at": "2026-10-24T11:37:01.417606+00:00",
+  "base_supplied_by_root": "aa80624cbafda91a1c9d6f8d13b749586133be41",
+  "owned_sources": {
+    "crates/deadpan-plan/tests/picture_plan.rs": {
+      "bytes": 91010,
+      "sha256": "c79623e8b6e0452ab118240031fc0a6e4c8ae9915629729bd819e42ebf554b01"
+    },
+    "crates/deadpan-plan/tests/picture_plan/retime_follow_creep.rs": {
+      "bytes": 18427,
+      "sha256": "3fba182c5c07571e5dbfbda4f532ae2c259f2191c07e85508f982ad1f2c5880c"
+    }
+  },
+  "status": "written and scoped-formatted; no Cargo until Core lane release/Root allocation; no full changing-source-set freeze claimed"
+}

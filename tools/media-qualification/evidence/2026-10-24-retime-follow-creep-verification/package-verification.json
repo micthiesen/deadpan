@@ -1,0 +1,280 @@
+{
+  "actual_media_commands": 9,
+  "app_unit_live_terminal_matched": true,
+  "archives": [
+    {
+      "members": 17,
+      "metadata_omissions": 0,
+      "path": "archives/first-source.tar.gz",
+      "retained_member_bytes": 811602,
+      "retained_sidecars": [],
+      "source_bytes": 811602
+    },
+    {
+      "members": 8,
+      "metadata_omissions": 0,
+      "path": "archives/worker-core-source.tar.gz",
+      "retained_member_bytes": 165071,
+      "retained_sidecars": [],
+      "source_bytes": 165071
+    },
+    {
+      "members": 8,
+      "metadata_omissions": 0,
+      "path": "archives/worker-cli-source.tar.gz",
+      "retained_member_bytes": 165071,
+      "retained_sidecars": [],
+      "source_bytes": 165071
+    },
+    {
+      "members": 5,
+      "metadata_omissions": 0,
+      "path": "archives/native-worker-source.tar.gz",
+      "retained_member_bytes": 229767,
+      "retained_sidecars": [],
+      "source_bytes": 229767
+    },
+    {
+      "members": 300,
+      "metadata_omissions": 0,
+      "path": "archives/plan-focused-source.tar.gz",
+      "retained_member_bytes": 5868938,
+      "retained_sidecars": [],
+      "source_bytes": 5868938
+    },
+    {
+      "members": 30,
+      "metadata_omissions": 0,
+      "path": "archives/final-native-retime-project-and-export.tar.gz",
+      "retained_member_bytes": 1877470,
+      "retained_sidecars": [
+        "portable.deadpan/Snapshots/.tmpgMap6v-shm",
+        "portable.deadpan/Snapshots/.tmpgMap6v-wal"
+      ],
+      "source_bytes": 1877470
+    },
+    {
+      "members": 13,
+      "metadata_omissions": 0,
+      "path": "archives/actual-native-retime-project.tar.gz",
+      "retained_member_bytes": 2074466,
+      "retained_sidecars": [
+        "Snapshots/.tmpXkyKrY-shm",
+        "Snapshots/.tmpXkyKrY-wal"
+      ],
+      "source_bytes": 2074466
+    },
+    {
+      "members": 5,
+      "metadata_omissions": 0,
+      "path": "archives/audit-history.tar.gz",
+      "retained_member_bytes": 49601,
+      "retained_sidecars": [],
+      "source_bytes": 49601
+    }
+  ],
+  "audio_offset": 0,
+  "audio_window": [
+    0,
+    192192
+  ],
+  "authored_omissions": 0,
+  "budget_bytes": 268435456,
+  "collector_sha256": "320e79dbf00568d68d7657e3c31d968402772533071529e7c9c494f9aacc6f0e",
+  "current_scoped_sources_unchanged": true,
+  "decoded_ledger_bytes": 164657702,
+  "earlier_audit_files_unchanged": true,
+  "embedded_raw_audit_sha256": "ba51734a1db42d9c156a22d2726d751dec2d1311b533c3fbf45388ce4499393e",
+  "encoded_ledger_stored_bytes": 11673895,
+  "encoding_records": 138,
+  "encodings": {
+    "gzip": 20,
+    "identity": 110,
+    "tar+gzip": 8
+  },
+  "exact_mapped_cut": [
+    {
+      "decoded_ordinal": 39,
+      "edit": 59,
+      "exact_original": "119/3"
+    },
+    {
+      "decoded_ordinal": 80,
+      "edit": 60,
+      "exact_original": "241/3"
+    }
+  ],
+  "final_source_paths": 17,
+  "findings": [],
+  "finished_utc": "2026-10-24T12:02:15.594472+00:00",
+  "first_audit_history_unchanged": true,
+  "first_audit_schema_stop_preserved": true,
+  "fractional_provider_coordinates": 80,
+  "gzip_streams": 28,
+  "inventory_sha256": "488348a4d58e81c307f947a968c8563a89d65740a18a619af4c9edb3002ce523",
+  "inventory_unchanged": true,
+  "limitations": [
+    "No collector, payload script, product, Cargo, test, worker, decoder, model or Git command executed.",
+    "Seventeen scoped sources and relevant historical subsets are checked, not compilation of every repository file.",
+    "Root's image review is bound by bytes; PNG integrity is not independent visual or physical-display qualification.",
+    "Shared picture/limited-audio references do not establish independent DSP, listening, encoded bit equality, tracking accuracy or latency/requirement completion.",
+    "The first offline audit schema stop and its passing retry are retained. Core focused global17 drift was only an unrelated Plan integration-test draft; own8/named9 remain current. App unit hash was observed live and at terminal. One release candidate only."
+  ],
+  "metadata_omissions": 0,
+  "movie": {
+    "bytes": 172802,
+    "sha256": "6fac1365b2ce192eebe16dccf01883af4041e9d4c1d238d5dc09d689afb3f4f1"
+  },
+  "native": [
+    {
+      "checks": 129,
+      "kestrel": 1,
+      "name": "native-retime-first",
+      "skips": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warnings": 3
+    },
+    {
+      "checks": 101,
+      "kestrel": 1,
+      "name": "native-sequence-follow-creep-final",
+      "skips": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warnings": 3
+    },
+    {
+      "checks": 129,
+      "kestrel": 1,
+      "name": "native-repeat-follow-creep-final",
+      "skips": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warnings": 3
+    },
+    {
+      "checks": 213,
+      "kestrel": 1,
+      "name": "native-zoom-final",
+      "skips": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warnings": 3
+    }
+  ],
+  "native_portable_all_selected_history_tables_equal": true,
+  "native_portable_history_counts": {
+    "history": 13,
+    "history_receipt": 1,
+    "redo": 0,
+    "revision_patches": 7,
+    "revisions": 21,
+    "state": 1,
+    "transaction_steps": 6
+  },
+  "passing_retry_preserved": true,
+  "payload_bytes": 11811693,
+  "payloads": 141,
+  "picture_neighbor_observability": {
+    "observable": 150,
+    "unobservable": 88
+  },
+  "picture_rows": 120,
+  "plan_sha256": "fb3e2b67909d721934ed604ce35e0a4d4bd832021f26c937683531873229a6bb",
+  "primary_bytes_including_inventory": 11832684,
+  "primary_files": 142,
+  "primary_tree_unchanged": true,
+  "prior_audit_file_pins": {
+    "audit-retime-evidence.json": {
+      "bytes": 106561,
+      "sha256": "ba51734a1db42d9c156a22d2726d751dec2d1311b533c3fbf45388ce4499393e"
+    },
+    "audit-retime-evidence.py": {
+      "bytes": 28181,
+      "sha256": "729b5ab74f1c0fcb154b49f0296a05cd96797aacc8278bae05af111a315ca2c6"
+    },
+    "audit-retime-evidence.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "audit-retime-evidence.stdout": {
+      "bytes": 110,
+      "sha256": "f229a0a6bf52b2e29c93df62029f423608724415c5233b6c5f7ef2e2ccf16da0"
+    }
+  },
+  "raw_archive_source_bytes": 11241986,
+  "raw_payload_bytes": 164328488,
+  "raw_regular_bytes": 153086502,
+  "raw_tests": {
+    "app-units-final": [
+      1304,
+      0,
+      11
+    ],
+    "core-plan-final": [
+      2056,
+      0,
+      0
+    ],
+    "plan-focused-1": [
+      3,
+      0,
+      0
+    ],
+    "worker-cli-1": [
+      15,
+      0,
+      0
+    ],
+    "worker-core-1": [
+      2,
+      0,
+      0
+    ]
+  },
+  "schema_version": 1,
+  "selected_pngs": {
+    "images/native-retime-first-retime-follow-creep-081.png": {
+      "bytes": 330813,
+      "dimensions": [
+        1280,
+        820
+      ],
+      "sha256": "b8844405dace2dd6e9fed49b5e65f7ca7a83cdff3691861abe720840d99d0ea1"
+    },
+    "images/native-retime-first-retime-follow-creep-121.png": {
+      "bytes": 357479,
+      "dimensions": [
+        1280,
+        820
+      ],
+      "sha256": "5d4a763674d37779dee63720efa7b0d55e8d10dc77a0899c724ef807f5f3a668"
+    },
+    "images/native-retime-first-retime-follow-creep-122.png": {
+      "bytes": 359770,
+      "dimensions": [
+        1280,
+        820
+      ],
+      "sha256": "9c6e62c2035d36e94efa2b41d5dcf970254c02fde5949fd37c6c0e5195e5b2d5"
+    },
+    "images/native-retime-first-retime-follow-creep-123.png": {
+      "bytes": 359516,
+      "dimensions": [
+        1280,
+        820
+      ],
+      "sha256": "af3f334412a39e906b3ca2dc9ebb6bd0c0ee8c528b1240f545daa1e677f027a3"
+    }
+  },
+  "started_utc": "2026-10-24T12:02:14.569803+00:00",
+  "status": "no_findings",
+  "tar_member_bytes": 11241986,
+  "tar_members": 386,
+  "verifier_sha256": "0dfb2707e09a9955d71c51210481d09cd96e574e39e87e96954fe2de6b5c8c69"
+}

@@ -1,0 +1,9 @@
+{
+  "base": "aa80624cbafda91a1c9d6f8d13b749586133be41",
+  "scope": "All17 scoped product/test paths, all3 new Rust files, relevant framing/target docs. Foreign fuzz/Cargo.lock/.claude excluded.",
+  "general": "Fresh check role found no actionable findings and verified source-review-freeze.json.",
+  "clock": "Fresh check-focused role found no clock, fractional mapping, retained-normalization or actual authority findings.",
+  "test_quality": "Fresh check-focused role found no source-backed oracle, conservation, scope or native-routing findings.",
+  "review_routes": "Three fresh check/check-focused roles at their prescribed Luna tier; reviewers did not execute runtime/Cargo tests.",
+  "limits": "Native and media qualification remain independent of this source review."
+}

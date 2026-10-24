@@ -1,0 +1,21 @@
+{
+  "claim": "Stable retained bytes and identities; no automatic requirement certification.",
+  "final_source_paths": 17,
+  "limitations": [
+    "Seventeen scoped final source paths and five sibling executable identities, not an attestation of every repository file.",
+    "One release candidate. First/final source and all five binary bytes are identical; native-retime-first is final and is not counted twice.",
+    "Focused Core receipts retain a concurrent global Plan integration-test draft change. All eight owned sources and nine named numeric/Plan/CLI basis sources are stable. CLI15 and Plan3 bind all17 current source files; final broad checks and native/media bind current17.",
+    "Three focused Plan tests cover ten bounded cases,78 owner frames and40 neighbor frames, with all287 Core/Plan basis sources stable. This is not qualification of every nested Retime or gap structure.",
+    "The first offline raw audit stopped on an auditor type assertion: empty global-missing lists were compared to numeric zero. Its exact script/receipt/streams are retained before the narrow correction and passing retry. No product or fixture failed and no product run was repeated.",
+    "Native Retime uses production keys and manually authored/corrected points; no document construction, mocked detector or tracker is counted as native authoring.",
+    "Offscreen Metal and scripted input do not establish physical display/input, OS IME delivery, VoiceOver speech, listening or latency.",
+    "Export comparison uses the committed shared picture/DSP reference. Neighbor observability limits, warnings and existing opt-in ignores remain explicit.",
+    "App unit executable identity was observed during execution and again after terminal tests; byte identity is not an archived executable or a pre-run attestation.",
+    "Actual native and portable projects, complete immutable history and every-picture/full-audio verification retain explicit encoder-delay metadata.",
+    "Collector output and later package-verification receipts remain separate to avoid recursive publication."
+  ],
+  "plan_sha256": "fb3e2b67909d721934ed604ce35e0a4d4bd832021f26c937683531873229a6bb",
+  "raw_payload_bytes": 164328488,
+  "schema_version": 1,
+  "script_sha256": "320e79dbf00568d68d7657e3c31d968402772533071529e7c9c494f9aacc6f0e"
+}

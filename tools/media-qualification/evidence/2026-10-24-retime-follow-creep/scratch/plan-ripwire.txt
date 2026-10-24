@@ -1,0 +1,242 @@
+<ctx task="Retime FollowScaleTransition FramingClock RetainedOutput SourcePoint crates/deadpan-plan/tests/picture_plan.rs retime_follow_creep.rs" route=" [routed: subtoken+body BM25 — name-exact declined: anchor &apos;retime&apos; is a common name (8056 name-carriers, 40 defs); conceptual ranker used]" bundle="auto" bodies="5"><!-- ripwire lens for "Retime FollowScaleTransition FramingClock RetainedOutput SourcePoint crates/deadpan-plan/tests/picture_plan.rs retime_follow_creep.rs" [mention anchor: 1 file + 3 symbols named in the task lifted near the top] [doc mentions: 2 docs discussing 1 top-ranked symbol surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="4286" --><sigs capped="1"><f p="/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera.rs"><d l="305" n="FollowDraft" cx="0" ccx="0" in="0" churn="32" amp="63">pub(super) struct FollowDraft</d><d l="481" n="followed_framing" cx="4" ccx="4" in="4" churn="32" amp="67" tested="1">fn followed_framing(follow: &amp;FollowDraft, pose: FramingPose) -&gt; Result&lt;Framing, String&gt;</d><d l="3815" n="animated_follow_camera_keeps_entry_clock_bases_and_releases_the_shown_static_pose" id="/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera.rs::tests::animated_follow_camera_keeps_entry_clock_bases_and_releases_the_shown_static_pose" cx="1" ccx="0" in="0" churn="32" amp="63">fn animated_follow_camera_keeps_entry_clock_bases_and_releases_the_shown_static_pose()</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-plan/tests/picture_plan.rs" layer="test"><d l="228" n="framing_retains_every_owner_clock_and_repeat_scope_in_composition_order" cx="2" ccx="1" in="0" churn="36" amp="149">fn framing_retains_every_owner_clock_and_repeat_scope_in_composition_order()</d><d l="549" n="freeze_picture_identity_stays_fixed_while_its_framing_clock_advances" cx="1" ccx="0" in="0" churn="36" amp="149">fn freeze_picture_identity_stays_fixed_while_its_framing_clock_advances()</d><d l="840" n="retained_partitions_preserve_exact_vfr_picture_mapping_through_fractional_retime" cx="2" ccx="1" in="0" churn="36" amp="149">fn retained_partitions_preserve_exact_vfr_picture_mapping_through_fractional_retime()</d></f></sigs><bodies shown="5" total="6" capped="1"><b t="method" l="3815" p="/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera.rs" n="animated_follow_camera_keeps_entry_clock_bases_and_releases_the_shown_static_pose"><![CDATA[fn animated_follow_camera_keeps_entry_clock_bases_and_releases_the_shown_static_pose() {
+        let r = |n, d| ExactRatio::new(n, d).unwrap();
+        let fallback = FramingPose::new(r(1, 3), r(2, 7), r(1, 2)).unwrap();
+        let transition = deadpan_core::FollowScaleTransition {
+            factor: r(2, 1),
+            curve: deadpan_core::framing_zoom::ZoomCurve::Linear,
+        };
+        let follow = FollowDraft {
+            target: TargetId::new("speaker").unwrap(),
+            center: [r(2, 5), r(1, 2)],
+            base_scale: r(5, 2),
+            base_live: r(2, 1),
+            base_fallback: fallback,
+            clock: FramingClock::RetainedOutput {
+                offset: r(1, 1),
+                duration: r(4, 1),
+            },
+            scale_transition: Some(transition),
+        };
+        let entry = Framing {
+            clock: follow.clock,
+            value: FramingValue::Follow {
+                target: follow.target.clone(),
+                scale: follow.base_live,
+                fallback,
+                scale_transition: Some(transition),
+            },
+        };
+        let handle =
+            FramingPose::new(follow.center[0], follow.center[1], follow.base_scale).unwrap();
+        assert_eq!(followed_framing(&follow, handle).unwrap(), entry);
+        let changed = followed_framing(
+            &follow,
+            FramingPose {
+                scale: r(5, 1),
+                ..handle
+            },
+        )
+        .unwrap();
+        assert_eq!(changed.clock, entry.clock);
+        let FramingValue::Follow {
+            scale,
+            fallback: adjusted,
+            scale_transition,
+            ..
+        } = changed.value
+        else {
+            panic!("follow flattened");
+        };
+        assert_eq!(scale, r(4, 1));
+        assert_eq!(
+            adjusted,
+            FramingPose {
+                scale: r(1, 1),
+                ..fallback
+            }
+        );
+        assert_eq!(scale_transition, Some(transition));
+        // The terminal endpoint, not just this frame's handle, bounds adjustment.
+        assert!(
+            followed_framing(
+                &follow,
+                FramingPose {
+                    scale: r(41, 1),
+                    ..handle
+                }
+            )
+            .is_err()
+        );
+        let fallback_shown = entry.evaluate_exact(ExactRatio::ZERO, r(8, 1)).unwrap();
+        assert_eq!(fallback_shown.center_x, r(1, 3));
+        assert_eq!(
+            adjusted_framing(Some(&entry), fallback_shown, fallback_shown, false)
+                .unwrap()
+                .unwrap()
+                .value,
+            FramingValue::Static {
+                pose: fallback_shown
+            }
+        );
+        let mut switched = follow.clone();
+        switched.target = TargetId::new("other").unwrap();
+        let switched = followed_framing(&switched, handle).unwrap();
+        assert!(
+            matches!(switched.value, FramingValue::Follow { target, scale_transition: Some(value), .. }
+            if target.as_str() == "other" && value == transition)
+        );
+    }]]><calls total="4"><c n="followed_framing" l="481">fn followed_framing(follow: &amp;FollowDraft, pose: FramingPose) -&gt; Result&lt;Framing, String&gt;</c><c n="new" l="52">pub fn new(numerator: i128, denominator: i128) -&gt; Result&lt;Self, TimeError&gt;</c><c n="new" l="76">pub fn new( center_x: ExactRatio, center_y: ExactRatio, scale: ExactRatio, ) -&gt; Result&lt;Self, FramingError&gt;</c><c n="evaluate_exact" l="416">pub fn evaluate_exact( &amp;self, local: ExactRatio, duration: ExactRatio, ) -&gt; Result&lt;FramingPose, FramingError&gt;</c></calls></b><b t="cls" l="305" p="/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera.rs" n="FollowDraft"><![CDATA[pub(super) struct FollowDraft {
+    target: TargetId,
+    /// The draft center while following. Nudges are refused instead of
+    /// silently diverging from the target-supplied center.
+    center: [ExactRatio; 2],
+    base_scale: ExactRatio,
+    /// Authored base, distinct from the scale handle evaluated at this picture.
+    base_live: ExactRatio,
+    base_fallback: FramingPose,
+    clock: FramingClock,
+    scale_transition: Option<deadpan_core::FollowScaleTransition>,
+}]]></b><b t="fn" l="228" p="/Users/michael/Code/deadpan/crates/deadpan-plan/tests/picture_plan.rs" n="framing_retains_every_owner_clock_and_repeat_scope_in_composition_order"><![CDATA[fn framing_retains_every_owner_clock_and_repeat_scope_in_composition_order() {
+    let document = document(
+        &["lead", "group"],
+        vec![
+            ("lead", hold(3)),
+            ("group", BeatNode::sequence("group", vec![id("repeat")])),
+            ("repeat", framed(repeat("retime", 3, 1, "plays"), 2)),
+            ("retime", framed(retime("source", 4, 0, 8), 2)),
+            ("source", framed(source(8, 0, 8000), 3)),
+        ],
+    );
+    let plan = RenderPlan::compile(&document).unwrap();
+    let sample = plan.picture(ProjectFrame(9)).unwrap();
+    let layers = &sample.framing;
+    assert_eq!(
+        layers
+            .iter()
+            .map(|l| l.instance.node.as_str())
+            .collect::<Vec<_>>(),
+        ["source", "retime", "repeat", "group", "root"]
+    );
+    assert_eq!(
+        layers.iter().map(|l| l.local_position).collect::<Vec<_>>(),
+        [
+            ExactRatio::integer(3),
+            ExactRatio::new(3, 2).unwrap(),
+            ExactRatio::new(13, 2).unwrap(),
+            ExactRatio::new(13, 2).unwrap(),
+            ExactRatio::new(19, 2).unwrap()
+        ]
+    );
+    assert_eq!(
+        layers
+            .iter()
+            .map(|l| l.duration.frames())
+            .collect::<Vec<_>>(),
+        [8, 4, 14, 14, 17]
+    );
+    assert_eq!(
+        layers[0].pose.unwrap().scale,
+        ExactRatio::new(7, 4).unwrap()
+    );
+    assert_eq!(
+        layers[1].pose.unwrap().scale,
+        ExactRatio::new(11, 8).unwrap()
+    );
+    assert_eq!(layers[0].instance.repeats[0].iteration.ordinal, 1);
+    assert_eq!(layers[1].instance.repeats[0].iteration.ordinal, 1);
+    assert!(layers[2].instance.repeats.is_empty());
+    assert!(layers[3].pose.is_none() && layers[4].pose.is_none());
+    for layer in layers {
+        layer.instance.validate(&document).unwrap();
+    }
+    assert!(sample.lookup.visited_nodes <= 5);
+
+    let gap = plan.picture(ProjectFrame(7)).unwrap();
+    assert_eq!(gap.gap_after.unwrap().ordinal, 0);
+    assert_eq!(
+        gap.framing
+            .iter()
+            .map(|l| l.instance.node.as_str())
+            .collect::<Vec<_>>(),
+        ["repeat", "group", "root"]
+    );
+    assert_eq!(gap.local_position, ExactRatio::new(1, 2).unwrap());
+    assert_eq!(
+        gap.framing[0].local_position,
+        ExactRatio::new(9, 2).unwrap()
+    );
+    assert_eq!(gap.framing[0].duration, duration(14));
+}]]><calls total="3"><c n="ProjectFrame" l="9">pub struct ProjectFrame</c><c n="compile" l="701">pub fn compile(document: &amp;ProjectDocument) -&gt; Result&lt;Self, PlanError&gt;</c><c n="document" l="128">fn document(roots: &amp;[&amp;str], nodes: Vec&lt;(&amp;str, BeatNode)&gt;) -&gt; ProjectDocument</c></calls></b><b t="fn" l="549" p="/Users/michael/Code/deadpan/crates/deadpan-plan/tests/picture_plan.rs" n="freeze_picture_identity_stays_fixed_while_its_framing_clock_advances"><![CDATA[fn freeze_picture_identity_stays_fixed_while_its_framing_clock_advances() {
+    let freeze = node(NodeKind::Hold {
+        recipe: HoldRecipe {
+            duration: duration(8),
+            video: HoldVideo::Freeze {
+                asset: asset_id("video"),
+                timestamp: SourceTimestamp {
+                    ticks: 1001,
+                    time_base: clock(),
+                },
+            },
+            picture_context: None,
+            audio: HoldAudio::Silence,
+        },
+    });
+    let document = document(&["hold"], vec![("hold", framed(freeze, 3))]);
+    let plan = RenderPlan::compile(&document).unwrap();
+    let first = plan.picture(ProjectFrame(0)).unwrap();
+    let last = plan.picture(ProjectFrame(7)).unwrap();
+    assert_eq!(first.picture, last.picture);
+    assert_eq!(
+        first.framing[0].pose.unwrap().scale,
+        ExactRatio::new(9, 8).unwrap()
+    );
+    assert_eq!(
+        last.framing[0].pose.unwrap().scale,
+        ExactRatio::new(23, 8).unwrap()
+    );
+}]]><calls total="7"><c n="ProjectFrame" l="9">pub struct ProjectFrame</c><c n="compile" l="701">pub fn compile(document: &amp;ProjectDocument) -&gt; Result&lt;Self, PlanError&gt;</c><c n="asset_id" l="33">fn asset_id(value: &amp;str) -&gt; AssetId</c><c n="duration" l="39">fn duration(value: i64) -&gt; FrameDuration</c><c n="clock" l="45">fn clock() -&gt; SourceTimeBase</c><c n="node" l="61">fn node(kind: NodeKind) -&gt; BeatNode</c><c n="document" l="128">fn document(roots: &amp;[&amp;str], nodes: Vec&lt;(&amp;str, BeatNode)&gt;) -&gt; ProjectDocument</c></calls></b><b t="fn" l="840" p="/Users/michael/Code/deadpan/crates/deadpan-plan/tests/picture_plan.rs" n="retained_partitions_preserve_exact_vfr_picture_mapping_through_fractional_retime"><![CDATA[fn retained_partitions_preserve_exact_vfr_picture_mapping_through_fractional_retime() {
+    let original = document(
+        &["retime"],
+        vec![
+            ("source", source(6, -2002, 5005)),
+            ("retime", retime("source", 9, 0, 6)),
+        ],
+    );
+    let partition = |child: &str, start, end| {
+        let mut node = retime(child, end - start, start, end);
+        let NodeKind::Retime { purpose, .. } = &mut node.kind else {
+            unreachable!()
+        };
+        *purpose = RetimePurpose::Partition;
+        node
+    };
+    let divided = document(
+        &["left", "right"],
+        vec![
+            ("left", partition("retime-left", 0, 4)),
+            ("right", partition("retime-right", 4, 9)),
+            ("source-left", source(6, -2002, 5005)),
+            ("source-right", source(6, -2002, 5005)),
+            ("retime-left", retime("source-left", 9, 0, 6)),
+            ("retime-right", retime("source-right", 9, 0, 6)),
+        ],
+    );
+    let original = RenderPlan::compile(&original).unwrap();
+    let plan = RenderPlan::compile(&divided).unwrap();
+    let index = index("video", clock(), &[-2002, -1001, 1001, 4004], 5005);
+    assert_eq!(plan.duration(), original.duration());
+    for frame in [8, 0, 3, 4, 7, 1, 5, 2, 6] {
+        let before = original.picture(ProjectFrame(frame)).unwrap();
+        let after = plan.picture(ProjectFrame(frame)).unwrap();
+        assert_eq!(after.picture, before.picture);
+        assert_eq!(
+            after.picture.select_source_frame(&index).unwrap(),
+            before.picture.select_source_frame(&index).unwrap()
+        );
+        assert_eq!(
+            ticks(&after.picture),
+            ExactRatio::new(-2002 * 18 + (2 * i128::from(frame) + 1) * 7007, 18).unwrap()
+        );
+        after.instance.validate(&divided).unwrap();
+    }
+}]]><calls total="6"><c n="ProjectFrame" l="9">pub struct ProjectFrame</c><c n="compile" l="701">pub fn compile(document: &amp;ProjectDocument) -&gt; Result&lt;Self, PlanError&gt;</c><c n="clock" l="45">fn clock() -&gt; SourceTimeBase</c><c n="retime" l="111">fn retime(child: &amp;str, frames: i64, start: i64, end: i64) -&gt; BeatNode</c><c n="document" l="128">fn document(roots: &amp;[&amp;str], nodes: Vec&lt;(&amp;str, BeatNode)&gt;) -&gt; ProjectDocument</c><c n="index" l="183">fn index(asset: &amp;str, time_base: SourceTimeBase, pts: &amp;[i64], end: i64) -&gt; SourceFrameIndex</c></calls></b><!-- body omitted (over budget): framing --></bodies></ctx>
