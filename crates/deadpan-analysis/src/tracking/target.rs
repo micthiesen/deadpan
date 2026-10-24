@@ -107,7 +107,7 @@ fn mapped(samples: &[TrackSample]) -> Vec<(TargetSample, bool)> {
         out.push((
             TargetSample {
                 at: sample.pts,
-                region: target_region(&sample.region),
+                region: target_region(&sample.region).into(),
                 confidence: confidence_thousandths(sample.confidence),
                 state,
             },
@@ -125,6 +125,13 @@ fn on_line(
     last: &TargetSample,
     tolerance: u32,
 ) -> bool {
+    let (Some(first_region), Some(middle_region), Some(last_region)) = (
+        first.region.as_region(),
+        middle.region.as_region(),
+        last.region.as_region(),
+    ) else {
+        return false;
+    };
     let t = (middle.at - first.at) as f64 / (last.at - first.at) as f64;
     let close = |a: u32, m: u32, b: u32| {
         let predicted = f64::from(a) + (f64::from(b) - f64::from(a)) * t;
@@ -132,13 +139,13 @@ fn on_line(
     };
     (0..2).all(|axis| {
         close(
-            first.region.center[axis],
-            middle.region.center[axis],
-            last.region.center[axis],
+            first_region.center[axis],
+            middle_region.center[axis],
+            last_region.center[axis],
         ) && close(
-            first.region.size[axis],
-            middle.region.size[axis],
-            last.region.size[axis],
+            first_region.size[axis],
+            middle_region.size[axis],
+            last_region.size[axis],
         )
     })
 }
@@ -157,7 +164,7 @@ fn compact_at(samples: &[(TargetSample, bool)], tolerance: u32) -> Vec<TargetSam
         let run = &samples[start..end];
         if state == deadpan_core::TrackState::Lost {
             // Held positions step; keep the first of each held region.
-            let mut previous: Option<TargetRegion> = None;
+            let mut previous = None;
             for (sample, _) in run {
                 if previous != Some(sample.region) {
                     kept.push(*sample);
@@ -238,13 +245,13 @@ impl TrackedPath {
             label,
             asset,
             span,
-            region: target_region(&self.keyframes()[0].region),
+            region: target_region(&self.keyframes()[0].region).into(),
             samples,
             corrections: self.keyframes()[1..]
                 .iter()
                 .map(|keyframe| TargetCorrection {
                     at: keyframe.pts,
-                    region: target_region(&keyframe.region),
+                    region: target_region(&keyframe.region).into(),
                 })
                 .collect(),
             provenance: Some(TargetProvenance {
@@ -269,6 +276,11 @@ pub fn retrack_target(
     engine: &str,
     budget: usize,
 ) -> Result<(AttentionTarget, u32), TrackError> {
+    if target.region.is_point() {
+        return Err(TrackError::Invalid(
+            "point targets cannot be rectangle-tracked",
+        ));
+    }
     let keyframe: Keyframe = segment.keyframes()[0];
     let (start, end) = target
         .correction_range(keyframe.pts)
@@ -337,7 +349,7 @@ pub fn retrack_target(
     }
     corrections.push(TargetCorrection {
         at: keyframe.pts,
-        region: target_region(&keyframe.region),
+        region: target_region(&keyframe.region).into(),
     });
     corrections.sort_by_key(|correction| correction.at);
     Ok((

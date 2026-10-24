@@ -39,7 +39,7 @@ fn with_target(document: ProjectDocument, end: i64, follows: &[(&str, i64)]) -> 
     }
     let sample = |at: i64, x: u32| TargetSample {
         at,
-        region: region(x),
+        region: region(x).into(),
         confidence: 950,
         state: TrackState::Tracked,
     };
@@ -49,7 +49,7 @@ fn with_target(document: ProjectDocument, end: i64, follows: &[(&str, i64)]) -> 
             label: "Speaker".into(),
             asset: asset_id("video"),
             span: span(0, end),
-            region: region(200_000),
+            region: region(200_000).into(),
             // Consecutive tracked samples interpolate, so the move is a
             // one-tick ramp just before frame 5.
             samples: [
@@ -255,13 +255,13 @@ fn following_creep_keeps_the_lost_region_and_animates_distinct_fallback_scale() 
     value["targets"]["speaker"]["samples"] = serde_json::to_value([
         TargetSample {
             at: 0,
-            region: region(200_000),
+            region: region(200_000).into(),
             confidence: 950,
             state: TrackState::Tracked,
         },
         TargetSample {
             at: 2002,
-            region: region(200_000),
+            region: region(200_000).into(),
             confidence: 0,
             state: TrackState::Lost,
         },
@@ -269,7 +269,7 @@ fn following_creep_keeps_the_lost_region_and_animates_distinct_fallback_scale() 
     .unwrap();
     value["targets"]["speaker"]["corrections"] = serde_json::to_value([TargetCorrection {
         at: 4004,
-        region: region(800_000),
+        region: region(800_000).into(),
     }])
     .unwrap();
     let document = ProjectDocument::from_json(&value.to_string()).unwrap();
@@ -433,3 +433,47 @@ fn following_creep_split_preserves_frames_and_inverse_payload_and_raw_retime_clo
 
 #[path = "follow/structural.rs"]
 mod structural;
+
+#[test]
+fn point_follow_matches_rectangle_centers_through_nested_owner_clocks() {
+    let before = with_target(
+        document(
+            &["repeat"],
+            vec![
+                ("repeat", repeat("speed", 2, 1, "point-plays")),
+                ("speed", retime("a", 4, 0, 8)),
+                ("a", source(8, 0, 8008)),
+            ],
+        ),
+        8008,
+        &[("a", 2), ("speed", 1)],
+    );
+    let mut raw = serde_json::to_value(&before).unwrap();
+    let target = raw["targets"]["speaker"].as_object_mut().unwrap();
+    target["region"].as_object_mut().unwrap().remove("size");
+    for field in ["samples", "corrections"] {
+        if let Some(values) = target
+            .get_mut(field)
+            .and_then(serde_json::Value::as_array_mut)
+        {
+            for value in values {
+                value["region"].as_object_mut().unwrap().remove("size");
+            }
+        }
+    }
+    let point_document = ProjectDocument::from_json(&raw.to_string()).unwrap();
+    assert!(
+        point_document.targets()[&TargetId::new("speaker").unwrap()]
+            .region
+            .is_point()
+    );
+    let rectangle = RenderPlan::compile(&before).unwrap();
+    let point = RenderPlan::compile(&point_document).unwrap();
+    for frame in 0..before.duration().unwrap().frames() {
+        let a = rectangle.picture(ProjectFrame(frame)).unwrap();
+        let b = point.picture(ProjectFrame(frame)).unwrap();
+        assert_eq!(a.picture, b.picture);
+        assert_eq!(a.framing, b.framing);
+        assert_eq!(a.picture_context, b.picture_context);
+    }
+}

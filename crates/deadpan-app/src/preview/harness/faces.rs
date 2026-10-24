@@ -146,7 +146,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
             if *target == id && *scale == ExactRatio::new(27, 20).unwrap())
             && target.as_ref().is_some_and(|target| {
                 target.label == "Face 2"
-                    && target.region == expected
+                    && target.region == expected.into()
                     && target.samples.is_empty()
                     && target.provenance.is_none()
             })

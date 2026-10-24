@@ -261,7 +261,7 @@ impl DeadpanApp {
                     .map_err(|error| error.to_string())?;
                     let point = target
                         .region
-                        .center
+                        .center()
                         .map(|v| f64::from(v) / f64::from(TARGET_UNITS));
                     let center = geometry
                         .source_to_input(camera.layer + usize::from(picture.framing_gap), point)
@@ -277,7 +277,10 @@ impl DeadpanApp {
                         face: Some(Proposal {
                             number,
                             face,
-                            region: target.region,
+                            region: *target
+                                .region
+                                .as_region()
+                                .ok_or("Face detection returned no rectangle.")?,
                         }),
                     })
                 })
@@ -468,7 +471,7 @@ mod tests {
             saved: (!proposed && number < 64).then(|| {
                 (
                     TargetId::new(format!("target-{number}")).unwrap(),
-                    region,
+                    region.into(),
                     TargetSource::Initial,
                 )
             }),

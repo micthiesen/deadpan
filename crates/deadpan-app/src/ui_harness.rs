@@ -15,6 +15,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "editing",
     "camera",
     "targets",
+    "points",
     "faces",
     "menus",
     "palette",

@@ -1,0 +1,46 @@
+{
+  "recorded_at": "2026-10-24T07:35:02.460919+00:00",
+  "review_base_resolution": "origin/main via review-base.sh",
+  "base_commit": "43477adbf6d69f6b31da944a8accff692fb3399e",
+  "reviews": [
+    {
+      "agent": "point_geometry_review",
+      "role": "check-focused",
+      "scope": "Core geometry codec/validation/correction semantics and Plan Follow, followed by Python closed vocabulary, canonical bytes and area authority",
+      "remaining_findings": [],
+      "execution": "Read-only source review; no tests or edits by reviewer"
+    },
+    {
+      "agent": "point_app_review",
+      "role": "check",
+      "scope": "App point creation/correction, separate saves, own-save continuation, Follow center/fallback, overlay/discoverability; follow-up feedback wording and error ownership",
+      "remaining_findings": [],
+      "execution": "Read-only source review; no tests or edits by reviewer"
+    },
+    {
+      "agent": "point_tests_review",
+      "role": "check-focused",
+      "scope": "Core, Plan, Store, CLI, Models and App tests, native replay assumptions and meaningful failure coverage",
+      "remaining_findings": [],
+      "execution": "Read-only source review; no tests or edits by reviewer"
+    }
+  ],
+  "dismissed": [
+    {
+      "finding": "Proxy correction could bypass exact picture gate",
+      "reason": "Camera entry stable_sequence_ticket requires decoded and displayed Original; reviewer refuted before final report."
+    }
+  ],
+  "root_image_review": [
+    {
+      "image": "native-points-first/points-031.png",
+      "finding": "Disabled framing help still said Finish the rectangle in point mode",
+      "fix": "Finish the target; native assertion added."
+    },
+    {
+      "image": "native-points-first/points-070.png",
+      "finding": "Rejected geometry-type switch remained visible after valid point movement",
+      "fix": "Successful RegionChanged clears the prior Camera error; native assertion added."
+    }
+  ]
+}

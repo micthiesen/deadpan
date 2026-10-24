@@ -1,0 +1,87 @@
+[
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-core",
+      "--lib",
+      "target::tests"
+    ],
+    "exit": 0,
+    "stdout": "worker-point-focused-1.stdout",
+    "stderr": "worker-point-focused-1.stderr"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-plan",
+      "--test",
+      "picture_plan",
+      "follow::point_follow"
+    ],
+    "exit": 0,
+    "stdout": "worker-point-focused-2.stdout",
+    "stderr": "worker-point-focused-2.stderr"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-store",
+      "--test",
+      "point_targets"
+    ],
+    "exit": 0,
+    "stdout": "worker-point-focused-3.stdout",
+    "stderr": "worker-point-focused-3.stderr"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-analysis",
+      "--lib",
+      "rectangle_retracking_refuses_point_target_without_mutation"
+    ],
+    "exit": 0,
+    "stdout": "worker-point-focused-4.stdout",
+    "stderr": "worker-point-focused-4.stderr"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-models",
+      "--lib",
+      "point_targets_never_become_fake_area_conditioning_seeds"
+    ],
+    "exit": 0,
+    "stdout": "worker-point-focused-5.stdout",
+    "stderr": "worker-point-focused-5.stderr"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--lib",
+      "tracking::point_tests"
+    ],
+    "exit": 0,
+    "stdout": "worker-point-focused-6.stdout",
+    "stderr": "worker-point-focused-6.stderr"
+  }
+]

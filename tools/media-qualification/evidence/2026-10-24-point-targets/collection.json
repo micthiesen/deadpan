@@ -1,0 +1,18 @@
+{
+  "claim": "Stable retained bytes and identities; no automatic requirement certification.",
+  "final_source_paths": 52,
+  "limitations": [
+    "Fifty-two scoped final sources and five sibling executable identities, not an attestation of every repository source file.",
+    "Core/Plan broad receipt guard is false only for separately disclosed App/Models changes; every Core/Plan input remained unchanged.",
+    "A test-only Models useless-conversion removal follows release-final/App units; final source check and Clippy bind the final scope, with unchanged runtime binary hashes.",
+    "Positive face regression detections use the existing scripted seam; point tracking is refused before launch. No person-quality, classifier or inference claim.",
+    "Offscreen Metal and scripted native input; no physical display/input, OS IME delivery, VoiceOver speech, listening or latency qualification.",
+    "Export comparison uses the committed shared picture/DSP reference; all observability limits, layout/screenshot warnings and opt-in ignores are retained.",
+    "Actual project, portable package, complete media verification and explicit video/AAC edit metadata are retained.",
+    "Collector output and later package-verification receipts are retained separately to avoid recursive publication."
+  ],
+  "plan_sha256": "5d3a39e697a5e384cb62da3887e9c3a903f8ff2fb4eefe8e564d9d0a0cf475e9",
+  "raw_payload_bytes": 86960816,
+  "schema_version": 1,
+  "script_sha256": "320e79dbf00568d68d7657e3c31d968402772533071529e7c9c494f9aacc6f0e"
+}

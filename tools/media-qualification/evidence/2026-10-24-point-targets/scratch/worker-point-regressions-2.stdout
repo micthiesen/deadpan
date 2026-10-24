@@ -1,0 +1,24 @@
+
+running 19 tests
+test tracking::tests::regions_are_bounded_and_rotations_round_trip ... ok
+test tracking::tests::shot_boundaries_and_limits_end_the_range ... ok
+test tracking::tests::distance_is_measured_in_the_display_aspect ... ok
+test tracking::tests::confident_observations_track_and_short_gaps_interpolate ... ok
+test tracking::tests::a_confident_jump_to_another_subject_is_a_loss ... ok
+test tracking::tests::a_trailing_gap_is_lost_and_strides_scale_motion ... ok
+test tracking::tests::interpolation_is_bounded_in_pictures_not_observations ... ok
+test tracking::tests::invalid_inputs_are_refused ... ok
+test tracking::tests::corrections_at_unanalysed_pictures_are_all_or_nothing ... ok
+test tracking::tests::long_gaps_are_lost_then_held_until_corrected ... ok
+test tracking::tests::mapping_rounds_and_maps_states_and_confidence ... ok
+test tracking::tests::rectangle_retracking_refuses_point_target_without_mutation ... ok
+test tracking::tests::paths_round_trip_through_validated_json ... ok
+test tracking::tests::rotations_are_inverse ... ok
+test tracking::tests::corrections_invalidate_only_their_range ... ok
+test tracking::tests::the_policy_never_follows_an_implausible_or_unbounded_path ... ok
+test tracking::tests::saved_targets_reproduce_the_path_and_corrections_replace_only_their_range ... ok
+test tracking::tests::dense_paths_compact_within_core_bounds_or_refuse ... ok
+test tracking::tests::adversarial_tracker_artifacts ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 168 filtered out; finished in 0.42s
+

@@ -1,0 +1,61 @@
+[
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-core",
+      "--lib",
+      "target::tests"
+    ],
+    "exit": 0,
+    "stdout": "worker-point-regressions-1.stdout",
+    "stderr": "worker-point-regressions-1.stderr"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-analysis",
+      "--lib",
+      "tracking::tests"
+    ],
+    "exit": 0,
+    "stdout": "worker-point-regressions-2.stdout",
+    "stderr": "worker-point-regressions-2.stderr"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-models",
+      "--lib",
+      "conditioning_region::tests"
+    ],
+    "exit": 0,
+    "stdout": "worker-point-regressions-3.stdout",
+    "stderr": "worker-point-regressions-3.stderr",
+    "test_count": 0,
+    "note": "Incorrect filter; corrected in next entry. No coverage claimed."
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-models",
+      "--lib",
+      "conditioning::region::tests"
+    ],
+    "exit": 0,
+    "stdout": "worker-point-regressions-4.stdout",
+    "stderr": "worker-point-regressions-4.stderr",
+    "test_count": 8
+  }
+]

@@ -200,11 +200,23 @@ def target_rectangle(value):
     return result
 
 
+def target_geometry(value):
+    """An authored point has no size; never manufacture an area for it."""
+    if not isinstance(value, dict) or set(value) not in ({"center"}, {"center", "size"}):
+        raise ValueError("invalid retained target geometry")
+    if "size" in value:
+        return target_rectangle(value)
+    center = value["center"]
+    if not isinstance(center, list) or len(center) != 2:
+        raise ValueError("invalid retained target point")
+    return {"center": [integer(item, 0, 1_000_000) for item in center]}
+
+
 def target_record(value):
     """Validate and serialize in Rust AttentionTarget field order for its hash."""
     required = {"label", "asset", "span", "region"}
     if (not isinstance(value, dict) or not required <= value.keys()
-            or value.keys() - required - {"samples", "corrections", "provenance"}):
+            or value.keys() - required - {"samples", "corrections", "provenance", "display_aspect"}):
         raise ValueError("invalid retained target fields")
     _core_identifier(value["asset"], "target asset")
     label = value["label"]
@@ -216,7 +228,8 @@ def target_record(value):
             or not 0 < end["ticks"] - start["ticks"] < (1 << 63)):
         raise ValueError("invalid retained target span")
     canonical = {"label": label, "asset": value["asset"], "span": {"start": start, "end": end},
-                 "region": target_rectangle(value["region"])}
+                 "region": target_geometry(value["region"])}
+    is_point = "size" not in canonical["region"]
     for key, maximum in (("samples", 4096), ("corrections", 256)):
         rows = value.get(key, [])
         if not isinstance(rows, list) or len(rows) > maximum:
@@ -228,7 +241,10 @@ def target_record(value):
             at = integer(row["at"], start["ticks"], end["ticks"] - 1)
             if previous is not None and at <= previous:
                 raise ValueError("retained target rows must be chronological")
-            item = {"at": at, "region": target_rectangle(row["region"])}
+            geometry = target_geometry(row["region"])
+            if ("size" not in geometry) != is_point:
+                raise ValueError("retained target rows must keep their geometry kind")
+            item = {"at": at, "region": geometry}
             if key == "samples":
                 item["confidence"] = integer(row["confidence"], 0, 1000)
                 if row["state"] not in ("tracked", "interpolated", "lost"):
@@ -248,6 +264,13 @@ def target_record(value):
                 or any(ord(c) < 32 or 127 <= ord(c) <= 159 or c in "\u2028\u2029" for c in engine)):
             raise ValueError("invalid retained target provenance")
         canonical["provenance"] = {key: provenance[key] for key in ("rule", "engine", "stop")}
+    aspect = value.get("display_aspect")
+    if aspect is not None:
+        aspect = exact_ratio(aspect)
+        if (not Fraction(1, 64) <= aspect <= 64
+                or aspect.numerator > (1 << 48) or aspect.denominator > (1 << 48)):
+            raise ValueError("invalid retained target display aspect")
+        canonical["display_aspect"] = {"numerator": str(aspect.numerator), "denominator": str(aspect.denominator)}
     return canonical
 
 
@@ -260,6 +283,12 @@ def validate_region(binding, captured):
     exact_keys(selected, ["id", "record"])
     _core_identifier(selected["id"], "selected target")
     record = target_record(selected["record"])
+    if "size" not in record["region"]:
+        # Identity retention is independent of ROI availability. The Rust host
+        # retains a selected point but can never derive an area seed from it.
+        for side in ("anchor", "left", "right"):
+            if captured.get(side, {}).get("status") == "available":
+                raise ValueError("a point target cannot supply an area seed")
     encoded = json.dumps(record, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     if (selected["id"] != captured["target"] or record["label"] != captured["label"]
             or hashlib.sha256(encoded).hexdigest() != captured["target_sha256"]):

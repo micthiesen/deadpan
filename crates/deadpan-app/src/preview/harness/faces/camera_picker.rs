@@ -213,7 +213,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         "Selecting a proposal saves only that face and continues the adjusted Camera draft",
         target_count(d) == 1
             && saved.as_ref().is_some_and(|target| {
-                target.region == expected
+                target.region == expected.into()
                     && target.label == "Face 6"
                     && target.samples.is_empty()
                     && target.display_aspect.is_some()

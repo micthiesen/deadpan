@@ -1,0 +1,21 @@
+
+running 16 tests
+test target::tests::display_aspects_are_exact_upright_shapes_within_bounds ... ok
+test target::tests::fit_points_letterbox_and_pillarbox_exactly ... ok
+test target::tests::evaluated_confidence_follows_the_same_interpolation_and_correction ... ok
+test target::tests::an_unrepresentable_interpolation_is_unavailable_not_a_held_region ... ok
+test target::tests::points::point_correction_real_limit_allows_update_and_start_without_a_new_slot ... ok
+test target::tests::moving_samples_interpolate_but_never_across_loss_state_or_correction ... ok
+test target::tests::points::point_targets_require_one_geometry_kind_and_keep_existing_time_confidence_and_lost_rules ... ok
+test target::tests::regions_follow_samples_and_corrections_in_source_time ... ok
+test target::tests::points::point_manual_corrections_invalidate_only_their_half_open_range_atomically ... ok
+test target::tests::invalid_targets_are_refused ... ok
+test target::tests::recorded_aspects_validate_and_stay_off_the_wire_when_absent ... ok
+test target::tests::points::point_geometry_codec_preserves_rectangle_bytes_and_rejects_open_or_oversized_shapes ... ok
+test target::tests::provenance_is_optional_enumerated_bounded_and_round_trips ... ok
+test target::tests::set_and_delete_target_are_reversible_edits_without_picture_time ... ok
+test target::tests::points::point_samples_interpolate_exactly_like_rectangle_centers ... ok
+test target::tests::copying_a_followed_beat_carries_its_target_to_a_destination_without_it ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 726 filtered out; finished in 0.01s
+

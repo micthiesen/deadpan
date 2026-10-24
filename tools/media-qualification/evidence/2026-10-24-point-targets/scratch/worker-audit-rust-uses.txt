@@ -1,0 +1,49 @@
+crates/deadpan-cli/src/generation/conditioning/extension_tests.rs:3:    TargetRegion,
+crates/deadpan-cli/src/generation/conditioning/extension_tests.rs:571:        region: TargetRegion {
+crates/deadpan-cli/src/framing/tests.rs:11:    Subtree, TargetId, TargetRegion,
+crates/deadpan-cli/src/framing/tests.rs:338:                region: TargetRegion {
+crates/deadpan-cli/src/tracking.rs:24:    TrackPolicy, TrackRange, TrackStop, TrackedPath, rect_from_target, retrack_target,
+crates/deadpan-cli/src/tracking.rs:1201:pub fn target_rect_at(target: &AttentionTarget, at: i64) -> Option<NormalizedRect> {
+crates/deadpan-cli/src/tracking.rs:1206:    rect_from_target(region.as_region()?)
+crates/deadpan-cli/src/tracking/point_tests.rs:26:    assert_eq!(target_rect_at(&target,0),None);
+crates/deadpan-models/src/conditioning_region.rs:5:    AssetId, AttentionTarget, ExactRatio, SourcePoint, TARGET_UNITS, TargetId, TargetRegion,
+crates/deadpan-models/src/conditioning_region.rs:34:        region: TargetRegion,
+crates/deadpan-models/src/conditioning_region.rs:287:fn inside(region: TargetRegion) -> bool {
+crates/deadpan-models/src/conditioning_region.rs:297:    region: TargetRegion,
+crates/deadpan-store/src/generation_inputs/tests.rs:11:    TargetRegion, TerminalProvenance,
+crates/deadpan-store/src/generation_inputs/tests.rs:570:    let region = TargetRegion {
+crates/deadpan-store/src/generation_inputs/tests.rs:589:            region: TargetRegion {
+crates/deadpan-cli/src/generation_context/tests.rs:187:        region: TargetRegion {
+crates/deadpan-cli/src/generation_context/tests.rs:241:        region: TargetRegion {
+crates/deadpan-models/src/conditioning_extension/binding/tests.rs:3:    SourceTimeBase, SourceTimestamp, TargetRegion,
+crates/deadpan-models/src/conditioning_extension/binding/tests.rs:492:        region: TargetRegion {
+crates/deadpan-models/src/region_tests.rs:11:    SourceQualificationId, SourceTimeBase, SourceTimestamp, TargetId, TargetRegion, TargetSource,
+crates/deadpan-models/src/region_tests.rs:118:            region: TargetRegion {
+crates/deadpan-models/src/conditioning_region_tests.rs:26:        region: TargetRegion {
+crates/deadpan-models/src/conditioning_region_tests.rs:89:        region: TargetRegion {
+crates/deadpan-models/src/conditioning_extension_tests.rs:537:        region: deadpan_core::TargetRegion {
+crates/deadpan-models/src/conditioning_extension_tests.rs:592:        TargetRegion,
+crates/deadpan-models/src/conditioning_extension_tests.rs:653:        region: TargetRegion {
+crates/deadpan-analysis/src/tracking/target.rs:34:    TargetCorrection, TargetProvenance, TargetRegion, TargetRule, TargetSample, TargetStop,
+crates/deadpan-analysis/src/tracking/target.rs:47:pub fn target_region(rect: &NormalizedRect) -> TargetRegion {
+crates/deadpan-analysis/src/tracking/target.rs:53:    TargetRegion {
+crates/deadpan-analysis/src/tracking/target.rs:60:pub fn rect_from_target(region: &TargetRegion) -> Option<NormalizedRect> {
+crates/deadpan-core/src/target.rs:121:pub struct TargetRegion {
+crates/deadpan-core/src/target.rs:126:impl TargetRegion {
+crates/deadpan-core/src/target.rs:274:pub struct EvaluatedTargetRegion {
+crates/deadpan-core/src/target.rs:431:    pub fn evaluated_region_at(&self, point: SourcePoint) -> Option<EvaluatedTargetRegion> {
+crates/deadpan-core/src/target.rs:451:        let tracked = |sample: &TargetSample| -> Option<EvaluatedTargetRegion> {
+crates/deadpan-core/src/target.rs:453:            Some(EvaluatedTargetRegion {
+crates/deadpan-core/src/target.rs:461:            (_, Some(correction)) => Some(EvaluatedTargetRegion {
+crates/deadpan-core/src/target.rs:467:            (None, None) => Some(EvaluatedTargetRegion {
+crates/deadpan-core/src/target.rs:520:            (TargetGeometry::Region(first), TargetGeometry::Region(next)) => TargetRegion {
+crates/deadpan-analysis/src/tracking/tests.rs:632:) -> (deadpan_core::TargetRegion, deadpan_core::TargetSource) {
+crates/deadpan-analysis/src/tracking/tests.rs:725:    let back = rect_from_target(&region).unwrap();
+crates/deadpan-core/src/target/geometry.rs:31:    Region(TargetRegion),
+crates/deadpan-core/src/target/geometry.rs:42:    pub const fn as_region(&self) -> Option<&TargetRegion> {
+crates/deadpan-core/src/target/geometry.rs:53:impl From<TargetRegion> for TargetGeometry {
+crates/deadpan-core/src/target/geometry.rs:54:    fn from(value: TargetRegion) -> Self { Self::Region(value) }
+crates/deadpan-core/src/target/geometry.rs:111:                    Some(size) => TargetGeometry::Region(TargetRegion { center,size }),
+crates/deadpan-core/src/target/point_tests.rs:14:    let rectangle = TargetRegion { center: [0,TARGET_UNITS],size:[1,TARGET_UNITS] };
+crates/deadpan-core/src/target/tests.rs:15:    TargetRegion {
+crates/deadpan-core/src/target/tests.rs:139:    empty.region = TargetRegion { center: empty.region.center(), size: [0, 1] }.into();

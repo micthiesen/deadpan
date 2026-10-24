@@ -1,0 +1,198 @@
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+    Checking deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error[E0308]: mismatched types
+   --> crates/deadpan-app/src/preview/harness/faces/camera_picker.rs:216:34
+    |
+216 |                 target.region == expected
+    |                 -------------    ^^^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+    |                 |
+    |                 expected because this is `TargetGeometry`
+    |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+    |
+216 |                 target.region == deadpan_core::TargetGeometry::Region(expected)
+    |                                  +++++++++++++++++++++++++++++++++++++        +
+
+error[E0308]: mismatched types
+   --> crates/deadpan-app/src/preview/harness/faces.rs:149:41
+    |
+149 |                     && target.region == expected
+    |                        -------------    ^^^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+    |                        |
+    |                        expected because this is `TargetGeometry`
+    |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+    |
+149 |                     && target.region == deadpan_core::TargetGeometry::Region(expected)
+    |                                         +++++++++++++++++++++++++++++++++++++        +
+
+error[E0308]: mismatched types
+    --> crates/deadpan-app/src/preview/camera.rs:3895:21
+     |
+3895 |             region: region(1),
+     |                     ^^^^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+     |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+     |
+3895 |             region: deadpan_core::TargetGeometry::Region(region(1)),
+     |                     +++++++++++++++++++++++++++++++++++++         +
+
+error[E0308]: mismatched types
+    --> crates/deadpan-app/src/preview/camera.rs:3899:25
+     |
+3899 |                 region: region(2),
+     |                         ^^^^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+     |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+     |
+3899 |                 region: deadpan_core::TargetGeometry::Region(region(2)),
+     |                         +++++++++++++++++++++++++++++++++++++         +
+
+error[E0308]: mismatched types
+    --> crates/deadpan-app/src/preview/camera.rs:3904:61
+     |
+3904 |         assert_eq!(corrected(&target, 0, region(9)).region, region(9));
+     |                                                             ^^^^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+     |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+     |
+3904 |         assert_eq!(corrected(&target, 0, region(9)).region, deadpan_core::TargetGeometry::Region(region(9)));
+     |                                                             +++++++++++++++++++++++++++++++++++++         +
+
+error[E0308]: mismatched types
+    --> crates/deadpan-app/src/preview/camera.rs:3919:25
+     |
+3919 |                 region: region(4)
+     |                         ^^^^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+     |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+     |
+3919 |                 region: deadpan_core::TargetGeometry::Region(region(4))
+     |                         +++++++++++++++++++++++++++++++++++++         +
+
+error[E0308]: mismatched types
+    --> crates/deadpan-app/src/preview/camera.rs:3922:37
+     |
+3922 |         assert_eq!(replaced.region, region(1));
+     |                                     ^^^^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+     |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+     |
+3922 |         assert_eq!(replaced.region, deadpan_core::TargetGeometry::Region(region(1)));
+     |                                     +++++++++++++++++++++++++++++++++++++         +
+
+error[E0615]: attempted to take value of method `center` on type `TargetGeometry`
+   --> crates/deadpan-app/src/preview/harness/targets.rs:161:29
+    |
+161 |             && saved.region.center == [530_000, 500_000],
+    |                             ^^^^^^ method, not a field
+    |
+help: use parentheses to call the method
+    |
+161 |             && saved.region.center() == [530_000, 500_000],
+    |                                   ++
+
+error[E0308]: mismatched types
+   --> crates/deadpan-app/src/project/tests/generation.rs:448:17
+    |
+448 |           region: TargetRegion {
+    |  _________________^
+449 | |             center,
+450 | |             size: [200_000, 200_000],
+451 | |         },
+    | |_________^ expected `TargetGeometry`, found `TargetRegion`
+    |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+    |
+448 ~         region: deadpan_core::TargetGeometry::Region(TargetRegion {
+449 |             center,
+450 |             size: [200_000, 200_000],
+451 ~         }),
+    |
+
+error[E0308]: mismatched types
+   --> crates/deadpan-app/src/project/tests/jobs.rs:113:17
+    |
+113 |           region: TargetRegion {
+    |  _________________^
+114 | |             center: [400_000, 500_000],
+115 | |             size: [200_000, 200_000],
+116 | |         },
+    | |_________^ expected `TargetGeometry`, found `TargetRegion`
+    |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+    |
+113 ~         region: deadpan_core::TargetGeometry::Region(TargetRegion {
+114 |             center: [400_000, 500_000],
+115 |             size: [200_000, 200_000],
+116 ~         }),
+    |
+
+error[E0308]: mismatched types
+   --> crates/deadpan-app/src/project/tests/targets.rs:101:17
+    |
+101 |           region: TargetRegion {
+    |  _________________^
+102 | |             center: [400_000, 500_000],
+103 | |             size: [200_000, 200_000],
+104 | |         },
+    | |_________^ expected `TargetGeometry`, found `TargetRegion`
+    |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+    |
+101 ~         region: deadpan_core::TargetGeometry::Region(TargetRegion {
+102 |             center: [400_000, 500_000],
+103 |             size: [200_000, 200_000],
+104 ~         }),
+    |
+
+error[E0615]: attempted to take value of method `center` on type `TargetGeometry`
+   --> crates/deadpan-app/src/project/tests/targets.rs:333:19
+    |
+333 |     assert!(later.center[0] > early.center[0]);
+    |                   ^^^^^^ method, not a field
+    |
+help: use parentheses to call the method
+    |
+333 |     assert!(later.center()[0] > early.center[0]);
+    |                         ++
+
+error[E0615]: attempted to take value of method `center` on type `TargetGeometry`
+   --> crates/deadpan-app/src/project/tests/targets.rs:333:37
+    |
+333 |     assert!(later.center[0] > early.center[0]);
+    |                                     ^^^^^^ method, not a field
+    |
+help: use parentheses to call the method
+    |
+333 |     assert!(later.center[0] > early.center()[0]);
+    |                                           ++
+
+error[E0615]: attempted to take value of method `center` on type `TargetGeometry`
+   --> crates/deadpan-app/src/project/tests/targets.rs:365:22
+    |
+365 |     assert_eq!(after.center, region.center);
+    |                      ^^^^^^ method, not a field
+    |
+help: use parentheses to call the method
+    |
+365 |     assert_eq!(after.center(), region.center);
+    |                            ++
+
+Some errors have detailed explanations: E0308, E0615.
+For more information about an error, try `rustc --explain E0308`.
+error: could not compile `deadpan-app` (bin "deadpan-app") due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-app` (bin "deadpan-app" test) due to 14 previous errors

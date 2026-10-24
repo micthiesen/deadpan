@@ -44,7 +44,8 @@ fn keep_creep_rebinds_follow_bases_and_target_with_atomic_refusal_and_durable_hi
                     region: TargetRegion {
                         center: [x, 400_000],
                         size: [100_000; 2],
-                    },
+                    }
+                    .into(),
                     samples: vec![],
                     corrections: vec![],
                     provenance: None,

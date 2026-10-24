@@ -49,6 +49,7 @@ mod nested_pause;
 mod original_layout;
 mod original_playback;
 mod palette;
+mod points;
 mod proxy;
 mod recipe_library;
 mod recipes;

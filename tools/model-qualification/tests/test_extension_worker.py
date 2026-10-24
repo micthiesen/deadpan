@@ -373,6 +373,75 @@ class ExtensionContextTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.validate(wire, context)
 
+    def point_context(self):
+        wire = request_wire()
+        wire["constraints"]["region_target"] = "hand"
+        context = decoded_context(wire)
+        select_region(context)
+        encoded = (Path(__file__).parent / "fixtures/point-target.json").read_bytes().rstrip(b"\n")
+        record = json.loads(encoded)
+        context["continuity"]["binding"]["region"]["record"] = record
+        context["region"].update(target_sha256=hashlib.sha256(encoded).hexdigest(),
+                                 anchor={"status": "unavailable", "reason": "point_target"})
+        return wire, context, encoded
+
+    def test_point_identity_and_measured_aspect_cross_the_actual_extension_validator_without_an_roi(self):
+        wire, context, encoded = self.point_context()
+        record = context["continuity"]["binding"]["region"]["record"]
+        canonical = extension_context.target_record(record)
+        self.assertEqual(json.dumps(canonical, separators=(",", ":")).encode(), encoded)
+        self.assertEqual(len(self.validate(wire, context)), 9)
+        self.assertNotIn("size", canonical["region"])
+        self.assertTrue(all("size" not in row["region"] for row in canonical["samples"] + canonical["corrections"]))
+        record["corrections"][0]["region"]["center"][0] += 1
+        with self.assertRaisesRegex(ValueError, "retained target differs"):
+            self.validate(wire, context)
+
+    def test_point_identity_cannot_claim_a_fabricated_available_area_seed(self):
+        wire, context, _ = self.point_context()
+        picture = context["context"][-1]["picture"]["original"]
+        pts = picture["picture"]["pts"]
+        context["region"]["anchor"] = {
+            "status": "available", "asset": picture["asset"], "source": "initial", "confidence": None,
+            "point": {"ticks": {"numerator": str(pts["ticks"]), "denominator": "1"}, "time_base": pts["time_base"]},
+            "region": {"center": [500000, 500000], "size": [200000, 200000]},
+        }
+        with self.assertRaisesRegex(ValueError, "point target cannot supply an area seed"):
+            self.validate(wire, context)
+
+    def test_retained_point_geometry_is_closed_uniform_and_bounded(self):
+        mutations = [
+            lambda r: r["region"].update(size=None),
+            lambda r: r["region"].update(size=[0, 1]),
+            lambda r: r["region"].update(center=[0, 0, 0]),
+            lambda r: r["region"].update(center=[True, 0]),
+            lambda r: r["region"].update(center=[1000001, 0]),
+            lambda r: r["region"].update(extra=True),
+            lambda r: r["samples"][0]["region"].update(size=[1, 1]),
+            lambda r: r["corrections"][0]["region"].update(size=[1, 1]),
+            lambda r: r["display_aspect"].update(numerator="0"),
+            lambda r: r["display_aspect"].update(numerator="65", denominator="1"),
+            lambda r: r["display_aspect"].update(numerator=str((1 << 48) + 1), denominator=str(1 << 48)),
+        ]
+        for index, mutate in enumerate(mutations):
+            _, context, _ = self.point_context()
+            record = context["continuity"]["binding"]["region"]["record"]
+            mutate(record)
+            with self.subTest(index=index), self.assertRaises(ValueError):
+                extension_context.target_record(record)
+
+    def test_rectangle_record_canonical_bytes_stay_unchanged_and_aspect_is_retained_last(self):
+        wire = request_wire()
+        context = context_for(wire)
+        select_region(context)
+        record = context["continuity"]["binding"]["region"]["record"]
+        old_bytes = json.dumps(record, separators=(",", ":")).encode()
+        self.assertEqual(json.dumps(extension_context.target_record(record), separators=(",", ":")).encode(), old_bytes)
+        record["display_aspect"] = {"numerator": "32", "denominator": "18"}
+        canonical = extension_context.target_record(record)
+        self.assertEqual(canonical["display_aspect"], {"numerator": "16", "denominator": "9"})
+        self.assertEqual(list(canonical)[-1], "display_aspect")
+
     def test_decoded_original_and_generated_identities_bind_in_both_directions(self):
         for kind in ("original", "generated"):
             for direction in ("from_left", "from_right"):

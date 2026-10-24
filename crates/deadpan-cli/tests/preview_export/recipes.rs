@@ -1183,17 +1183,17 @@ pub fn framing(dir: &Path) -> Result<Fixture> {
                 label: "Subject".into(),
                 asset: asset.clone(),
                 span: SourceSpan::new(stamp(32), stamp(42))?,
-                region: region(300_000),
+                region: region(300_000).into(),
                 samples: vec![
                     TargetSample {
                         at: 32 * per_frame,
-                        region: region(300_000),
+                        region: region(300_000).into(),
                         confidence: 1000,
                         state: TrackState::Tracked,
                     },
                     TargetSample {
                         at: 41 * per_frame,
-                        region: region(700_000),
+                        region: region(700_000).into(),
                         confidence: 1000,
                         state: TrackState::Tracked,
                     },
@@ -1264,17 +1264,17 @@ pub fn letterbox_follow(dir: &Path) -> Result<Fixture> {
                 label: "Subject".into(),
                 asset: asset.clone(),
                 span: SourceSpan::new(stamp(32), stamp(42))?,
-                region: region(300_000),
+                region: region(300_000).into(),
                 samples: vec![
                     TargetSample {
                         at: 32 * per_frame,
-                        region: region(300_000),
+                        region: region(300_000).into(),
                         confidence: 1000,
                         state: TrackState::Tracked,
                     },
                     TargetSample {
                         at: 41 * per_frame,
-                        region: region(700_000),
+                        region: region(700_000).into(),
                         confidence: 1000,
                         state: TrackState::Tracked,
                     },

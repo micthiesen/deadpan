@@ -1,0 +1,62 @@
+crates/deadpan-cli/src/generation/conditioning/extension_tests.rs:571:        region: TargetRegion {
+crates/deadpan-cli/src/framing/tests.rs:338:                region: TargetRegion {
+crates/deadpan-cli/src/framing/tests/scoped.rs:145:                region: TargetRegion {
+crates/deadpan-cli/src/tracking.rs:1203:    rect_from_target(&region)
+crates/deadpan-cli/src/generation_context/tests.rs:187:        region: TargetRegion {
+crates/deadpan-cli/src/generation_context/tests.rs:241:        region: TargetRegion {
+crates/deadpan-cli/src/generation_context/tests/scoped.rs:645:        region: TargetRegion {
+crates/deadpan-cli/src/generation_context/tests/scoped.rs:679:        region: TargetRegion {
+crates/deadpan-cli/src/picture/tests/extension.rs:334:    corrected.region.center[0] += 50_000;
+crates/deadpan-app/src/navigation/camera.rs:62:    region: TargetRegion,
+crates/deadpan-app/src/navigation/camera.rs:68:    pub fn new(region: TargetRegion) -> Self {
+crates/deadpan-app/src/navigation/camera.rs:70:            region: TargetRegion {
+crates/deadpan-app/src/navigation/camera.rs:104:                self.region.center[axis] = shift(self.region.center[axis], sign * delta, 0);
+crates/deadpan-app/src/navigation/camera.rs:112:                self.region.size[axis] =
+crates/deadpan-app/src/navigation/camera.rs:113:                    shift(self.region.size[axis], sign * delta, MIN_REGION_SIZE);
+crates/deadpan-app/src/navigation/camera.rs:310:    pub fn open_region(&mut self, region: TargetRegion) -> CameraEffect {
+crates/deadpan-app/src/preview/camera.rs:618:fn corrected(target: &AttentionTarget, at: i64, region: TargetRegion) -> AttentionTarget {
+crates/deadpan-app/src/preview/camera.rs:2401:    fn camera_save_region(&mut self, region: TargetRegion) {
+crates/deadpan-store/src/boundary_replacements/tests/temporal.rs:515:                region: TargetRegion {
+crates/deadpan-render/tests/follow_letterbox.rs:45:        region: TargetRegion {
+crates/deadpan-cli/src/faces.rs:563:        assert_eq!(target.region.center, [550_000, 300_000]);
+crates/deadpan-cli/src/faces.rs:564:        assert_eq!(target.region.size, [100_000, 200_000]);
+crates/deadpan-app/src/project/service/targets.rs:399:            rect_from_target(&region).ok_or("The target's rectangle lies outside the picture.")?;
+crates/deadpan-store/src/generation_inputs/tests.rs:589:            region: TargetRegion {
+crates/deadpan-app/src/project/targets.rs:112:    Correct { at: i64, region: TargetRegion },
+crates/deadpan-app/src/project/tests/jobs.rs:113:        region: TargetRegion {
+crates/deadpan-app/src/preview/camera/face_picker.rs:9:    pub(super) region: TargetRegion,
+crates/deadpan-app/src/preview/targets.rs:73:    pub region: TargetRegion,
+crates/deadpan-app/src/project/tests/targets.rs:101:        region: TargetRegion {
+crates/deadpan-app/src/project/tests/generation.rs:448:        region: TargetRegion {
+crates/deadpan-models/src/conditioning_region.rs:34:        region: TargetRegion,
+crates/deadpan-models/src/conditioning_region.rs:282:fn inside(region: TargetRegion) -> bool {
+crates/deadpan-models/src/conditioning_region.rs:292:    region: TargetRegion,
+crates/deadpan-app/src/preview/harness/targets.rs:161:            && saved.region.center == [530_000, 500_000],
+crates/deadpan-models/src/conditioning_extension/binding/tests.rs:492:        region: TargetRegion {
+crates/deadpan-cli/tests/bridge_conditioning.rs:412:        region: TargetRegion {
+crates/deadpan-models/src/conditioning_region_tests.rs:26:        region: TargetRegion {
+crates/deadpan-models/src/conditioning_region_tests.rs:89:        region: TargetRegion {
+crates/deadpan-models/src/conditioning_region_tests.rs:170:    target.region.center[0] = 0;
+crates/deadpan-models/src/conditioning_region_tests.rs:183:        target.region.size = size;
+crates/deadpan-cli/tests/project_commands/macros/framing/follow_creep_admission.rs:21:                region: TargetRegion {
+crates/deadpan-models/src/conditioning_extension_tests.rs:653:        region: TargetRegion {
+crates/deadpan-cli/tests/project_commands/macros/framing/follow_creep.rs:44:                    region: TargetRegion {
+crates/deadpan-models/src/region_tests.rs:118:            region: TargetRegion {
+crates/deadpan-analysis/src/tracking/target.rs:60:pub fn rect_from_target(region: &TargetRegion) -> Option<NormalizedRect> {
+crates/deadpan-analysis/src/tracking/target.rs:135:            first.region.center[axis],
+crates/deadpan-analysis/src/tracking/target.rs:136:            middle.region.center[axis],
+crates/deadpan-analysis/src/tracking/target.rs:137:            last.region.center[axis],
+crates/deadpan-analysis/src/tracking/target.rs:139:            first.region.size[axis],
+crates/deadpan-analysis/src/tracking/target.rs:140:            middle.region.size[axis],
+crates/deadpan-analysis/src/tracking/target.rs:141:            last.region.size[axis],
+crates/deadpan-analysis/src/tracking/tests.rs:724:    let back = rect_from_target(&region).unwrap();
+crates/deadpan-core/src/target/tests.rs:139:    empty.region.size = [0, 1];
+crates/deadpan-core/src/target.rs:167:    pub region: TargetRegion,
+crates/deadpan-core/src/target.rs:179:    pub region: TargetRegion,
+crates/deadpan-core/src/target.rs:242:    pub region: TargetRegion,
+crates/deadpan-core/src/target.rs:272:    pub region: TargetRegion,
+crates/deadpan-core/src/target.rs:479:                    mix(first.region.center[0], next.region.center[0], 0)?,
+crates/deadpan-core/src/target.rs:480:                    mix(first.region.center[1], next.region.center[1], 0)?,
+crates/deadpan-core/src/target.rs:483:                    mix(first.region.size[0], next.region.size[0], 1)?,
+crates/deadpan-core/src/target.rs:484:                    mix(first.region.size[1], next.region.size[1], 1)?,
+crates/deadpan-core/tests/framing/follow_boundaries.rs:54:            region: TargetRegion {

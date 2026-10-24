@@ -365,6 +365,9 @@ impl Service {
             .targets()
             .get(&id)
             .ok_or_else(|| format!("There is no saved target {}.", id.as_str()))?;
+        let initial_region = target.region.as_region().copied().ok_or(
+            "Point targets have no tracking rectangle. Draw a region target to track; point positions can be corrected manually.",
+        )?;
         let (from_pts, to_pts, region, stop_at_shots, correct_at) = match mode {
             TrackMode::Track { through_shots } => {
                 if !target.samples.is_empty() {
@@ -383,7 +386,7 @@ impl Service {
                 (
                     target.span.start().ticks,
                     target.span.end().ticks,
-                    target.region,
+                    initial_region,
                     !through_shots,
                     None,
                 )

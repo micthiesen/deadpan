@@ -113,7 +113,8 @@ fn project(ai: Vec<AiScript>, tracking: Vec<TrackScript>) -> Fixture {
         region: TargetRegion {
             center: [400_000, 500_000],
             size: [200_000, 200_000],
-        },
+        }
+        .into(),
         samples: Vec::new(),
         corrections: Vec::new(),
         provenance: None,

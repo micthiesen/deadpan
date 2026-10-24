@@ -11,11 +11,12 @@ fn stamp(ticks: i64) -> SourceTimestamp {
         time_base: base(),
     }
 }
-fn region(x: u32) -> TargetRegion {
+fn region(x: u32) -> TargetGeometry {
     TargetRegion {
         center: [x, 500_000],
         size: [100_000, 200_000],
     }
+    .into()
 }
 fn assets() -> BTreeMap<AssetId, AssetRecord> {
     BTreeMap::from([(
@@ -136,7 +137,11 @@ fn invalid_targets_are_refused() {
     outside.span = SourceSpan::new(stamp(10), stamp(400)).unwrap();
     assert!(outside.validate(&assets).is_err());
     let mut empty = target();
-    empty.region.size = [0, 1];
+    empty.region = TargetRegion {
+        center: empty.region.center(),
+        size: [0, 1],
+    }
+    .into();
     assert!(empty.validate(&assets).is_err());
     let mut missing = target();
     missing.asset = AssetId::new("other").unwrap();
@@ -207,8 +212,7 @@ fn set_and_delete_target_are_reversible_edits_without_picture_time() {
     );
 }
 
-#[test]
-fn copying_a_followed_beat_carries_its_target_to_a_destination_without_it() {
+fn assert_copy_target(copied: AttentionTarget) {
     let basis = crate::PresentationBasis {
         width: 640,
         height: 360,
@@ -248,7 +252,7 @@ fn copying_a_followed_beat_carries_its_target_to_a_destination_without_it() {
     });
     source["nodes"]["root"]["kind"]["children"] = serde_json::json!(["held"]);
     source["nodes"]["held"] = serde_json::to_value(&hold).unwrap();
-    source["targets"] = serde_json::json!({ "speaker": target() });
+    source["targets"] = serde_json::json!({ "speaker": copied });
     let source = crate::ProjectDocument::from_json(&source.to_string()).unwrap();
     let slice = crate::CapturedEditSlice::capture_selection(
         &source,
@@ -294,10 +298,13 @@ fn copying_a_followed_beat_carries_its_target_to_a_destination_without_it() {
     )
     .unwrap();
     let after = pasted.forward.apply(&destination).unwrap();
-    assert_eq!(
-        after.targets()[&TargetId::new("speaker").unwrap()],
-        target()
-    );
+    assert_eq!(after.targets()[&TargetId::new("speaker").unwrap()], copied);
+}
+
+#[test]
+fn copying_a_followed_beat_carries_its_target_to_a_destination_without_it() {
+    assert_copy_target(target());
+    assert_copy_target(points::point_target());
 }
 
 fn sample(at: i64, x: u32, state: TrackState) -> TargetSample {
@@ -332,19 +339,19 @@ fn moving_samples_interpolate_but_never_across_loss_state_or_correction() {
     };
     let at = |ticks: ExactRatio| region_at(&moving, ticks);
     // Linear in source time, including fractional source points.
-    assert_eq!(at(ExactRatio::integer(25)).0.center[0], 250_000);
-    assert_eq!(at(ExactRatio::new(51, 2).unwrap()).0.center[0], 255_000);
+    assert_eq!(at(ExactRatio::integer(25)).0.center()[0], 250_000);
+    assert_eq!(at(ExactRatio::new(51, 2).unwrap()).0.center()[0], 255_000);
     assert_eq!(
         at(ExactRatio::integer(25)).1,
         TargetSource::Tracked(TrackState::Tracked)
     );
     // Rounded to the nearest millionth: a third of 100_000 is 33_333.3…
-    assert_eq!(at(ExactRatio::new(70, 3).unwrap()).0.center[0], 233_333);
-    assert_eq!(at(ExactRatio::integer(45)).0.center[0], 450_000);
+    assert_eq!(at(ExactRatio::new(70, 3).unwrap()).0.center()[0], 233_333);
+    assert_eq!(at(ExactRatio::integer(45)).0.center()[0], 450_000);
     // Tracked → Interpolated is a change of state: the earlier one holds.
-    assert_eq!(at(ExactRatio::integer(35)).0.center[0], 300_000);
+    assert_eq!(at(ExactRatio::integer(35)).0.center()[0], 300_000);
     // Lost samples hold; nothing interpolates from the initial region.
-    assert_eq!(at(ExactRatio::integer(65)).0.center[0], 500_000);
+    assert_eq!(at(ExactRatio::integer(65)).0.center()[0], 500_000);
     assert_eq!(at(ExactRatio::integer(15)).0, region(100_000));
     // A correction between two samples stops interpolation from the first.
     let mut corrected = moving.clone();
@@ -353,7 +360,7 @@ fn moving_samples_interpolate_but_never_across_loss_state_or_correction() {
         region: region(900_000),
     }];
     assert_eq!(
-        region_at(&corrected, ExactRatio::integer(25)).0.center[0],
+        region_at(&corrected, ExactRatio::integer(25)).0.center()[0],
         200_000
     );
     assert_eq!(
@@ -515,3 +522,6 @@ fn recorded_aspects_validate_and_stay_off_the_wire_when_absent() {
     target.display_aspect = Some(ratio((1 << 48) + 1, 1 << 48));
     assert!(target.validate_shape().is_err());
 }
+
+#[path = "point_tests.rs"]
+mod points;

@@ -1,0 +1,34 @@
+{
+  "collect.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "collect.stdout": {
+    "bytes": 228,
+    "sha256": "a7e1d9055d01571ce0d15043c8dc4c9720b1d9fa4b1ab934b017aef6a4b958c8"
+  },
+  "package-verification.json": {
+    "bytes": 8826,
+    "sha256": "962dfdaa489e651acdc48ffc9064db1c6b98804314aa5414a3b27bc191aefa90"
+  },
+  "package-verification.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "package-verification.stdout": {
+    "bytes": 334,
+    "sha256": "2efca9e81f16932cca3410b8945ce3232050fdb0ee7afcdfc6e456d5be59fe45"
+  },
+  "publication.json": {
+    "bytes": 1282,
+    "sha256": "5af87876d3f2979167d148942f800ffff5d9b41359e93dfe856bba8909f7c98d"
+  },
+  "publish-verification.py.txt": {
+    "bytes": 2738,
+    "sha256": "c81241bea7919328defdc2c9791623733a04d6c3e8556e4f3f5688ed0b760af4"
+  },
+  "verify-point-package.py": {
+    "bytes": 23187,
+    "sha256": "097b6028028cf6530b6db28513fd952c6f05518c358806a584068c1b209e07f1"
+  }
+}

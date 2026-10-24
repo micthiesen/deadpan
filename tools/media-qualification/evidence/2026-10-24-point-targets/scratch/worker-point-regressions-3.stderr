@@ -1,0 +1,4 @@
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.98s
+     Running unittests src/lib.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_models-8e2702687f03c533)

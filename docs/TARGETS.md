@@ -1,6 +1,6 @@
 # Attention targets
 
-Specification §4 (Attention · Target), §5.4 and §11.3. A target is a region of
+Specification §4 (Attention · Target), §5.4 and §11.3. A target is a point or region of
 the Original followed over source time. It is evaluated in source time, so it
 follows its subject through any retiming, repetition or freeze of the pictures
 that show it. Targets name no person.
@@ -8,9 +8,13 @@ that show it. Targets name no person.
 ## Model (`deadpan_core::AttentionTarget`)
 
 - `asset` and half-open source `span` inside that asset's video.
-- `region`: the initially selected rectangle by center and size, in millionths
+- `region`: the initially selected `TargetGeometry`, either a rectangle by
+  center and size or a point by center alone, in millionths
   of the displayed, uncropped picture (`(0,0)` top-left, `(1,1)` bottom-right),
-  the same normalized source coordinates framing centers use.
+  the same normalized source coordinates framing centers use. Rectangle JSON
+  remains `{"center":[x,y],"size":[w,h]}`; point JSON is `{"center":[x,y]}`.
+  Points have no implied area. A target's initial geometry, samples and
+  corrections must all have the same kind.
 - `samples`: tracked pictures, strictly ordered source ticks inside the span,
   each with region, confidence (thousandths) and `TrackState`
   (`Tracked`, `Interpolated`, `Lost`). A lost sample holds the last confident
@@ -41,7 +45,8 @@ that show it. Targets name no person.
 Between two consecutive samples in the same moving state (both `Tracked` or both
 `Interpolated`) with no correction after the first up to the second,
 `region_at` interpolates linearly in exact source time, rounding each center and
-size component half to even to a millionth (sizes at least one). Nothing
+size component half to even to a millionth (sizes at least one); points
+interpolate only their centers. Nothing
 interpolates across a `Lost` sample, a change of state, a correction or from the
 initial region; there the earlier entry holds. Sparse or strided paths therefore
 move smoothly instead of stepping. Where the exact interpolation overflows (an
@@ -96,11 +101,13 @@ Camera picks, draws, follows and corrects targets ([framing](FRAMING.md#native-i
   reach the other pages. The viewer draws saved targets at `region_at` of the
   picture's exact source time with its state (`drawn`, `corrected`, `tracked`,
   `interpolated`, `lost · holding`).
-- `n` draws a new rectangle with the keyboard (Tab: center, width, height;
-  arrows or `h/j/k/l`, Shift for 5%, counts) and Enter saves it as one undoable
+- `n` opens a new target with the keyboard; `n` in that editor switches
+  rectangle / point. Rectangles have center, width and height; points have
+  only center, and Tab stays there. Both use
+  arrows or `h/j/k/l`, Shift for 5%, counts, and Enter saves one undoable
   `SetTarget` with a fresh `target-N` id and `Target N` label, no samples and no
   provenance. Its span starts at the displayed picture's indexed PTS, where the
-  rectangle was selected, and ends at the next stored shot boundary of the
+  target was selected, and ends at the next stored shot boundary of the
   Original, or at the end of the measured video without a shot analysis. This
   matches tracking, which starts from the selected picture and stops at the
   next cut; pictures earlier in the same shot are outside the target and a
@@ -121,10 +128,15 @@ Camera picks, draws, follows and corrects targets ([framing](FRAMING.md#native-i
   can always be named by its label. `:target-delete TARGET` deletes it as one
   undoable `DeleteTarget`, or refuses and names every beat whose framing or
   escalating zoom still follows it (`a_target_in_use_refuses_deletion…`).
-- `t` follows the picked target; `c` corrects it at this picture; `T` tracks it.
-  A correction of an untracked target replaces the initial rectangle at the
-  span start or adds a manual correction at that picture. A correction of a
-  tracked target re-tracks only the correction's range
+- `t` follows the picked target; `c` corrects it at this picture; `T` tracks
+  rectangles. Corrections keep the saved geometry kind. A point correction
+  replaces the initial point at the span start or adds a manual correction
+  at a later picture, invalidating samples only until the next correction
+  or span end. It never launches tracking. Tracking a point refuses before
+  work or history changes, because a point has no tracking rectangle.
+  An untracked rectangle can be corrected at its span start; later corrections
+  require tracking first. A correction of a tracked rectangle re-tracks only
+  the correction's range
   ([tracking](TRACKING.md#in-the-app)).
 
 Saves are ordinary revisions with no node and no picture time: the cursor,
@@ -149,5 +161,10 @@ only that face as a target, keeps Camera open and centers its draft; Enter
 commits framing separately. Escape retains the explicitly accepted target
 while restoring entry framing. Detection alone never edits.
 
-Point targets, pointer rectangle dragging, general
+Points and rectangles share the saved picker, Follow, creep, rename, delete,
+copy and history paths. The viewer draws points with a cross and center
+marker. Region-based AI conditioning reports `point_target` unavailable for
+points, retaining their identity without inventing a subject rectangle.
+
+Pointer rectangle dragging, general
 (non-face) region proposals and quality evidence on real people remain open.

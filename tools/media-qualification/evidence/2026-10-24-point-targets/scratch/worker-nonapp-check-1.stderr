@@ -1,0 +1,118 @@
+    Checking once_cell v1.21.4
+    Checking serde_core v1.0.229
+    Checking smallvec v1.16.1
+    Checking dispatch2 v0.3.1
+    Checking thiserror v2.0.20
+    Checking bytemuck v1.25.2
+    Checking log v0.4.34
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking zerocopy v0.8.57
+    Checking raw-window-handle v0.6.2
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking naga-types v30.0.1
+    Checking deadpan-dsp v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-dsp)
+    Checking tempfile v3.27.0
+    Checking rustls v0.23.45
+    Checking ureq-proto v0.6.4
+    Checking rusqlite v0.40.2
+    Checking parking_lot_core v0.9.12
+    Checking image v0.25.10
+    Checking font-types v0.12.5
+    Checking objc2-core-foundation v0.3.2
+    Checking wgpu-types v30.0.1
+    Checking rusty-fork v0.3.1
+    Checking parking_lot v0.12.5
+    Checking read-fonts v0.41.0
+    Checking deadpan-sqlite-status v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-sqlite-status)
+    Checking serde_json v1.0.151
+    Checking serde v1.0.229
+    Checking uuid v1.26.1
+    Checking objc2-foundation v0.3.2
+    Checking objc2-core-graphics v0.3.2
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Checking deadpan-chaos v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-chaos)
+    Checking rustls-platform-verifier v0.7.1
+    Checking ureq v3.4.2
+    Checking half v2.7.1
+    Checking ppv-lite86 v0.2.21
+    Checking rand_chacha v0.9.0
+    Checking naga v30.0.1
+    Checking proptest v1.11.0
+    Checking deadpan-filesystem v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-filesystem)
+    Checking objc2-metal v0.3.2
+    Checking objc2-core-audio v0.3.2
+    Checking objc2-app-kit v0.3.2
+    Checking objc2-audio-toolbox v0.3.2
+    Checking skrifa v0.44.0
+    Checking coreaudio-rs v0.14.2
+    Checking cpal v0.18.2
+    Checking deadpan-output v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-output)
+    Checking objc2-quartz-core v0.3.2
+    Checking raw-window-metal v1.1.0
+    Checking wgpu-naga-bridge v30.0.1
+    Checking wgpu-hal v30.0.1
+    Checking wgpu-core-deps-apple v30.0.1
+    Checking wgpu-core v30.0.1
+    Checking wgpu v30.0.1
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+    Checking deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+    Checking deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+error[E0308]: mismatched types
+   --> crates/deadpan-analysis/src/tracking/target.rs:164:37
+    |
+164 |                 if previous != Some(sample.region) {
+    |                                ---- ^^^^^^^^^^^^^ expected `TargetRegion`, found `TargetGeometry`
+    |                                |
+    |                                arguments to this enum variant are incorrect
+    |
+help: the type constructed contains `TargetGeometry` due to the type of the argument passed
+   --> crates/deadpan-analysis/src/tracking/target.rs:164:32
+    |
+164 |                 if previous != Some(sample.region) {
+    |                                ^^^^^-------------^
+    |                                     |
+    |                                     this argument influences the type of `Some`
+note: tuple variant defined here
+   --> /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/core/src/option.rs:605:4
+
+error[E0308]: mismatched types
+   --> crates/deadpan-analysis/src/tracking/target.rs:166:37
+    |
+166 |                     previous = Some(sample.region);
+    |                                ---- ^^^^^^^^^^^^^ expected `TargetRegion`, found `TargetGeometry`
+    |                                |
+    |                                arguments to this enum variant are incorrect
+    |
+help: the type constructed contains `TargetGeometry` due to the type of the argument passed
+   --> crates/deadpan-analysis/src/tracking/target.rs:166:32
+    |
+166 |                     previous = Some(sample.region);
+    |                                ^^^^^-------------^
+    |                                     |
+    |                                     this argument influences the type of `Some`
+note: tuple variant defined here
+   --> /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/core/src/option.rs:605:4
+
+error[E0308]: mismatched types
+   --> crates/deadpan-analysis/src/tracking/tests.rs:633:5
+    |
+632 |   ) -> (deadpan_core::TargetRegion, deadpan_core::TargetSource) {
+    |        -------------------------------------------------------- expected `(TargetRegion, TargetSource)` because of return type
+633 | /     target
+634 | |         .region_at(deadpan_core::SourcePoint {
+635 | |             ticks: deadpan_core::ExactRatio::integer(pts),
+636 | |             time_base: time_base(),
+637 | |         })
+638 | |         .unwrap()
+    | |_________________^ expected `(TargetRegion, TargetSource)`, found `(TargetGeometry, TargetSource)`
+    |
+    = note: expected tuple `(TargetRegion, TargetSource)`
+               found tuple `(TargetGeometry, TargetSource)`
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `deadpan-analysis` (lib) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-analysis` (lib test) due to 3 previous errors

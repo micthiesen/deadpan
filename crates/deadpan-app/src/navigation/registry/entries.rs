@@ -1908,11 +1908,11 @@ pub static SPECS: &[Spec] = &[
         contexts: C::CAMERA,
         replay: Replay::NotRecorded,
         headless: eq("command set_target; track-correct", CAM),
-        help: "Draw a new target rectangle, or correct the chosen target at this picture. Tab moves between center, width and height; arrows or h/j/k/l change 1%, Shift 5%, counts repeat; Enter saves one undoable edit; Escape returns to framing.",
+        help: "Draw a new target, or correct the chosen target at this picture. While drawing, n switches rectangle / point; corrections keep their kind. Tab moves between center, width and height for rectangles, or stays on center for points; arrows or h/j/k/l change 1%, Shift 5%, counts repeat. Enter saves one undoable edit; Escape returns to framing.",
     },
     Spec {
         id: "camera.fields",
-        name: "Rectangle fields",
+        name: "Target fields",
         section: Section::Camera,
         keys: &[
             mode(Mode::Camera, "Tab", &[chord(Key::Tab, PlainOrShift)]),
@@ -1931,7 +1931,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::CAMERA,
         replay: Replay::Ignored,
         headless: gui("none needed", CAM),
-        help: "While drawing or correcting a target, Tab / Shift-Tab choose center, width or height and arrows change it.",
+        help: "While drawing or correcting a target, Tab / Shift-Tab choose center, width or height for a rectangle; a point has only center. Arrows change the chosen field.",
     },
     Spec {
         id: "camera.reset",

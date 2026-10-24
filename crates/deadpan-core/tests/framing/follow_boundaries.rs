@@ -54,7 +54,8 @@ fn targeted() -> ProjectDocument {
             region: TargetRegion {
                 center: [200_000, 500_000],
                 size: [100_000, 100_000],
-            },
+            }
+            .into(),
             samples: Vec::new(),
             corrections: Vec::new(),
             provenance: None,

@@ -571,7 +571,8 @@ fn selected_region_uses_direction_anchor_and_preserves_captured_controls() {
         region: TargetRegion {
             center: [500_000, 500_000],
             size: [500_000, 500_000],
-        },
+        }
+        .into(),
         samples: Vec::new(),
         corrections: Vec::new(),
         provenance: None,

@@ -448,7 +448,8 @@ fn save_generation_target(fixture: &mut Fixture, name: &str, center: [u32; 2]) {
         region: TargetRegion {
             center,
             size: [200_000, 200_000],
-        },
+        }
+        .into(),
         samples: vec![],
         corrections: vec![],
         provenance: None,

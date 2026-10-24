@@ -635,6 +635,7 @@ fn core_region_at(
             ticks: deadpan_core::ExactRatio::integer(pts),
             time_base: time_base(),
         })
+        .map(|(geometry, source)| (*geometry.as_region().unwrap(), source))
         .unwrap()
 }
 
@@ -876,4 +877,51 @@ fn adversarial_tracker_artifacts() {
         },
     );
     report.assert_clean();
+}
+
+#[test]
+fn rectangle_retracking_refuses_point_target_without_mutation() {
+    let seed = moving(0);
+    let all = pictures(3);
+    let seen = all
+        .iter()
+        .map(|at| seen(*at, seed, 0.9))
+        .collect::<Vec<_>>();
+    let path = TrackedPath::track(
+        TrackPolicy::default(),
+        1.0,
+        &all,
+        30,
+        TrackStop::RangeEnd,
+        Keyframe {
+            pts: 0,
+            region: seed,
+        },
+        &seen,
+    )
+    .unwrap();
+    let (mut target, _) = path
+        .to_target(
+            "Point".into(),
+            deadpan_core::AssetId::new("clip").unwrap(),
+            time_base(),
+            None,
+            "test",
+            4096,
+        )
+        .unwrap();
+    target.region = deadpan_core::TargetPoint {
+        center: target.region.center(),
+    }
+    .into();
+    for sample in &mut target.samples {
+        sample.region = deadpan_core::TargetPoint {
+            center: sample.region.center(),
+        }
+        .into();
+    }
+    let before = target.clone();
+    let error = retrack_target(&target, &path, "unused", 4096).unwrap_err();
+    assert!(error.to_string().contains("point targets"));
+    assert_eq!(target, before);
 }

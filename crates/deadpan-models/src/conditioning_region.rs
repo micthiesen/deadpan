@@ -42,6 +42,7 @@ pub enum CapturedRegionBoundary {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RegionCaptureUnavailable {
+    PointTarget,
     NotOriginal,
     DifferentAsset,
     OutsideTargetSpan,
@@ -56,6 +57,7 @@ pub enum RegionCaptureUnavailable {
 impl RegionCaptureUnavailable {
     pub(super) fn description(self) -> &'static str {
         match self {
+            Self::PointTarget => "a point target has no subject region",
             Self::NotOriginal => "boundary is not an Original picture",
             Self::DifferentAsset => "target belongs to a different Original",
             Self::OutsideTargetSpan => "picture is outside the target's supported source range",
@@ -261,20 +263,23 @@ fn capture_boundary(
         }
         _ => {}
     }
-    if !inside(value.region) {
+    let Some(region) = value.region.as_region().copied() else {
+        return unavailable(Reason::PointTarget);
+    };
+    if !inside(region) {
         return unavailable(Reason::OutsideSource);
     }
     let Some(content) = content else {
         return unavailable(Reason::MissingContent);
     };
-    if map_region(value.region, content, native).is_err() {
+    if map_region(region, content, native).is_err() {
         return unavailable(Reason::TooSmall);
     }
     CapturedRegionBoundary::Available {
         asset: asset.clone(),
         point,
         source: value.source,
-        region: value.region,
+        region,
         confidence: value.confidence,
     }
 }

@@ -1067,6 +1067,12 @@ pub fn correct_target(
         .get(id)
         .cloned()
         .ok_or_else(|| TrackingError::Unavailable(format!("no target {}", id.as_str())))?;
+    if target.region.is_point() {
+        return Err(TrackingError::Request(
+            "point targets cannot be rectangle-tracked or re-tracked".into(),
+        )
+        .into());
+    }
     let (_, end) = target.correction_range(at).ok_or_else(|| {
         TrackingError::Request("the correction lies outside the target's span".into())
     })?;
@@ -1200,5 +1206,8 @@ pub fn target_rect_at(target: &AttentionTarget, at: i64) -> Option<NormalizedRec
         ticks: deadpan_core::ExactRatio::integer(at),
         time_base: target.span.start().time_base,
     })?;
-    rect_from_target(&region)
+    rect_from_target(region.as_region()?)
 }
+
+#[cfg(test)]
+mod point_tests;

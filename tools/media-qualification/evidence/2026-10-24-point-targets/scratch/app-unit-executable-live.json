@@ -1,0 +1,7 @@
+{
+  "observed_at": "2026-10-24T07:33:41.076195+00:00",
+  "path": "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_app-c75853e20f9b0baa",
+  "bytes": 245284432,
+  "sha256": "d85c1892acf1da5acab1783f4c654bce3d6251b167baf370f78959f2fa5f8b0d",
+  "note": "Binary reported by Cargo and observed while its full unit process was running; no archived-source comparison or shared-name alternate build."
+}

@@ -145,7 +145,8 @@ fn semantic_scoped_zoom_keep_preserves_live_follow_and_retained_clock_after_isol
                 region: TargetRegion {
                     center: [250_000, 500_000],
                     size: [100_000, 100_000],
-                },
+                }
+                .into(),
                 samples: vec![],
                 corrections: vec![],
                 provenance: None,

@@ -13,6 +13,9 @@
 
 use serde::{Deserialize, Serialize};
 
+mod geometry;
+pub use geometry::{TargetGeometry, TargetPoint};
+
 use crate::{
     AssetId, DocumentError, DocumentErrorCode, ExactRatio, SourcePoint, SourceSpan,
     SourceTimestamp, TargetId,
@@ -164,7 +167,7 @@ pub enum TrackState {
 pub struct TargetSample {
     /// Source ticks in the target span's time base.
     pub at: i64,
-    pub region: TargetRegion,
+    pub region: TargetGeometry,
     /// Tracker confidence in thousandths.
     pub confidence: u16,
     pub state: TrackState,
@@ -176,7 +179,7 @@ pub struct TargetSample {
 #[serde(deny_unknown_fields)]
 pub struct TargetCorrection {
     pub at: i64,
-    pub region: TargetRegion,
+    pub region: TargetGeometry,
 }
 
 /// The versioned tracking policy that produced a target's samples.
@@ -239,7 +242,7 @@ pub struct AttentionTarget {
     /// The half-open source range the target covers.
     pub span: SourceSpan,
     /// The region selected when the target was created, at the span start.
-    pub region: TargetRegion,
+    pub region: TargetGeometry,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub samples: Vec<TargetSample>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -269,12 +272,62 @@ pub enum TargetSource {
 /// Authored regions have no detector confidence; lost samples remain explicit.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct EvaluatedTargetRegion {
-    pub region: TargetRegion,
+    pub region: TargetGeometry,
     pub source: TargetSource,
     pub confidence: Option<u16>,
 }
 
 impl AttentionTarget {
+    /// Correct a point without starting a rectangle tracker. Only samples in
+    /// this correction's half-open range are invalidated; the input is immutable.
+    pub fn with_point_correction(
+        &self,
+        at: i64,
+        point: TargetPoint,
+    ) -> Result<Self, DocumentError> {
+        self.validate_shape()?;
+        point.validate()?;
+        if !self.region.is_point() {
+            return Err(invalid("a point correction requires a point target"));
+        }
+        let (start, end) = self
+            .correction_range(at)
+            .ok_or_else(|| invalid("a point correction lies inside the target span"))?;
+        let index = self
+            .corrections
+            .binary_search_by_key(&at, |correction| correction.at);
+        if at != self.span.start().ticks
+            && index.is_err()
+            && self.corrections.len() == MAX_TARGET_CORRECTIONS
+        {
+            return Err(DocumentError::new(
+                DocumentErrorCode::LimitExceeded,
+                "a target holds at most 256 corrections",
+            ));
+        }
+        let mut result = self.clone();
+        result
+            .samples
+            .retain(|sample| sample.at < start.ticks || sample.at >= end.ticks);
+        if at == self.span.start().ticks {
+            result.region = point.into();
+            if let Ok(index) = index {
+                result.corrections.remove(index);
+            }
+        } else {
+            let correction = TargetCorrection {
+                at,
+                region: point.into(),
+            };
+            match index {
+                Ok(index) => result.corrections[index] = correction,
+                Err(index) => result.corrections.insert(index, correction),
+            }
+        }
+        result.validate_shape()?;
+        Ok(result)
+    }
+
     /// Validate the retained record without a document's asset catalog. This
     /// checks labels, regions, sample ordering/confidence and provenance only;
     /// document admission additionally proves the registered video and range.
@@ -344,6 +397,9 @@ impl AttentionTarget {
         let mut previous = None;
         for sample in &self.samples {
             sample.region.validate()?;
+            if sample.region.is_point() != self.region.is_point() {
+                return Err(invalid("a target's samples retain its geometry kind"));
+            }
             if !within(sample.at)
                 || previous.is_some_and(|previous| previous >= sample.at)
                 || sample.confidence > 1000
@@ -357,6 +413,9 @@ impl AttentionTarget {
         let mut previous = None;
         for correction in &self.corrections {
             correction.region.validate()?;
+            if correction.region.is_point() != self.region.is_point() {
+                return Err(invalid("a target's corrections retain its geometry kind"));
+            }
             if !within(correction.at) || previous.is_some_and(|previous| previous >= correction.at)
             {
                 return Err(invalid(
@@ -385,7 +444,7 @@ impl AttentionTarget {
     /// unavailable and the result is `None`, as outside the span: a caller
     /// such as `Follow` framing then uses its fallback rather than a region the
     /// target does not describe.
-    pub fn region_at(&self, point: SourcePoint) -> Option<(TargetRegion, TargetSource)> {
+    pub fn region_at(&self, point: SourcePoint) -> Option<(TargetGeometry, TargetSource)> {
         self.evaluated_region_at(point)
             .map(|value| (value.region, value.source))
     }
@@ -437,7 +496,7 @@ impl AttentionTarget {
     /// The region from sample `index` (the last at or before `point`),
     /// interpolated towards the next sample where both move together, or
     /// `None` when that interpolation overflows.
-    fn sample_region(&self, index: usize, point: SourcePoint) -> Option<(TargetRegion, u16)> {
+    fn sample_region(&self, index: usize, point: SourcePoint) -> Option<(TargetGeometry, u16)> {
         let first = &self.samples[index];
         let Some(next) = self.samples.get(index + 1) else {
             return Some((first.region, first.confidence));
@@ -473,19 +532,23 @@ impl AttentionTarget {
                 .ok()?;
             u32::try_from(value.clamp(i128::from(minimum), i128::from(TARGET_UNITS))).ok()
         };
-        Some((
-            TargetRegion {
-                center: [
-                    mix(first.region.center[0], next.region.center[0], 0)?,
-                    mix(first.region.center[1], next.region.center[1], 0)?,
-                ],
+        let center = [
+            mix(first.region.center()[0], next.region.center()[0], 0)?,
+            mix(first.region.center()[1], next.region.center()[1], 0)?,
+        ];
+        let region = match (first.region, next.region) {
+            (TargetGeometry::Point(_), TargetGeometry::Point(_)) => TargetPoint { center }.into(),
+            (TargetGeometry::Region(first), TargetGeometry::Region(next)) => TargetRegion {
+                center,
                 size: [
-                    mix(first.region.size[0], next.region.size[0], 1)?,
-                    mix(first.region.size[1], next.region.size[1], 1)?,
+                    mix(first.size[0], next.size[0], 1)?,
+                    mix(first.size[1], next.size[1], 1)?,
                 ],
-            },
-            first.confidence.min(next.confidence),
-        ))
+            }
+            .into(),
+            _ => return None,
+        };
+        Some((region, first.confidence.min(next.confidence)))
     }
 
     /// The tracked range a correction at `at` invalidates: from it to the next

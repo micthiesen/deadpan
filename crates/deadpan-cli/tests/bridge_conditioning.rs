@@ -412,7 +412,8 @@ fn saved_target_capture_is_bound_to_the_revision_and_retained_decoded_pictures()
         region: TargetRegion {
             center: [500_000, 500_000],
             size: [200_000, 200_000],
-        },
+        }
+        .into(),
         samples: vec![],
         corrections: vec![],
         provenance: None,

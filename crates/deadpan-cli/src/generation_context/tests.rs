@@ -187,7 +187,8 @@ fn a_selected_target_correction_or_removal_stales_only_requests_that_captured_it
         region: TargetRegion {
             center: [400_000, 500_000],
             size: [200_000, 200_000],
-        },
+        }
+        .into(),
         samples: vec![],
         corrections: vec![],
         provenance: None,
@@ -241,7 +242,8 @@ fn a_selected_target_correction_or_removal_stales_only_requests_that_captured_it
         region: TargetRegion {
             center: [600_000, 500_000],
             size: [200_000, 200_000],
-        },
+        }
+        .into(),
     });
     let corrected = with_target(&origin, "subject", corrected_target);
     assert_eq!(

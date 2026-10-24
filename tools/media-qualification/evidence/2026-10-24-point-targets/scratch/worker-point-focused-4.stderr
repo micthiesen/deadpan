@@ -1,0 +1,3 @@
+   Compiling deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.59s
+     Running unittests src/lib.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_analysis-33aceeb6fbc0aa36)

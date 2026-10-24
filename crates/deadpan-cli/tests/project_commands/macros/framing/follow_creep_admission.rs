@@ -21,7 +21,8 @@ fn explicit_follow_creep_from_rebases_both_scales_and_invalid_endpoints_never_pu
                 region: TargetRegion {
                     center: [400_000, 500_000],
                     size: [100_000; 2],
-                },
+                }
+                .into(),
                 samples: vec![],
                 corrections: vec![],
                 provenance: None,

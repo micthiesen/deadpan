@@ -235,7 +235,7 @@ def validate_context_region(context):
             or len(label.encode("utf-8")) > 128 or not isinstance(digest, str)
             or len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest)):
         raise ValueError("invalid captured region identity")
-    reasons = {"not_original", "different_asset", "outside_target_span", "lost_track",
+    reasons = {"point_target", "not_original", "different_asset", "outside_target_span", "lost_track",
                "interpolated_track", "low_confidence", "outside_source", "missing_content", "too_small"}
     for side in ("left", "right"):
         seed = region[side]

@@ -4,6 +4,51 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-24
 
+[First-class point targets](../qualification/point-targets-2026-10-24.md) are
+implemented and locally verified. Geometry is center-only Point or existing
+center/size Region, uniformly typed across initial geometry, samples and
+corrections. Exact interpolation, confidence/Lost semantics, nested Follow,
+copy and history stay shared. Manual point correction invalidates only its
+half-open range. Camera `n` switches kind while creating, `c` locks saved kind,
+Tab exposes only Center for a point, and target/framing saves stay separate.
+Direct Follow after saving shows the live point with the original fallback.
+Rectangle tracking refuses points before work. Area-based AI guidance retains
+identity with explicit `point_target` unavailable coverage; shared Rust/Python
+golden bytes and actual parser regressions prevent fabricated rectangles.
+
+Core 58 / SQLite 87 remain under the additive development vocabulary; old
+rectangle bytes are identical, old readers refuse points, no migration.
+Independent Core/Plan, App, test and Python reviews have no remaining findings.
+Image review fixed stale rectangle wording and rejected-switch feedback.
+All 2,041 Core/Plan, 1,304 App, 533 CLI and 186 Models tests pass, with the
+documented opt-in ignores. The golden and 62 Python tests pass. Strict checks,
+formatting and release build/source check pass. Final points/targets/faces/zoom
+replays pass 34/41/66/213 checks with matching live Kestrel audits. They retain
+layout/screenshot warnings and physical-input skips; no performance claim.
+
+Final App SHA `a87afae7…`, CLI `1c748464…`; 52 source paths and five sibling
+executable identities are frozen. The actual saved point edit exports 120
+pictures and full `[0,192192)` audio with zero offset/gaps. Movie SHA
+`8f179d12…`; portable document and ten revision/five history rows match.
+Independent raw audit receipt `dde49811…` has no findings. Evidence, all
+terminal receipts, first/final source snapshots and reviewed images are in
+`/tmp/deadpan-point-targets-2026-10-24`. Preserve foreign `fuzz/Cargo.lock` and
+`.claude/`. Do not restart passing lanes without a relevant change.
+
+The immutable [point Primary](../../tools/media-qualification/evidence/2026-10-24-point-targets)
+has 254 payloads, inventory `1c1174e0…`. Its archive ledger explicitly omits
+only the portable package's empty WAL and rebuildable 32,768-byte SHM; no
+authored history or media is omitted.
+First package verification passes with Primary unchanged, receipt `962dfdaa…`.
+The [supplement](../../tools/media-qualification/evidence/2026-10-24-point-targets-verification)
+has eight payloads, inventory `26d90b35…`; full readback passes.
+
+Continue general non-face region proposals, broader following-creep authoring
+and the remaining full normative scope. Coverage remains 89%, eight Complete
+and sixteen Partial. The full goal stays active.
+
+## Earlier Camera face-picker continuation, 2026-10-24
+
 The [Camera face picker](../qualification/camera-face-picker-2026-10-24.md)
 now reuses background face detection on the exact installed Original picture.
 Proposals append after saved/fixed choices with stable positions; Tab and
@@ -34,10 +79,10 @@ has 138 payloads, inventory `eff0d0c2…`. Its first package verification passes
 with Primary unchanged. The [supplement](../../tools/media-qualification/evidence/2026-10-24-camera-face-picker-verification)
 has nine payloads, inventory `09ed95b1…`; receipt `fc671eac…`.
 
-Continue point/target controls and following-creep authoring beyond whole
-ordinary Sources. Point representation is still rectangle-only; a read-only
-consumer/design map is in `point-target-map.md` in that scratch directory.
-Coverage remains 89%, eight Complete/sixteen Partial; the full goal is active.
+At that checkpoint, point/target controls and following-creep authoring beyond
+whole ordinary Sources remained open. The point representation was still
+rectangle-only; its read-only consumer/design map is in `point-target-map.md`
+in that scratch directory. The current continuation above supersedes it.
 
 ## Earlier target-following creep continuation, 2026-10-24
 

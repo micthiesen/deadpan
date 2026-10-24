@@ -338,7 +338,8 @@ fn semantic_framing_uses_live_follow_pose_at_retimed_source_clock_instead_of_fal
                 region: TargetRegion {
                     center: [250_000, 500_000],
                     size: [100_000, 100_000],
-                },
+                }
+                .into(),
                 samples: vec![],
                 corrections: vec![],
                 provenance: None,

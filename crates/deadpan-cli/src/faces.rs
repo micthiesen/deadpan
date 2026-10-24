@@ -422,7 +422,7 @@ pub fn face_target(
         label,
         asset,
         span,
-        region: target_region(&face.region),
+        region: target_region(&face.region).into(),
         samples: Vec::new(),
         corrections: Vec::new(),
         provenance: None,
@@ -560,8 +560,8 @@ mod tests {
         assert_eq!(target.label, "Face 2");
         assert_eq!(target.span.start().ticks, 40);
         assert_eq!(target.span.end().ticks, 1_000);
-        assert_eq!(target.region.center, [550_000, 300_000]);
-        assert_eq!(target.region.size, [100_000, 200_000]);
+        assert_eq!(target.region.center(), [550_000, 300_000]);
+        assert_eq!(target.region.as_region().unwrap().size, [100_000, 200_000]);
         assert!(target.samples.is_empty() && target.corrections.is_empty());
         assert!(target.provenance.is_none());
         assert!(

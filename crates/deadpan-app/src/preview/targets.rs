@@ -5,7 +5,9 @@
 
 use std::time::Duration;
 
-use deadpan_core::{AttentionTarget, TargetId, TargetRegion, TargetSource, TrackState};
+use deadpan_core::{
+    AttentionTarget, TargetGeometry, TargetId, TargetRegion, TargetSource, TrackState,
+};
 
 use super::*;
 use crate::project::targets::{Job, Operation, Outcome, Saved, TrackMode, Update};
@@ -70,7 +72,7 @@ impl State {
 pub(super) struct Shown {
     pub id: TargetId,
     pub label: String,
-    pub region: TargetRegion,
+    pub region: TargetGeometry,
     pub source: TargetSource,
 }
 
@@ -97,6 +99,13 @@ pub(super) fn source_color(source: TargetSource) -> egui::Color32 {
 /// One line about a target's whole span and tracking.
 pub(super) fn summary(target: &AttentionTarget) -> String {
     if target.samples.is_empty() {
+        if target.region.is_point() {
+            return if target.corrections.is_empty() {
+                "Point · fixed".into()
+            } else {
+                format!("Point · {}", corrections(target.corrections.len()))
+            };
+        }
         if target.corrections.is_empty() {
             "Drawn · not tracked".into()
         } else {
@@ -108,7 +117,15 @@ pub(super) fn summary(target: &AttentionTarget) -> String {
             .iter()
             .filter(|sample| sample.state == TrackState::Lost)
             .count();
-        let mut text = format!("Tracked · {} positions", target.samples.len());
+        let mut text = format!(
+            "{} · {} positions",
+            if target.region.is_point() {
+                "Point path"
+            } else {
+                "Tracked"
+            },
+            target.samples.len()
+        );
         if lost > 0 {
             text.push_str(&format!(" · {lost} lost"));
         }

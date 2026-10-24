@@ -15,8 +15,8 @@ use crate::navigation::camera::{
 use crate::project::targets::{Operation, TrackMode};
 use deadpan_core::{
     AttentionTarget, ExactRatio, Framing, FramingClock, FramingCurve, FramingPose, FramingValue,
-    InstancePath, SourceSpan, SourceTimestamp, TARGET_UNITS, TargetCorrection, TargetId,
-    TargetRegion, TargetSource,
+    InstancePath, SourceSpan, SourceTimestamp, TARGET_UNITS, TargetCorrection, TargetGeometry,
+    TargetId, TargetRegion, TargetSource,
 };
 use deadpan_render::FramingLayer;
 
@@ -290,7 +290,7 @@ mod semantic_zoom_tests {
 pub(super) struct PickerTarget {
     number: Option<u8>,
     label: String,
-    saved: Option<(TargetId, TargetRegion, TargetSource)>,
+    saved: Option<(TargetId, TargetGeometry, TargetSource)>,
     /// The fixed upright source point, for the center and corners.
     point: Option<[f64; 2]>,
     /// Upright source point projected into the selected operation's input.
@@ -618,7 +618,7 @@ fn layer_poses(
 fn corrected(target: &AttentionTarget, at: i64, region: TargetRegion) -> AttentionTarget {
     let mut corrected = target.clone();
     if at == target.span.start().ticks {
-        corrected.region = region;
+        corrected.region = region.into();
     } else {
         let index = corrected
             .corrections
@@ -628,11 +628,15 @@ fn corrected(target: &AttentionTarget, at: i64, region: TargetRegion) -> Attenti
             .get(index)
             .is_some_and(|correction| correction.at == at)
         {
-            corrected.corrections[index].region = region;
+            corrected.corrections[index].region = region.into();
         } else {
-            corrected
-                .corrections
-                .insert(index, TargetCorrection { at, region });
+            corrected.corrections.insert(
+                index,
+                TargetCorrection {
+                    at,
+                    region: region.into(),
+                },
+            );
         }
     }
     corrected
@@ -714,7 +718,7 @@ impl CameraSession {
         for shown in app.targets_at_picture() {
             let center = shown
                 .region
-                .center
+                .center()
                 .map(|value| f64::from(value) / f64::from(TARGET_UNITS));
             // One degenerate projection must not block Camera for the picture.
             picker.push(PickerTarget {
@@ -881,8 +885,8 @@ impl CameraSession {
             "pose": format!("{:?}", self.draft.pose()),
             "draft_pose": self.draft.pose(),
             "region": self.draft.region().map(|region| {
-                let region = region.region();
-                serde_json::json!({"center": region.center, "size": region.size})
+                let geometry = region.geometry();
+                serde_json::json!({"center": geometry.center(), "size": geometry.as_region().map(|region| region.size), "point": geometry.is_point(), "kind_locked": region.kind_locked()})
             }),
             "field": self.draft.region().map(|region| region.field().label()),
             "follow": self.follow.as_ref().map(|follow| follow.target.as_str().to_owned()),
@@ -2113,7 +2117,7 @@ impl DeadpanApp {
             CameraEffect::RequestRegion { correction } => self.camera_open_region(correction),
             CameraEffect::ToggleFollow => self.camera_toggle_follow(),
             CameraEffect::Track => self.camera_track(),
-            CameraEffect::RegionChanged(_) => {}
+            CameraEffect::RegionChanged(_) => self.error = None,
             CameraEffect::RegionClosed => {
                 if let Some(camera) = &mut self.camera {
                     camera.region_purpose = None;
@@ -2293,6 +2297,46 @@ impl DeadpanApp {
                 camera.follow = None;
                 return Err(error);
             }
+            // A newly drawn target can be selected without first moving the
+            // Camera to it. Keep the old pose as fallback, but show the actual
+            // target-owned center in the draft and its disabled center fields.
+            let resolved = (|| -> Result<FramingPose, String> {
+                let picture = self
+                    .presentation
+                    .picture()
+                    .ok_or("Wait for the Camera picture.")?;
+                let framing = camera.framing(pose, false)?;
+                layer_poses(
+                    &workspace.document,
+                    picture,
+                    camera.layer,
+                    framing.as_ref(),
+                    camera.local_position,
+                )?
+                .first()
+                .and_then(|(_, pose)| *pose)
+                .ok_or_else(|| "The followed target has no Camera pose.".into())
+            })();
+            let shown = match resolved {
+                Ok(shown) => shown,
+                Err(error) => {
+                    camera.follow = None;
+                    return Err(error);
+                }
+            };
+            let centered = FramingPose {
+                center_x: shown.center_x,
+                center_y: shown.center_y,
+                ..pose
+            };
+            if let CameraEffect::Rejected(error) = camera.draft.set_pose(centered) {
+                camera.follow = None;
+                return Err(error.to_string());
+            }
+            camera.follow.as_mut().expect("follow just created").center =
+                [shown.center_x, shown.center_y];
+            camera.fields.sync(camera.draft.pose());
+            camera.field_error = None;
             let mut message = format!(
                 "Following {} at {:.2}×. +/- change the scale; Enter saves; t stops following.",
                 target.label,
@@ -2321,10 +2365,10 @@ impl DeadpanApp {
         }
     }
 
-    /// Start a rectangle: a new target centered on what the viewer shows, or
-    /// the acting target's rectangle at this picture for a correction.
+    /// Start a new target centered on the viewer, or the acting target's
+    /// geometry at this picture for a correction.
     fn camera_open_region(&mut self, correction: bool) {
-        let result = (|| -> Result<(TargetRegion, RegionPurpose), String> {
+        let result = (|| -> Result<(TargetGeometry, RegionPurpose), String> {
             let camera = self.camera.as_ref().ok_or("Camera is closed.")?;
             let (_, at) = camera.picture.clone().ok_or(
                 "Targets are drawn on Original pictures; this picture shows no Original moment.",
@@ -2374,7 +2418,8 @@ impl DeadpanApp {
                 TargetRegion {
                     center: [units(center[0]), units(center[1])],
                     size: [units(size[0]).max(1), units(size[1]).max(1)],
-                },
+                }
+                .into(),
                 RegionPurpose::New,
             ))
         })();
@@ -2383,7 +2428,10 @@ impl DeadpanApp {
                 let Some(camera) = &mut self.camera else {
                     return;
                 };
-                let effect = camera.draft.open_region(region);
+                let effect = match (region, correction) {
+                    (TargetGeometry::Region(region), false) => camera.draft.open_region(region),
+                    (geometry, locked) => camera.draft.open_geometry(geometry, locked),
+                };
                 if let CameraEffect::Rejected(error) = effect {
                     self.error = Some(error.to_string());
                     return;
@@ -2396,9 +2444,9 @@ impl DeadpanApp {
         }
     }
 
-    /// Enter on a rectangle: save a new target or a correction. A correction
-    /// of a tracked target re-tracks only the range it governs.
-    fn camera_save_region(&mut self, region: TargetRegion) {
+    /// Save a new target or correction. Point corrections are manual;
+    /// tracked rectangle corrections re-track only their governed range.
+    fn camera_save_region(&mut self, region: TargetGeometry) {
         let result = (|| -> Result<(), String> {
             let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
             let camera = self.camera.as_ref().ok_or("Camera is closed.")?;
@@ -2408,11 +2456,7 @@ impl DeadpanApp {
                 .ok_or("This picture shows no Original moment.")?;
             let session = camera.session;
             let revision = camera.revision.clone();
-            match camera
-                .region_purpose
-                .clone()
-                .ok_or("No rectangle is open.")?
-            {
+            match camera.region_purpose.clone().ok_or("No target is open.")? {
                 RegionPurpose::New => {
                     let (id, label) = fresh_target(&workspace.document)?;
                     let target = AttentionTarget {
@@ -2444,6 +2488,30 @@ impl DeadpanApp {
                         .targets()
                         .get(&id)
                         .ok_or("The target no longer exists.")?;
+                    if let TargetGeometry::Point(point) = region {
+                        let target = target
+                            .with_point_correction(at, point)
+                            .map_err(|error| error.to_string())?;
+                        let ticket = self
+                            .submit_target(Operation::Save {
+                                ticket: 0,
+                                session,
+                                revision,
+                                id,
+                                target: Box::new(target),
+                            })
+                            .ok_or_else(|| self.error.clone().unwrap_or_default())?;
+                        if let Some(camera) = &mut self.camera {
+                            camera.saving = Some(ticket);
+                        }
+                        return Ok(());
+                    }
+                    if target.region.is_point() {
+                        return Err("A point correction keeps point geometry. Create a new rectangle target to change kind.".into());
+                    }
+                    let region = *region
+                        .as_region()
+                        .ok_or("The correction has no rectangle.")?;
                     if target.samples.is_empty() {
                         // Nothing tracked to invalidate. Later pictures of an
                         // untracked target are corrected by tracking it first,
@@ -2649,6 +2717,26 @@ impl DeadpanApp {
                 .ok()?;
             Some(egui::Rect::from_min_max(to_screen(min), to_screen(max)))
         };
+        let source_point = |center: [u32; 2]| -> Option<egui::Pos2> {
+            let point = center.map(|value| f64::from(value) / f64::from(TARGET_UNITS));
+            geometry
+                .source_to_canvas(point)
+                .ok()
+                .flatten()
+                .map(to_screen)
+        };
+        let point_marker = |at: egui::Pos2, color, width| {
+            let stroke = egui::Stroke::new(width, color);
+            painter.circle_stroke(at, 5.0, stroke);
+            painter.line_segment(
+                [at - egui::vec2(9.0, 0.0), at + egui::vec2(9.0, 0.0)],
+                stroke,
+            );
+            painter.line_segment(
+                [at - egui::vec2(0.0, 9.0), at + egui::vec2(0.0, 9.0)],
+                stroke,
+            );
+        };
         let badge = |at: egui::Pos2, text: &str, fill: egui::Color32| {
             let font = egui::FontId::monospace(11.0);
             let galley = painter.layout_no_wrap(text.to_owned(), font, style::CANVAS);
@@ -2676,8 +2764,19 @@ impl DeadpanApp {
             if correcting == Some(&shown.id) {
                 continue;
             }
-            let Some(rect) = source_rect(&shown.region) else {
-                continue;
+            let (anchor, bounds) = match shown.region {
+                TargetGeometry::Region(region) => {
+                    let Some(rect) = source_rect(&region) else {
+                        continue;
+                    };
+                    (rect.left_top(), Some(rect))
+                }
+                TargetGeometry::Point(point) => {
+                    let Some(at) = source_point(point.center) else {
+                        continue;
+                    };
+                    (at, None)
+                }
             };
             let color = super::targets::source_color(shown.source);
             let selected = camera.acting_target() == Some(&shown.id);
@@ -2685,12 +2784,16 @@ impl DeadpanApp {
                 .follow
                 .as_ref()
                 .is_some_and(|follow| follow.target == shown.id);
-            painter.rect_stroke(
-                rect,
-                2.0,
-                egui::Stroke::new(if selected { 2.5 } else { 1.5 }, color),
-                egui::StrokeKind::Middle,
-            );
+            if let Some(rect) = bounds {
+                painter.rect_stroke(
+                    rect,
+                    2.0,
+                    egui::Stroke::new(if selected { 2.5 } else { 1.5 }, color),
+                    egui::StrokeKind::Middle,
+                );
+            } else {
+                point_marker(anchor, color, if selected { 2.5 } else { 1.5 });
+            }
             let number = camera
                 .picker
                 .iter()
@@ -2710,7 +2813,10 @@ impl DeadpanApp {
             if followed {
                 text.push_str(" · following");
             }
-            badge(rect.left_top() - egui::vec2(0.0, 18.0), &text, color);
+            if shown.region.is_point() {
+                text.push_str(" · point");
+            }
+            badge(anchor - egui::vec2(0.0, 18.0), &text, color);
         }
         if picking {
             for entry in &camera.picker {
@@ -2749,6 +2855,22 @@ impl DeadpanApp {
                     );
                 }
             }
+        }
+        // A point has a marker and center only; no authored bounding area.
+        if let Some(region) = camera.draft.region()
+            && region.is_point()
+        {
+            if let Some(at) = source_point(region.geometry().center()) {
+                point_marker(at, style::CURSOR, 2.5);
+                let title = match &camera.region_purpose {
+                    Some(RegionPurpose::Correct { id, .. }) => {
+                        format!("Correct {} · point", self.target_label(id))
+                    }
+                    _ => "New point target · Center".to_owned(),
+                };
+                badge(at - egui::vec2(0.0, 21.0), &title, style::CURSOR);
+            }
+            return;
         }
         // The rectangle under keyboard edit, its focused part emphasized.
         if let Some(region) = camera.draft.region()
@@ -2874,7 +2996,27 @@ impl DeadpanApp {
                 style::key_hint(ui, "Esc", "cancel");
             }
             CameraPhase::Region => {
-                style::key_hint(ui, "Tab", "center / width / height");
+                let region = camera.draft.region().expect("region phase has a draft");
+                style::key_hint(
+                    ui,
+                    "Tab",
+                    if region.is_point() {
+                        "center"
+                    } else {
+                        "center / width / height"
+                    },
+                );
+                if !region.kind_locked() {
+                    style::key_hint(
+                        ui,
+                        "n",
+                        if region.is_point() {
+                            "rectangle target"
+                        } else {
+                            "point target"
+                        },
+                    );
+                }
                 style::key_hint(ui, "←→↑↓ hjkl", "1%");
                 style::key_hint(ui, "HJKL", "5%");
                 style::key_hint(ui, "3→", "three steps");
@@ -2978,12 +3120,18 @@ impl DeadpanApp {
                                 _ => "NEW TARGET".to_owned(),
                             };
                             ui.label(style::section_title(&title, true));
+                            ui.label(if region.is_point() { "Point target · center only" } else { "Rectangle target" });
+                            if !region.kind_locked() && ui.add(style::row_action(ui,
+                                if region.is_point() { "Use rectangle" } else { "Use point" }, "n")).clicked() {
+                                requested = Some(CameraKey::NewRegion);
+                            }
                             let [x, y, w, h] = super::targets::region_text(&region.region());
                             for (field, label, value) in [
                                 (RegionField::Center, "Center", format!("{x}, {y}")),
                                 (RegionField::Width, "Width", w),
                                 (RegionField::Height, "Height", h),
                             ] {
+                                if region.is_point() && field != RegionField::Center { continue; }
                                 let focused = region.field() == field;
                                 egui::Frame::new()
                                     .fill(if focused { style::SELECTED } else { egui::Color32::TRANSPARENT })
@@ -2998,7 +3146,12 @@ impl DeadpanApp {
                                         });
                                     });
                             }
-                            ui.weak("Percent of the upright Original picture. Tab moves between center, width and height; arrows or h/j/k/l change the focused part by 1%, Shift by 5%; counts repeat.");
+                            ui.weak(if region.is_point() {
+                                "Percent of the upright Original picture. Arrows or h/j/k/l move the point by 1%, Shift by 5%; counts repeat. Tab keeps the center field."
+                            } else {
+                                "Percent of the upright Original picture. Tab moves between center, width and height; arrows or h/j/k/l change the focused part by 1%, Shift by 5%; counts repeat."
+                            });
+                            if region.kind_locked() { ui.weak("A correction keeps this target's geometry kind."); }
                             ui.add_space(4.0);
                             if camera.saving.is_some() {
                                 ui.horizontal(|ui| { crate::preview::accessibility::busy(ui); ui.label("Saving target…"); });
@@ -3037,7 +3190,7 @@ impl DeadpanApp {
                         ui.add_space(8.0);
                         ui.weak(match camera.draft.phase() {
                             CameraPhase::TargetPicker => "Choose this page's number. Tab / Shift+Tab changes pages; f returns to adjustment. A face selection saves its target before framing changes.",
-                            CameraPhase::Region => "Finish the rectangle, or press Escape to return to framing.",
+                            CameraPhase::Region => "Finish the target, or press Escape to return to framing.",
                             _ if camera.follow.is_some() => "The followed target supplies the center. Scale changes keep following it.",
                             _ => "Tab moves through fields. Up/Down changes 1%. Enter finishes a field; Enter in the viewer applies the edit.",
                         });
@@ -3122,7 +3275,9 @@ impl DeadpanApp {
                             let acting = camera.acting_target().is_some();
                             if ui.add_enabled(acting, style::row_action(ui, if camera.follow.is_some() { "Stop following" } else { "Follow selected target" }, "t")).clicked() { requested = Some(CameraKey::Follow); }
                             if ui.add_enabled(acting, style::row_action(ui, "Correct target here", "c")).clicked() { requested = Some(CameraKey::Correct); }
-                            if ui.add_enabled(acting && self.targets.running().is_none(), style::row_action(ui, "Track selected target", "T")).clicked() { requested = Some(CameraKey::Track); }
+                            let region_target = camera.acting_target().and_then(|id| self.workspace.as_ref()?.document.targets().get(id)).is_some_and(|target| !target.region.is_point());
+                            if ui.add_enabled(region_target && self.targets.running().is_none(), style::row_action(ui, "Track selected target", "T")).clicked() { requested = Some(CameraKey::Track); }
+                            if acting && !region_target { ui.weak("Point positions are corrected manually with c. Tracking requires a rectangle target."); }
                         });
                         self.tracking_status(ui);
                         ui.add_space(8.0);
@@ -3773,16 +3928,16 @@ mod tests {
             label: "Target 1".into(),
             asset: AssetId::new("asset").unwrap(),
             span: SourceSpan::new(stamp(0), stamp(1000)).unwrap(),
-            region: region(1),
+            region: region(1).into(),
             samples: Vec::new(),
             corrections: vec![TargetCorrection {
                 at: 500,
-                region: region(2),
+                region: region(2).into(),
             }],
             provenance: None,
             display_aspect: None,
         };
-        assert_eq!(corrected(&target, 0, region(9)).region, region(9));
+        assert_eq!(corrected(&target, 0, region(9)).region, region(9).into());
         let inserted = corrected(&target, 200, region(3));
         assert_eq!(
             inserted
@@ -3797,10 +3952,10 @@ mod tests {
             replaced.corrections,
             [TargetCorrection {
                 at: 500,
-                region: region(4)
+                region: region(4).into()
             }]
         );
-        assert_eq!(replaced.region, region(1));
+        assert_eq!(replaced.region, region(1).into());
     }
 
     #[test]

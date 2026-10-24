@@ -1,0 +1,6 @@
+
+running 1 test
+test follow::point_follow_matches_rectangle_centers_through_nested_owner_clocks ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 121 filtered out; finished in 0.01s
+

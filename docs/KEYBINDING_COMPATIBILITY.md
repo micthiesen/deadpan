@@ -15,6 +15,11 @@ pages; ordinary Camera fields retain their native editing routes. The final
 cases against all 62 live Kestrel reservations, without conflict or source
 drift. Saved/proposed target digits, paging and text/IME guards are covered by
 the [Camera face picker qualification](qualification/camera-face-picker-2026-10-24.md).
+New-target editing also uses the existing plain `n` route to switch rectangle /
+point, and Tab stays on Center for points. Corrections lock their saved kind.
+The final [point-target replays](qualification/point-targets-2026-10-24.md) pass
+the same live-source audit in points, targets, faces and zoom without a new
+modified global chord.
 
 `:eq` adds a captured EQ editor and complete typed recipes without a new key
 chord. The 2026-10-12 EQ, Gain and audio-treatment release replays pass

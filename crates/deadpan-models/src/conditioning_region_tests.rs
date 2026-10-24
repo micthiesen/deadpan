@@ -26,7 +26,8 @@ fn target() -> AttentionTarget {
         region: TargetRegion {
             center: [500_000, 500_000],
             size: [200_000, 300_000],
-        },
+        }
+        .into(),
         samples: vec![],
         corrections: vec![],
         provenance: None,
@@ -89,7 +90,8 @@ fn region_uses_exact_decoded_pts_and_actual_odd_fitted_content() {
         region: TargetRegion {
             center: [600_000, 400_000],
             size: [200_000, 300_000],
-        },
+        }
+        .into(),
     });
     let captured = capture(&target);
     let seeds = captured
@@ -167,7 +169,9 @@ fn no_target_is_distinct_from_selected_but_unavailable() {
 #[test]
 fn off_source_boxes_are_unavailable_without_clipping() {
     let mut target = target();
-    target.region.center[0] = 0;
+    let mut region = *target.region.as_region().unwrap();
+    region.center[0] = 0;
+    target.region = region.into();
     assert!(matches!(
         captured_left(&capture(&target)),
         CapturedRegionBoundary::Unavailable {
@@ -180,7 +184,9 @@ fn off_source_boxes_are_unavailable_without_clipping() {
 fn tiny_authored_or_fitted_regions_remain_explicitly_unavailable() {
     for size in [[1, 1], [300, 300]] {
         let mut target = target();
-        target.region.size = size;
+        let mut region = *target.region.as_region().unwrap();
+        region.size = size;
+        target.region = region.into();
         target.region.validate().unwrap();
         let captured = capture(&target);
         assert!(matches!(
@@ -296,4 +302,46 @@ fn record_fingerprint_changes_even_if_only_later_tracking_changes() {
         unreachable!()
     };
     assert_ne!(first_hash, second_hash);
+}
+
+#[test]
+fn point_targets_never_become_fake_area_conditioning_seeds() {
+    let mut value = target();
+    value.region = deadpan_core::TargetPoint {
+        center: value.region.center(),
+    }
+    .into();
+    let captured = capture(&value);
+    assert!(matches!(
+        captured_left(&captured),
+        CapturedRegionBoundary::Unavailable {
+            reason: RegionCaptureUnavailable::PointTarget
+        }
+    ));
+    assert!(
+        captured
+            .seeds(&boundaries(), &geometry(), [768, 320])
+            .unwrap()
+            .is_none()
+    );
+}
+
+#[test]
+fn point_target_identity_bytes_match_the_python_bridge_golden() {
+    let encoded = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tools/model-qualification/tests/fixtures/point-target.json"
+    ))
+    .trim_end();
+    let record: AttentionTarget = serde_json::from_str(encoded).unwrap();
+    record.validate_shape().unwrap();
+    assert!(record.region.is_point());
+    assert!(record.samples.iter().all(|sample| sample.region.is_point()));
+    assert!(
+        record
+            .corrections
+            .iter()
+            .all(|correction| correction.region.is_point())
+    );
+    assert_eq!(serde_json::to_string(&record).unwrap(), encoded);
 }

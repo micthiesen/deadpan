@@ -332,6 +332,18 @@ class WorkerContextShapeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "target differs"):
             worker.validate_bridge_context(self.schema4_context(), worker_protocol.parse_host_message(wire), wire["constraints"]["video"])
 
+    def test_point_target_is_retained_as_unavailable_area_in_bridge_context(self):
+        wire = bridge_request_wire()
+        wire["constraints"]["region_target"] = "hand"
+        context = self.schema4_context(selected=True)
+        context["region"]["left"] = {"status": "unavailable", "reason": "point_target"}
+        context["region"]["right"] = {"status": "unavailable", "reason": "point_target"}
+        worker.validate_bridge_context(context, worker_protocol.parse_host_message(wire), wire["constraints"]["video"])
+        self.assertNotIn("region", context["region"]["left"])
+        context["region"]["left"]["reason"] = "invented_point_box"
+        with self.assertRaisesRegex(ValueError, "unsupported region unavailable reason"):
+            worker.validate_context_shape(context)
+
     def context(self):
         artifact = {"reference": "inputs/left.png", "sha256": SHA_A, "byte_length": 1}
         return {

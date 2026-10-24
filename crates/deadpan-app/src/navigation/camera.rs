@@ -7,7 +7,8 @@
 use std::fmt;
 
 use deadpan_core::{
-    ExactRatio, FRAMING_NUMERIC_SCALE, FramingError, FramingPose, TARGET_UNITS, TargetRegion,
+    ExactRatio, FRAMING_NUMERIC_SCALE, FramingError, FramingPose, TARGET_UNITS, TargetGeometry,
+    TargetPoint, TargetRegion,
 };
 use eframe::egui::{Key, Modifiers};
 
@@ -19,12 +20,12 @@ const MAX_SCALE_STEPS: u32 = 171;
 pub enum CameraPhase {
     Adjust,
     TargetPicker,
-    /// Editing a target rectangle with the keyboard: center, width, height.
+    /// Editing a target point or rectangle with the keyboard.
     Region,
     Closed,
 }
 
-/// The focused part of a target rectangle while editing it.
+/// The focused target field. Points expose only Center.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RegionField {
     Center,
@@ -50,17 +51,21 @@ impl RegionField {
     }
 }
 
-/// One keyboard step of a target rectangle: 1% of the upright source.
+/// One keyboard target step: 1% of the upright source.
 pub const REGION_STEP: u32 = TARGET_UNITS / 100;
 /// The smallest rectangle side Camera creates: 1% of the upright source.
 pub const MIN_REGION_SIZE: u32 = REGION_STEP;
 
-/// A target rectangle under keyboard edit, in millionths of the upright,
+/// Target geometry under keyboard edit, in millionths of the upright,
 /// uncropped source picture. Steps clamp at the picture edges.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RegionDraft {
+    // Rectangle size is temporary editor memory while authoring a point. It
+    // never enters that point's geometry or serialized target.
     region: TargetRegion,
     field: RegionField,
+    point: bool,
+    kind_locked: bool,
 }
 
 impl RegionDraft {
@@ -74,7 +79,62 @@ impl RegionDraft {
                     .map(|value| value.clamp(MIN_REGION_SIZE, TARGET_UNITS)),
             },
             field: RegionField::Center,
+            point: false,
+            kind_locked: false,
         }
+    }
+
+    pub fn from_geometry(geometry: TargetGeometry, kind_locked: bool) -> Self {
+        let (region, point) = match geometry {
+            TargetGeometry::Region(region) => (region, false),
+            TargetGeometry::Point(point) => (
+                TargetRegion {
+                    center: point.center,
+                    size: [TARGET_UNITS / 4; 2],
+                },
+                true,
+            ),
+        };
+        let mut draft = Self::new(region);
+        draft.point = point;
+        draft.kind_locked = kind_locked;
+        draft
+    }
+
+    pub fn geometry(&self) -> TargetGeometry {
+        if self.point {
+            TargetPoint {
+                center: self.region.center,
+            }
+            .into()
+        } else {
+            self.region.into()
+        }
+    }
+
+    pub const fn is_point(&self) -> bool {
+        self.point
+    }
+
+    pub const fn kind_locked(&self) -> bool {
+        self.kind_locked
+    }
+
+    fn toggle_kind(&mut self) -> Result<(), CameraError> {
+        if self.kind_locked {
+            return Err(CameraError::TargetKindLocked);
+        }
+        self.point = !self.point;
+        self.field = RegionField::Center;
+        Ok(())
+    }
+
+    fn next_field(&mut self, reverse: bool) {
+        self.field = if self.point {
+            RegionField::Center
+        } else {
+            self.field.next(reverse)
+        };
     }
 
     pub const fn region(&self) -> TargetRegion {
@@ -149,7 +209,7 @@ pub enum CameraKey {
     Scale(ScaleDirection),
     RefreshTargets,
     Reset,
-    /// Start a new target rectangle (`n`).
+    /// Start a target editor, or toggle point/rectangle in a new target (`n`).
     NewRegion,
     /// Toggle following the selected saved target (`t`).
     Follow,
@@ -180,6 +240,7 @@ pub enum CameraError {
     TargetMismatch,
     Closed,
     NotEditingRegion,
+    TargetKindLocked,
     Framing(FramingError),
 }
 
@@ -205,7 +266,8 @@ impl fmt::Display for CameraError {
                 f.write_str("The selected target changed before it could be applied.")
             }
             Self::Closed => f.write_str("Camera mode has already closed."),
-            Self::NotEditingRegion => f.write_str("No target rectangle is being edited."),
+            Self::NotEditingRegion => f.write_str("No target geometry is being edited."),
+            Self::TargetKindLocked => f.write_str("A correction keeps the target's geometry kind. Create a new target to switch between point and rectangle."),
             Self::Framing(error) => error.fmt(f),
         }
     }
@@ -249,9 +311,9 @@ pub enum CameraEffect {
     },
     ToggleFollow,
     Track,
-    RegionChanged(TargetRegion),
-    /// Enter on a rectangle. The rectangle stays open until the app closes it.
-    RegionCommit(TargetRegion),
+    RegionChanged(TargetGeometry),
+    /// Enter on geometry. The editor stays open until the app closes it.
+    RegionCommit(TargetGeometry),
     RegionClosed,
     Rejected(CameraError),
 }
@@ -308,14 +370,18 @@ impl CameraDraft {
 
     /// Begin editing `region` from Adjust.
     pub fn open_region(&mut self, region: TargetRegion) -> CameraEffect {
+        self.open_geometry(region.into(), false)
+    }
+
+    pub fn open_geometry(&mut self, geometry: TargetGeometry, kind_locked: bool) -> CameraEffect {
         if self.phase != CameraPhase::Adjust {
             return CameraEffect::Rejected(CameraError::NotAdjusting);
         }
-        let draft = RegionDraft::new(region);
+        let draft = RegionDraft::from_geometry(geometry, kind_locked);
         self.region = Some(draft);
         self.phase = CameraPhase::Region;
         self.clear_count();
-        CameraEffect::RegionChanged(draft.region())
+        CameraEffect::RegionChanged(draft.geometry())
     }
 
     /// Leave rectangle editing, after a save or Escape.
@@ -348,24 +414,36 @@ impl CameraDraft {
             };
             let region = self.region.as_mut().expect("region phase has a region");
             return if region.adjust(direction, steps) {
-                CameraEffect::RegionChanged(region.region())
+                CameraEffect::RegionChanged(region.geometry())
             } else {
                 CameraEffect::None
             };
         }
         match key {
             CameraKey::Digit(digit) => self.digit(digit),
+            CameraKey::NewRegion => {
+                if let Some(error) = self.require_no_count() {
+                    return CameraEffect::Rejected(error);
+                }
+                let region = self.region.as_mut().expect("region phase has a region");
+                match region.toggle_kind() {
+                    Ok(()) => CameraEffect::RegionChanged(region.geometry()),
+                    Err(error) => CameraEffect::Rejected(error),
+                }
+            }
             CameraKey::Tab { reverse } => {
                 self.clear_count();
                 let region = self.region.as_mut().expect("region phase has a region");
-                region.field = region.field.next(reverse);
-                CameraEffect::RegionChanged(region.region())
+                region.next_field(reverse);
+                CameraEffect::RegionChanged(region.geometry())
             }
             CameraKey::Commit => {
                 if let Some(error) = self.require_no_count() {
                     return CameraEffect::Rejected(error);
                 }
-                CameraEffect::RegionCommit(self.region.expect("region phase has a region").region())
+                CameraEffect::RegionCommit(
+                    self.region.expect("region phase has a region").geometry(),
+                )
             }
             CameraKey::Cancel => self.close_region(),
             CameraKey::Ignore => CameraEffect::None,
@@ -1310,14 +1388,17 @@ mod tests {
             "the app supplies the start"
         );
         let start = region([500_000, 500_000], [200_000, 200_000]);
-        assert_eq!(draft.open_region(start), CameraEffect::RegionChanged(start));
+        assert_eq!(
+            draft.open_region(start),
+            CameraEffect::RegionChanged(start.into())
+        );
         assert_eq!(draft.phase(), CameraPhase::Region);
         assert_eq!(draft.region().unwrap().field(), RegionField::Center);
         // Center: arrows and h/j/k/l move it; counts repeat; Shift is 5 steps.
         draft.input(CameraKey::Digit(3), None);
         assert_eq!(
             draft.input(CameraKey::Arrow(Direction::Right), None),
-            CameraEffect::RegionChanged(region([530_000, 500_000], [200_000, 200_000]))
+            CameraEffect::RegionChanged(region([530_000, 500_000], [200_000, 200_000]).into())
         );
         assert_eq!(
             draft.input(
@@ -1327,7 +1408,7 @@ mod tests {
                 },
                 None
             ),
-            CameraEffect::RegionChanged(region([530_000, 450_000], [200_000, 200_000]))
+            CameraEffect::RegionChanged(region([530_000, 450_000], [200_000, 200_000]).into())
         );
         // Tab: Width grows with Right/Up, shrinks with Left/Down.
         draft.input(CameraKey::Tab { reverse: false }, None);
@@ -1364,7 +1445,7 @@ mod tests {
         let committed = draft.region().unwrap().region();
         assert_eq!(
             draft.input(CameraKey::Commit, None),
-            CameraEffect::RegionCommit(committed)
+            CameraEffect::RegionCommit(committed.into())
         );
         assert_eq!(draft.phase(), CameraPhase::Region, "open until saved");
         // Escape leaves only the rectangle; the Camera draft stays.
@@ -1375,6 +1456,78 @@ mod tests {
         assert_eq!(draft.phase(), CameraPhase::Adjust);
         assert!(draft.region().is_none());
         assert_eq!(draft.pose(), FramingPose::identity());
+    }
+
+    #[test]
+    fn point_creation_keeps_only_center_and_remembers_rectangle_size_temporarily() {
+        let mut draft = new_draft();
+        draft.open_region(region([500_000, 500_000], [200_000, 200_000]));
+        draft.input(CameraKey::Tab { reverse: false }, None);
+        draft.input(CameraKey::Arrow(Direction::Up), None);
+        draft.input(CameraKey::NewRegion, None);
+        assert!(draft.region().unwrap().is_point());
+        assert_eq!(draft.region().unwrap().field(), RegionField::Center);
+        draft.input(CameraKey::Digit(3), None);
+        draft.input(CameraKey::Arrow(Direction::Left), None);
+        for reverse in [false, true] {
+            draft.input(CameraKey::Tab { reverse }, None);
+            assert_eq!(draft.region().unwrap().field(), RegionField::Center);
+        }
+        let point = TargetGeometry::Point(TargetPoint {
+            center: [470_000, 500_000],
+        });
+        assert_eq!(draft.region().unwrap().geometry(), point);
+        assert_eq!(
+            serde_json::to_value(point).unwrap(),
+            serde_json::json!({"center":[470000,500000]})
+        );
+        assert_eq!(
+            draft.input(CameraKey::Commit, None),
+            CameraEffect::RegionCommit(point)
+        );
+        draft.input(CameraKey::Digit(2), None);
+        assert_eq!(
+            draft.input(CameraKey::NewRegion, None),
+            CameraEffect::Rejected(CameraError::CountNotSupported)
+        );
+        assert_eq!(draft.region().unwrap().geometry(), point);
+        draft.input(CameraKey::NewRegion, None);
+        assert_eq!(
+            draft.region().unwrap().geometry(),
+            region([470_000, 500_000], [210_000, 200_000]).into()
+        );
+        assert_eq!(draft.pose(), FramingPose::identity());
+    }
+
+    #[test]
+    fn corrections_lock_geometry_kind_and_point_motion_clamps_at_source_edges() {
+        for geometry in [
+            TargetGeometry::Point(TargetPoint {
+                center: [TARGET_UNITS, 0],
+            }),
+            region([TARGET_UNITS, 0], [200_000, 200_000]).into(),
+        ] {
+            let mut draft = new_draft();
+            draft.open_geometry(geometry, true);
+            assert_eq!(
+                draft.input(CameraKey::NewRegion, None),
+                CameraEffect::Rejected(CameraError::TargetKindLocked)
+            );
+            assert_eq!(draft.region().unwrap().geometry(), geometry);
+            draft.input(CameraKey::Digit(9), None);
+            draft.input(CameraKey::Arrow(Direction::Right), None);
+            draft.input(CameraKey::Arrow(Direction::Up), None);
+            assert_eq!(
+                draft.region().unwrap().geometry().center(),
+                [TARGET_UNITS, 0]
+            );
+            assert_eq!(
+                draft.input(CameraKey::Cancel, None),
+                CameraEffect::RegionClosed
+            );
+            assert!(draft.region().is_none());
+            assert_eq!(draft.pose(), FramingPose::identity());
+        }
     }
 
     #[test]

@@ -576,7 +576,7 @@ fn region_corrections_are_bound_even_when_raw_context_is_unchanged() {
             label: "Speaker".into(),
             asset: asset(),
             span: span(0, 256),
-            region,
+            region: region.into(),
             samples: vec![],
             corrections: vec![],
             provenance: None,
@@ -589,7 +589,8 @@ fn region_corrections_are_bound_even_when_raw_context_is_unchanged() {
             region: TargetRegion {
                 center: [600_000, 500_000],
                 ..region
-            },
+            }
+            .into(),
         }]);
     });
     let before = crate::generation_inputs::GenerationInputCapture::with_region(

@@ -1,0 +1,76 @@
+<ctx task="Add first-class point targets alongside rectangles in AttentionTarget TargetRegion TargetSample TargetCorrection region_at center_ratio in crates/deadpan-core/src/target.rs, follow_pose in crates/deadpan-plan/src/plan.rs, rect_from_target in crates/deadpan-analysis/src/tracking/target.rs, and Camera RegionDraft in crates/deadpan-app/src/navigation/camera.rs; determine core format policy and all exact rectangle consumers" route=" [routed: subtoken+body BM25 (--for&apos;s default) — no strong name hit, multi-word conceptual query]" bundle="auto" bodies="6"><!-- ripwire lens for "Add first-class point targets alongside rectangles in AttentionTarget TargetRegion TargetSample TargetCorrection region_at center_ratio in crates/deadpan-core/src/target.rs, follow_pose in crates/deadpan-plan/src/plan.rs, rect_from_target in crates/deadpan-analysis/src/tracking/target.rs, and Camera RegionDraft in crates/deadpan-app/src/navigation/camera.rs; determine core format policy and all exact rectangle consumers" [mention anchor: 4 files + 10 symbols named in the task lifted near the top] [doc mentions: 6 docs discussing 3 top-ranked symbols surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="3361" --><sigs capped="1"><f p="./crates/deadpan-analysis/src/tracking/target.rs"><d l="47" n="target_region" cx="1" ccx="0" in="7" churn="2" amp="7" tested="1"><doc>A rectangle as core center and size in millionths</doc>pub fn target_region(rect: &amp;NormalizedRect) -&gt; TargetRegion</d><d l="60" n="rect_from_target" cx="1" ccx="0" in="3" churn="2" amp="3" tested="1">pub fn rect_from_target(region: &amp;TargetRegion) -&gt; Option&lt;NormalizedRect&gt;</d><d l="219" n="to_target" id="./crates/deadpan-analysis/src/tracking/target.rs::TrackedPath::to_target" cx="2" ccx="1" in="6" churn="2" amp="6" tested="1">pub fn to_target( &amp;self, label: String, asset: AssetId, time_base: SourceTimeBase, display_aspect: Option&lt;deadpan_core::ExactRatio&gt;, engine: &amp;str, budget: usize, ) -&gt; Result&lt;(AttentionTarget, u32), TrackError&gt;</d><d l="266" n="retrack_target" cx="7" ccx="5" in="2" churn="2" amp="2" tested="1">pub fn retrack_target( target: &amp;AttentionTarget, segment: &amp;TrackedPath, engine: &amp;str, budget: us…</d></f><f p="./crates/deadpan-cli/src/tracking.rs"><d l="1198" n="target_rect_at" cx="1" ccx="0" in="1" churn="6" amp="1" tested="1"><doc>The region a saved target gives `at`, as a normalized rectangle</doc>pub fn target_rect_at(target: &amp;AttentionTarget, at: i64) -&gt; Option&lt;NormalizedRect&gt;</d></f><f p="./crates/deadpan-core/src/target.rs"><d l="164" n="TargetSample" cx="0" ccx="0" in="0" churn="5" amp="46">pub struct TargetSample</d><d l="236" n="AttentionTarget" cx="0" ccx="0" in="0" churn="5" amp="46">pub struct AttentionTarget</d><d l="388" n="region_at" id="./crates/deadpan-core/src/target.rs::AttentionTarget::region_at" cx="1" ccx="0" in="8" churn="5" amp="54" tested="1">pub fn region_at(&amp;self, point: SourcePoint) -&gt; Option&lt;(TargetRegion, TargetSource)&gt;</d><d l="440" n="sample_region" id="./crates/deadpan-core/src/target.rs::AttentionTarget::sample_region" cx="6" ccx="3" in="1" churn="5" amp="47" tested="1">fn sample_region(&amp;self, index: usize, point: SourcePoint) -&gt; Option&lt;(TargetRegion, u16)&gt;</d></f><f p="./crates/deadpan-plan/src/plan.rs"><d l="143" n="RenderPlan" cx="0" ccx="0" in="0" churn="65" amp="296">pub struct RenderPlan</d><d l="1299" n="resolve_follows" id="./crates/deadpan-plan/src/plan.rs::RenderPlan::resolve_follows" cx="7" ccx="11" in="1" churn="65" amp="297" tested="1">fn resolve_follows( &amp;self, framing: &amp;mut [PictureFraming], follows: &amp;[(usize, &amp;deadpan_core::TargetId, ExactRatio, bool)], picture: &amp;Picture, captured_geometry:…</d><d l="1773" n="follow_pose" cx="4" ccx="2" in="1" churn="65" amp="297" tested="1">pub fn follow_pose( target: &amp;deadpan_core::AttentionTarget, asset: &amp;AssetId, point: SourcePoint, canvas: [u32</d></f><f p="./crates/deadpan-app/src/preview/camera.rs"><d l="324" n="CameraSession" cx="0" ccx="0" in="0" churn="28" amp="63">pub(super) struct CameraSession</d><d l="618" n="corrected" cx="3" ccx="5" in="6" churn="28" amp="69" tested="1">fn corrected(target: &amp;AttentionTarget, at: i64, region: TargetRegion) -&gt; AttentionTarget</d></f></sigs><bodies shown="6" total="6" capped="0"><b t="fn" l="47" p="./crates/deadpan-analysis/src/tracking/target.rs" n="target_region"><![CDATA[pub fn target_region(rect: &NormalizedRect) -> TargetRegion {
+    let units = f64::from(TARGET_UNITS);
+    let scale = |value: f64, minimum: u32| -> u32 {
+        (value * units).round().clamp(f64::from(minimum), units) as u32
+    };
+    let (x, y) = rect.center();
+    TargetRegion {
+        center: [scale(x, 0), scale(y, 0)],
+        size: [scale(rect.width(), 1), scale(rect.height(), 1)],
+    }
+}]]><calls total="1"><c n="round" l="135">pub fn round(value: f64) -&gt; f64</c></calls></b><b t="fn" l="1198" p="./crates/deadpan-cli/src/tracking.rs" n="target_rect_at"><![CDATA[pub fn target_rect_at(target: &AttentionTarget, at: i64) -> Option<NormalizedRect> {
+    let (region, _) = target.region_at(deadpan_core::SourcePoint {
+        ticks: deadpan_core::ExactRatio::integer(at),
+        time_base: target.span.start().time_base,
+    })?;
+    rect_from_target(&region)
+}]]><calls total="3"><c n="rect_from_target" l="60">pub fn rect_from_target(region: &amp;TargetRegion) -&gt; Option&lt;NormalizedRect&gt;</c><c n="integer" l="62">pub const fn integer(value: i64) -&gt; Self</c><c n="region_at" l="388">pub fn region_at(&amp;self, point: SourcePoint) -&gt; Option&lt;(TargetRegion, TargetSource)&gt;</c></calls></b><b t="cls" l="164" p="./crates/deadpan-core/src/target.rs" n="TargetSample"><![CDATA[pub struct TargetSample {
+    /// Source ticks in the target span's time base.
+    pub at: i64,
+    pub region: TargetRegion,
+    /// Tracker confidence in thousandths.
+    pub confidence: u16,
+    pub state: TrackState,
+}]]></b><b t="cls" l="236" p="./crates/deadpan-core/src/target.rs" n="AttentionTarget"><![CDATA[pub struct AttentionTarget {
+    pub label: String,
+    pub asset: AssetId,
+    /// The half-open source range the target covers.
+    pub span: SourceSpan,
+    /// The region selected when the target was created, at the span start.
+    pub region: TargetRegion,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub samples: Vec<TargetSample>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub corrections: Vec<TargetCorrection>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provenance: Option<TargetProvenance>,
+    /// The exact display aspect (width over height, after clean aperture,
+    /// sample aspect ratio and rotation; see [`display_aspect`]) of the
+    /// picture the regions are normalized to. A `Follow` uses it to place the
+    /// region center on a canvas of another aspect exactly as the renderer
+    /// fits the picture there. Absent on targets recorded without it, whose
+    /// follows keep source coordinates.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display_aspect: Option<ExactRatio>,
+}]]></b><b t="method" l="388" p="./crates/deadpan-core/src/target.rs" n="region_at"><![CDATA[pub fn region_at(&self, point: SourcePoint) -> Option<(TargetRegion, TargetSource)> {
+        self.evaluated_region_at(point)
+            .map(|value| (value.region, value.source))
+    }]]><calls total="2"><c n="map" l="164">fn map(self, extent: i64) -&gt; Result&lt;SoundRippleMap, DocumentError&gt;</c><c n="evaluated_region_at" l="393">pub fn evaluated_region_at(&amp;self, point: SourcePoint) -&gt; Option&lt;EvaluatedTargetRegion&gt;</c></calls></b><b t="cls" l="143" p="./crates/deadpan-plan/src/plan.rs" n="RenderPlan"><![CDATA[pub struct RenderPlan {
+    metadata: PlanMetadata,
+    nodes: Vec<PlanNode>,
+    by_id: BTreeMap<NodeId, usize>,
+    root: usize,
+    // Catalog-only sounds are retained alongside structural dependencies.
+    // These contracts still require explicit host admission.
+    audio_assets: BTreeMap<AssetId, deadpan_core::AssetRecord>,
+    sounds: BTreeMap<deadpan_core::SoundId, deadpan_core::SoundEvent>,
+    beat_sounds: BTreeMap<NodeId, BTreeMap<deadpan_core::SoundId, deadpan_core::BeatSound>>,
+    sound_routes: BTreeMap<deadpan_core::SoundId, deadpan_core::RootSoundRoute>,
+    sound_allowances: BTreeMap<deadpan_core::SoundId, deadpan_core::SoundHoldAllowances>,
+    /// Attention targets that `Follow` framing resolves in source time.
+    targets: Arc<BTreeMap<deadpan_core::TargetId, deadpan_core::AttentionTarget>>,
+    compiled_sounds: BTreeMap<deadpan_core::SoundId, crate::audio_sound_event::CompiledRootSound>,
+    // Frozen admission stays distinct even when its catalog is empty.
+    audio_context: bool,
+    has_audio_treatments: bool,
+    has_audio_equalizers: bool,
+    has_audio_wet_sends: bool,
+    has_audio_component_automation: bool,
+    has_audio_editorial_edges: bool,
+    audio_bindings: deadpan_core::AudioBindingState,
+    // A checked structural snapshot used as the live side of sound-clock
+    // correspondence proofs. Historical clocks live in `audio_bindings`.
+    sound_clock_layout: Option<Arc<deadpan_core::FrozenAudioLayout>>,
+    parents: Vec<Option<usize>>,
+    definition_index: Option<Arc<DefinitionIndex>>,
+}]]></b></bodies></ctx>

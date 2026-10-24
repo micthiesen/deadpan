@@ -1,0 +1,4 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.92s
+     Running tests/picture_plan.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/picture_plan-8377682556489926)

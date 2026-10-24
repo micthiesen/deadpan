@@ -109,9 +109,9 @@ selection, navigation scope and cursor changes revoke the draft.
 | `f` | Toggle the numbered picker: saved targets covering this picture, center and corners, then detected face proposals. Digits pick there; they are counts in Adjust. |
 | `Tab` / `Shift+Tab` in the picker | Next / previous page of up to nine numbered targets. |
 | `t` | Follow the picked saved target (`FramingValue::Follow`, the current scale, fallback = the current pose); `t` again stops following at the pose shown. |
-| `n` | Draw a new target rectangle (below). |
+| `n` | Draw a new target; `n` in the editor switches rectangle / point (below). |
 | `c` | Correct the picked or followed target at this picture (below). |
-| `T` | Track the picked or followed target in the background ([tracking](TRACKING.md#in-the-app)). |
+| `T` | Track the picked or followed rectangle in the background; points have no tracking box ([tracking](TRACKING.md#in-the-app)). |
 | `r` | Reset the temporary framing to neutral. Later adjustments create a new static pose; a follow stops. |
 | `Enter` | Apply one typed revision-guarded edit. Unchanged framing creates no history entry. |
 | `Escape` | Discard the draft and restore the entry operation. |
@@ -129,8 +129,8 @@ asset is the displayed picture's and whose span covers its source time, then the
 center and four corners of the upright Original, then detected faces. Each page
 uses digits 1–9; Tab and Shift+Tab reach every page. Background face proposals
 append without changing existing entry positions. Saved targets are drawn as
-rectangles at `region_at` of the picture's exact source time, colored and labelled
-by how that region was obtained: `drawn` (the initial rectangle), `corrected`,
+rectangles or point markers at `region_at` of the picture's exact source time,
+colored and labelled by how that geometry was obtained: `drawn` (the initial selection), `corrected`,
 `tracked`, `interpolated` or `lost · holding`. All entries are upright source
 points projected through descendants into the selected operation's input canvas.
 Clipped targets are unavailable, never silently clamped or renamed as detected
@@ -159,24 +159,30 @@ sees the changed operation, and replaces those poses atomically on the retained
 picture. Escape restores every operation's entry pose. The `targets` replay
 checks that the committed picture's pose equals the Camera preview exactly.
 
-### Keyboard target rectangles
+### Keyboard point and rectangle targets
 
 `n` opens a rectangle centered on what the viewer shows, a quarter of the
-visible source in each dimension. `c` opens the target's rectangle at this
-picture. Tab moves between the Center, Width and Height fields; arrows or
+visible source in each dimension. Another `n` switches to a point, with its
+center alone; switching back remembers the temporary rectangle size. `c` opens
+the target at this picture and keeps its saved geometry kind. Tab moves between
+the Center, Width and Height fields for a rectangle and stays on Center for a
+point; arrows or
 `h/j/k/l` change the focused part by 1% of the upright source, Shift by 5%, and
 counts repeat. Width and Height grow with Right/Up and shrink with Left/Down,
 never below 1%; centers stay inside the picture. Enter saves; Escape returns to
-framing without an edit. The mouse is not required and not yet supported.
+framing without an edit. Points draw a cross and center marker, never an
+invented bounding box. The mouse is not required and not yet supported.
 
 A new target is one undoable `SetTarget` with a fresh `target-N` id and
 `Target N` label. Its span starts at the displayed picture's indexed PTS (the
-rectangle is the region selected there, as the core model requires) and ends at
+geometry is the point or region selected there, as the core model requires) and ends at
 the next stored shot boundary of the Original, or at the end of its measured
-video when no shot analysis is stored. A correction of an untracked target
-replaces its initial rectangle at the span start or stores a manual correction
-at this picture; a correction of a tracked target re-tracks only its range in
-the background.
+video when no shot analysis is stored. A point correction replaces its initial
+center at the span start or saves a manual correction at a later picture,
+invalidating samples only until the next correction or span end. Tracking a
+point refuses before work or writes. An untracked rectangle can be corrected
+at its span start; later corrections require tracking first. A correction of a
+tracked rectangle re-tracks only its range in the background.
 
 Target saves keep Camera open: a revision created by this Camera's own target
 save (matched by session, base revision and saved revision) rebuilds the session
@@ -390,9 +396,9 @@ Database 25 now stores core 19 and freezes core 18 before admitting captured Hol
 geometry. See [the capture contract](CAPTURED_FRAMING.md) for its stricter legacy
 recipe boundary and migration fixture.
 
-Saved region targets, keyboard region creation, following and selected-target
+Saved point and region targets, keyboard creation, following and selected-region
 tracking are implemented (above, [targets](TARGETS.md), [tracking](TRACKING.md)).
-Point targets, general non-face region proposals and pointer dragging of
+General non-face region proposals and pointer dragging of
 rectangles remain required. Whole ordinary Source following creep now animates
 scale while retaining the live target, as described above; broader authoring
 scopes remain open. Follow centers are placed on a letterboxed or

@@ -645,7 +645,8 @@ fn region(document: &ProjectDocument) -> AttentionTarget {
         region: TargetRegion {
             center: [400_000, 500_000],
             size: [200_000, 200_000],
-        },
+        }
+        .into(),
         samples: vec![],
         corrections: vec![],
         provenance: None,
@@ -679,7 +680,8 @@ fn selected_region_changes_stale_the_mapped_request_without_changing_its_picture
         region: TargetRegion {
             center: [600_000, 500_000],
             size: [200_000, 200_000],
-        },
+        }
+        .into(),
     });
     for (index, command) in [
         Command::SetTarget {

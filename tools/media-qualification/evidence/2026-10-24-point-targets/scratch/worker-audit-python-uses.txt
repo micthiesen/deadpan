@@ -1,0 +1,60 @@
+tools/model-qualification/worker_protocol.py:373:    region_target: str | None = None
+tools/model-qualification/worker_protocol.py:391:        if self.region_target is not None:
+tools/model-qualification/worker_protocol.py:392:            _core_identifier(self.region_target, "region target")
+tools/model-qualification/worker_protocol.py:402:        if self.region_target is not None:
+tools/model-qualification/worker_protocol.py:403:            result["region_target"] = self.region_target
+tools/model-qualification/worker_protocol.py:409:        value, {"video", "conditioning", "motion"}, "constraints", optional={"instructions", "region_target"}
+tools/model-qualification/worker_protocol.py:416:        constraints.get("region_target"),
+tools/model-qualification/tests/test_extension_worker.py:124:def select_region(context, target="hand"):
+tools/model-qualification/tests/test_extension_worker.py:128:              "region": {"center": [500000, 500000], "size": [200000, 200000]}}
+tools/model-qualification/tests/test_extension_worker.py:129:    context["continuity"]["binding"]["region"] = {"id": target, "record": record}
+tools/model-qualification/tests/test_extension_worker.py:130:    context["region"] = {"selection": "selected", "target": target, "label": "Hand",
+tools/model-qualification/tests/test_extension_worker.py:366:    def test_selected_region_has_one_anchor_and_captured_request_target(self):
+tools/model-qualification/tests/test_extension_worker.py:368:        wire["constraints"]["region_target"] = "hand"
+tools/model-qualification/tests/test_extension_worker.py:372:        context["region"]["target"] = "other"
+tools/model-qualification/tests/test_extension_worker.py:567:        wire["constraints"]["region_target"] = "hand"
+tools/model-qualification/tests/test_extension_worker.py:606:        wire["constraints"]["region_target"] = "hand"
+tools/model-qualification/tests/test_worker_protocol_v2.py:120:    def test_region_target_is_bounded_and_round_trips(self):
+tools/model-qualification/tests/test_worker_protocol_v2.py:122:        wire["constraints"]["region_target"] = "hand-1"
+tools/model-qualification/tests/test_worker_protocol_v2.py:124:        self.assertEqual(parsed.constraints.region_target, "hand-1")
+tools/model-qualification/tests/test_worker_protocol_v2.py:125:        self.assertEqual(parsed.constraints._wire()["region_target"], "hand-1")
+tools/model-qualification/tests/test_worker_protocol_v2.py:127:            wire["constraints"]["region_target"] = target
+tools/model-qualification/tests/test_worker_protocol_v2.py:297:                         "source": "initial", "region": {"center": [500000, 500000], "size": [100000, 100000]},
+tools/model-qualification/tests/test_worker_protocol_v2.py:310:            lambda value: value["region"].update(target="../hand"),
+tools/model-qualification/tests/test_worker_protocol_v2.py:315:            lambda value: value["region"]["left"]["region"].update(size=[1, 1]),
+tools/model-qualification/tests/test_worker_protocol_v2.py:330:        wire["constraints"]["region_target"] = "hand"
+tools/model-qualification/evidence/2026-10-08-extension-one-second/support/worker_protocol.py:342:    region_target: str | None = None
+tools/model-qualification/evidence/2026-10-08-extension-one-second/support/worker_protocol.py:360:        if self.region_target is not None:
+tools/model-qualification/evidence/2026-10-08-extension-one-second/support/worker_protocol.py:361:            _core_identifier(self.region_target, "region target")
+tools/model-qualification/evidence/2026-10-08-extension-one-second/support/worker_protocol.py:371:        if self.region_target is not None:
+tools/model-qualification/evidence/2026-10-08-extension-one-second/support/worker_protocol.py:372:            result["region_target"] = self.region_target
+tools/model-qualification/evidence/2026-10-08-extension-one-second/support/worker_protocol.py:378:        value, {"video", "conditioning", "motion"}, "constraints", optional={"instructions", "region_target"}
+tools/model-qualification/evidence/2026-10-08-extension-one-second/support/worker_protocol.py:385:        constraints.get("region_target"),
+tools/media-qualification/evidence/2026-10-24-follow-creep/scratch/audit_media.py:52:'poses':{'rows':len(poses),'branches':dict(branches),'all_actual_equals_expected':checks['pose_120_rows_and_oracle_matches'],'target_samples':[(x['at'],x['state'],x['confidence'],x['region']['center']) for x in target['samples']],'manual_correction':target['corrections'],'follow_value':next(n['framing'] for n in ev['after']['nodes'].values() if 'framing' in n),'owner_position_examples':{str(f):next(p['owner_position'] for p in poses if p['frame']==f) for f in [0,10,80,119]}},
+tools/media-qualification/evidence/2026-10-24-follow-creep/scratch/audit_final_media.py:57:'poses':{'rows':len(poses),'branches':dict(branches),'all_actual_equals_expected':checks['pose_120_rows_and_exact_oracle'],'target_samples':[(x['at'],x['state'],x['confidence'],x['region']['center']) for x in target['samples']],'corrections':target['corrections'],'owner_position_examples':{str(f):next(x['owner_position'] for x in poses if x['frame']==f) for f in [0,10,80,119]}},
+tools/model-qualification/evidence/2026-10-08-extension-one-second/support/worker_extension_context.py:183:                 "region": target_rectangle(value["region"])}
+tools/model-qualification/evidence/2026-10-08-extension-one-second/support/worker_extension_context.py:195:            item = {"at": at, "region": target_rectangle(row["region"])}
+tools/model-qualification/evidence/2026-10-08-extension-one-second/support/worker_extension_context.py:230:        raise ValueError("retained target differs from captured region identity")
+tools/model-qualification/evidence/2026-10-08-extension-one-second/support/worker.py:227:    exact_keys(region, ["selection", "target", "label", "target_sha256", "left", "right"])
+tools/model-qualification/evidence/2026-10-08-extension-one-second/support/worker.py:228:    _core_identifier(region["target"], "region target")
+tools/model-qualification/evidence/2026-10-08-extension-one-second/support/worker.py:230:    digest = region["target_sha256"]
+tools/model-qualification/evidence/2026-10-08-extension-one-second/support/worker.py:302:    if captured_target != request.constraints.region_target:
+tools/model-qualification/evidence/2026-10-08-extension-one-second/support/worker.py:303:        raise ValueError("region target differs from captured context")
+tools/model-qualification/evidence/2026-10-08-extension-one-second/support/worker.py:388:        exact_keys(region, ["selection", "target", "label", "target_sha256", "anchor"])
+tools/model-qualification/evidence/2026-10-08-extension-one-second/support/worker.py:389:        captured_target = region["target"]
+tools/model-qualification/evidence/2026-10-08-extension-one-second/support/worker.py:390:        synthetic = {"region": {key: region[key] for key in ("selection", "target", "label", "target_sha256")},
+tools/model-qualification/evidence/2026-10-08-extension-one-second/support/worker.py:398:    if captured_target != request.constraints.region_target:
+tools/model-qualification/evidence/2026-10-08-extension-one-second/support/worker.py:399:        raise ValueError("extension region target differs from captured context")
+tools/model-qualification/worker_extension_context.py:219:                 "region": target_rectangle(value["region"])}
+tools/model-qualification/worker_extension_context.py:231:            item = {"at": at, "region": target_rectangle(row["region"])}
+tools/model-qualification/worker_extension_context.py:266:        raise ValueError("retained target differs from captured region identity")
+tools/model-qualification/worker.py:230:    exact_keys(region, ["selection", "target", "label", "target_sha256", "left", "right"])
+tools/model-qualification/worker.py:231:    _core_identifier(region["target"], "region target")
+tools/model-qualification/worker.py:233:    digest = region["target_sha256"]
+tools/model-qualification/worker.py:305:    if captured_target != request.constraints.region_target:
+tools/model-qualification/worker.py:306:        raise ValueError("region target differs from captured context")
+tools/model-qualification/worker.py:391:        exact_keys(region, ["selection", "target", "label", "target_sha256", "anchor"])
+tools/model-qualification/worker.py:392:        captured_target = region["target"]
+tools/model-qualification/worker.py:393:        synthetic = {"region": {key: region[key] for key in ("selection", "target", "label", "target_sha256")},
+tools/model-qualification/worker.py:401:    if captured_target != request.constraints.region_target:
+tools/model-qualification/worker.py:402:        raise ValueError("extension region target differs from captured context")

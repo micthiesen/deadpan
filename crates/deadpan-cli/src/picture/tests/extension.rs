@@ -242,7 +242,8 @@ fn extension_relevance_keeps_editorial_edits_but_binds_saved_region_and_origin_d
         region: deadpan_core::TargetRegion {
             center: [500_000, 500_000],
             size: [200_000, 200_000],
-        },
+        }
+        .into(),
         samples: vec![],
         corrections: vec![],
         provenance: None,
@@ -331,7 +332,9 @@ fn extension_relevance_keeps_editorial_edits_but_binds_saved_region_and_origin_d
     wrong_origin.plan = None;
     assert_request_relevance(&fixture, &origin, &wrong_origin, false)?;
     let mut corrected = region;
-    corrected.region.center[0] += 50_000;
+    let mut region = *corrected.region.as_region().unwrap();
+    region.center[0] += 50_000;
+    corrected.region = region.into();
     fixture.edit(
         "correct-region",
         Command::SetTarget {

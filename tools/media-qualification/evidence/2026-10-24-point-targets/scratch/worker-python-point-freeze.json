@@ -1,0 +1,32 @@
+{
+  "files": {
+    "tools/model-qualification/worker.py": "05fcebf641530929f4d2f89bfac949ad1eb4dcf2e9b5458e8684b6aa0df077b3",
+    "tools/model-qualification/worker_extension_context.py": "48e72a3bc4507aa572aee05e0608e7b887ba7e50991299b99e2fd3911700df4a",
+    "tools/model-qualification/tests/test_extension_worker.py": "995065b5f98d017425e098687f2584d7198f0bfe4e36c001e80db3937315a4f9",
+    "tools/model-qualification/tests/test_worker_protocol_v2.py": "9a4b8326cf794abbcb6420b41501b817c787acdd3f50c6044b2fd680fee697a7",
+    "tools/model-qualification/tests/fixtures/point-target.json": "0d45ebfd8b41cc4644c08aef4baa549a2ca7975dbffa6eaa68e1509114525fc9",
+    "crates/deadpan-models/src/conditioning_region_tests.rs": "b29505404bb7be19b643853d60f7a7cc7ce4e87dca6d87b40d2212fd7466dd12"
+  },
+  "checks": [
+    {
+      "command": "PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s tools/model-qualification/tests -p test_extension_worker.py",
+      "exit": 0,
+      "tests": 39,
+      "stdout": "worker-python-extension-1.stdout",
+      "stderr": "worker-python-extension-1.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "82fc2f63e2c0fe52229668c48f5344740a497efcd631238497d2922e2c382895"
+    },
+    {
+      "command": "PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s tools/model-qualification/tests -p test_worker_protocol_v2.py",
+      "exit": 0,
+      "tests": 23,
+      "stdout": "worker-python-protocol-1.stdout",
+      "stderr": "worker-python-protocol-1.stderr",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3084c00deb56403e872c8ffad495a83608c8b370c5620baeb9c7ed2603dcf50"
+    }
+  ],
+  "pending_root_check": "cargo test --locked -p deadpan-models --lib point_target_identity_bytes_match_the_python_bridge_golden",
+  "active_worker_processes": []
+}

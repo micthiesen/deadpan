@@ -492,7 +492,8 @@ fn target() -> AttentionTarget {
         region: TargetRegion {
             center: [500_000, 500_000],
             size: [200_000, 300_000],
-        },
+        }
+        .into(),
         samples: vec![],
         corrections: vec![],
         provenance: None,

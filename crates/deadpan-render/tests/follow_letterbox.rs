@@ -45,7 +45,8 @@ fn target(center: [u32; 2], aspect: Option<ExactRatio>) -> AttentionTarget {
         region: TargetRegion {
             center,
             size: [100_000, 100_000],
-        },
+        }
+        .into(),
         samples: Vec::new(),
         corrections: Vec::new(),
         provenance: None,

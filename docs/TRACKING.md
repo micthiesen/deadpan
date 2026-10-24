@@ -342,7 +342,10 @@ threads ([service](../crates/deadpan-app/src/project/service/targets.rs)).
   `:track-cancel` cancels. Without `through-shots` a stored shot analysis is
   required (the app detects shots automatically); without one the job reports
   that tracking cannot stop at cuts and saves nothing. `:track` refuses a target
-  that already has samples or corrections: correct it instead.
+  that already has samples or corrections: correct it instead. Saved points
+  refuse before media preparation, worker launch or writes: tracking requires
+  a rectangle. Draw a region target to track a subject, or correct the point
+  manually with `c`.
 - Each command captures session and head revision at entry. The job thread
   opens the package read-only, runs `prepare_tracking` (refusing a head that
   differs from the captured one), then `track` with the installed
@@ -354,8 +357,9 @@ threads ([service](../crates/deadpan-app/src/project/service/targets.rs)).
 - Corrections: `c` in Camera on a tracked target opens its rectangle at the
   displayed picture; Enter runs a job over exactly `correction_range(at)`
   (no shot stop) and saves `retrack_target` expecting the entry head. Earlier
-  pictures keep their positions. An untracked target's correction is saved
-  directly without tracking.
+  pictures keep their positions. An untracked rectangle's initial selection
+  can be corrected at its span start; later corrections require tracking first.
+  Point corrections save directly without tracking and retain point geometry.
 - One job runs at a time; a second start is refused. Cancellation is explicit
   and cooperative. Closing, opening another project and shutdown cancel the job
   and wait until it has drained before releasing the project. Outcomes
@@ -471,7 +475,8 @@ mostly the unoptimized BGRA copy. The upscale is a measurement input only
 * Each attempt copies the whole Original into its workspace.
 * `deadpan-jobs` depends on `deadpan-analysis` for `NormalizedRect` in the
   protocol; moving the wire type was optional and not done.
-* Point targets, face proposals in Camera's numbered picker, general (non-face)
-  region proposals and stabilization consumers of a path remain open. Face
+* [Point targets and Camera face proposals](TARGETS.md) are implemented.
+  General (non-face) region proposals and stabilization consumers of a path
+  remain open. Face
   detection quality on real people (lighting, profile, occlusion, small faces)
   is unmeasured: the fixture is drawn.

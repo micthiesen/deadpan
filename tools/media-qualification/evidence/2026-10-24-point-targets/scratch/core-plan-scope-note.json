@@ -1,0 +1,19 @@
+{
+  "exit_code": 0,
+  "core_plan_inputs_unchanged": true,
+  "relevant_paths": [
+    "/Users/michael/Code/deadpan/crates/deadpan-core/src/target.rs",
+    "/Users/michael/Code/deadpan/crates/deadpan-core/src/target/geometry.rs",
+    "/Users/michael/Code/deadpan/crates/deadpan-core/src/target/point_tests.rs",
+    "/Users/michael/Code/deadpan/crates/deadpan-core/src/target/tests.rs",
+    "/Users/michael/Code/deadpan/crates/deadpan-core/tests/framing/follow_boundaries.rs",
+    "/Users/michael/Code/deadpan/crates/deadpan-plan/tests/picture_plan/follow.rs"
+  ],
+  "other_changed_paths": [
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/navigation/camera.rs",
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera.rs",
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness/points.rs",
+    "/Users/michael/Code/deadpan/crates/deadpan-models/src/conditioning_region_tests.rs"
+  ],
+  "note": "App comments/harness and Models golden test were edited while Core/Plan tests ran; every listed Core/Plan input stayed byte-identical."
+}

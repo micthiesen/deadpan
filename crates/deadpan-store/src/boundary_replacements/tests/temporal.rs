@@ -515,7 +515,8 @@ fn removing_a_selected_region_restores_fallback_and_retains_the_missing_selectio
                 region: TargetRegion {
                     center: [500_000, 500_000],
                     size: [250_000, 250_000],
-                },
+                }
+                .into(),
                 samples: vec![],
                 corrections: vec![],
                 provenance: None,

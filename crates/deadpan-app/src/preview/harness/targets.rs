@@ -158,7 +158,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
             && state["selected"] == "target-1"
             && saved.label == "Target 1"
             && saved.samples.is_empty()
-            && saved.region.center == [530_000, 500_000],
+            && saved.region.center() == [530_000, 500_000],
         json!({"camera_revision":"current","selected":"target-1","label":"Target 1","samples":0}),
         json!({"camera":state,"label":saved.label,"samples":saved.samples.len(),"region":format!("{:?}", saved.region)}),
     )?;

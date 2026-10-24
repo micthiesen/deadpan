@@ -9,6 +9,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "editing" => editing(d),
         "camera" => camera(d),
         "targets" => super::targets::run(d),
+        "points" => super::points::run(d),
         "faces" => super::faces::run(d),
         "menus" => menus(d),
         "palette" => super::palette::run(d),

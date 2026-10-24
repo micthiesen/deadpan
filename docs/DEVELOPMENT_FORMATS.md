@@ -120,6 +120,21 @@ Frozen audio contexts are schema 8: a context of schema 7 or older refuses a
 pitch shift or saturation, and the frozen layout validates a shift's range and
 purpose and its streaming preflight admits the shift object shape.
 
+## Additive target geometry in core schema 58 (2026-10-24)
+
+Attention targets now admit a center-only point as `{"center":[x,y]}`.
+Rectangles retain their exact `{"center":[x,y],"size":[w,h]}` bytes, including
+inside samples, corrections, commands and patches. All geometry in one target
+has the same kind. Points have no implicit rectangle; unknown or duplicate
+fields, null size, oversized coordinate arrays and invalid bounds refuse.
+
+Core 58 / SQLite 87 remain current. Existing rectangle documents and history
+are not rewritten. Earlier builds refuse point documents because their
+rectangle decoder requires size. This is an additive development vocabulary,
+following the closed-field convention above, with no migration or promise
+that an older binary can open a package containing points. Region-based AI
+conditioning retains point identity and reports `point_target` unavailable.
+
 ## Current validation and prior-format refusal
 
 ```sh

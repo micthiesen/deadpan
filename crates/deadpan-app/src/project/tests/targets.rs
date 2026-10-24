@@ -101,7 +101,8 @@ fn drawn(fixture: &Fixture, first: usize) -> AttentionTarget {
         region: TargetRegion {
             center: [400_000, 500_000],
             size: [200_000, 200_000],
-        },
+        }
+        .into(),
         samples: Vec::new(),
         corrections: Vec::new(),
         provenance: None,
@@ -211,6 +212,79 @@ fn store_cut(fixture: &Fixture, cut: usize) -> Arc<Workspace> {
     });
     assert_eq!(update.shot_save.unwrap().error, None);
     update.workspace.unwrap()
+}
+
+#[test]
+fn point_targets_save_and_correct_without_launching_rectangle_tracking() {
+    // No scripted runs: any accidental launch cannot yield a successful result.
+    let fixture = project(vec![]);
+    let mut point = drawn(&fixture, 2);
+    point.region = deadpan_core::TargetPoint {
+        center: [400_000, 500_000],
+    }
+    .into();
+    let saved = save(&fixture, &fixture.workspace, "point", point.clone());
+    let workspace = saved.workspace.unwrap();
+    let before = workspace.document.clone();
+    for mode in [
+        TrackMode::Track {
+            through_shots: true,
+        },
+        TrackMode::Correct {
+            at: fixture.pictures[6],
+            region: TargetRegion {
+                center: [300_000, 400_000],
+                size: [200_000, 200_000],
+            },
+        },
+    ] {
+        let refused = targets(&fixture.service, track(&workspace, 2, "point", mode));
+        assert!(refusal(&refused).unwrap().contains("no tracking rectangle"));
+        assert!(refused.targets.as_ref().unwrap().job.is_none());
+        assert_eq!(
+            refused.workspace.unwrap().document.as_ref(),
+            before.as_ref()
+        );
+    }
+    let corrected = point
+        .with_point_correction(
+            fixture.pictures[6],
+            deadpan_core::TargetPoint {
+                center: [600_000, 300_000],
+            },
+        )
+        .unwrap();
+    let saved = save(&fixture, &workspace, "point", corrected.clone());
+    let corrected_workspace = saved.workspace.unwrap();
+    assert_eq!(
+        corrected_workspace.document.targets()[&TargetId::new("point").unwrap()],
+        corrected
+    );
+    assert!(saved.targets.unwrap().job.is_none());
+    let undone = command(
+        &fixture.service,
+        ProjectRequest::Undo {
+            expected_revision: corrected_workspace.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(
+        undone.document.targets()[&TargetId::new("point").unwrap()],
+        point
+    );
+    let redone = command(
+        &fixture.service,
+        ProjectRequest::Redo {
+            expected_revision: undone.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(
+        redone.document.targets()[&TargetId::new("point").unwrap()],
+        corrected
+    );
 }
 
 #[test]
@@ -330,7 +404,7 @@ fn tracking_stops_at_the_stored_cut_saves_against_its_entry_head_and_corrects_on
     };
     let (early, _) = target.region_at(at(3)).unwrap();
     let (later, source) = target.region_at(at(cut - 1)).unwrap();
-    assert!(later.center[0] > early.center[0]);
+    assert!(later.center()[0] > early.center()[0]);
     assert_eq!(source, TargetSource::Tracked(TrackState::Tracked));
 
     // A correction re-tracks only from its picture; earlier positions stay.
@@ -362,7 +436,7 @@ fn tracking_stops_at_the_stored_cut_saves_against_its_entry_head_and_corrects_on
         assert_eq!(corrected.region_at(at(index)), target.region_at(at(index)));
     }
     let (after, _) = corrected.region_at(at(correction)).unwrap();
-    assert_eq!(after.center, region.center);
+    assert_eq!(after.center(), region.center);
 }
 
 #[test]

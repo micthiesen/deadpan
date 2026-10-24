@@ -1,0 +1,812 @@
+{
+  "schema_version": 1,
+  "repository": "/Users/michael/Code/deadpan",
+  "destination": "tools/media-qualification/evidence/2026-10-24-point-targets",
+  "raw_byte_limit": 268435456,
+  "gzip_threshold_bytes": 65536,
+  "inputs": {
+    "Cargo.lock": {
+      "bytes": 135252,
+      "sha256": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b"
+    },
+    "Cargo.toml": {
+      "bytes": 3509,
+      "sha256": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3"
+    },
+    "rust-toolchain.toml": {
+      "bytes": 86,
+      "sha256": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+    },
+    ".cargo/config.toml": {
+      "bytes": 147,
+      "sha256": "b906738cab8f6f289180e1bcf32826d3e2996899cb5055dc7f0c6838655c340d"
+    },
+    "crates/deadpan-app/src/navigation/registry/baseline-routing.txt": {
+      "bytes": 796287,
+      "sha256": "a181ba1d3f2db1c030fbdf1feaf2d5ae8efd5edd885114bcea9c161ac774cd8d"
+    },
+    "docs/COMMANDS.md": {
+      "bytes": 97071,
+      "sha256": "cde8bb1d3d7049f171782ac7293129f927602dc34e016836a272b6907647d8f1"
+    },
+    "docs/TARGETS.md": {
+      "bytes": 10676,
+      "sha256": "22375336ae89d61725f3a00ebf9f52fb6f03dcb7d3f668039158bd0ab2afb26b"
+    },
+    "docs/FRAMING.md": {
+      "bytes": 28033,
+      "sha256": "c2ce7771cc9f7686a3a6698f24f5bebb770afc5134632ce0453be93d2153bca2"
+    },
+    "docs/TRACKING.md": {
+      "bytes": 32140,
+      "sha256": "837c4218c193b6daf1f6e4cc829dc35260f86d73a13cb8a3a128f30701bc6d89"
+    },
+    "docs/KEYBINDING_COMPATIBILITY.md": {
+      "bytes": 44547,
+      "sha256": "d1963d4c1a5e4e5eeec0e401c4b58ae26011f23f7d263fed7ecbc755a98eae57"
+    },
+    "docs/DEVELOPMENT_FORMATS.md": {
+      "bytes": 10945,
+      "sha256": "ca803d3a0397294e0dfae5d3bf081aa2c1ed4441a2c33a405c7a299bd39ff3ab"
+    },
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": {
+      "bytes": 39157,
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+    }
+  },
+  "post_run_sources": {},
+  "files": [
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/app-check-1.stderr",
+      "path": "scratch/app-check-1.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/app-check-1.stdout",
+      "path": "scratch/app-check-1.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/app-check-2.stderr",
+      "path": "scratch/app-check-2.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/app-check-2.stdout",
+      "path": "scratch/app-check-2.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/app-point-tests-1.stderr",
+      "path": "scratch/app-point-tests-1.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/app-point-tests-1.stdout",
+      "path": "scratch/app-point-tests-1.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/app-unit-executable-live.json",
+      "path": "scratch/app-unit-executable-live.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/app-unit-executable-terminal.json",
+      "path": "scratch/app-unit-executable-terminal.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/app-units-final.json",
+      "path": "scratch/app-units-final.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/app-units-final.runner.stderr",
+      "path": "scratch/app-units-final.runner.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/app-units-final.runner.stdout",
+      "path": "scratch/app-units-final.runner.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/app-units-final.stderr",
+      "path": "scratch/app-units-final.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/app-units-final.stdout",
+      "path": "scratch/app-units-final.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/audit-point-evidence.json",
+      "path": "scratch/audit-point-evidence.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/audit-point-evidence.py",
+      "path": "scratch/audit-point-evidence.py"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/audit-point-evidence.stderr",
+      "path": "scratch/audit-point-evidence.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/audit-point-evidence.stdout",
+      "path": "scratch/audit-point-evidence.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/bundle-helpers.py",
+      "path": "scratch/bundle-helpers.py"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/cli-models-units.json",
+      "path": "scratch/cli-models-units.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/cli-models-units.runner.stderr",
+      "path": "scratch/cli-models-units.runner.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/cli-models-units.runner.stdout",
+      "path": "scratch/cli-models-units.runner.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/cli-models-units.stderr",
+      "path": "scratch/cli-models-units.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/cli-models-units.stdout",
+      "path": "scratch/cli-models-units.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/clippy-final-second.json",
+      "path": "scratch/clippy-final-second.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/clippy-final-second.runner.stderr",
+      "path": "scratch/clippy-final-second.runner.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/clippy-final-second.runner.stdout",
+      "path": "scratch/clippy-final-second.runner.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/clippy-final-second.stderr",
+      "path": "scratch/clippy-final-second.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/clippy-final-second.stdout",
+      "path": "scratch/clippy-final-second.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/clippy-final.json",
+      "path": "scratch/clippy-final.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/clippy-final.runner.stderr",
+      "path": "scratch/clippy-final.runner.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/clippy-final.runner.stdout",
+      "path": "scratch/clippy-final.runner.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/clippy-final.stderr",
+      "path": "scratch/clippy-final.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/clippy-final.stdout",
+      "path": "scratch/clippy-final.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/collect.py",
+      "path": "scratch/collect.py"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/commands-write.json",
+      "path": "scratch/commands-write.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/commands-write.runner.stderr",
+      "path": "scratch/commands-write.runner.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/commands-write.runner.stdout",
+      "path": "scratch/commands-write.runner.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/commands-write.stderr",
+      "path": "scratch/commands-write.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/commands-write.stdout",
+      "path": "scratch/commands-write.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/consumers.txt",
+      "path": "scratch/consumers.txt"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/core-plan-scope-note.json",
+      "path": "scratch/core-plan-scope-note.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/core-plan.json",
+      "path": "scratch/core-plan.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/core-plan.runner.stderr",
+      "path": "scratch/core-plan.runner.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/core-plan.runner.stdout",
+      "path": "scratch/core-plan.runner.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/core-plan.stderr",
+      "path": "scratch/core-plan.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/core-plan.stdout",
+      "path": "scratch/core-plan.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/design.md",
+      "path": "scratch/design.md"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/final-identities.json",
+      "path": "scratch/final-identities.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/first-identities.json",
+      "path": "scratch/first-identities.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/fmt-initial.stderr",
+      "path": "scratch/fmt-initial.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/fmt-initial.stdout",
+      "path": "scratch/fmt-initial.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/format-final-second.json",
+      "path": "scratch/format-final-second.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/format-final-second.runner.stderr",
+      "path": "scratch/format-final-second.runner.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/format-final-second.runner.stdout",
+      "path": "scratch/format-final-second.runner.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/format-final-second.stderr",
+      "path": "scratch/format-final-second.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/format-final-second.stdout",
+      "path": "scratch/format-final-second.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/format-final.json",
+      "path": "scratch/format-final.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/format-final.runner.stderr",
+      "path": "scratch/format-final.runner.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/format-final.runner.stdout",
+      "path": "scratch/format-final.runner.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/format-final.stderr",
+      "path": "scratch/format-final.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/format-final.stdout",
+      "path": "scratch/format-final.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/format-scoped.json",
+      "path": "scratch/format-scoped.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/format-scoped.stderr",
+      "path": "scratch/format-scoped.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/format-scoped.stdout",
+      "path": "scratch/format-scoped.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/host.json",
+      "path": "scratch/host.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/mechanical-region-initializers.json",
+      "path": "scratch/mechanical-region-initializers.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/media-final.json",
+      "path": "scratch/media-final.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/media-final.runner.stderr",
+      "path": "scratch/media-final.runner.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/media-final.runner.stdout",
+      "path": "scratch/media-final.runner.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/media-final.stderr",
+      "path": "scratch/media-final.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/media-final.stdout",
+      "path": "scratch/media-final.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/media.py",
+      "path": "scratch/media.py"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/models-golden.json",
+      "path": "scratch/models-golden.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/models-golden.runner.stderr",
+      "path": "scratch/models-golden.runner.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/models-golden.runner.stdout",
+      "path": "scratch/models-golden.runner.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/models-golden.stderr",
+      "path": "scratch/models-golden.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/models-golden.stdout",
+      "path": "scratch/models-golden.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-faces-final.json",
+      "path": "scratch/native-faces-final.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-faces-final.stderr",
+      "path": "scratch/native-faces-final.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-faces-final.stdout",
+      "path": "scratch/native-faces-final.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-points-final.json",
+      "path": "scratch/native-points-final.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-points-final.runner.stderr",
+      "path": "scratch/native-points-final.runner.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-points-final.runner.stdout",
+      "path": "scratch/native-points-final.runner.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-points-final.stderr",
+      "path": "scratch/native-points-final.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-points-final.stdout",
+      "path": "scratch/native-points-final.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-points-first.json",
+      "path": "scratch/native-points-first.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-points-first.runner.stderr",
+      "path": "scratch/native-points-first.runner.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-points-first.runner.stdout",
+      "path": "scratch/native-points-first.runner.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-points-first.stderr",
+      "path": "scratch/native-points-first.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-points-first.stdout",
+      "path": "scratch/native-points-first.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-regressions.py",
+      "path": "scratch/native-regressions.py"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-regressions.stderr",
+      "path": "scratch/native-regressions.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-regressions.stdout",
+      "path": "scratch/native-regressions.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-targets-final.json",
+      "path": "scratch/native-targets-final.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-targets-final.stderr",
+      "path": "scratch/native-targets-final.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-targets-final.stdout",
+      "path": "scratch/native-targets-final.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-zoom-final.json",
+      "path": "scratch/native-zoom-final.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-zoom-final.stderr",
+      "path": "scratch/native-zoom-final.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-zoom-final.stdout",
+      "path": "scratch/native-zoom-final.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/prepare-final.stderr",
+      "path": "scratch/prepare-final.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/prepare-final.stdout",
+      "path": "scratch/prepare-final.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/prepare-first.stderr",
+      "path": "scratch/prepare-first.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/prepare-first.stdout",
+      "path": "scratch/prepare-first.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/prepare.py",
+      "path": "scratch/prepare.py"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/release-final.json",
+      "path": "scratch/release-final.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/release-final.runner.stderr",
+      "path": "scratch/release-final.runner.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/release-final.runner.stdout",
+      "path": "scratch/release-final.runner.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/release-final.stderr",
+      "path": "scratch/release-final.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/release-final.stdout",
+      "path": "scratch/release-final.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/release-first.json",
+      "path": "scratch/release-first.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/release-first.runner.stderr",
+      "path": "scratch/release-first.runner.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/release-first.runner.stdout",
+      "path": "scratch/release-first.runner.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/release-first.stderr",
+      "path": "scratch/release-first.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/release-first.stdout",
+      "path": "scratch/release-first.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/release-source-check.json",
+      "path": "scratch/release-source-check.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/release-source-check.runner.stderr",
+      "path": "scratch/release-source-check.runner.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/release-source-check.runner.stdout",
+      "path": "scratch/release-source-check.runner.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/release-source-check.stderr",
+      "path": "scratch/release-source-check.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/release-source-check.stdout",
+      "path": "scratch/release-source-check.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/review-notes.json",
+      "path": "scratch/review-notes.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/ripwire.stderr",
+      "path": "scratch/ripwire.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/ripwire.stdout",
+      "path": "scratch/ripwire.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/run-worker-focused.py",
+      "path": "scratch/run-worker-focused.py"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/run-worker-regressions.py",
+      "path": "scratch/run-worker-regressions.py"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/run.py",
+      "path": "scratch/run.py"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/source-files.json",
+      "path": "scratch/source-files.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-audit-python-uses.txt",
+      "path": "scratch/worker-audit-python-uses.txt"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-audit-ripwire.stdout",
+      "path": "scratch/worker-audit-ripwire.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-audit-rust-uses.txt",
+      "path": "scratch/worker-audit-rust-uses.txt"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-core-check-1.stderr",
+      "path": "scratch/worker-core-check-1.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-core-check-1.stdout",
+      "path": "scratch/worker-core-check-1.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-core-tests-1.stderr",
+      "path": "scratch/worker-core-tests-1.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-core-tests-1.stdout",
+      "path": "scratch/worker-core-tests-1.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-nonapp-check-1.stderr",
+      "path": "scratch/worker-nonapp-check-1.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-nonapp-check-1.stdout",
+      "path": "scratch/worker-nonapp-check-1.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-nonapp-check-2.stderr",
+      "path": "scratch/worker-nonapp-check-2.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-nonapp-check-2.stdout",
+      "path": "scratch/worker-nonapp-check-2.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-nonapp-check-3.stderr",
+      "path": "scratch/worker-nonapp-check-3.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-nonapp-check-3.stdout",
+      "path": "scratch/worker-nonapp-check-3.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-nonapp-check-4.stderr",
+      "path": "scratch/worker-nonapp-check-4.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-nonapp-check-4.stdout",
+      "path": "scratch/worker-nonapp-check-4.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-focused-1.stderr",
+      "path": "scratch/worker-point-focused-1.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-focused-1.stdout",
+      "path": "scratch/worker-point-focused-1.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-focused-2.stderr",
+      "path": "scratch/worker-point-focused-2.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-focused-2.stdout",
+      "path": "scratch/worker-point-focused-2.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-focused-3.stderr",
+      "path": "scratch/worker-point-focused-3.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-focused-3.stdout",
+      "path": "scratch/worker-point-focused-3.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-focused-4.stderr",
+      "path": "scratch/worker-point-focused-4.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-focused-4.stdout",
+      "path": "scratch/worker-point-focused-4.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-focused-5.stderr",
+      "path": "scratch/worker-point-focused-5.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-focused-5.stdout",
+      "path": "scratch/worker-point-focused-5.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-focused-6.stderr",
+      "path": "scratch/worker-point-focused-6.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-focused-6.stdout",
+      "path": "scratch/worker-point-focused-6.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-focused-results.json",
+      "path": "scratch/worker-point-focused-results.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-freeze.json",
+      "path": "scratch/worker-point-freeze.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-handoff.md",
+      "path": "scratch/worker-point-handoff.md"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-regression-results.json",
+      "path": "scratch/worker-point-regression-results.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-regressions-1.stderr",
+      "path": "scratch/worker-point-regressions-1.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-regressions-1.stdout",
+      "path": "scratch/worker-point-regressions-1.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-regressions-2.stderr",
+      "path": "scratch/worker-point-regressions-2.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-regressions-2.stdout",
+      "path": "scratch/worker-point-regressions-2.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-regressions-3.stderr",
+      "path": "scratch/worker-point-regressions-3.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-regressions-3.stdout",
+      "path": "scratch/worker-point-regressions-3.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-regressions-4.stderr",
+      "path": "scratch/worker-point-regressions-4.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-point-regressions-4.stdout",
+      "path": "scratch/worker-point-regressions-4.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-python-extension-1.stderr",
+      "path": "scratch/worker-python-extension-1.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-python-extension-1.stdout",
+      "path": "scratch/worker-python-extension-1.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-python-point-freeze.json",
+      "path": "scratch/worker-python-point-freeze.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-python-point-handoff.md",
+      "path": "scratch/worker-python-point-handoff.md"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-python-protocol-1.stderr",
+      "path": "scratch/worker-python-protocol-1.stderr"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-python-protocol-1.stdout",
+      "path": "scratch/worker-python-protocol-1.stdout"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/worker-tracked-files.txt",
+      "path": "scratch/worker-tracked-files.txt"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-points-first/report.json",
+      "path": "native/native-points-first.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-points-final/report.json",
+      "path": "native/native-points-final.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-targets-final/report.json",
+      "path": "native/native-targets-final.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-faces-final/report.json",
+      "path": "native/native-faces-final.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-zoom-final/report.json",
+      "path": "native/native-zoom-final.json"
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-points-first/points-070.png",
+      "path": "screenshots/first-stale-feedback.png",
+      "png": true
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-points-final/points-031.png",
+      "path": "screenshots/new-point-center-controls.png",
+      "png": true
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-points-final/points-070.png",
+      "path": "screenshots/manual-point-correction.png",
+      "png": true
+    },
+    {
+      "source": "/tmp/deadpan-point-targets-2026-10-24/native-points-final/points-083.png",
+      "path": "screenshots/committed-point-following-creep.png",
+      "png": true
+    }
+  ],
+  "archives": [
+    {
+      "name": "first-source",
+      "root": "/tmp/deadpan-point-targets-2026-10-24/source-first"
+    },
+    {
+      "name": "final-point-project-and-export",
+      "root": "/tmp/deadpan-point-targets-2026-10-24/media-final"
+    },
+    {
+      "name": "actual-native-point-project",
+      "root": "/tmp/deadpan-point-targets-2026-10-24/native-points-final/projects/points/Documents/Deadpan/cfr-bframes.deadpan"
+    }
+  ],
+  "limitations": [
+    "Fifty-two scoped final sources and five sibling executable identities, not an attestation of every repository source file.",
+    "Core/Plan broad receipt guard is false only for separately disclosed App/Models changes; every Core/Plan input remained unchanged.",
+    "A test-only Models useless-conversion removal follows release-final/App units; final source check and Clippy bind the final scope, with unchanged runtime binary hashes.",
+    "Positive face regression detections use the existing scripted seam; point tracking is refused before launch. No person-quality, classifier or inference claim.",
+    "Offscreen Metal and scripted native input; no physical display/input, OS IME delivery, VoiceOver speech, listening or latency qualification.",
+    "Export comparison uses the committed shared picture/DSP reference; all observability limits, layout/screenshot warnings and opt-in ignores are retained.",
+    "Actual project, portable package, complete media verification and explicit video/AAC edit metadata are retained.",
+    "Collector output and later package-verification receipts are retained separately to avoid recursive publication."
+  ]
+}

@@ -537,7 +537,8 @@ fn selected_anchor_unavailability_is_preserved_and_binds_request_target() {
         region: deadpan_core::TargetRegion {
             center: [500_000, 500_000],
             size: [200_000, 300_000],
-        },
+        }
+        .into(),
         samples: vec![],
         corrections: vec![],
         provenance: None,
@@ -653,7 +654,8 @@ fn selected_region_captures_one_exact_original_anchor_and_rejects_a_moved_seed()
         region: TargetRegion {
             center: [500_000, 500_000],
             size: [200_000, 300_000],
-        },
+        }
+        .into(),
         samples: vec![],
         corrections: vec![],
         provenance: None,

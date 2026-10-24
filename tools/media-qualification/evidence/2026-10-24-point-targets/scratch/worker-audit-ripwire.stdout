@@ -1,0 +1,95 @@
+<ctx task="TargetGeometry TargetRegion AttentionTarget target_rect_at rect_from_target retrack_target RegionCaptureUnavailable PointTarget conditioning_region.rs tracking.rs Python bridge region center size" route=" [routed: subtoken+body BM25 (--for&apos;s default) — no strong name hit, multi-word conceptual query]" bundle="auto" bodies="6"><!-- ripwire lens for "TargetGeometry TargetRegion AttentionTarget target_rect_at rect_from_target retrack_target RegionCaptureUnavailable PointTarget conditioning_region.rs tracking.rs Python bridge region center size": reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="2599" --><sigs capped="1"><f p="/Users/michael/Code/deadpan/crates/deadpan-cli/src/tracking.rs"><d l="1201" n="target_rect_at" cx="1" ccx="0" in="1" churn="6" amp="1" tested="1"><doc>The region a saved target gives `at`, as a normalized rectangle</doc>pub fn target_rect_at(target: &amp;AttentionTarget, at: i64) -&gt; Option&lt;NormalizedRect&gt;</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-analysis/src/tracking/target.rs"><d l="47" n="target_region" cx="1" ccx="0" in="7" churn="2" amp="7" tested="1"><doc>A rectangle as core center and size in millionths</doc>pub fn target_region(rect: &amp;NormalizedRect) -&gt; TargetRegion</d><d l="60" n="rect_from_target" cx="1" ccx="0" in="3" churn="2" amp="3" tested="1"><doc>The part of a core region inside the picture, as a normalized rectangle</doc>pub fn rect_from_target(region: &amp;TargetRegion) -&gt; Option&lt;NormalizedRect&gt;</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-app/src/navigation/camera.rs"><d l="87" n="from_geometry" id="/Users/michael/Code/deadpan/crates/deadpan-app/src/navigation/camera.rs::RegionDraft::from_geometry" cx="3" ccx="1" in="1" churn="3" amp="1">pub fn from_geometry(geometry: TargetGeometry, kind_locked: bool) -&gt; Self</d></f></sigs><bodies shown="6" total="6" capped="0"><b t="fn" l="1201" p="/Users/michael/Code/deadpan/crates/deadpan-cli/src/tracking.rs" n="target_rect_at"><![CDATA[pub fn target_rect_at(target: &AttentionTarget, at: i64) -> Option<NormalizedRect> {
+    let (region, _) = target.region_at(deadpan_core::SourcePoint {
+        ticks: deadpan_core::ExactRatio::integer(at),
+        time_base: target.span.start().time_base,
+    })?;
+    rect_from_target(region.as_region()?)
+}]]><calls total="3"><c n="rect_from_target" l="60">pub fn rect_from_target(region: &amp;TargetRegion) -&gt; Option&lt;NormalizedRect&gt;</c><c n="integer" l="62">pub const fn integer(value: i64) -&gt; Self</c><c n="region_at" l="426">pub fn region_at(&amp;self, point: SourcePoint) -&gt; Option&lt;(TargetGeometry, TargetSource)&gt;</c></calls></b><b t="fn" l="47" p="/Users/michael/Code/deadpan/crates/deadpan-analysis/src/tracking/target.rs" n="target_region"><![CDATA[pub fn target_region(rect: &NormalizedRect) -> TargetRegion {
+    let units = f64::from(TARGET_UNITS);
+    let scale = |value: f64, minimum: u32| -> u32 {
+        (value * units).round().clamp(f64::from(minimum), units) as u32
+    };
+    let (x, y) = rect.center();
+    TargetRegion {
+        center: [scale(x, 0), scale(y, 0)],
+        size: [scale(rect.width(), 1), scale(rect.height(), 1)],
+    }
+}]]><calls total="1"><c n="round" l="135">pub fn round(value: f64) -&gt; f64</c></calls></b><b t="fn" l="60" p="/Users/michael/Code/deadpan/crates/deadpan-analysis/src/tracking/target.rs" n="rect_from_target"><![CDATA[pub fn rect_from_target(region: &TargetRegion) -> Option<NormalizedRect> {
+    let units = f64::from(TARGET_UNITS);
+    let [cx, cy] = region.center.map(|value| f64::from(value) / units);
+    let [w, h] = region.size.map(|value| f64::from(value) / units);
+    NormalizedRect::clipped(cx - w / 2.0, cy - h / 2.0, w, h)
+}]]><calls total="1"><c n="clipped" l="180">pub fn clipped(x: f64, y: f64, width: f64, height: f64) -&gt; Option&lt;Self&gt;</c></calls></b><b t="method" l="87" p="/Users/michael/Code/deadpan/crates/deadpan-app/src/navigation/camera.rs" n="from_geometry"><![CDATA[pub fn from_geometry(geometry: TargetGeometry, kind_locked: bool) -> Self {
+        let (region, point) = match geometry {
+            TargetGeometry::Region(region) => (region, false),
+            TargetGeometry::Point(point) => (
+                TargetRegion {
+                    center: point.center,
+                    size: [TARGET_UNITS / 4; 2],
+                },
+                true,
+            ),
+        };
+        let mut draft = Self::new(region);
+        draft.point = point;
+        draft.kind_locked = kind_locked;
+        draft
+    }]]><calls total="1"><c n="new" l="73">pub fn new(region: TargetRegion) -&gt; Self</c></calls></b><b t="fn" l="306" p="/Users/michael/Code/deadpan/crates/deadpan-models/src/conditioning_region_tests.rs" n="point_targets_never_become_fake_area_conditioning_seeds"><![CDATA[fn point_targets_never_become_fake_area_conditioning_seeds() {
+    let mut value=target();
+    value.region=deadpan_core::TargetPoint{center:value.region.center()}.into();
+    let captured=capture(&value);
+    assert!(matches!(captured_left(&captured),CapturedRegionBoundary::Unavailable{reason:RegionCaptureUnavailable::PointTarget}));
+    assert!(captured.seeds(&boundaries(),&geometry(),[768,320]).unwrap().is_none());
+}]]><calls total="2"><c n="target" l="21">fn target() -&gt; AttentionTarget</c><c n="capture" l="73">fn capture(target: &amp;AttentionTarget) -&gt; RegionCapture</c></calls></b><b t="fn" l="233" p="/Users/michael/Code/deadpan/crates/deadpan-models/src/conditioning_region.rs" n="capture_boundary"><![CDATA[fn capture_boundary(
+    target: &AttentionTarget,
+    boundary: &BoundaryPicture,
+    content: Option<RasterRect>,
+    native: [u32; 2],
+) -> CapturedRegionBoundary {
+    use RegionCaptureUnavailable as Reason;
+    let unavailable = |reason| CapturedRegionBoundary::Unavailable { reason };
+    let BoundaryPicture::Original { asset, picture, .. } = boundary else {
+        return unavailable(Reason::NotOriginal);
+    };
+    if asset != &target.asset {
+        return unavailable(Reason::DifferentAsset);
+    }
+    let point = SourcePoint {
+        ticks: ExactRatio::integer(picture.pts.ticks),
+        time_base: picture.pts.time_base,
+    };
+    let Some(value) = target.evaluated_region_at(point) else {
+        return unavailable(Reason::OutsideTargetSpan);
+    };
+    match value.source {
+        TargetSource::Tracked(TrackState::Lost) => return unavailable(Reason::LostTrack),
+        TargetSource::Tracked(TrackState::Interpolated) => {
+            return unavailable(Reason::InterpolatedTrack);
+        }
+        TargetSource::Tracked(TrackState::Tracked)
+            if value.confidence.is_none_or(|confidence| confidence < 700) =>
+        {
+            return unavailable(Reason::LowConfidence);
+        }
+        _ => {}
+    }
+    let Some(region) = value.region.as_region().copied() else {
+        return unavailable(Reason::PointTarget);
+    };
+    if !inside(region) {
+        return unavailable(Reason::OutsideSource);
+    }
+    let Some(content) = content else {
+        return unavailable(Reason::MissingContent);
+    };
+    if map_region(region, content, native).is_err() {
+        return unavailable(Reason::TooSmall);
+    }
+    CapturedRegionBoundary::Available {
+        asset: asset.clone(),
+        point,
+        source: value.source,
+        region,
+        confidence: value.confidence,
+    }
+}]]><calls total="4"><c n="integer" l="62">pub const fn integer(value: i64) -&gt; Self</c><c n="evaluated_region_at" l="431">pub fn evaluated_region_at(&amp;self, point: SourcePoint) -&gt; Option&lt;EvaluatedTargetRegion&gt;</c><c n="inside" l="287">fn inside(region: TargetRegion) -&gt; bool</c><c n="map_region" l="296">pub(super) fn map_region( region: TargetRegion, content: RasterRect, native: [u32</c></calls></b></bodies></ctx>

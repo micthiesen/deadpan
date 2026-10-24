@@ -1,0 +1,50 @@
+    Checking deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+error[E0308]: mismatched types
+   --> crates/deadpan-store/src/generation_inputs/tests.rs:579:13
+    |
+579 |             region,
+    |             ^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+    |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+    |
+579 |             region: deadpan_core::TargetGeometry::Region(region),
+    |             +++++++++++++++++++++++++++++++++++++++++++++      +
+
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `deadpan-store` (lib test) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error[E0615]: attempted to take value of method `center` on type `TargetGeometry`
+   --> crates/deadpan-cli/src/faces.rs:563:34
+    |
+563 |         assert_eq!(target.region.center, [550_000, 300_000]);
+    |                                  ^^^^^^ method, not a field
+    |
+help: use parentheses to call the method
+    |
+563 |         assert_eq!(target.region.center(), [550_000, 300_000]);
+    |                                        ++
+
+error[E0609]: no field `size` on type `TargetGeometry`
+   --> crates/deadpan-cli/src/faces.rs:564:34
+    |
+564 |         assert_eq!(target.region.size, [100_000, 200_000]);
+    |                                  ^^^^ unknown field
+
+error[E0615]: attempted to take value of method `center` on type `TargetGeometry`
+   --> crates/deadpan-cli/src/picture/tests/extension.rs:334:22
+    |
+334 |     corrected.region.center[0] += 50_000;
+    |                      ^^^^^^ method, not a field
+    |
+    = help: methods are immutable and cannot be assigned to
+
+Some errors have detailed explanations: E0609, E0615.
+For more information about an error, try `rustc --explain E0609`.
+error: could not compile `deadpan-cli` (lib test) due to 3 previous errors

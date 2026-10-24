@@ -1,0 +1,141 @@
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+error[E0308]: mismatched types
+   --> crates/deadpan-cli/tests/preview_export/follow_creep.rs:204:25
+    |
+204 |                 region: region(250_000),
+    |                         ^^^^^^^^^^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+    |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+    |
+204 |                 region: deadpan_core::TargetGeometry::Region(region(250_000)),
+    |                         +++++++++++++++++++++++++++++++++++++               +
+
+error[E0308]: mismatched types
+   --> crates/deadpan-cli/tests/preview_export/follow_creep.rs:208:33
+    |
+208 |                         region: region(250_000),
+    |                                 ^^^^^^^^^^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+    |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+    |
+208 |                         region: deadpan_core::TargetGeometry::Region(region(250_000)),
+    |                                 +++++++++++++++++++++++++++++++++++++               +
+
+error[E0308]: mismatched types
+   --> crates/deadpan-cli/tests/preview_export/follow_creep.rs:214:33
+    |
+214 |                         region: region(650_000),
+    |                                 ^^^^^^^^^^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+    |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+    |
+214 |                         region: deadpan_core::TargetGeometry::Region(region(650_000)),
+    |                                 +++++++++++++++++++++++++++++++++++++               +
+
+error[E0308]: mismatched types
+   --> crates/deadpan-cli/tests/preview_export/follow_creep.rs:220:33
+    |
+220 |                         region: region(650_000),
+    |                                 ^^^^^^^^^^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+    |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+    |
+220 |                         region: deadpan_core::TargetGeometry::Region(region(650_000)),
+    |                                 +++++++++++++++++++++++++++++++++++++               +
+
+error[E0308]: mismatched types
+   --> crates/deadpan-cli/tests/preview_export/follow_creep.rs:226:33
+    |
+226 |                         region: region(700_000),
+    |                                 ^^^^^^^^^^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+    |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+    |
+226 |                         region: deadpan_core::TargetGeometry::Region(region(700_000)),
+    |                                 +++++++++++++++++++++++++++++++++++++               +
+
+error[E0308]: mismatched types
+   --> crates/deadpan-cli/tests/preview_export/follow_creep.rs:233:29
+    |
+233 |                     region: region(450_001),
+    |                             ^^^^^^^^^^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+    |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+    |
+233 |                     region: deadpan_core::TargetGeometry::Region(region(450_001)),
+    |                             +++++++++++++++++++++++++++++++++++++               +
+
+error[E0308]: mismatched types
+    --> crates/deadpan-cli/tests/preview_export/recipes.rs:1186:25
+     |
+1186 |                 region: region(300_000),
+     |                         ^^^^^^^^^^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+     |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+     |
+1186 |                 region: deadpan_core::TargetGeometry::Region(region(300_000)),
+     |                         +++++++++++++++++++++++++++++++++++++               +
+
+error[E0308]: mismatched types
+    --> crates/deadpan-cli/tests/preview_export/recipes.rs:1190:33
+     |
+1190 |                         region: region(300_000),
+     |                                 ^^^^^^^^^^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+     |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+     |
+1190 |                         region: deadpan_core::TargetGeometry::Region(region(300_000)),
+     |                                 +++++++++++++++++++++++++++++++++++++               +
+
+error[E0308]: mismatched types
+    --> crates/deadpan-cli/tests/preview_export/recipes.rs:1196:33
+     |
+1196 |                         region: region(700_000),
+     |                                 ^^^^^^^^^^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+     |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+     |
+1196 |                         region: deadpan_core::TargetGeometry::Region(region(700_000)),
+     |                                 +++++++++++++++++++++++++++++++++++++               +
+
+error[E0308]: mismatched types
+    --> crates/deadpan-cli/tests/preview_export/recipes.rs:1267:25
+     |
+1267 |                 region: region(300_000),
+     |                         ^^^^^^^^^^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+     |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+     |
+1267 |                 region: deadpan_core::TargetGeometry::Region(region(300_000)),
+     |                         +++++++++++++++++++++++++++++++++++++               +
+
+error[E0308]: mismatched types
+    --> crates/deadpan-cli/tests/preview_export/recipes.rs:1271:33
+     |
+1271 |                         region: region(300_000),
+     |                                 ^^^^^^^^^^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+     |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+     |
+1271 |                         region: deadpan_core::TargetGeometry::Region(region(300_000)),
+     |                                 +++++++++++++++++++++++++++++++++++++               +
+
+error[E0308]: mismatched types
+    --> crates/deadpan-cli/tests/preview_export/recipes.rs:1277:33
+     |
+1277 |                         region: region(700_000),
+     |                                 ^^^^^^^^^^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+     |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+     |
+1277 |                         region: deadpan_core::TargetGeometry::Region(region(700_000)),
+     |                                 +++++++++++++++++++++++++++++++++++++               +
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `deadpan-cli` (test "golden_renders") due to 12 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-cli` (test "bridge_conditioning") due to 12 previous errors
+error: could not compile `deadpan-cli` (test "preview_export") due to 12 previous errors
