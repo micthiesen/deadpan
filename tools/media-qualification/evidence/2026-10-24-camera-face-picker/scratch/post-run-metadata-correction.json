@@ -1,0 +1,9 @@
+{
+  "path": "crates/deadpan-app/src/preview/harness/targets.rs",
+  "before_sha256": "c44f7c18ed877e26d7a5704c83b031a7182f71a5f143e2c95dcb00f82742c5a0",
+  "after_sha256": "cc68360fa230160c2a49749faba213d8b2854b40dd4ead35841215065658d9e8",
+  "exactly_one_string_replacement": true,
+  "functional_behavior_changed": false,
+  "new_wording_executed_in_retained_replays": false,
+  "note": "The targets reports retain the old skip wording; face coverage is in the separate faces report."
+}

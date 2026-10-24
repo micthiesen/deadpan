@@ -1,0 +1,38 @@
+{
+  "collector_first_execution_exit_code": 0,
+  "primary_inventory_sha256": "eff0d0c2542c329a1cedd82bbcff1100be9fa5aceb115823284d7bb3ce7ab98e",
+  "publisher_sha256": "371482a8e15f889d09c178130103e9cd5f46d80408399b9741485306cd1b89f3",
+  "scope": "Receipts produced after immutable Primary publication; no product/build command rerun.",
+  "source_files": {
+    "collect.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "collect.stdout": {
+      "bytes": 233,
+      "sha256": "078f9bde2e5018a6517e3c61ad4bbc2418bffa803fbd1b5c73c160acd4337541"
+    },
+    "package-verification.json": {
+      "bytes": 5645,
+      "sha256": "fc671eacce4209a93771cd6224f20ed5e87dc868b4157db701f8912bf34c8fbe"
+    },
+    "package-verification.md": {
+      "bytes": 1187,
+      "sha256": "e0c6dc76b37c5b0821340311b813bdde40f0a2843de7db2af2dc8ebc399c9d8b"
+    },
+    "package-verification.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "package-verification.stdout": {
+      "bytes": 285,
+      "sha256": "84b607ce8a7c8b4c9136f6d7be35a24c7e2d2556a64828232c54f1e7eed092e8"
+    },
+    "verify-package.py": {
+      "bytes": 22437,
+      "sha256": "cf0206662f66392ae269cd1a451fc8e129a80e24639b7f471615118bce21496e"
+    }
+  },
+  "verification_first_execution_exit_code": 0,
+  "verification_receipt_sha256": "fc671eacce4209a93771cd6224f20ed5e87dc868b4157db701f8912bf34c8fbe"
+}

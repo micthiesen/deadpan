@@ -60,7 +60,9 @@ picture time. The document map is `targets`; patches carry `targets` changes.
 ## Following a target
 
 `FramingValue::Follow { target, scale, fallback }` centers a framing layer on
-the target at the source time of the picture shown, at a fixed scale. The plan
+the target at the source time of the picture shown, at its evaluated scale.
+A whole ordinary Source can retain a live-target scale transition
+([following creep](FRAMING.md#zoom-and-creep-commands)). The plan
 resolves it after descending to the picture (`RenderPlan::resolve_follows`): the
 target point is carried outward through every inner posed layer, innermost
 first (`p' = (p - center) * scale + 1/2`), so an outer follow sees the subject
@@ -89,8 +91,9 @@ scale and the fallback; the target supplies the center.
 
 Camera picks, draws, follows and corrects targets ([framing](FRAMING.md#native-interaction)):
 
-- `f` lists saved targets covering the stopped picture before the center and
-  corners; digits pick one. The viewer draws each at `region_at` of the
+- `f` lists saved targets covering the stopped picture, center and corners,
+  then detected face proposals. Each page has digits 1–9; Tab and Shift+Tab
+  reach the other pages. The viewer draws saved targets at `region_at` of the
   picture's exact source time with its state (`drawn`, `corrected`, `tracked`,
   `interpolated`, `lost · holding`).
 - `n` draws a new rectangle with the keyboard (Tab: center, width, height;
@@ -141,6 +144,10 @@ and centers the wrong point; re-saving it (draw, track or `track --save
 created and corrected headlessly (`track --save`, `track-correct`; see
 [tracking](TRACKING.md)) and in Camera, and saved from a face proposal by
 `target=face:N`. `detect-faces` lists proposals headlessly without editing.
-Point targets, pointer rectangle
-dragging, face proposals as numbered entries of Camera's picker, general
+Camera's numbered face proposals use the same service. Selecting one saves
+only that face as a target, keeps Camera open and centers its draft; Enter
+commits framing separately. Escape retains the explicitly accepted target
+while restoring entry framing. Detection alone never edits.
+
+Point targets, pointer rectangle dragging, general
 (non-face) region proposals and quality evidence on real people remain open.

@@ -1,0 +1,16 @@
+{
+  "claim": "Stable retained bytes and identities; no automatic requirement certification.",
+  "final_source_paths": 10,
+  "limitations": [
+    "Ten qualified sources plus one post-run diagnostic-string-only amendment; no all-tree compilation attestation.",
+    "Positive face observations are scripted; real counter-fixture Vision no-face runs do not establish people/detector accuracy.",
+    "Offscreen Metal UI with simulated audio, not physical input/display, OS IME, VoiceOver speech, listening or latency qualification.",
+    "Export references the canonical shared picture/DSP implementation; no independent DSP oracle.",
+    "Raw reports keep all warnings/skips, including the stale targets skip corrected only after the runs.",
+    "Collector output and later package-verification receipts are retained separately, not recursively inside this immutable package."
+  ],
+  "plan_sha256": "b696372a904df5439d5e35560ce7ed49d62bdfebc21a5f0425dc1bead8b4d3ec",
+  "raw_payload_bytes": 100788674,
+  "schema_version": 1,
+  "script_sha256": "320e79dbf00568d68d7657e3c31d968402772533071529e7c9c494f9aacc6f0e"
+}

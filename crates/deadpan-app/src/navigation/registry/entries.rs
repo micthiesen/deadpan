@@ -1883,7 +1883,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::CAMERA,
         replay: Replay::Ignored,
         headless: gui("none needed", CAM),
-        help: "Toggle the numbered picker: saved targets at this picture first, then the center and corners. Choose by number. Digits are counts outside the picker.",
+        help: "Toggle the numbered picker: saved targets, center and corners, then detected faces. Digits 1–9 choose from the current page; Tab and Shift+Tab change pages. Selecting a face saves its target; Enter separately applies framing. Digits are counts outside the picker.",
     },
     Spec {
         id: "camera.follow",

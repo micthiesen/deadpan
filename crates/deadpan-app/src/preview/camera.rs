@@ -2,8 +2,8 @@
 //! replaces evaluated operations on its already decoded picture.
 //!
 //! Camera also owns attention targets at the stopped picture: the numbered
-//! picker lists saved targets covering the picture before the center and
-//! corners; `t` makes the framing follow the selected target; `n` draws a new
+//! picker lists saved targets, center and corners, then detected face proposals
+//! in pages of nine; `t` follows the selected target; `n` draws a new
 //! target rectangle and `c` corrects the selected one with the keyboard; `T`
 //! tracks it in the background. A target save continues the same Camera on
 //! the revision it created; any other revision change revokes the draft.
@@ -21,6 +21,8 @@ use deadpan_core::{
 use deadpan_render::FramingLayer;
 
 use super::*;
+
+mod face_picker;
 
 const PREPARING_PICTURE: &str = "Preparing the stopped picture for framing…";
 
@@ -284,8 +286,7 @@ mod semantic_zoom_tests {
     }
 }
 
-/// One numbered picker entry: a saved target covering this picture, or a
-/// fixed source point.
+/// A saved target, fixed source point or unsaved detected face proposal.
 pub(super) struct PickerTarget {
     number: Option<u8>,
     label: String,
@@ -295,6 +296,7 @@ pub(super) struct PickerTarget {
     /// Upright source point projected into the selected operation's input.
     /// None where a descendant operation clipped it.
     center: Option<[ExactRatio; 2]>,
+    face: Option<face_picker::Proposal>,
 }
 
 /// A temporary follow of a saved target. Scale changes keep the target's
@@ -335,6 +337,9 @@ pub(super) struct CameraSession {
     draft: CameraDraft,
     steps: CameraPanSteps,
     picker: Vec<PickerTarget>,
+    picker_page: usize,
+    faces: face_picker::Faces,
+    face_acceptance: Option<face_picker::Acceptance>,
     committing: bool,
     fields: super::camera_fields::CameraFields,
     field_keys: Vec<CameraKey>,
@@ -704,7 +709,7 @@ impl CameraSession {
                 .transpose()
         };
         // Saved targets first, then the center and corners (specification
-        // section 7.6). Digits reach the first nine.
+        // section 7.6). Each page owns its digits; proposals append later.
         let mut picker = Vec::new();
         for shown in app.targets_at_picture() {
             let center = shown
@@ -718,6 +723,7 @@ impl CameraSession {
                 saved: Some((shown.id, shown.region, shown.source)),
                 point: None,
                 center: project(center).ok().flatten(),
+                face: None,
             });
         }
         for (label, point) in [
@@ -733,6 +739,7 @@ impl CameraSession {
                 saved: None,
                 point: Some(point),
                 center: project(point)?,
+                face: None,
             });
         }
         for (position, entry) in picker.iter_mut().enumerate().take(9) {
@@ -811,6 +818,9 @@ impl CameraSession {
                 vertical: projected_point(steps[1])?,
             },
             picker,
+            picker_page: 0,
+            faces: face_picker::Faces::default(),
+            face_acceptance: None,
             committing: false,
             fields: super::camera_fields::CameraFields::new(draft_pose),
             field_keys: Vec::new(),
@@ -869,6 +879,7 @@ impl CameraSession {
             "revision": self.revision.as_str(),
             "phase": format!("{:?}", self.draft.phase()),
             "pose": format!("{:?}", self.draft.pose()),
+            "draft_pose": self.draft.pose(),
             "region": self.draft.region().map(|region| {
                 let region = region.region();
                 serde_json::json!({"center": region.center, "size": region.size})
@@ -881,8 +892,12 @@ impl CameraSession {
             "picker": self
                 .picker
                 .iter()
-                .map(|entry| serde_json::json!({"number": entry.number, "label": entry.label, "available": entry.center.is_some()}))
+                .map(|entry| serde_json::json!({"number": entry.number, "label": entry.label, "available": entry.center.is_some(), "face": entry.face.map(|face| face.number), "saved": entry.saved.as_ref().map(|(id, ..)| id.as_str())}))
                 .collect::<Vec<_>>(),
+            "picker_page": self.picker_page + 1,
+            "picker_pages": self.picker.len().div_ceil(9),
+            "faces_status": self.faces.status,
+            "faces_pending": self.faces.pending.is_some(),
         })
     }
 
@@ -1731,6 +1746,21 @@ impl DeadpanApp {
             session.draft.set_pose(pose);
         }
         session.fields.sync(session.draft.pose());
+        if let Some(acceptance) = old.face_acceptance
+            && self
+                .targets
+                .saved()
+                .is_some_and(|saved| saved.id == acceptance.id)
+            && targets.contains_key(&acceptance.id)
+        {
+            if let Err(error) = session.accept_saved_face(acceptance) {
+                self.error = Some(format!(
+                    "The face target was saved; its framing could not be selected: {error}"
+                ));
+            } else {
+                self.message = Some("Face target saved and selected. Enter applies framing; Escape keeps the target and restores entry framing.".into());
+            }
+        }
         let poses = self.workspace.as_ref().and_then(|workspace| {
             let picture = self.presentation.picture()?;
             let framing = session
@@ -1840,6 +1870,9 @@ impl DeadpanApp {
     }
 
     pub(super) fn reconcile_camera(&mut self) {
+        // A completed proposal may have arrived while this same picture's
+        // temporary framing was waiting for GPU submission.
+        self.finish_camera_faces();
         let Some(camera) = &self.camera else {
             return;
         };
@@ -1879,6 +1912,7 @@ impl DeadpanApp {
 
     /// A refused target command lets Camera continue editing.
     pub(super) fn camera_target_reply(&mut self, ticket: u64, refusal: Option<&str>) {
+        self.camera_face_reply(ticket, refusal);
         // A later command's reply also answers the save. Its success needs no
         // flag: the saved receipt alone continues Camera on its revision.
         if let Some(camera) = &mut self.camera
@@ -1957,6 +1991,7 @@ impl DeadpanApp {
         if let CameraEffect::Reset(_) = effect {
             // Reset replaces the operation with a static pose; it stops a follow.
             camera.follow = None;
+            camera.close_faces();
         }
         self.camera_effect(effect, context);
     }
@@ -1990,7 +2025,18 @@ impl DeadpanApp {
 
     fn camera_effect(&mut self, effect: CameraEffect, context: &egui::Context) {
         match effect {
-            CameraEffect::None | CameraEffect::RefreshTargets | CameraEffect::TargetsClosed => {}
+            CameraEffect::None => {}
+            CameraEffect::RefreshTargets => self.start_camera_faces(),
+            CameraEffect::TargetsClosed => {
+                if let Some(camera) = &mut self.camera {
+                    camera.close_faces();
+                }
+            }
+            CameraEffect::TargetPage { reverse } => {
+                if let Some(camera) = &mut self.camera {
+                    camera.picker_page(reverse);
+                }
+            }
             CameraEffect::Unchanged => {
                 // A follow started or stopped at the same pose still changes
                 // the authored framing.
@@ -2095,6 +2141,15 @@ impl DeadpanApp {
     }
 
     fn camera_target(&mut self, number: u8, context: &egui::Context) {
+        if self.camera.as_ref().is_some_and(|camera| {
+            camera
+                .picker
+                .iter()
+                .any(|entry| entry.number == Some(number) && entry.face.is_some())
+        }) {
+            self.save_camera_face(number);
+            return;
+        }
         let Some(camera) = &mut self.camera else {
             return;
         };
@@ -2141,6 +2196,7 @@ impl DeadpanApp {
         }
         let effect = camera.draft.choose_target(number, pose);
         if matches!(effect, CameraEffect::PoseChanged(_)) {
+            camera.close_faces();
             camera.fields.sync(camera.draft.pose());
             camera.field_error = None;
             if let Some(follow) = &mut camera.follow {
@@ -2658,6 +2714,21 @@ impl DeadpanApp {
         }
         if picking {
             for entry in &camera.picker {
+                if let (Some(number), Some(face)) = (entry.number, entry.face)
+                    && let Some(rect) = source_rect(&face.region)
+                {
+                    painter.rect_stroke(
+                        rect,
+                        2.0,
+                        egui::Stroke::new(1.5, style::LAVENDER),
+                        egui::StrokeKind::Middle,
+                    );
+                    badge(
+                        rect.left_top() - egui::vec2(0.0, 18.0),
+                        &number.to_string(),
+                        style::LAVENDER,
+                    );
+                }
                 let (Some(number), Some(point)) = (entry.number, entry.point) else {
                     continue;
                 };
@@ -2792,6 +2863,12 @@ impl DeadpanApp {
                     .max()
                     .unwrap_or(1);
                 style::key_hint(ui, &format!("1–{last}"), "target");
+                style::key_hint(ui, "Tab / Shift+Tab", "target page");
+                ui.weak(format!(
+                    "Page {} / {}",
+                    camera.picker_page + 1,
+                    camera.picker.len().div_ceil(9)
+                ));
                 style::key_hint(ui, "f", "back");
                 style::key_hint(ui, "r", "reset");
                 style::key_hint(ui, "Esc", "cancel");
@@ -2959,7 +3036,7 @@ impl DeadpanApp {
                         }
                         ui.add_space(8.0);
                         ui.weak(match camera.draft.phase() {
-                            CameraPhase::TargetPicker => "Choose a number or press f to return to adjustment.",
+                            CameraPhase::TargetPicker => "Choose this page's number. Tab / Shift+Tab changes pages; f returns to adjustment. A face selection saves its target before framing changes.",
                             CameraPhase::Region => "Finish the rectangle, or press Escape to return to framing.",
                             _ if camera.follow.is_some() => "The followed target supplies the center. Scale changes keep following it.",
                             _ => "Tab moves through fields. Up/Down changes 1%. Enter finishes a field; Enter in the viewer applies the edit.",
@@ -3000,7 +3077,12 @@ impl DeadpanApp {
                         }
                         if ui.add(style::action(if camera.draft.phase() == CameraPhase::TargetPicker { "Close targets" } else { "Choose target" }, "f")).clicked() { requested = Some(CameraKey::RefreshTargets); }
                         if camera.draft.phase() == CameraPhase::TargetPicker {
-                            for entry in &camera.picker {
+                            if ui.add_enabled(camera.picker.len() > 9, style::action("Previous page", "Shift+Tab").min_size(egui::vec2(ui.available_width(), 28.0))).clicked() { requested = Some(CameraKey::Tab { reverse: true }); }
+                            if ui.add_enabled(camera.picker.len() > 9, style::action("Next page", "Tab").min_size(egui::vec2(ui.available_width(), 28.0))).clicked() { requested = Some(CameraKey::Tab { reverse: false }); }
+                            ui.label(format!("Page {} / {}", camera.picker_page + 1, camera.picker.len().div_ceil(9)));
+                            if camera.faces.pending.is_some() { crate::preview::accessibility::busy(ui); }
+                            ui.label(&camera.faces.status);
+                            for entry in camera.picker.iter().filter(|entry| entry.number.is_some()) {
                                 let text = match (entry.number, &entry.saved) {
                                     (Some(number), Some((_, _, source))) => format!("{number}  {} · {}", entry.label, super::targets::source_label(*source)),
                                     (Some(number), None) => format!("{number}  {}", entry.label),
@@ -3010,7 +3092,7 @@ impl DeadpanApp {
                                 if response.clicked() { target = entry.number; }
                                 if entry.center.is_none() { response.on_hover_text("This point was clipped by a descendant operation."); }
                             }
-                            ui.weak("Saved targets at this picture, then the center and corners of the upright Original.");
+                            ui.weak("Saved targets, center and corners, then detected faces. Each page uses digits 1–9. Close and reopen f to refresh faces.");
                         }
                         ui.add_space(8.0);
                         ui.label(style::section_title("TARGETS", false));
@@ -3241,6 +3323,11 @@ mod tests {
             );
             cycle_camera_focus(&context, draft.phase(), fields.ids(), reverse);
             assert!(context.memory(|memory| memory.has_focus(viewer)));
+            assert_eq!(
+                draft.input(CameraKey::Tab { reverse }, None),
+                CameraEffect::TargetPage { reverse }
+            );
+            assert_eq!(draft.phase(), CameraPhase::TargetPicker);
             for (key, expected) in [
                 (egui::Key::Num3, CameraKey::Digit(3)),
                 (egui::Key::F, CameraKey::RefreshTargets),

@@ -419,7 +419,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!(target(d, "target-1").map(|target| target.corrections.len())),
     )?;
     d.report.skipped.push(
-        "Face/person proposals are not implemented; the ,z target punch-in and :zoom target= are covered by the zoom scenario."
+        "Detected face proposals and their Camera picker are covered by the faces scenario; target punch-in and :zoom target= are covered by zoom."
             .into(),
     );
     d.capture("Targets after undo")

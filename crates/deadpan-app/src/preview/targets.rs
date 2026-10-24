@@ -281,6 +281,7 @@ impl DeadpanApp {
         let session = self.workspace.as_ref().map(|workspace| workspace.session);
         self.targets.update = update.filter(|update| Some(update.session) == session);
         let Some((answered, refusal)) = self.targets.reply().cloned() else {
+            self.finish_camera_faces();
             self.finish_face_zoom();
             return;
         };
@@ -299,6 +300,7 @@ impl DeadpanApp {
             self.targets.awaiting = None;
             self.camera_target_reply(answered, refusal.as_deref());
         }
+        self.finish_camera_faces();
         self.finish_face_zoom();
     }
 

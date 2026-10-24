@@ -9,6 +9,13 @@ The comma prefix remains usable while browsing the Original so `,i` can copy it
 into Your edit. Other edit operators keep the Original non-destructive. Native
 text editing retains its own selection, clipboard, undo, and redo behavior.
 
+Camera's target picker uses existing Tab/Shift+Tab routes for next/previous
+pages; ordinary Camera fields retain their native editing routes. The final
+2026-10-24 faces, targets and zoom release replays each pass 21,885,504 routing
+cases against all 62 live Kestrel reservations, without conflict or source
+drift. Saved/proposed target digits, paging and text/IME guards are covered by
+the [Camera face picker qualification](qualification/camera-face-picker-2026-10-24.md).
+
 `:eq` adds a captured EQ editor and complete typed recipes without a new key
 chord. The 2026-10-12 EQ, Gain and audio-treatment release replays pass
 21,884,016 routing cases each against all 62 pinned Kestrel reservations.

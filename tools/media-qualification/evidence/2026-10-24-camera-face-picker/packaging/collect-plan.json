@@ -1,0 +1,514 @@
+{
+  "schema_version": 1,
+  "repository": "/Users/michael/Code/deadpan",
+  "destination": "tools/media-qualification/evidence/2026-10-24-camera-face-picker",
+  "raw_byte_limit": 268435456,
+  "gzip_threshold_bytes": 65536,
+  "inputs": {
+    "Cargo.lock": {
+      "bytes": 135252,
+      "sha256": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b"
+    },
+    "Cargo.toml": {
+      "bytes": 3509,
+      "sha256": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3"
+    },
+    "rust-toolchain.toml": {
+      "bytes": 86,
+      "sha256": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+    },
+    ".cargo/config.toml": {
+      "bytes": 147,
+      "sha256": "b906738cab8f6f289180e1bcf32826d3e2996899cb5055dc7f0c6838655c340d"
+    },
+    "crates/deadpan-app/src/navigation/registry/baseline-routing.txt": {
+      "bytes": 796287,
+      "sha256": "a181ba1d3f2db1c030fbdf1feaf2d5ae8efd5edd885114bcea9c161ac774cd8d"
+    },
+    "docs/COMMANDS.md": {
+      "bytes": 96912,
+      "sha256": "3cd90e5ed20233f6846d384dcaa720974245f71a382f9a88ae3cfd1e44d9d5f3"
+    },
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": {
+      "bytes": 39157,
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+    }
+  },
+  "post_run_sources": {
+    "crates/deadpan-app/src/preview/harness/targets.rs": {
+      "bytes": 17250,
+      "sha256": "cc68360fa230160c2a49749faba213d8b2854b40dd4ead35841215065658d9e8"
+    }
+  },
+  "files": [
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/async-fix-review.md",
+      "path": "scratch/async-fix-review.md"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/async-receipt-condition.md",
+      "path": "scratch/async-receipt-condition.md"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/async-review.md",
+      "path": "scratch/async-review.md"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/audit-evidence.py",
+      "path": "scratch/audit-evidence.py"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/bundle-helpers.py",
+      "path": "scratch/bundle-helpers.py"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/camera-final.json",
+      "path": "scratch/camera-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/camera-final.stderr",
+      "path": "scratch/camera-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/camera-final.stdout",
+      "path": "scratch/camera-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/clippy-final-second.json",
+      "path": "scratch/clippy-final-second.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/clippy-final-second.stderr",
+      "path": "scratch/clippy-final-second.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/clippy-final-second.stdout",
+      "path": "scratch/clippy-final-second.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/clippy-final.json",
+      "path": "scratch/clippy-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/clippy-final.stderr",
+      "path": "scratch/clippy-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/clippy-final.stdout",
+      "path": "scratch/clippy-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/collect.py",
+      "path": "scratch/collect.py"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/commands-final.json",
+      "path": "scratch/commands-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/commands-final.stderr",
+      "path": "scratch/commands-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/commands-final.stdout",
+      "path": "scratch/commands-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/commands-reference.json",
+      "path": "scratch/commands-reference.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/commands-reference.stderr",
+      "path": "scratch/commands-reference.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/commands-reference.stdout",
+      "path": "scratch/commands-reference.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/evidence-audit.json",
+      "path": "scratch/evidence-audit.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/evidence-audit.md",
+      "path": "scratch/evidence-audit.md"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/evidence-audit.stderr",
+      "path": "scratch/evidence-audit.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/evidence-audit.stdout",
+      "path": "scratch/evidence-audit.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/face-picker-map.md",
+      "path": "scratch/face-picker-map.md"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/faces-service-final-second.json",
+      "path": "scratch/faces-service-final-second.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/faces-service-final-second.stderr",
+      "path": "scratch/faces-service-final-second.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/faces-service-final-second.stdout",
+      "path": "scratch/faces-service-final-second.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/faces-service-final.json",
+      "path": "scratch/faces-service-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/faces-service-final.stderr",
+      "path": "scratch/faces-service-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/faces-service-final.stdout",
+      "path": "scratch/faces-service-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/final-identities.json",
+      "path": "scratch/final-identities.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/first-identities.json",
+      "path": "scratch/first-identities.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/format-final-second.json",
+      "path": "scratch/format-final-second.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/format-final-second.stderr",
+      "path": "scratch/format-final-second.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/format-final-second.stdout",
+      "path": "scratch/format-final-second.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/format-final.json",
+      "path": "scratch/format-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/format-final.stderr",
+      "path": "scratch/format-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/format-final.stdout",
+      "path": "scratch/format-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/general-review.md",
+      "path": "scratch/general-review.md"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/host.json",
+      "path": "scratch/host.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/make-plan.py",
+      "path": "scratch/make-plan.py"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/media-dump.json",
+      "path": "scratch/media-dump.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/media-dump.stderr",
+      "path": "scratch/media-dump.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/media-dump.stdout",
+      "path": "scratch/media-dump.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/media-final.json",
+      "path": "scratch/media-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/media-final.stderr",
+      "path": "scratch/media-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/media-final.stdout",
+      "path": "scratch/media-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/media.py",
+      "path": "scratch/media.py"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-final.json",
+      "path": "scratch/native-faces-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-final.stderr",
+      "path": "scratch/native-faces-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-final.stdout",
+      "path": "scratch/native-faces-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-first.json",
+      "path": "scratch/native-faces-first.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-first.stderr",
+      "path": "scratch/native-faces-first.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-first.stdout",
+      "path": "scratch/native-faces-first.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-targets-final.json",
+      "path": "scratch/native-targets-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-targets-final.stderr",
+      "path": "scratch/native-targets-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-targets-final.stdout",
+      "path": "scratch/native-targets-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-targets-second.json",
+      "path": "scratch/native-targets-second.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-targets-second.stderr",
+      "path": "scratch/native-targets-second.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-targets-second.stdout",
+      "path": "scratch/native-targets-second.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-zoom-final.json",
+      "path": "scratch/native-zoom-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-zoom-final.stderr",
+      "path": "scratch/native-zoom-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-zoom-final.stdout",
+      "path": "scratch/native-zoom-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/point-target-map.md",
+      "path": "scratch/point-target-map.md"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/polish-review.md",
+      "path": "scratch/polish-review.md"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/post-run-metadata-correction.json",
+      "path": "scratch/post-run-metadata-correction.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/prepare-first.py.txt",
+      "path": "scratch/prepare-first.py.txt"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/prepare.py",
+      "path": "scratch/prepare.py"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/record-metadata.py",
+      "path": "scratch/record-metadata.py"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/release-build-final.json",
+      "path": "scratch/release-build-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/release-build-final.stderr",
+      "path": "scratch/release-build-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/release-build-final.stdout",
+      "path": "scratch/release-build-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/release-build.json",
+      "path": "scratch/release-build.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/release-build.stderr",
+      "path": "scratch/release-build.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/release-build.stdout",
+      "path": "scratch/release-build.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/ripwire.stderr",
+      "path": "scratch/ripwire.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/ripwire.stdout",
+      "path": "scratch/ripwire.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/run.py",
+      "path": "scratch/run.py"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/source-files.json",
+      "path": "scratch/source-files.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/targets-after-metadata.rs.txt",
+      "path": "scratch/targets-after-metadata.rs.txt"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/targets-before-metadata.rs.txt",
+      "path": "scratch/targets-before-metadata.rs.txt"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/test-quality-fix-review.md",
+      "path": "scratch/test-quality-fix-review.md"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/test-quality-review.md",
+      "path": "scratch/test-quality-review.md"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/units-final-second.json",
+      "path": "scratch/units-final-second.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/units-final-second.stderr",
+      "path": "scratch/units-final-second.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/units-final-second.stdout",
+      "path": "scratch/units-final-second.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/units-final-third.json",
+      "path": "scratch/units-final-third.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/units-final-third.stderr",
+      "path": "scratch/units-final-third.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/units-final-third.stdout",
+      "path": "scratch/units-final-third.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/units-final.json",
+      "path": "scratch/units-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/units-final.stderr",
+      "path": "scratch/units-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/units-final.stdout",
+      "path": "scratch/units-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/worker-check-1.stderr",
+      "path": "scratch/worker-check-1.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/worker-check-1.stdout",
+      "path": "scratch/worker-check-1.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/worker-check-2.stderr",
+      "path": "scratch/worker-check-2.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/worker-check-2.stdout",
+      "path": "scratch/worker-check-2.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/worker-face-picker-freeze.json",
+      "path": "scratch/worker-face-picker-freeze.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/worker-face-picker-handoff.md",
+      "path": "scratch/worker-face-picker-handoff.md"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/worker-tests-1.stderr",
+      "path": "scratch/worker-tests-1.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/worker-tests-1.stdout",
+      "path": "scratch/worker-tests-1.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/worker-tests-2.stderr",
+      "path": "scratch/worker-tests-2.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/worker-tests-2.stdout",
+      "path": "scratch/worker-tests-2.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-first/report.json",
+      "path": "native/native-faces-first.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-targets-final/report.json",
+      "path": "native/native-targets-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-final/report.json",
+      "path": "native/native-faces-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-targets-second/report.json",
+      "path": "native/native-targets-second.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-zoom-final/report.json",
+      "path": "native/native-zoom-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-first/faces-078.png",
+      "path": "screenshots/before-overlapping-badges.png",
+      "png": true
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-final/faces-079.png",
+      "path": "screenshots/camera-proposals-page-two.png",
+      "png": true
+    },
+    {
+      "source": "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-final/faces-121.png",
+      "path": "screenshots/committed-following-creep.png",
+      "png": true
+    }
+  ],
+  "archives": [
+    {
+      "name": "first-source",
+      "root": "/private/tmp/deadpan-camera-target-controls-2026-10-24/source-first"
+    },
+    {
+      "name": "final-camera-project-and-export",
+      "root": "/private/tmp/deadpan-camera-target-controls-2026-10-24/media-final"
+    }
+  ],
+  "limitations": [
+    "Ten qualified sources plus one post-run diagnostic-string-only amendment; no all-tree compilation attestation.",
+    "Positive face observations are scripted; real counter-fixture Vision no-face runs do not establish people/detector accuracy.",
+    "Offscreen Metal UI with simulated audio, not physical input/display, OS IME, VoiceOver speech, listening or latency qualification.",
+    "Export references the canonical shared picture/DSP implementation; no independent DSP oracle.",
+    "Raw reports keep all warnings/skips, including the stale targets skip corrected only after the runs.",
+    "Collector output and later package-verification receipts are retained separately, not recursively inside this immutable package."
+  ]
+}

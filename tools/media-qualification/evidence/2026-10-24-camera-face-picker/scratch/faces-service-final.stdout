@@ -1,0 +1,18 @@
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 3 tests
+test project::tests::targets::faces::closing_cancels_a_running_detection_and_drains_it ... ok
+test project::tests::targets::faces::proposals_never_edit_and_a_chosen_face_saves_its_target_and_framing_as_one_undo ... ok
+test project::tests::targets::faces::stale_unindexed_and_unordered_detections_propose_nothing ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 1308 filtered out; finished in 0.34s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+

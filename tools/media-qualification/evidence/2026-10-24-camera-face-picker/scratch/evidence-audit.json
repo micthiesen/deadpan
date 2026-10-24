@@ -1,0 +1,986 @@
+{
+  "actual_original_and_portable_history_rows_equal": true,
+  "additional_raw_diagnostic_read": {
+    "diagnostics_by_log": {
+      "camera-final.stderr": [
+        "warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected",
+        "warning: `deadpan-app` (bin \"deadpan-app\") generated 1 warning"
+      ],
+      "commands-reference.stderr": [
+        "error: test failed, to rerun pass `-p deadpan-app --bin deadpan-app`"
+      ],
+      "commands-reference.stdout": [
+        "test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1310 filtered out; finished in 0.01s"
+      ],
+      "faces-service-final-second.stderr": [
+        "warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected",
+        "warning: `deadpan-app` (bin \"deadpan-app\") generated 1 warning"
+      ],
+      "faces-service-final.stderr": [
+        "warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected",
+        "warning: `deadpan-app` (bin \"deadpan-app\") generated 1 warning"
+      ],
+      "units-final.stderr": [
+        "warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected",
+        "warning: `deadpan-app` (bin \"deadpan-app\") generated 1 warning",
+        "error: test failed, to rerun pass `-p deadpan-app --bin deadpan-app`"
+      ],
+      "units-final.stdout": [
+        "test result: FAILED. 1298 passed; 1 failed; 11 ignored; 0 measured; 0 filtered out; finished in 228.88s"
+      ],
+      "worker-check-1.stderr": [
+        "error[E0308]: mismatched types",
+        "error[E0308]: mismatched types",
+        "error[E0624]: method `finish_camera_faces` is private",
+        "error[E0624]: method `finish_camera_faces` is private",
+        "error: could not compile `deadpan-app` (bin \"deadpan-app\") due to 4 previous errors",
+        "warning: build failed, waiting for other jobs to finish...",
+        "error: could not compile `deadpan-app` (bin \"deadpan-app\" test) due to 4 previous errors"
+      ],
+      "worker-check-2.stderr": [
+        "warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected",
+        "warning: `deadpan-app` (bin \"deadpan-app\") generated 1 warning"
+      ],
+      "worker-tests-1.stderr": [
+        "warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected",
+        "warning: `deadpan-app` (bin \"deadpan-app\") generated 1 warning"
+      ],
+      "worker-tests-2.stderr": [
+        "warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected",
+        "warning: `deadpan-app` (bin \"deadpan-app\") generated 1 warning"
+      ]
+    },
+    "initial_worker_errors": {
+      "E0308": 2,
+      "E0624": 2
+    },
+    "interpretation": "The initial worker compile errors were corrected before qualification. Debug linker __eh_frame warnings remain in successful focused-test logs. These records are historical diagnostics, not failures of the final strict run or final native/media qualification.",
+    "method": "Post-verifier offline Python read every top-level retained .stdout/.stderr (excluding audit outputs), bound each SHA/byte count, and collected anchored warning/error/FAILED-summary lines. No command was launched."
+  },
+  "audio_offset": 0,
+  "audio_samples_verified": 192192,
+  "bound_executables_per_build": 5,
+  "final_app_sha256": "9aec8c29f87b9a97dece459c3bd8dc66d70ce712865eba75a108ac7cfae69e5d",
+  "final_direct_unit_binary": {
+    "bytes": 245149072,
+    "sha256": "ae9bfbe3c4716beb89b77da4a0b1edaaf5726e0c18822b4f32ac2878d26215ee"
+  },
+  "final_identities_sha256": "57a3caecd4c3ceaec52a914673d823d7d6cbb0eb78753bf097c3389bfa2440d6",
+  "final_source_count": 10,
+  "final_sources": {
+    "crates/deadpan-app/src/navigation/camera.rs": {
+      "bytes": 50799,
+      "sha256": "95255678b3028417b21abd03a1fe7b669417d04fb6b327b30d3b059dc450b9ae"
+    },
+    "crates/deadpan-app/src/navigation/registry/entries.rs": {
+      "bytes": 137865,
+      "sha256": "86fca7ada6dd98939f51dd10ca4c721ae64ad35d3d816fb173ed0582bf60d6f2"
+    },
+    "crates/deadpan-app/src/preview/camera.rs": {
+      "bytes": 160131,
+      "sha256": "b840297941f3e9cbf74d898b05b7b9c8d762e89a7616c0a0b543eae3466dfb95"
+    },
+    "crates/deadpan-app/src/preview/camera/face_picker.rs": {
+      "bytes": 27500,
+      "sha256": "970feef7f2f21908a80746f591faa1aad005ce837d270c381f114863983a4938"
+    },
+    "crates/deadpan-app/src/preview/harness/faces.rs": {
+      "bytes": 9808,
+      "sha256": "321733bdd0c56e75c4d26168b05961fefe3c96ff6e524d2bdc94c08dd49c6503"
+    },
+    "crates/deadpan-app/src/preview/harness/faces/camera_picker.rs": {
+      "bytes": 13033,
+      "sha256": "ac950d6b1b1d0417fca47132223e5194fb324feae18909515798983e3b8e575c"
+    },
+    "crates/deadpan-app/src/preview/targets.rs": {
+      "bytes": 20820,
+      "sha256": "81cf6d3fff91121f63881ed3e2070f002ae468e88e8a2e8179399323d6542088"
+    },
+    "crates/deadpan-app/src/project/service/targets/faces.rs": {
+      "bytes": 13814,
+      "sha256": "1c7bc84e04c498423ca37755995dcf6bced8f895ac837a017831b9455731f134"
+    },
+    "crates/deadpan-app/src/project/targets.rs": {
+      "bytes": 11115,
+      "sha256": "2005292c2c783293926a55474a4926aba12b226e0637b4c341ce16c4be73f240"
+    },
+    "crates/deadpan-app/src/project/tests/targets/faces.rs": {
+      "bytes": 9312,
+      "sha256": "ccbceac583f8dd09719db54785afda96abde45a41077605b13f9cc7eaa299725"
+    }
+  },
+  "findings": [],
+  "first_app_sha256": "7919f72ce229558e5dbe704d721480116224375758b61160872b5dfd957971b3",
+  "first_identities_sha256": "5d60abb910e2b3bb5c8dfd1b794b2f683ce4d8e16d80a3fb80b1caa51ed211a4",
+  "first_source_count": 9,
+  "frame_rate": [
+    30000,
+    1001
+  ],
+  "input_file_pins": {
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/camera-final.stderr": {
+      "bytes": 804,
+      "sha256": "5df31dbf2e4fa46fc3842f0cbcfc456ea44e4145de8f2b530673e588323a4198"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/camera-final.stdout": {
+      "bytes": 3930,
+      "sha256": "afc9ef1a2349b16b3425bf0e0fd743152df4856761b43d789b1f4e75b0e6aeca"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/clippy-final-second.stderr": {
+      "bytes": 153,
+      "sha256": "71b4612624994e6c51672f8aed8e1b3a6625e7ec05f7bb1f7d702fbb9134673a"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/clippy-final-second.stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/commands-final.stderr": {
+      "bytes": 194,
+      "sha256": "e70a639a9bc1bd47825c8cae93604e5dabe3dccb4cfe46cdf675d4d17dd63ead"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/commands-final.stdout": {
+      "bytes": 186,
+      "sha256": "98c16588c21d8768797fe759c8786c14c4fc45627bfceec8e9b47012504f9503"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/commands-reference.stderr": {
+      "bytes": 344,
+      "sha256": "6bc6d64a2d42803a56f9af4ec2cae929004c48b2cd51a5a60c4e55474c1c8244"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/commands-reference.stdout": {
+      "bytes": 730,
+      "sha256": "0bfba09bea2ee8ba40fc6c445a1fc9f4e5831bf4ac54a6f97d4acfa29a8ab018"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/faces-service-final-second.stderr": {
+      "bytes": 804,
+      "sha256": "68f4f4563062608da23995e268348186de6fb34049207d8bb908384fae334f48"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/faces-service-final-second.stdout": {
+      "bytes": 760,
+      "sha256": "c9548fcb4fada193bf8babd001ac81a68d7f43062a06c3a979113921aa807735"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/format-final-second.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/format-final-second.stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/media-final.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/media-final.stdout": {
+      "bytes": 208,
+      "sha256": "71c5d460bcabb1e06b6111a306f888f269c4916371c708315167002ba1f378ea"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-final.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-final.stdout": {
+      "bytes": 103,
+      "sha256": "a7548c3303d2d73f66f1e2292e76a8972a34206e0bd05babdf93d943f9828abd"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-first.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-first.stdout": {
+      "bytes": 103,
+      "sha256": "f2e0149839a2284e738c54c35596bd24052c275527273d3c9cf6b40c53f54610"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-targets-second.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-targets-second.stdout": {
+      "bytes": 108,
+      "sha256": "9389c7019d01cb93b7228397e3efcdbaa09403fc1de48ff90d502514c949f787"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-zoom-final.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-zoom-final.stdout": {
+      "bytes": 101,
+      "sha256": "63c29e72efeab5f30936e6c04986fc23bc82d235a4754c04b7c9d21dcceb8a2d"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/release-build-final.stderr": {
+      "bytes": 144,
+      "sha256": "6ef0c1003f7d836a345b4b873344dde7281990985c9fa97aec521eebc3cf167d"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/release-build-final.stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/units-final-third.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/units-final-third.stdout": {
+      "bytes": 142438,
+      "sha256": "7cbd23c1c9583047cda6f6505227da91e4641e0151b1c9019f6579a86d1f9e22"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/units-final.stderr": {
+      "bytes": 639,
+      "sha256": "4db5c2ae660d8a9b0bbfd83ee3c4593d6d11038828a21d9eed34fd79ab37c6a9"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/units-final.stdout": {
+      "bytes": 142752,
+      "sha256": "ec210dc42679f624d5c36b11de03ae747050f7e59e22ab8d91d3879353188ff8"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/camera-final.json": {
+      "bytes": 4792,
+      "sha256": "f1b45dd6f8aad7dcd2c6355233a03430809a567ed345871dc46d596e91e2f79f"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/camera-final.stderr": {
+      "bytes": 804,
+      "sha256": "5df31dbf2e4fa46fc3842f0cbcfc456ea44e4145de8f2b530673e588323a4198"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/camera-final.stdout": {
+      "bytes": 3930,
+      "sha256": "afc9ef1a2349b16b3425bf0e0fd743152df4856761b43d789b1f4e75b0e6aeca"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/clippy-final-second.json": {
+      "bytes": 5251,
+      "sha256": "14c776b3e39d122e7bc95acab1d599c79555007c865d83729c573079cc7ba9fb"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/clippy-final-second.stderr": {
+      "bytes": 153,
+      "sha256": "71b4612624994e6c51672f8aed8e1b3a6625e7ec05f7bb1f7d702fbb9134673a"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/clippy-final-second.stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/clippy-final.stderr": {
+      "bytes": 1269,
+      "sha256": "921870cb15e857ed427427d34ab0dfd32b3e37ea0b05fbfc44bc69e362ac468b"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/clippy-final.stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/commands-final.json": {
+      "bytes": 4840,
+      "sha256": "32235cbb240db7a7c9876a2ef133e5c9830c9894710294c4829a2c9f5a201d39"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/commands-final.stderr": {
+      "bytes": 194,
+      "sha256": "e70a639a9bc1bd47825c8cae93604e5dabe3dccb4cfe46cdf675d4d17dd63ead"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/commands-final.stdout": {
+      "bytes": 186,
+      "sha256": "98c16588c21d8768797fe759c8786c14c4fc45627bfceec8e9b47012504f9503"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/commands-reference.json": {
+      "bytes": 4761,
+      "sha256": "415b73c7b2d70cb201fe2ea2de9083375f3d16f8ab4d16c6b33ae6156788874e"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/commands-reference.stderr": {
+      "bytes": 344,
+      "sha256": "6bc6d64a2d42803a56f9af4ec2cae929004c48b2cd51a5a60c4e55474c1c8244"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/commands-reference.stdout": {
+      "bytes": 730,
+      "sha256": "0bfba09bea2ee8ba40fc6c445a1fc9f4e5831bf4ac54a6f97d4acfa29a8ab018"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/faces-service-final-second.json": {
+      "bytes": 5246,
+      "sha256": "016228b16efa2757106f39740837665c449d687c20667594e6738962c70b691e"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/faces-service-final-second.stderr": {
+      "bytes": 804,
+      "sha256": "68f4f4563062608da23995e268348186de6fb34049207d8bb908384fae334f48"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/faces-service-final-second.stdout": {
+      "bytes": 760,
+      "sha256": "c9548fcb4fada193bf8babd001ac81a68d7f43062a06c3a979113921aa807735"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/faces-service-final.stderr": {
+      "bytes": 804,
+      "sha256": "8372df8ffa626c1a830a791d031d210a38fea451a21665fbd1e029fa4c1e784f"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/faces-service-final.stdout": {
+      "bytes": 661,
+      "sha256": "3af8d1c369abdbb7e414fe4e873f95ae3ba06cc56a26a2217d472bf3e15bcf05"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/final-identities.json": {
+      "bytes": 2951,
+      "sha256": "57a3caecd4c3ceaec52a914673d823d7d6cbb0eb78753bf097c3389bfa2440d6"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/first-identities.json": {
+      "bytes": 2777,
+      "sha256": "5d60abb910e2b3bb5c8dfd1b794b2f683ce4d8e16d80a3fb80b1caa51ed211a4"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/format-final-second.json": {
+      "bytes": 4945,
+      "sha256": "dc0ec3e3a54e581a32c0bbd875976c1c75e5382abf628e3a12ba58bd4a7581d8"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/format-final-second.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/format-final-second.stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/format-final.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/format-final.stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-dump.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-dump.stdout": {
+      "bytes": 6243,
+      "sha256": "bd6768fe1102fb5f5240518f9a82c74eb8bb762b7c4c3045c3e3ed3433215bad"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final.json": {
+      "bytes": 6041,
+      "sha256": "cbc3634a1cd5f64d978a2f3e7de131bf115369805e196f1ed990db9f4277cd94"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final.stdout": {
+      "bytes": 208,
+      "sha256": "71c5d460bcabb1e06b6111a306f888f269c4916371c708315167002ba1f378ea"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/checkpoint.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/checkpoint.stdout": {
+      "bytes": 196,
+      "sha256": "79bce94701212b2d67520d039907f0601354a2dbd6a72379c2677cd1934715be"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/commands.json": {
+      "bytes": 3675,
+      "sha256": "ad1dc07ed446a6d4e670a73e553b8af4afe107c3f06eedeeb185e2c6082f2dc0"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/copy.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/copy.stdout": {
+      "bytes": 908,
+      "sha256": "5bcd7b170dd1c759c6e03a64edd8ea5822d8d071d5a2186255919750d13acebf"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/deadpan-render-53772495-a01e-4922-a95d-d5fa694a380b.json": {
+      "bytes": 32967,
+      "sha256": "c047ab62ba2fc7dd55dced551e1b4d9c4e32ef428409ae8cccac1027ddd6d694"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/dump.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/dump.stdout": {
+      "bytes": 6243,
+      "sha256": "81cacaa788e309db09b289764424792121150ed0a9cc939a68a0dfeafed1ed01"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/portable-checkpoint.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/portable-checkpoint.stdout": {
+      "bytes": 153,
+      "sha256": "c8e8d740849b898a37daa8cd7a196123191d0fe860f2f0947a62a71c46973210"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/portable-dump.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/portable-dump.stdout": {
+      "bytes": 6243,
+      "sha256": "81cacaa788e309db09b289764424792121150ed0a9cc939a68a0dfeafed1ed01"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/portable-validate.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/portable-validate.stdout": {
+      "bytes": 714,
+      "sha256": "3cbf1175f8803aaf678518b102946045a353776e91e71cea6d0378fb56c4e8fc"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/render.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/render.stdout": {
+      "bytes": 15047,
+      "sha256": "4034290c8ec2e93a72fa691dbbf83da8823c1d3c439dbef42752731af45e1196"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/result.json": {
+      "bytes": 220,
+      "sha256": "af04648693fb6c3a48355ee6e7f27dac9df6adc3255086a1c2d01ed3832a99ae"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/validate.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/validate.stdout": {
+      "bytes": 714,
+      "sha256": "3cbf1175f8803aaf678518b102946045a353776e91e71cea6d0378fb56c4e8fc"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/verification.json": {
+      "bytes": 162848,
+      "sha256": "1d0961248704c59f1ffe216dc1e473b7c023638c28b09277e6e7a584f2e4be6d"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/verify.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media-final/verify.stdout": {
+      "bytes": 162849,
+      "sha256": "67c551d5265d73c7493b7204690886aea8ef084360f911c96847ca0d215141fc"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/media.py": {
+      "bytes": 2899,
+      "sha256": "2bde554c151af8b5ff31bab33af17a277243bc7957d42c15ef648486ce02b869"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-final.json": {
+      "bytes": 7183,
+      "sha256": "dcbc460c53aa11116cf71b57a687ce0e786997e734df0930fadbaf7066170a64"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-final.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-final.stdout": {
+      "bytes": 103,
+      "sha256": "a7548c3303d2d73f66f1e2292e76a8972a34206e0bd05babdf93d943f9828abd"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-final/report.json": {
+      "bytes": 15064465,
+      "sha256": "eb6160809232b5acfc84acf06dde7270d8f016b8401f88fb0de657c888139ba0"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-first.json": {
+      "bytes": 6909,
+      "sha256": "2259210991fa7ff0d376482c85cff35e8429c73124b1a66d02ec8f5ecd85fa32"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-first.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-first.stdout": {
+      "bytes": 103,
+      "sha256": "f2e0149839a2284e738c54c35596bd24052c275527273d3c9cf6b40c53f54610"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-first/report.json": {
+      "bytes": 15067088,
+      "sha256": "20bae7784185cdb53098ef40cc2c9e9f45c2213b0d792a1517209abfb9770c16"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/native-targets-final.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/native-targets-final.stdout": {
+      "bytes": 107,
+      "sha256": "3a118556c638453c86bb6d2dbc521fabc5dcbfb76bb2bc25bd78a224329963d4"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/native-targets-second.json": {
+      "bytes": 5620,
+      "sha256": "f91a552cb8d46c29f54b479d03265b2647a903b0e55f9c2f8d5f7097d65b0e03"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/native-targets-second.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/native-targets-second.stdout": {
+      "bytes": 108,
+      "sha256": "9389c7019d01cb93b7228397e3efcdbaa09403fc1de48ff90d502514c949f787"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/native-targets-second/report.json": {
+      "bytes": 26426921,
+      "sha256": "6936c96fcedbecf78137f5fa9f68d3ccf66d7e99bffc14697b3509c2385b1ea0"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/native-zoom-final.json": {
+      "bytes": 5605,
+      "sha256": "1787a4e6d51fa6b7274418ddec9c50dcfa5bf515699770a8734668e9c69168e1"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/native-zoom-final.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/native-zoom-final.stdout": {
+      "bytes": 101,
+      "sha256": "63c29e72efeab5f30936e6c04986fc23bc82d235a4754c04b7c9d21dcceb8a2d"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/native-zoom-final/report.json": {
+      "bytes": 21624434,
+      "sha256": "d494038eadc921fa1e471ac12551608f999e5b4df68d79f1be744f6fbf4dd18c"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/post-run-metadata-correction.json": {
+      "bytes": 483,
+      "sha256": "cb5fd1165eb3f5870146edb7fad6f36e5891146b3db00edb972962c790e61d4a"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/release-build-final.json": {
+      "bytes": 5211,
+      "sha256": "a87400e533efcb3dd5fadba288c856d779640efd7399b40f7191d6b8d52ebf0b"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/release-build-final.stderr": {
+      "bytes": 144,
+      "sha256": "6ef0c1003f7d836a345b4b873344dde7281990985c9fa97aec521eebc3cf167d"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/release-build-final.stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/release-build.stderr": {
+      "bytes": 486,
+      "sha256": "758519868c85b21bd45356dbb0e15c16e4fb83cbb4d2206c7821772392c96403"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/release-build.stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/ripwire.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/ripwire.stdout": {
+      "bytes": 8130,
+      "sha256": "ad2b3e7e0b4e23b4a3ec025fa4c985e4a15ab860f93d551d52573043953cc141"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/run.py": {
+      "bytes": 2959,
+      "sha256": "b805103bb6d204adce00b59203b49b29b43ec20698eddbf2951065617181b068"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/source-files.json": {
+      "bytes": 549,
+      "sha256": "5e0259cf5c55940c9e4888b839b80e4385fa9941e66afc461e1cf0b110614ccc"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/source-final/crates/deadpan-app/src/navigation/camera.rs.txt": {
+      "bytes": 50799,
+      "sha256": "95255678b3028417b21abd03a1fe7b669417d04fb6b327b30d3b059dc450b9ae"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/source-final/crates/deadpan-app/src/navigation/registry/entries.rs.txt": {
+      "bytes": 137865,
+      "sha256": "86fca7ada6dd98939f51dd10ca4c721ae64ad35d3d816fb173ed0582bf60d6f2"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/source-final/crates/deadpan-app/src/preview/camera.rs.txt": {
+      "bytes": 160131,
+      "sha256": "b840297941f3e9cbf74d898b05b7b9c8d762e89a7616c0a0b543eae3466dfb95"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/source-final/crates/deadpan-app/src/preview/camera/face_picker.rs.txt": {
+      "bytes": 27500,
+      "sha256": "970feef7f2f21908a80746f591faa1aad005ce837d270c381f114863983a4938"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/source-final/crates/deadpan-app/src/preview/harness/faces.rs.txt": {
+      "bytes": 9808,
+      "sha256": "321733bdd0c56e75c4d26168b05961fefe3c96ff6e524d2bdc94c08dd49c6503"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/source-final/crates/deadpan-app/src/preview/harness/faces/camera_picker.rs.txt": {
+      "bytes": 13033,
+      "sha256": "ac950d6b1b1d0417fca47132223e5194fb324feae18909515798983e3b8e575c"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/source-final/crates/deadpan-app/src/preview/targets.rs.txt": {
+      "bytes": 20820,
+      "sha256": "81cf6d3fff91121f63881ed3e2070f002ae468e88e8a2e8179399323d6542088"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/source-final/crates/deadpan-app/src/project/service/targets/faces.rs.txt": {
+      "bytes": 13814,
+      "sha256": "1c7bc84e04c498423ca37755995dcf6bced8f895ac837a017831b9455731f134"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/source-final/crates/deadpan-app/src/project/targets.rs.txt": {
+      "bytes": 11115,
+      "sha256": "2005292c2c783293926a55474a4926aba12b226e0637b4c341ce16c4be73f240"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/source-final/crates/deadpan-app/src/project/tests/targets/faces.rs.txt": {
+      "bytes": 9312,
+      "sha256": "ccbceac583f8dd09719db54785afda96abde45a41077605b13f9cc7eaa299725"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/source-first/crates/deadpan-app/src/navigation/camera.rs.txt": {
+      "bytes": 50799,
+      "sha256": "95255678b3028417b21abd03a1fe7b669417d04fb6b327b30d3b059dc450b9ae"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/source-first/crates/deadpan-app/src/navigation/registry/entries.rs.txt": {
+      "bytes": 137865,
+      "sha256": "86fca7ada6dd98939f51dd10ca4c721ae64ad35d3d816fb173ed0582bf60d6f2"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/source-first/crates/deadpan-app/src/preview/camera.rs.txt": {
+      "bytes": 160165,
+      "sha256": "0c3b6938c6197fb606c8f6a2c0792b2156e93bbffb2fff5f316a22896665d61b"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/source-first/crates/deadpan-app/src/preview/camera/face_picker.rs.txt": {
+      "bytes": 27500,
+      "sha256": "970feef7f2f21908a80746f591faa1aad005ce837d270c381f114863983a4938"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/source-first/crates/deadpan-app/src/preview/harness/faces.rs.txt": {
+      "bytes": 9808,
+      "sha256": "321733bdd0c56e75c4d26168b05961fefe3c96ff6e524d2bdc94c08dd49c6503"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/source-first/crates/deadpan-app/src/preview/harness/faces/camera_picker.rs.txt": {
+      "bytes": 12788,
+      "sha256": "eb682205237b2aef7cd9b2158aea46266549832b9c90b61f12f0fdce4d426af8"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/source-first/crates/deadpan-app/src/preview/targets.rs.txt": {
+      "bytes": 20820,
+      "sha256": "81cf6d3fff91121f63881ed3e2070f002ae468e88e8a2e8179399323d6542088"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/source-first/crates/deadpan-app/src/project/service/targets/faces.rs.txt": {
+      "bytes": 12897,
+      "sha256": "243a3997507a2bd49dcd10ededd23e6cf3f068c63b1e8e35e1875803453bf2ca"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/source-first/crates/deadpan-app/src/project/targets.rs.txt": {
+      "bytes": 11115,
+      "sha256": "2005292c2c783293926a55474a4926aba12b226e0637b4c341ce16c4be73f240"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/targets-after-metadata.rs.txt": {
+      "bytes": 17250,
+      "sha256": "cc68360fa230160c2a49749faba213d8b2854b40dd4ead35841215065658d9e8"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/targets-before-metadata.rs.txt": {
+      "bytes": 17230,
+      "sha256": "c44f7c18ed877e26d7a5704c83b031a7182f71a5f143e2c95dcb00f82742c5a0"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/units-final-second.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/units-final-second.stdout": {
+      "bytes": 142339,
+      "sha256": "60ebb161dd7d06e89a0fc0b4570f7799f7245b356d6a7400866ecf5a7435da9a"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/units-final-third.json": {
+      "bytes": 5398,
+      "sha256": "a15d08f87963a2225dfcdfcb68f5e8071680e0501d25d741b06a7b951d82c8d8"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/units-final-third.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/units-final-third.stdout": {
+      "bytes": 142438,
+      "sha256": "7cbd23c1c9583047cda6f6505227da91e4641e0151b1c9019f6579a86d1f9e22"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/units-final.json": {
+      "bytes": 4692,
+      "sha256": "bc21b8ee2379f606ea721121c43bd7d3713f69bf9ef65729c335fb43d789f526"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/units-final.stderr": {
+      "bytes": 639,
+      "sha256": "4db5c2ae660d8a9b0bbfd83ee3c4593d6d11038828a21d9eed34fd79ab37c6a9"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/units-final.stdout": {
+      "bytes": 142752,
+      "sha256": "ec210dc42679f624d5c36b11de03ae747050f7e59e22ab8d91d3879353188ff8"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/worker-check-1.stderr": {
+      "bytes": 3176,
+      "sha256": "63be71f4c7b81c0990a28d4374d2c911a4268bc24722d01c87f5702ab8e6b005"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/worker-check-1.stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/worker-check-2.stderr": {
+      "bytes": 805,
+      "sha256": "b208b4e9c39c09f7b267050d68c177b1f1947fc19ff8e1f263422d44d88565fe"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/worker-check-2.stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/worker-tests-1.stderr": {
+      "bytes": 804,
+      "sha256": "2751863fad5543ac407c7b87dcc1448b1486316de32a6ee443b7e7a48244e7a0"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/worker-tests-1.stdout": {
+      "bytes": 2165,
+      "sha256": "1ccc0b6fadd1d9bae47d151410e53df9525ac738801b4c80e48a2d2ac78cc1cf"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/worker-tests-2.stderr": {
+      "bytes": 804,
+      "sha256": "4631444486897cdbaec738e9a8fb3101b9f0580f0c4f3cf1cf91504765e6c030"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/worker-tests-2.stdout": {
+      "bytes": 3819,
+      "sha256": "9738a3ca9dfb11ed216c57a005f3cb96f758aa52b4921abf6d83f57981324b23"
+    }
+  },
+  "limitations": [
+    "No build, product binary, native worker, media decoder/exporter, publisher or Git command was executed by this audit.",
+    "The positive twelve-face observations are scripted against the counter fixture; actual Vision zero-face results are exercised. This establishes neither real-person detection nor tracking accuracy.",
+    "Export verification uses the shared picture and limited-audio reference. It is not an independent picture/DSP oracle or a listening test.",
+    "Native input is scripted. Physical keyboard/display, OS picker interaction, VoiceOver, IME and audio-device behavior are not qualified; no latency or requirement-completion claim is inferred.",
+    "Ten final source paths and scoped runtime receipts are bound. This is not a claim about every repository source file or all historical builds sharing one source snapshot.",
+    "The first faces report passed semantic checks while Root's image inspection found overlapping badges and a stale completion notice. Final evidence is kept distinct from that pre-polish build."
+  ],
+  "movie": {
+    "bytes": 128183,
+    "sha256": "7c2036efceb5ae97179e8b2132944ec3b702dd178f7b42e9ac802f10fc87e798"
+  },
+  "native_reports": [
+    {
+      "binary_sha256": "7919f72ce229558e5dbe704d721480116224375758b61160872b5dfd957971b3",
+      "kestrel_checks": 1,
+      "name": "native-faces-first",
+      "scenario_checks": 66,
+      "skipped": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warning_count": 3,
+      "warning_summaries": [
+        "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+        "7 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ]
+    },
+    {
+      "binary_sha256": "9aec8c29f87b9a97dece459c3bd8dc66d70ce712865eba75a108ac7cfae69e5d",
+      "kestrel_checks": 1,
+      "name": "native-faces-final",
+      "scenario_checks": 66,
+      "skipped": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warning_count": 3,
+      "warning_summaries": [
+        "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+        "7 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ]
+    },
+    {
+      "binary_sha256": "9aec8c29f87b9a97dece459c3bd8dc66d70ce712865eba75a108ac7cfae69e5d",
+      "kestrel_checks": 1,
+      "name": "native-targets-second",
+      "scenario_checks": 41,
+      "skipped": [
+        "The Vision worker is the scripted test seam; real tracking is covered by native/deadpan-track tests and the CLI (docs/TRACKING.md).",
+        "Face/person proposals are not implemented; the ,z target punch-in and :zoom target= are covered by the zoom scenario.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warning_count": 2,
+      "warning_summaries": [
+        "4 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ]
+    },
+    {
+      "binary_sha256": "9aec8c29f87b9a97dece459c3bd8dc66d70ce712865eba75a108ac7cfae69e5d",
+      "kestrel_checks": 1,
+      "name": "native-zoom-final",
+      "scenario_checks": 213,
+      "skipped": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warning_count": 3,
+      "warning_summaries": [
+        "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+        "19 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 10 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ]
+    }
+  ],
+  "observations": [
+    "The targets scenario has stale legacy skipped wording saying face/person proposals are not implemented. Separate faces checks do exercise the new picker; this wording is not treated as evidence that those checks were skipped.",
+    "An eleventh Rust path received exactly one diagnostic-string replacement after runtime qualification. Both versions and the exact transformation are bound; its new wording was not executed in these retained runs.",
+    "First and final face semantic reports both pass. Root's recorded visual-polish issue and notice-ownership fix remain material provenance; semantic pass alone does not prove badge legibility.",
+    "Camera-focused 35-test run uses the pre-polish nine-source basis. The final four service tests and complete 1,301-unit run use the final ten-source basis.",
+    "The initial complete unit run failed one stale commands-reference assertion. The commands writer intentionally exited 101, then the commands test and later full run passed; all raw failed streams remain bound."
+  ],
+  "pictures_verified": 120,
+  "portable_document_exact_equal": true,
+  "portable_history_rows": 7,
+  "portable_revision_rows": 13,
+  "post_run_metadata_only_amendment": {
+    "after_sha256": "cc68360fa230160c2a49749faba213d8b2854b40dd4ead35841215065658d9e8",
+    "before_sha256": "c44f7c18ed877e26d7a5704c83b031a7182f71a5f143e2c95dcb00f82742c5a0",
+    "exactly_one_string_replacement": true,
+    "functional_behavior_changed": false,
+    "new_wording_executed_in_retained_replays": false,
+    "note": "The targets reports retain the old skip wording; face coverage is in the separate faces report.",
+    "path": "crates/deadpan-app/src/preview/harness/targets.rs"
+  },
+  "raw_cli_commands": 9,
+  "render_report_sha256": "c047ab62ba2fc7dd55dced551e1b4d9c4e32ef428409ae8cccac1027ddd6d694",
+  "reviewed_current_sources_unchanged": true,
+  "schema_version": 1,
+  "scope": "Independent offline audit of Camera face-picker retained qualification evidence before packaging",
+  "stable_non_app_executables": 4,
+  "status": "no_findings",
+  "tests": {
+    "camera-final": {
+      "failed": 0,
+      "filtered": [
+        0,
+        1276,
+        4
+      ],
+      "ignored": 0,
+      "passed": 35,
+      "summary_statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ]
+    },
+    "commands-final": {
+      "failed": 0,
+      "filtered": [
+        1310
+      ],
+      "ignored": 0,
+      "passed": 1,
+      "summary_statuses": [
+        "ok"
+      ]
+    },
+    "commands-reference": {
+      "failed": 1,
+      "filtered": [
+        1310
+      ],
+      "ignored": 0,
+      "passed": 0,
+      "summary_statuses": [
+        "FAILED"
+      ]
+    },
+    "faces-service-final-second": {
+      "failed": 0,
+      "filtered": [
+        0,
+        1308,
+        4
+      ],
+      "ignored": 0,
+      "passed": 4,
+      "summary_statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ]
+    },
+    "units-final": {
+      "failed": 1,
+      "filtered": [
+        0
+      ],
+      "ignored": 11,
+      "ignored_tests": [
+        {
+          "name": "preview::transcript::lifecycle::real::real_worker_is_interrupted_by_sleep_then_succeeds_on_explicit_retry",
+          "reason": "requires explicit installed Whisper model and deadpan-transcribe helper paths"
+        },
+        {
+          "name": "preview::transcript::lifecycle::real_activity::real_vad_worker_is_cancelled_after_model_load_and_succeeds_on_fresh_retry",
+          "reason": "requires explicit installed Silero model and deadpan-transcribe helper paths"
+        },
+        {
+          "name": "project::tests::generation::real_worker_generates_a_candidate_that_acceptance_commits",
+          "reason": "runs the local AI model; set DEADPAN_BRIDGE_REAL=1"
+        },
+        {
+          "name": "worker::project_tests::generated_playback_tests::cancelled_or_different_project_admissions_cannot_be_adopted",
+          "reason": "requires the real accepted bundle fixture; see module documentation"
+        },
+        {
+          "name": "worker::project_tests::generated_playback_tests::generated_admission_and_first_decode_finish_before_the_hold_is_requested",
+          "reason": "requires the real accepted bundle fixture; see module documentation"
+        },
+        {
+          "name": "worker::project_tests::generated_playback_tests::generated_holds_preserve_both_verified_decoders_and_original_lookahead",
+          "reason": "requires the real accepted bundle fixture; see module documentation"
+        },
+        {
+          "name": "worker::project_tests::generated_playback_tests::generated_playback_worker_matches_the_independent_single_slot_reader",
+          "reason": "requires the real accepted bundle fixture; see module documentation"
+        },
+        {
+          "name": "worker::project_tests::generated_playback_tests::generated_preview_slices_equal_the_single_threaded_offline_reader",
+          "reason": "requires DEADPAN_GENERATED_TRANSITIONS_PACKAGE: two accepted Generated Holds"
+        },
+        {
+          "name": "worker::project_tests::generated_playback_tests::next_generated_provider_prepares_while_the_current_hold_serves",
+          "reason": "requires DEADPAN_GENERATED_TRANSITIONS_PACKAGE: two accepted Holds separated by one Original picture"
+        },
+        {
+          "name": "worker::project_tests::generated_playback_tests::starting_on_generated_prepares_original_and_revokes_stale_admissions",
+          "reason": "requires DEADPAN_GENERATED_TRANSITIONS_PACKAGE: two accepted Holds separated by one Original picture"
+        },
+        {
+          "name": "worker::project_tests::stress_tests::seek_storm_and_jumpy_playback_stay_bounded",
+          "reason": "stress run on a large package; see the module documentation"
+        }
+      ],
+      "passed": 1298,
+      "summary_statuses": [
+        "FAILED"
+      ]
+    },
+    "units-final-third": {
+      "failed": 0,
+      "filtered": [
+        0
+      ],
+      "ignored": 11,
+      "ignored_tests": [
+        {
+          "name": "preview::transcript::lifecycle::real::real_worker_is_interrupted_by_sleep_then_succeeds_on_explicit_retry",
+          "reason": "requires explicit installed Whisper model and deadpan-transcribe helper paths"
+        },
+        {
+          "name": "preview::transcript::lifecycle::real_activity::real_vad_worker_is_cancelled_after_model_load_and_succeeds_on_fresh_retry",
+          "reason": "requires explicit installed Silero model and deadpan-transcribe helper paths"
+        },
+        {
+          "name": "project::tests::generation::real_worker_generates_a_candidate_that_acceptance_commits",
+          "reason": "runs the local AI model; set DEADPAN_BRIDGE_REAL=1"
+        },
+        {
+          "name": "worker::project_tests::generated_playback_tests::cancelled_or_different_project_admissions_cannot_be_adopted",
+          "reason": "requires the real accepted bundle fixture; see module documentation"
+        },
+        {
+          "name": "worker::project_tests::generated_playback_tests::generated_admission_and_first_decode_finish_before_the_hold_is_requested",
+          "reason": "requires the real accepted bundle fixture; see module documentation"
+        },
+        {
+          "name": "worker::project_tests::generated_playback_tests::generated_holds_preserve_both_verified_decoders_and_original_lookahead",
+          "reason": "requires the real accepted bundle fixture; see module documentation"
+        },
+        {
+          "name": "worker::project_tests::generated_playback_tests::generated_playback_worker_matches_the_independent_single_slot_reader",
+          "reason": "requires the real accepted bundle fixture; see module documentation"
+        },
+        {
+          "name": "worker::project_tests::generated_playback_tests::generated_preview_slices_equal_the_single_threaded_offline_reader",
+          "reason": "requires DEADPAN_GENERATED_TRANSITIONS_PACKAGE: two accepted Generated Holds"
+        },
+        {
+          "name": "worker::project_tests::generated_playback_tests::next_generated_provider_prepares_while_the_current_hold_serves",
+          "reason": "requires DEADPAN_GENERATED_TRANSITIONS_PACKAGE: two accepted Holds separated by one Original picture"
+        },
+        {
+          "name": "worker::project_tests::generated_playback_tests::starting_on_generated_prepares_original_and_revokes_stale_admissions",
+          "reason": "requires DEADPAN_GENERATED_TRANSITIONS_PACKAGE: two accepted Holds separated by one Original picture"
+        },
+        {
+          "name": "worker::project_tests::stress_tests::seek_storm_and_jumpy_playback_stay_bounded",
+          "reason": "stress run on a large package; see the module documentation"
+        }
+      ],
+      "passed": 1301,
+      "summary_statuses": [
+        "ok"
+      ]
+    }
+  },
+  "verification_sha256": "1d0961248704c59f1ffe216dc1e473b7c023638c28b09277e6e7a584f2e4be6d",
+  "verifier_sha256": "bbd387b7a9413dd69fe9024345488634f67e86653d603870fe166f65ea0b8fcf"
+}

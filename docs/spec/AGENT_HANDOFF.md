@@ -4,6 +4,43 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-24
 
+The [Camera face picker](../qualification/camera-face-picker-2026-10-24.md)
+now reuses background face detection on the exact installed Original picture.
+Proposals append after saved/fixed choices with stable positions; Tab and
+Shift+Tab reach pages of nine. Explicit selection saves only its target,
+continues Camera and retains the draft path/Follow transition. Enter separately
+commits framing; Escape retains the accepted target and restores entry framing.
+Successful receipt matching survives a later refused request. Compact overlay
+digits and notice ownership fix two issues found through actual image review.
+
+Final App units: 1,301 passed, eleven existing ignored. Strict/format checks
+and release build pass. Final native faces/targets/zoom replays pass 66/41/213
+workflow checks, each with the live Kestrel audit. App SHA is `9aec8c29…`;
+the CLI/helpers retain their preceding qualified identities. Actual final
+Camera project export verifies 120 pictures and `[0,192192)` audio at zero
+offset; movie `7c2036ef…`. Portable authored data and thirteen revision/seven
+history rows agree. Positive face observations are scripted, real Vision
+no-face cases are exercised; no people/detector-quality or listening claim.
+
+Ten qualified source paths remain frozen. One additional targets-scenario
+skip string was corrected after the runs, with exact before/after proof; its
+new wording was not executed. Original reports retain the stale sentence and
+the independent audit explains it. Evidence and all terminal process receipts
+are under `/tmp/deadpan-camera-target-controls-2026-10-24`. Do not restart passing
+lanes. Preserve foreign `fuzz/Cargo.lock` and `.claude/`.
+
+The immutable [Primary](../../tools/media-qualification/evidence/2026-10-24-camera-face-picker)
+has 138 payloads, inventory `eff0d0c2…`. Its first package verification passes
+with Primary unchanged. The [supplement](../../tools/media-qualification/evidence/2026-10-24-camera-face-picker-verification)
+has nine payloads, inventory `09ed95b1…`; receipt `fc671eac…`.
+
+Continue point/target controls and following-creep authoring beyond whole
+ordinary Sources. Point representation is still rectangle-only; a read-only
+consumer/design map is in `point-target-map.md` in that scratch directory.
+Coverage remains 89%, eight Complete/sixteen Partial; the full goal is active.
+
+## Earlier target-following creep continuation, 2026-10-24
+
 Whole ordinary Source [target-following creep](../qualification/follow-creep-2026-10-24.md)
 is implemented and locally verified. Keep-center creep retains the live target
 while an optional fixed-size scale transition evaluates on the owner clock.

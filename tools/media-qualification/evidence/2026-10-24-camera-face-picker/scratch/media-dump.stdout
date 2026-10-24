@@ -1,0 +1,261 @@
+{
+  "schema_version": 58,
+  "project_id": "f6752023-33ab-4a20-9e9d-da948d94c340",
+  "revision_id": "03d8fab3-3c45-4e33-b675-1ff7a564fc82",
+  "presentation_basis": {
+    "width": 320,
+    "height": 180,
+    "frame_rate": {
+      "numerator": 30000,
+      "denominator": 1001
+    },
+    "color_policy": "sdr_rec709"
+  },
+  "basis_state": {
+    "rate_origin": "primary_source",
+    "geometry_origin": "primary_source",
+    "primary": {
+      "asset": "586216c2-6f57-486e-b9e1-763a1994a72f",
+      "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+    }
+  },
+  "root": "7ff1ffe5-d017-4871-aa05-66a55f0ee183",
+  "nodes": {
+    "52d6d3f3-b694-423a-a338-63bcfc411602": {
+      "label": "cfr-bframes.mp4",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 120,
+          "edit_window": {
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "end": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "video": {
+            "type": "stream",
+            "asset": "586216c2-6f57-486e-b9e1-763a1994a72f",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "586216c2-6f57-486e-b9e1-763a1994a72f",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      },
+      "framing": {
+        "value": {
+          "type": "follow",
+          "target": "face-2",
+          "scale": {
+            "numerator": "1",
+            "denominator": "1"
+          },
+          "fallback": {
+            "center_x": {
+              "numerator": "1760936591",
+              "denominator": "4294967296"
+            },
+            "center_y": {
+              "numerator": "359703511",
+              "denominator": "536870912"
+            },
+            "scale": {
+              "numerator": "1",
+              "denominator": "1"
+            }
+          },
+          "scale_transition": {
+            "factor": {
+              "numerator": "27",
+              "denominator": "20"
+            },
+            "curve": "smoothstep"
+          }
+        }
+      }
+    },
+    "7ff1ffe5-d017-4871-aa05-66a55f0ee183": {
+      "label": "Sequence",
+      "kind": {
+        "type": "sequence",
+        "children": [
+          "52d6d3f3-b694-423a-a338-63bcfc411602"
+        ]
+      }
+    }
+  },
+  "assets": {
+    "586216c2-6f57-486e-b9e1-763a1994a72f": {
+      "label": "cfr-bframes.mp4",
+      "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "video": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        },
+        "end": {
+          "ticks": 120120,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        }
+      },
+      "audio": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        },
+        "end": {
+          "ticks": 192192,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        }
+      },
+      "still_image": false,
+      "frame_count": 120,
+      "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+    }
+  },
+  "marks": {},
+  "overrides": {},
+  "targets": {
+    "face-1": {
+      "label": "Face 6",
+      "asset": "586216c2-6f57-486e-b9e1-763a1994a72f",
+      "span": {
+        "start": {
+          "ticks": 10010,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        },
+        "end": {
+          "ticks": 120120,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        }
+      },
+      "region": {
+        "center": [
+          410000,
+          670000
+        ],
+        "size": [
+          100000,
+          180000
+        ]
+      },
+      "display_aspect": {
+        "numerator": "16",
+        "denominator": "9"
+      }
+    },
+    "face-2": {
+      "label": "Face 6 (face-2)",
+      "asset": "586216c2-6f57-486e-b9e1-763a1994a72f",
+      "span": {
+        "start": {
+          "ticks": 10010,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        },
+        "end": {
+          "ticks": 120120,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        }
+      },
+      "region": {
+        "center": [
+          410000,
+          670000
+        ],
+        "size": [
+          100000,
+          180000
+        ]
+      },
+      "display_aspect": {
+        "numerator": "16",
+        "denominator": "9"
+      }
+    }
+  }
+}

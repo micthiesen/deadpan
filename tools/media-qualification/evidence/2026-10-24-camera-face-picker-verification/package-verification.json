@@ -1,0 +1,169 @@
+{
+  "actual_media_commands": 9,
+  "archives": [
+    {
+      "members": 9,
+      "omitted_sidecars": 0,
+      "path": "archives/first-source.tar.gz",
+      "retained_sidecars": {},
+      "source_bytes": 443757
+    },
+    {
+      "members": 30,
+      "omitted_sidecars": 0,
+      "path": "archives/final-camera-project-and-export.tar.gz",
+      "retained_sidecars": {
+        "portable.deadpan/Snapshots/.tmpYABYnK-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "portable.deadpan/Snapshots/.tmpYABYnK-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "source_bytes": 1788999
+    }
+  ],
+  "audio_samples": 192192,
+  "collector_sha256": "320e79dbf00568d68d7657e3c31d968402772533071529e7c9c494f9aacc6f0e",
+  "decoded_regular_plus_authored_bytes": 100788674,
+  "earlier_audit_files_unchanged": true,
+  "encoding_records": 135,
+  "encodings": {
+    "gzip": 13,
+    "identity": 120,
+    "tar+gzip": 2
+  },
+  "findings": [],
+  "finished_utc": "2026-10-24T06:35:52.123745+00:00",
+  "inventory_sha256": "eff0d0c2542c329a1cedd82bbcff1100be9fa5aceb115823284d7bb3ce7ab98e",
+  "inventory_unchanged": true,
+  "limitations": [
+    "No package payload, collector, product executable, build, decoder, exporter or Git operation was executed.",
+    "The final ten qualified source paths and one proved, unexecuted diagnostic-string amendment are checked. No complete repository compilation attestation is inferred.",
+    "Twelve positive face proposals are scripted; actual Vision zero-face counter-fixture cases do not establish real-person detector or tracking accuracy.",
+    "The recorded export checks use shared picture and limited-audio references, not an independent DSP oracle or listening test.",
+    "Raw replay warnings and skips remain, including the original stale targets skip. No physical-input/display, latency or requirement-completion claim is made."
+  ],
+  "live_rust_source_files": 0,
+  "measured_offset": 0,
+  "movie_bytes": 128183,
+  "movie_sha256": "7c2036efceb5ae97179e8b2132944ec3b702dd178f7b42e9ac802f10fc87e798",
+  "native": {
+    "native-faces-final": {
+      "checks": 66,
+      "kestrel": 1,
+      "skips": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warnings": 3
+    },
+    "native-faces-first": {
+      "checks": 66,
+      "kestrel": 1,
+      "skips": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warnings": 3
+    },
+    "native-targets-second": {
+      "checks": 41,
+      "kestrel": 1,
+      "skips": [
+        "The Vision worker is the scripted test seam; real tracking is covered by native/deadpan-track tests and the CLI (docs/TRACKING.md).",
+        "Face/person proposals are not implemented; the ,z target punch-in and :zoom target= are covered by the zoom scenario.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warnings": 2
+    },
+    "native-zoom-final": {
+      "checks": 213,
+      "kestrel": 1,
+      "skips": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warnings": 3
+    }
+  },
+  "old_audit_sha256": "9a4de1c9677277ada71b626daa0c16733305039e6861898f8c60d768beff1b89",
+  "omitted_sidecars": 0,
+  "payload_bytes": 6157873,
+  "payloads": 138,
+  "pictures": 120,
+  "plan_sha256": "b696372a904df5439d5e35560ce7ed49d62bdfebc21a5f0425dc1bead8b4d3ec",
+  "portable_history_rows": 7,
+  "portable_revisions": 13,
+  "post_run_unexecuted_metadata_paths": 1,
+  "primary_files": 139,
+  "primary_tree_unchanged": true,
+  "prior_audit_file_pins": {
+    "audit-evidence.py": {
+      "bytes": 24130,
+      "sha256": "bbd387b7a9413dd69fe9024345488634f67e86653d603870fe166f65ea0b8fcf"
+    },
+    "evidence-audit.json": {
+      "bytes": 48927,
+      "sha256": "9a4de1c9677277ada71b626daa0c16733305039e6861898f8c60d768beff1b89"
+    },
+    "evidence-audit.md": {
+      "bytes": 1548,
+      "sha256": "eda53e456c34e501aab8d3516e5620820304e4a5ba7db78b23f372c61ba3806c"
+    },
+    "evidence-audit.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "evidence-audit.stdout": {
+      "bytes": 202,
+      "sha256": "05c9b536d4902ad19117651e4c08f7ed82449cf0fc763f95a7613e1d5fa4d8b5"
+    }
+  },
+  "qualified_source_paths": 10,
+  "retained_checkpoint_sidecars": 2,
+  "schema_version": 1,
+  "scope": "Independent read-only verification of immutable Camera face-picker Primary",
+  "six_build_inputs_plus_fixture": 7,
+  "source_binaries_and_previous_audit_equal": true,
+  "started_utc": "2026-10-24T06:35:51.334617+00:00",
+  "status": "no_findings",
+  "tar_members": 39,
+  "tar_source_bytes": 2232756,
+  "tests": {
+    "camera-final": [
+      35,
+      0,
+      0
+    ],
+    "commands-final": [
+      1,
+      0,
+      0
+    ],
+    "commands-reference": [
+      0,
+      1,
+      0
+    ],
+    "faces-service-final-second": [
+      4,
+      0,
+      0
+    ],
+    "units-final": [
+      1298,
+      1,
+      11
+    ],
+    "units-final-third": [
+      1301,
+      0,
+      11
+    ]
+  },
+  "verifier_sha256": "cf0206662f66392ae269cd1a451fc8e129a80e24639b7f471615118bce21496e"
+}

@@ -1,0 +1,4 @@
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.77s
+     Running unittests src/main.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_app-c75853e20f9b0baa)
+error: test failed, to rerun pass `-p deadpan-app --bin deadpan-app`

@@ -113,6 +113,10 @@ fn proposals_never_edit_and_a_chosen_face_saves_its_target_and_framing_as_one_un
         panic!("expected faces, got {:?}", job.outcome)
     };
     assert_eq!(faces.len(), 2);
+    assert_eq!(
+        update.message.as_deref(),
+        Some("2 face proposals ready. Detection made no edit.")
+    );
     // Detection is a proposal: no revision, no target, no selection.
     let head = update.workspace.unwrap_or_else(|| before.clone());
     assert_eq!(head.document.revision_id(), before.document.revision_id());
@@ -170,6 +174,49 @@ fn proposals_never_edit_and_a_chosen_face_saves_its_target_and_framing_as_one_un
     .unwrap();
     assert!(undone.document.targets().is_empty());
     assert_eq!(undone.document.nodes(), before.document.nodes());
+}
+
+#[test]
+fn a_face_completion_does_not_replace_a_later_save_notice() {
+    let fixture = scripted(vec![FaceRun::Faces {
+        faces: vec![face(0.1, 0.2)],
+        delay: Duration::from_secs(1),
+    }]);
+    let before = fixture.workspace.clone();
+    assert_eq!(
+        refusal(&detect(&fixture, &before, 1, fixture.pictures[2])),
+        None
+    );
+    let saved = targets(
+        &fixture.service,
+        Operation::Save {
+            ticket: 2,
+            session: before.session,
+            revision: before.document.revision_id().clone(),
+            id: TargetId::new("target-1").unwrap(),
+            target: Box::new(drawn(&fixture, 2)),
+        },
+    );
+    assert_eq!(refusal(&saved), None);
+    assert!(
+        saved
+            .targets
+            .as_ref()
+            .unwrap()
+            .faces
+            .as_ref()
+            .unwrap()
+            .outcome
+            .is_none()
+    );
+    let notice = saved.message.clone().expect("the target save has a notice");
+    assert!(!notice.contains("Finding faces"));
+    let (_, completed) = faces_done(&fixture.service, 1);
+    assert_eq!(completed.message.as_deref(), Some(notice.as_str()));
+    assert_eq!(
+        completed.workspace.unwrap().document.revision_id(),
+        saved.workspace.unwrap().document.revision_id()
+    );
 }
 
 #[test]

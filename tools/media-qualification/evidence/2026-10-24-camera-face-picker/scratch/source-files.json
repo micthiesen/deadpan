@@ -1,0 +1,12 @@
+[
+  "crates/deadpan-app/src/navigation/camera.rs",
+  "crates/deadpan-app/src/navigation/registry/entries.rs",
+  "crates/deadpan-app/src/preview/camera.rs",
+  "crates/deadpan-app/src/preview/camera/face_picker.rs",
+  "crates/deadpan-app/src/preview/targets.rs",
+  "crates/deadpan-app/src/project/targets.rs",
+  "crates/deadpan-app/src/project/service/targets/faces.rs",
+  "crates/deadpan-app/src/project/tests/targets/faces.rs",
+  "crates/deadpan-app/src/preview/harness/faces.rs",
+  "crates/deadpan-app/src/preview/harness/faces/camera_picker.rs"
+]

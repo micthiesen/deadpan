@@ -1,0 +1,155 @@
+{
+  "started_at": "2026-10-24T06:06:44.485052+00:00",
+  "cwd": "/Users/michael/Code/deadpan",
+  "command": [
+    "/tmp/deadpan-camera-target-controls-2026-10-24/bin-first/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "faces",
+    "--output",
+    "/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-first",
+    "--retain-projects",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "environment": {
+    "DEADPAN_FFMPEG_PREFIX": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix"
+  },
+  "runner_sha256": "b805103bb6d204adce00b59203b49b29b43ec20698eddbf2951065617181b068",
+  "source_before": {
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/navigation/camera.rs": {
+      "bytes": 50799,
+      "sha256": "95255678b3028417b21abd03a1fe7b669417d04fb6b327b30d3b059dc450b9ae"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/navigation/registry/entries.rs": {
+      "bytes": 137865,
+      "sha256": "86fca7ada6dd98939f51dd10ca4c721ae64ad35d3d816fb173ed0582bf60d6f2"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera.rs": {
+      "bytes": 160165,
+      "sha256": "0c3b6938c6197fb606c8f6a2c0792b2156e93bbffb2fff5f316a22896665d61b"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera/face_picker.rs": {
+      "bytes": 27500,
+      "sha256": "970feef7f2f21908a80746f591faa1aad005ce837d270c381f114863983a4938"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/targets.rs": {
+      "bytes": 20820,
+      "sha256": "81cf6d3fff91121f63881ed3e2070f002ae468e88e8a2e8179399323d6542088"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/project/targets.rs": {
+      "bytes": 11115,
+      "sha256": "2005292c2c783293926a55474a4926aba12b226e0637b4c341ce16c4be73f240"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/project/service/targets/faces.rs": {
+      "bytes": 12897,
+      "sha256": "243a3997507a2bd49dcd10ededd23e6cf3f068c63b1e8e35e1875803453bf2ca"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness/faces.rs": {
+      "bytes": 9808,
+      "sha256": "321733bdd0c56e75c4d26168b05961fefe3c96ff6e524d2bdc94c08dd49c6503"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness/faces/camera_picker.rs": {
+      "bytes": 12788,
+      "sha256": "eb682205237b2aef7cd9b2158aea46266549832b9c90b61f12f0fdce4d426af8"
+    }
+  },
+  "binary_before": {
+    "/tmp/deadpan-camera-target-controls-2026-10-24/bin-first/deadpan-app": {
+      "bytes": 77865296,
+      "sha256": "7919f72ce229558e5dbe704d721480116224375758b61160872b5dfd957971b3"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/bin-first/deadpan-cli": {
+      "bytes": 50018096,
+      "sha256": "e9ad52a23d3f91ac198007f18e69811d0ec09797e24c53230255f4e083150701"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/bin-first/deadpan-track": {
+      "bytes": 1656592,
+      "sha256": "11aeb6de474b1e6815146f2db4c826ae8721a8d3409607e0dee87b3a212c23c8"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/bin-first/deadpan-media-worker": {
+      "bytes": 1169872,
+      "sha256": "9bb776f74a23a3c875c52251770c161bfc2b0b49146891aa40de9578683424f7"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/bin-first/deadpan-transcribe": {
+      "bytes": 2603984,
+      "sha256": "351468f98590062f06b6913d94ccbf2b07b019d1185c2939f09c8650c91f71d5"
+    }
+  },
+  "pid": 34889,
+  "exit_code": 0,
+  "seconds": 15.937940792180598,
+  "finished_at": "2026-10-24T06:07:00.470583+00:00",
+  "source_after": {
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/navigation/camera.rs": {
+      "bytes": 50799,
+      "sha256": "95255678b3028417b21abd03a1fe7b669417d04fb6b327b30d3b059dc450b9ae"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/navigation/registry/entries.rs": {
+      "bytes": 137865,
+      "sha256": "86fca7ada6dd98939f51dd10ca4c721ae64ad35d3d816fb173ed0582bf60d6f2"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera.rs": {
+      "bytes": 160165,
+      "sha256": "0c3b6938c6197fb606c8f6a2c0792b2156e93bbffb2fff5f316a22896665d61b"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera/face_picker.rs": {
+      "bytes": 27500,
+      "sha256": "970feef7f2f21908a80746f591faa1aad005ce837d270c381f114863983a4938"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/targets.rs": {
+      "bytes": 20820,
+      "sha256": "81cf6d3fff91121f63881ed3e2070f002ae468e88e8a2e8179399323d6542088"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/project/targets.rs": {
+      "bytes": 11115,
+      "sha256": "2005292c2c783293926a55474a4926aba12b226e0637b4c341ce16c4be73f240"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/project/service/targets/faces.rs": {
+      "bytes": 12897,
+      "sha256": "243a3997507a2bd49dcd10ededd23e6cf3f068c63b1e8e35e1875803453bf2ca"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness/faces.rs": {
+      "bytes": 9808,
+      "sha256": "321733bdd0c56e75c4d26168b05961fefe3c96ff6e524d2bdc94c08dd49c6503"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness/faces/camera_picker.rs": {
+      "bytes": 12788,
+      "sha256": "eb682205237b2aef7cd9b2158aea46266549832b9c90b61f12f0fdce4d426af8"
+    }
+  },
+  "binary_after": {
+    "/tmp/deadpan-camera-target-controls-2026-10-24/bin-first/deadpan-app": {
+      "bytes": 77865296,
+      "sha256": "7919f72ce229558e5dbe704d721480116224375758b61160872b5dfd957971b3"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/bin-first/deadpan-cli": {
+      "bytes": 50018096,
+      "sha256": "e9ad52a23d3f91ac198007f18e69811d0ec09797e24c53230255f4e083150701"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/bin-first/deadpan-track": {
+      "bytes": 1656592,
+      "sha256": "11aeb6de474b1e6815146f2db4c826ae8721a8d3409607e0dee87b3a212c23c8"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/bin-first/deadpan-media-worker": {
+      "bytes": 1169872,
+      "sha256": "9bb776f74a23a3c875c52251770c161bfc2b0b49146891aa40de9578683424f7"
+    },
+    "/tmp/deadpan-camera-target-controls-2026-10-24/bin-first/deadpan-transcribe": {
+      "bytes": 2603984,
+      "sha256": "351468f98590062f06b6913d94ccbf2b07b019d1185c2939f09c8650c91f71d5"
+    }
+  },
+  "sources_unchanged": true,
+  "binaries_unchanged": true,
+  "streams": {
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-first.stdout": {
+      "bytes": 103,
+      "sha256": "f2e0149839a2284e738c54c35596bd24052c275527273d3c9cf6b40c53f54610"
+    },
+    "/private/tmp/deadpan-camera-target-controls-2026-10-24/native-faces-first.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

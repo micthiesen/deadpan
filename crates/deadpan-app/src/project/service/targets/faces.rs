@@ -2,8 +2,9 @@
 //! resolves one indexed picture from a read-only store, copies the verified
 //! Original and runs the supervised `deadpan-track detect-faces` worker; the
 //! writer publishes the admitted faces as proposals and never edits. Using a
-//! face is a separate, explicit `SaveFramed` command: the face becomes an
-//! ordinary target and the beat's framing changes in one undoable Compound.
+//! face is a separate explicit command. Camera uses `Save` for the chosen
+//! target; `:zoom … target=face:N` uses `SaveFramed` to save the target and
+//! framing in one undoable Compound.
 //! Session replacement and shutdown cancel the job and wait until it drains.
 
 use std::sync::mpsc::{self, Receiver, SyncSender};
@@ -18,6 +19,7 @@ use crate::project::targets::{FaceJob, FaceOutcome};
 
 /// Longest one detection may run, including the Original copy.
 const DEADLINE: Duration = Duration::from_secs(10 * 60);
+const FINDING_FACES: &str = "Finding faces in the displayed picture…";
 
 pub(in crate::project::service) struct Running {
     cancelled: Arc<AtomicBool>,
@@ -152,7 +154,7 @@ impl Service {
             thread: Some(thread),
         });
         self.targets.faces = Some(job);
-        self.message = Some("Finding faces in the displayed picture…".into());
+        self.message = Some(FINDING_FACES.into());
         Ok(())
     }
 
@@ -180,6 +182,22 @@ impl Service {
         if let Some(job) = &mut self.targets.faces
             && job.outcome.is_none()
         {
+            if self.message.as_deref() == Some(FINDING_FACES) {
+                self.message = Some(match &result {
+                    FaceOutcome::Found(faces) if faces.is_empty() => {
+                        "No faces found in the analysed picture. No edit was made.".into()
+                    }
+                    FaceOutcome::Found(faces) => format!(
+                        "{} face proposals ready. Detection made no edit.",
+                        faces.len()
+                    ),
+                    FaceOutcome::Unavailable(reason) => {
+                        format!("Face detection unavailable: {reason}")
+                    }
+                    FaceOutcome::Failed(reason) => format!("Face detection failed: {reason}"),
+                    FaceOutcome::Cancelled => "Face detection cancelled. No edit was made.".into(),
+                });
+            }
             job.outcome = Some(result);
         }
         true

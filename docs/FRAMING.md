@@ -106,7 +106,8 @@ selection, navigation scope and cursor changes revoke the draft.
 | `h/j/k/l` | Move the center by 1% of the upright uncropped source width/height. |
 | `H/J/K/L` | Move by 5% of the same source dimensions. |
 | `+` / `-` | Multiply scale by 1.05 or its reciprocal. Counts repeat the operation. |
-| `f` | Toggle the numbered picker: saved targets covering this picture, then the center and corners. Digits pick there; they are counts in Adjust. |
+| `f` | Toggle the numbered picker: saved targets covering this picture, center and corners, then detected face proposals. Digits pick there; they are counts in Adjust. |
+| `Tab` / `Shift+Tab` in the picker | Next / previous page of up to nine numbered targets. |
 | `t` | Follow the picked saved target (`FramingValue::Follow`, the current scale, fallback = the current pose); `t` again stops following at the pose shown. |
 | `n` | Draw a new target rectangle (below). |
 | `c` | Correct the picked or followed target at this picture (below). |
@@ -123,11 +124,11 @@ the whole candidate curve before preview or commit. It evaluates that candidate
 through the same core helper used by the committed picture plan. Reset and the
 two named gag commands have explicit replacement semantics.
 
-The picker lists, in the order of specification section 7.6, saved targets whose
+The picker lists saved targets whose
 asset is the displayed picture's and whose span covers its source time, then the
-center and four corners of the upright Original. Digits reach the first nine
-entries; later entries (the last corners first) have no number and are listed
-in the inspector only. Saved targets are drawn as
+center and four corners of the upright Original, then detected faces. Each page
+uses digits 1–9; Tab and Shift+Tab reach every page. Background face proposals
+append without changing existing entry positions. Saved targets are drawn as
 rectangles at `region_at` of the picture's exact source time, colored and labelled
 by how that region was obtained: `drawn` (the initial rectangle), `corrected`,
 `tracked`, `interpolated` or `lost · holding`. All entries are upright source
@@ -306,6 +307,23 @@ Undo, and the two-target refusal of `,z` followed by a quoted-label `:zoom`.
 
 ### Face proposals
 
+Camera's `f` picker requests proposals for its exact stopped Original picture
+through the same background face service. Saved targets, center and corners
+keep their positions; detected faces append after them, ordered left to right
+then top to bottom. Each page has digits 1–9. Tab advances a page, Shift+Tab
+returns, and the inspector has matching page buttons. Pending, empty and failed
+detections leave ordinary choices available. Closing and reopening the picker
+refreshes proposals; a completion for a closed or changed Camera cannot act.
+
+Selecting a numbered face explicitly saves only that face as an ordinary
+target, then continues Camera centered on it. The scale and complete existing
+camera path remain temporary, including a Follow's clock and scale animation.
+Enter applies framing as a separate undoable edit. Escape restores entry
+framing while keeping the explicitly accepted target. A refused target save
+keeps the previous draft and permits another selection. Detection alone saves
+nothing. These target and framing history steps differ from the combined
+command below.
+
 `target=face:N` (specification §6.4 `:zoom 1.35 target=face:2 curve=step`)
 names the `N`th face Apple Vision's face rectangle detector proposes in the
 stopped picture, counted from 1 left to right (then top to bottom). Detection
@@ -374,8 +392,7 @@ recipe boundary and migration fixture.
 
 Saved region targets, keyboard region creation, following and selected-target
 tracking are implemented (above, [targets](TARGETS.md), [tracking](TRACKING.md)).
-Point targets, face proposals in Camera's numbered picker (only `target=face:N`
-uses them now), general region detection, renaming targets and pointer dragging of
+Point targets, general non-face region proposals and pointer dragging of
 rectangles remain required. Whole ordinary Source following creep now animates
 scale while retaining the live target, as described above; broader authoring
 scopes remain open. Follow centers are placed on a letterboxed or

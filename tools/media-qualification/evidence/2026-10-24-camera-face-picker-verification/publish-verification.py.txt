@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+"""Retain completed publication/verification receipts without changing Primary."""
+import hashlib
+import json
+from pathlib import Path
+import runpy
+import shutil
+import tempfile
+
+scratch = Path(__file__).resolve().parent
+repo = Path('/Users/michael/Code/deadpan')
+destination = repo / 'tools/media-qualification/evidence/2026-10-24-camera-face-picker-verification'
+helper = scratch / 'bundle-helpers.py'
+assert hashlib.sha256(helper.read_bytes()).hexdigest() == '2758fa2c837e63d41b33f38b34f728017feda8b0c05aa21499eeb40f4764df13'
+h = runpy.run_path(str(helper))
+limit = 4 * 1024 * 1024
+assert not destination.exists()
+stage = Path(tempfile.mkdtemp(prefix='.camera-face-verification-', dir=scratch))
+published = False
+try:
+    names = ['verify-package.py', 'package-verification.json', 'package-verification.md',
+             'package-verification.stdout', 'package-verification.stderr', 'collect.stdout', 'collect.stderr']
+    originals = {}
+    for name in names:
+        source = scratch / name
+        data = h['read_regular'](source, limit)
+        originals[name] = h['hash_regular'](source, limit)
+        with (stage / name).open('xb') as output:
+            output.write(data)
+        assert h['read_regular'](stage / name, limit) == data
+    script = Path(__file__).read_bytes()
+    (stage / 'publish-verification.py.txt').write_bytes(script)
+    metadata = {'primary_inventory_sha256': 'eff0d0c2542c329a1cedd82bbcff1100be9fa5aceb115823284d7bb3ce7ab98e',
+                'collector_first_execution_exit_code': 0,
+                'verification_first_execution_exit_code': 0,
+                'verification_receipt_sha256': 'fc671eacce4209a93771cd6224f20ed5e87dc868b4157db701f8912bf34c8fbe',
+                'source_files': originals, 'publisher_sha256': hashlib.sha256(script).hexdigest(),
+                'scope': 'Receipts produced after immutable Primary publication; no product/build command rerun.'}
+    assert originals['package-verification.json']['sha256'] == metadata['verification_receipt_sha256']
+    (stage / 'publication.json').write_bytes(h['json_bytes'](metadata))
+    inventory = {name: h['hash_regular'](path, limit) for name, path in h['safe_tree'](stage)}
+    assert sum(row['bytes'] for row in inventory.values()) < limit
+    (stage / 'files.json').write_bytes(h['json_bytes'](inventory))
+    assert {name: h['hash_regular'](path, limit) for name, path in h['safe_tree'](stage) if name != 'files.json'} == inventory
+    assert all(h['hash_regular'](scratch / name, limit) == identity for name, identity in originals.items())
+    h['exclusive_publish'](stage, destination)
+    published = True
+    print(json.dumps({'published': str(destination), 'payloads': len(inventory),
+                      'bytes': sum(row['bytes'] for row in inventory.values()),
+                      'inventory_sha256': hashlib.sha256(h['json_bytes'](inventory)).hexdigest()}))
+finally:
+    if not published:
+        shutil.rmtree(stage)

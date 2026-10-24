@@ -1,0 +1,47 @@
+{
+  "files": {
+    "crates/deadpan-app/src/navigation/camera.rs": "95255678b3028417b21abd03a1fe7b669417d04fb6b327b30d3b059dc450b9ae",
+    "crates/deadpan-app/src/preview/camera.rs": "c4ea67d20968fa568d21b52fa17cf18808d179d6a359e21272ac8dba9fabc3c8",
+    "crates/deadpan-app/src/preview/camera/face_picker.rs": "804ba33ca1cf0204a73fc52c0f26a00b616932696bfd44a3dbc7d6b1a63f67aa",
+    "crates/deadpan-app/src/preview/targets.rs": "81cf6d3fff91121f63881ed3e2070f002ae468e88e8a2e8179399323d6542088"
+  },
+  "commands": [
+    {
+      "log": "worker-check-1",
+      "filter": "navigation::camera::tests --no-run",
+      "exit": 101,
+      "session": 31467,
+      "reason": "first compile found two missing borrows and child callback visibility; fixed",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "63be71f4c7b81c0990a28d4374d2c911a4268bc24722d01c87f5702ab8e6b005"
+    },
+    {
+      "log": "worker-check-2",
+      "filter": "navigation::camera::tests --no-run",
+      "exit": 0,
+      "session": 40698,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "b208b4e9c39c09f7b267050d68c177b1f1947fc19ff8e1f263422d44d88565fe"
+    },
+    {
+      "log": "worker-tests-1",
+      "filter": "preview::camera::",
+      "exit": 0,
+      "session": 38129,
+      "result": "17 passed",
+      "stdout_sha256": "1ccc0b6fadd1d9bae47d151410e53df9525ac738801b4c80e48a2d2ac78cc1cf",
+      "stderr_sha256": "2751863fad5543ac407c7b87dcc1448b1486316de32a6ee443b7e7a48244e7a0"
+    },
+    {
+      "log": "worker-tests-2",
+      "filter": "camera::",
+      "exit": 0,
+      "session": 82290,
+      "result": "34 passed; 1276 filtered; 0.03s",
+      "stdout_sha256": "9738a3ca9dfb11ed216c57a005f3cb96f758aa52b4921abf6d83f57981324b23",
+      "stderr_sha256": "4631444486897cdbaec738e9a8fb3101b9f0580f0c4f3cf1cf91504765e6c030"
+    }
+  ],
+  "cargo_prefix": "CARGO_TARGET_DIR=/tmp/deadpan-follow-creep-2026-10-24/target DEADPAN_FFMPEG_PREFIX=\"$HOME/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix\" cargo test --locked -p deadpan-app --features ui-harness",
+  "active_processes": []
+}

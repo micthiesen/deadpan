@@ -20,6 +20,8 @@ use egui::Key;
 use super::*;
 use crate::project::targets::{Backend, FaceRun, FaceScript};
 
+mod camera_picker;
+
 /// Two proposals: a face left of center and a smaller one right of center.
 fn proposed() -> Vec<DetectedFace> {
     vec![
@@ -44,6 +46,19 @@ pub(super) fn backend() -> Backend {
         scripted(400),
         scripted(600),
         scripted(0),
+        FaceRun::Worker,
+        FaceRun::Faces {
+            faces: camera_picker::proposed(),
+            delay: Duration::from_millis(600),
+        },
+        FaceRun::Faces {
+            faces: camera_picker::proposed(),
+            delay: Duration::from_millis(400),
+        },
+        FaceRun::Faces {
+            faces: camera_picker::proposed(),
+            delay: Duration::ZERO,
+        },
     ])))
 }
 
@@ -212,5 +227,5 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"error":"face:N numbers the faces in the picture from 1 to 64, left to right."}),
         json!({"error":d.app().error}),
     )?;
-    Ok(())
+    camera_picker::run(d)
 }

@@ -1,0 +1,18 @@
+
+running 1 test
+test navigation::registry::tests::commands_reference_is_current ... FAILED
+
+failures:
+
+---- navigation::registry::tests::commands_reference_is_current stdout ----
+
+thread 'navigation::registry::tests::commands_reference_is_current' (181647445) panicked at crates/deadpan-app/src/navigation/registry/tests.rs:14:5:
+/Users/michael/Code/deadpan/crates/deadpan-app/../../docs/COMMANDS.md rewritten; review the diff, then rerun without DEADPAN_UPDATE_COMMANDS_MD
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    navigation::registry::tests::commands_reference_is_current
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1310 filtered out; finished in 0.01s
+

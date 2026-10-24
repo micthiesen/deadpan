@@ -12,8 +12,8 @@
 //! Face proposals run on a second bounded job thread the same way: one
 //! indexed picture, the supervised `deadpan-track detect-faces` worker, and
 //! admitted faces published as proposals. Nothing is saved until the person
-//! uses one (`:zoom … target=face:N`), which saves the face as a target and
-//! frames the beat toward it in one undoable transaction.
+//! accepts one. Camera saves the chosen target independently; the explicit
+//! `:zoom … target=face:N` command saves it together with framing in one edit.
 
 #[cfg(any(test, feature = "ui-harness"))]
 use std::sync::Arc;

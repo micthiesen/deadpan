@@ -230,6 +230,9 @@ pub enum CameraEffect {
     CycleField {
         reverse: bool,
     },
+    TargetPage {
+        reverse: bool,
+    },
     AdjustField {
         direction: Direction,
         count: u32,
@@ -449,7 +452,12 @@ impl CameraDraft {
             CameraKey::Scale(direction) => self.scale(direction),
             CameraKey::Tab { reverse } => {
                 self.clear_count();
-                CameraEffect::CycleField { reverse }
+                if self.phase == CameraPhase::TargetPicker {
+                    self.pending_target = None;
+                    CameraEffect::TargetPage { reverse }
+                } else {
+                    CameraEffect::CycleField { reverse }
+                }
             }
             CameraKey::Arrow(direction) => match self.take_count() {
                 Ok(count) if self.phase == CameraPhase::Adjust => {
@@ -1006,6 +1014,28 @@ mod tests {
         );
         assert_eq!(draft.phase(), CameraPhase::TargetPicker);
         assert_eq!(draft.pending_count(), None);
+    }
+
+    #[test]
+    fn target_page_keys_clear_a_pending_digit_without_focusing_fields() {
+        for reverse in [false, true] {
+            let mut draft = new_draft();
+            draft.input(CameraKey::RefreshTargets, None);
+            draft.input(CameraKey::Digit(4), None);
+            assert_eq!(
+                draft.input(CameraKey::Tab { reverse }, None),
+                CameraEffect::TargetPage { reverse }
+            );
+            assert_eq!(draft.phase(), CameraPhase::TargetPicker);
+            assert_eq!(
+                draft.choose_target(4, FramingPose::identity()),
+                CameraEffect::Rejected(CameraError::TargetMismatch)
+            );
+            assert_eq!(
+                draft.input(CameraKey::Digit(4), None),
+                CameraEffect::SelectTarget(4)
+            );
+        }
     }
 
     #[test]

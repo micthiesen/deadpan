@@ -1,0 +1,69 @@
+<ctx task="Implement remaining native Camera point targets and face/region picker proposals from DEADPAN_SPEC 7.6 and 11.3: AttentionTarget TargetRegion in crates/deadpan-core/src/target.rs, CameraSession TargetPickerEntry and camera_target in crates/deadpan-app/src/preview/camera.rs, CameraDraft in crates/deadpan-app/src/navigation/camera.rs, existing faces detection and atomic selection in crates/deadpan-app/src/preview/camera/faces.rs and crates/deadpan-cli/src/faces.rs" route=" [routed: subtoken+body BM25 (--for&apos;s default) — no strong name hit, multi-word conceptual query]" bundle="auto" bodies="5"><!-- ripwire lens for "Implement remaining native Camera point targets and face/region picker proposals from DEADPAN_SPEC 7.6 and 11.3: AttentionTarget TargetRegion in crates/deadpan-core/src/target.rs, CameraSession TargetPickerEntry and camera_target in crates/deadpan-app/src/preview/camera.rs, CameraDraft in crates/deadpan-app/src/navigation/camera.rs, existing faces detection and atomic selection in crates/deadpan-app/src/preview/camera/faces.rs and crates/deadpan-cli/src/faces.rs" [mention anchor: 4 files + 6 symbols named in the task lifted near the top] [doc mentions: 2 docs discussing 1 top-ranked symbol surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="2839" --><sigs capped="1"><f p="./crates/deadpan-app/src/preview/harness/targets.rs"><d l="66" n="run" cx="48" ccx="23" in="1" churn="3" amp="1">pub(super) fn run(d: &amp;mut Driver&lt;&apos;_&gt;) -&gt; Result&lt;(), String&gt;</d></f><f p="./crates/deadpan-app/src/preview/camera.rs"><d l="181" n="FaceZoom" cx="0" ccx="0" in="0" churn="27" amp="63">pub(super) struct FaceZoom</d><d l="322" n="CameraSession" cx="0" ccx="0" in="0" churn="27" amp="63">pub(super) struct CameraSession</d><d l="1397" n="start_face_zoom" id="./crates/deadpan-app/src/preview/camera.rs::DeadpanApp::start_face_zoom" cx="5" ccx="7" in="1" churn="27" amp="64" tested="1">fn start_face_zoom( &amp;mut self, session: CameraSession, input: crate::navigation::zoom::ZoomInput…</d><d l="1458" n="finish_face_zoom" id="./crates/deadpan-app/src/preview/camera.rs::DeadpanApp::finish_face_zoom" cx="13" ccx="9" in="1" churn="27" amp="64">pub(super) fn finish_face_zoom(&amp;mut self)</d><d l="1635" n="finish_camera_rebase" id="./crates/deadpan-app/src/preview/camera.rs::DeadpanApp::finish_camera_rebase" cx="17" ccx="14" in="1" churn="27" amp="64" tested="1">fn finish_camera_rebase(&amp;mut self, context: &amp;egui::Context)</d><d l="1808" n="camera_follows_target_save" id="./crates/deadpan-app/src/preview/camera.rs::DeadpanApp::camera_follows_target_save" cx="14" ccx="3" in="1" churn="27" amp="64">pub(super) fn camera_follows_target_save(&amp;self, new_revision: Option&lt;&amp;RevisionId&gt;) -&gt; bool</d><d l="1842" n="reconcile_camera" id="./crates/deadpan-app/src/preview/camera.rs::DeadpanApp::reconcile_camera" cx="16" ccx="12" in="1" churn="27" amp="64">pub(super) fn reconcile_camera(&amp;mut self)</d><d l="1991" n="camera_effect" id="./crates/deadpan-app/src/preview/camera.rs::DeadpanApp::camera_effect" cx="26" ccx="17" in="3" churn="27" amp="66">fn camera_effect(&amp;mut self, effect: CameraEffect, context: &amp;egui::Context)</d><d l="2097" n="camera_target" id="./crates/deadpan-app/src/preview/camera.rs::DeadpanApp::camera_target" cx="12" ccx="15" in="1" churn="27" amp="64">fn camera_target(&amp;mut self, number: u8, context: &amp;egui::Context)</d><d l="2172" n="camera_toggle_follow" id="./crates/deadpan-app/src/preview/camera.rs::DeadpanApp::camera_toggle_follow" cx="11" ccx="18" in="1" churn="27" amp="64">fn camera_toggle_follow(&amp;mut self)</d><d l="2345" n="camera_save_region" id="./crates/deadpan-app/src/preview/camera.rs::DeadpanApp::camera_save_region" cx="10" ccx="26" in="1" churn="27" amp="64">fn camera_save_region(&amp;mut self, region: TargetRegion)</d><d l="2849" n="camera_inspector" id="./crates/deadpan-app/src/preview/camera.rs::DeadpanApp::camera_inspector" cx="62" ccx="221" in="1" churn="27" amp="64">pub(super) fn camera_inspector(&amp;mut self, ui: &amp;mut egui::Ui)</d></f><f p="./crates/deadpan-models/src/region.rs"><d l="20" n="PROFILE" cx="0" ccx="0" in="0" churn="1">const PROFILE: &amp;str = &quot;deadpan-selected-region-1&quot;</d><d l="24" n="BridgeRegionReport" cx="0" ccx="0" in="0" churn="1">pub struct BridgeRegionReport</d></f></sigs><bodies shown="5" total="6" capped="1"><!-- body omitted (over budget): run --><b t="cls" l="322" p="./crates/deadpan-app/src/preview/camera.rs" n="CameraSession"><![CDATA[pub(super) struct CameraSession {
+    session: u64,
+    revision: RevisionId,
+    scope: InstancePath,
+    navigation_scope: SequenceScope,
+    scoped: Option<crate::project::scoped::Target>,
+    ticket: Ticket,
+    cursor: u64,
+    entry: Option<Framing>,
+    entry_pose: Option<FramingPose>,
+    /// Every operation's entry pose, restored on Escape: Camera may also
+    /// re-resolve outer follows that see this operation.
+    entry_layers: Vec<(InstancePath, Option<FramingPose>)>,
+    draft: CameraDraft,
+    steps: CameraPanSteps,
+    picker: Vec<PickerTarget>,
+    committing: bool,
+    fields: super::camera_fields::CameraFields,
+    field_keys: Vec<CameraKey>,
+    field_error: Option<String>,
+    local_position: ExactRatio,
+    duration: deadpan_core::FrameDuration,
+    /// This operation's index in the picture's provider-to-root layers.
+    layer: usize,
+    /// The asset and indexed PTS of the displayed Original picture.
+    picture: Option<(AssetId, i64)>,
+    /// That picture's exact upright display aspect, which targets drawn or
+    /// proposed on it record; `None` for a preview-proxy picture.
+    display_aspect: Option<ExactRatio>,
+    follow: Option<FollowDraft>,
+    selected_target: Option<TargetId>,
+    region_purpose: Option<RegionPurpose>,
+    /// The ticket of a target command Camera waits for.
+    saving: Option<u64>,
+    /// Continuing on the revision this Camera's own target save created.
+    rebase: Option<RevisionId>,
+}]]></b><b t="cls" l="181" p="./crates/deadpan-app/src/preview/camera.rs" n="FaceZoom"><![CDATA[pub(super) struct FaceZoom {
+    /// The `DetectFaces` command's ticket.
+    pub(super) ticket: u64,
+    number: u8,
+    input: crate::navigation::zoom::ZoomInput,
+    range: Option<(u64, u64)>,
+    context: ZoomContext,
+    camera: CameraSession,
+    asset: AssetId,
+    span: SourceSpan,
+}]]></b><b t="var" l="20" p="./crates/deadpan-models/src/region.rs" n="PROFILE"><![CDATA[const PROFILE: &str = "deadpan-selected-region-1";]]></b><b t="cls" l="24" p="./crates/deadpan-models/src/region.rs" n="BridgeRegionReport"><![CDATA[pub struct BridgeRegionReport {
+    schema_version: u32,
+    profile: String,
+    native: VideoContract,
+    native_object: GeneratedObjectRef,
+    context_object: GeneratedObjectRef,
+    left_object: GeneratedObjectRef,
+    right_object: GeneratedObjectRef,
+    geometry: ConditioningGeometry,
+    boundaries: BridgeBoundaries,
+    capture: RegionCapture,
+    evidence: RegionEvidence,
+}]]></b><b t="cls" l="40" p="./crates/deadpan-models/src/region.rs" n="RegionEvidence"><![CDATA[enum RegionEvidence {
+    Unavailable {
+        reason: String,
+    },
+    Measured {
+        runtime: RegionRuntimeReport,
+        timings: InspectionTimings,
+        observations: Box<RawRegionBatch>,
+        assessment: Box<GeneratedRegionReport>,
+    },
+}]]></b></bodies></ctx>
