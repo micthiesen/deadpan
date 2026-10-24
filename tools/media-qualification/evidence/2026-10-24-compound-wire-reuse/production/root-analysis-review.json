@@ -1,0 +1,26 @@
+{
+  "status": "approved_for_execution_after_all_terminals",
+  "analyze_sha256": "fc4347bc1d0bd91b4c40eea18e9631e5cb4f919be8df20a42addf27b5f698131",
+  "prior_draft_sha256": "582ee3e81b02103ce231b63b36a5f07aac099aef0de0bee8f1302b11f86cef76",
+  "checks": [
+    "Actual frozen trial row/summary schemas checked; source maps bind through immutable protocol/driver/source reviews, not nonexistent row fields.",
+    "Five pair differences keep every sample; actual native reports, raw build names/summaries and real fixture/codec/media hashes are rechecked.",
+    "Root added current raw Nextest PASS parsing, explicit two-leg/one-audio validation, zero low-SNR blocks, retained verification equality and versioned complete/diagnostic result metadata.",
+    "No profiler, memory, p95 or target claim."
+  ],
+  "parser_smoke": {
+    "positive_prior_receipt": {
+      "started": 1,
+      "passed_tests": [
+        "group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached"
+      ],
+      "summaries": 1
+    },
+    "negative_cases_rejected": [
+      "missing_pass",
+      "wrong_test",
+      "zero_test"
+    ]
+  },
+  "full_analysis_executed": false
+}

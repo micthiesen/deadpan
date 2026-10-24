@@ -1,0 +1,133 @@
+"""Generate a proposed explicit package manifest after all producer terminals exist."""
+from pathlib import Path
+import hashlib
+import json
+import stat
+
+S = Path('/tmp/deadpan-compound-wire-reuse-production-2026-10-24')
+DRAFT = S / 'packaging-draft'
+OUT = DRAFT / 'approved-package-manifest.json'
+PLAN = DRAFT / 'static-packaging-plan.md'
+PACKAGE = DRAFT / 'package.py'
+DEST = Path('/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-24-compound-wire-reuse')
+STAGES = ['rustc','cargo','format','core-unit-build','core-unit-all','core-integration','store-preparation','release-app','strict']
+MEDIA_TREE = ('media-one-leaf-fixture.json','media-evidence-inventory.json','media-terminal.json')
+TOP_SUFFIXES = {'.json','.py','.md','.patch','.stdout','.stderr'}
+TOP_EXCLUDE = {'approved-package-manifest.json','package-manifest.json','inventory.json'}
+REPORTS = {'measurement-report'}
+
+
+def sha_bytes(data): return hashlib.sha256(data).hexdigest()
+def sha(path): return sha_bytes(Path(path).read_bytes())
+def read(path): return json.loads(Path(path).read_text())
+def payload(source, destination, compress=True):
+    p=Path(source); assert p.is_file() and not p.is_symlink()
+    raw=p.read_bytes()
+    return {'source':str(p),'destination':destination,'bytes':len(raw),
+            'sha256':sha_bytes(raw),'encoding':'gzip' if compress and len(raw)>100_000 else 'identity'}
+
+
+def main():
+    assert not OUT.exists(), 'refuse overwrite of proposed approved manifest'
+    # Fail closed until the build, timing, and media producers have completed.
+    build=read(S/'build-terminal.json'); timing=read(S/'measurement-terminal.json'); media=read(S/'media-terminal.json')
+    assert build['status']=='complete' and build['steps']==9 and build['stage_names']==STAGES
+    assert timing['status']=='complete' and timing['trials']==10 and timing['commands']==20
+    assert media['status']=='complete' and media['commands']==4 and media['tests']==1
+    assert (S/'analysis.json').is_file() and read(S/'root-analysis-review.json')['status']=='no_findings'
+    assert not (S/'memory-terminal.json').exists(), 'this package has no memory lane'
+    source_map=read(S/'frozen-sources.json'); base_map=read(S/'baseline-sources.json')
+    assert len(source_map)==len(base_map)==2053
+    assert sha(S/'frozen-sources.json')=='2b0997f1ad22ce7dd869beba699909d22972efba434279cee350478dc63cb728'
+    assert sha(S/'baseline-sources.json')=='f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53'
+    assert {p for p in source_map if source_map[p]!=base_map[p]} == {
+        'crates/deadpan-core/src/compound.rs','crates/deadpan-core/src/one_leaf_replay.rs'}
+    assert sha(PLAN) and PLAN.is_file() and PACKAGE.is_file()
+    assert len(read(S/'baseline-inputs.json'))==6
+    rows=[]
+    # Preserve bounded top-level scripts, receipts, maps, logs, notes, and analysis records.
+    for p in sorted(S.iterdir()):
+        if p.is_file() and not p.is_symlink() and p.suffix in TOP_SUFFIXES and p.name not in TOP_EXCLUDE:
+            rows.append(payload(p,'production/'+p.name))
+    # Raw JSON/HTML reports are separate directories, not top-level files.
+    report_dirs=sorted(p for p in S.iterdir() if p.is_dir() and p.name.endswith('-report'))
+    assert len(report_dirs)==10, len(report_dirs)
+    for report_dir in report_dirs:
+        for report_file in sorted(report_dir.iterdir()):
+            if report_file.is_file() and not report_file.is_symlink() and report_file.suffix in {'.json','.html','.stdout','.stderr'}:
+                rows.append(payload(report_file,'reports/'+report_dir.name+'/'+report_file.name))
+    # Include the frozen package plan and its exact generator/copier sources.
+    rows.extend([payload(PLAN,'approval/static-packaging-plan.md',False),
+                 payload(Path(__file__),'provenance/prepare_manifest.py',False),
+                 payload(PACKAGE,'provenance/package.py',False)])
+    # Six exact source/build input files are separately retained as bytes.
+    inputs=read(S/'baseline-inputs.json')
+    for rel,digest in sorted(inputs.items()):
+        p=S/'source'/rel
+        assert sha(p)==digest
+        rows.append(payload(p,'inputs/'+rel))
+    # Keep the exact before/after Rust for the two changed paths as plain text snapshots.
+    changes=[]
+    for rel in sorted(p for p in source_map if source_map[p]!=base_map[p]):
+        candidate=S/'source'/rel; qualified=Path('/tmp/deadpan-single-leaf-net-production-2026-10-24/source')/rel
+        assert sha(candidate)==source_map[rel] and sha(qualified)==base_map[rel]
+        before='source/qualified-main/'+rel+'.txt'; after='source/candidate/'+rel+'.txt'
+        rows.extend([payload(qualified,before),payload(candidate,after)])
+        changes.append({'path':rel,'before_sha256':base_map[rel],'before_destination':before,
+                        'after_sha256':source_map[rel],'after_destination':after})
+    # Preserve the complete actual media evidence tree listed by its verified inventory.
+    inv=read(S/'media-evidence-inventory.json'); root=Path(inv['root']).resolve(strict=True)
+    media_files=[]
+    for rel,meta in sorted(inv['files'].items()):
+        p=root/rel
+        assert p.is_file() and not p.is_symlink() and p.stat().st_size==meta['bytes'] and sha(p)==meta['sha256']
+        dest='media-evidence/'+rel
+        rows.append(payload(p,dest,False))
+        media_files.append({'relative_path':rel,'destination':dest,'bytes':meta['bytes'],'sha256':meta['sha256']})
+    assert len(media_files)==35
+    # Fixture maps are payloads; archives exclude exactly the two verified SQLite runtime sidecars.
+    fixture_rows=[]
+    roots=sorted(S.glob('rotation-*.deadpan'))
+    assert len(roots)==10, len(roots)
+    destinations={r['destination']:r for r in rows}
+    for root in roots:
+        name=root.name[:-len('.deadpan')]
+        before=S/(name+'-input-before.json'); after=S/(name+'-input-after.json')
+        assert before.is_file() and after.is_file()
+        b,a=read(before),read(after)
+        sidecars={}
+        for side in ('project.sqlite-shm','project.sqlite-wal'):
+            if side in a:
+                sidecars[side]={'after':a[side]}
+                if side in b: sidecars[side]['before']=b[side]
+        assert sidecars.get('project.sqlite-shm',{}).get('after',{}).get('bytes')==32768
+        assert sidecars.get('project.sqlite-wal',{}).get('after',{}).get('bytes')==0
+        bd='production/'+before.name; ad='production/'+after.name
+        assert bd in destinations and ad in destinations
+        fixture_rows.append({'name':name,'root':str(root),
+          'before_map':{'source':str(before),'destination':bd,'bytes':before.stat().st_size,'sha256':sha(before)},
+          'after_map':{'source':str(after),'destination':ad,'bytes':after.stat().st_size,'sha256':sha(after)},
+          'allowed_sidecars':sidecars,'archive_destination':'fixtures/'+name+'.tar.gz'})
+    dests=[r['destination'] for r in rows]
+    assert len(dests)==len(set(dests)), 'duplicate payload destination'
+    assert len({x['name'] for x in fixture_rows})==len(fixture_rows)==10
+    assert len({x['archive_destination'] for x in fixture_rows})==10
+    for row in rows:
+        p=Path(row['source']); assert not p.is_symlink() and stat.S_ISREG(p.lstat().st_mode)
+        assert p.stat().st_size==row['bytes'] and sha(p)==row['sha256']
+    manifest={'schema':'deadpan-compound-wire-reuse-production-evidence-1',
+      'status':'proposed_for_root_review','candidate_source_map_sha256':sha(S/'frozen-sources.json'),
+      'qualified_base_source_map_sha256':sha(S/'baseline-sources.json'),
+      'input_map_sha256':sha(S/'baseline-inputs.json'),'candidate_app_sha256':build['app_sha256'],
+      'control_app_sha256':read(S/'baseline.json')['control']['sha256'],
+      'source_review_sha256':sha(S/'source-review.json'),'analysis_review_sha256':sha(S/'root-analysis-review.json'),
+      'analysis_sha256':sha(S/'analysis.json'),'media_inventory_sha256':sha(S/'media-evidence-inventory.json'),
+      'static_packaging_plan_sha256':sha(PLAN),'terminal_sha256':{
+        'build':sha(S/'build-terminal.json'),'measurement':sha(S/'measurement-terminal.json'),
+        'media':sha(S/'media-terminal.json')},'source_changes':changes,'payloads':rows,
+      'fixtures':fixture_rows,'media_files':media_files}
+    OUT.write_text(json.dumps(manifest,indent=2,sort_keys=True)+'\n')
+    print(json.dumps({'manifest':str(OUT),'payloads':len(rows),'fixtures':len(fixture_rows),
+      'media_files':len(media_files),'source_changes':len(changes),'manifest_sha256':sha(OUT)},sort_keys=True))
+
+if __name__=='__main__': main()

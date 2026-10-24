@@ -1,0 +1,201 @@
+{
+  "schema": "deadpan-compound-wire-reuse-production-analysis-1",
+  "status": "complete",
+  "diagnostic_only": true,
+  "claims_excluded": [
+    "p95",
+    "latency target pass",
+    "memory claim",
+    "physical-display latency"
+  ],
+  "source_and_harness": {
+    "candidate_source_count": 2053,
+    "qualified_source_count": 2053,
+    "changed_paths": [
+      "crates/deadpan-core/src/compound.rs",
+      "crates/deadpan-core/src/one_leaf_replay.rs"
+    ],
+    "inputs": {
+      "Cargo.lock": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+      "Cargo.toml": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3",
+      "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+      ".cargo/config.toml": "b906738cab8f6f289180e1bcf32826d3e2996899cb5055dc7f0c6838655c340d",
+      "crates/deadpan-app/src/navigation/registry/baseline-routing.txt": "a181ba1d3f2db1c030fbdf1feaf2d5ae8efd5edd885114bcea9c161ac774cd8d",
+      "docs/COMMANDS.md": "b4fc50fffbb6d96406593dda90a56ee6c9f3b89a3790b6e7f69b87863f57beec"
+    },
+    "source_review": "no_findings",
+    "driver_pin_sets": [
+      "build",
+      "media"
+    ]
+  },
+  "build": {
+    "stages": [
+      "rustc",
+      "cargo",
+      "format",
+      "core-unit-build",
+      "core-unit-all",
+      "core-integration",
+      "store-preparation",
+      "release-app",
+      "strict"
+    ],
+    "core_unit_passed": 729,
+    "core_integration_total": 35,
+    "core_integration_passed_per_binary": [
+      15,
+      3,
+      13,
+      4
+    ],
+    "store_passed": 12,
+    "release_app_sha256": "0c9c2e641dbe0ef242f1d5503edb4d795a32fef23f286335cdf575e52f814c66"
+  },
+  "measurement": {
+    "pairs": [
+      {
+        "rotation": 1,
+        "control_minus_candidate_commit_ms": 6.140542000000011,
+        "control_minus_candidate_composition_ms": 6.170001000000013
+      },
+      {
+        "rotation": 2,
+        "control_minus_candidate_commit_ms": 5.737334000000004,
+        "control_minus_candidate_composition_ms": 5.692791999999997
+      },
+      {
+        "rotation": 3,
+        "control_minus_candidate_commit_ms": 6.570333000000005,
+        "control_minus_candidate_composition_ms": 6.439916000000011
+      },
+      {
+        "rotation": 4,
+        "control_minus_candidate_commit_ms": 4.4065000000000225,
+        "control_minus_candidate_composition_ms": 4.313209000000029
+      },
+      {
+        "rotation": 5,
+        "control_minus_candidate_commit_ms": 3.2953319999999735,
+        "control_minus_candidate_composition_ms": 3.1114579999999705
+      }
+    ],
+    "paired_commit_reduction_ms": {
+      "n": 5,
+      "min": 3.2953319999999735,
+      "median": 5.737334000000004,
+      "max": 6.570333000000005,
+      "values": [
+        6.140542000000011,
+        5.737334000000004,
+        6.570333000000005,
+        4.4065000000000225,
+        3.2953319999999735
+      ]
+    },
+    "paired_composition_reduction_ms": {
+      "n": 5,
+      "min": 3.1114579999999705,
+      "median": 5.692791999999997,
+      "max": 6.439916000000011,
+      "values": [
+        6.170001000000013,
+        5.692791999999997,
+        6.439916000000011,
+        4.313209000000029,
+        3.1114579999999705
+      ]
+    },
+    "candidate_and_control_metrics": {
+      "control": {
+        "large_first_pause_input_to_commit_ms": {
+          "n": 5,
+          "min": 185.199375,
+          "median": 185.96179099999998,
+          "max": 187.247625,
+          "values": [
+            187.247625,
+            185.807209,
+            186.513583,
+            185.199375,
+            185.96179099999998
+          ]
+        },
+        "large_first_pause_input_to_offscreen_background_composition_ms": {
+          "n": 5,
+          "min": 187.70283400000002,
+          "median": 188.42624999999998,
+          "max": 189.79154200000002,
+          "values": [
+            189.79154200000002,
+            188.18575,
+            188.851458,
+            187.70283400000002,
+            188.42624999999998
+          ]
+        }
+      },
+      "candidate": {
+        "large_first_pause_input_to_commit_ms": {
+          "n": 5,
+          "min": 179.94325,
+          "median": 180.79287499999998,
+          "max": 182.666459,
+          "values": [
+            181.107083,
+            180.069875,
+            179.94325,
+            180.79287499999998,
+            182.666459
+          ]
+        },
+        "large_first_pause_input_to_offscreen_background_composition_ms": {
+          "n": 5,
+          "min": 182.411542,
+          "median": 183.389625,
+          "max": 185.314792,
+          "values": [
+            183.621541,
+            182.49295800000002,
+            182.411542,
+            183.389625,
+            185.314792
+          ]
+        }
+      }
+    },
+    "warning_count": 20,
+    "scope": "five matched rotations, diagnostic only; no target or percentile claim"
+  },
+  "media": {
+    "selected_test": "group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached",
+    "archive_sha256": "55d358989010cae45c118634fe8bc4fe34f473c53cfc237a8bda7f33d08822aa",
+    "exports": [
+      {
+        "leg": "cached",
+        "movie_sha256": "adc6f3042e4b2f916d5de769bc17ac93efee265a4b03f4103e1f4055d538b37f"
+      },
+      {
+        "leg": "uncached",
+        "movie_sha256": "e22e7fb456f327dfee4f51affacfb00a6af492b7cbe5948bf2ffd92181c84e58"
+      }
+    ],
+    "verified_pictures_per_export": 45,
+    "verified_samples_per_export": 72072,
+    "zero_offsets": true
+  },
+  "parser_smoke": {
+    "positive_prior_receipt": {
+      "started": 1,
+      "passed_tests": [
+        "group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached"
+      ],
+      "summaries": 1
+    },
+    "negative_cases_rejected": [
+      "missing_pass",
+      "wrong_test",
+      "zero_test"
+    ]
+  }
+}

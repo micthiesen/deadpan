@@ -1,0 +1,18 @@
+{
+  "status": "approved_for_packaging",
+  "package_script_sha256": "b20d849e87b77e174c86302edec6462827f867b3ed02cca8bf346606304b53bf",
+  "approved_manifest_sha256": "74266fa01a8980ef552754ebb7502a2f816f732f4597426fd1b9bf7a6be34974",
+  "packager_review_sha256": "a76837722f9c56ad9ffba7c5d7428d2d63524e85ea3e27a88cf66893e74f4d91",
+  "static_packaging_plan_sha256": "798d12a6c302a1a8a5b632f795da05b5a578bddfdb9f1eb5c3f1894c8c023afb",
+  "source_map_sha256": "2b0997f1ad22ce7dd869beba699909d22972efba434279cee350478dc63cb728",
+  "binary_manifest_sha256": "79bee16cc96b4bda96e97003d4cb6ecc12e59667ab50d9a505d6d33bbd73544e",
+  "qualified_helper_manifest_sha256": "763e335a151e42fd15d537514fd90dcf2a9ef06a7d8293926185cbc3b12e5949",
+  "source_review_sha256": "388a77cfd4e8aa46955b2f1d14c15130ae472e4ce2132ce6148d708f5be0abff",
+  "analysis_review_sha256": "7b15f06575b84a2eaf584f00468132396165f553c4dc3d5d8d9166fb32d277ab",
+  "input_map_sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317",
+  "candidate_app_sha256": "0c9c2e641dbe0ef242f1d5503edb4d795a32fef23f286335cdf575e52f814c66",
+  "control_app_sha256": "970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2",
+  "build_terminal_sha256": "09c66fac1ef00326b62d01747708c53ad3707e9d638bf1ad38728302d23fa0c0",
+  "measurement_terminal_sha256": "697245b6cb0f25f21fe29d95ad07885fb0c1862bc81e37d33f6ca12f9244c042",
+  "media_terminal_sha256": "52bc7d94ec882741750df011179b447b4774ac9e5e550480a70a6309e567c2b2"
+}

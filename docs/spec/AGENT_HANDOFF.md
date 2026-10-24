@@ -4,6 +4,52 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-24
 
+Main now includes [compound wire-count reuse](../qualification/compound-wire-reuse-2026-10-24.md).
+It retains actual local counts for an untouched clone and a header-only
+change in one eligible InsertTime replay. Actual initial/post serialization,
+all cumulative charges, full-serializer refusals, visitor/identity boundaries
+and Store's actual document/edit/readback/inverse checks remain. Debug
+complete-Result oracles remain; no public API or Core 58 /SQLite 87 change.
+
+Main's complete 2,053-file Rust map and six inputs match qualified candidate
+2b0997f1ad22ce7dd869beba699909d22972efba434279cee350478dc63cb728.
+Only two Core paths changed; 2,051 other files match qualified control f973.
+Executed release App is
+0c9c2e641dbe0ef242f1d5503edb4d795a32fef23f286335cdf575e52f814c66,
+control 970df9f9. All 729 Core unit/35 integration/12 release Store tests,
+App, strict and format checks pass. One actual media case verifies
+Some/None capability history/PCM and both 45-picture, 72,072-sample exports
+at zero offset. Forced-full count parity is covered separately by unit tests.
+
+Five alternating uninstrumented pairs pass 70 pause/10 Kestrel checks and
+retain twenty layout warnings. All five improve: paired median commit and
+composition reductions are 5.737334/5.692792 ms, with ranges
+3.295332–6.570333 and 3.111458–6.439916 ms. Candidate medians are
+180.792875/183.389625 ms. No memory lane, p95 or 100 ms/50 ms target pass.
+Independent raw-result review reports no findings.
+
+All producers in /tmp/deadpan-compound-wire-reuse-production-2026-10-24
+are terminal: build 76289, media 85726 and timing 26178 exited zero. Main
+format session 42762 exited zero too. Do not restart them. Retain the initial
+copy-filter refusal and corrected source projection, plus pre-execution
+analysis/collector drafts. First copy and independent reread pass: primary
+253 payloads /10,713,173 bytes, inventory
+eb326525ca16652869ae889695c155bb5848e611bc2ca445ed5bbedfd100684c.
+All 237 decoded inputs, ten safe authored-fixture archives, 35 media files
+and both actual movies match. The seven-file verification supplement
+retains the verifier/receipt and raw outputs; primary bytes stay unchanged.
+Coverage remains 89%, eight Complete/sixteen Partial; the full goal is active.
+
+The next bounded feature candidate is whole ordinary Source target-following
+creep. Read the revised private design
+/tmp/deadpan-target-follow-creep-design-revised-2026-10-24.md
+(238771cd2f8016cc50aadbfa3a83d110f63af9e85f90277f770621120967b45d)
+and its predecessor review. Preserve Lost-region holding and explicit target
+release to static; do not convert to an ordinary Envelope through mismatched
+Q32 semantics. No feature implementation has begun.
+
+## Earlier private count-reuse continuation, 2026-10-24
+
 The [compound wire-count prototype](../qualification/compound-wire-reuse-prototype-2026-10-24.md)
 is terminal in /tmp/deadpan-compound-wire-reuse-prototype-2026-10-24.
 Do not restart build 6874, media 88440 or timing 67860; all exited zero.
@@ -24,16 +70,12 @@ inventory 338756b4d89157f1e72270c6ca0bd3269240c7ef204a2db2453eb2fcce68e2e4.
 Both first copier and verifier runs pass; all 335 decoded payloads, eighteen
 safe authored-fixture archives and both emitted movies verify.
 
-The uninstrumented follow-up is building separately in
-/tmp/deadpan-compound-wire-reuse-production-2026-10-24, against the current
-qualified control App 970df9f9. Source map 2b0997f1 has 2,053 files and only
-two owned changes; all 2,051 other files/six inputs match qualified Main.
-Formatting and exact removal of the old profiling overlay pass. Build
-session 76289 is active; its production verification is still owed.
-Main runtime remains the net-edit reuse implementation described below.
-Coverage remains 89%, eight Complete/sixteen Partial; the full goal is active.
+The separate uninstrumented qualification above completes the production
+verification that was still owed at this private checkpoint.
 
-Main now includes the qualified [single-leaf net reuse change](../qualification/single-leaf-net-reuse-2026-10-24.md).
+## Earlier net-edit reuse continuation, 2026-10-24
+
+The preceding Main included the qualified [single-leaf net reuse change](../qualification/single-leaf-net-reuse-2026-10-24.md).
 Core retains its successful leaf EditTransaction and changes only the outer
 forward/inverse revision headers and description after final document
 admission. Authored timing allocation IDs keep the leaf revision. Release
@@ -42,7 +84,7 @@ whole-edit oracle and Store's actual result/codec/readback/inverse checks remain
 All original eligibility, prefix, revision, byte/work and visitor boundaries
 remain. Public APIs and Core 58 /SQLite 87 are unchanged.
 
-Main's 2,053 Rust files and six pinned inputs exactly match source map
+That qualification's 2,053 Rust files and six pinned inputs exactly match source map
 f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53.
 Only three Core files changed. Executed release App SHA-256 is
 970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2;

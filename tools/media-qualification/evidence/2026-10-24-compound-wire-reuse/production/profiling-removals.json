@@ -1,0 +1,125 @@
+{
+  "base_relationship": {
+    "instrumented": "0bf07513646ffdfee5aec03bb1b64b6fff757196512aeea883226c675b15ed02",
+    "uninstrumented": "f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53"
+  },
+  "overlay_changed_paths": [
+    "crates/deadpan-app/src/project/service.rs",
+    "crates/deadpan-app/src/project/service/macros.rs",
+    "crates/deadpan-core/src/command.rs",
+    "crates/deadpan-core/src/compound.rs",
+    "crates/deadpan-core/src/insert_time.rs",
+    "crates/deadpan-core/src/lib.rs",
+    "crates/deadpan-core/src/one_leaf_replay.rs",
+    "crates/deadpan-core/src/pause_route_profile.rs",
+    "crates/deadpan-core/src/semantic/planner.rs",
+    "crates/deadpan-core/src/semantic/planner/content.rs",
+    "crates/deadpan-core/src/semantic/planner/pause.rs",
+    "crates/deadpan-core/src/semantic/planner/selection.rs",
+    "crates/deadpan-store/src/compound.rs",
+    "crates/deadpan-store/src/lib.rs"
+  ],
+  "owned_exact_operations": {
+    "crates/deadpan-core/src/compound.rs": {
+      "instrumented_base_sha256": "7a89813ac9f91e3d1234167ad629fd4c8252b4e90c4c44e321763e3c8d35677a",
+      "qualified_uninstrumented_base_sha256": "a74328e4d4d3be1ec9ad4800ea524596e526a29578c726c7a5d2bd9a327f02e5",
+      "reviewed_wire_prototype_sha256": "61d64cc76d65fc321f34141cf43625f2463a3a0388bf6e1fe024a42d3ffce4b3",
+      "operations": [
+        {
+          "old_text": "    let _pause_replay =\n        crate::pause_route_profile::enter(crate::pause_route_profile::Phase::ReplayMisc);\n",
+          "new_text": "",
+          "occurrences": 1,
+          "old_text_sha256": "e2408750e0a0d0be324387089612fb70dd426fbeeee50f261d433197308aa70e"
+        },
+        {
+          "old_text": "    let pause_wire =\n        crate::pause_route_profile::enter(crate::pause_route_profile::Phase::ReplayDocumentWire);\n",
+          "new_text": "",
+          "occurrences": 2,
+          "old_text_sha256": "a781d822457053573fe173dd681d1efdb4b2dfec387dc67786c37ee104220c7c"
+        },
+        {
+          "old_text": "            let pause_wire = crate::pause_route_profile::enter(\n                crate::pause_route_profile::Phase::ReplayDocumentWire,\n            );\n",
+          "new_text": "",
+          "occurrences": 2,
+          "old_text_sha256": "734b292b788cd047bec15366f2a741b8c1b815b5dd0c13612a106bef058e30d2"
+        },
+        {
+          "old_text": "            drop(pause_wire);\n",
+          "new_text": "",
+          "occurrences": 2,
+          "old_text_sha256": "428c6c2424fdaf23d467791060bde2d6649b085594eaf814af1c4b4fde9719a2"
+        },
+        {
+          "old_text": "    drop(pause_wire);\n",
+          "new_text": "",
+          "occurrences": 2,
+          "old_text_sha256": "35df0a2f3bc962767bb3915ff5b41633d61301fad5711e49fe4980cdfba8b180"
+        },
+        {
+          "old_text": "    let pause_net =\n        crate::pause_route_profile::enter(crate::pause_route_profile::Phase::ReplayNetAggregate);\n",
+          "new_text": "",
+          "occurrences": 1,
+          "old_text_sha256": "b40382f1af46463785b12cc65c55e59eb149c41ef87bc91a5c21ed9648d68565"
+        },
+        {
+          "old_text": "    drop(pause_net);\n",
+          "new_text": "",
+          "occurrences": 1,
+          "old_text_sha256": "e8e030dc1e4006460a93872e8aa2c1e1c7abb1fea24590ddef89ba30f587a91a"
+        }
+      ],
+      "stripped_base_equals_qualified_control": true
+    },
+    "crates/deadpan-core/src/one_leaf_replay.rs": {
+      "instrumented_base_sha256": "9fac04a41e77a703b61ee6ec01c589b1dcc95b31ddeb3892c76a1bc1cd6a0a1e",
+      "qualified_uninstrumented_base_sha256": "1dc847665b59b800c83f23c50c7872b1dbc0c26760487a2a7046fa4f5a71d6bc",
+      "reviewed_wire_prototype_sha256": "49763f9cff86576828e3f223cda8c5555e12b15442ad5cfd07e84d67474a6375",
+      "operations": [
+        {
+          "old_text": "    let pause_apply =\n        crate::pause_route_profile::enter(crate::pause_route_profile::Phase::SemanticLeafApply);\n",
+          "new_text": "",
+          "occurrences": 1,
+          "old_text_sha256": "b1a2485adc3cee0247cfa1f83581a9c330cdffac51182363fa3af91dcb11bf0a"
+        },
+        {
+          "old_text": "    drop(pause_apply);\n",
+          "new_text": "",
+          "occurrences": 1,
+          "old_text_sha256": "e841a760bd64430d94c958df7f6ef16305c7d4843a7725bac34e473aa248ce45"
+        },
+        {
+          "old_text": "        let _pause_snapshot = crate::pause_route_profile::enter(\n            crate::pause_route_profile::Phase::CapabilitySnapshot,\n        );\n",
+          "new_text": "",
+          "occurrences": 1,
+          "old_text_sha256": "889960b55b775288d3bce514f741e9070cc435dd35cd7983449848785ca661fa"
+        },
+        {
+          "old_text": "        let pause_match = crate::pause_route_profile::enter(\n            crate::pause_route_profile::Phase::ReuseEligibilityEq,\n        );\n",
+          "new_text": "",
+          "occurrences": 1,
+          "old_text_sha256": "502a8de4b292bf34ff05e90efe1076daf3d2b40a55e46f6f4dea698fb7f7cb2f"
+        },
+        {
+          "old_text": "        drop(pause_match);\n",
+          "new_text": "",
+          "occurrences": 1,
+          "old_text_sha256": "28f843664080fcb8e59718d826f41da515c473b681d8cff875a8e7e2fa7437ee"
+        },
+        {
+          "old_text": "        let _pause_exit =\n            crate::pause_route_profile::enter(crate::pause_route_profile::Phase::ReuseCloneExit);\n",
+          "new_text": "",
+          "occurrences": 1,
+          "old_text_sha256": "1e34609c78607781d69e3db064f800dcb78152d35b1a9604db678a0b37ce5a08"
+        },
+        {
+          "old_text": "    .then(|| {\n        OneLeafReplay {\n            entry: entry.clone(),\n            request: request.clone(),\n            next: next.clone(),\n            edit: edit.expect(\"retained InsertTime edit\"),\n        }\n    });",
+          "new_text": "    .then(|| OneLeafReplay {\n        entry: entry.clone(),\n        request: request.clone(),\n        next: next.clone(),\n        edit: edit.expect(\"retained InsertTime edit\"),\n    });",
+          "occurrences": 1,
+          "reason": "Exact closure cleanup already present in qualified uninstrumented control"
+        }
+      ],
+      "stripped_base_equals_qualified_control": true
+    }
+  },
+  "no_other_prototype_source_copied": true
+}

@@ -1,0 +1,214 @@
+{
+  "status": "no_findings",
+  "findings": [],
+  "source_map_sha256": "2b0997f1ad22ce7dd869beba699909d22972efba434279cee350478dc63cb728",
+  "baseline_source_map_sha256": "f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53",
+  "source_review_sha256": "388a77cfd4e8aa46955b2f1d14c15130ae472e4ce2132ce6148d708f5be0abff",
+  "analyze_py_sha256": "fc4347bc1d0bd91b4c40eea18e9631e5cb4f919be8df20a42addf27b5f698131",
+  "analysis_sha256": "8ea0744c155cd8226ddf4f8b4dc95dcd2b0e65c1f8d2285546bbcccf798af50d",
+  "reviewed_scope": "Independent offline source/input/binary and retained raw report/receipt arithmetic audit. No producer function imports or app/test/build/media decoding/browser/Git/Main writes. Packaging draft was not reviewed in this task.",
+  "input_hashes": {
+    "analysis.json": "8ea0744c155cd8226ddf4f8b4dc95dcd2b0e65c1f8d2285546bbcccf798af50d",
+    "analysis-pins.json": "06f23c7cd43a5b0b1ff60c0922d7bc2c33ff358cda2af7e6aeb2bc840f4f3444",
+    "frozen-sources.json": "2b0997f1ad22ce7dd869beba699909d22972efba434279cee350478dc63cb728",
+    "baseline-sources.json": "f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53",
+    "baseline-inputs.json": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317",
+    "source-review.json": "388a77cfd4e8aa46955b2f1d14c15130ae472e4ce2132ce6148d708f5be0abff",
+    "build-terminal.json": "09c66fac1ef00326b62d01747708c53ad3707e9d638bf1ad38728302d23fa0c0",
+    "build-receipt.json": "39087de70f1cea25dcddf3b39100adc8b3b841f3e53386957ac597b38f35dd17",
+    "expected-tests.json": "7f4ebeb2f7b447bbe3a4cdbd1b2425d4471950883627172c5b8504f5fd4ccb78",
+    "measurement-terminal.json": "697245b6cb0f25f21fe29d95ad07885fb0c1862bc81e37d33f6ca12f9244c042",
+    "measurement-receipt.json": "d1d86823cb49ee28bd41b9d377fa190aa975614e879cf3a3da11e9f7b8cd563f",
+    "expected-measurement.json": "c30cc032b41e8a7fd08dd7e1d1e8a9045d4beb08ab1c66f7633b189154b25c7a",
+    "trials.json": "71eca45120f9122c8db218228a1ba248c293456ed31c5df0607004da94a46c05",
+    "summary.json": "2789eada6afd4fdcc8ec00b3af8dce3b705235bf87fc9ba4ff1be7cf1a902125",
+    "media-terminal.json": "52bc7d94ec882741750df011179b447b4774ac9e5e550480a70a6309e567c2b2",
+    "media-receipt.json": "071107c2d37c27bbaae97b50924d8a35f952529be3b5957aedab9bcd4640bb70",
+    "media-evidence-inventory.json": "8728d9064144bdb1a9bf13166fbe68db25deb70c05c966d6926d6a91a6dcf3ba",
+    "media-one-leaf-fixture.json": "99c1f1fa95499badb7205ed45a76514271990bee9838185a5e56cedaff7f5fa7"
+  },
+  "source_verification": {
+    "candidate_rust_files": 2053,
+    "baseline_rust_files": 2053,
+    "unchanged_paths": 2051,
+    "changed_paths": [
+      "crates/deadpan-core/src/compound.rs",
+      "crates/deadpan-core/src/one_leaf_replay.rs"
+    ],
+    "all_live_source_bytes_rehashed": true,
+    "six_input_files_equal_in_both_roots": true,
+    "no_private_profile_module": true
+  },
+  "binaries": {
+    "control": "970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2",
+    "candidate": "0c9c2e641dbe0ef242f1d5503edb4d795a32fef23f286335cdf575e52f814c66"
+  },
+  "build": {
+    "stages": [
+      "rustc",
+      "cargo",
+      "format",
+      "core-unit-build",
+      "core-unit-all",
+      "core-integration",
+      "store-preparation",
+      "release-app",
+      "strict"
+    ],
+    "raw_passed_counts": {
+      "core-unit-all": 729,
+      "core-integration": 35,
+      "store-preparation": 12
+    },
+    "zero_failed_and_ignored": true,
+    "required_case_names_checked": true,
+    "executed_unit_artifact_hash_checked": true
+  },
+  "measurement": {
+    "trials": 10,
+    "commands": 20,
+    "orders": [
+      [
+        "control",
+        "candidate"
+      ],
+      [
+        "candidate",
+        "control"
+      ],
+      [
+        "control",
+        "candidate"
+      ],
+      [
+        "candidate",
+        "control"
+      ],
+      [
+        "control",
+        "candidate"
+      ]
+    ],
+    "pause_checks": 70,
+    "kestrel_checks": 10,
+    "layout_warnings": 20,
+    "raw_reports_recomputed": 10,
+    "one_completed_sample_per_metric_per_invocation": true,
+    "all_logs_profile_free": true,
+    "all_ten_fixture_authored_bytes_and_paths_unchanged": true,
+    "all_root_wal_empty": true,
+    "all_fixture_database_hashes_identical": true,
+    "quiet_last_load_max": 2.9521484375,
+    "raw_report_sha256": {
+      "rotation-1-control": "b3c34e0b026e0d13015d5b6d20bae7bc7253cab121adb28ecb4993df5e017a0d",
+      "rotation-1-candidate": "cfd42cc3c0cb0c31b10714ef189f3cb8dff1ee612dd891aea93a0954be906570",
+      "rotation-2-control": "e3af425a4588a15d9b3a37305a599efa3cfc0c989df75fdacb99e821151ff12c",
+      "rotation-2-candidate": "057e1879c90efc16cb78c8a20ea63177541b2ad831538c6a6c79b9177a81bb53",
+      "rotation-3-control": "f5df33cb50864b5229b7b71d5b201a7625596a66b25cb094696505571d25812d",
+      "rotation-3-candidate": "b2654e0fa0e59e5c08347ff341ddc785ac1d494eac1ebb56423f92166c351c43",
+      "rotation-4-control": "712b5807d9524e9ab7de81c1d494d2c07ba3263b76f6d93c9b917878c2217e87",
+      "rotation-4-candidate": "55180cfe5f7a17d2ca1f505166ca20b54d358bb30cfc115062299b6f1e04bce0",
+      "rotation-5-control": "cabf0344a928d7bf7ae88f515fa1ce67b21c8de6957517d21ed55975315b8800",
+      "rotation-5-candidate": "d99769c8fe5c15839cb56176e9cbbd7d47cf719f78ab9522755e70d65d040cf1"
+    },
+    "paired_reductions_ms": {
+      "large_first_pause_input_to_commit_ms": {
+        "n": 5,
+        "min": 3.2953319999999735,
+        "median": 5.737334000000004,
+        "max": 6.570333000000005,
+        "values": [
+          6.140542000000011,
+          5.737334000000004,
+          6.570333000000005,
+          4.4065000000000225,
+          3.2953319999999735
+        ]
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "n": 5,
+        "min": 3.1114579999999705,
+        "median": 5.692791999999997,
+        "max": 6.439916000000011,
+        "values": [
+          6.170001000000013,
+          5.692791999999997,
+          6.439916000000011,
+          4.313209000000029,
+          3.1114579999999705
+        ]
+      }
+    },
+    "pairs": [
+      {
+        "rotation": 1,
+        "control_minus_candidate_commit_ms": 6.140542000000011,
+        "control_minus_candidate_composition_ms": 6.170001000000013
+      },
+      {
+        "rotation": 2,
+        "control_minus_candidate_commit_ms": 5.737334000000004,
+        "control_minus_candidate_composition_ms": 5.692791999999997
+      },
+      {
+        "rotation": 3,
+        "control_minus_candidate_commit_ms": 6.570333000000005,
+        "control_minus_candidate_composition_ms": 6.439916000000011
+      },
+      {
+        "rotation": 4,
+        "control_minus_candidate_commit_ms": 4.4065000000000225,
+        "control_minus_candidate_composition_ms": 4.313209000000029
+      },
+      {
+        "rotation": 5,
+        "control_minus_candidate_commit_ms": 3.2953319999999735,
+        "control_minus_candidate_composition_ms": 3.1114579999999705
+      }
+    ],
+    "all_five_pairs_positive": true
+  },
+  "media": {
+    "commands": 4,
+    "selected_tests": 1,
+    "selected_test": "group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached",
+    "archive_sha256": "55d358989010cae45c118634fe8bc4fe34f473c53cfc237a8bda7f33d08822aa",
+    "cli_sha256": "8eb7716d210b11b1f3a7434a3824c873ccc1d284fe9beaf31d87a95191cbe5ac",
+    "test_sha256": "7cc889f5be0b0896fe7a370ff422fce973d623b3bebbf1d643c01d01f30c0452",
+    "all35_inventory_files_rehashed": true,
+    "opaque_some_vs_explicit_none": true,
+    "callback_counts": [
+      1,
+      1
+    ],
+    "canonical_document_bank_history_pcm_limiter_bit_and_partition_cold_assertions_retained": true,
+    "undo_redo_reopen_full_history_checked": true,
+    "pictures_per_export": 45,
+    "samples_per_export": 72072,
+    "measured_offset_samples": 0,
+    "exports": [
+      {
+        "leg": "cached",
+        "sha256": "adc6f3042e4b2f916d5de769bc17ac93efee265a4b03f4103e1f4055d538b37f",
+        "bytes": 13232
+      },
+      {
+        "leg": "uncached",
+        "sha256": "e22e7fb456f327dfee4f51affacfb00a6af492b7cbe5948bf2ffd92181c84e58",
+        "bytes": 13232
+      }
+    ]
+  },
+  "inspected_artifact_count": 94,
+  "inspected_artifact_identity_digest": "2d7aeea55a5b3cdb511e2764610672553161442e1d3b3dc5ed7fd72f4a148e0c",
+  "limitations": [
+    "Five matched same-machine production pairs are descriptive. All paired values are retained, but this is not p95, latency-target closure or a general performance guarantee.",
+    "No memory observer or memory lane exists. No per-count, retained-state, memory saving, exact peak, worker/GPU memory or ceiling claim.",
+    "The fixture uses Background/Silence Holds without source media; end is same-ticket offscreen composition, not physical display or source decoding. OS cache and power/thermal state remain uncontrolled.",
+    "No private instrumented prototype trial is pooled into these ten production trials.",
+    "Build scope is 729 Core lib unit tests, 35 selected Core integrations and 12 release Store tests plus release App/strict/format, not every workspace suite.",
+    "Actual successful media receipts and export bytes were rehashed and checked; no independent DSP, listening, compressed-byte identity or new media decoder execution.",
+    "The Some/None media comparison selects semantic/net capability reuse; both legs can use local wire-count reuse. Forced-full wire-count independence is supplied by the reviewed unit-test reference mode, not inferred from the media leg labels.",
+    "Historical analysis/preparation corrections remain pinned separately. No failed or partial producer attempt is folded into the completed timing counts."
+  ]
+}

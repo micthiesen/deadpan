@@ -1,0 +1,17 @@
+{
+  "main_rust_sources": 2053,
+  "all_bytes_equal_qualified_candidate": true,
+  "candidate_source_map_sha256": "2b0997f1ad22ce7dd869beba699909d22972efba434279cee350478dc63cb728",
+  "inputs": {
+    "Cargo.lock": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+    "Cargo.toml": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+    ".cargo/config.toml": "b906738cab8f6f289180e1bcf32826d3e2996899cb5055dc7f0c6838655c340d",
+    "crates/deadpan-app/src/navigation/registry/baseline-routing.txt": "a181ba1d3f2db1c030fbdf1feaf2d5ae8efd5edd885114bcea9c161ac774cd8d",
+    "docs/COMMANDS.md": "b4fc50fffbb6d96406593dda90a56ee6c9f3b89a3790b6e7f69b87863f57beec"
+  },
+  "only_owned_paths_changed": [
+    "crates/deadpan-core/src/compound.rs",
+    "crates/deadpan-core/src/one_leaf_replay.rs"
+  ]
+}

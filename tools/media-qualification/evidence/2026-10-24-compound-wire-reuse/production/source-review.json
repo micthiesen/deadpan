@@ -1,0 +1,26 @@
+{
+  "status": "no_findings",
+  "findings": [],
+  "review_kind": "Root independent projection audit of worker-prepared uninstrumented copy; original wire logic has separate independent source and runtime qualification. No production runtime claim.",
+  "source_map_sha256": "2b0997f1ad22ce7dd869beba699909d22972efba434279cee350478dc63cb728",
+  "source_files": 2053,
+  "unchanged_nonowned_files": 2051,
+  "reviewed_paths": {
+    "crates/deadpan-core/src/compound.rs": "e4b21f6a2d00f235cb7eb25e3417db5f6f67ab4daab3e43d531183628c4ae250",
+    "crates/deadpan-core/src/one_leaf_replay.rs": "f25004855ae085fd3d5feec595a7d960dbe78f687e0e9e8ab26ba527c37f0b68"
+  },
+  "prototype_map_sha256": "59ab40b15f9a705953320d45a9ffcef87a85f876a15455c4fb4180ce12ebdff9",
+  "independent_prototype_source_review_sha256": "dbbc5efe7cf81b41bba3bca181991db809dd3afe1358793be0163f2bb78db86d",
+  "independent_prototype_analysis_review_sha256": "c712e35e8f45a22a7cc3397310894480444fade6f3da20dc9311472bf63971c1",
+  "proof": [
+    "All 2053 candidate and qualified source bytes independently rehashed; only the two owned files differ.",
+    "Exact reviewed profiling removals reproduce qualified control from old instrumented baseline and reproduce candidate from tested prototype. No other source projection occurs.",
+    "OneLeafReplay production prefix is identical to current qualified Main; test module is identical to reviewed/tested prototype.",
+    "Actual initial/post serializers, checked token arithmetic, full refusal fallbacks, complete Result debug oracles, charge order and private scoped test witnesses match the reviewed prototype.",
+    "All six build inputs match. Formatter check session91969 exited zero."
+  ],
+  "limitations": [
+    "Candidate builds/tests, uninstrumented real media and five timing pairs are still owed.",
+    "First copy-filter failure was before applying changes, retained separately, corrected by protecting qualified source paths."
+  ]
+}

@@ -50,6 +50,83 @@ pub(super) mod net_reuse_test {
     }
 }
 
+// Scoped unit-test reference mode and bounded observations. Nothing persists
+// beyond the scope, including nested scopes and unwinding.
+#[cfg(test)]
+pub(super) mod wire_reuse_test {
+    use std::cell::Cell;
+
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+    pub(crate) struct Observation {
+        pub full: [usize; 4],
+        pub reused: [bool; 2],
+        pub charges: [usize; 12],
+        pub charge_count: usize,
+        pub overflow: bool,
+    }
+
+    #[derive(Clone, Copy)]
+    struct State {
+        force_full: bool,
+        observation: Observation,
+    }
+
+    thread_local! {
+        static STATE: Cell<Option<State>> = const { Cell::new(None) };
+    }
+
+    fn update(operation: impl FnOnce(&mut Observation)) {
+        STATE.with(|state| {
+            if let Some(mut current) = state.get() {
+                operation(&mut current.observation);
+                state.set(Some(current));
+            }
+        });
+    }
+
+    pub(super) fn force_full() -> bool {
+        STATE.with(|state| state.get().is_some_and(|current| current.force_full))
+    }
+
+    pub(super) fn full(site: usize) {
+        update(|observation| observation.full[site] += 1);
+    }
+
+    pub(super) fn reused(site: usize) {
+        update(|observation| observation.reused[site] = true);
+    }
+
+    pub(super) fn charge(amount: usize) {
+        update(|observation| {
+            if let Some(slot) = observation.charges.get_mut(observation.charge_count) {
+                *slot = amount;
+                observation.charge_count += 1;
+            } else {
+                observation.overflow = true;
+            }
+        });
+    }
+
+    pub(crate) fn observe<T>(force_full: bool, operation: impl FnOnce() -> T) -> (T, Observation) {
+        struct Restore(Option<State>);
+        impl Drop for Restore {
+            fn drop(&mut self) {
+                STATE.with(|state| state.set(self.0));
+            }
+        }
+        let restore = Restore(STATE.with(|state| {
+            state.replace(Some(State {
+                force_full,
+                observation: Observation::default(),
+            }))
+        }));
+        let result = operation();
+        let observation = STATE.with(|state| state.get().unwrap().observation);
+        drop(restore);
+        (result, observation)
+    }
+}
+
 /// A command that cannot recursively contain another resolved transaction.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(transparent)]
@@ -282,6 +359,7 @@ pub(crate) fn replay_compound_captured<E: From<EditError>>(
 /// Replay with an optional immutable result of Core's own exact semantic leaf.
 /// Every replay prefix charge, host visit and final document admission still
 /// executes. A successful eligible hit may reuse its net edit's authored state.
+/// Exact local counts may replace successful clone/header-only recounts.
 pub fn replay_compound_with_one_leaf<E: From<EditError>>(
     document: &ProjectDocument,
     request: &CommandRequest,
@@ -314,13 +392,28 @@ fn replay_compound_inner<E: From<EditError>>(
             return Err(identity("leaf revision must differ from base and outer revisions").into());
         }
     }
-    let mut bytes = wire::size(document, crate::MAX_DOCUMENT_JSON_BYTES)?;
+    // Counts belong to this invocation's actual values, never candidate Eq or
+    // a semantic plan. This exact shape has one untouched entry clone and one
+    // post-leaf value whose only subsequent authored change is its header.
+    let reuse_wire = isolation.is_none()
+        && crate::one_leaf_replay::eligible_compound(request)
+        && crate::command_work::local()
+        && crate::audio_binding_lifecycle::compact_representation();
+    #[cfg(test)]
+    let reuse_wire = reuse_wire && !wire_reuse_test::force_full();
+    #[cfg(test)]
+    wire_reuse_test::full(0);
+    let initial_size = wire::size(document, crate::MAX_DOCUMENT_JSON_BYTES)?;
+    let mut bytes = initial_size;
+    #[cfg(test)]
+    wire_reuse_test::charge(initial_size);
     let mut captured_bytes = 0usize;
     let mut captures = BTreeSet::new();
     let mut identities = identities::Ledger::new(document);
     let mut current = document.clone();
     let mut writes = BTreeMap::<RegisterName, Arc<RegisterValue>>::new();
     let mut reused_net = None;
+    let mut post_wire_size = None;
     for step in &transaction.steps {
         let value = match step {
             ResolvedStep::Edit { .. } => None,
@@ -365,7 +458,24 @@ fn replay_compound_inner<E: From<EditError>>(
         let leaf = step.edit().map(|edit| edit.request(&current));
         let next = if let Some(leaf) = &leaf {
             identities.reserve(&current, &leaf.command)?;
-            let size = wire::size(&current, crate::MAX_DOCUMENT_JSON_BYTES)?;
+            let size = if reuse_wire {
+                // Ledger reservation only read this literal clone of the
+                // successfully serialized entry; no visitor has run yet.
+                #[cfg(test)]
+                wire_reuse_test::reused(0);
+                #[cfg(debug_assertions)]
+                assert_eq!(
+                    Ok(initial_size),
+                    wire::size(&current, crate::MAX_DOCUMENT_JSON_BYTES)
+                );
+                initial_size
+            } else {
+                #[cfg(test)]
+                wire_reuse_test::full(1);
+                wire::size(&current, crate::MAX_DOCUMENT_JSON_BYTES)?
+            };
+            #[cfg(test)]
+            wire_reuse_test::charge(size);
             charge(
                 &mut bytes,
                 size,
@@ -394,13 +504,20 @@ fn replay_compound_inner<E: From<EditError>>(
                     None => crate::apply_with_result(&current, leaf)?.1,
                 }
             };
+            #[cfg(test)]
+            wire_reuse_test::full(2);
             let size = wire::size(&next, crate::MAX_DOCUMENT_JSON_BYTES)?;
+            #[cfg(test)]
+            wire_reuse_test::charge(size);
             charge(
                 &mut bytes,
                 size,
                 MAX_COMPOUND_DOCUMENT_BYTES,
                 "staged document work byte limit",
             )?;
+            if reuse_wire {
+                post_wire_size = Some(size);
+            }
             identities.observe(&current, &next)?;
             Some(next)
         } else {
@@ -422,8 +539,36 @@ fn replay_compound_inner<E: From<EditError>>(
             current = next;
         }
     }
+    let counted_header = post_wire_size.map(|size| (size, current.revision_id.clone()));
     current.revision_id = request.new_revision.clone();
-    let final_size = wire::size(&current, crate::MAX_DOCUMENT_JSON_BYTES)?;
+    let revised_size = counted_header.and_then(|(size, old_revision)| {
+        let old_token = wire::size(&old_revision, crate::MAX_DOCUMENT_JSON_BYTES).ok()?;
+        let new_token = wire::size(&request.new_revision, crate::MAX_DOCUMENT_JSON_BYTES).ok()?;
+        size.checked_sub(old_token)?
+            .checked_add(new_token)
+            .filter(|size| *size <= crate::MAX_DOCUMENT_JSON_BYTES)
+    });
+    let final_size = match revised_size {
+        Some(size) => {
+            #[cfg(test)]
+            wire_reuse_test::reused(1);
+            #[cfg(debug_assertions)]
+            assert_eq!(
+                Ok(size),
+                wire::size(&current, crate::MAX_DOCUMENT_JSON_BYTES)
+            );
+            size
+        }
+        None => {
+            // Refusals and unexpected arithmetic/token failures still use the
+            // original full serializer and its original error mapping.
+            #[cfg(test)]
+            wire_reuse_test::full(3);
+            wire::size(&current, crate::MAX_DOCUMENT_JSON_BYTES)?
+        }
+    };
+    #[cfg(test)]
+    wire_reuse_test::charge(final_size);
     charge(
         &mut bytes,
         final_size,

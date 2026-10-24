@@ -303,24 +303,437 @@ mod tests {
         candidate: Option<&OneLeafReplay>,
     ) -> (EditError, usize) {
         let request = outer_request(entry, leaf, outer);
-        let mut visits = 0;
-        let (result, constructed) = crate::compound::net_reuse_test::observe(|| {
-            crate::replay_compound_with_one_leaf(
-                entry,
+        let execute = |force_full| {
+            let mut visits = 0;
+            let ((result, constructed), observation) =
+                crate::compound::wire_reuse_test::observe(force_full, || {
+                    crate::compound::net_reuse_test::observe(|| {
+                        crate::replay_compound_with_one_leaf(
+                            entry,
+                            &request,
+                            |_| {
+                                visits += 1;
+                                Ok::<(), EditError>(())
+                            },
+                            candidate,
+                        )
+                    })
+                });
+            assert!(!constructed, "refusal must precede net construction");
+            assert!(
+                !observation.reused[1],
+                "refusal must use actual final sizing"
+            );
+            assert!(!observation.overflow);
+            assert_eq!(observation.full[0], 1);
+            if visits == 1 {
+                assert_eq!(observation.full[3], 1);
+            }
+            let error = match result {
+                Err(error) => error,
+                Ok(_) => panic!("wire-boundary replay unexpectedly succeeded"),
+            };
+            ((error, visits), observation)
+        };
+        let (actual, observation) = execute(false);
+        let (expected, reference) = execute(true);
+        assert_eq!(actual, expected);
+        assert_eq!(observation.charges, reference.charges);
+        assert_eq!(observation.charge_count, reference.charge_count);
+        actual
+    }
+
+    #[derive(Debug, PartialEq, Eq)]
+    struct WireOutcome {
+        edit: EditTransaction,
+        document: ProjectDocument,
+        edit_wire: String,
+        document_wire: String,
+        writes:
+            std::collections::BTreeMap<crate::RegisterName, std::sync::Arc<crate::RegisterValue>>,
+    }
+
+    #[derive(Debug, PartialEq, Eq)]
+    struct WireVisit {
+        before: String,
+        after: String,
+        request: Option<String>,
+        step: String,
+        value: Option<String>,
+    }
+
+    struct WireRun {
+        result: Result<WireOutcome, EditError>,
+        visits: Vec<WireVisit>,
+        observation: crate::compound::wire_reuse_test::Observation,
+    }
+
+    fn wire_run(
+        entry: &ProjectDocument,
+        request: &CommandRequest,
+        candidate: Option<&OneLeafReplay>,
+        force_full: bool,
+        isolation: bool,
+        refuse: bool,
+    ) -> WireRun {
+        let mut visits = Vec::new();
+        let mut visit = |value: crate::CompoundVisit<'_>| {
+            visits.push(WireVisit {
+                before: value.before.to_compact_json().unwrap(),
+                after: value.after.to_compact_json().unwrap(),
+                request: value
+                    .request
+                    .map(|value| serde_json::to_string(value).unwrap()),
+                step: serde_json::to_string(value.step).unwrap(),
+                value: value
+                    .value
+                    .map(|value| serde_json::to_string(value).unwrap()),
+            });
+            if refuse {
+                Err(EditError::new(
+                    crate::EditErrorCode::SelectionUnavailable,
+                    "wire visitor refusal",
+                ))
+            } else {
+                Ok(())
+            }
+        };
+        let (result, observation) = crate::compound::wire_reuse_test::observe(force_full, || {
+            if isolation {
+                crate::compound::replay_compound_captured::<EditError>(
+                    entry,
+                    request,
+                    &mut visit,
+                    Some(&mut Vec::new()),
+                )
+            } else {
+                crate::replay_compound_with_one_leaf::<EditError>(
+                    entry, request, &mut visit, candidate,
+                )
+            }
+        });
+        WireRun {
+            result: result.map(|outcome| WireOutcome {
+                edit_wire: serde_json::to_string(&outcome.edit).unwrap(),
+                document_wire: outcome.document.to_compact_json().unwrap(),
+                edit: outcome.edit,
+                document: outcome.document,
+                writes: outcome.register_writes,
+            }),
+            visits,
+            observation,
+        }
+    }
+
+    fn wire_parity(
+        entry: &ProjectDocument,
+        request: &CommandRequest,
+        candidate: Option<&OneLeafReplay>,
+        isolation: bool,
+        refuse: bool,
+    ) -> WireRun {
+        let actual = wire_run(entry, request, candidate, false, isolation, refuse);
+        let reference = wire_run(entry, request, candidate, true, isolation, refuse);
+        assert_eq!(actual.result, reference.result);
+        assert_eq!(actual.visits, reference.visits);
+        assert_eq!(actual.observation.charges, reference.observation.charges);
+        assert_eq!(
+            actual.observation.charge_count,
+            reference.observation.charge_count
+        );
+        assert!(!actual.observation.overflow);
+        assert!(!reference.observation.overflow);
+        assert_eq!(reference.observation.reused, [false; 2]);
+        actual
+    }
+
+    fn nested_wire_fixture() -> (ProjectDocument, CommandRequest) {
+        let (mut entry, mut request) = fixture();
+        let id = |value: &str| crate::NodeId::new(value).unwrap();
+        let hold = entry.nodes[&id("hold")].clone();
+        entry.nodes.insert(id("side"), hold);
+        entry.nodes.insert(
+            id("nested"),
+            crate::BeatNode::sequence("Nested \"é\\\n雪", vec![id("hold")]),
+        );
+        entry.nodes.insert(
+            id("root"),
+            crate::BeatNode::sequence("Root", vec![id("nested"), id("side")]),
+        );
+        entry.validate().unwrap();
+        let mut seed = request.clone();
+        seed.new_revision = crate::RevisionId::new("wire-seed").unwrap();
+        let Command::InsertTime {
+            at,
+            id: pause,
+            identities,
+            timing,
+            ..
+        } = &mut seed.command
+        else {
+            panic!("InsertTime fixture")
+        };
+        *at = crate::ProjectFrame(16);
+        *pause = id("wire-seed-pause");
+        identities.nodes.clear();
+        timing.allocation = seed.new_revision.clone();
+        entry = crate::apply_with_result(&entry, &seed).unwrap().1;
+        request.expected_revision = entry.revision_id().clone();
+        let split = entry
+            .insert_time_target(crate::ProjectFrame(3))
+            .unwrap()
+            .split
+            .unwrap();
+        let Command::InsertTime { identities, .. } = &mut request.command else {
+            panic!("InsertTime fixture")
+        };
+        identities.nodes = (0..split.required_ids)
+            .map(|index| id(&format!("nested-split-{index}")))
+            .collect();
+        assert!(!entry.audio_bindings.timings.is_empty());
+        (entry, request)
+    }
+
+    #[test]
+    fn compound_wire_reuse_matches_full_counts_and_actual_charges_for_header_lengths() {
+        let (entry, leaf) = nested_wire_fixture();
+        let (_, candidate) = apply_semantic_leaf(&entry, &leaf, true, serialize).unwrap();
+        let candidate = candidate.unwrap();
+        let initial = crate::compound::wire::size(&entry, crate::MAX_DOCUMENT_JSON_BYTES).unwrap();
+        for outer in ["o".to_owned(), "four".to_owned(), "o".repeat(128)] {
+            let request = outer_request(&entry, &leaf, &outer);
+            let mut previous = None;
+            for candidate in [None, Some(&candidate)] {
+                let run = wire_parity(&entry, &request, candidate, false, false);
+                assert_eq!(run.observation.full, [1, 0, 1, 0]);
+                assert_eq!(run.observation.reused, [true, true]);
+                assert_eq!(run.observation.charge_count, 4);
+                assert_eq!(&run.observation.charges[..2], &[initial, initial]);
+                assert_eq!(run.observation.charges[2], run.visits[0].after.len());
+                let outcome = run.result.unwrap();
+                assert_eq!(run.observation.charges[3], outcome.document_wire.len());
+                assert!(outcome.writes.is_empty());
+                assert!(
+                    outcome
+                        .edit
+                        .inverse
+                        .restores(&outcome.document, &entry)
+                        .unwrap()
+                );
+                if let Some(previous) = &previous {
+                    assert_eq!(&outcome, previous);
+                } else {
+                    previous = Some(outcome);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn compound_wire_reuse_preserves_fallbacks_and_visitor_error_order() {
+        let (entry, leaf) = fixture();
+        let (_, candidate) = apply_semantic_leaf(&entry, &leaf, true, serialize).unwrap();
+        let candidate = candidate.unwrap();
+        let request = outer_request(&entry, &leaf, "outer");
+        for isolation in [false, true] {
+            let run = wire_parity(&entry, &request, Some(&candidate), isolation, false);
+            assert!(run.result.is_ok());
+            assert_eq!(run.observation.reused, [!isolation; 2]);
+            if isolation {
+                assert_eq!(run.observation.full, [1, 1, 1, 1]);
+            }
+        }
+        for reference in [false, true] {
+            let operation = || {
+                let run = wire_parity(&entry, &request, Some(&candidate), false, false);
+                assert!(run.result.is_ok());
+                assert_eq!(run.observation.full, [1, 1, 1, 1]);
+                assert_eq!(run.observation.reused, [false; 2]);
+            };
+            if reference {
+                crate::with_reference_command_work(operation);
+            } else {
+                crate::with_reference_timing_representation(operation);
+            }
+        }
+        let mut noneligible = request.clone();
+        noneligible.command = Command::Compound {
+            transaction: crate::ResolvedTransaction::new(0, Default::default(), vec![mark_step(1)])
+                .unwrap(),
+        };
+        let run = wire_parity(&entry, &noneligible, Some(&candidate), false, false);
+        assert!(run.result.is_ok());
+        assert_eq!(run.observation.reused, [false; 2]);
+        assert_eq!(run.observation.full, [1, 1, 1, 1]);
+        let Command::Compound { transaction } = &request.command else {
+            panic!("compound fixture")
+        };
+        let mut with_inputs = request.clone();
+        with_inputs.command = Command::Compound {
+            transaction: crate::ResolvedTransaction::new(
+                0,
+                std::collections::BTreeMap::from([(crate::RegisterName::unnamed(), None)]),
+                transaction.steps().to_vec(),
+            )
+            .unwrap(),
+        };
+        let run = wire_parity(&entry, &with_inputs, Some(&candidate), false, false);
+        assert!(run.result.is_ok());
+        assert_eq!(run.observation.reused, [false; 2]);
+        assert_eq!(run.observation.full, [1, 1, 1, 1]);
+        let register = crate::RegisterName::new('a').unwrap();
+        let slice = crate::CapturedEditSlice::capture(
+            &entry,
+            entry.root(),
+            crate::FrameRange::new(crate::ProjectFrame(0), crate::ProjectFrame(8)).unwrap(),
+            crate::AudioTimingId {
+                allocation: crate::RevisionId::new("wire-capture").unwrap(),
+                ordinal: 0,
+            },
+        )
+        .unwrap();
+        let mut capture = request.clone();
+        capture.command = Command::Compound {
+            transaction: crate::ResolvedTransaction::new(
+                0,
+                Default::default(),
+                vec![ResolvedStep::Yank {
+                    name: register,
+                    value: std::sync::Arc::new(crate::RegisterValue::Edited {
+                        slice: std::sync::Arc::new(slice),
+                    }),
+                }],
+            )
+            .unwrap(),
+        };
+        let run = wire_parity(&entry, &capture, Some(&candidate), false, false);
+        let outcome = run.result.unwrap();
+        assert!(outcome.writes.contains_key(&register));
+        assert!(outcome.writes.contains_key(&crate::RegisterName::unnamed()));
+        assert_eq!(run.observation.reused, [false; 2]);
+        assert_eq!(run.observation.full, [1, 0, 0, 1]);
+        assert_eq!(run.observation.charge_count, 2);
+        let mut identity = request.clone();
+        identity.new_revision = leaf.new_revision.clone();
+        let run = wire_parity(&entry, &identity, Some(&candidate), false, false);
+        assert_eq!(
+            run.result.unwrap_err().code,
+            crate::EditErrorCode::IdentityConflict
+        );
+        assert!(run.visits.is_empty());
+        assert_eq!(run.observation.charge_count, 0);
+        let mut collision = leaf.clone();
+        let Command::InsertTime { identities, .. } = &mut collision.command else {
+            panic!("InsertTime fixture")
+        };
+        identities.nodes[0] = crate::NodeId::new("hold").unwrap();
+        let collision = outer_request(&entry, &collision, "outer");
+        let run = wire_parity(&entry, &collision, Some(&candidate), false, false);
+        assert_eq!(
+            run.result.unwrap_err().code,
+            crate::EditErrorCode::IdentityConflict
+        );
+        assert!(run.visits.is_empty());
+        assert_eq!(run.observation.full, [1, 0, 0, 0]);
+        assert_eq!(run.observation.charge_count, 1);
+        let run = wire_parity(&entry, &request, Some(&candidate), false, true);
+        assert_eq!(run.result.unwrap_err().message, "wire visitor refusal");
+        assert_eq!(run.visits.len(), 1);
+        assert_eq!(run.observation.reused, [true, false]);
+        assert_eq!(run.observation.charge_count, 3);
+        let (_, outer) = crate::compound::wire_reuse_test::observe(false, || {
+            let (_, nested) = crate::compound::wire_reuse_test::observe(true, || {
+                crate::replay_compound_with_one_leaf::<EditError>(
+                    &entry,
+                    &request,
+                    |_| Ok(()),
+                    Some(&candidate),
+                )
+                .is_ok()
+            });
+            assert_eq!(nested.reused, [false; 2]);
+            assert!(
+                std::panic::catch_unwind(|| {
+                    crate::compound::wire_reuse_test::observe(true, || {
+                        crate::replay_compound_with_one_leaf::<EditError>(
+                            &entry,
+                            &request,
+                            |_| panic!("visitor unwind"),
+                            Some(&candidate),
+                        )
+                        .is_ok()
+                    })
+                })
+                .is_err()
+            );
+            let result = crate::replay_compound_with_one_leaf::<EditError>(
+                &entry,
                 &request,
                 |_| {
-                    visits += 1;
-                    Ok::<(), EditError>(())
+                    crate::with_reference_command_work(|| {
+                        crate::with_reference_timing_representation(|| ())
+                    });
+                    Ok(())
                 },
-                candidate,
-            )
+                Some(&candidate),
+            );
+            assert!(result.is_ok());
         });
-        assert!(!constructed, "refusal must precede net construction");
-        let error = match result {
-            Err(error) => error,
-            Ok(_) => panic!("wire-boundary replay unexpectedly succeeded"),
+        assert_eq!(outer.reused, [true; 2]);
+        assert_eq!(outer.charge_count, 4);
+    }
+
+    #[test]
+    fn compound_wire_reuse_equal_provisional_entry_still_requires_full_initial_count() {
+        let (mut entry, leaf) = fixture();
+        let alias = crate::NodeId::new("hold").unwrap();
+        let side = entry.nodes[&alias].clone();
+        let mut children = vec![alias.clone()];
+        for index in 0..8 {
+            let id = crate::NodeId::new(format!("side-{index}")).unwrap();
+            entry.nodes.insert(id.clone(), side.clone());
+            children.push(id);
+        }
+        entry.nodes.insert(
+            crate::NodeId::new("root").unwrap(),
+            crate::BeatNode::sequence("Root", children),
+        );
+        entry.validate().unwrap();
+        let provisional = crate::FrozenAudioLayout::capture_scoped(
+            &entry,
+            &std::collections::BTreeSet::from([alias.clone()]),
+        )
+        .unwrap()
+        .unwrap();
+        let normal = provisional.sliced(provisional.nodes().keys()).unwrap();
+        assert_eq!(normal, provisional);
+        let timing = crate::AudioTimingId {
+            allocation: crate::RevisionId::new("captured").unwrap(),
+            ordinal: 0,
         };
-        (error, visits)
+        let (mut bindings, _) =
+            crate::audio_binding_lifecycle::capture_for_insertion(&entry, timing.clone()).unwrap();
+        bindings.bindings.retain(|owner, _| owner == &alias);
+        bindings.timings.insert(timing.clone(), normal);
+        entry.audio_bindings = bindings;
+        entry.validate().unwrap();
+        let (_, candidate) = apply_semantic_leaf(&entry, &leaf, true, serialize).unwrap();
+        let mut provisional_entry = entry.clone();
+        provisional_entry
+            .audio_bindings
+            .timings
+            .insert(timing, provisional);
+        assert_eq!(entry, provisional_entry);
+        let expected = serialize(&provisional_entry).unwrap_err();
+        let request = outer_request(&entry, &leaf, "outer");
+        for candidate in [None, candidate.as_ref()] {
+            let run = wire_parity(&provisional_entry, &request, candidate, false, false);
+            assert_eq!(run.result.unwrap_err(), expected);
+            assert!(run.visits.is_empty());
+            assert_eq!(run.observation.full, [1, 0, 0, 0]);
+            assert_eq!(run.observation.reused, [false; 2]);
+            assert_eq!(run.observation.charge_count, 0);
+        }
     }
 
     #[test]
@@ -498,30 +911,52 @@ mod tests {
             transaction: crate::ResolvedTransaction::new(0, Default::default(), steps).unwrap(),
         };
         assert!(!eligible_compound(&request));
-        let execute = |candidate| {
+        let execute = |candidate, force_full| {
             let mut visits = 0;
-            let (result, constructed) = crate::compound::net_reuse_test::observe(|| {
-                crate::replay_compound_with_one_leaf::<EditError>(
-                    &entry,
-                    &request,
-                    |value| {
-                        visits += 1;
-                        serialize(value.after)?;
-                        Ok(())
-                    },
-                    candidate,
-                )
-            });
+            let ((result, constructed), observation) =
+                crate::compound::wire_reuse_test::observe(force_full, || {
+                    crate::compound::net_reuse_test::observe(|| {
+                        crate::replay_compound_with_one_leaf::<EditError>(
+                            &entry,
+                            &request,
+                            |value| {
+                                visits += 1;
+                                serialize(value.after)?;
+                                Ok(())
+                            },
+                            candidate,
+                        )
+                    })
+                });
             assert!(!constructed);
-            (result.err().expect("actual cumulative cap"), visits)
+            assert!(!observation.overflow);
+            assert_eq!(observation.reused, [false; 2]);
+            assert_eq!(observation.full, [1, 4, 4, 0]);
+            assert_eq!(observation.charge_count, 9);
+            assert!(
+                observation.charges[..8].iter().sum::<usize>() < crate::MAX_COMPOUND_DOCUMENT_BYTES
+            );
+            assert!(
+                observation.charges[..9].iter().sum::<usize>() > crate::MAX_COMPOUND_DOCUMENT_BYTES
+            );
+            (
+                (result.err().expect("actual cumulative cap"), visits),
+                observation,
+            )
         };
-        let plain = execute(None);
+        let (plain, observation) = execute(None, false);
         assert_eq!(plain.0.code, crate::EditErrorCode::LimitExceeded);
         assert_eq!(plain.0.message, "staged document work byte limit");
         // Initial plus pre/post for three visited steps is just over 420 MiB.
         // Step four's pre stays below 512 MiB; its post crosses the real cap.
         assert_eq!(plain.1, 3);
-        assert_eq!(execute(Some(&candidate)), plain);
+        for candidate in [None, Some(&candidate)] {
+            for force_full in [false, true] {
+                let (actual, reference) = execute(candidate, force_full);
+                assert_eq!(actual, plain);
+                assert_eq!(reference, observation);
+            }
+        }
     }
 
     #[test]
@@ -593,6 +1028,20 @@ mod tests {
             let reused = candidate.reuse(&entry, &request).unwrap().unwrap();
             assert!(reused.0 == next, "exact-cap reuse changed its result");
             drop(reused);
+            for outer in ["four", "o"] {
+                let outer = outer_request(&entry, &request, outer);
+                let run = wire_parity(&entry, &outer, Some(&candidate), false, false);
+                assert!(run.result.is_ok());
+                assert_eq!(run.visits.len(), 1);
+                assert_eq!(run.observation.full, [1, 0, 1, 0]);
+                assert_eq!(run.observation.reused, [true; 2]);
+                assert_eq!(run.observation.charge_count, 4);
+                assert_eq!(run.observation.charges[2], limit);
+                assert_eq!(
+                    run.observation.charges[3],
+                    limit - request.new_revision.as_str().len() + outer.new_revision.as_str().len()
+                );
+            }
             let mut final_value = next;
             final_value.revision_id = crate::RevisionId::new("o".repeat(128)).unwrap();
             let expected = serialize(&final_value).unwrap_err();

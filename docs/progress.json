@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-24T02:45:21.259Z",
+  "updated_at": "2026-10-24T03:16:15.935Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Private count reuse passed correctness and media checks. Six matched pairs saved a median 6.03 ms to commit, with one slower pair retained. Uninstrumented verification is running; Main runtime and the 100 ms/50 ms targets are unchanged.",
+  "focus": "Pause count reuse is implemented and verified. Five uninstrumented pairs saved a median 5.74 ms to commit; every pair improved. The 100 ms/50 ms targets remain open.",
   "features": [
     {
       "id": "editing",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "Main retains the qualified net-edit reuse change. A separate private compound count-reuse trial passes 737 Core unit tests, 35 integration tests, 12 Store tests, strict/format and real-media history/PCM checks; both 45-picture, 72,072-sample exports verify at zero offset. Eighteen native trials pass 126 pause and 18 Kestrel checks. Six matched pairs have median commit/composition reductions of 6.030062/6.203416 ms; one slower pair remains included. Replay-wire phase medians are 13.2755215/6.7645835 ms. Uninstrumented qualification remains required before promotion; no p95, latency-target or memory claim is made."
+      "note": "The narrow compound count-reuse change is promoted after 729 Core unit tests, 35 integration tests, 12 release Store tests, strict/format and real-media history/PCM verification. Both 45-picture, 72,072-sample exports verify at zero offset. Five fresh uninstrumented timing pairs pass 70 pause and 10 Kestrel checks, with all five improving: paired median reductions are 5.737334 ms to commit and 5.692792 ms to offscreen composition. Candidate medians are 180.792875/183.389625 ms. Counts are local to actual serialized values, every work charge remains and original full-serializer refusals are retained. No memory lane, p95 or 100 ms/50 ms target pass is claimed."
     },
     {
       "id": "models",
@@ -1245,6 +1245,14 @@
       "revision": "d6a6e23f47ac4ab7cf381547ebadc7e0a71cad3d",
       "retrospective": false,
       "summary": "A private compound wire-count reuse trial retains exact initial and post-leaf counts for one eligible InsertTime replay. Checked serialized-header adjustment replaces only successful final recounting; actual initial/post counts, every charge and original full-serializer refusal remain. All 737 Core unit tests, 35 integrations, 12 release Store tests, App, strict/format and one actual history/PCM media case pass, including both 45-picture, 72,072-sample zero-offset exports. Eighteen native trials pass 126 pause and 18 Kestrel checks with 36 retained layout warnings and exact 35-phase conservation. Six matched pairs have median commit/composition reductions of 6.030062/6.203416 ms; rotation three is slower by 3.646876/3.810250 ms and remains included. Independent raw-result review agrees. The first copier and independent verifier confirm all 359 retained primary payloads, 18 safe authored-fixture archives and both emitted movies. The prototype source has 2,054 Rust files; Main runtime is unchanged and separate uninstrumented qualification remains owed. No gate, p95, 100 ms/50 ms target or memory claim closes; coverage remains 89%, eight Complete/sixteen Partial."
+    },
+    {
+      "date": "2026-10-24",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "5f4147204a091554932eecb85af6f02b8102fd93",
+      "retrospective": false,
+      "summary": "The uninstrumented compound wire-count reuse change is promoted to Main. Its 2,053 Rust files and six inputs exactly match qualified snapshot 2b0997f1; only two Core paths change and 2,051 other source files match the control. All 729 Core unit tests, 35 integration tests, 12 release Store tests, App, strict and format checks pass. One actual release media case compares Some/None leaf-capability history and canonical PCM; both 45-picture, 72,072-sample exports independently verify at zero offset. Forced-full counting parity is covered separately in unit tests, including actual 64 MiB/512 MiB limits. Five fresh alternating native pairs pass 70 pause and 10 Kestrel checks with twenty retained warnings. All pairs improve: paired median reductions are 5.737334 ms to commit and 5.692792 ms to offscreen composition, with candidate medians 180.792875/183.389625 ms. Independent raw-result review agrees. The first copier and independent reread verify all 253 primary payloads, ten safe authored-fixture archives, 35 media files and both emitted movies. No memory lane, p95, latency target, requirement or gate closes; coverage remains 89%, eight Complete/sixteen Partial. Public APIs and Core 58/SQLite 87 remain unchanged."
     }
   ]
 }

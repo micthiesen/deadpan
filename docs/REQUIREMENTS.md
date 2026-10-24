@@ -2,6 +2,21 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Compound wire-count reuse: production qualification, 2026-10-24
+
+The [uninstrumented qualification](qualification/compound-wire-reuse-2026-10-24.md)
+promotes exact local count reuse for one eligible InsertTime replay. Main's
+2,053 Rust files and six inputs exactly match the tested snapshot. All 729
+Core unit tests, 35 integration tests, 12 release Store tests, strict/format
+checks and the real-media history/PCM case pass. Both actual exports verify
+45 pictures and 72,072 samples at zero offset. Full initial/post counts,
+every work charge, original full-serializer refusals and Store checks remain.
+
+Five fresh alternating timing pairs pass 70 pause and 10 Kestrel checks.
+All five improve, with paired median commit/composition reductions of
+5.737334/5.692792 ms. No p95, 100 ms/50 ms target, memory claim, requirement
+or gate closes. Coverage remains 89%, eight Complete and sixteen Partial.
+
 ## Compound wire-count reuse: private qualification, 2026-10-24
 
 The [private trial](qualification/compound-wire-reuse-prototype-2026-10-24.md)
@@ -15,8 +30,9 @@ the real-media history/PCM case pass; both exports verify 45 pictures and
 Eighteen native trials pass 126 pause and 18 Kestrel checks. Six matched pairs
 have median commit/composition reductions of 6.030062/6.203416 ms, retaining
 one slower pair. Replay-wire medians are 13.2755215/6.7645835 ms. Independent
-raw-result review agrees. Main runtime is unchanged; uninstrumented
-qualification remains required. No p95, target or memory claim is made.
+raw-result review agrees. At that checkpoint Main runtime was unchanged;
+the separate uninstrumented qualification above now promotes the change.
+No p95, target or memory claim is made by the private batch.
 Coverage remains 89%, eight Complete and sixteen Partial.
 
 ## Single-leaf net reuse: production qualification, 2026-10-24

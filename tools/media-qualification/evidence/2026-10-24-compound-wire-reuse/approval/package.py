@@ -1,0 +1,306 @@
+"""Root-approved, manifest-driven evidence copier. Never run before packaging GO."""
+from pathlib import Path, PurePosixPath
+import ctypes
+import gzip
+import hashlib
+import io
+import json
+import os
+import shutil
+import stat
+import tarfile
+import tempfile
+import unicodedata
+
+S=Path('/tmp/deadpan-compound-wire-reuse-production-2026-10-24')
+REPO=Path('/Users/michael/Code/deadpan')
+BASE=Path('/tmp/deadpan-single-leaf-net-production-2026-10-24/source')
+DEST=REPO/'tools/media-qualification/evidence/2026-10-24-compound-wire-reuse'
+DRAFT=S/'packaging-draft'
+MANIFEST=DRAFT/'approved-package-manifest.json'
+REVIEW=DRAFT/'packager-final-review.json'
+GO=DRAFT/'PACKAGING-GO.json'
+PLAN=DRAFT/'static-packaging-plan.md'
+SCRIPT=Path(__file__).absolute()
+ENVELOPE={'approval/approved-package-manifest.json':MANIFEST,
+          'approval/packager-final-review.json':REVIEW,
+          'approval/PACKAGING-GO.json':GO,
+          'approval/static-packaging-plan.md':PLAN,
+          'approval/package.py':SCRIPT}
+SIDECARS={'project.sqlite-shm','project.sqlite-wal'}
+STAGES=['rustc','cargo','format','core-unit-build','core-unit-all','core-integration','store-preparation','release-app','strict']
+TERMINALS={'build':S/'build-terminal.json','measurement':S/'measurement-terminal.json','media':S/'media-terminal.json'}
+MAX_FIXTURE_BYTES=25_000_000
+MAX_PAYLOAD_BYTES=25_000_000
+MAX_PACKAGE_BYTES=150_000_000
+EXPECTED_FIXTURES={f'rotation-{i}-{kind}' for i in range(1,6) for kind in ('control','candidate')}
+HELPER_MANIFEST=Path('/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-native-binaries.json')
+
+
+def digest_bytes(b): return hashlib.sha256(b).hexdigest()
+def digest(p): return digest_bytes(Path(p).read_bytes())
+def read(p): return json.loads(Path(p).read_text(encoding='utf-8'))
+
+def safe_rel(text):
+    q=PurePosixPath(text)
+    assert text and not q.is_absolute() and '..' not in q.parts and '.' not in q.parts and '\\' not in text
+    assert q.as_posix()==text
+    assert unicodedata.normalize('NFC',text)==text
+    return q
+
+def regular(p):
+    p=Path(p); assert not p.is_symlink(); q=p.resolve(strict=True)
+    assert q.is_file() and stat.S_ISREG(q.lstat().st_mode)
+    return q
+
+def verify_payload(item):
+    assert type(item['bytes']) is int and 0<=item['bytes']<=MAX_PAYLOAD_BYTES
+    p=regular(item['source']); assert p.stat().st_size==item['bytes']
+    raw=p.read_bytes()
+    assert len(raw)==item['bytes'] and digest_bytes(raw)==item['sha256'], p
+    return raw
+
+def outpath(root, rel):
+    q=root.joinpath(*safe_rel(rel).parts)
+    assert q.resolve().is_relative_to(root.resolve())
+    return q
+
+def snapshot(root):
+    r=Path(root); assert not r.is_symlink(); r=r.resolve(strict=True); assert r.is_dir()
+    result={}
+    for p in sorted(r.rglob('*')):
+        if p.is_symlink(): raise AssertionError(('fixture symlink',p))
+        mode=p.lstat().st_mode
+        if stat.S_ISDIR(mode): continue
+        if not stat.S_ISREG(mode): raise AssertionError(('fixture special file',p))
+        assert p.stat().st_size<=MAX_PAYLOAD_BYTES, ('fixture file too large',p)
+        result[p.relative_to(r).as_posix()]={'bytes':p.stat().st_size,'sha256':digest(p)}
+    assert sum(v['bytes'] for v in result.values())<=MAX_FIXTURE_BYTES
+    return result
+
+def approved_map(ref,payloads):
+    found=[x for x in payloads if x['source']==ref['source'] and x['destination']==ref['destination']
+           and x['bytes']==ref['bytes'] and x['sha256']==ref['sha256']]
+    assert len(found)==1, ('unapproved fixture map',ref)
+    raw=verify_payload(found[0]); d=json.loads(raw); return d.get('files',d)
+
+def verify_fixture(item,payloads):
+    assert item['name'] in EXPECTED_FIXTURES and Path(item['root'])==S/(item['name']+'.deadpan')
+    before=approved_map(item['before_map'],payloads); after=approved_map(item['after_map'],payloads)
+    actual=snapshot(item['root']); expected=item['allowed_sidecars']
+    assert set(expected)==SIDECARS
+    for name,rec in expected.items():
+        assert rec.get('after')==after[name]
+        assert actual.get(name)==rec['after']
+        if name=='project.sqlite-shm': assert rec['after']['bytes']==32768
+        if name=='project.sqlite-wal': assert rec['after']['bytes']==0
+        if name in before: assert rec.get('before')==before[name]
+        else: assert 'before' not in rec
+    before_auth={k:v for k,v in before.items() if k not in SIDECARS}
+    after_auth={k:v for k,v in after.items() if k not in SIDECARS}
+    actual_auth={k:v for k,v in actual.items() if k not in SIDECARS}
+    assert before_auth==after_auth==actual_auth, item['name']
+    assert set(actual)-set(before)<=set(expected), item['name']
+    return actual_auth
+
+def add_payload(stage,item):
+    raw=verify_payload(item); dest=outpath(stage,item['destination']); dest.parent.mkdir(parents=True,exist_ok=True)
+    if item['encoding']=='identity': stored=raw
+    elif item['encoding']=='gzip':
+        stored=gzip.compress(raw,compresslevel=9,mtime=0); assert gzip.decompress(stored)==raw
+    else: raise AssertionError(('unsupported encoding',item['encoding']))
+    dest.write_bytes(stored)
+    return {'path':item['destination'],'source_bytes':len(raw),'source_sha256':item['sha256'],
+            'stored_bytes':dest.stat().st_size,'stored_sha256':digest(dest),'encoding':item['encoding']}
+
+def add_fixture(stage,item,payloads):
+    files=verify_fixture(item,payloads); archive=outpath(stage,item['archive_destination']); archive.parent.mkdir(parents=True,exist_ok=True)
+    temp=archive.with_suffix('.tar')
+    total=0
+    with tarfile.open(temp,'w') as tar:
+        for rel,meta in sorted(files.items()):
+            src=Path(item['root']).resolve(strict=True).joinpath(*safe_rel(rel).parts); raw=src.read_bytes()
+            assert len(raw)==meta['bytes'] and digest_bytes(raw)==meta['sha256']
+            total+=len(raw); assert total<=MAX_FIXTURE_BYTES
+            info=tarfile.TarInfo(item['name']+'/'+rel); info.size=len(raw); info.mode=0o600
+            tar.addfile(info,io.BytesIO(raw))
+    assert temp.stat().st_size<=MAX_FIXTURE_BYTES
+    tar_raw=temp.read_bytes(); compressed=gzip.compress(tar_raw,compresslevel=9,mtime=0); temp.unlink()
+    assert len(compressed)<=MAX_PAYLOAD_BYTES
+    assert gzip.decompress(compressed)==tar_raw; archive.write_bytes(compressed)
+    seen={}
+    with tarfile.open(archive,'r:gz') as tar:
+        for member in tar.getmembers():
+            name=PurePosixPath(member.name)
+            assert member.isfile() and not name.is_absolute() and '..' not in name.parts and '.' not in name.parts
+            assert name.as_posix()==member.name and name.parts[0]==item['name']
+            f=tar.extractfile(member); assert f is not None
+            raw=f.read(); rel=name.relative_to(item['name']).as_posix()
+            assert rel in files and len(raw)==files[rel]['bytes'] and digest_bytes(raw)==files[rel]['sha256']
+            seen[rel]={'bytes':len(raw),'sha256':digest_bytes(raw)}
+    assert seen==files and total<=MAX_FIXTURE_BYTES
+    return {'name':item['name'],'archive':item['archive_destination'],'sha256':digest(archive),
+            'authored_files':len(seen),'authored_bytes':total,'separate_sqlite_sidecars':item['allowed_sidecars']}
+
+def validate(manifest,envelope):
+    plan=envelope['approval/static-packaging-plan.md']; assert digest_bytes(plan)==manifest['static_packaging_plan_sha256']
+    review=json.loads(envelope['approval/packager-final-review.json'])
+    go=json.loads(envelope['approval/PACKAGING-GO.json'])
+    assert review['status']=='no_findings' and review['findings']==[]
+    assert review['script_sha256']==digest_bytes(envelope['approval/package.py'])
+    assert review['manifest_sha256']==digest_bytes(envelope['approval/approved-package-manifest.json'])
+    assert go['status']=='approved_for_packaging'
+    expected_go={'package_script_sha256':digest(SCRIPT),'approved_manifest_sha256':digest(MANIFEST),
+      'packager_review_sha256':digest_bytes(envelope['approval/packager-final-review.json']),
+      'static_packaging_plan_sha256':manifest['static_packaging_plan_sha256'],
+      'source_map_sha256':manifest['candidate_source_map_sha256'],
+      'build_terminal_sha256':manifest['terminal_sha256']['build'],
+      'measurement_terminal_sha256':manifest['terminal_sha256']['measurement'],
+      'media_terminal_sha256':manifest['terminal_sha256']['media'],
+      'binary_manifest_sha256':manifest['binary_manifest_sha256'],
+      'qualified_helper_manifest_sha256':manifest['qualified_helper_manifest_sha256'],
+      'source_review_sha256':manifest['source_review_sha256'],
+      'analysis_review_sha256':manifest['analysis_review_sha256'],
+      'input_map_sha256':manifest['input_map_sha256'],
+      'candidate_app_sha256':manifest['candidate_app_sha256'],
+      'control_app_sha256':manifest['control_app_sha256']}
+    assert all(go.get(k)==v for k,v in expected_go.items()), expected_go
+    assert manifest['schema']=='deadpan-compound-wire-reuse-production-evidence-1'
+    assert manifest['binary_manifest_sha256']==digest(S/'binaries.json')
+    assert manifest['qualified_helper_manifest_sha256']==digest(HELPER_MANIFEST)
+    assert {k:digest(v) for k,v in TERMINALS.items()}==manifest['terminal_sha256']
+    build,measurement,media=(read(TERMINALS[k]) for k in ('build','measurement','media'))
+    assert build['status']=='complete' and build['steps']==9 and build['stage_names']==STAGES
+    assert build['app_sha256']==manifest['candidate_app_sha256']
+    assert measurement['status']=='complete' and measurement['trials']==10 and measurement['commands']==20
+    assert media['status']=='complete' and media['commands']==4 and media['tests']==1
+    binaries=read(S/'binaries.json'); baseline=read(S/'baseline.json')
+    app=binaries['deadpan-app']; control=baseline['control']; helper_manifest=read(HELPER_MANIFEST)
+    assert app['sha256']==manifest['candidate_app_sha256'] and digest(app['executed'])==app['sha256']
+    assert control['sha256']==manifest['control_app_sha256']=='970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2'
+    assert digest(control['path'])==control['sha256']
+    pins=read(S/'media-static-pins.json')
+    assert baseline['qualified_helper_manifest_sha256']==manifest['qualified_helper_manifest_sha256']
+    assert pins['qualified_helper_manifest_sha256']==manifest['qualified_helper_manifest_sha256']
+    assert helper_manifest['deadpan-app']['sha256']=='0cb2931562108a68b57915c6135f448bc74293ba20623c7484053152566d31ff'
+    for name,want in pins['qualified_helper_sha256'].items():
+        entry=binaries[name]; qualified=helper_manifest[name]
+        assert entry['qualified_helper_reuse'] is True and entry['freshly_built'] is False
+        assert entry['sha256']==qualified['sha256']==want
+        assert digest(entry['executed'])==want and digest(qualified['executed'])==want
+    # Both source roots are immutable evidence copies; never rely on mutable Main after promotion.
+    candidate=read(S/'frozen-sources.json'); base=read(S/'baseline-sources.json')
+    assert digest(S/'frozen-sources.json')==manifest['candidate_source_map_sha256']
+    assert digest(S/'baseline-sources.json')==manifest['qualified_base_source_map_sha256']
+    assert {str(p.relative_to(S/'source')):digest(p) for p in sorted((S/'source').rglob('*.rs'))}==candidate
+    assert {str(p.relative_to(BASE)):digest(p) for p in sorted(BASE.rglob('*.rs'))}==base
+    assert set(candidate)==set(base) and len(candidate)==2053
+    assert pins['source_map_sha256']==manifest['candidate_source_map_sha256']
+    assert pins['qualified_base_map_sha256']==manifest['qualified_base_source_map_sha256']
+    source_review=read(S/'source-review.json')
+    assert source_review['status']=='no_findings' and source_review['findings']==[]
+    assert source_review['source_map_sha256']==manifest['candidate_source_map_sha256']
+    differences={p for p in candidate if candidate[p]!=base[p]}
+    assert differences=={x['path'] for x in manifest['source_changes']}
+    assert differences=={'crates/deadpan-core/src/compound.rs','crates/deadpan-core/src/one_leaf_replay.rs'}
+    inputs=read(S/'baseline-inputs.json'); assert len(inputs)==6 and digest(S/'baseline-inputs.json')==manifest['input_map_sha256']
+    payloads=manifest['payloads']; bydest={x['destination']:x for x in payloads}
+    assert len(bydest)==len(payloads)
+    for rel,want in inputs.items():
+        dest='inputs/'+rel; assert dest in bydest and bydest[dest]['sha256']==want and digest(S/'source'/rel)==want
+        assert digest(BASE/rel)==want
+    for change in manifest['source_changes']:
+        assert base[change['path']]==change['before_sha256']
+        assert candidate[change['path']]==change['after_sha256']
+        before_item=bydest[change['before_destination']]; after_item=bydest[change['after_destination']]
+        assert before_item['source']==str(BASE/change['path']) and before_item['sha256']==change['before_sha256']
+        assert after_item['source']==str(S/'source'/change['path']) and after_item['sha256']==change['after_sha256']
+    media_inventory=read(S/'media-evidence-inventory.json')
+    assert digest(S/'media-evidence-inventory.json')==manifest['media_inventory_sha256']
+    assert len(manifest['media_files'])==35 and len(media_inventory['files'])==35
+    assert {x['relative_path']:x['sha256'] for x in manifest['media_files']}=={k:v['sha256'] for k,v in media_inventory['files'].items()}
+    assert {x['relative_path'] for x in manifest['media_files']}==set(media_inventory['files'])
+    for media_file in manifest['media_files']:
+        item=bydest.get(media_file['destination']); assert item is not None
+        assert item['source']==str(Path(media_inventory['root'])/media_file['relative_path'])
+        assert item['bytes']==media_file['bytes'] and item['sha256']==media_file['sha256']
+    assert sum(x['bytes'] for x in manifest['media_files'])<=MAX_PACKAGE_BYTES
+    for export in media['evidence']['exports']:
+        rel=Path(export['movie']).resolve(strict=True).relative_to(Path(media_inventory['root']).resolve()).as_posix()
+        item=bydest['media-evidence/'+rel]
+        assert item['sha256']==export['movie_sha256'] and item['bytes']==media_inventory['files'][rel]['bytes']
+    assert digest(S/'analysis.json')==manifest['analysis_sha256']
+    ar=read(S/'analysis-review.json')
+    assert digest(S/'analysis-review.json')==manifest['analysis_review_sha256']
+    assert ar['status']=='no_findings' and ar['findings']==[]
+    assert digest(S/'source-review.json')==manifest['source_review_sha256']
+    fixtures=manifest['fixtures']; assert len(fixtures)==10
+    payload_dests=set(bydest); archives={x['archive_destination'] for x in fixtures}
+    reserved=set(ENVELOPE)|{'package-manifest.json','inventory.json'}
+    assert len(archives)==10 and not(payload_dests&archives) and not((payload_dests|archives)&reserved)
+    assert len({x['name'] for x in fixtures})==10
+    assert {x['name'] for x in fixtures}==EXPECTED_FIXTURES
+    assert len({x['root'] for x in fixtures})==10
+    assert all(Path(x['root'])==S/(x['name']+'.deadpan') for x in fixtures)
+    for rel in payload_dests|archives|reserved: safe_rel(rel)
+    all_destinations=payload_dests|archives|reserved
+    assert len(payload_dests)+len(archives)+len(reserved)==len(all_destinations)
+    parts={tuple(unicodedata.normalize('NFC',part).casefold() for part in safe_rel(rel).parts) for rel in all_destinations}
+    assert len(parts)==len(all_destinations), 'normalized or case-folded destination alias'
+    assert all(not (a!=b and len(a)<len(b) and b[:len(a)]==a) for a in parts for b in parts), 'file/directory path collision'
+    return payloads,fixtures,go
+
+def inventory(root):
+    files=[]; total=0
+    for p in sorted(root.rglob('*')):
+        if p.is_symlink(): raise AssertionError(('staged symlink',p))
+        mode=p.lstat().st_mode
+        if stat.S_ISDIR(mode): continue
+        if not stat.S_ISREG(mode): raise AssertionError(('staged special file',p))
+        total+=p.stat().st_size; files.append({'path':p.relative_to(root).as_posix(),'bytes':p.stat().st_size,'sha256':digest(p)})
+    return {'files':files,'total_files':len(files),'total_bytes':total}
+
+def main():
+    assert not DEST.exists(), ('refuse existing evidence destination',DEST)
+    env={rel:verify_payload({'source':str(src),'bytes':src.stat().st_size,'sha256':digest(src)}) for rel,src in ENVELOPE.items()}
+    manifest=json.loads(env['approval/approved-package-manifest.json'])
+    payloads,fixtures,go=validate(manifest,env)
+    before={f['name']:verify_fixture(f,payloads) for f in fixtures}
+    approved_source_bytes=sum(item['bytes'] for item in payloads)
+    fixture_authored_bytes=sum(meta['bytes'] for tree in before.values() for meta in tree.values())
+    assert approved_source_bytes+fixture_authored_bytes<=MAX_PACKAGE_BYTES, 'approved package source-byte bound exceeded'
+    DEST.parent.mkdir(parents=True,exist_ok=True)
+    stage=Path(tempfile.mkdtemp(prefix='.compound-wire-reuse-stage-',dir=DEST.parent))
+    try:
+        copied=[add_payload(stage,item) for item in payloads]
+        archived=[add_fixture(stage,item,payloads) for item in fixtures]
+        for rel,data in env.items():
+            p=outpath(stage,rel); p.parent.mkdir(parents=True,exist_ok=True); p.write_bytes(data)
+        package_meta={'schema':'deadpan-compound-wire-reuse-package-1','manifest_sha256':digest(MANIFEST),
+          'static_packaging_plan_sha256':manifest['static_packaging_plan_sha256'],
+          'source_map_sha256':manifest['candidate_source_map_sha256'],'candidate_app_sha256':manifest['candidate_app_sha256'],
+          'terminal_sha256':manifest['terminal_sha256'],'payloads':copied,'fixtures':archived}
+        (stage/'package-manifest.json').write_text(json.dumps(package_meta,indent=2,sort_keys=True)+'\n')
+        assert digest(PLAN)==go['static_packaging_plan_sha256']
+        for item in payloads: verify_payload(item)
+        for item in fixtures: assert verify_fixture(item,payloads)==before[item['name']]
+        assert digest(MANIFEST)==go['approved_manifest_sha256'] and digest(SCRIPT)==go['package_script_sha256']
+        assert digest(REVIEW)==go['packager_review_sha256']
+        for rel,src in ENVELOPE.items():
+            assert verify_payload({'source':str(src),'bytes':len(env[rel]),'sha256':digest_bytes(env[rel])})==env[rel]
+        listing=inventory(stage); (stage/'inventory.json').write_text(json.dumps(listing,indent=2,sort_keys=True)+'\n')
+        actual=inventory(stage); stored=read(stage/'inventory.json')
+        assert {x['path']:x for x in stored['files']}=={x['path']:x for x in actual['files'] if x['path']!='inventory.json'}
+        assert actual['total_bytes']<=MAX_PACKAGE_BYTES
+        assert not DEST.exists()
+        libc=ctypes.CDLL(None,use_errno=True); fn=libc.renameatx_np
+        fn.argtypes=[ctypes.c_int,ctypes.c_char_p,ctypes.c_int,ctypes.c_char_p,ctypes.c_uint]; fn.restype=ctypes.c_int
+        if fn(-2,os.fsencode(stage),-2,os.fsencode(DEST),0x00000004)!=0:
+            err=ctypes.get_errno(); raise OSError(err,os.strerror(err),str(DEST))
+    except BaseException:
+        shutil.rmtree(stage,ignore_errors=True); raise
+    inv=read(DEST/'inventory.json')
+    print(json.dumps({'destination':str(DEST),'files':inv['total_files'],'bytes':inv['total_bytes'],
+                      'inventory_sha256':digest(DEST/'inventory.json'),'fixtures':len(fixtures)},sort_keys=True))
+
+if __name__=='__main__': main()

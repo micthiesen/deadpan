@@ -1,0 +1,9 @@
+{
+  "schema": "compound-wire-package-draft-history-1",
+  "preserved": ["prepare_manifest-before-review-fix.py.txt", "package-before-review-fix.py.txt"],
+  "corrections": [
+    "Final manifest generation now requires independent analysis-review.json with status no_findings and pins its digest. The existing pre-execution Root review remains historical payload and its status is not altered.",
+    "The static plan is retained once through the approval envelope and bound by its digest; it is not also added as a payload destination. Generator rejects payload/archive collisions with reserved envelope and inventory destinations before writing a manifest."
+  ],
+  "scripts_remain_unexecuted": true
+}

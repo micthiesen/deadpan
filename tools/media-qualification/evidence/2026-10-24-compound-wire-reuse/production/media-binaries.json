@@ -1,0 +1,70 @@
+{
+  "archive": "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/media-one-leaf.tar.zst",
+  "archive_sha256": "55d358989010cae45c118634fe8bc4fe34f473c53cfc237a8bda7f33d08822aa",
+  "matched_tests": [
+    "group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached"
+  ],
+  "selected_tests": [
+    "group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached"
+  ],
+  "nextest_test_binary": "/private/tmp/deadpan-compound-wire-reuse-production-2026-10-24/media-one-leaf-extracted/target/release/deps/preview_export-8652fc5e7c449500",
+  "expected_compile_time_cli": "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/target/release/deadpan-cli",
+  "records": [
+    {
+      "role": "release_preview_export_test",
+      "paths": [
+        "/private/tmp/deadpan-compound-wire-reuse-production-2026-10-24/media-one-leaf-extracted/target/release/deps/preview_export-8652fc5e7c449500",
+        "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/media-retained-bin/preview_export-8652fc5e7c449500"
+      ],
+      "sha256": "7cc889f5be0b0896fe7a370ff422fce973d623b3bebbf1d643c01d01f30c0452",
+      "fresh_source_archive_build": true
+    },
+    {
+      "role": "release_cli",
+      "paths": [
+        "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/target/release/deadpan-cli",
+        "/private/tmp/deadpan-compound-wire-reuse-production-2026-10-24/media-one-leaf-extracted/target/release/deadpan-cli",
+        "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/media-retained-bin/deadpan-cli"
+      ],
+      "sha256": "8eb7716d210b11b1f3a7434a3824c873ccc1d284fe9beaf31d87a95191cbe5ac",
+      "fresh_source_archive_build": true,
+      "actual_cli_basis": "unchanged recipes::cli_path uses compile-time CARGO_BIN_EXE_deadpan-cli"
+    },
+    {
+      "role": "deadpan-media-worker",
+      "paths": [
+        "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/bin/deadpan-media-worker",
+        "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/target/release/deadpan-media-worker",
+        "/private/tmp/deadpan-compound-wire-reuse-production-2026-10-24/media-one-leaf-extracted/target/release/deadpan-media-worker",
+        "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/media-retained-bin/deadpan-media-worker"
+      ],
+      "sha256": "70114641de62f0c9c839734f3dddab1221b01888661a43ed5583e40ca9ed90fe",
+      "fresh_source_archive_build": false,
+      "qualified_helper_reuse": true
+    },
+    {
+      "role": "deadpan-transcribe",
+      "paths": [
+        "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/bin/deadpan-transcribe",
+        "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/target/release/deadpan-transcribe",
+        "/private/tmp/deadpan-compound-wire-reuse-production-2026-10-24/media-one-leaf-extracted/target/release/deadpan-transcribe",
+        "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/media-retained-bin/deadpan-transcribe"
+      ],
+      "sha256": "a75e83e94c073fa7419fea1ffc4621ab56adba020d402435c65622dababbe8b3",
+      "fresh_source_archive_build": false,
+      "qualified_helper_reuse": true
+    },
+    {
+      "role": "deadpan-track",
+      "paths": [
+        "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/bin/deadpan-track",
+        "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/target/release/deadpan-track",
+        "/private/tmp/deadpan-compound-wire-reuse-production-2026-10-24/media-one-leaf-extracted/target/release/deadpan-track",
+        "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/media-retained-bin/deadpan-track"
+      ],
+      "sha256": "97564bc5d9aee093aa7e3fa5e8a89aa5da68134f92f34032a407f27778c1eab4",
+      "fresh_source_archive_build": false,
+      "qualified_helper_reuse": true
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+[
+  {
+    "seconds": 0.02969999983906746,
+    "load": [
+      4.45947265625,
+      4.1708984375,
+      3.21337890625
+    ],
+    "conflicting_processes": [],
+    "ps_exit": 0,
+    "ps_stderr": ""
+  },
+  {
+    "seconds": 5.110643208026886,
+    "load": [
+      4.10205078125,
+      4.1015625,
+      3.1943359375
+    ],
+    "conflicting_processes": [],
+    "ps_exit": 0,
+    "ps_stderr": ""
+  },
+  {
+    "seconds": 10.18924158345908,
+    "load": [
+      3.853515625,
+      4.0498046875,
+      3.18115234375
+    ],
+    "conflicting_processes": [],
+    "ps_exit": 0,
+    "ps_stderr": ""
+  },
+  {
+    "seconds": 15.26891962531954,
+    "load": [
+      3.625,
+      3.9990234375,
+      3.16796875
+    ],
+    "conflicting_processes": [],
+    "ps_exit": 0,
+    "ps_stderr": ""
+  },
+  {
+    "seconds": 20.349546000361443,
+    "load": [
+      3.49462890625,
+      3.9658203125,
+      3.16064453125
+    ],
+    "conflicting_processes": [],
+    "ps_exit": 0,
+    "ps_stderr": ""
+  },
+  {
+    "seconds": 25.43027020804584,
+    "load": [
+      3.61474609375,
+      3.98291015625,
+      3.17138671875
+    ],
+    "conflicting_processes": [],
+    "ps_exit": 0,
+    "ps_stderr": ""
+  },
+  {
+    "seconds": 30.49890304170549,
+    "load": [
+      3.4052734375,
+      3.93310546875,
+      3.158203125
+    ],
+    "conflicting_processes": [],
+    "ps_exit": 0,
+    "ps_stderr": ""
+  },
+  {
+    "seconds": 35.57987816724926,
+    "load": [
+      3.21240234375,
+      3.88427734375,
+      3.1455078125
+    ],
+    "conflicting_processes": [],
+    "ps_exit": 0,
+    "ps_stderr": ""
+  },
+  {
+    "seconds": 40.65695208311081,
+    "load": [
+      3.03515625,
+      3.8359375,
+      3.1328125
+    ],
+    "conflicting_processes": [],
+    "ps_exit": 0,
+    "ps_stderr": ""
+  },
+  {
+    "seconds": 45.73513574991375,
+    "load": [
+      2.9521484375,
+      3.80517578125,
+      3.1259765625
+    ],
+    "conflicting_processes": [],
+    "ps_exit": 0,
+    "ps_stderr": ""
+  }
+]

@@ -1,0 +1,14 @@
+{
+  "prepare.py": "37c4dd82910ef5305a7bf5da6c4a51df83f9a0f80012a334497ad6b27c6abbba",
+  "baseline-sources.json": "f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53",
+  "baseline-inputs.json": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317",
+  "prototype-sources.json": "59ab40b15f9a705953320d45a9ffcef87a85f876a15455c4fb4180ce12ebdff9",
+  "profile-baseline-sources.json": "0bf07513646ffdfee5aec03bb1b64b6fff757196512aeea883226c675b15ed02",
+  "frozen-sources.json": "2b0997f1ad22ce7dd869beba699909d22972efba434279cee350478dc63cb728",
+  "prototype.patch": "85806f15e169611f532c0a50ff84d930f5115b9b28642e61b1efe1e9559079eb",
+  "profiling-overlay.patch": "25f6108fd6253d1a76eb19d3e3e004f799bbbaebb187001a4ec74e01d48aaef0",
+  "profiling-removals.json": "39908741a42d279ce751c1b0fe01243d16dbc5aa39728f53489bed844354250e",
+  "baseline-provenance.json": "f138c3aab7727627f5f2a49d6d5a49b380df279750c6acb02a851050c64f8956",
+  "baseline.json": "15e7b7bec86e9da6668fda66bb5e6fb2460a1cfb294ca8d71fa62576c1388fab",
+  "preparation-receipt.json": "844f98d243f7e5711584f9e9761af3e422da75936addb90fd077b0c95aa4166b"
+}

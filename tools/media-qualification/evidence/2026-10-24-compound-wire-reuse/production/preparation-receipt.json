@@ -1,0 +1,32 @@
+{
+  "prepared_at_utc": "2026-10-24T02:39:50.291594+00:00",
+  "preparation_script_sha256": "37c4dd82910ef5305a7bf5da6c4a51df83f9a0f80012a334497ad6b27c6abbba",
+  "control_map_sha256": "f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53",
+  "candidate_map_sha256": "2b0997f1ad22ce7dd869beba699909d22972efba434279cee350478dc63cb728",
+  "reviewed_prototype_map_sha256": "59ab40b15f9a705953320d45a9ffcef87a85f876a15455c4fb4180ce12ebdff9",
+  "instrumented_baseline_map_sha256": "0bf07513646ffdfee5aec03bb1b64b6fff757196512aeea883226c675b15ed02",
+  "rust_file_count": 2053,
+  "unchanged_nonowned_rust_files": 2051,
+  "changed_paths": {
+    "crates/deadpan-core/src/compound.rs": "e4b21f6a2d00f235cb7eb25e3417db5f6f67ab4daab3e43d531183628c4ae250",
+    "crates/deadpan-core/src/one_leaf_replay.rs": "f25004855ae085fd3d5feec595a7d960dbe78f687e0e9e8ab26ba527c37f0b68"
+  },
+  "six_inputs_identical": true,
+  "one_leaf_production_prefix_identical": true,
+  "source_roots_rehashed_after_copy": true,
+  "excluded_paths": [],
+  "exclusion_directory_names": [
+    ".cache",
+    ".claude",
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+    "node_modules",
+    "target"
+  ],
+  "format_build_tests_product_runtime_git_main_writes": false,
+  "status": "source_prepared_only; Root owns format, independent review and qualification"
+}

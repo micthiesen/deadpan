@@ -1,0 +1,280 @@
+from pathlib import Path
+import hashlib
+import json
+import math
+import re
+import statistics
+
+S = Path('/tmp/deadpan-compound-wire-reuse-production-2026-10-24')
+SOURCE = S / 'source'
+CONTROL_SOURCE = Path('/tmp/deadpan-single-leaf-net-production-2026-10-24/source')
+HELPER_MANIFEST = Path('/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-native-binaries.json')
+SIDECARS = {'project.sqlite-shm', 'project.sqlite-wal'}
+KINDS = ('control', 'candidate')
+METRICS = ('large_first_pause_input_to_commit_ms',
+           'large_first_pause_input_to_offscreen_background_composition_ms')
+
+
+def sha(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def read(name):
+    return json.loads((S / name).read_text(encoding='utf-8'))
+
+
+def source_map(root):
+    return {str(p.relative_to(root)): sha(p) for p in sorted(root.rglob('*.rs'))}
+
+
+def finite_number(value):
+    return type(value) in (int, float) and math.isfinite(value)
+
+
+def summary(values):
+    assert values and all(finite_number(x) for x in values)
+    return {'n': len(values), 'min': min(values), 'median': statistics.median(values),
+            'max': max(values), 'values': values}
+
+
+def parse_media_run_output(text, expected_test):
+    starts = re.findall(r'^\s*Starting 1 test across 1 binary(?:\s|\()', text, re.M)
+    passed = re.findall(r'^\s*PASS\s+\[[^]]+\]\s+\(1/1\)\s+'
+                        r'deadpan-cli::preview_export\s+(\S+)\s*$', text, re.M)
+    summaries = re.findall(r'^\s*Summary\s+\[[^]]+\]\s+1 test run: 1 passed'
+                           r'(?:, [0-9]+ skipped)?\s*$', text, re.M)
+    assert len(starts) == 1 and passed == [expected_test] and len(summaries) == 1, (
+        len(starts), passed, len(summaries))
+    return {'started': len(starts), 'passed_tests': passed, 'summaries': len(summaries)}
+
+
+def parser_smoke():
+    test_name = read('media-static-pins.json')['test']
+    prior = Path('/tmp/deadpan-single-leaf-net-production-2026-10-24/media-run.stdout').read_text()
+    prior += '\n' + Path('/tmp/deadpan-single-leaf-net-production-2026-10-24/media-run.stderr').read_text()
+    positive = parse_media_run_output(prior, test_name)
+    bad = {
+        'zero_test': re.sub(r'Starting 1 test across 1 binary', 'Starting 0 tests across 0 binaries', prior),
+        'wrong_test': prior.replace(test_name, 'group_endpoints_export::wrong_case'),
+        'missing_pass': re.sub(r'^.*PASS.*$', '', prior, flags=re.M),
+    }
+    for label, text in bad.items():
+        try:
+            parse_media_run_output(text, test_name)
+        except AssertionError:
+            continue
+        raise AssertionError('media parser accepted malformed ' + label)
+    return {'positive_prior_receipt': positive, 'negative_cases_rejected': sorted(bad)}
+
+
+def validate_build():
+    stages = read('expected-build-stages.json')
+    receipt, terminal = read('build-receipt.json'), read('build-terminal.json')
+    assert stages == ['rustc', 'cargo', 'format', 'core-unit-build', 'core-unit-all',
+                      'core-integration', 'store-preparation', 'release-app', 'strict']
+    assert terminal['status'] == 'complete' and terminal['steps'] == len(stages)
+    assert terminal['stage_names'] == stages
+    assert [x['name'] for x in receipt] == stages
+    assert all(x['exit'] == 0 and x['validation'] == 'passed' for x in receipt)
+    tests = read('test-binaries.json')
+    unit = tests['core-unit-all']
+    assert unit['tests']['failed'] == unit['tests']['ignored'] == 0
+    assert unit['executed'] == unit['retained'] and sha(unit['executed']) == unit['sha256']
+    unit_names = unit['tests']['executed_tests']
+    unit_text = (S / 'core-unit-all.stdout').read_text()
+    raw_names = re.findall(r'^test ([A-Za-z0-9_:]+) \.\.\. ok$', unit_text, re.M)
+    raw_sums = re.findall(r'^test result: ok\. ([0-9]+) passed; 0 failed; 0 ignored;', unit_text, re.M)
+    assert raw_names == unit_names and raw_sums == [str(len(unit_names))]
+    for suffix in read('expected-tests.json')['core-unit-all']['required_test_suffixes']:
+        assert any(n == suffix or n.endswith('::' + suffix) for n in unit_names), suffix
+    integration, store = receipt[5]['tests'], receipt[6]['tests']
+    assert integration['failed'] == integration['ignored'] == 0
+    assert len(integration['passed_per_summary']) == 4
+    assert len(integration['executed_tests']) == sum(integration['passed_per_summary'])
+    itext = (S / 'core-integration.stdout').read_text()
+    inames = re.findall(r'^test ([A-Za-z0-9_:]+) \.\.\. ok$', itext, re.M)
+    isum = re.findall(r'^test result: ok\. ([0-9]+) passed; 0 failed; 0 ignored;', itext, re.M)
+    assert inames == integration['executed_tests']
+    assert isum == list(map(str, integration['passed_per_summary']))
+    for suffix in read('expected-tests.json')['core-integration']['required_test_suffixes']:
+        assert any(n == suffix or n.endswith('::' + suffix) for n in inames), suffix
+    assert store['failed'] == store['ignored'] == 0
+    assert store['passed_per_summary'] == [12] and len(store['executed_tests']) == 12
+    stext = (S / 'store-preparation.stdout').read_text()
+    snames = re.findall(r'^test ([A-Za-z0-9_:]+) \.\.\. ok$', stext, re.M)
+    ssum = re.findall(r'^test result: ok\. ([0-9]+) passed; 0 failed; 0 ignored;', stext, re.M)
+    assert snames == store['executed_tests'] and ssum == ['12']
+    for suffix in read('expected-tests.json')['store-preparation']:
+        assert any(n == suffix or n.endswith('::' + suffix) for n in snames), suffix
+    return {'stages': stages, 'core_unit_passed': len(unit_names),
+            'core_integration_total': len(inames), 'core_integration_passed_per_binary': integration['passed_per_summary'],
+            'store_passed': len(snames), 'release_app_sha256': read('binaries.json')['deadpan-app']['sha256']}
+
+
+def validate_source_and_harness():
+    static = read('media-static-pins.json')
+    candidate = read('frozen-sources.json')
+    base = read('baseline-sources.json')
+    inputs = read('baseline-inputs.json')
+    assert len(candidate) == len(base) == 2053
+    assert sha(S/'frozen-sources.json') == static['source_map_sha256']
+    assert sha(S/'baseline-sources.json') == static['qualified_base_map_sha256']
+    assert source_map(SOURCE) == candidate
+    assert source_map(CONTROL_SOURCE) == base
+    assert set(candidate) == set(base)
+    changed = {path for path in candidate if candidate[path] != base[path]}
+    assert len(changed) == 2 and changed == {
+        'crates/deadpan-core/src/compound.rs',
+        'crates/deadpan-core/src/one_leaf_replay.rs'}
+    assert len(inputs) == 6 and sha(S/'baseline-inputs.json') == static['input_map_sha256']
+    assert all(sha(root/path) == digest for root in (SOURCE, CONTROL_SOURCE)
+               for path, digest in inputs.items())
+    review = read('source-review.json')
+    assert review['status'] == 'no_findings' and review['findings'] == []
+    assert review['source_map_sha256'] == sha(S/'frozen-sources.json')
+    for name, digest in read('driver-pins.json').items():
+        assert sha(S/name) == digest
+    for name, digest in read('media-driver-pins.json').items():
+        assert sha(S/name) == digest
+    assert static['qualified_control_sha256'] == read('baseline.json')['control']['sha256']
+    assert sha(static['qualified_control_path']) == static['qualified_control_sha256']
+    assert sha(Path(static['qualified_helper_manifest'])) == static['qualified_helper_manifest_sha256']
+    return {'candidate_source_count':len(candidate),'qualified_source_count':len(base),
+            'changed_paths':sorted(changed),'inputs':inputs,
+            'source_review':'no_findings','driver_pin_sets':['build','media']}
+
+
+def validate_measurement():
+    protocol = read('expected-measurement.json')
+    terminal, commands, trials, supplied = (read('measurement-terminal.json'),
+        read('measurement-receipt.json'), read('trials.json'), read('summary.json'))
+    assert protocol['orders'] == [['control','candidate'],['candidate','control'],
+        ['control','candidate'],['candidate','control'],['control','candidate']]
+    assert (protocol['trials'], protocol['commands'], protocol['pause_checks'],
+            protocol['kestrel_checks'], protocol['warnings']) == (10,20,70,10,20)
+    assert terminal == {'status':'complete','trials':10,'commands':20,
+                         'workflow_checks':70,'kestrel_checks':10,'warnings':20}
+    assert len(commands)==20 and all(r['exit']==0 and r['profile_gate'] is None for r in commands)
+    expected_names={f'rotation-{i}-{kind}{suffix}' for i in range(1,6) for kind in KINDS for suffix in ('-make','')}
+    assert {r['name'] for r in commands} == expected_names
+    assert len(trials)==10
+    indexed={(r['rotation'],r['kind']):r for r in trials}
+    assert set(indexed)=={(i,k) for i in range(1,6) for k in KINDS}
+    baseline, prov = read('baseline.json'), read('baseline-provenance.json')
+    bins = read('binaries.json')
+    app = bins['deadpan-app']
+    assert app['sha256']==read('build-terminal.json')['app_sha256'] and sha(app['executed'])==app['sha256']
+    control_sha=baseline['control']['sha256']
+    assert control_sha=='970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2'
+    assert sha(baseline['control']['path'])==control_sha
+    assert prov['matched_source_map_sha256']==sha(S/'baseline-sources.json')
+    assert prov['matched_app_sha256']==control_sha
+    lane={'control':control_sha,'candidate':app['sha256']}
+    for r in range(1,6):
+        for k in KINDS:
+            row=indexed[(r,k)]; name=f'rotation-{r}-{k}'
+            assert row['binary_sha256']==lane[k]
+            assert row['source_map_sha256']==sha(S/'frozen-sources.json')
+            assert row['matched_source_map_sha256']==sha(S/'baseline-sources.json')
+            assert row['authored_input_unchanged'] is True and row['wal_empty'] is True
+            assert row['checks']==7 and row['kestrel_checks']==1 and row['warnings']==2
+            before,after=read(name+'-input-before.json'),read(name+'-input-after.json')
+            assert before['project.sqlite']['sha256']==after['project.sqlite']['sha256']==row['fixture_sha256']
+            assert {x:y for x,y in before.items() if x not in SIDECARS}=={x:y for x,y in after.items() if x not in SIDECARS}
+            assert after.get('project.sqlite-wal',{}).get('bytes',0)==0
+            report=json.loads((S/(name+'-report/report.json')).read_text())
+            assert report['failed'] is False and report['metadata']['binary_sha256']==lane[k]
+            assert report['metadata']['build_profile']=='release'
+            assert report['metadata']['physical_display_measured'] is False
+            assert report['metadata']['gpu_readback_in_timing_run'] is False
+            assert str(report['metadata']['rust']).startswith('rustc 1.97.1 ')
+            sc=report['scenarios']; assert [x['name'] for x in sc]==['kestrel-shortcuts','large-first-pause']
+            assert len(sc[0]['checks'])==1 and sc[0]['checks'][0]['passed'] and not sc[0]['findings']
+            assert len(sc[1]['checks'])==7 and all(x['passed'] for x in sc[1]['checks'])
+            assert len(sc[1]['findings'])==2 and all(x['severity']=='warning' for x in sc[1]['findings'])
+            assert [x['message'].splitlines()[0] for x in sc[1]['findings']] == protocol['warning_message_prefixes']
+            assert all((S/(name+suffix)).read_text().find('DEADPAN_PAUSE_ROUTE_PROFILE')<0
+                       for suffix in ('.stdout','.stderr'))
+            metric_rows=[x for x in sc[1]['timings'] if x['name'] in METRICS]
+            assert len(metric_rows)==2 and {x['name'] for x in metric_rows}==set(METRICS)
+            values={x['name']:x['summary']['completed']['p50_ms'] for x in metric_rows}
+            assert all(finite_number(v) and v>=0 for v in values.values()) and values==row['metrics']
+    pairs=[]
+    for r in range(1,6):
+        c=indexed[(r,'control')]['metrics']; n=indexed[(r,'candidate')]['metrics']
+        pairs.append({'rotation':r,'control_minus_candidate_commit_ms':c[METRICS[0]]-n[METRICS[0]],
+                      'control_minus_candidate_composition_ms':c[METRICS[1]]-n[METRICS[1]]})
+    assert supplied['diagnostic_only'] is True and supplied['n_per_kind']==5
+    assert supplied['pairs']==pairs
+    for kind in KINDS:
+        for metric in METRICS:
+            vals=[indexed[(r,kind)]['metrics'][metric] for r in range(1,6)]
+            item=supplied['kinds'][kind][metric]
+            assert item=={'min':min(vals),'median':statistics.median(vals),'max':max(vals)}
+    pair_commit=[r['control_minus_candidate_commit_ms'] for r in pairs]
+    pair_comp=[r['control_minus_candidate_composition_ms'] for r in pairs]
+    assert supplied['paired_commit_reduction_median_ms']==statistics.median(pair_commit)
+    assert supplied['paired_composition_reduction_median_ms']==statistics.median(pair_comp)
+    return {'pairs':pairs,'paired_commit_reduction_ms':summary(pair_commit),
+            'paired_composition_reduction_ms':summary(pair_comp),
+            'candidate_and_control_metrics':supplied['kinds'],
+            'warning_count':sum(x['warnings'] for x in trials),
+            'scope':'five matched rotations, diagnostic only; no target or percentile claim'}
+
+
+def validate_media():
+    static, terminal = read('media-static-pins.json'), read('media-terminal.json')
+    rows, bins = read('media-receipt.json'), read('media-binaries.json')
+    assert terminal['status']=='complete' and terminal['commands']==4 and terminal['tests']==1
+    assert [r['stage'] for r in rows]==['hardware','archive','list','run'] and all(r['exit']==0 for r in rows)
+    assert terminal['selected_test']==static['test'] and terminal['physical_mac_required']
+    assert terminal['synthetic_worker_feature_required'] and terminal['qualified_helper_reuse']
+    assert terminal['source_map_sha256']==sha(S/'frozen-sources.json')
+    evidence=read('media-one-leaf-fixture.json')
+    assert evidence['schema']=='deadpan-one-leaf-media-parity-1'
+    assert evidence['capability_present'] and evidence['callback_counts']==[1,1]
+    assert (evidence['pictures'],evidence['samples'],evidence['channels'])==(45,72072,2)
+    assert evidence['history']['undo_redo_reopen_checked'] and evidence['history']['full_replay_checked']
+    assert evidence['history']['receipt_shortcut_used'] is False
+    can=evidence['canonical_comparison']
+    for key in ('document_bytes_equal','commit_undo_redo_bytes_equal','register_banks_equal',
+                'authored_limited_and_limiter_gain_bits_equal','partition_and_cold_reads_equal',
+                'source_pcm_nonzero','pause_interior_silent'):
+        assert can[key] is True
+    assert bins['selected_tests']==bins['matched_tests']==[static['test']]
+    archive=sha(S/'media-one-leaf.tar.zst')
+    assert bins['archive_sha256']==terminal['archive_sha256']==archive
+    for record in bins['records']:
+        assert all(sha(p)==record['sha256'] for p in record['paths'])
+    test_record=next(x for x in bins['records'] if x['role']=='release_preview_export_test')
+    cli_record=next(x for x in bins['records'] if x['role']=='release_cli')
+    assert terminal['test_sha256']==test_record['sha256'] and terminal['cli_sha256']==cli_record['sha256']
+    for row in evidence['exports']:
+        assert row['leg'] in ('cached','uncached')
+        v=row['verification']; assert v['passed'] and len(v['pictures'])==45
+        assert v['summary']['pictures_checked']==45 and v['summary']['pictures_failed']==v['summary']['nonzero_offsets']==0
+        aud=v['audio'][0]; assert aud['passed'] and aud['project_samples']==[0,72072]
+        assert aud['offset_status']=='verified_zero' and aud['measured_offset_samples']==0
+        assert aud['flags']==[] and aud['uncovered_samples']==0
+        assert sha(row['movie'])==next(x['movie_sha256'] for x in terminal['evidence']['exports'] if x['leg']==row['leg'])
+    inv=read('media-evidence-inventory.json'); root=Path(inv['root']).resolve(strict=True)
+    actual={str(p.relative_to(root)):{'bytes':p.stat().st_size,'sha256':sha(p)} for p in sorted(root.rglob('*')) if p.is_file()}
+    assert actual==inv['files'] and inv['external_receipt_sha256']==sha(S/'media-one-leaf-fixture.json')
+    return {'selected_test':static['test'],'archive_sha256':archive,
+            'exports':[{'leg':r['leg'],'movie_sha256':sha(r['movie'])} for r in evidence['exports']],
+            'verified_pictures_per_export':45,'verified_samples_per_export':72072,'zero_offsets':True}
+
+
+def main():
+    result={'source_and_harness':validate_source_and_harness(),
+            'build':validate_build(),'measurement':validate_measurement(),
+            'media':validate_media(),'parser_smoke':parser_smoke()}
+    out=S/'analysis.json'
+    with out.open('x') as f:
+        f.write(json.dumps(result,indent=2)+'\n')
+    print(json.dumps({'analysis':'complete','build_stages':len(result['build']['stages']),
+                      'trials':10,'media_exports':2,'output_sha256':sha(out)},sort_keys=True))
+
+
+if __name__=='__main__':
+    main()

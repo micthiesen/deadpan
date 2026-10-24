@@ -1,0 +1,61 @@
+{
+  "core-unit-all": {
+    "test_threads": 8,
+    "required_test_suffixes": [
+      "one_leaf_replay_net_selection_requires_a_hit_and_final_admission",
+      "one_leaf_replay_real_cumulative_work_limit_uses_multistep_fallback",
+      "one_leaf_replay_real_wire_boundaries_preserve_initial_post_and_final_refusals",
+      "one_leaf_replay_equal_provisional_value_cannot_bypass_wire_admission",
+      "one_leaf_replay_consumes_stale_exact_edit_at_both_ordinary_boundaries",
+      "one_leaf_replay_private_hit_is_exact_and_mode_misses_do_not_return_a_result",
+      "one_leaf_replay_post_leaf_admission_failure_returns_no_capability",
+      "compound_wire_reuse_matches_full_counts_and_actual_charges_for_header_lengths",
+      "compound_wire_reuse_preserves_fallbacks_and_visitor_error_order",
+      "compound_wire_reuse_equal_provisional_entry_still_requires_full_initial_count"
+    ],
+    "passed": 729
+  },
+  "core-integration": {
+    "targets": [
+      "semantic_refresh",
+      "command_work",
+      "audio_reference",
+      "semantic_leaf_replay"
+    ],
+    "summaries": 4,
+    "minimum_passed_per_binary": 1,
+    "ignored_per_binary": 0,
+    "required_test_suffixes": [
+      "one_leaf_replay_exact_interior_result_visitor_and_aggregate_are_unchanged",
+      "one_leaf_replay_rebases_outer_headers_and_preserves_leaf_timing_allocations",
+      "one_leaf_replay_same_revision_changed_values_and_swapped_witnesses_cannot_retarget",
+      "one_leaf_replay_public_plan_field_mutation_does_not_modify_private_witnesses",
+      "one_leaf_replay_changed_leaf_payloads_fall_back_with_exact_results_or_refusals",
+      "one_leaf_replay_outer_leaf_and_identity_prefix_errors_still_precede_the_visitor",
+      "one_leaf_replay_host_visitor_refusal_is_not_bypassed",
+      "one_leaf_replay_reference_modes_bypass_use_and_creation_and_restore_their_state",
+      "one_leaf_replay_extra_steps_registers_ai_occurrences_and_derived_results_are_ineligible"
+    ],
+    "passed": 35,
+    "passed_per_binary_sorted": [
+      3,
+      4,
+      13,
+      15
+    ]
+  },
+  "store-preparation": [
+    "host_failure_rolls_back_authored_and_register_only_preparation_and_allows_retry",
+    "authoritative_refusals_happen_before_host_preparation",
+    "prepared_commit_matches_preview_commit_history_and_reopening",
+    "one_leaf_replay_prepared_commit_retains_exact_history_undo_redo_and_copy",
+    "one_leaf_replay_store_refusals_precede_callback_and_leave_no_writes",
+    "one_leaf_replay_host_and_sql_failures_roll_back_even_after_a_hit",
+    "one_leaf_replay_transcript_guard_is_current_authority_before_preparation",
+    "one_leaf_replay_admitted_reverse_audio_rechecks_stored_qualification",
+    "one_leaf_replay_changed_corrections_invalidate_admitted_transcript_guard",
+    "one_leaf_replay_historical_allocations_refuse_before_preparation",
+    "write_failure_discards_host_state_and_rolls_back_before_retry",
+    "unavailable_transcript_authority_refuses_before_host_preparation"
+  ]
+}

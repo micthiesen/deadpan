@@ -288,8 +288,8 @@ Ordinary one-leaf semantic replay also retains the successful leaf
 hit can lend it to final aggregation: exactly one ordinary `InsertTime`, no
 inputs or isolation, local command work, compact timing and no derived or
 provisional clocks. Every prefix admission, revision/identity check,
-serialization and byte/work charge, visitor and final document admission runs
-in its original order. After that hit, only the document's revision header
+byte/work charge, visitor and final document admission keeps its original
+order. After that hit, only the document's revision header
 changes. The aggregate therefore copies the validated leaf patches, changes
 `forward.to_revision`, `inverse.from_revision` and the description, and keeps
 authored timing allocation IDs on the leaf revision.
@@ -303,6 +303,26 @@ the original factory. The retained forward/inverse state adds live memory;
 whole-app samples do not isolate its cost. Tests cover actual hit/fallback
 selection, two outer revision lengths, preserved leaf allocations, visitor
 refusal, scoped-witness unwind and real 64 MiB/512 MiB refusals.
+
+One ordinary local/compact `InsertTime` replay without inputs or isolation
+also reuses two exact local wire counts. The actual entry is fully counted;
+its untouched literal clone can reuse that successful count. The actual
+post-leaf value is fully counted too. After the visitor, only its top-level
+revision header changes, so checked subtraction/addition of the actual
+serialized revision tokens supplies its final successful count. Counts
+never come from the optional replay capability, document equality or revision
+identity. This works with either a real capability or `None`.
+
+Token errors, arithmetic uncertainty and over-limit results use the original
+full serializer and error mapping at the original final site. Every cumulative
+charge retains its exact amount and position. Debug builds compare complete
+full-serializer Results against each reused count. Other transaction shapes
+and reference modes retain full counting. This adds only scalar counts and a
+bounded revision-header clone, with no new document/JSON buffer or persistent
+cache. Tests compare both Some/None paths against independently forced full
+counting, including provisional-value equality, visitor/prefix failures,
+short/equal/128-byte outer headers and the actual 64 MiB/512 MiB limits.
+See the [uninstrumented qualification](qualification/compound-wire-reuse-2026-10-24.md).
 
 `crates/deadpan-core/tests/command_work.rs` runs 48 seeded random sequences of
 40 edits over Hold-only, linked-Source and placed-sound documents (pauses at

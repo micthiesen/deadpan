@@ -1,0 +1,8 @@
+{
+  "schema": "analyzer-draft-correction-history-1",
+  "preserved_draft": "analyze-before-schema-fix.py.txt",
+  "correction": "Removed nonexistent source-map fields from trial-row expectations. Analyzer binds source identity through frozen source/input maps, provenance, static pins, and binary manifests. Summary field names and warning prefixes now match the frozen measure.py/report schemas.",
+  "prior_batch_smoke": "Validated summary/trial/report parsing against the retained 10-trial, five-pair single-leaf production batch; no current compound-wire production batch analysis was run.",
+  "parser_smoke": "Accepted retained valid media output and rejected zero-test, wrong-test, and missing-PASS variants.",
+  "no_current_batch_analysis_run": true
+}

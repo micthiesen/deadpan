@@ -1,0 +1,105 @@
+{
+  "status": "no_findings",
+  "findings": [],
+  "script_sha256": "b20d849e87b77e174c86302edec6462827f867b3ed02cca8bf346606304b53bf",
+  "manifest_sha256": "74266fa01a8980ef552754ebb7502a2f816f732f4597426fd1b9bf7a6be34974",
+  "source_map_sha256": "2b0997f1ad22ce7dd869beba699909d22972efba434279cee350478dc63cb728",
+  "review_scope": "Independent static final collector and proposed-manifest audit. Rehashed all explicitly approved payloads and live fixture/media/source inputs. No generator/copier function execution or imports, GO creation, build/application/media runtime, Git or Main writes.",
+  "reviewed_input_hashes": {
+    "packaging-draft/package.py": "b20d849e87b77e174c86302edec6462827f867b3ed02cca8bf346606304b53bf",
+    "packaging-draft/prepare_manifest.py": "c924af2d42123b196dad95d42d026705f11731565125b6976e8eb7f72a04beec",
+    "packaging-draft/static-packaging-plan.md": "798d12a6c302a1a8a5b632f795da05b5a578bddfdb9f1eb5c3f1894c8c023afb",
+    "packaging-draft/approved-package-manifest.json": "74266fa01a8980ef552754ebb7502a2f816f732f4597426fd1b9bf7a6be34974",
+    "analysis-review.json": "7b15f06575b84a2eaf584f00468132396165f553c4dc3d5d8d9166fb32d277ab",
+    "source-review.json": "388a77cfd4e8aa46955b2f1d14c15130ae472e4ce2132ce6148d708f5be0abff",
+    "packaging-draft/draft-review.md": "f43199c55a06dda749d9a13e128aa23757a4cba3827c4ab628403db780c4f149",
+    "packaging-draft/packaging-draft-history.json": "99dad335688bb1b4e59915abb6c4c8ea7f0479dc620f1323dd3d760753b59bcd"
+  },
+  "verified": {
+    "payloads": 237,
+    "raw_payload_bytes": 40698126,
+    "gzip_payloads": 31,
+    "plain_source_snapshots": 4,
+    "source_changes": 2,
+    "candidate_and_qualified_sources": 2053,
+    "unchanged_rust_paths": 2051,
+    "all_live_source_bytes_rehashed": true,
+    "six_exact_input_payloads": true,
+    "fixture_archives": 10,
+    "fixture_authored_members": 30,
+    "fixture_authored_bytes": 44892780,
+    "approved_payload_plus_fixture_raw_bytes": 85590906,
+    "byte_limits": {
+      "payload": 25000000,
+      "fixture": 25000000,
+      "aggregate": 150000000
+    },
+    "media_files": 35,
+    "movies": [
+      {
+        "leg": "cached",
+        "sha256": "adc6f3042e4b2f916d5de769bc17ac93efee265a4b03f4103e1f4055d538b37f"
+      },
+      {
+        "leg": "uncached",
+        "sha256": "e22e7fb456f327dfee4f51affacfb00a6af492b7cbe5948bf2ffd92181c84e58"
+      }
+    ],
+    "history_payloads": [
+      "history/analyze-before-root-review.py.txt",
+      "history/analyze-before-schema-fix.py.txt",
+      "history/package-before-review-fix.py.txt",
+      "history/prepare_manifest-before-review-fix.py.txt",
+      "history/package-before-grouped-review-fixes.py.txt",
+      "history/prepare_manifest-before-grouped-review-fixes.py.txt",
+      "history/packaging-draft-history.json",
+      "history/draft-review.md"
+    ],
+    "all_payload_hashes_sizes_regular_types_and_destination_aliases_checked": true,
+    "all_fixture_before_after_live_pathsets_and_sidecars_checked": true,
+    "source_and_analysis_independent_reviews_bound": true
+  },
+  "resolved_findings": [
+    "Final no-findings analysis-review.json is required and pinned; historical Root pre-execution analysis review remains separately retained.",
+    "Static plan is retained through the envelope, manifest hash-bound, checked before staging and before exclusive publication; no reserved duplicate payload.",
+    "Both analysis .py.txt snapshots, packaging correction snapshots/history and draft review are explicitly retained.",
+    "Candidate/control/qualified helper executable bytes and binary/helper manifests are checked. Complete equal 2053 source sets, exact two changes, source-review map/status and before/after snapshot bindings are checked; baseline and candidate six inputs agree.",
+    "All 35 media descriptors have corresponding exact payloads/source paths; generator compares complete actual media tree to inventory and both terminal export hashes.",
+    "Payload and fixture limits are 25 MB; generator and collector both enforce raw payload+authored-fixture <=150 MB before staging, and collector enforces final staged bytes.",
+    "Canonical NFC/case-folded paths and prefix collisions are rejected across payloads/archives/approval metadata; fixture roots are exactly the ten expected private paths.",
+    "Every approval-envelope source including current GO is compared with frozen bytes immediately before publication.",
+    "Both aggregate fixture sums use actual flat after-map .items(), avoiding the nonexistent files wrapper."
+  ],
+  "code_notes": [
+    "All source/baseline guards use immutable private copies, not live Main after promotion.",
+    "Gzip payloads intentionally retain logical .json/.html names; encoding fields are authoritative. All four .rs.txt source snapshots remain identity encoded.",
+    "Fixture TARs contain only three approved authored regular relative files per root. Exact before/after/runtime sidecar rows remain in maps and archive metadata; no SHM/WAL goes into native fixture TARs.",
+    "Publication is private sibling staging plus Darwin renameatx_np(-2,...,RENAME_EXCL=0x4), refusing existing destination; inventory is reread before publication.",
+    "No binary bytes, nextest archive, Cargo target tree, complete source archive or memory lane is approved. Actual helper/binary hashes and raw output records remain.",
+    "The completed 729/35/12 build, ten native reports and actual media semantics were independently checked in the pinned analysis review; no duplicate performance claim is inferred here."
+  ],
+  "go_contract": {
+    "status": "approved_for_packaging",
+    "package_script_sha256": "b20d849e87b77e174c86302edec6462827f867b3ed02cca8bf346606304b53bf",
+    "approved_manifest_sha256": "74266fa01a8980ef552754ebb7502a2f816f732f4597426fd1b9bf7a6be34974",
+    "packager_review_sha256": "SHA-256 of this final review file",
+    "static_packaging_plan_sha256": "798d12a6c302a1a8a5b632f795da05b5a578bddfdb9f1eb5c3f1894c8c023afb",
+    "source_map_sha256": "2b0997f1ad22ce7dd869beba699909d22972efba434279cee350478dc63cb728",
+    "binary_manifest_sha256": "79bee16cc96b4bda96e97003d4cb6ecc12e59667ab50d9a505d6d33bbd73544e",
+    "qualified_helper_manifest_sha256": "763e335a151e42fd15d537514fd90dcf2a9ef06a7d8293926185cbc3b12e5949",
+    "source_review_sha256": "388a77cfd4e8aa46955b2f1d14c15130ae472e4ce2132ce6148d708f5be0abff",
+    "analysis_review_sha256": "7b15f06575b84a2eaf584f00468132396165f553c4dc3d5d8d9166fb32d277ab",
+    "input_map_sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317",
+    "candidate_app_sha256": "0c9c2e641dbe0ef242f1d5503edb4d795a32fef23f286335cdf575e52f814c66",
+    "control_app_sha256": "970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2",
+    "build_terminal_sha256": "09c66fac1ef00326b62d01747708c53ad3707e9d638bf1ad38728302d23fa0c0",
+    "measurement_terminal_sha256": "697245b6cb0f25f21fe29d95ad07885fb0c1862bc81e37d33f6ca12f9244c042",
+    "media_terminal_sha256": "52bc7d94ec882741750df011179b447b4774ac9e5e550480a70a6309e567c2b2"
+  },
+  "limitations": [
+    "This approves only the exact script and proposed manifest reviewed. Root still owns explicit GO and first copier execution.",
+    "No compressed output, TAR file, published inventory or destination has been generated or verified by this reviewer for production. Root must independently verify the actual copied package after successful publication.",
+    "The production five-pair timing record is descriptive; this review establishes no p95, target pass, memory, physical-display or source-decode claim.",
+    "Static correction snapshots are historical pre-execution artifacts. No collector runtime failure is claimed."
+  ]
+}

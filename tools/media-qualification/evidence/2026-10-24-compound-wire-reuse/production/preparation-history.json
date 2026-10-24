@@ -1,0 +1,17 @@
+{
+  "attempts": [
+    {
+      "outcome": "copy guard refused before applying source changes",
+      "script_sha256": "30087c1e14fe016c4c6d6b7420f224b8a494f4b48cebd4b224e042295672913e",
+      "failure": "Copied source differs before the two-file change",
+      "copied_rust_paths": 2051,
+      "missing_qualified_paths": [
+        "crates/deadpan-core/src/target/tests.rs",
+        "crates/deadpan-playback/src/target/audio_range.rs"
+      ],
+      "reason": "Artifact-name filter treated two legitimate source target directories as Cargo output",
+      "retained_copy": "source-copy-attempt-1",
+      "qualified_roots_or_main_modified": false
+    }
+  ]
+}

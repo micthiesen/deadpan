@@ -1,0 +1,61 @@
+{
+  "diagnostic_only": true,
+  "n_per_kind": 5,
+  "kinds": {
+    "control": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 185.199375,
+        "median": 185.96179099999998,
+        "max": 187.247625
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 187.70283400000002,
+        "median": 188.42624999999998,
+        "max": 189.79154200000002
+      }
+    },
+    "candidate": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 179.94325,
+        "median": 180.79287499999998,
+        "max": 182.666459
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 182.411542,
+        "median": 183.389625,
+        "max": 185.314792
+      }
+    }
+  },
+  "phase_accounting": "no diagnostic hooks; production-route observation only",
+  "no_percentile_target_or_memory_claim": true,
+  "pairs": [
+    {
+      "rotation": 1,
+      "control_minus_candidate_commit_ms": 6.140542000000011,
+      "control_minus_candidate_composition_ms": 6.170001000000013
+    },
+    {
+      "rotation": 2,
+      "control_minus_candidate_commit_ms": 5.737334000000004,
+      "control_minus_candidate_composition_ms": 5.692791999999997
+    },
+    {
+      "rotation": 3,
+      "control_minus_candidate_commit_ms": 6.570333000000005,
+      "control_minus_candidate_composition_ms": 6.439916000000011
+    },
+    {
+      "rotation": 4,
+      "control_minus_candidate_commit_ms": 4.4065000000000225,
+      "control_minus_candidate_composition_ms": 4.313209000000029
+    },
+    {
+      "rotation": 5,
+      "control_minus_candidate_commit_ms": 3.2953319999999735,
+      "control_minus_candidate_composition_ms": 3.1114579999999705
+    }
+  ],
+  "paired_commit_reduction_median_ms": 5.737334000000004,
+  "paired_composition_reduction_median_ms": 5.692791999999997
+}

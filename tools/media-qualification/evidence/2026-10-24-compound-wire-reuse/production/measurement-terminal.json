@@ -1,0 +1,8 @@
+{
+  "status": "complete",
+  "trials": 10,
+  "commands": 20,
+  "workflow_checks": 70,
+  "kestrel_checks": 10,
+  "warnings": 20
+}

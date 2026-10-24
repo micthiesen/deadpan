@@ -1,7 +1,20 @@
 # Performance measurement
 
+The [compound wire-count qualification](qualification/compound-wire-reuse-2026-10-24.md)
+records the current uninstrumented change. All 729 Core unit tests, 35
+integration tests, 12 release Store tests, strict/format checks and the
+actual history/PCM media case pass; both exports verify 45 pictures and
+72,072 samples at zero offset. Five alternating fresh timing pairs pass
+70 pause/10 Kestrel checks with 20 retained layout warnings. Every pair
+improves: paired median reductions are 5.737334 ms to commit and 5.692792 ms
+to offscreen composition, with ranges 3.295332–6.570333 and
+3.111458–6.439916 ms. Candidate medians are 180.792875/183.389625 ms.
+No memory lane runs for this bounded count/header change; no memory claim,
+p95 or 100 ms/50 ms target pass is inferred. The private 18-trial prototype
+remains a separate diagnostic batch, including its slower third pair.
+
 The [single-leaf net reuse qualification](qualification/single-leaf-net-reuse-2026-10-24.md)
-records the current uninstrumented change after source, Core/Store, real-media,
+records the preceding uninstrumented change after source, Core/Store, real-media,
 history and PCM checks. Five fresh 10,000-Hold timing pairs pass 70 pause and
 10 Kestrel checks. Paired median reductions are 5.355917 ms to commit and
 5.468292 ms to offscreen composition; candidate medians are 188.425/191.147 ms.

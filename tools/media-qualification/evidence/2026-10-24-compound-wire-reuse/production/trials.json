@@ -1,0 +1,252 @@
+[
+  {
+    "rotation": 1,
+    "kind": "control",
+    "binary_sha256": "970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 187.247625,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 189.79154200000002
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "findings": [
+      {
+        "message": "2 frame(s) settled their layout only on a second retry: [{\"frame\":115,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]},{\"frame\":129,\"input\":\"Command hold 12f\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]}]",
+        "severity": "warning"
+      },
+      {
+        "message": "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":113,\"input\":\"Private 10,000-Hold fixture opened\",\"new_input\":false,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]},{\"frame\":114,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6150)\"]},{\"frame\":115,\"input\":\"Command sequence\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]}]]",
+        "severity": "warning"
+      }
+    ],
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 1,
+    "kind": "candidate",
+    "binary_sha256": "0c9c2e641dbe0ef242f1d5503edb4d795a32fef23f286335cdf575e52f814c66",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 181.107083,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 183.621541
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "findings": [
+      {
+        "message": "2 frame(s) settled their layout only on a second retry: [{\"frame\":119,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]},{\"frame\":133,\"input\":\"Command hold 12f\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]}]",
+        "severity": "warning"
+      },
+      {
+        "message": "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":117,\"input\":\"Private 10,000-Hold fixture opened\",\"new_input\":false,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]},{\"frame\":118,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6150)\"]},{\"frame\":119,\"input\":\"Command sequence\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]}]]",
+        "severity": "warning"
+      }
+    ],
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 2,
+    "kind": "candidate",
+    "binary_sha256": "0c9c2e641dbe0ef242f1d5503edb4d795a32fef23f286335cdf575e52f814c66",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 180.069875,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 182.49295800000002
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "findings": [
+      {
+        "message": "2 frame(s) settled their layout only on a second retry: [{\"frame\":115,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]},{\"frame\":129,\"input\":\"Command hold 12f\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]}]",
+        "severity": "warning"
+      },
+      {
+        "message": "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":113,\"input\":\"Private 10,000-Hold fixture opened\",\"new_input\":false,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]},{\"frame\":114,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6150)\"]},{\"frame\":115,\"input\":\"Command sequence\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]}]]",
+        "severity": "warning"
+      }
+    ],
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 2,
+    "kind": "control",
+    "binary_sha256": "970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 185.807209,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 188.18575
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "findings": [
+      {
+        "message": "2 frame(s) settled their layout only on a second retry: [{\"frame\":123,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]},{\"frame\":137,\"input\":\"Command hold 12f\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]}]",
+        "severity": "warning"
+      },
+      {
+        "message": "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":121,\"input\":\"Private 10,000-Hold fixture opened\",\"new_input\":false,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]},{\"frame\":122,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6150)\"]},{\"frame\":123,\"input\":\"Command sequence\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]}]]",
+        "severity": "warning"
+      }
+    ],
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 3,
+    "kind": "control",
+    "binary_sha256": "970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 186.513583,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 188.851458
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "findings": [
+      {
+        "message": "2 frame(s) settled their layout only on a second retry: [{\"frame\":117,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]},{\"frame\":131,\"input\":\"Command hold 12f\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]}]",
+        "severity": "warning"
+      },
+      {
+        "message": "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":115,\"input\":\"Private 10,000-Hold fixture opened\",\"new_input\":false,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]},{\"frame\":116,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6150)\"]},{\"frame\":117,\"input\":\"Command sequence\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]}]]",
+        "severity": "warning"
+      }
+    ],
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 3,
+    "kind": "candidate",
+    "binary_sha256": "0c9c2e641dbe0ef242f1d5503edb4d795a32fef23f286335cdf575e52f814c66",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 179.94325,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 182.411542
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "findings": [
+      {
+        "message": "2 frame(s) settled their layout only on a second retry: [{\"frame\":114,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]},{\"frame\":128,\"input\":\"Command hold 12f\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]}]",
+        "severity": "warning"
+      },
+      {
+        "message": "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":112,\"input\":\"Private 10,000-Hold fixture opened\",\"new_input\":false,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]},{\"frame\":113,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6150)\"]},{\"frame\":114,\"input\":\"Command sequence\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]}]]",
+        "severity": "warning"
+      }
+    ],
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 4,
+    "kind": "candidate",
+    "binary_sha256": "0c9c2e641dbe0ef242f1d5503edb4d795a32fef23f286335cdf575e52f814c66",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 180.79287499999998,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 183.389625
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "findings": [
+      {
+        "message": "2 frame(s) settled their layout only on a second retry: [{\"frame\":116,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]},{\"frame\":130,\"input\":\"Command hold 12f\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]}]",
+        "severity": "warning"
+      },
+      {
+        "message": "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":114,\"input\":\"Private 10,000-Hold fixture opened\",\"new_input\":false,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]},{\"frame\":115,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6150)\"]},{\"frame\":116,\"input\":\"Command sequence\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]}]]",
+        "severity": "warning"
+      }
+    ],
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 4,
+    "kind": "control",
+    "binary_sha256": "970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 185.199375,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 187.70283400000002
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "findings": [
+      {
+        "message": "2 frame(s) settled their layout only on a second retry: [{\"frame\":114,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]},{\"frame\":128,\"input\":\"Command hold 12f\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]}]",
+        "severity": "warning"
+      },
+      {
+        "message": "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":112,\"input\":\"Private 10,000-Hold fixture opened\",\"new_input\":false,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]},{\"frame\":113,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6150)\"]},{\"frame\":114,\"input\":\"Command sequence\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]}]]",
+        "severity": "warning"
+      }
+    ],
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 5,
+    "kind": "control",
+    "binary_sha256": "970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 185.96179099999998,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 188.42624999999998
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "findings": [
+      {
+        "message": "2 frame(s) settled their layout only on a second retry: [{\"frame\":115,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]},{\"frame\":129,\"input\":\"Command hold 12f\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]}]",
+        "severity": "warning"
+      },
+      {
+        "message": "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":113,\"input\":\"Private 10,000-Hold fixture opened\",\"new_input\":false,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]},{\"frame\":114,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6150)\"]},{\"frame\":115,\"input\":\"Command sequence\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]}]]",
+        "severity": "warning"
+      }
+    ],
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 5,
+    "kind": "candidate",
+    "binary_sha256": "0c9c2e641dbe0ef242f1d5503edb4d795a32fef23f286335cdf575e52f814c66",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 182.666459,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 185.314792
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "findings": [
+      {
+        "message": "2 frame(s) settled their layout only on a second retry: [{\"frame\":115,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]},{\"frame\":129,\"input\":\"Command hold 12f\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]}]",
+        "severity": "warning"
+      },
+      {
+        "message": "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":113,\"input\":\"Private 10,000-Hold fixture opened\",\"new_input\":false,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]},{\"frame\":114,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6150)\"]},{\"frame\":115,\"input\":\"Command sequence\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5835)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4204)\"]}]]",
+        "severity": "warning"
+      }
+    ],
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  }
+]

@@ -1,0 +1,312 @@
+[
+  {
+    "name": "rotation-1-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-1-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1994083747267723,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-1-control",
+    "command": [
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-1-control.deadpan",
+      "--output",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-1-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.380060208030045,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-1-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-1-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1868199585005641,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-1-candidate",
+    "command": [
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-1-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-1-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 14.404786875471473,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-2-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-2-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19511441700160503,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-2-candidate",
+    "command": [
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-2-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-2-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 13.557688999921083,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-2-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-2-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19412450026720762,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-2-control",
+    "command": [
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-2-control.deadpan",
+      "--output",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-2-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.361220582388341,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-3-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-3-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18505124934017658,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-3-control",
+    "command": [
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-3-control.deadpan",
+      "--output",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-3-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.557825250551105,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-3-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-3-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1862432500347495,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-3-candidate",
+    "command": [
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-3-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-3-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 13.705156332813203,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-4-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-4-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18919045943766832,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-4-candidate",
+    "command": [
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-4-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-4-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 13.814092375338078,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-4-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-4-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19099187478423119,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-4-control",
+    "command": [
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-4-control.deadpan",
+      "--output",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-4-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.499513790942729,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-5-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-5-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18765416648238897,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-5-control",
+    "command": [
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-5-control.deadpan",
+      "--output",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-5-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.705890292301774,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-5-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-5-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1878004176542163,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-5-candidate",
+    "command": [
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-5-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/rotation-5-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 13.735309499315917,
+    "profile_gate": null
+  }
+]

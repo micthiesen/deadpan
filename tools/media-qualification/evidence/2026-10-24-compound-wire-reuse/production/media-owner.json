@@ -1,0 +1,8 @@
+{
+  "pid": 20746,
+  "started_unix": 1792810631.7409122,
+  "script": "/private/tmp/deadpan-compound-wire-reuse-production-2026-10-24/qualify_media.py",
+  "source": "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/source",
+  "target": "/tmp/deadpan-compound-wire-reuse-production-2026-10-24/target",
+  "one_test_only": true
+}

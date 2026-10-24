@@ -1,0 +1,18 @@
+{
+  "status": "approved_for_execution_after_successful_build",
+  "driver_sha256": "e34830c6c1a6057c1bcbdaac29f51475425711a4b5c6b902d59b7ceb8341c1ca",
+  "media_pins_sha256": "973d933cd417dbddf9841fb8e8071354d4600f26b256260c4ed653f866479a60",
+  "source_map_sha256": "2b0997f1ad22ce7dd869beba699909d22972efba434279cee350478dc63cb728",
+  "checks": [
+    "Candidate2053map2b099 and immutable qualified2053mapf973, sixinputs, source-review388a77 and full Rootdriverpins are guarded.",
+    "Build must finish all9stages and actual releaseApphash must equal freshly built binary receipt.",
+    "Qualified helpers retain763e manifest and exact actual helper bytes.",
+    "Four stages retain actual physicalhardware, fresh release archive/empty extraction setup, exact one-test listing and PASS, actual CLI/test/helperhashes.",
+    "Unchanged canonical history/PCM and both45picture72072sample zero-offset emitted exports are independently validated.",
+    "No profilingoutput; no liveMain baseline dependency afterpromotion."
+  ],
+  "limitations": [
+    "Not yet executed.",
+    "No performance or memory claim."
+  ]
+}

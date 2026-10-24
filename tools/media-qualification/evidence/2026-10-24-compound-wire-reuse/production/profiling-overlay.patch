@@ -1,0 +1,1441 @@
+--- a/crates/deadpan-app/src/project/service.rs
++++ b/crates/deadpan-app/src/project/service.rs
+@@ -6,7 +6,6 @@
+ use std::thread::JoinHandle;
+ use std::time::Duration;
+ 
+-use deadpan_core::pause_route_profile::{self, Phase as PausePhase};
+ use deadpan_core::{
+     AssetId, Command, CommandRequest, NodeId, NodeKind, ProjectDocument, ProjectId, RevisionId,
+ };
+@@ -179,8 +178,6 @@
+     backend: super::generation::Backend,
+     tracking: super::targets::Backend,
+ ) {
+-    let pause_route_profile_enabled = std::env::var_os("DEADPAN_PAUSE_ROUTE_PROFILE").as_deref()
+-        == Some(std::ffi::OsStr::new("1"));
+     let mut service = Service {
+         shared,
+         store: None,
+@@ -343,34 +340,15 @@
+                 service.publish();
+             }
+             Ok(request) => {
+-                let pause_route = if pause_route_profile_enabled
+-                    && matches!(
+-                        &request,
+-                        ProjectRequest::Macro(crate::project::macros::Operation::Apply { instruction, .. })
+-                            if matches!(instruction.as_ref(), deadpan_core::SemanticInstruction::InsertPause { .. })
+-                    ) {
+-                    Some(pause_route_profile::Profile::begin())
+-                } else {
+-                    None
+-                };
+                 if service.dispatch_request(request) {
+                     #[cfg(test)]
+                     service.shared.request_completed(crate::project::Lane::User);
+                     service.shared.busy.store(false, Ordering::Release);
+                 }
+-                if pause_route.is_some() {
+-                    pause_route_profile::set(PausePhase::NativePublication);
+-                }
+                 service.invalidate_changed_splice();
+                 service.reconcile_slip();
+                 service.reconcile_trim();
+                 service.publish();
+-                if let Some(profile) = pause_route {
+-                    profile.published();
+-                    if let Some(snapshot) = profile.finish() {
+-                        emit_pause_route_profile(snapshot);
+-                    }
+-                }
+             }
+             Err(RecvTimeoutError::Disconnected) => {
+                 requests_connected = false;
+@@ -432,82 +410,6 @@
+     let _ = worker.join();
+     shared.shutdown_complete.store(true, Ordering::Release);
+     (shared.wake)();
+-}
+-
+-fn emit_pause_route_profile(snapshot: pause_route_profile::Snapshot) {
+-    use std::io::Write;
+-
+-    const NAMES: [&str; pause_route_profile::PHASE_COUNT] = [
+-        "native_admission",
+-        "semantic_plan",
+-        "native_continuation",
+-        "store_entry_misc",
+-        "store_prepare",
+-        "host_runtime_bank",
+-        "store_write",
+-        "sqlite_commit",
+-        "store_cache_publication",
+-        "native_postcommit",
+-        "workspace_refresh",
+-        "native_finish",
+-        "native_publication",
+-        "semantic_document_wire",
+-        "semantic_leaf_apply",
+-        "capability_snapshot",
+-        "replay_document_wire",
+-        "reuse_eligibility_eq",
+-        "reuse_clone_exit",
+-        "replay_net_aggregate",
+-        "replay_misc",
+-        "store_compact_size",
+-        "store_checkpoint_wire",
+-        "store_visitor_authority",
+-        "history_codec_readback",
+-        "history_inverse_restore",
+-        "semantic_head_validate",
+-        "semantic_context_admission",
+-        "semantic_planner_setup",
+-        "semantic_pause_target",
+-        "semantic_pause_provider",
+-        "semantic_children_refresh",
+-        "leaf_insert_known",
+-        "leaf_input_durations",
+-        "leaf_net_construction",
+-    ];
+-    if snapshot.counts != pause_route_profile::EXPECTED_COUNTS {
+-        return;
+-    }
+-    let mut bytes = [0u8; 4096];
+-    let length = {
+-        let mut output = std::io::Cursor::new(&mut bytes[..]);
+-        if writeln!(output, "DEADPAN_PAUSE_ROUTE_PROFILE_V3 BEGIN count=1").is_err() {
+-            return;
+-        }
+-        for ((name, elapsed), count) in NAMES
+-            .into_iter()
+-            .zip(snapshot.elapsed_ns)
+-            .zip(snapshot.counts)
+-        {
+-            if writeln!(
+-                output,
+-                "DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name={name} elapsed_ns={elapsed} count={count}"
+-            )
+-            .is_err()
+-            {
+-                return;
+-            }
+-        }
+-        if writeln!(output, "DEADPAN_PAUSE_ROUTE_PROFILE_V3 END count=1 elapsed_ns={} committed=1 refreshed=1 published=1", snapshot.total_ns).is_err() {
+-            return;
+-        }
+-        let Ok(length) = usize::try_from(output.position()) else {
+-            return;
+-        };
+-        length
+-    };
+-    if let Some(message) = bytes.get(..length) {
+-        let _ = std::io::stderr().lock().write_all(message);
+-    }
+ }
+ 
+ impl Service {
+--- a/crates/deadpan-app/src/project/service/macros.rs
++++ b/crates/deadpan-app/src/project/service/macros.rs
+@@ -710,7 +710,6 @@
+                     context,
+                 )?;
+                 let invocation = SemanticProgram::new(vec![instruction]).map_err(display)?;
+-                pause_route_profile::set(PausePhase::SemanticPlan);
+                 let plan = deadpan_cli::macros::plan_program_with_transcript_guard(
+                     self.store.as_ref().ok_or("Open a project first")?,
+                     &document,
+@@ -721,7 +720,6 @@
+                     id.transcript_guard.as_deref(),
+                 )
+                 .map_err(display)?;
+-                pause_route_profile::set(PausePhase::NativeContinuation);
+                 if let Some(consumed) = &plan.transcript_guard {
+                     let displayed = self
+                         .workspace
+@@ -803,10 +801,6 @@
+                         deadpan_cli::macros::PreparedCommitError::Commit(error) => display(error),
+                         deadpan_cli::macros::PreparedCommitError::Preparation(error) => error,
+                     })?;
+-                pause_route_profile::set(PausePhase::NativePostcommit);
+-                if outcome.committed.is_some() {
+-                    pause_route_profile::committed();
+-                }
+                 if let Some(saved) = &outcome.committed {
+                     self.capture_preparation_notices(&saved.generation_preparation_notices);
+                     if plan.context.original.is_some() {
+@@ -873,11 +867,8 @@
+                         .render_commit_refresh_failure
+                         .swap(false, Ordering::AcqRel);
+                 }
+-                pause_route_profile::set(PausePhase::WorkspaceRefresh);
+                 match self.refresh() {
+                     Ok(()) => {
+-                        pause_route_profile::set(PausePhase::NativeFinish);
+-                        pause_route_profile::refreshed();
+                         self.message = Some(if committed.is_some() {
+                             format!("{label} saved as one edit; Undo restores it")
+                         } else {
+@@ -885,7 +876,6 @@
+                         })
+                     }
+                     Err(error) => {
+-                        pause_route_profile::set(PausePhase::NativeFinish);
+                         let message = format!(
+                             "{label} saved, but the preview could not refresh: {error}. Reopen this project before editing or undoing."
+                         );
+--- a/crates/deadpan-core/src/command.rs
++++ b/crates/deadpan-core/src/command.rs
+@@ -1431,9 +1431,6 @@
+             // this command's timing identity, so its table must stay complete.
+             let scoped = beat_sound_edit.is_none();
+             let saved_allowances = scoped.then(|| allowance_edit.clone()).flatten();
+-            let _pause_insert = crate::pause_route_profile::enter(
+-                crate::pause_route_profile::Phase::LeafInsertKnown,
+-            );
+             let scoped_result = crate::command_work::with_scoped_timing_captures(scoped, || {
+                 crate::insert_time::apply_known(
+                     input,
+@@ -1813,8 +1810,6 @@
+     if !crate::command_work::local() {
+         known = KnownValidation::Nothing;
+     }
+-    let pause_net =
+-        crate::pause_route_profile::enter(crate::pause_route_profile::Phase::LeafNetConstruction);
+     let (edit, validation) = net_transaction_known(
+         document,
+         &result,
+@@ -1822,7 +1817,6 @@
+         previous,
+         known,
+     )?;
+-    drop(pause_net);
+     if result.schema_version != document.schema_version
+         || result.project_id != document.project_id
+         || result.root != document.root
+--- a/crates/deadpan-core/src/compound.rs
++++ b/crates/deadpan-core/src/compound.rs
+@@ -298,8 +298,6 @@
+     mut isolation: Option<&mut Vec<crate::ScopedIsolationStep>>,
+     candidate: Option<&crate::OneLeafReplay>,
+ ) -> Result<CompoundOutcome, E> {
+-    let _pause_replay =
+-        crate::pause_route_profile::enter(crate::pause_route_profile::Phase::ReplayMisc);
+     crate::command::check_revision(
+         document,
+         &request.project_id,
+@@ -316,10 +314,7 @@
+             return Err(identity("leaf revision must differ from base and outer revisions").into());
+         }
+     }
+-    let pause_wire =
+-        crate::pause_route_profile::enter(crate::pause_route_profile::Phase::ReplayDocumentWire);
+     let mut bytes = wire::size(document, crate::MAX_DOCUMENT_JSON_BYTES)?;
+-    drop(pause_wire);
+     let mut captured_bytes = 0usize;
+     let mut captures = BTreeSet::new();
+     let mut identities = identities::Ledger::new(document);
+@@ -370,9 +365,6 @@
+         let leaf = step.edit().map(|edit| edit.request(&current));
+         let next = if let Some(leaf) = &leaf {
+             identities.reserve(&current, &leaf.command)?;
+-            let pause_wire = crate::pause_route_profile::enter(
+-                crate::pause_route_profile::Phase::ReplayDocumentWire,
+-            );
+             let size = wire::size(&current, crate::MAX_DOCUMENT_JSON_BYTES)?;
+             charge(
+                 &mut bytes,
+@@ -380,7 +372,6 @@
+                 MAX_COMPOUND_DOCUMENT_BYTES,
+                 "staged document work byte limit",
+             )?;
+-            drop(pause_wire);
+             // The validated result equals its forward patch applied to `current`.
+             let next = if let Some(isolation) = isolation.as_deref_mut() {
+                 let (_, next, steps) = crate::command::apply_with_isolation(&current, leaf)?;
+@@ -403,9 +394,6 @@
+                     None => crate::apply_with_result(&current, leaf)?.1,
+                 }
+             };
+-            let pause_wire = crate::pause_route_profile::enter(
+-                crate::pause_route_profile::Phase::ReplayDocumentWire,
+-            );
+             let size = wire::size(&next, crate::MAX_DOCUMENT_JSON_BYTES)?;
+             charge(
+                 &mut bytes,
+@@ -413,7 +401,6 @@
+                 MAX_COMPOUND_DOCUMENT_BYTES,
+                 "staged document work byte limit",
+             )?;
+-            drop(pause_wire);
+             identities.observe(&current, &next)?;
+             Some(next)
+         } else {
+@@ -436,8 +423,6 @@
+         }
+     }
+     current.revision_id = request.new_revision.clone();
+-    let pause_wire =
+-        crate::pause_route_profile::enter(crate::pause_route_profile::Phase::ReplayDocumentWire);
+     let final_size = wire::size(&current, crate::MAX_DOCUMENT_JSON_BYTES)?;
+     charge(
+         &mut bytes,
+@@ -445,9 +430,6 @@
+         MAX_COMPOUND_DOCUMENT_BYTES,
+         "staged document work byte limit",
+     )?;
+-    drop(pause_wire);
+-    let pause_net =
+-        crate::pause_route_profile::enter(crate::pause_route_profile::Phase::ReplayNetAggregate);
+     let edit = match reused_net {
+         Some(leaf) => {
+             // This borrow comes only from the actual ordinary one-step hit,
+@@ -483,7 +465,6 @@
+         }
+         None => crate::command::net_transaction(document, &current, "Apply resolved transaction")?,
+     };
+-    drop(pause_net);
+     Ok(CompoundOutcome {
+         edit,
+         document: current,
+--- a/crates/deadpan-core/src/insert_time.rs
++++ b/crates/deadpan-core/src/insert_time.rs
+@@ -86,10 +86,7 @@
+             .map(|result| (result, None));
+         }
+     }
+-    let pause_durations =
+-        crate::pause_route_profile::enter(crate::pause_route_profile::Phase::LeafInputDurations);
+     let durations = document.durations()?;
+-    drop(pause_durations);
+     let total = durations[document.root()].frames();
+     if at.0 < 0 || at.0 > total {
+         return Err(invalid("pause boundary is outside the project"));
+--- a/crates/deadpan-core/src/lib.rs
++++ b/crates/deadpan-core/src/lib.rs
+@@ -66,8 +66,6 @@
+ mod occurrence;
+ mod occurrence_edit;
+ mod output_color;
+-#[doc(hidden)]
+-pub mod pause_route_profile;
+ mod picture_context;
+ mod preserve_input;
+ mod register;
+--- a/crates/deadpan-core/src/one_leaf_replay.rs
++++ b/crates/deadpan-core/src/one_leaf_replay.rs
+@@ -45,29 +45,21 @@
+     retain: bool,
+     admit_next: impl FnOnce(&ProjectDocument) -> Result<(), EditError>,
+ ) -> Result<(ProjectDocument, Option<OneLeafReplay>), EditError> {
+-    let pause_apply =
+-        crate::pause_route_profile::enter(crate::pause_route_profile::Phase::SemanticLeafApply);
+     let (edit, next) = crate::apply_with_result(entry, request)?;
+     // Preserve the original pre-admission drop for intents that cannot retain
+     // this result. Mode and value eligibility still follow actual admission.
+     let edit = (retain && matches!(&request.command, Command::InsertTime { .. })).then_some(edit);
+-    drop(pause_apply);
+     admit_next(&next)?;
+     let candidate = (retain
+         && eligible_mode()
+         && eligible_value(entry)
+         && eligible_value(&next)
+         && matches!(&request.command, Command::InsertTime { .. }))
+-    .then(|| {
+-        let _pause_snapshot = crate::pause_route_profile::enter(
+-            crate::pause_route_profile::Phase::CapabilitySnapshot,
+-        );
+-        OneLeafReplay {
+-            entry: entry.clone(),
+-            request: request.clone(),
+-            next: next.clone(),
+-            edit: edit.expect("retained InsertTime edit"),
+-        }
++    .then(|| OneLeafReplay {
++        entry: entry.clone(),
++        request: request.clone(),
++        next: next.clone(),
++        edit: edit.expect("retained InsertTime edit"),
+     });
+     Ok((next, candidate))
+ }
+@@ -80,9 +72,6 @@
+         entry: &ProjectDocument,
+         request: &CommandRequest,
+     ) -> Result<Option<(ProjectDocument, &EditTransaction)>, EditError> {
+-        let pause_match = crate::pause_route_profile::enter(
+-            crate::pause_route_profile::Phase::ReuseEligibilityEq,
+-        );
+         if !eligible_mode()
+             || !eligible_value(entry)
+             || !eligible_value(&self.entry)
+@@ -92,9 +81,6 @@
+         {
+             return Ok(None);
+         }
+-        drop(pause_match);
+-        let _pause_exit =
+-            crate::pause_route_profile::enter(crate::pause_route_profile::Phase::ReuseCloneExit);
+         // Ordinary apply clears this destructive TLS before leaf revision
+         // admission and consumes it again before preserving exact clocks.
+         crate::insert_time::retimed::take_exact_edit();
+--- a/crates/deadpan-core/src/pause_route_profile.rs
++++ b/crates/deadpan-core/src/pause_route_profile.rs
+@@ -1,794 +0,0 @@
+-//! Temporary private-study scalar timing. Activation and output belong to the
+-//! native service; inactive calls read no clock and retain no authored values.
+-
+-use std::cell::{Cell, RefCell};
+-use std::marker::PhantomData;
+-use std::rc::Rc;
+-use std::time::Instant;
+-
+-pub const PHASE_COUNT: usize = 35;
+-pub const EXPECTED_COUNTS: [u64; PHASE_COUNT] = [
+-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4, 1, 1, 4, 1, 1, 1, 1, 3, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+-    1, 1, 1,
+-];
+-const STACK_LIMIT: usize = 8;
+-
+-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+-#[repr(usize)]
+-pub enum Phase {
+-    NativeAdmission,
+-    SemanticPlan,
+-    NativeContinuation,
+-    StoreEntryMisc,
+-    StorePrepare,
+-    HostRuntimeBank,
+-    StoreWrite,
+-    SqliteCommit,
+-    StoreCachePublication,
+-    NativePostcommit,
+-    WorkspaceRefresh,
+-    NativeFinish,
+-    NativePublication,
+-    SemanticDocumentWire,
+-    SemanticLeafApply,
+-    CapabilitySnapshot,
+-    ReplayDocumentWire,
+-    ReuseEligibilityEq,
+-    ReuseCloneExit,
+-    ReplayNetAggregate,
+-    ReplayMisc,
+-    StoreCompactSize,
+-    StoreCheckpointWire,
+-    StoreVisitorAuthority,
+-    HistoryCodecReadback,
+-    HistoryInverseRestore,
+-    SemanticHeadValidate,
+-    SemanticContextAdmission,
+-    SemanticPlannerSetup,
+-    SemanticPauseTarget,
+-    SemanticPauseProvider,
+-    SemanticChildrenRefresh,
+-    LeafInsertKnown,
+-    LeafInputDurations,
+-    LeafNetConstruction,
+-}
+-
+-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+-pub struct Snapshot {
+-    pub elapsed_ns: [u64; PHASE_COUNT],
+-    pub counts: [u64; PHASE_COUNT],
+-    pub total_ns: u64,
+-}
+-
+-#[derive(Clone, Copy)]
+-struct Frame {
+-    phase: Phase,
+-    token: u64,
+-}
+-
+-const EMPTY_FRAME: Frame = Frame {
+-    phase: Phase::NativeAdmission,
+-    token: 0,
+-};
+-
+-struct Counters {
+-    elapsed_ns: [u64; PHASE_COUNT],
+-    counts: [u64; PHASE_COUNT],
+-    stack: [Frame; STACK_LIMIT],
+-    depth: usize,
+-    next_token: u64,
+-    last_ns: u64,
+-    markers: [u64; 3],
+-    invalid: bool,
+-}
+-
+-impl Counters {
+-    const fn empty() -> Self {
+-        Self {
+-            elapsed_ns: [0; PHASE_COUNT],
+-            counts: [0; PHASE_COUNT],
+-            stack: [EMPTY_FRAME; STACK_LIMIT],
+-            depth: 0,
+-            next_token: 0,
+-            last_ns: 0,
+-            markers: [0; 3],
+-            invalid: false,
+-        }
+-    }
+-
+-    fn started() -> Self {
+-        let mut counters = Self::empty();
+-        counters.stack[0] = Frame {
+-            phase: Phase::NativeAdmission,
+-            token: 1,
+-        };
+-        counters.depth = 1;
+-        counters.next_token = 1;
+-        counters.counts[Phase::NativeAdmission as usize] = 1;
+-        counters
+-    }
+-
+-    fn charge(&mut self, now: u64) -> bool {
+-        let frame = self
+-            .depth
+-            .checked_sub(1)
+-            .and_then(|index| self.stack.get(index));
+-        let Some(frame) = frame.filter(|_| !self.invalid) else {
+-            self.invalid = true;
+-            return false;
+-        };
+-        let index = frame.phase as usize;
+-        let next = now
+-            .checked_sub(self.last_ns)
+-            .and_then(|delta| self.elapsed_ns[index].checked_add(delta));
+-        let Some(next) = next else {
+-            self.invalid = true;
+-            return false;
+-        };
+-        self.elapsed_ns[index] = next;
+-        self.last_ns = now;
+-        true
+-    }
+-
+-    fn count(&mut self, phase: Phase) -> bool {
+-        let count = &mut self.counts[phase as usize];
+-        match count.checked_add(1) {
+-            Some(next) => {
+-                *count = next;
+-                true
+-            }
+-            None => {
+-                self.invalid = true;
+-                false
+-            }
+-        }
+-    }
+-
+-    fn set_at(&mut self, phase: Phase, now: u64) {
+-        if self.depth != 1 {
+-            self.invalid = true;
+-            return;
+-        }
+-        if self.charge(now) && self.count(phase) {
+-            self.stack[0].phase = phase;
+-        }
+-    }
+-
+-    fn enter_at(&mut self, phase: Phase, now: u64) -> Option<(u64, usize)> {
+-        if self.depth == 0 || self.depth >= STACK_LIMIT {
+-            self.invalid = true;
+-            return None;
+-        }
+-        let Some(token) = self.next_token.checked_add(1) else {
+-            self.invalid = true;
+-            return None;
+-        };
+-        if !self.charge(now) || !self.count(phase) {
+-            return None;
+-        }
+-        self.stack[self.depth] = Frame { phase, token };
+-        self.depth += 1;
+-        self.next_token = token;
+-        Some((token, self.depth))
+-    }
+-
+-    fn leave_at(&mut self, token: u64, depth: usize, now: u64) {
+-        let top = self
+-            .depth
+-            .checked_sub(1)
+-            .and_then(|index| self.stack.get(index));
+-        if self.depth != depth || depth < 2 || top.is_none_or(|frame| frame.token != token) {
+-            self.invalid = true;
+-            return;
+-        }
+-        if self.charge(now) {
+-            self.depth -= 1;
+-        }
+-    }
+-
+-    fn mark(&mut self, index: usize) {
+-        let Some(marker) = self.markers.get_mut(index) else {
+-            self.invalid = true;
+-            return;
+-        };
+-        match marker.checked_add(1) {
+-            Some(next) => *marker = next,
+-            None => self.invalid = true,
+-        }
+-    }
+-
+-    fn finish_at(mut self, now: u64) -> Option<Snapshot> {
+-        if self.invalid
+-            || self.depth != 1
+-            || self.stack[0].phase != Phase::NativePublication
+-            || self.counts != EXPECTED_COUNTS
+-            || self
+-                .elapsed_ns
+-                .iter()
+-                .zip(EXPECTED_COUNTS)
+-                .any(|(elapsed, count)| count == 0 && *elapsed != 0)
+-            || self.markers != [1; 3]
+-            || !self.charge(now)
+-        {
+-            return None;
+-        }
+-        let sum = self
+-            .elapsed_ns
+-            .iter()
+-            .try_fold(0u64, |sum, value| sum.checked_add(*value))?;
+-        (sum == now).then_some(Snapshot {
+-            elapsed_ns: self.elapsed_ns,
+-            counts: self.counts,
+-            total_ns: now,
+-        })
+-    }
+-}
+-
+-struct State {
+-    generation: u64,
+-    origin: Option<Instant>,
+-    counters: Counters,
+-}
+-
+-impl State {
+-    const fn empty() -> Self {
+-        Self {
+-            generation: 0,
+-            origin: None,
+-            counters: Counters::empty(),
+-        }
+-    }
+-
+-    fn now(&mut self) -> Option<u64> {
+-        if self.counters.invalid {
+-            return None;
+-        }
+-        // The origin is absent on every inactive path, before any clock read.
+-        let origin = self.origin.as_ref()?;
+-        match u64::try_from(origin.elapsed().as_nanos()) {
+-            Ok(now) => Some(now),
+-            Err(_) => {
+-                self.counters.invalid = true;
+-                None
+-            }
+-        }
+-    }
+-
+-    fn clear(&mut self) {
+-        self.origin = None;
+-        self.counters = Counters::empty();
+-    }
+-}
+-
+-struct Local {
+-    state: RefCell<State>,
+-    fault: Cell<bool>,
+-    cancelled: Cell<Option<u64>>,
+-}
+-
+-thread_local! {
+-    static LOCAL: Local = const { Local {
+-        state: RefCell::new(State::empty()), fault: Cell::new(false), cancelled: Cell::new(None),
+-    } };
+-}
+-
+-fn access<T>(operation: impl FnOnce(&mut State, &Cell<bool>) -> Option<T>) -> Option<T> {
+-    LOCAL
+-        .try_with(|local| {
+-            let Ok(mut state) = local.state.try_borrow_mut() else {
+-                local.fault.set(true);
+-                return None;
+-            };
+-            if local
+-                .cancelled
+-                .take()
+-                .is_some_and(|generation| generation == state.generation)
+-            {
+-                state.clear();
+-                local.fault.set(false);
+-            }
+-            if local.fault.get() {
+-                state.counters.invalid = true;
+-            }
+-            operation(&mut state, &local.fault)
+-        })
+-        .ok()
+-        .flatten()
+-}
+-
+-fn cancel(generation: u64) {
+-    let _ = LOCAL.try_with(|local| local.cancelled.set(Some(generation)));
+-    // If another diagnostic hook holds the borrow, the next access performs
+-    // this generation's pending clear before starting any fresh activation.
+-    let _ = access(|_, _| Some(()));
+-}
+-
+-/// A service-owned activation. It cannot move to a different thread. Dropping
+-/// it without finishing cancels and clears this diagnostic only.
+-pub struct Profile {
+-    generation: Option<u64>,
+-    _local: PhantomData<Rc<()>>,
+-}
+-
+-impl Profile {
+-    pub fn begin() -> Self {
+-        let generation = access(|state, fault| {
+-            if state.origin.is_some() {
+-                state.counters.invalid = true;
+-                return None;
+-            }
+-            let generation = state.generation.checked_add(1)?;
+-            state.generation = generation;
+-            state.counters = Counters::started();
+-            fault.set(false);
+-            state.origin = Some(Instant::now());
+-            Some(generation)
+-        });
+-        Self {
+-            generation,
+-            _local: PhantomData,
+-        }
+-    }
+-
+-    /// Called only after the native service's store_update and wake return.
+-    pub fn published(&self) {
+-        let Some(generation) = self.generation else {
+-            return;
+-        };
+-        let _ = access(|state, _| {
+-            if state.generation == generation && state.origin.is_some() {
+-                state.counters.mark(2);
+-            }
+-            Some(())
+-        });
+-    }
+-
+-    pub fn finish(mut self) -> Option<Snapshot> {
+-        let generation = self.generation.take()?;
+-        let result = access(|state, fault| {
+-            if state.generation != generation || state.origin.is_none() {
+-                return None;
+-            }
+-            let now = state.now();
+-            let counters = std::mem::replace(&mut state.counters, Counters::empty());
+-            state.origin = None;
+-            fault.set(false);
+-            now.and_then(|now| counters.finish_at(now))
+-        });
+-        cancel(generation);
+-        result
+-    }
+-}
+-
+-impl Drop for Profile {
+-    fn drop(&mut self) {
+-        let Some(generation) = self.generation else {
+-            return;
+-        };
+-        cancel(generation);
+-    }
+-}
+-
+-/// Replace the native root category. Resuming a parent never calls this.
+-pub fn set(phase: Phase) {
+-    let _ = access(|state, _| {
+-        let now = state.now()?;
+-        state.counters.set_at(phase, now);
+-        Some(())
+-    });
+-}
+-
+-/// A disjoint child category. Invalid or inactive entries remain no-ops.
+-pub struct Span {
+-    identity: Option<(u64, u64, usize)>,
+-    _local: PhantomData<Rc<()>>,
+-}
+-
+-pub fn enter(phase: Phase) -> Span {
+-    let identity = access(|state, _| {
+-        let now = state.now()?;
+-        let (token, depth) = state.counters.enter_at(phase, now)?;
+-        Some((state.generation, token, depth))
+-    });
+-    Span {
+-        identity,
+-        _local: PhantomData,
+-    }
+-}
+-
+-impl Drop for Span {
+-    fn drop(&mut self) {
+-        let Some((generation, token, depth)) = self.identity else {
+-            return;
+-        };
+-        let _ = access(|state, _| {
+-            if state.generation == generation {
+-                let now = state.now()?;
+-                state.counters.leave_at(token, depth, now);
+-            }
+-            Some(())
+-        });
+-    }
+-}
+-
+-pub fn committed() {
+-    mark(0);
+-}
+-pub fn refreshed() {
+-    mark(1);
+-}
+-
+-fn mark(index: usize) {
+-    let _ = access(|state, _| {
+-        if state.origin.is_some() {
+-            state.counters.mark(index);
+-        }
+-        Some(())
+-    });
+-}
+-
+-#[cfg(test)]
+-mod tests {
+-    use super::*;
+-
+-    fn counter_span(
+-        counters: &mut Counters,
+-        phase: Phase,
+-        now: &mut u64,
+-        body: impl FnOnce(&mut Counters, &mut u64),
+-    ) {
+-        let (token, depth) = counters.enter_at(phase, *now).unwrap();
+-        *now += 1;
+-        body(counters, now);
+-        counters.leave_at(token, depth, *now);
+-        *now += 1;
+-    }
+-
+-    fn counter_leaf(counters: &mut Counters, phase: Phase, now: &mut u64) {
+-        counter_span(counters, phase, now, |_, _| {});
+-    }
+-
+-    fn complete_counters() -> Counters {
+-        let mut counters = Counters::started();
+-        let mut now = 1;
+-        counters.set_at(Phase::SemanticPlan, now);
+-        now += 1;
+-        for phase in [
+-            Phase::SemanticHeadValidate,
+-            Phase::SemanticContextAdmission,
+-            Phase::SemanticDocumentWire,
+-            Phase::SemanticPlannerSetup,
+-            Phase::SemanticPauseTarget,
+-            Phase::SemanticPauseProvider,
+-            Phase::SemanticDocumentWire,
+-        ] {
+-            counter_leaf(&mut counters, phase, &mut now);
+-        }
+-        counter_span(
+-            &mut counters,
+-            Phase::SemanticLeafApply,
+-            &mut now,
+-            |counters, now| {
+-                counter_span(counters, Phase::LeafInsertKnown, now, |counters, now| {
+-                    counter_leaf(counters, Phase::LeafInputDurations, now);
+-                });
+-                counter_leaf(counters, Phase::LeafNetConstruction, now);
+-            },
+-        );
+-        for phase in [
+-            Phase::SemanticDocumentWire,
+-            Phase::CapabilitySnapshot,
+-            Phase::SemanticChildrenRefresh,
+-            Phase::SemanticDocumentWire,
+-        ] {
+-            counter_leaf(&mut counters, phase, &mut now);
+-        }
+-        counters.set_at(Phase::NativeContinuation, now);
+-        now += 1;
+-        counter_span(
+-            &mut counters,
+-            Phase::StoreEntryMisc,
+-            &mut now,
+-            |counters, now| {
+-                counter_span(counters, Phase::StorePrepare, now, |counters, now| {
+-                    counter_leaf(counters, Phase::StoreCompactSize, now);
+-                    counter_span(counters, Phase::ReplayMisc, now, |counters, now| {
+-                        for phase in [
+-                            Phase::ReplayDocumentWire,
+-                            Phase::ReplayDocumentWire,
+-                            Phase::ReuseEligibilityEq,
+-                            Phase::ReuseCloneExit,
+-                            Phase::ReplayDocumentWire,
+-                        ] {
+-                            counter_leaf(counters, phase, now);
+-                        }
+-                        counter_span(
+-                            counters,
+-                            Phase::StoreVisitorAuthority,
+-                            now,
+-                            |counters, now| {
+-                                counter_leaf(counters, Phase::StoreCompactSize, now);
+-                            },
+-                        );
+-                        counter_leaf(counters, Phase::ReplayDocumentWire, now);
+-                        counter_leaf(counters, Phase::ReplayNetAggregate, now);
+-                    });
+-                    for phase in [
+-                        Phase::StoreCompactSize,
+-                        Phase::HistoryCodecReadback,
+-                        Phase::HistoryInverseRestore,
+-                    ] {
+-                        counter_leaf(counters, phase, now);
+-                    }
+-                });
+-                for phase in [
+-                    Phase::HostRuntimeBank,
+-                    Phase::StoreWrite,
+-                    Phase::SqliteCommit,
+-                    Phase::StoreCachePublication,
+-                ] {
+-                    counter_leaf(counters, phase, now);
+-                }
+-            },
+-        );
+-        counters.set_at(Phase::NativePostcommit, now);
+-        now += 1;
+-        counters.mark(0);
+-        counters.set_at(Phase::WorkspaceRefresh, now);
+-        now += 1;
+-        counters.set_at(Phase::NativeFinish, now);
+-        now += 1;
+-        counters.mark(1);
+-        counters.set_at(Phase::NativePublication, now);
+-        counters.mark(2);
+-        counters
+-    }
+-
+-    fn finish_complete(counters: Counters) -> Option<Snapshot> {
+-        let now = counters.last_ns + 1;
+-        counters.finish_at(now)
+-    }
+-
+-    fn live_leaf(phase: Phase) {
+-        drop(enter(phase));
+-    }
+-
+-    fn complete_live(profile: Profile) -> Option<Snapshot> {
+-        set(Phase::SemanticPlan);
+-        for phase in [
+-            Phase::SemanticHeadValidate,
+-            Phase::SemanticContextAdmission,
+-            Phase::SemanticDocumentWire,
+-            Phase::SemanticPlannerSetup,
+-            Phase::SemanticPauseTarget,
+-            Phase::SemanticPauseProvider,
+-            Phase::SemanticDocumentWire,
+-        ] {
+-            live_leaf(phase);
+-        }
+-        let apply = enter(Phase::SemanticLeafApply);
+-        let insert = enter(Phase::LeafInsertKnown);
+-        live_leaf(Phase::LeafInputDurations);
+-        drop(insert);
+-        live_leaf(Phase::LeafNetConstruction);
+-        drop(apply);
+-        for phase in [
+-            Phase::SemanticDocumentWire,
+-            Phase::CapabilitySnapshot,
+-            Phase::SemanticChildrenRefresh,
+-            Phase::SemanticDocumentWire,
+-        ] {
+-            live_leaf(phase);
+-        }
+-        set(Phase::NativeContinuation);
+-        let store = enter(Phase::StoreEntryMisc);
+-        let prepare = enter(Phase::StorePrepare);
+-        live_leaf(Phase::StoreCompactSize);
+-        let replay = enter(Phase::ReplayMisc);
+-        for phase in [
+-            Phase::ReplayDocumentWire,
+-            Phase::ReplayDocumentWire,
+-            Phase::ReuseEligibilityEq,
+-            Phase::ReuseCloneExit,
+-            Phase::ReplayDocumentWire,
+-        ] {
+-            live_leaf(phase);
+-        }
+-        let visitor = enter(Phase::StoreVisitorAuthority);
+-        live_leaf(Phase::StoreCompactSize);
+-        drop(visitor);
+-        live_leaf(Phase::ReplayDocumentWire);
+-        live_leaf(Phase::ReplayNetAggregate);
+-        drop(replay);
+-        live_leaf(Phase::StoreCompactSize);
+-        live_leaf(Phase::HistoryCodecReadback);
+-        live_leaf(Phase::HistoryInverseRestore);
+-        drop(prepare);
+-        for phase in [
+-            Phase::HostRuntimeBank,
+-            Phase::StoreWrite,
+-            Phase::SqliteCommit,
+-            Phase::StoreCachePublication,
+-        ] {
+-            let span = enter(phase);
+-            drop(span);
+-        }
+-        drop(store);
+-        set(Phase::NativePostcommit);
+-        committed();
+-        set(Phase::WorkspaceRefresh);
+-        refreshed();
+-        set(Phase::NativeFinish);
+-        set(Phase::NativePublication);
+-        profile.published();
+-        profile.finish()
+-    }
+-
+-    #[test]
+-    fn pause_route_profile_nested_exclusive_durations_conserve_and_resume_without_counts() {
+-        let snapshot = finish_complete(complete_counters()).unwrap();
+-        assert_eq!(snapshot.counts, EXPECTED_COUNTS);
+-        for (phase, duration) in [
+-            (Phase::SemanticDocumentWire, 4),
+-            (Phase::ReplayDocumentWire, 4),
+-            (Phase::StoreCompactSize, 3),
+-            (Phase::StoreCheckpointWire, 0),
+-            (Phase::SemanticHeadValidate, 1),
+-            (Phase::SemanticContextAdmission, 1),
+-            (Phase::SemanticPlannerSetup, 1),
+-            (Phase::SemanticPauseTarget, 1),
+-            (Phase::SemanticPauseProvider, 1),
+-            (Phase::SemanticChildrenRefresh, 1),
+-            (Phase::LeafInsertKnown, 2),
+-            (Phase::LeafInputDurations, 1),
+-            (Phase::LeafNetConstruction, 1),
+-            (Phase::SemanticLeafApply, 3),
+-        ] {
+-            assert_eq!(snapshot.elapsed_ns[phase as usize], duration);
+-        }
+-        assert_eq!(
+-            snapshot.elapsed_ns.into_iter().sum::<u64>(),
+-            snapshot.total_ns
+-        );
+-    }
+-
+-    #[test]
+-    fn pause_route_profile_live_success_clears_before_returning_scalars() {
+-        let snapshot = complete_live(Profile::begin()).unwrap();
+-        assert_eq!(snapshot.counts, EXPECTED_COUNTS);
+-        assert_eq!(
+-            snapshot.elapsed_ns.into_iter().sum::<u64>(),
+-            snapshot.total_ns
+-        );
+-        assert!(access(|state, _| Some(state.origin.is_none())).unwrap());
+-    }
+-
+-    #[test]
+-    fn pause_route_profile_failure_and_cancel_leave_no_finished_block() {
+-        let failed = Profile::begin();
+-        set(Phase::SemanticPlan);
+-        assert!(failed.finish().is_none());
+-        let cancelled = Profile::begin();
+-        let stale_span = enter(Phase::StoreEntryMisc);
+-        drop(cancelled);
+-        let next = Profile::begin();
+-        drop(stale_span);
+-        assert!(complete_live(next).is_some());
+-    }
+-
+-    #[test]
+-    fn pause_route_profile_out_of_order_drop_and_reentrant_activation_discard() {
+-        let profile = Profile::begin();
+-        let parent = enter(Phase::StoreEntryMisc);
+-        let child = enter(Phase::StorePrepare);
+-        drop(parent);
+-        drop(child);
+-        assert!(profile.finish().is_none());
+-        let outer = Profile::begin();
+-        let inner = Profile::begin();
+-        assert!(inner.finish().is_none());
+-        assert!(outer.finish().is_none());
+-        assert!(complete_live(Profile::begin()).is_some());
+-    }
+-
+-    #[test]
+-    fn pause_route_profile_borrow_conflict_invalidates_without_panicking() {
+-        let profile = Profile::begin();
+-        LOCAL.with(|local| {
+-            let _held = local.state.borrow_mut();
+-            set(Phase::SemanticPlan);
+-        });
+-        assert!(profile.finish().is_none());
+-        assert!(complete_live(Profile::begin()).is_some());
+-        let finishing = Profile::begin();
+-        LOCAL.with(|local| {
+-            let _held = local.state.borrow_mut();
+-            assert!(finishing.finish().is_none());
+-        });
+-        assert!(complete_live(Profile::begin()).is_some());
+-        let cancelling = Profile::begin();
+-        LOCAL.with(|local| {
+-            let _held = local.state.borrow_mut();
+-            drop(cancelling);
+-        });
+-        assert!(complete_live(Profile::begin()).is_some());
+-    }
+-
+-    #[test]
+-    fn pause_route_profile_invalid_counters_markers_clock_and_stack_are_rejected() {
+-        let mut overflow = Counters::started();
+-        overflow.elapsed_ns[0] = u64::MAX;
+-        overflow.set_at(Phase::SemanticPlan, 1);
+-        assert!(overflow.invalid);
+-        let mut count = Counters::started();
+-        count.counts[Phase::SemanticPlan as usize] = u64::MAX;
+-        count.set_at(Phase::SemanticPlan, 0);
+-        assert!(count.invalid);
+-        let mut marker = complete_counters();
+-        marker.markers[0] = u64::MAX;
+-        marker.mark(0);
+-        assert!(finish_complete(marker).is_none());
+-        let mut backwards = Counters::started();
+-        backwards.set_at(Phase::SemanticPlan, 2);
+-        backwards.set_at(Phase::NativeContinuation, 1);
+-        assert!(backwards.invalid);
+-        let mut stack = Counters::started();
+-        for _ in 1..STACK_LIMIT {
+-            assert!(stack.enter_at(Phase::StorePrepare, 0).is_some());
+-        }
+-        assert!(stack.enter_at(Phase::StorePrepare, 0).is_none());
+-        assert!(stack.invalid);
+-    }
+-
+-    #[test]
+-    fn pause_route_profile_wrong_counts_missing_success_and_broken_conservation_discard() {
+-        let mut counts = complete_counters();
+-        counts.counts[Phase::StorePrepare as usize] = 2;
+-        assert!(finish_complete(counts).is_none());
+-        for phase in [
+-            Phase::SemanticDocumentWire,
+-            Phase::ReplayDocumentWire,
+-            Phase::StoreCompactSize,
+-            Phase::StoreCheckpointWire,
+-            Phase::SemanticHeadValidate,
+-            Phase::SemanticContextAdmission,
+-            Phase::SemanticPlannerSetup,
+-            Phase::SemanticPauseTarget,
+-            Phase::SemanticPauseProvider,
+-            Phase::SemanticChildrenRefresh,
+-            Phase::LeafInsertKnown,
+-            Phase::LeafInputDurations,
+-            Phase::LeafNetConstruction,
+-        ] {
+-            let mut counts = complete_counters();
+-            counts.counts[phase as usize] += 1;
+-            assert!(finish_complete(counts).is_none());
+-        }
+-        for marker in 0..3 {
+-            let mut missing = complete_counters();
+-            missing.markers[marker] = 0;
+-            assert!(finish_complete(missing).is_none());
+-        }
+-        let mut sum = complete_counters();
+-        sum.elapsed_ns[0] += 1;
+-        assert!(finish_complete(sum).is_none());
+-        let mut zero = complete_counters();
+-        zero.elapsed_ns[Phase::StoreCheckpointWire as usize] = 1;
+-        zero.elapsed_ns[Phase::NativeAdmission as usize] -= 1;
+-        assert!(finish_complete(zero).is_none());
+-    }
+-
+-    #[test]
+-    fn pause_route_profile_inactive_hooks_do_not_create_a_session() {
+-        set(Phase::SemanticPlan);
+-        drop(enter(Phase::StorePrepare));
+-        committed();
+-        refreshed();
+-        assert!(
+-            access(|state, _| Some(
+-                state.origin.is_none() && state.counters.counts == [0; PHASE_COUNT]
+-            ))
+-            .unwrap()
+-        );
+-    }
+-}
+--- a/crates/deadpan-core/src/semantic/planner.rs
++++ b/crates/deadpan-core/src/semantic/planner.rs
+@@ -661,28 +661,16 @@
+     ) -> Result<SemanticFramingState, EditError>,
+ ) -> Result<SemanticPlan, EditError> {
+     program.validate()?;
+-    let pause_head =
+-        crate::pause_route_profile::enter(crate::pause_route_profile::Phase::SemanticHeadValidate);
+     document.validate()?;
+-    drop(pause_head);
+     crate::command::check_revision(
+         document,
+         document.project_id(),
+         document.revision_id(),
+         &new_revision,
+     )?;
+-    let pause_context = crate::pause_route_profile::enter(
+-        crate::pause_route_profile::Phase::SemanticContextAdmission,
+-    );
+     let bounds = validate_context(document, context)?;
+-    drop(pause_context);
+     validate_original_context(document, context, original_index.as_deref())?;
+-    let pause_wire =
+-        crate::pause_route_profile::enter(crate::pause_route_profile::Phase::SemanticDocumentWire);
+     let document_bytes = wire::size(document, MAX_DOCUMENT_JSON_BYTES)?;
+-    drop(pause_wire);
+-    let pause_setup =
+-        crate::pause_route_profile::enter(crate::pause_route_profile::Phase::SemanticPlannerSetup);
+     let mut revisions: BTreeSet<_> = document
+         .audio_bindings()
+         .allocation_ids()
+@@ -737,7 +725,6 @@
+         speech: None,
+         original_index,
+     };
+-    drop(pause_setup);
+     planner.execute(program)?;
+     let selected_child = planner.context.selected_child.clone();
+     let request = if planner.steps.is_empty() {
+@@ -745,16 +732,12 @@
+     } else {
+         if planner.steps.iter().any(|step| step.edit().is_some()) {
+             planner.current.revision_id = new_revision.clone();
+-            let pause_wire = crate::pause_route_profile::enter(
+-                crate::pause_route_profile::Phase::SemanticDocumentWire,
+-            );
+             charge(
+                 &mut planner.document_bytes,
+                 wire::size(&planner.current, MAX_DOCUMENT_JSON_BYTES)?,
+                 MAX_COMPOUND_DOCUMENT_BYTES,
+                 "macro staged document byte limit",
+             )?;
+-            drop(pause_wire);
+         }
+         Some(CommandRequest {
+             project_id: document.project_id().clone(),
+--- a/crates/deadpan-core/src/semantic/planner/content.rs
++++ b/crates/deadpan-core/src/semantic/planner/content.rs
+@@ -625,9 +625,6 @@
+         if self.steps.len() == MAX_COMPOUND_STEPS {
+             return Err(limit("macro exceeds 1024 resolved editing steps"));
+         }
+-        let pause_wire = crate::pause_route_profile::enter(
+-            crate::pause_route_profile::Phase::SemanticDocumentWire,
+-        );
+         let size = wire::size(&self.current, MAX_DOCUMENT_JSON_BYTES)?;
+         charge(
+             &mut self.document_bytes,
+@@ -635,7 +632,6 @@
+             MAX_COMPOUND_DOCUMENT_BYTES,
+             "macro staged document byte limit",
+         )?;
+-        drop(pause_wire);
+         if capture {
+             charge(
+                 &mut self.captured_bytes,
+--- a/crates/deadpan-core/src/semantic/planner/pause.rs
++++ b/crates/deadpan-core/src/semantic/planner/pause.rs
+@@ -293,9 +293,6 @@
+         }
+         let at = self.context.cursor;
+         let scoped = self.context.scoped.clone();
+-        let pause_target = crate::pause_route_profile::enter(
+-            crate::pause_route_profile::Phase::SemanticPauseTarget,
+-        );
+         let target = if let Some(scoped) = &scoped {
+             super::framing::validate_scoped_context(&self.current, &self.context)?;
+             if request_ai {
+@@ -311,18 +308,13 @@
+         } else {
+             self.current.pause_insertion_target(at)?
+         };
+-        drop(pause_target);
+         if !self.within_scope(target.navigation_parent()) {
+             return Err(EditError::new(
+                 EditErrorCode::SelectionUnavailable,
+                 "this boundary belongs to an enclosing group; insert the pause from that group",
+             ));
+         }
+-        let pause_provider = crate::pause_route_profile::enter(
+-            crate::pause_route_profile::Phase::SemanticPauseProvider,
+-        );
+         let provider = provider(self)?;
+-        drop(pause_provider);
+         if scoped.is_some()
+             && (!matches!(
+                 provider.video,
+@@ -1081,9 +1073,6 @@
+             &edit.request(&self.current),
+             self.steps.is_empty() && self.inputs.is_empty() && self.writes.is_empty(),
+             |next| {
+-                let _pause_wire = crate::pause_route_profile::enter(
+-                    crate::pause_route_profile::Phase::SemanticDocumentWire,
+-                );
+                 charge(
+                     document_bytes,
+                     wire::size(next, MAX_DOCUMENT_JSON_BYTES)?,
+--- a/crates/deadpan-core/src/semantic/planner/selection.rs
++++ b/crates/deadpan-core/src/semantic/planner/selection.rs
+@@ -454,9 +454,6 @@
+     }
+ 
+     pub(super) fn refresh_children(&mut self) -> Result<(), EditError> {
+-        let _pause_refresh = crate::pause_route_profile::enter(
+-            crate::pause_route_profile::Phase::SemanticChildrenRefresh,
+-        );
+         if crate::command_work::local() && self.current.derived_clocks().is_empty() {
+             let current = &self.current;
+             let parent = &self.context.parent;
+--- a/crates/deadpan-store/src/compound.rs
++++ b/crates/deadpan-store/src/compound.rs
+@@ -3,7 +3,6 @@
+ 
+ use std::collections::BTreeSet;
+ 
+-use deadpan_core::pause_route_profile::{self, Phase as PausePhase};
+ use deadpan_core::{
+     Command, CommandRequest, EditTransaction, ProjectDocument, RegisterValue, ResolvedStep,
+     RevisionId,
+@@ -185,7 +184,6 @@
+         candidate: Option<&deadpan_core::OneLeafReplay>,
+         prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
+     ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
+-        let _pause_store = pause_route_profile::enter(PausePhase::StoreEntryMisc);
+         self.require_writer()?;
+         require_compound(request)?;
+         let documents = &self.documents;
+@@ -196,15 +194,11 @@
+         if let Some(guard) = guard {
+             crate::transcript_selection::check_guard(&transaction, documents, guard)?;
+         }
+-        let pause_prepare = pause_route_profile::enter(PausePhase::StorePrepare);
+         let plan =
+             crate::prepare_command_with_one_leaf(&transaction, documents, request, candidate)?;
+-        drop(pause_prepare);
+         let prepared = plan.compound.as_ref().expect("compound plan");
+-        let pause_runtime = pause_route_profile::enter(PausePhase::HostRuntimeBank);
+         let register_bank = prepared.registers.bank.clone();
+         let host = prepare(&register_bank).map_err(CompoundPreparationError::Preparation)?;
+-        drop(pause_runtime);
+         let committed = if prepared.steps.is_empty() {
+             if prepared.writes {
+                 crate::registers::write_prepared_bank(
+@@ -215,21 +209,15 @@
+             }
+             None
+         } else {
+-            let pause_write = pause_route_profile::enter(PausePhase::StoreWrite);
+-            let written = crate::write_command_plan(
++            Some(crate::write_command_plan(
+                 &transaction,
+                 documents,
+                 plan,
+                 relevance,
+                 self.context_resolver.as_deref(),
+-            )?;
+-            drop(pause_write);
+-            Some(written)
++            )?)
+         };
+-        let pause_commit = pause_route_profile::enter(PausePhase::SqliteCommit);
+         transaction.commit().map_err(StoreError::from)?;
+-        drop(pause_commit);
+-        let _pause_cache = pause_route_profile::enter(PausePhase::StoreCachePublication);
+         let committed = committed.map(|(outcome, next)| {
+             documents.insert(next);
+             outcome
+@@ -502,15 +490,12 @@
+     }
+     let mut steps: Vec<StepRecord> = Vec::new();
+     let mut checkpoint_bytes = 0_usize;
+-    let pause_size = pause_route_profile::enter(PausePhase::StoreCompactSize);
+     let mut processed_bytes = current.compact_json_size()?;
+-    drop(pause_size);
+     let mut original_pastes = OriginalPasteMappings::default();
+     let outcome = deadpan_core::replay_compound_with_one_leaf(
+         current,
+         request,
+         |visit| -> Result<(), StoreError> {
+-            let _pause_visitor = pause_route_profile::enter(PausePhase::StoreVisitorAuthority);
+             if matches!(
+                 visit.step,
+                 ResolvedStep::Yank { .. } | ResolvedStep::Cut { .. }
+@@ -582,18 +567,11 @@
+                 // Other stages need their exact byte charge, not an output buffer.
+                 let document = capture_states
+                     .contains(&leaf.new_revision)
+-                    .then(|| {
+-                        let _pause_checkpoint =
+-                            pause_route_profile::enter(PausePhase::StoreCheckpointWire);
+-                        visit.after.to_compact_json()
+-                    })
++                    .then(|| visit.after.to_compact_json())
+                     .transpose()?;
+                 let bytes = match &document {
+                     Some(json) => json.len(),
+-                    None => {
+-                        let _pause_size = pause_route_profile::enter(PausePhase::StoreCompactSize);
+-                        visit.after.compact_json_size()?
+-                    }
++                    None => visit.after.compact_json_size()?,
+                 };
+                 processed_bytes = processed_bytes
+                     .checked_add(bytes)
+@@ -617,9 +595,7 @@
+         },
+         candidate,
+     )?;
+-    let pause_size = pause_route_profile::enter(PausePhase::StoreCompactSize);
+     crate::check_document_size_bytes(outcome.document.compact_json_size()?)?;
+-    drop(pause_size);
+     Ok((outcome, steps))
+ }
+ 
+--- a/crates/deadpan-store/src/lib.rs
++++ b/crates/deadpan-store/src/lib.rs
+@@ -1449,9 +1449,6 @@
+     request: &CommandRequest,
+     compound: Option<compound::Prepared>,
+ ) -> Result<CommandPlan, StoreError> {
+-    let pause_codec = deadpan_core::pause_route_profile::enter(
+-        deadpan_core::pause_route_profile::Phase::HistoryCodecReadback,
+-    );
+     let request_json = serde_json::to_string(request)?;
+     check_document_size(&request_json)?;
+     // Typed native callers bypass JSON ingress. Admit their exact stored wire
+@@ -1473,16 +1470,11 @@
+             "edit changes meaning when decoded for history replay".into(),
+         ));
+     }
+-    drop(pause_codec);
+-    let pause_inverse = deadpan_core::pause_route_profile::enter(
+-        deadpan_core::pause_route_profile::Phase::HistoryInverseRestore,
+-    );
+     if !edit.inverse.restores(&next, &current)? {
+         return Err(StoreError::History(
+             "inverse does not restore the preceding revision".into(),
+         ));
+     }
+-    drop(pause_inverse);
+     // The adopted result must be exactly what history replay reconstructs
+     // from the stored patch, and its retained validation must equal complete
+     // validation. Debug builds (every test) check both on every commit.

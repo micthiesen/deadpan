@@ -1,0 +1,16 @@
+{
+  "status": "approved_for_uninstrumented_build",
+  "source_map_sha256": "2b0997f1ad22ce7dd869beba699909d22972efba434279cee350478dc63cb728",
+  "source_review_sha256": "388a77cfd4e8aa46955b2f1d14c15130ae472e4ce2132ce6148d708f5be0abff",
+  "checks": [
+    "Nine-stage driver retains complete unfiltered unit execution; expected729 cases including real size boundaries and exact reuse witnesses.",
+    "Four integration binaries35tests and12releaseStore cases enforced from actual names/summaries; App/strict/fmt retained.",
+    "Control970d/sourcef973 andcandidate2053map2b099 have exact2051nonownedpaths andsixinputs.",
+    "Drivers use fresh independent target and exclusive outputs; exact protocol/review/pins checked around every stage.",
+    "Timing is five alternating fresh pairs with10trials20commands70pause10Kestrel checks, exact20knownlayoutwarnings, equal fixture bytes, empty WAL, quiet load/process guards and no profiling output.",
+    "No memory lane or memory claim; no p95/latency-target pass inferred."
+  ],
+  "limitations": [
+    "This review does not claim uninstrumented build/runtime/test/timing success."
+  ]
+}
