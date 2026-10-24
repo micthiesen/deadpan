@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-24T10:15:05Z",
+  "updated_at": "2026-10-24T11:25:57Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Following creep on whole Sequence groups is verified and committed. Continuing following creep on entire Repeats from outside them and remaining target/proposal authoring; coverage remains 89%.",
+  "focus": "Whole Repeat following creep and live crop visibility are verified and committed. Continuing whole Retime following creep and remaining target/proposal authoring; coverage remains 89%.",
   "features": [
     {
       "id": "editing",
@@ -35,7 +35,7 @@
         "DP-08",
         "DP-11"
       ],
-      "note": "Whole Sequence groups keep one creep clock across child cuts while targets follow each child's Original time. Camera paths, tracking, Source/Hold following creep, captured-view target projection, the paged face picker and editable point targets work. Native replays, complete media exports and exact portable history are verified. Broader following-creep authoring, general non-face region proposals and other target controls remain."
+      "note": "Source, Hold, Sequence and whole Repeat owners keep live targets while creep scales their output clocks. Follow respects captured and live crops; hidden targets use fallback through later zoom-outs. Camera paths, tracking, the paged face picker and editable point targets work. Native replays, complete exports and exact portable history are verified. Retime/scoped following creep, general non-face region proposals and other target controls remain."
     },
     {
       "id": "audio",
@@ -1293,6 +1293,14 @@
       "revision": "0d20845ad8addfc16da416e2f6a36099f7cac39d",
       "retrospective": false,
       "summary": "Whole Sequence groups retain live Follow across child cuts while scale uses the group output clock. Independent review, 2,049 Core/Plan, 1,304 App and thirteen CLI framing tests, a 107-check native workflow and a verified 80-picture export with exact portable history pass."
+    },
+    {
+      "date": "2026-10-24",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "3a91621b38fcb8d06e5b92fa0f04d5f00aea86a2",
+      "retrospective": false,
+      "summary": "Whole Repeats keep live Follow across plays and gaps, and cropped-out targets use fallback. Independent review, 2,053 Core/Plan, 1,304 App and fourteen CLI tests, native replays, two complete 80-picture exports and exact portable history are verified. The clipped-export script’s late empty-WAL guard failure is retained and reconciled without rerunning the product."
     }
   ]
 }
