@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-24T09:27:38Z",
+  "updated_at": "2026-10-24T10:15:05Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Following creep on whole Holds and target projection through captured views are verified and committed. Continuing following creep on Sequence groups and remaining target/proposal authoring; coverage remains 89%.",
+  "focus": "Following creep on whole Sequence groups is verified and committed. Continuing following creep on entire Repeats from outside them and remaining target/proposal authoring; coverage remains 89%.",
   "features": [
     {
       "id": "editing",
@@ -35,7 +35,7 @@
         "DP-08",
         "DP-11"
       ],
-      "note": "Camera paths, tracking, following creep on whole Sources and Holds, the paged face picker and center-only point targets work. Targets resolve through captured views and use the fallback when clipped while scale animation continues. Camera labels and picker pages stay readable. Native replays and a complete 132-picture export with exact portable history are verified. General non-face region proposals, broader creep authoring and other target controls remain."
+      "note": "Whole Sequence groups keep one creep clock across child cuts while targets follow each child's Original time. Camera paths, tracking, Source/Hold following creep, captured-view target projection, the paged face picker and editable point targets work. Native replays, complete media exports and exact portable history are verified. Broader following-creep authoring, general non-face region proposals and other target controls remain."
     },
     {
       "id": "audio",
@@ -1285,6 +1285,14 @@
       "revision": "5db84eabafd3d9de5f497e0c8359aa65899262a8",
       "retrospective": false,
       "summary": "Whole Holds retain live Follow while scale animates. Targets project through captured views and fall back when clipped. Independent review, 2,047 Core/Plan and 1,304 App tests, final native replays and a verified 132-picture export with exact portable history pass."
+    },
+    {
+      "date": "2026-10-24",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "0d20845ad8addfc16da416e2f6a36099f7cac39d",
+      "retrospective": false,
+      "summary": "Whole Sequence groups retain live Follow across child cuts while scale uses the group output clock. Independent review, 2,049 Core/Plan, 1,304 App and thirteen CLI framing tests, a 107-check native workflow and a verified 80-picture export with exact portable history pass."
     }
   ]
 }
