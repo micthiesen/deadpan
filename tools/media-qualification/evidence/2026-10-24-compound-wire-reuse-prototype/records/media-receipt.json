@@ -1,0 +1,86 @@
+[
+  {
+    "stage": "hardware",
+    "command": [
+      "sysctl",
+      "-n",
+      "hw.model",
+      "hw.memsize",
+      "hw.physicalcpu",
+      "hw.logicalcpu",
+      "kern.hv_vmm_present"
+    ],
+    "cwd": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source",
+    "exit": 0,
+    "seconds": 0.007048250176012516
+  },
+  {
+    "stage": "archive",
+    "command": [
+      "cargo",
+      "nextest",
+      "archive",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "preview_export",
+      "--features",
+      "synthetic-worker",
+      "--archive-file",
+      "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-one-leaf.tar.zst",
+      "--zstd-level=-1"
+    ],
+    "cwd": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source",
+    "exit": 0,
+    "seconds": 185.2011811248958
+  },
+  {
+    "stage": "list",
+    "command": [
+      "cargo",
+      "nextest",
+      "list",
+      "--archive-file",
+      "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-one-leaf.tar.zst",
+      "--extract-to",
+      "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-one-leaf-extracted",
+      "--extract-overwrite",
+      "--workspace-remap",
+      "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source",
+      "-E",
+      "binary(=preview_export) & test(=group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached)",
+      "--message-format",
+      "json"
+    ],
+    "cwd": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source",
+    "exit": 0,
+    "seconds": 0.13357762526720762
+  },
+  {
+    "stage": "run",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--archive-file",
+      "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-one-leaf.tar.zst",
+      "--extract-to",
+      "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-one-leaf-extracted",
+      "--extract-overwrite",
+      "--workspace-remap",
+      "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source",
+      "-E",
+      "binary(=preview_export) & test(=group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached)",
+      "--run-ignored",
+      "all",
+      "--test-threads",
+      "1",
+      "--no-fail-fast"
+    ],
+    "cwd": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source",
+    "exit": 0,
+    "seconds": 6.680802250280976
+  }
+]

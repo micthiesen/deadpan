@@ -1,0 +1,17 @@
+{
+  "commit": "d6a6e23f47ac4ab7cf381547ebadc7e0a71cad3d",
+  "code_commit": "d6a6e23f47ac4ab7cf381547ebadc7e0a71cad3d",
+  "source_files": 2053,
+  "private_profile_files": 2054,
+  "input_files": 6,
+  "control": {
+    "path": "/tmp/deadpan-single-leaf-net-production-2026-10-24/bin/deadpan-app",
+    "sha256": "970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2"
+  },
+  "matched_profile": {
+    "path": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/bin/deadpan-app",
+    "sha256": "1a12c2e9f866de1cef3ec64ea3997b26a1baafa194a95e3eef9b4587607d288a"
+  },
+  "parent_source_map_sha256": "0bf07513646ffdfee5aec03bb1b64b6fff757196512aeea883226c675b15ed02",
+  "qualified_helper_manifest_sha256": "763e335a151e42fd15d537514fd90dcf2a9ef06a7d8293926185cbc3b12e5949"
+}

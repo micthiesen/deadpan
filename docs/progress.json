@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-24T01:45:47.337Z",
+  "updated_at": "2026-10-24T02:45:21.259Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Pause edit reuse is implemented and verified. Five uninstrumented pairs saved about 5.36 ms to commit. Separate memory observations are recorded; the 100 ms/50 ms targets remain open.",
+  "focus": "Private count reuse passed correctness and media checks. Six matched pairs saved a median 6.03 ms to commit, with one slower pair retained. Uninstrumented verification is running; Main runtime and the 100 ms/50 ms targets are unchanged.",
   "features": [
     {
       "id": "editing",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "The narrow net-edit reuse change is promoted after 726 Core unit tests, 35 integration tests, 12 Store tests, strict/format and real-media/history/PCM verification. Both 45-picture, 72,072-sample exports verify at zero offset. Five fresh uninstrumented pairs save a paired median 5.355917 ms to commit and 5.468292 ms to offscreen composition. Six separate memory runs show physical-footprint medians of 667.423/665.939 MiB and resident medians of 653.922/672.938 MiB; these are whole-app sampled maxima, not retained cost, savings or ceilings. No p95 or 100 ms/50 ms target pass is claimed."
+      "note": "Main retains the qualified net-edit reuse change. A separate private compound count-reuse trial passes 737 Core unit tests, 35 integration tests, 12 Store tests, strict/format and real-media history/PCM checks; both 45-picture, 72,072-sample exports verify at zero offset. Eighteen native trials pass 126 pause and 18 Kestrel checks. Six matched pairs have median commit/composition reductions of 6.030062/6.203416 ms; one slower pair remains included. Replay-wire phase medians are 13.2755215/6.7645835 ms. Uninstrumented qualification remains required before promotion; no p95, latency-target or memory claim is made."
     },
     {
       "id": "models",
@@ -1237,6 +1237,14 @@
       "revision": "076f45cf33e73727700dea3aed95a169821ad7b6",
       "retrospective": false,
       "summary": "The uninstrumented single-leaf net-edit reuse change is promoted to Main. Its 2,053 Rust files and six pinned inputs exactly match the qualified snapshot f973b941. All 726 Core unit tests, 35 integration tests, 12 Store tests, release App, strict and format checks pass. One actual cached/uncached media-history/PCM case verifies two independent 45-picture, 72,072-sample exports at zero offset. Five fresh native timing pairs pass 70 pause and 10 Kestrel checks; median paired reductions are 5.355917 ms to commit and 5.468292 ms to offscreen composition. Six separate owned-app memory trials have median sampled physical-footprint maxima of 667.423/665.939 MiB and resident maxima of 653.922/672.938 MiB, without a per-leaf cost, saving or ceiling claim. The first copier and independent reread verify the 341-payload production package, 16 safe native-fixture archives and both actual movies. Public APIs and Core 58/SQLite 87 are unchanged. Coverage remains 89%, eight Complete/sixteen Partial; no gate, p95 or latency target closes."
+    },
+    {
+      "date": "2026-10-24",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "d6a6e23f47ac4ab7cf381547ebadc7e0a71cad3d",
+      "retrospective": false,
+      "summary": "A private compound wire-count reuse trial retains exact initial and post-leaf counts for one eligible InsertTime replay. Checked serialized-header adjustment replaces only successful final recounting; actual initial/post counts, every charge and original full-serializer refusal remain. All 737 Core unit tests, 35 integrations, 12 release Store tests, App, strict/format and one actual history/PCM media case pass, including both 45-picture, 72,072-sample zero-offset exports. Eighteen native trials pass 126 pause and 18 Kestrel checks with 36 retained layout warnings and exact 35-phase conservation. Six matched pairs have median commit/composition reductions of 6.030062/6.203416 ms; rotation three is slower by 3.646876/3.810250 ms and remains included. Independent raw-result review agrees. The first copier and independent verifier confirm all 359 retained primary payloads, 18 safe authored-fixture archives and both emitted movies. The prototype source has 2,054 Rust files; Main runtime is unchanged and separate uninstrumented qualification remains owed. No gate, p95, 100 ms/50 ms target or memory claim closes; coverage remains 89%, eight Complete/sixteen Partial."
     }
   ]
 }

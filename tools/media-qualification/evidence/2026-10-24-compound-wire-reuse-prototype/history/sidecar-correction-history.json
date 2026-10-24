@@ -1,0 +1,10 @@
+{
+  "schema": "deadpan-compound-wire-reuse-packager-correction-1",
+  "initial_package_script_sha256": "7edf9fd0b74114cdad1254a47f06b165669722e5d73b83c2f7b0e722ac2febdc",
+  "initial_script_snapshot": "package-initial-draft-reconstructed.py.txt",
+  "initial_script_snapshot_sha256": "7edf9fd0b74114cdad1254a47f06b165669722e5d73b83c2f7b0e722ac2febdc",
+  "reconstruction_check": "The reversible sidecar edit was applied backward to the corrected script; its SHA-256 exactly matches the recorded initial draft hash.",
+  "finding": "The original collector allowed only project.sqlite-wal and would reject the observed project.sqlite-shm created during setup.",
+  "correction": "Pin project.sqlite-shm at 32768 bytes and SHA-256 fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb, and project.sqlite-wal at zero bytes and SHA-256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855. Compare authored files after excluding both known runtime sidecars; retain sidecar rows in before/after maps and omit them from archive members.",
+  "corrected_script_snapshot": "package-after-sidecar-fix.py.txt"
+}

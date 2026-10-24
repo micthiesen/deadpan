@@ -1,0 +1,4 @@
+{
+  "earlier_preparation": "Source copy completed and verified; metadata assertion failed when a Path-only hash helper received an executable path string. Corrected helper to wrap Path and verified existing copy before writing metadata.",
+  "runtime_or_build_executed": false
+}

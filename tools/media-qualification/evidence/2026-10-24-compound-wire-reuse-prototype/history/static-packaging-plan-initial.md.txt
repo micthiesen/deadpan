@@ -1,0 +1,22 @@
+# Compound wire reuse prototype evidence package plan
+
+This is a review plan for a later, explicitly approved copy. It does not create the evidence destination or an approved payload manifest.
+
+## Evidence boundary
+
+- Preserve the immutable build, measurement and media terminal receipts; their raw command logs; the full 2054-entry candidate map; the matched profile and qualified Main maps; the six build inputs; source and harness reviews; and the final analysis produced from all 18 timing reports and profiles.
+- Preserve source diffs and before/after Rust snapshots only as `.rs.txt`. The candidate source map is 2054 files (`59ab40…`); its matched profile is V2's 2054-file map (`0bf075…`). The qualified production Main map is 2053 files (`f973b9…`). Derive each actual path difference from these maps; do not assume a Main state after promotion.
+- Preserve all 18 timing fixture snapshots through explicit root-relative archives, their before/after maps, and the verified empty SQLite WAL exclusion. Keep any SHM file and every other regular authored file. Refuse symlinks and special files.
+- Preserve the complete retained real-media evidence tree, including both cached and uncached movie exports, their package contents, canonical PCM/history/verification evidence, the media inventory, and all four media command outputs and receipts.
+- Preserve binary and executable manifests and their hashes, but never copy app/helper/test executables, Cargo targets, or complete source trees. The qualified helper manifest is pinned at `763e335a…`; control is `970df9…`, matched profile `1a12c2…`, and the candidate app identity comes from its completed build terminal.
+- Compress only explicitly approved text/log/report payloads when listed with `encoding: gzip`; store exact source byte count and SHA-256 and verify decompressed bytes before and after staging. Do not copy an executable, build archive, or target directory through a broad recursive scan.
+
+## Later approved manifest
+
+Root should create `approved-package-manifest.json` only after all three terminal receipts are complete and `analysis.json` exists. It should enumerate every payload path, destination, category, original byte count and SHA-256, plus every fixture root, before/after map reference, archive destination and allowed sidecar. It must include the final source review and harness reviews, preparation history, raw media parity evidence, analysis output and all 18 native reports/profiles/logs. No memory lane is part of this experiment.
+
+The later collector requires a separate no-findings packager review and `PACKAGING-GO.json` binding the exact script, manifest, review and build/media/measurement terminal hashes. The collector will validate the approved manifest, all inputs, fixture maps, source and binary identities before staging. It rechecks them immediately before publication, writes a complete list-of-`{path, bytes, sha256}` inventory, rereads and verifies staged content, then uses Darwin `renameatx_np(..., RENAME_EXCL)` to publish only when the destination does not exist.
+
+## Claims
+
+This is a private diagnostic prototype record, not a production qualification. The final summary must report the six within-rotation baseline/candidate pairs, keep control separate, derive warnings from the actual reports, and state that no p95, target-pass, memory, or production-gain claim is made. Build, real-media, and profile evidence must retain their exact tested source and executable identities.

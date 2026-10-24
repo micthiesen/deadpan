@@ -1,0 +1,108 @@
+{
+  "status": "no_findings",
+  "findings": [],
+  "script_sha256": "3d313cb6cc85a4447332b520cfec20c8d5ac3e03cd5a7a1c07fea2d2836f1702",
+  "manifest_sha256": "0a7d5e90c4827da77c20f2d275b060e45ed84d8eb25c14d0d91f4a0af6bf3820",
+  "scope": "Independent static publisher/collector review and offline rehash of exact approved files and fixture/media trees. No publisher/generator function import or execution, GO creation, compression/archive production, app/build/test runtime, Main or Git action.",
+  "source_map_sha256": "59ab40b15f9a705953320d45a9ffcef87a85f876a15455c4fb4180ce12ebdff9",
+  "source_review_sha256": "dbbc5efe7cf81b41bba3bca181991db809dd3afe1358793be0163f2bb78db86d",
+  "analysis_review_sha256": "c712e35e8f45a22a7cc3397310894480444fade6f3da20dc9311472bf63971c1",
+  "reviewed_inputs": {
+    "packaging-draft/package.py": "3d313cb6cc85a4447332b520cfec20c8d5ac3e03cd5a7a1c07fea2d2836f1702",
+    "approved-package-manifest.json": "0a7d5e90c4827da77c20f2d275b060e45ed84d8eb25c14d0d91f4a0af6bf3820",
+    "packaging-draft/make_approved_manifest.py": "b7091a3ecdb2a066ad4c5ff74ec8d99a25d5f76d264936c6ef872c3001920d13",
+    "packaging-draft/static-packaging-plan.md": "7fea9037dab0e280316c4ea10cbf7c8f252d76bfb9ebcb157f3de40c946163f2",
+    "packaging-draft/sidecar-correction-history.json": "fa566fc7d504d9b580722baa37eb4ce52d512d1a1dcd7d4bbc5cc52777dc81ab",
+    "packaging-draft/input-payload-correction-history.json": "940c6147475e6fd367a1f84090af712807e56dd96490790e5465d3756816ff70",
+    "packaging-draft/plan-pin-correction-history.json": "b43022688d4e1f8cab2cc9c1af63d2541cc2453d93ac4aa8803f8af8db99fe49",
+    "analysis-review.json": "c712e35e8f45a22a7cc3397310894480444fade6f3da20dc9311472bf63971c1",
+    "source-review.json": "dbbc5efe7cf81b41bba3bca181991db809dd3afe1358793be0163f2bb78db86d"
+  },
+  "verified": {
+    "approved_payloads": 335,
+    "approved_raw_bytes": 66678738,
+    "gzip_payloads": 46,
+    "plain_rs_txt_snapshots": 29,
+    "fixture_plans": 18,
+    "fixture_authored_members": 54,
+    "fixture_authored_bytes": 80807004,
+    "fixture_sidecars": {
+      "project.sqlite-shm": {
+        "bytes": 32768,
+        "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+      },
+      "project.sqlite-wal": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "all_payload_bytes_and_destinations_rechecked": true,
+    "all_live_fixture_maps_and_pathsets_rechecked": true,
+    "explicit_media_files": 35,
+    "verified_export_movies": [
+      {
+        "leg": "cached",
+        "sha256": "6b3db7c0ae2af76e410a2917ac2c92e01e250e51bcef1426f638b80662d57d9b"
+      },
+      {
+        "leg": "uncached",
+        "sha256": "fb36aa0694280a09bd27aa5c079c949fb96d0a104eeb15617f5a389f56cbe950"
+      }
+    ],
+    "six_input_payloads_present": true,
+    "source_changes_vs_matched": 2,
+    "overlay_vs_qualified": 14,
+    "existing_overlay_changes": 13,
+    "added_overlay_paths": 1,
+    "all_source_maps_and_live_source_bytes_rehashed": true,
+    "exact_raw_build_media_measurement_terminal_pins": true,
+    "no_binary_build_archive_target_or_complete_source_tree_payloads": true,
+    "retained_packaging_history_payloads": 9
+  },
+  "code_review": [
+    "Manifest and no-findings review bind exact script and manifest. GO requires all listed identities before staging. The final plan is now additionally hash-bound through the approved manifest and checked against actual envelope bytes before staging. Approval files are retained separately to avoid a self-hash cycle.",
+    "Every approved payload has exact bytes/hash and safe unique destination, with no canonical aliases or file/directory-prefix collisions in this manifest. Actual source snapshots are individually approved .rs files stored as plain .rs.txt, not a recursive source archive.",
+    "FORBIDDEN_SOURCE_PARTS would reject a future legitimate source directory named target, but none of the actual 29 approved source paths contains that component. It causes no refusal in this frozen manifest. Do not infer source directories named target are build trees when changing future manifests.",
+    "Fixtures require exactly the observed pinned SHM32768 and WAL0 in both after-map and live tree. Authored before/after/live equality excludes only those two root sidecars. The generated archive contains exactly three authored relative regular files per fixture and records both omitted sidecars.",
+    "Static archive path/member checks, readback equality, per-fixture/payload/package bounds, canonical gzip and explicit payload ledger are sound for this fixed manifest. No extraction of untrusted links/special members occurs.",
+    "Publication stages in a private sibling directory, checks source/fixture/envelope inputs again, inventories regular staged files and verifies inventory readback, then uses Darwin renameatx_np with AT_FDCWD=-2 and RENAME_EXCL=0x4. It will not overwrite an existing destination.",
+    "All build/media/measurement semantics were independently audited in the pinned analysis review; this publisher retains those raw receipts/reports and exact current identities. It makes no additional performance, percentile, memory or production qualification claim."
+  ],
+  "addressed_pre_execution_findings": [
+    {
+      "issue": "Initial sidecar draft would reject observed project.sqlite-shm.",
+      "resolution": "Pinned SHM and empty WAL, authored comparisons and omitted-sidecar archive records.",
+      "history_sha256": "fa566fc7d504d9b580722baa37eb4ce52d512d1a1dcd7d4bbc5cc52777dc81ab"
+    },
+    {
+      "issue": "324-payload manifest omitted all six inputs required by validate_inputs.",
+      "resolution": "Six exact inputs retained, prior incorrect manifest and correction history retained.",
+      "history_sha256": "940c6147475e6fd367a1f84090af712807e56dd96490790e5465d3756816ff70"
+    },
+    {
+      "issue": "Final static plan envelope attachment lacked an approval hash.",
+      "resolution": "Manifest static_packaging_plan_sha256 is checked against envelope bytes before staging; prior script/manifest and correction history retained.",
+      "history_sha256": "b43022688d4e1f8cab2cc9c1af63d2541cc2453d93ac4aa8803f8af8db99fe49"
+    }
+  ],
+  "go_contract": {
+    "status": "approved_for_packaging",
+    "required_pins": {
+      "package_script_sha256": "3d313cb6cc85a4447332b520cfec20c8d5ac3e03cd5a7a1c07fea2d2836f1702",
+      "manifest_sha256": "0a7d5e90c4827da77c20f2d275b060e45ed84d8eb25c14d0d91f4a0af6bf3820",
+      "packager_review_sha256": "SHA-256 of this final review file",
+      "build_terminal_sha256": "55969676f55637ebc0cbb678207705098f84b66c647f4d37c52be6bc8e67054f",
+      "measurement_terminal_sha256": "2e713143427e45e6eb03d486fe92c445a21d4ea5c24aa3c18fe1ff243944a28a",
+      "media_terminal_sha256": "a62179dfd3f81d6f5af1897cb9763ac94cd2e2078a2735b54c13150af709936c",
+      "candidate_source_map_sha256": "59ab40b15f9a705953320d45a9ffcef87a85f876a15455c4fb4180ce12ebdff9",
+      "binary_manifest_sha256": "e6281e51ffc137cff47fe2f8fb6fe8489689cbb723eb724d18844d11170a230d",
+      "analysis_sha256": "5022f95b0dc73072995621dd8010b2f753b45ddf5e0abb6f942a53fab814fed0",
+      "analysis_review_sha256": "c712e35e8f45a22a7cc3397310894480444fade6f3da20dc9311472bf63971c1"
+    }
+  },
+  "limitations": [
+    "No package destination has been created or tested by this reviewer. Final compressed bytes, TAR files, inventory and publication outcomes require Root execution and independent output verification.",
+    "Review covers these exact script and manifest bytes. It is not a certification of arbitrary future manifests or filesystem adversaries.",
+    "The negative rotation3 pair and all six paired values remain in the pinned analysis and raw reports. No memory lane exists."
+  ]
+}

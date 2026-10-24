@@ -1,0 +1,12 @@
+{
+  "qualified_main_commit": "d6a6e23f47ac4ab7cf381547ebadc7e0a71cad3d",
+  "qualified_main_source_map_sha256": "f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53",
+  "matched_source": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/source",
+  "matched_source_map_sha256": "0bf07513646ffdfee5aec03bb1b64b6fff757196512aeea883226c675b15ed02",
+  "matched_app": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/bin/deadpan-app",
+  "matched_app_sha256": "1a12c2e9f866de1cef3ec64ea3997b26a1baafa194a95e3eef9b4587607d288a",
+  "qualified_control": "/tmp/deadpan-single-leaf-net-production-2026-10-24/bin/deadpan-app",
+  "qualified_control_sha256": "970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2",
+  "hooks": "existing35phaseV3 only; keep logical guard scopes/counts unchanged",
+  "design_sha256": "b3c32fab907efc0f547fb9fc81b53dc775313e08a70330d3c3463d7f66400841"
+}

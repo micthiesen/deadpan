@@ -1,0 +1,4 @@
+{
+  "change": "Root strengthened debug wire oracles from fallible RHS ? to whole Result equality. Unexpected reference errors must panic as proof failures, not restore a release-only false acceptance in debug tests. No release behavior changes from this amendment.",
+  "source_map_sha256": "59ab40b15f9a705953320d45a9ffcef87a85f876a15455c4fb4180ce12ebdff9"
+}

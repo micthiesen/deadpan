@@ -1,0 +1,37 @@
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 BEGIN count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=native_admission elapsed_ns=5685709 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=semantic_plan elapsed_ns=211460 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=native_continuation elapsed_ns=7235333 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=store_entry_misc elapsed_ns=19666 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=store_prepare elapsed_ns=3530583 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=host_runtime_bank elapsed_ns=3375 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=store_write elapsed_ns=7342125 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=sqlite_commit elapsed_ns=6304709 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=store_cache_publication elapsed_ns=1167 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=native_postcommit elapsed_ns=311417 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=workspace_refresh elapsed_ns=4201416 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=native_finish elapsed_ns=1256625 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=native_publication elapsed_ns=3977125 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=semantic_document_wire elapsed_ns=13525373 count=4
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=semantic_leaf_apply elapsed_ns=3345958 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=capability_snapshot elapsed_ns=4791 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=replay_document_wire elapsed_ns=7004917 count=4
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=reuse_eligibility_eq elapsed_ns=189000 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=reuse_clone_exit elapsed_ns=1083 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=replay_net_aggregate elapsed_ns=1654750 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=replay_misc elapsed_ns=774749 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=store_compact_size elapsed_ns=11683375 count=3
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=store_checkpoint_wire elapsed_ns=0 count=0
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=store_visitor_authority elapsed_ns=215001 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=history_codec_readback elapsed_ns=22220333 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=history_inverse_restore elapsed_ns=1935167 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=semantic_head_validate elapsed_ns=1457917 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=semantic_context_admission elapsed_ns=7702209 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=semantic_planner_setup elapsed_ns=2099042 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=semantic_pause_target elapsed_ns=4147834 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=semantic_pause_provider elapsed_ns=9708500 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=semantic_children_refresh elapsed_ns=8754958 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=leaf_insert_known elapsed_ns=28268542 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=leaf_input_durations elapsed_ns=1272833 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=leaf_net_construction elapsed_ns=7481208 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V3 END count=1 elapsed_ns=173528250 committed=1 refreshed=1 published=1

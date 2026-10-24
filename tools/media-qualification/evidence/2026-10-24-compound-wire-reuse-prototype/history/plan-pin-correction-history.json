@@ -1,0 +1,8 @@
+{
+  "correction": "Record static_packaging_plan_sha256 in the approved manifest and compare it to the exact envelope bytes in validate_inputs before staging.",
+  "execution": "Pre-execution review correction; package.py remains unexecuted.",
+  "finding": "The static packaging plan was copied in the approval envelope but was not hash-bound by the manifest or GO, so a plan edit would not invalidate the review.",
+  "prior_manifest_sha256": "238425b059ea66761d68a0d7217e085a61565c2d45a2dfe934fa8b44da1e395c",
+  "prior_package_script_sha256": "0b544784bab9651be9301a8c600523bbb86d055ffc16ae592bf051e1eb27c1fd",
+  "schema": "deadpan-compound-wire-reuse-manifest-correction-2"
+}

@@ -1,0 +1,13 @@
+{
+  "status": "approved_for_packaging",
+  "package_script_sha256": "3d313cb6cc85a4447332b520cfec20c8d5ac3e03cd5a7a1c07fea2d2836f1702",
+  "manifest_sha256": "0a7d5e90c4827da77c20f2d275b060e45ed84d8eb25c14d0d91f4a0af6bf3820",
+  "packager_review_sha256": "b676c7cad1b7055161ffe53aafff92ed25822329301d5a9226cbbe4559a90462",
+  "build_terminal_sha256": "55969676f55637ebc0cbb678207705098f84b66c647f4d37c52be6bc8e67054f",
+  "measurement_terminal_sha256": "2e713143427e45e6eb03d486fe92c445a21d4ea5c24aa3c18fe1ff243944a28a",
+  "media_terminal_sha256": "a62179dfd3f81d6f5af1897cb9763ac94cd2e2078a2735b54c13150af709936c",
+  "candidate_source_map_sha256": "59ab40b15f9a705953320d45a9ffcef87a85f876a15455c4fb4180ce12ebdff9",
+  "binary_manifest_sha256": "e6281e51ffc137cff47fe2f8fb6fe8489689cbb723eb724d18844d11170a230d",
+  "analysis_sha256": "5022f95b0dc73072995621dd8010b2f753b45ddf5e0abb6f942a53fab814fed0",
+  "analysis_review_sha256": "c712e35e8f45a22a7cc3397310894480444fade6f3da20dc9311472bf63971c1"
+}

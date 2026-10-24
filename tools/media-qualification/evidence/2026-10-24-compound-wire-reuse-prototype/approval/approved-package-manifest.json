@@ -1,0 +1,3343 @@
+{
+  "analysis_review_sha256": "c712e35e8f45a22a7cc3397310894480444fade6f3da20dc9311472bf63971c1",
+  "analysis_sha256": "5022f95b0dc73072995621dd8010b2f753b45ddf5e0abb6f942a53fab814fed0",
+  "binary_manifest_sha256": "e6281e51ffc137cff47fe2f8fb6fe8489689cbb723eb724d18844d11170a230d",
+  "candidate_app_sha256": "ea9ff53ba7928aac7d2da11fabb7daad3c7b71ba39338f69227a9828878348e0",
+  "candidate_source_map_sha256": "59ab40b15f9a705953320d45a9ffcef87a85f876a15455c4fb4180ce12ebdff9",
+  "control_app_sha256": "970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2",
+  "fixtures": [
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "records/rotation-1-control-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-control-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "archive_destination": "fixtures/rotation-1-control.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "records/rotation-1-control-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-control-input-before.json"
+      },
+      "name": "rotation-1-control",
+      "root": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-control.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "records/rotation-1-baseline-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-baseline-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "archive_destination": "fixtures/rotation-1-baseline.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "records/rotation-1-baseline-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-baseline-input-before.json"
+      },
+      "name": "rotation-1-baseline",
+      "root": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-baseline.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "records/rotation-1-candidate-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-candidate-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "archive_destination": "fixtures/rotation-1-candidate.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "records/rotation-1-candidate-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-candidate-input-before.json"
+      },
+      "name": "rotation-1-candidate",
+      "root": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-candidate.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "records/rotation-2-control-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-control-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "archive_destination": "fixtures/rotation-2-control.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "records/rotation-2-control-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-control-input-before.json"
+      },
+      "name": "rotation-2-control",
+      "root": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-control.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "records/rotation-2-baseline-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-baseline-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "archive_destination": "fixtures/rotation-2-baseline.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "records/rotation-2-baseline-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-baseline-input-before.json"
+      },
+      "name": "rotation-2-baseline",
+      "root": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-baseline.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "records/rotation-2-candidate-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-candidate-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "archive_destination": "fixtures/rotation-2-candidate.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "records/rotation-2-candidate-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-candidate-input-before.json"
+      },
+      "name": "rotation-2-candidate",
+      "root": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-candidate.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "records/rotation-3-control-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-control-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "archive_destination": "fixtures/rotation-3-control.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "records/rotation-3-control-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-control-input-before.json"
+      },
+      "name": "rotation-3-control",
+      "root": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-control.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "records/rotation-3-baseline-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-baseline-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "archive_destination": "fixtures/rotation-3-baseline.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "records/rotation-3-baseline-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-baseline-input-before.json"
+      },
+      "name": "rotation-3-baseline",
+      "root": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-baseline.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "records/rotation-3-candidate-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-candidate-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "archive_destination": "fixtures/rotation-3-candidate.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "records/rotation-3-candidate-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-candidate-input-before.json"
+      },
+      "name": "rotation-3-candidate",
+      "root": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-candidate.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "records/rotation-4-control-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-control-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "archive_destination": "fixtures/rotation-4-control.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "records/rotation-4-control-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-control-input-before.json"
+      },
+      "name": "rotation-4-control",
+      "root": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-control.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "records/rotation-4-baseline-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-baseline-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "archive_destination": "fixtures/rotation-4-baseline.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "records/rotation-4-baseline-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-baseline-input-before.json"
+      },
+      "name": "rotation-4-baseline",
+      "root": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-baseline.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "records/rotation-4-candidate-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-candidate-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "archive_destination": "fixtures/rotation-4-candidate.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "records/rotation-4-candidate-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-candidate-input-before.json"
+      },
+      "name": "rotation-4-candidate",
+      "root": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-candidate.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "records/rotation-5-control-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-control-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "archive_destination": "fixtures/rotation-5-control.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "records/rotation-5-control-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-control-input-before.json"
+      },
+      "name": "rotation-5-control",
+      "root": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-control.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "records/rotation-5-baseline-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-baseline-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "archive_destination": "fixtures/rotation-5-baseline.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "records/rotation-5-baseline-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-baseline-input-before.json"
+      },
+      "name": "rotation-5-baseline",
+      "root": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-baseline.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "records/rotation-5-candidate-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-candidate-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "archive_destination": "fixtures/rotation-5-candidate.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "records/rotation-5-candidate-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-candidate-input-before.json"
+      },
+      "name": "rotation-5-candidate",
+      "root": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-candidate.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "records/rotation-6-control-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-control-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "archive_destination": "fixtures/rotation-6-control.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "records/rotation-6-control-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-control-input-before.json"
+      },
+      "name": "rotation-6-control",
+      "root": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-control.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "records/rotation-6-baseline-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-baseline-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "archive_destination": "fixtures/rotation-6-baseline.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "records/rotation-6-baseline-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-baseline-input-before.json"
+      },
+      "name": "rotation-6-baseline",
+      "root": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-baseline.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "records/rotation-6-candidate-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-candidate-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "archive_destination": "fixtures/rotation-6-candidate.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "records/rotation-6-candidate-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-candidate-input-before.json"
+      },
+      "name": "rotation-6-candidate",
+      "root": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-candidate.deadpan"
+    }
+  ],
+  "generation_notes": {
+    "media_tree_files": 35,
+    "memory_lane": false,
+    "native_fixture_sidecars": {
+      "project.sqlite-shm": {
+        "bytes": 32768,
+        "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+      },
+      "project.sqlite-wal": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "native_sidecars_omitted_from_archives": [
+      "project.sqlite-shm",
+      "project.sqlite-wal"
+    ],
+    "source_snapshot_differences_vs_matched_profile": 2,
+    "source_snapshot_differences_vs_qualified_main": 14
+  },
+  "helper_manifest_sha256": "763e335a151e42fd15d537514fd90dcf2a9ef06a7d8293926185cbc3b12e5949",
+  "helper_sha256": {
+    "deadpan-media-worker": "70114641de62f0c9c839734f3dddab1221b01888661a43ed5583e40ca9ed90fe",
+    "deadpan-track": "97564bc5d9aee093aa7e3fa5e8a89aa5da68134f92f34032a407f27778c1eab4",
+    "deadpan-transcribe": "a75e83e94c073fa7419fea1ffc4621ab56adba020d402435c65622dababbe8b3"
+  },
+  "input_map_sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317",
+  "matched_profile_app_sha256": "1a12c2e9f866de1cef3ec64ea3997b26a1baafa194a95e3eef9b4587607d288a",
+  "matched_profile_source_map_sha256": "0bf07513646ffdfee5aec03bb1b64b6fff757196512aeea883226c675b15ed02",
+  "media_exports": [
+    {
+      "leg": "cached",
+      "sha256": "6b3db7c0ae2af76e410a2917ac2c92e01e250e51bcef1426f638b80662d57d9b"
+    },
+    {
+      "leg": "uncached",
+      "sha256": "fb36aa0694280a09bd27aa5c079c949fb96d0a104eeb15617f5a389f56cbe950"
+    }
+  ],
+  "media_inventory_sha256": "f2977666808bd0ddc8719abe5d6f1462b9b78e41d3d14b5429aa3ea04cd614c4",
+  "payloads": [
+    {
+      "bytes": 669,
+      "category": "record",
+      "destination": "records/analysis-pins.json",
+      "encoding": "identity",
+      "sha256": "16df753b1bab3fd23d415d9343ee99bccb443d386f16219ed44fdc9f75f4dd3a",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/analysis-pins.json"
+    },
+    {
+      "bytes": 1122,
+      "category": "record",
+      "destination": "records/analysis-preparation-history.json",
+      "encoding": "identity",
+      "sha256": "efe509b35f5b0de75ad39d3826749332b74b224fc31b2e8e40c7632421ad60ee",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/analysis-preparation-history.json"
+    },
+    {
+      "bytes": 9557,
+      "category": "record",
+      "destination": "records/analysis-review.json",
+      "encoding": "identity",
+      "sha256": "c712e35e8f45a22a7cc3397310894480444fade6f3da20dc9311472bf63971c1",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/analysis-review.json"
+    },
+    {
+      "bytes": 104616,
+      "category": "record",
+      "destination": "records/analysis.json.gz",
+      "encoding": "gzip",
+      "sha256": "5022f95b0dc73072995621dd8010b2f753b45ddf5e0abb6f942a53fab814fed0",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/analysis.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/analysis.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/analysis.stderr"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/analysis.stdout",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/analysis.stdout"
+    },
+    {
+      "bytes": 23201,
+      "category": "record",
+      "destination": "records/analyze-before-root-review.py.txt",
+      "encoding": "identity",
+      "sha256": "6d334931c08f24ca0e68c75618e6a4628ec440fbd856e258281545b7df28ed24",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/analyze-before-root-review.py.txt"
+    },
+    {
+      "bytes": 25305,
+      "category": "record",
+      "destination": "records/analyze.py",
+      "encoding": "identity",
+      "sha256": "125baf628790c69f924589f09786de58c5d3da35af3b21170be004d6c7dd0564",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/analyze.py"
+    },
+    {
+      "bytes": 583,
+      "category": "record",
+      "destination": "records/baseline-inputs.json",
+      "encoding": "identity",
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/baseline-inputs.json"
+    },
+    {
+      "bytes": 902,
+      "category": "record",
+      "destination": "records/baseline-provenance.json",
+      "encoding": "identity",
+      "sha256": "c07885367193a27fe8d21da9addaa75cde2b0279b08f2671d6cd12d8576ddcea",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/baseline-provenance.json"
+    },
+    {
+      "bytes": 253615,
+      "category": "record",
+      "destination": "records/baseline-sources.json.gz",
+      "encoding": "gzip",
+      "sha256": "0bf07513646ffdfee5aec03bb1b64b6fff757196512aeea883226c675b15ed02",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/baseline-sources.json"
+    },
+    {
+      "bytes": 777,
+      "category": "record",
+      "destination": "records/baseline.json",
+      "encoding": "identity",
+      "sha256": "7e828e1764bfb9395cc4e99f0bc5e32b82cbd5a2368aec2e3f0de78213369727",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/baseline.json"
+    },
+    {
+      "bytes": 1516,
+      "category": "record",
+      "destination": "records/binaries.json",
+      "encoding": "identity",
+      "sha256": "e6281e51ffc137cff47fe2f8fb6fe8489689cbb723eb724d18844d11170a230d",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/binaries.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/build-driver.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/build-driver.stderr"
+    },
+    {
+      "bytes": 2668,
+      "category": "record",
+      "destination": "records/build-driver.stdout",
+      "encoding": "identity",
+      "sha256": "450cbafc3cdc87db05e3588af0133f8dcd4ed7802b78bffe745e10d4b6f7eaef",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/build-driver.stdout"
+    },
+    {
+      "bytes": 166,
+      "category": "record",
+      "destination": "records/build-owner.json",
+      "encoding": "identity",
+      "sha256": "2a6ebbf2857b003d693d3e34326effff22ef9b09592bac093f41680cd250c57b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/build-owner.json"
+    },
+    {
+      "bytes": 276292,
+      "category": "record",
+      "destination": "records/build-receipt.json.gz",
+      "encoding": "gzip",
+      "sha256": "f4df57365e5d97d63349d9fd36ef0ee69b09dc2d12c81b8f1a7bd51aadc5ff87",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/build-receipt.json"
+    },
+    {
+      "bytes": 314,
+      "category": "record",
+      "destination": "records/build-terminal.json",
+      "encoding": "identity",
+      "sha256": "55969676f55637ebc0cbb678207705098f84b66c647f4d37c52be6bc8e67054f",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/build-terminal.json"
+    },
+    {
+      "bytes": 14090,
+      "category": "record",
+      "destination": "records/build.py",
+      "encoding": "identity",
+      "sha256": "c6e11a22dafc2ab0108a1e9bf9aa5e1e5d2ca36bfe43578559e539c80d89e07d",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/build.py"
+    },
+    {
+      "bytes": 1966,
+      "category": "record",
+      "destination": "records/cargo-rustc-info.json",
+      "encoding": "identity",
+      "sha256": "1d691aca426164bc512f3f3de07ae203e4491b4d05aefac8f13177cf6ea887d5",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/cargo-rustc-info.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/cargo.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/cargo.stderr"
+    },
+    {
+      "bytes": 36,
+      "category": "record",
+      "destination": "records/cargo.stdout",
+      "encoding": "identity",
+      "sha256": "1aedaa9cce116919d39b1eb303a58865771582bc24fc259aa8e26cb212e0f59e",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/cargo.stdout"
+    },
+    {
+      "bytes": 7083,
+      "category": "record",
+      "destination": "records/check_profile.py",
+      "encoding": "identity",
+      "sha256": "d7856844d550b05207cc75391a810008da0b44adeafeb38e70ec95892c9a4f61",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/check_profile.py"
+    },
+    {
+      "bytes": 783,
+      "category": "record",
+      "destination": "records/core-integration.stderr",
+      "encoding": "identity",
+      "sha256": "519f5958c20c070ff4d43fdd832c83c93e96a4ecd70dad4af3138f7ce0ca3840",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/core-integration.stderr"
+    },
+    {
+      "bytes": 52382,
+      "category": "record",
+      "destination": "records/core-integration.stdout",
+      "encoding": "identity",
+      "sha256": "c8f85ec649a78c79675d557f818a464964718d1d88df57eb881fcfa1027cc82e",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/core-integration.stdout"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/core-unit-all.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/core-unit-all.stderr"
+    },
+    {
+      "bytes": 86525,
+      "category": "record",
+      "destination": "records/core-unit-all.stdout",
+      "encoding": "identity",
+      "sha256": "8aa271d1059a0f393d3b453b25c604c79ff22a463315f22d8b2566d13c276df4",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/core-unit-all.stdout"
+    },
+    {
+      "bytes": 1421,
+      "category": "record",
+      "destination": "records/core-unit-build.stderr",
+      "encoding": "identity",
+      "sha256": "1873abf46762b86bf89cdf9fd86c92a120bb04f0e4c4b2bb1592f8e6abd44b90",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/core-unit-build.stderr"
+    },
+    {
+      "bytes": 46213,
+      "category": "record",
+      "destination": "records/core-unit-build.stdout",
+      "encoding": "identity",
+      "sha256": "3f7f97445b888ea99b7d6bd2ce9ebb2483012a5793b708f4735e41aa7688da7f",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/core-unit-build.stdout"
+    },
+    {
+      "bytes": 13306,
+      "category": "record",
+      "destination": "records/design.md",
+      "encoding": "identity",
+      "sha256": "b3c32fab907efc0f547fb9fc81b53dc775313e08a70330d3c3463d7f66400841",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/design.md"
+    },
+    {
+      "bytes": 1471,
+      "category": "record",
+      "destination": "records/driver-pins.json",
+      "encoding": "identity",
+      "sha256": "2caedac1b175acd55c249b00e8f4ba9bc6760a4c62c39f63c5d070030f818a51",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/driver-pins.json"
+    },
+    {
+      "bytes": 151,
+      "category": "record",
+      "destination": "records/expected-build-stages.json",
+      "encoding": "identity",
+      "sha256": "4e5ecd34168f3bb8fdbbf567a4276dac0fdb832b3bc5f0cc76d5ce757dc8b8f3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/expected-build-stages.json"
+    },
+    {
+      "bytes": 2542,
+      "category": "record",
+      "destination": "records/expected-tests.json",
+      "encoding": "identity",
+      "sha256": "d418b8511f3a2f62a0386892140c85801046dedcbb24b291372d79085f40ea69",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/expected-tests.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/format.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/format.stderr"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/format.stdout",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/format.stdout"
+    },
+    {
+      "bytes": 253615,
+      "category": "record",
+      "destination": "records/frozen-sources.json.gz",
+      "encoding": "gzip",
+      "sha256": "59ab40b15f9a705953320d45a9ffcef87a85f876a15455c4fb4180ce12ebdff9",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/frozen-sources.json"
+    },
+    {
+      "bytes": 1198,
+      "category": "record",
+      "destination": "records/harness-review.json",
+      "encoding": "identity",
+      "sha256": "c44954cf1660c0aeff0323b142394f20cd6c355f1eebce5beee1866274f82a0b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/harness-review.json"
+    },
+    {
+      "bytes": 19427,
+      "category": "record",
+      "destination": "records/measure.py",
+      "encoding": "identity",
+      "sha256": "dc30e00cb2e9f201917f99dd4d1bacbaa083aaaae25f26249372e55bc459b5e0",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/measure.py"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/measurement-driver.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/measurement-driver.stderr"
+    },
+    {
+      "bytes": 16090,
+      "category": "record",
+      "destination": "records/measurement-driver.stdout",
+      "encoding": "identity",
+      "sha256": "1d276b965acd7ffe10b4cb49775544142aa2c5b1d9f23e767ed39d5cc53f47b0",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/measurement-driver.stdout"
+    },
+    {
+      "bytes": 649,
+      "category": "record",
+      "destination": "records/measurement-owner.json",
+      "encoding": "identity",
+      "sha256": "a4574b353ecd1e61b50d198b668da02745b2fbc1e6dd29b2725a616235f0cb7a",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/measurement-owner.json"
+    },
+    {
+      "bytes": 18950,
+      "category": "record",
+      "destination": "records/measurement-receipt.json",
+      "encoding": "identity",
+      "sha256": "917c8785c68bc9bfdea3728361c3b2e35a8486fb1461ba68c63ae02ff29eb10b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/measurement-receipt.json"
+    },
+    {
+      "bytes": 111,
+      "category": "record",
+      "destination": "records/measurement-terminal.json",
+      "encoding": "identity",
+      "sha256": "2e713143427e45e6eb03d486fe92c445a21d4ea5c24aa3c18fe1ff243944a28a",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/measurement-terminal.json"
+    },
+    {
+      "bytes": 3385,
+      "category": "record",
+      "destination": "records/media-archive.stderr",
+      "encoding": "identity",
+      "sha256": "6c8a1da00cc7f98858aa1af39432462107c59085b7f987baa8379fc9f2320790",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-archive.stderr"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/media-archive.stdout",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-archive.stdout"
+    },
+    {
+      "bytes": 3769,
+      "category": "record",
+      "destination": "records/media-binaries.json",
+      "encoding": "identity",
+      "sha256": "2833ef51f4248d3e68c246f3a7a859c647898e72f26521855e8c34739a1ffcd8",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-binaries.json"
+    },
+    {
+      "bytes": 1222,
+      "category": "record",
+      "destination": "records/media-driver-pins.json",
+      "encoding": "identity",
+      "sha256": "360cc3449fd555ce86718e8fccd494fc8f045572c50c6f683b5421d001dc5d33",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-driver-pins.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/media-driver.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-driver.stderr"
+    },
+    {
+      "bytes": 1998,
+      "category": "record",
+      "destination": "records/media-driver.stdout",
+      "encoding": "identity",
+      "sha256": "f4353dc31ac9ac9512c1647b75966c68e122be894ae50b634f5b15f0017817a3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-driver.stdout"
+    },
+    {
+      "bytes": 6259,
+      "category": "record",
+      "destination": "records/media-evidence-inventory.json",
+      "encoding": "identity",
+      "sha256": "f2977666808bd0ddc8719abe5d6f1462b9b78e41d3d14b5429aa3ea04cd614c4",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-evidence-inventory.json"
+    },
+    {
+      "bytes": 124,
+      "category": "record",
+      "destination": "records/media-hardware.json",
+      "encoding": "identity",
+      "sha256": "e30b3d2ac93eb1b43f8147b3ff6bedcd6750509e889d304a12acaafb9a099309",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-hardware.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/media-hardware.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-hardware.stderr"
+    },
+    {
+      "bytes": 29,
+      "category": "record",
+      "destination": "records/media-hardware.stdout",
+      "encoding": "identity",
+      "sha256": "dc7310a7c1781dfccc3f4262c5909848c353de3c145dc1fa2917bfba12fc9e21",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-hardware.stdout"
+    },
+    {
+      "bytes": 1223,
+      "category": "record",
+      "destination": "records/media-harness-review.json",
+      "encoding": "identity",
+      "sha256": "99eb52922218bc440c2766a6fcab3666bfe0dbcce8c17cbd7c08b36c48b1d7b7",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-harness-review.json"
+    },
+    {
+      "bytes": 284,
+      "category": "record",
+      "destination": "records/media-list.stderr",
+      "encoding": "identity",
+      "sha256": "29139eaaccf6beeb96b3300cac494c13974ccfbe4e1134d0c320ff03590c8c2c",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-list.stderr"
+    },
+    {
+      "bytes": 12901,
+      "category": "record",
+      "destination": "records/media-list.stdout",
+      "encoding": "identity",
+      "sha256": "a4d4111dd92100f9da23d0625e8ae035d8796e0b95c1027f296d29b90a235fa6",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-list.stdout"
+    },
+    {
+      "bytes": 154480,
+      "category": "record",
+      "destination": "records/media-one-leaf-fixture.json.gz",
+      "encoding": "gzip",
+      "sha256": "aeb49c1b75214d7dffab659a0a1d5179eedd5632e7d248c8fa42af1896bd7282",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-one-leaf-fixture.json"
+    },
+    {
+      "bytes": 327,
+      "category": "record",
+      "destination": "records/media-owner.json",
+      "encoding": "identity",
+      "sha256": "cff227fe14902256fb82be122f3b6bae12f3d7ebd32d8414d1b4e0d68b4e04a8",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-owner.json"
+    },
+    {
+      "bytes": 2400,
+      "category": "record",
+      "destination": "records/media-receipt.json",
+      "encoding": "identity",
+      "sha256": "0f88ba93a32a9585b73f8c9046c51c280e01721b20a13f3b0f9e56b5cf5e8199",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-receipt.json"
+    },
+    {
+      "bytes": 700,
+      "category": "record",
+      "destination": "records/media-run.stderr",
+      "encoding": "identity",
+      "sha256": "b4310317293cf1bb1332057373624f47693c7fc1ef28a2ea6297c8ea90fa0a6f",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-run.stderr"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/media-run.stdout",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-run.stdout"
+    },
+    {
+      "bytes": 1431,
+      "category": "record",
+      "destination": "records/media-static-pins.json",
+      "encoding": "identity",
+      "sha256": "14e81ed374c708520f59c12b9e8373ce69564f95274d9d8659042ce962bb593a",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-static-pins.json"
+    },
+    {
+      "bytes": 1727,
+      "category": "record",
+      "destination": "records/media-terminal.json",
+      "encoding": "identity",
+      "sha256": "a62179dfd3f81d6f5af1897cb9763ac94cd2e2078a2735b54c13150af709936c",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/media-terminal.json"
+    },
+    {
+      "bytes": 278,
+      "category": "record",
+      "destination": "records/preparation-history.json",
+      "encoding": "identity",
+      "sha256": "92b198c73015b600344eba4db59fde6d5f22d613d3eae251ae81def92907f61e",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/preparation-history.json"
+    },
+    {
+      "bytes": 31168,
+      "category": "record",
+      "destination": "records/prototype.patch",
+      "encoding": "identity",
+      "sha256": "de34a2b4cf611393ed8ff1f4a0584f3cbd697a7712874375708cc7353e23718f",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/prototype.patch"
+    },
+    {
+      "bytes": 253495,
+      "category": "record",
+      "destination": "records/qualified-base-sources.json.gz",
+      "encoding": "gzip",
+      "sha256": "f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/qualified-base-sources.json"
+    },
+    {
+      "bytes": 17386,
+      "category": "record",
+      "destination": "records/qualify_media.py",
+      "encoding": "identity",
+      "sha256": "0b67203bb9d0ad849bd2167876079d838da957f33762531873c626ab38bfe8fa",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/qualify_media.py"
+    },
+    {
+      "bytes": 9259,
+      "category": "record",
+      "destination": "records/release-app.stderr",
+      "encoding": "identity",
+      "sha256": "17b2b11720d082df0d375e4bdf9a221e692627022be9cd6b7a2da8832d74fbdd",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/release-app.stderr"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/release-app.stdout",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/release-app.stdout"
+    },
+    {
+      "bytes": 359,
+      "category": "record",
+      "destination": "records/root-oracle-review.json",
+      "encoding": "identity",
+      "sha256": "1fd4918c10d0d39573e72599475ecd0eb8a1d5f9d1f91fc6761cff87613d781b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/root-oracle-review.json"
+    },
+    {
+      "bytes": 639,
+      "category": "record",
+      "destination": "records/rotation-1-baseline-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-baseline-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "category": "record",
+      "destination": "records/rotation-1-baseline-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-baseline-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-1-baseline-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-baseline-make.stderr"
+    },
+    {
+      "bytes": 209,
+      "category": "record",
+      "destination": "records/rotation-1-baseline-make.stdout",
+      "encoding": "identity",
+      "sha256": "b914f3ae7b0499c055f503148ad3750b89c19459276cc9c69d95aef265e35636",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-baseline-make.stdout"
+    },
+    {
+      "bytes": 199,
+      "category": "record",
+      "destination": "records/rotation-1-baseline-preflight.json",
+      "encoding": "identity",
+      "sha256": "cd2fd963c952c9a78832fce57906d8ecd48e8d873f2f51b3db0306fc2e450e5b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-baseline-preflight.json"
+    },
+    {
+      "bytes": 8344,
+      "category": "record",
+      "destination": "records/rotation-1-baseline-profile.json",
+      "encoding": "identity",
+      "sha256": "61e3ae594a23932ace0ae8fbd27536e5b50edd6d78756140002e62b0cdcd25ce",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-baseline-profile.json"
+    },
+    {
+      "bytes": 3231,
+      "category": "record",
+      "destination": "records/rotation-1-baseline.stderr",
+      "encoding": "identity",
+      "sha256": "2bd875d91f6e77091c284f31c6ba330f610557ffed5d70f42d01bb94fd2e72b5",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-baseline.stderr"
+    },
+    {
+      "bytes": 130,
+      "category": "record",
+      "destination": "records/rotation-1-baseline.stdout",
+      "encoding": "identity",
+      "sha256": "6fc9ddcffaeefb7487b77c9f408f8f9d86ec1de52399b0af18f1f5f3ad577d21",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-baseline.stdout"
+    },
+    {
+      "bytes": 639,
+      "category": "record",
+      "destination": "records/rotation-1-candidate-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-candidate-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "category": "record",
+      "destination": "records/rotation-1-candidate-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-candidate-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-1-candidate-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-candidate-make.stderr"
+    },
+    {
+      "bytes": 202,
+      "category": "record",
+      "destination": "records/rotation-1-candidate-make.stdout",
+      "encoding": "identity",
+      "sha256": "e79aa9721e17700df6824b05d9b70e78c6c94918fdb5e680a42fba9121132467",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-candidate-make.stdout"
+    },
+    {
+      "bytes": 201,
+      "category": "record",
+      "destination": "records/rotation-1-candidate-preflight.json",
+      "encoding": "identity",
+      "sha256": "a05a89bdc1ce14a9b9bdd0d0d1389e9f00ae99bb398a29e1c6e8d901171e9645",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-candidate-preflight.json"
+    },
+    {
+      "bytes": 8342,
+      "category": "record",
+      "destination": "records/rotation-1-candidate-profile.json",
+      "encoding": "identity",
+      "sha256": "03073561ab755998b90adee1da32b9878134eafb194db2dfe27e8d0633e75617",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-candidate-profile.json"
+    },
+    {
+      "bytes": 3230,
+      "category": "record",
+      "destination": "records/rotation-1-candidate.stderr",
+      "encoding": "identity",
+      "sha256": "3aab9e83b7f3955f862b4870c08929d978ed548a1e303f09157e3494dee720a5",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-candidate.stderr"
+    },
+    {
+      "bytes": 131,
+      "category": "record",
+      "destination": "records/rotation-1-candidate.stdout",
+      "encoding": "identity",
+      "sha256": "1ab6a2aebef75f409c2a90d5b1d9f58cc6a45f5dbf4d878d643b01866fcc357f",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-candidate.stdout"
+    },
+    {
+      "bytes": 639,
+      "category": "record",
+      "destination": "records/rotation-1-control-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-control-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "category": "record",
+      "destination": "records/rotation-1-control-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-control-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-1-control-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-control-make.stderr"
+    },
+    {
+      "bytes": 207,
+      "category": "record",
+      "destination": "records/rotation-1-control-make.stdout",
+      "encoding": "identity",
+      "sha256": "9f0f0addf728424e7d4ce6334536155e6e2236f6ced955383a0e8bc189359f71",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-control-make.stdout"
+    },
+    {
+      "bytes": 201,
+      "category": "record",
+      "destination": "records/rotation-1-control-preflight.json",
+      "encoding": "identity",
+      "sha256": "9aaf861255902d78e3076f6aebbf4e648b14ad927f2fef357a5b64ada124ee10",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-control-preflight.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-1-control.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-control.stderr"
+    },
+    {
+      "bytes": 129,
+      "category": "record",
+      "destination": "records/rotation-1-control.stdout",
+      "encoding": "identity",
+      "sha256": "abbe1553afdbe19bfa9811a2a0fe19710334c1edced95ec273290f037c52e0a7",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-control.stdout"
+    },
+    {
+      "bytes": 639,
+      "category": "record",
+      "destination": "records/rotation-2-baseline-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-baseline-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "category": "record",
+      "destination": "records/rotation-2-baseline-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-baseline-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-2-baseline-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-baseline-make.stderr"
+    },
+    {
+      "bytes": 201,
+      "category": "record",
+      "destination": "records/rotation-2-baseline-make.stdout",
+      "encoding": "identity",
+      "sha256": "0ddf32e394a81b95132b5319e69dec232f44f58624559e465fb1aad23588339a",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-baseline-make.stdout"
+    },
+    {
+      "bytes": 201,
+      "category": "record",
+      "destination": "records/rotation-2-baseline-preflight.json",
+      "encoding": "identity",
+      "sha256": "722eea2eae299e88a6a425c0d5b048037a9a757cc1b109190c3edbf1a2ecc87e",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-baseline-preflight.json"
+    },
+    {
+      "bytes": 8342,
+      "category": "record",
+      "destination": "records/rotation-2-baseline-profile.json",
+      "encoding": "identity",
+      "sha256": "ee73e37d68937a842127af9be29d3e066c49ac2850c57b5bed0a5ffaa96c68cb",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-baseline-profile.json"
+    },
+    {
+      "bytes": 3230,
+      "category": "record",
+      "destination": "records/rotation-2-baseline.stderr",
+      "encoding": "identity",
+      "sha256": "9c4fa38997e67740ff6bce6a7ad61cd5c0f8be327cdec77bec08c8778a0637fb",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-baseline.stderr"
+    },
+    {
+      "bytes": 130,
+      "category": "record",
+      "destination": "records/rotation-2-baseline.stdout",
+      "encoding": "identity",
+      "sha256": "0ec70ac3a284b93b248392d09c0051577bdfca7e5a803639251b188a89b75a04",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-baseline.stdout"
+    },
+    {
+      "bytes": 639,
+      "category": "record",
+      "destination": "records/rotation-2-candidate-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-candidate-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "category": "record",
+      "destination": "records/rotation-2-candidate-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-candidate-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-2-candidate-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-candidate-make.stderr"
+    },
+    {
+      "bytes": 202,
+      "category": "record",
+      "destination": "records/rotation-2-candidate-make.stdout",
+      "encoding": "identity",
+      "sha256": "0f1ea1132712315b6ac5ead0d032c976d5fd1be02f9ec84f03798fff941ae606",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-candidate-make.stdout"
+    },
+    {
+      "bytes": 203,
+      "category": "record",
+      "destination": "records/rotation-2-candidate-preflight.json",
+      "encoding": "identity",
+      "sha256": "1b6b0a08933a4707e49602cdd5decb17f2c08f1d5c62afcdcced3f02f99588a6",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-candidate-preflight.json"
+    },
+    {
+      "bytes": 8344,
+      "category": "record",
+      "destination": "records/rotation-2-candidate-profile.json",
+      "encoding": "identity",
+      "sha256": "195a89466de6dbe656caae59890666adc52d7d2053f620446807299f1ce6e3a6",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-candidate-profile.json"
+    },
+    {
+      "bytes": 3231,
+      "category": "record",
+      "destination": "records/rotation-2-candidate.stderr",
+      "encoding": "identity",
+      "sha256": "2e280e0165d7b7150ddaab239cbb90e732c5c29589d7f5261d94380ac010e693",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-candidate.stderr"
+    },
+    {
+      "bytes": 131,
+      "category": "record",
+      "destination": "records/rotation-2-candidate.stdout",
+      "encoding": "identity",
+      "sha256": "f271f13bced5b6eda73e2016a5fdb70e17eccffd753f12f4fe8fd6226addea82",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-candidate.stdout"
+    },
+    {
+      "bytes": 639,
+      "category": "record",
+      "destination": "records/rotation-2-control-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-control-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "category": "record",
+      "destination": "records/rotation-2-control-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-control-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-2-control-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-control-make.stderr"
+    },
+    {
+      "bytes": 200,
+      "category": "record",
+      "destination": "records/rotation-2-control-make.stdout",
+      "encoding": "identity",
+      "sha256": "593296390d533a019f0c2c9d2ed965a87e3ba87f2fdd3658b6cbf97c299a9ed7",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-control-make.stdout"
+    },
+    {
+      "bytes": 201,
+      "category": "record",
+      "destination": "records/rotation-2-control-preflight.json",
+      "encoding": "identity",
+      "sha256": "e31e248f6562aa470dc3279af92e733e7f73a62b7bc9635ef71fdc70652d149b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-control-preflight.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-2-control.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-control.stderr"
+    },
+    {
+      "bytes": 129,
+      "category": "record",
+      "destination": "records/rotation-2-control.stdout",
+      "encoding": "identity",
+      "sha256": "1330f71ae82afe1f8608b768d0cdb42f99b1594395c2e9f9956778c742d09857",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-control.stdout"
+    },
+    {
+      "bytes": 639,
+      "category": "record",
+      "destination": "records/rotation-3-baseline-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-baseline-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "category": "record",
+      "destination": "records/rotation-3-baseline-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-baseline-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-3-baseline-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-baseline-make.stderr"
+    },
+    {
+      "bytes": 209,
+      "category": "record",
+      "destination": "records/rotation-3-baseline-make.stdout",
+      "encoding": "identity",
+      "sha256": "ad64a164f9da35e2ac9e291501d26155353f2567d8bb819c94360ff350bd0825",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-baseline-make.stdout"
+    },
+    {
+      "bytes": 199,
+      "category": "record",
+      "destination": "records/rotation-3-baseline-preflight.json",
+      "encoding": "identity",
+      "sha256": "98bdbced269958e980b03d9fc26aa2c01fe709acf29639ae0570703292337ab4",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-baseline-preflight.json"
+    },
+    {
+      "bytes": 8340,
+      "category": "record",
+      "destination": "records/rotation-3-baseline-profile.json",
+      "encoding": "identity",
+      "sha256": "b1cf9041c16f8cc002951e04dcc3f0767469990a237f200781b579ba6a33484b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-baseline-profile.json"
+    },
+    {
+      "bytes": 3229,
+      "category": "record",
+      "destination": "records/rotation-3-baseline.stderr",
+      "encoding": "identity",
+      "sha256": "e9be6ea700ef583663d41ef03a961b0f327714f3e1e31ec84ce42a470545163e",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-baseline.stderr"
+    },
+    {
+      "bytes": 130,
+      "category": "record",
+      "destination": "records/rotation-3-baseline.stdout",
+      "encoding": "identity",
+      "sha256": "3d51a22dc0af12beae1e895a49bcba4cf06410e2e4a3313720616cb3c04ef2e0",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-baseline.stdout"
+    },
+    {
+      "bytes": 639,
+      "category": "record",
+      "destination": "records/rotation-3-candidate-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-candidate-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "category": "record",
+      "destination": "records/rotation-3-candidate-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-candidate-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-3-candidate-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-candidate-make.stderr"
+    },
+    {
+      "bytes": 202,
+      "category": "record",
+      "destination": "records/rotation-3-candidate-make.stdout",
+      "encoding": "identity",
+      "sha256": "c19e3ed6ae91d9301e2e4d2fb42471976262869e5e6382277e4bff9f1010ebc4",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-candidate-make.stdout"
+    },
+    {
+      "bytes": 199,
+      "category": "record",
+      "destination": "records/rotation-3-candidate-preflight.json",
+      "encoding": "identity",
+      "sha256": "5250e801e3d465a5ab480c60a0d2d172fb7152f146d47400ef1139c0f5405c32",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-candidate-preflight.json"
+    },
+    {
+      "bytes": 8342,
+      "category": "record",
+      "destination": "records/rotation-3-candidate-profile.json",
+      "encoding": "identity",
+      "sha256": "477f952df39b9134334b7bee388e6c25082738c656b3be06e959d093d6eaca77",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-candidate-profile.json"
+    },
+    {
+      "bytes": 3230,
+      "category": "record",
+      "destination": "records/rotation-3-candidate.stderr",
+      "encoding": "identity",
+      "sha256": "f6f836632526f993ce4a48e1bf6da2c7e075bbbf874d1a4428c118a258539d4b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-candidate.stderr"
+    },
+    {
+      "bytes": 131,
+      "category": "record",
+      "destination": "records/rotation-3-candidate.stdout",
+      "encoding": "identity",
+      "sha256": "0fb42386d10bdff418c55e39a212dbccaa7eaf8d63a1b7d0053d27092d1d3b98",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-candidate.stdout"
+    },
+    {
+      "bytes": 639,
+      "category": "record",
+      "destination": "records/rotation-3-control-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-control-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "category": "record",
+      "destination": "records/rotation-3-control-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-control-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-3-control-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-control-make.stderr"
+    },
+    {
+      "bytes": 200,
+      "category": "record",
+      "destination": "records/rotation-3-control-make.stdout",
+      "encoding": "identity",
+      "sha256": "b12e354c6109a0af2f83e3334b511aabca0f152b1737ef0e4b0a4953593a29db",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-control-make.stdout"
+    },
+    {
+      "bytes": 200,
+      "category": "record",
+      "destination": "records/rotation-3-control-preflight.json",
+      "encoding": "identity",
+      "sha256": "f5f841c2a267633c1164b9e7f2f276126877e09392a14254a2a5375cf70680ac",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-control-preflight.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-3-control.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-control.stderr"
+    },
+    {
+      "bytes": 129,
+      "category": "record",
+      "destination": "records/rotation-3-control.stdout",
+      "encoding": "identity",
+      "sha256": "a26cd7e7d4b4a5413fb7dd9af68b26f31588c977949f4e91d4ad032be2d1f992",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-control.stdout"
+    },
+    {
+      "bytes": 639,
+      "category": "record",
+      "destination": "records/rotation-4-baseline-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-baseline-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "category": "record",
+      "destination": "records/rotation-4-baseline-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-baseline-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-4-baseline-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-baseline-make.stderr"
+    },
+    {
+      "bytes": 209,
+      "category": "record",
+      "destination": "records/rotation-4-baseline-make.stdout",
+      "encoding": "identity",
+      "sha256": "84d0613de07efc6bce859149f5fa331e7d6f31654a7f53e0d5f6d9cec1713863",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-baseline-make.stdout"
+    },
+    {
+      "bytes": 203,
+      "category": "record",
+      "destination": "records/rotation-4-baseline-preflight.json",
+      "encoding": "identity",
+      "sha256": "6a49e57b4970e6fc98eec5af46856bd7ecd322295c4c34f7af37920295b883c0",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-baseline-preflight.json"
+    },
+    {
+      "bytes": 8342,
+      "category": "record",
+      "destination": "records/rotation-4-baseline-profile.json",
+      "encoding": "identity",
+      "sha256": "be80f0a79f7038e74eef4aed7e23b34e7003fe2ee5821e6c43fcb84a2d4891ab",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-baseline-profile.json"
+    },
+    {
+      "bytes": 3230,
+      "category": "record",
+      "destination": "records/rotation-4-baseline.stderr",
+      "encoding": "identity",
+      "sha256": "999c65acd8bc33ae2786db0be904c70bf02b07d04622a3d13fd039cba2c998b1",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-baseline.stderr"
+    },
+    {
+      "bytes": 130,
+      "category": "record",
+      "destination": "records/rotation-4-baseline.stdout",
+      "encoding": "identity",
+      "sha256": "e96ccb5a350175bf31c53de2eebe50bac4bc7e8158156361d2392289af32cf2d",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-baseline.stdout"
+    },
+    {
+      "bytes": 639,
+      "category": "record",
+      "destination": "records/rotation-4-candidate-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-candidate-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "category": "record",
+      "destination": "records/rotation-4-candidate-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-candidate-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-4-candidate-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-candidate-make.stderr"
+    },
+    {
+      "bytes": 202,
+      "category": "record",
+      "destination": "records/rotation-4-candidate-make.stdout",
+      "encoding": "identity",
+      "sha256": "66e9bc88b94dbfd778706d06f7a538f61e1c01df957eebb87567ad4555885c36",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-candidate-make.stdout"
+    },
+    {
+      "bytes": 203,
+      "category": "record",
+      "destination": "records/rotation-4-candidate-preflight.json",
+      "encoding": "identity",
+      "sha256": "46d035de6cff3e069552dcd50c66078932714a919e4cc395dfdf9cac0e93e2ee",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-candidate-preflight.json"
+    },
+    {
+      "bytes": 8344,
+      "category": "record",
+      "destination": "records/rotation-4-candidate-profile.json",
+      "encoding": "identity",
+      "sha256": "6886d39bd3ffe428ceed882d2d1225e7947ed74b4638c0254c57b0e2c7c95d25",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-candidate-profile.json"
+    },
+    {
+      "bytes": 3231,
+      "category": "record",
+      "destination": "records/rotation-4-candidate.stderr",
+      "encoding": "identity",
+      "sha256": "cdbb2f1b72948f912f25205a63e2055f2638e18f6e580530336d56280f19577b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-candidate.stderr"
+    },
+    {
+      "bytes": 131,
+      "category": "record",
+      "destination": "records/rotation-4-candidate.stdout",
+      "encoding": "identity",
+      "sha256": "cb2349e0d1ad56fbe0a3d6f9388b454f7c9177b305fd29a816fa40fe9782e80f",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-candidate.stdout"
+    },
+    {
+      "bytes": 639,
+      "category": "record",
+      "destination": "records/rotation-4-control-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-control-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "category": "record",
+      "destination": "records/rotation-4-control-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-control-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-4-control-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-control-make.stderr"
+    },
+    {
+      "bytes": 200,
+      "category": "record",
+      "destination": "records/rotation-4-control-make.stdout",
+      "encoding": "identity",
+      "sha256": "0142cc9a4227a466a0a93cc3089414a2fae4ebf57415db81b555ab5de806f755",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-control-make.stdout"
+    },
+    {
+      "bytes": 192,
+      "category": "record",
+      "destination": "records/rotation-4-control-preflight.json",
+      "encoding": "identity",
+      "sha256": "7478f7bce6c9ff3508c99722664f02fd49a6f34e9523e026bd396fceb75231c6",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-control-preflight.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-4-control.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-control.stderr"
+    },
+    {
+      "bytes": 129,
+      "category": "record",
+      "destination": "records/rotation-4-control.stdout",
+      "encoding": "identity",
+      "sha256": "f744b2c53df3c78031e1d8c57f768bde3843daf4c4c61713b82c5fd653752449",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-control.stdout"
+    },
+    {
+      "bytes": 639,
+      "category": "record",
+      "destination": "records/rotation-5-baseline-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-baseline-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "category": "record",
+      "destination": "records/rotation-5-baseline-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-baseline-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-5-baseline-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-baseline-make.stderr"
+    },
+    {
+      "bytes": 201,
+      "category": "record",
+      "destination": "records/rotation-5-baseline-make.stdout",
+      "encoding": "identity",
+      "sha256": "59c900724917d073fd09bc55455faafd46401a9add771cb615c5f0f92342aa76",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-baseline-make.stdout"
+    },
+    {
+      "bytes": 200,
+      "category": "record",
+      "destination": "records/rotation-5-baseline-preflight.json",
+      "encoding": "identity",
+      "sha256": "6b965cfff6e644e873f9f6dda7f609117ba237bff1c25f62187a03517b5d37b9",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-baseline-preflight.json"
+    },
+    {
+      "bytes": 8344,
+      "category": "record",
+      "destination": "records/rotation-5-baseline-profile.json",
+      "encoding": "identity",
+      "sha256": "a2a0495c98c0e66f6e4e62f31b19f153a7c97c189e855c9bd112f1eaa715f41c",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-baseline-profile.json"
+    },
+    {
+      "bytes": 3231,
+      "category": "record",
+      "destination": "records/rotation-5-baseline.stderr",
+      "encoding": "identity",
+      "sha256": "cb0211a1b7a6ef76b6a759d4b9d19b9b85cb0a6b1a0c7f4438a8830c5914dbe5",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-baseline.stderr"
+    },
+    {
+      "bytes": 130,
+      "category": "record",
+      "destination": "records/rotation-5-baseline.stdout",
+      "encoding": "identity",
+      "sha256": "afa394a64e3eccac8680964ac5791ed1bbbe448b95784c3d7feff7489364e594",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-baseline.stdout"
+    },
+    {
+      "bytes": 639,
+      "category": "record",
+      "destination": "records/rotation-5-candidate-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-candidate-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "category": "record",
+      "destination": "records/rotation-5-candidate-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-candidate-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-5-candidate-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-candidate-make.stderr"
+    },
+    {
+      "bytes": 202,
+      "category": "record",
+      "destination": "records/rotation-5-candidate-make.stdout",
+      "encoding": "identity",
+      "sha256": "39531c5d86c3ac17f11fbbfae0b242a879c8678eda9fd8c956f28c07f1d7e3db",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-candidate-make.stdout"
+    },
+    {
+      "bytes": 201,
+      "category": "record",
+      "destination": "records/rotation-5-candidate-preflight.json",
+      "encoding": "identity",
+      "sha256": "43fc2df8e3196e9b737e19fd14895c72c8ac1e5e32f4caff18b1e00fbec528d7",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-candidate-preflight.json"
+    },
+    {
+      "bytes": 8342,
+      "category": "record",
+      "destination": "records/rotation-5-candidate-profile.json",
+      "encoding": "identity",
+      "sha256": "a57196d4eb8a267f24de4f131f243109564a6742f88bd6dc26b3a5f04023beba",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-candidate-profile.json"
+    },
+    {
+      "bytes": 3230,
+      "category": "record",
+      "destination": "records/rotation-5-candidate.stderr",
+      "encoding": "identity",
+      "sha256": "a1a3d7836707622a3cfc6e7bc25bf43fc9cb662140e5c4f2e1e889dc8f2d0456",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-candidate.stderr"
+    },
+    {
+      "bytes": 131,
+      "category": "record",
+      "destination": "records/rotation-5-candidate.stdout",
+      "encoding": "identity",
+      "sha256": "141d7f7bb03dc0505d8ac7c3a8bcd8a0ea88d67ff952e60e0fbaf22e4441d697",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-candidate.stdout"
+    },
+    {
+      "bytes": 639,
+      "category": "record",
+      "destination": "records/rotation-5-control-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-control-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "category": "record",
+      "destination": "records/rotation-5-control-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-control-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-5-control-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-control-make.stderr"
+    },
+    {
+      "bytes": 200,
+      "category": "record",
+      "destination": "records/rotation-5-control-make.stdout",
+      "encoding": "identity",
+      "sha256": "dfbe7ab139d74f6b89c9d8e8caa43f893245acca9512f91005af9aed76bee99e",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-control-make.stdout"
+    },
+    {
+      "bytes": 199,
+      "category": "record",
+      "destination": "records/rotation-5-control-preflight.json",
+      "encoding": "identity",
+      "sha256": "0c8997c3d38582f3b1b40f408bfe1bef62923f63ffe19f04c47c8117e34b25b5",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-control-preflight.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-5-control.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-control.stderr"
+    },
+    {
+      "bytes": 129,
+      "category": "record",
+      "destination": "records/rotation-5-control.stdout",
+      "encoding": "identity",
+      "sha256": "7da066c728e43d1bdcb8b90acc804ef1c94789ccef4c43e976790edefddef6f8",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-control.stdout"
+    },
+    {
+      "bytes": 639,
+      "category": "record",
+      "destination": "records/rotation-6-baseline-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-baseline-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "category": "record",
+      "destination": "records/rotation-6-baseline-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-baseline-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-6-baseline-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-baseline-make.stderr"
+    },
+    {
+      "bytes": 201,
+      "category": "record",
+      "destination": "records/rotation-6-baseline-make.stdout",
+      "encoding": "identity",
+      "sha256": "ab1c5a622bcf30d56b2401a9468cf9faec1c1eb3bf52585884a49f16a87ac3ed",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-baseline-make.stdout"
+    },
+    {
+      "bytes": 201,
+      "category": "record",
+      "destination": "records/rotation-6-baseline-preflight.json",
+      "encoding": "identity",
+      "sha256": "1f343ddc13ae47128990fb5f058708f15f0aa918e18646611ed1b75356c59aae",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-baseline-preflight.json"
+    },
+    {
+      "bytes": 8342,
+      "category": "record",
+      "destination": "records/rotation-6-baseline-profile.json",
+      "encoding": "identity",
+      "sha256": "b41cb866315129bfa88af6c90da08ae329cb76d5ed71a6f0b33de62e6d85c9fb",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-baseline-profile.json"
+    },
+    {
+      "bytes": 3230,
+      "category": "record",
+      "destination": "records/rotation-6-baseline.stderr",
+      "encoding": "identity",
+      "sha256": "fa793d5a102e8755820db8a48505b9d3098a87b0a6a1ac3e1dfdb146f8d6d3aa",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-baseline.stderr"
+    },
+    {
+      "bytes": 130,
+      "category": "record",
+      "destination": "records/rotation-6-baseline.stdout",
+      "encoding": "identity",
+      "sha256": "1e14512f1c571add7f1f946dd448bcf051f84de9ac6e34fca13c0aea8e082af0",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-baseline.stdout"
+    },
+    {
+      "bytes": 639,
+      "category": "record",
+      "destination": "records/rotation-6-candidate-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-candidate-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "category": "record",
+      "destination": "records/rotation-6-candidate-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-candidate-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-6-candidate-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-candidate-make.stderr"
+    },
+    {
+      "bytes": 202,
+      "category": "record",
+      "destination": "records/rotation-6-candidate-make.stdout",
+      "encoding": "identity",
+      "sha256": "d0b9db498231899c22bafdfcbf4ffdaa1325805d3d178a549267a9cb7eadb3a3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-candidate-make.stdout"
+    },
+    {
+      "bytes": 200,
+      "category": "record",
+      "destination": "records/rotation-6-candidate-preflight.json",
+      "encoding": "identity",
+      "sha256": "d12b172ac8653bd15edf7789b3783f2105b2aee38d59facca9c6f328d3e5f43c",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-candidate-preflight.json"
+    },
+    {
+      "bytes": 8340,
+      "category": "record",
+      "destination": "records/rotation-6-candidate-profile.json",
+      "encoding": "identity",
+      "sha256": "fa6a23275c79ade049c497551a1b271c9dfa03bc908e9faab0f20f31241beed2",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-candidate-profile.json"
+    },
+    {
+      "bytes": 3229,
+      "category": "record",
+      "destination": "records/rotation-6-candidate.stderr",
+      "encoding": "identity",
+      "sha256": "2962837af042916ed57b6323f67c9295b3083541a669659e499ded47278ab427",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-candidate.stderr"
+    },
+    {
+      "bytes": 131,
+      "category": "record",
+      "destination": "records/rotation-6-candidate.stdout",
+      "encoding": "identity",
+      "sha256": "66ca6b687ee2181c12a06ad46f51c429694fda2f0561787b545551e032caf5a4",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-candidate.stdout"
+    },
+    {
+      "bytes": 639,
+      "category": "record",
+      "destination": "records/rotation-6-control-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-control-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "category": "record",
+      "destination": "records/rotation-6-control-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-control-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-6-control-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-control-make.stderr"
+    },
+    {
+      "bytes": 200,
+      "category": "record",
+      "destination": "records/rotation-6-control-make.stdout",
+      "encoding": "identity",
+      "sha256": "47b62b8d779cdcc545b68e0a836f79a1c66b009211646fa18956d98e44e2c2de",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-control-make.stdout"
+    },
+    {
+      "bytes": 200,
+      "category": "record",
+      "destination": "records/rotation-6-control-preflight.json",
+      "encoding": "identity",
+      "sha256": "5aa4d7506c74a08f53a3c4db30e3a45deeb72d706e19c4c2dc8ecc17e2024ee2",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-control-preflight.json"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rotation-6-control.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-control.stderr"
+    },
+    {
+      "bytes": 129,
+      "category": "record",
+      "destination": "records/rotation-6-control.stdout",
+      "encoding": "identity",
+      "sha256": "120d1f987526f5e4ac09abff3077737eca11bf1369d977cb497c176de87149ef",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-control.stdout"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/rustc.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rustc.stderr"
+    },
+    {
+      "bytes": 192,
+      "category": "record",
+      "destination": "records/rustc.stdout",
+      "encoding": "identity",
+      "sha256": "e794146d99fad54562fdcbd4a7c8b22b0240d2b0312ff6d879d67939b3131850",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rustc.stdout"
+    },
+    {
+      "bytes": 3828,
+      "category": "record",
+      "destination": "records/slower-pair-observation.json",
+      "encoding": "identity",
+      "sha256": "36091cdc2b12ce7667ff643cd42d37cbed89f16f41f417216718cdc7840f9025",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/slower-pair-observation.json"
+    },
+    {
+      "bytes": 8775,
+      "category": "record",
+      "destination": "records/source-review.json",
+      "encoding": "identity",
+      "sha256": "dbbc5efe7cf81b41bba3bca181991db809dd3afe1358793be0163f2bb78db86d",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source-review.json"
+    },
+    {
+      "bytes": 3892,
+      "category": "record",
+      "destination": "records/store-preparation.stderr",
+      "encoding": "identity",
+      "sha256": "d4192aff162bc7f68f5cb82ae11a93ecea6b5515407bb028f8884761bf2ab4e5",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/store-preparation.stderr"
+    },
+    {
+      "bytes": 99480,
+      "category": "record",
+      "destination": "records/store-preparation.stdout",
+      "encoding": "identity",
+      "sha256": "4872be54a62d4c78617ff208b53a909801401134644b5b54e320c1b33a95be61",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/store-preparation.stdout"
+    },
+    {
+      "bytes": 10493,
+      "category": "record",
+      "destination": "records/strict.stderr",
+      "encoding": "identity",
+      "sha256": "fea7d8cb3038289935cc619072f39d00977aa5f444f99502346392f1a2b2bf70",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/strict.stderr"
+    },
+    {
+      "bytes": 0,
+      "category": "record",
+      "destination": "records/strict.stdout",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/strict.stdout"
+    },
+    {
+      "bytes": 13905,
+      "category": "record",
+      "destination": "records/summary.json",
+      "encoding": "identity",
+      "sha256": "4d59926c6b78fea7840dabfb25c8c9bf1652a54d06877e75b387c24adbc50a12",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/summary.json"
+    },
+    {
+      "bytes": 179637,
+      "category": "record",
+      "destination": "records/test-binaries.json.gz",
+      "encoding": "gzip",
+      "sha256": "20da0c5e84b2e7aecf72eaf09a39cab0c529bfbf7f7236a6861c6e755278af53",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/test-binaries.json"
+    },
+    {
+      "bytes": 129918,
+      "category": "record",
+      "destination": "records/trials.json.gz",
+      "encoding": "gzip",
+      "sha256": "0de5687ac1af5c6b7283da940516d27c0a3ac44b680778c84dfe60446956271c",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/trials.json"
+    },
+    {
+      "bytes": 21297,
+      "category": "packaging-history",
+      "destination": "history/package-initial-draft.py.txt",
+      "encoding": "identity",
+      "sha256": "7edf9fd0b74114cdad1254a47f06b165669722e5d73b83c2f7b0e722ac2febdc",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/packaging-draft/package-initial-draft-reconstructed.py.txt"
+    },
+    {
+      "bytes": 21794,
+      "category": "packaging-history",
+      "destination": "history/package-after-sidecar-fix.py.txt",
+      "encoding": "identity",
+      "sha256": "cb1301f098fa9b3d31807725cef55838eeea5587807a71f55d54a59b199dd03e",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/packaging-draft/package-after-sidecar-fix.py.txt"
+    },
+    {
+      "bytes": 3503,
+      "category": "packaging-history",
+      "destination": "history/static-packaging-plan-initial.md.txt",
+      "encoding": "identity",
+      "sha256": "9ed4fcb3ce2b28025d72ebeb9e4a840872ee9d10e774351dcea5acfb34db59d6",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/packaging-draft/static-packaging-plan-initial.md.txt"
+    },
+    {
+      "bytes": 1118,
+      "category": "packaging-history",
+      "destination": "history/sidecar-correction-history.json",
+      "encoding": "identity",
+      "sha256": "fa566fc7d504d9b580722baa37eb4ce52d512d1a1dcd7d4bbc5cc52777dc81ab",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/packaging-draft/sidecar-correction-history.json"
+    },
+    {
+      "bytes": 145223,
+      "category": "packaging-history",
+      "destination": "history/approved-package-manifest-before-input-fix.json.txt.gz",
+      "encoding": "gzip",
+      "sha256": "d6aa5b07e5fb2dfa3d4b5e1532fe3ab3607605a8fcccd18f6784df20b8d0db4e",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/packaging-draft/approved-package-manifest-before-input-fix.json.txt"
+    },
+    {
+      "bytes": 692,
+      "category": "packaging-history",
+      "destination": "history/input-payload-correction-history.json",
+      "encoding": "identity",
+      "sha256": "940c6147475e6fd367a1f84090af712807e56dd96490790e5465d3756816ff70",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/packaging-draft/input-payload-correction-history.json"
+    },
+    {
+      "bytes": 148055,
+      "category": "packaging-history",
+      "destination": "history/approved-package-manifest-before-plan-pin.json.txt.gz",
+      "encoding": "gzip",
+      "sha256": "238425b059ea66761d68a0d7217e085a61565c2d45a2dfe934fa8b44da1e395c",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/packaging-draft/approved-package-manifest-before-plan-pin.json.txt"
+    },
+    {
+      "bytes": 24729,
+      "category": "packaging-history",
+      "destination": "history/package-before-plan-pin.py.txt",
+      "encoding": "identity",
+      "sha256": "0b544784bab9651be9301a8c600523bbb86d055ffc16ae592bf051e1eb27c1fd",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/packaging-draft/package-before-plan-pin.py.txt"
+    },
+    {
+      "bytes": 676,
+      "category": "packaging-history",
+      "destination": "history/plan-pin-correction-history.json",
+      "encoding": "identity",
+      "sha256": "b43022688d4e1f8cab2cc9c1af63d2541cc2453d93ac4aa8803f8af8db99fe49",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/packaging-draft/plan-pin-correction-history.json"
+    },
+    {
+      "bytes": 12068,
+      "category": "packaging-tool",
+      "destination": "packaging/make_approved_manifest.py",
+      "encoding": "identity",
+      "sha256": "b7091a3ecdb2a066ad4c5ff74ec8d99a25d5f76d264936c6ef872c3001920d13",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/packaging-draft/make_approved_manifest.py"
+    },
+    {
+      "bytes": 135252,
+      "category": "pinned-input",
+      "destination": "inputs/Cargo.lock",
+      "encoding": "identity",
+      "sha256": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source/Cargo.lock"
+    },
+    {
+      "bytes": 3509,
+      "category": "pinned-input",
+      "destination": "inputs/Cargo.toml",
+      "encoding": "identity",
+      "sha256": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source/Cargo.toml"
+    },
+    {
+      "bytes": 86,
+      "category": "pinned-input",
+      "destination": "inputs/rust-toolchain.toml",
+      "encoding": "identity",
+      "sha256": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source/rust-toolchain.toml"
+    },
+    {
+      "bytes": 147,
+      "category": "pinned-input",
+      "destination": "inputs/.cargo/config.toml",
+      "encoding": "identity",
+      "sha256": "b906738cab8f6f289180e1bcf32826d3e2996899cb5055dc7f0c6838655c340d",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source/.cargo/config.toml"
+    },
+    {
+      "bytes": 796287,
+      "category": "pinned-input",
+      "destination": "inputs/crates/deadpan-app/src/navigation/registry/baseline-routing.txt",
+      "encoding": "identity",
+      "sha256": "a181ba1d3f2db1c030fbdf1feaf2d5ae8efd5edd885114bcea9c161ac774cd8d",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source/crates/deadpan-app/src/navigation/registry/baseline-routing.txt"
+    },
+    {
+      "bytes": 96796,
+      "category": "pinned-input",
+      "destination": "inputs/docs/COMMANDS.md",
+      "encoding": "identity",
+      "sha256": "b4fc50fffbb6d96406593dda90a56ee6c9f3b89a3790b6e7f69b87863f57beec",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source/docs/COMMANDS.md"
+    },
+    {
+      "bytes": 102684,
+      "category": "source-text",
+      "destination": "source/candidate/crates/deadpan-app/src/project/service.rs.txt",
+      "encoding": "identity",
+      "sha256": "3f290296af812245290ae9a39bbda1cfdb58a82e86ebba6f963bdb5e0c59a420",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source/crates/deadpan-app/src/project/service.rs"
+    },
+    {
+      "bytes": 52483,
+      "category": "source-text",
+      "destination": "source/candidate/crates/deadpan-app/src/project/service/macros.rs.txt",
+      "encoding": "identity",
+      "sha256": "1d64321deba7812b0133917af1145c01f5b1465f84d5f196d3e0fef632aba5cc",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source/crates/deadpan-app/src/project/service/macros.rs"
+    },
+    {
+      "bytes": 154853,
+      "category": "source-text",
+      "destination": "source/candidate/crates/deadpan-core/src/command.rs.txt",
+      "encoding": "identity",
+      "sha256": "ef40053c894ebed6af299f3a28e7acce0c4fc22115ef1bc3d710c24e44c7d5da",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source/crates/deadpan-core/src/command.rs"
+    },
+    {
+      "bytes": 29436,
+      "category": "source-text",
+      "destination": "source/candidate/crates/deadpan-core/src/compound.rs.txt",
+      "encoding": "identity",
+      "sha256": "61d64cc76d65fc321f34141cf43625f2463a3a0388bf6e1fe024a42d3ffce4b3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source/crates/deadpan-core/src/compound.rs"
+    },
+    {
+      "bytes": 46796,
+      "category": "source-text",
+      "destination": "source/candidate/crates/deadpan-core/src/insert_time.rs.txt",
+      "encoding": "identity",
+      "sha256": "76bcc37b4367d9e610d67950af26198afc6ac4986299f02635799513f0bc08b1",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source/crates/deadpan-core/src/insert_time.rs"
+    },
+    {
+      "bytes": 6032,
+      "category": "source-text",
+      "destination": "source/candidate/crates/deadpan-core/src/lib.rs.txt",
+      "encoding": "identity",
+      "sha256": "2c0f8acc8b375d7ff11b2bb7a1502a25df4a606d65ed71ab0e1136f45b269dba",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source/crates/deadpan-core/src/lib.rs"
+    },
+    {
+      "bytes": 44310,
+      "category": "source-text",
+      "destination": "source/candidate/crates/deadpan-core/src/one_leaf_replay.rs.txt",
+      "encoding": "identity",
+      "sha256": "49763f9cff86576828e3f223cda8c5555e12b15442ad5cfd07e84d67474a6375",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source/crates/deadpan-core/src/one_leaf_replay.rs"
+    },
+    {
+      "bytes": 24536,
+      "category": "source-text",
+      "destination": "source/candidate/crates/deadpan-core/src/pause_route_profile.rs.txt",
+      "encoding": "identity",
+      "sha256": "b4a435b76db6749c0a87383b5ccabb0690544bbd5832d0e79f6fe4934e579f2a",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source/crates/deadpan-core/src/pause_route_profile.rs"
+    },
+    {
+      "bytes": 68813,
+      "category": "source-text",
+      "destination": "source/candidate/crates/deadpan-core/src/semantic/planner.rs.txt",
+      "encoding": "identity",
+      "sha256": "74427a6fa8c6deb009cd68984e566ad3e7dc56912340084e8c44f70c776b202f",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source/crates/deadpan-core/src/semantic/planner.rs"
+    },
+    {
+      "bytes": 25851,
+      "category": "source-text",
+      "destination": "source/candidate/crates/deadpan-core/src/semantic/planner/content.rs.txt",
+      "encoding": "identity",
+      "sha256": "367e4778a6b328599a9e619631902a33c32e3986576fc777f2e5b1d9bf701ec6",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source/crates/deadpan-core/src/semantic/planner/content.rs"
+    },
+    {
+      "bytes": 47549,
+      "category": "source-text",
+      "destination": "source/candidate/crates/deadpan-core/src/semantic/planner/pause.rs.txt",
+      "encoding": "identity",
+      "sha256": "8137e6231c1cec8b9a1bf11db91c9c850eef208f716cd75453a70db903ff21e0",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source/crates/deadpan-core/src/semantic/planner/pause.rs"
+    },
+    {
+      "bytes": 18664,
+      "category": "source-text",
+      "destination": "source/candidate/crates/deadpan-core/src/semantic/planner/selection.rs.txt",
+      "encoding": "identity",
+      "sha256": "01f1833486770980345fef38950e014bad7f3f762a705ed004405806c943464c",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source/crates/deadpan-core/src/semantic/planner/selection.rs"
+    },
+    {
+      "bytes": 32596,
+      "category": "source-text",
+      "destination": "source/candidate/crates/deadpan-store/src/compound.rs.txt",
+      "encoding": "identity",
+      "sha256": "1bab2023a4e5d257eff0771fabf619e61579171b6fc259a2f895b5f3f54a1bbd",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source/crates/deadpan-store/src/compound.rs"
+    },
+    {
+      "bytes": 79532,
+      "category": "source-text",
+      "destination": "source/candidate/crates/deadpan-store/src/lib.rs.txt",
+      "encoding": "identity",
+      "sha256": "ff94eb1d3901b928be4838d03344a752a047356329283aa48fde112d057e1a41",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source/crates/deadpan-store/src/lib.rs"
+    },
+    {
+      "bytes": 99180,
+      "category": "source-text",
+      "destination": "source/qualified-before/crates/deadpan-app/src/project/service.rs.txt",
+      "encoding": "identity",
+      "sha256": "d68879b682dc78607a9ac996fa6941dde1975b6860da375e2da97ab7222ff750",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/crates/deadpan-app/src/project/service.rs"
+    },
+    {
+      "bytes": 51866,
+      "category": "source-text",
+      "destination": "source/qualified-before/crates/deadpan-app/src/project/service/macros.rs.txt",
+      "encoding": "identity",
+      "sha256": "b3d63ee05d49d3c1208a54a5492fe365c39b198b2a82448388df5a264e64c20c",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/crates/deadpan-app/src/project/service/macros.rs"
+    },
+    {
+      "bytes": 154563,
+      "category": "source-text",
+      "destination": "source/qualified-before/crates/deadpan-core/src/command.rs.txt",
+      "encoding": "identity",
+      "sha256": "37e364c3e02ab670d372a7bdc37f7d53b9979347b5821303047a4fef61b563b5",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/crates/deadpan-core/src/command.rs"
+    },
+    {
+      "bytes": 23475,
+      "category": "source-text",
+      "destination": "source/qualified-before/crates/deadpan-core/src/compound.rs.txt",
+      "encoding": "identity",
+      "sha256": "a74328e4d4d3be1ec9ad4800ea524596e526a29578c726c7a5d2bd9a327f02e5",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/crates/deadpan-core/src/compound.rs"
+    },
+    {
+      "bytes": 46645,
+      "category": "source-text",
+      "destination": "source/qualified-before/crates/deadpan-core/src/insert_time.rs.txt",
+      "encoding": "identity",
+      "sha256": "e98dda4425f9e6ca2a19243956c103c1af8d975c38f34d1e1515c2b3c40fae39",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/crates/deadpan-core/src/insert_time.rs"
+    },
+    {
+      "bytes": 5988,
+      "category": "source-text",
+      "destination": "source/qualified-before/crates/deadpan-core/src/lib.rs.txt",
+      "encoding": "identity",
+      "sha256": "b7746cc15dd05b11d13c842229ddc5ee3081e3f351ca03c7d894d6eda67f99ac",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/crates/deadpan-core/src/lib.rs"
+    },
+    {
+      "bytes": 24869,
+      "category": "source-text",
+      "destination": "source/qualified-before/crates/deadpan-core/src/one_leaf_replay.rs.txt",
+      "encoding": "identity",
+      "sha256": "1dc847665b59b800c83f23c50c7872b1dbc0c26760487a2a7046fa4f5a71d6bc",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/crates/deadpan-core/src/one_leaf_replay.rs"
+    },
+    {
+      "bytes": 68040,
+      "category": "source-text",
+      "destination": "source/qualified-before/crates/deadpan-core/src/semantic/planner.rs.txt",
+      "encoding": "identity",
+      "sha256": "dbf214faab9294a40902be007262723972862451a39e0d6769cb2b395479b3cf",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/crates/deadpan-core/src/semantic/planner.rs"
+    },
+    {
+      "bytes": 25685,
+      "category": "source-text",
+      "destination": "source/qualified-before/crates/deadpan-core/src/semantic/planner/content.rs.txt",
+      "encoding": "identity",
+      "sha256": "168b2b5a2b1a93361d72aa2ccf2c71eeb763d62931840b243d01f4b1519fcb5d",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/crates/deadpan-core/src/semantic/planner/content.rs"
+    },
+    {
+      "bytes": 47040,
+      "category": "source-text",
+      "destination": "source/qualified-before/crates/deadpan-core/src/semantic/planner/pause.rs.txt",
+      "encoding": "identity",
+      "sha256": "3875f474af99770066bb34d44b5f003529494f20ff34ffb8a95fe70e4387f056",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/crates/deadpan-core/src/semantic/planner/pause.rs"
+    },
+    {
+      "bytes": 18517,
+      "category": "source-text",
+      "destination": "source/qualified-before/crates/deadpan-core/src/semantic/planner/selection.rs.txt",
+      "encoding": "identity",
+      "sha256": "f8e16b78ed203dade31c1ff90632371f4d8dc1798db09178b03a3799d93ca526",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/crates/deadpan-core/src/semantic/planner/selection.rs"
+    },
+    {
+      "bytes": 31243,
+      "category": "source-text",
+      "destination": "source/qualified-before/crates/deadpan-store/src/compound.rs.txt",
+      "encoding": "identity",
+      "sha256": "852c4a4982ad28536649fe6ed91005503424bd941eb16de2877c26ed7f82d7b2",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/crates/deadpan-store/src/compound.rs"
+    },
+    {
+      "bytes": 79195,
+      "category": "source-text",
+      "destination": "source/qualified-before/crates/deadpan-store/src/lib.rs.txt",
+      "encoding": "identity",
+      "sha256": "6cac4fccb2112473fd9143f3ac0b50bb5d97dc2eeb2b6988d8336d45071fd010",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/crates/deadpan-store/src/lib.rs"
+    },
+    {
+      "bytes": 24370,
+      "category": "source-text",
+      "destination": "source/profile-before/crates/deadpan-core/src/compound.rs.txt",
+      "encoding": "identity",
+      "sha256": "7a89813ac9f91e3d1234167ad629fd4c8252b4e90c4c44e321763e3c8d35677a",
+      "source": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/source/crates/deadpan-core/src/compound.rs"
+    },
+    {
+      "bytes": 25480,
+      "category": "source-text",
+      "destination": "source/profile-before/crates/deadpan-core/src/one_leaf_replay.rs.txt",
+      "encoding": "identity",
+      "sha256": "9fac04a41e77a703b61ee6ec01c589b1dcc95b31ddeb3892c76a1bc1cd6a0a1e",
+      "source": "/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/source/crates/deadpan-core/src/one_leaf_replay.rs"
+    },
+    {
+      "bytes": 1500589,
+      "category": "native-report",
+      "destination": "native-reports/1/control/report.html.gz",
+      "encoding": "gzip",
+      "sha256": "4fa41bf6d4e32bc3c9a1e8a9c5b8ae5771ebb7d165c1ad3677ea792247d18efb",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-control-report/report.html"
+    },
+    {
+      "bytes": 1641948,
+      "category": "native-report",
+      "destination": "native-reports/1/control/report.json.gz",
+      "encoding": "gzip",
+      "sha256": "487f70a275002805132c5529dc63387952274c33d8890b18c6dee3d7c4ae5581",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-control-report/report.json"
+    },
+    {
+      "bytes": 1505048,
+      "category": "native-report",
+      "destination": "native-reports/1/baseline/report.html.gz",
+      "encoding": "gzip",
+      "sha256": "74c204f9148163ffc426803169fc34ee8418d209daa095718a11898d0806fef1",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-baseline-report/report.html"
+    },
+    {
+      "bytes": 1646703,
+      "category": "native-report",
+      "destination": "native-reports/1/baseline/report.json.gz",
+      "encoding": "gzip",
+      "sha256": "562dd5604f5b816b1882230c766dceeaea9e4fbd32ee8e6d79ace2f4e744de00",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-baseline-report/report.json"
+    },
+    {
+      "bytes": 1469303,
+      "category": "native-report",
+      "destination": "native-reports/1/candidate/report.html.gz",
+      "encoding": "gzip",
+      "sha256": "4c5d73a70dfe59e34278ac4bebd9c43f77d2aad59eaca83b379379afd9ee3729",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-candidate-report/report.html"
+    },
+    {
+      "bytes": 1608426,
+      "category": "native-report",
+      "destination": "native-reports/1/candidate/report.json.gz",
+      "encoding": "gzip",
+      "sha256": "af691c8b4b739d2487d8a49928b59511788f6139aae485feda6cb45e5aaae082",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-1-candidate-report/report.json"
+    },
+    {
+      "bytes": 1492912,
+      "category": "native-report",
+      "destination": "native-reports/2/control/report.html.gz",
+      "encoding": "gzip",
+      "sha256": "e5b1b178ee9c5d7c9a4946734761e6f5c12c320916c9bab3393b2bcf94dec257",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-control-report/report.html"
+    },
+    {
+      "bytes": 1633521,
+      "category": "native-report",
+      "destination": "native-reports/2/control/report.json.gz",
+      "encoding": "gzip",
+      "sha256": "70e1052427ee7a3d15749d29a94a3d3a6862ea0f1488655ed6593d637686c0e2",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-control-report/report.json"
+    },
+    {
+      "bytes": 1497366,
+      "category": "native-report",
+      "destination": "native-reports/2/baseline/report.html.gz",
+      "encoding": "gzip",
+      "sha256": "ea082d13781aa60352e2fc99a0d5a867ef59806162c3f310de9729d3c770e3f3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-baseline-report/report.html"
+    },
+    {
+      "bytes": 1638462,
+      "category": "native-report",
+      "destination": "native-reports/2/baseline/report.json.gz",
+      "encoding": "gzip",
+      "sha256": "ad6e0871b0b4ea7b13e2df16161714ce386fe15ac39080bbb81e0c220bbf530c",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-baseline-report/report.json"
+    },
+    {
+      "bytes": 1461624,
+      "category": "native-report",
+      "destination": "native-reports/2/candidate/report.html.gz",
+      "encoding": "gzip",
+      "sha256": "2a4e491d4cc8ec09378b9c33fb75cf72edde3c016ad19de16b84f85cb8eee4c8",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-candidate-report/report.html"
+    },
+    {
+      "bytes": 1599985,
+      "category": "native-report",
+      "destination": "native-reports/2/candidate/report.json.gz",
+      "encoding": "gzip",
+      "sha256": "88b8699fef704001950f596fb78959e7494d2509d232bca87865c8de0fcba196",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-2-candidate-report/report.json"
+    },
+    {
+      "bytes": 1497435,
+      "category": "native-report",
+      "destination": "native-reports/3/control/report.html.gz",
+      "encoding": "gzip",
+      "sha256": "3ab6613bde7cc8b531d95500bae723c24efa80650eaced7ca57e859f996f7111",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-control-report/report.html"
+    },
+    {
+      "bytes": 1638993,
+      "category": "native-report",
+      "destination": "native-reports/3/control/report.json.gz",
+      "encoding": "gzip",
+      "sha256": "a687c52c6247da808412b11d4ee449210859052e3e09bbecc44a27b2da47255e",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-control-report/report.json"
+    },
+    {
+      "bytes": 1497345,
+      "category": "native-report",
+      "destination": "native-reports/3/baseline/report.html.gz",
+      "encoding": "gzip",
+      "sha256": "4d5bdb09e12d93e8d4194e9c116e2fac751bf750ac8403e463591da36559cccd",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-baseline-report/report.html"
+    },
+    {
+      "bytes": 1638401,
+      "category": "native-report",
+      "destination": "native-reports/3/baseline/report.json.gz",
+      "encoding": "gzip",
+      "sha256": "2d0a36eecdd79757e50472a0285d005e348c7fe803cd8e150411d0b42339b97b",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-baseline-report/report.json"
+    },
+    {
+      "bytes": 1434840,
+      "category": "native-report",
+      "destination": "native-reports/3/candidate/report.html.gz",
+      "encoding": "gzip",
+      "sha256": "e7b954edc1fef58cf87776da59bdba26fd1d7476ddff6a2057bfa9f746dd3ffb",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-candidate-report/report.html"
+    },
+    {
+      "bytes": 1571178,
+      "category": "native-report",
+      "destination": "native-reports/3/candidate/report.json.gz",
+      "encoding": "gzip",
+      "sha256": "0c29016feff02f327f0bd2a7c96d46afd17a27feff509f2ebe003499a1c871a3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-3-candidate-report/report.json"
+    },
+    {
+      "bytes": 1476397,
+      "category": "native-report",
+      "destination": "native-reports/4/control/report.html.gz",
+      "encoding": "gzip",
+      "sha256": "f748c3797bcea0be572100e2ccc26d9d33572fbf9f01917194f3d9cab92fc24e",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-control-report/report.html"
+    },
+    {
+      "bytes": 1615892,
+      "category": "native-report",
+      "destination": "native-reports/4/control/report.json.gz",
+      "encoding": "gzip",
+      "sha256": "301dee81da5ab4ecc7d8df8437fd60de600fd4e22d6d799fc7d22068a2a8d05c",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-control-report/report.json"
+    },
+    {
+      "bytes": 1499206,
+      "category": "native-report",
+      "destination": "native-reports/4/baseline/report.html.gz",
+      "encoding": "gzip",
+      "sha256": "5aba7e1978d30ded7e7ef55429663e9d697a77b41b443c143cf1146901625643",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-baseline-report/report.html"
+    },
+    {
+      "bytes": 1640834,
+      "category": "native-report",
+      "destination": "native-reports/4/baseline/report.json.gz",
+      "encoding": "gzip",
+      "sha256": "47b7403a19bcf1ca63f6afc2b4d9a89898aee2bfe3eb0f762c8b67c498cb2e32",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-baseline-report/report.json"
+    },
+    {
+      "bytes": 1437424,
+      "category": "native-report",
+      "destination": "native-reports/4/candidate/report.html.gz",
+      "encoding": "gzip",
+      "sha256": "a620d603ea9ac6990c7bac975ef8c232ca7c4efe3a7aa63488050820de8c4882",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-candidate-report/report.html"
+    },
+    {
+      "bytes": 1573632,
+      "category": "native-report",
+      "destination": "native-reports/4/candidate/report.json.gz",
+      "encoding": "gzip",
+      "sha256": "da2d8df29c280bd3a57e5e29b6699ef078626b9c1e4e59a3a1fe5dc6b57926d3",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-4-candidate-report/report.json"
+    },
+    {
+      "bytes": 1484250,
+      "category": "native-report",
+      "destination": "native-reports/5/control/report.html.gz",
+      "encoding": "gzip",
+      "sha256": "7f6ae9418ea828205a9e1332363ef4250e44736e7e9eec875934fb487b78ddb7",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-control-report/report.html"
+    },
+    {
+      "bytes": 1624435,
+      "category": "native-report",
+      "destination": "native-reports/5/control/report.json.gz",
+      "encoding": "gzip",
+      "sha256": "967a0223cd55faef050c990988054f368d16b2080a299f3b3b98602758b0defe",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-control-report/report.json"
+    },
+    {
+      "bytes": 1506395,
+      "category": "native-report",
+      "destination": "native-reports/5/baseline/report.html.gz",
+      "encoding": "gzip",
+      "sha256": "d04a747aa4c89a46e85095a42862de7f7d2ae549d437c09d8bbe12def725cf24",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-baseline-report/report.html"
+    },
+    {
+      "bytes": 1647710,
+      "category": "native-report",
+      "destination": "native-reports/5/baseline/report.json.gz",
+      "encoding": "gzip",
+      "sha256": "5ae2daf94ef00d31de680cf39d05ca3142befd1d3849571e2a6b602ddfb65709",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-baseline-report/report.json"
+    },
+    {
+      "bytes": 1466150,
+      "category": "native-report",
+      "destination": "native-reports/5/candidate/report.html.gz",
+      "encoding": "gzip",
+      "sha256": "ae33fdbbaef574883baf3c6bdefc401b23dcc370a15558fad0bcda311992bfb8",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-candidate-report/report.html"
+    },
+    {
+      "bytes": 1604995,
+      "category": "native-report",
+      "destination": "native-reports/5/candidate/report.json.gz",
+      "encoding": "gzip",
+      "sha256": "74a79c9425f798b34456b8c6f1851cfe42c004524734df42608cbefeac7302bf",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-candidate-report/report.json"
+    },
+    {
+      "bytes": 1485233,
+      "category": "native-report",
+      "destination": "native-reports/6/control/report.html.gz",
+      "encoding": "gzip",
+      "sha256": "726e0a80688c043b0a12c03b72477e483f65b98cb19259fcf5ea44a2c4e3ae30",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-control-report/report.html"
+    },
+    {
+      "bytes": 1625149,
+      "category": "native-report",
+      "destination": "native-reports/6/control/report.json.gz",
+      "encoding": "gzip",
+      "sha256": "8eed73e6973d36787fdbe05955aab59e7635ffc38b3bff488ec92f156df72636",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-control-report/report.json"
+    },
+    {
+      "bytes": 1500604,
+      "category": "native-report",
+      "destination": "native-reports/6/baseline/report.html.gz",
+      "encoding": "gzip",
+      "sha256": "f0e28a8034f42a7596fe6af4d4ab7b779c7eaaea4dbb22bdb3201b125428c017",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-baseline-report/report.html"
+    },
+    {
+      "bytes": 1642305,
+      "category": "native-report",
+      "destination": "native-reports/6/baseline/report.json.gz",
+      "encoding": "gzip",
+      "sha256": "ea45852b912caa78ded8b1cc73e960703c8d265aa1ab5d4a108005b18b7484a7",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-baseline-report/report.json"
+    },
+    {
+      "bytes": 1455898,
+      "category": "native-report",
+      "destination": "native-reports/6/candidate/report.html.gz",
+      "encoding": "gzip",
+      "sha256": "5143693fbed21407b650ba61066bf9ba886c69beecf3716460d7bc8723d9c1bd",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-candidate-report/report.html"
+    },
+    {
+      "bytes": 1594001,
+      "category": "native-report",
+      "destination": "native-reports/6/candidate/report.json.gz",
+      "encoding": "gzip",
+      "sha256": "c16f5ac0c8016b38b04ce4f30b1411276b7bf4752c755aeb82165268804764d9",
+      "source": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-6-candidate-report/report.json"
+    },
+    {
+      "bytes": 0,
+      "category": "media-evidence",
+      "destination": "media/cached/one-leaf-cached-media.deadpan/.render-candidates.lock",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/cached/one-leaf-cached-media.deadpan/.render-candidates.lock"
+    },
+    {
+      "bytes": 0,
+      "category": "media-evidence",
+      "destination": "media/cached/one-leaf-cached-media.deadpan/.writer.lock",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/cached/one-leaf-cached-media.deadpan/.writer.lock"
+    },
+    {
+      "bytes": 39157,
+      "category": "media-evidence",
+      "destination": "media/cached/one-leaf-cached-media.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "encoding": "identity",
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/cached/one-leaf-cached-media.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1"
+    },
+    {
+      "bytes": 15070,
+      "category": "media-evidence",
+      "destination": "media/cached/one-leaf-cached-media.deadpan/Media/RenderCandidates/blake3-4f40708547407780293a7e801a32c00b91748be27e82c40dabeda46f41be8887",
+      "encoding": "identity",
+      "sha256": "781fdac8f7f0f6f3f1c7d41ed61fe8f5f2e0f7ba83c80777a6cf9e5be739f8be",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/cached/one-leaf-cached-media.deadpan/Media/RenderCandidates/blake3-4f40708547407780293a7e801a32c00b91748be27e82c40dabeda46f41be8887"
+    },
+    {
+      "bytes": 13232,
+      "category": "media-evidence",
+      "destination": "media/cached/one-leaf-cached-media.deadpan/Media/RenderCandidates/blake3-94cdd596fc2d04c80f41339af20e25c45e77b904a58e9cc25f83eee635e0579b",
+      "encoding": "identity",
+      "sha256": "6b3db7c0ae2af76e410a2917ac2c92e01e250e51bcef1426f638b80662d57d9b",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/cached/one-leaf-cached-media.deadpan/Media/RenderCandidates/blake3-94cdd596fc2d04c80f41339af20e25c45e77b904a58e9cc25f83eee635e0579b"
+    },
+    {
+      "bytes": 82,
+      "category": "media-evidence",
+      "destination": "media/cached/one-leaf-cached-media.deadpan/manifest.json",
+      "encoding": "identity",
+      "sha256": "f4c2a56ae142a6c30c92bdd1ccc464f78fbaa6f6178491f593aa96ca9d6702b2",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/cached/one-leaf-cached-media.deadpan/manifest.json"
+    },
+    {
+      "bytes": 593920,
+      "category": "media-evidence",
+      "destination": "media/cached/one-leaf-cached-media.deadpan/project.sqlite",
+      "encoding": "identity",
+      "sha256": "262ea15cecc2cad026ee56199a765e7a1e5e2db40683b9cf4ae4a4188cae39a9",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/cached/one-leaf-cached-media.deadpan/project.sqlite"
+    },
+    {
+      "bytes": 32768,
+      "category": "media-evidence",
+      "destination": "media/cached/one-leaf-cached-media.deadpan/project.sqlite-shm",
+      "encoding": "identity",
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/cached/one-leaf-cached-media.deadpan/project.sqlite-shm"
+    },
+    {
+      "bytes": 0,
+      "category": "media-evidence",
+      "destination": "media/cached/one-leaf-cached-media.deadpan/project.sqlite-wal",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/cached/one-leaf-cached-media.deadpan/project.sqlite-wal"
+    },
+    {
+      "bytes": 39157,
+      "category": "media-evidence",
+      "destination": "media/cached/original.mp4",
+      "encoding": "identity",
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/cached/original.mp4"
+    },
+    {
+      "bytes": 454,
+      "category": "media-evidence",
+      "destination": "media/cached/request-one-leaf-cached-media-r01.json",
+      "encoding": "identity",
+      "sha256": "78a32acfb89cbd3f20b1a19aa57f6785cf6c9078407dcb4c3085327df7f8b2de",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/cached/request-one-leaf-cached-media-r01.json"
+    },
+    {
+      "bytes": 414,
+      "category": "media-evidence",
+      "destination": "media/cached/request-one-leaf-cached-media-r02.json",
+      "encoding": "identity",
+      "sha256": "e0d5fd951d91189bbe8e6f16bdd249d30690b6d064ec87d9d04b1cc5e0e04b00",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/cached/request-one-leaf-cached-media-r02.json"
+    },
+    {
+      "bytes": 32887,
+      "category": "media-evidence",
+      "destination": "media/exports-cached/deadpan-render-d435d722-136f-4e9a-aafb-098ea88b6a28.json",
+      "encoding": "identity",
+      "sha256": "523dc977bcbd8cf8cfe7202bf7ab4702abd777b6ef70b6a1b485bc77d2887aa3",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/exports-cached/deadpan-render-d435d722-136f-4e9a-aafb-098ea88b6a28.json"
+    },
+    {
+      "bytes": 13232,
+      "category": "media-evidence",
+      "destination": "media/exports-cached/one-leaf-cached-media.mp4",
+      "encoding": "identity",
+      "sha256": "6b3db7c0ae2af76e410a2917ac2c92e01e250e51bcef1426f638b80662d57d9b",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/exports-cached/one-leaf-cached-media.mp4"
+    },
+    {
+      "bytes": 32889,
+      "category": "media-evidence",
+      "destination": "media/exports-uncached/deadpan-render-cae9f758-93c7-4493-9064-eb37cc143cc5.json",
+      "encoding": "identity",
+      "sha256": "0897bc52b23e575293c7330bc163caa9dfa6615f9b6f4f7b2e79c330243bcea2",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/exports-uncached/deadpan-render-cae9f758-93c7-4493-9064-eb37cc143cc5.json"
+    },
+    {
+      "bytes": 13232,
+      "category": "media-evidence",
+      "destination": "media/exports-uncached/one-leaf-uncached-media.mp4",
+      "encoding": "identity",
+      "sha256": "fb36aa0694280a09bd27aa5c079c949fb96d0a104eeb15617f5a389f56cbe950",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/exports-uncached/one-leaf-uncached-media.mp4"
+    },
+    {
+      "bytes": 7642,
+      "category": "media-evidence",
+      "destination": "media/one-leaf-after-document.json",
+      "encoding": "identity",
+      "sha256": "ddf78e5f2874e7b28a70a99edb6eedbd722b00fcfde324e3006fb4e35750cba8",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/one-leaf-after-document.json"
+    },
+    {
+      "bytes": 2319402,
+      "category": "media-evidence",
+      "destination": "media/one-leaf-after-pcm.json",
+      "encoding": "identity",
+      "sha256": "239ae1dc1903ad3879f8e096c21280a1ea60800c43afc4b96632aac4f1ced873",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/one-leaf-after-pcm.json"
+    },
+    {
+      "bytes": 4420,
+      "category": "media-evidence",
+      "destination": "media/one-leaf-before-document.json",
+      "encoding": "identity",
+      "sha256": "53300d704fbfff87fa78d30831a8b1f1ad458eded4f6e0de60c1d87c41b1661b",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/one-leaf-before-document.json"
+    },
+    {
+      "bytes": 1550634,
+      "category": "media-evidence",
+      "destination": "media/one-leaf-before-pcm.json",
+      "encoding": "identity",
+      "sha256": "9a6ce5e6fcb27c5e823545bfaf9642203676acf0fee501df11f610f790ceb761",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/one-leaf-before-pcm.json"
+    },
+    {
+      "bytes": 43395,
+      "category": "media-evidence",
+      "destination": "media/one-leaf-cached-verification.json",
+      "encoding": "identity",
+      "sha256": "a6042eebcced6827eb8555f39ec27519819e4e028e85da1ecf4f1c6513e188a2",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/one-leaf-cached-verification.json"
+    },
+    {
+      "bytes": 4645,
+      "category": "media-evidence",
+      "destination": "media/one-leaf-commit.json",
+      "encoding": "identity",
+      "sha256": "c17cb994ed8adf3dd23d33cabf47905a080c2bdabd9a5c2375aa9e50bbe49fc2",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/one-leaf-commit.json"
+    },
+    {
+      "bytes": 88856,
+      "category": "media-evidence",
+      "destination": "media/one-leaf-media-summary.json",
+      "encoding": "identity",
+      "sha256": "43d85c69bac733451df8783b75ed271db127f7961e03356569688540db8555ee",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/one-leaf-media-summary.json"
+    },
+    {
+      "bytes": 4544,
+      "category": "media-evidence",
+      "destination": "media/one-leaf-redo.json",
+      "encoding": "identity",
+      "sha256": "2a8e81589ebc17188c28633e33215a8c8a7525d043ed285b36ab9ff5b55490ce",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/one-leaf-redo.json"
+    },
+    {
+      "bytes": 43399,
+      "category": "media-evidence",
+      "destination": "media/one-leaf-uncached-verification.json",
+      "encoding": "identity",
+      "sha256": "70761339b6e8c5ce8eac182416955792c33c8f2cc3f9233f32a34ceefbba4550",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/one-leaf-uncached-verification.json"
+    },
+    {
+      "bytes": 4544,
+      "category": "media-evidence",
+      "destination": "media/one-leaf-undo.json",
+      "encoding": "identity",
+      "sha256": "1ff13d57d3329de45ece7ec5fd20c3ab3981774f272bd417dec5fc5847416be6",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/one-leaf-undo.json"
+    },
+    {
+      "bytes": 0,
+      "category": "media-evidence",
+      "destination": "media/uncached.deadpan/.render-candidates.lock",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/uncached.deadpan/.render-candidates.lock"
+    },
+    {
+      "bytes": 0,
+      "category": "media-evidence",
+      "destination": "media/uncached.deadpan/.writer.lock",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/uncached.deadpan/.writer.lock"
+    },
+    {
+      "bytes": 39157,
+      "category": "media-evidence",
+      "destination": "media/uncached.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "encoding": "identity",
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/uncached.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1"
+    },
+    {
+      "bytes": 13232,
+      "category": "media-evidence",
+      "destination": "media/uncached.deadpan/Media/RenderCandidates/blake3-1120ef54a7b21907d85f9b448b934a4f3fe99cb0fb79834dc3fb38b7ced87328",
+      "encoding": "identity",
+      "sha256": "fb36aa0694280a09bd27aa5c079c949fb96d0a104eeb15617f5a389f56cbe950",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/uncached.deadpan/Media/RenderCandidates/blake3-1120ef54a7b21907d85f9b448b934a4f3fe99cb0fb79834dc3fb38b7ced87328"
+    },
+    {
+      "bytes": 15070,
+      "category": "media-evidence",
+      "destination": "media/uncached.deadpan/Media/RenderCandidates/blake3-6edf6f05d28129f9aa49191627077a5cf72dea51aaa0db99abb2192251b9f7fa",
+      "encoding": "identity",
+      "sha256": "89f7c070c8ff0499b0beea31d4201a8a17d95634c32aafd3e315d7e7603ea59c",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/uncached.deadpan/Media/RenderCandidates/blake3-6edf6f05d28129f9aa49191627077a5cf72dea51aaa0db99abb2192251b9f7fa"
+    },
+    {
+      "bytes": 82,
+      "category": "media-evidence",
+      "destination": "media/uncached.deadpan/manifest.json",
+      "encoding": "identity",
+      "sha256": "f4c2a56ae142a6c30c92bdd1ccc464f78fbaa6f6178491f593aa96ca9d6702b2",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/uncached.deadpan/manifest.json"
+    },
+    {
+      "bytes": 593920,
+      "category": "media-evidence",
+      "destination": "media/uncached.deadpan/project.sqlite",
+      "encoding": "identity",
+      "sha256": "c0d8332691255ecb8c3972d84f48bf3a8ba383f1067aac27911a94165e18a65b",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/uncached.deadpan/project.sqlite"
+    },
+    {
+      "bytes": 32768,
+      "category": "media-evidence",
+      "destination": "media/uncached.deadpan/project.sqlite-shm",
+      "encoding": "identity",
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/uncached.deadpan/project.sqlite-shm"
+    },
+    {
+      "bytes": 0,
+      "category": "media-evidence",
+      "destination": "media/uncached.deadpan/project.sqlite-wal",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpayuZWD/uncached.deadpan/project.sqlite-wal"
+    }
+  ],
+  "qualified_main_source_map_sha256": "f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53",
+  "qualified_overlay": [
+    {
+      "after_destination": "source/candidate/crates/deadpan-app/src/project/service.rs.txt",
+      "after_sha256": "3f290296af812245290ae9a39bbda1cfdb58a82e86ebba6f963bdb5e0c59a420",
+      "before_destination": "source/qualified-before/crates/deadpan-app/src/project/service.rs.txt",
+      "before_sha256": "d68879b682dc78607a9ac996fa6941dde1975b6860da375e2da97ab7222ff750",
+      "path": "crates/deadpan-app/src/project/service.rs"
+    },
+    {
+      "after_destination": "source/candidate/crates/deadpan-app/src/project/service/macros.rs.txt",
+      "after_sha256": "1d64321deba7812b0133917af1145c01f5b1465f84d5f196d3e0fef632aba5cc",
+      "before_destination": "source/qualified-before/crates/deadpan-app/src/project/service/macros.rs.txt",
+      "before_sha256": "b3d63ee05d49d3c1208a54a5492fe365c39b198b2a82448388df5a264e64c20c",
+      "path": "crates/deadpan-app/src/project/service/macros.rs"
+    },
+    {
+      "after_destination": "source/candidate/crates/deadpan-core/src/command.rs.txt",
+      "after_sha256": "ef40053c894ebed6af299f3a28e7acce0c4fc22115ef1bc3d710c24e44c7d5da",
+      "before_destination": "source/qualified-before/crates/deadpan-core/src/command.rs.txt",
+      "before_sha256": "37e364c3e02ab670d372a7bdc37f7d53b9979347b5821303047a4fef61b563b5",
+      "path": "crates/deadpan-core/src/command.rs"
+    },
+    {
+      "after_destination": "source/candidate/crates/deadpan-core/src/compound.rs.txt",
+      "after_sha256": "61d64cc76d65fc321f34141cf43625f2463a3a0388bf6e1fe024a42d3ffce4b3",
+      "before_destination": "source/qualified-before/crates/deadpan-core/src/compound.rs.txt",
+      "before_sha256": "a74328e4d4d3be1ec9ad4800ea524596e526a29578c726c7a5d2bd9a327f02e5",
+      "path": "crates/deadpan-core/src/compound.rs"
+    },
+    {
+      "after_destination": "source/candidate/crates/deadpan-core/src/insert_time.rs.txt",
+      "after_sha256": "76bcc37b4367d9e610d67950af26198afc6ac4986299f02635799513f0bc08b1",
+      "before_destination": "source/qualified-before/crates/deadpan-core/src/insert_time.rs.txt",
+      "before_sha256": "e98dda4425f9e6ca2a19243956c103c1af8d975c38f34d1e1515c2b3c40fae39",
+      "path": "crates/deadpan-core/src/insert_time.rs"
+    },
+    {
+      "after_destination": "source/candidate/crates/deadpan-core/src/lib.rs.txt",
+      "after_sha256": "2c0f8acc8b375d7ff11b2bb7a1502a25df4a606d65ed71ab0e1136f45b269dba",
+      "before_destination": "source/qualified-before/crates/deadpan-core/src/lib.rs.txt",
+      "before_sha256": "b7746cc15dd05b11d13c842229ddc5ee3081e3f351ca03c7d894d6eda67f99ac",
+      "path": "crates/deadpan-core/src/lib.rs"
+    },
+    {
+      "after_destination": "source/candidate/crates/deadpan-core/src/one_leaf_replay.rs.txt",
+      "after_sha256": "49763f9cff86576828e3f223cda8c5555e12b15442ad5cfd07e84d67474a6375",
+      "before_destination": "source/qualified-before/crates/deadpan-core/src/one_leaf_replay.rs.txt",
+      "before_sha256": "1dc847665b59b800c83f23c50c7872b1dbc0c26760487a2a7046fa4f5a71d6bc",
+      "path": "crates/deadpan-core/src/one_leaf_replay.rs"
+    },
+    {
+      "after_destination": "source/candidate/crates/deadpan-core/src/pause_route_profile.rs.txt",
+      "after_sha256": "b4a435b76db6749c0a87383b5ccabb0690544bbd5832d0e79f6fe4934e579f2a",
+      "before_destination": null,
+      "before_sha256": null,
+      "path": "crates/deadpan-core/src/pause_route_profile.rs"
+    },
+    {
+      "after_destination": "source/candidate/crates/deadpan-core/src/semantic/planner.rs.txt",
+      "after_sha256": "74427a6fa8c6deb009cd68984e566ad3e7dc56912340084e8c44f70c776b202f",
+      "before_destination": "source/qualified-before/crates/deadpan-core/src/semantic/planner.rs.txt",
+      "before_sha256": "dbf214faab9294a40902be007262723972862451a39e0d6769cb2b395479b3cf",
+      "path": "crates/deadpan-core/src/semantic/planner.rs"
+    },
+    {
+      "after_destination": "source/candidate/crates/deadpan-core/src/semantic/planner/content.rs.txt",
+      "after_sha256": "367e4778a6b328599a9e619631902a33c32e3986576fc777f2e5b1d9bf701ec6",
+      "before_destination": "source/qualified-before/crates/deadpan-core/src/semantic/planner/content.rs.txt",
+      "before_sha256": "168b2b5a2b1a93361d72aa2ccf2c71eeb763d62931840b243d01f4b1519fcb5d",
+      "path": "crates/deadpan-core/src/semantic/planner/content.rs"
+    },
+    {
+      "after_destination": "source/candidate/crates/deadpan-core/src/semantic/planner/pause.rs.txt",
+      "after_sha256": "8137e6231c1cec8b9a1bf11db91c9c850eef208f716cd75453a70db903ff21e0",
+      "before_destination": "source/qualified-before/crates/deadpan-core/src/semantic/planner/pause.rs.txt",
+      "before_sha256": "3875f474af99770066bb34d44b5f003529494f20ff34ffb8a95fe70e4387f056",
+      "path": "crates/deadpan-core/src/semantic/planner/pause.rs"
+    },
+    {
+      "after_destination": "source/candidate/crates/deadpan-core/src/semantic/planner/selection.rs.txt",
+      "after_sha256": "01f1833486770980345fef38950e014bad7f3f762a705ed004405806c943464c",
+      "before_destination": "source/qualified-before/crates/deadpan-core/src/semantic/planner/selection.rs.txt",
+      "before_sha256": "f8e16b78ed203dade31c1ff90632371f4d8dc1798db09178b03a3799d93ca526",
+      "path": "crates/deadpan-core/src/semantic/planner/selection.rs"
+    },
+    {
+      "after_destination": "source/candidate/crates/deadpan-store/src/compound.rs.txt",
+      "after_sha256": "1bab2023a4e5d257eff0771fabf619e61579171b6fc259a2f895b5f3f54a1bbd",
+      "before_destination": "source/qualified-before/crates/deadpan-store/src/compound.rs.txt",
+      "before_sha256": "852c4a4982ad28536649fe6ed91005503424bd941eb16de2877c26ed7f82d7b2",
+      "path": "crates/deadpan-store/src/compound.rs"
+    },
+    {
+      "after_destination": "source/candidate/crates/deadpan-store/src/lib.rs.txt",
+      "after_sha256": "ff94eb1d3901b928be4838d03344a752a047356329283aa48fde112d057e1a41",
+      "before_destination": "source/qualified-before/crates/deadpan-store/src/lib.rs.txt",
+      "before_sha256": "6cac4fccb2112473fd9143f3ac0b50bb5d97dc2eeb2b6988d8336d45071fd010",
+      "path": "crates/deadpan-store/src/lib.rs"
+    }
+  ],
+  "schema": "deadpan-compound-wire-reuse-package-1",
+  "source_changes": [
+    {
+      "after_destination": "source/candidate/crates/deadpan-core/src/compound.rs.txt",
+      "after_sha256": "61d64cc76d65fc321f34141cf43625f2463a3a0388bf6e1fe024a42d3ffce4b3",
+      "before_destination": "source/profile-before/crates/deadpan-core/src/compound.rs.txt",
+      "before_sha256": "7a89813ac9f91e3d1234167ad629fd4c8252b4e90c4c44e321763e3c8d35677a",
+      "path": "crates/deadpan-core/src/compound.rs"
+    },
+    {
+      "after_destination": "source/candidate/crates/deadpan-core/src/one_leaf_replay.rs.txt",
+      "after_sha256": "49763f9cff86576828e3f223cda8c5555e12b15442ad5cfd07e84d67474a6375",
+      "before_destination": "source/profile-before/crates/deadpan-core/src/one_leaf_replay.rs.txt",
+      "before_sha256": "9fac04a41e77a703b61ee6ec01c589b1dcc95b31ddeb3892c76a1bc1cd6a0a1e",
+      "path": "crates/deadpan-core/src/one_leaf_replay.rs"
+    }
+  ],
+  "source_review_sha256": "dbbc5efe7cf81b41bba3bca181991db809dd3afe1358793be0163f2bb78db86d",
+  "static_packaging_plan_sha256": "7fea9037dab0e280316c4ea10cbf7c8f252d76bfb9ebcb157f3de40c946163f2",
+  "terminal_sha256": {
+    "build": "55969676f55637ebc0cbb678207705098f84b66c647f4d37c52be6bc8e67054f",
+    "measurement": "2e713143427e45e6eb03d486fe92c445a21d4ea5c24aa3c18fe1ff243944a28a",
+    "media": "a62179dfd3f81d6f5af1897cb9763ac94cd2e2078a2735b54c13150af709936c"
+  }
+}

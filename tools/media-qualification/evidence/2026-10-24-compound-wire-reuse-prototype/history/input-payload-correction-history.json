@@ -1,0 +1,8 @@
+{
+  "correction": "Add each exact file from the frozen candidate source tree under inputs/<name>, with byte length and SHA-256 matching baseline-inputs.json and the immutable matched-profile inputs.",
+  "execution": "Static review finding before publisher execution; package.py was not run.",
+  "finding": "The collector preflight requires six exact inputs/<name> payloads, while the first approved manifest retained only the six-file hash map.",
+  "prior_manifest_sha256": "d6aa5b07e5fb2dfa3d4b5e1532fe3ab3607605a8fcccd18f6784df20b8d0db4e",
+  "prior_manifest_snapshot": "approved-package-manifest-before-input-fix.json.txt",
+  "schema": "deadpan-compound-wire-reuse-manifest-correction-1"
+}

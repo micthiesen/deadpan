@@ -1,0 +1,18 @@
+{
+  "status": "approved_for_execution_after_successful_build",
+  "driver_sha256": "0b67203bb9d0ad849bd2167876079d838da957f33762531873c626ab38bfe8fa",
+  "media_pins_sha256": "360cc3449fd555ce86718e8fccd494fc8f045572c50c6f683b5421d001dc5d33",
+  "source_map_sha256": "59ab40b15f9a705953320d45a9ffcef87a85f876a15455c4fb4180ce12ebdff9",
+  "checks": [
+    "Candidate, immutable qualified production and matched instrumented source maps are separately verified.",
+    "Main current tracked Rust path set and six inputs are guarded without untracked foreign extras.",
+    "Successful nine-stage build, actual App hash and qualified helper receipts required.",
+    "Fresh release archive, empty extraction setup, exact one-test selection, actual CLI/test/helper hashes and nonzero PASS summary are checked.",
+    "Real Some/None history, canonical PCM and two emitted-file exports are independently validated at 45 pictures and 72072 samples/zero offset.",
+    "Profile output is disabled; actual media records and movies remain retained."
+  ],
+  "limitations": [
+    "Not yet executed.",
+    "Some/None media parity checks capability equivalence; independent forced-full wire-count parity is covered by the full Core suite."
+  ]
+}

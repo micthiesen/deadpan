@@ -1,0 +1,24 @@
+{
+  "schema": "deadpan-compound-wire-reuse-prototype-media-static-1",
+  "source_map_sha256": "59ab40b15f9a705953320d45a9ffcef87a85f876a15455c4fb4180ce12ebdff9",
+  "source_count": 2054,
+  "qualified_base_source_map_sha256": "f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53",
+  "qualified_source_root": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source",
+  "test": "group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached",
+  "fixture": {
+    "path": "source/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+    "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+  },
+  "nextest_config": {
+    "path": "source/.config/nextest.toml",
+    "sha256": "0fe01c7d7f266b630a39474d9a33901bdf9d64ca3f4ab8db4ce4885bb209e677"
+  },
+  "qualified_control_sha256": "970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2",
+  "qualified_matched_profile_sha256": "1a12c2e9f866de1cef3ec64ea3997b26a1baafa194a95e3eef9b4587607d288a",
+  "qualified_helper_manifest_sha256": "763e335a151e42fd15d537514fd90dcf2a9ef06a7d8293926185cbc3b12e5949",
+  "qualified_helper_sha256": {
+    "deadpan-media-worker": "70114641de62f0c9c839734f3dddab1221b01888661a43ed5583e40ca9ed90fe",
+    "deadpan-transcribe": "a75e83e94c073fa7419fea1ffc4621ab56adba020d402435c65622dababbe8b3",
+    "deadpan-track": "97564bc5d9aee093aa7e3fa5e8a89aa5da68134f92f34032a407f27778c1eab4"
+  }
+}

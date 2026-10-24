@@ -1,0 +1,123 @@
+{
+  "status": "no_findings",
+  "findings": [],
+  "review_kind": "Independent read-only source and test audit; no compilation, formatting, test or product runtime execution.",
+  "source_map_sha256": "59ab40b15f9a705953320d45a9ffcef87a85f876a15455c4fb4180ce12ebdff9",
+  "baseline_source_map_sha256": "0bf07513646ffdfee5aec03bb1b64b6fff757196512aeea883226c675b15ed02",
+  "reviewed_paths": {
+    "crates/deadpan-core/src/compound.rs": "61d64cc76d65fc321f34141cf43625f2463a3a0388bf6e1fe024a42d3ffce4b3",
+    "crates/deadpan-core/src/one_leaf_replay.rs": "49763f9cff86576828e3f223cda8c5555e12b15442ad5cfd07e84d67474a6375"
+  },
+  "input_hashes": {
+    "frozen-sources.json": "59ab40b15f9a705953320d45a9ffcef87a85f876a15455c4fb4180ce12ebdff9",
+    "baseline-sources.json": "0bf07513646ffdfee5aec03bb1b64b6fff757196512aeea883226c675b15ed02",
+    "baseline-inputs.json": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317",
+    "baseline-provenance.json": "c07885367193a27fe8d21da9addaa75cde2b0279b08f2671d6cd12d8576ddcea",
+    "prototype.patch": "de34a2b4cf611393ed8ff1f4a0584f3cbd697a7712874375708cc7353e23718f",
+    "design.md": "b3c32fab907efc0f547fb9fc81b53dc775313e08a70330d3c3463d7f66400841",
+    "root-oracle-review.json": "1fd4918c10d0d39573e72599475ecd0eb8a1d5f9d1f91fc6761cff87613d781b"
+  },
+  "scope_verification": {
+    "rust_file_count": 2054,
+    "same_rust_path_set_as_baseline": true,
+    "changed_paths": [
+      "crates/deadpan-core/src/compound.rs",
+      "crates/deadpan-core/src/one_leaf_replay.rs"
+    ],
+    "unchanged_rust_files": 2052,
+    "all_current_and_baseline_rust_files_rehashed": true,
+    "six_inputs_match_baseline": true,
+    "build_inputs": {
+      "Cargo.lock": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+      "Cargo.toml": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3",
+      "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+      ".cargo/config.toml": "b906738cab8f6f289180e1bcf32826d3e2996899cb5055dc7f0c6838655c340d",
+      "crates/deadpan-app/src/navigation/registry/baseline-routing.txt": "a181ba1d3f2db1c030fbdf1feaf2d5ae8efd5edd885114bcea9c161ac774cd8d",
+      "docs/COMMANDS.md": "b4fc50fffbb6d96406593dda90a56ee6c9f3b89a3790b6e7f69b87863f57beec"
+    },
+    "one_leaf_replay_non_test_prefix_byte_identical": true
+  },
+  "proof_review": [
+    {
+      "anchors": [
+        "compound.rs:385-414",
+        "compound.rs:418-489",
+        "one_leaf_replay.rs:34-39",
+        "compound/identities.rs:14-60"
+      ],
+      "conclusion": "Original revision, transaction and leaf-header admission stay first. Eligibility is exactly isolation absent, no inputs, one ordinary Edit/InsertTime, local command work and compact representation. The initial successful full count is retained separately from cumulative bytes. The eligible first current is the untouched literal document clone; ledger reservation mutates only its own sets. Its original pre-leaf charge stays after reservation and before leaf application."
+    },
+    {
+      "anchors": [
+        "compound.rs:493-554"
+      ],
+      "conclusion": "Actual leaf selection/application and successful full post-leaf serialization remain. Post size is retained only after its unchanged cumulative charge succeeds. Ledger observation, immutable visitor, register publication and current assignment keep their order. The eligible shape cannot publish registers or execute an additional leaf."
+    },
+    {
+      "anchors": [
+        "compound.rs:555-594",
+        "document.rs:49-111",
+        "document.rs:596-629",
+        "audio_binding.rs:2025-2058",
+        "audio_reference.rs:243-301",
+        "shared_map.rs:105"
+      ],
+      "conclusion": "After the actual counted result and immutable visitor, only top-level revision_id changes. The final count subtracts and adds actual serializer token counts with checked arithmetic. Only known successful results at or below the real document limit are reused; token failures, arithmetic failure or over-limit results fall back to the original full serializer and error mapping at the original final admission site. The final cumulative charge remains. Existing serializer implementations read immutable authored representation; skipped OnceLock/index caches cannot affect bytes. This is a local ownership proof, not generic Serialize or equality reuse."
+    },
+    {
+      "anchors": [
+        "compound.rs:474-478",
+        "compound.rs:570-575"
+      ],
+      "conclusion": "Both debug-only full serializers are compared as complete Result values against Ok(expected), so an unexpected serializer error cannot be hidden by question-mark propagation. Release intentionally omits the two successful full recounts."
+    },
+    {
+      "anchors": [
+        "compound.rs:595-640",
+        "one_leaf_replay.rs:1-128"
+      ],
+      "conclusion": "Net-edit, semantic capability, exact-edit TLS, current Core/Store authority and fallback behavior receive no production changes in this patch. Wire reuse does not read a size from a candidate, semantic plan or Eq comparison. Its proof does not require a new live-derived-clock guard: the actual full initial/post serialization binds each representation, while the existing capability eligibility and no-provisional guards remain unchanged."
+    },
+    {
+      "anchors": [
+        "compound.rs:56-129"
+      ],
+      "conclusion": "Only scalar usize counts and an immutable bounded RevisionId clone are added in production. Token serialization retains no document/JSON buffer; identifier conversion can create only bounded token strings. Test state is cfg(test), fixed arrays and scoped Cell values; no TLS borrow crosses callbacks, and RAII restores nested/panicking scopes. Existing timing guard placement/drop and all four cumulative amounts remain."
+    }
+  ],
+  "test_source_review": [
+    {
+      "anchors": [
+        "one_leaf_replay.rs:313-461",
+        "one_leaf_replay.rs:512-544"
+      ],
+      "conclusion": "Forced-full reference mode disables only this count shortcut, keeping the same candidate choice and net-edit behavior. None and genuine Some each compare shortcut versus forced-full outcomes, complete edit/document wire, inverse, register writes, immutable visitor transcript and all charges. Witness assertions select full [1,0,1,0], reuse [true,true], versus no reuse. Short/equal/128-byte outer revisions exercise actual escaped UTF-8 labels and retained timing tables."
+    },
+    {
+      "anchors": [
+        "one_leaf_replay.rs:547-698"
+      ],
+      "conclusion": "Captured isolation, both reference modes, non-Insert edit, frozen inputs and capture-only shapes assert full-count fallbacks. Identity failures precede the pre-leaf count/charge, and visitor refusal precedes final sizing. Nested/panic observations and temporary nested command/timing modes restore outer state."
+    },
+    {
+      "anchors": [
+        "one_leaf_replay.rs:701-757"
+      ],
+      "conclusion": "Equal normal/provisional values cannot inherit a count: initial actual full serialization refuses for both candidate None and Some, with no visits/reuse/charges."
+    },
+    {
+      "anchors": [
+        "one_leaf_replay.rs:906-974",
+        "one_leaf_replay.rs:977-1085"
+      ],
+      "conclusion": "Existing genuine 64 MiB initial/post/final boundary checks now compare forced-full errors and charged prefixes. Exact-cap leaf results exercise equal and shorter final headers and exact charges; a longer header uses actual full final refusal after one visit and before net construction. Real 60 MiB multistep fallback crosses the unchanged 512 MiB cumulative cap at step-four post size after three visits, in both candidate and forced-full combinations. No test limits are lowered. Four successful one-leaf charges cannot exceed 256 MiB, so a 512 MiB cumulative refusal is unreachable for the eligible shape."
+    }
+  ],
+  "limitations": [
+    "Source review only. This report does not claim any new or existing test, build, formatter, lint, benchmark, media run or memory measurement passed for these frozen bytes.",
+    "No performance or memory saving is inferred. Debug builds intentionally retain full-count proof oracles; release omits successful clone/header recounts.",
+    "Purity depends on the reviewed immutable ProjectDocument serializer graph. A future serializer that reads mutable ambient state or changes authored data through shared references would require revisiting the proof.",
+    "Large real-cap tests were inspected but not executed; their resource usage and all compilation/runtime results remain Root verification work.",
+    "This patch does not transfer Core counts to Store, change encoded edit/history production, or establish a public count/cache API."
+  ]
+}

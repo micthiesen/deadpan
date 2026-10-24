@@ -1,0 +1,151 @@
+{
+  "rotation": 3,
+  "inputs": {
+    "rotation-3-baseline-profile.json": "b1cf9041c16f8cc002951e04dcc3f0767469990a237f200781b579ba6a33484b",
+    "rotation-3-candidate-profile.json": "477f952df39b9134334b7bee388e6c25082738c656b3be06e959d093d6eaca77"
+  },
+  "candidate_minus_baseline_worker_ns": 3434625,
+  "phase_differences": [
+    {
+      "phase": "native_admission",
+      "candidate_minus_baseline_ns": 248083
+    },
+    {
+      "phase": "semantic_plan",
+      "candidate_minus_baseline_ns": -10663
+    },
+    {
+      "phase": "native_continuation",
+      "candidate_minus_baseline_ns": 161916
+    },
+    {
+      "phase": "store_entry_misc",
+      "candidate_minus_baseline_ns": -374
+    },
+    {
+      "phase": "store_prepare",
+      "candidate_minus_baseline_ns": 237165
+    },
+    {
+      "phase": "host_runtime_bank",
+      "candidate_minus_baseline_ns": -2251
+    },
+    {
+      "phase": "store_write",
+      "candidate_minus_baseline_ns": -131750
+    },
+    {
+      "phase": "sqlite_commit",
+      "candidate_minus_baseline_ns": 1700542
+    },
+    {
+      "phase": "store_cache_publication",
+      "candidate_minus_baseline_ns": 84
+    },
+    {
+      "phase": "native_postcommit",
+      "candidate_minus_baseline_ns": 34500
+    },
+    {
+      "phase": "workspace_refresh",
+      "candidate_minus_baseline_ns": 408374
+    },
+    {
+      "phase": "native_finish",
+      "candidate_minus_baseline_ns": 598126
+    },
+    {
+      "phase": "native_publication",
+      "candidate_minus_baseline_ns": 59250
+    },
+    {
+      "phase": "semantic_document_wire",
+      "candidate_minus_baseline_ns": 181457
+    },
+    {
+      "phase": "semantic_leaf_apply",
+      "candidate_minus_baseline_ns": 91416
+    },
+    {
+      "phase": "capability_snapshot",
+      "candidate_minus_baseline_ns": -958
+    },
+    {
+      "phase": "replay_document_wire",
+      "candidate_minus_baseline_ns": -6360250
+    },
+    {
+      "phase": "reuse_eligibility_eq",
+      "candidate_minus_baseline_ns": 15584
+    },
+    {
+      "phase": "reuse_clone_exit",
+      "candidate_minus_baseline_ns": 708
+    },
+    {
+      "phase": "replay_net_aggregate",
+      "candidate_minus_baseline_ns": -41959
+    },
+    {
+      "phase": "replay_misc",
+      "candidate_minus_baseline_ns": 74168
+    },
+    {
+      "phase": "store_compact_size",
+      "candidate_minus_baseline_ns": -328373
+    },
+    {
+      "phase": "store_checkpoint_wire",
+      "candidate_minus_baseline_ns": 0
+    },
+    {
+      "phase": "store_visitor_authority",
+      "candidate_minus_baseline_ns": 49249
+    },
+    {
+      "phase": "history_codec_readback",
+      "candidate_minus_baseline_ns": -758625
+    },
+    {
+      "phase": "history_inverse_restore",
+      "candidate_minus_baseline_ns": 84583
+    },
+    {
+      "phase": "semantic_head_validate",
+      "candidate_minus_baseline_ns": 113292
+    },
+    {
+      "phase": "semantic_context_admission",
+      "candidate_minus_baseline_ns": 1201001
+    },
+    {
+      "phase": "semantic_planner_setup",
+      "candidate_minus_baseline_ns": 403749
+    },
+    {
+      "phase": "semantic_pause_target",
+      "candidate_minus_baseline_ns": 527874
+    },
+    {
+      "phase": "semantic_pause_provider",
+      "candidate_minus_baseline_ns": 2537166
+    },
+    {
+      "phase": "semantic_children_refresh",
+      "candidate_minus_baseline_ns": 139916
+    },
+    {
+      "phase": "leaf_insert_known",
+      "candidate_minus_baseline_ns": 1858583
+    },
+    {
+      "phase": "leaf_input_durations",
+      "candidate_minus_baseline_ns": 283167
+    },
+    {
+      "phase": "leaf_net_construction",
+      "candidate_minus_baseline_ns": 59875
+    }
+  ],
+  "interpretation": "Retain the slower third pair. Replay wire time is lower, while other measured phases are higher. These observations do not identify a cause or justify excluding the pair."
+}

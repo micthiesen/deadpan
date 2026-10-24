@@ -1,0 +1,18 @@
+{
+  "schema": "compound-wire-reuse-analysis-preparation-history-1",
+  "initial_draft": {
+    "path": "analyze-before-root-review.py.txt",
+    "sha256": "6d334931c08f24ca0e68c75618e6a4628ec440fbd856e258281545b7df28ed24",
+    "issue": "The PASS regex had no capture group but its full-line matches were compared to the bare testcase name; it could not accept the retained successful media run."
+  },
+  "correction": {
+    "path": "analyze.py",
+    "sha256": "125baf628790c69f924589f09786de58c5d3da35af3b21170be004d6c7dd0564",
+    "change": "Capture only the selected testcase name. Independently check archive, test, CLI and each movie hash against terminal receipts; compare raw Core/integration/Store names and zero-failure/zero-ignored summaries to build receipts."
+  },
+  "parser_smoke": {
+    "input": "media-run.stderr",
+    "result": "valid single test accepted; wrong-test, missing-summary and zero-test contrasts rejected using Python standard library only"
+  },
+  "analysis_execution": "The full analysis.py was not run; measurement was still active. No product runtime, build, media command or tests were run."
+}

@@ -4,6 +4,35 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-24
 
+The [compound wire-count prototype](../qualification/compound-wire-reuse-prototype-2026-10-24.md)
+is terminal in /tmp/deadpan-compound-wire-reuse-prototype-2026-10-24.
+Do not restart build 6874, media 88440 or timing 67860; all exited zero.
+Its 2,054-file source map is 59ab40b15f9a705953320d45a9ffcef87a85f876a15455c4fb4180ce12ebdff9
+and App is ea9ff53ba7928aac7d2da11fabb7daad3c7b71ba39338f69227a9828878348e0.
+All 737 Core unit/35 integration/12 release Store tests, App, strict and
+format checks pass. The fresh media case verifies history/PCM and both
+45-picture, 72,072-sample zero-offset exports.
+
+Eighteen native trials pass 126 pause/18 Kestrel checks with 36 retained
+layout warnings and exact 35-phase conservation. Six matched commit and
+composition differences have medians 6.030062/6.203416 ms. Rotation three
+is slower by 3.646876/3.810250 ms and remains included. Independent raw
+analysis agrees; no production, target, percentile or memory gain is claimed.
+
+The independently reread primary package has 359 payloads /15,332,794 bytes,
+inventory 338756b4d89157f1e72270c6ca0bd3269240c7ef204a2db2453eb2fcce68e2e4.
+Both first copier and verifier runs pass; all 335 decoded payloads, eighteen
+safe authored-fixture archives and both emitted movies verify.
+
+The uninstrumented follow-up is building separately in
+/tmp/deadpan-compound-wire-reuse-production-2026-10-24, against the current
+qualified control App 970df9f9. Source map 2b0997f1 has 2,053 files and only
+two owned changes; all 2,051 other files/six inputs match qualified Main.
+Formatting and exact removal of the old profiling overlay pass. Build
+session 76289 is active; its production verification is still owed.
+Main runtime remains the net-edit reuse implementation described below.
+Coverage remains 89%, eight Complete/sixteen Partial; the full goal is active.
+
 Main now includes the qualified [single-leaf net reuse change](../qualification/single-leaf-net-reuse-2026-10-24.md).
 Core retains its successful leaf EditTransaction and changes only the outer
 forward/inverse revision headers and description after final document

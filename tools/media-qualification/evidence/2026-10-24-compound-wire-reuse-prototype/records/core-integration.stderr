@@ -1,0 +1,6 @@
+   Compiling deadpan-core v0.1.0 (/private/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/source/crates/deadpan-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.62s
+     Running tests/audio_reference.rs (/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/target/debug/deps/audio_reference-e08ec461d66ed53b)
+     Running tests/command_work.rs (/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/target/debug/deps/command_work-8737fb0ac7fb2aa7)
+     Running tests/semantic_leaf_replay.rs (/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/target/debug/deps/semantic_leaf_replay-c4fef8b70483d309)
+     Running tests/semantic_refresh.rs (/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/target/debug/deps/semantic_refresh-2c75c15caa34783a)

@@ -1,0 +1,418 @@
+from pathlib import Path
+import hashlib
+import importlib.util
+import json
+import math
+import re
+import statistics
+
+S = Path('/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24')
+SOURCE = S / 'source'
+BASELINE_SOURCE = Path('/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24/source')
+QUALIFIED_SOURCE = Path('/tmp/deadpan-single-leaf-net-production-2026-10-24/source')
+HELPER_MANIFEST = Path('/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-native-binaries.json')
+PERF = Path('/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf')
+SIDECARS = {'project.sqlite-shm', 'project.sqlite-wal'}
+METRICS = (
+    'large_first_pause_input_to_commit_ms',
+    'large_first_pause_input_to_offscreen_background_composition_ms',
+)
+KINDS = ('control', 'baseline', 'candidate')
+
+
+def sha(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def read(name):
+    return json.loads((S / name).read_text(encoding='utf-8'))
+
+
+def source_map(root):
+    return {str(path.relative_to(root)): sha(path) for path in sorted(root.rglob('*.rs'))}
+
+
+def snapshot(root):
+    result = {}
+    for path in sorted(root.rglob('*')):
+        if path.is_symlink():
+            raise AssertionError(('unexpected symlink', str(path)))
+        if path.is_file():
+            result[str(path.relative_to(root))] = {
+                'bytes': path.stat().st_size, 'sha256': sha(path)}
+    return result
+
+
+def median_range(values):
+    assert values and all(type(value) in (int, float) and math.isfinite(value) for value in values)
+    return {'n': len(values), 'min': min(values), 'median': statistics.median(values),
+            'max': max(values), 'values': values}
+
+
+def validate_harness_and_sources():
+    build_pins = read('driver-pins.json')
+    assert all(sha(S / name) == digest for name, digest in build_pins.items())
+    media_pins = read('media-driver-pins.json')
+    assert all(sha(S / name) == digest for name, digest in media_pins.items())
+    static = read('media-static-pins.json')
+    assert sha(S / 'frozen-sources.json') == static['source_map_sha256']
+    candidate = read('frozen-sources.json')
+    assert len(candidate) == 2054 == static['source_count']
+    assert source_map(SOURCE) == candidate
+    assert read('source-review.json')['status'] == 'no_findings'
+    assert not read('source-review.json')['findings']
+    assert read('source-review.json')['source_map_sha256'] == sha(S / 'frozen-sources.json')
+
+    qualified = read('qualified-base-sources.json')
+    assert sha(S / 'qualified-base-sources.json') == static['qualified_base_source_map_sha256']
+    assert len(qualified) == 2053
+    assert source_map(QUALIFIED_SOURCE) == qualified
+    baseline_sources = read('baseline-sources.json')
+    provenance = read('baseline-provenance.json')
+    assert sha(S / 'baseline-sources.json') == provenance['matched_source_map_sha256']
+    assert source_map(BASELINE_SOURCE) == baseline_sources
+    assert set(candidate) == set(baseline_sources)
+    assert provenance['matched_source_map_sha256'] == read('baseline.json')['parent_source_map_sha256']
+
+    inputs = read('baseline-inputs.json')
+    assert len(inputs) == 6
+    assert all(sha(root / name) == digest for root in (SOURCE, BASELINE_SOURCE, QUALIFIED_SOURCE)
+               for name, digest in inputs.items())
+
+    baseline = read('baseline.json')
+    assert baseline['control']['sha256'] == static['qualified_control_sha256']
+    assert sha(baseline['control']['path']) == baseline['control']['sha256']
+    assert baseline['matched_profile']['sha256'] == static['qualified_matched_profile_sha256']
+    assert provenance['matched_app_sha256'] == baseline['matched_profile']['sha256']
+    assert sha(provenance['matched_app']) == provenance['matched_app_sha256']
+    assert sha(HELPER_MANIFEST) == baseline['qualified_helper_manifest_sha256']
+    assert sha(PERF) == 'fa11b331dcd9b2f5645cb011af6f07a54986fa0c0055bcce63bd4af6a4ba3166'
+
+    binaries = read('binaries.json')
+    candidate_app = binaries['deadpan-app']
+    assert candidate_app['freshly_built'] is True
+    for row in binaries.values():
+        assert sha(row['executed']) == row['sha256']
+    assert candidate_app['sha256'] == read('build-terminal.json')['app_sha256']
+
+    helper_manifest = json.loads(HELPER_MANIFEST.read_text())
+    for name in ('deadpan-media-worker', 'deadpan-transcribe', 'deadpan-track'):
+        row = binaries[name]
+        assert row['qualified_helper_reuse'] is True
+        assert row['sha256'] == helper_manifest[name]['sha256']
+
+    return {'candidate_source_map_sha256': sha(S / 'frozen-sources.json'),
+            'qualified_main_source_map_sha256': sha(S / 'qualified-base-sources.json'),
+            'matched_profile_source_map_sha256': sha(S / 'baseline-sources.json'),
+            'input_count': len(inputs), 'input_hashes': inputs,
+            'candidate_app_sha256': candidate_app['sha256'],
+            'matched_profile_app_sha256': baseline['matched_profile']['sha256'],
+            'control_app_sha256': baseline['control']['sha256'],
+            'helper_manifest_sha256': sha(HELPER_MANIFEST)}
+
+
+def validate_build():
+    expected_stages = read('expected-build-stages.json')
+    expected_tests = read('expected-tests.json')
+    receipt = read('build-receipt.json')
+    terminal = read('build-terminal.json')
+    assert terminal['status'] == 'complete'
+    assert terminal['steps'] == 9 and terminal['stage_names'] == expected_stages
+    assert [row['name'] for row in receipt] == expected_stages
+    assert all(row['exit'] == 0 and row['validation'] == 'passed' for row in receipt)
+    tests = read('test-binaries.json')
+    unit = tests['core-unit-all']
+    assert unit['tests']['failed'] == 0 and unit['tests']['ignored'] == 0
+    assert unit['executed'] == unit['retained'] and sha(unit['executed']) == unit['sha256']
+    unit_names = unit['tests']['executed_tests']
+    assert len(unit_names) == len(set(unit_names))
+    for suffix in expected_tests['core-unit-all']['required_test_suffixes']:
+        assert any(name == suffix or name.endswith('::' + suffix) for name in unit_names), suffix
+    integration = receipt[5]['tests']
+    assert integration['failed'] == 0 and integration['ignored'] == 0
+    assert len(integration['passed_per_summary']) == 4
+    assert len(integration['executed_tests']) == sum(integration['passed_per_summary'])
+    for suffix in expected_tests['core-integration']['required_test_suffixes']:
+        assert any(name == suffix or name.endswith('::' + suffix)
+                   for name in integration['executed_tests']), suffix
+    store = receipt[6]['tests']
+    assert store['failed'] == 0 and store['ignored'] == 0
+    assert store['passed_per_summary'] == [12] and len(store['executed_tests']) == 12
+    for suffix in expected_tests['store-preparation']:
+        assert any(name == suffix or name.endswith('::' + suffix)
+                   for name in store['executed_tests']), suffix
+    return {'stage_names': expected_stages,
+            'core_unit_passed': len(unit_names), 'core_unit_ignored': unit['tests']['ignored'],
+            'core_unit_test_names': unit_names,
+            'core_integration_passed_per_binary': integration['passed_per_summary'],
+            'core_integration_total': len(integration['executed_tests']),
+            'core_integration_test_names': integration['executed_tests'],
+            'store_passed': len(store['executed_tests']),
+            'store_test_names': store['executed_tests'],
+            'strict_exit': receipt[-1]['exit'],
+            'release_app_sha256': read('binaries.json')['deadpan-app']['sha256']}
+
+
+def validate_measurement(parser):
+    terminal = read('measurement-terminal.json')
+    commands = read('measurement-receipt.json')
+    trials = read('trials.json')
+    summary = read('summary.json')
+    assert terminal['status'] == 'complete'
+    assert (terminal['trials'], terminal['commands'], terminal['workflow_checks'],
+            terminal['kestrel_checks']) == (18, 36, 126, 18)
+    assert len(commands) == 36 and all(row['exit'] == 0 for row in commands)
+    assert len(trials) == 18
+    expected_commands = {f'rotation-{rotation}-{kind}{suffix}'
+                         for rotation in range(1, 7) for kind in KINDS
+                         for suffix in ('-make', '')}
+    assert {row['name'] for row in commands} == expected_commands
+    by_key = {(row['rotation'], row['kind']): row for row in trials}
+    assert len(by_key) == 18
+
+    baseline = read('baseline.json')
+    provenance = read('baseline-provenance.json')
+    candidate_app = read('binaries.json')['deadpan-app']
+    owner = read('measurement-owner.json')
+    assert owner['memory_observer'] is False
+    assert owner['source_map_sha256'] == sha(S / 'frozen-sources.json')
+    assert owner['matched_source_map_sha256'] == sha(S / 'baseline-sources.json')
+    assert owner['candidate_app_sha256'] == candidate_app['sha256']
+    assert owner['control_app_sha256'] == baseline['control']['sha256']
+    assert owner['matched_profile_app_sha256'] == provenance['matched_app_sha256']
+    lane_hashes = {'control': baseline['control']['sha256'],
+                   'baseline': provenance['matched_app_sha256'],
+                   'candidate': candidate_app['sha256']}
+    warnings_by_kind = {kind: [] for kind in KINDS}
+    report_hashes = {}
+    metrics_by_kind = {kind: {metric: [] for metric in METRICS} for kind in KINDS}
+    replay_wire_by_kind = {'baseline': [], 'candidate': []}
+    profile_counts = {kind: 0 for kind in KINDS}
+    input_hashes = read('baseline-inputs.json')
+
+    for rotation in range(1, 7):
+        assert {(rotation, kind) for kind in KINDS} <= by_key.keys()
+    for (rotation, kind), row in sorted(by_key.items()):
+        name = f'rotation-{rotation}-{kind}'
+        run_command = next(command for command in commands if command['name'] == name)
+        make_command = next(command for command in commands if command['name'] == name + '-make')
+        assert make_command['profile_gate'] is None
+        assert run_command['profile_gate'] == (None if kind == 'control' else '1')
+        assert row['binary_sha256'] == lane_hashes[kind]
+        assert row['source_map_sha256'] == sha(S / 'frozen-sources.json')
+        assert row['matched_source_map_sha256'] == sha(S / 'baseline-sources.json')
+        before = read(name + '-input-before.json')
+        after = read(name + '-input-after.json')
+        assert 'project.sqlite' in before and 'project.sqlite' in after
+        assert {key: value for key, value in before.items() if key not in SIDECARS} == {
+            key: value for key, value in after.items() if key not in SIDECARS}
+        assert after.get('project.sqlite-wal', {}).get('bytes', 0) == 0
+        report_path = S / (name + '-report') / 'report.json'
+        report_hashes[name] = sha(report_path)
+        report = json.loads(report_path.read_text(encoding='utf-8'))
+        assert report['failed'] is False
+        metadata = report['metadata']
+        assert metadata['binary_sha256'] == lane_hashes[kind]
+        assert metadata['build_profile'] == 'release'
+        assert metadata['fixture_sha256'] == before['project.sqlite']['sha256']
+        assert metadata['cargo_lock_sha256_at_run'] == input_hashes['Cargo.lock']
+        assert metadata['physical_display_measured'] is False
+        assert metadata['gpu_readback_in_timing_run'] is False
+        assert str(metadata['rust']).startswith('rustc 1.97.1 ')
+        assert [scenario['name'] for scenario in report['scenarios']] == [
+            'kestrel-shortcuts', 'large-first-pause']
+        kestrel, pause = report['scenarios']
+        assert len(kestrel['checks']) == 1 and kestrel['checks'][0]['passed']
+        assert len(pause['checks']) == 7 and all(check['passed'] for check in pause['checks'])
+        assert row['checks'] == 7 and row['kestrel_checks'] == 1
+        timings = [item for item in pause['timings'] if item['name'].startswith('large_first_pause')]
+        assert len(timings) == 2 and {item['name'] for item in timings} == set(METRICS)
+        recomputed = {item['name']: item['summary']['completed']['p50_ms'] for item in timings}
+        for metric in METRICS:
+            value = recomputed[metric]
+            assert type(value) in (int, float) and math.isfinite(value) and value >= 0
+            assert row['metrics'][metric] == value
+            metrics_by_kind[kind][metric].append(value)
+        warning_count = sum(len(scenario.get('findings', [])) for scenario in report['scenarios'])
+        assert row['warnings'] == warning_count
+        warnings_by_kind[kind].append(warning_count)
+
+        stderr = (S / (name + '.stderr')).read_text(encoding='utf-8')
+        if kind in ('baseline', 'candidate'):
+            parsed = parser.parse_profile(stderr)
+            saved = read(name + '-profile.json')
+            assert saved == parsed and parsed['block_count'] == 1
+            selected = parsed['selected']
+            assert [phase['name'] for phase in selected['phases']] == list(parser.PHASES)
+            assert selected['phase_sum_ns'] == selected['elapsed_ns']
+            assert [phase['count'] for phase in selected['phases']] == [
+                parser.EXPECTED_COUNTS[name] for name in parser.PHASES]
+            replay = next(phase for phase in selected['phases']
+                          if phase['name'] == 'replay_document_wire')
+            replay_wire_by_kind[kind].append(replay['elapsed_ns'])
+            profile_counts[kind] += 1
+        else:
+            assert 'DEADPAN_PAUSE_ROUTE_PROFILE' not in stderr
+            assert row['profile'] is None
+        assert row['authored_input_unchanged'] is True and row['wal_empty'] is True
+
+    assert profile_counts == {'control': 0, 'baseline': 6, 'candidate': 6}
+    assert all(len(warnings_by_kind[kind]) == 6 for kind in KINDS)
+
+    pairs = []
+    for rotation in range(1, 7):
+        base_row = by_key[(rotation, 'baseline')]
+        candidate_row = by_key[(rotation, 'candidate')]
+        control_row = by_key[(rotation, 'control')]
+        pairs.append({
+            'rotation': rotation,
+            'baseline_minus_candidate_commit_ms':
+                base_row['metrics'][METRICS[0]] - candidate_row['metrics'][METRICS[0]],
+            'baseline_minus_candidate_composition_ms':
+                base_row['metrics'][METRICS[1]] - candidate_row['metrics'][METRICS[1]],
+            'control_minus_candidate_commit_ms':
+                control_row['metrics'][METRICS[0]] - candidate_row['metrics'][METRICS[0]],
+        })
+    for metric in METRICS:
+        values = {kind: metrics_by_kind[kind][metric] for kind in KINDS}
+        assert len(values['control']) == len(values['baseline']) == len(values['candidate']) == 6
+        expected = {kind: {'min': min(seq), 'median': statistics.median(seq), 'max': max(seq)}
+                    for kind, seq in values.items()}
+        for kind in KINDS:
+            assert summary['kinds'][kind][metric] == expected[kind]
+    assert summary['pairs'] == pairs
+
+    replay_summaries = {kind: median_range(values) for kind, values in replay_wire_by_kind.items()}
+    lane_metric_summaries = {
+        kind: {metric: median_range(metrics_by_kind[kind][metric]) for metric in METRICS}
+        for kind in KINDS}
+    paired_wire = [replay_wire_by_kind['baseline'][rotation - 1]
+                   - replay_wire_by_kind['candidate'][rotation - 1]
+                   for rotation in range(1, 7)]
+    return {'terminal': terminal, 'paired_baseline_minus_candidate': {
+                METRICS[0]: median_range([row['baseline_minus_candidate_commit_ms'] for row in pairs]),
+                METRICS[1]: median_range([row['baseline_minus_candidate_composition_ms'] for row in pairs])},
+            'pairs': pairs, 'exclusive_replay_document_wire_ns': replay_summaries,
+            'lane_metrics_ms': lane_metric_summaries,
+            'exclusive_replay_document_wire_baseline_minus_candidate_ns': median_range(paired_wire),
+            'warning_counts_by_kind': {kind: {'total': sum(rows), 'per_trial': rows}
+                                       for kind, rows in warnings_by_kind.items()},
+            'report_sha256': report_hashes,
+            'phase_protocol': {'schema': parser.PREFIX, 'phase_count': len(parser.PHASES),
+                               'counts': parser.EXPECTED_COUNTS,
+                               'conservation_rechecked_from_raw_stderr': True},
+            'scope': 'six matched rotations; control reported separately; diagnostic only; '
+                     'no percentile, performance-target, or memory claim'}
+
+
+def validate_media():
+    terminal = read('media-terminal.json')
+    rows = read('media-receipt.json')
+    assert terminal['status'] == 'complete' and terminal['commands'] == 4
+    assert [row['stage'] for row in rows] == ['hardware', 'archive', 'list', 'run']
+    assert all(row['exit'] == 0 for row in rows)
+    hardware = read('media-hardware.json')
+    assert hardware['hypervisor_present'] is False
+    assert hardware['physicalcpu'] > 0 and hardware['logicalcpu'] > 0
+    static = read('media-static-pins.json')
+    assert terminal['tests'] == 1 and terminal['selected_test'] == static['test']
+    assert terminal['physical_mac_required'] is True
+    assert terminal['synthetic_worker_feature_required'] is True
+    assert terminal['qualified_helper_reuse'] is True
+    assert terminal['source_map_sha256'] == sha(S / 'frozen-sources.json')
+    evidence = read('media-one-leaf-fixture.json')
+    assert evidence['schema'] == 'deadpan-one-leaf-media-parity-1'
+    assert evidence['capability_present'] is True and evidence['callback_counts'] == [1, 1]
+    assert (evidence['pictures'], evidence['samples'], evidence['channels']) == (45, 72072, 2)
+    canonical = evidence['canonical_comparison']
+    for field in ('document_bytes_equal', 'commit_undo_redo_bytes_equal', 'register_banks_equal',
+                  'authored_limited_and_limiter_gain_bits_equal', 'partition_and_cold_reads_equal',
+                  'source_pcm_nonzero', 'pause_interior_silent'):
+        assert canonical[field] is True
+    assert evidence['history']['undo_redo_reopen_checked'] is True
+    assert evidence['history']['full_replay_checked'] is True
+    assert evidence['history']['receipt_shortcut_used'] is False
+    exports = evidence['exports']
+    assert len(exports) == 2 and {row['leg'] for row in exports} == {'cached', 'uncached'}
+    for row in exports:
+        movie = Path(row['movie']).resolve(strict=True)
+        package = Path(row['package']).resolve(strict=True)
+        assert movie.is_file() and movie.stat().st_size > 0
+        assert package.is_dir()
+        verify = row['verification']
+        assert verify['passed'] is True
+        assert len(verify['pictures']) == verify['summary']['pictures_checked'] == 45
+        assert verify['summary']['pictures_failed'] == verify['summary']['nonzero_offsets'] == 0
+        assert len(verify['audio']) == 1
+        audio = verify['audio'][0]
+        assert audio['passed'] is True and audio['project_samples'] == [0, 72072]
+        assert audio['flags'] == [] and audio['uncovered_samples'] == 0
+        assert audio['offset_status'] == 'verified_zero' and audio['measured_offset_samples'] == 0
+        retained_verification = json.loads(
+            (Path(evidence['evidence_dir']) / f"one-leaf-{row['leg']}-verification.json").read_text())
+        assert retained_verification == verify
+    media_bins = read('media-binaries.json')
+    assert media_bins['selected_tests'] == [static['test']]
+    assert media_bins['matched_tests'] == [static['test']]
+    records = media_bins['records']
+    for record in records:
+        assert all(sha(path) == record['sha256'] for path in record['paths']), record['role']
+    test_record = next(row for row in records if row['role'] == 'release_preview_export_test')
+    cli_record = next(row for row in records if row['role'] == 'release_cli')
+    assert all(sha(path) == test_record['sha256'] for path in test_record['paths'])
+    assert all(sha(path) == cli_record['sha256'] for path in cli_record['paths'])
+    output = (S / 'media-run.stdout').read_text(encoding='utf-8')
+    stderr = (S / 'media-run.stderr').read_text(encoding='utf-8')
+    combined = output + '\n' + stderr
+    assert re.search(r'^\s*Starting 1 test across 1 binary(?:\s|\()', combined, re.M)
+    selected = re.escape(static['test'])
+    assert re.findall(r'^\s*PASS\s+\[[^]]+\]\s+\(1/1\)\s+deadpan-cli::preview_export\s+'
+                      + selected + r'\s*$', combined, re.M) == [static['test']]
+    assert len(re.findall(r'^\s*Summary\s+\[[^]]+\]\s+1 test run: 1 passed'
+                          r'(?:, [0-9]+ skipped)?\s*$', combined, re.M)) == 1
+    assert 'DEADPAN_PAUSE_ROUTE_PROFILE' not in combined
+    inventory = read('media-evidence-inventory.json')
+    evidence_root = Path(inventory['root']).resolve(strict=True)
+    actual_inventory = {str(path.relative_to(evidence_root)): {'bytes': path.stat().st_size,
+                        'sha256': sha(path)} for path in sorted(evidence_root.rglob('*'))
+                        if path.is_file()}
+    assert inventory['files'] == actual_inventory
+    assert inventory['external_receipt_sha256'] == sha(S / 'media-one-leaf-fixture.json')
+    assert terminal['evidence']['verified_pictures_per_export'] == 45
+    assert terminal['evidence']['verified_samples_per_export'] == 72072
+    return {'commands': rows, 'selected_test': static['test'],
+            'hardware': hardware,
+            'test_sha256': test_record['sha256'], 'cli_sha256': cli_record['sha256'],
+            'exports': [{'leg': row['leg'], 'movie_sha256': sha(row['movie']),
+                         'package': row['package'], 'revision': row['revision']}
+                        for row in exports],
+            'pictures_per_export': 45, 'samples_per_export': 72072,
+            'measured_offset_samples': 0, 'pcm_history_export_checks': canonical,
+            'media_inventory_sha256': sha(S / 'media-evidence-inventory.json')}
+
+
+def main():
+    assert not (S / 'analysis.json').exists(), 'refusing to overwrite analysis'
+    build = validate_build()
+    identities = validate_harness_and_sources()
+    parser_spec = importlib.util.spec_from_file_location('pause_profile_parser', S / 'check_profile.py')
+    parser = importlib.util.module_from_spec(parser_spec)
+    parser_spec.loader.exec_module(parser)
+    assert parser.PREFIX == 'DEADPAN_PAUSE_ROUTE_PROFILE_V3'
+    assert len(parser.PHASES) == len(parser.EXPECTED_COUNTS) == 35
+    measurement = validate_measurement(parser)
+    media = validate_media()
+    result = {'schema': 'deadpan-compound-wire-reuse-analysis-1',
+              'status': 'complete', 'diagnostic_only': True,
+              'build': build, 'identities': identities,
+              'measurement': measurement, 'media': media,
+              'claims_excluded': ['p95', 'performance target pass', 'memory claim',
+                                  'physical-display latency', 'source decode latency'],
+              'analyzed_from_raw_reports_and_profiles': True}
+    with (S / 'analysis.json').open('x', encoding='utf-8') as output:
+        json.dump(result, output, indent=2, sort_keys=True)
+        output.write('\n')
+
+
+if __name__ == '__main__':
+    main()

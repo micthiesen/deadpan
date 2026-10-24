@@ -1,0 +1,18 @@
+{
+  "build.py": "c6e11a22dafc2ab0108a1e9bf9aa5e1e5d2ca36bfe43578559e539c80d89e07d",
+  "measure.py": "dc30e00cb2e9f201917f99dd4d1bacbaa083aaaae25f26249372e55bc459b5e0",
+  "expected-build-stages.json": "4e5ecd34168f3bb8fdbbf567a4276dac0fdb832b3bc5f0cc76d5ce757dc8b8f3",
+  "expected-tests.json": "d418b8511f3a2f62a0386892140c85801046dedcbb24b291372d79085f40ea69",
+  "check_profile.py": "d7856844d550b05207cc75391a810008da0b44adeafeb38e70ec95892c9a4f61",
+  "frozen-sources.json": "59ab40b15f9a705953320d45a9ffcef87a85f876a15455c4fb4180ce12ebdff9",
+  "source-review.json": "dbbc5efe7cf81b41bba3bca181991db809dd3afe1358793be0163f2bb78db86d",
+  "baseline-sources.json": "0bf07513646ffdfee5aec03bb1b64b6fff757196512aeea883226c675b15ed02",
+  "baseline-inputs.json": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317",
+  "baseline-provenance.json": "c07885367193a27fe8d21da9addaa75cde2b0279b08f2671d6cd12d8576ddcea",
+  "baseline.json": "7e828e1764bfb9395cc4e99f0bc5e32b82cbd5a2368aec2e3f0de78213369727",
+  "preparation-history.json": "92b198c73015b600344eba4db59fde6d5f22d613d3eae251ae81def92907f61e",
+  "prototype.patch": "de34a2b4cf611393ed8ff1f4a0584f3cbd697a7712874375708cc7353e23718f",
+  "design.md": "b3c32fab907efc0f547fb9fc81b53dc775313e08a70330d3c3463d7f66400841",
+  "root-oracle-review.json": "1fd4918c10d0d39573e72599475ecd0eb8a1d5f9d1f91fc6761cff87613d781b",
+  "harness-review.json": "c44954cf1660c0aeff0323b142394f20cd6c355f1eebce5beee1866274f82a0b"
+}

@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 169.473,
+  "package": "/tmp/deadpan-compound-wire-reuse-prototype-2026-10-24/rotation-5-baseline.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 178.858792
+}

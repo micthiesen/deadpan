@@ -2,6 +2,23 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Compound wire-count reuse: private qualification, 2026-10-24
+
+The [private trial](qualification/compound-wire-reuse-prototype-2026-10-24.md)
+reuses exact counts for an untouched working clone and a header-only change
+inside one eligible InsertTime replay. Actual initial/post counts, every
+work charge and original full-serializer refusals remain. All 737 Core unit
+tests, 35 integration tests, 12 release Store tests, strict/format checks and
+the real-media history/PCM case pass; both exports verify 45 pictures and
+72,072 samples at zero offset.
+
+Eighteen native trials pass 126 pause and 18 Kestrel checks. Six matched pairs
+have median commit/composition reductions of 6.030062/6.203416 ms, retaining
+one slower pair. Replay-wire medians are 13.2755215/6.7645835 ms. Independent
+raw-result review agrees. Main runtime is unchanged; uninstrumented
+qualification remains required. No p95, target or memory claim is made.
+Coverage remains 89%, eight Complete and sixteen Partial.
+
 ## Single-leaf net reuse: production qualification, 2026-10-24
 
 The [uninstrumented qualification](qualification/single-leaf-net-reuse-2026-10-24.md)

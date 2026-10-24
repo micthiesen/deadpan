@@ -1,0 +1,57 @@
+{
+  "status": "passed",
+  "scope": "Independent offline evidence byte, decoding and metadata verifier. No app/build/test or media decoding executed.",
+  "script_sha256": "fe4da950b695fbed99a14267f11b202414ba59cf16b5358d4221e3ed2ca2fd86",
+  "destination": "/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-24-compound-wire-reuse-prototype",
+  "inventory_sha256_before": "338756b4d89157f1e72270c6ca0bd3269240c7ef204a2db2453eb2fcce68e2e4",
+  "inventory_sha256_after": "338756b4d89157f1e72270c6ca0bd3269240c7ef204a2db2453eb2fcce68e2e4",
+  "primary_unchanged": true,
+  "all_files_including_inventory": 360,
+  "inventoried_files_excluding_inventory": 359,
+  "inventoried_bytes_excluding_inventory": 15332794,
+  "total_bytes_including_inventory": 15395702,
+  "approved_payloads": 335,
+  "decoded_payload_source_bytes": 66678738,
+  "gzip_payloads": 46,
+  "fixture_archives": 18,
+  "fixture_authored_members": 54,
+  "fixture_authored_bytes": 80807004,
+  "runtime_sidecars_checked_and_omitted_from_fixture_archives": {
+    "project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "media_files": 35,
+  "exports": [
+    {
+      "leg": "cached",
+      "sha256": "6b3db7c0ae2af76e410a2917ac2c92e01e250e51bcef1426f638b80662d57d9b",
+      "bytes": 13232
+    },
+    {
+      "leg": "uncached",
+      "sha256": "fb36aa0694280a09bd27aa5c079c949fb96d0a104eeb15617f5a389f56cbe950",
+      "bytes": 13232
+    }
+  ],
+  "source_snapshot_changes_vs_matched_profile": 2,
+  "source_snapshot_overlay_vs_qualified": {
+    "existing": 13,
+    "added": 1
+  },
+  "pinned_inputs": 6,
+  "approval_files": {
+    "approval/approved-package-manifest.json": "0a7d5e90c4827da77c20f2d275b060e45ed84d8eb25c14d0d91f4a0af6bf3820",
+    "approval/packager-final-review.json": "b676c7cad1b7055161ffe53aafff92ed25822329301d5a9226cbbe4559a90462",
+    "approval/PACKAGING-GO.json": "507ad5578b060e2df6799c7ed8adfe546bce9c44e5274041635d554e21191768",
+    "approval/package.py": "3d313cb6cc85a4447332b520cfec20c8d5ac3e03cd5a7a1c07fea2d2836f1702",
+    "approval/static-packaging-plan.md": "7fea9037dab0e280316c4ea10cbf7c8f252d76bfb9ebcb157f3de40c946163f2"
+  },
+  "all_raw_payload_sources_match": true,
+  "no_new_supplement_or_main_writes": true
+}

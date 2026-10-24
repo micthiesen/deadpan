@@ -1,0 +1,18 @@
+{
+  "status": "approved_for_private_build",
+  "candidate_source_map_sha256": "59ab40b15f9a705953320d45a9ffcef87a85f876a15455c4fb4180ce12ebdff9",
+  "source_review_sha256": "dbbc5efe7cf81b41bba3bca181991db809dd3afe1358793be0163f2bb78db86d",
+  "checks": [
+    "Nine stages run the complete unfiltered Core unit binary, four integration targets, twelve release Store tests, release App and strict Clippy.",
+    "Matched source and App are pinned separately from the uninstrumented current production control.",
+    "All source/input/build driver pins are checked before and after each stage.",
+    "Measurement uses eighteen fresh trials with all six three-role permutations and the unchanged strict 35-phase parser.",
+    "Metric name comparison uses set(METRICS); prior tuple comparison failure is absent.",
+    "Native checks, exact executable identity, immutable fixture bytes, empty WAL, quiet process/load checks and profile-off silence are asserted.",
+    "No memory observer or memory claim in this bounded scalar/header trial."
+  ],
+  "limitations": [
+    "Source review is not runtime evidence.",
+    "Successful build is required before timing; real-media verification is still owed."
+  ]
+}

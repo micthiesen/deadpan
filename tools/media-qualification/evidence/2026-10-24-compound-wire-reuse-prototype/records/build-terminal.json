@@ -1,0 +1,16 @@
+{
+  "status": "complete",
+  "steps": 9,
+  "stage_names": [
+    "rustc",
+    "cargo",
+    "format",
+    "core-unit-build",
+    "core-unit-all",
+    "core-integration",
+    "store-preparation",
+    "release-app",
+    "strict"
+  ],
+  "app_sha256": "ea9ff53ba7928aac7d2da11fabb7daad3c7b71ba39338f69227a9828878348e0"
+}

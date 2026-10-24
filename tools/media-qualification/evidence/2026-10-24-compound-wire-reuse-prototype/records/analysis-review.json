@@ -1,0 +1,249 @@
+{
+  "status": "no_findings",
+  "findings": [],
+  "scope": "Independent offline read/hash/JSON/raw-text arithmetic audit. No producer function imports, app/test/build/browser/Git execution or source edits.",
+  "source_map_sha256": "59ab40b15f9a705953320d45a9ffcef87a85f876a15455c4fb4180ce12ebdff9",
+  "baseline_source_map_sha256": "0bf07513646ffdfee5aec03bb1b64b6fff757196512aeea883226c675b15ed02",
+  "qualified_source_map_sha256": "f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53",
+  "input_hashes": {
+    "analysis.json": "5022f95b0dc73072995621dd8010b2f753b45ddf5e0abb6f942a53fab814fed0",
+    "analysis-pins.json": "16df753b1bab3fd23d415d9343ee99bccb443d386f16219ed44fdc9f75f4dd3a",
+    "source-review.json": "dbbc5efe7cf81b41bba3bca181991db809dd3afe1358793be0163f2bb78db86d",
+    "frozen-sources.json": "59ab40b15f9a705953320d45a9ffcef87a85f876a15455c4fb4180ce12ebdff9",
+    "baseline-sources.json": "0bf07513646ffdfee5aec03bb1b64b6fff757196512aeea883226c675b15ed02",
+    "qualified-base-sources.json": "f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53",
+    "baseline-inputs.json": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317",
+    "build-terminal.json": "55969676f55637ebc0cbb678207705098f84b66c647f4d37c52be6bc8e67054f",
+    "build-receipt.json": "f4df57365e5d97d63349d9fd36ef0ee69b09dc2d12c81b8f1a7bd51aadc5ff87",
+    "measurement-terminal.json": "2e713143427e45e6eb03d486fe92c445a21d4ea5c24aa3c18fe1ff243944a28a",
+    "measurement-receipt.json": "917c8785c68bc9bfdea3728361c3b2e35a8486fb1461ba68c63ae02ff29eb10b",
+    "trials.json": "0de5687ac1af5c6b7283da940516d27c0a3ac44b680778c84dfe60446956271c",
+    "summary.json": "4d59926c6b78fea7840dabfb25c8c9bf1652a54d06877e75b387c24adbc50a12",
+    "media-terminal.json": "a62179dfd3f81d6f5af1897cb9763ac94cd2e2078a2735b54c13150af709936c",
+    "media-receipt.json": "0f88ba93a32a9585b73f8c9046c51c280e01721b20a13f3b0f9e56b5cf5e8199",
+    "media-evidence-inventory.json": "f2977666808bd0ddc8719abe5d6f1462b9b78e41d3d14b5429aa3ea04cd614c4",
+    "media-one-leaf-fixture.json": "aeb49c1b75214d7dffab659a0a1d5179eedd5632e7d248c8fa42af1896bd7282",
+    "check_profile.py": "d7856844d550b05207cc75391a810008da0b44adeafeb38e70ec95892c9a4f61"
+  },
+  "analyze_py_sha256": "125baf628790c69f924589f09786de58c5d3da35af3b21170be004d6c7dd0564",
+  "source_identity_verification": {
+    "candidate_files": 2054,
+    "matched_baseline_files": 2054,
+    "qualified_files": 2053,
+    "all_live_maps_rehashed": true,
+    "changed_paths": [
+      "crates/deadpan-core/src/compound.rs",
+      "crates/deadpan-core/src/one_leaf_replay.rs"
+    ],
+    "six_inputs_match_all_three": true
+  },
+  "binaries": {
+    "control": "970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2",
+    "baseline": "1a12c2e9f866de1cef3ec64ea3997b26a1baafa194a95e3eef9b4587607d288a",
+    "candidate": "ea9ff53ba7928aac7d2da11fabb7daad3c7b71ba39338f69227a9828878348e0"
+  },
+  "build_checks": {
+    "core-unit-all": 737,
+    "core-integration": 35,
+    "store-preparation": 12
+  },
+  "build_stage_names": [
+    "rustc",
+    "cargo",
+    "format",
+    "core-unit-build",
+    "core-unit-all",
+    "core-integration",
+    "store-preparation",
+    "release-app",
+    "strict"
+  ],
+  "measurement": {
+    "trials": 18,
+    "commands": 36,
+    "workflow_checks": 126,
+    "kestrel_checks": 18,
+    "layout_warnings": 36,
+    "orders": [
+      [
+        "control",
+        "baseline",
+        "candidate"
+      ],
+      [
+        "baseline",
+        "candidate",
+        "control"
+      ],
+      [
+        "candidate",
+        "control",
+        "baseline"
+      ],
+      [
+        "control",
+        "candidate",
+        "baseline"
+      ],
+      [
+        "candidate",
+        "baseline",
+        "control"
+      ],
+      [
+        "baseline",
+        "control",
+        "candidate"
+      ]
+    ],
+    "raw_metric_samples_per_invocation": 1,
+    "raw_profiles_recomputed": 12,
+    "exclusive_phase_rows_per_profile": 35,
+    "conservation_and_exact_count_masks": true,
+    "quiet_preflight_max_one_minute_load": 1.9345703125,
+    "all_18_fixture_authored_bytes_and_paths_unchanged": true,
+    "all_root_wal_empty": true,
+    "paired_baseline_minus_candidate": {
+      "large_first_pause_input_to_commit_ms": {
+        "n": 6,
+        "min": -3.64687600000002,
+        "median": 6.030062000000001,
+        "max": 7.508583999999985,
+        "values": [
+          5.843708000000021,
+          6.216415999999981,
+          -3.64687600000002,
+          2.748750000000001,
+          7.131709000000029,
+          7.508583999999985
+        ]
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "n": 6,
+        "min": -3.810250000000025,
+        "median": 6.203416000000004,
+        "max": 7.2771669999999915,
+        "values": [
+          5.889666000000005,
+          6.517166000000003,
+          -3.810250000000025,
+          2.7136659999999893,
+          7.079542000000032,
+          7.2771669999999915
+        ]
+      }
+    },
+    "pairs": [
+      {
+        "rotation": 1,
+        "baseline_minus_candidate_commit_ms": 5.843708000000021,
+        "baseline_minus_candidate_composition_ms": 5.889666000000005,
+        "control_minus_candidate_commit_ms": 5.517875000000004
+      },
+      {
+        "rotation": 2,
+        "baseline_minus_candidate_commit_ms": 6.216415999999981,
+        "baseline_minus_candidate_composition_ms": 6.517166000000003,
+        "control_minus_candidate_commit_ms": 7.490748999999994
+      },
+      {
+        "rotation": 3,
+        "baseline_minus_candidate_commit_ms": -3.64687600000002,
+        "baseline_minus_candidate_composition_ms": -3.810250000000025,
+        "control_minus_candidate_commit_ms": -3.4460840000000132
+      },
+      {
+        "rotation": 4,
+        "baseline_minus_candidate_commit_ms": 2.748750000000001,
+        "baseline_minus_candidate_composition_ms": 2.7136659999999893,
+        "control_minus_candidate_commit_ms": 2.298292000000032
+      },
+      {
+        "rotation": 5,
+        "baseline_minus_candidate_commit_ms": 7.131709000000029,
+        "baseline_minus_candidate_composition_ms": 7.079542000000032,
+        "control_minus_candidate_commit_ms": 5.335334000000017
+      },
+      {
+        "rotation": 6,
+        "baseline_minus_candidate_commit_ms": 7.508583999999985,
+        "baseline_minus_candidate_composition_ms": 7.2771669999999915,
+        "control_minus_candidate_commit_ms": 7.25954200000001
+      }
+    ],
+    "exclusive_replay_wire_ns": {
+      "baseline": {
+        "n": 6,
+        "min": 13197251,
+        "median": 13275521.5,
+        "max": 13530249,
+        "values": [
+          13443583,
+          13197251,
+          13277125,
+          13273918,
+          13206041,
+          13530249
+        ]
+      },
+      "candidate": {
+        "n": 6,
+        "min": 6707209,
+        "median": 6764583.5,
+        "max": 7004917,
+        "values": [
+          6720459,
+          7004917,
+          6916875,
+          6707209,
+          6808708,
+          6719334
+        ]
+      }
+    },
+    "all_six_pairs_retained_including_negative_rotation_3": true
+  },
+  "media": {
+    "commands": 4,
+    "tests": 1,
+    "selected_test": "group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached",
+    "archive_sha256": "9d6b21fbf8183477d8623381d98a9b918db8012863d058b8281d3289ab6d2b41",
+    "test_sha256": "7805a2d62143e4c3bcee784c0f05c4bd3d92d8b77b18f46467d99d6de28b1c50",
+    "cli_sha256": "6e876dcf1ae39582e5849b38054fa9ebb489e131187c41a1f9d40c2c05158f81",
+    "capability_some_vs_explicit_none": true,
+    "callback_counts": [
+      1,
+      1
+    ],
+    "canonical_document_bank_history_pcm_gain_bits_checked": true,
+    "partition_and_cold_reads_checked": true,
+    "history_full_replay_and_undo_redo_reopen_checked": true,
+    "pictures_per_export": 45,
+    "samples_per_export": 72072,
+    "verified_offset_samples": 0,
+    "exports": [
+      {
+        "leg": "cached",
+        "sha256": "6b3db7c0ae2af76e410a2917ac2c92e01e250e51bcef1426f638b80662d57d9b",
+        "bytes": 13232
+      },
+      {
+        "leg": "uncached",
+        "sha256": "fb36aa0694280a09bd27aa5c079c949fb96d0a104eeb15617f5a389f56cbe950",
+        "bytes": 13232
+      }
+    ],
+    "inventory_live_hashes_rechecked": 35
+  },
+  "inspected_artifact_count": 135,
+  "inspected_artifact_identity_digest": "15ca057dddb3ae7e515ecf547db8422b3508a04b6f1d7bc0a8f4af0b745a6695",
+  "limitations": [
+    "Six matched same-machine diagnostic pairs; one pair regressed and is retained. This does not prove a p95, performance target, uninstrumented production gain or repeatable general speedup.",
+    "Baseline and candidate use the existing profiling gate; the qualified gate-off control is separate. No old prototype batches are pooled.",
+    "No memory lane was measured in this batch. No memory saving, retained-state cost, exact peak or memory ceiling claim.",
+    "Timing fixture is Background/Silence without source media; end is offscreen same-ticket composition, not physical display or source-decode latency.",
+    "Build receipts cover 737 Core lib unit tests, 35 selected Core integrations and 12 release Store tests, plus release App/strict/format; not all workspace suites.",
+    "Media assertions use actual successful retained test receipts, verified exports and rehashed bytes; no independent DSP implementation, compressed-MP4 equality, listening or new decoding/runtime was performed.",
+    "Packaging/collector is explicitly outside this audit and was not imported or executed."
+  ]
+}
