@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-24T05:37:52Z",
+  "updated_at": "2026-10-24T06:39:28Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Whole-Source following creep is verified and committed. Continuing the remaining target controls and authoring scopes; coverage remains 89%.",
+  "focus": "Camera face selection is verified and committed. Continuing point targets and the remaining Camera/creep authoring scopes; coverage remains 89%.",
   "features": [
     {
       "id": "editing",
@@ -35,7 +35,7 @@
         "DP-08",
         "DP-11"
       ],
-      "note": "Camera paths, tracking and whole ordinary Source following creep work. Camera preserves animated targets through scaling and explicit release; media and history are verified. Point targets, Camera face proposals, broader creep authoring and other target controls remain."
+      "note": "Camera paths, tracking, whole-Source following creep and the paged face picker work. Choosing a detected face saves only that target and preserves the Camera draft for a separate framing commit; media and history are verified. Point targets, general region proposals, broader creep authoring and other target controls remain."
     },
     {
       "id": "audio",
@@ -1261,6 +1261,14 @@
       "revision": "3060c13c6ddee8d709e35ba0980ec247178b56da",
       "retrospective": false,
       "summary": "Whole ordinary Source Keep-center creep now animates separate live and fallback scales on the owner clock while following the saved target. Camera preserves the complete entry, scales proportionally, switches targets and releases explicitly to Static; recording and direct-edit dot retain semantic intent. The complete first Core/Plan lane passes 2020 tests, with additional real-cap ingress/structural tests, 1294 App units, 532 CLI units, twelve CLI framing cases and strict/format checks; seventeen opt-in cases remain ignored. The final release replay passes 213 workflow checks and the live Kestrel audit. Two actual 120-picture, 192192-stereo-sample exports verify at zero offset, with independent pose oracles, unchanged complete PCM and portable history. Runtime qualification exposed and fixed a Camera event-loss bug; failed drafts and warnings remain retained. The first collector and independent verifier validate 185 payloads, five safe archives, both movies and source/binary bindings. Broader authoring and target controls remain open; no requirement, gate or performance target closes."
+    },
+    {
+      "date": "2026-10-24",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "6bb688cad6d6f90995b911d2a873458d33bb45b1",
+      "retrospective": false,
+      "summary": "Camera's numbered face picker preserves existing digits, pages all proposals and separates target acceptance from framing. Independent review, 1,301 App tests, final Metal replays and a fully verified 120-picture export with portable history pass."
     }
   ]
 }
