@@ -1,0 +1,68 @@
+   Compiling deadpan-chaos v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-chaos)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 19.10s
+     Running unittests src/lib.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_app-6416c890dd71a14e)
+     Running unittests src/main.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_app-c75853e20f9b0baa)
+     Running unittests src/lib.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_cli-d9455d3f5567661b)
+[hevc_videotoolbox @ 0xc6eb39c00] This device does not support the AllowOpenGop option. Value ignored.
+[hevc_videotoolbox @ 0xc6eb39c00] This device does not support the AllowOpenGop option. Value ignored.
+[mp4 @ 0xc6eb2ca00] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6d099500] Qavg: 65395.852
+[mp4 @ 0xc6eb42580] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6d099500] Qavg: 65395.852
+[mp4 @ 0xc6f234a00] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6f4a3800] Qavg: 65395.852
+[mp4 @ 0xc6eb40f00] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6d09ad80] Qavg: 65395.852
+[mp4 @ 0xc6f235b80] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6f4a3100] Qavg: 65395.852
+[mp4 @ 0xc6eb43700] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6d098380] Qavg: 65395.852
+[mp4 @ 0xc6f234000] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6f4a2300] Qavg: 65395.852
+[mp4 @ 0xc6eb43480] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6f4a2680] Qavg: 65395.852
+[mp4 @ 0xc6f234280] Starting second pass: moving the moov atom to the beginning of the file
+[mp4 @ 0xc6eb42f80] Starting second pass: moving the moov atom to the beginning of the file
+[mp4 @ 0xc6eb43200] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6f4a3480] Qavg: 65395.852
+[aac @ 0xc6f4a2a00] Qavg: 65395.852
+[aac @ 0xc6f4a1880] Qavg: 65395.852
+[mp4 @ 0xc6ead9b80] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6d09bb80] Qavg: 65395.852
+[mp4 @ 0xc6eb43980] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6d09aa00] Qavg: 65395.852
+[mp4 @ 0xc6f234000] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6dde4e00] Qavg: 65395.852
+[mp4 @ 0xc6dc43980] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6dde4700] Qavg: 65395.852
+[mp4 @ 0xc6eb43c00] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6f4a1c00] Qavg: 65395.852
+[hevc_videotoolbox @ 0xc6dde5180] This device does not support the AllowOpenGop option. Value ignored.
+[hevc_videotoolbox @ 0xc6dde5180] This device does not support the AllowOpenGop option. Value ignored.
+[mp4 @ 0xc6eb42080] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6f4a2680] Qavg: 65395.852
+[mp4 @ 0xc6eada300] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6dde6d80] Qavg: 65395.852
+[mp4 @ 0xc6ead8500] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6dde5880] Qavg: 65395.852
+[mp4 @ 0xc6dc42080] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6dde4380] Qavg: 65395.852
+[mp4 @ 0xc6dc40c80] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6dde5500] Qavg: 65395.852
+[mp4 @ 0xc6eadbc00] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6d09a680] Qavg: 65395.852
+[mp4 @ 0xc6dc41e00] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6dde6d80] Qavg: 65395.852
+[mp4 @ 0xc6dc42080] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6d098380] Qavg: 65395.852
+[mp4 @ 0xc6dc41e00] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6dde5500] Qavg: 65395.852
+[mp4 @ 0xc6dc42080] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6dde6d80] Qavg: 65395.852
+[mp4 @ 0xc6d92e580] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6dde4700] Qavg: 65395.852
+[mp4 @ 0xc6dc41b80] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xc6eb3ad80] Qavg: 65395.852
+     Running unittests src/main.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_cli-a70192c1fe690fb0)

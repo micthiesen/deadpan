@@ -1,0 +1,11 @@
+
+running 1 test
+test macros::framing::follow_creep::keep_creep_rebinds_follow_bases_and_target_with_atomic_refusal_and_durable_history ... FAILED
+
+failures:
+
+failures:
+    macros::framing::follow_creep::keep_creep_rebinds_follow_bases_and_target_with_atomic_refusal_and_durable_history
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 56 filtered out; finished in 0.49s
+

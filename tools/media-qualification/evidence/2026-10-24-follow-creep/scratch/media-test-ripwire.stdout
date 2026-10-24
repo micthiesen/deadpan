@@ -1,0 +1,175 @@
+<ctx task="Add independent real-media FollowScaleTransition tests in crates/deadpan-cli/tests/preview_export/follow_creep.rs and follow_creep_export.rs using Project::create_from, inspect-audio and RenderPlan picture framing" route=" [routed: subtoken+body BM25 (--for&apos;s default) — no strong name hit, multi-word conceptual query]" bundle="auto" bodies="4"><!-- ripwire lens for "Add independent real-media FollowScaleTransition tests in crates/deadpan-cli/tests/preview_export/follow_creep.rs and follow_creep_export.rs using Project::create_from, inspect-audio and RenderPlan picture framing": reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="4069" --><sigs capped="1"><f p="./crates/deadpan-core/src/framing_zoom/tests.rs"><d l="8" n="zoom_intent_validates_scale_bounds_and_eased_curves" cx="4" ccx="4" in="0" churn="1">fn zoom_intent_validates_scale_bounds_and_eased_curves()</d><d l="309" n="whole_beat_keep_retains_a_follow_and_refuses_to_flatten_a_path" cx="2" ccx="1" in="0" churn="1">fn whole_beat_keep_retains_a_follow_and_refuses_to_flatten_a_path()</d><d l="503" n="follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_source" cx="2" ccx="1" in="0" churn="1">fn follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_source()</d></f><f p="./crates/deadpan-core/src/framing.rs"><d l="204" n="FramingValue" cx="0" ccx="0" in="0" churn="6" amp="41">pub enum FramingValue</d><d l="227" n="FollowScaleTransition" cx="0" ccx="0" in="0" churn="6" amp="41">pub struct FollowScaleTransition</d><d l="374" n="record_count" id="./crates/deadpan-core/src/framing.rs::Framing::record_count" cx="5" ccx="5" in="2" churn="6" amp="43" tested="1">pub fn record_count(&amp;self) -&gt; usize</d><d l="417" n="evaluate_with_follow_exact" id="./crates/deadpan-core/src/framing.rs::Framing::evaluate_with_follow_exact" cx="15" ccx="13" in="7" churn="6" amp="48" tested="1"><doc>Evaluate scale and fallback in the same owner clock. Provider target lookup remains the plan&apos;s r…</doc>pub fn evaluate_with_follow_exact( &amp;self, local: ExactRatio, duration: ExactRatio, ) -&gt; Result&lt;EvaluatedFraming&lt;&apos;_&gt;, FramingError&gt;</d><d l="474" n="follow_scale" cx="5" ccx="5" in="1" churn="6" amp="42" tested="1">fn follow_scale(base: ExactRatio, transition: FollowScaleTransition, local: ExactRatio, duration: ExactRatio) -&gt; Result&lt;ExactRatio, FramingError&gt;</d><d l="646" n="follow_transition_tests" cx="0" ccx="0" in="0" churn="6" amp="41">mod follow_transition_tests</d><d l="651" n="framing" id="./crates/deadpan-core/src/framing.rs::follow_transition_tests::framing" cx="1" ccx="0" in="3" churn="6" amp="44">fn framing(curve: ZoomCurve) -&gt; Framing</d><d l="664" n="follow_transition_curves_preserve_exact_fallback_centers_and_endpoint_scales" id="./crates/deadpan-core/src/framing.rs::follow_transition_tests::follow_transition_curves_preserve_exact_fallback_centers_and_endpoint_scales" cx="4" ccx="3" in="0" churn="6" amp="41">fn follow_transition_curves_preserve_exact_fallback_centers_and_endpoint_scales()</d><d l="714" n="follow_transition_validates_both_branches_and_closed_raw_vocabulary" id="./crates/deadpan-core/src/framing.rs::follow_transition_tests::follow_transition_validates_both_branches_and_closed_raw_vocabulary" cx="6" ccx="6" in="0" churn="6" amp="41">fn follow_transition_validates_both_branches_and_closed_raw_vocabulary()</d></f></sigs><bodies shown="4" total="6" capped="1"><b t="fn" l="309" p="./crates/deadpan-core/src/framing_zoom/tests.rs" n="whole_beat_keep_retains_a_follow_and_refuses_to_flatten_a_path"><![CDATA[fn whole_beat_keep_retains_a_follow_and_refuses_to_flatten_a_path() {
+    let id = TargetId::new("target-1").unwrap();
+    let fallback = FramingPose::new(ratio(2, 5), ratio(1, 2), ratio(11, 10)).unwrap();
+    let follow = Framing {
+        clock: FramingClock::RetainedOutput {
+            offset: ExactRatio::ONE,
+            duration: ExactRatio::integer(12),
+        },
+        value: FramingValue::Follow {
+            target: id.clone(),
+            scale: ratio(11, 10),
+            fallback,
+            scale_transition: None,
+        },
+    };
+    // The displayed pose is the target's center, not the fallback.
+    let current = FramingPose::new(ratio(3, 5), ratio(1, 2), ratio(11, 10)).unwrap();
+    let shot_on = |entry| Shot {
+        entry: Some(entry),
+        current,
+        ..shot(None)
+    };
+    let smash = build(
+        ZoomKind::Smash { scale: ratio(2, 1) },
+        &Center::Keep,
+        &shot_on(&follow),
+    )
+    .unwrap()
+    .unwrap();
+    assert_eq!(smash.clock, follow.clock);
+    assert_eq!(
+        smash.value,
+        FramingValue::Follow {
+            target: id,
+            scale: ratio(2, 1),
+            fallback: FramingPose {
+                scale: ratio(2, 1),
+                ..fallback
+            },
+            scale_transition: None,
+        }
+    );
+    let creep = ZoomKind::Creep {
+        from: None,
+        to: ratio(2, 1),
+        curve: ZoomCurve::Smoothstep,
+    };
+    assert_eq!(
+        build(creep, &Center::Keep, &shot_on(&follow)).unwrap_err(),
+        FOLLOW_CREEP_REFUSAL
+    );
+    // An explicit fixed center replaces the follow on request.
+    assert!(matches!(
+        build(
+            creep,
+            &Center::Point([ratio(1, 2), ratio(1, 2)]),
+            &Shot {
+                explicit: true,
+                ..shot_on(&follow)
+            }
+        ),
+        Ok(Some(Framing {
+            value: FramingValue::Envelope { .. },
+            ..
+        }))
+    ));
+    let path = Framing::creep(
+        FramingPose::identity(),
+        FramingPose {
+            scale: ratio(2, 1),
+            ..FramingPose::identity()
+        },
+        FramingCurve::Smoothstep,
+    )
+    .unwrap();
+    for kind in [ZoomKind::Smash { scale: ratio(3, 2) }, creep] {
+        assert_eq!(
+            build(kind, &Center::Keep, &shot_on(&path)).unwrap_err(),
+            PATH_REFUSAL
+        );
+        // ,z resolving the selected target is not an explicit replacement.
+        let target = Center::Target {
+            id: TargetId::new("target-1").unwrap(),
+            fixed: Some([ratio(1, 2), ratio(1, 2)]),
+        };
+        assert_eq!(
+            build(kind, &target, &shot_on(&path)).unwrap_err(),
+            PATH_REFUSAL
+        );
+        assert!(
+            build(
+                kind,
+                &target,
+                &Shot {
+                    explicit: true,
+                    ..shot_on(&path)
+                }
+            )
+            .is_ok()
+        );
+    }
+    assert_eq!(
+        build(ZoomKind::Off, &Center::Keep, &shot_on(&path)).unwrap(),
+        None
+    );
+}]]><calls total="6"><c n="integer" l="62">pub const fn integer(value: i64) -&gt; Self</c><c n="identity" l="68">pub fn identity() -&gt; Self</c><c n="new" l="76">pub fn new( center_x: ExactRatio, center_y: ExactRatio, scale: ExactRatio, ) -&gt; Result&lt;Self, FramingError&gt;</c><c n="creep" l="276">pub fn creep( from: FramingPose, to: FramingPose, curve: FramingCurve, ) -&gt; Result&lt;Self, FramingError&gt;</c><c n="ratio" l="3">fn ratio(n: i128, d: i128) -&gt; ExactRatio</c><c n="shot" l="103">fn shot(range: Option&lt;(u64, u64)&gt;) -&gt; Shot&lt;&apos;static&gt;</c></calls></b><b t="fn" l="503" p="./crates/deadpan-core/src/framing_zoom/tests.rs" n="follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_source"><![CDATA[fn follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_source() {
+    let fallback = FramingPose::new(ratio(1, 3), ratio(2, 7), ratio(1, 2)).unwrap();
+    let entry = Framing {
+        clock: FramingClock::RetainedOutput { offset: ratio(-2, 1), duration: ratio(7, 1) },
+        value: FramingValue::Follow {
+            target: TargetId::new("speaker").unwrap(), scale: ratio(2, 1), fallback,
+            scale_transition: None,
+        },
+    };
+    let kind = ZoomKind::Creep { from: None, to: ratio(4, 1), curve: ZoomCurve::Linear };
+    let admitted = Shot { entry: Some(&entry), ordinary_source: true, ..shot(None) };
+    let result = build(kind, &Center::Keep, &admitted).unwrap().unwrap();
+    assert_eq!(result.clock, FramingClock::OwnerOutput);
+    let value = result.evaluate_with_follow_exact(ratio(1, 1), ratio(4, 1)).unwrap();
+    assert_eq!(value.follow.unwrap().1, ratio(5, 2));
+    assert_eq!(value.pose.scale, ratio(5, 8));
+    assert_eq!([value.pose.center_x, value.pose.center_y], [ratio(1, 3), ratio(2, 7)]);
+    let explicit = build(ZoomKind::Creep { from: Some(ratio(3, 1)), to: ratio(4, 1), curve: ZoomCurve::Linear },
+        &Center::Keep, &admitted).unwrap().unwrap();
+    let initial = explicit.evaluate_with_follow_exact(ExactRatio::ZERO, ratio(4, 1)).unwrap();
+    assert_eq!(initial.follow.unwrap().1, ratio(3, 1));
+    assert_eq!(initial.pose.scale, ratio(3, 4));
+    for range in [Some((0, 10)), Some((1, 9))] {
+        assert!(build(kind, &Center::Keep, &Shot { range, ..admitted }).is_err());
+    }
+    assert!(build(kind, &Center::Keep, &Shot { ordinary_source: false, ..admitted }).is_err());
+    assert!(build(kind, &Center::Keep, &Shot { entry: Some(&result), ..admitted }).is_err());
+    assert!(build(ZoomKind::Smash { scale: ratio(3, 1) }, &Center::Keep,
+        &Shot { entry: Some(&result), ..admitted }).is_err());
+    // Explicit target selection continues to author a sampled ordinary path.
+    assert!(matches!(build(kind, &Center::Point([ratio(1, 2), ratio(1, 2)]),
+        &Shot { explicit: true, entry: Some(&result), ..admitted }).unwrap().unwrap().value,
+        FramingValue::Envelope { .. }));
+}]]><calls total="4"><c n="new" l="76">pub fn new( center_x: ExactRatio, center_y: ExactRatio, scale: ExactRatio, ) -&gt; Result&lt;Self, FramingError&gt;</c><c n="evaluate_with_follow_exact" l="417">pub fn evaluate_with_follow_exact( &amp;self, local: ExactRatio, duration: ExactRatio, ) -&gt; Result&lt;EvaluatedFraming&lt;&apos;_&gt;, FramingError&gt;</c><c n="ratio" l="3">fn ratio(n: i128, d: i128) -&gt; ExactRatio</c><c n="shot" l="103">fn shot(range: Option&lt;(u64, u64)&gt;) -&gt; Shot&lt;&apos;static&gt;</c></calls></b><b t="method" l="714" p="./crates/deadpan-core/src/framing.rs" n="follow_transition_validates_both_branches_and_closed_raw_vocabulary"><![CDATA[fn follow_transition_validates_both_branches_and_closed_raw_vocabulary() {
+        let mut recipe = framing(ZoomCurve::Linear);
+        for bad in [ratio(0, 1), ratio(-1, 1), ratio(128, 1), ratio(1, 128)] {
+            if let FramingValue::Follow { scale_transition, .. } = &mut recipe.value {
+                scale_transition.as_mut().unwrap().factor = bad;
+            }
+            assert!(recipe.validate().is_err());
+        }
+        recipe = framing(ZoomCurve::Linear);
+        if let FramingValue::Follow { fallback, .. } = &mut recipe.value { fallback.scale = ratio(40, 1); }
+        assert!(recipe.validate().is_err(), "fallback endpoint bounds are independent of live scale");
+        for transition in [
+            r#"{"factor":"2","curve":"cubic"}"#,
+            r#"{"factor":2,"factor":2,"curve":"linear"}"#,
+            r#"{"factor":2,"curve":"linear","segments":[]}"#,
+        ] {
+            assert!(serde_json::from_str::<FollowScaleTransition>(transition).is_err());
+        }
+        let mut fixed = framing(ZoomCurve::Linear);
+        if let FramingValue::Follow { scale_transition, .. } = &mut fixed.value { *scale_transition = None; }
+        let encoded = serde_json::to_value(&fixed).unwrap();
+        assert!(encoded["value"].get("scale_transition").is_none());
+        assert_eq!(fixed.record_count(), 1);
+        assert_eq!(framing(ZoomCurve::Linear).record_count(), 2);
+        assert_eq!(serde_json::from_value::<Framing>(encoded).unwrap(), fixed);
+    }]]><calls total="2"><c n="ratio" l="650">fn ratio(n: i128, d: i128) -&gt; ExactRatio</c><c n="framing" l="651">fn framing(curve: ZoomCurve) -&gt; Framing</c></calls></b><!-- body omitted (over budget): evaluate_with_follow_exact --><!-- body omitted (over budget): follow_transition_tests --><b t="cls" l="303" p="./crates/deadpan-app/src/preview/camera.rs" n="FollowDraft"><![CDATA[pub(super) struct FollowDraft {
+    target: TargetId,
+    /// The draft center while following. Nudges are refused instead of
+    /// silently diverging from the target-supplied center.
+    center: [ExactRatio; 2],
+    base_scale: ExactRatio,
+    /// Authored base, distinct from the scale handle evaluated at this picture.
+    base_live: ExactRatio,
+    base_fallback: FramingPose,
+    clock: FramingClock,
+    scale_transition: Option<deadpan_core::FollowScaleTransition>,
+}]]></b></bodies></ctx>

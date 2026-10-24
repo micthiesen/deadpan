@@ -1,0 +1,27 @@
+{
+  "deadpan-app": {
+    "built": "/tmp/deadpan-follow-creep-2026-10-24/target/release/deadpan-app",
+    "executed": "/tmp/deadpan-follow-creep-2026-10-24/final-native-bin/deadpan-app",
+    "sha256": "2eb7d88f3b56ade6d98e6a347ea7ee1f2fa7d1988a7e46607d66cef3ca26b5b5"
+  },
+  "deadpan-cli": {
+    "built": "/tmp/deadpan-follow-creep-2026-10-24/target/release/deadpan-cli",
+    "executed": "/tmp/deadpan-follow-creep-2026-10-24/final-native-bin/deadpan-cli",
+    "sha256": "8aaaf11dcc8bf8f3d0fc0500f0eb13841a8efc454a950e2d34edcaa4907fe4a9"
+  },
+  "deadpan-media-worker": {
+    "built": "/tmp/deadpan-follow-creep-2026-10-24/target/release/deadpan-media-worker",
+    "executed": "/tmp/deadpan-follow-creep-2026-10-24/final-native-bin/deadpan-media-worker",
+    "sha256": "9bb776f74a23a3c875c52251770c161bfc2b0b49146891aa40de9578683424f7"
+  },
+  "deadpan-transcribe": {
+    "built": "/tmp/deadpan-follow-creep-2026-10-24/target/release/deadpan-transcribe",
+    "executed": "/tmp/deadpan-follow-creep-2026-10-24/final-native-bin/deadpan-transcribe",
+    "sha256": "351468f98590062f06b6913d94ccbf2b07b019d1185c2939f09c8650c91f71d5"
+  },
+  "deadpan-track": {
+    "built": "/tmp/deadpan-follow-creep-2026-10-24/target/release/deadpan-track",
+    "executed": "/tmp/deadpan-follow-creep-2026-10-24/final-native-bin/deadpan-track",
+    "sha256": "11aeb6de474b1e6815146f2db4c826ae8721a8d3409607e0dee87b3a212c23c8"
+  }
+}

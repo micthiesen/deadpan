@@ -169,6 +169,7 @@ fn semantic_scoped_zoom_keep_preserves_live_follow_and_retained_clock_after_isol
                     target: target.clone(),
                     scale: ExactRatio::integer(2),
                     fallback,
+                    scale_transition: None,
                 },
             }),
         },
@@ -275,6 +276,7 @@ fn semantic_scoped_zoom_keep_preserves_live_follow_and_retained_clock_after_isol
                 scale: ExactRatio::integer(3),
                 ..fallback
             },
+            scale_transition: None,
         }
     );
     let state = resolve(

@@ -1475,12 +1475,13 @@ impl RenderPlan {
             if let Some(continuity) = continuity.as_deref_mut() {
                 continuity.limit(local, node.extent)?;
             }
-            if let Some(deadpan_core::Framing {
-                value: deadpan_core::FramingValue::Follow { target, scale, .. },
-                ..
-            }) = &node.framing
-            {
-                follows.push((framing.len(), target, *scale, false));
+            let evaluated = node
+                .framing
+                .as_ref()
+                .map(|framing| framing.evaluate_with_follow_exact(local, node.extent))
+                .transpose()?;
+            if let Some((target, scale)) = evaluated.as_ref().and_then(|value| value.follow) {
+                follows.push((framing.len(), target, scale, false));
             }
             framing.push(PictureFraming {
                 instance: InstancePath {
@@ -1490,11 +1491,7 @@ impl RenderPlan {
                 local_position: local,
                 duration: node.inspection.duration,
                 effective_duration: node.extent,
-                pose: node
-                    .framing
-                    .as_ref()
-                    .map(|framing| framing.evaluate_exact(local, node.extent))
-                    .transpose()?,
+                pose: evaluated.map(|value| value.pose),
                 escalation: false,
             });
             captions.extend(

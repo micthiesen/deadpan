@@ -21,6 +21,7 @@ enum Role {
     Segments,
     Segment,
     Curve,
+    Transition,
     Other,
 }
 
@@ -83,6 +84,14 @@ impl<'de> Visitor<'de> for Scan<'_> {
         Ok(())
     }
     fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<(), A::Error> {
+        // An explicit null is the same absent transition as None, so charge
+        // only an actual scalar record, before reading its fields.
+        if self.role == Role::Transition {
+            if self.counts.records == MAX_FRAMING_RECORDS {
+                return Err(A::Error::custom("aggregate framing record limit exceeded"));
+            }
+            self.counts.records += 1;
+        }
         while let Some(key) = map.next_key::<std::borrow::Cow<'de, str>>()? {
             if self.role == Role::Nodes {
                 if self.counts.nodes == MAX_DOCUMENT_NODES {
@@ -96,6 +105,8 @@ impl<'de> Visitor<'de> for Scan<'_> {
                 (Role::Node, "framing") => (Role::Framing, false),
                 (Role::Framing, "value") => (Role::Value, false),
                 (Role::Value, "pose") => (Role::Other, true),
+                (Role::Value, "fallback") => (Role::Other, true),
+                (Role::Value, "scale_transition") => (Role::Transition, false),
                 (Role::Value, "envelope") => (Role::Envelope, false),
                 (Role::Envelope, "initial") => (Role::Other, true),
                 (Role::Envelope, "segments") => (Role::Segments, false),
@@ -151,6 +162,38 @@ mod tests {
     use super::*;
 
     #[test]
+    fn scanner_counts_follow_bases_and_transitions_before_the_extra_record_body() {
+        let node = r#"{"framing":{"value":{"fallback":{},"scale_transition":{}}}}"#;
+        let nodes = (0..MAX_FRAMING_RECORDS / 2)
+            .map(|index| format!(r#""n{index}":{node}"#))
+            .collect::<Vec<_>>()
+            .join(",");
+        assert!(check(&format!(r#"{{"nodes":{{{nodes}}}}}"#)).is_ok());
+        let error = check(&format!(
+            r#"{{"nodes":{{{nodes},"extra":{{"framing":{{"value":{{"fall\u0062ack":"#
+        ))
+        .unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("aggregate framing record limit exceeded"),
+            "{error}"
+        );
+        // Explicit None is absent, including in the streaming record budget.
+        let mut counts = Counts::default();
+        let mut decoder =
+            serde_json::Deserializer::from_str(r#"{"fallback":{},"scale_transition":null}"#);
+        Scan {
+            role: Role::Value,
+            counts: &mut counts,
+            charge: false,
+        }
+        .deserialize(&mut decoder)
+        .unwrap();
+        assert_eq!(counts.records, 1);
+    }
+
+    #[test]
     fn scanner_rejects_the_extra_segment_before_reading_its_malformed_body() {
         let segment = r#"{"curve":{"type":"linear"}}"#;
         let input = format!(
@@ -184,3 +227,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "follow_preflight_tests.rs"]
+mod follow_preflight_tests;

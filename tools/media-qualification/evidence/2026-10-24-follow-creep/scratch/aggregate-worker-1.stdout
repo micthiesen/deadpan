@@ -1,0 +1,19 @@
+
+running 2 tests
+test follow_boundaries::aggregate::raw_slice_reader_enforces_exact_aggregate_cap_without_claiming_capture_admission ... FAILED
+test follow_boundaries::aggregate::raw_patch_enforces_exact_aggregate_cap_and_retained_result_union ... ok
+
+failures:
+
+---- follow_boundaries::aggregate::raw_slice_reader_enforces_exact_aggregate_cap_without_claiming_capture_admission stdout ----
+
+thread 'follow_boundaries::aggregate::raw_slice_reader_enforces_exact_aggregate_cap_without_claiming_capture_admission' (181527649) panicked at crates/deadpan-core/tests/framing/follow_aggregate.rs:274:52:
+called `Result::unwrap()` on an `Err` value: EditError { code: InvalidCommand, message: "audio binding owner is not a physical recipe", current_revision: None }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    follow_boundaries::aggregate::raw_slice_reader_enforces_exact_aggregate_cap_without_claiming_capture_admission
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 21 filtered out; finished in 14.46s
+

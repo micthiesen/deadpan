@@ -1,0 +1,39 @@
+
+running 22 tests
+test exact_clock::exact_clock_rejects_invalid_extents_and_positions_for_static_and_moving_framing ... ok
+test retained_clock::retained_clock_keeps_fractional_domain_and_step_boundaries_exact ... ok
+test step_boundary_and_quantization_do_not_move_segment_selection ... ok
+test retained_clock::retained_clock_composes_prefixes_and_freezes_tail_growth ... ok
+test all_curves_use_explicit_frame_edge_progress_and_exact_endpoints ... ok
+test wide_local_time_and_small_segment_denominators_do_not_overflow ... ok
+test interpolation_matches_independent_fraction_oracles_at_extreme_coordinates ... ok
+test retained_clock::retained_clock_admission_and_arithmetic_fail_without_mutation ... ok
+test setters_are_atomic_reversible_and_duration_changes_reflow_the_host ... ok
+test follow_boundaries::mixed_and_escaped_follow_transition_documents_keep_wire_counts_and_closed_fields ... ok
+test retained_clock::retained_framing_round_trips_atomic_commands_and_exact_inverse_patches ... ok
+test occurrence_copy_is_independent_and_framed_ungroup_moves_framing_onto_its_child ... ok
+test split_retains_framed_partition_as_a_complete_owned_effect_scope ... ok
+test follow_boundaries::raw_command_subtree_slice_and_stored_patch_validate_transition_before_publication ... ok
+test explicit_pause_can_split_a_retained_framed_partition_without_losing_its_clock ... ok
+test exact_clock::exact_clock_matches_independent_unbounded_fraction_oracles ... ok
+test typed_subtree_aggregate_framing_is_rejected_before_installation ... ok
+test hostile_envelopes_and_layers_are_rejected ... ok
+test retained_clock::retained_paths_hold_endpoints_without_retiming_any_curve ... ok
+test exact_clock::derived_owner_extents_keep_all_curve_shapes_and_exact_segment_boundaries ... ok
+test follow_boundaries::inserted_subtree_rejects_real_aggregate_transition_record_overflow_before_clone ... ok
+test follow_boundaries::aggregate::raw_slice_and_patch_enforce_exact_aggregate_cap_and_retained_result_union ... FAILED
+
+failures:
+
+---- follow_boundaries::aggregate::raw_slice_and_patch_enforce_exact_aggregate_cap_and_retained_result_union stdout ----
+
+thread 'follow_boundaries::aggregate::raw_slice_and_patch_enforce_exact_aggregate_cap_and_retained_result_union' (181478373) panicked at crates/deadpan-core/tests/framing/follow_aggregate.rs:155:10:
+called `Result::unwrap()` on an `Err` value: EditError { code: LimitExceeded, message: "audio binding capture complexity limit", current_revision: None }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    follow_boundaries::aggregate::raw_slice_and_patch_enforce_exact_aggregate_cap_and_retained_result_union
+
+test result: FAILED. 21 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.08s
+

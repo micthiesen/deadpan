@@ -4,6 +4,59 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-24
 
+Whole ordinary Source [target-following creep](../qualification/follow-creep-2026-10-24.md)
+is implemented and locally verified. Keep-center creep retains the live target
+while an optional fixed-size scale transition evaluates on the owner clock.
+Live/fallback bases stay separate, Lost uses its retained region, and Camera
+retains the exact entry/clock, scales proportionally and releases explicitly to
+Static. Recording and direct-edit dot retain Zoom Keep intent. Range, occurrence
+and other-owner authoring remain explicit refusals; broader authoring and the
+remaining point/target controls are still open. Core 58 / SQLite 87 stay under
+the additive optional-field convention. No dependency or Store/renderer/tracker
+changes were needed.
+
+The first full Core/Plan lane passes 2,020 tests. Final focused lanes pass 23
+framing ingress/aggregate tests, 26 Core Follow/scanner tests, 18 Follow plan
+tests, 1,294 App units, 532 CLI units and twelve CLI framing cases. Counts
+overlap; seventeen existing opt-in unit tests are ignored, not qualified.
+Strict all-target checks and formatting pass. A real Camera scale-event bug
+was found in the first replay, fixed and independently reviewed. The final
+release App `2eb7d88f3b56ade6d98e6a347ea7ee1f2fa7d1988a7e46607d66cef3ca26b5b5`
+passes 213 workflow checks plus the live Kestrel audit (62 reservations,
+21,885,504 routing cases). Three nonfailure warnings remain in the full report.
+Final Camera/editor offscreen images were inspected for hierarchy, labels,
+focus and keyboard discoverability.
+
+The final fresh CLI is
+`e9ad52a23d3f91ac198007f18e69811d0ec09797e24c53230255f4e083150701`.
+Both actual media runs verify 120 pictures and 192,192 stereo samples at zero
+offset, independent per-frame poses, unchanged authored/limited PCM and limiter
+gain bits, Undo/Redo and seven-revision portable history. Regions are manually
+authored over the existing counter Original; no tracker, independent DSP or
+listening claim follows. Final movie is `fb5a58fb…`, first is `171a9872…`.
+
+Runtime/harness freeze has eleven paths (cd45a91c…). The current 2,062-file Rust
+map is 05af18a4… and thirty changed sources are retained as `.rs.txt`; that map
+does not attest every earlier draft build. Six inputs remain pinned, and the
+preceding compound/one-leaf replay files retain their qualified hashes. Primary
+evidence has 185 payloads /7,389,224 bytes, inventory 7d51eb53…; the independent
+first verification passes with primary bytes unchanged. The verification
+supplement has ten payloads /51,827 bytes, inventory 548d3e18… and receipt
+564ad268…. Full failures, raw reports, both media
+trees, five safe project/media archives and selected final PNGs are retained.
+Authored diff checks pass; nineteen raw evidence EOF-blank warnings are retained
+byte-identically. Foreign `fuzz/Cargo.lock` and `.claude/` remain untouched.
+
+All build, UI and media producers in
+`/tmp/deadpan-follow-creep-2026-10-24` are terminal. Do not restart successful
+lanes. The aggregate fixture's separate audio-capture budget refusal stays
+asserted; standalone raw slice admission proves the real 100,000/100,001 record
+boundary without claiming authentic capture or early allocation admission.
+Raw patch inventory and retained-result-union boundaries pass independently.
+Coverage remains 89%, eight Complete/sixteen Partial; the full goal is active.
+
+## Earlier compound count-reuse continuation, 2026-10-24
+
 Main now includes [compound wire-count reuse](../qualification/compound-wire-reuse-2026-10-24.md).
 It retains actual local counts for an untouched clone and a header-only
 change in one eligible InsertTime replay. Actual initial/post serialization,
@@ -40,13 +93,13 @@ and both actual movies match. The seven-file verification supplement
 retains the verifier/receipt and raw outputs; primary bytes stay unchanged.
 Coverage remains 89%, eight Complete/sixteen Partial; the full goal is active.
 
-The next bounded feature candidate is whole ordinary Source target-following
-creep. Read the revised private design
+The following-creep work above supersedes this section's next-feature plan.
+The revised private design is retained at
 /tmp/deadpan-target-follow-creep-design-revised-2026-10-24.md
 (238771cd2f8016cc50aadbfa3a83d110f63af9e85f90277f770621120967b45d)
 and its predecessor review. Preserve Lost-region holding and explicit target
 release to static; do not convert to an ordinary Envelope through mismatched
-Q32 semantics. No feature implementation has begun.
+Q32 semantics.
 
 ## Earlier private count-reuse continuation, 2026-10-24
 

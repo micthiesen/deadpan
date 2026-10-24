@@ -1,0 +1,9 @@
+{
+  "crates/deadpan-core/tests/framing/follow_boundaries.rs": "b9967587f0b2ed8b6d683113b1a47481fe5afeac9e84f945963ed81474824f22",
+  "crates/deadpan-core/tests/framing.rs": "20fd80bc5873e5227b462070c7cc1e5d8dbf59d19f9161804a2faee788d92996",
+  "crates/deadpan-core/src/framing/follow_preflight_tests.rs": "332ae789d2d5e6d93d698acd16a8ddaf5bb713fab6d4201c636b8bff473601c9",
+  "crates/deadpan-core/src/framing/preflight.rs": "056ce5d00a446085fadb13394583b90cca1d15a118a38a2a7e520e2b887380dc",
+  "crates/deadpan-plan/tests/picture_plan/follow/structural.rs": "72ef057d68cbb77da264aae886e892b4e3e955d11e206b182a154579a7b6d423",
+  "crates/deadpan-plan/tests/picture_plan/follow.rs": "4c83fdfcb68810943001a2d76f8a4a597d0147adc506705d89386ceabf8c8ec2",
+  "crates/deadpan-app/src/preview/camera.rs": "f1779a4622508e2757a1b7796d9a81e16c10dd30b32f0a6d61855bd781b4871e"
+}

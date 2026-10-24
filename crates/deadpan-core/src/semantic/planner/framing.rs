@@ -177,6 +177,10 @@ where
             kind,
             &resolved_center,
             &framing_zoom::Shot {
+                ordinary_source: matches!(
+                    self.current.nodes()[&selected].kind,
+                    NodeKind::Source { .. }
+                ),
                 entry,
                 current: state.current,
                 frames,
@@ -255,6 +259,7 @@ where
             kind,
             &resolved_center,
             &framing_zoom::Shot {
+                ordinary_source: false,
                 entry,
                 current: state.current,
                 frames,

@@ -1,5 +1,7 @@
 #![cfg(target_os = "macos")]
 
+#[path = "preview_export/follow_creep_export.rs"]
+mod follow_creep_export;
 #[path = "preview_export/group_endpoints_export.rs"]
 mod group_endpoints_export;
 #[path = "support/physical_mac.rs"]

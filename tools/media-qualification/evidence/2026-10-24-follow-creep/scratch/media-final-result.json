@@ -1,0 +1,48 @@
+{
+  "audio_windows": 1,
+  "authored_limited_and_limiter_gain_bits_equal": true,
+  "blocks_compared": 4,
+  "canonical_channels": 2,
+  "canonical_pcm_evidence": {
+    "after": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/fixture/follow-creep-after-pcm.json",
+    "before": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/fixture/follow-creep-before-pcm.json",
+    "history_and_independent_pose_oracle": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/fixture/follow-creep-authored-evidence.json",
+    "portable_copy": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/fixture/follow-creep-portable-copy.json"
+  },
+  "canonical_samples_compared": 192192,
+  "declared_audio_priming": 2048,
+  "failures": [],
+  "fixture": "follow-creep",
+  "frames": 120,
+  "independent_DSP_claim": false,
+  "independent_pose_oracle": true,
+  "listening_claim": false,
+  "max_block_level_db": 0.043817517907697834,
+  "max_thumbnail_mad": 0.13048573369565217,
+  "min_block_snr_db": 29.534686653581982,
+  "min_chroma_psnr_db": 56.58419742639922,
+  "min_luma_psnr_db": 45.0423074992569,
+  "min_neighbor_margin_db": 25.529113714367952,
+  "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/exports/follow-creep.mp4",
+  "notes": [
+    "Qualified 120-picture A/V CFR Original; manually authored deterministic target regions move, hold through Lost, receive a correction, and fall back outside their span. Keep-center creep is authored through the shared semantic CLI; live 1.5->2 and fallback 1.25->5/3 use one owner clock. Every picture is checked against independent Q32 pose arithmetic; all 192192 stereo authored/limited samples and limiter gain bits equal the pre-creep baseline. The source picture is the existing counter fixture, not a generated moving subject; this does not qualify tracking accuracy, listening or independent DSP."
+  ],
+  "offsets": [
+    [
+      "verified_zero",
+      0
+    ]
+  ],
+  "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/fixture/follow-creep-portable.deadpan",
+  "passed": true,
+  "pictures": 120,
+  "render_seconds": 1.664037292,
+  "revision": "068f76ac-7c09-4038-ab7f-caad404501aa",
+  "rows": [
+    "Slow creep",
+    "Framing"
+  ],
+  "signal_windows": 1,
+  "tracking_accuracy_claim": false,
+  "verify_seconds": 1.047443041
+}

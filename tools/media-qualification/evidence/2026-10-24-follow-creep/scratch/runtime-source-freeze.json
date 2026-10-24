@@ -1,0 +1,13 @@
+{
+  "crates/deadpan-core/src/framing.rs": "473f72aa91517bcd0c228b2c105db0c8b3caf517067b6816a1ff0eebb6230667",
+  "crates/deadpan-core/src/framing/preflight.rs": "056ce5d00a446085fadb13394583b90cca1d15a118a38a2a7e520e2b887380dc",
+  "crates/deadpan-core/src/framing_zoom.rs": "894db34f3db35c4584f52361c7cbff9ec7094e3f1f64378635bae8d4615bc2bc",
+  "crates/deadpan-core/src/semantic/planner/framing.rs": "1f6874277346748583d776269243a5ec806ca0cb427baddd7ef1a811d5088dad",
+  "crates/deadpan-plan/src/plan.rs": "e3fbb7b7fe51ca178973dbe1eb4ec3346692f8e96ab5edd7d4317469f410ab79",
+  "crates/deadpan-app/src/preview/camera.rs": "f1779a4622508e2757a1b7796d9a81e16c10dd30b32f0a6d61855bd781b4871e",
+  "crates/deadpan-app/src/navigation/zoom.rs": "a1b51dffe0b5b5243a1f5fd654b75b91ea0e1c369592dd3983e9989aa7a668d1",
+  "crates/deadpan-app/src/preview/inspector.rs": "01cd09d8d455ad3d428a3a830de566bbf6ee2123816f8ae250c308f4afcbcdb0",
+  "crates/deadpan-app/src/preview.rs": "ccf8fdca53a21298c5e8251deaf3133275645885ec4fc1af298038f4ccce0f3a",
+  "crates/deadpan-app/src/preview/harness/zoom/follow_creep.rs": "5db0e1f8c07766bf473e6a8e04af62f9d9cb6353a4159083a90ed1c7d1e87ed4",
+  "crates/deadpan-app/src/preview/harness/zoom.rs": "c7d87385c21b077a1be3dd732b75c05c98474353c6e7439ff7feff0d79b4c651"
+}

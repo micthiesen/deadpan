@@ -279,13 +279,44 @@ fn scale_label(scale: ExactRatio) -> String {
     )
 }
 
+pub fn follow_scale_label(
+    scale: ExactRatio,
+    transition: Option<deadpan_core::FollowScaleTransition>,
+) -> String {
+    let Some(transition) = transition else {
+        return scale_label(scale);
+    };
+    match scale.checked_mul(transition.factor) {
+        Ok(end) => format!(
+            "{} → {} ({})",
+            scale_label(scale),
+            scale_label(end),
+            match transition.curve {
+                ZoomCurve::Step => "step",
+                ZoomCurve::Linear => "linear",
+                ZoomCurve::Smoothstep => "smoothstep",
+            }
+        ),
+        Err(_) => "invalid scale animation".into(),
+    }
+}
+
 /// A short account of committed framing for the status line.
 pub fn describe(framing: Option<&Framing>, label: &dyn Fn(&TargetId) -> String) -> String {
     match framing.map(|framing| &framing.value) {
         None => "full picture, no framing".into(),
         Some(FramingValue::Static { pose }) => format!("{} static", scale_label(pose.scale)),
-        Some(FramingValue::Follow { target, scale, .. }) => {
-            format!("{} following {}", scale_label(*scale), label(target))
+        Some(FramingValue::Follow {
+            target,
+            scale,
+            scale_transition,
+            ..
+        }) => {
+            format!(
+                "{} following {}",
+                follow_scale_label(*scale, *scale_transition),
+                label(target)
+            )
         }
         Some(FramingValue::Envelope { envelope }) => {
             let last = envelope

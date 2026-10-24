@@ -702,3 +702,6 @@ fn typed_subtree_aggregate_framing_is_rejected_before_installation() {
     assert_eq!(error.code, EditErrorCode::LimitExceeded);
     assert_eq!(doc.nodes().len(), 2);
 }
+
+#[path = "framing/follow_boundaries.rs"]
+mod follow_boundaries;

@@ -17,6 +17,12 @@ mod scoped;
 #[path = "framing/scoped_duration.rs"]
 mod scoped_duration;
 
+#[path = "framing/follow_creep.rs"]
+mod follow_creep;
+
+#[path = "framing/follow_creep_admission.rs"]
+mod follow_creep_admission;
+
 #[cfg(all(target_os = "macos", feature = "synthetic-worker"))]
 #[allow(dead_code)]
 #[path = "../../preview_export/recipes.rs"]

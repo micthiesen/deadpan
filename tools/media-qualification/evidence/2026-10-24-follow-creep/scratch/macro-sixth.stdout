@@ -1,0 +1,7 @@
+
+running 2 tests
+test macros::framing::follow_creep_admission::explicit_follow_creep_from_rebases_both_scales_and_invalid_endpoints_never_publish ... ok
+test macros::framing::follow_creep::keep_creep_rebinds_follow_bases_and_target_with_atomic_refusal_and_durable_history ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 56 filtered out; finished in 1.18s
+

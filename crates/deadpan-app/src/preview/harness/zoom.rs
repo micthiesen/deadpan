@@ -7,6 +7,7 @@ use egui::Key;
 
 use super::*;
 
+mod follow_creep;
 mod macros;
 
 fn framing(d: &Driver<'_>) -> Option<Framing> {
@@ -138,6 +139,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"followed":widgets.contains("Target 1 · 1.35×"),"presets":widgets.contains("Framing presets")}),
     )?;
     d.capture("Punch-in follows Target 1")?;
+
+    follow_creep::run(d)?;
 
     // :zoom … target=center curve=step: a smash zoom centered on the Original.
     let revision = d.revision();

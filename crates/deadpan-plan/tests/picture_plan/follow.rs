@@ -26,6 +26,7 @@ fn follow(scale: i64) -> Framing {
             target: TargetId::new("speaker").unwrap(),
             scale: ExactRatio::integer(scale),
             fallback: FramingPose::identity(),
+            scale_transition: None,
         },
     }
 }
@@ -230,3 +231,205 @@ fn an_escalating_zoom_moves_toward_its_target_and_keeps_the_view_inside_the_pict
     value.as_object_mut().unwrap().remove("targets");
     assert!(ProjectDocument::from_json(&value.to_string()).is_err());
 }
+
+fn animated(document: &ProjectDocument, owner: &str) -> ProjectDocument {
+    let mut value = serde_json::to_value(document).unwrap();
+    value["nodes"][owner]["framing"]["value"]["scale_transition"] =
+        serde_json::to_value(FollowScaleTransition {
+            factor: ratio(2, 1),
+            curve: framing_zoom::ZoomCurve::Linear,
+        })
+        .unwrap();
+    ProjectDocument::from_json(&value.to_string()).unwrap()
+}
+
+#[test]
+fn following_creep_keeps_the_lost_region_and_animates_distinct_fallback_scale() {
+    let document = with_target(
+        document(&["a"], vec![("a", source(8, 0, 8008))]),
+        5005,
+        &[("a", 2)],
+    );
+    let document = animated(&document, "a");
+    let mut value = serde_json::to_value(&document).unwrap();
+    value["targets"]["speaker"]["samples"] = serde_json::to_value([
+        TargetSample {
+            at: 0,
+            region: region(200_000),
+            confidence: 950,
+            state: TrackState::Tracked,
+        },
+        TargetSample {
+            at: 2002,
+            region: region(200_000),
+            confidence: 0,
+            state: TrackState::Lost,
+        },
+    ])
+    .unwrap();
+    value["targets"]["speaker"]["corrections"] = serde_json::to_value([TargetCorrection {
+        at: 4004,
+        region: region(800_000),
+    }])
+    .unwrap();
+    let document = ProjectDocument::from_json(&value.to_string()).unwrap();
+    let plan = RenderPlan::compile(&document).unwrap();
+    for frame in [0, 2, 3] {
+        assert_eq!(pose(&plan, frame, 0).center_x, grid(1, 5));
+        let local = plan.picture(ProjectFrame(frame)).unwrap().framing[0].local_position;
+        // Linear 2→4 over eight owner frames, independent of target states.
+        assert_eq!(
+            pose(&plan, frame, 0).scale,
+            ratio(2, 1)
+                .checked_add(local.checked_div(ratio(4, 1)).unwrap())
+                .unwrap()
+        );
+    }
+    assert_eq!(
+        pose(&plan, 4, 0).center_x,
+        grid(4, 5),
+        "manual correction ends the held region"
+    );
+    let late = plan.picture(ProjectFrame(6)).unwrap();
+    assert_eq!(late.framing[0].pose.unwrap().center_x, ratio(1, 2));
+    assert_eq!(
+        late.framing[0].pose.unwrap().scale,
+        ratio(1, 1)
+            .checked_add(
+                late.framing[0]
+                    .local_position
+                    .checked_div(ratio(8, 1))
+                    .unwrap()
+            )
+            .unwrap()
+    );
+}
+
+#[test]
+fn raw_group_follow_transition_survives_ungroup_and_retains_each_child_clock() {
+    let document = with_target(
+        document(
+            &["g"],
+            vec![
+                ("g", BeatNode::sequence("Group", vec![id("a"), id("b")])),
+                ("a", source(4, 0, 4004)),
+                ("b", source(4, 4004, 8008)),
+            ],
+        ),
+        8008,
+        &[("g", 2)],
+    );
+    let before = animated(&document, "g");
+    let tx = apply(
+        &before,
+        &CommandRequest {
+            project_id: before.project_id().clone(),
+            expected_revision: before.revision_id().clone(),
+            new_revision: RevisionId::new("ungroup-follow").unwrap(),
+            command: Command::Ungroup { node: id("g") },
+        },
+    )
+    .unwrap();
+    let after = tx.forward.apply(&before).unwrap();
+    assert_eq!(tx.inverse.apply(&after).unwrap(), before);
+    let old = RenderPlan::compile(&before).unwrap();
+    let new = RenderPlan::compile(&after).unwrap();
+    assert_eq!(old.duration(), new.duration());
+    for frame in 0..8 {
+        let prior = old.picture(ProjectFrame(frame)).unwrap();
+        let next = new.picture(ProjectFrame(frame)).unwrap();
+        assert_eq!(prior.picture, next.picture);
+        assert_eq!(
+            prior
+                .framing
+                .iter()
+                .filter_map(|layer| layer.pose)
+                .collect::<Vec<_>>(),
+            next.framing
+                .iter()
+                .filter_map(|layer| layer.pose)
+                .collect::<Vec<_>>()
+        );
+    }
+}
+
+#[test]
+fn following_creep_split_preserves_frames_and_inverse_payload_and_raw_retime_clock() {
+    let before = animated(
+        &with_target(
+            document(&["a"], vec![("a", source(8, 0, 8008))]),
+            8008,
+            &[("a", 2)],
+        ),
+        "a",
+    );
+    let tx = apply(
+        &before,
+        &CommandRequest {
+            project_id: before.project_id().clone(),
+            expected_revision: before.revision_id().clone(),
+            new_revision: RevisionId::new("split-follow").unwrap(),
+            command: Command::Split {
+                node: id("a"),
+                at: duration(3),
+                identities: SplitIdentities {
+                    nodes: (0..16).map(|n| id(&format!("split-follow-{n}"))).collect(),
+                },
+            },
+        },
+    )
+    .unwrap();
+    let after = tx.forward.apply(&before).unwrap();
+    assert_eq!(tx.inverse.apply(&after).unwrap(), before);
+    let reopened = ProjectDocument::from_json(&after.to_json().unwrap()).unwrap();
+    let old = RenderPlan::compile(&before).unwrap();
+    let split = RenderPlan::compile(&reopened).unwrap();
+    for frame in 0..8 {
+        let a = old.picture(ProjectFrame(frame)).unwrap();
+        let b = split.picture(ProjectFrame(frame)).unwrap();
+        assert_eq!(a.picture, b.picture);
+        assert_eq!(
+            a.framing.iter().filter_map(|v| v.pose).collect::<Vec<_>>(),
+            b.framing.iter().filter_map(|v| v.pose).collect::<Vec<_>>()
+        );
+    }
+    // Raw authoring is valid on a Retime even though initial Zoom admission is
+    // Source-only. Its scale uses the Retime output, not provider source time.
+    let retimed = animated(
+        &with_target(
+            document(
+                &["r"],
+                vec![("r", retime("a", 4, 0, 8)), ("a", source(8, 0, 8008))],
+            ),
+            8008,
+            &[("r", 2)],
+        ),
+        "r",
+    );
+    let plan = RenderPlan::compile(&retimed).unwrap();
+    for frame in 0..4 {
+        let picture = plan.picture(ProjectFrame(frame)).unwrap();
+        let layer = picture
+            .framing
+            .iter()
+            .find(|layer| layer.instance.node == id("r"))
+            .unwrap();
+        assert_eq!(layer.effective_duration, ratio(4, 1));
+        assert_eq!(layer.local_position, ratio(2 * i128::from(frame) + 1, 2));
+        assert_eq!(
+            ticks(&picture.picture),
+            ratio((2 * i128::from(frame) + 1) * 1001, 1)
+        );
+        assert_eq!(
+            layer.pose.unwrap().center_x,
+            if frame < 2 { grid(1, 5) } else { grid(4, 5) }
+        );
+        assert_eq!(
+            layer.pose.unwrap().scale,
+            ratio(9 + 2 * i128::from(frame), 4)
+        );
+    }
+}
+
+#[path = "follow/structural.rs"]
+mod structural;

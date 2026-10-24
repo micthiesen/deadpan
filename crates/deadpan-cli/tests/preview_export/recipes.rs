@@ -88,6 +88,9 @@ pub mod processing_duration;
 #[path = "clocked_speed_update.rs"]
 pub mod clocked_speed_update;
 
+#[path = "follow_creep.rs"]
+pub mod follow_creep;
+
 #[path = "inner_repeat_speed.rs"]
 pub mod inner_repeat_speed;
 
@@ -1210,6 +1213,7 @@ pub fn framing(dir: &Path) -> Result<Fixture> {
                     target: target.clone(),
                     scale: zoom,
                     fallback: zoomed,
+                    scale_transition: None,
                 },
             }),
         })
@@ -1290,6 +1294,7 @@ pub fn letterbox_follow(dir: &Path) -> Result<Fixture> {
                     target: target.clone(),
                     scale: zoom,
                     fallback: FramingPose::new(half, half, zoom)?,
+                    scale_transition: None,
                 },
             }),
         })

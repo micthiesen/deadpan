@@ -243,6 +243,7 @@ fn copying_a_followed_beat_carries_its_target_to_a_destination_without_it() {
             target: TargetId::new("speaker").unwrap(),
             scale: ExactRatio::integer(2),
             fallback: crate::FramingPose::identity(),
+            scale_transition: None,
         },
     });
     source["nodes"]["root"]["kind"]["children"] = serde_json::json!(["held"]);

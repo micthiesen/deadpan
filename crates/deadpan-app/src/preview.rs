@@ -4791,7 +4791,13 @@ impl DeadpanApp {
         }
         // A follow names its target by label, never by its internal id.
         if let Some(deadpan_core::Framing {
-            value: deadpan_core::FramingValue::Follow { target, scale, .. },
+            value:
+                deadpan_core::FramingValue::Follow {
+                    target,
+                    scale,
+                    scale_transition,
+                    ..
+                },
             ..
         }) = &node.framing
             && let Some(field) = description
@@ -4799,10 +4805,20 @@ impl DeadpanApp {
                 .iter_mut()
                 .find(|(label, _)| *label == "Framing")
         {
-            let scale = scale.numerator() as f64 / scale.denominator() as f64;
             *field = (
                 "Follows",
-                format!("{} · {scale:.2}×", self.target_label(target)),
+                match scale_transition {
+                    Some(transition) => format!(
+                        "{} · {}",
+                        self.target_label(target),
+                        navigation::zoom::follow_scale_label(*scale, Some(*transition))
+                    ),
+                    None => format!(
+                        "{} · {:.2}×",
+                        self.target_label(target),
+                        scale.numerator() as f64 / scale.denominator() as f64
+                    ),
+                },
             );
         }
         Some(description)

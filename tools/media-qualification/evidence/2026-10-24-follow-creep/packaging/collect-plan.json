@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "repository": "/Users/michael/Code/deadpan",
+  "scratch": "/tmp/deadpan-follow-creep-2026-10-24",
+  "destination": "tools/media-qualification/evidence/2026-10-24-follow-creep",
+  "raw_byte_limit": 268435456,
+  "gzip_threshold_bytes": 200000,
+  "runtime_source_freeze": {
+    "path": "runtime-source-freeze.json",
+    "sha256": "cd45a91c008fa103c06aacb133f4d2eb63ff149803764cc7771de38f32ac9400",
+    "count": 11
+  },
+  "source_file_list": {
+    "path": "source-files.json",
+    "sha256": "ff4d26f205e3d023aff8501a4aba173e24c0c77cb1965be4f8bbd9744ba9322c",
+    "count": 30
+  },
+  "build_inputs": {
+    "Cargo.lock": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+    "Cargo.toml": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+    ".cargo/config.toml": "b906738cab8f6f289180e1bcf32826d3e2996899cb5055dc7f0c6838655c340d",
+    "crates/deadpan-app/src/navigation/registry/baseline-routing.txt": "a181ba1d3f2db1c030fbdf1feaf2d5ae8efd5edd885114bcea9c161ac774cd8d",
+    "docs/COMMANDS.md": "b4fc50fffbb6d96406593dda90a56ee6c9f3b89a3790b6e7f69b87863f57beec"
+  },
+  "reports": [
+    "native-first/report.json",
+    "native-debug-second/report.json",
+    "native-release-second/report.json"
+  ],
+  "selected_screenshots": [
+    "native-release-second/zoom-049.png",
+    "native-release-second/zoom-118.png"
+  ],
+  "archives": [
+    {
+      "name": "actual-media",
+      "root": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C",
+      "required": true
+    },
+    {
+      "name": "actual-media-final",
+      "root": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG",
+      "required": true
+    },
+    {
+      "name": "native-release-second-zoom-project",
+      "root": "/tmp/deadpan-follow-creep-2026-10-24/native-release-second/projects/zoom",
+      "required": true
+    },
+    {
+      "name": "native-first-zoom-project",
+      "root": "/tmp/deadpan-follow-creep-2026-10-24/native-first/projects/zoom",
+      "required": false
+    },
+    {
+      "name": "native-debug-second-zoom-project",
+      "root": "/tmp/deadpan-follow-creep-2026-10-24/native-debug-second/projects/zoom",
+      "required": false
+    }
+  ],
+  "required_scratch_files": [
+    "media-first-invocation.json",
+    "media-first-terminal.json",
+    "media-first-result.json",
+    "media-final-invocation.json",
+    "media-final-terminal.json",
+    "media-final-result.json",
+    "media-final-source-before.json",
+    "media-final-source-after.json",
+    "media-independent-audit.json",
+    "media-independent-audit.md",
+    "native-release-second-invocation.json",
+    "native-release-second-terminal.json",
+    "first-release-binaries.json",
+    "final-native-binaries.json"
+  ],
+  "excluded_scratch_names": [
+    "collect.py",
+    "collect-plan.json",
+    "collect.stdout",
+    "collect.stderr",
+    "collect-result.json",
+    "collect-receipt.json"
+  ],
+  "limitations": [
+    "Collection verifies retained byte identities and stable inputs; it does not certify that a test, aggregate campaign, render, review, performance target or requirement passed.",
+    "The current Rust map is measured at collection. It is not proof that every earlier build compiled that entire map; the retained runtime freeze binds only its eleven listed paths.",
+    "All eligible immediate scratch logs, JSON, Markdown, text, patch and Python inputs present at execution are retained, including failures and any later final-media/aggregate/check logs. Build targets and executable copies are excluded.",
+    "Only the two selected final PNGs are published. They remain directly viewable as a documented exception to gzip above200000bytes because PNG is already compressed. Other screenshot PNGs and HTML reports remain in scratch; complete raw native JSON reports are retained compressed.",
+    "SQLite WAL and SHM sidecars are omitted only together with an observed empty WAL next to a regular SQLite database. Exact omitted sizes and hashes remain in the archive ledger; all other files are retained.",
+    "No listening, physical keyboard/IME, VoiceOver speech, second-Mac or tracking-accuracy acceptance is inferred from these materials."
+  ]
+}

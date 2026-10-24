@@ -1,0 +1,212 @@
+<ctx task="Implement whole ordinary Source target-following creep: FramingValue::Follow scale_transition shared evaluate_exact owner clock in crates/deadpan-core/src/framing.rs framing/numeric.rs framing/preflight.rs framing_zoom.rs semantic/planner/framing.rs and crates/deadpan-plan/src/plan.rs follow_pose; integrate crates/deadpan-app/src/preview/camera.rs navigation/zoom.rs preview/inspector.rs" route=" [routed: subtoken+body BM25 (--for&apos;s default) — no strong name hit, multi-word conceptual query]" bundle="auto" bodies="5"><!-- ripwire lens for "Implement whole ordinary Source target-following creep: FramingValue::Follow scale_transition shared evaluate_exact owner clock in crates/deadpan-core/src/framing.rs framing/numeric.rs framing/preflight.rs framing_zoom.rs semantic/planner/framing.rs and crates/deadpan-plan/src/plan.rs follow_pose; integrate crates/deadpan-app/src/preview/camera.rs navigation/zoom.rs preview/inspector.rs" [mention anchor: 4 files + 12 symbols named in the task lifted near the top] [doc mentions: 5 docs discussing 3 top-ranked symbols surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="4454" --><sigs capped="1"><f p="./crates/deadpan-core/src/framing_zoom/tests.rs"><d l="133" n="whole_beat_smash_follows_a_target_and_otherwise_keeps_a_static_pose" cx="1" ccx="0" in="0" churn="1">fn whole_beat_smash_follows_a_target_and_otherwise_keeps_a_static_pose()</d><d l="180" n="creeps_ease_from_the_current_pose_toward_a_target_center" cx="1" ccx="0" in="0" churn="1">fn creeps_ease_from_the_current_pose_toward_a_target_center()</d><d l="216" n="ranged_framing_keeps_the_beat_outside_the_range" cx="1" ccx="0" in="0" churn="1">fn ranged_framing_keeps_the_beat_outside_the_range()</d><d l="266" n="abrupt_return_steps_out_over_a_range_and_never_flattens_a_path" cx="1" ccx="0" in="0" churn="1">fn abrupt_return_steps_out_over_a_range_and_never_flattens_a_path()</d><d l="306" n="whole_beat_keep_retains_a_follow_and_refuses_to_flatten_a_path" cx="2" ccx="1" in="0" churn="1">fn whole_beat_keep_retains_a_follow_and_refuses_to_flatten_a_path()</d><d l="412" n="retained_clock_static_poses_are_ranged_like_any_static_pose" cx="1" ccx="0" in="0" churn="1">fn retained_clock_static_poses_are_ranged_like_any_static_pose()</d></f><f p="./crates/deadpan-core/src/framing.rs"><d l="204" n="FramingValue" cx="0" ccx="0" in="0" churn="6" amp="41">pub enum FramingValue</d><d l="259" n="creep" id="./crates/deadpan-core/src/framing.rs::Framing::creep" cx="1" ccx="0" in="36" churn="6" amp="77" tested="1">pub fn creep( from: FramingPose, to: FramingPose, curve: FramingCurve, ) -&gt; Result&lt;Self, FramingError&gt;</d><d l="379" n="evaluate_exact" id="./crates/deadpan-core/src/framing.rs::Framing::evaluate_exact" cx="13" ccx="10" in="5" churn="6" amp="46" tested="1"><doc>Evaluate a derived owner clock without rounding its extent. This does not change authored frame …</doc>pub fn evaluate_exact( &amp;self, local: ExactRatio, duration: ExactRatio, ) -&gt; Result&lt;FramingPose, FramingError&gt;</d></f><f p="./crates/deadpan-core/src/framing_zoom.rs"><d l="146" n="build" cx="32" ccx="24" in="2" churn="1" amp="2">pub fn build(kind: ZoomKind, center: &amp;Center, shot: &amp;Shot&lt;&apos;_&gt;) -&gt; Result&lt;Option&lt;Framing&gt;, String&gt;</d></f><f p="./crates/deadpan-core/src/framing/numeric.rs"><d l="14" n="compare" cx="8" ccx="15" in="0" churn="2" clone="1">pub(super) fn compare(a: ExactRatio, b: ExactRatio) -&gt; Ordering</d><d l="45" n="quantize" cx="1" ccx="0" in="1" churn="2" amp="1" tested="1">pub(super) fn quantize(value: ExactRatio) -&gt; Result&lt;i64, FramingError&gt;</d><d l="56" n="lerp" cx="2" ccx="1" in="0" churn="2" clone="1">pub(super) fn lerp(a: i64, b: i64, t: u64) -&gt; Result&lt;i64, FramingError&gt;</d></f><f p="./crates/deadpan-app/src/preview/camera.rs"><d l="134" n="FramingRequest" cx="0" ccx="0" in="0" churn="26" amp="63">pub(super) enum FramingRequest</d><d l="303" n="FollowDraft" cx="0" ccx="0" in="0" churn="26" amp="63">pub(super) struct FollowDraft</d><d l="458" n="followed_framing" cx="2" ccx="1" in="2" churn="26" amp="65" tested="1">fn followed_framing(follow: &amp;FollowDraft, pose: FramingPose) -&gt; Result&lt;Framing, String&gt;</d></f></sigs><bodies shown="5" total="6" capped="1"><b t="fn" l="306" p="./crates/deadpan-core/src/framing_zoom/tests.rs" n="whole_beat_keep_retains_a_follow_and_refuses_to_flatten_a_path"><![CDATA[fn whole_beat_keep_retains_a_follow_and_refuses_to_flatten_a_path() {
+    let id = TargetId::new("target-1").unwrap();
+    let fallback = FramingPose::new(ratio(2, 5), ratio(1, 2), ratio(11, 10)).unwrap();
+    let follow = Framing {
+        clock: FramingClock::RetainedOutput {
+            offset: ExactRatio::ONE,
+            duration: ExactRatio::integer(12),
+        },
+        value: FramingValue::Follow {
+            target: id.clone(),
+            scale: ratio(11, 10),
+            fallback,
+        },
+    };
+    // The displayed pose is the target's center, not the fallback.
+    let current = FramingPose::new(ratio(3, 5), ratio(1, 2), ratio(11, 10)).unwrap();
+    let shot_on = |entry| Shot {
+        entry: Some(entry),
+        current,
+        ..shot(None)
+    };
+    let smash = build(
+        ZoomKind::Smash { scale: ratio(2, 1) },
+        &Center::Keep,
+        &shot_on(&follow),
+    )
+    .unwrap()
+    .unwrap();
+    assert_eq!(smash.clock, follow.clock);
+    assert_eq!(
+        smash.value,
+        FramingValue::Follow {
+            target: id,
+            scale: ratio(2, 1),
+            fallback: FramingPose {
+                scale: ratio(2, 1),
+                ..fallback
+            },
+        }
+    );
+    let creep = ZoomKind::Creep {
+        from: None,
+        to: ratio(2, 1),
+        curve: ZoomCurve::Smoothstep,
+    };
+    assert_eq!(
+        build(creep, &Center::Keep, &shot_on(&follow)).unwrap_err(),
+        FOLLOW_CREEP_REFUSAL
+    );
+    // An explicit fixed center replaces the follow on request.
+    assert!(matches!(
+        build(
+            creep,
+            &Center::Point([ratio(1, 2), ratio(1, 2)]),
+            &Shot {
+                explicit: true,
+                ..shot_on(&follow)
+            }
+        ),
+        Ok(Some(Framing {
+            value: FramingValue::Envelope { .. },
+            ..
+        }))
+    ));
+    let path = Framing::creep(
+        FramingPose::identity(),
+        FramingPose {
+            scale: ratio(2, 1),
+            ..FramingPose::identity()
+        },
+        FramingCurve::Smoothstep,
+    )
+    .unwrap();
+    for kind in [ZoomKind::Smash { scale: ratio(3, 2) }, creep] {
+        assert_eq!(
+            build(kind, &Center::Keep, &shot_on(&path)).unwrap_err(),
+            PATH_REFUSAL
+        );
+        // ,z resolving the selected target is not an explicit replacement.
+        let target = Center::Target {
+            id: TargetId::new("target-1").unwrap(),
+            fixed: Some([ratio(1, 2), ratio(1, 2)]),
+        };
+        assert_eq!(
+            build(kind, &target, &shot_on(&path)).unwrap_err(),
+            PATH_REFUSAL
+        );
+        assert!(
+            build(
+                kind,
+                &target,
+                &Shot {
+                    explicit: true,
+                    ..shot_on(&path)
+                }
+            )
+            .is_ok()
+        );
+    }
+    assert_eq!(
+        build(ZoomKind::Off, &Center::Keep, &shot_on(&path)).unwrap(),
+        None
+    );
+}]]><calls total="6"><c n="integer" l="62">pub const fn integer(value: i64) -&gt; Self</c><c n="identity" l="68">pub fn identity() -&gt; Self</c><c n="new" l="76">pub fn new( center_x: ExactRatio, center_y: ExactRatio, scale: ExactRatio, ) -&gt; Result&lt;Self, FramingError&gt;</c><c n="creep" l="259">pub fn creep( from: FramingPose, to: FramingPose, curve: FramingCurve, ) -&gt; Result&lt;Self, FramingError&gt;</c><c n="ratio" l="3">fn ratio(n: i128, d: i128) -&gt; ExactRatio</c><c n="shot" l="103">fn shot(range: Option&lt;(u64, u64)&gt;) -&gt; Shot&lt;&apos;static&gt;</c></calls></b><b t="cls" l="204" p="./crates/deadpan-core/src/framing.rs" n="FramingValue"><![CDATA[pub enum FramingValue {
+    Static {
+        pose: FramingPose,
+    },
+    Envelope {
+        envelope: FramingEnvelope,
+    },
+    /// Center on an attention target at the source time of the picture
+    /// shown, at a fixed scale. Where the picture is not the target's asset
+    /// or lies outside its span, `fallback` applies.
+    Follow {
+        target: crate::TargetId,
+        scale: ExactRatio,
+        fallback: FramingPose,
+    },
+}]]></b><b t="method" l="259" p="./crates/deadpan-core/src/framing.rs" n="creep"><![CDATA[pub fn creep(
+        from: FramingPose,
+        to: FramingPose,
+        curve: FramingCurve,
+    ) -> Result<Self, FramingError> {
+        let framing = Self {
+            clock: FramingClock::OwnerOutput,
+            value: FramingValue::Envelope {
+                envelope: FramingEnvelope {
+                    initial: from,
+                    segments: vec![FramingSegment {
+                        end: ExactRatio::ONE,
+                        pose: to,
+                        curve,
+                    }],
+                },
+            },
+        };
+        framing.validate()?;
+        Ok(framing)
+    }]]><calls total="1"><c n="validate" l="309">pub fn validate(&amp;self) -&gt; Result&lt;(), FramingError&gt;</c></calls></b><b t="method" l="379" p="./crates/deadpan-core/src/framing.rs" n="evaluate_exact"><![CDATA[pub fn evaluate_exact(
+        &self,
+        local: ExactRatio,
+        duration: ExactRatio,
+    ) -> Result<FramingPose, FramingError> {
+        self.validate()?;
+        if !duration.compare_integer(0).is_gt()
+            || local.compare_integer(0).is_lt()
+            || numeric::compare(local, duration).is_gt()
+        {
+            return Err(FramingError::TimeRange);
+        }
+        let (local, duration) = self.clock.resolve(local, duration)?;
+        let envelope = match &self.value {
+            FramingValue::Static { pose } => return Ok(*pose),
+            // The target is resolved against the picture by the plan; on its
+            // own, a follow evaluates to its fallback.
+            FramingValue::Follow { fallback, .. } => return Ok(*fallback),
+            FramingValue::Envelope { envelope } => envelope,
+        };
+        let mut start = ExactRatio::ZERO;
+        let mut from = envelope.initial;
+        for segment in &envelope.segments {
+            // Do not materialize `end * duration` or `local / duration` as an
+            // ExactRatio. Their intermediates can exceed i128 even when all
+            // inputs and the selected segment are valid.
+            match numeric::compare_progress(local, duration, segment.end)? {
+                std::cmp::Ordering::Equal => return Ok(segment.pose),
+                std::cmp::Ordering::Greater => {
+                    start = segment.end;
+                    from = segment.pose;
+                }
+                std::cmp::Ordering::Less => {
+                    if numeric::compare_progress(local, duration, start)?.is_eq()
+                        || matches!(segment.curve, FramingCurve::Step)
+                    {
+                        return Ok(from);
+                    }
+                    let progress = numeric::segment_progress(local, duration, start, segment.end)?;
+                    return interpolate(from, segment.pose, segment.curve, progress);
+                }
+            }
+        }
+        Err(FramingError::TimeRange)
+    }]]><calls total="7"><c n="compare_integer" l="146">pub fn compare_integer(self, value: i64) -&gt; std::cmp::Ordering</c><c n="resolve" l="160">fn resolve( self, local: ExactRatio, owner_duration: ExactRatio, ) -&gt; Result&lt;(ExactRatio, ExactRatio), FramingError&gt;</c><c n="validate" l="309">pub fn validate(&amp;self) -&gt; Result&lt;(), FramingError&gt;</c><c n="interpolate" l="426">fn interpolate( from: FramingPose, to: FramingPose, curve: FramingCurve, progress: u64, ) -&gt; Result&lt;FramingPose, FramingError&gt;</c><c n="segment_progress" l="65">pub(super) fn segment_progress( local: ExactRatio, duration: ExactRatio, start: ExactRatio, end: ExactRatio, ) -&gt; Result&lt;u64, FramingError&gt;</c><c n="compare_progress" l="98">pub(super) fn compare_progress( local: ExactRatio, duration: ExactRatio, progress: ExactRatio, ) -&gt; Result&lt;Ordering, FramingError&gt;</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><!-- body omitted (over budget): build --><b t="fn" l="14" p="./crates/deadpan-core/src/framing/numeric.rs" n="compare"><![CDATA[pub(super) fn compare(a: ExactRatio, b: ExactRatio) -> Ordering {
+    let order = a.floor().cmp(&b.floor());
+    if order != Ordering::Equal {
+        return order;
+    }
+    let mut a = (
+        a.numerator().rem_euclid(a.denominator()) as u128,
+        a.denominator() as u128,
+    );
+    let mut b = (
+        b.numerator().rem_euclid(b.denominator()) as u128,
+        b.denominator() as u128,
+    );
+    let mut reverse = false;
+    loop {
+        let order = (a.0 / a.1).cmp(&(b.0 / b.1));
+        if order != Ordering::Equal {
+            return if reverse { order.reverse() } else { order };
+        }
+        let ar = a.0 % a.1;
+        let br = b.0 % b.1;
+        if ar == 0 || br == 0 {
+            let order = ar.cmp(&br);
+            return if reverse { order.reverse() } else { order };
+        }
+        a = (a.1, ar);
+        b = (b.1, br);
+        reverse = !reverse;
+    }
+}]]><calls total="1"><c n="cmp" l="198">fn cmp(&amp;self, other: &amp;Self) -&gt; Ordering</c></calls></b></bodies></ctx>

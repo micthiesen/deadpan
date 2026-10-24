@@ -1,0 +1,31 @@
+
+running 26 tests
+test framing_zoom::tests::whole_beat_smash_follows_a_target_and_otherwise_keeps_a_static_pose ... ok
+test framing_zoom::tests::whole_beat_keep_retains_a_follow_and_refuses_to_flatten_a_path ... ok
+test framing_zoom::tests::follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_source ... ok
+test framing::follow_transition_tests::follow_transition_curves_preserve_exact_fallback_centers_and_endpoint_scales ... ok
+test cutaway::tests::pictures_play_at_their_natural_rate_then_follow_the_fit ... ok
+test framing::follow_transition_tests::follow_transition_retained_fractional_clock_and_growth_keep_original_samples ... ok
+test semantic::speech::tests::shot_motions_and_objects_follow_shot_occurrences ... ok
+test framing::follow_transition_tests::follow_transition_non_grid_scales_match_an_independent_integer_grid_oracle ... ok
+test target::tests::evaluated_confidence_follows_the_same_interpolation_and_correction ... ok
+test target::tests::regions_follow_samples_and_corrections_in_source_time ... ok
+test semantic::planner::tests::speech::word_and_sentence_motions_follow_supplied_speech ... ok
+test framing::follow_transition_tests::follow_transition_validates_both_branches_and_closed_raw_vocabulary ... ok
+test target::tests::copying_a_followed_beat_carries_its_target_to_a_destination_without_it ... ok
+test semantic::planner::tests::group::ungroup_selects_promoted_or_following_literal_empty_sibling ... ok
+test semantic::planner::tests::objects::around_empty_child_cut_chooses_literal_following_empty_sibling ... ok
+test scoped_edit::tests::proof_tests::later_concrete_edit_follows_an_earlier_shared_default_isolation ... ok
+test semantic::planner::tests::speech::word_objects_cut_exact_ranges_and_speech_follows_the_staged_edit ... ok
+test scoped_edit::tests::nested_mark_counts_are_exact_and_concrete_marks_follow_wildcard_outer_defaults ... ok
+test scoped_edit::tests::permissions_follow_each_matching_concrete_play_and_hold_audio_retires_only_changed_issuers ... ok
+test repeat_selection::tests::root_sound_routes_and_concrete_allowances_follow_only_the_retained_first_play ... ok
+test semantic::planner::tests::pause::nested_follow_speed_semantic_pauses_refresh_exact_scope_and_replay_as_one_edit ... ok
+test semantic::planner::tests::scoped_framing::scoped_gain::scoped_gain_follows_pause_continuation_and_preserves_whole_composite_owner_effects ... ok
+test semantic::planner::tests::scoped_framing::scoped_hold_audio::scoped_hold_audio_named_calls_follow_staged_hold_through_zoom_pause_and_late_refusal ... ok
+test framing::preflight::tests::scanner_counts_follow_bases_and_transitions_before_the_extra_record_body ... ok
+test framing::follow_transition_tests::follow_transition_typed_aggregate_admission_uses_the_real_record_limit ... ok
+test framing::preflight::follow_preflight_tests::mixed_fixed_animated_and_pose_envelope_records_share_the_real_preflight_cap ... ok
+
+test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 711 filtered out; finished in 0.21s
+

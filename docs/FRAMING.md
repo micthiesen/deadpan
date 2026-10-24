@@ -209,7 +209,7 @@ construction and its numeric tests live in
 | `,c` | `:creep to=1.35`. |
 | `:zoom S [target=…] [curve=step]` | Smash zoom. On the whole beat with a target: `Follow { target, scale: S, fallback }`, a live step onto the target. Otherwise a static pose at scale `S`. |
 | `:zoom S curve=linear\|smoothstep` | An eased change from the current pose, as `:creep to=S`. |
-| `:creep [from=S] [to=S] [target=…] [curve=smoothstep\|linear]` | An envelope from the current center at `from` (default: the current scale) to `to` (default 1.35). |
+| `:creep [from=S] [to=S] [target=…] [curve=smoothstep\|linear]` | Eases from `from` (default: current scale) to `to` (default 1.35). With no `target=`, a whole ordinary Source with a fixed Follow retains live targeting and animates scale. Other cases use a fixed-center envelope. |
 | `:zoom S target=face:N …`, `:creep … target=face:N` | Face `N` (1 to 64, left to right) proposed in the displayed picture, saved as a target together with the framing ([face proposals](#face-proposals)). |
 | `:zoom off` | Abrupt return: no framing on the whole beat, or a step out to the full picture over the Edit range. |
 
@@ -217,7 +217,7 @@ construction and its numeric tests live in
 only saved target covering the displayed picture; several refuse and name them.
 `target=center` is the Original's center; `target=face:N` is a face proposal
 (below); any other value is a target id or label (quote labels with spaces). A whole-beat step with a target follows it
-live. An eased or ranged edit uses a fixed point: the target's center exactly
+live. An eased edit that explicitly names a target, or a ranged edit, uses a fixed point: the target's center exactly
 as a follow would resolve it (`deadpan_plan::follow_pose`) at the frame where a
 step lands (the range's first frame) or where a creep arrives (its last frame).
 The status line names that frame and says the framing does not follow. A target
@@ -225,12 +225,38 @@ not visible at that frame refuses.
 
 Nothing flattens an existing path implicitly. On the whole beat:
 
-- a beat that follows a target keeps following when `:zoom S` or `,z` changes
-  only its scale (the fallback keeps its center; the clock is kept); a creep
-  without `target=` refuses, because a fixed center would stop the follow;
-- a camera path (envelope) refuses `,z`, `,c`, `:zoom` and `:creep` unless the
+- a fixed Follow keeps following when `:zoom S` or `,z` changes only its scale
+  (the fallback keeps its center; the clock is kept);
+- a whole ordinary Source with a fixed Follow accepts `,c` or `:creep` without
+  `target=`. Its center keeps following the target at each picture's Original
+  time while scale changes on the Source's output clock. Clear Visual selection
+  first, including a full-length range. Single-play and other owner authoring
+  currently refuse this operation;
+- a camera path (envelope or animated Follow) refuses `,z`, `,c`, `:zoom` and `:creep` unless the
   command names `target=` explicitly, which replaces the path on request;
   `:zoom off` always removes framing.
+
+Animated Follow stores one optional `scale_transition` with a terminal `factor`
+and `linear`, `smoothstep` or raw `step` curve. The live scale and fallback scale
+retain separate initial values; each terminal value is its own initial scale
+times the factor. An explicit `from=` proportionally adjusts both bases before
+creating the transition. New creep spans the current whole Source; later
+structural edits retain its authored normalization clock. Interpolation uses the
+existing Q32 round-even numeric contract. Fallback centers and exact endpoint
+scales stay exact; resolved target poses use the existing whole-pose grid.
+Raw validated framing supports the transition on every supported owner type.
+
+Lost tracking holds the last retained region while scale continues changing.
+Outside the target's span, or when existing target projection cannot resolve,
+the fallback center applies and its own scale continues changing. Captured Hold
+geometry retains its existing suppression of live follow resolution.
+
+Camera Enter without adjustments retains the full authored Follow. Scale
+adjustments proportionally change both bases while retaining the factor and
+clock, and refuse if either endpoint would be invalid. `t` explicitly releases
+the target at the installed picture pose and removes the scale animation;
+Enter saves that static framing, and Escape keeps the entry framing. The
+inspector and Camera show both scale endpoints and the curve.
 
 With an Edit range inside the beat, only that range changes: Step segments hold
 the beat's static pose before it, the range gets the new pose, and a step
@@ -243,8 +269,10 @@ Envelope progress is exact (`frame / beat frames`, reduced, at most one million)
 
 `:zoom` and `:creep` capture the session, revision, view, selected beat, Repeat
 scope, cursor and Edit range when `:` opens, including their absence; any
-change before Enter refuses instead of retargeting. Ordinary whole-beat macro presets
-retain their `SetFraming` behavior. Ordinary ranged commands record `Zoom`
+change before Enter refuses instead of retargeting. Whole-Source Keep-center
+Follow creep records semantic `Zoom` intent, so named replay and dot resolve the
+invocation's target, both scale bases and duration. Other ordinary whole-beat
+macro presets retain their `SetFraming` behavior. Ordinary ranged commands record `Zoom`
 intent with scales, curve and `Keep` or explicit `OriginalCenter`; replay
 resolves the invocation's selected owner and exact range against each staged
 document. It retains no old range fractions or sampled target point. A
@@ -347,9 +375,10 @@ recipe boundary and migration fixture.
 Saved region targets, keyboard region creation, following and selected-target
 tracking are implemented (above, [targets](TARGETS.md), [tracking](TRACKING.md)).
 Point targets, face proposals in Camera's numbered picker (only `target=face:N`
-uses them now), general region detection, renaming targets, pointer dragging of
-rectangles, and a live follow whose scale changes over time (a creep that tracks a
-moving target) remain required. Follow centers are placed on a letterboxed or
+uses them now), general region detection, renaming targets and pointer dragging of
+rectangles remain required. Whole ordinary Source following creep now animates
+scale while retaining the live target, as described above; broader authoring
+scopes remain open. Follow centers are placed on a letterboxed or
 pillarboxed canvas for targets that record their display aspect
 ([qualification](qualification/letterbox-follow-2026-10-15.md)). Centered per-play scale
 escalation is in [Repeat escalation](REPEAT_ESCALATION.md). Ungroup moves a group's camera path onto its unframed

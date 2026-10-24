@@ -1,0 +1,5 @@
+    Blocking waiting for file lock on build directory
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 16.56s
+     Running tests/picture_plan.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/picture_plan-8377682556489926)
+error: test failed, to rerun pass `-p deadpan-plan --test picture_plan`

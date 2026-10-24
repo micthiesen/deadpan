@@ -1,0 +1,32 @@
+{
+  "files": {
+    "crates/deadpan-core/tests/framing/follow_aggregate.rs": "c80acef27fe6a618e65fe9f45e20a1cbfedb811ec0863bff75206009ecb6037d"
+  },
+  "command": "CARGO_TARGET_DIR=/tmp/deadpan-follow-creep-2026-10-24/target cargo test --locked -p deadpan-core --test framing follow_boundaries::aggregate",
+  "attempts": [
+    {
+      "attempt": 1,
+      "stdout": "aggregate-worker-1.stdout",
+      "stderr": "aggregate-worker-1.stderr",
+      "test_result": "1 passed; 1 failed; 21 filtered out; 14.46s",
+      "failure": "raw slice changed bound physical Hold to Sequence: audio binding owner is not a physical recipe",
+      "wrapper_exit": 1,
+      "cargo_exit": "not captured separately; Cargo emitted test failure (wrapper then failed because zsh status is readonly)",
+      "terminal_handle": 18572,
+      "active": false,
+      "stdout_sha256": "5f56631979981ab5b97dceb741c2b59567de61bf9614b6f539e7aa5c234e9998",
+      "stderr_sha256": "d69732337828013dee7d1354ea0d6d21320304bd911b079f75b8ae7a2ff783c7"
+    },
+    {
+      "attempt": 2,
+      "stdout": "aggregate-worker-2.stdout",
+      "stderr": "aggregate-worker-2.stderr",
+      "test_result": "2 passed; 0 failed; 21 filtered out; 14.91s",
+      "exit": 0,
+      "terminal_handle": 88756,
+      "active": false,
+      "stdout_sha256": "28d1b0f32c93e780797934443c40f27d16de627004eb392fafffbdd645226f04",
+      "stderr_sha256": "80990d642a264806d1ce47d1739f101ae23da0bd98d043062bf3eb405d2d535d"
+    }
+  ]
+}

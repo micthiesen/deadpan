@@ -516,6 +516,7 @@ fn a_target_in_use_refuses_deletion_and_an_unused_one_deletes_in_one_undo() {
             target: id.clone(),
             scale: deadpan_core::ExactRatio::integer(2),
             fallback: deadpan_core::FramingPose::identity(),
+            scale_transition: None,
         },
     };
     let followed = edited(

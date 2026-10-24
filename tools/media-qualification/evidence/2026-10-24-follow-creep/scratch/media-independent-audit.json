@@ -1,0 +1,375 @@
+{
+  "audio": {
+    "DSP_independent": false,
+    "PCM_authored_equal": true,
+    "PCM_gain_equal": true,
+    "PCM_limited_equal": true,
+    "channels": 2,
+    "click_window_47808_48192_nonzero": true,
+    "full_range": [
+      0,
+      192192
+    ],
+    "listening": false,
+    "nonzero_authored_pairs": 2816,
+    "nonzero_limited_pairs": 2816,
+    "offset_samples": 0,
+    "offset_status": "verified_zero",
+    "samples": 192192,
+    "source_click_sample_48000": [
+      0.749076783657074,
+      -0.649470865726471
+    ],
+    "uncovered": 0
+  },
+  "identities": {
+    "original_blake3": "16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+    "release_binaries": {
+      "deadpan-app": {
+        "bytes": 77775088,
+        "path": "/tmp/deadpan-follow-creep-2026-10-24/target/release/deadpan-app",
+        "sha256": "011273d2791066379e86e55fd7436b4c6b5b5ac7613af4ca1a7a5f87a6633e42"
+      },
+      "deadpan-cli": {
+        "bytes": 50018096,
+        "path": "/tmp/deadpan-follow-creep-2026-10-24/target/release/deadpan-cli",
+        "sha256": "8aaaf11dcc8bf8f3d0fc0500f0eb13841a8efc454a950e2d34edcaa4907fe4a9"
+      },
+      "deadpan-media-worker": {
+        "bytes": 1169872,
+        "path": "/tmp/deadpan-follow-creep-2026-10-24/target/release/deadpan-media-worker",
+        "sha256": "9bb776f74a23a3c875c52251770c161bfc2b0b49146891aa40de9578683424f7"
+      },
+      "deadpan-track": {
+        "bytes": 1656592,
+        "path": "/tmp/deadpan-follow-creep-2026-10-24/target/release/deadpan-track",
+        "sha256": "11aeb6de474b1e6815146f2db4c826ae8721a8d3409607e0dee87b3a212c23c8"
+      },
+      "deadpan-transcribe": {
+        "bytes": 2603984,
+        "path": "/tmp/deadpan-follow-creep-2026-10-24/target/release/deadpan-transcribe",
+        "sha256": "351468f98590062f06b6913d94ccbf2b07b019d1185c2939f09c8650c91f71d5"
+      }
+    },
+    "sha256_files": {
+      "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/exports/deadpan-render-dcd88887-cbed-4221-8fe2-371b0b0ca6a9.json": {
+        "bytes": 32960,
+        "sha256": "de16416e7cde8a87ca849e4bc95f4e7787c39ee2d7280f82f6ab0c47b18bb330"
+      },
+      "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/exports/follow-creep.mp4": {
+        "bytes": 211945,
+        "sha256": "171a987281d70bd0b7af1bae7b6e6d8534e08e9afccee959cda74ee0d0e3f0a1"
+      },
+      "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/fixture/follow-creep-after-pcm.json": {
+        "bytes": 6246627,
+        "sha256": "10cb6b31edd1cac052eb4956440321b723175be9efe4bda16107e4d138d7dadd"
+      },
+      "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/fixture/follow-creep-apply.stderr.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/fixture/follow-creep-apply.stdout.json": {
+        "bytes": 2282,
+        "sha256": "0c30b01e8b54d7fdc00ee580ffa1ce2f250ed1ab66c3bf5b4c6afabc33f3b72a"
+      },
+      "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/fixture/follow-creep-authored-evidence.json": {
+        "bytes": 129978,
+        "sha256": "cfc22dfff4372334d4f8de23ba3b404d85665516385d61a1086163adf8415ce3"
+      },
+      "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/fixture/follow-creep-before-pcm.json": {
+        "bytes": 6246730,
+        "sha256": "2ae6bc9a5a406c7839f9250045c0f04a4c2767eba681f7d1bb73002d27c9acd8"
+      },
+      "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/fixture/follow-creep-portable-copy.json": {
+        "bytes": 894,
+        "sha256": "cf860ca8f16235088c4ad7b7479ad822375104575a67362895061ce2c798d52e"
+      },
+      "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/fixture/macro-request.json": {
+        "bytes": 447,
+        "sha256": "5253f9ca905a4fa0cc5c174bd739d3ec4af01d06d6ce7cf77434dd6a8088fd4b"
+      },
+      "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/fixture/original.mp4": {
+        "bytes": 39157,
+        "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+      },
+      "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/fixture/request-follow-creep-r01.json": {
+        "bytes": 1103,
+        "sha256": "6ed8595dc7871ad679e06a81f797d860fc19ef2133f0eded360d050eade715d9"
+      },
+      "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/fixture/request-follow-creep-r02.json": {
+        "bytes": 479,
+        "sha256": "f07134681cc886e418847f00a4c3bba8e8163f7be7e46de24f9d7eea80ae0eaa"
+      },
+      "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/follow-creep-render.stderr.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/follow-creep-render.stdout.jsonl": {
+        "bytes": 15193,
+        "sha256": "ad8b91f0ff2cc81e9ebc69a29d79b62c0f8e7396a77b4b4e207fddb7d3efba15"
+      },
+      "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/follow-creep-summary.json": {
+        "bytes": 2336,
+        "sha256": "e1a9b7a6f2a8caa3a133c34a4efa1f3f6d0a3735bcd56ba855b28be013f8ad53"
+      },
+      "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/follow-creep-verification.json": {
+        "bytes": 162647,
+        "sha256": "f62e052a545d3e5ed2145722f15b965e2697022713d1a928929e3b28a05bacc9"
+      },
+      "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/follow-creep-verification.stderr.txt": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/follow-creep-verification.stdout.json": {
+        "bytes": 162648,
+        "sha256": "830f883779ebfc97be6a28e3034b368459d5945a142669d69a3628da6590c1ae"
+      },
+      "/tmp/deadpan-follow-creep-2026-10-24/first-release-binaries.json": {
+        "bytes": 1071,
+        "sha256": "aada9fb48ae5a05a0c66095d58a859294f4a747d09c20da8a1795879110240ef"
+      },
+      "/tmp/deadpan-follow-creep-2026-10-24/media-first-invocation.json": {
+        "bytes": 1458,
+        "sha256": "0fb0502518ac864580edcb9b0bf2a7d72fe4d486cc292ec1fbf27c74e7dec1f5"
+      },
+      "/tmp/deadpan-follow-creep-2026-10-24/media-first-result.json": {
+        "bytes": 2336,
+        "sha256": "e1a9b7a6f2a8caa3a133c34a4efa1f3f6d0a3735bcd56ba855b28be013f8ad53"
+      },
+      "/tmp/deadpan-follow-creep-2026-10-24/media-first-terminal.json": {
+        "bytes": 91,
+        "sha256": "fd8d7e11d9662e388249304623123317b21ae0c63de15f2d44d5854b13be7307"
+      },
+      "/tmp/deadpan-follow-creep-2026-10-24/media-first.stderr": {
+        "bytes": 2227,
+        "sha256": "9e48ba044be2d31b10030283f7a29708ca15e7a9341b4ae899b29d7e9d1e02ac"
+      },
+      "/tmp/deadpan-follow-creep-2026-10-24/media-first.stdout": {
+        "bytes": 222,
+        "sha256": "f1361736ebfa33574e3a07d5cbd4f3e2b74d17f78acdce5d5f005527ef939d9f"
+      }
+    },
+    "source_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "test_binary_sha256": "15230c8d7d16a2ddc0c5420b9fd535c0933ef3e2c460b5d4647cba5fce4a8bd1"
+  },
+  "limitations": [
+    "Existing counter video, not a naturally moving subject. Target samples and correction are deterministic and manually authored.",
+    "Evidence checks tracking-state consumption and independent Q32 pose arithmetic, not tracking accuracy.",
+    "PCM arrays compare retained IEEE float bit patterns (authored/limited/gain) against before baseline. This is not an independent DSP oracle and makes no listening or audibility claim.",
+    "Undo and copy state compare equal after removing the intentionally different revision_id. Hashes identify audited files; they do not independently attest how invocation records were produced."
+  ],
+  "mismatches": [],
+  "passed_checks": {
+    "120_sequential_pictures": true,
+    "audio_full_192192_stereo": true,
+    "audio_offset_verified_zero": true,
+    "copy_state_matches_after_except_new_revision": true,
+    "movie_hash_matches_render_receipt": true,
+    "pcm_authored_bits_equal": true,
+    "pcm_limited_bits_equal": true,
+    "pcm_limiter_gain_bits_equal": true,
+    "pcm_signal_nonzero": true,
+    "picture_failures_zero": true,
+    "picture_offsets_zero": true,
+    "portable_history_7_verified": true,
+    "portable_original_cloned": true,
+    "pose_120_rows_and_oracle_matches": true,
+    "raw_result_equals_summary": true,
+    "source_binaries_match_initial_and_terminal": true,
+    "terminal_exit_zero_and_binaries_unchanged": true,
+    "test_1_passed_66_filtered_not_skipped": true,
+    "undo_state_matches_before_except_new_revision": true
+  },
+  "portable_copy": {
+    "authored_history": {
+      "replayed": 6,
+      "revisions": 7,
+      "verified_by_receipt": 0
+    },
+    "destination_exists": true,
+    "note": "Copy report verifies 7 revisions by receipts. Separate authored-evidence history row reports 7 revisions, 6 replayed, 0 verified-by-receipt; these counters describe separate checks.",
+    "report": {
+      "destination": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/fixture/follow-creep-portable.deadpan",
+      "generated": [],
+      "omitted_generated": 0,
+      "omitted_render_candidates": 0,
+      "originals": [
+        {
+          "bytes": 39157,
+          "content": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+          "from": "managed",
+          "label": "original.mp4",
+          "method": "cloned"
+        }
+      ],
+      "project_id": "9be5a8e7-1689-4625-963d-e005456ae1bd",
+      "revision_id": "7ad21e52-285d-482d-a064-862f9dc3061f",
+      "schema_version": 1,
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/fixture/follow-creep.deadpan",
+      "total_bytes": 637173,
+      "verified_history": {
+        "replayed": 0,
+        "revisions": 7,
+        "verified_by_receipt": 7
+      }
+    },
+    "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/fixture/follow-creep.deadpan",
+    "state_restored_equals_after_ignoring_revision_id": true
+  },
+  "poses": {
+    "all_actual_equals_expected": true,
+    "branches": {
+      "fallback": 20,
+      "lost_holds_region": 20,
+      "manual_correction": 20,
+      "tracked": 60
+    },
+    "follow_value": {
+      "value": {
+        "fallback": {
+          "center_x": {
+            "denominator": "3",
+            "numerator": "1"
+          },
+          "center_y": {
+            "denominator": "5",
+            "numerator": "2"
+          },
+          "scale": {
+            "denominator": "4",
+            "numerator": "5"
+          }
+        },
+        "scale": {
+          "denominator": "2",
+          "numerator": "3"
+        },
+        "scale_transition": {
+          "curve": "linear",
+          "factor": {
+            "denominator": "3",
+            "numerator": "4"
+          }
+        },
+        "target": "moving-region",
+        "type": "follow"
+      }
+    },
+    "manual_correction": [
+      {
+        "at": 80080,
+        "region": {
+          "center": [
+            450001,
+            400000
+          ],
+          "size": [
+            100000,
+            100000
+          ]
+        }
+      }
+    ],
+    "owner_position_examples": {
+      "0": {
+        "denominator": "2",
+        "numerator": "1"
+      },
+      "10": {
+        "denominator": "2",
+        "numerator": "21"
+      },
+      "119": {
+        "denominator": "2",
+        "numerator": "239"
+      },
+      "80": {
+        "denominator": "2",
+        "numerator": "161"
+      }
+    },
+    "rows": 120,
+    "target_samples": [
+      [
+        10010,
+        "tracked",
+        1000,
+        [
+          250000,
+          400000
+        ]
+      ],
+      [
+        50050,
+        "tracked",
+        1000,
+        [
+          650000,
+          400000
+        ]
+      ],
+      [
+        60060,
+        "lost",
+        0,
+        [
+          650000,
+          400000
+        ]
+      ],
+      [
+        100100,
+        "tracked",
+        1000,
+        [
+          700000,
+          400000
+        ]
+      ]
+    ]
+  },
+  "scope": "Read-only independent parsing of retained reports/media. No product command rerun. No independent DSP implementation, acoustic listening, or tracking-accuracy claim.",
+  "test": {
+    "name": "follow_creep_export::follow_creep_preserves_live_motion_lost_correction_fallback_and_verified_av",
+    "stderr_excerpt": "follow creep Render evidence: /var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C\n{\"audio_windows\":1,\"authored_limited_and_limiter_gain_bits_equal\":true,\"blocks_compared\":4,\"canonical_channels\":2,\"canonical_pcm_evidence\":{\"after\":\"/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/fixture/follow-creep-after-pcm.json\",\"before\":\"/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/fixture/follow-creep-before-pcm.json\",\"history_and_independent_pose_oracle\":\"/var/folders/37/7",
+    "stdout_result_line": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 66 filtered out; finished in 5.29s",
+    "terminal": {
+      "binaries_unchanged": true,
+      "elapsed_seconds": 5.347552333027124,
+      "exit_code": 0
+    },
+    "test_binary": {
+      "path": "/tmp/deadpan-follow-creep-2026-10-24/target/release/deps/preview_export-8652fc5e7c449500",
+      "sha256": "15230c8d7d16a2ddc0c5420b9fd535c0933ef3e2c460b5d4647cba5fce4a8bd1"
+    }
+  },
+  "video": {
+    "bytes": 211945,
+    "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptRnJ7C/exports/follow-creep.mp4",
+    "movie_sha256_matches_receipt": true,
+    "picture_summary": {
+      "audio_windows_checked": 1,
+      "audio_windows_failed": 0,
+      "blocks_compared": 4,
+      "index_observable_comparisons": 234,
+      "index_unobservable_comparisons": 4,
+      "max_block_level_db": 0.043817517907697834,
+      "max_local_luma_error": 10.25,
+      "max_thumbnail_mad": 0.13048573369565217,
+      "min_block_snr_db": 29.534686653581982,
+      "min_chroma_psnr_db": 56.58419742639922,
+      "min_luma_psnr_db": 45.0423074992569,
+      "min_neighbor_margin_db": 25.529113714367952,
+      "nonzero_offsets": 0,
+      "offset_unobservable_windows": 0,
+      "offset_verified_windows": 1,
+      "pictures_checked": 120,
+      "pictures_failed": 0,
+      "pictures_without_index_neighbors": 0,
+      "signal_windows": 1
+    },
+    "pictures": 120,
+    "render_receipt_sha256": "171a987281d70bd0b7af1bae7b6e6d8534e08e9afccee959cda74ee0d0e3f0a1",
+    "sha256": "171a987281d70bd0b7af1bae7b6e6d8534e08e9afccee959cda74ee0d0e3f0a1"
+  }
+}

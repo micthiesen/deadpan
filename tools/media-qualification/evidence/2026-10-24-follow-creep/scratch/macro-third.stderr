@@ -1,0 +1,8 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.03s
+     Running tests/project_commands.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/project_commands-cb3585c5972643cb)
+
+thread 'macros::framing::follow_creep::keep_creep_rebinds_follow_bases_and_target_with_atomic_refusal_and_durable_history' (181333238) panicked at crates/deadpan-cli/tests/project_commands/macros/framing/follow_creep.rs:56:9:
+{"error":{"code":"InvalidCommand","current_revision":null,"message":"InvalidCommand: This beat follows a target; a range would stop following it outside the range. Apply to the whole beat (clear the Visual range) or :zoom off first.","recovery_backup":null},"schema_version":1}
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `-p deadpan-cli --test project_commands`

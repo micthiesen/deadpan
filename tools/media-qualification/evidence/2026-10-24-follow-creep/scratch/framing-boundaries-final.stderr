@@ -1,0 +1,3 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.49s
+     Running tests/framing.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/framing-5000978f28d382ae)

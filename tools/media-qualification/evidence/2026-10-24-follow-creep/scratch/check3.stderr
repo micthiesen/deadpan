@@ -1,0 +1,92 @@
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error[E0425]: cannot find function `execute` in module `super::super::super::macros`
+   --> crates/deadpan-app/src/preview/harness/zoom/follow_creep.rs:99:34
+    |
+ 99 |     super::super::super::macros::execute(d, 'x', None)?;
+    |                                  ^^^^^^^ not found in `super::super::super::macros`
+    |
+note: these functions exist but are inaccessible
+   --> crates/deadpan-app/src/preview/harness/scoped_plays/audio_setters.rs:242:1
+    |
+242 | / fn execute(
+243 | |     d: &mut Driver<'_>,
+244 | |     name: char,
+245 | |     checkpoints: &mut Vec<ProjectDocument>,
+...   |
+251 | |     settled(d)
+252 | | }
+    | |_^ `crate::preview::harness::scoped_plays::audio_setters::execute`: not accessible
+    |
+   ::: crates/deadpan-app/src/preview/harness/scoped_plays/hold_audio.rs:861:1
+    |
+861 |   fn execute(d: &mut Driver<'_>, name: char) -> Result<(), String> {
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `crate::preview::harness::scoped_plays::hold_audio::execute`: not accessible
+help: consider importing this function
+    |
+  2 + use crate::preview::harness::macros::execute;
+    |
+help: if you import `execute`, refer to it directly
+    |
+ 99 -     super::super::super::macros::execute(d, 'x', None)?;
+ 99 +     execute(d, 'x', None)?;
+    |
+
+error[E0425]: cannot find function `execute` in module `super::super::super::macros`
+   --> crates/deadpan-app/src/preview/harness/zoom/follow_creep.rs:99:34
+    |
+ 99 |     super::super::super::macros::execute(d, 'x', None)?;
+    |                                  ^^^^^^^ not found in `super::super::super::macros`
+    |
+note: these functions exist but are inaccessible
+   --> crates/deadpan-app/src/preview/harness/scoped_plays/audio_setters.rs:242:1
+    |
+242 | / fn execute(
+243 | |     d: &mut Driver<'_>,
+244 | |     name: char,
+245 | |     checkpoints: &mut Vec<ProjectDocument>,
+...   |
+251 | |     settled(d)
+252 | | }
+    | |_^ `crate::preview::harness::scoped_plays::audio_setters::execute`: not accessible
+    |
+   ::: crates/deadpan-app/src/preview/harness/scoped_plays/hold_audio.rs:861:1
+    |
+861 |   fn execute(d: &mut Driver<'_>, name: char) -> Result<(), String> {
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `crate::preview::harness::scoped_plays::hold_audio::execute`: not accessible
+    |
+   ::: crates/deadpan-app/src/project/tests/semantic/selectors.rs:91:1
+    |
+ 91 |   fn execute(service: &ProjectService, operation: MacroOperation) -> ProjectUpdate {
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `crate::project::tests::semantic::selectors::execute`: not accessible
+help: consider importing this function
+    |
+  2 + use crate::preview::harness::macros::execute;
+    |
+help: if you import `execute`, refer to it directly
+    |
+ 99 -     super::super::super::macros::execute(d, 'x', None)?;
+ 99 +     execute(d, 'x', None)?;
+    |
+
+error[E0609]: no field `cursor` on type `&preview::DeadpanApp`
+  --> crates/deadpan-app/src/preview/harness/zoom/follow_creep.rs:33:31
+   |
+33 |     let edit_cursor = d.app().cursor;
+   |                               ^^^^^^ unknown field
+   |
+   = note: available fields are: `feedback`, `smoke_frames`, `display`, `close_pending`, `exited` ... and 95 others
+
+error[E0609]: no field `cursor` on type `&preview::DeadpanApp`
+  --> crates/deadpan-app/src/preview/harness/zoom/follow_creep.rs:46:24
+   |
+46 |             && d.app().cursor == edit_cursor,
+   |                        ^^^^^^ unknown field
+   |
+   = note: available fields are: `feedback`, `smoke_frames`, `display`, `close_pending`, `exited` ... and 95 others
+
+Some errors have detailed explanations: E0425, E0609.
+For more information about an error, try `rustc --explain E0425`.
+error: could not compile `deadpan-app` (bin "deadpan-app") due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-app` (bin "deadpan-app" test) due to 3 previous errors

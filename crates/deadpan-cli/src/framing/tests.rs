@@ -358,6 +358,7 @@ fn semantic_framing_uses_live_follow_pose_at_retimed_source_clock_instead_of_fal
                     target,
                     scale: ExactRatio::integer(2),
                     fallback,
+                    scale_transition: None,
                 },
             }),
         },

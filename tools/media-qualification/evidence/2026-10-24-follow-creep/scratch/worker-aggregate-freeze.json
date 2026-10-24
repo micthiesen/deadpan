@@ -1,0 +1,4 @@
+{
+  "crates/deadpan-core/tests/framing/follow_boundaries.rs": "f5d59def881b47694a6169e0271d220976beda0cdf3dc1f4e224c4e275818aa9",
+  "crates/deadpan-core/tests/framing/follow_aggregate.rs": "c696b31cfa553ffc26b25d235cce6917cfdd73c31db353e827232444d47a0b08"
+}

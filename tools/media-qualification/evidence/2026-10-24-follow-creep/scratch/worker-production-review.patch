@@ -1,0 +1,830 @@
+--- before/crates/deadpan-core/src/framing.rs
++++ after/crates/deadpan-core/src/framing.rs
+@@ -209,13 +209,30 @@
+         envelope: FramingEnvelope,
+     },
+     /// Center on an attention target at the source time of the picture
+-    /// shown, at a fixed scale. Where the picture is not the target's asset
++    /// shown. Where the picture is not the target's asset
+     /// or lies outside its span, `fallback` applies.
+     Follow {
+         target: crate::TargetId,
+         scale: ExactRatio,
+         fallback: FramingPose,
++        #[serde(default, skip_serializing_if = "Option::is_none")]
++        scale_transition: Option<FollowScaleTransition>,
+     },
++}
++
++/// One scale change across the owner's declared clock. Both the live and
++/// fallback scales keep their own base; only their terminal factor is shared.
++#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
++#[serde(deny_unknown_fields)]
++pub struct FollowScaleTransition {
++    pub factor: ExactRatio,
++    pub curve: crate::framing_zoom::ZoomCurve,
++}
++
++/// Framing before the plan resolves a target against the provider picture.
++pub struct EvaluatedFraming<'a> {
++    pub pose: FramingPose,
++    pub follow: Option<(&'a crate::TargetId, ExactRatio)>,
+ }
+ 
+ #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+@@ -311,10 +328,20 @@
+         match &self.value {
+             FramingValue::Static { pose } => pose.validate(),
+             FramingValue::Follow {
+-                scale, fallback, ..
++                scale, fallback, scale_transition, ..
+             } => {
+                 fallback.validate()?;
+-                FramingPose::new(fallback.center_x, fallback.center_y, *scale).map(|_| ())
++                FramingPose::new(fallback.center_x, fallback.center_y, *scale)?;
++                if let Some(transition) = scale_transition {
++                    if !transition.factor.compare_integer(0).is_gt() {
++                        return Err(FramingError::PoseRange);
++                    }
++                    for base in [*scale, fallback.scale] {
++                        FramingPose::new(fallback.center_x, fallback.center_y,
++                            base.checked_mul(transition.factor)?)?;
++                    }
++                }
++                Ok(())
+             }
+             FramingValue::Envelope { envelope } => {
+                 envelope.initial.validate()?;
+@@ -346,7 +373,8 @@
+ 
+     pub fn record_count(&self) -> usize {
+         match &self.value {
+-            FramingValue::Static { .. } | FramingValue::Follow { .. } => 1,
++            FramingValue::Static { .. } => 1,
++            FramingValue::Follow { scale_transition, .. } => 1 + usize::from(scale_transition.is_some()),
+             FramingValue::Envelope { envelope } => {
+                 1 + envelope
+                     .segments
+@@ -381,6 +409,16 @@
+         local: ExactRatio,
+         duration: ExactRatio,
+     ) -> Result<FramingPose, FramingError> {
++        self.evaluate_with_follow_exact(local, duration).map(|value| value.pose)
++    }
++
++    /// Evaluate scale and fallback in the same owner clock. Provider target
++    /// lookup remains the plan's responsibility and uses picture source time.
++    pub fn evaluate_with_follow_exact(
++        &self,
++        local: ExactRatio,
++        duration: ExactRatio,
++    ) -> Result<EvaluatedFraming<'_>, FramingError> {
+         self.validate()?;
+         if !duration.compare_integer(0).is_gt()
+             || local.compare_integer(0).is_lt()
+@@ -390,10 +428,19 @@
+         }
+         let (local, duration) = self.clock.resolve(local, duration)?;
+         let envelope = match &self.value {
+-            FramingValue::Static { pose } => return Ok(*pose),
++            FramingValue::Static { pose } => return Ok(EvaluatedFraming { pose: *pose, follow: None }),
+             // The target is resolved against the picture by the plan; on its
+             // own, a follow evaluates to its fallback.
+-            FramingValue::Follow { fallback, .. } => return Ok(*fallback),
++            FramingValue::Follow { target, scale, fallback, scale_transition } => {
++                let evaluated = |base| match scale_transition {
++                    None => Ok(base),
++                    Some(transition) => follow_scale(base, *transition, local, duration),
++                };
++                return Ok(EvaluatedFraming {
++                    pose: FramingPose { scale: evaluated(fallback.scale)?, ..*fallback },
++                    follow: Some((target, evaluated(*scale)?)),
++                });
++            }
+             FramingValue::Envelope { envelope } => envelope,
+         };
+         let mut start = ExactRatio::ZERO;
+@@ -403,7 +450,7 @@
+             // ExactRatio. Their intermediates can exceed i128 even when all
+             // inputs and the selected segment are valid.
+             match numeric::compare_progress(local, duration, segment.end)? {
+-                std::cmp::Ordering::Equal => return Ok(segment.pose),
++                std::cmp::Ordering::Equal => return Ok(EvaluatedFraming { pose: segment.pose, follow: None }),
+                 std::cmp::Ordering::Greater => {
+                     start = segment.end;
+                     from = segment.pose;
+@@ -412,15 +459,38 @@
+                     if numeric::compare_progress(local, duration, start)?.is_eq()
+                         || matches!(segment.curve, FramingCurve::Step)
+                     {
+-                        return Ok(from);
++                        return Ok(EvaluatedFraming { pose: from, follow: None });
+                     }
+                     let progress = numeric::segment_progress(local, duration, start, segment.end)?;
+-                    return interpolate(from, segment.pose, segment.curve, progress);
++                    return interpolate(from, segment.pose, segment.curve, progress)
++                        .map(|pose| EvaluatedFraming { pose, follow: None });
+                 }
+             }
+         }
+         Err(FramingError::TimeRange)
+     }
++}
++
++fn follow_scale(base: ExactRatio, transition: FollowScaleTransition,
++    local: ExactRatio, duration: ExactRatio) -> Result<ExactRatio, FramingError> {
++    let end = base.checked_mul(transition.factor)?;
++    if local == duration { return Ok(end); }
++    if local == ExactRatio::ZERO || transition.curve == crate::framing_zoom::ZoomCurve::Step {
++        return Ok(base);
++    }
++    let progress = numeric::segment_progress(local, duration, ExactRatio::ZERO, ExactRatio::ONE)?;
++    let progress = if transition.curve == crate::framing_zoom::ZoomCurve::Smoothstep {
++        smoothstep(progress)?
++    } else { progress };
++    let value = numeric::lerp(numeric::quantize(base)?, numeric::quantize(end)?, progress)?;
++    Ok(ExactRatio::new(i128::from(value), i128::from(FRAMING_NUMERIC_SCALE))?)
++}
++
++fn smoothstep(progress: u64) -> Result<u64, FramingError> {
++    let q = i128::from(FRAMING_NUMERIC_SCALE);
++    let t = i128::from(progress);
++    let shaped = ExactRatio::new(t * t * (3 * q - 2 * t), q * q)?.round_even()?;
++    u64::try_from(shaped).map_err(|_| FramingError::Overflow)
+ }
+ 
+ fn interpolate(
+@@ -442,14 +512,7 @@
+         FramingCurve::Step => from,
+         FramingCurve::Linear => blend(from, to, progress)?,
+         FramingCurve::Smoothstep => {
+-            let q = i128::from(FRAMING_NUMERIC_SCALE);
+-            let t = i128::from(progress);
+-            let shaped = ExactRatio::new(t * t * (3 * q - 2 * t), q * q)?.round_even()?;
+-            blend(
+-                from,
+-                to,
+-                u64::try_from(shaped).map_err(|_| FramingError::Overflow)?,
+-            )?
++            blend(from, to, smoothstep(progress)?)?
+         }
+         FramingCurve::Cubic { control1, control2 } => {
+             let c1 = control1.grid()?;
+@@ -578,3 +641,117 @@
+     }
+     Ok(())
+ }
++
++#[cfg(test)]
++mod follow_transition_tests {
++    use super::*;
++    use crate::framing_zoom::ZoomCurve;
++
++    fn ratio(n: i128, d: i128) -> ExactRatio { ExactRatio::new(n, d).unwrap() }
++    fn framing(curve: ZoomCurve) -> Framing {
++        Framing {
++            clock: FramingClock::OwnerOutput,
++            value: FramingValue::Follow {
++                target: crate::TargetId::new("speaker").unwrap(),
++                scale: ratio(2, 1),
++                fallback: FramingPose::new(ratio(1, 3), ratio(2, 7), ratio(1, 2)).unwrap(),
++                scale_transition: Some(FollowScaleTransition { factor: ratio(2, 1), curve }),
++            },
++        }
++    }
++
++    #[test]
++    fn follow_transition_curves_preserve_exact_fallback_centers_and_endpoint_scales() {
++        for (curve, live, fallback) in [
++            (ZoomCurve::Step, ratio(2, 1), ratio(1, 2)),
++            (ZoomCurve::Linear, ratio(5, 2), ratio(5, 8)),
++            (ZoomCurve::Smoothstep, ratio(37, 16), ratio(37, 64)),
++        ] {
++            let recipe = framing(curve);
++            let value = recipe.evaluate_with_follow_exact(ratio(1, 1), ratio(4, 1)).unwrap();
++            assert_eq!(value.follow.unwrap().1, live);
++            assert_eq!(value.pose.scale, fallback);
++            assert_eq!(value.pose.center_x, ratio(1, 3));
++            assert_eq!(value.pose.center_y, ratio(2, 7));
++            assert_eq!(recipe.evaluate_exact(ratio(1, 1), ratio(4, 1)).unwrap(), value.pose);
++            assert_eq!(recipe.evaluate_with_follow_exact(ratio(4, 1), ratio(4, 1))
++                .unwrap().follow.unwrap().1, ratio(4, 1));
++        }
++        let mut recipe = framing(ZoomCurve::Linear);
++        if let FramingValue::Follow { scale, fallback, .. } = &mut recipe.value {
++            *scale = ratio(3, 5);
++            fallback.scale = ratio(5, 7);
++        }
++        for local in [ExactRatio::ZERO, ExactRatio::ONE] {
++            let value = recipe.evaluate_with_follow_exact(local, ExactRatio::ONE).unwrap();
++            assert_eq!(value.follow.unwrap().1, if local == ExactRatio::ZERO { ratio(3, 5) } else { ratio(6, 5) });
++            assert_eq!(value.pose.scale, if local == ExactRatio::ZERO { ratio(5, 7) } else { ratio(10, 7) });
++        }
++    }
++
++    #[test]
++    fn follow_transition_retained_fractional_clock_and_growth_keep_original_samples() {
++        let recipe = framing(ZoomCurve::Smoothstep);
++        let grown = recipe.prepend_owner_frames(FrameDuration::new(3).unwrap(), FrameDuration::new(8).unwrap()).unwrap();
++        for n in 0..=16 {
++            let local = ratio(n, 2);
++            let before = recipe.evaluate_with_follow_exact(local, ratio(8, 1)).unwrap();
++            let after = grown.evaluate_with_follow_exact(local.checked_add(ratio(3, 1)).unwrap(), ratio(13, 1)).unwrap();
++            assert_eq!(before.pose, after.pose);
++            assert_eq!(before.follow, after.follow);
++        }
++        assert_eq!(grown.evaluate_exact(ExactRatio::ZERO, ratio(13, 1)).unwrap(),
++            recipe.evaluate_exact(ExactRatio::ZERO, ratio(8, 1)).unwrap());
++        assert_eq!(grown.evaluate_exact(ratio(13, 1), ratio(13, 1)).unwrap(),
++            recipe.evaluate_exact(ratio(8, 1), ratio(8, 1)).unwrap());
++        let mut fractional = recipe.clone();
++        fractional.clock = FramingClock::RetainedOutput { offset: ratio(1, 3), duration: ratio(8, 3) };
++        assert_eq!(fractional.evaluate_exact(ratio(1, 3), ratio(1, 1)).unwrap(),
++            recipe.evaluate_exact(ratio(1, 1), ratio(4, 1)).unwrap());
++    }
++
++    #[test]
++    fn follow_transition_typed_aggregate_admission_uses_the_real_record_limit() {
++        let mut node = crate::BeatNode::sequence("Follow owner", Vec::new());
++        node.framing = Some(framing(ZoomCurve::Linear));
++        assert_eq!(validate_nodes(std::iter::repeat_n(&node, MAX_FRAMING_RECORDS / 2)).unwrap(),
++            MAX_FRAMING_RECORDS);
++        assert!(validate_nodes(std::iter::repeat_n(&node, MAX_FRAMING_RECORDS / 2 + 1)).is_err());
++        if let Some(Framing { value: FramingValue::Follow { scale_transition, .. }, .. }) = &mut node.framing {
++            *scale_transition = None;
++        }
++        assert_eq!(validate_nodes(std::iter::repeat_n(&node, MAX_FRAMING_RECORDS)).unwrap(),
++            MAX_FRAMING_RECORDS);
++        assert!(validate_nodes(std::iter::repeat_n(&node, MAX_FRAMING_RECORDS + 1)).is_err());
++    }
++
++    #[test]
++    fn follow_transition_validates_both_branches_and_closed_raw_vocabulary() {
++        let mut recipe = framing(ZoomCurve::Linear);
++        for bad in [ratio(0, 1), ratio(-1, 1), ratio(128, 1), ratio(1, 128)] {
++            if let FramingValue::Follow { scale_transition, .. } = &mut recipe.value {
++                scale_transition.as_mut().unwrap().factor = bad;
++            }
++            assert!(recipe.validate().is_err());
++        }
++        recipe = framing(ZoomCurve::Linear);
++        if let FramingValue::Follow { fallback, .. } = &mut recipe.value { fallback.scale = ratio(40, 1); }
++        assert!(recipe.validate().is_err(), "fallback endpoint bounds are independent of live scale");
++        let factor = serde_json::to_string(&ratio(2, 1)).unwrap();
++        for (transition, reason) in [
++            (format!(r#"{{"factor":{factor},"curve":"cubic"}}"#), "unknown variant"),
++            (format!(r#"{{"factor":{factor},"factor":{factor},"curve":"linear"}}"#), "duplicate field"),
++            (format!(r#"{{"factor":{factor},"curve":"linear","segments":[]}}"#), "unknown field"),
++        ] {
++            let error = serde_json::from_str::<FollowScaleTransition>(&transition).unwrap_err();
++            assert!(error.to_string().contains(reason), "{error}");
++        }
++        let mut fixed = framing(ZoomCurve::Linear);
++        if let FramingValue::Follow { scale_transition, .. } = &mut fixed.value { *scale_transition = None; }
++        let encoded = serde_json::to_value(&fixed).unwrap();
++        assert!(encoded["value"].get("scale_transition").is_none());
++        assert_eq!(fixed.record_count(), 1);
++        assert_eq!(framing(ZoomCurve::Linear).record_count(), 2);
++        assert_eq!(serde_json::from_value::<Framing>(encoded).unwrap(), fixed);
++    }
++}
+--- before/crates/deadpan-core/src/framing/preflight.rs
++++ after/crates/deadpan-core/src/framing/preflight.rs
+@@ -21,6 +21,7 @@
+     Segments,
+     Segment,
+     Curve,
++    Transition,
+     Other,
+ }
+ 
+@@ -83,6 +84,14 @@
+         Ok(())
+     }
+     fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<(), A::Error> {
++        // An explicit null is the same absent transition as None, so charge
++        // only an actual scalar record, before reading its fields.
++        if self.role == Role::Transition {
++            if self.counts.records == MAX_FRAMING_RECORDS {
++                return Err(A::Error::custom("aggregate framing record limit exceeded"));
++            }
++            self.counts.records += 1;
++        }
+         while let Some(key) = map.next_key::<std::borrow::Cow<'de, str>>()? {
+             if self.role == Role::Nodes {
+                 if self.counts.nodes == MAX_DOCUMENT_NODES {
+@@ -96,6 +105,8 @@
+                 (Role::Node, "framing") => (Role::Framing, false),
+                 (Role::Framing, "value") => (Role::Value, false),
+                 (Role::Value, "pose") => (Role::Other, true),
++                (Role::Value, "fallback") => (Role::Other, true),
++                (Role::Value, "scale_transition") => (Role::Transition, false),
+                 (Role::Value, "envelope") => (Role::Envelope, false),
+                 (Role::Envelope, "initial") => (Role::Other, true),
+                 (Role::Envelope, "segments") => (Role::Segments, false),
+@@ -151,6 +162,22 @@
+     use super::*;
+ 
+     #[test]
++    fn scanner_counts_follow_bases_and_transitions_before_the_extra_record_body() {
++        let node = r#"{"framing":{"value":{"fallback":{},"scale_transition":{}}}}"#;
++        let nodes = (0..MAX_FRAMING_RECORDS / 2)
++            .map(|index| format!(r#""n{index}":{node}"#)).collect::<Vec<_>>().join(",");
++        assert!(check(&format!(r#"{{"nodes":{{{nodes}}}}}"#)).is_ok());
++        let error = check(&format!(r#"{{"nodes":{{{nodes},"extra":{{"framing":{{"value":{{"fall\u0062ack":"#))
++            .unwrap_err();
++        assert!(error.to_string().contains("aggregate framing record limit exceeded"), "{error}");
++        // Explicit None is absent, including in the streaming record budget.
++        let mut counts = Counts::default();
++        let mut decoder = serde_json::Deserializer::from_str(r#"{"fallback":{},"scale_transition":null}"#);
++        Scan { role: Role::Value, counts: &mut counts, charge: false }.deserialize(&mut decoder).unwrap();
++        assert_eq!(counts.records, 1);
++    }
++
++    #[test]
+     fn scanner_rejects_the_extra_segment_before_reading_its_malformed_body() {
+         let segment = r#"{"curve":{"type":"linear"}}"#;
+         let input = format!(
+--- before/crates/deadpan-core/src/framing_zoom.rs
++++ after/crates/deadpan-core/src/framing_zoom.rs
+@@ -110,6 +110,9 @@
+ 
+ /// The beat being framed, as Camera sees it at the displayed picture.
+ pub struct Shot<'a> {
++    /// Resolved ordinary Source outside occurrence editing. This admits only
++    /// creation of a whole-owner Follow transition, never raw payload validity.
++    pub ordinary_source: bool,
+     /// The beat's authored framing before the edit.
+     pub entry: Option<&'a Framing>,
+     /// The beat's evaluated pose at the displayed picture.
+@@ -132,7 +135,7 @@
+ }
+ 
+ pub const PATH_REFUSAL: &str = "This beat has a camera path, and this would replace it. Use :zoom off first, or name the target (target=current, center or an id) to replace it explicitly.";
+-pub const FOLLOW_CREEP_REFUSAL: &str = "This beat follows a target; a creep with a fixed center would stop following it. Use :zoom S to change the follow's scale, name target= to creep to a fixed point, or :zoom off first.";
++pub const FOLLOW_CREEP_REFUSAL: &str = "Following creep requires one whole ordinary Source with no Visual range or single-play scope. Name target= to creep to a fixed point, or clear the range and select an ordinary Source.";
+ pub const RANGED_FOLLOW_REFUSAL: &str = "This beat follows a target; a range would stop following it outside the range. Apply to the whole beat (clear the Visual range) or :zoom off first.";
+ pub const RANGED_PATH_REFUSAL: &str = "This beat has a camera path; a range would replace it outside the range. Apply to the whole beat (clear the Visual range) or :zoom off first.";
+ 
+@@ -144,6 +147,7 @@
+ /// the beat's framing outside the range, so it needs no framing or one static
+ /// pose (on any clock, since a static pose is constant).
+ pub fn build(kind: ZoomKind, center: &Center, shot: &Shot<'_>) -> Result<Option<Framing>, String> {
++    kind.validate()?;
+     let range = shot
+         .range
+         .filter(|(start, end)| !(*start == 0 && *end == shot.frames));
+@@ -166,7 +170,8 @@
+     let keep = *center == Center::Keep;
+     let Some((start, end)) = range else {
+         if !matches!(kind, ZoomKind::Off)
+-            && matches!(entry, Some(FramingValue::Envelope { .. }))
++            && matches!(entry, Some(FramingValue::Envelope { .. }
++                | FramingValue::Follow { scale_transition: Some(_), .. }))
+             && (keep || !shot.explicit)
+         {
+             return Err(PATH_REFUSAL.into());
+@@ -205,14 +210,37 @@
+                         target,
+                         scale,
+                         fallback,
++                        scale_transition: None,
+                     },
+                 };
+                 framing.validate().map_err(|error| error.to_string())?;
+                 Ok(Some(framing))
+             }
+             ZoomKind::Creep { from, to, curve } => {
+-                if keep && matches!(entry, Some(FramingValue::Follow { .. })) {
+-                    return Err(FOLLOW_CREEP_REFUSAL.into());
++                if keep && let Some(FramingValue::Follow { target, scale, fallback, .. }) = entry {
++                    if !shot.ordinary_source || shot.range.is_some() {
++                        return Err(FOLLOW_CREEP_REFUSAL.into());
++                    }
++                    let from = from.unwrap_or(*scale);
++                    let framing = Framing {
++                        clock: FramingClock::OwnerOutput,
++                        value: FramingValue::Follow {
++                            target: target.clone(),
++                            scale: from,
++                            fallback: FramingPose {
++                                scale: fallback.scale.checked_mul(from.checked_div(*scale)
++                                    .map_err(|error| error.to_string())?)
++                                    .map_err(|error| error.to_string())?,
++                                ..*fallback
++                            },
++                            scale_transition: Some(crate::FollowScaleTransition {
++                                factor: to.checked_div(from).map_err(|error| error.to_string())?,
++                                curve,
++                            }),
++                        },
++                    };
++                    framing.validate().map_err(|error| error.to_string())?;
++                    return Ok(Some(framing));
+                 }
+                 Framing::creep(
+                     pose(current, from.unwrap_or(shot.current.scale))?,
+--- before/crates/deadpan-core/src/semantic/planner/framing.rs
++++ after/crates/deadpan-core/src/semantic/planner/framing.rs
+@@ -177,6 +177,7 @@
+             kind,
+             &resolved_center,
+             &framing_zoom::Shot {
++                ordinary_source: matches!(self.current.nodes()[&selected].kind, NodeKind::Source { .. }),
+                 entry,
+                 current: state.current,
+                 frames,
+@@ -255,6 +256,7 @@
+             kind,
+             &resolved_center,
+             &framing_zoom::Shot {
++                ordinary_source: false,
+                 entry,
+                 current: state.current,
+                 frames,
+--- before/crates/deadpan-plan/src/plan.rs
++++ after/crates/deadpan-plan/src/plan.rs
+@@ -1475,12 +1475,11 @@
+             if let Some(continuity) = continuity.as_deref_mut() {
+                 continuity.limit(local, node.extent)?;
+             }
+-            if let Some(deadpan_core::Framing {
+-                value: deadpan_core::FramingValue::Follow { target, scale, .. },
+-                ..
+-            }) = &node.framing
+-            {
+-                follows.push((framing.len(), target, *scale, false));
++            let evaluated = node.framing.as_ref()
++                .map(|framing| framing.evaluate_with_follow_exact(local, node.extent))
++                .transpose()?;
++            if let Some((target, scale)) = evaluated.as_ref().and_then(|value| value.follow) {
++                follows.push((framing.len(), target, scale, false));
+             }
+             framing.push(PictureFraming {
+                 instance: InstancePath {
+@@ -1490,11 +1489,7 @@
+                 local_position: local,
+                 duration: node.inspection.duration,
+                 effective_duration: node.extent,
+-                pose: node
+-                    .framing
+-                    .as_ref()
+-                    .map(|framing| framing.evaluate_exact(local, node.extent))
+-                    .transpose()?,
++                pose: evaluated.map(|value| value.pose),
+                 escalation: false,
+             });
+             captions.extend(
+--- before/crates/deadpan-app/src/preview/camera.rs
++++ after/crates/deadpan-app/src/preview/camera.rs
+@@ -306,8 +306,11 @@
+     /// silently diverging from the target-supplied center.
+     center: [ExactRatio; 2],
+     base_scale: ExactRatio,
++    /// Authored base, distinct from the scale handle evaluated at this picture.
++    base_live: ExactRatio,
+     base_fallback: FramingPose,
+     clock: FramingClock,
++    scale_transition: Option<deadpan_core::FollowScaleTransition>,
+ }
+ 
+ #[derive(Clone, Debug, PartialEq, Eq)]
+@@ -466,26 +469,28 @@
+         .checked_div(follow.base_scale)
+         .map_err(|error| error.to_string())?;
+     // Only the scale changes: the fallback keeps its exact authored center.
+-    let scaled = FramingPose {
+-        scale: follow
+-            .base_fallback
+-            .scale
+-            .checked_mul(factor)
+-            .map_err(|error| error.to_string())?,
+-        ..follow.base_fallback
+-    }
+-    .quantized()
+-    .map_err(|error| error.to_string())?;
++    let scale = follow.base_live.checked_mul(factor).map_err(|error| error.to_string())?;
++    let fallback_scale = follow.base_fallback.scale.checked_mul(factor)
++        .map_err(|error| error.to_string())?;
++    // Preserve exact entry values when untouched. Fixed Follow adjustments
++    // retain their existing quantized fallback-scale policy.
++    let fallback_scale = if factor == ExactRatio::ONE || follow.scale_transition.is_some() {
++        fallback_scale
++    } else {
++        FramingPose { scale: fallback_scale, ..follow.base_fallback }
++            .quantized().map_err(|error| error.to_string())?.scale
++    };
+     let fallback = FramingPose {
+-        scale: scaled.scale,
++        scale: fallback_scale,
+         ..follow.base_fallback
+     };
+     let framing = Framing {
+         clock: follow.clock,
+         value: FramingValue::Follow {
+             target: follow.target.clone(),
+-            scale: pose.scale,
++            scale,
+             fallback,
++            scale_transition: follow.scale_transition,
+         },
+     };
+     framing.validate().map_err(|error| error.to_string())?;
+@@ -534,43 +539,28 @@
+             })
+             .unwrap_or(fallback)
+     };
+-    poses[layer] = match framing {
+-        Some(Framing {
+-            value:
+-                FramingValue::Follow {
+-                    target,
+-                    scale,
+-                    fallback,
+-                },
+-            ..
+-        }) => Some(resolve(target, *scale, *fallback, &poses[..layer])),
+-        Some(framing) => Some(
+-            framing
+-                .evaluate_exact(local_position, picture.framing[layer].effective_duration)
+-                .map_err(|error| error.to_string())?,
+-        ),
+-        None => None,
++    let evaluate = |framing: &Framing, local, duration, inner: &[Option<FramingPose>]| {
++        let evaluated = framing.evaluate_with_follow_exact(local, duration)
++            .map_err(|error| error.to_string())?;
++        Ok::<_, String>(match evaluated.follow {
++            Some((target, scale)) => resolve(target, scale, evaluated.pose, inner),
++            None => evaluated.pose,
++        })
+     };
++    poses[layer] = framing.map(|framing| evaluate(framing, local_position,
++        picture.framing[layer].effective_duration, &poses[..layer])).transpose()?;
+     let mut changed = vec![(picture.framing[layer].instance.clone(), poses[layer])];
+     for index in layer + 1..poses.len() {
+         let outer = &picture.framing[index];
+         if outer.escalation {
+             continue;
+         }
+-        if let Some(Framing {
+-            value:
+-                FramingValue::Follow {
+-                    target,
+-                    scale,
+-                    fallback,
+-                },
+-            ..
+-        }) = document
+-            .nodes()
+-            .get(&outer.instance.node)
++        if let Some(framing) = document.nodes().get(&outer.instance.node)
+             .and_then(|node| node.framing.as_ref())
++            .filter(|framing| matches!(framing.value, FramingValue::Follow { .. }))
+         {
+-            poses[index] = Some(resolve(target, *scale, *fallback, &poses[..index]));
++            poses[index] = Some(evaluate(framing, outer.local_position,
++                outer.effective_duration, &poses[..index])?);
+             changed.push((outer.instance.clone(), poses[index]));
+         }
+     }
+@@ -717,16 +707,23 @@
+                         target,
+                         scale,
+                         fallback,
++                        scale_transition,
+                     },
+             }) => {
+-                // The target supplies the center; Camera adjusts the scale.
+-                let shown = entry_pose.unwrap_or(*fallback);
++                let evaluated = entry.as_ref().expect("entry matched")
++                    .evaluate_with_follow_exact(layer.local_position, layer.effective_duration)
++                    .map_err(|error| error.to_string())?;
++                // The handle follows live scale even on a fallback picture.
++                let live = evaluated.follow.expect("Follow evaluated").1;
++                let shown = entry_pose.unwrap_or(evaluated.pose);
+                 Some(FollowDraft {
+                     target: target.clone(),
+                     center: [shown.center_x, shown.center_y],
+-                    base_scale: *scale,
++                    base_scale: live,
++                    base_live: *scale,
+                     base_fallback: *fallback,
+                     clock: *clock,
++                    scale_transition: *scale_transition,
+                 })
+             }
+             _ => None,
+@@ -800,6 +797,15 @@
+         )
+     }
+ 
++    fn ordinary_source(&self, document: &deadpan_core::ProjectDocument) -> bool {
++        self.scoped.is_none() && self.scope.repeats.is_empty()
++            && matches!(document.nodes().get(&self.scope.node).map(|node| &node.kind),
++                Some(deadpan_core::NodeKind::Source { .. }))
++            && document.nodes().get(self.navigation_scope.groups().last().unwrap_or(document.root()))
++                .is_some_and(|node| matches!(&node.kind,
++                    deadpan_core::NodeKind::Sequence { children } if children.contains(&self.scope.node)))
++    }
++
+     fn edit(&self, framing: Option<Framing>) -> ProjectEdit {
+         match &self.scoped {
+             Some(target) => ProjectEdit::Scoped {
+@@ -1136,7 +1142,13 @@
+                     .as_ref()
+                     .is_ok_and(|captured| captured.has_scoped_framing_authority())
+             });
+-        let intent_scope = (range.is_some() && session.scoped.is_none())
++        let follow_creep = range.is_none()
++            && self.workspace.as_ref().is_some_and(|workspace| session.ordinary_source(&workspace.document))
++            && matches!(input.target, crate::navigation::zoom::TargetChoice::Keep)
++            && matches!(input.kind, deadpan_core::framing_zoom::ZoomKind::Creep { .. })
++            && matches!(session.entry.as_ref().map(|entry| &entry.value),
++                Some(FramingValue::Follow { scale_transition: None, .. }));
++        let intent_scope = follow_creep || (range.is_some() && session.scoped.is_none())
+             || scoped_semantic
+             || (session.scoped.is_some() && self.macros.recording());
+         let center_intent = intent_scope.then(|| {
+@@ -1298,6 +1310,8 @@
+             },
+         };
+         let shot = zoom::Shot {
++            ordinary_source: self.workspace.as_ref()
++                .is_some_and(|workspace| session.ordinary_source(&workspace.document)),
+             entry: session.entry.as_ref(),
+             current: session.entry_pose.unwrap_or_default(),
+             frames,
+@@ -2120,8 +2134,11 @@
+                     .targets()
+                     .get(&follow.target)
+                     .map_or_else(|| follow.target.to_string(), |target| target.label.clone());
++                let removed = if follow.scale_transition.is_some() {
++                    " Scale animation removed."
++                } else { "" };
+                 return Ok(format!(
+-                    "Stopped following {label}. Enter saves this static framing; Escape keeps the entry framing."
++                    "Stopped following {label}.{removed} Enter saves this static framing; Escape keeps the entry framing."
+                 ));
+             }
+             let id = camera.selected_target.clone().ok_or(
+@@ -2143,8 +2160,10 @@
+                 target: id,
+                 center: [pose.center_x, pose.center_y],
+                 base_scale: pose.scale,
++                base_live: pose.scale,
+                 base_fallback: pose,
+                 clock: FramingClock::OwnerOutput,
++                scale_transition: None,
+             });
+             if let Err(error) = camera.framing(pose, false) {
+                 camera.follow = None;
+@@ -2887,6 +2906,13 @@
+                         ui.separator();
+                         if let Some(label) = &follow_label {
+                             ui.label(style::semibold(format!("Follows {label}")));
++                            if let Ok(Some(framing)) = camera.framing(camera.draft.pose(), false)
++                                && let FramingValue::Follow { scale, scale_transition: Some(transition), .. } = framing.value
++                            {
++                                ui.label(format!("Scale animation retained · {}",
++                                    navigation::zoom::follow_scale_label(scale, Some(transition))));
++                                ui.weak("t stops following and removes the scale animation.");
++                            }
+                             ui.weak("Centered on the target at each picture's Original time. Outside its range the framing holds its fallback pose.");
+                             if camera.replaces_curve() {
+                                 ui.colored_label(style::WARNING, "Saving replaces the beat's camera curve.");
+@@ -3384,6 +3410,48 @@
+     }
+ 
+     #[test]
++    fn animated_follow_camera_keeps_entry_clock_bases_and_releases_the_shown_static_pose() {
++        let r = |n, d| ExactRatio::new(n, d).unwrap();
++        let fallback = FramingPose::new(r(1, 3), r(2, 7), r(1, 2)).unwrap();
++        let transition = deadpan_core::FollowScaleTransition {
++            factor: r(2, 1), curve: deadpan_core::framing_zoom::ZoomCurve::Linear,
++        };
++        let follow = FollowDraft {
++            target: TargetId::new("speaker").unwrap(),
++            center: [r(2, 5), r(1, 2)],
++            base_scale: r(5, 2), base_live: r(2, 1), base_fallback: fallback,
++            clock: FramingClock::RetainedOutput { offset: r(1, 1), duration: r(4, 1) },
++            scale_transition: Some(transition),
++        };
++        let entry = Framing {
++            clock: follow.clock,
++            value: FramingValue::Follow { target: follow.target.clone(), scale: follow.base_live,
++                fallback, scale_transition: Some(transition) },
++        };
++        let handle = FramingPose::new(follow.center[0], follow.center[1], follow.base_scale).unwrap();
++        assert_eq!(followed_framing(&follow, handle).unwrap(), entry);
++        let changed = followed_framing(&follow, FramingPose { scale: r(5, 1), ..handle }).unwrap();
++        assert_eq!(changed.clock, entry.clock);
++        let FramingValue::Follow { scale, fallback: adjusted, scale_transition, .. } = changed.value else {
++            panic!("follow flattened");
++        };
++        assert_eq!(scale, r(4, 1));
++        assert_eq!(adjusted, FramingPose { scale: r(1, 1), ..fallback });
++        assert_eq!(scale_transition, Some(transition));
++        // The terminal endpoint, not just this frame's handle, bounds adjustment.
++        assert!(followed_framing(&follow, FramingPose { scale: r(41, 1), ..handle }).is_err());
++        let fallback_shown = entry.evaluate_exact(ExactRatio::ZERO, r(8, 1)).unwrap();
++        assert_eq!(fallback_shown.center_x, r(1, 3));
++        assert_eq!(adjusted_framing(Some(&entry), fallback_shown, fallback_shown, false)
++            .unwrap().unwrap().value, FramingValue::Static { pose: fallback_shown });
++        let mut switched = follow.clone();
++        switched.target = TargetId::new("other").unwrap();
++        let switched = followed_framing(&switched, handle).unwrap();
++        assert!(matches!(switched.value, FramingValue::Follow { target, scale_transition: Some(value), .. }
++            if target.as_str() == "other" && value == transition));
++    }
++
++    #[test]
+     fn a_follow_changes_scale_keeps_its_target_and_releases_only_explicitly() {
+         let target = deadpan_core::TargetId::new("speaker").unwrap();
+         let fallback = pose(30, 150);
+@@ -3394,8 +3462,10 @@
+                 ExactRatio::new(1, 2).unwrap(),
+             ],
+             base_scale: ExactRatio::integer(2),
++            base_live: ExactRatio::integer(2),
+             base_fallback: fallback,
+             clock: FramingClock::OwnerOutput,
++            scale_transition: None,
+         };
+         let scaled =
+             FramingPose::new(follow.center[0], follow.center[1], ExactRatio::integer(3)).unwrap();
+@@ -3407,6 +3477,7 @@
+                 scale: ExactRatio::integer(3),
+                 // The fallback keeps its center and scales by the same 3/2.
+                 fallback: pose(30, 225),
++                scale_transition: None,
+             }
+         );
+         // The target supplies the center: a nudge is refused, not converted.
+--- before/crates/deadpan-app/src/navigation/zoom.rs
++++ after/crates/deadpan-app/src/navigation/zoom.rs
+@@ -279,13 +279,23 @@
+     )
+ }
+ 
++pub fn follow_scale_label(scale: ExactRatio, transition: Option<deadpan_core::FollowScaleTransition>) -> String {
++    let Some(transition) = transition else { return scale_label(scale); };
++    match scale.checked_mul(transition.factor) {
++        Ok(end) => format!("{} → {} ({})", scale_label(scale), scale_label(end), match transition.curve {
++            ZoomCurve::Step => "step", ZoomCurve::Linear => "linear", ZoomCurve::Smoothstep => "smoothstep",
++        }),
++        Err(_) => "invalid scale animation".into(),
++    }
++}
++
+ /// A short account of committed framing for the status line.
+ pub fn describe(framing: Option<&Framing>, label: &dyn Fn(&TargetId) -> String) -> String {
+     match framing.map(|framing| &framing.value) {
+         None => "full picture, no framing".into(),
+         Some(FramingValue::Static { pose }) => format!("{} static", scale_label(pose.scale)),
+-        Some(FramingValue::Follow { target, scale, .. }) => {
+-            format!("{} following {}", scale_label(*scale), label(target))
++        Some(FramingValue::Follow { target, scale, scale_transition, .. }) => {
++            format!("{} following {}", follow_scale_label(*scale, *scale_transition), label(target))
+         }
+         Some(FramingValue::Envelope { envelope }) => {
+             let last = envelope
+--- before/crates/deadpan-app/src/preview/inspector.rs
++++ after/crates/deadpan-app/src/preview/inspector.rs
+@@ -337,9 +337,8 @@
+                     let high = scales.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+                     format!("Path · {low:.2}–{high:.2}×")
+                 }
+-                deadpan_core::FramingValue::Follow { target, scale, .. } => {
+-                    let scale = scale.numerator() as f64 / scale.denominator() as f64;
+-                    format!("Follows {target} · {scale:.3}×")
++                deadpan_core::FramingValue::Follow { target, scale, scale_transition, .. } => {
++                    format!("Follows {target} · {}", crate::navigation::zoom::follow_scale_label(*scale, *scale_transition))
+                 }
+             };
+             fields.push(("Framing", description));
+--- before/crates/deadpan-app/src/preview.rs
++++ after/crates/deadpan-app/src/preview.rs
+@@ -4791,7 +4791,7 @@
+         }
+         // A follow names its target by label, never by its internal id.
+         if let Some(deadpan_core::Framing {
+-            value: deadpan_core::FramingValue::Follow { target, scale, .. },
++            value: deadpan_core::FramingValue::Follow { target, scale, scale_transition, .. },
+             ..
+         }) = &node.framing
+             && let Some(field) = description
+@@ -4799,10 +4799,12 @@
+                 .iter_mut()
+                 .find(|(label, _)| *label == "Framing")
+         {
+-            let scale = scale.numerator() as f64 / scale.denominator() as f64;
+             *field = (
+                 "Follows",
+-                format!("{} · {scale:.2}×", self.target_label(target)),
++                match scale_transition {
++                    Some(transition) => format!("{} · {}", self.target_label(target), navigation::zoom::follow_scale_label(*scale, Some(*transition))),
++                    None => format!("{} · {:.2}×", self.target_label(target), scale.numerator() as f64 / scale.denominator() as f64),
++                },
+             );
+         }
+         Some(description)

@@ -1,0 +1,17 @@
+{
+  "status": "approved",
+  "script_sha256": "2758fa2c837e63d41b33f38b34f728017feda8b0c05aa21499eeb40f4764df13",
+  "plan_sha256": "8dba03a4fa8d4515a0cc8232cc725cd7b9d1e51b05ef3ea86b328fc4b84c7608",
+  "scope": "Read the complete collector, plan and subsequent staging/final-media changes before execution.",
+  "corrections": [
+    "Temporary staging moved out of the repository into task scratch, with same-device validation before exclusive publication.",
+    "Final media tree, retained executable hashes and runtime-source before/after bindings were added after the fresh build/run."
+  ],
+  "limits": [
+    "Collect only after all source and log writers are terminal.",
+    "The collector proves retained byte identity, not test or requirement completion.",
+    "The current full Rust map does not attest every earlier build's inputs; the separate runtime freeze has eleven paths.",
+    "Use exactly collect.stdout and collect.stderr for execution output, excluded from its own source inventory.",
+    "Retain full raw reports and archives. Publish only the two selected final screenshots; other images and HTML remain in scratch."
+  ]
+}

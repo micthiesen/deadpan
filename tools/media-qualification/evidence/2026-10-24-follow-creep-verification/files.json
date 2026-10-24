@@ -1,0 +1,42 @@
+{
+  "collect.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "collect.stdout": {
+    "bytes": 408,
+    "sha256": "35116d071f847dafbed15661a084745f3868b9a7fa31fc6013e9a79a4ebf8d29"
+  },
+  "format-verified-receipt.json": {
+    "bytes": 8188,
+    "sha256": "4e9390ed0b06add442e58e1adde9d6ec38e6342bc6639baabfdef4289f5a5493"
+  },
+  "format-verified.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "format-verified.stdout": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "independent-verification.json": {
+    "bytes": 15136,
+    "sha256": "564ad268a05ac43e5d5662f5dee85e089e0327b545de5d45501b7fde9e8ae4d6"
+  },
+  "run-format-verified.py": {
+    "bytes": 1548,
+    "sha256": "e7c41e97b38241dedb23846555fb1cf815bb06daac7e4d4b1e5924fba512ac5a"
+  },
+  "verify-evidence.py": {
+    "bytes": 26242,
+    "sha256": "974e781030537839f43ff6a3847f4f2d2b5060f1018b6b535684f7d4f026533c"
+  },
+  "verify.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "verify.stdout": {
+    "bytes": 305,
+    "sha256": "3a546f0152ffd475f4837ba2dabee088954e4122b449400227ea81deb5456884"
+  }
+}

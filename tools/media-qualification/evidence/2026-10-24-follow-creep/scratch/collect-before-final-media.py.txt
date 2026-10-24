@@ -1,0 +1,385 @@
+#!/usr/bin/env python3
+"""Reviewable, fail-closed Follow creep evidence collector. Never runs tests.
+
+Invocation requires the independently approved SHA-256 of this script and its
+plan. Only run after source writers, Cargo, product processes and log writers
+have finished. This script publishes one new directory, never overwrites one.
+"""
+
+import argparse
+import ctypes
+import errno
+import gzip
+import hashlib
+import io
+import json
+import os
+from pathlib import Path, PurePosixPath
+import shutil
+import stat
+import sys
+import tarfile
+import tempfile
+
+
+def require(condition, message):
+    if not condition:
+        raise RuntimeError(message)
+
+
+def digest(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def json_bytes(value):
+    return (json.dumps(value, sort_keys=True, indent=2) + "\n").encode()
+
+
+def signature(info):
+    return info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns
+
+
+def safe_name(value):
+    require(isinstance(value, str) and value and "\x00" not in value, "empty/invalid name")
+    require("\\" not in value and all(ord(char) >= 32 and ord(char) != 127 for char in value), "unsafe path spelling")
+    name = PurePosixPath(value)
+    require(not name.is_absolute() and ".." not in name.parts, f"unsafe name: {value}")
+    require(not name.parts[0].endswith(":"), f"drive-qualified name: {value}")
+    require(str(name) == value and value != ".", f"noncanonical name: {value}")
+    return value
+
+
+def regular(path):
+    info = path.lstat()
+    require(stat.S_ISREG(info.st_mode), f"not a regular file: {path}")
+    return info
+
+
+def read_regular(path, limit):
+    before = regular(path)
+    require(before.st_size <= limit, f"file exceeds bound: {path}")
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    fd = os.open(path, flags)
+    try:
+        require(signature(before) == signature(os.fstat(fd)), f"file replaced: {path}")
+        with os.fdopen(fd, "rb", closefd=False) as handle:
+            data = handle.read(limit + 1)
+        require(len(data) == before.st_size, f"short/overbound read: {path}")
+        require(signature(before) == signature(os.fstat(fd)), f"file changed: {path}")
+    finally:
+        os.close(fd)
+    require(signature(before) == signature(regular(path)), f"path changed: {path}")
+    return data
+
+
+def hash_regular(path, limit):
+    before = regular(path)
+    require(before.st_size <= limit, f"identity input exceeds bound: {path}")
+    h = hashlib.sha256()
+    with path.open("rb") as handle:
+        require(signature(before) == signature(os.fstat(handle.fileno())), f"file replaced: {path}")
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            h.update(block)
+        require(signature(before) == signature(os.fstat(handle.fileno())), f"file changed: {path}")
+    require(signature(before) == signature(regular(path)), f"path changed: {path}")
+    return {"bytes": before.st_size, "sha256": h.hexdigest()}
+
+
+def safe_tree(root):
+    require(stat.S_ISDIR(root.lstat().st_mode), f"not a regular directory: {root}")
+    files = []
+    for current, directories, names in os.walk(root, followlinks=False):
+        directories.sort()
+        names.sort()
+        for name in directories:
+            path = Path(current) / name
+            require(stat.S_ISDIR(path.lstat().st_mode), f"non-directory tree entry: {path}")
+        for name in names:
+            path = Path(current) / name
+            regular(path)
+            relative = safe_name(path.relative_to(root).as_posix())
+            files.append((relative, path))
+    return sorted(files)
+
+
+def rust_map(repo, limit):
+    result = {}
+    for current, directories, names in os.walk(repo, followlinks=False):
+        # src/target is a real Rust module. Exclude Cargo output directories,
+        # not every directory which happens to be named target.
+        directories[:] = sorted(name for name in directories
+            if name not in {".git", ".claude"}
+            and not (name == "target" and (Path(current) / "Cargo.toml").is_file()))
+        for name in directories:
+            path = Path(current) / name
+            require(stat.S_ISDIR(path.lstat().st_mode), f"symlink in Rust map: {path}")
+        for name in sorted(names):
+            if name.endswith(".rs"):
+                path = Path(current) / name
+                result[path.relative_to(repo).as_posix()] = hash_regular(path, limit)["sha256"]
+    return result
+
+
+def gzip_bytes(data):
+    output = io.BytesIO()
+    with gzip.GzipFile(filename="", mode="wb", fileobj=output, mtime=0, compresslevel=9) as handle:
+        handle.write(data)
+    return output.getvalue()
+
+
+class Collector:
+    def __init__(self, plan, stage):
+        self.plan, self.stage = plan, stage
+        self.limit = plan["raw_byte_limit"]
+        self.raw_bytes = 0
+        self.encodings, self.archives, self.witnesses = [], [], {}
+
+    def charge(self, size):
+        self.raw_bytes += size
+        require(self.raw_bytes <= self.limit, "aggregate raw payload exceeds 256 MiB")
+
+    def put(self, name, data):
+        target = self.stage / safe_name(name)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with target.open("xb") as handle:
+            handle.write(data)
+        require(read_regular(target, self.limit) == data, f"payload write differs: {name}")
+
+    def retain(self, name, data, source, viewable_png=False):
+        self.charge(len(data))
+        compressed = len(data) > self.plan["gzip_threshold_bytes"] and not viewable_png
+        encoded = gzip_bytes(data) if compressed else data
+        stored = name + ".gz" if compressed else name
+        self.put(stored, encoded)
+        row = {"path":stored, "source":source, "encoding":"gzip" if compressed else "identity",
+               "decoded_bytes":len(data), "decoded_sha256":digest(data),
+               "stored_bytes":len(encoded), "stored_sha256":digest(encoded)}
+        if viewable_png:
+            row["gzip_threshold_exception"] = "selected directly viewable PNG; already compressed image format"
+        self.encodings.append(row)
+
+    def archive(self, name, root):
+        files = safe_tree(root)
+        contents = {}
+        for relative, path in files:
+            data = read_regular(path, self.limit - self.raw_bytes)
+            self.charge(len(data))
+            contents[relative] = data
+        omitted = {}
+        for relative, data in contents.items():
+            if relative.endswith(".sqlite-wal") and not data:
+                database = relative[:-4]
+                if database in contents and contents[database].startswith(b"SQLite format 3\x00"):
+                    for sidecar in [relative, database + "-shm"]:
+                        if sidecar in contents:
+                            omitted[sidecar] = {"bytes":len(contents[sidecar]), "sha256":digest(contents[sidecar]),
+                                                "reason":"paired SQLite WAL observed empty; nonauthored sidecar"}
+        members, output = [], io.BytesIO()
+        with tarfile.open(fileobj=output, mode="w", format=tarfile.PAX_FORMAT) as archive:
+            for relative, data in sorted(contents.items()):
+                if relative in omitted:
+                    continue
+                info = tarfile.TarInfo(safe_name(relative))
+                info.size, info.mode, info.uid, info.gid, info.mtime = len(data), 0o644, 0, 0, 0
+                info.uname = info.gname = ""
+                archive.addfile(info, io.BytesIO(data))
+                members.append({"path":relative, "bytes":len(data), "sha256":digest(data)})
+        raw = output.getvalue()
+        encoded = gzip_bytes(raw)
+        stored = f"archives/{safe_name(name)}.tar.gz"
+        self.put(stored, encoded)
+        self.encodings.append({"path":stored, "source":str(root), "encoding":"tar+gzip",
+            "decoded_bytes":len(raw), "decoded_sha256":digest(raw),
+            "stored_bytes":len(encoded), "stored_sha256":digest(encoded)})
+        self.archives.append({"path":stored, "root":str(root), "members":members,
+            "omitted_sidecars":omitted, "source_files":len(contents),
+            "source_bytes":sum(map(len, contents.values()))})
+        self.witnesses[str(root)] = {relative:{"bytes":len(data), "sha256":digest(data)}
+                                      for relative,data in sorted(contents.items())}
+
+    def verify_encoded(self):
+        for row in self.encodings:
+            stored = read_regular(self.stage / row["path"], self.limit)
+            require(len(stored) == row["stored_bytes"] and digest(stored) == row["stored_sha256"], "stored identity differs")
+            raw = gzip.decompress(stored) if row["encoding"] != "identity" else stored
+            require(len(raw) == row["decoded_bytes"] and digest(raw) == row["decoded_sha256"], "decoded identity differs")
+            if row["encoding"] == "tar+gzip":
+                entry = next(item for item in self.archives if item["path"] == row["path"])
+                found = []
+                with tarfile.open(fileobj=io.BytesIO(raw), mode="r:") as archive:
+                    for member in archive.getmembers():
+                        safe_name(member.name)
+                        require(member.isfile(), f"non-file archive member: {member.name}")
+                        data = archive.extractfile(member).read()
+                        found.append({"path":member.name, "bytes":len(data), "sha256":digest(data)})
+                require(found == entry["members"], "archive members differ")
+
+
+def exclusive_publish(stage, destination):
+    require(sys.platform == "darwin", "exclusive directory publication requires Darwin renamex_np")
+    library = ctypes.CDLL("/usr/lib/libSystem.B.dylib", use_errno=True)
+    rename = library.renamex_np
+    rename.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint]
+    rename.restype = ctypes.c_int
+    # Darwin RENAME_EXCL makes a pre-existing destination a failure atomically.
+    if rename(os.fsencode(stage), os.fsencode(destination), 0x00000004) != 0:
+        code = ctypes.get_errno()
+        if code == errno.EEXIST:
+            raise FileExistsError(destination)
+        raise OSError(code, os.strerror(code), str(destination))
+
+
+def scratch_selection(root, excluded):
+    chosen = []
+    for path in sorted(root.iterdir()):
+        if path.name in excluded or not stat.S_ISREG(path.lstat().st_mode):
+            continue
+        name = path.name
+        if name.endswith((".stdout", ".stderr", ".stdout.jsonl", ".json", ".md", ".txt", ".py", ".patch")):
+            chosen.append(path)
+    return chosen
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--plan", type=Path, required=True)
+    parser.add_argument("--approved-script-sha256", required=True)
+    parser.add_argument("--approved-plan-sha256", required=True)
+    args = parser.parse_args()
+    script = Path(__file__).resolve(strict=True)
+    script_data = read_regular(script, 1024 * 1024)
+    plan_data = read_regular(args.plan.resolve(strict=True), 1024 * 1024)
+    require(digest(script_data) == args.approved_script_sha256, "script differs from approved digest")
+    require(digest(plan_data) == args.approved_plan_sha256, "plan differs from approved digest")
+    plan = json.loads(plan_data)
+    require(plan["schema_version"] == 1 and plan["raw_byte_limit"] <= 256 * 1024 * 1024, "unsupported plan/bound")
+    repo, scratch = Path(plan["repository"]).resolve(strict=True), Path(plan["scratch"]).resolve(strict=True)
+    destination = repo / safe_name(plan["destination"])
+    require(not destination.exists() and not destination.is_symlink(), "destination already exists")
+    require(destination.parent.is_dir(), "destination parent is missing")
+    limit = plan["raw_byte_limit"]
+    tracked = {}
+    tracked[str(script)] = {"bytes":len(script_data), "sha256":digest(script_data)}
+    tracked[str(args.plan.resolve())] = {"bytes":len(plan_data), "sha256":digest(plan_data)}
+
+    def read_tracked(path):
+        data = read_regular(path, limit)
+        tracked[str(path)] = {"bytes":len(data), "sha256":digest(data)}
+        return data
+
+    freeze_spec, files_spec = plan["runtime_source_freeze"], plan["source_file_list"]
+    frozen_data = read_tracked(scratch / safe_name(freeze_spec["path"]))
+    source_list_data = read_tracked(scratch / safe_name(files_spec["path"]))
+    require(digest(frozen_data) == freeze_spec["sha256"], "runtime freeze file differs")
+    require(digest(source_list_data) == files_spec["sha256"], "source file list differs")
+    frozen, source_files = json.loads(frozen_data), json.loads(source_list_data)
+    require(len(frozen) == freeze_spec["count"] and len(source_files) == files_spec["count"], "freeze/list count differs")
+    require(len(set(source_files)) == len(source_files) and all(name.endswith(".rs") for name in source_files), "invalid source list")
+    initial_map = rust_map(repo, limit)
+    for relative, expected in frozen.items():
+        require(initial_map.get(safe_name(relative)) == expected, f"runtime source differs: {relative}")
+    selected = scratch_selection(scratch, set(plan["excluded_scratch_names"]))
+    require(set(plan["required_scratch_files"]).issubset({path.name for path in selected}), "required scratch input missing")
+    require(scratch.stat().st_dev == destination.parent.stat().st_dev,
+            "scratch and destination are on different filesystems; refusing cross-device publication")
+    stage = Path(tempfile.mkdtemp(prefix=".follow-creep-staging-", dir=scratch))
+    published = False
+    try:
+        collector = Collector(plan, stage)
+        collector.retain("packaging/collect.py.txt", script_data, str(script))
+        collector.retain("packaging/collect-plan.json", plan_data, str(args.plan.resolve()))
+        for path in selected:
+            collector.retain("scratch/" + path.name, read_tracked(path), str(path))
+        for relative in source_files:
+            data = read_tracked(repo / safe_name(relative))
+            require(digest(data) == initial_map[relative], f"source snapshot differs: {relative}")
+            collector.retain("source/" + relative + ".txt", data, str(repo / relative))
+        for relative, expected in plan["build_inputs"].items():
+            data = read_tracked(repo / safe_name(relative))
+            require(digest(data) == expected, f"build input differs from plan: {relative}")
+            collector.retain("inputs/" + relative, data, str(repo / relative))
+        for relative in plan["reports"]:
+            collector.retain("native/" + relative, read_tracked(scratch / safe_name(relative)), str(scratch / relative))
+        for relative in plan["selected_screenshots"]:
+            data = read_tracked(scratch / safe_name(relative))
+            require(data.startswith(b"\x89PNG\r\n\x1a\n"), f"not PNG: {relative}")
+            collector.retain("screenshots/" + Path(relative).name, data, str(scratch / relative), viewable_png=True)
+        for spec in plan["archives"]:
+            root = Path(spec["root"])
+            if root.exists():
+                collector.archive(spec["name"], root.resolve(strict=True))
+            else:
+                require(not spec["required"], f"required archive root missing: {root}")
+        identities = {}
+        for manifest, folder, key in [
+            ("final-native-binaries.json", None, "executed"),
+            ("first-release-binaries.json", "first-release-retained", "path"),
+        ]:
+            rows = json.loads(read_tracked(scratch / manifest))
+            for name, row in rows.items():
+                path = scratch / folder / safe_name(name) if folder else Path(row[key])
+                found = hash_regular(path, limit)
+                require(found["sha256"] == row["sha256"], f"retained binary differs: {path}")
+                identities[str(path)] = found
+        invocation = json.loads(read_tracked(scratch / "media-first-invocation.json"))
+        test = scratch / "first-release-retained/preview_export"
+        identities[str(test)] = hash_regular(test, limit)
+        require(identities[str(test)]["sha256"] == invocation["test"]["sha256"], "retained media test binary differs")
+        native_invocation = json.loads(read_tracked(scratch / "native-release-second-invocation.json"))
+        native_binaries = json.loads(read_tracked(scratch / "final-native-binaries.json"))
+        native_report = json.loads(read_tracked(scratch / "native-release-second/report.json"))
+        native_terminal = json.loads(read_tracked(scratch / "native-release-second-terminal.json"))
+        require(native_invocation["runtime_source_freeze_sha256"] == freeze_spec["sha256"], "native invocation freeze differs")
+        require(native_invocation["binaries"] == native_binaries, "native invocation binaries differ")
+        app_hash = native_binaries["deadpan-app"]["sha256"]
+        require(native_report["metadata"]["binary_sha256"] == app_hash, "native report app identity differs")
+        require(native_terminal["binary_sha256"] == app_hash, "native terminal app identity differs")
+        collector.verify_encoded()
+        collector.put("current-rust-source-map.json", json_bytes(initial_map))
+        collector.put("retained-binary-identities.json", json_bytes(identities))
+        collector.put("encoding-ledger.json", json_bytes({"schema_version":1,
+            "scope":"retained raw payloads and archives; generated metadata is pinned by files.json",
+            "records":collector.encodings}))
+        collector.put("archive-ledger.json", json_bytes({"schema_version":1,"archives":collector.archives}))
+        movies = {f"{archive['path']}:{member['path']}":member
+                  for archive in collector.archives for member in archive["members"]
+                  if member["path"].endswith(".mp4")}
+        collector.put("collection.json", json_bytes({"schema_version":1,
+            "script_sha256":digest(script_data), "plan_sha256":digest(plan_data),
+            "runtime_freeze_sha256":digest(frozen_data), "runtime_freeze_paths":len(frozen),
+            "source_snapshot_paths":len(source_files), "current_rust_map_paths":len(initial_map),
+            "raw_retained_bytes_including_omitted_sidecars":collector.raw_bytes,
+            "binary_hashes_checked_at_collection":identities,"movies":movies,
+            "verification_claim":"retained identities and stable byte sources only; no test/requirement certification",
+            "limitations":plan["limitations"]}))
+        inventory = {relative:hash_regular(path, limit) for relative,path in safe_tree(stage)}
+        encoded_names = {row["path"] for row in collector.encodings}
+        decoded_bytes = sum(row["decoded_bytes"] for row in collector.encodings)
+        metadata_bytes = sum(row["bytes"] for name,row in inventory.items() if name not in encoded_names)
+        require(decoded_bytes + metadata_bytes + len(json_bytes(inventory)) <= limit, "decoded package exceeds 256 MiB")
+        require(sum(row["bytes"] for row in inventory.values()) + len(json_bytes(inventory)) <= limit, "stored package exceeds 256 MiB")
+        collector.put("files.json", json_bytes(inventory))
+        # Prove the complete final inventory, including generated metadata.
+        actual = {relative:hash_regular(path, limit) for relative,path in safe_tree(stage) if relative != "files.json"}
+        require(actual == inventory, "final inventory differs")
+        require([path.name for path in scratch_selection(scratch, set(plan["excluded_scratch_names"]))]
+                == [path.name for path in selected], "scratch input set changed during collection")
+        for path, expected in tracked.items():
+            require(hash_regular(Path(path), limit) == expected, f"retained source changed: {path}")
+        for root, expected in collector.witnesses.items():
+            actual = {relative:hash_regular(path, limit) for relative,path in safe_tree(Path(root))}
+            require(actual == expected, f"archive source tree changed: {root}")
+        require(rust_map(repo, limit) == initial_map, "Rust source tree changed during collection")
+        exclusive_publish(stage, destination)
+        published = True
+        print(json.dumps({"published":str(destination), "payload_files":len(inventory),
+            "payload_bytes":sum(row["bytes"] for row in inventory.values()),
+            "inventory_sha256":digest(json_bytes(inventory)),
+            "script_sha256":digest(script_data), "plan_sha256":digest(plan_data)}, sort_keys=True))
+    finally:
+        if not published:
+            shutil.rmtree(stage)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,501 @@
+{
+  "archive_authored_bytes": 33432800,
+  "archive_regular_members": 82,
+  "archives": [
+    {
+      "authored_bytes": 14716026,
+      "members": 29,
+      "omitted_sidecars": 4,
+      "path": "archives/actual-media.tar.gz",
+      "source_bytes": 14781562,
+      "source_files": 33
+    },
+    {
+      "authored_bytes": 14716049,
+      "members": 29,
+      "omitted_sidecars": 4,
+      "path": "archives/actual-media-final.tar.gz",
+      "source_bytes": 14781585,
+      "source_files": 33
+    },
+    {
+      "authored_bytes": 1554759,
+      "members": 8,
+      "omitted_sidecars": 2,
+      "path": "archives/native-release-second-zoom-project.tar.gz",
+      "source_bytes": 1587527,
+      "source_files": 10
+    },
+    {
+      "authored_bytes": 1161543,
+      "members": 8,
+      "omitted_sidecars": 2,
+      "path": "archives/native-first-zoom-project.tar.gz",
+      "source_bytes": 1194311,
+      "source_files": 10
+    },
+    {
+      "authored_bytes": 1284423,
+      "members": 8,
+      "omitted_sidecars": 2,
+      "path": "archives/native-debug-second-zoom-project.tar.gz",
+      "source_bytes": 1317191,
+      "source_files": 10
+    }
+  ],
+  "build_inputs": {
+    ".cargo/config.toml": "b906738cab8f6f289180e1bcf32826d3e2996899cb5055dc7f0c6838655c340d",
+    "Cargo.lock": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+    "Cargo.toml": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3",
+    "crates/deadpan-app/src/navigation/registry/baseline-routing.txt": "a181ba1d3f2db1c030fbdf1feaf2d5ae8efd5edd885114bcea9c161ac774cd8d",
+    "docs/COMMANDS.md": "b4fc50fffbb6d96406593dda90a56ee6c9f3b89a3790b6e7f69b87863f57beec",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  },
+  "collector_sha256": "2758fa2c837e63d41b33f38b34f728017feda8b0c05aa21499eeb40f4764df13",
+  "current_rust_map_sha256": "05af18a4354a89d5528bd27ea8731630c71453d3de9829fb685a9ae35e00f3f8",
+  "current_rust_paths": 2062,
+  "encoding_counts": {
+    "gzip": 10,
+    "identity": 165,
+    "tar+gzip": 5
+  },
+  "encoding_records": 180,
+  "final_native_app_sha256": "2eb7d88f3b56ade6d98e6a347ea7ee1f2fa7d1988a7e46607d66cef3ca26b5b5",
+  "findings": [],
+  "fmt_log_bytes": {
+    "fmt-confirmed.stderr": 0,
+    "fmt-confirmed.stdout": 0,
+    "fmt-final.stderr": 0,
+    "fmt-final.stdout": 0
+  },
+  "inventoried_bytes": 7389224,
+  "inventoried_payloads": 185,
+  "inventory_sha256": "7d51eb530df1abb5577de6972f14f3147c6b91567aa917cc4941cfb147e0fcf2",
+  "inventory_unchanged": true,
+  "limitations": [
+    "No collector, compiler, test binary, app, decoder, exporter or Git command was executed.",
+    "Retained reports prove their recorded results and identities, not independent DSP, listening, tracking accuracy, physical keyboard/display behavior, latency targets or requirement completion.",
+    "The current complete Rust map is a collection-time witness. Eleven runtime source pins do not establish that every earlier build compiled the entire current map.",
+    "Final fmt logs are empty. Their bytes are verified, but empty logs alone do not independently establish a process exit code.",
+    "Mutable build output paths are not substituted for the retained executed-copy identities."
+  ],
+  "media_exports": [
+    {
+      "lane": "first",
+      "movie_bytes": 211945,
+      "movie_sha256": "171a987281d70bd0b7af1bae7b6e6d8534e08e9afccee959cda74ee0d0e3f0a1",
+      "offset": 0,
+      "pairs_above_1e_minus_6": {
+        "authored": 2663,
+        "limited": 2663
+      },
+      "pcm_all_bits_equal": true,
+      "pictures": 120,
+      "portable_revisions": 7,
+      "published_report_sha256": "de16416e7cde8a87ca849e4bc95f4e7787c39ee2d7280f82f6ab0c47b18bb330",
+      "stereo_samples": 192192,
+      "verification_sha256": "f62e052a545d3e5ed2145722f15b965e2697022713d1a928929e3b28a05bacc9"
+    },
+    {
+      "lane": "final",
+      "movie_bytes": 211945,
+      "movie_sha256": "fb5a58fbce268699889f67208433616e3aeb50d3f5fdbb7d81f84992fb5b6238",
+      "offset": 0,
+      "pairs_above_1e_minus_6": {
+        "authored": 2663,
+        "limited": 2663
+      },
+      "pcm_all_bits_equal": true,
+      "pictures": 120,
+      "portable_revisions": 7,
+      "published_report_sha256": "1e2a655ddc8545501b7f1d7ce43fbb8643a3488e3e620fffe29a2d9a93557a13",
+      "stereo_samples": 192192,
+      "verification_sha256": "ef9265a1875f8d95900b9c70fd709ac697ce7ca07cd97bde20bfbcee5c030d03"
+    }
+  ],
+  "native_reports": [
+    {
+      "binary_sha256": "011273d2791066379e86e55fd7436b4c6b5b5ac7613af4ca1a7a5f87a6633e42",
+      "failed": true,
+      "failed_checks": 1,
+      "failure_findings": [
+        "Check failed: Camera refuses a scale nudge whose later endpoint exceeds the bound"
+      ],
+      "lane": "native-first",
+      "warning_findings": 2,
+      "zoom_checks": 24
+    },
+    {
+      "binary_sha256": "8589b84ff51c8b71679b355b9b1c4df58506f7e409f2ca93bd398ec676c45d7b",
+      "failed": true,
+      "failed_checks": 0,
+      "failure_findings": [
+        "Timed out waiting for Committed revision changed: {\"annotation_busy\":false,\"beat_count\":1,\"busy\":false,\"camera_open\":false,\"camera_pending\":false,\"command\":\"creep to=2.7 curve=linear\",\"command_open\":false,\"context\":\"Sequence\",\"cop"
+      ],
+      "lane": "native-debug-second",
+      "warning_findings": 3,
+      "zoom_checks": 82
+    },
+    {
+      "binary_sha256": "2eb7d88f3b56ade6d98e6a347ea7ee1f2fa7d1988a7e46607d66cef3ca26b5b5",
+      "failed": false,
+      "failed_checks": 0,
+      "failure_findings": [],
+      "lane": "native-release-second",
+      "warning_findings": 3,
+      "zoom_checks": 213
+    }
+  ],
+  "omitted_sqlite_sidecars": 14,
+  "plan_sha256": "8dba03a4fa8d4515a0cc8232cc725cd7b9d1e51b05ef3ea86b328fc4b84c7608",
+  "primary_files": 186,
+  "primary_tree_unchanged": true,
+  "raw_retained_bytes_including_omitted_sidecars": 83508005,
+  "raw_tests": {
+    "app-cli-unit-first.stdout": {
+      "failed": 0,
+      "filtered": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "ignored": 17,
+      "ignored_tests": [
+        {
+          "name": "preview::transcript::lifecycle::real::real_worker_is_interrupted_by_sleep_then_succeeds_on_explicit_retry",
+          "reason": "requires explicit installed Whisper model and deadpan-transcribe helper paths"
+        },
+        {
+          "name": "preview::transcript::lifecycle::real_activity::real_vad_worker_is_cancelled_after_model_load_and_succeeds_on_fresh_retry",
+          "reason": "requires explicit installed Silero model and deadpan-transcribe helper paths"
+        },
+        {
+          "name": "project::tests::generation::real_worker_generates_a_candidate_that_acceptance_commits",
+          "reason": "runs the local AI model; set DEADPAN_BRIDGE_REAL=1"
+        },
+        {
+          "name": "worker::project_tests::generated_playback_tests::cancelled_or_different_project_admissions_cannot_be_adopted",
+          "reason": "requires the real accepted bundle fixture; see module documentation"
+        },
+        {
+          "name": "worker::project_tests::generated_playback_tests::generated_admission_and_first_decode_finish_before_the_hold_is_requested",
+          "reason": "requires the real accepted bundle fixture; see module documentation"
+        },
+        {
+          "name": "worker::project_tests::generated_playback_tests::generated_holds_preserve_both_verified_decoders_and_original_lookahead",
+          "reason": "requires the real accepted bundle fixture; see module documentation"
+        },
+        {
+          "name": "worker::project_tests::generated_playback_tests::generated_playback_worker_matches_the_independent_single_slot_reader",
+          "reason": "requires the real accepted bundle fixture; see module documentation"
+        },
+        {
+          "name": "worker::project_tests::generated_playback_tests::generated_preview_slices_equal_the_single_threaded_offline_reader",
+          "reason": "requires DEADPAN_GENERATED_TRANSITIONS_PACKAGE: two accepted Generated Holds"
+        },
+        {
+          "name": "worker::project_tests::generated_playback_tests::next_generated_provider_prepares_while_the_current_hold_serves",
+          "reason": "requires DEADPAN_GENERATED_TRANSITIONS_PACKAGE: two accepted Holds separated by one Original picture"
+        },
+        {
+          "name": "worker::project_tests::generated_playback_tests::starting_on_generated_prepares_original_and_revokes_stale_admissions",
+          "reason": "requires DEADPAN_GENERATED_TRANSITIONS_PACKAGE: two accepted Holds separated by one Original picture"
+        },
+        {
+          "name": "worker::project_tests::stress_tests::seek_storm_and_jumpy_playback_stay_bounded",
+          "reason": "stress run on a large package; see the module documentation"
+        },
+        {
+          "name": "encoded_render::admission::hardware_tests::measure_hdr_probe_content_on_this_host",
+          "reason": "requires the host's real VideoToolbox/OS encoders"
+        },
+        {
+          "name": "encoded_render::admission::hardware_tests::measure_hdr_probe_declared_light",
+          "reason": "measurement"
+        },
+        {
+          "name": "encoded_render::admission::hardware_tests::measure_small_sdr_probe_geometry",
+          "reason": "measurement of real small-raster VideoToolbox encoders"
+        },
+        {
+          "name": "encoded_render::verification::inspect::hdr_tests::hdr_light_measurement",
+          "reason": "qualification measurement; prints host and decoded content light"
+        },
+        {
+          "name": "generation::attempt::tests::extension_scheduling::real_extension_worker_pauses_resumes_and_cancels_while_paused",
+          "reason": "requires explicit real-model paths and runs MLX inference on the GPU"
+        },
+        {
+          "name": "system_conditions::tests::live_memory_headroom_observation",
+          "reason": "live macOS observation; run explicitly on the qualification host"
+        }
+      ],
+      "passed": 1826,
+      "summaries": 4
+    },
+    "core-follow-first.stdout": {
+      "failed": 0,
+      "filtered": [
+        711
+      ],
+      "ignored": 0,
+      "passed": 26,
+      "summaries": 1
+    },
+    "core-plan-first.stdout": {
+      "failed": 0,
+      "filtered": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ignored": 0,
+      "passed": 2020,
+      "summaries": 100
+    },
+    "framing-boundaries-final.stdout": {
+      "failed": 0,
+      "filtered": [
+        0
+      ],
+      "ignored": 0,
+      "passed": 23,
+      "summaries": 1
+    },
+    "framing-cli-all-second.stdout": {
+      "failed": 0,
+      "filtered": [
+        46
+      ],
+      "ignored": 0,
+      "passed": 12,
+      "summaries": 1
+    },
+    "media-final.stdout": {
+      "failed": 0,
+      "filtered": [
+        66
+      ],
+      "ignored": 0,
+      "passed": 1,
+      "summaries": 1
+    },
+    "media-first.stdout": {
+      "failed": 0,
+      "filtered": [
+        66
+      ],
+      "ignored": 0,
+      "passed": 1,
+      "summaries": 1
+    },
+    "structural-second.stdout": {
+      "failed": 0,
+      "filtered": [
+        103
+      ],
+      "ignored": 0,
+      "passed": 18,
+      "summaries": 1
+    }
+  },
+  "retained_binary_count": 16,
+  "retained_historical_failed_test_summaries": {
+    "aggregate-worker-1.stdout": [
+      {
+        "failed": 1,
+        "filtered": 21,
+        "ignored": 0,
+        "passed": 1
+      }
+    ],
+    "framing-boundaries-second.stdout": [
+      {
+        "failed": 1,
+        "filtered": 0,
+        "ignored": 0,
+        "passed": 21
+      }
+    ],
+    "framing-cli-all.stdout": [
+      {
+        "failed": 1,
+        "filtered": 46,
+        "ignored": 0,
+        "passed": 11
+      }
+    ],
+    "macro-fourth.stdout": [
+      {
+        "failed": 1,
+        "filtered": 56,
+        "ignored": 0,
+        "passed": 0
+      }
+    ],
+    "macro-second.stdout": [
+      {
+        "failed": 1,
+        "filtered": 56,
+        "ignored": 0,
+        "passed": 0
+      }
+    ],
+    "macro-third.stdout": [
+      {
+        "failed": 1,
+        "filtered": 56,
+        "ignored": 0,
+        "passed": 0
+      }
+    ],
+    "structural-first.stdout": [
+      {
+        "failed": 1,
+        "filtered": 103,
+        "ignored": 0,
+        "passed": 17
+      }
+    ]
+  },
+  "runtime_source_freeze_paths": 11,
+  "runtime_source_freeze_sha256": "cd45a91c008fa103c06aacb133f4d2eb63ff149803764cc7771de38f32ac9400",
+  "schema_version": 1,
+  "scope": "Offline independent byte, archive, source, retained binary and raw evidence verification",
+  "separate_post_publication_format_proof": {
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "exit_code": 0,
+    "files": {
+      "format-verified-receipt.json": {
+        "bytes": 8188,
+        "sha256": "4e9390ed0b06add442e58e1adde9d6ec38e6342bc6639baabfdef4289f5a5493"
+      },
+      "format-verified.stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "format-verified.stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "run-format-verified.py": {
+        "bytes": 1548,
+        "sha256": "e7c41e97b38241dedb23846555fb1cf815bb06daac7e4d4b1e5924fba512ac5a"
+      }
+    },
+    "scope": "Supplement-only Root execution receipt, independently read and hash/source checked after the primary verifier finished. Not part of Primary.",
+    "source_paths_unchanged": 30,
+    "verification_method": "Inline offline Python checked exact command/cwd, exit0, ordered timestamps, 30 before/after hashes equal current primary map, sources_unchanged and actual raw stream byte counts/SHA256; no formatter was executed by reviewer."
+  },
+  "source_snapshots": 30,
+  "status": "no_findings",
+  "strict_log": {
+    "completion_line": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 10.37s",
+    "diagnostic_error_lines": 0
+  },
+  "verifier_sha256": "974e781030537839f43ff6a3847f4f2d2b5060f1018b6b535684f7d4f026533c"
+}

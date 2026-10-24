@@ -337,9 +337,16 @@ impl Inspector {
                     let high = scales.iter().copied().fold(f64::NEG_INFINITY, f64::max);
                     format!("Path · {low:.2}–{high:.2}×")
                 }
-                deadpan_core::FramingValue::Follow { target, scale, .. } => {
-                    let scale = scale.numerator() as f64 / scale.denominator() as f64;
-                    format!("Follows {target} · {scale:.3}×")
+                deadpan_core::FramingValue::Follow {
+                    target,
+                    scale,
+                    scale_transition,
+                    ..
+                } => {
+                    format!(
+                        "Follows {target} · {}",
+                        crate::navigation::zoom::follow_scale_label(*scale, *scale_transition)
+                    )
                 }
             };
             fields.push(("Framing", description));

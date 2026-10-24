@@ -1,0 +1,375 @@
+{
+  "audio": {
+    "DSP_independent": false,
+    "authored_equals_before": true,
+    "channels": 2,
+    "limited_equals_before": true,
+    "limiter_gain_equals_before": true,
+    "listening": false,
+    "nonzero_authored_pairs": 2816,
+    "nonzero_click_window": [
+      47808,
+      48192
+    ],
+    "nonzero_limited_pairs": 2816,
+    "offset_samples": 0,
+    "offset_status": "verified_zero",
+    "range": [
+      0,
+      192192
+    ],
+    "sample_48000": [
+      0.749076783657074,
+      -0.649470865726471
+    ],
+    "samples": 192192,
+    "uncovered": 0
+  },
+  "checks": {
+    "120_sequential_pictures": true,
+    "all_four_retained_binaries_hash_match": true,
+    "audio_offset_verified_zero": true,
+    "authored_pcm_bits_equal": true,
+    "click_window_nonzero": true,
+    "current_sources_exactly_match_freeze": true,
+    "final_cli_hash_is_e9ad": true,
+    "full_stereo_audio_192192": true,
+    "limited_pcm_bits_equal": true,
+    "limiter_gain_bits_equal": true,
+    "movie_hash_matches_render_receipt": true,
+    "picture_failures_zero": true,
+    "picture_offsets_zero": true,
+    "portable_copy_seven_receipt_verified_revisions": true,
+    "portable_original_cloned": true,
+    "portable_restore_matches_after_ignoring_revision_id": true,
+    "pose_120_rows_and_exact_oracle": true,
+    "result_equals_raw_summary": true,
+    "retained_test_hash_match": true,
+    "terminal_exit_zero_binaries_and_sources_unchanged": true,
+    "test_1_passed_66_filtered_not_skipped": true,
+    "undo_matches_before_ignoring_revision_id": true
+  },
+  "limitations": [
+    "Existing burned-in counter video; target samples and correction are deterministic and manually authored. This verifies resolver/pose behavior, not tracker accuracy.",
+    "Exact PCM float-bit equality is a before/after consistency check, not an independent DSP oracle. Nonzero PCM confirms sample presence only; no listening claim.",
+    "Undo/copy state equality excludes revision_id, which necessarily changes across undo and portable copy. Hashes establish audited file identity, not provenance beyond the supplied invocation and terminal records."
+  ],
+  "mismatches": [],
+  "portable_copy": {
+    "authored_history": {
+      "replayed": 6,
+      "revisions": 7,
+      "verified_by_receipt": 0
+    },
+    "destination_exists": true,
+    "report": {
+      "destination": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/fixture/follow-creep-portable.deadpan",
+      "generated": [],
+      "omitted_generated": 0,
+      "omitted_render_candidates": 0,
+      "originals": [
+        {
+          "bytes": 39157,
+          "content": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+          "from": "managed",
+          "label": "original.mp4",
+          "method": "cloned"
+        }
+      ],
+      "project_id": "b8c779be-5c57-47d4-8c84-b1ec55752ee4",
+      "revision_id": "068f76ac-7c09-4038-ab7f-caad404501aa",
+      "schema_version": 1,
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/fixture/follow-creep.deadpan",
+      "total_bytes": 637173,
+      "verified_history": {
+        "replayed": 0,
+        "revisions": 7,
+        "verified_by_receipt": 7
+      }
+    },
+    "restore_matches_after_ignoring_revision_id": true,
+    "undo_matches_before_ignoring_revision_id": true
+  },
+  "poses": {
+    "all_actual_equals_expected": true,
+    "branches": {
+      "fallback": 20,
+      "lost_holds_region": 20,
+      "manual_correction": 20,
+      "tracked": 60
+    },
+    "corrections": [
+      {
+        "at": 80080,
+        "region": {
+          "center": [
+            450001,
+            400000
+          ],
+          "size": [
+            100000,
+            100000
+          ]
+        }
+      }
+    ],
+    "owner_position_examples": {
+      "0": {
+        "denominator": "2",
+        "numerator": "1"
+      },
+      "10": {
+        "denominator": "2",
+        "numerator": "21"
+      },
+      "119": {
+        "denominator": "2",
+        "numerator": "239"
+      },
+      "80": {
+        "denominator": "2",
+        "numerator": "161"
+      }
+    },
+    "rows": 120,
+    "target_samples": [
+      [
+        10010,
+        "tracked",
+        1000,
+        [
+          250000,
+          400000
+        ]
+      ],
+      [
+        50050,
+        "tracked",
+        1000,
+        [
+          650000,
+          400000
+        ]
+      ],
+      [
+        60060,
+        "lost",
+        0,
+        [
+          650000,
+          400000
+        ]
+      ],
+      [
+        100100,
+        "tracked",
+        1000,
+        [
+          700000,
+          400000
+        ]
+      ]
+    ]
+  },
+  "retained_binaries": {
+    "deadpan-cli": {
+      "actual_sha256": "e9ad52a23d3f91ac198007f18e69811d0ec09797e24c53230255f4e083150701",
+      "expected_sha256": "e9ad52a23d3f91ac198007f18e69811d0ec09797e24c53230255f4e083150701",
+      "matches": true,
+      "path": "/tmp/deadpan-follow-creep-2026-10-24/final-media-retained/deadpan-cli"
+    },
+    "deadpan-media-worker": {
+      "actual_sha256": "9bb776f74a23a3c875c52251770c161bfc2b0b49146891aa40de9578683424f7",
+      "expected_sha256": "9bb776f74a23a3c875c52251770c161bfc2b0b49146891aa40de9578683424f7",
+      "matches": true,
+      "path": "/tmp/deadpan-follow-creep-2026-10-24/final-media-retained/deadpan-media-worker"
+    },
+    "deadpan-track": {
+      "actual_sha256": "11aeb6de474b1e6815146f2db4c826ae8721a8d3409607e0dee87b3a212c23c8",
+      "expected_sha256": "11aeb6de474b1e6815146f2db4c826ae8721a8d3409607e0dee87b3a212c23c8",
+      "matches": true,
+      "path": "/tmp/deadpan-follow-creep-2026-10-24/final-media-retained/deadpan-track"
+    },
+    "deadpan-transcribe": {
+      "actual_sha256": "351468f98590062f06b6913d94ccbf2b07b019d1185c2939f09c8650c91f71d5",
+      "expected_sha256": "351468f98590062f06b6913d94ccbf2b07b019d1185c2939f09c8650c91f71d5",
+      "matches": true,
+      "path": "/tmp/deadpan-follow-creep-2026-10-24/final-media-retained/deadpan-transcribe"
+    }
+  },
+  "scope": "Independent read-only final-run audit. No product command, build, test, or repository edit. No independent DSP implementation, acoustic listening, or tracking-accuracy claim.",
+  "sha256_inventory": {
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/exports/deadpan-render-e10aaedd-4d66-4b6f-828b-4a37a5c0aa69.json": {
+      "bytes": 32968,
+      "sha256": "1e2a655ddc8545501b7f1d7ce43fbb8643a3488e3e620fffe29a2d9a93557a13"
+    },
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/exports/follow-creep.mp4": {
+      "bytes": 211945,
+      "sha256": "fb5a58fbce268699889f67208433616e3aeb50d3f5fdbb7d81f84992fb5b6238"
+    },
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/fixture/follow-creep-after-pcm.json": {
+      "bytes": 6246627,
+      "sha256": "10cb6b31edd1cac052eb4956440321b723175be9efe4bda16107e4d138d7dadd"
+    },
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/fixture/follow-creep-apply.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/fixture/follow-creep-apply.stdout.json": {
+      "bytes": 2282,
+      "sha256": "122a7d4650a381695cbe9855fb4d695e8112f3b5c2d4143fe51704d36759e317"
+    },
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/fixture/follow-creep-authored-evidence.json": {
+      "bytes": 129978,
+      "sha256": "494d12651157269752adf80d6186a899b2c603a53210cfae92000b203f25f19d"
+    },
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/fixture/follow-creep-before-pcm.json": {
+      "bytes": 6246730,
+      "sha256": "2ae6bc9a5a406c7839f9250045c0f04a4c2767eba681f7d1bb73002d27c9acd8"
+    },
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/fixture/follow-creep-portable-copy.json": {
+      "bytes": 894,
+      "sha256": "9e40c1548dab3591ba9e4cf8658de124b9e9ff5088d70b9bdb1fd81afab2450f"
+    },
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/fixture/macro-request.json": {
+      "bytes": 447,
+      "sha256": "12e58e50ddb38eaabc195808c05f1dc36e3c023844c04443191bf35a72c79c4f"
+    },
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/fixture/original.mp4": {
+      "bytes": 39157,
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+    },
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/fixture/request-follow-creep-r01.json": {
+      "bytes": 1103,
+      "sha256": "68d18a6e6b504d73f8cb2754d1a9be34591bbe952d06156b203b556bf781ba20"
+    },
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/fixture/request-follow-creep-r02.json": {
+      "bytes": 479,
+      "sha256": "c6e10dc6dd99cab61e1cb84de299b8f1cf121627394534a7371e117b0cd1e5a7"
+    },
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/follow-creep-render.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/follow-creep-render.stdout.jsonl": {
+      "bytes": 15193,
+      "sha256": "2419dc9f5229f8a13d6a085409721a95b29f1e2f51941291ebd316c1bf8a5411"
+    },
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/follow-creep-summary.json": {
+      "bytes": 2339,
+      "sha256": "d3ff6ce64cb106a82b760534ce9bdac4c16437a974090130b084cf719a568a2a"
+    },
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/follow-creep-verification.json": {
+      "bytes": 162647,
+      "sha256": "ef9265a1875f8d95900b9c70fd709ac697ce7ca07cd97bde20bfbcee5c030d03"
+    },
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/follow-creep-verification.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/follow-creep-verification.stdout.json": {
+      "bytes": 162648,
+      "sha256": "36e72094a438fec6e9e82a9dd530cc18aa1a46e42ba46595a75dff9c868a7c53"
+    },
+    "/tmp/deadpan-follow-creep-2026-10-24/final-media-retained/deadpan-cli": {
+      "bytes": 50018096,
+      "sha256": "e9ad52a23d3f91ac198007f18e69811d0ec09797e24c53230255f4e083150701"
+    },
+    "/tmp/deadpan-follow-creep-2026-10-24/final-media-retained/deadpan-media-worker": {
+      "bytes": 1169872,
+      "sha256": "9bb776f74a23a3c875c52251770c161bfc2b0b49146891aa40de9578683424f7"
+    },
+    "/tmp/deadpan-follow-creep-2026-10-24/final-media-retained/deadpan-track": {
+      "bytes": 1656592,
+      "sha256": "11aeb6de474b1e6815146f2db4c826ae8721a8d3409607e0dee87b3a212c23c8"
+    },
+    "/tmp/deadpan-follow-creep-2026-10-24/final-media-retained/deadpan-transcribe": {
+      "bytes": 2603984,
+      "sha256": "351468f98590062f06b6913d94ccbf2b07b019d1185c2939f09c8650c91f71d5"
+    },
+    "/tmp/deadpan-follow-creep-2026-10-24/final-media-retained/preview_export": {
+      "bytes": 35901584,
+      "sha256": "6293b75721dd84941ce2646a9e17d3d46ee8e221737c76d1d82e7ae5d9d999b5"
+    },
+    "/tmp/deadpan-follow-creep-2026-10-24/media-final-invocation.json": {
+      "bytes": 1720,
+      "sha256": "efcb68a289f5165646a6676ffb1e23a7a3f81fe763ff0f893ba3aa9d3864e547"
+    },
+    "/tmp/deadpan-follow-creep-2026-10-24/media-final-result.json": {
+      "bytes": 2339,
+      "sha256": "d3ff6ce64cb106a82b760534ce9bdac4c16437a974090130b084cf719a568a2a"
+    },
+    "/tmp/deadpan-follow-creep-2026-10-24/media-final-source-after.json": {
+      "bytes": 1278,
+      "sha256": "cd45a91c008fa103c06aacb133f4d2eb63ff149803764cc7771de38f32ac9400"
+    },
+    "/tmp/deadpan-follow-creep-2026-10-24/media-final-source-before.json": {
+      "bytes": 1278,
+      "sha256": "cd45a91c008fa103c06aacb133f4d2eb63ff149803764cc7771de38f32ac9400"
+    },
+    "/tmp/deadpan-follow-creep-2026-10-24/media-final-terminal.json": {
+      "bytes": 128,
+      "sha256": "7b573b76a214dfad0c430e1904e334f48f3457f19db802fa6492af9126feb13b"
+    },
+    "/tmp/deadpan-follow-creep-2026-10-24/media-final.stderr": {
+      "bytes": 2230,
+      "sha256": "f53148e71405c4b3480ed7b54e8a12e4fc043c7c726633c0867a64bb07387f2d"
+    },
+    "/tmp/deadpan-follow-creep-2026-10-24/media-final.stdout": {
+      "bytes": 222,
+      "sha256": "e64ad2a95c9e2df1e9c3ad249cb58647e467a69c4837fa454bc5350b906cddaf"
+    },
+    "/tmp/deadpan-follow-creep-2026-10-24/runtime-source-freeze.json": {
+      "bytes": 1278,
+      "sha256": "cd45a91c008fa103c06aacb133f4d2eb63ff149803764cc7771de38f32ac9400"
+    }
+  },
+  "source_freeze": {
+    "after_equals_freeze": true,
+    "before_equals_after": true,
+    "files": 11,
+    "freeze_file_sha256": "cd45a91c008fa103c06aacb133f4d2eb63ff149803764cc7771de38f32ac9400",
+    "invocation_sha256": "cd45a91c008fa103c06aacb133f4d2eb63ff149803764cc7771de38f32ac9400"
+  },
+  "test": {
+    "binaries_unchanged": true,
+    "elapsed_seconds": 5.279096459038556,
+    "exit_code": 0,
+    "name": "follow_creep_export::follow_creep_preserves_live_motion_lost_correction_fallback_and_verified_av",
+    "result_line": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 66 filtered out; finished in 5.25s",
+    "retained_test_sha256": "6293b75721dd84941ce2646a9e17d3d46ee8e221737c76d1d82e7ae5d9d999b5",
+    "runtime_sources_unchanged": true,
+    "test_binary": {
+      "path": "/tmp/deadpan-follow-creep-2026-10-24/target/release/deps/preview_export-8652fc5e7c449500",
+      "retained": "/tmp/deadpan-follow-creep-2026-10-24/final-media-retained/preview_export",
+      "sha256": "6293b75721dd84941ce2646a9e17d3d46ee8e221737c76d1d82e7ae5d9d999b5"
+    }
+  },
+  "video": {
+    "bytes": 211945,
+    "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpzVeReG/exports/follow-creep.mp4",
+    "render_receipt_sha256": "fb5a58fbce268699889f67208433616e3aeb50d3f5fdbb7d81f84992fb5b6238",
+    "sha256": "fb5a58fbce268699889f67208433616e3aeb50d3f5fdbb7d81f84992fb5b6238",
+    "summary": {
+      "audio_windows_checked": 1,
+      "audio_windows_failed": 0,
+      "blocks_compared": 4,
+      "index_observable_comparisons": 234,
+      "index_unobservable_comparisons": 4,
+      "max_block_level_db": 0.043817517907697834,
+      "max_local_luma_error": 10.25,
+      "max_thumbnail_mad": 0.13048573369565217,
+      "min_block_snr_db": 29.534686653581982,
+      "min_chroma_psnr_db": 56.58419742639922,
+      "min_luma_psnr_db": 45.0423074992569,
+      "min_neighbor_margin_db": 25.529113714367952,
+      "nonzero_offsets": 0,
+      "offset_unobservable_windows": 0,
+      "offset_verified_windows": 1,
+      "pictures_checked": 120,
+      "pictures_failed": 0,
+      "pictures_without_index_neighbors": 0,
+      "signal_windows": 1
+    }
+  }
+}

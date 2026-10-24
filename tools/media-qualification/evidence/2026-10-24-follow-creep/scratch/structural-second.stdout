@@ -1,0 +1,23 @@
+
+running 18 tests
+test follow::outside_the_target_the_fallback_applies ... ok
+test follow::a_follow_centers_on_the_target_at_each_pictures_source_time ... ok
+test follow::an_outer_follow_sees_the_subject_through_inner_framing ... ok
+test follow::an_escalating_zoom_moves_toward_its_target_and_keeps_the_view_inside_the_picture ... ok
+test follow::following_creep_keeps_the_lost_region_and_animates_distinct_fallback_scale ... ok
+test follow::structural::nested_raw_follows_use_distinct_source_repeat_and_group_clocks_including_gap ... ok
+test follow::structural::raw_follow_curves_reach_live_and_fallback_plan_poses ... ok
+test follow::raw_group_follow_transition_survives_ungroup_and_retains_each_child_clock ... ok
+test follow::a_follow_centers_the_target_where_the_picture_is_fitted_on_the_canvas ... ok
+test follow::structural::captured_hold_follow_animates_fallback_and_keeps_geometry_after_provider_change ... ok
+test generated_hold_resize_reuses_materialized_frames_and_preserves_following_source ... ok
+test follow::following_creep_split_preserves_frames_and_inverse_payload_and_raw_retime_clock ... ok
+test follow::structural::repeat_occurrence_isolation_and_explode_keep_follow_contexts_and_gap_clock ... ok
+test follow::structural::inserted_freeze_captures_follow_view_and_preserves_source_path_after_provider_change ... ok
+test pauses_inside_follow_speed_shift_later_pictures_without_changing_their_source_times ... ok
+test follow::structural::cropped_copy_and_duplicate_retain_original_follow_phase_and_target ... ok
+test follow::structural::source_trim_roll_and_slip_keep_follow_phase_on_surviving_material ... ok
+test nested_follow_speed_pauses_preserve_every_old_picture_through_both_stage_boundaries ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 103 filtered out; finished in 0.08s
+

@@ -1,0 +1,148 @@
+   Compiling bitflags v2.13.2
+   Compiling objc2-encode v4.1.0
+   Compiling once_cell v1.21.4
+   Compiling serde_core v1.0.229
+   Compiling itoa v1.0.18
+   Compiling foldhash v0.2.0
+   Compiling libc v0.2.189
+   Compiling libm v0.2.16
+   Compiling zmij v1.0.23
+   Compiling memchr v2.8.3
+   Compiling log v0.4.34
+   Compiling smallvec v1.16.1
+   Compiling simd-adler32 v0.3.10
+   Compiling equivalent v1.0.2
+   Compiling syn v3.0.6
+   Compiling syn v2.0.119
+   Compiling adler2 v2.0.1
+   Compiling getrandom v0.3.4
+   Compiling rustc-hash v1.1.0
+   Compiling hashbrown v0.17.1
+   Compiling deadpan-diagnostics v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-diagnostics)
+   Compiling miniz_oxide v0.9.1
+   Compiling crc32fast v1.5.2
+   Compiling unicode-width v0.2.2
+   Compiling bit-vec v0.9.1
+   Compiling fdeflate v0.3.7
+   Compiling miniz_oxide v0.8.9
+   Compiling scopeguard v1.2.0
+   Compiling objc2 v0.6.4
+   Compiling zeroize v1.9.0
+   Compiling quick-error v2.0.1
+   Compiling bit-set v0.10.0
+   Compiling codespan-reporting v0.13.1
+   Compiling fastrand v2.5.0
+   Compiling zune-core v0.5.3
+   Compiling byteorder-lite v0.1.0
+   Compiling raw-window-handle v0.6.2
+   Compiling pxfm v0.1.30
+   Compiling static_assertions v1.1.0
+   Compiling errno v0.3.14
+   Compiling cpufeatures v0.3.1
+   Compiling getrandom v0.2.17
+   Compiling flate2 v1.1.10
+   Compiling rustix v1.1.5
+   Compiling sha2 v0.11.0
+   Compiling image-webp v0.2.4
+   Compiling zune-jpeg v0.5.15
+   Compiling parking_lot_core v0.9.12
+   Compiling rustls-pki-types v1.15.1
+   Compiling lock_api v0.4.14
+   Compiling indexmap v2.14.2
+   Compiling wgpu-hal v30.0.1
+   Compiling untrusted v0.9.0
+   Compiling core-foundation-sys v0.8.7
+   Compiling num-traits v0.2.19
+   Compiling ring v0.17.14
+   Compiling parking_lot v0.12.5
+   Compiling png v0.18.1
+   Compiling libloading v0.8.9
+   Compiling profiling v1.0.18
+   Compiling libsqlite3-sys v0.38.2
+   Compiling getrandom v0.4.3
+   Compiling core-foundation v0.10.1
+   Compiling security-framework-sys v2.17.0
+   Compiling hashlink v0.12.2
+   Compiling wgpu-core v30.0.1
+   Compiling subtle v2.6.1
+   Compiling bytes v1.12.1
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling fallible-iterator v0.3.0
+   Compiling dispatch2 v0.3.1
+   Compiling block2 v0.6.2
+   Compiling objc2-core-audio-types v0.3.2
+   Compiling security-framework v3.7.0
+   Compiling httparse v1.10.1
+   Compiling wgpu v30.0.1
+   Compiling base64 v0.23.1
+   Compiling rusqlite v0.40.2
+   Compiling webpki-roots v1.0.10
+   Compiling deadpan-fileclone v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-fileclone)
+   Compiling percent-encoding v2.3.2
+   Compiling objc2-core-foundation v0.3.2
+   Compiling utf8-zero v0.8.1
+   Compiling signal-hook-registry v1.4.8
+   Compiling http v1.5.0
+   Compiling dasp_sample v0.11.0
+   Compiling mach2 v0.6.0
+   Compiling pollster v1.0.1
+   Compiling signal-hook v0.3.18
+   Compiling rtrb v0.4.0
+   Compiling rustls-webpki v0.103.16
+   Compiling thiserror-impl v2.0.20
+   Compiling bytemuck_derive v1.12.1
+   Compiling serde_derive v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling deadpan-native-process v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-process)
+   Compiling tempfile v3.27.0
+   Compiling uuid v1.26.1
+   Compiling deadpan-sqlite-status v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-sqlite-status)
+   Compiling zerocopy-derive v0.8.57
+   Compiling moxcms v0.8.1
+   Compiling rustls v0.23.45
+   Compiling ureq-proto v0.6.4
+   Compiling bytemuck v1.25.2
+   Compiling thiserror v2.0.20
+   Compiling naga-types v30.0.1
+   Compiling deadpan-dsp v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-dsp)
+   Compiling wgpu-types v30.0.1
+   Compiling font-types v0.12.5
+   Compiling deadpan-chaos v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-chaos)
+   Compiling zerocopy v0.8.57
+   Compiling read-fonts v0.41.0
+   Compiling objc2-foundation v0.3.2
+   Compiling objc2-core-graphics v0.3.2
+   Compiling serde v1.0.229
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling objc2-metal v0.3.2
+   Compiling objc2-core-audio v0.3.2
+   Compiling deadpan-filesystem v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-filesystem)
+   Compiling objc2-app-kit v0.3.2
+   Compiling image v0.25.10
+   Compiling objc2-audio-toolbox v0.3.2
+   Compiling half v2.7.1
+   Compiling coreaudio-rs v0.14.2
+   Compiling naga v30.0.1
+   Compiling cpal v0.18.2
+   Compiling deadpan-output v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-output)
+   Compiling skrifa v0.44.0
+   Compiling objc2-quartz-core v0.3.2
+   Compiling raw-window-metal v1.1.0
+   Compiling wgpu-naga-bridge v30.0.1
+   Compiling wgpu-core-deps-apple v30.0.1
+   Compiling deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+   Compiling deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 26.72s
+     Running tests/project_commands.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/project_commands-cb3585c5972643cb)

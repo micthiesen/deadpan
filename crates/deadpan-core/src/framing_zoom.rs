@@ -110,6 +110,9 @@ pub enum Center {
 
 /// The beat being framed, as Camera sees it at the displayed picture.
 pub struct Shot<'a> {
+    /// Resolved ordinary Source outside occurrence editing. This admits only
+    /// creation of a whole-owner Follow transition, never raw payload validity.
+    pub ordinary_source: bool,
     /// The beat's authored framing before the edit.
     pub entry: Option<&'a Framing>,
     /// The beat's evaluated pose at the displayed picture.
@@ -132,7 +135,7 @@ fn progress(frame: u64, frames: u64) -> Result<ExactRatio, String> {
 }
 
 pub const PATH_REFUSAL: &str = "This beat has a camera path, and this would replace it. Use :zoom off first, or name the target (target=current, center or an id) to replace it explicitly.";
-pub const FOLLOW_CREEP_REFUSAL: &str = "This beat follows a target; a creep with a fixed center would stop following it. Use :zoom S to change the follow's scale, name target= to creep to a fixed point, or :zoom off first.";
+pub const FOLLOW_CREEP_REFUSAL: &str = "Following creep requires one whole ordinary Source with no Visual range or single-play scope. Name target= to creep to a fixed point, or clear the range and select an ordinary Source.";
 pub const RANGED_FOLLOW_REFUSAL: &str = "This beat follows a target; a range would stop following it outside the range. Apply to the whole beat (clear the Visual range) or :zoom off first.";
 pub const RANGED_PATH_REFUSAL: &str = "This beat has a camera path; a range would replace it outside the range. Apply to the whole beat (clear the Visual range) or :zoom off first.";
 
@@ -144,6 +147,7 @@ pub const RANGED_PATH_REFUSAL: &str = "This beat has a camera path; a range woul
 /// the beat's framing outside the range, so it needs no framing or one static
 /// pose (on any clock, since a static pose is constant).
 pub fn build(kind: ZoomKind, center: &Center, shot: &Shot<'_>) -> Result<Option<Framing>, String> {
+    kind.validate()?;
     let range = shot
         .range
         .filter(|(start, end)| !(*start == 0 && *end == shot.frames));
@@ -166,7 +170,16 @@ pub fn build(kind: ZoomKind, center: &Center, shot: &Shot<'_>) -> Result<Option<
     let keep = *center == Center::Keep;
     let Some((start, end)) = range else {
         if !matches!(kind, ZoomKind::Off)
-            && matches!(entry, Some(FramingValue::Envelope { .. }))
+            && matches!(
+                entry,
+                Some(
+                    FramingValue::Envelope { .. }
+                        | FramingValue::Follow {
+                            scale_transition: Some(_),
+                            ..
+                        }
+                )
+            )
             && (keep || !shot.explicit)
         {
             return Err(PATH_REFUSAL.into());
@@ -205,14 +218,48 @@ pub fn build(kind: ZoomKind, center: &Center, shot: &Shot<'_>) -> Result<Option<
                         target,
                         scale,
                         fallback,
+                        scale_transition: None,
                     },
                 };
                 framing.validate().map_err(|error| error.to_string())?;
                 Ok(Some(framing))
             }
             ZoomKind::Creep { from, to, curve } => {
-                if keep && matches!(entry, Some(FramingValue::Follow { .. })) {
-                    return Err(FOLLOW_CREEP_REFUSAL.into());
+                if keep
+                    && let Some(FramingValue::Follow {
+                        target,
+                        scale,
+                        fallback,
+                        ..
+                    }) = entry
+                {
+                    if !shot.ordinary_source || shot.range.is_some() {
+                        return Err(FOLLOW_CREEP_REFUSAL.into());
+                    }
+                    let from = from.unwrap_or(*scale);
+                    let framing = Framing {
+                        clock: FramingClock::OwnerOutput,
+                        value: FramingValue::Follow {
+                            target: target.clone(),
+                            scale: from,
+                            fallback: FramingPose {
+                                scale: fallback
+                                    .scale
+                                    .checked_mul(
+                                        from.checked_div(*scale)
+                                            .map_err(|error| error.to_string())?,
+                                    )
+                                    .map_err(|error| error.to_string())?,
+                                ..*fallback
+                            },
+                            scale_transition: Some(crate::FollowScaleTransition {
+                                factor: to.checked_div(from).map_err(|error| error.to_string())?,
+                                curve,
+                            }),
+                        },
+                    };
+                    framing.validate().map_err(|error| error.to_string())?;
+                    return Ok(Some(framing));
                 }
                 Framing::creep(
                     pose(current, from.unwrap_or(shot.current.scale))?,

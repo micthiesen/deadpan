@@ -93,6 +93,7 @@ fn follow() -> Framing {
                 scale: ExactRatio::new(27, 20).unwrap(),
                 ..Default::default()
             },
+            scale_transition: None,
         },
     }
 }
