@@ -263,6 +263,35 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"saved":"face-1","label":"Face 6","number":1,"face":null}),
         json!({"before":prior_saved_choice,"after":saved_choice}),
     )?;
+    let saved_rectangles = |d: &Driver<'_>| {
+        d.harness
+            .output()
+            .shapes
+            .iter()
+            .filter(|shape| {
+                matches!(&shape.shape, egui::Shape::Rect(rect)
+                if rect.fill == egui::Color32::TRANSPARENT && rect.stroke.color == style::CURSOR)
+            })
+            .count()
+    };
+    let before_page = d.revision();
+    let first_page_rectangles = saved_rectangles(d);
+    d.key(Key::Tab)?;
+    d.settled()?;
+    let second_page_rectangles = saved_rectangles(d);
+    d.check(
+        "The picker hides off-page saved markers rather than leaving unidentified outlines",
+        first_page_rectangles > 0
+            && second_page_rectangles + 1 == first_page_rectangles
+            && state(d)["picker_page"] == 2
+            && state(d)["picker"][0]["number"].is_null()
+            && d.revision() == before_page,
+        json!({"off_page_saved_rectangle":"not painted","revision":"unchanged"}),
+        json!({"page_one_target_strokes":first_page_rectangles,"page_two_target_strokes":second_page_rectangles,"camera":state(d)}),
+    )?;
+    d.capture("Paged face choices hide off-page saved markers")?;
+    d.key_modified(Key::Tab, egui::Modifiers::SHIFT)?;
+    d.settled()?;
     d.key(Key::Num1)?;
     d.key(Key::T)?;
     let target_only = d.revision();

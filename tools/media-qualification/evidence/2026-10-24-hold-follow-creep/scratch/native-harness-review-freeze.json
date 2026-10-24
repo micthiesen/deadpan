@@ -1,0 +1,26 @@
+{
+  "frozen_at": "2026-10-24T08:22:02.483785+00:00",
+  "scope": [
+    "crates/deadpan-app/src/preview/harness/hold_follow_creep.rs"
+  ],
+  "files": [
+    {
+      "path": "crates/deadpan-app/src/preview/harness/hold_follow_creep.rs",
+      "bytes": 22403,
+      "sha256": "80a00574a4fd15204708a0ed1b4b6c0bcf9dabb6b8b9dacee05e73d778b90bcd"
+    }
+  ],
+  "registration_files_edited": false,
+  "source_frozen": true,
+  "format_command": "rustfmt --edition 2024 --config skip_children=true crates/deadpan-app/src/preview/harness/hold_follow_creep.rs",
+  "format_exit": 0,
+  "executed_product_tests": false,
+  "executed_cargo": false,
+  "executed_runtime": false,
+  "executed_git": false,
+  "changes": [
+    "Half-open boundaries 39,40,51,52 assert Source/Freeze providers, exact follow points and measured Original ordinals 39,39,39,40; Hold layer presence is false,true,true,false.",
+    "Adjacent Source samples compare picture, instance, gap, local clock, captured context, framing and captions against the pre-creep workspace.",
+    "All twelve clipped Hold frames assert the independent Q32 scale oracle, neutral fallback center, owner clock, unchanged Freeze point and captured context; Camera fallback center remains asserted."
+  ]
+}

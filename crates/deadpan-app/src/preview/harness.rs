@@ -36,6 +36,7 @@ mod generated_playback;
 mod group_pixels;
 mod groups;
 mod hold_effects;
+mod hold_follow_creep;
 mod jobs;
 mod keymap;
 mod large_first_pause;

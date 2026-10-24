@@ -14,6 +14,9 @@ use serde::Serialize;
 
 use crate::{Picture, PictureFraming, PictureSample, PlanError};
 
+#[path = "follow_context.rs"]
+mod follow_context;
+
 #[cfg(test)]
 #[path = "prefixes/tests.rs"]
 mod prefix_tests;
@@ -1301,14 +1304,8 @@ impl RenderPlan {
         framing: &mut [PictureFraming],
         follows: &[(usize, &deadpan_core::TargetId, ExactRatio, bool)],
         picture: &Picture,
-        captured_geometry: bool,
+        context: Option<&CapturedFraming>,
     ) {
-        // A pause's captured geometry sits between its picture and every
-        // framing layer; follows keep their fallback there until that
-        // geometry is mapped too.
-        if captured_geometry {
-            return;
-        }
         let Some((asset, point)) = picture.follow_point() else {
             return;
         };
@@ -1319,7 +1316,9 @@ impl RenderPlan {
                 continue;
             };
             let inner = framing[index + 1..].iter().rev().map(|layer| layer.pose);
-            let Some(mut pose) = follow_pose(found, asset, point, canvas, inner, scale) else {
+            let Some(mut pose) =
+                follow_pose_in_context(found, asset, point, canvas, context, inner, scale)
+            else {
                 continue;
             };
             // An escalating zoom moves toward its target but keeps the view
@@ -1742,7 +1741,7 @@ impl RenderPlan {
                 }
             }
         };
-        self.resolve_follows(&mut framing, &follows, &picture, picture_context.is_some());
+        self.resolve_follows(&mut framing, &follows, &picture, picture_context.as_deref());
         framing.reverse();
         Ok(PictureWalk {
             instance: InstancePath {
@@ -1778,30 +1777,59 @@ pub fn follow_pose(
     inner: impl IntoIterator<Item = Option<deadpan_core::FramingPose>>,
     scale: ExactRatio,
 ) -> Option<deadpan_core::FramingPose> {
+    follow_pose_in_context(target, asset, point, canvas, None, inner, scale)
+}
+
+/// Resolve a target through retained, clipped Hold canvases before the live
+/// framing scopes. Captured geometry needs the target's measured source aspect;
+/// absent aspect, clipped targets and arithmetic overflow retain the fallback.
+/// Without a context this has exactly the original [`follow_pose`] behavior.
+pub fn follow_pose_in_context(
+    target: &deadpan_core::AttentionTarget,
+    asset: &AssetId,
+    point: SourcePoint,
+    canvas: [u32; 2],
+    context: Option<&CapturedFraming>,
+    inner: impl IntoIterator<Item = Option<deadpan_core::FramingPose>>,
+    scale: ExactRatio,
+) -> Option<deadpan_core::FramingPose> {
     if &target.asset != asset {
         return None;
     }
     let (region, _) = target.region_at(point)?;
-    let center = match target.display_aspect {
-        Some(aspect) => deadpan_core::fit_source_point(region.center_ratio(), aspect, canvas)?,
-        None => region.center_ratio(),
+    let center = match context {
+        Some(context) => follow_context::project(
+            region.center_ratio(),
+            target.display_aspect?,
+            context,
+            canvas,
+        )?,
+        None => match target.display_aspect {
+            Some(aspect) => deadpan_core::fit_source_point(region.center_ratio(), aspect, canvas)?,
+            None => region.center_ratio(),
+        },
     };
     let half = ExactRatio::new(1, 2).expect("constant ratio");
     let [x, y] = inner.into_iter().try_fold(center, |position, pose| {
-        let Some(pose) = pose else {
-            return Some(position);
+        let result = match pose {
+            Some(pose) => {
+                let through = |value: ExactRatio, center: ExactRatio| {
+                    value
+                        .checked_sub(center)
+                        .and_then(|offset| offset.checked_mul(pose.scale))
+                        .and_then(|offset| offset.checked_add(half))
+                        .ok()
+                };
+                [
+                    through(position[0], pose.center_x)?,
+                    through(position[1], pose.center_y)?,
+                ]
+            }
+            None => position,
         };
-        let through = |value: ExactRatio, center: ExactRatio| {
-            value
-                .checked_sub(center)
-                .and_then(|offset| offset.checked_mul(pose.scale))
-                .and_then(|offset| offset.checked_add(half))
-                .ok()
-        };
-        Some([
-            through(position[0], pose.center_x)?,
-            through(position[1], pose.center_y)?,
-        ])
+        // Live scopes after retained geometry still clip. Keep the historical
+        // context-free API unchanged, including its exterior-center behavior.
+        (context.is_none() || follow_context::visible(result)).then_some(result)
     })?;
     deadpan_core::FramingPose::new(x, y, scale)
         .and_then(|pose| pose.quantized())

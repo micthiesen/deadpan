@@ -66,7 +66,7 @@ picture time. The document map is `targets`; patches carry `targets` changes.
 
 `FramingValue::Follow { target, scale, fallback }` centers a framing layer on
 the target at the source time of the picture shown, at its evaluated scale.
-A whole ordinary Source can retain a live-target scale transition
+A whole ordinary Source or Hold can retain a live-target scale transition
 ([following creep](FRAMING.md#zoom-and-creep-commands)). The plan
 resolves it after descending to the picture (`RenderPlan::resolve_follows`): the
 target point is carried outward through every inner posed layer, innermost
@@ -79,12 +79,18 @@ the other it is scaled about the middle by the covered fraction, in exact
 rational arithmetic. A 16:9 Original on a 1080x1920 Shorts canvas covers
 81/256 of the height, so a subject at y = 0.4 is centered at
 1/2 - (1/10)(81/256) = 1199/2560 of the canvas. Preview, Camera and export use
-the same `follow_pose` with the canvas from the presentation basis. Resolved poses are quantized to the framing grid.
+the same `follow_pose_in_context` with the canvas from the presentation basis.
+Resolved poses are quantized to the framing grid.
 The fallback applies where the picture is not the target's asset, lies outside
 its span, or the centered pose is out of range (including arithmetic overflow);
 evaluated on its own, a follow is its fallback. An endpoint-held Source picture
-uses its selection's last moment. Under a pause with captured geometry, follows
-keep their fallback until that geometry is mapped too. Copies of a followed beat
+uses its selection's last moment. Under a pause, the target center traverses
+each retained canvas's Fit/Fill, ordered poses and clips, then the current
+canvas and live inner framing. A later zoom-out cannot restore a point clipped
+by an earlier captured stage. Captured projection requires the target's
+measured display aspect; absent aspect, lost coverage or arithmetic overflow
+uses the fallback. The retained crop, provider and Original clock do not change.
+Copies of a followed beat
 carry the target and its asset; a paste adds the target only where the
 destination lacks it, so the destination's current target wins.
 
@@ -101,6 +107,10 @@ Camera picks, draws, follows and corrects targets ([framing](FRAMING.md#native-i
   reach the other pages. The viewer draws saved targets at `region_at` of the
   picture's exact source time with its state (`drawn`, `corrected`, `tracked`,
   `interpolated`, `lost · holding`).
+  With several saved targets, picker overlays use compact digits and the
+  inspector retains full names and states. Outside the picker, the active
+  target keeps its full label and secondary targets keep their markers.
+  While drawing or correcting, only the geometry under edit is labelled.
 - `n` opens a new target with the keyboard; `n` in that editor switches
   rectangle / point. Rectangles have center, width and height; points have
   only center, and Tab stays there. Both use

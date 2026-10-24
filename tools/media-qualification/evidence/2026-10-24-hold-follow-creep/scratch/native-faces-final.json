@@ -1,0 +1,211 @@
+{
+  "started_at": "2026-10-24T09:06:18.464365+00:00",
+  "cwd": "/Users/michael/Code/deadpan",
+  "command": [
+    "/private/tmp/deadpan-hold-follow-creep-2026-10-24/bin-final/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "faces",
+    "--output",
+    "/private/tmp/deadpan-hold-follow-creep-2026-10-24/native-faces-final",
+    "--retain-projects",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "environment": {
+    "DEADPAN_REQUIRE_PHYSICAL_MAC": "1"
+  },
+  "runner_sha256": "b805103bb6d204adce00b59203b49b29b43ec20698eddbf2951065617181b068",
+  "source_before": {
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/navigation/registry/entries.rs": {
+      "bytes": 138160,
+      "sha256": "480d9657f8cd5a6d16638151c5d703d83ff9e0048bb29e0961e19146a161f688"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera.rs": {
+      "bytes": 168660,
+      "sha256": "f0ada4c0ff9809c081f146a2e7a1cf4aa3cf12a26f29f761c03f40c53b7fab77"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness.rs": {
+      "bytes": 59240,
+      "sha256": "d784f0279b6cb1823cc21aaf16526c36efdc045baf8292a2cc4efa05a464f06f"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness/faces/camera_picker.rs": {
+      "bytes": 14297,
+      "sha256": "c4022962d75e58202f64d8326d9e182e77d5e8a0e5616768e134aec0b99ecfe8"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness/hold_follow_creep.rs": {
+      "bytes": 23740,
+      "sha256": "7c92db47b82f1a44a8528b17fafba2ceedf020a93da22ae367071fc170d8ac70"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness/scenarios.rs": {
+      "bytes": 89223,
+      "sha256": "8f3350552950518c7c34a8d1f54d9a027f9d7f88aeb8e053c711e2520e632768"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/ui_harness.rs": {
+      "bytes": 29604,
+      "sha256": "6edb30672dff2abaf3bb3fa63a57afd7564a96fa6726cfc383302ca09861bde7"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-cli/tests/project_commands/macros/framing.rs": {
+      "bytes": 26412,
+      "sha256": "392a1b4700d9ed0d79f609078234378ba9379491f689d82e6eace5c332a3a4c4"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-cli/tests/project_commands/macros/framing/hold_follow_creep.rs": {
+      "bytes": 15417,
+      "sha256": "27b37b957d32c2c78b1d31bb71d28b1d18effb0ab72eb75571be6fbfceaf8d76"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-core/src/framing_zoom.rs": {
+      "bytes": 13985,
+      "sha256": "6dbd3359342efc6ad73d428a24f7c111682480093c694ae9d61d1e5b43bacb61"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-core/src/framing_zoom/tests.rs": {
+      "bytes": 18136,
+      "sha256": "9066405212a9dfcf2a76099c024fe58b476b67f832160a5322ea83960a7ea9dc"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/framing.rs": {
+      "bytes": 13489,
+      "sha256": "fe4b6ff81b60849de268cbed9e33b5bc26d0ddb1236d3e6a38c0046367f846d9"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/tests/framing.rs": {
+      "bytes": 16946,
+      "sha256": "a8128906b1e2f99734101692ea255a6d539b08abd1c4c9a948eef859a2a1df18"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-plan/src/follow_context.rs": {
+      "bytes": 3371,
+      "sha256": "ecf738a574b212f6bb3b0279a4eeb4685523e5bc82d741a8330a810e9368313b"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-plan/src/lib.rs": {
+      "bytes": 6627,
+      "sha256": "3eda2ebc8219db41985e7bae69ea5e3aeb5b47936646a291e5ee0fafff9aa334"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-plan/src/plan.rs": {
+      "bytes": 74905,
+      "sha256": "65757b3999ce03d8760960af1ee1f8d1740932ef4dcc5656885e56886211579d"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-plan/tests/picture_plan.rs": {
+      "bytes": 90787,
+      "sha256": "97c442a09b3160b68e666f698c76b11c37b9447394e634155598970f1c4c7fd8"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-plan/tests/picture_plan/captured_follow.rs": {
+      "bytes": 10832,
+      "sha256": "5d7d17ee855af02878b06addac7fe454780a5e3be42fa9e32f2c21e103ce99de"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-render/tests/follow_letterbox.rs": {
+      "bytes": 4577,
+      "sha256": "c5d43221154615ad506bc9553f7afaa5c79c1ef4d01471646af839a58211ed1f"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-render/tests/follow_letterbox/captured.rs": {
+      "bytes": 5746,
+      "sha256": "58a601c4a7ceec93b9959435219fd1ac2a3a6266c906f3f32c8c961505ebb4c9"
+    }
+  },
+  "binary_before": {
+    "/private/tmp/deadpan-hold-follow-creep-2026-10-24/bin-final/deadpan-app": {
+      "bytes": 78047360,
+      "sha256": "e46f0e4fca6c22be1f4eeb43de05040c56be3e32b465023c7c79b855bb27a126"
+    }
+  },
+  "pid": 11322,
+  "exit_code": 0,
+  "seconds": 15.923073292709887,
+  "finished_at": "2026-10-24T09:06:34.417173+00:00",
+  "source_after": {
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/navigation/registry/entries.rs": {
+      "bytes": 138160,
+      "sha256": "480d9657f8cd5a6d16638151c5d703d83ff9e0048bb29e0961e19146a161f688"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera.rs": {
+      "bytes": 168660,
+      "sha256": "f0ada4c0ff9809c081f146a2e7a1cf4aa3cf12a26f29f761c03f40c53b7fab77"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness.rs": {
+      "bytes": 59240,
+      "sha256": "d784f0279b6cb1823cc21aaf16526c36efdc045baf8292a2cc4efa05a464f06f"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness/faces/camera_picker.rs": {
+      "bytes": 14297,
+      "sha256": "c4022962d75e58202f64d8326d9e182e77d5e8a0e5616768e134aec0b99ecfe8"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness/hold_follow_creep.rs": {
+      "bytes": 23740,
+      "sha256": "7c92db47b82f1a44a8528b17fafba2ceedf020a93da22ae367071fc170d8ac70"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness/scenarios.rs": {
+      "bytes": 89223,
+      "sha256": "8f3350552950518c7c34a8d1f54d9a027f9d7f88aeb8e053c711e2520e632768"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/ui_harness.rs": {
+      "bytes": 29604,
+      "sha256": "6edb30672dff2abaf3bb3fa63a57afd7564a96fa6726cfc383302ca09861bde7"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-cli/tests/project_commands/macros/framing.rs": {
+      "bytes": 26412,
+      "sha256": "392a1b4700d9ed0d79f609078234378ba9379491f689d82e6eace5c332a3a4c4"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-cli/tests/project_commands/macros/framing/hold_follow_creep.rs": {
+      "bytes": 15417,
+      "sha256": "27b37b957d32c2c78b1d31bb71d28b1d18effb0ab72eb75571be6fbfceaf8d76"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-core/src/framing_zoom.rs": {
+      "bytes": 13985,
+      "sha256": "6dbd3359342efc6ad73d428a24f7c111682480093c694ae9d61d1e5b43bacb61"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-core/src/framing_zoom/tests.rs": {
+      "bytes": 18136,
+      "sha256": "9066405212a9dfcf2a76099c024fe58b476b67f832160a5322ea83960a7ea9dc"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/framing.rs": {
+      "bytes": 13489,
+      "sha256": "fe4b6ff81b60849de268cbed9e33b5bc26d0ddb1236d3e6a38c0046367f846d9"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/tests/framing.rs": {
+      "bytes": 16946,
+      "sha256": "a8128906b1e2f99734101692ea255a6d539b08abd1c4c9a948eef859a2a1df18"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-plan/src/follow_context.rs": {
+      "bytes": 3371,
+      "sha256": "ecf738a574b212f6bb3b0279a4eeb4685523e5bc82d741a8330a810e9368313b"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-plan/src/lib.rs": {
+      "bytes": 6627,
+      "sha256": "3eda2ebc8219db41985e7bae69ea5e3aeb5b47936646a291e5ee0fafff9aa334"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-plan/src/plan.rs": {
+      "bytes": 74905,
+      "sha256": "65757b3999ce03d8760960af1ee1f8d1740932ef4dcc5656885e56886211579d"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-plan/tests/picture_plan.rs": {
+      "bytes": 90787,
+      "sha256": "97c442a09b3160b68e666f698c76b11c37b9447394e634155598970f1c4c7fd8"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-plan/tests/picture_plan/captured_follow.rs": {
+      "bytes": 10832,
+      "sha256": "5d7d17ee855af02878b06addac7fe454780a5e3be42fa9e32f2c21e103ce99de"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-render/tests/follow_letterbox.rs": {
+      "bytes": 4577,
+      "sha256": "c5d43221154615ad506bc9553f7afaa5c79c1ef4d01471646af839a58211ed1f"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-render/tests/follow_letterbox/captured.rs": {
+      "bytes": 5746,
+      "sha256": "58a601c4a7ceec93b9959435219fd1ac2a3a6266c906f3f32c8c961505ebb4c9"
+    }
+  },
+  "binary_after": {
+    "/private/tmp/deadpan-hold-follow-creep-2026-10-24/bin-final/deadpan-app": {
+      "bytes": 78047360,
+      "sha256": "e46f0e4fca6c22be1f4eeb43de05040c56be3e32b465023c7c79b855bb27a126"
+    }
+  },
+  "sources_unchanged": true,
+  "binaries_unchanged": true,
+  "streams": {
+    "/private/tmp/deadpan-hold-follow-creep-2026-10-24/native-faces-final.stdout": {
+      "bytes": 106,
+      "sha256": "fc37c74fd9a433b97dd2c24ba2f003d972ee034552da9ae123b6844a0d4aebf6"
+    },
+    "/private/tmp/deadpan-hold-follow-creep-2026-10-24/native-faces-final.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

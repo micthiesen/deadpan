@@ -1,0 +1,373 @@
+[
+  {
+    "members": [
+      {
+        "bytes": 138160,
+        "path": "crates/deadpan-app/src/navigation/registry/entries.rs.txt",
+        "sha256": "480d9657f8cd5a6d16638151c5d703d83ff9e0048bb29e0961e19146a161f688"
+      },
+      {
+        "bytes": 167916,
+        "path": "crates/deadpan-app/src/preview/camera.rs.txt",
+        "sha256": "1007f7fca1d049b28967382081410b623b3ecb8185046d8b7834a310b78a5309"
+      },
+      {
+        "bytes": 59240,
+        "path": "crates/deadpan-app/src/preview/harness.rs.txt",
+        "sha256": "d784f0279b6cb1823cc21aaf16526c36efdc045baf8292a2cc4efa05a464f06f"
+      },
+      {
+        "bytes": 22403,
+        "path": "crates/deadpan-app/src/preview/harness/hold_follow_creep.rs.txt",
+        "sha256": "80a00574a4fd15204708a0ed1b4b6c0bcf9dabb6b8b9dacee05e73d778b90bcd"
+      },
+      {
+        "bytes": 89223,
+        "path": "crates/deadpan-app/src/preview/harness/scenarios.rs.txt",
+        "sha256": "8f3350552950518c7c34a8d1f54d9a027f9d7f88aeb8e053c711e2520e632768"
+      },
+      {
+        "bytes": 29604,
+        "path": "crates/deadpan-app/src/ui_harness.rs.txt",
+        "sha256": "6edb30672dff2abaf3bb3fa63a57afd7564a96fa6726cfc383302ca09861bde7"
+      },
+      {
+        "bytes": 26412,
+        "path": "crates/deadpan-cli/tests/project_commands/macros/framing.rs.txt",
+        "sha256": "392a1b4700d9ed0d79f609078234378ba9379491f689d82e6eace5c332a3a4c4"
+      },
+      {
+        "bytes": 15417,
+        "path": "crates/deadpan-cli/tests/project_commands/macros/framing/hold_follow_creep.rs.txt",
+        "sha256": "27b37b957d32c2c78b1d31bb71d28b1d18effb0ab72eb75571be6fbfceaf8d76"
+      },
+      {
+        "bytes": 13985,
+        "path": "crates/deadpan-core/src/framing_zoom.rs.txt",
+        "sha256": "6dbd3359342efc6ad73d428a24f7c111682480093c694ae9d61d1e5b43bacb61"
+      },
+      {
+        "bytes": 18136,
+        "path": "crates/deadpan-core/src/framing_zoom/tests.rs.txt",
+        "sha256": "9066405212a9dfcf2a76099c024fe58b476b67f832160a5322ea83960a7ea9dc"
+      },
+      {
+        "bytes": 13489,
+        "path": "crates/deadpan-core/src/semantic/planner/framing.rs.txt",
+        "sha256": "fe4b6ff81b60849de268cbed9e33b5bc26d0ddb1236d3e6a38c0046367f846d9"
+      },
+      {
+        "bytes": 16946,
+        "path": "crates/deadpan-core/src/semantic/planner/tests/framing.rs.txt",
+        "sha256": "a8128906b1e2f99734101692ea255a6d539b08abd1c4c9a948eef859a2a1df18"
+      },
+      {
+        "bytes": 3371,
+        "path": "crates/deadpan-plan/src/follow_context.rs.txt",
+        "sha256": "ecf738a574b212f6bb3b0279a4eeb4685523e5bc82d741a8330a810e9368313b"
+      },
+      {
+        "bytes": 6627,
+        "path": "crates/deadpan-plan/src/lib.rs.txt",
+        "sha256": "3eda2ebc8219db41985e7bae69ea5e3aeb5b47936646a291e5ee0fafff9aa334"
+      },
+      {
+        "bytes": 74905,
+        "path": "crates/deadpan-plan/src/plan.rs.txt",
+        "sha256": "65757b3999ce03d8760960af1ee1f8d1740932ef4dcc5656885e56886211579d"
+      },
+      {
+        "bytes": 90787,
+        "path": "crates/deadpan-plan/tests/picture_plan.rs.txt",
+        "sha256": "97c442a09b3160b68e666f698c76b11c37b9447394e634155598970f1c4c7fd8"
+      },
+      {
+        "bytes": 10832,
+        "path": "crates/deadpan-plan/tests/picture_plan/captured_follow.rs.txt",
+        "sha256": "5d7d17ee855af02878b06addac7fe454780a5e3be42fa9e32f2c21e103ce99de"
+      },
+      {
+        "bytes": 4577,
+        "path": "crates/deadpan-render/tests/follow_letterbox.rs.txt",
+        "sha256": "c5d43221154615ad506bc9553f7afaa5c79c1ef4d01471646af839a58211ed1f"
+      },
+      {
+        "bytes": 5746,
+        "path": "crates/deadpan-render/tests/follow_letterbox/captured.rs.txt",
+        "sha256": "58a601c4a7ceec93b9959435219fd1ac2a3a6266c906f3f32c8c961505ebb4c9"
+      }
+    ],
+    "omitted_sidecars": {},
+    "path": "archives/first-source.tar.gz",
+    "root": "/private/tmp/deadpan-hold-follow-creep-2026-10-24/source-first",
+    "source_bytes": 807776,
+    "source_files": 19
+  },
+  {
+    "members": [
+      {
+        "bytes": 23118,
+        "path": "first-cli-source-pin-mismatch/audit-hold-evidence.json",
+        "sha256": "eb18c798cfea7ae0271dec2b6a56fba34296db35dec24c6eec42971753663b77"
+      },
+      {
+        "bytes": 21520,
+        "path": "first-cli-source-pin-mismatch/audit-hold-evidence.py",
+        "sha256": "ca71c5158077eba3421ac318a6ff40394f9666ed05faffef0b1a754059e6954e"
+      },
+      {
+        "bytes": 593,
+        "path": "first-cli-source-pin-mismatch/audit-hold-evidence.stderr",
+        "sha256": "15cb14d0f3b6717580f67e71fe3428af9fb32438be2a8acb770c7f5d457b0599"
+      },
+      {
+        "bytes": 271,
+        "path": "first-cli-source-pin-mismatch/audit-hold-evidence.stdout",
+        "sha256": "6438f2f5e72a66b4607e9f5505ad8d31c1b578c0f9b0a2c2207a1758faae91dd"
+      },
+      {
+        "bytes": 787,
+        "path": "first-cli-source-pin-mismatch/preservation.json",
+        "sha256": "fccb029e594114d78968174a8aa91a5cab27dd253bf459eb9c0627b187b9559e"
+      }
+    ],
+    "omitted_sidecars": {},
+    "path": "archives/audit-history.tar.gz",
+    "root": "/private/tmp/deadpan-hold-follow-creep-2026-10-24/audit-history",
+    "source_bytes": 46289,
+    "source_files": 5
+  },
+  {
+    "members": [
+      {
+        "bytes": 0,
+        "path": "checkpoint.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 202,
+        "path": "checkpoint.stdout",
+        "sha256": "7970f1fdb86060ffd9c4b8e03b72cfb63843f67d7fc5950ddacfcf8cc32ba15d"
+      },
+      {
+        "bytes": 3643,
+        "path": "commands.json",
+        "sha256": "12ce64fc5ab2ec9693250f8aa6c1d74bc4668f83cce7294f4eee5604c0d10430"
+      },
+      {
+        "bytes": 0,
+        "path": "copy.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 909,
+        "path": "copy.stdout",
+        "sha256": "9e4cca9ea8b34cd29645af4d95c08ed8c386a92e6227ea2a10221b00cf116ff8"
+      },
+      {
+        "bytes": 32976,
+        "path": "deadpan-render-b33cdda7-1244-4787-ab39-1b15f55df058.json",
+        "sha256": "8fa592162ebfe5f2dcd0212f0811fc5619ac3840453b704d4237020621e43335"
+      },
+      {
+        "bytes": 0,
+        "path": "dump.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 14484,
+        "path": "dump.stdout",
+        "sha256": "8a9b9e747ea4639aa4cd28494f18c48086f06c686f7f2186a740f5cb9affab0d"
+      },
+      {
+        "bytes": 44541,
+        "path": "hold-follow-creep.mp4",
+        "sha256": "276e0755b2fbd8c8904e549695442bb514648f147893b2ae6fad8b9f1a2d70e7"
+      },
+      {
+        "bytes": 0,
+        "path": "portable-checkpoint.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 148,
+        "path": "portable-checkpoint.stdout",
+        "sha256": "eaa22a7bae5637908781a96abe211738ea219e50d2b834630913dc6217f5ae96"
+      },
+      {
+        "bytes": 0,
+        "path": "portable-dump.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 14484,
+        "path": "portable-dump.stdout",
+        "sha256": "8a9b9e747ea4639aa4cd28494f18c48086f06c686f7f2186a740f5cb9affab0d"
+      },
+      {
+        "bytes": 0,
+        "path": "portable-validate.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 714,
+        "path": "portable-validate.stdout",
+        "sha256": "cfcf219d50b595127f2928948896e14baec13db8c5267b3c2eee23ebf38e5610"
+      },
+      {
+        "bytes": 0,
+        "path": "portable.deadpan/.writer.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 39157,
+        "path": "portable.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+        "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+      },
+      {
+        "bytes": 614400,
+        "path": "portable.deadpan/Snapshots/.tmp12Xou5",
+        "sha256": "a5cef04d1b74021553ea9767779c22a79c62ebe93b40d50af394ce828e370733"
+      },
+      {
+        "bytes": 32768,
+        "path": "portable.deadpan/Snapshots/.tmp12Xou5-shm",
+        "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+      },
+      {
+        "bytes": 0,
+        "path": "portable.deadpan/Snapshots/.tmp12Xou5-wal",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 82,
+        "path": "portable.deadpan/manifest.json",
+        "sha256": "0cf661fd42286c9f4fa5d4563f1cd2bc9a0f99858313b750c5a80cbaf27d367c"
+      },
+      {
+        "bytes": 614400,
+        "path": "portable.deadpan/project.sqlite",
+        "sha256": "3c76c4885fe7887edaa86eddd5323a3a43309953c588aaac6d153768f1b26b6b"
+      },
+      {
+        "bytes": 0,
+        "path": "render.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 15913,
+        "path": "render.stdout",
+        "sha256": "50e01c7a4072ad88d1e8f91d0870b94c4593046bcc0d8925a0ec802785c5b8e7"
+      },
+      {
+        "bytes": 281,
+        "path": "result.json",
+        "sha256": "67ee3118dbfd1444d6cc2875c01cba3a726b590d7fd6775cf1993a43f845c30a"
+      },
+      {
+        "bytes": 0,
+        "path": "validate.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 714,
+        "path": "validate.stdout",
+        "sha256": "cfcf219d50b595127f2928948896e14baec13db8c5267b3c2eee23ebf38e5610"
+      },
+      {
+        "bytes": 177522,
+        "path": "verification.json",
+        "sha256": "06adb1cc9788e110ee002298e9d580c5d0370e3fa5a086cc6774a4980106ad1b"
+      },
+      {
+        "bytes": 0,
+        "path": "verify.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 177523,
+        "path": "verify.stdout",
+        "sha256": "40aabf9813213e92606b86e08a32abcdef5fbfc02171d292fb7fe5d579d16e05"
+      }
+    ],
+    "omitted_sidecars": {},
+    "path": "archives/final-hold-project-and-export.tar.gz",
+    "root": "/private/tmp/deadpan-hold-follow-creep-2026-10-24/media-final",
+    "source_bytes": 1784861,
+    "source_files": 30
+  },
+  {
+    "members": [
+      {
+        "bytes": 0,
+        "path": ".render-candidates.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 0,
+        "path": ".writer.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 0,
+        "path": "Backups/.backups-active.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 0,
+        "path": "Backups/.backups.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 598016,
+        "path": "Backups/backup-20261024T090618.321Z-close-ab35b3ce.sqlite",
+        "sha256": "81e18174ed95e0ff2621d9852a1b6b10f4752c52605d7f301778d6fc0de5abfb"
+      },
+      {
+        "bytes": 39157,
+        "path": "Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+        "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+      },
+      {
+        "bytes": 15126,
+        "path": "Media/RenderCandidates/blake3-1df040eee1c75a7a7566a2319ca4f38f2250368f31ef6636046bd0861bdd8dc3",
+        "sha256": "4c076b2e7117064b8ee16a16243ab1a9d03fbe0ce980a2f5d54b022d3220df36"
+      },
+      {
+        "bytes": 44541,
+        "path": "Media/RenderCandidates/blake3-fa9e2290723df0fa81a681a1dd1d9d22bd9ad91c3aa286a15237aa478a2ff179",
+        "sha256": "276e0755b2fbd8c8904e549695442bb514648f147893b2ae6fad8b9f1a2d70e7"
+      },
+      {
+        "bytes": 614400,
+        "path": "Snapshots/.tmpLzAZ9S",
+        "sha256": "a5cef04d1b74021553ea9767779c22a79c62ebe93b40d50af394ce828e370733"
+      },
+      {
+        "bytes": 32768,
+        "path": "Snapshots/.tmpLzAZ9S-shm",
+        "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+      },
+      {
+        "bytes": 0,
+        "path": "Snapshots/.tmpLzAZ9S-wal",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 82,
+        "path": "manifest.json",
+        "sha256": "0cf661fd42286c9f4fa5d4563f1cd2bc9a0f99858313b750c5a80cbaf27d367c"
+      },
+      {
+        "bytes": 614400,
+        "path": "project.sqlite",
+        "sha256": "56425e1c59ac75fc62473d2f421c4869eabf128925ef5d75e006ed39893ed729"
+      }
+    ],
+    "omitted_sidecars": {},
+    "path": "archives/actual-native-hold-project.tar.gz",
+    "root": "/private/tmp/deadpan-hold-follow-creep-2026-10-24/native-hold-final/projects/hold-follow-creep/Documents/Deadpan/cfr-bframes.deadpan",
+    "source_bytes": 1958490,
+    "source_files": 13
+  }
+]

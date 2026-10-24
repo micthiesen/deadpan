@@ -1,0 +1,103 @@
+{
+  "base": "efd84b88324d1b71dfe339b19c097c376e64783f",
+  "files": {
+    "crates/deadpan-core/src/framing_zoom.rs": "6dbd3359342efc6ad73d428a24f7c111682480093c694ae9d61d1e5b43bacb61",
+    "crates/deadpan-core/src/framing_zoom/tests.rs": "fd3c14512874e89c9105a6ab71ea92c193a4515e559040301525f0b1ecfecdf1",
+    "crates/deadpan-core/src/semantic/planner/framing.rs": "fe4b6ff81b60849de268cbed9e33b5bc26d0ddb1236d3e6a38c0046367f846d9",
+    "crates/deadpan-core/src/semantic/planner/tests/framing.rs": "360df1b17bd0011a67176f95b41f1707c2eabce87c5ff127a58b0696f3043de4",
+    "crates/deadpan-cli/tests/project_commands/macros/framing.rs": "392a1b4700d9ed0d79f609078234378ba9379491f689d82e6eace5c332a3a4c4",
+    "crates/deadpan-cli/tests/project_commands/macros/framing/hold_follow_creep.rs": "a6db79c96cd05ba464c477fe0f7c4b284acda17bb051c66a50f13c28d214b50e"
+  },
+  "checks": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-core",
+        "--lib",
+        "follow_creep"
+      ],
+      "exit": 0,
+      "tests": 2,
+      "session": 58712,
+      "stdout": "worker-core-1.stdout",
+      "stderr": "worker-core-1.stderr",
+      "stdout_sha256": "a1bc5093eafbff75cefb4cc44ecf461c3627471c447a67445011d9d1f45c2801",
+      "stderr_sha256": "6db141ef7e2bba7c36ab8b24c95771f432965e7d3c258695d2709e6709e2533a"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "--test",
+        "project_commands",
+        "hold_follow_creep"
+      ],
+      "exit": 101,
+      "tests_failed": 1,
+      "session": 99211,
+      "stdout": "worker-cli-1.stdout",
+      "stderr": "worker-cli-1.stderr",
+      "reason": "fixture hardcoded root ID, corrected to actual document root",
+      "stdout_sha256": "a8a216e95c96de45212c2c3d481d5f458d31cec0501739b988777b93e6170a15",
+      "stderr_sha256": "97144b16b4bcf3e156f533da0dde1eeda7d83a68f83f31303e8c29fadfbfa03a"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "--test",
+        "project_commands",
+        "hold_follow_creep"
+      ],
+      "exit": 0,
+      "tests": 1,
+      "session": 35203,
+      "stdout": "worker-cli-2.stdout",
+      "stderr": "worker-cli-2.stderr",
+      "limitation": "predates measured-aspect fixture strengthening and pending Plan captured projection",
+      "stdout_sha256": "1a8fc622b5a36457f47036bbdb2d36e6b62d59be6aa76d954c40a251a390b86a",
+      "stderr_sha256": "b2b96c3b6997e3a214ceb4cdf8167e8633d86247ccffe2cf472eff899c97acbb"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "--test",
+        "project_commands",
+        "hold_follow_creep"
+      ],
+      "exit": 0,
+      "tests": 1,
+      "elapsed_test_seconds": 1.14,
+      "session": 44710,
+      "stdout": "worker-cli-3.stdout",
+      "stderr": "worker-cli-3.stderr",
+      "qualification": "completed captured Plan projection and measured-aspect fixture",
+      "stdout_sha256": "fe0e921b7b5ab492c8dcbd50774833c612493c8f50cdfe62f459a1b093fadfab",
+      "stderr_sha256": "131e5ee2fdf014cf913630a449d62db5ba06d5291a6824404451a8ad60b5d471"
+    }
+  ],
+  "environment": {
+    "CARGO_TARGET_DIR": "/tmp/deadpan-follow-creep-2026-10-24/target",
+    "DEADPAN_FFMPEG_PREFIX": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix"
+  },
+  "active_worker_processes": [],
+  "pending": null,
+  "source_changed_since_prior_freeze": {},
+  "plan_dependency": "65757b3999ce03d8760960af1ee1f8d1740932ef4dcc5656885e56886211579d",
+  "binaries": {
+    "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/project_commands-b909db8abc2c71b1": "0e46d6a7e7c6131b81e97fddf9060e7a7a1ea0b6cdce4cb9a9c89f27e85005ef"
+  }
+}

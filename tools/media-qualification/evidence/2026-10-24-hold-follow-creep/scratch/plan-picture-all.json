@@ -1,0 +1,65 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-plan",
+    "--test",
+    "picture_plan"
+  ],
+  "cwd": "/Users/michael/Code/deadpan",
+  "started_at": "2026-10-24T08:10:09.023426+00:00",
+  "source_before": {
+    "crates/deadpan-plan/src/lib.rs": {
+      "bytes": 6627,
+      "sha256": "3eda2ebc8219db41985e7bae69ea5e3aeb5b47936646a291e5ee0fafff9aa334"
+    },
+    "crates/deadpan-plan/src/plan.rs": {
+      "bytes": 74905,
+      "sha256": "65757b3999ce03d8760960af1ee1f8d1740932ef4dcc5656885e56886211579d"
+    },
+    "crates/deadpan-plan/src/follow_context.rs": {
+      "bytes": 3371,
+      "sha256": "ecf738a574b212f6bb3b0279a4eeb4685523e5bc82d741a8330a810e9368313b"
+    },
+    "crates/deadpan-plan/tests/picture_plan.rs": {
+      "bytes": 90787,
+      "sha256": "97c442a09b3160b68e666f698c76b11c37b9447394e634155598970f1c4c7fd8"
+    },
+    "crates/deadpan-plan/tests/picture_plan/captured_follow.rs": {
+      "bytes": 10832,
+      "sha256": "5d7d17ee855af02878b06addac7fe454780a5e3be42fa9e32f2c21e103ce99de"
+    }
+  },
+  "environment": {
+    "CARGO_TARGET_DIR": "/tmp/deadpan-follow-creep-2026-10-24/target",
+    "DEADPAN_FFMPEG_PREFIX": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix"
+  },
+  "exit_code": 0,
+  "seconds": 0.5472218748182058,
+  "finished_at": "2026-10-24T08:10:09.571073+00:00",
+  "source_after": {
+    "crates/deadpan-plan/src/lib.rs": {
+      "bytes": 6627,
+      "sha256": "3eda2ebc8219db41985e7bae69ea5e3aeb5b47936646a291e5ee0fafff9aa334"
+    },
+    "crates/deadpan-plan/src/plan.rs": {
+      "bytes": 74905,
+      "sha256": "65757b3999ce03d8760960af1ee1f8d1740932ef4dcc5656885e56886211579d"
+    },
+    "crates/deadpan-plan/src/follow_context.rs": {
+      "bytes": 3371,
+      "sha256": "ecf738a574b212f6bb3b0279a4eeb4685523e5bc82d741a8330a810e9368313b"
+    },
+    "crates/deadpan-plan/tests/picture_plan.rs": {
+      "bytes": 90787,
+      "sha256": "97c442a09b3160b68e666f698c76b11c37b9447394e634155598970f1c4c7fd8"
+    },
+    "crates/deadpan-plan/tests/picture_plan/captured_follow.rs": {
+      "bytes": 10832,
+      "sha256": "5d7d17ee855af02878b06addac7fe454780a5e3be42fa9e32f2c21e103ce99de"
+    }
+  },
+  "sources_unchanged": true
+}

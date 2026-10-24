@@ -177,10 +177,11 @@ where
             kind,
             &resolved_center,
             &framing_zoom::Shot {
-                ordinary_source: matches!(
-                    self.current.nodes()[&selected].kind,
-                    NodeKind::Source { .. }
-                ),
+                ordinary_owner: match &self.current.nodes()[&selected].kind {
+                    NodeKind::Source { .. } => Some(framing_zoom::OrdinaryFollowOwner::Source),
+                    NodeKind::Hold { .. } => Some(framing_zoom::OrdinaryFollowOwner::Hold),
+                    _ => None,
+                },
                 entry,
                 current: state.current,
                 frames,
@@ -259,7 +260,7 @@ where
             kind,
             &resolved_center,
             &framing_zoom::Shot {
-                ordinary_source: false,
+                ordinary_owner: None,
                 entry,
                 current: state.current,
                 frames,

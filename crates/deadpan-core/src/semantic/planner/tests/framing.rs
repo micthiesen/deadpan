@@ -381,3 +381,150 @@ fn zoom_ordinary_owner_remains_available_with_retained_nested_tape_pause_clocks(
             .unwrap();
     assert_eq!(replay.edit.inverse.apply(&replay.document).unwrap(), paused);
 }
+
+#[test]
+fn whole_hold_follow_creep_resolves_actual_owner_and_preserves_recipe_with_atomic_refusals() {
+    let mut document = fixture(8);
+    let tb = crate::SourceTimeBase::new(1, 30).unwrap();
+    let span = crate::SourceSpan::new(
+        crate::SourceTimestamp {
+            ticks: 0,
+            time_base: tb,
+        },
+        crate::SourceTimestamp {
+            ticks: 100,
+            time_base: tb,
+        },
+    )
+    .unwrap();
+    let asset = crate::AssetId::new("original").unwrap();
+    document.assets.insert(
+        asset.clone(),
+        crate::AssetRecord {
+            label: "Original".into(),
+            content_hash: "a".repeat(64),
+            video: Some(span),
+            audio: None,
+            still_image: false,
+            frame_count: None,
+            source_qualification: None,
+        },
+    );
+    let target = crate::TargetId::new("subject").unwrap();
+    document.targets.insert(
+        target.clone(),
+        crate::AttentionTarget {
+            label: "Subject".into(),
+            asset,
+            span,
+            region: crate::TargetPoint {
+                center: [200_000, 300_000],
+            }
+            .into(),
+            samples: vec![],
+            corrections: vec![],
+            provenance: None,
+            display_aspect: None,
+        },
+    );
+    let fixed = Framing {
+        clock: crate::FramingClock::OwnerOutput,
+        value: FramingValue::Follow {
+            target,
+            scale: ExactRatio::integer(2),
+            fallback: FramingPose::new(
+                ExactRatio::new(1, 3).unwrap(),
+                ExactRatio::new(2, 7).unwrap(),
+                ExactRatio::new(1, 2).unwrap(),
+            )
+            .unwrap(),
+            scale_transition: None,
+        },
+    };
+    document.nodes.get_mut(&node("held")).unwrap().framing = Some(fixed);
+    document.validate().unwrap();
+    let before = document.clone();
+    let instruction = zoom(
+        ZoomKind::Creep {
+            from: None,
+            to: ExactRatio::integer(4),
+            curve: ZoomCurve::Linear,
+        },
+        SemanticZoomCenter::Keep,
+    );
+    let resolver = |doc: &ProjectDocument, _: &SemanticFramingSite| {
+        Ok(SemanticFramingState {
+            duration: doc.node_duration(&node("held")).unwrap(),
+            current: FramingPose::identity(),
+            original_center: None,
+        })
+    };
+    let plan = resolve(
+        &document,
+        &selected(3, None),
+        vec![instruction.clone()],
+        &BTreeMap::new(),
+        resolver,
+    )
+    .unwrap();
+    let mut expected_node = before.nodes()[&node("held")].clone();
+    expected_node.framing = plan.document.nodes()[&node("held")].framing.clone();
+    assert_eq!(plan.document.nodes()[&node("held")], expected_node);
+    assert_eq!(
+        plan.document.duration().unwrap(),
+        document.duration().unwrap()
+    );
+    let value = plan.document.nodes()[&node("held")]
+        .framing
+        .as_ref()
+        .unwrap()
+        .evaluate_with_follow_exact(ExactRatio::integer(2), ExactRatio::integer(8))
+        .unwrap();
+    assert_eq!(value.follow.unwrap().1, ExactRatio::new(5, 2).unwrap());
+    assert_eq!(value.pose.scale, ExactRatio::new(5, 8).unwrap());
+    let replay =
+        crate::replay_compound::<EditError>(&document, plan.request.as_ref().unwrap(), |_| Ok(()))
+            .unwrap();
+    assert_eq!(replay.document, plan.document);
+    assert_eq!(replay.edit.inverse.apply(&plan.document).unwrap(), before);
+    for selection in [visual(0, 8), visual(1, 7), visual(8, 0)] {
+        assert!(
+            resolve(
+                &document,
+                &selected(3, selection),
+                vec![instruction.clone()],
+                &BTreeMap::new(),
+                resolver
+            )
+            .is_err()
+        );
+    }
+    assert!(
+        resolve(
+            &plan.document,
+            &selected(3, None),
+            vec![instruction.clone()],
+            &BTreeMap::new(),
+            resolver
+        )
+        .is_err()
+    );
+    // A Sequence carrying the same valid raw Follow is still not an ordinary
+    // Source/Hold authoring owner, even though its subtree has the same duration.
+    document.nodes.insert(node("inside"), hold(8));
+    document.nodes.get_mut(&node("held")).unwrap().kind = NodeKind::Sequence {
+        children: vec![node("inside")],
+    };
+    document.validate().unwrap();
+    assert!(
+        resolve(
+            &document,
+            &selected(3, None),
+            vec![instruction],
+            &BTreeMap::new(),
+            resolver
+        )
+        .is_err()
+    );
+    assert_eq!(before.nodes()[&node("held")].kind, expected_node.kind);
+}

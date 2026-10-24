@@ -1,0 +1,41 @@
+{
+  "observed_at": "2026-10-24T09:08:29.168226+00:00",
+  "method": "Root visually inspected retained native offscreen Metal PNGs through view_image. No live browser or physical display.",
+  "first_result": "Closely spaced full labels overlapped, fixed before final build.",
+  "final_result": "Active target label readable; secondary point marker remains visible without overlapping name; committed Follow scale range and Hold12frames readable; clipped target uses explicit fallback; face page2 hides off-page saved target and shows numbered proposals.",
+  "images": {
+    "native-hold-first/hold-follow-creep-053.png": {
+      "bytes": 347417,
+      "sha256": "3913602bb0677b1b8861616fe77e5de030e53f9d7fe8a59bf5b8631a6b300323"
+    },
+    "native-hold-final/hold-follow-creep-053.png": {
+      "bytes": 353250,
+      "sha256": "c734ac4d75914010a3e83deb802b3c9f752009a84919efeafaf57ef8bf990be5"
+    },
+    "native-hold-final/hold-follow-creep-057.png": {
+      "bytes": 343672,
+      "sha256": "a1a8f5fa8955598bd9b6a92f372ea012642194428527f8304be4841c27be4c3f"
+    },
+    "native-hold-final/hold-follow-creep-069.png": {
+      "bytes": 366171,
+      "sha256": "3f7b355fbfe62c27f24f777bcd840b0da816fb7e7488f249c6eb98709a47b2a1"
+    },
+    "native-hold-final/hold-follow-creep-112.png": {
+      "bytes": 344941,
+      "sha256": "aab49836f46cec6a79706de71200692d2128e358f4a5d7cbce61627305ab3634"
+    },
+    "native-hold-final/hold-follow-creep-117.png": {
+      "bytes": 358964,
+      "sha256": "bcdf68ca18d51a5f5e46989310a1484a30d5a877ac5052f69e711b5a7fdfda5f"
+    },
+    "native-faces-final/faces-099.png": {
+      "bytes": 335141,
+      "sha256": "e88456d6d6d694c156fd00e994e54462d1c7620e34063dbe335fd6ede2f8870b"
+    }
+  },
+  "limits": [
+    "Hold065 inspected but preparingpicture, not used as settled witness. Named checkpoints069/117 supply settled images.",
+    "Scripted positive face observations do not prove detector quality on person footage.",
+    "No physical display, OS input, VoiceOver, listening or latency qualification."
+  ]
+}

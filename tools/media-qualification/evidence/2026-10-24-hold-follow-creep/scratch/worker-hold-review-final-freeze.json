@@ -1,0 +1,43 @@
+{
+  "scope": "CLI test-only accepted review strengthening",
+  "files": {
+    "crates/deadpan-cli/tests/project_commands/macros/framing/hold_follow_creep.rs": "1f86ad6f1298e440a1e999bc8bea2ccb5c83b89bb339e8efd8e2c17ec806221b"
+  },
+  "source_freeze_receipt": "worker-hold-review-source-freeze.json",
+  "source_freeze_sha256": "5d1959e57bb3e286d48cb4272b773a3449040bb5cfb8173f974411dc5a0b9fb8",
+  "check": {
+    "receipt": "worker-cli-review-1.json",
+    "receipt_sha256": "b5a3108da5383241ff2ddd623860859b03638555e3c4e0cce978d3adebe9f738",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "project_commands",
+      "hold_follow_creep"
+    ],
+    "environment": {
+      "DEADPAN_FFMPEG_PREFIX": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix",
+      "CARGO_TARGET_DIR": "/tmp/deadpan-follow-creep-2026-10-24/target"
+    },
+    "exit": 0,
+    "tests": 1,
+    "seconds": 4.685059666633606,
+    "session": 96347,
+    "terminal": true,
+    "stdout": "worker-cli-review-1.stdout",
+    "stderr": "worker-cli-review-1.stderr",
+    "stdout_sha256": "fe0e921b7b5ab492c8dcbd50774833c612493c8f50cdfe62f459a1b093fadfab",
+    "stderr_sha256": "83e4ea8aa80a727b63d4fc13b76b02868344c4e72c57c436075f502935a3cf2f"
+  },
+  "binaries": {
+    "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/project_commands-b909db8abc2c71b1": "b5436a22cfdb80ac04f141899446ef73329ebc8104d417392bf460d1d4cd0f3c",
+    "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deadpan-cli": "6a909b4c7d2058d8ca98573feb0ec442c84b339d8d7b1656f5f45a6adf056fcf"
+  },
+  "no_production_edits": true,
+  "active_worker_processes": [],
+  "pending": null,
+  "limits": "Native Hold-to-Source boundary remains Root qualification. CLI fixture retains all 144 frames; its next provider after live Hold is other Hold, and captured Hold ends at terminal 144."
+}

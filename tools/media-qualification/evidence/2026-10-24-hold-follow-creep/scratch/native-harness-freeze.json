@@ -1,0 +1,27 @@
+{
+  "recorded_at": "2026-10-24T08:12:10.664742+00:00",
+  "files": {
+    "crates/deadpan-app/src/preview/harness/hold_follow_creep.rs": {
+      "bytes": 17022,
+      "sha256": "08ff1170d29eae10c9c237322211bbc00034ecb572e231616df7695e9a958479"
+    },
+    "crates/deadpan-app/src/preview/harness.rs": {
+      "bytes": 59240,
+      "sha256": "d784f0279b6cb1823cc21aaf16526c36efdc045baf8292a2cc4efa05a464f06f"
+    },
+    "crates/deadpan-app/src/preview/harness/scenarios.rs": {
+      "bytes": 89223,
+      "sha256": "8f3350552950518c7c34a8d1f54d9a027f9d7f88aeb8e053c711e2520e632768"
+    },
+    "crates/deadpan-app/src/ui_harness.rs": {
+      "bytes": 29604,
+      "sha256": "6edb30672dff2abaf3bb3fa63a57afd7564a96fa6726cfc383302ca09861bde7"
+    }
+  },
+  "checks": [
+    "rustfmt --edition 2024 --config skip_children=true crates/deadpan-app/src/preview/harness/hold_follow_creep.rs: exit0, parses formatting only"
+  ],
+  "executed_product_tests": false,
+  "cargo_active": false,
+  "source_frozen": true
+}

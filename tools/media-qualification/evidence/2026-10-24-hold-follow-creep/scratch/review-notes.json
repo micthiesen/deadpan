@@ -1,0 +1,23 @@
+{
+  "base": "efd84b88324d1b71dfe339b19c097c376e64783f",
+  "general_review": "Explicit checkout and 40-character HEAD/base confirmed; all 16 initial product paths reviewed with no actionable findings.",
+  "geometry_review": "No findings on exact transform order, clipping, arithmetic bounds or renderer equivalence.",
+  "test_review": [
+    {
+      "finding": "Adjacent owner frames not asserted in native/CLI cases",
+      "disposition": "Applied native39/40/51/52 Source/Freeze/Source boundaries andCLI119/120/127/128 +135/136/143/terminal144."
+    },
+    {
+      "finding": "Fallback scale oracle used production quantization andnativeonlyfirstframe",
+      "disposition": "Applied independentintegerhalf-evenQ32 CLIoracle andall12nativeclippedfallbackframes."
+    }
+  ],
+  "renderer_oracle": "Root compared Plan centers/clipping with composed renderer geometry across 960 cases; two tests pass including legacy control. The two test source files are pinned separately because the first run scoped 17 paths, before final scope expanded to 19.",
+  "followup_test_review": "Both findings confirmed addressed; independent composed-renderer comparison reviewed with no remaining findings.",
+  "final_ui_review": {
+    "finding": "Closely spaced point labels overlapped; off-page saved markers remained unidentified during picker paging.",
+    "applied": "Only active full labels outside picker; compact current-page digits in multiple-target picker; skip off-page markers before painting. Full names remain in inspector.",
+    "regression": "Passed actual final Hold67checks and faces69checks, including overlay text and paged painted-shape assertions. All20scoped sources/binaries unchanged.",
+    "confirmation": "Independent general reviewer confirmed guard/test and no remaining actionable issue; read-only, no runtime claim."
+  }
+}

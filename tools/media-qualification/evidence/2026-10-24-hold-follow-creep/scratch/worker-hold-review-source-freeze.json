@@ -1,0 +1,9 @@
+{
+  "prior_receipt": "worker-hold-final-freeze.json",
+  "files": {
+    "crates/deadpan-cli/tests/project_commands/macros/framing/hold_follow_creep.rs": "1f86ad6f1298e440a1e999bc8bea2ccb5c83b89bb339e8efd8e2c17ec806221b"
+  },
+  "pending": "Root shared Cargo release, then focused CLI rerun",
+  "production_changes_in_this_followup": false,
+  "scope_note": "Only this CLI test was edited by worker. Prior six-file manifest predates Root formatting of Core tests; those root-owned formatting changes are excluded from this receipt."
+}

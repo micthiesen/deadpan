@@ -1,0 +1,33 @@
+{
+  "collector_exit_code": 0,
+  "primary_inventory_sha256": "49b624de11bde3b8f6268f6bd8c5ebe0cfe521203de1fddffd36e0f29c2ccf9d",
+  "publisher_sha256": "aa417a384704eae87fe6fb4ec375fad040eedd4adbefdf94cdd9c3e53ec41cb4",
+  "scope": "Post-publication receipts only; no Primary changes or product/build rerun.",
+  "source_files": {
+    "collect.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "collect.stdout": {
+      "bytes": 233,
+      "sha256": "608bbf0aa258b2f6c37abfeb35041cad9e90a004a04fd8dcee26c4bfbf0ab0ea"
+    },
+    "package-verification.json": {
+      "bytes": 9183,
+      "sha256": "72a96336a73c3079c871036e0201fe19a9232b4bc16326ce0ad274a770d6f4ec"
+    },
+    "package-verification.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "package-verification.stdout": {
+      "bytes": 286,
+      "sha256": "935715ecaacba655cd3823f0d1a3e4ef3a1a1845f1dcfa19aeddf8e71a70e86f"
+    },
+    "verify-hold-package.py": {
+      "bytes": 22309,
+      "sha256": "e17f4eb4e4134fd0e785acec102aa39fdb96d74c143b8853044fc549b322ef88"
+    }
+  },
+  "verification_receipt_sha256": "72a96336a73c3079c871036e0201fe19a9232b4bc16326ce0ad274a770d6f4ec"
+}

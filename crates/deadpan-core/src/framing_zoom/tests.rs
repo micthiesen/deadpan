@@ -102,7 +102,7 @@ fn zoom_intent_wire_roundtrips_and_refuses_unknown_fields() {
 
 fn shot(range: Option<(u64, u64)>) -> Shot<'static> {
     Shot {
-        ordinary_source: false,
+        ordinary_owner: None,
         entry: None,
         current: FramingPose::identity(),
         frames: 10,
@@ -270,7 +270,7 @@ fn abrupt_return_steps_out_over_a_range_and_never_flattens_a_path() {
         Framing::static_pose(FramingPose::new(ratio(2, 5), ratio(1, 2), ratio(3, 2)).unwrap())
             .unwrap();
     let shot = Shot {
-        ordinary_source: false,
+        ordinary_owner: None,
         entry: Some(&zoomed),
         current: FramingPose::new(ratio(2, 5), ratio(1, 2), ratio(3, 2)).unwrap(),
         frames: 10,
@@ -424,7 +424,7 @@ fn retained_clock_static_poses_are_ranged_like_any_static_pose() {
         value: FramingValue::Static { pose: zoomed },
     };
     let shot = Shot {
-        ordinary_source: false,
+        ordinary_owner: None,
         entry: Some(&retained),
         current: zoomed,
         frames: 10,
@@ -466,7 +466,7 @@ fn retained_clock_static_poses_are_ranged_like_any_static_pose() {
 #[test]
 fn ranges_beyond_the_progress_grid_refuse_with_the_frame_limit() {
     let shot = Shot {
-        ordinary_source: false,
+        ordinary_owner: None,
         entry: None,
         current: FramingPose::identity(),
         frames: 1_000_003,
@@ -500,7 +500,7 @@ fn targets_are_sampled_where_a_step_lands_or_a_creep_arrives() {
 }
 
 #[test]
-fn follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_source() {
+fn follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_source_or_hold() {
     let fallback = FramingPose::new(ratio(1, 3), ratio(2, 7), ratio(1, 2)).unwrap();
     let entry = Framing {
         clock: FramingClock::RetainedOutput {
@@ -519,88 +519,90 @@ fn follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_source() {
         to: ratio(4, 1),
         curve: ZoomCurve::Linear,
     };
-    let admitted = Shot {
-        entry: Some(&entry),
-        ordinary_source: true,
-        ..shot(None)
-    };
-    let result = build(kind, &Center::Keep, &admitted).unwrap().unwrap();
-    assert_eq!(result.clock, FramingClock::OwnerOutput);
-    let value = result
-        .evaluate_with_follow_exact(ratio(1, 1), ratio(4, 1))
+    for owner in [OrdinaryFollowOwner::Source, OrdinaryFollowOwner::Hold] {
+        let admitted = Shot {
+            entry: Some(&entry),
+            ordinary_owner: Some(owner),
+            ..shot(None)
+        };
+        let result = build(kind, &Center::Keep, &admitted).unwrap().unwrap();
+        assert_eq!(result.clock, FramingClock::OwnerOutput);
+        let value = result
+            .evaluate_with_follow_exact(ratio(1, 1), ratio(4, 1))
+            .unwrap();
+        assert_eq!(value.follow.unwrap().1, ratio(5, 2));
+        assert_eq!(value.pose.scale, ratio(5, 8));
+        assert_eq!(
+            [value.pose.center_x, value.pose.center_y],
+            [ratio(1, 3), ratio(2, 7)]
+        );
+        let explicit = build(
+            ZoomKind::Creep {
+                from: Some(ratio(3, 1)),
+                to: ratio(4, 1),
+                curve: ZoomCurve::Linear,
+            },
+            &Center::Keep,
+            &admitted,
+        )
+        .unwrap()
         .unwrap();
-    assert_eq!(value.follow.unwrap().1, ratio(5, 2));
-    assert_eq!(value.pose.scale, ratio(5, 8));
-    assert_eq!(
-        [value.pose.center_x, value.pose.center_y],
-        [ratio(1, 3), ratio(2, 7)]
-    );
-    let explicit = build(
-        ZoomKind::Creep {
-            from: Some(ratio(3, 1)),
-            to: ratio(4, 1),
-            curve: ZoomCurve::Linear,
-        },
-        &Center::Keep,
-        &admitted,
-    )
-    .unwrap()
-    .unwrap();
-    let initial = explicit
-        .evaluate_with_follow_exact(ExactRatio::ZERO, ratio(4, 1))
-        .unwrap();
-    assert_eq!(initial.follow.unwrap().1, ratio(3, 1));
-    assert_eq!(initial.pose.scale, ratio(3, 4));
-    for range in [Some((0, 10)), Some((1, 9))] {
-        assert!(build(kind, &Center::Keep, &Shot { range, ..admitted }).is_err());
+        let initial = explicit
+            .evaluate_with_follow_exact(ExactRatio::ZERO, ratio(4, 1))
+            .unwrap();
+        assert_eq!(initial.follow.unwrap().1, ratio(3, 1));
+        assert_eq!(initial.pose.scale, ratio(3, 4));
+        for range in [Some((0, 10)), Some((1, 9))] {
+            assert!(build(kind, &Center::Keep, &Shot { range, ..admitted }).is_err());
+        }
+        assert!(
+            build(
+                kind,
+                &Center::Keep,
+                &Shot {
+                    ordinary_owner: None,
+                    ..admitted
+                }
+            )
+            .is_err()
+        );
+        assert!(
+            build(
+                kind,
+                &Center::Keep,
+                &Shot {
+                    entry: Some(&result),
+                    ..admitted
+                }
+            )
+            .is_err()
+        );
+        assert!(
+            build(
+                ZoomKind::Smash { scale: ratio(3, 1) },
+                &Center::Keep,
+                &Shot {
+                    entry: Some(&result),
+                    ..admitted
+                }
+            )
+            .is_err()
+        );
+        // Explicit target selection continues to author a sampled ordinary path.
+        assert!(matches!(
+            build(
+                kind,
+                &Center::Point([ratio(1, 2), ratio(1, 2)]),
+                &Shot {
+                    explicit: true,
+                    entry: Some(&result),
+                    ..admitted
+                }
+            )
+            .unwrap()
+            .unwrap()
+            .value,
+            FramingValue::Envelope { .. }
+        ));
     }
-    assert!(
-        build(
-            kind,
-            &Center::Keep,
-            &Shot {
-                ordinary_source: false,
-                ..admitted
-            }
-        )
-        .is_err()
-    );
-    assert!(
-        build(
-            kind,
-            &Center::Keep,
-            &Shot {
-                entry: Some(&result),
-                ..admitted
-            }
-        )
-        .is_err()
-    );
-    assert!(
-        build(
-            ZoomKind::Smash { scale: ratio(3, 1) },
-            &Center::Keep,
-            &Shot {
-                entry: Some(&result),
-                ..admitted
-            }
-        )
-        .is_err()
-    );
-    // Explicit target selection continues to author a sampled ordinary path.
-    assert!(matches!(
-        build(
-            kind,
-            &Center::Point([ratio(1, 2), ratio(1, 2)]),
-            &Shot {
-                explicit: true,
-                entry: Some(&result),
-                ..admitted
-            }
-        )
-        .unwrap()
-        .unwrap()
-        .value,
-        FramingValue::Envelope { .. }
-    ));
 }

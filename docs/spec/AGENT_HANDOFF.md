@@ -4,6 +4,57 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-24
 
+[Whole-Hold following creep](../qualification/hold-follow-creep-2026-10-24.md)
+is implemented and locally verified. Shared typed admission now
+accepts whole ordinary Sources or Holds while preserving range, occurrence,
+other-owner and existing-animation refusals. `follow_pose_in_context` resolves
+point/region centers through captured Fit/Fill, poses and irreversible clips;
+the no-context wrapper retains legacy behavior. Camera uses the same projection.
+The Hold retains its exact provider, capture, audio and duration. Its complete
+output clock drives independent live/fallback scale bases.
+
+The native witness creates a twelve-frame captured Hold at Edit 40 from a
+2× Source crop, follows a second point through it and creeps 1.1× to 2.2×.
+All twelve live and clipped-fallback frame poses plus neighboring half-open
+boundaries are asserted. Undo restores the live target before export. First
+native checks pass but image inspection found overlapping labels. Active-only
+full labels, compact picker digits and off-page marker suppression now have
+reviewed native regressions. Final App/release/replay checks and image review
+pass. Root inspected Hold 053/057/069/112/117 and paged-face 099.
+
+Core/Plan 2,047, final App 1,304 (eleven existing ignored), the strengthened
+CLI case and the renderer's 960-combination cross-oracle pass. Strict checks,
+formatting and release build pass. Final Hold/faces/targets/zoom/points replays
+pass 67/69/41/213/34 checks with matching Kestrel audits. They retain
+2/3/2/3/2 layout/screenshot warnings and physical-input skips. Final App
+`e46f0e4f…`, CLI `7a3062a6…`; twenty source paths form the final scope and
+five sibling executable identities are frozen. Earlier receipts have their
+own narrower exact inputs. Scratch is
+`/tmp/deadpan-hold-follow-creep-2026-10-24`, base `efd84b88…`. The actual
+saved project exports all 132 pictures and full `[0,211411)` stereo audio at
+zero offset/gaps; MP4 SHA `276e0755…`, 44,541 bytes. All nine CLI commands
+pass and the portable document is exactly equal. Independent SQLite comparison
+confirms eighteen immutable revisions, eleven history rows, eighteen verified
+receipts and all selected history tables match. Final raw audit `16a0b974…`
+has no findings. Its initial CLI pre-rustfmt provenance stop remains archived;
+the exact final-source rerun passes. The immutable
+[Primary](../../tools/media-qualification/evidence/2026-10-24-hold-follow-creep)
+has 221 payloads, 13,198,233 bytes plus inventory `49b624de…`; its 67 archive
+members omit nothing. The first package verification passes with no findings,
+receipt `72a96336…`. Primary, all twenty final scoped source paths and the
+raw audit/history remain unchanged. The [supplement](../../tools/media-qualification/evidence/2026-10-24-hold-follow-creep-verification)
+has eight payloads, 36,035 bytes plus inventory `bd6c39be…`; complete readback
+passes. Preserve foreign `fuzz/Cargo.lock` and `.claude/`, and never alter
+preceding immutable evidence.
+
+Coverage remains 89%, eight Complete and sixteen Partial. The next preferred
+bounded slice is whole ordinary Sequence Keep-center creep, preserving the
+current exact clocks, nested target projection and explicit scope refusals.
+General non-face proposals and the remaining full normative scope stay open.
+The full goal stays active.
+
+## Earlier first-class point-target continuation, 2026-10-24
+
 [First-class point targets](../qualification/point-targets-2026-10-24.md) are
 implemented and locally verified. Geometry is center-only Point or existing
 center/size Region, uniformly typed across initial geometry, samples and

@@ -114,3 +114,6 @@ fn plan_follow_centers_agree_with_the_renderers_fit_on_other_canvases() {
     assert_eq!(value(legacy.center_y), 0.25);
     assert!((rendered[1] - (0.5 - 81.0 / 1024.0)).abs() < 1e-12);
 }
+
+#[path = "follow_letterbox/captured.rs"]
+mod captured;

@@ -1,0 +1,19 @@
+
+running 1 test
+test macros::framing::hold_follow_creep::whole_hold_keep_follow_creep_replays_live_and_captured_fallback_with_durable_undo_and_scope_refusals ... FAILED
+
+failures:
+
+---- macros::framing::hold_follow_creep::whole_hold_keep_follow_creep_replays_live_and_captured_fallback_with_durable_undo_and_scope_refusals stdout ----
+
+thread 'macros::framing::hold_follow_creep::whole_hold_keep_follow_creep_replays_live_and_captured_fallback_with_durable_undo_and_scope_refusals' (181996747) panicked at crates/deadpan-cli/tests/project_commands.rs:43:5:
+{"error":{"code":"SelectionUnavailable","current_revision":null,"message":"SelectionUnavailable: node root does not exist","recovery_backup":null},"schema_version":1}
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    macros::framing::hold_follow_creep::whole_hold_keep_follow_creep_replays_live_and_captured_fallback_with_durable_undo_and_scope_refusals
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 57 filtered out; finished in 0.39s
+

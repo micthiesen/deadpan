@@ -531,8 +531,7 @@ fn followed_framing(follow: &FollowDraft, pose: FramingPose) -> Result<Framing, 
 /// Every operation of `picture` from `layer` outward whose pose depends on
 /// `framing` at `layer`: the operation itself, then each outer follow, which
 /// sees the subject where inner operations put it. Resolution matches the
-/// committed plan (`deadpan_plan::follow_pose`); a pause's captured geometry
-/// keeps follows on their fallbacks.
+/// committed plan, including the pause provider's retained input geometry.
 fn layer_poses(
     document: &deadpan_core::ProjectDocument,
     picture: &crate::worker::Picture,
@@ -545,25 +544,22 @@ fn layer_poses(
     if layer >= poses.len() {
         return Err("The Camera scope is absent from this picture.".into());
     }
-    let captured = picture.picture_context.is_some();
     let basis = document.presentation_basis();
     let canvas = [basis.width, basis.height];
     let resolve = |target: &TargetId,
                    scale: ExactRatio,
                    fallback: FramingPose,
                    inner: &[Option<FramingPose>]| {
-        if captured {
-            return fallback;
-        }
         picture
             .follow_point
             .as_ref()
             .and_then(|(asset, point)| {
-                deadpan_plan::follow_pose(
+                deadpan_plan::follow_pose_in_context(
                     document.targets().get(target)?,
                     asset,
                     *point,
                     canvas,
+                    picture.picture_context.as_deref(),
                     inner.iter().copied(),
                     scale,
                 )
@@ -854,13 +850,34 @@ impl CameraSession {
         )
     }
 
-    fn ordinary_source(&self, document: &deadpan_core::ProjectDocument) -> bool {
-        self.scoped.is_none() && self.scope.repeats.is_empty()
-            && matches!(document.nodes().get(&self.scope.node).map(|node| &node.kind),
-                Some(deadpan_core::NodeKind::Source { .. }))
-            && document.nodes().get(self.navigation_scope.groups().last().unwrap_or(document.root()))
-                .is_some_and(|node| matches!(&node.kind,
-                    deadpan_core::NodeKind::Sequence { children } if children.contains(&self.scope.node)))
+    fn ordinary_follow_owner(
+        &self,
+        document: &deadpan_core::ProjectDocument,
+    ) -> Option<deadpan_core::framing_zoom::OrdinaryFollowOwner> {
+        use deadpan_core::framing_zoom::OrdinaryFollowOwner;
+        if self.scoped.is_some() || !self.scope.repeats.is_empty() {
+            return None;
+        }
+        let parent = self
+            .navigation_scope
+            .groups()
+            .last()
+            .unwrap_or(document.root());
+        if !document.nodes().get(parent).is_some_and(|node| {
+            matches!(&node.kind,
+            deadpan_core::NodeKind::Sequence { children } if children.contains(&self.scope.node))
+        }) {
+            return None;
+        }
+        match document
+            .nodes()
+            .get(&self.scope.node)
+            .map(|node| &node.kind)
+        {
+            Some(deadpan_core::NodeKind::Source { .. }) => Some(OrdinaryFollowOwner::Source),
+            Some(deadpan_core::NodeKind::Hold { .. }) => Some(OrdinaryFollowOwner::Hold),
+            _ => None,
+        }
     }
 
     fn edit(&self, framing: Option<Framing>) -> ProjectEdit {
@@ -1205,10 +1222,9 @@ impl DeadpanApp {
                     .is_ok_and(|captured| captured.has_scoped_framing_authority())
             });
         let follow_creep = range.is_none()
-            && self
-                .workspace
-                .as_ref()
-                .is_some_and(|workspace| session.ordinary_source(&workspace.document))
+            && self.workspace.as_ref().is_some_and(|workspace| {
+                session.ordinary_follow_owner(&workspace.document).is_some()
+            })
             && matches!(input.target, crate::navigation::zoom::TargetChoice::Keep)
             && matches!(
                 input.kind,
@@ -1384,10 +1400,10 @@ impl DeadpanApp {
             },
         };
         let shot = zoom::Shot {
-            ordinary_source: self
+            ordinary_owner: self
                 .workspace
                 .as_ref()
-                .is_some_and(|workspace| session.ordinary_source(&workspace.document)),
+                .and_then(|workspace| session.ordinary_follow_owner(&workspace.document)),
             entry: session.entry.as_ref(),
             current: session.entry_pose.unwrap_or_default(),
             frames,
@@ -1594,7 +1610,7 @@ impl DeadpanApp {
     }
 
     /// The target's center at `local`, exactly as a follow of it would
-    /// resolve there (`deadpan_plan::follow_pose`), in this operation's input.
+    /// resolve there, including retained provider geometry, in this operation's input.
     fn target_center_at(
         &self,
         session: &CameraSession,
@@ -1612,11 +1628,6 @@ impl DeadpanApp {
             .plan
             .picture(frame)
             .map_err(|error| error.to_string())?;
-        if sample.picture_context.is_some() {
-            return Err(format!(
-                "This pause keeps its captured view, so {label} has no position in it. Frame it without a target."
-            ));
-        }
         let layer = sample
             .framing
             .iter()
@@ -1630,11 +1641,12 @@ impl DeadpanApp {
             .picture
             .follow_point()
             .and_then(|(asset, point)| {
-                deadpan_plan::follow_pose(
+                deadpan_plan::follow_pose_in_context(
                     target,
                     asset,
                     point,
                     [basis.width, basis.height],
+                    sample.picture_context.as_deref(),
                     sample.framing[..layer].iter().map(|layer| layer.pose),
                     ExactRatio::ONE,
                 )
@@ -2759,9 +2771,25 @@ impl DeadpanApp {
             Some(RegionPurpose::Correct { id, .. }) => Some(id),
             _ => None,
         };
-        // Saved targets at this picture's source time, with tracking state.
-        for shown in self.targets_at_picture() {
+        // Names stay in the inspector; compact secondary overlays keep nearby
+        // targets from covering the active target or the geometry under edit.
+        let shown_targets = self.targets_at_picture();
+        let multiple_saved = shown_targets.len() > 1;
+        for shown in shown_targets {
             if correcting == Some(&shown.id) {
+                continue;
+            }
+            let number = camera
+                .picker
+                .iter()
+                .find(|entry| {
+                    entry
+                        .saved
+                        .as_ref()
+                        .is_some_and(|(id, _, _)| id == &shown.id)
+                })
+                .and_then(|entry| entry.number);
+            if picking && number.is_none() {
                 continue;
             }
             let (anchor, bounds) = match shown.region {
@@ -2794,16 +2822,17 @@ impl DeadpanApp {
             } else {
                 point_marker(anchor, color, if selected { 2.5 } else { 1.5 });
             }
-            let number = camera
-                .picker
-                .iter()
-                .find(|entry| {
-                    entry
-                        .saved
-                        .as_ref()
-                        .is_some_and(|(id, _, _)| id == &shown.id)
-                })
-                .and_then(|entry| entry.number);
+            if camera.draft.phase() == CameraPhase::Region
+                || (!picking && multiple_saved && !selected)
+            {
+                continue;
+            }
+            if picking && multiple_saved {
+                if let Some(number) = number {
+                    badge(anchor - egui::vec2(0.0, 18.0), &number.to_string(), color);
+                }
+                continue;
+            }
             let mut text = match number.filter(|_| picking) {
                 Some(number) => format!("{number} {}", shown.label),
                 None => shown.label.clone(),
@@ -3212,9 +3241,9 @@ impl DeadpanApp {
                                 ui.weak("t stops following and removes the scale animation.");
                             }
                             ui.weak(if camera.follow.as_ref().is_some_and(|follow| follow.scale_transition.is_some()) {
-                                "Centered on the target at each picture's Original time. Outside its range the fallback center is retained and scale animation continues."
+                                "Centered on the target at each picture's Original time. Outside its range or when clipped by a captured view, the fallback center is retained and scale animation continues."
                             } else {
-                                "Centered on the target at each picture's Original time. Outside its range the framing holds its fallback pose."
+                                "Centered on the target at each picture's Original time. Outside its range or when clipped by a captured view, the framing holds its fallback pose."
                             });
                             if camera.replaces_curve() {
                                 ui.colored_label(style::WARNING, "Saving replaces the beat's camera curve.");

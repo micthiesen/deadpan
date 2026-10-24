@@ -1,0 +1,24 @@
+{
+  "exit_code": 0,
+  "passed": 2047,
+  "seconds": 287.29919479228556,
+  "core_plan_inputs_unchanged": true,
+  "core_plan_paths": [
+    "/Users/michael/Code/deadpan/crates/deadpan-core/src/framing_zoom.rs",
+    "/Users/michael/Code/deadpan/crates/deadpan-core/src/framing_zoom/tests.rs",
+    "/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/framing.rs",
+    "/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/tests/framing.rs",
+    "/Users/michael/Code/deadpan/crates/deadpan-plan/src/follow_context.rs",
+    "/Users/michael/Code/deadpan/crates/deadpan-plan/src/lib.rs",
+    "/Users/michael/Code/deadpan/crates/deadpan-plan/src/plan.rs",
+    "/Users/michael/Code/deadpan/crates/deadpan-plan/tests/picture_plan.rs",
+    "/Users/michael/Code/deadpan/crates/deadpan-plan/tests/picture_plan/captured_follow.rs"
+  ],
+  "changed_unrelated_test_paths": [],
+  "note": "All16 snapshotpaths stayed unchanged through Core/Plan run; later App/CLI boundary and independent fallback-oracle test edits do not affect the nine tested Core/Plan paths, which also match current bytes. Registry help was added outside the16-path snapshot before final App qualification.",
+  "all16_inputs_unchanged_during_run": true,
+  "changed_after_run_before_final_app_qualification": [
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness/hold_follow_creep.rs",
+    "/Users/michael/Code/deadpan/crates/deadpan-cli/tests/project_commands/macros/framing/hold_follow_creep.rs"
+  ]
+}

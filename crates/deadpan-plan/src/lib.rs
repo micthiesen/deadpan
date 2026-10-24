@@ -44,7 +44,6 @@ pub use audio_source_root::AudioRootSource;
 pub use audio_tape::{AudioSignalTape, AudioSignalTapeRun};
 
 pub use picture::{Picture, PictureCaption, PictureFraming, PictureSample};
-pub use plan::follow_pose;
 pub use plan::{
     AudioBound, AudioBoundDomain, AudioFadeEdge, AudioFadeQuery, AudioFadeSpan, AudioPolicyQuery,
 };
@@ -81,6 +80,7 @@ pub use plan::{
     ProviderLeafKind, ScopedHoldBoundaries, ScopedHoldContext, ScopedHoldContextObservation,
     ScopedHoldContextRequest,
 };
+pub use plan::{follow_pose, follow_pose_in_context};
 
 use deadpan_core::{
     AssetId, DocumentError, ExactRatio, FrameDuration, NodeId, ProjectFrame, SourceFrameId,

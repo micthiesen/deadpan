@@ -1,0 +1,52 @@
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 37 tests
+test navigation::camera::tests::unchanged_enter_is_not_a_project_edit_but_reset_is ... ok
+test navigation::camera::tests::follow_track_and_correction_keys_need_adjust_without_a_count ... ok
+test navigation::camera::tests::invalid_or_stale_targets_leave_picker_open ... ok
+test navigation::camera::tests::camera_enters_adjust_at_current_pose_and_escape_discards_the_draft ... ok
+test navigation::camera::tests::logical_router_respects_focus_modifiers_and_key_repeat ... ok
+test navigation::camera::tests::numeric_pose_update_preserves_exact_components_and_reset_intent ... ok
+test navigation::camera::tests::target_page_keys_clear_a_pending_digit_without_focusing_fields ... ok
+test navigation::camera::tests::rebasing_keeps_adjustments_and_adopts_an_untouched_entry ... ok
+test navigation::camera::tests::corrections_lock_geometry_kind_and_point_motion_clamps_at_source_edges ... ok
+test navigation::camera::tests::region_editing_is_keyboard_operable_with_fields_counts_and_clamps ... ok
+test navigation::camera::tests::zero_overflow_unsupported_count_and_repeated_commit_are_bounded ... ok
+test navigation::camera::tests::f_toggles_target_picker_without_discarding_the_adjustment ... ok
+test navigation::camera::tests::reset_is_explicit_and_survives_later_pose_adjustments ... ok
+test navigation::camera::tests::target_picker_digits_choose_targets_instead_of_becoming_counts ... ok
+test navigation::camera::tests::bounds_and_missing_projection_reject_without_changing_the_pose ... ok
+test navigation::camera::tests::source_axis_vectors_pan_exactly_and_coarse_steps_are_five_percent ... ok
+test preview::camera::tests::camera_adjusts_the_whole_curve_and_controls_without_changing_time_hosts ... ok
+test preview::camera::tests::camera_adjustment_keeps_retained_domain_until_explicit_reset ... ok
+test preview::camera::tests::a_follow_changes_scale_keeps_its_target_and_releases_only_explicitly ... ok
+test navigation::camera::tests::point_creation_keeps_only_center_and_remembers_rectangle_size_temporarily ... ok
+test preview::camera::semantic_zoom_tests::ranged_zoom_intent_never_turns_an_implicit_saved_target_into_keep ... ok
+test navigation::camera::tests::count_multiplies_pan_and_scale ... ok
+test preview::camera::tests::zoom_commands_act_only_on_the_context_captured_at_entry ... ok
+test preview::camera::tests::animated_follow_camera_keeps_entry_clock_bases_and_releases_the_shown_static_pose ... ok
+test preview::camera::tests::corrections_replace_the_initial_rectangle_or_insert_in_order ... ok
+test preview::camera::tests::invalid_curve_adjustment_and_nonfinite_projection_fail_without_mutation ... ok
+test preview::camera::face_picker::tests::refused_face_save_leaves_pose_follow_and_picker_retryable ... ok
+test preview::camera::face_picker::tests::a_later_refusal_preserves_the_successful_face_save_acceptance ... ok
+test preview::camera::face_picker::tests::accepted_face_changes_subject_and_center_but_preserves_follow_scale_and_clock ... ok
+test preview::camera::tests::follow_scale_center_restoration_retains_change_effect_and_endpoint_validation ... ok
+test preview::camera::face_picker::tests::face_reply_requires_live_picker_request_and_exact_session_revision_picture ... ok
+test preview::camera::tests::target_picker_tab_keeps_same_batch_digits_and_return_key_routable ... ok
+test navigation::camera::tests::counted_scale_matches_repeated_quantized_steps_and_stays_bounded ... ok
+test preview::camera::face_picker::tests::pages_reach_all_saved_fixed_and_detected_entries_without_async_renumbering ... ok
+test preview::camera::tests::camera_path_preview_uses_the_exact_sampled_owner_extent ... ok
+test preview::camera::tests::camera_routing_preserves_native_text_ime_and_global_shortcuts ... ok
+test preview::camera::tests::tab_into_camera_fields_does_not_retype_an_earlier_count ... ok
+
+test result: ok. 37 passed; 0 failed; 0 ignored; 0 measured; 1278 filtered out; finished in 0.03s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+

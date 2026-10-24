@@ -1,0 +1,277 @@
+{
+  "actual_media_commands": 9,
+  "all_selected_history_tables_equal": true,
+  "archives": [
+    {
+      "bytes": 807776,
+      "members": 19,
+      "omissions": 0,
+      "path": "archives/first-source.tar.gz",
+      "retained_sidecars": []
+    },
+    {
+      "bytes": 46289,
+      "members": 5,
+      "omissions": 0,
+      "path": "archives/audit-history.tar.gz",
+      "retained_sidecars": []
+    },
+    {
+      "bytes": 1784861,
+      "members": 30,
+      "omissions": 0,
+      "path": "archives/final-hold-project-and-export.tar.gz",
+      "retained_sidecars": [
+        "portable.deadpan/Snapshots/.tmp12Xou5-shm",
+        "portable.deadpan/Snapshots/.tmp12Xou5-wal"
+      ]
+    },
+    {
+      "bytes": 1958490,
+      "members": 13,
+      "omissions": 0,
+      "path": "archives/actual-native-hold-project.tar.gz",
+      "retained_sidecars": [
+        "Snapshots/.tmpLzAZ9S-shm",
+        "Snapshots/.tmpLzAZ9S-wal"
+      ]
+    }
+  ],
+  "audio_offset": 0,
+  "audio_window": [
+    0,
+    211411
+  ],
+  "authored_omissions": 0,
+  "budget_bytes": 268435456,
+  "collector_sha256": "320e79dbf00568d68d7657e3c31d968402772533071529e7c9c494f9aacc6f0e",
+  "current_scoped_sources_unchanged": true,
+  "earlier_audit_files_unchanged": true,
+  "embedded_raw_audit_sha256": "16a0b9743a790dc682d7b4820f61bd3a2e287968168528770b8ccfc931e4522f",
+  "encoding_records": 218,
+  "encodings": {
+    "gzip": 24,
+    "identity": 190,
+    "tar+gzip": 4
+  },
+  "final_source_paths": 20,
+  "findings": [],
+  "finished_utc": "2026-10-24T09:23:43.279838+00:00",
+  "first_audit_stop_preserved": true,
+  "initial_audit_history_unchanged": true,
+  "inventory_sha256": "49b624de11bde3b8f6268f6bd8c5ebe0cfe521203de1fddffd36e0f29c2ccf9d",
+  "inventory_unchanged": true,
+  "limitations": [
+    "No collector, payload script, product, Cargo, test, worker, decoder, model or Git command executed.",
+    "Twenty scoped sources and relevant historical subsets are checked, not compilation of every repository file.",
+    "Root's image review is bound by bytes; PNG integrity is not independent visual or physical-display qualification.",
+    "Shared picture/limited-audio references do not establish independent DSP, listening, encoded bit equality, tracking accuracy or latency/requirement completion.",
+    "First passing Hold replay predates the overlap fix. The first raw audit stopped on a CLI source-binding gap; that attempt remains intact and fresh final20 CLI execution resolves the gap."
+  ],
+  "metadata_omissions": 0,
+  "movie": {
+    "bytes": 44541,
+    "sha256": "276e0755b2fbd8c8904e549695442bb514648f147893b2ae6fad8b9f1a2d70e7"
+  },
+  "native": [
+    {
+      "checks": 64,
+      "kestrel": 1,
+      "name": "native-hold-first",
+      "skips": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warnings": [
+        "6 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ]
+    },
+    {
+      "checks": 67,
+      "kestrel": 1,
+      "name": "native-hold-final",
+      "skips": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warnings": [
+        "6 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ]
+    },
+    {
+      "checks": 69,
+      "kestrel": 1,
+      "name": "native-faces-final",
+      "skips": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warnings": [
+        "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+        "7 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ]
+    },
+    {
+      "checks": 41,
+      "kestrel": 1,
+      "name": "native-targets-final",
+      "skips": [
+        "The Vision worker is the scripted test seam; real tracking is covered by native/deadpan-track tests and the CLI (docs/TRACKING.md).",
+        "Detected face proposals and their Camera picker are covered by the faces scenario; target punch-in and :zoom target= are covered by zoom.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warnings": [
+        "4 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ]
+    },
+    {
+      "checks": 213,
+      "kestrel": 1,
+      "name": "native-zoom-final",
+      "skips": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warnings": [
+        "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+        "19 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 10 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ]
+    },
+    {
+      "checks": 34,
+      "kestrel": 1,
+      "name": "native-points-final",
+      "skips": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warnings": [
+        "6 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ]
+    }
+  ],
+  "payload_bytes": 13198233,
+  "payloads": 221,
+  "picture_neighbor_observability": {
+    "observable": 216,
+    "unobservable": 46
+  },
+  "picture_rows": 132,
+  "plan_sha256": "35ab5cbff7eece58db31868f83c98ec5684c5e3239b2ffc450b3253610b0366d",
+  "portable_history_rows": 11,
+  "portable_revisions": 18,
+  "primary_files": 222,
+  "primary_tree_unchanged": true,
+  "prior_audit_file_pins": {
+    "audit-hold-evidence.json": {
+      "bytes": 567518,
+      "sha256": "16a0b9743a790dc682d7b4820f61bd3a2e287968168528770b8ccfc931e4522f"
+    },
+    "audit-hold-evidence.py": {
+      "bytes": 22243,
+      "sha256": "84b206e7e382e9c8983efccf60e39594a719c43b78e248eae9ad32332e6bb445"
+    },
+    "audit-hold-evidence.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "audit-hold-evidence.stdout": {
+      "bytes": 186,
+      "sha256": "16098c0444a6c2a7119305f49c0763b207de93a3911951b172e6480be1bb6e23"
+    }
+  },
+  "raw_payload_bytes": 200389133,
+  "raw_tests": {
+    "app-units-final-second": [
+      1304,
+      0,
+      11
+    ],
+    "cli-hold-final": [
+      1,
+      0,
+      0
+    ],
+    "core-plan-final": [
+      2047,
+      0,
+      0
+    ],
+    "renderer-capture-oracle": [
+      2,
+      0,
+      0
+    ]
+  },
+  "schema_version": 1,
+  "selected_pngs": {
+    "images/native-faces-final-faces-099.png": {
+      "bytes": 335141,
+      "dimensions": [
+        1280,
+        820
+      ],
+      "sha256": "e88456d6d6d694c156fd00e994e54462d1c7620e34063dbe335fd6ede2f8870b"
+    },
+    "images/native-hold-final-hold-follow-creep-053.png": {
+      "bytes": 353250,
+      "dimensions": [
+        1280,
+        820
+      ],
+      "sha256": "c734ac4d75914010a3e83deb802b3c9f752009a84919efeafaf57ef8bf990be5"
+    },
+    "images/native-hold-final-hold-follow-creep-057.png": {
+      "bytes": 343672,
+      "dimensions": [
+        1280,
+        820
+      ],
+      "sha256": "a1a8f5fa8955598bd9b6a92f372ea012642194428527f8304be4841c27be4c3f"
+    },
+    "images/native-hold-final-hold-follow-creep-069.png": {
+      "bytes": 366171,
+      "dimensions": [
+        1280,
+        820
+      ],
+      "sha256": "3f7b355fbfe62c27f24f777bcd840b0da816fb7e7488f249c6eb98709a47b2a1"
+    },
+    "images/native-hold-final-hold-follow-creep-112.png": {
+      "bytes": 344941,
+      "dimensions": [
+        1280,
+        820
+      ],
+      "sha256": "aab49836f46cec6a79706de71200692d2128e358f4a5d7cbce61627305ab3634"
+    },
+    "images/native-hold-final-hold-follow-creep-117.png": {
+      "bytes": 358964,
+      "dimensions": [
+        1280,
+        820
+      ],
+      "sha256": "bcdf68ca18d51a5f5e46989310a1484a30d5a877ac5052f69e711b5a7fdfda5f"
+    },
+    "images/native-hold-first-hold-follow-creep-053.png": {
+      "bytes": 347417,
+      "dimensions": [
+        1280,
+        820
+      ],
+      "sha256": "3913602bb0677b1b8861616fe77e5de030e53f9d7fe8a59bf5b8631a6b300323"
+    }
+  },
+  "started_utc": "2026-10-24T09:23:41.754694+00:00",
+  "status": "no_findings",
+  "tar_member_bytes": 4597416,
+  "tar_members": 67,
+  "verifier_sha256": "e17f4eb4e4134fd0e785acec102aa39fdb96d74c143b8853044fc549b322ef88"
+}

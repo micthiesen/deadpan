@@ -1,0 +1,15 @@
+{
+  "observed_at": "2026-10-24T08:36:46.441328+00:00",
+  "observed_live": {
+    "observed_at": "2026-10-24T08:33:34.247502+00:00",
+    "path": "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_app-c75853e20f9b0baa",
+    "bytes": 245292384,
+    "sha256": "45f6b0fe9e6e966c945668d7c1cd723d84c9fba6f9d892e02039e4439a9ac889",
+    "note": "Cargo-reported full App unit executable observed while its process runs; no archived-source alternate build."
+  },
+  "terminal": {
+    "bytes": 245292384,
+    "sha256": "45f6b0fe9e6e966c945668d7c1cd723d84c9fba6f9d892e02039e4439a9ac889"
+  },
+  "unchanged": true
+}

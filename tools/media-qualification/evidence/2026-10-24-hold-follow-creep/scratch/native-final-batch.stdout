@@ -1,0 +1,10 @@
+{"label": "native-hold-final", "exit_code": 0, "seconds": 14.129993917420506, "sources_unchanged": true, "binaries_unchanged": true}
+{"completed": "hold-follow-creep"}
+{"label": "native-faces-final", "exit_code": 0, "seconds": 15.923073292709887, "sources_unchanged": true, "binaries_unchanged": true}
+{"completed": "faces"}
+{"label": "native-targets-final", "exit_code": 0, "seconds": 14.873407208360732, "sources_unchanged": true, "binaries_unchanged": true}
+{"completed": "targets"}
+{"label": "native-zoom-final", "exit_code": 0, "seconds": 14.218858082778752, "sources_unchanged": true, "binaries_unchanged": true}
+{"completed": "zoom"}
+{"label": "native-points-final", "exit_code": 0, "seconds": 13.263930999673903, "sources_unchanged": true, "binaries_unchanged": true}
+{"completed": "points"}

@@ -1,0 +1,14 @@
+{
+  "observed_at": "2026-10-24T08:27:05.541351+00:00",
+  "files": {
+    "crates/deadpan-render/tests/follow_letterbox.rs": {
+      "bytes": 4577,
+      "sha256": "c5d43221154615ad506bc9553f7afaa5c79c1ef4d01471646af839a58211ed1f"
+    },
+    "crates/deadpan-render/tests/follow_letterbox/captured.rs": {
+      "bytes": 5746,
+      "sha256": "58a601c4a7ceec93b9959435219fd1ac2a3a6266c906f3f32c8c961505ebb4c9"
+    }
+  },
+  "note": "Two renderer test sources created before renderer-capture-oracle; this separate observation supplements that run17-path receipt. No edits after its invocation."
+}

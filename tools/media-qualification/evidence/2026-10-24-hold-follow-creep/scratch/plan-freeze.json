@@ -1,0 +1,26 @@
+{
+  "frozen_at": "2026-10-24T08:11:39.820529+00:00",
+  "files": {
+    "crates/deadpan-plan/src/lib.rs": {
+      "bytes": 6627,
+      "sha256": "3eda2ebc8219db41985e7bae69ea5e3aeb5b47936646a291e5ee0fafff9aa334"
+    },
+    "crates/deadpan-plan/src/plan.rs": {
+      "bytes": 74905,
+      "sha256": "65757b3999ce03d8760960af1ee1f8d1740932ef4dcc5656885e56886211579d"
+    },
+    "crates/deadpan-plan/src/follow_context.rs": {
+      "bytes": 3371,
+      "sha256": "ecf738a574b212f6bb3b0279a4eeb4685523e5bc82d741a8330a810e9368313b"
+    },
+    "crates/deadpan-plan/tests/picture_plan.rs": {
+      "bytes": 90787,
+      "sha256": "97c442a09b3160b68e666f698c76b11c37b9447394e634155598970f1c4c7fd8"
+    },
+    "crates/deadpan-plan/tests/picture_plan/captured_follow.rs": {
+      "bytes": 10832,
+      "sha256": "5d7d17ee855af02878b06addac7fe454780a5e3be42fa9e32f2c21e103ce99de"
+    }
+  },
+  "active_processes": []
+}

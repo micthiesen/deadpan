@@ -1,0 +1,570 @@
+{
+  "schema_version": 58,
+  "project_id": "29c00ea0-796e-4c88-a548-7436449f2dcd",
+  "revision_id": "ddfb01ec-efbe-4b65-bcd4-f2ae48d04899",
+  "presentation_basis": {
+    "width": 320,
+    "height": 180,
+    "frame_rate": {
+      "numerator": 30000,
+      "denominator": 1001
+    },
+    "color_policy": "sdr_rec709"
+  },
+  "basis_state": {
+    "rate_origin": "primary_source",
+    "geometry_origin": "primary_source",
+    "primary": {
+      "asset": "0489891a-a7f4-4187-8772-4a43f208fd65",
+      "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+    }
+  },
+  "root": "dd8e8e3b-a58e-4709-b859-4694348c2610",
+  "nodes": {
+    "1b51d5c9-e1d3-46c8-b6ee-da71104db4da": {
+      "label": "cfr-bframes.mp4",
+      "kind": {
+        "type": "retime",
+        "child": "bec82fe3-c295-4b19-a099-8aa664459fe3",
+        "duration": 40,
+        "mapping": {
+          "start": 0,
+          "end": 40
+        },
+        "pitch": "preserve",
+        "purpose": "partition"
+      }
+    },
+    "25abbec6-b9a6-4aa6-a3f9-4042dd3158b6": {
+      "label": "cfr-bframes.mp4",
+      "kind": {
+        "type": "retime",
+        "child": "cea8e3d7-84e3-451f-b2d1-e15fb1a294f7",
+        "duration": 80,
+        "mapping": {
+          "start": 40,
+          "end": 120
+        },
+        "pitch": "preserve",
+        "purpose": "partition"
+      }
+    },
+    "2a28d1c1-ca8e-4e39-893f-0bf6794a21ac": {
+      "label": "Pause",
+      "kind": {
+        "type": "hold",
+        "recipe": {
+          "picture_context": {
+            "canvases": [
+              {
+                "width": 320,
+                "height": 180,
+                "fit": "fit",
+                "layers": [
+                  {
+                    "center_x": {
+                      "numerator": "311385129",
+                      "denominator": "536870912"
+                    },
+                    "center_y": {
+                      "numerator": "1",
+                      "denominator": "2"
+                    },
+                    "scale": {
+                      "numerator": "2",
+                      "denominator": "1"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "duration": 12,
+          "video": {
+            "type": "freeze",
+            "asset": "0489891a-a7f4-4187-8772-4a43f208fd65",
+            "timestamp": {
+              "ticks": 39039,
+              "time_base": {
+                "numerator": 1,
+                "denominator": 30000
+              }
+            }
+          },
+          "audio": {
+            "type": "silence"
+          }
+        }
+      },
+      "framing": {
+        "value": {
+          "type": "follow",
+          "target": "target-2",
+          "scale": {
+            "numerator": "11",
+            "denominator": "10"
+          },
+          "fallback": {
+            "center_x": {
+              "numerator": "1",
+              "denominator": "2"
+            },
+            "center_y": {
+              "numerator": "1",
+              "denominator": "2"
+            },
+            "scale": {
+              "numerator": "11",
+              "denominator": "10"
+            }
+          },
+          "scale_transition": {
+            "factor": {
+              "numerator": "2",
+              "denominator": "1"
+            },
+            "curve": "linear"
+          }
+        }
+      }
+    },
+    "bec82fe3-c295-4b19-a099-8aa664459fe3": {
+      "label": "cfr-bframes.mp4",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 120,
+          "edit_window": {
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "end": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "video": {
+            "type": "stream",
+            "asset": "0489891a-a7f4-4187-8772-4a43f208fd65",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "0489891a-a7f4-4187-8772-4a43f208fd65",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      },
+      "framing": {
+        "value": {
+          "type": "follow",
+          "target": "target-1",
+          "scale": {
+            "numerator": "2",
+            "denominator": "1"
+          },
+          "fallback": {
+            "center_x": {
+              "numerator": "1",
+              "denominator": "2"
+            },
+            "center_y": {
+              "numerator": "1",
+              "denominator": "2"
+            },
+            "scale": {
+              "numerator": "2",
+              "denominator": "1"
+            }
+          }
+        }
+      }
+    },
+    "cea8e3d7-84e3-451f-b2d1-e15fb1a294f7": {
+      "label": "cfr-bframes.mp4",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 120,
+          "edit_window": {
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "end": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "video": {
+            "type": "stream",
+            "asset": "0489891a-a7f4-4187-8772-4a43f208fd65",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "0489891a-a7f4-4187-8772-4a43f208fd65",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      },
+      "framing": {
+        "value": {
+          "type": "follow",
+          "target": "target-1",
+          "scale": {
+            "numerator": "2",
+            "denominator": "1"
+          },
+          "fallback": {
+            "center_x": {
+              "numerator": "1",
+              "denominator": "2"
+            },
+            "center_y": {
+              "numerator": "1",
+              "denominator": "2"
+            },
+            "scale": {
+              "numerator": "2",
+              "denominator": "1"
+            }
+          }
+        }
+      }
+    },
+    "dd8e8e3b-a58e-4709-b859-4694348c2610": {
+      "label": "Sequence",
+      "kind": {
+        "type": "sequence",
+        "children": [
+          "1b51d5c9-e1d3-46c8-b6ee-da71104db4da",
+          "2a28d1c1-ca8e-4e39-893f-0bf6794a21ac",
+          "25abbec6-b9a6-4aa6-a3f9-4042dd3158b6"
+        ]
+      }
+    }
+  },
+  "assets": {
+    "0489891a-a7f4-4187-8772-4a43f208fd65": {
+      "label": "cfr-bframes.mp4",
+      "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "video": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        },
+        "end": {
+          "ticks": 120120,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        }
+      },
+      "audio": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        },
+        "end": {
+          "ticks": 192192,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        }
+      },
+      "still_image": false,
+      "frame_count": 120,
+      "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+    }
+  },
+  "marks": {},
+  "overrides": {},
+  "audio_lineage": {
+    "bec82fe3-c295-4b19-a099-8aa664459fe3": {
+      "allocation": "47c1e22e-18d3-4fb7-979f-882d15bcfe84",
+      "origin": "bec82fe3-c295-4b19-a099-8aa664459fe3"
+    },
+    "cea8e3d7-84e3-451f-b2d1-e15fb1a294f7": {
+      "allocation": "47c1e22e-18d3-4fb7-979f-882d15bcfe84",
+      "origin": "bec82fe3-c295-4b19-a099-8aa664459fe3"
+    }
+  },
+  "audio_bindings": {
+    "timings": [
+      {
+        "id": {
+          "allocation": "47c1e22e-18d3-4fb7-979f-882d15bcfe84",
+          "ordinal": 0
+        },
+        "layout": {
+          "root": "dd8e8e3b-a58e-4709-b859-4694348c2610",
+          "rate": {
+            "numerator": 30000,
+            "denominator": 1001
+          },
+          "nodes": {
+            "bec82fe3-c295-4b19-a099-8aa664459fe3": {
+              "duration": 120,
+              "kind": {
+                "type": "source",
+                "placement": {
+                  "start": {
+                    "numerator": "0",
+                    "denominator": "1"
+                  },
+                  "end": {
+                    "numerator": "120",
+                    "denominator": "1"
+                  }
+                }
+              }
+            },
+            "dd8e8e3b-a58e-4709-b859-4694348c2610": {
+              "duration": 120,
+              "kind": {
+                "type": "sequence",
+                "children": [
+                  "bec82fe3-c295-4b19-a099-8aa664459fe3"
+                ]
+              }
+            }
+          },
+          "overrides": {}
+        }
+      }
+    ],
+    "bindings": {
+      "bec82fe3-c295-4b19-a099-8aa664459fe3": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "47c1e22e-18d3-4fb7-979f-882d15bcfe84",
+              "ordinal": 0
+            },
+            "physical": "bec82fe3-c295-4b19-a099-8aa664459fe3"
+          }
+        }
+      },
+      "cea8e3d7-84e3-451f-b2d1-e15fb1a294f7": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "47c1e22e-18d3-4fb7-979f-882d15bcfe84",
+              "ordinal": 0
+            },
+            "physical": "bec82fe3-c295-4b19-a099-8aa664459fe3"
+          }
+        },
+        "resume": {
+          "local_boundary": {
+            "numerator": "40",
+            "denominator": "1"
+          },
+          "phase": {
+            "terms": [
+              {
+                "placement": {
+                  "reference": {
+                    "timing": {
+                      "allocation": "47c1e22e-18d3-4fb7-979f-882d15bcfe84",
+                      "ordinal": 0
+                    },
+                    "physical": "bec82fe3-c295-4b19-a099-8aa664459fe3"
+                  }
+                },
+                "from_local": {
+                  "numerator": "0",
+                  "denominator": "1"
+                },
+                "to_local": {
+                  "numerator": "40",
+                  "denominator": "1"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "targets": {
+    "target-1": {
+      "label": "Target 1",
+      "asset": "0489891a-a7f4-4187-8772-4a43f208fd65",
+      "span": {
+        "start": {
+          "ticks": 10010,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        },
+        "end": {
+          "ticks": 120120,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        }
+      },
+      "region": {
+        "center": [
+          580000,
+          500000
+        ]
+      },
+      "display_aspect": {
+        "numerator": "16",
+        "denominator": "9"
+      }
+    },
+    "target-2": {
+      "label": "Target 2",
+      "asset": "0489891a-a7f4-4187-8772-4a43f208fd65",
+      "span": {
+        "start": {
+          "ticks": 39039,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        },
+        "end": {
+          "ticks": 120120,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        }
+      },
+      "region": {
+        "center": [
+          680000,
+          500000
+        ]
+      },
+      "display_aspect": {
+        "numerator": "16",
+        "denominator": "9"
+      }
+    }
+  }
+}

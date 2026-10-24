@@ -1,0 +1,18 @@
+{
+  "claim": "Stable retained bytes and identities; no automatic requirement certification.",
+  "final_source_paths": 20,
+  "limitations": [
+    "Twenty scoped final source paths and five sibling executable identities, not an attestation of every repository file.",
+    "Earlier Core/Plan16, renderer17 and App/CLI19-path receipts retain their actual scopes. Only relevant unchanged paths are applied to final20; final-second checks and native/media receipts bind20.",
+    "The first passing Hold replay had overlapping target labels. Final overlay/paging fixes and a painted-shape regression are exercised by the final build and replays.",
+    "Positive face regression observations use the existing scripted seam; the Hold scenario uses manually authored points and real no-face detection. No person-quality or tracking-accuracy claim.",
+    "Offscreen Metal and scripted native input; no physical display/input, OS IME delivery, VoiceOver speech, listening or latency qualification.",
+    "Export comparison uses the committed shared picture/DSP reference. Neighbor observability limits, all warnings, failures and opt-in ignored tests are retained.",
+    "Actual native and portable projects, authoritative immutable history, complete media verification and explicit encoder-delay metadata are retained.",
+    "Collector output and later independent package-verification receipts are retained separately to avoid recursive publication."
+  ],
+  "plan_sha256": "35ab5cbff7eece58db31868f83c98ec5684c5e3239b2ffc450b3253610b0366d",
+  "raw_payload_bytes": 200389133,
+  "schema_version": 1,
+  "script_sha256": "320e79dbf00568d68d7657e3c31d968402772533071529e7c9c494f9aacc6f0e"
+}
