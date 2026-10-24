@@ -1,0 +1,28 @@
+{
+  "schema": "deadpan-media-resume-static-1",
+  "original_script": {
+    "path": "qualify_media.py",
+    "sha256": "4fcae22c9000f9cd8686924e8b1df79f74cbd9f79a7b0d42a29db09ba466e50c"
+  },
+  "original_artifacts": {
+    "media-archive.stderr": "dc592b95b88a824b6536d3deb690eaa665faf0d4e637f0c02a29fc7e08e2f019",
+    "media-archive.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "media-driver-pins.json": "6e5f9c763036ad4b55123cffd42bee870af75c5578d6e4c1193fe39523c5d15d",
+    "media-driver.stderr": "60b2111d3cdc5fa775d8644ec6a32415296f3f986bb7290658b7e5a86b5ce332",
+    "media-driver.stdout": "6d46b202faf8f54d4c10f4741da889b0742bdd1de06440d6f0faf978bec03c8b",
+    "media-hardware.json": "e30b3d2ac93eb1b43f8147b3ff6bedcd6750509e889d304a12acaafb9a099309",
+    "media-hardware.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "media-hardware.stdout": "dc7310a7c1781dfccc3f4262c5909848c353de3c145dc1fa2917bfba12fc9e21",
+    "media-list.stderr": "bd4b41ce5a27df3955ed7fddd247cbc9a5ede40012aa648633ff080235bec0ef",
+    "media-list.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "media-one-leaf.tar.zst": "b2ae4159642e2b74c830724e9aa5a789eaeea562563f747ad00a669b189d20c5",
+    "media-owner.json": "d0dbb9f9b24f498187d8a05f06a85a5698084116db28b65c47057fe129758bf7",
+    "media-receipt.json": "94522733cf7585e91a0599e359be9cf3e3c3ed90fed02e8f52addc2c06bd5997",
+    "media-review.json": "b1ec4569d93246b72980e42f93505cfde8e89f7b013a3229eebdf85c1ce3dddd",
+    "media-static-pins.json": "a3ef067f1fd41cf2c0ef4a4ec582c9537c930a048af194e36dbe61a471cb2d8d",
+    "media-terminal.json": "1e02ae65388ea19b0a608cf9888953a326f4fb78fcc4d869ae4212b50712e56d"
+  },
+  "archive_sha256": "b2ae4159642e2b74c830724e9aa5a789eaeea562563f747ad00a669b189d20c5",
+  "original_failure": "list destination directory missing; hardware and archive passed; no test ran",
+  "required_source_map_sha256": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e"
+}

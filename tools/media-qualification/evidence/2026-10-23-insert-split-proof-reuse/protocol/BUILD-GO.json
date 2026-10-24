@@ -1,0 +1,12 @@
+{
+  "status": "go",
+  "source_map_sha256": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+  "pins_sha256": "8d1dd7a1257889cfccc186f55e53c0d4c11a22f669d5d68702c0ed2b2dce0ba2",
+  "source_files": 2053,
+  "one_changed_source": "crates/deadpan-core/src/insert_time.rs",
+  "diagnostic_hooks": false,
+  "production_control_sha256": "0cb2931562108a68b57915c6135f448bc74293ba20623c7484053152566d31ff",
+  "core_unit_expected": 724,
+  "stages": 9,
+  "fresh_target": true
+}

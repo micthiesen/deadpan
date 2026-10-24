@@ -1,0 +1,79 @@
+{
+  "status": "no_findings",
+  "findings": [],
+  "script_sha256": "9a6a7f0cd331ab6e5be1731932d14f52db1175bb152b7ec1abcf9045433a00ad",
+  "manifest_sha256": "8b200d1ad0045ad2fe96e5ba66f5961a960f2000afc8b718214c5e19cc29705b",
+  "review_kind": "Independent final approved-manifest/data/schema review; byte verification and receipt interpretation only",
+  "prior_code_review_sha256": "b455f90abb75de725bcbd90d47629418c1af96ea0ac49a76d9355d8646b42d32",
+  "semantic_audit_references": {
+    "production-semantic-audit.json": "e51b7868bef09fda8b2586d6ea2affa00b995e89327d9299c15f3aa4b829d8f2",
+    "collect_package_v2.py": "3fda3a6242627f1fede1195e56875d41002708c89a7f3a7c6cdcdd38e9036c4e",
+    "main-promotion-source-check.json": "fb8522df0f59c7c876048dc767932d6a4b3200875729af9b42fa3888d56b44d8",
+    "main-format-receipt.json": "08ed6055781b8ef79c5f058787ded1eff6de2d5fb9ee457bedc5deb9424b0546",
+    "source-review.json": "a11b835c282c73881653a83191524b30934757bd55d8264ffc8731ff29dd3199",
+    "build-review.json": "3895df59b1f562eca2f69203cbddb8ae57770dad5c0b6089b71e67305b1a2538",
+    "measure-review.json": "62ad485db970783a7257c8613289e3dc00722bfa384bb4f22fdd44faafedec3d",
+    "media-resume-final-review.json": "a772c1125076a7233e88ee9fe2ff77da6379d228088faacc6ef8443985312225",
+    "collector-correction.json": "d216de9ec4cf403f3070da58d56ef00812b1f7e7b57b0bb269265f7db1578bf6"
+  },
+  "verified": {
+    "approved_files": 224,
+    "approved_raw_bytes": 25038461,
+    "current_payload_hash_mismatches": 0,
+    "fixture_descriptors": 10,
+    "fixture_authored_regular_files": 30,
+    "root_wals_empty": true,
+    "media_files": 35,
+    "media_raw_bytes": 5592184,
+    "actual_emitted_export_mp4s": 2,
+    "source_rust_files": 2053,
+    "source_map_sha256": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+    "main_and_private_source_match_map": true,
+    "six_main_and_private_inputs_match": true,
+    "build_stages": 9,
+    "core_unit_tests": 724,
+    "core_integration_tests": 22,
+    "store_tests": 12,
+    "native_trials": 10,
+    "native_commands": 20,
+    "pause_checks": 70,
+    "kestrel_checks": 10,
+    "warnings": 20,
+    "paired_commit_reduction_median_ms": 2.3808740000000057,
+    "paired_composition_reduction_median_ms": 2.504042999999996,
+    "all_five_pair_differences_positive": true,
+    "media_selected_test_passes": 1,
+    "verified_pictures_per_export": 45,
+    "verified_samples_per_export": 72072,
+    "audio_offsets_samples": [
+      0,
+      0
+    ],
+    "media_archive_sha256": "b2ae4159642e2b74c830724e9aa5a789eaeea562563f747ad00a669b189d20c5"
+  },
+  "review_details": [
+    "Every approved payload current byte count/SHA was independently reread. Destinations are unique/safe, cannot collide with reserved approval envelope/inventory and contain no retained .rs files, build targets, executable blobs or nextest archives.",
+    "All ten fixture descriptors before_map/after_map references exactly match retained approved ledger rows. Complete live regular-file authored maps match both pinned snapshots; only rootSHM and emptyWAL excluded. All thirty authored members are covered.",
+    "All thirty-five current media evidence paths/bytes/hashes match retained media inventory and approved rows. Both actual emitted movies match successful terminal digests. Complete authored/limitedPCM+limiter-gain bits, nonzero controls, partition/cold reads, exactdocument/bank/history and undo/redo evidence are retained.",
+    "Successful media-resume terminal is complete with one exactPASS, same original archive hash, no archive recompilation, physicalMac/syntheticworker/qualifiedhelper bindings. Original media-list exit96/failedterminal is retained and never treated as a test pass.",
+    "Two export verification records explicitly pass with failures[],45pictures and72072samples, all picture checks passing and zero measured audio offsets. No compressedbyteidentity, independentDSP or listening claim is asserted.",
+    "Nine build rows are passed and exact stage sequence;724Corelib+22integration+12Store counts agree with retained records. Ten production trials are separately paired and n1 per invocation; no diagnostic profile pooling, percentile, target or memory claim.",
+    "Main and private source hashes independently match the entire2053ee77map and all six inputs. Only the reviewed production insert_time.rs was promoted; diagnostic hooks/helper remain absent by reviewedsource construction.",
+    "Collector v1 included its still-open output, was rejected before any packager execution, and its unapprovedmanifest/closedlogs/correction note remain retained. Finalv2 excludes its own live output only; earlier closed collector material is present.",
+    "Approval manifest/review/GO/script are retained by fixed envelope outside ledger, avoiding self-hash cycles. This final review binds actual immutable manifest bytes; Root still must supply matching GO before execution."
+  ],
+  "go_contract": {
+    "status": "approved_for_packaging",
+    "package_script_sha256": "9a6a7f0cd331ab6e5be1731932d14f52db1175bb152b7ec1abcf9045433a00ad",
+    "approved_manifest_sha256": "8b200d1ad0045ad2fe96e5ba66f5961a960f2000afc8b718214c5e19cc29705b",
+    "packager_review_sha256": "SHA256 of this final packager-final-review.json file",
+    "source_map_sha256": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+    "binary_manifest_sha256": "146564ae7f4f17503a2e317f7539b2cc3958600400e4354c58a01559191d11f9",
+    "build_terminal_sha256": "d5fc33490b14f84d1951f473a505b575002bb475fc5bfbbd6bed8ab55b169785",
+    "measurement_terminal_sha256": "6a14d9904f993433509c959d217527a9454a8a7e1688383c728dc4636cc29bab",
+    "media_terminal_sha256": "c1ea3ae16bb40bff31a39082749876f05e7156d3dabc841743e4f9c53e16343f"
+  },
+  "limitations": [
+    "No package or producer imports/functions, builds, tests, media decodes/exports, native execution, Git/Main/source edits. Test and export behavior is assessed from retained actual receipts and the prior reviewed source, not rerun. No packaging execution pass is claimed."
+  ]
+}

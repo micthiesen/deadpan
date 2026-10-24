@@ -1,0 +1,41 @@
+{
+  "status": "no_findings",
+  "review_kind": "independent_static_production_measure_driver_review",
+  "reviewed_file": {
+    "path": "measure.py",
+    "sha256": "5d4c250b3dca5fa2b80a560813c3481abd0267c1e610420e34c6e3a67edb03ae"
+  },
+  "reviewed_files": {
+    "measure.py": "5d4c250b3dca5fa2b80a560813c3481abd0267c1e610420e34c6e3a67edb03ae",
+    "expected-build-stages.json": "4e5ecd34168f3bb8fdbbf567a4276dac0fdb832b3bc5f0cc76d5ce757dc8b8f3",
+    "expected-tests.json": "fc30555ea7b2b4a34bc1665f18aa1f68d7af1f254bcd9a3cc7ef56f6001117dd",
+    "baseline.json": "360274ff50be188af69fc6a52c91a0814a1d5892eeefc66009af724936892895",
+    "baseline-provenance.json": "85a9b1fb396c83376833f233aa7484ff5fe1f18737e0d2a10a9dc4552bc5f7bf",
+    "baseline-inputs.json": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317",
+    "frozen-sources.json": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+    "qualified-base-sources.json": "0b61b120b75aa6bbcf350f7642a5fb731c711b8e6985c8fa61709229ed12696f",
+    "source-review.json": "a11b835c282c73881653a83191524b30934757bd55d8264ffc8731ff29dd3199"
+  },
+  "findings": [],
+  "checks": [
+    "Current exact stage manifest has nine ordered names. Driver requires row names equal manifest, every exit0/validation passed, terminal complete/steps count/stage names equal manifest and terminal AppSHA equal binaries AppSHA.",
+    "Five alternating pairs produce ten fresh fixture/UI trials and twenty commands. Both kinds remove the profile environment gate; receipt records its absence. All commands must exit0.",
+    "Control metadata pins qualified0cb2931562108a68b57915c6135f448bc74293ba20623c7484053152566d31ff. Candidate comes from freshly retained build output. Both executed hashes and retained helper hashes are rechecked before/after every trial.",
+    "Pinned private and qualified Main Rust maps each contain2053 paths and differ only insert_time.rs. Private source rglob excludes its external target. Actual Main enumeration uses rg --files -g *.rs consistently with the qualified map, excluding ignored generated target Rust. Exact path/hash equality is checked before/after trials. Six input hashes match private source and Main.",
+    "Fresh fixture/output paths; original hashed fixture inventory; authored bytes preserved except named SQLite sidecars; zero WAL bytes; report fixture SHA equals original project.sqlite.",
+    "Exactly two scenarios, seven passed native checks and one passed Kestrel check. Release/binary/compiler/lock metadata validated; physical-display and GPU-readback flags are strictly false. Findings counts retained.",
+    "Exactly two named first-pause metrics must be finite nonnegative numbers. Appstderr must contain no diagnostic prefix. No profile parser/import/phase rows. Summary has five observations per kind, min/median/max, five paired deltas and explicit no percentile-target/memory claim.",
+    "Quiet preflight retains ps status/load/conflicts; failures or timeout stop measurement. Exclusive owner/terminal and old receipt refusal remain. Errors cannot emit a complete terminal receipt."
+  ],
+  "resolved_during_review": [
+    "Root replaced the Main rglob with rg-visible enumeration so ignored Main target/generated.rs files cannot falsely invalidate the qualified2053 map. Reviewed latest SHA5d4c250b..., superseding requested initial5989daa6...; no prior review file was written."
+  ],
+  "pre_execution_requirements": [
+    "Root must create/freeze driver-pins.json before execution, binding reviewed measure/build drivers, both expected manifests, both source maps, six-input map, baseline/control metadata and source-review. This pin file was intentionally absent during static draft review.",
+    "Build receipts, retained binaries and successful terminal remain future runtime gates. This review establishes no build/test/runtime outcome."
+  ],
+  "limitations": [
+    "No driver, Cargo, compiler, GUI, performance workload or Git execution; static source/manifest inspection and AST parsing only.",
+    "No performance gain, target-p95, memory ceiling or physical-display claim."
+  ]
+}

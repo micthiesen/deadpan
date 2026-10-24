@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 170.132,
+  "package": "/tmp/deadpan-insert-split-proof-production-2026-10-23/rotation-2-candidate.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 179.531042
+}

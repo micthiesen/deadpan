@@ -1,0 +1,12 @@
+{
+  "main_matches_exact_pretested_rust_map": true,
+  "rust_files": 2053,
+  "source_map_sha256": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+  "six_inputs_match": true,
+  "only_promoted_file": "crates/deadpan-core/src/insert_time.rs",
+  "promoted_file_sha256": "e98dda4425f9e6ca2a19243956c103c1af8d975c38f34d1e1515c2b3c40fae39",
+  "executed_app_sha256": "e6abcd3a521697f504901f156df445e41681cfc824ff97793f62f4e0865802e1",
+  "media_terminal_sha256": "c1ea3ae16bb40bff31a39082749876f05e7156d3dabc841743e4f9c53e16343f",
+  "main_commit_before_promotion": "e034933f55c914806f773d30010c662baab8c255",
+  "no_diagnostic_hooks": true
+}

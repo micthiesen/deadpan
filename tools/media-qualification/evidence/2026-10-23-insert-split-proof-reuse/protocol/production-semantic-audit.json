@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "root_semantic_audit": true,
+  "build_stages": 9,
+  "core_unit": 724,
+  "core_integration": 22,
+  "store": 12,
+  "native_trials": 10,
+  "native_commands": 20,
+  "native_checks": 70,
+  "kestrel_checks": 10,
+  "layout_warnings": 20,
+  "paired_commit_saved_ms": 2.3808740000000057,
+  "paired_composition_saved_ms": 2.504042999999996,
+  "media_selected_tests": 1,
+  "verified_exports": 2,
+  "verified_pictures_per_export": 45,
+  "verified_samples_per_export": 72072,
+  "original_media_setup_failure_retained": true,
+  "archive_recompiled": false,
+  "main_equals_pretested_source": true,
+  "no_percentile_or_target_claim": true
+}

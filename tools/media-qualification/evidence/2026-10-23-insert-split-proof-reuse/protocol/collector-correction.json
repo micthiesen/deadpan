@@ -1,0 +1,10 @@
+{
+  "original_manifest": "approved-package-manifest.v1-unapproved.json",
+  "status": "not_approved_not_packaged",
+  "reason": "Collector included its still-open stdout as empty, then printed its final summary. Final manifest must omit only that invocation live stdout/stderr; earlier closed collector outputs remain retained.",
+  "detected_by_root_before_packager_execution": true,
+  "mismatches": [
+    "/tmp/deadpan-insert-split-proof-production-2026-10-23/collector.stdout"
+  ],
+  "runtime_product_checks_affected": false
+}

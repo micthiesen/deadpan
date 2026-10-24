@@ -1,0 +1,11 @@
+{
+  "status": "approved_for_packaging",
+  "package_script_sha256": "9a6a7f0cd331ab6e5be1731932d14f52db1175bb152b7ec1abcf9045433a00ad",
+  "approved_manifest_sha256": "8b200d1ad0045ad2fe96e5ba66f5961a960f2000afc8b718214c5e19cc29705b",
+  "packager_review_sha256": "932747bd26c36006ff0817c96fd058bbf997fb997a5b2345fd4cdbc14889d2a4",
+  "source_map_sha256": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+  "binary_manifest_sha256": "146564ae7f4f17503a2e317f7539b2cc3958600400e4354c58a01559191d11f9",
+  "build_terminal_sha256": "d5fc33490b14f84d1951f473a505b575002bb475fc5bfbbd6bed8ab55b169785",
+  "measurement_terminal_sha256": "6a14d9904f993433509c959d217527a9454a8a7e1688383c728dc4636cc29bab",
+  "media_terminal_sha256": "c1ea3ae16bb40bff31a39082749876f05e7156d3dabc841743e4f9c53e16343f"
+}

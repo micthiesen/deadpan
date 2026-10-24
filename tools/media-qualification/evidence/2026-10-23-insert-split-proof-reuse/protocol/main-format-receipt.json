@@ -1,0 +1,12 @@
+{
+  "command": [
+    "cargo",
+    "fmt",
+    "--all",
+    "--check"
+  ],
+  "cwd": "/Users/michael/Code/deadpan",
+  "exit": 0,
+  "session_collected": 61891,
+  "source_map_unchanged": true
+}

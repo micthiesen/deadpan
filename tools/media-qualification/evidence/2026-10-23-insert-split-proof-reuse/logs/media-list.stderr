@@ -1,0 +1,7 @@
+error: error extracting archive `/tmp/deadpan-insert-split-proof-production-2026-10-23/media-one-leaf.tar.zst`
+
+Caused by:
+  error canonicalizing destination directory `/tmp/deadpan-insert-split-proof-production-2026-10-23/media-one-leaf-extracted`
+
+Caused by:
+  No such file or directory (os error 2)

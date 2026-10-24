@@ -1,0 +1,61 @@
+{
+  "diagnostic_only": true,
+  "n_per_kind": 5,
+  "kinds": {
+    "control": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 192.681167,
+        "median": 194.497917,
+        "max": 196.510708
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 195.131458,
+        "median": 197.044959,
+        "max": 199.2805
+      }
+    },
+    "candidate": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 191.674083,
+        "median": 192.496542,
+        "max": 194.129834
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 194.202458,
+        "median": 194.965208,
+        "max": 196.563209
+      }
+    }
+  },
+  "phase_accounting": "no diagnostic hooks; production-route observation only",
+  "no_percentile_target_or_memory_claim": true,
+  "pairs": [
+    {
+      "rotation": 1,
+      "control_minus_candidate_commit_ms": 2.3808740000000057,
+      "control_minus_candidate_composition_ms": 2.717290999999989
+    },
+    {
+      "rotation": 2,
+      "control_minus_candidate_commit_ms": 2.545917000000003,
+      "control_minus_candidate_composition_ms": 2.504042999999996
+    },
+    {
+      "rotation": 3,
+      "control_minus_candidate_commit_ms": 1.064832999999993,
+      "control_minus_candidate_composition_ms": 1.6670419999999808
+    },
+    {
+      "rotation": 4,
+      "control_minus_candidate_commit_ms": 3.183665999999988,
+      "control_minus_candidate_composition_ms": 3.219083000000012
+    },
+    {
+      "rotation": 5,
+      "control_minus_candidate_commit_ms": 1.0070839999999919,
+      "control_minus_candidate_composition_ms": 0.929000000000002
+    }
+  ],
+  "paired_commit_reduction_median_ms": 2.3808740000000057,
+  "paired_composition_reduction_median_ms": 2.504042999999996
+}

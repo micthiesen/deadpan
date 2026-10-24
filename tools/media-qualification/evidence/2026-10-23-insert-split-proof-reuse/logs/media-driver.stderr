@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/tmp/deadpan-insert-split-proof-production-2026-10-23/qualify_media.py", line 274, in <module>
+    main()
+    ~~~~^^
+  File "/tmp/deadpan-insert-split-proof-production-2026-10-23/qualify_media.py", line 204, in main
+    output, _ = run('list', ['cargo', 'nextest', 'list', *reuse, '-E', expression,
+                ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                            '--message-format', 'json'], rows)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/deadpan-insert-split-proof-production-2026-10-23/qualify_media.py", line 113, in run
+    assert result.returncode == 0, stage
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: list

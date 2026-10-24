@@ -267,6 +267,22 @@ the previous computation on the current thread as an oracle.
 | Patch diff, lineage comparison | Collected the key union and looked every key up in both maps | One merged pass over both sorted maps; lineage ancestors use hash maps | Same comparisons in the same key order |
 | Store inverse check | Copied the result, applied the inverse, compared whole documents | `DocumentPatch::restores`: the same guards and errors, then a field-by-field comparison of the would-be result | Equal to `apply_stored(from) == to`, checked on every random step |
 
+An unscoped legacy interior pause also retains its already successful entry
+duration query in a local `Arc`. Only local command work with compact timing,
+no derived clocks and no existing retained proof enters this scope. It lends
+the map to the exact unchanged entry borrow around the existing
+`split_captured` call. Capture has validated the working copy's only change,
+its bindings, so that bridge can reuse the same structural durations. Both
+borrowed scopes end before replacing the working document. Split still
+validates its changed result completely; later resume/result checks and every
+byte/work charge remain. No entry proof is attached to the changed result.
+Reference, derived-clock, already-scoped and noninterior paths stay as before.
+Six `insert_split_proof_*` unit tests compare unscoped, scoped and reference
+results and exact refusals, including malformed same-revision inputs, real
+mark/phase limits, recovery after errors and cleanup on unwind. The existing
+10,000-Hold oracle checks complete document/transaction equality and inverse
+restoration.
+
 `crates/deadpan-core/tests/command_work.rs` runs 48 seeded random sequences of
 40 edits over Hold-only, linked-Source and placed-sound documents (pauses at
 seams and interiors, Splits anywhere and of occurrence-mark hosts, Repeat

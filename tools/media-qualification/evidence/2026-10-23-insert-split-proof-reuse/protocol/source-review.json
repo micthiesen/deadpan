@@ -1,0 +1,41 @@
+{
+  "status": "no_findings",
+  "findings": [],
+  "source_map_sha256": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+  "qualified_base_map_sha256": "0b61b120b75aa6bbcf350f7642a5fb731c711b8e6985c8fa61709229ed12696f",
+  "reviewed_path_hashes": {
+    "crates/deadpan-core/src/insert_time.rs": "e98dda4425f9e6ca2a19243956c103c1af8d975c38f34d1e1515c2b3c40fae39"
+  },
+  "prototype_source_map_sha256": "ddf4b90c48877c24206c09cf4cf89f9f51c233b8b6fd158b95d5e08c15f31bf1",
+  "prototype_file_sha256": "76bcc37b4367d9e610d67950af26198afc6ac4986299f02635799513f0bc08b1",
+  "scope": {
+    "rust_files": 2053,
+    "changed_paths": [
+      "crates/deadpan-core/src/insert_time.rs"
+    ],
+    "unchanged_nonowned_rust_files": 2052,
+    "six_inputs_unchanged": true,
+    "private_profile_helper_absent": true,
+    "profile_hooks_absent_all_rust": true
+  },
+  "proof": [
+    "Independently rehashed every2053finalRustfile against frozen map. Qualified-base map is exact0b61b120 productionMain identity; path sets equal and exactly insert_time.rs differs.",
+    "Final insert_time.rs is byte-identical to the reviewed V3 prototype except removal of the two-line LeafInputDurations enter statement and its single drop. The original document.durations()? statement remains unchanged at its original evaluation position.",
+    "All13 diagnostic restoration paths match qualified Main except the sole intended candidate insert_time.rs delta. No pause_route_profile module/file, call or environment gate remains anywhere in the2053Rust files.",
+    "The implementation proof and six unit cases therefore carry forward unchanged: local+compact/no-live-derived/no-existing-exact-proof gate, owned map retained through tail, exact borrowed scopes only around existing legacy interior Split, guards removed before changed working replacement.",
+    "Capture/binding/layout/provisional/wire/work checks and complete Split-result validation remain; no new public API or Store/App path change. Test sentinel remains explicitly super::invalid."
+  ],
+  "parent_reviews": [
+    {
+      "path": "/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/source-review.json",
+      "sha256": "440086711022cbb2b540167ac5dfcf3b45ee8d25674b0d538c7c994ba1a6373f"
+    },
+    {
+      "path": "/tmp/deadpan-insert-split-proof-prototype-2026-10-23/source-review.json",
+      "sha256": "ff46735bd4e4e19363c4e8034ed7e1bd6303ce2e79c35758d1bfb81f71dc117a"
+    }
+  ],
+  "limitations": [
+    "Static source-only comparison; no Cargo/compiler/formatter/runtime/Git or Main writes. Production build, fullCore724unitcases, Store checks and uninstrumented timing remain Root execution obligations. Prototype timing is not production performance evidence."
+  ]
+}

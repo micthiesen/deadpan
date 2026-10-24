@@ -1,0 +1,8 @@
+{
+  "original_script": "verify_package.py",
+  "original_stderr": "verification.stderr",
+  "reason": "The original verifier rejected retained .deadpan directories. The approved ledger intentionally retains real-media SQLite package contents under those directories. Only executable Rust source file suffix .rs must be absent. All size/hash/gzip/archive/media checks passed before that filename-only assertion.",
+  "primary_package_changed": false,
+  "runtime_product_checks_affected": false,
+  "correction": "Restrict .rs scan to files; allow approved .deadpan directories."
+}

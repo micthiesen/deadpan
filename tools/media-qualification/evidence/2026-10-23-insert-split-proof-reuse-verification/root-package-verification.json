@@ -1,0 +1,26 @@
+{
+  "inventory_sha256": "55fc1aaacd7b6f8a806708c5c7f8c9fd3ec4523e5a23204433a638a695b67e8b",
+  "payload_files": 238,
+  "payload_bytes": 4863532,
+  "all_files": 239,
+  "approved_payloads_compared_with_original_bytes": 224,
+  "gzip_streams_decoded": 30,
+  "compressed_regular_payloads": 20,
+  "fixture_archives": 10,
+  "archive_regular_members": 30,
+  "all_hashes_and_sizes_reread": true,
+  "all_fixture_maps_match_live_and_packaged_before_after": true,
+  "every_wal_empty": true,
+  "actual_verified_export_files": [
+    {
+      "leg": "cached",
+      "path": "media/evidence/exports-cached/one-leaf-cached-media.mp4",
+      "sha256": "fb603c6519bb8a54c9010efd8078336fc9b871f2a9427647cfed588f424f3ef9"
+    },
+    {
+      "leg": "uncached",
+      "path": "media/evidence/exports-uncached/one-leaf-uncached-media.mp4",
+      "sha256": "407cb62777099b3a2f98a91093b1155dcb788b99f0f0d1aff6748a19dbc0cae3"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "status": "complete",
+  "commands": 3,
+  "tests": 1,
+  "selected_test": "group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached",
+  "archive_sha256": "b2ae4159642e2b74c830724e9aa5a789eaeea562563f747ad00a669b189d20c5",
+  "test_sha256": "dddd87f5b673c394647c339ad25bef76f7be940951b359bba69706b2067a3148",
+  "cli_sha256": "4574787836923e63dce6d4fa8eea33415d4a9d889853f1200bb9ad2f73d48c00",
+  "source_map_sha256": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+  "reused_archive": "/tmp/deadpan-insert-split-proof-production-2026-10-23/media-one-leaf.tar.zst",
+  "archive_recompiled": false,
+  "original_failed_terminal_sha256": "1e02ae65388ea19b0a608cf9888953a326f4fb78fcc4d869ae4212b50712e56d",
+  "original_receipt_sha256": "94522733cf7585e91a0599e359be9cf3e3c3ed90fed02e8f52addc2c06bd5997",
+  "physical_mac_required": true,
+  "synthetic_worker_feature_required": true,
+  "qualified_helper_reuse": true,
+  "evidence": {
+    "root": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpCaIq8P",
+    "exports": [
+      {
+        "leg": "cached",
+        "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpCaIq8P/exports-cached/one-leaf-cached-media.mp4",
+        "movie_sha256": "fb603c6519bb8a54c9010efd8078336fc9b871f2a9427647cfed588f424f3ef9",
+        "package": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpCaIq8P/cached/one-leaf-cached-media.deadpan",
+        "revision": "one-leaf-media-restored"
+      },
+      {
+        "leg": "uncached",
+        "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpCaIq8P/exports-uncached/one-leaf-uncached-media.mp4",
+        "movie_sha256": "407cb62777099b3a2f98a91093b1155dcb788b99f0f0d1aff6748a19dbc0cae3",
+        "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpCaIq8P/uncached.deadpan",
+        "revision": "one-leaf-media-restored"
+      }
+    ],
+    "canonical_history_pcm_checks": true,
+    "verified_pictures_per_export": 45,
+    "verified_samples_per_export": 72072
+  }
+}

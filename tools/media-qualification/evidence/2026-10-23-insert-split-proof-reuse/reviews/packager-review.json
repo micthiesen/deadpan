@@ -1,0 +1,45 @@
+{
+  "status": "findings",
+  "script_sha256": "43a435b5f80ef0488a10c13146517c6c1473807ed77399a3a6a79ab1347666a0",
+  "findings": [
+    {
+      "id": "PRODPKG01",
+      "severity": "high",
+      "location": "validate_go / main envelope retention and final checks",
+      "problem": "Only manifest.files are copied. MANIFEST cannot include its own digest, nor REVIEW or GO that bind its digest, without a hash cycle. Therefore the approval manifest/review/GO cannot all be self-contained retained evidence under the current copy path. Moreover they and SCRIPT are only checked initially and are not rechecked immediately before publication.",
+      "requested_change": "Auto-retain a fixed reserved envelope (exact manifest, final review, GO, script) outside manifest.files after hash validation. Capture their exact parsed bytes/digests before validation, forbid payload/archive destination collisions with envelope/inventory paths, and recheck the same digests before rename. Review may bind manifest SHA, GO may bind review+manifest+script; no manifest self-hash is needed."
+    },
+    {
+      "id": "PRODPKG02",
+      "severity": "high",
+      "location": "fixture descriptors / verify_manifest_inputs / before_manifest and after_manifest reads",
+      "problem": "Fixture before/after map paths have no required digest fields and need not be covered by manifest.files. Each validation rereads these unbound maps. If both are changed to describe a changed live fixture, final snapshot checks bless new bytes despite the Root-approved descriptor remaining unchanged.",
+      "requested_change": "Require explicit SHA/byte identities for both map files in every descriptor, or require their exact source paths and identities appear in the approved files/guard ledger. Verify those pinned identities before every parse and again before publication. Collector must retain the maps as raw evidence."
+    },
+    {
+      "id": "PRODPKG03",
+      "severity": "medium",
+      "location": "snapshot / make_fixture_archive / verify_fixture_snapshot",
+      "problem": "Fixture root is resolved before any symlink check, so a symlink root is accepted. snapshot also silently skips any non-file item, including FIFOs/sockets/devices, rather than only directories. New nonregular authored paths are invisible to the claimed full path-set recheck.",
+      "requested_change": "Reject the original fixture root when it is a symlink before resolving it. During snapshot, skip real directories, accept regular files, and reject every other entry type. Use the same helper in archive and final validation."
+    },
+    {
+      "id": "PRODPKG04",
+      "severity": "medium",
+      "location": "final os.rename(stage, DEST)",
+      "problem": "Destination absence is checked only at main entry. os.rename can replace an empty destination directory created during packaging, violating the refusal-to-overwrite contract.",
+      "requested_change": "Recheck destination absence immediately before publication and use the available no-replace publication primitive if needed for an atomic exclusivity guarantee. Preserve an appearing destination and fail without replacing it."
+    }
+  ],
+  "scope": "Static review of compact approved-ledger copier. Root remains responsible for separate semantic receipt audit and explicit manifest collection; no duplicate semantic/timing validation requested.",
+  "sound_areas": [
+    "Future approved manifest/final review/GO are intentional pending inputs. Exact GO bindings include script, manifest, review, source map, binary manifest and all three terminals; final review also binds script+manifest.",
+    "Identity/gzip payloads are checked against approved source SHA+bytes before copy, decoded and checked again before publication; gzip uses deterministic mtime0 and explicit compression level.",
+    "Archive member content is reread, traversal/link/nonregular tar members refused, root sidecars are the only allowed exclusions and rootWAL must be empty. Authored regular-file sets must match before/after/live maps.",
+    "Inventory records exact retained bytes/hashes and final payload rereads; explicit ledger approach can retain actual twoMP4/PCM/history files without giant executables/nextestarchives/targets/fullsource trees when collector selects them.",
+    "Current failed media-list terminal would correctly refuse packaging; no packager execution failure is asserted by this static review."
+  ],
+  "limitations": [
+    "No package imports/functions, Cargo/compiler/native runtime/Git/Main/source/producer edits. No future manifest content, media completion or performance claim has been approved by this review."
+  ]
+}

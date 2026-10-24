@@ -1,0 +1,6 @@
+[env]
+MACOSX_DEPLOYMENT_TARGET = "15.0"
+
+[alias]
+xtask = "run --locked --package xtask --"
+doctor = "run --locked --package deadpan-cli -- doctor"

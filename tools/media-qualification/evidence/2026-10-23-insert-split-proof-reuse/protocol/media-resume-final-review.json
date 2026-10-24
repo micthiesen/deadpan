@@ -1,0 +1,10 @@
+{
+  "schema": "deadpan-insert-split-proof-media-resume-final-review-1",
+  "status": "no_findings",
+  "findings": [],
+  "script_sha256": "caacfaa81d40782115a54f6ca1ae6519c70efcd25958c448cbc88f31556b1486",
+  "static_manifest_sha256": "6a3e9ba9434d42388fc842fc94b94773949436213b6453496371f8f521e6f368",
+  "supersedes_review": "media-resume-review.json",
+  "change_reviewed": "The initial refusal check now includes all six hardware/list/run stdout and stderr paths before exclusive owner creation or commands. The change exactly closes MEDIARESUME01; no other content changed relative to qualify_media_resumed.before-preflight.py.",
+  "scope": "Narrow static review of the preflight correction. No imports, commands, builds, tests, or runtime were executed. The dynamic media-resume-driver-pins.json still needs Root freeze before execution."
+}

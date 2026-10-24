@@ -1,0 +1,25 @@
+{
+  "qualified_rust_files": 2053,
+  "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/source",
+  "qualified_main": "/Users/michael/Code/deadpan",
+  "restored_main_paths": [
+    "crates/deadpan-store/src/compound.rs",
+    "crates/deadpan-store/src/lib.rs",
+    "crates/deadpan-app/src/project/service/macros.rs",
+    "crates/deadpan-app/src/project/service.rs",
+    "crates/deadpan-core/src/compound.rs",
+    "crates/deadpan-core/src/semantic/planner.rs",
+    "crates/deadpan-core/src/semantic/planner/content.rs",
+    "crates/deadpan-core/src/semantic/planner/pause.rs",
+    "crates/deadpan-core/src/semantic/planner/selection.rs",
+    "crates/deadpan-core/src/lib.rs",
+    "crates/deadpan-core/src/insert_time.rs",
+    "crates/deadpan-core/src/command.rs",
+    "crates/deadpan-core/src/one_leaf_replay.rs"
+  ],
+  "removed_temporary_helper": [
+    "crates/deadpan-core/src/pause_route_profile.rs"
+  ],
+  "before_patch_exact_qualified_map": true,
+  "diagnostic_hooks_copied_to_final_source": false
+}

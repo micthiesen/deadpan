@@ -1,0 +1,100 @@
+{
+  "status": "no_findings",
+  "findings": [],
+  "script_sha256": "9a6a7f0cd331ab6e5be1731932d14f52db1175bb152b7ec1abcf9045433a00ad",
+  "manifest_sha256": null,
+  "manifest_review_status": "pending: Root collector and separate semantic audit must finish, then this review must bind exact approved-package-manifest.json SHA before packaging GO can pass",
+  "prior_review_sha256": "9c3406e700024bdb892ca6984f45b722b0338d39f0ecce3e14ba72cff7395042",
+  "resolved_findings": {
+    "PRODPKG01": "Fixed reserved envelope auto-retains manifest/review/GO/script without self-hashing manifest fields. Exact original envelope bytes are captured, hash-bound and rechecked before publication; approved destinations may not collide with envelope/inventory.",
+    "PRODPKG02": "Every before_map/after_map reference supplies exact source/destination/SHA/byte identity and must match exactly one approved files ledger record; repeated reads verify the pinned identity.",
+    "PRODPKG03": "Original fixture root symlinks refused before resolution; snapshot accepts directories/regular files only and rejects symlinks/special entries.",
+    "PRODPKG04": "Final destination absence check plus macOS renameatx_np AT_FDCWD=-2/RENAME_EXCL=0x4 atomically refuses replacement; local SDK headers confirm constants/signature."
+  },
+  "manifest_contract": {
+    "schema": "deadpan-insert-split-proof-package-manifest-1",
+    "required_top_keys": [
+      "schema",
+      "source_map_sha256",
+      "binary_manifest_sha256",
+      "build_terminal_sha256",
+      "measurement_terminal_sha256",
+      "media_completion",
+      "files",
+      "fixtures"
+    ],
+    "files_row_required": [
+      "source",
+      "destination",
+      "sha256",
+      "bytes"
+    ],
+    "files_row_optional": {
+      "encoding": [
+        "identity",
+        "gzip"
+      ]
+    },
+    "fixture_required": [
+      "name",
+      "root",
+      "before_map",
+      "after_map",
+      "archive_destination"
+    ],
+    "fixture_optional": {
+      "allowed_sidecars": "Only root project.sqlite-shm / project.sqlite-wal; WAL bytes must0; existing sidecar byte counts required."
+    },
+    "fixture_map_ref_required": [
+      "source",
+      "destination",
+      "sha256",
+      "bytes"
+    ],
+    "media_completion_required": [
+      "terminal_path",
+      "terminal_sha256",
+      "receipt_path",
+      "receipt_sha256",
+      "archive_path",
+      "archive_sha256",
+      "historical_failure"
+    ],
+    "historical_failure_required": [
+      "terminal_path",
+      "terminal_sha256",
+      "receipt_path",
+      "receipt_sha256"
+    ],
+    "media_requirements": "Successful final terminal must be complete and identify exact retained actual archive. Original failed list terminal must remain failed and identify the same archive. Both receipt+terminal pairs must be approved retained files; giant archive bytes are only hash-checked, not automatically retained.",
+    "reserved_destinations": [
+      "inventory.json",
+      "approval/approved-package-manifest.json",
+      "approval/packager-final-review.json",
+      "approval/PACKAGING-GO.json",
+      "approval/package_v2.py"
+    ],
+    "collector_obligations": "Root separate semantic audit must approve all actual raw/derived/native/media receipts, input/source/binary identity records, failures, two actual MP4s and full PCM/hash/history evidence while excluding binary/nextestarchive/target/fullsource bytes. Script is a byte/path ledger verifier and does not duplicate that semantic audit."
+  },
+  "go_contract": {
+    "path": "PACKAGING-GO.json",
+    "status": "approved_for_packaging",
+    "required_hash_keys": [
+      "package_script_sha256",
+      "approved_manifest_sha256",
+      "packager_review_sha256",
+      "source_map_sha256",
+      "binary_manifest_sha256",
+      "build_terminal_sha256",
+      "measurement_terminal_sha256",
+      "media_terminal_sha256"
+    ],
+    "package_script_sha256": "9a6a7f0cd331ab6e5be1731932d14f52db1175bb152b7ec1abcf9045433a00ad",
+    "review_requirements": "Future packager-final-review.json must have status no_findings, exact script_sha256 and manifest_sha256 equal approved manifest bytes. RootGO binds that final review. This code-only report does not authorize packaging.",
+    "media_terminal_sha256": "Successful media_completion.terminal_sha256; original failed terminal stays historical evidence."
+  },
+  "limitations": [
+    "Static script-only follow-up. No packager functions/imports, native calls, builds/tests/Git/Main/source/producer writes. Manifest contents not yet reviewed; no media success, packaging execution or production performance claim."
+  ],
+  "review_stage": "script-only; final manifest approval remains pending"
+}

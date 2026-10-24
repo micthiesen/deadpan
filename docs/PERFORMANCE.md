@@ -36,6 +36,15 @@ Six matched pairs report a 4.502272 ms median commit difference and a
 diagnostics, not production qualification or a latency-target pass. The 100 ms
 and 50 ms targets remain open.
 
+The separate [production qualification](qualification/insert-split-proof-reuse-2026-10-23.md)
+uses an uninstrumented release App and five fresh alternating pairs. Control
+and candidate medians are 194.497917/192.496542 ms to commit and
+197.044959/194.965208 ms to offscreen Background composition. Median paired
+reductions are 2.380874 and 2.504043 ms; every pair favors the candidate.
+These five samples are diagnostic, not a percentile or target pass. The 100 ms
+fallback and 50 ms ordinary-edit targets remain open. The private prototype
+measurements above are a separate batch and are not pooled with production.
+
 [Specification Section 25](spec/DEADPAN_SPEC.md#25-performance-requirements-and-instrumentation)
 sets engineering targets. This page maps each target to the measurement that
 evaluates it, describes the reproducible suite, and lists the diagnostics the

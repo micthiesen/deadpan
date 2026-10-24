@@ -1,0 +1,19 @@
+{
+  "schema": "deadpan-insert-split-proof-media-review-1",
+  "status": "no_findings",
+  "findings": [],
+  "script_sha256": "4fcae22c9000f9cd8686924e8b1df79f74cbd9f79a7b0d42a29db09ba466e50c",
+  "static_pins_sha256": "a3ef067f1fd41cf2c0ef4a4ec582c9537c930a048af194e36dbe61a471cb2d8d",
+  "reviewed_scope": [
+    "Static inspection of the media qualification producer and test assertions; no commands, imports, builds, or runtime were executed.",
+    "The driver gates the exact one-test release archive/list/run, physical-Mac and synthetic-worker requirements, build/source/input/control/helper identities, retained media outputs, and binary stability.",
+    "The fixture assertions compare cached and uncached authored documents, history, register banks, canonical PCM/gain bits, and verified emitted media; the test explicitly disclaims independent DSP, listening, and compressed-byte identity."
+  ],
+  "required_external_freeze": [
+    "Before execution, Root must create and freeze media-driver-pins.json from the reviewed driver and its immutable inputs, then bind its digest in the execution authorization. The script checks the pin contents on every guarded step; this review does not claim that the pin file currently exists."
+  ],
+  "reviewed_test": "group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached",
+  "limitations": [
+    "This is a static review only. No qualification command or media test result is established by this record."
+  ]
+}

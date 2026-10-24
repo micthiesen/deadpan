@@ -1,0 +1,23 @@
+{
+  "schema": "deadpan-insert-split-proof-media-resume-review-1",
+  "status": "findings",
+  "script_sha256": "5fd589c2103fae07930e5080753b41047d68780d43e5b8e9541c4e85b798dea7",
+  "static_manifest_sha256": "6a3e9ba9434d42388fc842fc94b94773949436213b6453496371f8f521e6f368",
+  "findings": [
+    {
+      "id": "MEDIARESUME01",
+      "severity": "low",
+      "location": "qualify_media_resumed.py:212-216 and run(): output log creation",
+      "problem": "The fresh-output preflight omits the resume stdout/stderr files (media-resume-hardware.*, media-resume-list.*, media-resume-run.*). Exclusive x-mode opens prevent overwriting, but if a stale stderr exists, the corresponding stdout may be created before opening stderr fails. This can leave a partial refusal after the owner record and may occur after earlier hardware/list commands have already run.",
+      "requested_change": "Add every stdout/stderr destination to the initial absence check before creating the resume owner or executing any command. Keep the existing exclusive opens as a second guard."
+    }
+  ],
+  "verified": [
+    "The original media qualification artifacts listed by media-resume-static-manifest.json are digest checked, including the original driver and its pins, hardware output, archive, receipt, logs, and failed terminal.",
+    "The script verifies the original list attempt exited 96 after hardware/archive exits 0, checks the missing extraction-directory error, and asserts that no original run, result, binary manifest, or evidence inventory exists.",
+    "The original 43 MB archive hash is pinned and reused; the resume creates a distinct fresh empty extraction directory before nextest list, with no archive/rebuild command.",
+    "The resume retains the 2053-file source map and six inputs, nine-stage build and executed release app, qualified control and helper identities, plus the required physical-Mac and synthetic-worker conditions.",
+    "The exact named release test must be uniquely listed and nonignored, then PASS exactly once; the emitted evidence validates cached/uncached parity, complete document/history/PCM/gain checks, and two verified 45-picture, 72072-sample, zero-offset exports."
+  ],
+  "scope": "Static review only. No imports, commands, builds, tests, or runtime were executed. The separately created media-resume-driver-pins.json remains an external pre-execution freeze."
+}

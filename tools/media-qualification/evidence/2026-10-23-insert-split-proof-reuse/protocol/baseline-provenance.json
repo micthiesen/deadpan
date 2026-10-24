@@ -1,0 +1,8 @@
+{
+  "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/source",
+  "source_map_sha256": "c4e2c6a8592dd5b819f81b49ad6f196d63b27cb8c68b8c20ee61ecb64bebdae5",
+  "qualified_control_sha256": "0cb2931562108a68b57915c6135f448bc74293ba20623c7484053152566d31ff",
+  "matched_diagnostic_app": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/bin/deadpan-app",
+  "matched_diagnostic_app_sha256": "274e8a04a0a41b3656886663cea46f85169fa463d8b0e2c8d57b5d8d5638302a",
+  "unchanged_rust_files": 2054
+}

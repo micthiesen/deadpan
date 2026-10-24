@@ -4,11 +4,16 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-23
 
-Qualified code remains 5fdae748; this prototype's main documentation baseline is 79a14b8b.
-The [production replay qualification](../qualification/one-leaf-replay-reuse-2026-10-23.md)
-remains separate. Keep production App SHA-256
-0cb2931562108a68b57915c6135f448bc74293ba20623c7484053152566d31ff
-as control. Do not substitute a private instrumented App.
+The prior qualified Main baseline was 5fdae748. The narrow
+[InsertTime interior-split reuse change](../qualification/insert-split-proof-reuse-2026-10-23.md)
+is now promoted to Main after uninstrumented production qualification. Its
+release candidate App SHA-256 is
+e6abcd3a521697f504901f156df445e41681cfc824ff97793f62f4e0865802e1; control
+App SHA-256 is 0cb2931562108a68b57915c6135f448bc74293ba20623c7484053152566d31ff.
+This record is separate from the earlier
+[one-leaf replay qualification](../qualification/one-leaf-replay-reuse-2026-10-23.md)
+and the private instrumented
+[proof prototype](../qualification/insert-split-proof-prototype-2026-10-23.md).
 
 The [fine route study](../qualification/current-pause-detail-profile-2026-10-23.md)
 is terminal: eight exact-helper scalar tests, twelve release Store tests,
@@ -71,21 +76,38 @@ verified inventory SHA-256
 3059af729aeb692cb5d230cf661674d61d4232e088b235dd1255efd3a9fa237d. V1's
 test-only E0659 compile failure and V2's zero-test oracle selection remain
 separate retained history. Do not pool these results with the earlier one-leaf
-prototype or production qualification. A separate uninstrumented production
-qualification is still required. Keep diagnostic hooks outside Main. The full
+prototype or production qualification. The uninstrumented production result is
+recorded below as a separate batch. Keep diagnostic hooks outside Main. The full
 goal remains active at estimated 89%, eight Complete/sixteen Partial; the
 100 ms and 50 ms targets and all product gates remain open.
 
-Uninstrumented qualification is active in
-/tmp/deadpan-insert-split-proof-production-2026-10-23. Its 2,053-file map
-ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e
-differs from qualified Main only in insert_time.rs; all thirteen diagnostic
-paths were restored and the temporary helper removed. Independent source and
-driver reviews are clear. The nine-stage build has passed all 724 Core unit
-tests, 22 integration tests and twelve Store tests; release App and strict
-checks are still running. Root owns build session 63825. Five fresh native
-pairs and the qualified-media Some/None PCM/history/export test are still owed.
-Do not promote, call this a production gain, or restart active producers.
+The production report records the exact change, source/app hashes, test
+counts, timing pairs and media/history evidence. All 724 Core unit tests, 22
+Core integration tests, 12 Store tests, formatting and strict checks pass.
+Five uninstrumented pairs show median paired reductions of 2.380874 ms to
+commit and 2.504043 ms to offscreen Background composition; all 70 pause
+workflow and 10 Kestrel checks pass, with 20 retained layout warnings. The
+cached/uncached release-media/history test passes once and verifies both
+45-picture, 72,072-sample exports at zero offset.
+
+The source-map SHA-256 is
+ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e; the release
+App SHA-256 is e6abcd3a521697f504901f156df445e41681cfc824ff97793f62f4e0865802e1.
+The retained package has 238 payloads /4,863,532 bytes, inventory SHA-256
+55fc1aaacd7b6f8a806708c5c7f8c9fd3ec4523e5a23204433a638a695b67e8b. An
+independent reread verifies hashes, gzip streams, ten fixture archives and both
+media outputs. The collector correction preceded copying; the copier's first
+execution passed. A verifier filename assumption was corrected in the separate
+supplement with the primary unchanged. The failed first media extraction and
+successful same-archive resume remain explicitly retained. All producers are
+terminal in /tmp/deadpan-insert-split-proof-production-2026-10-23; do not restart
+them.
+
+These five pairs are diagnostic, not percentile evidence or a target pass.
+The 100 ms and 50 ms targets remain open. The private prototype's six-pair
+result is a separate batch and must not be pooled. No physical-display,
+source-decode or PCM performance claim follows. Coverage is still 89%, eight
+Complete/sixteen Partial, with no requirement or gate closed.
 
 ## Earlier qualification history, 2026-10-23
 

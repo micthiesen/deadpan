@@ -1,0 +1,8 @@
+  Extracting 2 binaries (including 1 non-test binary) and 7 linked paths to /private/tmp/deadpan-insert-split-proof-production-2026-10-23/media-resume-one-leaf-extracted
+   Extracted 51 files to /private/tmp/deadpan-insert-split-proof-production-2026-10-23/media-resume-one-leaf-extracted in 0.09s
+────────────
+ Nextest run ID 5c1d1636-45c6-423a-87ba-ee9042522ee9 with nextest profile: default
+    Starting 1 test across 1 binary (65 tests skipped)
+        PASS [   6.615s] (1/1) deadpan-cli::preview_export group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached
+────────────
+     Summary [   6.616s] 1 test run: 1 passed, 65 skipped

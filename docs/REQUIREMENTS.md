@@ -9,9 +9,32 @@ reuses a validated entry duration map only around the existing interior Split
 bridge for a narrow InsertTime case. Six matched diagnostic pairs report a
 4.502272 ms median input-to-commit difference and a 4.452875 ms median
 offscreen-composition difference. All 35 phase counts and sums conserve; all
-126 pause and 18 Kestrel checks pass. The prototype has not been qualified as
-production code, and the 100 ms/50 ms targets remain open. Coverage remains
+126 pause and 18 Kestrel checks pass. The private instrumented run is not
+production qualification; the same narrow source change has separate
+production evidence below. The 100 ms/50 ms targets remain open. Coverage remains
 89%, eight Complete and sixteen Partial.
+
+## Insert-split proof reuse: production qualification, 2026-10-23
+
+The [production qualification](qualification/insert-split-proof-reuse-2026-10-23.md)
+promotes one reviewed Core source change: for a narrow local/compact
+InsertTime case, it borrows the already-validated entry duration map only
+around the existing interior Split bridge. It avoids one redundant successful
+validation of the captured working input; the capture, result, authority,
+binding, budget and history checks remain. No API, cache or schema changed.
+All 724 Core unit tests, 22 Core integration tests, 12 Store tests, formatting
+and strict checks pass.
+
+Five fresh uninstrumented control/candidate pairs pass 70 pause workflow and
+10 Kestrel checks, with unchanged source and inputs, empty WALs, and 20 retained
+layout warnings. Paired median differences are 2.380874 ms to commit and
+2.504043 ms to offscreen composition; these five pairs establish no percentile
+or target pass. The cached and uncached release-media/history test passes once
+from the same fresh release archive after the extraction setup correction,
+and verifies two independent 45-picture,
+72,072-sample exports at zero offset. The 100 ms and 50 ms targets remain open;
+no requirement or gate closes. Coverage remains 89%, eight Complete and sixteen
+Partial.
 
 ## Detailed first-pause costs, 2026-10-23
 

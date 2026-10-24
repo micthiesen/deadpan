@@ -1,0 +1,53 @@
+{
+  "findings": [],
+  "limitations": [
+    "Static review only. No build driver functions, compiler, tests, native runtime, or Git were run.",
+    "The driver expects the final driver-pins.json to bind all relevant inputs before execution; Root owns that final freeze and runtime."
+  ],
+  "reviewed_build_contract": {
+    "core_integration_binaries": 3,
+    "core_integration_tests": 22,
+    "core_unit_tests": 724,
+    "required_core_cases": 7,
+    "stage_count": 9,
+    "stage_order": [
+      "rustc",
+      "cargo",
+      "format",
+      "core-unit-build",
+      "core-unit-all",
+      "core-integration",
+      "store-preparation",
+      "release-app",
+      "strict"
+    ],
+    "store_tests": 12,
+    "strict_scope": "release all-targets with ui-harness and -D warnings",
+    "strict_targets": [
+      "deadpan-core",
+      "deadpan-store",
+      "deadpan-app"
+    ]
+  },
+  "reviewed_controls": [
+    "Fresh target directory and exclusive owner/receipt creation refuse reuse before any command.",
+    "Source map, six pinned inputs, source review, protocol manifests, driver pins, and matched C diagnostic app are rechecked before and after every command.",
+    "The Core test executable is captured from Cargo compiler-artifact JSON, restricted to the private target directory, copied with digest verification, and the retained exact binary is run with eight test threads.",
+    "Core integration and Store binaries are matched between Cargo compiler-artifact JSON and Cargo Running lines, then retained with digests.",
+    "Test output parsing rejects failed/ignored tests and enforces the required named cases and counts; Core integration requires three binaries totaling 22 tests, Store requires all 12 expected names.",
+    "Release app is built in the private target, copied with digest verification, and the three helpers are reused only after matching the qualified release helper manifest.",
+    "The terminal receipt is created exclusively only after all nine stages validate; failures after ownership are recorded as terminal failure."
+  ],
+  "reviewed_files": {
+    "baseline-inputs.json": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317",
+    "baseline-provenance.json": "85a9b1fb396c83376833f233aa7484ff5fe1f18737e0d2a10a9dc4552bc5f7bf",
+    "baseline.json": "360274ff50be188af69fc6a52c91a0814a1d5892eeefc66009af724936892895",
+    "build.py": "fdad710f59fc3e9dcb9c2cb7832f3c7e42ce2f8af6acbeed35138e79dcb50dce",
+    "copy-provenance.json": "b866a2a6d003420d487d8966ff7fa264fef272ac1e1ea47bfbf8b3abe47a4633",
+    "expected-build-stages.json": "4e5ecd34168f3bb8fdbbf567a4276dac0fdb832b3bc5f0cc76d5ce757dc8b8f3",
+    "expected-tests.json": "fc30555ea7b2b4a34bc1665f18aa1f68d7af1f254bcd9a3cc7ef56f6001117dd",
+    "frozen-sources.json": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+    "source-review.json": "a11b835c282c73881653a83191524b30934757bd55d8264ffc8731ff29dd3199"
+  },
+  "status": "no_findings"
+}
