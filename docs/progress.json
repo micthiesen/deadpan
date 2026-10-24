@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-24T07:54:59Z",
+  "updated_at": "2026-10-24T09:27:38Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Point targets are verified and committed. Continuing following creep on whole Holds and remaining target/proposal authoring; coverage remains 89%.",
+  "focus": "Following creep on whole Holds and target projection through captured views are verified and committed. Continuing following creep on Sequence groups and remaining target/proposal authoring; coverage remains 89%.",
   "features": [
     {
       "id": "editing",
@@ -35,7 +35,7 @@
         "DP-08",
         "DP-11"
       ],
-      "note": "Camera paths, tracking, whole-Source following creep, the paged face picker and center-only point targets work. Camera creates and manually corrects points, with separate target/framing commits, exact Follow and durable history. Native replays and a complete media export with portable history are verified. General non-face region proposals, broader creep authoring and other target controls remain."
+      "note": "Camera paths, tracking, following creep on whole Sources and Holds, the paged face picker and center-only point targets work. Targets resolve through captured views and use the fallback when clipped while scale animation continues. Camera labels and picker pages stay readable. Native replays and a complete 132-picture export with exact portable history are verified. General non-face region proposals, broader creep authoring and other target controls remain."
     },
     {
       "id": "audio",
@@ -1277,6 +1277,14 @@
       "revision": "db729c592b5a83d684d35ca0978b12b67a94a75c",
       "retrospective": false,
       "summary": "Center-only point targets support Camera creation, manual correction and live Follow/creep. Independent review, 2,041 Core/Plan and 1,304 App tests, final native replays and a fully verified 120-picture export with exact portable history pass."
+    },
+    {
+      "date": "2026-10-24",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "5db84eabafd3d9de5f497e0c8359aa65899262a8",
+      "retrospective": false,
+      "summary": "Whole Holds retain live Follow while scale animates. Targets project through captured views and fall back when clipped. Independent review, 2,047 Core/Plan and 1,304 App tests, final native replays and a verified 132-picture export with exact portable history pass."
     }
   ]
 }
