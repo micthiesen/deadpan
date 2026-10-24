@@ -65,6 +65,7 @@ mod scale;
 mod scenarios;
 mod scoped_plays;
 mod semantic;
+mod sequence_follow_creep;
 mod shots;
 mod slip;
 mod sound_group_endpoints;

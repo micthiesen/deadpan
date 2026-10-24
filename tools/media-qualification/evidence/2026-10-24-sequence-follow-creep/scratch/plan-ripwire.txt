@@ -1,0 +1,191 @@
+<ctx task="Sequence Follow scale transition tests crates/deadpan-plan/tests/picture_plan.rs sequence_follow_creep.rs follow_pose_in_context" route=" [routed: subtoken+body BM25 — name-exact declined: anchor &apos;sequence&apos; is a common name (5057 name-carriers, 23 defs); conceptual ranker used]" bundle="auto" bodies="3"><!-- ripwire lens for "Sequence Follow scale transition tests crates/deadpan-plan/tests/picture_plan.rs sequence_follow_creep.rs follow_pose_in_context" [mention anchor: 1 file + 3 symbols named in the task lifted near the top] [doc mentions: 4 docs discussing 2 top-ranked symbols surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="4348" --><sigs capped="1"><f p="/Users/michael/Code/deadpan/crates/deadpan-core/src/framing.rs"><d l="204" n="FramingValue" cx="0" ccx="0" in="0" churn="7" amp="41">pub enum FramingValue</d><d l="227" n="FollowScaleTransition" cx="0" ccx="0" in="0" churn="7" amp="41">pub struct FollowScaleTransition</d><d l="427" n="evaluate_with_follow_exact" id="/Users/michael/Code/deadpan/crates/deadpan-core/src/framing.rs::Framing::evaluate_with_follow_exact" cx="15" ccx="13" in="9" churn="7" amp="50" tested="1"><doc>Evaluate scale and fallback in the same owner clock. Provider target lookup remains the plan&apos;s r…</doc>pub fn evaluate_with_follow_exact( &amp;self, local: ExactRatio, duration: ExactRatio, ) -&gt; Result&lt;EvaluatedFraming&lt;&apos;_&gt;, FramingError&gt;</d><d l="505" n="follow_scale" cx="5" ccx="5" in="1" churn="7" amp="42" tested="1">fn follow_scale( base: ExactRatio, transition: FollowScaleTransition, local: ExactRatio, duratio…</d><d l="686" n="follow_transition_tests" cx="0" ccx="0" in="0" churn="7" amp="41">mod follow_transition_tests</d><d l="693" n="framing" id="/Users/michael/Code/deadpan/crates/deadpan-core/src/framing.rs::follow_transition_tests::framing" cx="1" ccx="0" in="5" churn="7" amp="46">fn framing(curve: ZoomCurve) -&gt; Framing</d><d l="709" n="follow_transition_curves_preserve_exact_fallback_centers_and_endpoint_scales" id="/Users/michael/Code/deadpan/crates/deadpan-core/src/framing.rs::follow_transition_tests::follow_transition_curves_preserve_exact_fallback_centers_and_endpoint_scales" cx="4" ccx="3" in="0" churn="7" amp="41">fn follow_transition_curves_preserve_exact_fallback_centers_and_endpoint_scales()</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera.rs"><d l="3814" n="animated_follow_camera_keeps_entry_clock_bases_and_releases_the_shown_static_pose" id="/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera.rs::tests::animated_follow_camera_keeps_entry_clock_bases_and_releases_the_shown_static_pose" cx="1" ccx="0" in="0" churn="30" amp="63">fn animated_follow_camera_keeps_entry_clock_bases_and_releases_the_shown_static_pose()</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-plan/tests/picture_plan.rs" layer="test"><d l="545" n="freeze_picture_identity_stays_fixed_while_its_framing_clock_advances" cx="1" ccx="0" in="0" churn="34" amp="149">fn freeze_picture_identity_stays_fixed_while_its_framing_clock_advances()</d><d l="2388" n="nested_follow_speed_pauses_preserve_every_old_picture_through_both_stage_boundaries" cx="8" ccx="22" in="0" churn="34" amp="149">fn nested_follow_speed_pauses_preserve_every_old_picture_through_both_stage_boundaries()</d></f></sigs><bodies shown="3" total="6" capped="1"><b t="method" l="427" p="/Users/michael/Code/deadpan/crates/deadpan-core/src/framing.rs" n="evaluate_with_follow_exact"><![CDATA[pub fn evaluate_with_follow_exact(
+        &self,
+        local: ExactRatio,
+        duration: ExactRatio,
+    ) -> Result<EvaluatedFraming<'_>, FramingError> {
+        self.validate()?;
+        if !duration.compare_integer(0).is_gt()
+            || local.compare_integer(0).is_lt()
+            || numeric::compare(local, duration).is_gt()
+        {
+            return Err(FramingError::TimeRange);
+        }
+        let (local, duration) = self.clock.resolve(local, duration)?;
+        let envelope = match &self.value {
+            FramingValue::Static { pose } => {
+                return Ok(EvaluatedFraming {
+                    pose: *pose,
+                    follow: None,
+                });
+            }
+            // The target is resolved against the picture by the plan; on its
+            // own, a follow evaluates to its fallback.
+            FramingValue::Follow {
+                target,
+                scale,
+                fallback,
+                scale_transition,
+            } => {
+                let evaluated = |base| match scale_transition {
+                    None => Ok(base),
+                    Some(transition) => follow_scale(base, *transition, local, duration),
+                };
+                return Ok(EvaluatedFraming {
+                    pose: FramingPose {
+                        scale: evaluated(fallback.scale)?,
+                        ..*fallback
+                    },
+                    follow: Some((target, evaluated(*scale)?)),
+                });
+            }
+            FramingValue::Envelope { envelope } => envelope,
+        };
+        let mut start = ExactRatio::ZERO;
+        let mut from = envelope.initial;
+        for segment in &envelope.segments {
+            // Do not materialize `end * duration` or `local / duration` as an
+            // ExactRatio. Their intermediates can exceed i128 even when all
+            // inputs and the selected segment are valid.
+            match numeric::compare_progress(local, duration, segment.end)? {
+                std::cmp::Ordering::Equal => {
+                    return Ok(EvaluatedFraming {
+                        pose: segment.pose,
+                        follow: None,
+                    });
+                }
+                std::cmp::Ordering::Greater => {
+                    start = segment.end;
+                    from = segment.pose;
+                }
+                std::cmp::Ordering::Less => {
+                    if numeric::compare_progress(local, duration, start)?.is_eq()
+                        || matches!(segment.curve, FramingCurve::Step)
+                    {
+                        return Ok(EvaluatedFraming {
+                            pose: from,
+                            follow: None,
+                        });
+                    }
+                    let progress = numeric::segment_progress(local, duration, start, segment.end)?;
+                    return interpolate(from, segment.pose, segment.curve, progress)
+                        .map(|pose| EvaluatedFraming { pose, follow: None });
+                }
+            }
+        }
+        Err(FramingError::TimeRange)
+    }]]><calls total="10"><c n="compare_integer" l="146">pub fn compare_integer(self, value: i64) -&gt; std::cmp::Ordering</c><c n="resolve" l="160">fn resolve( self, local: ExactRatio, owner_duration: ExactRatio, ) -&gt; Result&lt;(ExactRatio, ExactRatio), FramingError&gt;</c><c n="validate" l="327">pub fn validate(&amp;self) -&gt; Result&lt;(), FramingError&gt;</c><c n="follow_scale" l="505">fn follow_scale( base: ExactRatio, transition: FollowScaleTransition, local: ExactRatio, duration: ExactRatio, ) -&gt; Result&lt;ExactRatio, FramingError&gt;</c><c n="interpolate" l="538">fn interpolate( from: FramingPose, to: FramingPose, curve: FramingCurve, progress: u64, ) -&gt; Result&lt;FramingPose, FramingError&gt;</c><c n="segment_progress" l="65">pub(super) fn segment_progress( local: ExactRatio, duration: ExactRatio, start: ExactRatio, end: ExactRatio, ) -&gt; Result&lt;u64, FramingError&gt;</c><c n="compare_progress" l="98">pub(super) fn compare_progress( local: ExactRatio, duration: ExactRatio, progress: ExactRatio, ) -&gt; Result&lt;Ordering, FramingError&gt;</c><c n="map" l="164">fn map(self, extent: i64) -&gt; Result&lt;SoundRippleMap, DocumentError&gt;</c><c n="evaluated" l="170">fn evaluated(document: &amp;ProjectDocument, owner: &amp;NodeId, local: ExactRatio) -&gt; EvaluatedGain</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><b t="method" l="3814" p="/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera.rs" n="animated_follow_camera_keeps_entry_clock_bases_and_releases_the_shown_static_pose"><![CDATA[fn animated_follow_camera_keeps_entry_clock_bases_and_releases_the_shown_static_pose() {
+        let r = |n, d| ExactRatio::new(n, d).unwrap();
+        let fallback = FramingPose::new(r(1, 3), r(2, 7), r(1, 2)).unwrap();
+        let transition = deadpan_core::FollowScaleTransition {
+            factor: r(2, 1),
+            curve: deadpan_core::framing_zoom::ZoomCurve::Linear,
+        };
+        let follow = FollowDraft {
+            target: TargetId::new("speaker").unwrap(),
+            center: [r(2, 5), r(1, 2)],
+            base_scale: r(5, 2),
+            base_live: r(2, 1),
+            base_fallback: fallback,
+            clock: FramingClock::RetainedOutput {
+                offset: r(1, 1),
+                duration: r(4, 1),
+            },
+            scale_transition: Some(transition),
+        };
+        let entry = Framing {
+            clock: follow.clock,
+            value: FramingValue::Follow {
+                target: follow.target.clone(),
+                scale: follow.base_live,
+                fallback,
+                scale_transition: Some(transition),
+            },
+        };
+        let handle =
+            FramingPose::new(follow.center[0], follow.center[1], follow.base_scale).unwrap();
+        assert_eq!(followed_framing(&follow, handle).unwrap(), entry);
+        let changed = followed_framing(
+            &follow,
+            FramingPose {
+                scale: r(5, 1),
+                ..handle
+            },
+        )
+        .unwrap();
+        assert_eq!(changed.clock, entry.clock);
+        let FramingValue::Follow {
+            scale,
+            fallback: adjusted,
+            scale_transition,
+            ..
+        } = changed.value
+        else {
+            panic!("follow flattened");
+        };
+        assert_eq!(scale, r(4, 1));
+        assert_eq!(
+            adjusted,
+            FramingPose {
+                scale: r(1, 1),
+                ..fallback
+            }
+        );
+        assert_eq!(scale_transition, Some(transition));
+        // The terminal endpoint, not just this frame's handle, bounds adjustment.
+        assert!(
+            followed_framing(
+                &follow,
+                FramingPose {
+                    scale: r(41, 1),
+                    ..handle
+                }
+            )
+            .is_err()
+        );
+        let fallback_shown = entry.evaluate_exact(ExactRatio::ZERO, r(8, 1)).unwrap();
+        assert_eq!(fallback_shown.center_x, r(1, 3));
+        assert_eq!(
+            adjusted_framing(Some(&entry), fallback_shown, fallback_shown, false)
+                .unwrap()
+                .unwrap()
+                .value,
+            FramingValue::Static {
+                pose: fallback_shown
+            }
+        );
+        let mut switched = follow.clone();
+        switched.target = TargetId::new("other").unwrap();
+        let switched = followed_framing(&switched, handle).unwrap();
+        assert!(
+            matches!(switched.value, FramingValue::Follow { target, scale_transition: Some(value), .. }
+            if target.as_str() == "other" && value == transition)
+        );
+    }]]><calls total="4"><c n="followed_framing" l="481">fn followed_framing(follow: &amp;FollowDraft, pose: FramingPose) -&gt; Result&lt;Framing, String&gt;</c><c n="new" l="52">pub fn new(numerator: i128, denominator: i128) -&gt; Result&lt;Self, TimeError&gt;</c><c n="new" l="76">pub fn new( center_x: ExactRatio, center_y: ExactRatio, scale: ExactRatio, ) -&gt; Result&lt;Self, FramingError&gt;</c><c n="evaluate_exact" l="416">pub fn evaluate_exact( &amp;self, local: ExactRatio, duration: ExactRatio, ) -&gt; Result&lt;FramingPose, FramingError&gt;</c></calls></b><b t="fn" l="545" p="/Users/michael/Code/deadpan/crates/deadpan-plan/tests/picture_plan.rs" n="freeze_picture_identity_stays_fixed_while_its_framing_clock_advances"><![CDATA[fn freeze_picture_identity_stays_fixed_while_its_framing_clock_advances() {
+    let freeze = node(NodeKind::Hold {
+        recipe: HoldRecipe {
+            duration: duration(8),
+            video: HoldVideo::Freeze {
+                asset: asset_id("video"),
+                timestamp: SourceTimestamp {
+                    ticks: 1001,
+                    time_base: clock(),
+                },
+            },
+            picture_context: None,
+            audio: HoldAudio::Silence,
+        },
+    });
+    let document = document(&["hold"], vec![("hold", framed(freeze, 3))]);
+    let plan = RenderPlan::compile(&document).unwrap();
+    let first = plan.picture(ProjectFrame(0)).unwrap();
+    let last = plan.picture(ProjectFrame(7)).unwrap();
+    assert_eq!(first.picture, last.picture);
+    assert_eq!(
+        first.framing[0].pose.unwrap().scale,
+        ExactRatio::new(9, 8).unwrap()
+    );
+    assert_eq!(
+        last.framing[0].pose.unwrap().scale,
+        ExactRatio::new(23, 8).unwrap()
+    );
+}]]><calls total="7"><c n="ProjectFrame" l="9">pub struct ProjectFrame</c><c n="compile" l="701">pub fn compile(document: &amp;ProjectDocument) -&gt; Result&lt;Self, PlanError&gt;</c><c n="asset_id" l="29">fn asset_id(value: &amp;str) -&gt; AssetId</c><c n="duration" l="35">fn duration(value: i64) -&gt; FrameDuration</c><c n="clock" l="41">fn clock() -&gt; SourceTimeBase</c><c n="node" l="57">fn node(kind: NodeKind) -&gt; BeatNode</c><c n="document" l="124">fn document(roots: &amp;[&amp;str], nodes: Vec&lt;(&amp;str, BeatNode)&gt;) -&gt; ProjectDocument</c></calls></b></bodies></ctx>

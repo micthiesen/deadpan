@@ -1,0 +1,8 @@
+{
+  "base": "fea6b081775165f9830ba14d938576d346fec6c8",
+  "scope": "All14sourcepaths in source-files.json and fullnewtest/harness content. Foreign fuzz/Cargo.lock and .claude excluded.",
+  "general": "No actionablefindings; actualordinaryselectedowner and existingrefusals covered.",
+  "clock": "No actionablefindings; groupOwnerOutput and per-providerOriginalpoints keptseparate, scopes/halfopen/fallback/descendants checked.",
+  "test_quality": "No actionablefindings; meaningful allframe/oracle/selection/history/refusal checks, no runtimeexecutedbyreviewers.",
+  "review_routes": "Fresh check and two check-focused roles, prescribed Luna tier; no model fallback."
+}

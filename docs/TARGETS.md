@@ -66,12 +66,14 @@ picture time. The document map is `targets`; patches carry `targets` changes.
 
 `FramingValue::Follow { target, scale, fallback }` centers a framing layer on
 the target at the source time of the picture shown, at its evaluated scale.
-A whole ordinary Source or Hold can retain a live-target scale transition
+A whole ordinary Source, Hold or Sequence can retain a live-target scale transition
 ([following creep](FRAMING.md#zoom-and-creep-commands)). The plan
 resolves it after descending to the picture (`RenderPlan::resolve_follows`): the
 target point is carried outward through every inner posed layer, innermost
 first (`p' = (p - center) * scale + 1/2`), so an outer follow sees the subject
-where inner framing put it. Before that, a target with a `display_aspect` has
+where inner framing put it. On a Sequence the target uses each child's current
+Original time across cuts, while scale uses the complete group's output clock.
+Before that, a target with a `display_aspect` has
 its center placed on the presentation canvas exactly where the renderer fits
 the whole picture (`deadpan_core::fit_source_point`, the `Fit` letterbox or
 pillarbox): along the axis the picture fills the coordinate is unchanged, along

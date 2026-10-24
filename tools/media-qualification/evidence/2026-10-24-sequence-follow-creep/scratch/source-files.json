@@ -1,0 +1,16 @@
+[
+  "crates/deadpan-app/src/navigation/registry/entries.rs",
+  "crates/deadpan-app/src/preview/camera.rs",
+  "crates/deadpan-app/src/preview/harness.rs",
+  "crates/deadpan-app/src/preview/harness/sequence_follow_creep.rs",
+  "crates/deadpan-app/src/preview/harness/scenarios.rs",
+  "crates/deadpan-app/src/ui_harness.rs",
+  "crates/deadpan-cli/tests/project_commands/macros/framing.rs",
+  "crates/deadpan-cli/tests/project_commands/macros/framing/sequence_follow_creep.rs",
+  "crates/deadpan-core/src/framing_zoom.rs",
+  "crates/deadpan-core/src/framing_zoom/tests.rs",
+  "crates/deadpan-core/src/semantic/planner/framing.rs",
+  "crates/deadpan-core/src/semantic/planner/tests/framing.rs",
+  "crates/deadpan-plan/tests/picture_plan.rs",
+  "crates/deadpan-plan/tests/picture_plan/sequence_follow_creep.rs"
+]

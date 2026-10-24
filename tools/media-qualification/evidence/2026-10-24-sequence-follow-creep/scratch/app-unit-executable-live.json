@@ -1,0 +1,7 @@
+{
+  "observed_at": "2026-10-24T09:46:09.485276+00:00",
+  "path": "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_app-c75853e20f9b0baa",
+  "bytes": 245292384,
+  "sha256": "e64c4181da7f7039c06033dae4ce09e2a66bfbad8eb52881102db02840f75300",
+  "note": "Cargo-reported final App unit binary observed while full app-units-final runs, scoped14sources. No archived-source comparison."
+}

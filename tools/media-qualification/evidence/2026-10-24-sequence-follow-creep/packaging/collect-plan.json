@@ -1,0 +1,485 @@
+{
+  "schema_version": 1,
+  "repository": "/Users/michael/Code/deadpan",
+  "destination": "tools/media-qualification/evidence/2026-10-24-sequence-follow-creep",
+  "raw_byte_limit": 268435456,
+  "gzip_threshold_bytes": 65536,
+  "inputs": {
+    "Cargo.lock": {
+      "bytes": 135252,
+      "sha256": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b"
+    },
+    "Cargo.toml": {
+      "bytes": 3509,
+      "sha256": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3"
+    },
+    "rust-toolchain.toml": {
+      "bytes": 86,
+      "sha256": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+    },
+    ".cargo/config.toml": {
+      "bytes": 147,
+      "sha256": "b906738cab8f6f289180e1bcf32826d3e2996899cb5055dc7f0c6838655c340d"
+    },
+    "crates/deadpan-app/src/navigation/registry/baseline-routing.txt": {
+      "bytes": 796287,
+      "sha256": "a181ba1d3f2db1c030fbdf1feaf2d5ae8efd5edd885114bcea9c161ac774cd8d"
+    },
+    "docs/COMMANDS.md": {
+      "bytes": 97217,
+      "sha256": "0c76bab6354d7b5dd106f06c966df85f8abb6166027cfda44fe9995ee428128a"
+    },
+    "docs/TARGETS.md": {
+      "bytes": 11453,
+      "sha256": "25432de30e12999edb9ab4785141ecf1a25eca57e598a7afb0688cf3677e5b18"
+    },
+    "docs/FRAMING.md": {
+      "bytes": 28747,
+      "sha256": "d6b52301524d1fd7e7e90e4aaf162436dd1ccb87cb8a240f3a73391a58132b02"
+    },
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": {
+      "bytes": 39157,
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+    }
+  },
+  "post_run_sources": {},
+  "files": [
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/app-check-first.json",
+      "path": "scratch/app-check-first.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/app-check-first.stderr",
+      "path": "scratch/app-check-first.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/app-check-first.stdout",
+      "path": "scratch/app-check-first.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/app-unit-executable-live.json",
+      "path": "scratch/app-unit-executable-live.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/app-unit-executable-terminal.json",
+      "path": "scratch/app-unit-executable-terminal.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/app-units-final.json",
+      "path": "scratch/app-units-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/app-units-final.stderr",
+      "path": "scratch/app-units-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/app-units-final.stdout",
+      "path": "scratch/app-units-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/audit-sequence-evidence.json",
+      "path": "scratch/audit-sequence-evidence.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/audit-sequence-evidence.py",
+      "path": "scratch/audit-sequence-evidence.py"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/audit-sequence-evidence.stderr",
+      "path": "scratch/audit-sequence-evidence.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/audit-sequence-evidence.stdout",
+      "path": "scratch/audit-sequence-evidence.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/bundle-helpers.py",
+      "path": "scratch/bundle-helpers.py"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/candidate-equivalence.json",
+      "path": "scratch/candidate-equivalence.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/cli-framing-final.json",
+      "path": "scratch/cli-framing-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/cli-framing-final.stderr",
+      "path": "scratch/cli-framing-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/cli-framing-final.stdout",
+      "path": "scratch/cli-framing-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/clippy-final.json",
+      "path": "scratch/clippy-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/clippy-final.stderr",
+      "path": "scratch/clippy-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/clippy-final.stdout",
+      "path": "scratch/clippy-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/collect.py",
+      "path": "scratch/collect.py"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/commands-write.json",
+      "path": "scratch/commands-write.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/commands-write.stderr",
+      "path": "scratch/commands-write.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/commands-write.stdout",
+      "path": "scratch/commands-write.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/core-plan-final.json",
+      "path": "scratch/core-plan-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/core-plan-final.stderr",
+      "path": "scratch/core-plan-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/core-plan-final.stdout",
+      "path": "scratch/core-plan-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/design-map.md",
+      "path": "scratch/design-map.md"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/design.md",
+      "path": "scratch/design.md"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/final-identities.json",
+      "path": "scratch/final-identities.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/final-native.py",
+      "path": "scratch/final-native.py"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/first-identities.json",
+      "path": "scratch/first-identities.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/format-first.json",
+      "path": "scratch/format-first.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/format-first.stderr",
+      "path": "scratch/format-first.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/format-first.stdout",
+      "path": "scratch/format-first.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/host.json",
+      "path": "scratch/host.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/make-collect-plan.py",
+      "path": "scratch/make-collect-plan.py"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/media-final.json",
+      "path": "scratch/media-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/media-final.stderr",
+      "path": "scratch/media-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/media-final.stdout",
+      "path": "scratch/media-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/media.py",
+      "path": "scratch/media.py"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-final-batch.stderr",
+      "path": "scratch/native-final-batch.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-final-batch.stdout",
+      "path": "scratch/native-final-batch.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-harness-freeze.json",
+      "path": "scratch/native-harness-freeze.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-harness-handoff.md",
+      "path": "scratch/native-harness-handoff.md"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-hold-final.json",
+      "path": "scratch/native-hold-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-hold-final.stderr",
+      "path": "scratch/native-hold-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-hold-final.stdout",
+      "path": "scratch/native-hold-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-sequence-first.json",
+      "path": "scratch/native-sequence-first.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-sequence-first.stderr",
+      "path": "scratch/native-sequence-first.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-sequence-first.stdout",
+      "path": "scratch/native-sequence-first.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-zoom-final.json",
+      "path": "scratch/native-zoom-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-zoom-final.stderr",
+      "path": "scratch/native-zoom-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-zoom-final.stdout",
+      "path": "scratch/native-zoom-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/plan-focused-1.json",
+      "path": "scratch/plan-focused-1.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/plan-focused-1.stderr",
+      "path": "scratch/plan-focused-1.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/plan-focused-1.stdout",
+      "path": "scratch/plan-focused-1.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/plan-freeze.json",
+      "path": "scratch/plan-freeze.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/plan-handoff.md",
+      "path": "scratch/plan-handoff.md"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/plan-ripwire.txt",
+      "path": "scratch/plan-ripwire.txt"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/plan-run.py",
+      "path": "scratch/plan-run.py"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/plan-write-test.py",
+      "path": "scratch/plan-write-test.py"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/plan-written.json",
+      "path": "scratch/plan-written.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/prepare-final.stderr",
+      "path": "scratch/prepare-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/prepare-final.stdout",
+      "path": "scratch/prepare-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/prepare-first.stderr",
+      "path": "scratch/prepare-first.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/prepare-first.stdout",
+      "path": "scratch/prepare-first.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/prepare.py",
+      "path": "scratch/prepare.py"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/release-final.json",
+      "path": "scratch/release-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/release-final.stderr",
+      "path": "scratch/release-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/release-final.stdout",
+      "path": "scratch/release-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/review-notes.json",
+      "path": "scratch/review-notes.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/ripwire.stderr",
+      "path": "scratch/ripwire.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/ripwire.stdout",
+      "path": "scratch/ripwire.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/run.py",
+      "path": "scratch/run.py"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/source-files.json",
+      "path": "scratch/source-files.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/visual-review.json",
+      "path": "scratch/visual-review.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/worker-cli-1-sequence_follow_creep.rs.txt",
+      "path": "scratch/worker-cli-1-sequence_follow_creep.rs.txt"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/worker-cli-1.json",
+      "path": "scratch/worker-cli-1.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/worker-cli-1.stderr",
+      "path": "scratch/worker-cli-1.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/worker-cli-1.stdout",
+      "path": "scratch/worker-cli-1.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/worker-cli-2.json",
+      "path": "scratch/worker-cli-2.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/worker-cli-2.stderr",
+      "path": "scratch/worker-cli-2.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/worker-cli-2.stdout",
+      "path": "scratch/worker-cli-2.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/worker-core-1.json",
+      "path": "scratch/worker-core-1.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/worker-core-1.stderr",
+      "path": "scratch/worker-core-1.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/worker-core-1.stdout",
+      "path": "scratch/worker-core-1.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/worker-run.py",
+      "path": "scratch/worker-run.py"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/worker-sequence-final-freeze.json",
+      "path": "scratch/worker-sequence-final-freeze.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/worker-sequence-final-handoff.md",
+      "path": "scratch/worker-sequence-final-handoff.md"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-hold-final/report.json",
+      "path": "native-hold-final/report.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-hold-final/report.html",
+      "path": "native-hold-final/report.html"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-sequence-first/report.json",
+      "path": "native-sequence-first/report.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-sequence-first/report.html",
+      "path": "native-sequence-first/report.html"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-zoom-final/report.json",
+      "path": "native-zoom-final/report.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-zoom-final/report.html",
+      "path": "native-zoom-final/report.html"
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-sequence-first/sequence-follow-creep-077.png",
+      "path": "images/native-sequence-first-sequence-follow-creep-077.png",
+      "png": true
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-sequence-first/sequence-follow-creep-107.png",
+      "path": "images/native-sequence-first-sequence-follow-creep-107.png",
+      "png": true
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-sequence-first/sequence-follow-creep-114.png",
+      "path": "images/native-sequence-first-sequence-follow-creep-114.png",
+      "png": true
+    },
+    {
+      "source": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-sequence-first/sequence-follow-creep-121.png",
+      "path": "images/native-sequence-first-sequence-follow-creep-121.png",
+      "png": true
+    }
+  ],
+  "archives": [
+    {
+      "name": "first-source",
+      "root": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/source-first"
+    },
+    {
+      "name": "worker-final-source",
+      "root": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/worker-source-final"
+    },
+    {
+      "name": "audit-history",
+      "root": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/audit-history"
+    },
+    {
+      "name": "final-sequence-project-and-export",
+      "root": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/media-final"
+    },
+    {
+      "name": "actual-native-sequence-project",
+      "root": "/private/tmp/deadpan-sequence-follow-creep-2026-10-24/native-sequence-first/projects/sequence-follow-creep/Documents/Deadpan/cfr-bframes.deadpan"
+    }
+  ],
+  "limitations": [
+    "Fourteen scoped final source paths and five sibling executable identities, not an attestation of every repository file.",
+    "One release candidate and one Sequence workflow. First/final source and all five binary bytes are identical; the passing native-sequence-first is final and is not counted twice.",
+    "Focused workers bind their actual narrower owned sources and basis. Core focused1 predates a later CLI fixture correction outside its Core test scope; Plan focused1 basis includes a later Core semantic-test change, with no Plan dependency production change. Final broad Core/Plan2049 and all standard final receipts bind all14 current sources.",
+    "The initial CLI reverse-selection fixture cursor mismatch and its exact old test source are retained. Final focused CLI1 and broader13 framing cases pass; these are not the full CLI suite.",
+    "Native Sequence uses production keys and manually authored/corrected points, without a scripted detector/tracker. Affected Source/Hold regressions are retained; unrelated face/point/tracking scenarios were not rerun.",
+    "Offscreen Metal and scripted native input; no physical display/input, OS IME delivery, VoiceOver speech, listening or latency qualification.",
+    "Export comparison uses the committed shared picture/DSP reference. Neighbor observability limits, warnings, failures and existing opt-in ignores are retained.",
+    "Actual native and portable projects, immutable history, complete media verification and explicit encoder-delay metadata are retained.",
+    "Collector output and later package-verification receipts remain separate to avoid recursive publication."
+  ]
+}

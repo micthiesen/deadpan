@@ -180,6 +180,7 @@ where
                 ordinary_owner: match &self.current.nodes()[&selected].kind {
                     NodeKind::Source { .. } => Some(framing_zoom::OrdinaryFollowOwner::Source),
                     NodeKind::Hold { .. } => Some(framing_zoom::OrdinaryFollowOwner::Hold),
+                    NodeKind::Sequence { .. } => Some(framing_zoom::OrdinaryFollowOwner::Sequence),
                     _ => None,
                 },
                 entry,

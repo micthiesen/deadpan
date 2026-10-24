@@ -113,11 +113,12 @@ pub enum Center {
 pub enum OrdinaryFollowOwner {
     Source,
     Hold,
+    Sequence,
 }
 
 /// The beat being framed, as Camera sees it at the displayed picture.
 pub struct Shot<'a> {
-    /// Resolved ordinary Source or Hold outside occurrence editing. This admits only
+    /// Resolved ordinary Source, Hold or Sequence outside occurrence editing. This admits only
     /// creation of a whole-owner Follow transition, never raw payload validity.
     pub ordinary_owner: Option<OrdinaryFollowOwner>,
     /// The beat's authored framing before the edit.
@@ -142,7 +143,7 @@ fn progress(frame: u64, frames: u64) -> Result<ExactRatio, String> {
 }
 
 pub const PATH_REFUSAL: &str = "This beat has a camera path, and this would replace it. Use :zoom off first, or name the target (target=current, center or an id) to replace it explicitly.";
-pub const FOLLOW_CREEP_REFUSAL: &str = "Following creep requires one whole ordinary Source or Hold with no Visual range or single-play scope. Name target= to creep to a fixed point, or clear the range and select an ordinary Source or Hold.";
+pub const FOLLOW_CREEP_REFUSAL: &str = "Following creep requires one whole ordinary Source, Hold or Sequence with no Visual range or single-play scope. Name target= to creep to a fixed point, or clear the range and select an ordinary Source, Hold or Sequence.";
 pub const RANGED_FOLLOW_REFUSAL: &str = "This beat follows a target; a range would stop following it outside the range. Apply to the whole beat (clear the Visual range) or :zoom off first.";
 pub const RANGED_PATH_REFUSAL: &str = "This beat has a camera path; a range would replace it outside the range. Apply to the whole beat (clear the Visual range) or :zoom off first.";
 

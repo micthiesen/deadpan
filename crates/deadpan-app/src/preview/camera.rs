@@ -876,6 +876,7 @@ impl CameraSession {
         {
             Some(deadpan_core::NodeKind::Source { .. }) => Some(OrdinaryFollowOwner::Source),
             Some(deadpan_core::NodeKind::Hold { .. }) => Some(OrdinaryFollowOwner::Hold),
+            Some(deadpan_core::NodeKind::Sequence { .. }) => Some(OrdinaryFollowOwner::Sequence),
             _ => None,
         }
     }

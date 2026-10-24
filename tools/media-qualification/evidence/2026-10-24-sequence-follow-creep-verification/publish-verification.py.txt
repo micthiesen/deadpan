@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+"""Retain completed Sequence package receipts without changing Primary."""
+import argparse, hashlib, json, runpy, shutil, tempfile
+from pathlib import Path
+scratch=Path(__file__).resolve().parent
+repo=Path('/Users/michael/Code/deadpan')
+destination=repo/'tools/media-qualification/evidence/2026-10-24-sequence-follow-creep-verification'
+parser=argparse.ArgumentParser()
+parser.add_argument('--receipt-sha256',required=True)
+a=parser.parse_args()
+helper=scratch/'bundle-helpers.py'
+assert hashlib.sha256(helper.read_bytes()).hexdigest()=='2758fa2c837e63d41b33f38b34f728017feda8b0c05aa21499eeb40f4764df13'
+h=runpy.run_path(str(helper)); limit=4*1024*1024
+assert not destination.exists()
+primary=repo/'tools/media-qualification/evidence/2026-10-24-sequence-follow-creep/files.json'
+primary_pin=h['hash_regular'](primary,limit)
+assert primary_pin['sha256']=='dac42373c6119a3baf5cd98869cf91beb01b66d676ab9a2763bdf7885bc8e7a9'
+stage=Path(tempfile.mkdtemp(prefix='.sequence-verification-',dir=scratch)); published=False
+try:
+ names=['verify-sequence-package.py','package-verification.json','package-verification.stdout','package-verification.stderr','collect.stdout','collect.stderr']
+ originals={}
+ for name in names:
+  source=scratch/name; data=h['read_regular'](source,limit)
+  originals[name]=h['hash_regular'](source,limit)
+  with (stage/name).open('xb') as out: out.write(data)
+  assert h['read_regular'](stage/name,limit)==data
+ assert originals['package-verification.json']['sha256']==a.receipt_sha256
+ script=Path(__file__).read_bytes()
+ (stage/'publish-verification.py.txt').write_bytes(script)
+ metadata={'primary_inventory_sha256':primary_pin['sha256'],'collector_exit_code':0,'verification_receipt_sha256':a.receipt_sha256,'source_files':originals,'publisher_sha256':hashlib.sha256(script).hexdigest(),'scope':'Post-publication receipts only; no Primary changes or product/build rerun.'}
+ (stage/'publication.json').write_bytes(h['json_bytes'](metadata))
+ inventory={name:h['hash_regular'](path,limit) for name,path in h['safe_tree'](stage)}
+ assert sum(x['bytes'] for x in inventory.values())<limit
+ (stage/'files.json').write_bytes(h['json_bytes'](inventory))
+ assert {name:h['hash_regular'](path,limit) for name,path in h['safe_tree'](stage) if name!='files.json'}==inventory
+ assert all(h['hash_regular'](scratch/name,limit)==pin for name,pin in originals.items())
+ assert h['hash_regular'](primary,limit)==primary_pin
+ h['exclusive_publish'](stage,destination); published=True
+ print(json.dumps({'published':str(destination),'payloads':len(inventory),'bytes':sum(x['bytes'] for x in inventory.values()),'inventory_sha256':hashlib.sha256(h['json_bytes'](inventory)).hexdigest()}))
+finally:
+ if not published: shutil.rmtree(stage)

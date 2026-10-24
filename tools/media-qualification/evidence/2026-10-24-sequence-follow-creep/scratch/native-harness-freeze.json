@@ -1,0 +1,42 @@
+{
+  "frozen_at": "2026-10-24T09:38:36.080687+00:00",
+  "base_supplied_by_root": "fea6b081",
+  "files": [
+    {
+      "path": "crates/deadpan-app/src/preview/harness/sequence_follow_creep.rs",
+      "bytes": 20734,
+      "sha256": "cd7114bfe6aa323f01fcb2bb8a34442403dd0d7edee3e8882230e4e2bdca467a"
+    },
+    {
+      "path": "crates/deadpan-app/src/preview/harness.rs",
+      "bytes": 59267,
+      "sha256": "37b385c23f2eb666eeccb802bda266f7dc88b9ddfbb288a26e9a2fd15ac440cf"
+    },
+    {
+      "path": "crates/deadpan-app/src/preview/harness/scenarios.rs",
+      "bytes": 89296,
+      "sha256": "52c73107248b6d4c92047afb663fc35a069c80326da90299e93962ef571f3e3a"
+    },
+    {
+      "path": "crates/deadpan-app/src/ui_harness.rs",
+      "bytes": 29633,
+      "sha256": "c82e041885aa5792e6946c2c1c9ea39d0eccf169694f375b1b0db990ce0d587a"
+    }
+  ],
+  "source_frozen": true,
+  "format_command": "rustfmt --edition 2024 --config skip_children=true crates/deadpan-app/src/preview/harness/sequence_follow_creep.rs",
+  "format_exit": 0,
+  "registration_count_checks": "one each",
+  "executed_cargo": false,
+  "executed_product_runtime": false,
+  "executed_git": false,
+  "verification_owner": "Root",
+  "final_output_frames": 80,
+  "final_audio_samples": 128128,
+  "scale_boundary_oracle": {
+    "0": "4753991927/4294967296",
+    "39": "3528584069/2147483648",
+    "40": "7116223939/4294967296",
+    "79": "4709700075/2147483648"
+  }
+}

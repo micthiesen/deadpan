@@ -31,6 +31,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "recipes" => super::recipes::run(d),
         "hold-effects" => super::hold_effects::run(d),
         "hold-follow-creep" => super::hold_follow_creep::run(d),
+        "sequence-follow-creep" => super::sequence_follow_creep::run(d),
         "tail-sends" => super::tail_sends::run(d),
         "wet-returns" => super::wet_returns::run(d),
         "audio-treatments" => super::audio_treatments::run(d),

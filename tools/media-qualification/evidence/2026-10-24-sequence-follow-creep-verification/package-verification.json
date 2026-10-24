@@ -1,0 +1,229 @@
+{
+  "actual_media_commands": 9,
+  "all_selected_history_tables_equal": true,
+  "archives": [
+    {
+      "bytes": 719169,
+      "members": 14,
+      "omissions": 0,
+      "path": "archives/first-source.tar.gz",
+      "retained_sidecars": []
+    },
+    {
+      "bytes": 111311,
+      "members": 6,
+      "omissions": 0,
+      "path": "archives/worker-final-source.tar.gz",
+      "retained_sidecars": []
+    },
+    {
+      "bytes": 43439,
+      "members": 5,
+      "omissions": 0,
+      "path": "archives/audit-history.tar.gz",
+      "retained_sidecars": []
+    },
+    {
+      "bytes": 1720574,
+      "members": 30,
+      "omissions": 0,
+      "path": "archives/final-sequence-project-and-export.tar.gz",
+      "retained_sidecars": [
+        "portable.deadpan/Snapshots/.tmpqN9R3b-shm",
+        "portable.deadpan/Snapshots/.tmpqN9R3b-wal"
+      ]
+    },
+    {
+      "bytes": 2031604,
+      "members": 13,
+      "omissions": 0,
+      "path": "archives/actual-native-sequence-project.tar.gz",
+      "retained_sidecars": [
+        "Snapshots/.tmp217iEk-shm",
+        "Snapshots/.tmp217iEk-wal"
+      ]
+    }
+  ],
+  "audio_offset": 0,
+  "audio_window": [
+    0,
+    128128
+  ],
+  "authored_omissions": 0,
+  "budget_bytes": 268435456,
+  "collector_sha256": "320e79dbf00568d68d7657e3c31d968402772533071529e7c9c494f9aacc6f0e",
+  "current_scoped_sources_unchanged": true,
+  "earlier_audit_files_unchanged": true,
+  "embedded_raw_audit_sha256": "1287a23f69e7003a5a815d12f05d4311bd3677f69c88eca16a39249e2073e0a4",
+  "encoding_records": 131,
+  "encodings": {
+    "gzip": 19,
+    "identity": 107,
+    "tar+gzip": 5
+  },
+  "final_source_paths": 14,
+  "findings": [],
+  "finished_utc": "2026-10-24T10:10:02.834088+00:00",
+  "first_audit_stop_preserved": true,
+  "initial_audit_history_unchanged": true,
+  "inventory_sha256": "dac42373c6119a3baf5cd98869cf91beb01b66d676ab9a2763bdf7885bc8e7a9",
+  "inventory_unchanged": true,
+  "limitations": [
+    "No collector, payload script, product, Cargo, test, worker, decoder, model or Git command executed.",
+    "Fourteen scoped sources and relevant historical subsets are checked, not compilation of every repository file.",
+    "Root's image review is bound by bytes; PNG integrity is not independent visual or physical-display qualification.",
+    "Shared picture/limited-audio references do not establish independent DSP, listening, encoded bit equality, tracking accuracy or latency/requirement completion.",
+    "The initial CLI fixture failure and initial offline Plan-basis scope stop are preserved; final broad Core/Plan execution provides the current binding. Only one release candidate/Sequence workflow is claimed."
+  ],
+  "metadata_omissions": 0,
+  "movie": {
+    "bytes": 117671,
+    "sha256": "f58bac4dd4e4dec609af135aa0958578ebe3bcb618cd0e089c1d2f086dc45611"
+  },
+  "native": [
+    {
+      "checks": 107,
+      "kestrel": 1,
+      "name": "native-sequence-first",
+      "skips": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warnings": [
+        "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+        "22 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 7 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ]
+    },
+    {
+      "checks": 67,
+      "kestrel": 1,
+      "name": "native-hold-final",
+      "skips": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warnings": [
+        "6 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ]
+    },
+    {
+      "checks": 213,
+      "kestrel": 1,
+      "name": "native-zoom-final",
+      "skips": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "warnings": [
+        "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+        "19 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 10 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ]
+    }
+  ],
+  "payload_bytes": 8457096,
+  "payloads": 134,
+  "picture_neighbor_observability": {
+    "observable": 152,
+    "unobservable": 6
+  },
+  "picture_rows": 80,
+  "plan_sha256": "248c91607f4fcb140201e8f854a168de65445b53c9e8ffb53bec374deabfbfe4",
+  "portable_history_rows": 15,
+  "portable_revisions": 26,
+  "primary_files": 135,
+  "primary_tree_unchanged": true,
+  "prior_audit_file_pins": {
+    "audit-sequence-evidence.json": {
+      "bytes": 54470,
+      "sha256": "1287a23f69e7003a5a815d12f05d4311bd3677f69c88eca16a39249e2073e0a4"
+    },
+    "audit-sequence-evidence.py": {
+      "bytes": 24491,
+      "sha256": "252c279d5c5f050af03cc7cf20f422b84b1ee5f1f594e738c32a837c751262d4"
+    },
+    "audit-sequence-evidence.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "audit-sequence-evidence.stdout": {
+      "bytes": 185,
+      "sha256": "4da513c4f8e419efd37917f5a888c3e5fd60c6ed67239b465f6eb524f7947391"
+    }
+  },
+  "raw_payload_bytes": 114876734,
+  "raw_tests": {
+    "app-units-final": [
+      1304,
+      0,
+      11
+    ],
+    "cli-framing-final": [
+      13,
+      0,
+      0
+    ],
+    "core-plan-final": [
+      2049,
+      0,
+      0
+    ],
+    "plan-focused-1": [
+      2,
+      0,
+      0
+    ],
+    "worker-cli-2": [
+      1,
+      0,
+      0
+    ],
+    "worker-core-1": [
+      2,
+      0,
+      0
+    ]
+  },
+  "schema_version": 1,
+  "selected_pngs": {
+    "images/native-sequence-first-sequence-follow-creep-077.png": {
+      "bytes": 335585,
+      "dimensions": [
+        1280,
+        820
+      ],
+      "sha256": "f465214e7f29a005cddbb4ad19c0cf37b9a1503d9d92e2ff7d8243f54e625db4"
+    },
+    "images/native-sequence-first-sequence-follow-creep-107.png": {
+      "bytes": 366518,
+      "dimensions": [
+        1280,
+        820
+      ],
+      "sha256": "2b40d27dcf1145471a603705ccd4f53ec649c122739722a40b2520e2479a5c8e"
+    },
+    "images/native-sequence-first-sequence-follow-creep-114.png": {
+      "bytes": 368282,
+      "dimensions": [
+        1280,
+        820
+      ],
+      "sha256": "7c3d4d3f31c5d4e1eb6c1907749b5ba4c8bfa30625839da0f8b7a58a8a63a6ff"
+    },
+    "images/native-sequence-first-sequence-follow-creep-121.png": {
+      "bytes": 362109,
+      "dimensions": [
+        1280,
+        820
+      ],
+      "sha256": "13e78234ed54c9c0323c9ef363ffdf9401ae7195f60b3ff6008012c4a7d3d688"
+    }
+  },
+  "started_utc": "2026-10-24T10:10:01.957454+00:00",
+  "status": "no_findings",
+  "tar_member_bytes": 4626097,
+  "tar_members": 68,
+  "verifier_sha256": "10c9c0114816f502df9075747afbbb2007fcbdf35cf4c7082be7234d2638b90b"
+}

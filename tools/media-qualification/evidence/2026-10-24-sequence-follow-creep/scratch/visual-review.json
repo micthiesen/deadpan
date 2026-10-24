@@ -1,0 +1,27 @@
+{
+  "observed_at": "2026-10-24T09:55:07.709625+00:00",
+  "method": "Root inspected offscreen native Metal PNGs through view_image.",
+  "result": "Camera077 labels the selected Sequence, shows Target1 Follow at center58 and separate80Edit/120Original clocks. Seam107/114 show sourcecounter39/80 with continuousgroup1.1to2.2 inspector and2children. Final121 retainsselectedwholeSequencewithliveFollow,80framesandreadablekeys. No overlappinglabelsorobscuredcontrols observed.",
+  "images": {
+    "native-sequence-first/sequence-follow-creep-077.png": {
+      "bytes": 335585,
+      "sha256": "f465214e7f29a005cddbb4ad19c0cf37b9a1503d9d92e2ff7d8243f54e625db4"
+    },
+    "native-sequence-first/sequence-follow-creep-107.png": {
+      "bytes": 366518,
+      "sha256": "2b40d27dcf1145471a603705ccd4f53ec649c122739722a40b2520e2479a5c8e"
+    },
+    "native-sequence-first/sequence-follow-creep-114.png": {
+      "bytes": 368282,
+      "sha256": "7c3d4d3f31c5d4e1eb6c1907749b5ba4c8bfa30625839da0f8b7a58a8a63a6ff"
+    },
+    "native-sequence-first/sequence-follow-creep-121.png": {
+      "bytes": 362109,
+      "sha256": "13e78234ed54c9c0323c9ef363ffdf9401ae7195f60b3ff6008012c4a7d3d688"
+    }
+  },
+  "limits": [
+    "Offscreen rendering and scripted input do not establish physical display/input, OS IME delivery, VoiceOver speech, listening or latency.",
+    "The finalworkflowusesonecandidatebuild. First/final snapshots and allfivebinarybytesidentical; the workflowisnotcountedtwice."
+  ]
+}

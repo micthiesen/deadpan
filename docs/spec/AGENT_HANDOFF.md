@@ -4,6 +4,75 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-24
 
+[Whole-Sequence following creep](../qualification/sequence-follow-creep-2026-10-24.md)
+is implemented and locally verified. The typed ordinary owner enum
+and actual selected-node classification now admit a direct-child Sequence
+outside enclosing Repeat and explicit occurrence scopes. No Visual range is
+admitted, including one covering the whole group. Descendant kinds remain
+unrestricted, including native Retime fragments. Root self-selection authority
+is unchanged. Repeat/Retime owners and implicit flattening of an animated
+Follow or envelope still refuse.
+
+Group `OwnerOutput` drives scale continuously while the currently displayed
+child's exact Original point drives the target across cuts. Raw Follow schema,
+Core 58 / SQLite 87, numerics, independent live/fallback bases, audio/timing
+and child framing are unchanged. Four production files change; fourteen scoped
+source paths include meaningful Core/Plan/CLI and native harness tests.
+
+Focused Core two, Plan two and CLI one pass, as do thirteen CLI framing cases,
+all 2,049 Core/Plan and 1,304 App tests, strict checks, fourteen-path formatting
+and the release build. The CLI framing lane includes the focused case; this
+does not claim the full CLI suite.
+Eleven existing App opt-in cases remain ignored. All fourteen source inputs
+stay unchanged. Independent general, owner-clock and test reviews report no
+findings; reviewers ran no runtime checks. The first CLI
+reverse Visual fixture had a cursor/head mismatch; the corrected fixture
+passes and its failed source/pins/streams remain retained.
+
+The native scenario uses production keys and project writes to create a point
+at Original 0, correct it at indexed Original 80, delete `[40,80)` and group
+the two remaining fragments. It asserts the Edit 39/40 seam jumps from
+Original 39 to 80 while all eighty scale samples use the complete group clock.
+The single release candidate passes 107 Sequence, 67 Hold and 213 zoom checks
+with matching Kestrel audits. First/final snapshots have identical bytes for
+all fourteen source paths and five executables. `native-sequence-first` is
+the final workflow, counted once. Final App `ed85fa1b…`, CLI `92324554…`.
+Root inspected Sequence
+077/107/114/121, with readable group/target/clock controls and no overlap.
+The actual saved edit exports eighty pictures and `[0,128128)` stereo samples
+at zero offset/gaps, MP4 117,671 bytes / SHA `f58bac4d…`. All nine CLI commands
+pass and the portable document is exactly equal. Independent SQLite comparison
+confirms twenty-six revisions, fifteen history rows, twenty-six receipt-verified
+revisions and all selected immutable history tables match. Frozen raw audit
+`1287a23f…` has no findings. Its initial focused-Plan basis stop is preserved:
+one captured Core test differs from the final tree, while Plan's owned files
+and dependency production stay current. The full final Core/Plan run binds
+all fourteen current paths and executes both Plan cases; no rerun needed.
+The immutable [Primary](../../tools/media-qualification/evidence/2026-10-24-sequence-follow-creep)
+has 134 payloads, 8,457,096 bytes plus inventory `dac42373…`; its five archives
+retain 68 members with no omissions. The first package verification passes
+with no findings, receipt `34bb11df…`. Primary, the final raw audit, preserved
+first attempt and all fourteen scoped sources remain unchanged. The [supplement](../../tools/media-qualification/evidence/2026-10-24-sequence-follow-creep-verification)
+has eight payloads, 36,761 bytes plus inventory `c5de1612…`; complete inventory
+and payload readback pass.
+
+Base `fea6b081775165f9830ba14d938576d346fec6c8`; scratch
+`/tmp/deadpan-sequence-follow-creep-2026-10-24`. Preserve foreign
+`fuzz/Cargo.lock`, `.claude/` and all preceding immutable evidence. Root owns
+qualification, Git, progress and artifact writes. Coverage remains 89%, eight
+Complete and sixteen Partial; no requirement or gate closes.
+
+The next preferred bounded slice is whole ordinary Repeat Keep-center creep,
+selected from its parent Sequence outside an enclosing Repeat occurrence.
+Use `next-repeat-map.md` in task scratch. Its complete owner clock must span
+all plays and gaps while target centers use actual provider time; prove the
+interaction with existing escalation and both default/owned gaps. Descendant
+structure stays composable. Retime-owner, selected-play and occurrence/range
+authoring, general non-face proposals and the remaining full normative scope
+stay open. The full goal remains active.
+
+## Earlier whole-Hold continuation, 2026-10-24
+
 [Whole-Hold following creep](../qualification/hold-follow-creep-2026-10-24.md)
 is implemented and locally verified. Shared typed admission now
 accepts whole ordinary Sources or Holds while preserving range, occurrence,

@@ -1,0 +1,23 @@
+{
+  "frozen_at": "2026-10-24T09:36:56.388318+00:00",
+  "base_supplied_by_main": "fea6b081775165f9830ba14d938576d346fec6c8",
+  "owned_sources": {
+    "crates/deadpan-plan/tests/picture_plan.rs": {
+      "bytes": 90864,
+      "sha256": "a0752b8cbb729367e1a4c2d77ed9377142d4308fc8f7b816a9c182dda57ed1bf"
+    },
+    "crates/deadpan-plan/tests/picture_plan/sequence_follow_creep.rs": {
+      "bytes": 11136,
+      "sha256": "d5af000998e6750b47c667e32b8ddc8150cbaa3d67a3d394d39a7d6dc16f924c"
+    }
+  },
+  "focused_receipt": "plan-focused-1.json",
+  "production_basis_unchanged_during_focused_run": true,
+  "executed_binary": {
+    "path": "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/picture_plan-8377682556489926",
+    "bytes": 63089136,
+    "sha256": "6890687140a9a820ec8897f95b2ec383e2904c6fa747114635493700ff01076a"
+  },
+  "active_processes": [],
+  "scope_limit": "No final cross-lane freeze; Main owns broad verification."
+}

@@ -383,7 +383,7 @@ fn zoom_ordinary_owner_remains_available_with_retained_nested_tape_pause_clocks(
 }
 
 #[test]
-fn whole_hold_follow_creep_resolves_actual_owner_and_preserves_recipe_with_atomic_refusals() {
+fn whole_hold_and_sequence_follow_creep_resolve_actual_owner_with_atomic_refusals() {
     let mut document = fixture(8);
     let tb = crate::SourceTimeBase::new(1, 30).unwrap();
     let span = crate::SourceSpan::new(
@@ -509,11 +509,91 @@ fn whole_hold_follow_creep_resolves_actual_owner_and_preserves_recipe_with_atomi
         )
         .is_err()
     );
-    // A Sequence carrying the same valid raw Follow is still not an ordinary
-    // Source/Hold authoring owner, even though its subtree has the same duration.
-    document.nodes.insert(node("inside"), hold(8));
+    // The actual selected Sequence owns one continuous output clock across its
+    // unequal children. Child structure/framing and the full inverse survive.
+    let mut inside = hold(3);
+    inside.framing = Some(Framing::static_pose(FramingPose::identity()).unwrap());
+    document.nodes.insert(node("inside-a"), inside);
+    document.nodes.insert(node("inside-b"), hold(5));
     document.nodes.get_mut(&node("held")).unwrap().kind = NodeKind::Sequence {
-        children: vec![node("inside")],
+        children: vec![node("inside-a"), node("inside-b")],
+    };
+    document.validate().unwrap();
+    let sequence = document.clone();
+    let planned = resolve(
+        &sequence,
+        &selected(3, None),
+        vec![instruction.clone()],
+        &BTreeMap::new(),
+        resolver,
+    )
+    .unwrap();
+    for frame in 0..8 {
+        let value = planned.document.nodes()[&node("held")]
+            .framing
+            .as_ref()
+            .unwrap()
+            .evaluate_with_follow_exact(
+                ExactRatio::new(2 * frame + 1, 2).unwrap(),
+                ExactRatio::integer(8),
+            )
+            .unwrap();
+        assert_eq!(
+            value.follow.unwrap().1,
+            ExactRatio::new(17 + 2 * frame, 8).unwrap()
+        );
+        assert_eq!(
+            value.pose.scale,
+            ExactRatio::new(17 + 2 * frame, 32).unwrap()
+        );
+    }
+    let replay =
+        crate::replay_compound::<EditError>(&sequence, planned.request.as_ref().unwrap(), |_| {
+            Ok(())
+        })
+        .unwrap();
+    assert_eq!(replay.document, planned.document);
+    assert_eq!(
+        replay.edit.inverse.apply(&planned.document).unwrap(),
+        sequence
+    );
+    let mut only_framing = sequence.clone();
+    only_framing.revision_id = planned.document.revision_id().clone();
+    only_framing.nodes.get_mut(&node("held")).unwrap().framing =
+        planned.document.nodes()[&node("held")].framing.clone();
+    assert_eq!(planned.document, only_framing);
+    assert_eq!(
+        planned.document.nodes()[&node("held")]
+            .framing
+            .as_ref()
+            .unwrap()
+            .clock,
+        crate::FramingClock::OwnerOutput
+    );
+    for selection in [visual(0, 8), visual(1, 7), visual(8, 0)] {
+        assert!(
+            resolve(
+                &sequence,
+                &selected(3, selection),
+                vec![instruction.clone()],
+                &BTreeMap::new(),
+                resolver,
+            )
+            .is_err()
+        );
+    }
+    // Raw generic Retime Follow remains valid, but does not gain ordinary-owner
+    // authoring admission through its Sequence child.
+    document.nodes.insert(
+        node("inside"),
+        BeatNode::sequence("Inside", vec![node("inside-a"), node("inside-b")]),
+    );
+    document.nodes.get_mut(&node("held")).unwrap().kind = NodeKind::Retime {
+        child: node("inside"),
+        duration: FrameDuration::new(8).unwrap(),
+        mapping: range(0, 8),
+        pitch: crate::PitchPolicy::FollowSpeed,
+        purpose: crate::RetimePurpose::Edit,
     };
     document.validate().unwrap();
     assert!(

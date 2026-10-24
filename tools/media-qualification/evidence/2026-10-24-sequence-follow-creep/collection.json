@@ -1,0 +1,19 @@
+{
+  "claim": "Stable retained bytes and identities; no automatic requirement certification.",
+  "final_source_paths": 14,
+  "limitations": [
+    "Fourteen scoped final source paths and five sibling executable identities, not an attestation of every repository file.",
+    "One release candidate and one Sequence workflow. First/final source and all five binary bytes are identical; the passing native-sequence-first is final and is not counted twice.",
+    "Focused workers bind their actual narrower owned sources and basis. Core focused1 predates a later CLI fixture correction outside its Core test scope; Plan focused1 basis includes a later Core semantic-test change, with no Plan dependency production change. Final broad Core/Plan2049 and all standard final receipts bind all14 current sources.",
+    "The initial CLI reverse-selection fixture cursor mismatch and its exact old test source are retained. Final focused CLI1 and broader13 framing cases pass; these are not the full CLI suite.",
+    "Native Sequence uses production keys and manually authored/corrected points, without a scripted detector/tracker. Affected Source/Hold regressions are retained; unrelated face/point/tracking scenarios were not rerun.",
+    "Offscreen Metal and scripted native input; no physical display/input, OS IME delivery, VoiceOver speech, listening or latency qualification.",
+    "Export comparison uses the committed shared picture/DSP reference. Neighbor observability limits, warnings, failures and existing opt-in ignores are retained.",
+    "Actual native and portable projects, immutable history, complete media verification and explicit encoder-delay metadata are retained.",
+    "Collector output and later package-verification receipts remain separate to avoid recursive publication."
+  ],
+  "plan_sha256": "248c91607f4fcb140201e8f854a168de65445b53c9e8ffb53bec374deabfbfe4",
+  "raw_payload_bytes": 114876734,
+  "schema_version": 1,
+  "script_sha256": "320e79dbf00568d68d7657e3c31d968402772533071529e7c9c494f9aacc6f0e"
+}

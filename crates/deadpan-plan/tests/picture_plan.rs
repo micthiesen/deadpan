@@ -22,6 +22,8 @@ mod generated_extension;
 mod provider_clock_coverage;
 #[path = "picture_plan/retained_framing.rs"]
 mod retained_framing;
+#[path = "picture_plan/sequence_follow_creep.rs"]
+mod sequence_follow_creep;
 
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()

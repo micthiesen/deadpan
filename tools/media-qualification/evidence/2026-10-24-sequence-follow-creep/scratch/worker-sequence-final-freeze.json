@@ -1,0 +1,151 @@
+{
+  "base": "fea6b081775165f9830ba14d938576d346fec6c8",
+  "files": {
+    "crates/deadpan-core/src/framing_zoom.rs": "da7375f6584a8b9af45bb7d3547f981d648b07342dfd6833e623e1a4a36f74cc",
+    "crates/deadpan-core/src/framing_zoom/tests.rs": "78f3e6fa7d5a2ad27554a573e69e0e22f045e6a892677bbb79a47075b0eb18ea",
+    "crates/deadpan-core/src/semantic/planner/framing.rs": "51ad17f15e29bbea480a4d2cf8bca004537256cb674ba0b430cc8ff91b2c0660",
+    "crates/deadpan-core/src/semantic/planner/tests/framing.rs": "86282ac643c801d50db4d61f3436ccf6fe0f81ee4b977f9ac93f10e4a2f883e5",
+    "crates/deadpan-cli/tests/project_commands/macros/framing.rs": "14e516323fdcaa92b309a27f1cd86c911eceba2dda399900e566cc7e485c2dc6",
+    "crates/deadpan-cli/tests/project_commands/macros/framing/sequence_follow_creep.rs": "574b88c3921eda690d89fc175b0244d954a112a64e3c385826413b5ffd05d5e1"
+  },
+  "production_scope": [
+    "crates/deadpan-core/src/framing_zoom.rs",
+    "crates/deadpan-core/src/semantic/planner/framing.rs"
+  ],
+  "scope_note": "Six worker-owned paths only. Existing hold_follow_creep.rs untouched. App, Plan, docs and native harness owned by other agents.",
+  "source_copies": "/tmp/deadpan-sequence-follow-creep-2026-10-24/worker-source-final",
+  "checks": [
+    {
+      "label": "worker-core-1",
+      "receipt_sha256": "445ccad10805f018b1f24a931c6eea9be28ae3e9c3b16218f8e99ab2d4c9ee06",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-core",
+        "--lib",
+        "follow_creep"
+      ],
+      "environment": {
+        "CARGO_TARGET_DIR": "/tmp/deadpan-follow-creep-2026-10-24/target",
+        "DEADPAN_FFMPEG_PREFIX": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix"
+      },
+      "exit": 0,
+      "seconds": 38.465396665968,
+      "session": 97857,
+      "terminal": true,
+      "tests_passed": 2,
+      "owned_unchanged": true,
+      "basis_unchanged": true,
+      "basis_scope": "All Core/Plan/CLI src Rust paths only; App and other concurrent files excluded",
+      "basis_paths": 477,
+      "binary_pins": {
+        "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_core-bf7ceed176dd1c4c": "809952b9867312543786e37c8afce32d085d0514c4f335b49e1b9e503c82b6bc"
+      },
+      "stream_pins": {
+        ".stdout": "2a7d945e8112cc1957f041165f8bdb61e75682525d8a203e0fc684460ee56571",
+        ".stderr": "afc5f6dfc874bd6ab93765750f0fc384ecff39423eaeed3fcce6b072cea0e711"
+      }
+    },
+    {
+      "label": "worker-cli-1",
+      "receipt_sha256": "de114dd7d61ce66cc5416e4ff64bb9e5dc120a9fdf01c83cfc5031d84d696316",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "--test",
+        "project_commands",
+        "sequence_follow_creep"
+      ],
+      "environment": {
+        "CARGO_TARGET_DIR": "/tmp/deadpan-follow-creep-2026-10-24/target",
+        "DEADPAN_FFMPEG_PREFIX": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix"
+      },
+      "exit": 101,
+      "seconds": 7.640732792206109,
+      "session": 16384,
+      "terminal": true,
+      "tests_passed": 0,
+      "owned_unchanged": true,
+      "basis_unchanged": true,
+      "basis_scope": "All Core/Plan/CLI src Rust paths only; App and other concurrent files excluded",
+      "basis_paths": 477,
+      "binary_pins": {
+        "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/project_commands-b909db8abc2c71b1": "a28f46ef4baf7ef2a22d518a47f53e132e16ea56d7d7a0725801c33d69d7e036"
+      },
+      "stream_pins": {
+        ".stdout": "7efa0de52ebfbc8c98c98486162539f06457a24c6a0d0013f54d337e5300c418",
+        ".stderr": "496be21779d71a4b1d09cb892841979bf3fd9851fdeaa111b07c9d410662e7cb"
+      }
+    },
+    {
+      "label": "worker-cli-2",
+      "receipt_sha256": "3216ee9b335aa9f53869c4bf85d7a9b53583ff55e4fd03debd6836dda9402115",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "--test",
+        "project_commands",
+        "sequence_follow_creep"
+      ],
+      "environment": {
+        "CARGO_TARGET_DIR": "/tmp/deadpan-follow-creep-2026-10-24/target",
+        "DEADPAN_FFMPEG_PREFIX": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix"
+      },
+      "exit": 0,
+      "seconds": 2.3117647916078568,
+      "session": 82795,
+      "terminal": true,
+      "tests_passed": 1,
+      "owned_unchanged": true,
+      "basis_unchanged": true,
+      "basis_scope": "All Core/Plan/CLI src Rust paths only; App and other concurrent files excluded",
+      "basis_paths": 477,
+      "binary_pins": {
+        "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/project_commands-b909db8abc2c71b1": "a1da8002a6add9686d8951d1365fd88ccaf7fa5431574b7f874d277d21585416"
+      },
+      "stream_pins": {
+        ".stdout": "f4153f4b44a0ccd05e04b59523950ec28323921be34095525dfa9ddfe99a797a",
+        ".stderr": "96df35a0703a2597f98bcdae4142b2c882906c53f4d811334883750154b0bc3d"
+      }
+    }
+  ],
+  "retained_failure": {
+    "label": "worker-cli-1",
+    "source_copy": "worker-cli-1-sequence_follow_creep.rs.txt",
+    "source_sha256": "76835246e1dcaa8747d9091ab857d3ce76cebd6756d5c21e3a8064f86d3c005c",
+    "cause": "Reverse extending Visual selection used cursor 5 rather than its head 2, triggering earlier context refusal before intended policy assertion. Fixture cursor aligned with head; assertion now prints complete error.",
+    "production_defect": false
+  },
+  "format": {
+    "command": [
+      "rustfmt",
+      "--edition",
+      "2024",
+      "--config",
+      "skip_children=true",
+      "crates/deadpan-core/src/framing_zoom.rs",
+      "crates/deadpan-core/src/framing_zoom/tests.rs",
+      "crates/deadpan-core/src/semantic/planner/framing.rs",
+      "crates/deadpan-core/src/semantic/planner/tests/framing.rs",
+      "crates/deadpan-cli/tests/project_commands/macros/framing.rs",
+      "crates/deadpan-cli/tests/project_commands/macros/framing/sequence_follow_creep.rs"
+    ],
+    "exit": 0,
+    "followup": "CLI file alone scoped-formatted after reverse-selection correction"
+  },
+  "limits": [
+    "CLI retains qualified video-only CFR fixture: silence audio plan spans unchanged, not PCM/export evidence.",
+    "Inline Apply tests native dot semantic boundary, not a persistent CLI dot register.",
+    "Native Camera, full media, broad suites and independent review are Root-owned pending qualification."
+  ],
+  "active_worker_processes": [],
+  "pending": null
+}

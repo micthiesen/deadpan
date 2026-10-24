@@ -1,0 +1,18 @@
+
+running 1 test
+test macros::framing::sequence_follow_creep::whole_sequence_follow_creep_crosses_source_cuts_and_replays_staged_keep_with_one_undo ... FAILED
+
+failures:
+
+---- macros::framing::sequence_follow_creep::whole_sequence_follow_creep_crosses_source_cuts_and_replays_staged_keep_with_one_undo stdout ----
+
+thread 'macros::framing::sequence_follow_creep::whole_sequence_follow_creep_crosses_source_cuts_and_replays_staged_keep_with_one_undo' (182226865) panicked at crates/deadpan-cli/tests/project_commands/macros/framing/sequence_follow_creep.rs:268:9:
+assertion failed: error["error"]["message"].as_str().unwrap().ends_with(expected)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    macros::framing::sequence_follow_creep::whole_sequence_follow_creep_crosses_source_cuts_and_replays_staged_keep_with_one_undo
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 58 filtered out; finished in 0.64s
+

@@ -500,7 +500,7 @@ fn targets_are_sampled_where_a_step_lands_or_a_creep_arrives() {
 }
 
 #[test]
-fn follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_source_or_hold() {
+fn follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_source_hold_or_sequence() {
     let fallback = FramingPose::new(ratio(1, 3), ratio(2, 7), ratio(1, 2)).unwrap();
     let entry = Framing {
         clock: FramingClock::RetainedOutput {
@@ -519,7 +519,11 @@ fn follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_source_or_hold() 
         to: ratio(4, 1),
         curve: ZoomCurve::Linear,
     };
-    for owner in [OrdinaryFollowOwner::Source, OrdinaryFollowOwner::Hold] {
+    for owner in [
+        OrdinaryFollowOwner::Source,
+        OrdinaryFollowOwner::Hold,
+        OrdinaryFollowOwner::Sequence,
+    ] {
         let admitted = Shot {
             entry: Some(&entry),
             ordinary_owner: Some(owner),

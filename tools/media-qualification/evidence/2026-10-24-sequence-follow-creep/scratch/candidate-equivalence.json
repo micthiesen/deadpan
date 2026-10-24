@@ -1,0 +1,6 @@
+{
+  "source_paths": 14,
+  "all_source_bytes_identical": true,
+  "all_five_binary_bytes_identical": true,
+  "note": "One candidate build; the passing native-sequence-first is the final Sequence workflow. Final snapshot copies the same tested bytes; no duplicate workflow run is claimed."
+}
