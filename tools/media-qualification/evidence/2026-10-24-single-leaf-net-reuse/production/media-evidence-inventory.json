@@ -1,0 +1,146 @@
+{
+  "root": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa",
+  "files": {
+    "cached/one-leaf-cached-media.deadpan/.render-candidates.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "cached/one-leaf-cached-media.deadpan/.writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "cached/one-leaf-cached-media.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1": {
+      "bytes": 39157,
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+    },
+    "cached/one-leaf-cached-media.deadpan/Media/RenderCandidates/blake3-6b312007b60cc9514cee58e001cf17cb59ecf14d4e576f3abf769cb8f5cfedc1": {
+      "bytes": 15067,
+      "sha256": "21a74dc1471615400314d770423cbf190a85d2ff2f0d5b07b7a1d076ad0b81d2"
+    },
+    "cached/one-leaf-cached-media.deadpan/Media/RenderCandidates/blake3-b4b803e0e57d38f5f485c7a6ea20026b1f642feb876c18068fdd01c263e279f1": {
+      "bytes": 13232,
+      "sha256": "b1dbb24ce918cf5958fee28807067ca72f3e2ede57f52abf756d6e28bccd1488"
+    },
+    "cached/one-leaf-cached-media.deadpan/manifest.json": {
+      "bytes": 82,
+      "sha256": "ff06b771270ee51b35075234cad019ae876fe360a2fc617a71966df343b83b9c"
+    },
+    "cached/one-leaf-cached-media.deadpan/project.sqlite": {
+      "bytes": 593920,
+      "sha256": "901557407a9424d0a49df78403455311d0c4596898a3744eb1a1f8ebbbb073c9"
+    },
+    "cached/one-leaf-cached-media.deadpan/project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "cached/one-leaf-cached-media.deadpan/project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "cached/original.mp4": {
+      "bytes": 39157,
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+    },
+    "cached/request-one-leaf-cached-media-r01.json": {
+      "bytes": 454,
+      "sha256": "fec654ba0378252077a6c810675a34762575260b23f38348a0e79bfec3ef0598"
+    },
+    "cached/request-one-leaf-cached-media-r02.json": {
+      "bytes": 414,
+      "sha256": "394ed19366d8d5953df9f2016ac4fbd05fcd7dd3072a050b15d6612925c546d3"
+    },
+    "exports-cached/deadpan-render-0e749570-2122-4cf0-a589-d16dd5c6e7d7.json": {
+      "bytes": 32885,
+      "sha256": "6dc3a95c54a72c04534cb65e6ceddc45c060e273adb40dccfc3fad419cddc9e1"
+    },
+    "exports-cached/one-leaf-cached-media.mp4": {
+      "bytes": 13232,
+      "sha256": "b1dbb24ce918cf5958fee28807067ca72f3e2ede57f52abf756d6e28bccd1488"
+    },
+    "exports-uncached/deadpan-render-80bd8be6-1ff3-47bb-9d15-71e75831504e.json": {
+      "bytes": 32887,
+      "sha256": "65d077f073a9d0a3667a10cfa09900249b2c1c15d6eb48fad8bc6b4a85875540"
+    },
+    "exports-uncached/one-leaf-uncached-media.mp4": {
+      "bytes": 13232,
+      "sha256": "5c72a13ae24c6b0936ce1dbd96b43d462e4b74ec12588bcdebe1861c0219c07a"
+    },
+    "one-leaf-after-document.json": {
+      "bytes": 7642,
+      "sha256": "5baf563fb9432f670e453091fef4c45060506f2c521dddc87ac1688ff87fa348"
+    },
+    "one-leaf-after-pcm.json": {
+      "bytes": 2319402,
+      "sha256": "239ae1dc1903ad3879f8e096c21280a1ea60800c43afc4b96632aac4f1ced873"
+    },
+    "one-leaf-before-document.json": {
+      "bytes": 4420,
+      "sha256": "1a03726fdddead19ce5c96b660f14018c074d3e45490d9cec52e54c25f481c61"
+    },
+    "one-leaf-before-pcm.json": {
+      "bytes": 1550634,
+      "sha256": "9a6ce5e6fcb27c5e823545bfaf9642203676acf0fee501df11f610f790ceb761"
+    },
+    "one-leaf-cached-verification.json": {
+      "bytes": 43395,
+      "sha256": "c4f4ba0cc1560bbe4c4da1a0f389441c9d1c70679e31625c519bd04b481f07aa"
+    },
+    "one-leaf-commit.json": {
+      "bytes": 4645,
+      "sha256": "fc3acb5469b874538f5bcc871363d48b46cf85b99e7b866038c2bb920bb03ad4"
+    },
+    "one-leaf-media-summary.json": {
+      "bytes": 88856,
+      "sha256": "f6bcc368e0229dd8f191902dfdb914409145df607ccea7dbca7b37b2057c812c"
+    },
+    "one-leaf-redo.json": {
+      "bytes": 4544,
+      "sha256": "b8e7fd2489431eb665f385daf65cc06699d13f14c54c181137b9c9af1d530afa"
+    },
+    "one-leaf-uncached-verification.json": {
+      "bytes": 43399,
+      "sha256": "dbe3560f12a0cc588b63dde06a21183fbaf507ce6e7ac84be70aa807a7c815b1"
+    },
+    "one-leaf-undo.json": {
+      "bytes": 4544,
+      "sha256": "654243e389dd4bfd8f292dee59486f430f490b82a9e4b307ca31bd3f1dd88c80"
+    },
+    "uncached.deadpan/.render-candidates.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "uncached.deadpan/.writer.lock": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "uncached.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1": {
+      "bytes": 39157,
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+    },
+    "uncached.deadpan/Media/RenderCandidates/blake3-68a2f61bfc11c92caafa6fb3ce75801a25cea7010d2c652deae84e434c4b3655": {
+      "bytes": 15067,
+      "sha256": "43a99709d5137de2ec22296864f979ca74898c369469a0bfc6978dbca6fa7449"
+    },
+    "uncached.deadpan/Media/RenderCandidates/blake3-f2e5cb888ea80030e9e9159537749d91336cb541f927cddd8ae08ca20edbeaba": {
+      "bytes": 13232,
+      "sha256": "5c72a13ae24c6b0936ce1dbd96b43d462e4b74ec12588bcdebe1861c0219c07a"
+    },
+    "uncached.deadpan/manifest.json": {
+      "bytes": 82,
+      "sha256": "ff06b771270ee51b35075234cad019ae876fe360a2fc617a71966df343b83b9c"
+    },
+    "uncached.deadpan/project.sqlite": {
+      "bytes": 593920,
+      "sha256": "52d11ae8ef7537d2762326e16eda4b7ac0ac87b93527268ed6da8d3bb1105a9f"
+    },
+    "uncached.deadpan/project.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    "uncached.deadpan/project.sqlite-wal": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "external_receipt_sha256": "df9cdc8b690fb2f742a2ce4662f47520a6df7e70e452f815c0fc46bc586a47b5"
+}

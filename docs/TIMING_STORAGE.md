@@ -283,6 +283,27 @@ mark/phase limits, recovery after errors and cleanup on unwind. The existing
 10,000-Hold oracle checks complete document/transaction equality and inverse
 restoration.
 
+Ordinary one-leaf semantic replay also retains the successful leaf
+`EditTransaction` in its private `OneLeafReplay`. Only an actual eligible reuse
+hit can lend it to final aggregation: exactly one ordinary `InsertTime`, no
+inputs or isolation, local command work, compact timing and no derived or
+provisional clocks. Every prefix admission, revision/identity check,
+serialization and byte/work charge, visitor and final document admission runs
+in its original order. After that hit, only the document's revision header
+changes. The aggregate therefore copies the validated leaf patches, changes
+`forward.to_revision`, `inverse.from_revision` and the description, and keeps
+authored timing allocation IDs on the leaf revision.
+
+Release Core skips the repeated final aggregate validation, diff, inverse and
+changed-ID traversal. Debug builds recompute the original whole edit and
+assert equality. Store still independently validates the actual result,
+serializes the actual outer request and rebased edit, enforces size limits,
+checks decode/readback equality and verifies inverse restoration. A miss uses
+the original factory. The retained forward/inverse state adds live memory;
+whole-app samples do not isolate its cost. Tests cover actual hit/fallback
+selection, two outer revision lengths, preserved leaf allocations, visitor
+refusal, scoped-witness unwind and real 64 MiB/512 MiB refusals.
+
 `crates/deadpan-core/tests/command_work.rs` runs 48 seeded random sequences of
 40 edits over Hold-only, linked-Source and placed-sound documents (pauses at
 seams and interiors, Splits anywhere and of occurrence-mark hosts, Repeat

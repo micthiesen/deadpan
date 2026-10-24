@@ -1,0 +1,12 @@
+{
+  "main_rust_files": 2053,
+  "candidate_rust_files": 2053,
+  "whole_map_equal": true,
+  "source_map_sha256": "f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53",
+  "six_inputs_equal": true,
+  "code_changes": [
+    "crates/deadpan-core/src/one_leaf_replay.rs",
+    "crates/deadpan-core/src/compound.rs",
+    "crates/deadpan-core/tests/semantic_leaf_replay.rs"
+  ]
+}

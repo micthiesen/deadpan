@@ -1,0 +1,39 @@
+{
+  "pid": 19761,
+  "started_unix": 1792805411.233919,
+  "script": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory.py",
+  "frozen_files": {
+    "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-driver-pins.json": "4611b7623f91bc5414897f22d5f800bf70b186c0a7092c233e616160fbd47675",
+    "/tmp/deadpan-single-leaf-net-production-2026-10-24/media-terminal.json": "87ba2682067b831a2d690dbc512911fc19e42537b93e4f54b861478a21ed02ad",
+    "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory.py": "a1f468b82f64ec818886ffcb728cefa044994e51e7b429bc1887542b0e69d746",
+    "/tmp/deadpan-single-leaf-net-production-2026-10-24/observer-provenance.json": "689fb148dc8374b70532c93b3c407fecdf374070c3c4db951c69846ec25aeb32",
+    "/tmp/deadpan-single-leaf-net-production-2026-10-24/baseline.json": "2c24fb3ced417d882640767af7f2ee1fd71bf770f7e314ffce7b5463cd82e86e",
+    "/tmp/deadpan-single-leaf-net-production-2026-10-24/baseline-provenance.json": "f48c786da268db05dddfe62a4f85f21db6c795bbfbf8ae669ab484ef0b4c0d27",
+    "/tmp/deadpan-single-leaf-net-production-2026-10-24/baseline-sources.json": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+    "/tmp/deadpan-single-leaf-net-production-2026-10-24/baseline-inputs.json": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317",
+    "/tmp/deadpan-single-leaf-net-production-2026-10-24/frozen-sources.json": "f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53",
+    "/tmp/deadpan-single-leaf-net-production-2026-10-24/source-review.json": "f05a35ca12388157ead3df99bd1d8c936a28b53c94ad6e8f98711ac65cc65be4",
+    "/tmp/deadpan-single-leaf-net-production-2026-10-24/binaries.json": "09e723b470ceebf49cb80b3d38f5c1f5b6c84bee74b2e59b2eba2ad7df1c31ce",
+    "/tmp/deadpan-single-leaf-net-production-2026-10-24/build-terminal.json": "c806d681efaeab1db3b547db17fa2aced2cf21906f3d7ddd7fef0623c3b3cd32",
+    "/tmp/deadpan-insert-split-proof-production-2026-10-23/binaries.json": "146564ae7f4f17503a2e317f7539b2cc3958600400e4354c58a01559191d11f9",
+    "/tmp/deadpan-insert-split-proof-production-2026-10-23/frozen-sources.json": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+    "/tmp/deadpan-single-leaf-net-production-2026-10-24/measurement-terminal.json": "6a14d9904f993433509c959d217527a9454a8a7e1688383c728dc4636cc29bab",
+    "/tmp/deadpan-single-leaf-net-production-2026-10-24/measurement-owner.json": "a0d70a2f930528d86edfa38ca0d7de9cf5bb0b0fde909b48bbdc3415e9e4fed3",
+    "/tmp/deadpan-single-leaf-net-production-2026-10-24/driver-pins.json": "f4d9ff97e0e5ce84b762095b498c3cc6f43b679ddb1cf54823d23528bfbfdb4d"
+  },
+  "order": [
+    [
+      "baseline",
+      "candidate"
+    ],
+    [
+      "candidate",
+      "baseline"
+    ],
+    [
+      "baseline",
+      "candidate"
+    ]
+  ],
+  "separate_from_timing": true
+}

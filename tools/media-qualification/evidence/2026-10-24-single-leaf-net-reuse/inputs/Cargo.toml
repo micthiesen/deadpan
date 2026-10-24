@@ -1,0 +1,74 @@
+[workspace]
+resolver = "3"
+members = ["crates/deadpan-core", "crates/deadpan-diagnostics", "crates/deadpan-analysis", "crates/deadpan-store", "crates/deadpan-plan", "crates/deadpan-jobs", "crates/deadpan-media", "crates/deadpan-audio", "crates/deadpan-models", "crates/deadpan-render", "crates/deadpan-playback", "crates/deadpan-app", "crates/deadpan-cli", "native/deadpan-process", "native/deadpan-lifecycle", "native/deadpan-media-worker", "native/deadpan-source", "native/deadpan-fileclone", "native/deadpan-filesystem", "native/deadpan-sqlite-status", "native/deadpan-dsp", "native/deadpan-output", "native/deadpan-encode", "native/deadpan-transcribe", "native/deadpan-track", "crates/deadpan-chaos", "crates/xtask"]
+default-members = ["crates/deadpan-app", "native/deadpan-transcribe", "native/deadpan-track"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+license = "MIT"
+repository = "https://github.com/micthiesen/deadpan"
+publish = false
+
+[workspace.dependencies]
+deadpan-core = { path = "crates/deadpan-core" }
+deadpan-diagnostics = { path = "crates/deadpan-diagnostics" }
+deadpan-analysis = { path = "crates/deadpan-analysis" }
+deadpan-store = { path = "crates/deadpan-store" }
+deadpan-plan = { path = "crates/deadpan-plan" }
+deadpan-jobs = { path = "crates/deadpan-jobs" }
+deadpan-media = { path = "crates/deadpan-media" }
+deadpan-audio = { path = "crates/deadpan-audio" }
+deadpan-dsp = { path = "native/deadpan-dsp" }
+deadpan-output = { path = "native/deadpan-output" }
+deadpan-encode = { path = "native/deadpan-encode" }
+deadpan-models = { path = "crates/deadpan-models" }
+deadpan-render = { path = "crates/deadpan-render" }
+deadpan-chaos = { path = "crates/deadpan-chaos" }
+deadpan-playback = { path = "crates/deadpan-playback" }
+deadpan-source = { path = "native/deadpan-source" }
+deadpan-fileclone = { path = "native/deadpan-fileclone" }
+deadpan-filesystem = { path = "native/deadpan-filesystem" }
+deadpan-sqlite-status = { path = "native/deadpan-sqlite-status" }
+deadpan-native-process = { path = "native/deadpan-process" }
+deadpan-lifecycle = { path = "native/deadpan-lifecycle" }
+cc = "=1.4.7"
+cpal = { version = "=0.18.2", default-features = false }
+rtrb = "=0.4.0"
+libc = "=0.2.189"
+rustix = { version = "=1.1.5", features = ["process", "fs"] }
+eframe = { version = "=0.36.2", default-features = false, features = ["accesskit", "default_fonts", "links", "wgpu"] }
+wgpu = { version = "=30.0.1", default-features = false, features = ["metal", "wgsl"] }
+pollster = "=1.0.1"
+proptest = "=1.11.0"
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = { version = "=1.0.151", features = ["float_roundtrip"] }
+sha2 = { version = "=0.11.0", default-features = false }
+blake3 = "=1.8.7"
+rusqlite = { version = "=0.40.2", features = ["bundled", "backup", "limits"] }
+tempfile = "=3.27.0"
+signal-hook = { version = "=0.3.18", default-features = false }
+thiserror = "=2.0.20"
+uuid = { version = "=1.26.1", features = ["v4"] }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+
+# Line tables keep file:line backtraces for workspace crates; dependencies carry
+# no debug info. On macOS, unpacked debug info keeps every object file beside
+# each test binary, so full debug info multiplies codegen, disk and link work.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+strip = "debuginfo"
+overflow-checks = true

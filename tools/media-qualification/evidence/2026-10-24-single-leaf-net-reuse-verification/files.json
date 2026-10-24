@@ -1,0 +1,36 @@
+{
+  "files": [
+    {
+      "path": "verify_package.py",
+      "bytes": 18544,
+      "sha256": "7fc4f5b1ef4fb6081fd5fd962788c9733b7b6cb4740b3ad24ca48da693d12432"
+    },
+    {
+      "path": "verification.stdout",
+      "bytes": 357,
+      "sha256": "190ebbe2d8d2e52a3972b6ea0b54dc919c1e24116b4e56159213bf8405558730"
+    },
+    {
+      "path": "verification.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "root-package-verification.json",
+      "bytes": 3290,
+      "sha256": "4b049de450c637d6cb6a294272d4989d5348abead71ddf83af5bbad4ce6d4e1a"
+    },
+    {
+      "path": "packaging-driver.stdout",
+      "bytes": 252,
+      "sha256": "1be30cd05e3cd5a1d53a60b77b412fcd27b657b14207cd2d98abe2828a885d6d"
+    },
+    {
+      "path": "packaging-driver.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "total_files": 6,
+  "total_bytes": 22443
+}

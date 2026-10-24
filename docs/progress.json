@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-24T01:28:01.647Z",
+  "updated_at": "2026-10-24T01:45:47.337Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "A pause-edit reuse candidate passes tests and real media. Five uninstrumented pairs save about 5.36 ms to commit; its final memory check is pending. Main runtime code is unchanged and the 100 ms/50 ms targets remain open.",
+  "focus": "Pause edit reuse is implemented and verified. Five uninstrumented pairs saved about 5.36 ms to commit. Separate memory observations are recorded; the 100 ms/50 ms targets remain open.",
   "features": [
     {
       "id": "editing",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "A private net-edit reuse prototype passes 734 Core unit tests, 35 integration tests, 12 Store tests and real-media/history/PCM checks; six matched timing pairs save 6.047542 ms. Separate whole-app sampled maxima have medians of 651.329/668.954 MiB and do not isolate retained edit memory. The uninstrumented candidate passes 726 Core unit, 35 integration and 12 Store tests, strict/format, real media and five timing pairs with a 5.355917 ms paired median reduction. Final memory verification is pending; no Main runtime change, percentile or 100 ms/50 ms target pass is claimed."
+      "note": "The narrow net-edit reuse change is promoted after 726 Core unit tests, 35 integration tests, 12 Store tests, strict/format and real-media/history/PCM verification. Both 45-picture, 72,072-sample exports verify at zero offset. Five fresh uninstrumented pairs save a paired median 5.355917 ms to commit and 5.468292 ms to offscreen composition. Six separate memory runs show physical-footprint medians of 667.423/665.939 MiB and resident medians of 653.922/672.938 MiB; these are whole-app sampled maxima, not retained cost, savings or ceilings. No p95 or 100 ms/50 ms target pass is claimed."
     },
     {
       "id": "models",
@@ -1229,6 +1229,14 @@
       "revision": "9211db7043d14e57e06782342aa7defd1313a8b6",
       "retrospective": false,
       "summary": "A private single-leaf net-edit reuse prototype retains Core-created patches and rebases only aggregate revision headers and description after final admission. All 734 Core unit tests, 35 integration tests, 12 Store tests, strict/format checks and one actual media/history/PCM case pass; two 45-picture, 72,072-sample exports verify at zero offset. Eighteen timing trials and six separate memory trials complete; six matched pairs save a median 6.047542 ms to commit, while median sampled whole-app maximum footprint is 651.329 MiB baseline and 668.954 MiB candidate, with no per-leaf or ceiling claim. The independently reread 541-payload evidence package verifies all hashes, 25 safe archives and both movies. The uninstrumented candidate separately passes 726 Core unit/35 integration/12 Store tests, strict/format, real media and five timing pairs saving a paired median 5.355917 ms; its memory check remains pending. Main runtime is unchanged. Coverage remains 89%, eight Complete/sixteen Partial; no gate, percentile or latency target closes."
+    },
+    {
+      "date": "2026-10-24",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "076f45cf33e73727700dea3aed95a169821ad7b6",
+      "retrospective": false,
+      "summary": "The uninstrumented single-leaf net-edit reuse change is promoted to Main. Its 2,053 Rust files and six pinned inputs exactly match the qualified snapshot f973b941. All 726 Core unit tests, 35 integration tests, 12 Store tests, release App, strict and format checks pass. One actual cached/uncached media-history/PCM case verifies two independent 45-picture, 72,072-sample exports at zero offset. Five fresh native timing pairs pass 70 pause and 10 Kestrel checks; median paired reductions are 5.355917 ms to commit and 5.468292 ms to offscreen composition. Six separate owned-app memory trials have median sampled physical-footprint maxima of 667.423/665.939 MiB and resident maxima of 653.922/672.938 MiB, without a per-leaf cost, saving or ceiling claim. The first copier and independent reread verify the 341-payload production package, 16 safe native-fixture archives and both actual movies. Public APIs and Core 58/SQLite 87 are unchanged. Coverage remains 89%, eight Complete/sixteen Partial; no gate, p95 or latency target closes."
     }
   ]
 }

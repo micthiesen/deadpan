@@ -1,0 +1,142 @@
+[
+  {
+    "rotation": 1,
+    "kind": "control",
+    "binary_sha256": "e6abcd3a521697f504901f156df445e41681cfc824ff97793f62f4e0865802e1",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 196.994625,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 200.029125
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 1,
+    "kind": "candidate",
+    "binary_sha256": "970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 191.63870799999998,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 194.560833
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 2,
+    "kind": "candidate",
+    "binary_sha256": "970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 187.809458,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 190.301
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 2,
+    "kind": "control",
+    "binary_sha256": "e6abcd3a521697f504901f156df445e41681cfc824ff97793f62f4e0865802e1",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 193.444625,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 195.911166
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 3,
+    "kind": "control",
+    "binary_sha256": "e6abcd3a521697f504901f156df445e41681cfc824ff97793f62f4e0865802e1",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 194.144542,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 197.009334
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 3,
+    "kind": "candidate",
+    "binary_sha256": "970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 188.37625,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 191.3895
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 4,
+    "kind": "candidate",
+    "binary_sha256": "970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 188.425208,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 191.08225000000002
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 4,
+    "kind": "control",
+    "binary_sha256": "e6abcd3a521697f504901f156df445e41681cfc824ff97793f62f4e0865802e1",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 192.487042,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 195.378667
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 5,
+    "kind": "control",
+    "binary_sha256": "e6abcd3a521697f504901f156df445e41681cfc824ff97793f62f4e0865802e1",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 192.941,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 195.522625
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 5,
+    "kind": "candidate",
+    "binary_sha256": "970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 188.647917,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 191.147083
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  }
+]

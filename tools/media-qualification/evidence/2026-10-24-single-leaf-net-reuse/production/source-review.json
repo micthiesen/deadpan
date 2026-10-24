@@ -1,0 +1,70 @@
+{
+  "status": "no_findings",
+  "findings": [],
+  "source_map_sha256": "f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53",
+  "baseline_source_map_sha256": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+  "private_prototype_source_map_sha256": "0bf07513646ffdfee5aec03bb1b64b6fff757196512aeea883226c675b15ed02",
+  "reviewed_path_hashes": {
+    "crates/deadpan-core/src/compound.rs": "a74328e4d4d3be1ec9ad4800ea524596e526a29578c726c7a5d2bd9a327f02e5",
+    "crates/deadpan-core/src/one_leaf_replay.rs": "1dc847665b59b800c83f23c50c7872b1dbc0c26760487a2a7046fa4f5a71d6bc",
+    "crates/deadpan-core/tests/semantic_leaf_replay.rs": "648ae62b2ae50fee4a6bfa98fb3fe69e7d5039df44a18a9a89e14daa100b8b42"
+  },
+  "baseline_path_hashes": {
+    "crates/deadpan-core/src/compound.rs": "1de3788b9f6b1275a8ca34e4e607f6a7b18eb8982aee1486399dcf95abbf62d0",
+    "crates/deadpan-core/src/one_leaf_replay.rs": "03954fddb62d5e9ede2c7577d533ce90911e214067cdd027cde88e2adfe655c4",
+    "crates/deadpan-core/tests/semantic_leaf_replay.rs": "0836e272bb2594e6cdcceaf7273a0773504d286a3ace91cd7ea1b059e8a9b561"
+  },
+  "input_hashes": {
+    "baseline.json": "2c24fb3ced417d882640767af7f2ee1fd71bf770f7e314ffce7b5463cd82e86e",
+    "baseline-provenance.json": "f48c786da268db05dddfe62a4f85f21db6c795bbfbf8ae669ab484ef0b4c0d27",
+    "baseline-inputs.json": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317",
+    "baseline-sources.json": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+    "qualified-base-sources.json": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+    "frozen-sources.json": "f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53"
+  },
+  "source_inputs": {
+    "Cargo.lock": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+    "Cargo.toml": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+    ".cargo/config.toml": "b906738cab8f6f289180e1bcf32826d3e2996899cb5055dc7f0c6838655c340d",
+    "crates/deadpan-app/src/navigation/registry/baseline-routing.txt": "a181ba1d3f2db1c030fbdf1feaf2d5ae8efd5edd885114bcea9c161ac774cd8d",
+    "docs/COMMANDS.md": "b4fc50fffbb6d96406593dda90a56ee6c9f3b89a3790b6e7f69b87863f57beec"
+  },
+  "scope": {
+    "candidate_rust_files": 2053,
+    "changed_rust_files": 3,
+    "unchanged_nonowned_rust_files": 2050,
+    "six_source_inputs_unchanged": true,
+    "Store_changed": false,
+    "profile_hooks_added": false,
+    "new_public_API_added": false,
+    "Main_changed_by_reviewer": false
+  },
+  "production_vs_prototype": [
+    "Read full qualified-base delta for all three files, not only the private prototype delta. Independently rehashed every candidate and qualified-base Rust file and verified equal path sets plus exactly three changed paths. All six pinned source inputs match candidate and qualified base.",
+    "Compared both implementation files directly against frozen v2 source map 0bf07513646ffdfee5aec03bb1b64b6fff757196512aeea883226c675b15ed02. Differences remove only pause_route_profile guard declarations/drops and restore the equivalent candidate-construction closure expression formatting. All eligibility, fallible calls, operation ordering, branches, test witnesses and assertions transfer unchanged.",
+    "Integration semantic_leaf_replay.rs is byte-identical to v2 at 648ae62b2ae50fee4a6bfa98fb3fe69e7d5039df44a18a9a89e14daa100b8b42. The production Rust path set is the qualified uninstrumented base path set; all 2050 nonowned files, including Store and app, are byte-identical to base."
+  ],
+  "proof_review": [
+    "OneLeafReplay adds only private immutable EditTransaction storage. It remains Core-created without public constructor, Clone/serde derivation or accessor. Its crate-private reuse signature lends the edit only together with the actual successful next result. No new public API, serializer, encoded buffer, global cache or ProjectDocument snapshot is added.",
+    "apply_semantic_leaf performs actual apply_with_result first. For retain=false or non-InsertTime the transaction drops before the unchanged admit_next callback. Otherwise actual post-leaf serialization/work admission must succeed, followed by unchanged mode/value/InsertTime eligibility, before candidate construction.",
+    "Existing reuse still requires local command work, compact timing, no derived/provisional state, and full exact entry/request equality. It preserves EXACT_EDIT reset/consume, original leaf revision check, next clone and sealed-preserved check. Changed/mutable public plan fields cannot retarget private edit provenance.",
+    "Compound captures reused_net only in the actual eligible one-ordinary-InsertTime hit, without inputs or isolation. Other shapes, modes and misses take the original leaf and net factory paths. The visitor receives shared authored references, and after a hit only current.revision_id changes before aggregate creation.",
+    "Original outer revision check, transaction/leaf separation, initial wire, Ledger.reserve, pre/post wire and cumulative charges, Ledger.observe, visitor, assignment and final outer-revision wire/charge order are retained. Cached aggregate construction occurs only after final admission. Test-only observation state does not exist in release and restores nested/error/unwind state.",
+    "DocumentPatch::rebased changes only from_revision/to_revision. The cached final transaction changes forward.to_revision and inverse.from_revision to the outer revision, plus description to Apply resolved transaction. Existing from/to opposite endpoints, project ID, all authored patch values and leaf AudioTimingId allocations, changed_ids and duration_delta remain exact. Each patch is cloned once.",
+    "command::net_transaction constructs payload from authored values and revision tags solely in patch headers; normal document validation does not read the current revision header. The successful ordinary leaf already establishes result validity under normal limits. Release intentionally skips redundant final Core aggregate validation/diff/inverse/changed-ID computation. Complete debug oracle recomputes the original net_transaction and compares the whole EditTransaction.",
+    "Unchanged Store continues independent actual-result validation, current transition authority and revision allocation checks, actual outer-request and aggregate-edit serialization with real size and decode/readback checks, inverse restoration and immutable history replay. No cached byte count, leaf encoded edit or stale host authority is substituted."
+  ],
+  "test_review": [
+    "Private actual-selection tests require a genuine Some hit and reject None/reference modes/changed same-revision entry/changed leaf/inputs/extra steps/isolation. Visitor refusal observes one visit and no cached-net construction; recovery remains possible and nested mode/witness scopes restore state.",
+    "Public integration compares whole edit/document/wire/register writes/visitor sequence against None and legacy replay. Two outer revision lengths exercise exact forward/inverse endpoints and compound description, unchanged leaf timing allocation payloads, actual serialization length and forward/inverse restoration.",
+    "Production 64 MiB initial/post-leaf/final-outer fixtures retain exact errors and visitor counts 0/0/1. A separate real 60 MiB multistep noneligible fixture crosses the production 512 MiB cumulative work limit after three visits, with exact Some/None parity and no cached-net selection. No artificial cap is introduced.",
+    "Existing reference/provisional/derived/AI/occurrence/register/mutable-plan/authority oracles remain in the unchanged base tests. Store implementation and test files are unchanged. Tests are inspected only in this review; they have not been executed by this reviewer."
+  ],
+  "caveats": [
+    "Independent static source/diff review only. No compiler, formatter, build, test, app, benchmark or Git execution; no source/Main changes. Only this source-review.json is written.",
+    "Parent reports v2 Core/integration/Store/real-media/timing/memory results. Those are private prototype evidence and do not qualify this uninstrumented production candidate. Root must run its production checks independently.",
+    "Taking the net edit into the capability retains sparse forward/inverse patch state longer; changed bindings may be wide. Retain=true ineligible InsertTime also keeps that edit through admission before discarding it. This is real memory and clone cost, not a free cache or measured per-leaf allocation.",
+    "No new genuine Store aggregate-edit 64 MiB boundary fixture is added. Its actual authoritative size/readback/inverse checks remain byte-identical. Future authored mutation between successful reuse hit and final aggregation must invalidate this proof path."
+  ]
+}

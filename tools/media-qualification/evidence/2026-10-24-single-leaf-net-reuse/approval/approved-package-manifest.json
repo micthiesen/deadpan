@@ -1,0 +1,2936 @@
+{
+  "analysis_review_sha256": "31f74fa1a53810a17baf980879815719a17d31fb453bc1bb1fda838b249c3881",
+  "binary_manifest_sha256": "09e723b470ceebf49cb80b3d38f5c1f5b6c84bee74b2e59b2eba2ad7df1c31ce",
+  "candidate_app_sha256": "970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2",
+  "candidate_source_map_sha256": "f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53",
+  "control_app_sha256": "e6abcd3a521697f504901f156df445e41681cfc824ff97793f62f4e0865802e1",
+  "fixtures": [
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "production/memory-1-baseline-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-baseline-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768
+        },
+        "project.sqlite-wal": {
+          "bytes": 0
+        }
+      },
+      "archive_destination": "fixtures/memory-1-baseline.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "production/memory-1-baseline-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-baseline-input-before.json"
+      },
+      "name": "memory-1-baseline",
+      "root": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-baseline.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "production/memory-1-candidate-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-candidate-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768
+        },
+        "project.sqlite-wal": {
+          "bytes": 0
+        }
+      },
+      "archive_destination": "fixtures/memory-1-candidate.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "production/memory-1-candidate-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-candidate-input-before.json"
+      },
+      "name": "memory-1-candidate",
+      "root": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-candidate.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "production/memory-2-baseline-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-baseline-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768
+        },
+        "project.sqlite-wal": {
+          "bytes": 0
+        }
+      },
+      "archive_destination": "fixtures/memory-2-baseline.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "production/memory-2-baseline-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-baseline-input-before.json"
+      },
+      "name": "memory-2-baseline",
+      "root": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-baseline.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "production/memory-2-candidate-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-candidate-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768
+        },
+        "project.sqlite-wal": {
+          "bytes": 0
+        }
+      },
+      "archive_destination": "fixtures/memory-2-candidate.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "production/memory-2-candidate-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-candidate-input-before.json"
+      },
+      "name": "memory-2-candidate",
+      "root": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-candidate.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "production/memory-3-baseline-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-baseline-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768
+        },
+        "project.sqlite-wal": {
+          "bytes": 0
+        }
+      },
+      "archive_destination": "fixtures/memory-3-baseline.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "production/memory-3-baseline-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-baseline-input-before.json"
+      },
+      "name": "memory-3-baseline",
+      "root": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-baseline.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "production/memory-3-candidate-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-candidate-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768
+        },
+        "project.sqlite-wal": {
+          "bytes": 0
+        }
+      },
+      "archive_destination": "fixtures/memory-3-candidate.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "production/memory-3-candidate-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-candidate-input-before.json"
+      },
+      "name": "memory-3-candidate",
+      "root": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-candidate.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "production/rotation-1-candidate-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-candidate-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768
+        },
+        "project.sqlite-wal": {
+          "bytes": 0
+        }
+      },
+      "archive_destination": "fixtures/rotation-1-candidate.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "production/rotation-1-candidate-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-candidate-input-before.json"
+      },
+      "name": "rotation-1-candidate",
+      "root": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-candidate.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "production/rotation-1-control-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-control-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768
+        },
+        "project.sqlite-wal": {
+          "bytes": 0
+        }
+      },
+      "archive_destination": "fixtures/rotation-1-control.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "production/rotation-1-control-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-control-input-before.json"
+      },
+      "name": "rotation-1-control",
+      "root": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-control.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "production/rotation-2-candidate-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-candidate-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768
+        },
+        "project.sqlite-wal": {
+          "bytes": 0
+        }
+      },
+      "archive_destination": "fixtures/rotation-2-candidate.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "production/rotation-2-candidate-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-candidate-input-before.json"
+      },
+      "name": "rotation-2-candidate",
+      "root": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-candidate.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "production/rotation-2-control-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-control-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768
+        },
+        "project.sqlite-wal": {
+          "bytes": 0
+        }
+      },
+      "archive_destination": "fixtures/rotation-2-control.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "production/rotation-2-control-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-control-input-before.json"
+      },
+      "name": "rotation-2-control",
+      "root": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-control.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "production/rotation-3-candidate-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-candidate-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768
+        },
+        "project.sqlite-wal": {
+          "bytes": 0
+        }
+      },
+      "archive_destination": "fixtures/rotation-3-candidate.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "production/rotation-3-candidate-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-candidate-input-before.json"
+      },
+      "name": "rotation-3-candidate",
+      "root": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-candidate.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "production/rotation-3-control-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-control-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768
+        },
+        "project.sqlite-wal": {
+          "bytes": 0
+        }
+      },
+      "archive_destination": "fixtures/rotation-3-control.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "production/rotation-3-control-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-control-input-before.json"
+      },
+      "name": "rotation-3-control",
+      "root": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-control.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "production/rotation-4-candidate-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-candidate-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768
+        },
+        "project.sqlite-wal": {
+          "bytes": 0
+        }
+      },
+      "archive_destination": "fixtures/rotation-4-candidate.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "production/rotation-4-candidate-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-candidate-input-before.json"
+      },
+      "name": "rotation-4-candidate",
+      "root": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-candidate.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "production/rotation-4-control-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-control-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768
+        },
+        "project.sqlite-wal": {
+          "bytes": 0
+        }
+      },
+      "archive_destination": "fixtures/rotation-4-control.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "production/rotation-4-control-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-control-input-before.json"
+      },
+      "name": "rotation-4-control",
+      "root": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-control.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "production/rotation-5-candidate-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-candidate-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768
+        },
+        "project.sqlite-wal": {
+          "bytes": 0
+        }
+      },
+      "archive_destination": "fixtures/rotation-5-candidate.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "production/rotation-5-candidate-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-candidate-input-before.json"
+      },
+      "name": "rotation-5-candidate",
+      "root": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-candidate.deadpan"
+    },
+    {
+      "after_map": {
+        "bytes": 639,
+        "destination": "production/rotation-5-control-input-after.json",
+        "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-control-input-after.json"
+      },
+      "allowed_sidecars": {
+        "project.sqlite-shm": {
+          "bytes": 32768
+        },
+        "project.sqlite-wal": {
+          "bytes": 0
+        }
+      },
+      "archive_destination": "fixtures/rotation-5-control.tar.gz",
+      "before_map": {
+        "bytes": 379,
+        "destination": "production/rotation-5-control-input-before.json",
+        "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+        "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-control-input-before.json"
+      },
+      "name": "rotation-5-control",
+      "root": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-control.deadpan"
+    }
+  ],
+  "initial_attempt_source_snapshots": [],
+  "input_map_sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317",
+  "matched_profile_app_sha256": "e6abcd3a521697f504901f156df445e41681cfc824ff97793f62f4e0865802e1",
+  "media_files": [
+    {
+      "bytes": 0,
+      "destination": "media-evidence/cached/one-leaf-cached-media.deadpan/.render-candidates.lock",
+      "relative_path": "cached/one-leaf-cached-media.deadpan/.render-candidates.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/one-leaf-cached-media.deadpan/.render-candidates.lock"
+    },
+    {
+      "bytes": 0,
+      "destination": "media-evidence/cached/one-leaf-cached-media.deadpan/.writer.lock",
+      "relative_path": "cached/one-leaf-cached-media.deadpan/.writer.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/one-leaf-cached-media.deadpan/.writer.lock"
+    },
+    {
+      "bytes": 39157,
+      "destination": "media-evidence/cached/one-leaf-cached-media.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "relative_path": "cached/one-leaf-cached-media.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/one-leaf-cached-media.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1"
+    },
+    {
+      "bytes": 15067,
+      "destination": "media-evidence/cached/one-leaf-cached-media.deadpan/Media/RenderCandidates/blake3-6b312007b60cc9514cee58e001cf17cb59ecf14d4e576f3abf769cb8f5cfedc1",
+      "relative_path": "cached/one-leaf-cached-media.deadpan/Media/RenderCandidates/blake3-6b312007b60cc9514cee58e001cf17cb59ecf14d4e576f3abf769cb8f5cfedc1",
+      "sha256": "21a74dc1471615400314d770423cbf190a85d2ff2f0d5b07b7a1d076ad0b81d2",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/one-leaf-cached-media.deadpan/Media/RenderCandidates/blake3-6b312007b60cc9514cee58e001cf17cb59ecf14d4e576f3abf769cb8f5cfedc1"
+    },
+    {
+      "bytes": 13232,
+      "destination": "media-evidence/cached/one-leaf-cached-media.deadpan/Media/RenderCandidates/blake3-b4b803e0e57d38f5f485c7a6ea20026b1f642feb876c18068fdd01c263e279f1",
+      "relative_path": "cached/one-leaf-cached-media.deadpan/Media/RenderCandidates/blake3-b4b803e0e57d38f5f485c7a6ea20026b1f642feb876c18068fdd01c263e279f1",
+      "sha256": "b1dbb24ce918cf5958fee28807067ca72f3e2ede57f52abf756d6e28bccd1488",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/one-leaf-cached-media.deadpan/Media/RenderCandidates/blake3-b4b803e0e57d38f5f485c7a6ea20026b1f642feb876c18068fdd01c263e279f1"
+    },
+    {
+      "bytes": 82,
+      "destination": "media-evidence/cached/one-leaf-cached-media.deadpan/manifest.json",
+      "relative_path": "cached/one-leaf-cached-media.deadpan/manifest.json",
+      "sha256": "ff06b771270ee51b35075234cad019ae876fe360a2fc617a71966df343b83b9c",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/one-leaf-cached-media.deadpan/manifest.json"
+    },
+    {
+      "bytes": 593920,
+      "destination": "media-evidence/cached/one-leaf-cached-media.deadpan/project.sqlite",
+      "relative_path": "cached/one-leaf-cached-media.deadpan/project.sqlite",
+      "sha256": "901557407a9424d0a49df78403455311d0c4596898a3744eb1a1f8ebbbb073c9",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/one-leaf-cached-media.deadpan/project.sqlite"
+    },
+    {
+      "bytes": 32768,
+      "destination": "media-evidence/cached/one-leaf-cached-media.deadpan/project.sqlite-shm",
+      "relative_path": "cached/one-leaf-cached-media.deadpan/project.sqlite-shm",
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/one-leaf-cached-media.deadpan/project.sqlite-shm"
+    },
+    {
+      "bytes": 0,
+      "destination": "media-evidence/cached/one-leaf-cached-media.deadpan/project.sqlite-wal",
+      "relative_path": "cached/one-leaf-cached-media.deadpan/project.sqlite-wal",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/one-leaf-cached-media.deadpan/project.sqlite-wal"
+    },
+    {
+      "bytes": 39157,
+      "destination": "media-evidence/cached/original.mp4",
+      "relative_path": "cached/original.mp4",
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/original.mp4"
+    },
+    {
+      "bytes": 454,
+      "destination": "media-evidence/cached/request-one-leaf-cached-media-r01.json",
+      "relative_path": "cached/request-one-leaf-cached-media-r01.json",
+      "sha256": "fec654ba0378252077a6c810675a34762575260b23f38348a0e79bfec3ef0598",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/request-one-leaf-cached-media-r01.json"
+    },
+    {
+      "bytes": 414,
+      "destination": "media-evidence/cached/request-one-leaf-cached-media-r02.json",
+      "relative_path": "cached/request-one-leaf-cached-media-r02.json",
+      "sha256": "394ed19366d8d5953df9f2016ac4fbd05fcd7dd3072a050b15d6612925c546d3",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/request-one-leaf-cached-media-r02.json"
+    },
+    {
+      "bytes": 32885,
+      "destination": "media-evidence/exports-cached/deadpan-render-0e749570-2122-4cf0-a589-d16dd5c6e7d7.json",
+      "relative_path": "exports-cached/deadpan-render-0e749570-2122-4cf0-a589-d16dd5c6e7d7.json",
+      "sha256": "6dc3a95c54a72c04534cb65e6ceddc45c060e273adb40dccfc3fad419cddc9e1",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/exports-cached/deadpan-render-0e749570-2122-4cf0-a589-d16dd5c6e7d7.json"
+    },
+    {
+      "bytes": 13232,
+      "destination": "media-evidence/exports-cached/one-leaf-cached-media.mp4",
+      "relative_path": "exports-cached/one-leaf-cached-media.mp4",
+      "sha256": "b1dbb24ce918cf5958fee28807067ca72f3e2ede57f52abf756d6e28bccd1488",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/exports-cached/one-leaf-cached-media.mp4"
+    },
+    {
+      "bytes": 32887,
+      "destination": "media-evidence/exports-uncached/deadpan-render-80bd8be6-1ff3-47bb-9d15-71e75831504e.json",
+      "relative_path": "exports-uncached/deadpan-render-80bd8be6-1ff3-47bb-9d15-71e75831504e.json",
+      "sha256": "65d077f073a9d0a3667a10cfa09900249b2c1c15d6eb48fad8bc6b4a85875540",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/exports-uncached/deadpan-render-80bd8be6-1ff3-47bb-9d15-71e75831504e.json"
+    },
+    {
+      "bytes": 13232,
+      "destination": "media-evidence/exports-uncached/one-leaf-uncached-media.mp4",
+      "relative_path": "exports-uncached/one-leaf-uncached-media.mp4",
+      "sha256": "5c72a13ae24c6b0936ce1dbd96b43d462e4b74ec12588bcdebe1861c0219c07a",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/exports-uncached/one-leaf-uncached-media.mp4"
+    },
+    {
+      "bytes": 7642,
+      "destination": "media-evidence/one-leaf-after-document.json",
+      "relative_path": "one-leaf-after-document.json",
+      "sha256": "5baf563fb9432f670e453091fef4c45060506f2c521dddc87ac1688ff87fa348",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/one-leaf-after-document.json"
+    },
+    {
+      "bytes": 2319402,
+      "destination": "media-evidence/one-leaf-after-pcm.json",
+      "relative_path": "one-leaf-after-pcm.json",
+      "sha256": "239ae1dc1903ad3879f8e096c21280a1ea60800c43afc4b96632aac4f1ced873",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/one-leaf-after-pcm.json"
+    },
+    {
+      "bytes": 4420,
+      "destination": "media-evidence/one-leaf-before-document.json",
+      "relative_path": "one-leaf-before-document.json",
+      "sha256": "1a03726fdddead19ce5c96b660f14018c074d3e45490d9cec52e54c25f481c61",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/one-leaf-before-document.json"
+    },
+    {
+      "bytes": 1550634,
+      "destination": "media-evidence/one-leaf-before-pcm.json",
+      "relative_path": "one-leaf-before-pcm.json",
+      "sha256": "9a6ce5e6fcb27c5e823545bfaf9642203676acf0fee501df11f610f790ceb761",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/one-leaf-before-pcm.json"
+    },
+    {
+      "bytes": 43395,
+      "destination": "media-evidence/one-leaf-cached-verification.json",
+      "relative_path": "one-leaf-cached-verification.json",
+      "sha256": "c4f4ba0cc1560bbe4c4da1a0f389441c9d1c70679e31625c519bd04b481f07aa",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/one-leaf-cached-verification.json"
+    },
+    {
+      "bytes": 4645,
+      "destination": "media-evidence/one-leaf-commit.json",
+      "relative_path": "one-leaf-commit.json",
+      "sha256": "fc3acb5469b874538f5bcc871363d48b46cf85b99e7b866038c2bb920bb03ad4",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/one-leaf-commit.json"
+    },
+    {
+      "bytes": 88856,
+      "destination": "media-evidence/one-leaf-media-summary.json",
+      "relative_path": "one-leaf-media-summary.json",
+      "sha256": "f6bcc368e0229dd8f191902dfdb914409145df607ccea7dbca7b37b2057c812c",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/one-leaf-media-summary.json"
+    },
+    {
+      "bytes": 4544,
+      "destination": "media-evidence/one-leaf-redo.json",
+      "relative_path": "one-leaf-redo.json",
+      "sha256": "b8e7fd2489431eb665f385daf65cc06699d13f14c54c181137b9c9af1d530afa",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/one-leaf-redo.json"
+    },
+    {
+      "bytes": 43399,
+      "destination": "media-evidence/one-leaf-uncached-verification.json",
+      "relative_path": "one-leaf-uncached-verification.json",
+      "sha256": "dbe3560f12a0cc588b63dde06a21183fbaf507ce6e7ac84be70aa807a7c815b1",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/one-leaf-uncached-verification.json"
+    },
+    {
+      "bytes": 4544,
+      "destination": "media-evidence/one-leaf-undo.json",
+      "relative_path": "one-leaf-undo.json",
+      "sha256": "654243e389dd4bfd8f292dee59486f430f490b82a9e4b307ca31bd3f1dd88c80",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/one-leaf-undo.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "media-evidence/uncached.deadpan/.render-candidates.lock",
+      "relative_path": "uncached.deadpan/.render-candidates.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/uncached.deadpan/.render-candidates.lock"
+    },
+    {
+      "bytes": 0,
+      "destination": "media-evidence/uncached.deadpan/.writer.lock",
+      "relative_path": "uncached.deadpan/.writer.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/uncached.deadpan/.writer.lock"
+    },
+    {
+      "bytes": 39157,
+      "destination": "media-evidence/uncached.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "relative_path": "uncached.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/uncached.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1"
+    },
+    {
+      "bytes": 15067,
+      "destination": "media-evidence/uncached.deadpan/Media/RenderCandidates/blake3-68a2f61bfc11c92caafa6fb3ce75801a25cea7010d2c652deae84e434c4b3655",
+      "relative_path": "uncached.deadpan/Media/RenderCandidates/blake3-68a2f61bfc11c92caafa6fb3ce75801a25cea7010d2c652deae84e434c4b3655",
+      "sha256": "43a99709d5137de2ec22296864f979ca74898c369469a0bfc6978dbca6fa7449",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/uncached.deadpan/Media/RenderCandidates/blake3-68a2f61bfc11c92caafa6fb3ce75801a25cea7010d2c652deae84e434c4b3655"
+    },
+    {
+      "bytes": 13232,
+      "destination": "media-evidence/uncached.deadpan/Media/RenderCandidates/blake3-f2e5cb888ea80030e9e9159537749d91336cb541f927cddd8ae08ca20edbeaba",
+      "relative_path": "uncached.deadpan/Media/RenderCandidates/blake3-f2e5cb888ea80030e9e9159537749d91336cb541f927cddd8ae08ca20edbeaba",
+      "sha256": "5c72a13ae24c6b0936ce1dbd96b43d462e4b74ec12588bcdebe1861c0219c07a",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/uncached.deadpan/Media/RenderCandidates/blake3-f2e5cb888ea80030e9e9159537749d91336cb541f927cddd8ae08ca20edbeaba"
+    },
+    {
+      "bytes": 82,
+      "destination": "media-evidence/uncached.deadpan/manifest.json",
+      "relative_path": "uncached.deadpan/manifest.json",
+      "sha256": "ff06b771270ee51b35075234cad019ae876fe360a2fc617a71966df343b83b9c",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/uncached.deadpan/manifest.json"
+    },
+    {
+      "bytes": 593920,
+      "destination": "media-evidence/uncached.deadpan/project.sqlite",
+      "relative_path": "uncached.deadpan/project.sqlite",
+      "sha256": "52d11ae8ef7537d2762326e16eda4b7ac0ac87b93527268ed6da8d3bb1105a9f",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/uncached.deadpan/project.sqlite"
+    },
+    {
+      "bytes": 32768,
+      "destination": "media-evidence/uncached.deadpan/project.sqlite-shm",
+      "relative_path": "uncached.deadpan/project.sqlite-shm",
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/uncached.deadpan/project.sqlite-shm"
+    },
+    {
+      "bytes": 0,
+      "destination": "media-evidence/uncached.deadpan/project.sqlite-wal",
+      "relative_path": "uncached.deadpan/project.sqlite-wal",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/uncached.deadpan/project.sqlite-wal"
+    }
+  ],
+  "observer_provenance_sha256": "689fb148dc8374b70532c93b3c407fecdf374070c3c4db951c69846ec25aeb32",
+  "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+  "payloads": [
+    {
+      "bytes": 5777,
+      "destination": "production/analysis-review.json",
+      "encoding": "identity",
+      "sha256": "31f74fa1a53810a17baf980879815719a17d31fb453bc1bb1fda838b249c3881",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/analysis-review.json"
+    },
+    {
+      "bytes": 583,
+      "destination": "production/baseline-inputs.json",
+      "encoding": "identity",
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/baseline-inputs.json"
+    },
+    {
+      "bytes": 904,
+      "destination": "production/baseline-provenance.json",
+      "encoding": "identity",
+      "sha256": "f48c786da268db05dddfe62a4f85f21db6c795bbfbf8ae669ab484ef0b4c0d27",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/baseline-provenance.json"
+    },
+    {
+      "bytes": 253495,
+      "destination": "production/baseline-sources.json",
+      "encoding": "gzip",
+      "sha256": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/baseline-sources.json"
+    },
+    {
+      "bytes": 778,
+      "destination": "production/baseline.json",
+      "encoding": "identity",
+      "sha256": "2c24fb3ced417d882640767af7f2ee1fd71bf770f7e314ffce7b5463cd82e86e",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/baseline.json"
+    },
+    {
+      "bytes": 1501,
+      "destination": "production/binaries.json",
+      "encoding": "identity",
+      "sha256": "09e723b470ceebf49cb80b3d38f5c1f5b6c84bee74b2e59b2eba2ad7df1c31ce",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/binaries.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/build-driver.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/build-driver.stderr"
+    },
+    {
+      "bytes": 2638,
+      "destination": "production/build-driver.stdout",
+      "encoding": "identity",
+      "sha256": "127edb6c4f18ff0c4614ec2dd8a69c63b0ce62b38d20c92d84498fc5ff924673",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/build-driver.stdout"
+    },
+    {
+      "bytes": 155,
+      "destination": "production/build-owner.json",
+      "encoding": "identity",
+      "sha256": "2f9629cbde3e95b5ec14caf7e973338451d201a56fd6c3c162e6d253f46e5db5",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/build-owner.json"
+    },
+    {
+      "bytes": 272540,
+      "destination": "production/build-receipt.json",
+      "encoding": "gzip",
+      "sha256": "977d5d4b474ffbb4e24bc11fa928effe187e3c3b463c66ab001727fda2803137",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/build-receipt.json"
+    },
+    {
+      "bytes": 314,
+      "destination": "production/build-terminal.json",
+      "encoding": "identity",
+      "sha256": "c806d681efaeab1db3b547db17fa2aced2cf21906f3d7ddd7fef0623c3b3cd32",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/build-terminal.json"
+    },
+    {
+      "bytes": 14067,
+      "destination": "production/build.py",
+      "encoding": "identity",
+      "sha256": "3c8c97abe6e63ecbb2f37c803c8b383e37751f7b62600b5f1d81c757a9b7e59d",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/build.py"
+    },
+    {
+      "bytes": 1966,
+      "destination": "production/cargo-rustc-info.json",
+      "encoding": "identity",
+      "sha256": "1d691aca426164bc512f3f3de07ae203e4491b4d05aefac8f13177cf6ea887d5",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/cargo-rustc-info.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/cargo.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/cargo.stderr"
+    },
+    {
+      "bytes": 36,
+      "destination": "production/cargo.stdout",
+      "encoding": "identity",
+      "sha256": "1aedaa9cce116919d39b1eb303a58865771582bc24fc259aa8e26cb212e0f59e",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/cargo.stdout"
+    },
+    {
+      "bytes": 768,
+      "destination": "production/core-integration.stderr",
+      "encoding": "identity",
+      "sha256": "7c6ba2d9e7caf900ac3488887945dcbd0302182ae99052459ae590e0896cc95f",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/core-integration.stderr"
+    },
+    {
+      "bytes": 52007,
+      "destination": "production/core-integration.stdout",
+      "encoding": "identity",
+      "sha256": "5b8a60eb1a4a1325994f7bb7fc9fd18b54608f2d8821dd519aebf5f6f51ff4d4",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/core-integration.stdout"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/core-unit-all.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/core-unit-all.stderr"
+    },
+    {
+      "bytes": 85316,
+      "destination": "production/core-unit-all.stdout",
+      "encoding": "identity",
+      "sha256": "fa22f2a80b49487ac4803ffc6f85614f66491c1ed13b9926720ad38d619e522d",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/core-unit-all.stdout"
+    },
+    {
+      "bytes": 1415,
+      "destination": "production/core-unit-build.stderr",
+      "encoding": "identity",
+      "sha256": "d3bf767ac7e434b2ec1c8c2901f04779db743cfd01821a104ee4d0a1904c9d70",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/core-unit-build.stderr"
+    },
+    {
+      "bytes": 45883,
+      "destination": "production/core-unit-build.stdout",
+      "encoding": "identity",
+      "sha256": "ed0da77df9c8fa9095ab2c30720cfe8bc78559bcae5162cd16cf4ae3e02e9e0a",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/core-unit-build.stdout"
+    },
+    {
+      "bytes": 1111,
+      "destination": "production/driver-pins.json",
+      "encoding": "identity",
+      "sha256": "f4d9ff97e0e5ce84b762095b498c3cc6f43b679ddb1cf54823d23528bfbfdb4d",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/driver-pins.json"
+    },
+    {
+      "bytes": 151,
+      "destination": "production/expected-build-stages.json",
+      "encoding": "identity",
+      "sha256": "4e5ecd34168f3bb8fdbbf567a4276dac0fdb832b3bc5f0cc76d5ce757dc8b8f3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/expected-build-stages.json"
+    },
+    {
+      "bytes": 2295,
+      "destination": "production/expected-tests.json",
+      "encoding": "identity",
+      "sha256": "e7e663b3bdbe2f1326811215f7039f6f93370c919be81bafcca1b342e3fad198",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/expected-tests.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/format.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/format.stderr"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/format.stdout",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/format.stdout"
+    },
+    {
+      "bytes": 253495,
+      "destination": "production/frozen-sources.json",
+      "encoding": "gzip",
+      "sha256": "f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/frozen-sources.json"
+    },
+    {
+      "bytes": 1776,
+      "destination": "production/harness-review.json",
+      "encoding": "identity",
+      "sha256": "20d1577deba75745b2620d4ed16ff00d1fc215a7310969dff36621cf3b5d4bd0",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/harness-review.json"
+    },
+    {
+      "bytes": 382,
+      "destination": "production/main-promotion-source-check.json",
+      "encoding": "identity",
+      "sha256": "24ffd706b93b516dc63ea7b612130534337022fcce694fcce7942bf0450dc332",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/main-promotion-source-check.json"
+    },
+    {
+      "bytes": 11223,
+      "destination": "production/measure.py",
+      "encoding": "identity",
+      "sha256": "f56a18385309d179cfdea9b379fb38afe7b96f73431841d5b2f836a6d1a769cc",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/measure.py"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/measurement-driver.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/measurement-driver.stderr"
+    },
+    {
+      "bytes": 7475,
+      "destination": "production/measurement-driver.stdout",
+      "encoding": "identity",
+      "sha256": "81b620972eedff45f21512d3bdda91fa5cbf6aa4eae939cd1ff9ce4b408fc77c",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/measurement-driver.stdout"
+    },
+    {
+      "bytes": 161,
+      "destination": "production/measurement-owner.json",
+      "encoding": "identity",
+      "sha256": "a0d70a2f930528d86edfa38ca0d7de9cf5bb0b0fde909b48bbdc3415e9e4fed3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/measurement-owner.json"
+    },
+    {
+      "bytes": 8944,
+      "destination": "production/measurement-receipt.json",
+      "encoding": "identity",
+      "sha256": "1092f559addfc2e282fe0b3ed0bfae6f9c86b9622cf72d99cdefd0dcc3028da8",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/measurement-receipt.json"
+    },
+    {
+      "bytes": 61,
+      "destination": "production/measurement-terminal.json",
+      "encoding": "identity",
+      "sha256": "6a14d9904f993433509c959d217527a9454a8a7e1688383c728dc4636cc29bab",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/measurement-terminal.json"
+    },
+    {
+      "bytes": 3340,
+      "destination": "production/media-archive.stderr",
+      "encoding": "identity",
+      "sha256": "d17e7ec8c6faf3cc25c30234fa1d6c986bf7578af66d0d317b3a825931666b8c",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/media-archive.stderr"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/media-archive.stdout",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/media-archive.stdout"
+    },
+    {
+      "bytes": 3709,
+      "destination": "production/media-binaries.json",
+      "encoding": "identity",
+      "sha256": "2e87ca9a89910ea9f1583e940424cc2ecbc14591fc215b33fb0aaed2260c77db",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/media-binaries.json"
+    },
+    {
+      "bytes": 1037,
+      "destination": "production/media-driver-pins.json",
+      "encoding": "identity",
+      "sha256": "fa8b73c88ea468a166ddc4c0e11084ad4cb4bff8a4644314861b5920bbeaacbc",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/media-driver-pins.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/media-driver.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/media-driver.stderr"
+    },
+    {
+      "bytes": 1966,
+      "destination": "production/media-driver.stdout",
+      "encoding": "identity",
+      "sha256": "d20003a480836037380fc12d3034bb0656791ada5db339f5e3f69e1b819ae508",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/media-driver.stdout"
+    },
+    {
+      "bytes": 6259,
+      "destination": "production/media-evidence-inventory.json",
+      "encoding": "identity",
+      "sha256": "43264f7636525d9cf3123616a190b88f109814c80c440b20921d761255cea791",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/media-evidence-inventory.json"
+    },
+    {
+      "bytes": 124,
+      "destination": "production/media-hardware.json",
+      "encoding": "identity",
+      "sha256": "e30b3d2ac93eb1b43f8147b3ff6bedcd6750509e889d304a12acaafb9a099309",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/media-hardware.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/media-hardware.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/media-hardware.stderr"
+    },
+    {
+      "bytes": 29,
+      "destination": "production/media-hardware.stdout",
+      "encoding": "identity",
+      "sha256": "dc7310a7c1781dfccc3f4262c5909848c353de3c145dc1fa2917bfba12fc9e21",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/media-hardware.stdout"
+    },
+    {
+      "bytes": 1500,
+      "destination": "production/media-harness-review.json",
+      "encoding": "identity",
+      "sha256": "8d799d74c503409c062fc6681d7f8f53f0c6da7216efc2d3c369f6f103360e85",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/media-harness-review.json"
+    },
+    {
+      "bytes": 278,
+      "destination": "production/media-list.stderr",
+      "encoding": "identity",
+      "sha256": "cf95d212f329543deb397c2618d919ea1254244b83bc623f9bc9902d67681ec2",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/media-list.stderr"
+    },
+    {
+      "bytes": 12880,
+      "destination": "production/media-list.stdout",
+      "encoding": "identity",
+      "sha256": "281f81ba55e1be5e68751249ce53c94fe87a8891f606af636faec52c1c22795f",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/media-list.stdout"
+    },
+    {
+      "bytes": 154480,
+      "destination": "production/media-one-leaf-fixture.json",
+      "encoding": "gzip",
+      "sha256": "df9cdc8b690fb2f742a2ce4662f47520a6df7e70e452f815c0fc46bc586a47b5",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/media-one-leaf-fixture.json"
+    },
+    {
+      "bytes": 310,
+      "destination": "production/media-owner.json",
+      "encoding": "identity",
+      "sha256": "682f8d97a3cc6b29a710e30a6c6eb0e7a3f697c05b38895a947c8df91b225f5b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/media-owner.json"
+    },
+    {
+      "bytes": 2368,
+      "destination": "production/media-receipt.json",
+      "encoding": "identity",
+      "sha256": "ac0ac1b45e081817b0e7e3c184f35ffefbeec334137e01ea436f049009618ecc",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/media-receipt.json"
+    },
+    {
+      "bytes": 694,
+      "destination": "production/media-run.stderr",
+      "encoding": "identity",
+      "sha256": "02f2f0df1ddd9769ac57a0e3aa4d8d11ce771340b332e27fff2b4a892cdc2edd",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/media-run.stderr"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/media-run.stdout",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/media-run.stdout"
+    },
+    {
+      "bytes": 1121,
+      "destination": "production/media-static-pins.json",
+      "encoding": "identity",
+      "sha256": "f0000f13e225bba2b90713cfd6e4222599f29b972417a4329898eedd12bcb0e3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/media-static-pins.json"
+    },
+    {
+      "bytes": 1727,
+      "destination": "production/media-terminal.json",
+      "encoding": "identity",
+      "sha256": "87ba2682067b831a2d690dbc512911fc19e42537b93e4f54b861478a21ed02ad",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/media-terminal.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-1-baseline-app.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-baseline-app.stderr"
+    },
+    {
+      "bytes": 125,
+      "destination": "production/memory-1-baseline-app.stdout",
+      "encoding": "identity",
+      "sha256": "892219fd474ce15c6537208b27427ef7e0577ff6a7c347b0b49b95a7fb8ba01c",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-baseline-app.stdout"
+    },
+    {
+      "bytes": 639,
+      "destination": "production/memory-1-baseline-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-baseline-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "destination": "production/memory-1-baseline-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-baseline-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-1-baseline-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-baseline-make.stderr"
+    },
+    {
+      "bytes": 196,
+      "destination": "production/memory-1-baseline-make.stdout",
+      "encoding": "identity",
+      "sha256": "ae3b9f4b984f9ea6e202c19a313901ab2d26c2b1367b1540616d847ef2810e9f",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-baseline-make.stdout"
+    },
+    {
+      "bytes": 826,
+      "destination": "production/memory-1-baseline-observer-receipt.json",
+      "encoding": "identity",
+      "sha256": "7bcf91c64fc107d547d41913aadfe596a6589b13a4aa76a9b675fb040e0b226a",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-baseline-observer-receipt.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-1-baseline-observer.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-baseline-observer.stderr"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-1-baseline-observer.stdout",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-baseline-observer.stdout"
+    },
+    {
+      "bytes": 525,
+      "destination": "production/memory-1-baseline-power.json",
+      "encoding": "identity",
+      "sha256": "256af446e847bc38f47e791220d91cf442e223c3a9a702bd6504ef43b1d84e07",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-baseline-power.json"
+    },
+    {
+      "bytes": 168,
+      "destination": "production/memory-1-baseline-preflight.json",
+      "encoding": "identity",
+      "sha256": "dc2ed4128a0b2890db6239f96f76e9f31b3510fcb6fa9e37846ce5651c5e9630",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-baseline-preflight.json"
+    },
+    {
+      "bytes": 196014,
+      "destination": "production/memory-1-baseline-samples.json",
+      "encoding": "gzip",
+      "sha256": "0cbe19a403477c3f607444959fc831fa9afa7cc3960fa8c875ad351cf8dcc2f3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-baseline-samples.json"
+    },
+    {
+      "bytes": 525,
+      "destination": "production/memory-1-baseline-setup-power.json",
+      "encoding": "identity",
+      "sha256": "256af446e847bc38f47e791220d91cf442e223c3a9a702bd6504ef43b1d84e07",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-baseline-setup-power.json"
+    },
+    {
+      "bytes": 169,
+      "destination": "production/memory-1-baseline-setup-preflight.json",
+      "encoding": "identity",
+      "sha256": "f6b9a436b61344e330a310cc4492b32cb487efbc601da29b17cf7289226a41a7",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-baseline-setup-preflight.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-1-candidate-app.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-candidate-app.stderr"
+    },
+    {
+      "bytes": 126,
+      "destination": "production/memory-1-candidate-app.stdout",
+      "encoding": "identity",
+      "sha256": "261abbff073d8dd119377be86f573ba816405237259fb64eb09ce9a2f6438fa9",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-candidate-app.stdout"
+    },
+    {
+      "bytes": 639,
+      "destination": "production/memory-1-candidate-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-candidate-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "destination": "production/memory-1-candidate-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-candidate-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-1-candidate-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-candidate-make.stderr"
+    },
+    {
+      "bytes": 205,
+      "destination": "production/memory-1-candidate-make.stdout",
+      "encoding": "identity",
+      "sha256": "1441bf15d01e1c5a2e8f7aa146a2ef8f00b3f899f46fb499f683258b837a588d",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-candidate-make.stdout"
+    },
+    {
+      "bytes": 826,
+      "destination": "production/memory-1-candidate-observer-receipt.json",
+      "encoding": "identity",
+      "sha256": "8840eeb9c0ab98b2922b9417a78ed04924d390efa59a0aa29391e329f08e12f4",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-candidate-observer-receipt.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-1-candidate-observer.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-candidate-observer.stderr"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-1-candidate-observer.stdout",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-candidate-observer.stdout"
+    },
+    {
+      "bytes": 525,
+      "destination": "production/memory-1-candidate-power.json",
+      "encoding": "identity",
+      "sha256": "256af446e847bc38f47e791220d91cf442e223c3a9a702bd6504ef43b1d84e07",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-candidate-power.json"
+    },
+    {
+      "bytes": 166,
+      "destination": "production/memory-1-candidate-preflight.json",
+      "encoding": "identity",
+      "sha256": "e35a37639581766cb8d93530cbccc82f7329023a1be6430def56a6d2c95c69cc",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-candidate-preflight.json"
+    },
+    {
+      "bytes": 190812,
+      "destination": "production/memory-1-candidate-samples.json",
+      "encoding": "gzip",
+      "sha256": "76c3c3ae34c82d7a47099e7cb04a53e0e0c6b3d8c5c60aab6d34f444946d1808",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-candidate-samples.json"
+    },
+    {
+      "bytes": 525,
+      "destination": "production/memory-1-candidate-setup-power.json",
+      "encoding": "identity",
+      "sha256": "256af446e847bc38f47e791220d91cf442e223c3a9a702bd6504ef43b1d84e07",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-candidate-setup-power.json"
+    },
+    {
+      "bytes": 166,
+      "destination": "production/memory-1-candidate-setup-preflight.json",
+      "encoding": "identity",
+      "sha256": "cc0b9254af32b070b70394ac64c60c99fc6ac4788c4b4e0d3405fdbea2a87631",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-candidate-setup-preflight.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-2-baseline-app.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-baseline-app.stderr"
+    },
+    {
+      "bytes": 125,
+      "destination": "production/memory-2-baseline-app.stdout",
+      "encoding": "identity",
+      "sha256": "59373ef8cba9d47104beb8dd5b6dbb5c407f20894bc88d6cdc997a42678b323e",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-baseline-app.stdout"
+    },
+    {
+      "bytes": 639,
+      "destination": "production/memory-2-baseline-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-baseline-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "destination": "production/memory-2-baseline-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-baseline-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-2-baseline-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-baseline-make.stderr"
+    },
+    {
+      "bytes": 196,
+      "destination": "production/memory-2-baseline-make.stdout",
+      "encoding": "identity",
+      "sha256": "21fdece198d23a059d6db20643d7c29d6098d33a9bcd621fb45d56de4e86d619",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-baseline-make.stdout"
+    },
+    {
+      "bytes": 826,
+      "destination": "production/memory-2-baseline-observer-receipt.json",
+      "encoding": "identity",
+      "sha256": "b6f6361ce5a5cb0cbe7edce767606d7a6a681cd9cff319edac0b99390894c321",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-baseline-observer-receipt.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-2-baseline-observer.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-baseline-observer.stderr"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-2-baseline-observer.stdout",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-baseline-observer.stdout"
+    },
+    {
+      "bytes": 525,
+      "destination": "production/memory-2-baseline-power.json",
+      "encoding": "identity",
+      "sha256": "256af446e847bc38f47e791220d91cf442e223c3a9a702bd6504ef43b1d84e07",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-baseline-power.json"
+    },
+    {
+      "bytes": 161,
+      "destination": "production/memory-2-baseline-preflight.json",
+      "encoding": "identity",
+      "sha256": "54baefc9023c89962f30b466ca9d8e6c92e9d858462783f05e922eddaedce8ba",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-baseline-preflight.json"
+    },
+    {
+      "bytes": 187755,
+      "destination": "production/memory-2-baseline-samples.json",
+      "encoding": "gzip",
+      "sha256": "7865c4042bcc590adc4540533071552d9112ee7c57b640b73c92b2e8096cdbc5",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-baseline-samples.json"
+    },
+    {
+      "bytes": 525,
+      "destination": "production/memory-2-baseline-setup-power.json",
+      "encoding": "identity",
+      "sha256": "256af446e847bc38f47e791220d91cf442e223c3a9a702bd6504ef43b1d84e07",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-baseline-setup-power.json"
+    },
+    {
+      "bytes": 162,
+      "destination": "production/memory-2-baseline-setup-preflight.json",
+      "encoding": "identity",
+      "sha256": "a3033997450141f803530febf1015476abb0ddddfb8adad0da813e5076249076",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-baseline-setup-preflight.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-2-candidate-app.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-candidate-app.stderr"
+    },
+    {
+      "bytes": 126,
+      "destination": "production/memory-2-candidate-app.stdout",
+      "encoding": "identity",
+      "sha256": "a4861cb2700cce7beaa646e447d4174abff34ca9bdee786a87f5484897c02f4e",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-candidate-app.stdout"
+    },
+    {
+      "bytes": 639,
+      "destination": "production/memory-2-candidate-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-candidate-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "destination": "production/memory-2-candidate-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-candidate-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-2-candidate-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-candidate-make.stderr"
+    },
+    {
+      "bytes": 197,
+      "destination": "production/memory-2-candidate-make.stdout",
+      "encoding": "identity",
+      "sha256": "2ca1f1e47c930d196e8e777d0813ae555d86797c9f246e5a1812877e2e4a5995",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-candidate-make.stdout"
+    },
+    {
+      "bytes": 826,
+      "destination": "production/memory-2-candidate-observer-receipt.json",
+      "encoding": "identity",
+      "sha256": "be2a4d18aebabebd07a19251ba1c885e3a1661d3d4c2679f9e6e17bc604d06e5",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-candidate-observer-receipt.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-2-candidate-observer.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-candidate-observer.stderr"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-2-candidate-observer.stdout",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-candidate-observer.stdout"
+    },
+    {
+      "bytes": 525,
+      "destination": "production/memory-2-candidate-power.json",
+      "encoding": "identity",
+      "sha256": "256af446e847bc38f47e791220d91cf442e223c3a9a702bd6504ef43b1d84e07",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-candidate-power.json"
+    },
+    {
+      "bytes": 165,
+      "destination": "production/memory-2-candidate-preflight.json",
+      "encoding": "identity",
+      "sha256": "8354477c2defaa4ecf01be4006fe48208023181def3a17bd03f4fc38cc605866",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-candidate-preflight.json"
+    },
+    {
+      "bytes": 184453,
+      "destination": "production/memory-2-candidate-samples.json",
+      "encoding": "gzip",
+      "sha256": "d4a5f9ced5e6ed00da23c021ffc1b991994fafce88a0d20833a3463bd7227674",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-candidate-samples.json"
+    },
+    {
+      "bytes": 525,
+      "destination": "production/memory-2-candidate-setup-power.json",
+      "encoding": "identity",
+      "sha256": "256af446e847bc38f47e791220d91cf442e223c3a9a702bd6504ef43b1d84e07",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-candidate-setup-power.json"
+    },
+    {
+      "bytes": 164,
+      "destination": "production/memory-2-candidate-setup-preflight.json",
+      "encoding": "identity",
+      "sha256": "b6edf15770bb6ce63bf8cdef3869b2ad5ae8894d4ce9339d3315b3d6634b4a0e",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-candidate-setup-preflight.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-3-baseline-app.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-baseline-app.stderr"
+    },
+    {
+      "bytes": 125,
+      "destination": "production/memory-3-baseline-app.stdout",
+      "encoding": "identity",
+      "sha256": "16fbb4298d17d9f5030059de47a532e497dbc72039bbf43265aefc890f26d819",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-baseline-app.stdout"
+    },
+    {
+      "bytes": 639,
+      "destination": "production/memory-3-baseline-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-baseline-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "destination": "production/memory-3-baseline-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-baseline-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-3-baseline-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-baseline-make.stderr"
+    },
+    {
+      "bytes": 195,
+      "destination": "production/memory-3-baseline-make.stdout",
+      "encoding": "identity",
+      "sha256": "54f1a46875fe59a7ed73ae65ea2881c8f73654073e883b476fc634c466735aad",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-baseline-make.stdout"
+    },
+    {
+      "bytes": 826,
+      "destination": "production/memory-3-baseline-observer-receipt.json",
+      "encoding": "identity",
+      "sha256": "ff6d8bf62bb753802620e31975231dcca5031044a595ecf13526e3c8a8f16de9",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-baseline-observer-receipt.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-3-baseline-observer.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-baseline-observer.stderr"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-3-baseline-observer.stdout",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-baseline-observer.stdout"
+    },
+    {
+      "bytes": 525,
+      "destination": "production/memory-3-baseline-power.json",
+      "encoding": "identity",
+      "sha256": "256af446e847bc38f47e791220d91cf442e223c3a9a702bd6504ef43b1d84e07",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-baseline-power.json"
+    },
+    {
+      "bytes": 167,
+      "destination": "production/memory-3-baseline-preflight.json",
+      "encoding": "identity",
+      "sha256": "a27ab5a577d921cf760b3d5b9a7e8319e7d5f09fbcd43142209cfb76424c4852",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-baseline-preflight.json"
+    },
+    {
+      "bytes": 195164,
+      "destination": "production/memory-3-baseline-samples.json",
+      "encoding": "gzip",
+      "sha256": "d6a942963f9226fe3700057a9882bd389d03320fc9e30ee1b1e8121eb53745cb",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-baseline-samples.json"
+    },
+    {
+      "bytes": 525,
+      "destination": "production/memory-3-baseline-setup-power.json",
+      "encoding": "identity",
+      "sha256": "256af446e847bc38f47e791220d91cf442e223c3a9a702bd6504ef43b1d84e07",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-baseline-setup-power.json"
+    },
+    {
+      "bytes": 167,
+      "destination": "production/memory-3-baseline-setup-preflight.json",
+      "encoding": "identity",
+      "sha256": "c2a5bba9b4be46f0f322ee8e94ca8d567c78e691f177606903ffd275cede3c6d",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-baseline-setup-preflight.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-3-candidate-app.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-candidate-app.stderr"
+    },
+    {
+      "bytes": 126,
+      "destination": "production/memory-3-candidate-app.stdout",
+      "encoding": "identity",
+      "sha256": "49bef58c85e892a82a9f023ec939fdcd9b0cd9f48d81de03659139514f136f84",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-candidate-app.stdout"
+    },
+    {
+      "bytes": 639,
+      "destination": "production/memory-3-candidate-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-candidate-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "destination": "production/memory-3-candidate-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-candidate-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-3-candidate-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-candidate-make.stderr"
+    },
+    {
+      "bytes": 197,
+      "destination": "production/memory-3-candidate-make.stdout",
+      "encoding": "identity",
+      "sha256": "51c5cafa25047071fb4564f0a8da093e00a9a02787ef28e0d2f099fb797d0487",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-candidate-make.stdout"
+    },
+    {
+      "bytes": 826,
+      "destination": "production/memory-3-candidate-observer-receipt.json",
+      "encoding": "identity",
+      "sha256": "8d8c045bedfc0e3cf26a39f5d1c89103bbe47a9a5e5a5d6f05b930b04eaadabe",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-candidate-observer-receipt.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-3-candidate-observer.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-candidate-observer.stderr"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-3-candidate-observer.stdout",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-candidate-observer.stdout"
+    },
+    {
+      "bytes": 525,
+      "destination": "production/memory-3-candidate-power.json",
+      "encoding": "identity",
+      "sha256": "256af446e847bc38f47e791220d91cf442e223c3a9a702bd6504ef43b1d84e07",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-candidate-power.json"
+    },
+    {
+      "bytes": 170,
+      "destination": "production/memory-3-candidate-preflight.json",
+      "encoding": "identity",
+      "sha256": "ad38a39d48644a114f89f1018f5a7d41a132f8d52955e884fc6682815b323609",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-candidate-preflight.json"
+    },
+    {
+      "bytes": 191344,
+      "destination": "production/memory-3-candidate-samples.json",
+      "encoding": "gzip",
+      "sha256": "e16d1e5f2d31cf19d1df4b77e381d6063214697d857c9763eabb3560325a3be0",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-candidate-samples.json"
+    },
+    {
+      "bytes": 525,
+      "destination": "production/memory-3-candidate-setup-power.json",
+      "encoding": "identity",
+      "sha256": "256af446e847bc38f47e791220d91cf442e223c3a9a702bd6504ef43b1d84e07",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-candidate-setup-power.json"
+    },
+    {
+      "bytes": 170,
+      "destination": "production/memory-3-candidate-setup-preflight.json",
+      "encoding": "identity",
+      "sha256": "d3808d3fcf44d6438543e015ae2601eb1de0f750e94239063775dd36673d08ac",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-candidate-setup-preflight.json"
+    },
+    {
+      "bytes": 10052,
+      "destination": "production/memory-commands.json",
+      "encoding": "identity",
+      "sha256": "d0f92a8c2a38bd21421bc8a64a9dc311b29c1d3db166a015592a0b8c8d43c5b1",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-commands.json"
+    },
+    {
+      "bytes": 464,
+      "destination": "production/memory-driver-pins.json",
+      "encoding": "identity",
+      "sha256": "4611b7623f91bc5414897f22d5f800bf70b186c0a7092c233e616160fbd47675",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-driver-pins.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/memory-driver.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-driver.stderr"
+    },
+    {
+      "bytes": 8676,
+      "destination": "production/memory-driver.stdout",
+      "encoding": "identity",
+      "sha256": "185717468f7d616a4e33d3b6dd6871e4ff09138139bf2a0037ef99d79989e7ac",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-driver.stdout"
+    },
+    {
+      "bytes": 1064,
+      "destination": "production/memory-harness-review.json",
+      "encoding": "identity",
+      "sha256": "d3e45d0b6ee411092fc358a3d5eaf0d53aa6af49588009dfb38dc26e89ceb68b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-harness-review.json"
+    },
+    {
+      "bytes": 2834,
+      "destination": "production/memory-owner.json",
+      "encoding": "identity",
+      "sha256": "4ed06a1856e3c748dd4bee00d995852073f5efc8b0d5597cff1e3b544a619b84",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-owner.json"
+    },
+    {
+      "bytes": 2540,
+      "destination": "production/memory-summary.json",
+      "encoding": "identity",
+      "sha256": "5da937f7d18ca033d159113da6fe363bbb50b849d4173cd68d118f4a93285405",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-summary.json"
+    },
+    {
+      "bytes": 217,
+      "destination": "production/memory-terminal.json",
+      "encoding": "identity",
+      "sha256": "6cf3d22427543bec9a44223b6c6b11a767d4e93b26b4e14472176f038a7c1dd0",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-terminal.json"
+    },
+    {
+      "bytes": 9706,
+      "destination": "production/memory-trials.json",
+      "encoding": "identity",
+      "sha256": "fa4079209d10f9ed617020c633fe55e905f0632ec0853241b7732bc9f260ea62",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-trials.json"
+    },
+    {
+      "bytes": 18961,
+      "destination": "production/memory.py",
+      "encoding": "identity",
+      "sha256": "a1f468b82f64ec818886ffcb728cefa044994e51e7b429bc1887542b0e69d746",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory.py"
+    },
+    {
+      "bytes": 3200,
+      "destination": "production/observer-provenance.json",
+      "encoding": "identity",
+      "sha256": "689fb148dc8374b70532c93b3c407fecdf374070c3c4db951c69846ec25aeb32",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/observer-provenance.json"
+    },
+    {
+      "bytes": 23599,
+      "destination": "production/prototype.patch",
+      "encoding": "identity",
+      "sha256": "2ed988244b35f7149385f0c4a6616e736afff5d7fa6c26b596269722c14428cc",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/prototype.patch"
+    },
+    {
+      "bytes": 253495,
+      "destination": "production/qualified-base-sources.json",
+      "encoding": "gzip",
+      "sha256": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/qualified-base-sources.json"
+    },
+    {
+      "bytes": 15688,
+      "destination": "production/qualify_media.py",
+      "encoding": "identity",
+      "sha256": "baa4fb1318341fa948c8789f1066486d814c42c7447ef2e2dd802c465dfc0cca",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/qualify_media.py"
+    },
+    {
+      "bytes": 9199,
+      "destination": "production/release-app.stderr",
+      "encoding": "identity",
+      "sha256": "4a47b4cf1da67ce8f3275c4880a7b5dc23d9d5426953a4817afcc918484e4f68",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/release-app.stderr"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/release-app.stdout",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/release-app.stdout"
+    },
+    {
+      "bytes": 639,
+      "destination": "production/rotation-1-candidate-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-candidate-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "destination": "production/rotation-1-candidate-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-candidate-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/rotation-1-candidate-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-candidate-make.stderr"
+    },
+    {
+      "bytes": 207,
+      "destination": "production/rotation-1-candidate-make.stdout",
+      "encoding": "identity",
+      "sha256": "f78358f9400390dd1c85c6425b695f0439a9dde7088d498753a7293bd547d4b2",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-candidate-make.stdout"
+    },
+    {
+      "bytes": 202,
+      "destination": "production/rotation-1-candidate-preflight.json",
+      "encoding": "identity",
+      "sha256": "8c55896de2441909beaeb8a54b272a10430504cb0af251846851e63ea90b43b3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-candidate-preflight.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/rotation-1-candidate.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-candidate.stderr"
+    },
+    {
+      "bytes": 128,
+      "destination": "production/rotation-1-candidate.stdout",
+      "encoding": "identity",
+      "sha256": "94eddb0d881cbf6fe29f6b7d8abc906e0d6b96ae5606bbb10c77b15435817ddd",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-candidate.stdout"
+    },
+    {
+      "bytes": 639,
+      "destination": "production/rotation-1-control-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-control-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "destination": "production/rotation-1-control-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-control-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/rotation-1-control-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-control-make.stderr"
+    },
+    {
+      "bytes": 204,
+      "destination": "production/rotation-1-control-make.stdout",
+      "encoding": "identity",
+      "sha256": "82aea05387d69ce5ad81806cd79ddb22b0c35397b46c1586827400eb53a31a4b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-control-make.stdout"
+    },
+    {
+      "bytes": 202,
+      "destination": "production/rotation-1-control-preflight.json",
+      "encoding": "identity",
+      "sha256": "895d900d8f26093a2641d0b772e941ba4e6f8dde7872772c87282dd9c5602650",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-control-preflight.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/rotation-1-control.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-control.stderr"
+    },
+    {
+      "bytes": 126,
+      "destination": "production/rotation-1-control.stdout",
+      "encoding": "identity",
+      "sha256": "a2d364124718a52f00af89ebdcbe957fe3a687dec32cd4eece977c9dd2350716",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-control.stdout"
+    },
+    {
+      "bytes": 639,
+      "destination": "production/rotation-2-candidate-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-candidate-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "destination": "production/rotation-2-candidate-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-candidate-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/rotation-2-candidate-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-candidate-make.stderr"
+    },
+    {
+      "bytes": 207,
+      "destination": "production/rotation-2-candidate-make.stdout",
+      "encoding": "identity",
+      "sha256": "a9995a0f6723d3a2f48363c42752a79317f87f222990960d88473a83e2652d97",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-candidate-make.stdout"
+    },
+    {
+      "bytes": 201,
+      "destination": "production/rotation-2-candidate-preflight.json",
+      "encoding": "identity",
+      "sha256": "d467542c52a98559a9d8ce80aa27991019c10406f58001579caeb586cefa3494",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-candidate-preflight.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/rotation-2-candidate.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-candidate.stderr"
+    },
+    {
+      "bytes": 128,
+      "destination": "production/rotation-2-candidate.stdout",
+      "encoding": "identity",
+      "sha256": "99ffee24381b6eff0023f950dc20f67848063c78c164b1ce24585ac9dce8a49e",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-candidate.stdout"
+    },
+    {
+      "bytes": 639,
+      "destination": "production/rotation-2-control-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-control-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "destination": "production/rotation-2-control-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-control-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/rotation-2-control-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-control-make.stderr"
+    },
+    {
+      "bytes": 197,
+      "destination": "production/rotation-2-control-make.stdout",
+      "encoding": "identity",
+      "sha256": "3c000a26f7e94df9310892fca8df9fd4e40938f8ba0c6220a39118c83a5293d4",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-control-make.stdout"
+    },
+    {
+      "bytes": 203,
+      "destination": "production/rotation-2-control-preflight.json",
+      "encoding": "identity",
+      "sha256": "0fd71bfe9711045316156775e3d6804e3ba2e3d32669047630707f7539280c6b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-control-preflight.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/rotation-2-control.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-control.stderr"
+    },
+    {
+      "bytes": 126,
+      "destination": "production/rotation-2-control.stdout",
+      "encoding": "identity",
+      "sha256": "7d792b65fe6f0982e0ccf61d8a96be291dda782a79a5455658d96c1ddcc97947",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-control.stdout"
+    },
+    {
+      "bytes": 639,
+      "destination": "production/rotation-3-candidate-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-candidate-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "destination": "production/rotation-3-candidate-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-candidate-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/rotation-3-candidate-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-candidate-make.stderr"
+    },
+    {
+      "bytes": 196,
+      "destination": "production/rotation-3-candidate-make.stdout",
+      "encoding": "identity",
+      "sha256": "3004cb308157bc39268e1e9b078ff59be9791b6e5d808c07b4f5ba0d4e5e7886",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-candidate-make.stdout"
+    },
+    {
+      "bytes": 197,
+      "destination": "production/rotation-3-candidate-preflight.json",
+      "encoding": "identity",
+      "sha256": "3f5e1834fb2bda2b2f2a290555989c5f5f1a6e8bb271cb0840f5b096522ac008",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-candidate-preflight.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/rotation-3-candidate.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-candidate.stderr"
+    },
+    {
+      "bytes": 128,
+      "destination": "production/rotation-3-candidate.stdout",
+      "encoding": "identity",
+      "sha256": "79ee3225293dcb34fe84b9def81b4bcc451a24a632619d0621a9084e08563b60",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-candidate.stdout"
+    },
+    {
+      "bytes": 639,
+      "destination": "production/rotation-3-control-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-control-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "destination": "production/rotation-3-control-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-control-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/rotation-3-control-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-control-make.stderr"
+    },
+    {
+      "bytes": 196,
+      "destination": "production/rotation-3-control-make.stdout",
+      "encoding": "identity",
+      "sha256": "308d51340416839557d7e2d3f3c1e26d815b66bac19b10c8390be00a45e1ebf7",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-control-make.stdout"
+    },
+    {
+      "bytes": 199,
+      "destination": "production/rotation-3-control-preflight.json",
+      "encoding": "identity",
+      "sha256": "bdc12f78e8ba6e427d672d75a708deabbb9d55d13a1a2830c0558b74c3a1a869",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-control-preflight.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/rotation-3-control.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-control.stderr"
+    },
+    {
+      "bytes": 126,
+      "destination": "production/rotation-3-control.stdout",
+      "encoding": "identity",
+      "sha256": "7135d5fb8fb4dd0fe7e2bd1403422694e1ccf99fefac688554a868d3d3893c20",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-control.stdout"
+    },
+    {
+      "bytes": 639,
+      "destination": "production/rotation-4-candidate-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-candidate-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "destination": "production/rotation-4-candidate-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-candidate-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/rotation-4-candidate-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-candidate-make.stderr"
+    },
+    {
+      "bytes": 199,
+      "destination": "production/rotation-4-candidate-make.stdout",
+      "encoding": "identity",
+      "sha256": "4100289ce40f891ef6e313100d8257539dadae81b69ad1557c865696a47a6e09",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-candidate-make.stdout"
+    },
+    {
+      "bytes": 197,
+      "destination": "production/rotation-4-candidate-preflight.json",
+      "encoding": "identity",
+      "sha256": "3651739b44f5507df7a195837cbd2bf5c0f6b02b2c42f1594188c977ed1bc936",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-candidate-preflight.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/rotation-4-candidate.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-candidate.stderr"
+    },
+    {
+      "bytes": 128,
+      "destination": "production/rotation-4-candidate.stdout",
+      "encoding": "identity",
+      "sha256": "6046086e344f4b5e44168fccd035e8f7b2cc04a208643d39d616d1a11ac19d2f",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-candidate.stdout"
+    },
+    {
+      "bytes": 639,
+      "destination": "production/rotation-4-control-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-control-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "destination": "production/rotation-4-control-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-control-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/rotation-4-control-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-control-make.stderr"
+    },
+    {
+      "bytes": 197,
+      "destination": "production/rotation-4-control-make.stdout",
+      "encoding": "identity",
+      "sha256": "2e7ba2d4327b10f9d7b06f99256c84edccf73e3294596ca95e59863a080ac543",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-control-make.stdout"
+    },
+    {
+      "bytes": 200,
+      "destination": "production/rotation-4-control-preflight.json",
+      "encoding": "identity",
+      "sha256": "0bcf4434353ee61aefa2e142899ca5a3d50383a37d6a76863a6b33efb43eabb1",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-control-preflight.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/rotation-4-control.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-control.stderr"
+    },
+    {
+      "bytes": 126,
+      "destination": "production/rotation-4-control.stdout",
+      "encoding": "identity",
+      "sha256": "dde809505b8830924c078fe80412f96dc4a495d9014f871a723293b98ad18e8f",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-control.stdout"
+    },
+    {
+      "bytes": 639,
+      "destination": "production/rotation-5-candidate-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-candidate-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "destination": "production/rotation-5-candidate-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-candidate-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/rotation-5-candidate-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-candidate-make.stderr"
+    },
+    {
+      "bytes": 207,
+      "destination": "production/rotation-5-candidate-make.stdout",
+      "encoding": "identity",
+      "sha256": "c524b5c14b25dcb3cc2d3f7476ef4fc9a132648197d8a1242864843dea0a2272",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-candidate-make.stdout"
+    },
+    {
+      "bytes": 203,
+      "destination": "production/rotation-5-candidate-preflight.json",
+      "encoding": "identity",
+      "sha256": "b717e17107933c89349f4705c58f5c4bd1042bf3a9ecaaa021d7bdd289510f22",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-candidate-preflight.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/rotation-5-candidate.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-candidate.stderr"
+    },
+    {
+      "bytes": 128,
+      "destination": "production/rotation-5-candidate.stdout",
+      "encoding": "identity",
+      "sha256": "4c9952597ad5609d0bde113f740ce0871ad0971f362093b930cd2fca5eadae1b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-candidate.stdout"
+    },
+    {
+      "bytes": 639,
+      "destination": "production/rotation-5-control-input-after.json",
+      "encoding": "identity",
+      "sha256": "39114207c368e784dbb9482ca62577f7cdeedf07d4bf0a326b5fa1661ce580b3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-control-input-after.json"
+    },
+    {
+      "bytes": 379,
+      "destination": "production/rotation-5-control-input-before.json",
+      "encoding": "identity",
+      "sha256": "02e4db6f412ee1b13dd73deeff9441c11cb4b8eff655882bfa204569e0b5299b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-control-input-before.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/rotation-5-control-make.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-control-make.stderr"
+    },
+    {
+      "bytes": 197,
+      "destination": "production/rotation-5-control-make.stdout",
+      "encoding": "identity",
+      "sha256": "d352666262f8a6f9cbc84c8ecdbc1266acfd0ab08f54a8a5076c28eb6bbb7af9",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-control-make.stdout"
+    },
+    {
+      "bytes": 201,
+      "destination": "production/rotation-5-control-preflight.json",
+      "encoding": "identity",
+      "sha256": "bb190788f6151864a32919cd5716b27274e48e678bb21baa95c0b9466cb5f5f1",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-control-preflight.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/rotation-5-control.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-control.stderr"
+    },
+    {
+      "bytes": 126,
+      "destination": "production/rotation-5-control.stdout",
+      "encoding": "identity",
+      "sha256": "c721fdb2b1bb212c13dea7bc030b5fafd11ecfa826ae2bc9823238c4d2e27fc4",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-control.stdout"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/rustc.stderr",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rustc.stderr"
+    },
+    {
+      "bytes": 192,
+      "destination": "production/rustc.stdout",
+      "encoding": "identity",
+      "sha256": "e794146d99fad54562fdcbd4a7c8b22b0240d2b0312ff6d879d67939b3131850",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rustc.stdout"
+    },
+    {
+      "bytes": 8924,
+      "destination": "production/source-review.json",
+      "encoding": "identity",
+      "sha256": "f05a35ca12388157ead3df99bd1d8c936a28b53c94ad6e8f98711ac65cc65be4",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source-review.json"
+    },
+    {
+      "bytes": 3850,
+      "destination": "production/store-preparation.stderr",
+      "encoding": "identity",
+      "sha256": "383212815394871f963853502e08c668ffa0a0af045a550793a66e1b86d44862",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/store-preparation.stderr"
+    },
+    {
+      "bytes": 98685,
+      "destination": "production/store-preparation.stdout",
+      "encoding": "identity",
+      "sha256": "6bb2e59882785bd5be6f76f5e11a47fe38c5f46ac33c0a9151ae8639878d7ccd",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/store-preparation.stdout"
+    },
+    {
+      "bytes": 10424,
+      "destination": "production/strict.stderr",
+      "encoding": "identity",
+      "sha256": "9b5c942de0631ed42bf76d525c2856897c37fc61ff542d485037dfebbf5553e6",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/strict.stderr"
+    },
+    {
+      "bytes": 0,
+      "destination": "production/strict.stdout",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/strict.stdout"
+    },
+    {
+      "bytes": 1807,
+      "destination": "production/summary.json",
+      "encoding": "identity",
+      "sha256": "1644f96937f8ab63d6f2f2d28abe977ab33f072a69e1d440b5d388607d6d70bb",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/summary.json"
+    },
+    {
+      "bytes": 177157,
+      "destination": "production/test-binaries.json",
+      "encoding": "gzip",
+      "sha256": "c476c89a0ce4d1664bc3f90e3c6b9712b4f9cd8f0b2a0f8cc1bb5b372cfee482",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/test-binaries.json"
+    },
+    {
+      "bytes": 4280,
+      "destination": "production/trials.json",
+      "encoding": "identity",
+      "sha256": "7fefa3f1c3a6f839d204fbf98e48ee6505949e7cef5181cca01c38d885f219ca",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/trials.json"
+    },
+    {
+      "bytes": 4402,
+      "destination": "report.md",
+      "encoding": "identity",
+      "sha256": "268151644bbf59da48aeff17d4d2337d4ce8f6f21537ca6b4e47bd30eec20516",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/packaging-draft/report.md"
+    },
+    {
+      "bytes": 9413,
+      "destination": "provenance/prepare_manifest.py",
+      "encoding": "identity",
+      "sha256": "550f251674ebcbe253ec7f8049121799f92fd7d18e3520ffd60b54fd708f489b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/packaging-draft/prepare_manifest.py"
+    },
+    {
+      "bytes": 22687,
+      "destination": "provenance/package.py",
+      "encoding": "identity",
+      "sha256": "8fb51381ddd8a9d116f6167e48e15a28b0f6d98ee8f88f523f72b8c91ec1aa9e",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/packaging-draft/package.py"
+    },
+    {
+      "bytes": 14055,
+      "destination": "provenance/memory-observer/actual.rs.txt",
+      "encoding": "identity",
+      "sha256": "81062e249112b7c9d698b77f6041b6fda1795f8aa9de8553387a6c96c69cb97b",
+      "source": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory_observer.rs"
+    },
+    {
+      "bytes": 12348,
+      "destination": "provenance/memory-observer/reviewed.rs.txt",
+      "encoding": "identity",
+      "sha256": "4f2d35f88576cebea29427ca75fc6b18cf9050bc1af322487f07d7f29e5abd09",
+      "source": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory_observer.reviewed.rs.txt"
+    },
+    {
+      "bytes": 20675,
+      "destination": "provenance/memory-observer/native-process.rs.txt",
+      "encoding": "identity",
+      "sha256": "e41aaa69620973871c492554b3cd9b978dc455e9f95cdca9c8509f8279d23d52",
+      "source": "/Users/michael/Code/deadpan/native/deadpan-process/src/lib.rs"
+    },
+    {
+      "bytes": 1537793,
+      "destination": "reports/memory-1-baseline-report/report.html",
+      "encoding": "gzip",
+      "sha256": "7dd51603f87c9a28c9e08d394d2bfa68e2e3949dc99aea89724077c0d2c3de1a",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-baseline-report/report.html"
+    },
+    {
+      "bytes": 1681209,
+      "destination": "reports/memory-1-baseline-report/report.json",
+      "encoding": "gzip",
+      "sha256": "18533cb181e8ea18b0abebcf3116facd4d50be6016e764d62d41d3304fa527f5",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-baseline-report/report.json"
+    },
+    {
+      "bytes": 1510934,
+      "destination": "reports/memory-1-candidate-report/report.html",
+      "encoding": "gzip",
+      "sha256": "bd2715e883c903d68830723d8b2df511baec115f60ff10a24b682efba160698b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-candidate-report/report.html"
+    },
+    {
+      "bytes": 1652959,
+      "destination": "reports/memory-1-candidate-report/report.json",
+      "encoding": "gzip",
+      "sha256": "53341a256449d4296092f11acb503669226a59c2e79218e61f4b9c458b5e2b0d",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-1-candidate-report/report.json"
+    },
+    {
+      "bytes": 1545430,
+      "destination": "reports/memory-2-baseline-report/report.html",
+      "encoding": "gzip",
+      "sha256": "4b91654d91ea7b146114bace28714dec80d69a0717c5dacd6d4a31a1252e10b4",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-baseline-report/report.html"
+    },
+    {
+      "bytes": 1690504,
+      "destination": "reports/memory-2-baseline-report/report.json",
+      "encoding": "gzip",
+      "sha256": "aeb141741aafafc658bbc9bae7c089a926ddf22cb8b92f118f5fc8083c32434c",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-baseline-report/report.json"
+    },
+    {
+      "bytes": 1501886,
+      "destination": "reports/memory-2-candidate-report/report.html",
+      "encoding": "gzip",
+      "sha256": "f2ece7e012d88d82a3ec6bb95662bc87c90d3d288e1d28b8e574ea90743a2e66",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-candidate-report/report.html"
+    },
+    {
+      "bytes": 1643343,
+      "destination": "reports/memory-2-candidate-report/report.json",
+      "encoding": "gzip",
+      "sha256": "1bcf8bc9ffbba36b5adef55f75a20bc6ab30bd0b962a08d8bb9cafecee8de043",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-2-candidate-report/report.json"
+    },
+    {
+      "bytes": 1516748,
+      "destination": "reports/memory-3-baseline-report/report.html",
+      "encoding": "gzip",
+      "sha256": "aa29312af75f0036f770db674db0ef6141bdb8ed06542bf56a1d09c38f173ae7",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-baseline-report/report.html"
+    },
+    {
+      "bytes": 1659339,
+      "destination": "reports/memory-3-baseline-report/report.json",
+      "encoding": "gzip",
+      "sha256": "9427ecdb802a9a1a6100640cb4f55c2288fd2330c52d52c9b4e18ef517555c15",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-baseline-report/report.json"
+    },
+    {
+      "bytes": 1498931,
+      "destination": "reports/memory-3-candidate-report/report.html",
+      "encoding": "gzip",
+      "sha256": "db3caea61274b7c64d74176ef299050156fc200f478da4cedb937e132f9746f4",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-candidate-report/report.html"
+    },
+    {
+      "bytes": 1639926,
+      "destination": "reports/memory-3-candidate-report/report.json",
+      "encoding": "gzip",
+      "sha256": "bc98c7afe2f4015ddc19c7e9da5c7b28dfdcd9933c93e326ede8ba9ba0f2a387",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-candidate-report/report.json"
+    },
+    {
+      "bytes": 1519817,
+      "destination": "reports/rotation-1-candidate-report/report.html",
+      "encoding": "gzip",
+      "sha256": "fda695649b5c3f5cd75e9a891d7840a4819311928949d2a07f9474f6f7cc21c3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-candidate-report/report.html"
+    },
+    {
+      "bytes": 1662740,
+      "destination": "reports/rotation-1-candidate-report/report.json",
+      "encoding": "gzip",
+      "sha256": "b6af9fdd4bffcfe3281ed1e31c5c40959881d5250a2f88331a434b7274152eb5",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-candidate-report/report.json"
+    },
+    {
+      "bytes": 1563152,
+      "destination": "reports/rotation-1-control-report/report.html",
+      "encoding": "gzip",
+      "sha256": "e57cc4629f717300886381a4fd4abdf2a88f0ecc49c54b47ef365fb8b4043a4d",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-control-report/report.html"
+    },
+    {
+      "bytes": 1709098,
+      "destination": "reports/rotation-1-control-report/report.json",
+      "encoding": "gzip",
+      "sha256": "435f02e2e1e308b1bbf8b97a914e873bd9cad78a198907176348a6510a01529b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-control-report/report.json"
+    },
+    {
+      "bytes": 1503640,
+      "destination": "reports/rotation-2-candidate-report/report.html",
+      "encoding": "gzip",
+      "sha256": "6e25af0b1f60549bee22712c2529081613be18c74dfd13f4970d3bbb5e29a54f",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-candidate-report/report.html"
+    },
+    {
+      "bytes": 1645713,
+      "destination": "reports/rotation-2-candidate-report/report.json",
+      "encoding": "gzip",
+      "sha256": "d810f17596691145594ac9bacfb03e3b3a3be0703c9873dae6552e1df8edc49a",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-candidate-report/report.json"
+    },
+    {
+      "bytes": 1533252,
+      "destination": "reports/rotation-2-control-report/report.html",
+      "encoding": "gzip",
+      "sha256": "b4c4c379606a650d8f1d1485d0828d7cc6d9b913b7cb26e20fe1dd10002cabec",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-control-report/report.html"
+    },
+    {
+      "bytes": 1676758,
+      "destination": "reports/rotation-2-control-report/report.json",
+      "encoding": "gzip",
+      "sha256": "638f948628c668f4346ad25d7049950310edd18ad0f7ed351f9eb0ca66234ff1",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-control-report/report.json"
+    },
+    {
+      "bytes": 1510855,
+      "destination": "reports/rotation-3-candidate-report/report.html",
+      "encoding": "gzip",
+      "sha256": "d2c455edf9459ee3e5953a98032d57ccd954790efdcc29e30e6afb5797ca12f0",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-candidate-report/report.html"
+    },
+    {
+      "bytes": 1652931,
+      "destination": "reports/rotation-3-candidate-report/report.json",
+      "encoding": "gzip",
+      "sha256": "cf22bda15b6abc42f02471533801c5150d976214812e605dd6c58395fd5ed7ff",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-candidate-report/report.json"
+    },
+    {
+      "bytes": 1534647,
+      "destination": "reports/rotation-3-control-report/report.html",
+      "encoding": "gzip",
+      "sha256": "55ae661d3905fb11aec6e6667b0ea5bd50191fbf75ee6aae4f1aeb7221bcb2db",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-control-report/report.html"
+    },
+    {
+      "bytes": 1678297,
+      "destination": "reports/rotation-3-control-report/report.json",
+      "encoding": "gzip",
+      "sha256": "37e9e9f33899498fd0fa2c307dbd34908f550e88678a9d42be80482913e4f67a",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-control-report/report.json"
+    },
+    {
+      "bytes": 1501907,
+      "destination": "reports/rotation-4-candidate-report/report.html",
+      "encoding": "gzip",
+      "sha256": "1fde906500ad91a8498e6c0081fde2ab20d5a8e39c0a0e495c47eb6b4e69f5c9",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-candidate-report/report.html"
+    },
+    {
+      "bytes": 1643661,
+      "destination": "reports/rotation-4-candidate-report/report.json",
+      "encoding": "gzip",
+      "sha256": "42fd5b044e19a86468add266b78c76e23b5e49b355893c50e93634d840f69baf",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-candidate-report/report.json"
+    },
+    {
+      "bytes": 1584455,
+      "destination": "reports/rotation-4-control-report/report.html",
+      "encoding": "gzip",
+      "sha256": "e90cacbe0fce3ed7586a7a47852ddf1a40e562e31f22349ec156559f3e4d0571",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-control-report/report.html"
+    },
+    {
+      "bytes": 1734999,
+      "destination": "reports/rotation-4-control-report/report.json",
+      "encoding": "gzip",
+      "sha256": "65b5de8458d226f3d990dc132fe8bc6a2771279b5f2d98ce3022322e6ee1c1b6",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-control-report/report.json"
+    },
+    {
+      "bytes": 1515940,
+      "destination": "reports/rotation-5-candidate-report/report.html",
+      "encoding": "gzip",
+      "sha256": "c4a43e51279f21ec8fe6361a607cbb30532a3ff508e3773a7bb5f3310c3c6df8",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-candidate-report/report.html"
+    },
+    {
+      "bytes": 1658939,
+      "destination": "reports/rotation-5-candidate-report/report.json",
+      "encoding": "gzip",
+      "sha256": "a968f1c932a822fcd53c39f406d9f207b04c5096ecb270f4a4a032c7a2cf756e",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-candidate-report/report.json"
+    },
+    {
+      "bytes": 1530192,
+      "destination": "reports/rotation-5-control-report/report.html",
+      "encoding": "gzip",
+      "sha256": "35ff085d9fb362b109f6153b686711765d3a270bf946626c534976dc29cc21b0",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-control-report/report.html"
+    },
+    {
+      "bytes": 1673234,
+      "destination": "reports/rotation-5-control-report/report.json",
+      "encoding": "gzip",
+      "sha256": "fc2ab99ed95536ff8a62f1b6f1d116b862029854f8891db51664a0ebca047d21",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-control-report/report.json"
+    },
+    {
+      "bytes": 23475,
+      "destination": "source/final/crates/deadpan-core/src/compound.rs.txt",
+      "encoding": "identity",
+      "sha256": "a74328e4d4d3be1ec9ad4800ea524596e526a29578c726c7a5d2bd9a327f02e5",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/crates/deadpan-core/src/compound.rs"
+    },
+    {
+      "bytes": 20768,
+      "destination": "source/qualified-main/crates/deadpan-core/src/compound.rs.txt",
+      "encoding": "identity",
+      "sha256": "1de3788b9f6b1275a8ca34e4e607f6a7b18eb8982aee1486399dcf95abbf62d0",
+      "source": "/tmp/deadpan-insert-split-proof-production-2026-10-23/source/crates/deadpan-core/src/compound.rs"
+    },
+    {
+      "bytes": 24869,
+      "destination": "source/final/crates/deadpan-core/src/one_leaf_replay.rs.txt",
+      "encoding": "identity",
+      "sha256": "1dc847665b59b800c83f23c50c7872b1dbc0c26760487a2a7046fa4f5a71d6bc",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/crates/deadpan-core/src/one_leaf_replay.rs"
+    },
+    {
+      "bytes": 14547,
+      "destination": "source/qualified-main/crates/deadpan-core/src/one_leaf_replay.rs.txt",
+      "encoding": "identity",
+      "sha256": "03954fddb62d5e9ede2c7577d533ce90911e214067cdd027cde88e2adfe655c4",
+      "source": "/tmp/deadpan-insert-split-proof-production-2026-10-23/source/crates/deadpan-core/src/one_leaf_replay.rs"
+    },
+    {
+      "bytes": 34399,
+      "destination": "source/final/crates/deadpan-core/tests/semantic_leaf_replay.rs.txt",
+      "encoding": "identity",
+      "sha256": "648ae62b2ae50fee4a6bfa98fb3fe69e7d5039df44a18a9a89e14daa100b8b42",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/crates/deadpan-core/tests/semantic_leaf_replay.rs"
+    },
+    {
+      "bytes": 31260,
+      "destination": "source/qualified-main/crates/deadpan-core/tests/semantic_leaf_replay.rs.txt",
+      "encoding": "identity",
+      "sha256": "0836e272bb2594e6cdcceaf7273a0773504d286a3ace91cd7ea1b059e8a9b561",
+      "source": "/tmp/deadpan-insert-split-proof-production-2026-10-23/source/crates/deadpan-core/tests/semantic_leaf_replay.rs"
+    },
+    {
+      "bytes": 147,
+      "destination": "inputs/.cargo/config.toml",
+      "encoding": "identity",
+      "sha256": "b906738cab8f6f289180e1bcf32826d3e2996899cb5055dc7f0c6838655c340d",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/.cargo/config.toml"
+    },
+    {
+      "bytes": 135252,
+      "destination": "inputs/Cargo.lock",
+      "encoding": "gzip",
+      "sha256": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/Cargo.lock"
+    },
+    {
+      "bytes": 3509,
+      "destination": "inputs/Cargo.toml",
+      "encoding": "identity",
+      "sha256": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/Cargo.toml"
+    },
+    {
+      "bytes": 796287,
+      "destination": "inputs/crates/deadpan-app/src/navigation/registry/baseline-routing.txt",
+      "encoding": "gzip",
+      "sha256": "a181ba1d3f2db1c030fbdf1feaf2d5ae8efd5edd885114bcea9c161ac774cd8d",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/crates/deadpan-app/src/navigation/registry/baseline-routing.txt"
+    },
+    {
+      "bytes": 96796,
+      "destination": "inputs/docs/COMMANDS.md",
+      "encoding": "identity",
+      "sha256": "b4fc50fffbb6d96406593dda90a56ee6c9f3b89a3790b6e7f69b87863f57beec",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/docs/COMMANDS.md"
+    },
+    {
+      "bytes": 86,
+      "destination": "inputs/rust-toolchain.toml",
+      "encoding": "identity",
+      "sha256": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+      "source": "/tmp/deadpan-single-leaf-net-production-2026-10-24/source/rust-toolchain.toml"
+    },
+    {
+      "bytes": 0,
+      "destination": "media-evidence/cached/one-leaf-cached-media.deadpan/.render-candidates.lock",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/one-leaf-cached-media.deadpan/.render-candidates.lock"
+    },
+    {
+      "bytes": 0,
+      "destination": "media-evidence/cached/one-leaf-cached-media.deadpan/.writer.lock",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/one-leaf-cached-media.deadpan/.writer.lock"
+    },
+    {
+      "bytes": 39157,
+      "destination": "media-evidence/cached/one-leaf-cached-media.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "encoding": "identity",
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/one-leaf-cached-media.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1"
+    },
+    {
+      "bytes": 15067,
+      "destination": "media-evidence/cached/one-leaf-cached-media.deadpan/Media/RenderCandidates/blake3-6b312007b60cc9514cee58e001cf17cb59ecf14d4e576f3abf769cb8f5cfedc1",
+      "encoding": "identity",
+      "sha256": "21a74dc1471615400314d770423cbf190a85d2ff2f0d5b07b7a1d076ad0b81d2",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/one-leaf-cached-media.deadpan/Media/RenderCandidates/blake3-6b312007b60cc9514cee58e001cf17cb59ecf14d4e576f3abf769cb8f5cfedc1"
+    },
+    {
+      "bytes": 13232,
+      "destination": "media-evidence/cached/one-leaf-cached-media.deadpan/Media/RenderCandidates/blake3-b4b803e0e57d38f5f485c7a6ea20026b1f642feb876c18068fdd01c263e279f1",
+      "encoding": "identity",
+      "sha256": "b1dbb24ce918cf5958fee28807067ca72f3e2ede57f52abf756d6e28bccd1488",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/one-leaf-cached-media.deadpan/Media/RenderCandidates/blake3-b4b803e0e57d38f5f485c7a6ea20026b1f642feb876c18068fdd01c263e279f1"
+    },
+    {
+      "bytes": 82,
+      "destination": "media-evidence/cached/one-leaf-cached-media.deadpan/manifest.json",
+      "encoding": "identity",
+      "sha256": "ff06b771270ee51b35075234cad019ae876fe360a2fc617a71966df343b83b9c",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/one-leaf-cached-media.deadpan/manifest.json"
+    },
+    {
+      "bytes": 593920,
+      "destination": "media-evidence/cached/one-leaf-cached-media.deadpan/project.sqlite",
+      "encoding": "identity",
+      "sha256": "901557407a9424d0a49df78403455311d0c4596898a3744eb1a1f8ebbbb073c9",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/one-leaf-cached-media.deadpan/project.sqlite"
+    },
+    {
+      "bytes": 32768,
+      "destination": "media-evidence/cached/one-leaf-cached-media.deadpan/project.sqlite-shm",
+      "encoding": "identity",
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/one-leaf-cached-media.deadpan/project.sqlite-shm"
+    },
+    {
+      "bytes": 0,
+      "destination": "media-evidence/cached/one-leaf-cached-media.deadpan/project.sqlite-wal",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/one-leaf-cached-media.deadpan/project.sqlite-wal"
+    },
+    {
+      "bytes": 39157,
+      "destination": "media-evidence/cached/original.mp4",
+      "encoding": "identity",
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/original.mp4"
+    },
+    {
+      "bytes": 454,
+      "destination": "media-evidence/cached/request-one-leaf-cached-media-r01.json",
+      "encoding": "identity",
+      "sha256": "fec654ba0378252077a6c810675a34762575260b23f38348a0e79bfec3ef0598",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/request-one-leaf-cached-media-r01.json"
+    },
+    {
+      "bytes": 414,
+      "destination": "media-evidence/cached/request-one-leaf-cached-media-r02.json",
+      "encoding": "identity",
+      "sha256": "394ed19366d8d5953df9f2016ac4fbd05fcd7dd3072a050b15d6612925c546d3",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/request-one-leaf-cached-media-r02.json"
+    },
+    {
+      "bytes": 32885,
+      "destination": "media-evidence/exports-cached/deadpan-render-0e749570-2122-4cf0-a589-d16dd5c6e7d7.json",
+      "encoding": "identity",
+      "sha256": "6dc3a95c54a72c04534cb65e6ceddc45c060e273adb40dccfc3fad419cddc9e1",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/exports-cached/deadpan-render-0e749570-2122-4cf0-a589-d16dd5c6e7d7.json"
+    },
+    {
+      "bytes": 13232,
+      "destination": "media-evidence/exports-cached/one-leaf-cached-media.mp4",
+      "encoding": "identity",
+      "sha256": "b1dbb24ce918cf5958fee28807067ca72f3e2ede57f52abf756d6e28bccd1488",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/exports-cached/one-leaf-cached-media.mp4"
+    },
+    {
+      "bytes": 32887,
+      "destination": "media-evidence/exports-uncached/deadpan-render-80bd8be6-1ff3-47bb-9d15-71e75831504e.json",
+      "encoding": "identity",
+      "sha256": "65d077f073a9d0a3667a10cfa09900249b2c1c15d6eb48fad8bc6b4a85875540",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/exports-uncached/deadpan-render-80bd8be6-1ff3-47bb-9d15-71e75831504e.json"
+    },
+    {
+      "bytes": 13232,
+      "destination": "media-evidence/exports-uncached/one-leaf-uncached-media.mp4",
+      "encoding": "identity",
+      "sha256": "5c72a13ae24c6b0936ce1dbd96b43d462e4b74ec12588bcdebe1861c0219c07a",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/exports-uncached/one-leaf-uncached-media.mp4"
+    },
+    {
+      "bytes": 7642,
+      "destination": "media-evidence/one-leaf-after-document.json",
+      "encoding": "identity",
+      "sha256": "5baf563fb9432f670e453091fef4c45060506f2c521dddc87ac1688ff87fa348",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/one-leaf-after-document.json"
+    },
+    {
+      "bytes": 2319402,
+      "destination": "media-evidence/one-leaf-after-pcm.json",
+      "encoding": "identity",
+      "sha256": "239ae1dc1903ad3879f8e096c21280a1ea60800c43afc4b96632aac4f1ced873",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/one-leaf-after-pcm.json"
+    },
+    {
+      "bytes": 4420,
+      "destination": "media-evidence/one-leaf-before-document.json",
+      "encoding": "identity",
+      "sha256": "1a03726fdddead19ce5c96b660f14018c074d3e45490d9cec52e54c25f481c61",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/one-leaf-before-document.json"
+    },
+    {
+      "bytes": 1550634,
+      "destination": "media-evidence/one-leaf-before-pcm.json",
+      "encoding": "identity",
+      "sha256": "9a6ce5e6fcb27c5e823545bfaf9642203676acf0fee501df11f610f790ceb761",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/one-leaf-before-pcm.json"
+    },
+    {
+      "bytes": 43395,
+      "destination": "media-evidence/one-leaf-cached-verification.json",
+      "encoding": "identity",
+      "sha256": "c4f4ba0cc1560bbe4c4da1a0f389441c9d1c70679e31625c519bd04b481f07aa",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/one-leaf-cached-verification.json"
+    },
+    {
+      "bytes": 4645,
+      "destination": "media-evidence/one-leaf-commit.json",
+      "encoding": "identity",
+      "sha256": "fc3acb5469b874538f5bcc871363d48b46cf85b99e7b866038c2bb920bb03ad4",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/one-leaf-commit.json"
+    },
+    {
+      "bytes": 88856,
+      "destination": "media-evidence/one-leaf-media-summary.json",
+      "encoding": "identity",
+      "sha256": "f6bcc368e0229dd8f191902dfdb914409145df607ccea7dbca7b37b2057c812c",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/one-leaf-media-summary.json"
+    },
+    {
+      "bytes": 4544,
+      "destination": "media-evidence/one-leaf-redo.json",
+      "encoding": "identity",
+      "sha256": "b8e7fd2489431eb665f385daf65cc06699d13f14c54c181137b9c9af1d530afa",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/one-leaf-redo.json"
+    },
+    {
+      "bytes": 43399,
+      "destination": "media-evidence/one-leaf-uncached-verification.json",
+      "encoding": "identity",
+      "sha256": "dbe3560f12a0cc588b63dde06a21183fbaf507ce6e7ac84be70aa807a7c815b1",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/one-leaf-uncached-verification.json"
+    },
+    {
+      "bytes": 4544,
+      "destination": "media-evidence/one-leaf-undo.json",
+      "encoding": "identity",
+      "sha256": "654243e389dd4bfd8f292dee59486f430f490b82a9e4b307ca31bd3f1dd88c80",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/one-leaf-undo.json"
+    },
+    {
+      "bytes": 0,
+      "destination": "media-evidence/uncached.deadpan/.render-candidates.lock",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/uncached.deadpan/.render-candidates.lock"
+    },
+    {
+      "bytes": 0,
+      "destination": "media-evidence/uncached.deadpan/.writer.lock",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/uncached.deadpan/.writer.lock"
+    },
+    {
+      "bytes": 39157,
+      "destination": "media-evidence/uncached.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "encoding": "identity",
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/uncached.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1"
+    },
+    {
+      "bytes": 15067,
+      "destination": "media-evidence/uncached.deadpan/Media/RenderCandidates/blake3-68a2f61bfc11c92caafa6fb3ce75801a25cea7010d2c652deae84e434c4b3655",
+      "encoding": "identity",
+      "sha256": "43a99709d5137de2ec22296864f979ca74898c369469a0bfc6978dbca6fa7449",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/uncached.deadpan/Media/RenderCandidates/blake3-68a2f61bfc11c92caafa6fb3ce75801a25cea7010d2c652deae84e434c4b3655"
+    },
+    {
+      "bytes": 13232,
+      "destination": "media-evidence/uncached.deadpan/Media/RenderCandidates/blake3-f2e5cb888ea80030e9e9159537749d91336cb541f927cddd8ae08ca20edbeaba",
+      "encoding": "identity",
+      "sha256": "5c72a13ae24c6b0936ce1dbd96b43d462e4b74ec12588bcdebe1861c0219c07a",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/uncached.deadpan/Media/RenderCandidates/blake3-f2e5cb888ea80030e9e9159537749d91336cb541f927cddd8ae08ca20edbeaba"
+    },
+    {
+      "bytes": 82,
+      "destination": "media-evidence/uncached.deadpan/manifest.json",
+      "encoding": "identity",
+      "sha256": "ff06b771270ee51b35075234cad019ae876fe360a2fc617a71966df343b83b9c",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/uncached.deadpan/manifest.json"
+    },
+    {
+      "bytes": 593920,
+      "destination": "media-evidence/uncached.deadpan/project.sqlite",
+      "encoding": "identity",
+      "sha256": "52d11ae8ef7537d2762326e16eda4b7ac0ac87b93527268ed6da8d3bb1105a9f",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/uncached.deadpan/project.sqlite"
+    },
+    {
+      "bytes": 32768,
+      "destination": "media-evidence/uncached.deadpan/project.sqlite-shm",
+      "encoding": "identity",
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/uncached.deadpan/project.sqlite-shm"
+    },
+    {
+      "bytes": 0,
+      "destination": "media-evidence/uncached.deadpan/project.sqlite-wal",
+      "encoding": "identity",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/uncached.deadpan/project.sqlite-wal"
+    }
+  ],
+  "qualified_base_source_map_sha256": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+  "schema": "deadpan-single-leaf-net-evidence-1",
+  "source_changes": [
+    {
+      "after_destination": "source/final/crates/deadpan-core/src/compound.rs.txt",
+      "after_sha256": "a74328e4d4d3be1ec9ad4800ea524596e526a29578c726c7a5d2bd9a327f02e5",
+      "before_destination": "source/qualified-main/crates/deadpan-core/src/compound.rs.txt",
+      "before_sha256": "1de3788b9f6b1275a8ca34e4e607f6a7b18eb8982aee1486399dcf95abbf62d0",
+      "path": "crates/deadpan-core/src/compound.rs"
+    },
+    {
+      "after_destination": "source/final/crates/deadpan-core/src/one_leaf_replay.rs.txt",
+      "after_sha256": "1dc847665b59b800c83f23c50c7872b1dbc0c26760487a2a7046fa4f5a71d6bc",
+      "before_destination": "source/qualified-main/crates/deadpan-core/src/one_leaf_replay.rs.txt",
+      "before_sha256": "03954fddb62d5e9ede2c7577d533ce90911e214067cdd027cde88e2adfe655c4",
+      "path": "crates/deadpan-core/src/one_leaf_replay.rs"
+    },
+    {
+      "after_destination": "source/final/crates/deadpan-core/tests/semantic_leaf_replay.rs.txt",
+      "after_sha256": "648ae62b2ae50fee4a6bfa98fb3fe69e7d5039df44a18a9a89e14daa100b8b42",
+      "before_destination": "source/qualified-main/crates/deadpan-core/tests/semantic_leaf_replay.rs.txt",
+      "before_sha256": "0836e272bb2594e6cdcceaf7273a0773504d286a3ace91cd7ea1b059e8a9b561",
+      "path": "crates/deadpan-core/tests/semantic_leaf_replay.rs"
+    }
+  ],
+  "source_review_sha256": "f05a35ca12388157ead3df99bd1d8c936a28b53c94ad6e8f98711ac65cc65be4",
+  "status": "proposed_for_root_review",
+  "terminal_sha256": {
+    "build": "c806d681efaeab1db3b547db17fa2aced2cf21906f3d7ddd7fef0623c3b3cd32",
+    "measurement": "6a14d9904f993433509c959d217527a9454a8a7e1688383c728dc4636cc29bab",
+    "media": "87ba2682067b831a2d690dbc512911fc19e42537b93e4f54b861478a21ed02ad",
+    "memory": "6cf3d22427543bec9a44223b6c6b11a767d4e93b26b4e14472176f038a7c1dd0"
+  }
+}

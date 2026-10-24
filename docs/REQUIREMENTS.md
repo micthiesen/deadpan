@@ -2,6 +2,24 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Single-leaf net reuse: production qualification, 2026-10-24
+
+The [uninstrumented qualification](qualification/single-leaf-net-reuse-2026-10-24.md)
+promotes the narrow Core edit-retention change. Main's 2,053 Rust files match
+the tested snapshot exactly. All 726 Core unit tests, 35 integration tests,
+12 release Store tests, strict/format checks and the real-media history/PCM
+case pass. Both actual exports verify 45 pictures and 72,072 samples at zero
+offset. Store's actual result, encoded-size/readback and inverse checks remain.
+
+Five fresh timing pairs pass all 70 pause and 10 Kestrel checks, with a median
+paired commit reduction of 5.355917 ms and composition reduction of 5.468292 ms.
+Six separate memory runs have median sampled physical-footprint maxima of
+667.423/665.939 MiB and resident maxima of 653.922/672.938 MiB. These whole-app
+samples establish neither a retained-edit cost nor a memory ceiling or saving.
+The independently reread package has 341 payloads /12,369,663 bytes. No p95,
+100 ms/50 ms target, requirement or gate closes. Coverage remains 89%, eight
+Complete and sixteen Partial.
+
 ## Single-leaf net reuse: private qualification, 2026-10-24
 
 The [private prototype](qualification/single-leaf-net-prototype-2026-10-24.md)

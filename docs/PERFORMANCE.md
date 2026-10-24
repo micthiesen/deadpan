@@ -1,5 +1,16 @@
 # Performance measurement
 
+The [single-leaf net reuse qualification](qualification/single-leaf-net-reuse-2026-10-24.md)
+records the current uninstrumented change after source, Core/Store, real-media,
+history and PCM checks. Five fresh 10,000-Hold timing pairs pass 70 pause and
+10 Kestrel checks. Paired median reductions are 5.355917 ms to commit and
+5.468292 ms to offscreen composition; candidate medians are 188.425/191.147 ms.
+The 100 ms/50 ms targets remain open, and these five pairs establish no p95.
+Six separate owned-app memory runs have median sampled maxima of
+667.423/665.939 MiB physical footprint and 653.922/672.938 MiB resident size.
+They establish no exact peak, retained-edit cost, memory saving or ceiling.
+The private instrumented prototype is a separate batch and is not pooled.
+
 [Real inference interference](qualification/inference-interference-2026-10-17.md)
 qualifies paired 30-second ordinary-source loops at 1080p60 and 4K30 with
 app-owned Extension inference, actual device audio and offscreen Metal:

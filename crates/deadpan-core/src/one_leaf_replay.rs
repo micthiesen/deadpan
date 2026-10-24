@@ -1,15 +1,17 @@
 //! One exact, successfully applied ordinary semantic leaf. No host proof or
 //! mutable plan field can construct or retarget this in-memory capability.
 
-use crate::{Command, CommandRequest, EditError, ProjectDocument, ResolvedStep};
+use crate::{Command, CommandRequest, EditError, EditTransaction, ProjectDocument, ResolvedStep};
 
 /// An optional result of Core's own one-leaf semantic application. Its complete
-/// entry, request and leaf-revision result are private immutable values. It is
-/// never serialized, cloned as a capability, or stored in authored history.
+/// entry, request, leaf-revision result and successful net edit are private
+/// immutable values. It is never serialized, cloned as a capability, or stored
+/// in authored history. The retained edit owns its sparse forward/inverse state.
 pub struct OneLeafReplay {
     entry: ProjectDocument,
     request: CommandRequest,
     next: ProjectDocument,
+    edit: EditTransaction,
 }
 
 impl std::fmt::Debug for OneLeafReplay {
@@ -43,7 +45,10 @@ pub(crate) fn apply_semantic_leaf(
     retain: bool,
     admit_next: impl FnOnce(&ProjectDocument) -> Result<(), EditError>,
 ) -> Result<(ProjectDocument, Option<OneLeafReplay>), EditError> {
-    let (_, next) = crate::apply_with_result(entry, request)?;
+    let (edit, next) = crate::apply_with_result(entry, request)?;
+    // Preserve the original pre-admission drop for intents that cannot retain
+    // this result. Mode and value eligibility still follow actual admission.
+    let edit = (retain && matches!(&request.command, Command::InsertTime { .. })).then_some(edit);
     admit_next(&next)?;
     let candidate = (retain
         && eligible_mode()
@@ -54,6 +59,7 @@ pub(crate) fn apply_semantic_leaf(
         entry: entry.clone(),
         request: request.clone(),
         next: next.clone(),
+        edit: edit.expect("retained InsertTime edit"),
     });
     Ok((next, candidate))
 }
@@ -65,7 +71,7 @@ impl OneLeafReplay {
         &self,
         entry: &ProjectDocument,
         request: &CommandRequest,
-    ) -> Result<Option<ProjectDocument>, EditError> {
+    ) -> Result<Option<(ProjectDocument, &EditTransaction)>, EditError> {
         if !eligible_mode()
             || !eligible_value(entry)
             || !eligible_value(&self.entry)
@@ -88,7 +94,8 @@ impl OneLeafReplay {
         if !crate::insert_time::retimed::take_exact_edit() {
             crate::derived_clock::sealed_preserved(entry, &next)?;
         }
-        Ok(Some(next))
+        // Only this successful hit can lend its net edit to final aggregation.
+        Ok(Some((next, &self.edit)))
     }
 }
 
@@ -156,7 +163,23 @@ mod tests {
         let (entry, request) = fixture();
         let (next, candidate) = apply_semantic_leaf(&entry, &request, true, serialize).unwrap();
         let candidate = candidate.unwrap();
-        assert_eq!(candidate.reuse(&entry, &request).unwrap().unwrap(), next);
+        let (reused, edit) = candidate.reuse(&entry, &request).unwrap().unwrap();
+        assert_eq!(reused, next);
+        assert!(std::ptr::eq(edit, &candidate.edit));
+        assert_eq!(*edit, crate::apply_with_result(&entry, &request).unwrap().0);
+        assert!(
+            apply_semantic_leaf(&entry, &request, false, serialize)
+                .unwrap()
+                .1
+                .is_none()
+        );
+        let non_insert = mark_step(1).edit().unwrap().request(&entry);
+        assert!(
+            apply_semantic_leaf(&entry, &non_insert, true, serialize)
+                .unwrap()
+                .1
+                .is_none()
+        );
         assert!(
             crate::with_reference_command_work(|| candidate.reuse(&entry, &request))
                 .unwrap()
@@ -204,7 +227,12 @@ mod tests {
         // A failed admission leaves no reusable state behind for another call.
         let (next, candidate) = apply_semantic_leaf(&entry, &request, true, serialize).unwrap();
         assert_eq!(
-            candidate.unwrap().reuse(&entry, &request).unwrap().unwrap(),
+            candidate
+                .unwrap()
+                .reuse(&entry, &request)
+                .unwrap()
+                .unwrap()
+                .0,
             next
         );
     }
@@ -245,13 +273,12 @@ mod tests {
         entry.validate().unwrap();
     }
 
-    fn replay_error(
+    fn outer_request(
         entry: &ProjectDocument,
         leaf: &CommandRequest,
         outer: &str,
-        candidate: Option<&OneLeafReplay>,
-    ) -> (EditError, usize) {
-        let request = CommandRequest {
+    ) -> CommandRequest {
+        CommandRequest {
             project_id: entry.project_id().clone(),
             expected_revision: entry.revision_id().clone(),
             new_revision: crate::RevisionId::new(outer).unwrap(),
@@ -266,22 +293,235 @@ mod tests {
                 )
                 .unwrap(),
             },
-        };
+        }
+    }
+
+    fn replay_error(
+        entry: &ProjectDocument,
+        leaf: &CommandRequest,
+        outer: &str,
+        candidate: Option<&OneLeafReplay>,
+    ) -> (EditError, usize) {
+        let request = outer_request(entry, leaf, outer);
         let mut visits = 0;
-        let result = crate::replay_compound_with_one_leaf(
-            entry,
-            &request,
-            |_| {
-                visits += 1;
-                Ok::<(), EditError>(())
-            },
-            candidate,
-        );
+        let (result, constructed) = crate::compound::net_reuse_test::observe(|| {
+            crate::replay_compound_with_one_leaf(
+                entry,
+                &request,
+                |_| {
+                    visits += 1;
+                    Ok::<(), EditError>(())
+                },
+                candidate,
+            )
+        });
+        assert!(!constructed, "refusal must precede net construction");
         let error = match result {
             Err(error) => error,
             Ok(_) => panic!("wire-boundary replay unexpectedly succeeded"),
         };
         (error, visits)
+    }
+
+    #[test]
+    fn one_leaf_replay_net_selection_requires_a_hit_and_final_admission() {
+        let (entry, leaf) = fixture();
+        let (_, candidate) = apply_semantic_leaf(&entry, &leaf, true, serialize).unwrap();
+        let candidate = candidate.unwrap();
+        let request = outer_request(&entry, &leaf, "outer");
+        let execute = |entry: &ProjectDocument, request: &CommandRequest, candidate| {
+            let (result, constructed) = crate::compound::net_reuse_test::observe(|| {
+                crate::replay_compound_with_one_leaf::<EditError>(
+                    entry,
+                    request,
+                    |_| Ok(()),
+                    candidate,
+                )
+            });
+            (
+                result.map(|outcome| (outcome.edit, outcome.document, outcome.register_writes)),
+                constructed,
+            )
+        };
+        let (expected, constructed) = execute(&entry, &request, None);
+        assert!(!constructed);
+        let (actual, constructed) = execute(&entry, &request, Some(&candidate));
+        assert!(constructed);
+        assert_eq!(actual, expected);
+        // Nested observations and panics restore the enclosing test witness.
+        let (_, constructed) = crate::compound::net_reuse_test::observe(|| {
+            let (result, hit) = execute(&entry, &request, Some(&candidate));
+            assert!(result.is_ok() && hit);
+            let (_, nested) = crate::compound::net_reuse_test::observe(|| ());
+            assert!(!nested);
+            assert!(
+                std::panic::catch_unwind(|| crate::compound::net_reuse_test::observe(|| {
+                    panic!("test witness unwind")
+                }))
+                .is_err()
+            );
+        });
+        assert!(!constructed, "nested observation leaked its selection");
+        for reference in [false, true] {
+            let operation = || {
+                let (actual, constructed) = execute(&entry, &request, Some(&candidate));
+                assert!(!constructed);
+                assert_eq!(actual, execute(&entry, &request, None).0);
+            };
+            if reference {
+                crate::with_reference_command_work(operation);
+            } else {
+                crate::with_reference_timing_representation(operation);
+            }
+        }
+        let mut changed_entry = entry.clone();
+        changed_entry
+            .nodes
+            .get_mut(&crate::NodeId::new("hold").unwrap())
+            .unwrap()
+            .label = "changed under the same revision".into();
+        let (actual, constructed) = execute(&changed_entry, &request, Some(&candidate));
+        assert!(!constructed);
+        assert_eq!(actual, execute(&changed_entry, &request, None).0);
+        let mut changed_leaf = leaf.clone();
+        let Command::InsertTime { hold, .. } = &mut changed_leaf.command else {
+            panic!("InsertTime fixture")
+        };
+        hold.duration = crate::FrameDuration::new(3).unwrap();
+        let changed_request = outer_request(&entry, &changed_leaf, "outer");
+        let (actual, constructed) = execute(&entry, &changed_request, Some(&candidate));
+        assert!(!constructed);
+        assert_eq!(actual, execute(&entry, &changed_request, None).0);
+        let Command::Compound { transaction } = &request.command else {
+            panic!("compound fixture")
+        };
+        let mut with_inputs = request.clone();
+        with_inputs.command = Command::Compound {
+            transaction: crate::ResolvedTransaction::new(
+                0,
+                std::collections::BTreeMap::from([(crate::RegisterName::unnamed(), None)]),
+                transaction.steps().to_vec(),
+            )
+            .unwrap(),
+        };
+        let mut with_steps = request.clone();
+        let mut steps = transaction.steps().to_vec();
+        steps.push(mark_step(1));
+        with_steps.command = Command::Compound {
+            transaction: crate::ResolvedTransaction::new(0, Default::default(), steps).unwrap(),
+        };
+        for request in [with_inputs, with_steps] {
+            let (actual, constructed) = execute(&entry, &request, Some(&candidate));
+            assert!(!constructed);
+            assert_eq!(actual, execute(&entry, &request, None).0);
+        }
+        let (captured, constructed) = crate::compound::net_reuse_test::observe(|| {
+            crate::compound::replay_compound_captured::<EditError>(
+                &entry,
+                &request,
+                |_| Ok(()),
+                Some(&mut Vec::new()),
+            )
+        });
+        assert!(!constructed);
+        assert_eq!(
+            captured.map(|outcome| (outcome.edit, outcome.document, outcome.register_writes)),
+            expected
+        );
+        let refused = EditError::new(crate::EditErrorCode::SelectionUnavailable, "host refusal");
+        let mut visits = 0;
+        let (result, constructed) = crate::compound::net_reuse_test::observe(|| {
+            crate::replay_compound_with_one_leaf::<EditError>(
+                &entry,
+                &request,
+                |_| {
+                    visits += 1;
+                    crate::with_reference_command_work(|| {
+                        crate::with_reference_timing_representation(|| ())
+                    });
+                    Err(refused.clone())
+                },
+                Some(&candidate),
+            )
+        });
+        assert_eq!(result.err(), Some(refused));
+        assert_eq!(visits, 1);
+        assert!(
+            !constructed,
+            "visitor refusal must precede net construction"
+        );
+        assert!(execute(&entry, &request, Some(&candidate)).1);
+    }
+
+    fn mark_step(index: usize) -> ResolvedStep {
+        ResolvedStep::Edit {
+            edit: crate::LeafEdit::new(
+                crate::RevisionId::new(format!("mark-leaf-{index}")).unwrap(),
+                Command::SetMark {
+                    id: crate::MarkId::new(format!("mark-{index}")).unwrap(),
+                    owner: crate::NodeId::new("root").unwrap(),
+                    label: format!("mark {index}"),
+                    boundary: crate::BoundaryAnchor {
+                        coordinate: crate::Anchor::Local {
+                            node: crate::NodeId::new("root").unwrap(),
+                            position: crate::ExactRatio::ZERO,
+                        },
+                        bias: crate::InsertionBias::Right,
+                    },
+                    loss_policy: crate::AnchorLossPolicy::DeleteOwned,
+                },
+            )
+            .unwrap(),
+        }
+    }
+
+    #[test]
+    fn one_leaf_replay_real_cumulative_work_limit_uses_multistep_fallback() {
+        let (mut entry, leaf) = wide_fixture();
+        let size = crate::compound::wire::size(&entry, usize::MAX).unwrap();
+        let target = 60 * 1024 * 1024;
+        pad_wire_by(&mut entry, target - size);
+        assert_eq!(
+            crate::compound::wire::size(&entry, usize::MAX).unwrap(),
+            target
+        );
+        serialize(&entry).unwrap();
+        let (_, candidate) = apply_semantic_leaf(&entry, &leaf, true, serialize).unwrap();
+        let candidate = candidate.unwrap();
+        let mut request = outer_request(&entry, &leaf, "outer");
+        let Command::Compound { transaction } = &request.command else {
+            panic!("compound fixture")
+        };
+        let mut steps = transaction.steps().to_vec();
+        steps.extend((1..5).map(mark_step));
+        request.command = Command::Compound {
+            transaction: crate::ResolvedTransaction::new(0, Default::default(), steps).unwrap(),
+        };
+        assert!(!eligible_compound(&request));
+        let execute = |candidate| {
+            let mut visits = 0;
+            let (result, constructed) = crate::compound::net_reuse_test::observe(|| {
+                crate::replay_compound_with_one_leaf::<EditError>(
+                    &entry,
+                    &request,
+                    |value| {
+                        visits += 1;
+                        serialize(value.after)?;
+                        Ok(())
+                    },
+                    candidate,
+                )
+            });
+            assert!(!constructed);
+            (result.err().expect("actual cumulative cap"), visits)
+        };
+        let plain = execute(None);
+        assert_eq!(plain.0.code, crate::EditErrorCode::LimitExceeded);
+        assert_eq!(plain.0.message, "staged document work byte limit");
+        // Initial plus pre/post for three visited steps is just over 420 MiB.
+        // Step four's pre stays below 512 MiB; its post crosses the real cap.
+        assert_eq!(plain.1, 3);
+        assert_eq!(execute(Some(&candidate)), plain);
     }
 
     #[test]
@@ -351,7 +591,7 @@ mod tests {
             assert_eq!(wire_size(&next), limit);
             let candidate = candidate.unwrap();
             let reused = candidate.reuse(&entry, &request).unwrap().unwrap();
-            assert!(reused == next, "exact-cap reuse changed its result");
+            assert!(reused.0 == next, "exact-cap reuse changed its result");
             drop(reused);
             let mut final_value = next;
             final_value.revision_id = crate::RevisionId::new("o".repeat(128)).unwrap();

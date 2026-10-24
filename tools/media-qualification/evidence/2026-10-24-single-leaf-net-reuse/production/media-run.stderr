@@ -1,0 +1,8 @@
+  Extracting 2 binaries (including 1 non-test binary) and 7 linked paths to /private/tmp/deadpan-single-leaf-net-production-2026-10-24/media-one-leaf-extracted
+   Extracted 51 files to /private/tmp/deadpan-single-leaf-net-production-2026-10-24/media-one-leaf-extracted in 0.10s
+────────────
+ Nextest run ID 26ac9865-432c-493b-96ed-f17976424efc with nextest profile: default
+    Starting 1 test across 1 binary (65 tests skipped)
+        PASS [   6.576s] (1/1) deadpan-cli::preview_export group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached
+────────────
+     Summary [   6.577s] 1 test run: 1 passed, 65 skipped

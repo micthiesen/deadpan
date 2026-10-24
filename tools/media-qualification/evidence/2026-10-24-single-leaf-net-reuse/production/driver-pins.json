@@ -1,0 +1,14 @@
+{
+  "build.py": "3c8c97abe6e63ecbb2f37c803c8b383e37751f7b62600b5f1d81c757a9b7e59d",
+  "measure.py": "f56a18385309d179cfdea9b379fb38afe7b96f73431841d5b2f836a6d1a769cc",
+  "expected-build-stages.json": "4e5ecd34168f3bb8fdbbf567a4276dac0fdb832b3bc5f0cc76d5ce757dc8b8f3",
+  "expected-tests.json": "e7e663b3bdbe2f1326811215f7039f6f93370c919be81bafcca1b342e3fad198",
+  "baseline.json": "2c24fb3ced417d882640767af7f2ee1fd71bf770f7e314ffce7b5463cd82e86e",
+  "baseline-provenance.json": "f48c786da268db05dddfe62a4f85f21db6c795bbfbf8ae669ab484ef0b4c0d27",
+  "baseline-sources.json": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+  "baseline-inputs.json": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317",
+  "qualified-base-sources.json": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+  "frozen-sources.json": "f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53",
+  "source-review.json": "f05a35ca12388157ead3df99bd1d8c936a28b53c94ad6e8f98711ac65cc65be4",
+  "prototype.patch": "2ed988244b35f7149385f0c4a6616e736afff5d7fa6c26b596269722c14428cc"
+}

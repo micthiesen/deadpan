@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 167.163,
+  "package": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-control.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 176.569792
+}

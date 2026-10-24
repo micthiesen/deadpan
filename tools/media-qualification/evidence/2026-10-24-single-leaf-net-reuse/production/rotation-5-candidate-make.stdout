@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 167.173,
+  "package": "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-candidate.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 176.59391699999998
+}

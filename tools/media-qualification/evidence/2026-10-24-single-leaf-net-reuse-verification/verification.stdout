@@ -1,0 +1,1 @@
+{"status": "complete", "receipt": "/tmp/deadpan-single-leaf-net-production-2026-10-24/root-package-verification.json", "receipt_sha256": "4b049de450c637d6cb6a294272d4989d5348abead71ddf83af5bbad4ce6d4e1a", "inventory_files": 341, "all_files": 342, "payloads": 320, "gzip_payloads": 46, "fixtures": 16, "TAR_members": 48, "media_files": 35, "actual_MP4s": 2}

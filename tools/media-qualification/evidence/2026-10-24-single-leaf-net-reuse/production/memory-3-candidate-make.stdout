@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 167.208,
+  "package": "/tmp/deadpan-single-leaf-net-production-2026-10-24/memory-3-candidate.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 176.622791
+}

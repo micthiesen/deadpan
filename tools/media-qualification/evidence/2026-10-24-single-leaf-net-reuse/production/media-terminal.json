@@ -1,0 +1,35 @@
+{
+  "status": "complete",
+  "commands": 4,
+  "tests": 1,
+  "selected_test": "group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached",
+  "archive_sha256": "bf3f0adb693c17349649cf8ccac0ba209fabf8e7a6550f909617a26ced047677",
+  "test_sha256": "41a0b8613bd49a5a04666e9245e992fc72db6641bf7a2bb58cc94fa8ae513bcb",
+  "cli_sha256": "840a1618074ff3dc283b6d6c3bcde58cf5e9e49820297b1bbac9d6416c6f2a4b",
+  "source_map_sha256": "f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53",
+  "physical_mac_required": true,
+  "synthetic_worker_feature_required": true,
+  "qualified_helper_reuse": true,
+  "evidence": {
+    "root": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa",
+    "exports": [
+      {
+        "leg": "cached",
+        "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/exports-cached/one-leaf-cached-media.mp4",
+        "movie_sha256": "b1dbb24ce918cf5958fee28807067ca72f3e2ede57f52abf756d6e28bccd1488",
+        "package": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/cached/one-leaf-cached-media.deadpan",
+        "revision": "one-leaf-media-restored"
+      },
+      {
+        "leg": "uncached",
+        "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/exports-uncached/one-leaf-uncached-media.mp4",
+        "movie_sha256": "5c72a13ae24c6b0936ce1dbd96b43d462e4b74ec12588bcdebe1861c0219c07a",
+        "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpsYbjVa/uncached.deadpan",
+        "revision": "one-leaf-media-restored"
+      }
+    ],
+    "canonical_history_pcm_checks": true,
+    "verified_pictures_per_export": 45,
+    "verified_samples_per_export": 72072
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "qualified_main_commit": "9211db7043d14e57e06782342aa7defd1313a8b6",
+  "qualified_main_source_map_sha256": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+  "matched_source": "/tmp/deadpan-insert-split-proof-production-2026-10-23/source",
+  "matched_source_map_sha256": "ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e",
+  "matched_app": "/tmp/deadpan-insert-split-proof-production-2026-10-23/bin/deadpan-app",
+  "matched_app_sha256": "e6abcd3a521697f504901f156df445e41681cfc824ff97793f62f4e0865802e1",
+  "qualified_control": "/tmp/deadpan-insert-split-proof-production-2026-10-23/bin/deadpan-app",
+  "qualified_control_sha256": "e6abcd3a521697f504901f156df445e41681cfc824ff97793f62f4e0865802e1",
+  "hooks": "none; uninstrumented2053-source candidate",
+  "private_prototype_source_map_sha256": "0bf07513646ffdfee5aec03bb1b64b6fff757196512aeea883226c675b15ed02"
+}

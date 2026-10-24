@@ -4,44 +4,53 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-24
 
-Main runtime code remains at qualified 9211db7043d14e57e06782342aa7defd1313a8b6.
-The [single-leaf net prototype](../qualification/single-leaf-net-prototype-2026-10-24.md)
-retains Core's successful leaf EditTransaction and rebases only its aggregate
-headers and description after final document admission. It deliberately skips
-redundant release Core aggregate validation/diff/inverse work; debug whole-edit
-equality and Store result/codec/readback/inverse checks remain. No public API,
-schema or Main runtime change is part of this record.
+Main now includes the qualified [single-leaf net reuse change](../qualification/single-leaf-net-reuse-2026-10-24.md).
+Core retains its successful leaf EditTransaction and changes only the outer
+forward/inverse revision headers and description after final document
+admission. Authored timing allocation IDs keep the leaf revision. Release
+skips repeated aggregate validation/diff/inverse/changed-ID work; the debug
+whole-edit oracle and Store's actual result/codec/readback/inverse checks remain.
+All original eligibility, prefix, revision, byte/work and visitor boundaries
+remain. Public APIs and Core 58 /SQLite 87 are unchanged.
 
-Private source map 0bf07513 has 2,054 Rust files; App 1a12c2e9 is separate from
-matched profile baseline ffba and qualified uninstrumented control e6abcd3a.
-All 734 Core unit, 35 integration and 12 Store tests, release App, strict and
-format checks pass. One actual cached/uncached media-history/PCM test verifies
-two 45-picture, 72,072-sample exports at zero offset. Eighteen fresh timing
-trials pass 126 pause/18 Kestrel checks, all 35 phase counts and conservation,
-and authored-byte/WAL guards. Median paired commit reduction is 6.047542 ms;
-composition reduction is 6.159625 ms. Keep the separate six-run memory lane's
-651.329/668.954 MiB median sampled maxima explicit; it does not isolate the
-retained edit's cost or establish an exact peak or ceiling.
+Main's 2,053 Rust files and six pinned inputs exactly match source map
+f973b941a3f71b70cd0826cf6ab3f5ceb68395e5407690bea79f8e5a49e53a53.
+Only three Core files changed. Executed release App SHA-256 is
+970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2;
+qualified control is e6abcd3a. Nine build stages pass: 726 unfiltered Core
+unit tests, 35 integration tests, 12 release Store tests, App, strict and
+format checks. One actual cached/uncached media-history/PCM case passes and
+verifies both 45-picture, 72,072-sample exports at zero offset.
 
-Primary evidence: 541 payloads /17,670,651 bytes, inventory
-c7fba9c46c455740c45ff7bccea188fbc3c9e8eb8ee470846e24c677ee551f0a.
-The independent reread verifies every stored hash and decoded payload, 25 safe
-fixture archives/75 authored files and both actual movies. The first copier
-and post-copy verifier executions pass. Earlier interrupted Core build,
-media-pin preflight failure, timing set/tuple assertion and collector file-walk
-correction remain retained. All producers in
-/tmp/deadpan-single-leaf-net-prototype-v2-2026-10-24 are terminal; do not restart.
+Five alternating uninstrumented timing pairs pass 70 pause/10 Kestrel checks,
+with 20 retained layout warnings and unchanged source/authored/WAL guards.
+Median paired reductions are 5.355917 ms to commit and 5.468292 ms to
+offscreen composition. Candidate medians are 188.425/191.147 ms; this is no
+p95 or 100 ms/50 ms target pass.
 
-An uninstrumented copy is being qualified in
-/tmp/deadpan-single-leaf-net-production-2026-10-24. Source map f973b941 has
-2,053 Rust files, exactly three changes against Main. App SHA-256 is
-970df9f9c760435968082dc0ede48c6d1832008bb63b989d1ab7cf2dc23d4ac2.
-Its independent source review, 726 Core unit tests, 35 integration tests,
-12 Store tests, release App, strict/format and same-source real-media test pass.
-Five uninstrumented timing pairs pass with a 5.355917 ms median commit reduction;
-the separate memory check remains owed before promotion. Do not pool these
-results with the private instrumented batch. Coverage remains 89%, eight
-Complete/sixteen Partial; the full goal and 100 ms/50 ms targets stay open.
+Six separate gate-off memory runs retain raw samples, query clocks and
+confirmed owned-child cleanup. Median observed physical-footprint maxima
+are 667.423/665.939 MiB; resident maxima are 653.922/672.938 MiB. These are
+whole-app sampled lower bounds, not retained-edit cost, exact peaks, memory
+savings or ceilings. The largest sample-start gap is 7.613375 ms.
+
+The production package has 341 payloads /12,369,663 bytes; inventory SHA-256
+e0ca61a60782b5c3bb5f7b5b311a2893d0032137d2a3a758fb5785335cada68b.
+First copier and independent post-copy verifier executions pass. All 320
+decoded payloads, 16 safe native-fixture archives/48 authored files, 35 media
+files and both actual movie hashes verify. Raw log and pinned command-source
+EOF whitespace is preserved; authored checks pass. Every producer in
+/tmp/deadpan-single-leaf-net-production-2026-10-24 is terminal. Do not restart.
+
+The earlier [private prototype](../qualification/single-leaf-net-prototype-2026-10-24.md)
+is separate: source 0bf07513/App 1a12c2e9, 734 Core unit/35 integration/12 Store
+tests, six matched timing pairs (6.047542 ms median commit difference) and
+six memory runs. Its 541-payload package and retained corrected harness
+failures remain in the record. Never pool its instrumented results with the
+production batch.
+
+Coverage remains 89%, eight Complete and sixteen Partial. No requirement or
+gate closes; the full development goal and latency targets remain active.
 
 ## Prior production qualification, 2026-10-23
 

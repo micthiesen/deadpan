@@ -19,6 +19,37 @@ pub const MAX_COMPOUND_WIRE_BYTES: usize = 64 * 1024 * 1024;
 pub const MAX_COMPOUND_CAPTURE_BYTES: usize = 64 * 1024 * 1024;
 pub const MAX_COMPOUND_DOCUMENT_BYTES: usize = 512 * 1024 * 1024;
 
+#[cfg(test)]
+pub(super) mod net_reuse_test {
+    use std::cell::Cell;
+
+    thread_local! {
+        static CONSTRUCTED: Cell<Option<bool>> = const { Cell::new(None) };
+    }
+
+    pub(super) fn constructed() {
+        CONSTRUCTED.with(|value| {
+            if value.get().is_some() {
+                value.set(Some(true));
+            }
+        });
+    }
+
+    pub(crate) fn observe<T>(operation: impl FnOnce() -> T) -> (T, bool) {
+        struct Restore(Option<bool>);
+        impl Drop for Restore {
+            fn drop(&mut self) {
+                CONSTRUCTED.with(|value| value.set(self.0));
+            }
+        }
+        let restore = Restore(CONSTRUCTED.with(|value| value.replace(Some(false))));
+        let result = operation();
+        let constructed = CONSTRUCTED.with(|value| value.get() == Some(true));
+        drop(restore);
+        (result, constructed)
+    }
+}
+
 /// A command that cannot recursively contain another resolved transaction.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(transparent)]
@@ -249,7 +280,8 @@ pub(crate) fn replay_compound_captured<E: From<EditError>>(
 }
 
 /// Replay with an optional immutable result of Core's own exact semantic leaf.
-/// Every replay prefix charge, host visit and final aggregate still executes.
+/// Every replay prefix charge, host visit and final document admission still
+/// executes. A successful eligible hit may reuse its net edit's authored state.
 pub fn replay_compound_with_one_leaf<E: From<EditError>>(
     document: &ProjectDocument,
     request: &CommandRequest,
@@ -288,6 +320,7 @@ fn replay_compound_inner<E: From<EditError>>(
     let mut identities = identities::Ledger::new(document);
     let mut current = document.clone();
     let mut writes = BTreeMap::<RegisterName, Arc<RegisterValue>>::new();
+    let mut reused_net = None;
     for step in &transaction.steps {
         let value = match step {
             ResolvedStep::Edit { .. } => None,
@@ -354,7 +387,10 @@ fn replay_compound_inner<E: From<EditError>>(
                     None
                 };
                 match reused {
-                    Some(next) => next,
+                    Some((next, edit)) => {
+                        reused_net = Some(edit);
+                        next
+                    }
                     None => crate::apply_with_result(&current, leaf)?.1,
                 }
             };
@@ -394,7 +430,41 @@ fn replay_compound_inner<E: From<EditError>>(
         MAX_COMPOUND_DOCUMENT_BYTES,
         "staged document work byte limit",
     )?;
-    let edit = crate::command::net_transaction(document, &current, "Apply resolved transaction")?;
+    let edit = match reused_net {
+        Some(leaf) => {
+            // This borrow comes only from the actual ordinary one-step hit,
+            // with no inputs or isolation. Since that hit, the visitor could
+            // only read authored state and only current.revision_id changed.
+            // Invalidate this path if replay ever permits another mutation.
+            // Rebase headers only: authored timing allocations keep the leaf
+            // revision. Clone each patch once, not a complete edit first.
+            let edit = EditTransaction {
+                forward: leaf.forward.rebased(
+                    leaf.forward.from_revision.clone(),
+                    request.new_revision.clone(),
+                ),
+                inverse: leaf.inverse.rebased(
+                    request.new_revision.clone(),
+                    leaf.inverse.to_revision.clone(),
+                ),
+                changed_ids: leaf.changed_ids.clone(),
+                duration_delta: leaf.duration_delta,
+                description: "Apply resolved transaction".into(),
+            };
+            #[cfg(test)]
+            net_reuse_test::constructed();
+            // The release hit deliberately skips the original aggregate
+            // validation/diff/inverse work. Keep a complete debug oracle.
+            #[cfg(debug_assertions)]
+            assert_eq!(
+                edit,
+                crate::command::net_transaction(document, &current, "Apply resolved transaction")?,
+                "one-leaf aggregate changed beyond its revision headers"
+            );
+            edit
+        }
+        None => crate::command::net_transaction(document, &current, "Apply resolved transaction")?,
+    };
     Ok(CompoundOutcome {
         edit,
         document: current,

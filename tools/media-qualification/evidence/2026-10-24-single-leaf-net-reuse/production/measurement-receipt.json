@@ -1,0 +1,312 @@
+[
+  {
+    "name": "rotation-1-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.20507541578263044,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-1-control",
+    "command": [
+      "/tmp/deadpan-insert-split-proof-production-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-control.deadpan",
+      "--output",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.910317624919116,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-1-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1887984173372388,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-1-candidate",
+    "command": [
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-1-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 13.569965083152056,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-2-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1872461661696434,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-2-candidate",
+    "command": [
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 13.732862000353634,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-2-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18713208474218845,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-2-control",
+    "command": [
+      "/tmp/deadpan-insert-split-proof-production-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-control.deadpan",
+      "--output",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-2-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.856943166814744,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-3-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1881628753617406,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-3-control",
+    "command": [
+      "/tmp/deadpan-insert-split-proof-production-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-control.deadpan",
+      "--output",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-control-report"
+    ],
+    "exit": 0,
+    "seconds": 14.011356041766703,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-3-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18933208286762238,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-3-candidate",
+    "command": [
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-3-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 13.380299833603203,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-4-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19220020808279514,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-4-candidate",
+    "command": [
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 13.661262333393097,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-4-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18830095883458853,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-4-control",
+    "command": [
+      "/tmp/deadpan-insert-split-proof-production-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-control.deadpan",
+      "--output",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-4-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.628900916315615,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-5-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1854675831273198,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-5-control",
+    "command": [
+      "/tmp/deadpan-insert-split-proof-production-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-control.deadpan",
+      "--output",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.773239417001605,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-5-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18738862499594688,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-5-candidate",
+    "command": [
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-single-leaf-net-production-2026-10-24/rotation-5-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 13.513612666167319,
+    "profile_gate": null
+  }
+]

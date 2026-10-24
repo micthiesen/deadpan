@@ -461,6 +461,74 @@ fn one_leaf_replay_exact_interior_result_visitor_and_aggregate_are_unchanged() {
 }
 
 #[test]
+fn one_leaf_replay_rebases_outer_headers_and_preserves_leaf_timing_allocations() {
+    for bound in [false, true] {
+        let entry = fixture(bound);
+        let planned = plan(&entry, 3);
+        let candidate = planned.one_leaf_replay().unwrap();
+        let original = planned.request.as_ref().unwrap();
+        let Command::Compound { transaction } = &original.command else {
+            panic!("compound fixture")
+        };
+        let leaf = transaction.steps()[0].edit().unwrap().request(&entry);
+        let Command::InsertTime { timing, .. } = &leaf.command else {
+            panic!("InsertTime fixture")
+        };
+        assert_eq!(timing.allocation, leaf.new_revision);
+        let (leaf_edit, _) = apply_with_result(&entry, &leaf).unwrap();
+        assert!(
+            leaf_edit
+                .forward
+                .audio_bindings
+                .as_ref()
+                .unwrap()
+                .timings
+                .iter()
+                .any(|change| change.id == *timing && change.after.is_some())
+        );
+        let mut lengths = Vec::new();
+        // Reuse the same opaque capability for two distinct valid outer
+        // headers. Their different lengths must reach actual serialization.
+        for outer in ["o", "a-much-longer-outer-revision"] {
+            let mut request = original.clone();
+            request.new_revision = revision(outer);
+            let (result, visits) = parity(&entry, &request, candidate);
+            let result = result.unwrap();
+            assert_eq!(visits.len(), 1);
+            assert_eq!(result.edit.forward.from_revision, *entry.revision_id());
+            assert_eq!(result.edit.forward.to_revision, request.new_revision);
+            assert_eq!(result.edit.inverse.from_revision, request.new_revision);
+            assert_eq!(result.edit.inverse.to_revision, *entry.revision_id());
+            assert_eq!(result.edit.description, "Apply resolved transaction");
+            let mut expected = leaf_edit.clone();
+            expected.forward.to_revision = request.new_revision.clone();
+            expected.inverse.from_revision = request.new_revision.clone();
+            expected.description = "Apply resolved transaction".into();
+            assert_eq!(result.edit, expected);
+            assert_eq!(result.edit_wire, serde_json::to_string(&expected).unwrap());
+            assert_eq!(
+                result.edit.forward.audio_bindings,
+                leaf_edit.forward.audio_bindings
+            );
+            assert_eq!(
+                result.edit.inverse.audio_bindings,
+                leaf_edit.inverse.audio_bindings
+            );
+            assert_inverse(&entry, &result);
+            lengths.push((
+                outer.len(),
+                result.document_wire.len(),
+                result.edit_wire.len(),
+            ));
+        }
+        let (short_outer, short_document, short_edit) = lengths[0];
+        let (long_outer, long_document, long_edit) = lengths[1];
+        assert_eq!(long_document - short_document, long_outer - short_outer);
+        assert_eq!(long_edit - short_edit, long_outer - short_outer);
+    }
+}
+
+#[test]
 fn one_leaf_replay_same_revision_changed_values_and_swapped_witnesses_cannot_retarget() {
     let entry = fixture(true);
     let planned = plan(&entry, 3);
