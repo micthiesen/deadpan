@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-24T06:39:28Z",
+  "updated_at": "2026-10-24T07:54:59Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Camera face selection is verified and committed. Continuing point targets and the remaining Camera/creep authoring scopes; coverage remains 89%.",
+  "focus": "Point targets are verified and committed. Continuing following creep on whole Holds and remaining target/proposal authoring; coverage remains 89%.",
   "features": [
     {
       "id": "editing",
@@ -35,7 +35,7 @@
         "DP-08",
         "DP-11"
       ],
-      "note": "Camera paths, tracking, whole-Source following creep and the paged face picker work. Choosing a detected face saves only that target and preserves the Camera draft for a separate framing commit; media and history are verified. Point targets, general region proposals, broader creep authoring and other target controls remain."
+      "note": "Camera paths, tracking, whole-Source following creep, the paged face picker and center-only point targets work. Camera creates and manually corrects points, with separate target/framing commits, exact Follow and durable history. Native replays and a complete media export with portable history are verified. General non-face region proposals, broader creep authoring and other target controls remain."
     },
     {
       "id": "audio",
@@ -1269,6 +1269,14 @@
       "revision": "6bb688cad6d6f90995b911d2a873458d33bb45b1",
       "retrospective": false,
       "summary": "Camera's numbered face picker preserves existing digits, pages all proposals and separates target acceptance from framing. Independent review, 1,301 App tests, final Metal replays and a fully verified 120-picture export with portable history pass."
+    },
+    {
+      "date": "2026-10-24",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "db729c592b5a83d684d35ca0978b12b67a94a75c",
+      "retrospective": false,
+      "summary": "Center-only point targets support Camera creation, manual correction and live Follow/creep. Independent review, 2,041 Core/Plan and 1,304 App tests, final native replays and a fully verified 120-picture export with exact portable history pass."
     }
   ]
 }
