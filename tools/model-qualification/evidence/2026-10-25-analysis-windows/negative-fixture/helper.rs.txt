@@ -1,0 +1,77 @@
+fn negative_aac_container() -> Vec<u8> {
+    fn number(bytes: &[u8]) -> u32 {
+        u32::from_be_bytes(bytes[..4].try_into().unwrap())
+    }
+    fn boxes(mut bytes: &[u8]) -> impl Iterator<Item = (&[u8], &[u8])> {
+        std::iter::from_fn(move || {
+            if bytes.is_empty() {
+                return None;
+            }
+            let size = usize::try_from(number(bytes)).unwrap();
+            assert!((8..=bytes.len()).contains(&size));
+            let (atom, rest) = bytes.split_at(size);
+            bytes = rest;
+            Some((&atom[4..8], &atom[8..]))
+        })
+    }
+    fn child<'a>(bytes: &'a [u8], kind: &[u8]) -> &'a [u8] {
+        boxes(bytes).find(|(tag, _)| *tag == kind).unwrap().1
+    }
+    fn rewrite(bytes: &[u8], audio: bool) -> Vec<u8> {
+        let mut result = Vec::new();
+        for (kind, payload) in boxes(bytes) {
+            let audio = if kind == b"trak" {
+                &child(child(payload, b"mdia"), b"hdlr")[8..12] == b"soun"
+            } else {
+                audio
+            };
+            let mut body = if [b"moov", b"trak", b"mdia", b"minf", b"stbl", b"edts"]
+                .iter()
+                .any(|tag| kind == *tag)
+            {
+                rewrite(payload, audio)
+            } else {
+                payload.to_vec()
+            };
+            if kind == b"elst" && audio {
+                assert_eq!(number(&body), 0); // Version 0.
+                assert_eq!(number(&body[4..]), 1); // One edit.
+                assert_eq!(number(&body[12..]), 1024);
+                body[12..16].copy_from_slice(&543_u32.to_be_bytes());
+            }
+            if kind == b"stco" {
+                let count = usize::try_from(number(&body[4..])).unwrap();
+                assert_eq!(body.len(), 8 + 4 * count);
+                for offset in body[8..].chunks_exact_mut(4) {
+                    offset.copy_from_slice(&number(offset).checked_add(24).unwrap().to_be_bytes());
+                }
+            }
+            if kind == b"stbl" && audio {
+                assert!(!boxes(payload).any(|(tag, _)| tag == b"ctts"));
+                assert_eq!(number(&child(payload, b"stsz")[8..]), 189);
+                body.extend_from_slice(&24_u32.to_be_bytes());
+                body.extend_from_slice(b"ctts");
+                for value in [
+                    0x0100_0000,
+                    1,
+                    189,
+                    u32::from_be_bytes((-481_i32).to_be_bytes()),
+                ] {
+                    body.extend_from_slice(&value.to_be_bytes());
+                }
+            }
+            result.extend_from_slice(&u32::try_from(body.len() + 8).unwrap().to_be_bytes());
+            result.extend_from_slice(kind);
+            result.extend_from_slice(&body);
+        }
+        result
+    }
+    let original = include_bytes!("/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4");
+    // The growing moov precedes every media chunk, so both tracks' stco entries
+    // move by the added 24-byte ctts box. Nothing inside mdat changes.
+    let kinds: Vec<_> = boxes(original).map(|(kind, _)| kind).collect();
+    assert_eq!(kinds, [b"ftyp", b"moov", b"free", b"mdat"]);
+    rewrite(original, false)
+}
+
+fn main() { std::fs::write("/tmp/deadpan-word-refinement-2026-10-25/negative-fixture/rust-helper.mp4", negative_aac_container()).unwrap(); }

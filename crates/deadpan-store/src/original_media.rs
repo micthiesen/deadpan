@@ -312,6 +312,33 @@ impl VerifiedOriginalObject {
         self,
         identity: deadpan_media::source_index::SourceContentIdentity,
     ) -> Result<deadpan_media::source_input::VerifiedSourceInput, StoreError> {
+        self.into_source_input_controlled(identity, None)
+    }
+
+    /// Adopt these verified bytes while retaining a caller's cancellation and
+    /// absolute deadline through debug-only verification as well.
+    pub fn into_source_input_with_deadline(
+        self,
+        identity: deadpan_media::source_index::SourceContentIdentity,
+        deadline: Instant,
+        cancelled: &AtomicBool,
+    ) -> Result<deadpan_media::source_input::VerifiedSourceInput, StoreError> {
+        self.into_source_input_controlled(identity, Some((deadline, cancelled)))
+    }
+
+    fn into_source_input_controlled(
+        self,
+        identity: deadpan_media::source_index::SourceContentIdentity,
+        control: Option<(Instant, &AtomicBool)>,
+    ) -> Result<deadpan_media::source_input::VerifiedSourceInput, StoreError> {
+        if let Some((deadline, cancelled)) = control {
+            if cancelled.load(Ordering::Acquire) {
+                return Err(OriginalMediaError::Cancelled.into());
+            }
+            if Instant::now() >= deadline {
+                return Err(OriginalMediaError::Deadline.into());
+            }
+        }
         if identity.sha256() != self.record.sha256
             || identity.byte_length() != self.record.object.byte_length()
         {
@@ -322,10 +349,23 @@ impl VerifiedOriginalObject {
             SnapshotBytes::Linked(file) => file,
         };
         file.seek(SeekFrom::Start(0))?;
-        deadpan_media::source_input::VerifiedSourceInput::from_store_verified_snapshot(
-            file, identity,
-        )
-        .map_err(|_| OriginalMediaError::IdentityMismatch.into())
+        use deadpan_media::source_input::{SourceInputError, VerifiedSourceInput};
+        let input = if let Some((deadline, cancelled)) = control {
+            VerifiedSourceInput::from_store_verified_snapshot_with_deadline(
+                file, identity, deadline, cancelled,
+            )
+        } else {
+            VerifiedSourceInput::from_store_verified_snapshot(file, identity)
+        };
+        input.map_err(|error| match error {
+            SourceInputError::Snapshot(deadpan_media::ConversionError::Cancelled) => {
+                OriginalMediaError::Cancelled.into()
+            }
+            SourceInputError::Snapshot(deadpan_media::ConversionError::Deadline) => {
+                OriginalMediaError::Deadline.into()
+            }
+            _ => OriginalMediaError::IdentityMismatch.into(),
+        })
     }
 }
 impl Read for VerifiedOriginalObject {

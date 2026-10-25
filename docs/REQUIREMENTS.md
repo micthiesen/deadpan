@@ -19,6 +19,27 @@ shows the scored requirement ledger and gates. Future percentages are computed
 from criterion evidence rather than manually carried forward. Earlier 89%
 statements below describe their historical reporting state.
 
+## Original analysis windows, 2026-10-25
+
+[Exact analysis-window preparation](qualification/analysis-windows-2026-10-25.md)
+retains the full Original analysis origin and separate exact sample offset,
+reuses the canonical global-phase resampler and adopts the verified source
+snapshot. Invalid or excessive windows refuse before source access. A retained
+session reuses its audio cache; initial cache opening still decodes the complete
+stream and is not described as selected-range decoding. Debug snapshot hashing
+now observes cancellation and the deadline between chunks.
+
+Four actual CLI transcription tests pass over 44.1/48 kHz, zero/positive/negative
+origins, fractional and terminal windows, preflight failures and retained-cache
+reuse. The new adoption interruption regression, strict CLI/Media/Store
+all-target checks and formatting pass. The original invalid-fixture and lint
+failures remain explicit in the 182-file evidence collection. This is a tested
+foundation, not completed word refinement: DP-10.3 remains unimplemented until
+real worker/model proposals and explicit native/headless correction acceptance
+are integrated. Separate model qualification records timing improvements and
+failed ambiguity/precision experiments without calling them passed. Coverage
+remains about 83%; no requirement or gate closes.
+
 ## Framing ranges inside Repeat plays, 2026-10-25
 
 [Scoped framing ranges](qualification/scoped-framing-ranges-2026-10-25.md)

@@ -1,0 +1,9 @@
+
+running 4 tests
+test local_window_preflight_refuses_before_source_reads_and_retained_windows_reuse_the_cache ... ok
+test transcript_commands_report_absence_usage_and_unavailable_sources ... ok
+test registered_audio_becomes_exact_length_mono_analysis_pcm ... ok
+test selected_analysis_windows_match_full_pcm_bits_on_the_global_phase_grid ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.06s
+

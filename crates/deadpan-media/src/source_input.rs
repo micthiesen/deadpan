@@ -92,6 +92,28 @@ impl VerifiedSourceInput {
         file: File,
         identity: SourceContentIdentity,
     ) -> Result<Self, SourceInputError> {
+        Self::adopt_store_snapshot(file, identity, || Ok(()))
+    }
+
+    /// The same store-only adoption contract, with cooperative cancellation
+    /// and an absolute deadline, including debug verification between chunks.
+    #[doc(hidden)]
+    pub fn from_store_verified_snapshot_with_deadline(
+        file: File,
+        identity: SourceContentIdentity,
+        end: Instant,
+        cancelled: &AtomicBool,
+    ) -> Result<Self, SourceInputError> {
+        let deadline = Deadline { end, cancelled };
+        Self::adopt_store_snapshot(file, identity, || deadline.check())
+    }
+
+    fn adopt_store_snapshot(
+        file: File,
+        identity: SourceContentIdentity,
+        mut check: impl FnMut() -> Result<(), ConversionError>,
+    ) -> Result<Self, SourceInputError> {
+        check()?;
         let metadata = file
             .metadata()
             .map_err(|error| SourceInputError::Snapshot(error.into()))?;
@@ -106,6 +128,7 @@ impl VerifiedSourceInput {
             let mut buffer = vec![0_u8; 1 << 20];
             let mut offset = 0_u64;
             loop {
+                check()?;
                 let read = file
                     .read_at(&mut buffer, offset)
                     .map_err(|error| SourceInputError::Snapshot(error.into()))?;
@@ -121,6 +144,7 @@ impl VerifiedSourceInput {
                 "an adopted snapshot is not the verified bytes it claims"
             );
         }
+        check()?;
         Ok(Self {
             file: Arc::new(file),
             identity,
@@ -155,5 +179,48 @@ impl VerifiedSourceInput {
 
     pub(crate) fn decoder_file(&self) -> std::io::Result<File> {
         self.file.try_clone()
+    }
+}
+
+#[cfg(all(test, debug_assertions))]
+mod tests {
+    use super::*;
+    use sha2::{Digest, Sha256};
+    use std::io::Write;
+
+    #[test]
+    fn store_adoption_observes_control_between_debug_hash_chunks() {
+        let bytes = vec![73_u8; 2 << 20];
+        let identity = SourceContentIdentity::new(
+            Sha256::digest(&bytes).into(),
+            u64::try_from(bytes.len()).unwrap(),
+        )
+        .unwrap();
+        for deadline in [false, true] {
+            let mut file = tempfile::tempfile().unwrap();
+            file.write_all(&bytes).unwrap();
+            let mut checks = 0;
+            let result = VerifiedSourceInput::adopt_store_snapshot(file, identity, || {
+                checks += 1;
+                if checks == 3 {
+                    // Admission and the first hash chunk were allowed. A
+                    // newly cancelled/expired operation must stop before the
+                    // remaining bytes, rather than checking only at return.
+                    Err(if deadline {
+                        ConversionError::Deadline
+                    } else {
+                        ConversionError::Cancelled
+                    })
+                } else {
+                    Ok(())
+                }
+            });
+            assert_eq!(checks, 3);
+            match result {
+                Err(SourceInputError::Snapshot(ConversionError::Deadline)) => assert!(deadline),
+                Err(SourceInputError::Snapshot(ConversionError::Cancelled)) => assert!(!deadline),
+                _ => panic!("adoption did not stop during its debug hash"),
+            }
+        }
     }
 }

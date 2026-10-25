@@ -12,7 +12,37 @@ Eight requirements remain Complete, sixteen Partial; all seven gates stay open
 and picture effects remain five of thirteen. DP-12 behavior scores fully covered
 but strict closure needs reconciliation; runtime optimizations, bakeoff and
 performance remain owed under DP-24 and Gates A/E/G. This reporting correction
-is distinct from the scoped framing range implementation below.
+is distinct from the implementations below.
+
+[Original analysis windows](../qualification/analysis-windows-2026-10-25.md)
+are implemented and verified. The CLI's new retained session/window API keeps
+full analysis origin, exact sample offset, full extent and source identity;
+global resampling matches full PCM bit-for-bit. Thirty-second/invalid window
+preflight precedes source access. Initial audio-cache opening is still a full
+stream decode. Snapshot adoption now carries cancellation/deadline through its
+debug hash. Four real CLI tests, the new Media interruption unit, strict
+CLI/Media/Store all-target checks and formatting pass; independent review's
+debug-cancellation finding is fixed. Evidence retains the initial unsupported
+PCM MOV fixture failure, corrected admitted negative-PTS AAC fixture and the
+reversed-range lint failure. No new schema or full-app/release claim.
+
+Current work: integrate the real local word-refinement proposal workflow after
+backend qualification. Scratch /tmp/deadpan-word-refinement-2026-10-25 contains
+all real inference and failed experiments. Read the
+[qualification plan](../../tools/model-qualification/word-refinement/plan.md).
+DTW separator refinement fails held-out coverage. The 5M label-prior phoneme
+model materially improves timing and exports to ONNX, but its original and
+context-guard experiments fail their stricter numerical gates. Preserve those
+failures. Independent evaluation audit distinguishes them from the spec's
+explicit approximate annotation workflow; do not claim automatic precision or
+relabel either experiment as passed. Use the frozen guarded backend for the
+next production proposal integration, with visible approximation, audition,
+manual adjustment, explicit acceptance, pinned corrections/cuts and actual
+worker/app parity. Human phonetic acceptability belongs on the owner list under
+§29.1. Native inference/features, model/runtime packaging and integration are
+still owed; DP-10.3 remains unimplemented and coverage stays 83%.
+
+## Earlier scoped framing ranges, 2026-10-25
 
 Contained framing ranges inside an explicit This play at every enclosing Repeat
 are implemented. The shared decoder-free PictureOwnerMap proves the actual

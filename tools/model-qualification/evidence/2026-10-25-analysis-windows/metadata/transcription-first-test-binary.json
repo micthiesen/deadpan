@@ -1,0 +1,6 @@
+{
+  "source": "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/transcription-f038106c420d4913",
+  "bytes": 29723360,
+  "sha256": "b8e40f87781a1d08574876dd1e167fce6acc9dff9b5ddd5fdeb5972da5161a11",
+  "scope": "compiled first failed transcription test binary; earlier source80 receipt retains hashes, source body was not frozen before subsequent edits"
+}

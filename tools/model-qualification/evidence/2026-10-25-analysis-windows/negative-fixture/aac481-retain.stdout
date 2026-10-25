@@ -1,0 +1,54 @@
+{
+  "authored_asset_registered": false,
+  "protocol": 1,
+  "retained_original": {
+    "method": "cloned",
+    "record": {
+      "label": "negative-aac481.mp4",
+      "linked": null,
+      "managed": true,
+      "object": {
+        "byte_length": 39181,
+        "content": {
+          "algorithm": "blake3",
+          "digest": "1761b1e8495692272663def585c69c01b083a5c3ae52149168f4247137a265ea"
+        }
+      },
+      "sha256": [
+        249,
+        216,
+        75,
+        181,
+        240,
+        206,
+        253,
+        17,
+        54,
+        121,
+        22,
+        231,
+        136,
+        43,
+        17,
+        228,
+        88,
+        24,
+        53,
+        252,
+        18,
+        42,
+        13,
+        7,
+        184,
+        7,
+        222,
+        54,
+        149,
+        125,
+        83,
+        55
+      ],
+      "version": 1
+    }
+  }
+}

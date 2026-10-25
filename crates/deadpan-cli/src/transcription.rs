@@ -27,6 +27,12 @@ use sha2::Digest;
 const INPUT: &str = "input/analysis.f32";
 const OUTPUT_SCOPE: &str = "output";
 
+mod window;
+pub use window::{
+    MAX_ANALYSIS_WINDOW_FRAMES, OriginalAnalysisSession, OriginalAnalysisWindow,
+    open_original_analysis, prepare_original_audio_window,
+};
+
 /// Selected by the trusted application host, never by project data.
 #[derive(Debug, Clone)]
 pub struct TranscriptionRuntime {
@@ -452,9 +458,6 @@ pub struct OriginalAnalysis {
     pub audio_stream: u32,
 }
 
-/// Source frames read per decode; output blocks reuse this window.
-const SOURCE_CHUNK_FRAMES: u32 = 32_768;
-
 /// The qualification receipt of the audio to analyse: the single-Original
 /// project's Original by default, or an explicitly registered source.
 pub(crate) fn analysed_receipt(
@@ -493,160 +496,7 @@ pub fn prepare_original_audio(
     cancelled: &AtomicBool,
     deadline: Instant,
 ) -> Result<OriginalAnalysis, TranscriptionError> {
-    use deadpan_audio::{PcmWindow, ResampleRecipe, Resampler, StereoMatrix};
-    use deadpan_core::{AudioSample, ExactRatio};
-    use deadpan_media::audio_session::{AudioSession, AudioSessionLimits, SourceAudioSample};
-    use deadpan_store::original_media::OriginalMediaLimits;
-
-    let unavailable = |reason: String| TranscriptionError::Worker(reason);
-    let check = || -> Result<(), TranscriptionError> {
-        if cancelled.load(Ordering::Acquire) {
-            return Err(TranscriptionError::Cancelled);
-        }
-        if Instant::now() >= deadline {
-            return Err(TranscriptionError::Deadline);
-        }
-        Ok(())
-    };
-    let receipt = analysed_receipt(store, asset)?;
-    let expected = receipt
-        .snapshot()
-        .audio()
-        .ok_or(TranscriptionError::Configuration(
-            "the Original has no qualified audio",
-        ))?;
-    let stream = expected.stream().clone();
-    let bytes = expected
-        .decoded_samples()
-        .checked_mul(u64::from(stream.channel_layout.channels()))
-        .and_then(|samples| samples.checked_mul(4))
-        .ok_or(TranscriptionError::Configuration("Original audio size"))?;
-    let limits = AudioSessionLimits {
-        maximum_cache_bytes: bytes,
-        maximum_index_frames: expected.frames().len(),
-        ..AudioSessionLimits::default()
-    };
-    let remaining = deadline
-        .saturating_duration_since(Instant::now())
-        .min(Duration::from_secs(3_600));
-    check()?;
-    let mut original = store
-        .snapshot_original(
-            receipt.original().content(),
-            OriginalMediaLimits::new(limits.decode.max_input_bytes, remaining)
-                .map_err(|e| unavailable(e.to_string()))?,
-            cancelled,
-        )
-        .map_err(|e| unavailable(e.to_string()))?;
-    if original.record().object() != receipt.original() {
-        return Err(TranscriptionError::Protocol(
-            "retained Original differs from its receipt".into(),
-        ));
-    }
-    let session = AudioSession::open_verified(
-        &mut original,
-        expected.content(),
-        stream.stream_index,
-        limits,
-        cancelled,
-    )
-    .map_err(|e| unavailable(e.to_string()))?;
-    let frames = session.index().frames();
-    let (Some(first), Some(last)) = (frames.first(), frames.last()) else {
-        return Err(TranscriptionError::Configuration(
-            "the Original audio is empty",
-        ));
-    };
-    let (valid_start, valid_end) = (first.valid_start, last.valid_end);
-    let rate = stream.sample_rate;
-    let source_frames = valid_end
-        .checked_sub(valid_start)
-        .filter(|frames| *frames > 0)
-        .ok_or(TranscriptionError::Configuration(
-            "the Original audio is empty",
-        ))?;
-    let output_frames = i64::try_from(
-        i128::from(source_frames) * i128::from(ANALYSIS_SAMPLE_RATE) / i128::from(rate),
-    )
-    .map_err(|_| TranscriptionError::Configuration("analysis length"))?;
-    if output_frames <= 0 || output_frames as u64 > transcription::MAX_ANALYSIS_FRAMES {
-        return Err(TranscriptionError::Configuration(
-            "the Original audio is empty or longer than the analysis bound",
-        ));
-    }
-    let recipe = ResampleRecipe::new(
-        valid_start..valid_end,
-        ExactRatio::integer(valid_start),
-        AudioSample(0),
-        ExactRatio::new(i128::from(rate), i128::from(ANALYSIS_SAMPLE_RATE))
-            .map_err(|_| TranscriptionError::Configuration("source rate"))?,
-        AudioSample(0)..AudioSample(output_frames),
-    )
-    .map_err(|e| unavailable(e.to_string()))?;
-    let resampler = Resampler::new(
-        recipe,
-        StereoMatrix::new(stream.channel_layout).map_err(|e| unavailable(e.to_string()))?,
-    );
-    let channels = stream.channel_layout.channels() as usize;
-    let mut buffer_start = valid_start;
-    let mut buffer: Vec<f32> = Vec::new();
-    let mut samples = Vec::with_capacity(output_frames as usize);
-    let block = i64::from(deadpan_audio::MAX_OUTPUT_FRAMES);
-    let mut start = 0_i64;
-    while start < output_frames {
-        check()?;
-        let count = (output_frames - start).min(block) as u32;
-        let required = resampler
-            .required_source_range(AudioSample(start), count)
-            .map_err(|e| unavailable(e.to_string()))?;
-        let window = match required {
-            None => None,
-            Some(required) => {
-                let buffer_end = buffer_start + (buffer.len() / channels) as i64;
-                if required.start < buffer_start || required.end > buffer_end {
-                    let length = (valid_end - required.start)
-                        .min(i64::from(SOURCE_CHUNK_FRAMES))
-                        .max(required.end - required.start);
-                    let read = session
-                        .read_samples(
-                            SourceAudioSample(required.start),
-                            u32::try_from(length)
-                                .map_err(|_| TranscriptionError::Configuration("read size"))?,
-                            Duration::from_secs(30),
-                            cancelled,
-                        )
-                        .map_err(|e| unavailable(e.to_string()))?;
-                    buffer_start = read.start.0;
-                    buffer = read.samples;
-                }
-                let offset = (required.start - buffer_start) as usize * channels;
-                let length = (required.end - required.start) as usize * channels;
-                Some(PcmWindow {
-                    start: required.start,
-                    samples: buffer[offset..offset + length].to_vec(),
-                })
-            }
-        };
-        let rendered = resampler
-            .render(AudioSample(start), count, window, cancelled)
-            .map_err(|e| unavailable(e.to_string()))?;
-        samples.extend(
-            rendered
-                .samples
-                .iter()
-                .map(|[left, right]| (left + right) * 0.5),
-        );
-        start += i64::from(count);
-    }
-    Ok(OriginalAnalysis {
-        input: AnalysisInput {
-            samples,
-            origin: valid_start,
-            source_rate: rate,
-        },
-        content: receipt.original().content().to_string(),
-        audio_stream: stream.stream_index,
-    })
+    window::prepare_full(store, asset, cancelled, deadline)
 }
 
 fn hex(bytes: &[u8]) -> String {

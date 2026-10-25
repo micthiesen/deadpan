@@ -1,0 +1,592 @@
+//! Word-timed transcripts of the Original's audio.
+//!
+//! The recognizer analyses mono 16 kHz PCM that begins at a known Original
+//! audio sample and reports token bounds in centiseconds. Because both clocks
+//! are exact, a centisecond `t` maps to Original audio sample
+//! `origin + t · rate / 100` without rounding. Recognizer timing itself is
+//! approximate (whisper.cpp calls word timestamps experimental), so every word
+//! keeps its probability and callers show uncertain words as approximate.
+
+use std::ops::Range;
+
+use deadpan_core::{ExactRatio, SourceFrameIndex, TimeError};
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
+
+/// Analysis sample rate the recognizer consumes.
+pub const ANALYSIS_SAMPLE_RATE: u32 = 16_000;
+pub const MAX_SEGMENTS: usize = 50_000;
+pub const MAX_TOKENS_PER_SEGMENT: usize = 1_024;
+pub const MAX_WORDS: usize = 250_000;
+pub const MAX_WORD_BYTES: usize = 256;
+pub const MAX_QUERY_WORDS: usize = 32;
+/// Words heard with lower probability are presented as approximate.
+pub const APPROXIMATE_BELOW: f32 = 0.6;
+/// Longest passage that can be recognized again on its own (20 minutes).
+pub const MAX_AGAIN_CS: u32 = 20 * 60 * 100;
+/// Most passages recognized again in one transcript.
+pub const MAX_AGAIN_PASSAGES: usize = 1_024;
+/// Leading words of a second pass compared with the words before it.
+pub const REPEAT_PROBE_WORDS: usize = 4;
+/// Words before a passage searched for those leading words.
+pub const REPEAT_PROBE_WINDOW: usize = 64;
+
+#[derive(Debug, Error, PartialEq)]
+pub enum TranscriptError {
+    #[error("transcript exceeds its {0} limit")]
+    Limit(&'static str),
+    #[error("transcript timing is invalid: {0}")]
+    Timing(&'static str),
+    #[error("transcript text is invalid: {0}")]
+    Text(&'static str),
+    #[error("transcript probability is invalid")]
+    Probability,
+    #[error(transparent)]
+    Time(#[from] TimeError),
+}
+
+/// One recognizer token, with bounds relative to the analysed PCM start.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RawToken {
+    pub text: String,
+    pub t0: i64,
+    pub t1: i64,
+    pub p: f32,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RawSegment {
+    pub t0: i64,
+    pub t1: i64,
+    pub tokens: Vec<RawToken>,
+}
+
+/// The Original audio the analysis PCM covers.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AnalysedAudio {
+    /// Original audio sample at which the analysis PCM begins.
+    pub origin: i64,
+    /// The Original audio stream's sample rate.
+    pub sample_rate: u32,
+    /// Analysis PCM length in centiseconds; no word may end after it.
+    pub duration_cs: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Word {
+    /// Display text with its attached punctuation.
+    pub text: String,
+    /// Half-open centisecond bounds relative to the analysis PCM start.
+    pub start_cs: u32,
+    pub end_cs: u32,
+    /// Lowest token probability in the word.
+    pub probability: f32,
+    /// Recognizer segment, a sentence-like unit.
+    pub segment: u32,
+}
+
+impl Word {
+    pub fn approximate(&self) -> bool {
+        self.probability < APPROXIMATE_BELOW
+    }
+
+    /// Lowercase letters, digits and inner apostrophes, used for search.
+    pub fn normalized(&self) -> String {
+        normalize(&self.text)
+    }
+}
+
+/// A passage the recognizer was run on again by itself, after the
+/// [recognition check](crate::check_recognition) flagged it. Its words came
+/// from that second pass; every other word came from the whole-file pass.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RecognizedAgain {
+    /// Half-open centisecond bounds relative to the analysis PCM start.
+    pub start_cs: u32,
+    pub end_cs: u32,
+}
+
+impl RecognizedAgain {
+    pub fn overlaps(&self, start_cs: u32, end_cs: u32) -> bool {
+        self.start_cs < end_cs && start_cs < self.end_cs
+    }
+}
+
+/// A validated transcript. Construction checks every bound, so stored values
+/// can be trusted by display, search and timing conversion.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(try_from = "TranscriptRecord", into = "TranscriptRecord")]
+pub struct Transcript {
+    audio: AnalysedAudio,
+    words: Vec<Word>,
+    again: Vec<RecognizedAgain>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TranscriptRecord {
+    audio: AnalysedAudio,
+    words: Vec<Word>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    recognized_again: Vec<RecognizedAgain>,
+}
+
+impl TryFrom<TranscriptRecord> for Transcript {
+    type Error = TranscriptError;
+
+    fn try_from(record: TranscriptRecord) -> Result<Self, Self::Error> {
+        Self::new(record.audio, record.words)?.with_recognized_again(record.recognized_again)
+    }
+}
+
+impl From<Transcript> for TranscriptRecord {
+    fn from(transcript: Transcript) -> Self {
+        Self {
+            audio: transcript.audio,
+            words: transcript.words,
+            recognized_again: transcript.again,
+        }
+    }
+}
+
+impl Transcript {
+    pub fn new(audio: AnalysedAudio, words: Vec<Word>) -> Result<Self, TranscriptError> {
+        if audio.sample_rate == 0 {
+            return Err(TranscriptError::Timing("zero sample rate"));
+        }
+        if words.len() > MAX_WORDS {
+            return Err(TranscriptError::Limit("word count"));
+        }
+        let mut previous: Option<&Word> = None;
+        for word in &words {
+            if word.text.trim().is_empty() || word.text.len() > MAX_WORD_BYTES {
+                return Err(TranscriptError::Text("empty or oversized word"));
+            }
+            if word.text.chars().any(char::is_control) {
+                return Err(TranscriptError::Text("control character"));
+            }
+            if !(0.0..=1.0).contains(&word.probability) {
+                return Err(TranscriptError::Probability);
+            }
+            if word.start_cs > word.end_cs || word.end_cs > audio.duration_cs {
+                return Err(TranscriptError::Timing("word outside the analysed audio"));
+            }
+            if let Some(previous) = previous
+                && (word.start_cs < previous.start_cs || word.segment < previous.segment)
+            {
+                return Err(TranscriptError::Timing("words out of order"));
+            }
+            previous = Some(word);
+        }
+        Ok(Self {
+            audio,
+            words,
+            again: Vec::new(),
+        })
+    }
+
+    /// Record the passages whose words came from recognizing them again.
+    /// They must lie in the audio, in order and without overlap.
+    pub fn with_recognized_again(
+        mut self,
+        again: Vec<RecognizedAgain>,
+    ) -> Result<Self, TranscriptError> {
+        if again.len() > MAX_AGAIN_PASSAGES {
+            return Err(TranscriptError::Limit("passages recognized again"));
+        }
+        let mut end = 0;
+        for passage in &again {
+            if passage.start_cs < end
+                || passage.end_cs <= passage.start_cs
+                || passage.end_cs > self.audio.duration_cs
+            {
+                return Err(TranscriptError::Timing(
+                    "passages recognized again are out of order or outside the audio",
+                ));
+            }
+            end = passage.end_cs;
+        }
+        self.again = again;
+        Ok(self)
+    }
+
+    /// Passages whose words came from recognizing them again, in order.
+    pub fn recognized_again(&self) -> &[RecognizedAgain] {
+        &self.again
+    }
+
+    /// Whether a second pass over audio beginning at `start_cs` starts by
+    /// repeating words this transcript already has just before that point:
+    /// its first [`REPEAT_PROBE_WORDS`] words occur in order among the last
+    /// [`REPEAT_PROBE_WINDOW`] words before it. The recognizer then timed
+    /// those earlier words too early rather than missing the passage's
+    /// speech, and merging would duplicate them.
+    pub fn repeats_before(&self, start_cs: u32, pass: &Transcript) -> bool {
+        let probe: Vec<String> = pass
+            .words
+            .iter()
+            .map(Word::normalized)
+            .filter(|text| !text.is_empty())
+            .take(REPEAT_PROBE_WORDS)
+            .collect();
+        if probe.len() < REPEAT_PROBE_WORDS {
+            return false;
+        }
+        let before = self.words.partition_point(|word| word.start_cs < start_cs);
+        let earlier: Vec<String> = self.words[before.saturating_sub(REPEAT_PROBE_WINDOW)..before]
+            .iter()
+            .map(Word::normalized)
+            .filter(|text| !text.is_empty())
+            .collect();
+        earlier
+            .windows(probe.len())
+            .any(|window| window == probe.as_slice())
+    }
+
+    /// Where the recognizer sentence holding the last word before
+    /// `start_cs` begins, when that is earlier than `start_cs`.
+    pub fn sentence_start_before(&self, start_cs: u32) -> Option<u32> {
+        let before = self.words.partition_point(|word| word.start_cs < start_cs);
+        let last = self.words.get(before.checked_sub(1)?)?;
+        let first = self
+            .words
+            .partition_point(|word| word.segment < last.segment);
+        Some(self.words[first].start_cs).filter(|start| *start < start_cs)
+    }
+
+    /// Replace the words of one passage with those of a second recognizer
+    /// pass over just that passage. `pass` analysed exactly the passage's
+    /// PCM, so its bounds are relative to the passage start. Words beginning
+    /// in the passage are replaced; all other words are kept unchanged.
+    /// Sentences are renumbered in order. A passage is recognized again at
+    /// most once, which bounds repeated attempts.
+    pub fn recognize_again(
+        &self,
+        passage: RecognizedAgain,
+        pass: &Transcript,
+    ) -> Result<Self, TranscriptError> {
+        if passage.end_cs <= passage.start_cs || passage.end_cs > self.audio.duration_cs {
+            return Err(TranscriptError::Timing(
+                "passage outside the analysed audio",
+            ));
+        }
+        if passage.end_cs - passage.start_cs > MAX_AGAIN_CS {
+            return Err(TranscriptError::Limit("passage length"));
+        }
+        if self
+            .again
+            .iter()
+            .any(|done| done.overlaps(passage.start_cs, passage.end_cs))
+        {
+            return Err(TranscriptError::Timing(
+                "this passage has already been recognized again",
+            ));
+        }
+        if pass.audio.duration_cs != passage.end_cs - passage.start_cs
+            || pass.audio.sample_rate != self.audio.sample_rate
+        {
+            return Err(TranscriptError::Timing(
+                "the second pass did not analyse exactly this passage",
+            ));
+        }
+        let inside = |word: &Word| (passage.start_cs..passage.end_cs).contains(&word.start_cs);
+        let before = self
+            .words
+            .iter()
+            .take_while(|word| word.start_cs < passage.start_cs);
+        let after = self
+            .words
+            .iter()
+            .skip_while(|word| word.start_cs < passage.start_cs);
+        let after = after.skip_while(|word| inside(word));
+        let shifted = pass.words.iter().map(|word| Word {
+            start_cs: word.start_cs + passage.start_cs,
+            end_cs: word.end_cs + passage.start_cs,
+            segment: word.segment,
+            ..word.clone()
+        });
+        // Renumber sentences in order: (source, segment) pairs become
+        // consecutive indices.
+        let mut words = Vec::with_capacity(self.words.len());
+        let mut last: Option<(u8, u32)> = None;
+        let mut segment = 0_u32;
+        let sources = before
+            .cloned()
+            .map(|word| (0_u8, word))
+            .chain(shifted.map(|word| (1_u8, word)))
+            .chain(after.cloned().map(|word| (2_u8, word)));
+        for (source, mut word) in sources {
+            let identity = (source, word.segment);
+            if let Some(previous) = last
+                && previous != identity
+            {
+                segment = segment
+                    .checked_add(1)
+                    .ok_or(TranscriptError::Limit("segment count"))?;
+            }
+            last = Some(identity);
+            word.segment = segment;
+            words.push(word);
+        }
+        let mut again = self.again.clone();
+        let position = again.partition_point(|done| done.end_cs <= passage.start_cs);
+        again.insert(position, passage);
+        Self::new(self.audio, words)?.with_recognized_again(again)
+    }
+
+    /// Build words from recognizer segments. Special tokens are dropped, a
+    /// token starting with a space begins a word, and other tokens (subword
+    /// pieces, punctuation) extend the current word. Bounds are clamped into
+    /// their segment and kept monotonic, so the result always validates.
+    pub fn from_segments(
+        audio: AnalysedAudio,
+        segments: &[RawSegment],
+    ) -> Result<Self, TranscriptError> {
+        if segments.len() > MAX_SEGMENTS {
+            return Err(TranscriptError::Limit("segment count"));
+        }
+        let duration = i64::from(audio.duration_cs);
+        let mut words: Vec<Word> = Vec::new();
+        let mut floor = 0_i64;
+        for (index, segment) in segments.iter().enumerate() {
+            if segment.tokens.len() > MAX_TOKENS_PER_SEGMENT {
+                return Err(TranscriptError::Limit("tokens per segment"));
+            }
+            let segment_start = segment.t0.clamp(floor, duration);
+            let segment_end = segment.t1.clamp(segment_start, duration);
+            let segment_index =
+                u32::try_from(index).map_err(|_| TranscriptError::Limit("segment count"))?;
+            let mut current: Option<Word> = None;
+            for token in &segment.tokens {
+                if token.text.starts_with("[_") || token.text.trim().is_empty() {
+                    continue;
+                }
+                if !token.p.is_finite() || !(0.0..=1.0).contains(&token.p) {
+                    return Err(TranscriptError::Probability);
+                }
+                let start = token.t0.clamp(segment_start, segment_end);
+                let end = token.t1.clamp(start, segment_end);
+                let punctuation = token.text.trim().chars().all(|c| !c.is_alphanumeric());
+                if punctuation && current.is_none() {
+                    // Leading punctuation belongs to the previous word, if any.
+                    if let Some(previous) = words.last_mut()
+                        && previous.text.len() + token.text.trim().len() <= MAX_WORD_BYTES
+                    {
+                        previous.text.push_str(token.text.trim());
+                    }
+                    continue;
+                }
+                let starts_word = token.text.starts_with(' ') || current.is_none();
+                if starts_word && !(punctuation && current.is_some()) {
+                    if let Some(word) = current.take() {
+                        floor = i64::from(word.end_cs).max(floor);
+                        words.push(word);
+                    }
+                    let start = start.max(floor);
+                    current = Some(Word {
+                        text: token.text.trim_start().to_owned(),
+                        start_cs: centiseconds(start)?,
+                        end_cs: centiseconds(end.max(start))?,
+                        probability: token.p,
+                        segment: segment_index,
+                    });
+                } else if let Some(word) = current.as_mut() {
+                    word.text.push_str(token.text.trim_start());
+                    if !punctuation {
+                        word.end_cs = word.end_cs.max(centiseconds(end)?);
+                        word.probability = word.probability.min(token.p);
+                    }
+                }
+                if current
+                    .as_ref()
+                    .is_some_and(|word| word.text.len() > MAX_WORD_BYTES)
+                {
+                    return Err(TranscriptError::Limit("word length"));
+                }
+            }
+            if let Some(word) = current.take() {
+                floor = i64::from(word.end_cs).max(floor);
+                words.push(word);
+            }
+            if words.len() > MAX_WORDS {
+                return Err(TranscriptError::Limit("word count"));
+            }
+        }
+        Self::new(audio, words)
+    }
+
+    pub fn audio(&self) -> AnalysedAudio {
+        self.audio
+    }
+
+    pub fn words(&self) -> &[Word] {
+        &self.words
+    }
+
+    /// The exact Original audio sample position of an analysis time.
+    pub fn original_sample(&self, centiseconds: u32) -> Result<ExactRatio, TranscriptError> {
+        let offset = ExactRatio::new(
+            i128::from(centiseconds) * i128::from(self.audio.sample_rate),
+            100,
+        )?;
+        Ok(ExactRatio::new(i128::from(self.audio.origin), 1)?.checked_add(offset)?)
+    }
+
+    /// Container time in seconds of an analysis time. Original audio sample
+    /// positions are PTS converted to samples, so this is `sample / rate`.
+    pub fn seconds(&self, centiseconds: u32) -> Result<ExactRatio, TranscriptError> {
+        Ok(self
+            .original_sample(centiseconds)?
+            .checked_div(ExactRatio::new(i128::from(self.audio.sample_rate), 1)?)?)
+    }
+
+    /// The analysis time of a container time, if it lies in the analysed audio.
+    pub fn centiseconds_at(&self, seconds: ExactRatio) -> Option<u32> {
+        let origin = ExactRatio::new(
+            i128::from(self.audio.origin),
+            i128::from(self.audio.sample_rate),
+        )
+        .ok()?;
+        let offset = seconds
+            .checked_sub(origin)
+            .ok()?
+            .checked_mul(ExactRatio::new(100, 1).ok()?)
+            .ok()?
+            .floor();
+        u32::try_from(offset)
+            .ok()
+            .filter(|centiseconds| *centiseconds < self.audio.duration_cs)
+    }
+
+    /// The word heard at an analysis time, if any.
+    pub fn word_at(&self, centiseconds: u32) -> Option<usize> {
+        let index = self
+            .words
+            .partition_point(|word| word.start_cs <= centiseconds);
+        index
+            .checked_sub(1)
+            .filter(|index| centiseconds < self.words[*index].end_cs)
+    }
+
+    /// Word ranges whose normalized text matches the query's words in order.
+    /// The last query word matches as a prefix, so results update while typing.
+    pub fn search(&self, query: &str) -> Vec<Range<usize>> {
+        let terms: Vec<String> = query
+            .split_whitespace()
+            .map(normalize)
+            .filter(|term| !term.is_empty())
+            .take(MAX_QUERY_WORDS)
+            .collect();
+        let Some((last, rest)) = terms.split_last() else {
+            return Vec::new();
+        };
+        let normalized: Vec<String> = self.words.iter().map(Word::normalized).collect();
+        (0..normalized.len().saturating_sub(terms.len() - 1))
+            .filter(|start| {
+                rest.iter()
+                    .enumerate()
+                    .all(|(offset, term)| normalized[start + offset] == *term)
+                    && normalized[start + rest.len()].starts_with(last.as_str())
+            })
+            .map(|start| start..start + terms.len())
+            .collect()
+    }
+
+    /// Editing search refuses truncated queries or partial result lists. Display
+    /// search above keeps its historical typing behavior; authored selectors use
+    /// this bounded form so an exhausted budget cannot change their meaning.
+    pub fn search_for_selection(
+        &self,
+        query: &str,
+        max_matches: usize,
+    ) -> Result<Vec<Range<usize>>, TranscriptError> {
+        if query.len() > 4096 {
+            return Err(TranscriptError::Limit("search query bytes"));
+        }
+        let mut terms = Vec::new();
+        for term in query
+            .split_whitespace()
+            .map(normalize)
+            .filter(|term| !term.is_empty())
+        {
+            if terms.len() == MAX_QUERY_WORDS {
+                return Err(TranscriptError::Limit("search query words"));
+            }
+            terms.push(term);
+        }
+        let Some((last, rest)) = terms.split_last() else {
+            return Err(TranscriptError::Text("search needs a word"));
+        };
+        let normalized: Vec<String> = self.words.iter().map(Word::normalized).collect();
+        let mut matches = Vec::new();
+        for start in 0..normalized.len().saturating_sub(terms.len() - 1) {
+            if rest
+                .iter()
+                .enumerate()
+                .all(|(offset, term)| normalized[start + offset] == *term)
+                && normalized[start + rest.len()].starts_with(last.as_str())
+            {
+                if matches.len() == max_matches {
+                    return Err(TranscriptError::Limit("search matches"));
+                }
+                matches.push(start..start + terms.len());
+            }
+        }
+        Ok(matches)
+    }
+}
+
+/// The picture shown at a container time: the last frame whose presentation
+/// timestamp is at or before it, within the measured terminal endpoint.
+pub fn picture_at(index: &SourceFrameIndex, seconds: ExactRatio) -> Option<usize> {
+    let base = index.time_base();
+    // pts · num / den <= seconds  ⇔  pts · num · s_den <= s_num · den
+    let at_or_before = |pts: i64| {
+        i128::from(pts)
+            .checked_mul(i128::from(base.numerator()))
+            .and_then(|value| value.checked_mul(seconds.denominator()))
+            .zip(
+                seconds
+                    .numerator()
+                    .checked_mul(i128::from(base.denominator())),
+            )
+            .is_some_and(|(left, right)| left <= right)
+    };
+    let frames = index.frames();
+    let count = frames.partition_point(|frame| at_or_before(frame.pts));
+    let candidate = count.checked_sub(1)?;
+    (!at_or_before(index.terminal_end())).then_some(candidate)
+}
+
+/// The container time at which a picture begins.
+pub fn picture_seconds(index: &SourceFrameIndex, frame: usize) -> Option<ExactRatio> {
+    let base = index.time_base();
+    let pts = index.frames().get(frame)?.pts;
+    ExactRatio::new(
+        i128::from(pts) * i128::from(base.numerator()),
+        i128::from(base.denominator()),
+    )
+    .ok()
+}
+
+fn centiseconds(value: i64) -> Result<u32, TranscriptError> {
+    u32::try_from(value).map_err(|_| TranscriptError::Timing("centisecond bound"))
+}
+
+fn normalize(text: &str) -> String {
+    let lower = text.to_lowercase();
+    let kept: String = lower
+        .chars()
+        .filter(|c| c.is_alphanumeric() || matches!(c, '\'' | '’'))
+        .map(|c| if c == '’' { '\'' } else { c })
+        .collect();
+    kept.trim_matches('\'').to_owned()
+}
+
+#[cfg(test)]
+mod tests;

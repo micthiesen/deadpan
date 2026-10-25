@@ -1,0 +1,213 @@
+{
+  "committed": true,
+  "outcome": {
+    "asset_id": "speech",
+    "commit": {
+      "edit": {
+        "changed_ids": [
+          "a0a50604-1f47-4b93-b567-dd7275e87ec8",
+          "speech-source"
+        ],
+        "description": "Import source media",
+        "duration_delta": 121,
+        "forward": {
+          "assets": {
+            "speech": {
+              "after": {
+                "audio": {
+                  "end": {
+                    "ticks": 192254,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  },
+                  "start": {
+                    "ticks": -481,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  }
+                },
+                "content_hash": "blake3:1761b1e8495692272663def585c69c01b083a5c3ae52149168f4247137a265ea",
+                "frame_count": 120,
+                "label": "Speech",
+                "source_qualification": "bf1661c03bb0e5c29e38397bc5137ad692dbb8d675cda042ce23d9ea7a5503d0",
+                "still_image": false,
+                "video": {
+                  "end": {
+                    "ticks": 120120,
+                    "time_base": {
+                      "denominator": 30000,
+                      "numerator": 1
+                    }
+                  },
+                  "start": {
+                    "ticks": 0,
+                    "time_base": {
+                      "denominator": 30000,
+                      "numerator": 1
+                    }
+                  }
+                }
+              },
+              "before": null
+            }
+          },
+          "from_revision": "7c94a203-ece2-43b4-971f-521dffdbc30e",
+          "marks": {},
+          "nodes": {
+            "a0a50604-1f47-4b93-b567-dd7275e87ec8": {
+              "after": {
+                "kind": {
+                  "children": [
+                    "speech-source"
+                  ],
+                  "type": "sequence"
+                },
+                "label": "Sequence"
+              },
+              "before": {
+                "kind": {
+                  "children": [],
+                  "type": "sequence"
+                },
+                "label": "Sequence"
+              }
+            },
+            "speech-source": {
+              "after": {
+                "kind": {
+                  "source": {
+                    "audio": {
+                      "asset": "speech",
+                      "span": {
+                        "end": {
+                          "ticks": 192254,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        },
+                        "start": {
+                          "ticks": -481,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        }
+                      }
+                    },
+                    "audio_mapping": {
+                      "frames": {
+                        "denominator": "8008",
+                        "numerator": "963675"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      },
+                      "type": "placement"
+                    },
+                    "audio_offset": 0,
+                    "duration": 121,
+                    "edit_window": {
+                      "end": {
+                        "denominator": "8008",
+                        "numerator": "963675"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      }
+                    },
+                    "link": "linked",
+                    "video": {
+                      "asset": "speech",
+                      "span": {
+                        "end": {
+                          "ticks": 120120,
+                          "time_base": {
+                            "denominator": 30000,
+                            "numerator": 1
+                          }
+                        },
+                        "start": {
+                          "ticks": 0,
+                          "time_base": {
+                            "denominator": 30000,
+                            "numerator": 1
+                          }
+                        }
+                      },
+                      "type": "stream"
+                    },
+                    "video_mapping": {
+                      "endpoints": "hold_adjacent",
+                      "frames": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "616",
+                        "numerator": "185"
+                      },
+                      "type": "placement"
+                    }
+                  },
+                  "type": "source"
+                },
+                "label": "Speech"
+              },
+              "before": null
+            }
+          },
+          "overrides": {},
+          "presentation": {
+            "after": {
+              "basis": {
+                "color_policy": "sdr_rec709",
+                "frame_rate": {
+                  "denominator": 1001,
+                  "numerator": 30000
+                },
+                "height": 180,
+                "width": 320
+              },
+              "state": {
+                "geometry_origin": "explicit",
+                "primary": {
+                  "asset": "speech",
+                  "qualification": "bf1661c03bb0e5c29e38397bc5137ad692dbb8d675cda042ce23d9ea7a5503d0"
+                },
+                "rate_origin": "explicit"
+              }
+            },
+            "before": {
+              "basis": {
+                "color_policy": "sdr_rec709",
+                "frame_rate": {
+                  "denominator": 1001,
+                  "numerator": 30000
+                },
+                "height": 180,
+                "width": 320
+              },
+              "state": {
+                "geometry_origin": "explicit",
+                "primary": null,
+                "rate_origin": "explicit"
+              }
+            }
+          },
+          "project_id": "11f5b9b4-6770-40c6-b911-08904fa8d804",
+          "to_revision": "registered"
+        }
+      },
+      "revision_id": "registered"
+    },
+    "qualification": "bf1661c03bb0e5c29e38397bc5137ad692dbb8d675cda042ce23d9ea7a5503d0"
+  },
+  "protocol": 1
+}

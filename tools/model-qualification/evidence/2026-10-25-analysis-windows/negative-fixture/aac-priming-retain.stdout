@@ -1,0 +1,54 @@
+{
+  "authored_asset_registered": false,
+  "protocol": 1,
+  "retained_original": {
+    "method": "cloned",
+    "record": {
+      "label": "negative-aac-priming.mp4",
+      "linked": null,
+      "managed": true,
+      "object": {
+        "byte_length": 39181,
+        "content": {
+          "algorithm": "blake3",
+          "digest": "5f14a98fecea24d226858dca275a37befa1fcc64618161768f6e3ab0858fe28e"
+        }
+      },
+      "sha256": [
+        10,
+        116,
+        13,
+        183,
+        115,
+        145,
+        9,
+        202,
+        40,
+        231,
+        125,
+        39,
+        252,
+        169,
+        137,
+        183,
+        13,
+        233,
+        178,
+        0,
+        98,
+        27,
+        221,
+        12,
+        3,
+        147,
+        102,
+        106,
+        177,
+        135,
+        233,
+        122
+      ],
+      "version": 1
+    }
+  }
+}

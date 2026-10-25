@@ -1,0 +1,10 @@
+   Compiling num-traits v0.2.19
+   Compiling rustix v1.1.5
+   Compiling bytemuck v1.25.2
+   Compiling moxcms v0.8.1
+   Compiling deadpan-native-process v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-process)
+   Compiling tempfile v3.27.0
+   Compiling image v0.25.10
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Finished `test` profile [optimized + debuginfo] target(s) in 7.19s
+     Running unittests src/lib.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_media-0996ce6cf48961b8)

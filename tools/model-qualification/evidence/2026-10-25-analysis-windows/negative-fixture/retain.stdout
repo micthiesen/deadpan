@@ -1,0 +1,54 @@
+{
+  "authored_asset_registered": false,
+  "protocol": 1,
+  "retained_original": {
+    "method": "cloned",
+    "record": {
+      "label": "negative-opus.mp4",
+      "linked": null,
+      "managed": true,
+      "object": {
+        "byte_length": 2944,
+        "content": {
+          "algorithm": "blake3",
+          "digest": "f346bdcd67de70d88d1f905a3a018bcb5a1d56933e3dbe4b161b56dd50aa58d0"
+        }
+      },
+      "sha256": [
+        184,
+        223,
+        5,
+        66,
+        187,
+        41,
+        134,
+        65,
+        163,
+        86,
+        195,
+        60,
+        152,
+        250,
+        20,
+        169,
+        197,
+        139,
+        113,
+        244,
+        132,
+        94,
+        169,
+        211,
+        103,
+        149,
+        174,
+        40,
+        204,
+        105,
+        223,
+        166
+      ],
+      "version": 1
+    }
+  }
+}

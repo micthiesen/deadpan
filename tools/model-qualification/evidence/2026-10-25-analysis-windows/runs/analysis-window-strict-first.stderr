@@ -1,0 +1,75 @@
+    Checking once_cell v1.21.4
+    Checking dispatch2 v0.3.1
+    Checking smallvec v1.16.1
+    Checking thiserror v2.0.20
+    Checking bytemuck v1.25.2
+    Checking serde v1.0.229
+    Checking log v0.4.34
+    Checking zerocopy v0.8.57
+    Checking raw-window-handle v0.6.2
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking naga-types v30.0.1
+    Checking deadpan-dsp v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-dsp)
+    Checking tempfile v3.27.0
+    Checking rustls v0.23.45
+    Checking ureq-proto v0.6.4
+    Checking rusqlite v0.40.2
+    Checking parking_lot_core v0.9.12
+    Checking image v0.25.10
+    Checking font-types v0.12.5
+    Checking objc2-core-foundation v0.3.2
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Checking wgpu-types v30.0.1
+    Checking parking_lot v0.12.5
+    Checking read-fonts v0.41.0
+    Checking deadpan-sqlite-status v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-sqlite-status)
+    Checking half v2.7.1
+    Checking objc2-foundation v0.3.2
+    Checking objc2-core-graphics v0.3.2
+    Checking naga v30.0.1
+    Checking rustls-platform-verifier v0.7.1
+    Checking ureq v3.4.2
+    Checking deadpan-filesystem v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-filesystem)
+    Checking objc2-metal v0.3.2
+    Checking objc2-core-audio v0.3.2
+    Checking objc2-app-kit v0.3.2
+    Checking objc2-audio-toolbox v0.3.2
+    Checking skrifa v0.44.0
+    Checking coreaudio-rs v0.14.2
+    Checking cpal v0.18.2
+    Checking deadpan-output v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-output)
+    Checking objc2-quartz-core v0.3.2
+    Checking wgpu-naga-bridge v30.0.1
+    Checking raw-window-metal v1.1.0
+    Checking wgpu-hal v30.0.1
+    Checking wgpu-core-deps-apple v30.0.1
+    Checking wgpu-core v30.0.1
+    Checking wgpu v30.0.1
+    Checking deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+    Checking deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+error: this range is empty so it will yield no values
+   --> crates/deadpan-cli/tests/transcription.rs:384:9
+    |
+384 |         9..8,
+    |         ^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#reversed_empty_ranges
+    = note: `-D clippy::reversed-empty-ranges` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::reversed_empty_ranges)]`
+help: consider using the following if you are attempting to iterate over this range in reverse
+    |
+384 -         9..8,
+384 +         (8..9).rev(),
+    |
+
+error: could not compile `deadpan-cli` (test "transcription") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

@@ -1,0 +1,1 @@
+["ffprobe", "-v", "error", "-select_streams", "a", "-show_packets", "-show_entries", "packet=pts,dts,duration,side_data_list", "-of", "json", "/tmp/deadpan-word-refinement-2026-10-25/negative-fixture/negative-aac-priming.mp4"]
