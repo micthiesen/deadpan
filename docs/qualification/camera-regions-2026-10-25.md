@@ -5,7 +5,8 @@ proposals, explicit Camera/region:N acceptance, inspected release visuals,
 quiet performance, full media/portable history and narrow copied-bundle worker
 relocation. Independent raw audit passes10/10 groups with no findings within
 scope. Three immutable evidence collections and their independent post-publication
-audit pass. The feature commit and milestone149 remain pending.
+audit pass. Implementation commit `4ee7b86d517763eaa1e2680316cbec417ef5d2ed`
+is pushed to main and recorded as progress milestone149.
 
 The original107-scenario invocation stays failed; pinned continuations
 establish101 runnable latest passes across explicit original/debug identities.

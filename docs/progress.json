@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-25T12:06:26Z",
+  "updated_at": "2026-10-25T12:43:33Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Region proposals pass native, export and copied-worker checks. Finalizing evidence and the implementation commit. Last completed milestone: 148; coverage remains 89%.",
+  "focus": "Milestone 149: Camera offers face and salient-region proposals with explicit acceptance. Native, export, portable-history and copied-worker checks pass. Continuing ranged framing and remaining target controls; coverage remains 89%.",
   "features": [
     {
       "id": "editing",
@@ -35,7 +35,7 @@
         "DP-08",
         "DP-11"
       ],
-      "note": "Source, Hold, Sequence, Repeat and Retime owners keep live targets while creep scales their local output clocks, in ordinary selection and explicit Repeat Play scopes. Targets use exact mapped Original time. Follow respects captured and live crops, with fallback for hidden targets. Camera paths, tracking, the paged face picker and editable point targets work. Nested-play native replay, complete export and exact portable history are verified. General non-face region proposals and other target controls remain."
+      "note": "Source, Hold, Sequence, Repeat and Retime owners keep live targets while creep scales their local output clocks, in ordinary selection and explicit Repeat Play scopes. Targets use exact mapped Original time. Follow respects captured and live crops, with fallback for hidden targets. Camera paths, tracking, the paged face picker and editable point targets work. Nested-play native replay, complete export and exact portable history are verified. Camera now offers paged face and salient-region proposals from one verified exact picture; choosing a proposal saves one ordinary target, and region:N atomically saves target and framing. Native workflows, full export PCM/picture fidelity, portable history and scoped copied-worker relocation are verified. Ranged following/framing and other target controls remain."
     },
     {
       "id": "audio",
@@ -1317,6 +1317,14 @@
       "revision": "dbcf4de69543578353bcbd7218066bf2829420f1",
       "retrospective": false,
       "summary": "Whole-owner following creep now works in explicit nested Repeat plays through the existing isolation transaction. Independent review, 2,059 Core/Plan, 1,304 App and sixteen CLI framing tests pass. The 155-check native workflow, all 240 exported pictures, full 384,384-sample audio at zero offset and exact portable history are verified. Evidence preserves both media-driver stops and the corrected offline audit."
+    },
+    {
+      "date": "2026-10-25",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "4ee7b86d517763eaa1e2680316cbec417ef5d2ed",
+      "retrospective": false,
+      "summary": "Camera now offers face and salient-region proposals with explicit target acceptance; region:N saves target and framing atomically. Independent review, focused regressions, native workflows, 120-picture fidelity and full 192,192-sample zero-offset audio, portable history and scoped copied-worker relocation pass. The original replay run retains 94 passes, seven failures and six fixture skips; identified continuations pass all 101 runnable scenarios. Three bounded evidence collections and their independent byte audit are published. DP-08 stays partial; coverage remains 89%."
     }
   ]
 }

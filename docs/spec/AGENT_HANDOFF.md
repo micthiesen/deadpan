@@ -9,8 +9,9 @@ are implemented and verified on the current release through native regions/
 faces, inspected visuals, quiet performance, actual media/portable history and
 scoped copied-bundle worker relocation. Independent final raw audit passes10/10
 groups with no findings within scope. Three immutable evidence collections and
-their independent post-publication audit pass. The feature commit/push and
-milestone149 remain pending; no requirement/gate or coverage increase is claimed.
+their independent post-publication audit pass. Implementation commit
+`4ee7b86d517763eaa1e2680316cbec417ef5d2ed` is pushed to main and recorded as
+milestone149; no requirement/gate or coverage increase is claimed.
 
 Base889a06f0738a7347faf1bda53463cd7e35ae07b1; scratch
 /tmp/deadpan-camera-regions-2026-10-25. verified-identities.json pins release59
@@ -131,11 +132,11 @@ Root's staged whitespace check exits2 only for four immutable raw stdout
 blank-at-EOF warnings (changed-doctests, commands-write, native-real-2/3), all
 matching inventory bytes; authored source/document-scoped whitespace is clean.
 
-Root owns the pending feature commit and milestone149, Git/progress/artifact and
+Root owns Git/progress/artifact and
 FRAMING/TARGETS/SEMANTIC_MACROS/COMMANDS/PARITY/DEPENDENCIES/packaging text.
-Latest focus-only b94de365 is pushed; artifact14 refresh at12:06 UTC passes the
-full1323-line/field comparison and phone review. These focus-only updates
-retain milestone148/89%, eight Complete/sixteen Partial, effects five of thirteen.
+Progress records milestone149 at89%, eight Complete/sixteen Partial, effects
+five of thirteen. Earlier focus-only b94de365 and artifact14 refresh at12:06 UTC
+passed the full1323-line/field comparison and phone review at milestone148.
 The full normative goal and remaining ranged following/framing scope stay open.
 Preserve foreign fuzz/Cargo.lock/.claude and every earlier immutable checkpoint.
 

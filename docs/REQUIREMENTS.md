@@ -46,7 +46,8 @@ Their [post-publication audit](../tools/media-qualification/evidence/2026-10-25-
 passes with no findings:576 payloads/579 files/38,682,216 stored bytes, each
 collection below256MiB including metadata, two explicit nonauthored sidecar
 omissions. The qualification records exact hashes and retention limits.
-The feature commit/push and milestone149 remain pending.
+Implementation commit `4ee7b86d517763eaa1e2680316cbec417ef5d2ed` is pushed
+to main and recorded as progress milestone149.
 Full raw replay reports remain pinned/indexed, not all copied into bounded
 collections. Coverage stays89%, eight Complete/sixteen Partial, effects five
 of thirteen. No requirement or gate closes; ranged following and the rest of
