@@ -12,7 +12,39 @@ Eight requirements remain Complete, sixteen Partial; all seven gates stay open
 and picture effects remain five of thirteen. DP-12 behavior scores fully covered
 but strict closure needs reconciliation; runtime optimizations, bakeoff and
 performance remain owed under DP-24 and Gates A/E/G. This reporting correction
-does not close the scoped framing range implementation currently being qualified.
+is distinct from the scoped framing range implementation below.
+
+Contained framing ranges inside an explicit This play at every enclosing Repeat
+are implemented. The shared decoder-free PictureOwnerMap proves the actual
+owner layer, exact ancestry, Retime crops and fractional structural allocation;
+Core admits scoped Time ranges only for Zoom and expanded framing Calls. Native
+capture, ProjectService receipts, fresh named/dot ranges and wrapped inspector
+values use the same captured scope. Slice placement remains ordinary-Sequence
+only: both fresh/delayed callbacks and pointer controls refuse any active
+Repeat/Retime inspector. Camera remains available for whole owners and disabled
+with a Time range. Core 58 / SQLite 87 stay current.
+
+See [scoped framing qualification](../qualification/scoped-framing-ranges-2026-10-25.md).
+Scratch /tmp/deadpan-scoped-framing-ranges-2026-10-25 retains eighteen source
+phases and all original failures. Final Core/Plan passes 2,088 tests; integrated
+App/CLI and full-App runs retain their recorded failures, followed by the exact
+bounded corrected lanes. Final strict/format, release build, scoped replays at
+60/120 Hz (296 plus Kestrel) and Original-moment replay (nineteen plus Kestrel)
+pass. Actual native-project media verifies all 240 pictures, 384,384 canonical
+stereo sample frames/limiter bits, zero-offset encoded audio and exact portable
+history. The immutable collection (607 files, eighteen source phases) and
+separate thirteen-file proof sidecar pass their independent audit and Root
+hash/JSON check. Prior audit-accounting failures remain explicit. Do not claim a fresh all-green full App/CLI
+run, physical display/IME/listening accuracy or full-product release acceptance.
+
+Next work is being selected from the fixed acceptance ledger, including the
+absent automatic local word-boundary refinement in DP-10. An independent
+exploration is checking the actual Whisper adapter, correction pinning and
+available real-media corpus before choosing the implementation. Keep existing
+creep parameter adjustment, remaining picture/audio effects, native workflows
+and performance targets open. Preserve foreign fuzz/Cargo.lock and .claude/.
+
+## Earlier Camera pointer targets, 2026-10-25
 
 [Camera pointer targets](../qualification/pointer-targets-2026-10-25.md) are
 implemented and locally qualified. `n`/`c` use the same temporary geometry for

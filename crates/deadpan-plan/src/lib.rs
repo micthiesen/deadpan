@@ -44,6 +44,7 @@ pub use audio_source_root::AudioRootSource;
 pub use audio_tape::{AudioSignalTape, AudioSignalTapeRun};
 
 pub use picture::{Picture, PictureCaption, PictureFraming, PictureSample};
+pub use plan::PictureOwnerMap;
 pub use plan::{
     AudioBound, AudioBoundDomain, AudioFadeEdge, AudioFadeQuery, AudioFadeSpan, AudioPolicyQuery,
 };
@@ -117,6 +118,8 @@ pub enum PlanError {
     },
     #[error("invalid scoped Hold: {0}")]
     InvalidScopedHold(&'static str),
+    #[error("invalid picture owner occurrence: {0}")]
+    InvalidPictureOccurrence(&'static str),
     #[error("{0}")]
     HoldContextUnavailable(HoldContextUnavailable),
     #[error("picture query exceeded its {0} budget")]

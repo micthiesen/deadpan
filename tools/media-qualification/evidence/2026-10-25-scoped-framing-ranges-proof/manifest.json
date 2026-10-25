@@ -1,0 +1,58 @@
+{
+  "files": {
+    "audit/byte-audit-sixteenth.json": {
+      "bytes": 14382,
+      "sha256": "f537d73e58a797e5e825006f64885e8eece243665723a811bce8e933724f2297"
+    },
+    "audit/byte-audit-sixteenth.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "audit/byte-audit-sixteenth.stdout": {
+      "bytes": 181398,
+      "sha256": "06a773c363bedbe6777ae6e99b43db6737c847f74c05827b0e38693926a397d7"
+    },
+    "audit/published-result-sixteenth.json": {
+      "bytes": 220528,
+      "sha256": "2281bc2bdbd499aae610bc93e4caa73d8c603f18f58a493307ce80466e1f85fa"
+    },
+    "audit/verify_evidence.py": {
+      "bytes": 97097,
+      "sha256": "b24c40e2ccc487754d38aa1cf078deaaf6db12ea1d3ed62082a13b0c1c11212d"
+    },
+    "publication/collection-run-final14.json": {
+      "bytes": 625,
+      "sha256": "34621762b5367b20c5bd6d98b3cc1a7a954866c3cd9de73e5fbd6b068d50a20c"
+    },
+    "publication/dry-run-final13.json": {
+      "bytes": 624,
+      "sha256": "43083212b079743547c43ea6803eb9a53ff394f86323fdcd19dabdcef6ba0e77"
+    },
+    "publication/evidence-collect-final14.json": {
+      "bytes": 14559,
+      "sha256": "ce073dc722f49d68109bd16df7edb1397aa50fb33867cdd11b65fdd71ba4fa6d"
+    },
+    "publication/evidence-collect-final14.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "publication/evidence-collect-final14.stdout": {
+      "bytes": 583,
+      "sha256": "c17ceff76ad7d8f4946769637e56e3162e31ce886f84685f152346efc8ca7981"
+    },
+    "publication/evidence-dry-run-final13.json": {
+      "bytes": 14450,
+      "sha256": "c4924dd530f3faad9d003b21d969968bacaab9ef799cac58f324d841743aa3e2"
+    },
+    "publication/evidence-dry-run-final13.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "publication/evidence-dry-run-final13.stdout": {
+      "bytes": 582,
+      "sha256": "4505a6a931a9a3b47bac890e72902721c764a4c3cd694ca77efc76e1d40b93b8"
+    }
+  },
+  "schema_version": 1,
+  "scope": "nonrecursive publication/audit proof sidecar; collection inventory is in sibling collection root"
+}

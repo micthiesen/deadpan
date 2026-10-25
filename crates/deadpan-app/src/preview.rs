@@ -4026,9 +4026,11 @@ impl DeadpanApp {
                         hints.push(("Esc".into(), if visual && !self.macros.is_pending() { "clear selection".into() } else { "cancel recording".into() }));
                         self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "save macro");
                         if scoped {
+                            if !self.has_scoped_visual_selection() {
                             self.add_editor_hint(&mut hints, EditorKey::Hold, "pause");
                             self.add_editor_hint(&mut hints, EditorKey::Mute, "mute / unmute");
                             self.add_editor_pair_hint(&mut hints, EditorKey::GainUp, EditorKey::GainDown, " / ", "gain 3 dB");
+                            }
                             self.add_editor_pair_hint(&mut hints, EditorKey::PunchIn, EditorKey::Creep, " / ", "punch in / creep");
                             if let Some(label) = self.repeat_hint() { self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label); }
                         } else {
@@ -4062,7 +4064,18 @@ impl DeadpanApp {
                         self.add_editor_hint(&mut hints, EditorKey::CutBeat, "remove");
                         self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
                     } else if self.view == View::Sequence && self.scoped.is_some() {
+                        let ranged = self.has_scoped_visual_selection();
                         self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " / ", "picture frame");
+                        if ranged {
+                            self.add_editor_hint(&mut hints, EditorKey::Visual, if self.edit_range.active { "finish framing range" } else { "start new range" });
+                            self.add_editor_hint(&mut hints, EditorKey::Escape, "clear range");
+                            self.add_editor_pair_hint(&mut hints, EditorKey::PunchIn, EditorKey::Creep, " / ", "range zoom / creep");
+                            self.add_editor_hint(&mut hints, EditorKey::Command, ":zoom / :creep");
+                            if let Some(label) = self.repeat_hint() { self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label); }
+                            self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "+ letter: record framing");
+                            self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: run framing");
+                            self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
+                        } else {
                         self.add_editor_pair_hint(&mut hints, EditorKey::BeatPrevious, EditorKey::BeatNext, " / ", "child");
                         self.add_editor_hint(&mut hints, EditorKey::EnterGroup, if self.scoped_hold_parameter().is_some() { "pause length" } else { "enter contents" });
                         self.add_editor_hint(&mut hints, EditorKey::LeaveGroup, "parent");
@@ -4076,6 +4089,7 @@ impl DeadpanApp {
                         self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: run macro");
                         hints.push((":scope".into(), "all / play N / plays 2-3".into()));
                         self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
+                        }
                     } else if self.view == View::Sequence && self.edit_range.has_set() {
                         hints.tier(key_labels::Tier::Core);
                         self.add_editor_hint(&mut hints, EditorKey::Copy, "copy union");
@@ -4867,6 +4881,10 @@ impl DeadpanApp {
 
     fn open_inspector_parameter(&mut self, context: &egui::Context) -> bool {
         if self.open_sound_position(context) {
+            return true;
+        }
+        if self.has_scoped_visual_selection() {
+            self.error = Some("This play's range supports :zoom and :creep. Clear it before editing a whole-owner parameter.".into());
             return true;
         }
         if self.scoped.is_some() && self.view == View::Sequence && !self.event_focused() {

@@ -141,7 +141,19 @@ fn nearest_boundary(index: &deadpan_core::SourceFrameIndex, fraction: f64) -> u6
 }
 
 impl DeadpanApp {
+    pub(super) fn placement_scope_allowed(&self) -> bool {
+        self.scoped.is_none()
+    }
+
+    pub(super) fn check_placement_scope(&self) -> Result<(), String> {
+        if !self.placement_scope_allowed() {
+            return Err("Return to the parent beat before placing or replacing a slice. Repeat and Retime contents do not admit structural paste; no edit was made.".into());
+        }
+        Ok(())
+    }
+
     pub(super) fn capture_placement_target(&self) -> Result<PlacementTarget, String> {
+        self.check_placement_scope()?;
         if self.copied.is_pending() {
             return Err("Wait for the copy to finish saving before placing it.".into());
         }
@@ -171,6 +183,7 @@ impl DeadpanApp {
     }
 
     pub(super) fn check_placement_target(&self, target: &PlacementTarget) -> Result<(), String> {
+        self.check_placement_scope()?;
         let workspace = self
             .workspace
             .as_ref()
@@ -536,6 +549,7 @@ impl DeadpanApp {
             });
             let label = copied.label();
             let is_macro = matches!(copied, copied::Content::Macro(_));
+            let placement_ready = !self.service.is_busy() && self.placement_scope_allowed();
             ui.horizontal_wrapped(|ui| {
                 ui.colored_label(style::LAVENDER, label);
                 if is_macro {
@@ -546,17 +560,14 @@ impl DeadpanApp {
                     return;
                 }
                 if ui
-                    .add_enabled(
-                        !self.service.is_busy(),
-                        egui::Button::new("Place slice…  :splice"),
-                    )
+                    .add_enabled(placement_ready, egui::Button::new("Place slice…  :splice"))
                     .clicked()
                 {
                     self.open_splice(ui.ctx());
                 }
                 if ui
                     .add_enabled(
-                        !self.service.is_busy(),
+                        placement_ready,
                         egui::Button::new(format!(
                             "{}  {}",
                             replacement_label.unwrap_or("Paste after"),
@@ -571,7 +582,7 @@ impl DeadpanApp {
                 }
                 if ui
                     .add_enabled(
-                        !self.service.is_busy(),
+                        placement_ready,
                         egui::Button::new(format!(
                             "{}  {}",
                             replacement_label.unwrap_or("Paste before"),

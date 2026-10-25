@@ -148,8 +148,15 @@ fn scoped_macro_target(
     let Some(scoped) = &context.scoped else {
         return Ok(None);
     };
-    if context.original.is_some() || context.visual_selection.is_some() {
-        return Err("One-play macros require Your edit with no Visual selection.".into());
+    if context.original.is_some()
+        || !matches!(
+            context.visual_selection.as_ref(),
+            None | Some(deadpan_core::SemanticVisualSelection::Time { .. })
+        )
+    {
+        return Err(
+            "One-play macros require Your edit with at most one Time selection for framing.".into(),
+        );
     }
     let target = crate::project::scoped::Target {
         session: id.session,

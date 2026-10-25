@@ -146,7 +146,7 @@ fn progress(frame: u64, frames: u64) -> Result<ExactRatio, String> {
 }
 
 pub const PATH_REFUSAL: &str = "This beat has a camera path, and this would replace it. Use :zoom off first, or name the target (target=current, center or an id) to replace it explicitly.";
-pub const FOLLOW_CREEP_REFUSAL: &str = "Following creep requires one admitted beat. Use an ordinary beat range, or clear the range and choose This play for every enclosing Repeat.";
+pub const FOLLOW_CREEP_REFUSAL: &str = "Following creep requires one admitted owner. Choose a contained Edit range and This play at every enclosing Repeat, or clear the range.";
 pub const RANGED_FOLLOW_REFUSAL: &str = "This beat follows a target; a range would stop following it outside the range. Apply to the whole beat (clear the Visual range) or :zoom off first.";
 pub const RANGED_PATH_REFUSAL: &str = "This beat has a camera path; a range would replace it outside the range. Apply to the whole beat (clear the Visual range) or :zoom off first.";
 
@@ -165,9 +165,46 @@ pub fn build(kind: ZoomKind, center: &Center, shot: &Shot<'_>) -> Result<Option<
     {
         return Err("Select a nonempty range inside the selected beat.".into());
     }
-    let range = shot
+    let selected = shot
         .range
-        .filter(|(start, end)| !(*start == 0 && *end == shot.frames));
+        .map(|(start, end)| {
+            Ok::<_, String>((progress(start, shot.frames)?, progress(end, shot.frames)?))
+        })
+        .transpose()?;
+    build_at(kind, center, shot, selected)
+}
+
+/// Build over an exact normalized owner-output range supplied by a validated
+/// host occurrence map. No local frame rounding is permitted. `shot.range`
+/// must be absent so an integral recipe range cannot conflict with this clock.
+pub fn build_normalized_range(
+    kind: ZoomKind,
+    center: &Center,
+    shot: &Shot<'_>,
+    selected: (ExactRatio, ExactRatio),
+) -> Result<Option<Framing>, String> {
+    kind.validate()?;
+    if shot.range.is_some() {
+        return Err("A framing range must use one declared clock.".into());
+    }
+    let (start, end) = selected;
+    if start.compare(ExactRatio::ZERO).is_lt()
+        || !start.compare(end).is_lt()
+        || end.compare(ExactRatio::ONE).is_gt()
+    {
+        return Err("Select a nonempty range inside the framed owner's output.".into());
+    }
+    build_at(kind, center, shot, Some(selected))
+}
+
+fn build_at(
+    kind: ZoomKind,
+    center: &Center,
+    shot: &Shot<'_>,
+    selected: Option<(ExactRatio, ExactRatio)>,
+) -> Result<Option<Framing>, String> {
+    let range =
+        selected.filter(|(start, end)| !(*start == ExactRatio::ZERO && *end == ExactRatio::ONE));
     let fixed = |current: [ExactRatio; 2]| -> Result<[ExactRatio; 2], String> {
         Ok(match center {
             Center::Keep => current,
@@ -182,7 +219,7 @@ pub fn build(kind: ZoomKind, center: &Center, shot: &Shot<'_>) -> Result<Option<
     let keep = *center == Center::Keep;
     if keep
         && let ZoomKind::Creep { from, to, curve } = kind
-        && let Some((start, end)) = shot.range
+        && let Some((start, end)) = selected
         && let Some(FramingValue::Follow {
             target,
             scale,
@@ -203,8 +240,8 @@ pub fn build(kind: ZoomKind, center: &Center, shot: &Shot<'_>) -> Result<Option<
                     factor: to.checked_div(*scale).map_err(|error| error.to_string())?,
                     curve,
                     range: Some(crate::FollowScaleRange {
-                        start: progress(start, shot.frames)?,
-                        end: progress(end, shot.frames)?,
+                        start,
+                        end,
                         from_factor: from
                             .unwrap_or(*scale)
                             .checked_div(*scale)
@@ -281,7 +318,7 @@ pub fn build(kind: ZoomKind, center: &Center, shot: &Shot<'_>) -> Result<Option<
                         ..
                     }) = entry
                 {
-                    if shot.whole_owner.is_none() || shot.range.is_some() {
+                    if shot.whole_owner.is_none() || selected.is_some() {
                         return Err(FOLLOW_CREEP_REFUSAL.into());
                     }
                     let from = from.unwrap_or(*scale);
@@ -355,11 +392,11 @@ pub fn build(kind: ZoomKind, center: &Center, shot: &Shot<'_>) -> Result<Option<
     // applies from that end onward. Pictures sample frame centers, so each
     // frame of [start, end) sees the range's pose.
     let mut segments = Vec::new();
-    let initial = if start == 0 {
+    let initial = if start == ExactRatio::ZERO {
         inside_from
     } else {
         segments.push(FramingSegment {
-            end: progress(start, shot.frames)?,
+            end: start,
             pose: inside_from,
             curve: FramingCurve::Step,
         });
@@ -367,15 +404,15 @@ pub fn build(kind: ZoomKind, center: &Center, shot: &Shot<'_>) -> Result<Option<
     };
     let stepped = curve == FramingCurve::Step;
     segments.push(FramingSegment {
-        end: progress(end, shot.frames)?,
-        pose: if stepped && end != shot.frames {
+        end,
+        pose: if stepped && end != ExactRatio::ONE {
             after
         } else {
             inside_to
         },
         curve,
     });
-    if end != shot.frames {
+    if end != ExactRatio::ONE {
         segments.push(FramingSegment {
             end: ExactRatio::ONE,
             pose: after,

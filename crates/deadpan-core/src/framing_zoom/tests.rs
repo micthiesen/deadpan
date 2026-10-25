@@ -115,6 +115,178 @@ fn approx(value: ExactRatio) -> f64 {
     value.numerator() as f64 / value.denominator() as f64
 }
 
+#[test]
+fn normalized_ranges_preserve_integral_builder_results_and_explicit_full_follow_windows() {
+    let fallback = FramingPose::new(ratio(1, 4), ratio(3, 4), ratio(5, 4)).unwrap();
+    let followed = Framing {
+        clock: FramingClock::RetainedOutput {
+            offset: ratio(-2, 1),
+            duration: ratio(7, 1),
+        },
+        value: FramingValue::Follow {
+            target: TargetId::new("moving").unwrap(),
+            scale: ratio(3, 2),
+            fallback,
+            scale_transition: None,
+        },
+    };
+    let static_pose = Framing::static_pose(fallback).unwrap();
+    for entry in [None, Some(&static_pose), Some(&followed)] {
+        for range in [(0, 10), (0, 8), (2, 10), (2, 8)] {
+            for kind in [
+                ZoomKind::Off,
+                ZoomKind::Smash { scale: ratio(2, 1) },
+                ZoomKind::Creep {
+                    from: None,
+                    to: ratio(12, 5),
+                    curve: ZoomCurve::Linear,
+                },
+                ZoomKind::Creep {
+                    from: Some(ratio(9, 5)),
+                    to: ratio(12, 5),
+                    curve: ZoomCurve::Smoothstep,
+                },
+            ] {
+                let ordinary = Shot {
+                    entry,
+                    whole_owner: Some(WholeFollowOwner::Hold),
+                    range: Some(range),
+                    ..shot(None)
+                };
+                let exact = Shot {
+                    entry,
+                    whole_owner: Some(WholeFollowOwner::Hold),
+                    ..shot(None)
+                };
+                assert_eq!(
+                    build(kind, &Center::Keep, &ordinary),
+                    build_normalized_range(
+                        kind,
+                        &Center::Keep,
+                        &exact,
+                        (
+                            ratio(i128::from(range.0), 10),
+                            ratio(i128::from(range.1), 10)
+                        )
+                    )
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn normalized_follow_range_uses_fractional_owner_extent_without_recipe_frame_rounding() {
+    let fallback = FramingPose::new(ratio(1, 4), ratio(3, 4), ratio(1, 2)).unwrap();
+    let entry = Framing {
+        clock: FramingClock::RetainedOutput {
+            offset: ratio(-2, 1),
+            duration: ratio(7, 1),
+        },
+        value: FramingValue::Follow {
+            target: TargetId::new("moving").unwrap(),
+            scale: ratio(2, 1),
+            fallback,
+            scale_transition: None,
+        },
+    };
+    let owner = Shot {
+        entry: Some(&entry),
+        whole_owner: Some(WholeFollowOwner::Retime),
+        frames: 4,
+        ..shot(None)
+    };
+    let result = build_normalized_range(
+        ZoomKind::Creep {
+            from: Some(ratio(3, 1)),
+            to: ratio(4, 1),
+            curve: ZoomCurve::Linear,
+        },
+        &Center::Keep,
+        &owner,
+        (ratio(1, 3), ratio(2, 3)),
+    )
+    .unwrap()
+    .unwrap();
+    assert_eq!(result.clock, FramingClock::OwnerOutput);
+    for (local, live, silent) in [
+        (ratio(1, 1), ratio(2, 1), ratio(1, 2)),
+        (ratio(7, 6), ratio(3, 1), ratio(3, 4)),
+        (ratio(7, 4), ratio(7, 2), ratio(7, 8)),
+        (ratio(7, 3), ratio(4, 1), ratio(1, 1)),
+        (ratio(3, 1), ratio(4, 1), ratio(1, 1)),
+    ] {
+        let actual = result
+            .evaluate_with_follow_exact(local, ratio(7, 2))
+            .unwrap();
+        assert_eq!(actual.follow.unwrap().0.as_str(), "moving");
+        assert_eq!(actual.follow.unwrap().1, live);
+        assert_eq!(actual.pose.scale, silent);
+        assert_eq!(
+            [actual.pose.center_x, actual.pose.center_y],
+            [ratio(1, 4), ratio(3, 4)]
+        );
+    }
+    let FramingValue::Follow {
+        scale_transition: Some(transition),
+        ..
+    } = &result.value
+    else {
+        panic!("expected live Follow")
+    };
+    assert_eq!(transition.range.as_ref().unwrap().start, ratio(1, 3));
+    assert_eq!(transition.range.as_ref().unwrap().end, ratio(2, 3));
+}
+
+#[test]
+fn normalized_range_rejects_conflicting_clocks_invalid_bounds_and_unrepresentable_windows() {
+    let kind = ZoomKind::Smash { scale: ratio(2, 1) };
+    for window in [
+        (ratio(-1, 4), ratio(1, 2)),
+        (ratio(1, 2), ratio(1, 2)),
+        (ratio(3, 4), ratio(1, 4)),
+        (ratio(1, 4), ratio(5, 4)),
+    ] {
+        assert!(build_normalized_range(kind, &Center::Keep, &shot(None), window).is_err());
+    }
+    assert!(
+        build_normalized_range(
+            kind,
+            &Center::Keep,
+            &shot(Some((1, 2))),
+            (ratio(1, 4), ratio(3, 4))
+        )
+        .is_err()
+    );
+    assert!(
+        build_normalized_range(
+            kind,
+            &Center::Keep,
+            &shot(None),
+            (ratio(1, 1_000_003), ratio(1, 2))
+        )
+        .is_err()
+    );
+    let path = Framing::creep(
+        FramingPose::identity(),
+        FramingPose::new(ratio(1, 2), ratio(1, 2), ratio(2, 1)).unwrap(),
+        FramingCurve::Linear,
+    )
+    .unwrap();
+    assert!(
+        build_normalized_range(
+            kind,
+            &Center::Keep,
+            &Shot {
+                entry: Some(&path),
+                ..shot(None)
+            },
+            (ratio(1, 4), ratio(3, 4))
+        )
+        .is_err()
+    );
+}
+
 fn close(value: ExactRatio, expected: f64) -> bool {
     (approx(value) - expected).abs() < 1e-8
 }

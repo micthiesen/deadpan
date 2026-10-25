@@ -10,6 +10,8 @@ use deadpan_core::{
 };
 use egui::Key;
 
+mod ranges;
+
 fn ratio(n: i128, d: i128) -> ExactRatio {
     ExactRatio::new(n, d).unwrap()
 }
@@ -802,11 +804,26 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     let before_visual = baseline.document.clone();
     d.key(Key::V)?;
     idle(d)?;
-    d.check("The native scoped inspector refuses Visual entry without creating an authored range or changing authority",
-        !d.app().edit_range.has_bounds()&&d.app().error.is_some()
+    d.check("The explicit nested Play opens an empty Time selection without changing authored state or authority",
+        matches!(d.app().edit_range.semantic()?,Some(deadpan_core::SemanticVisualSelection::Time {anchor,head,extending:true}) if anchor==head)
             && d.app().workspace.as_ref().is_some_and(|workspace|workspace.document==before_visual)
             && d.app().scoped_target()?.is_some_and(|target|target.target==captured.target),
-        json!({"Visual":"refused","document":"unchanged","target":captured.target}),d.snapshot())?;
+        json!({"Visual":"empty Time","document":"unchanged","target":captured.target}),d.snapshot())?;
+    d.key(Key::Escape)?;
+    idle(d)?;
+    d.check(
+        "Escape clears the scoped Time selection without leaving the selected Play or editing",
+        !d.app().edit_range.has_bounds()
+            && d.app()
+                .workspace
+                .as_ref()
+                .is_some_and(|workspace| workspace.document == before_visual)
+            && d.app()
+                .scoped_target()?
+                .is_some_and(|target| target.target == captured.target),
+        json!({"Visual":"cleared","document":"unchanged","target":captured.target}),
+        d.snapshot(),
+    )?;
 
     // A genuine writer Undo invalidates an already captured command.
     let stale_capture = choose(d, 2, 2)?;
@@ -1123,5 +1140,6 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"Edit":182,"Original":source_cursor,"selected":[164,200]}),
         d.snapshot(),
     )?;
-    d.capture("Scoped Follow creep committed on one nested concrete Retime")
+    d.capture("Scoped Follow creep committed on one nested concrete Retime")?;
+    ranges::run(d, &baseline)
 }

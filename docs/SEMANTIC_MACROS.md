@@ -274,14 +274,15 @@ by Source leaves, not audible PCM after independent audio treatments.
 
 ### Ranged zoom and creep
 
-On an ordinary selected direct child, `:zoom` and `:creep` over an Edit
-selection record `Zoom { kind, center }`. The instruction retains the scale,
+On an ordinary selected direct child, or a valid explicit single-Play scoped
+owner, `:zoom` and `:creep` over an Edit selection record
+`Zoom { kind, center }`. The instruction retains the scale,
 optional starting scale, curve and either `Keep` or `OriginalCenter` intent.
 It never stores the recording's range fractions, selected owner, displayed
 pose or sampled target point. Each invocation resolves the selected owner and
 its exact duration from the preceding staged document, then converts the
 invocation's selection to that owner's local frames. Time selections retain
-their oriented state; Object selections resolve their exact owned range.
+their oriented state; ordinary Object selections resolve their exact owned range.
 An empty or cross-owner range refuses. A range spanning the complete owner
 uses the existing whole-owner behavior, except that Keep-center creep on a
 fixed Follow retains its explicit window.
@@ -292,7 +293,8 @@ it refuses if that point is clipped. Recording a ranged command that would
 sample a selected, current, named, face or salient-region target refuses with an explanation.
 An implicit selected-target choice is treated as Keep only when no saved target
 or target follow is involved. Ordinary interactive target sampling remains
-available. Existing ordinary whole-beat presets keep their `SetFraming` behavior.
+available. A new scoped ranged edit refuses sampled-target intent even outside
+recording. Existing ordinary whole-beat presets keep their `SetFraming` behavior.
 
 Native commands and semantic replay share the pure `framing_zoom` builder.
 A ranged smash restores the preceding static pose after the range; a creep
@@ -332,6 +334,27 @@ explicit OriginalCenter. A successful single Apply also supplies that intent
 for dot. Choose another play before `@a` or `.` to frame that invocation's play.
 The saved program contains no node, play, presentation or recording-time pose.
 
+A scoped Time selection supplies an exact contained framing window. Its
+oriented endpoints stay on the root Edit clock; the staged plan maps both
+through ancestor Repeat positions, Retime transforms and crops into the chosen
+owner's exact output clock. Both boundaries must lie inside that concrete
+occurrence, and the invocation cursor must show the owner. A fractional boundary that only
+partly covers an Edit frame refuses instead of using a rounded visible start.
+Empty or cross-occurrence ranges, Default/mixed/several-play choices, stale or
+mismatched authority, and a plain nested Retime without a Play refuse atomically.
+Only Time selections are admitted here; no object, mark, transcript or multi-range
+selection is replaced by its hull.
+
+Finish `v`, frame motions and `v` before starting `q`. Recording admits the
+framing Zoom intent or a named Call against that retained range; it still refuses
+scoped selection gestures and navigation. Before named or dot replay, select a
+fresh range in the invocation's explicit play. Replay derives its own exact
+window, duration and scale factors rather than retaining recording-time fractions.
+With a static baseline, Keep and OriginalCenter use the existing ranged rules.
+On a fixed Follow, only Keep creep retains live targeting and both scale bases;
+sampled-target scoped range intent refuses. With no Visual selection, existing
+whole-owner framing behavior is unchanged.
+
 The invocation captures the authoring target and its separate concrete
 presentation, plus the ordinary Sequence context. Each staged instruction
 resolves that exact plan layer and its intrinsic owner clock, isolates only
@@ -347,13 +370,17 @@ The native receipt retains the mapped inspector. Any scope navigation revokes
 its cursor ownership permanently, including moving away and back in one event
 batch before a delayed receipt arrives.
 
-Zoom, whole-owner SetAudio Step, freeze/black InsertPause, SetHoldDuration,
-SetHoldAudio, SetRoomTone and named Call instructions are
-admitted under one-play authority,
+Without Visual selection, Zoom, whole-owner SetAudio Step, freeze/black
+InsertPause, SetHoldDuration, SetHoldAudio, SetRoomTone and named Call retain
+their existing one-play admission,
 including every expanded nested call. An unsupported later instruction refuses
 the complete run without history or bank writes. All plays, mixed choices,
 several plays, absent or mismatched presentations, Original invocation and
-Visual ranges cannot supply this authority. Scope navigation is not recorded;
+non-Time Visual selections cannot supply this authority. With a scoped Time range,
+only Zoom and named Call are admitted, including their expanded instructions;
+other whole-owner setters cannot silently ignore the selection. Native Camera
+and owner parameter entry refuse until the range is cleared, while independent
+placed-sound controls keep their existing routing. Scope navigation is not recorded;
 save or cancel before another editing action. Sampled, named and face-target
 framing refuses recording before analysis or authored work. Their ordinary
 interactive paths remain available. A Retime scope without a Repeat ancestor
@@ -366,6 +393,8 @@ mapped authority. Request bytes have a depth/identity-derived allowance while
 saved programs retain their independent 128 KiB limit.
 See [one-play qualification](qualification/one-play-framing-macros-2026-10-18.md)
 for real-media, durable-history, native replay, review and timing evidence.
+The [scoped range qualification record](qualification/scoped-framing-ranges-2026-10-25.md)
+tracks the additional range admission and mapping boundary.
 
 ### One-play pause intent
 

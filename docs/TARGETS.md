@@ -85,10 +85,23 @@ holds its terminal value afterward. The target stays live on both sides of the
 window. An explicit `from=` changes the ramp's start scale only at In, including
 the proportional fallback scale; it does not change the preceding pictures.
 Inside Repeat contents, selecting This play at every enclosing Repeat gives the
-same whole-owner behavior through occurrence isolation. Scale uses that selected
+same whole-owner or exactly contained ranged behavior through occurrence
+isolation. A ranged creep without `target=` keeps the fixed Follow's target and
+both base scales; explicit `from=` takes effect only at In. Scale uses that selected
 owner's local output clock; enclosing Retimes and Repeat occurrences do not
 replace it with the project clock. The target still resolves the actual mapped
-Original point. Default or incomplete Play choices and Visual ranges refuse.
+Original point. The Time selection remains on the root Edit clock; the canonical
+plan maps its complete interval through enclosing Retimes and crops into the
+selected owner's exact output clock. A new transition normalizes its window to
+that current duration, even when the fixed Follow had a retained clock.
+Partially visible fractional boundaries and a cursor that does not show the
+owner refuse. Default, mixed, incomplete or several-Play
+choices and non-Time selections cannot supply this range authority. A new scoped
+range cannot sample a current, selected, named, face or region target; only
+implicit Keep creep is admitted on a fixed Follow. Finish selection before `q`;
+named and dot replay need a fresh range and explicit play choices. The scoped
+inspector shows saved Follows, Scale before, Creep, Window and Framing clock
+separately. See the [scoped range qualification record](qualification/scoped-framing-ranges-2026-10-25.md).
 Before that, a target with a `display_aspect` has
 its center placed on the presentation canvas exactly where the renderer fits
 the whole picture (`deadpan_core::fit_source_point`, the `Fit` letterbox or

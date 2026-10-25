@@ -382,7 +382,7 @@ fn scoped_follow_creep_all_five_owners_keep_nested_play_clocks_isolation_and_dur
                 }
                 4 => {
                     bad["operation"]["visual_selection"] =
-                        json!({"type":"time","anchor":29,"head":38,"extending":false})
+                        json!({"type":"time","anchor":28,"head":38,"extending":false})
                 }
                 5 => {
                     bad["operation"]["scoped"] = Value::Null;

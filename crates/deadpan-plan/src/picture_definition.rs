@@ -468,7 +468,7 @@ pub(super) struct PictureBudget {
 }
 
 impl PictureBudget {
-    fn new(limits: BoundaryQueryLimits) -> Self {
+    pub(super) fn new(limits: BoundaryQueryLimits) -> Self {
         Self {
             limits,
             lookup: LookupStats::default(),

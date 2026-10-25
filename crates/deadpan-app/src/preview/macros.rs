@@ -2,7 +2,9 @@
 
 use std::num::NonZeroU32;
 
-use deadpan_core::{RegisterName, SemanticContext, SemanticInstruction, SemanticProgram};
+use deadpan_core::{
+    RegisterName, SemanticContext, SemanticInstruction, SemanticProgram, SemanticVisualSelection,
+};
 
 use super::*;
 use crate::project::{macros as protocol, slice};
@@ -596,13 +598,23 @@ impl DeadpanApp {
         let scoped = self.scoped_target()?;
         let mut context = context;
         if let Some(target) = &scoped {
-            if context.visual_selection.is_some() || self.view != View::Sequence {
-                return Err(
-                    "Clear the Visual selection and focus Your edit before using nested edit macros."
-                        .into(),
-                );
+            if self.view != View::Sequence {
+                return Err("Focus Your edit before using nested edit macros.".into());
             }
-            if !target.also.is_empty()
+            if context.visual_selection.is_some() {
+                if !matches!(
+                    context.visual_selection,
+                    Some(SemanticVisualSelection::Time { .. })
+                ) {
+                    return Err(
+                        "A single-play framing range requires one contiguous Time selection."
+                            .into(),
+                    );
+                }
+                // Only framing can consume this authority. Core keeps every
+                // whole-owner duration, audio and structural guard in place.
+                context.scoped = Some(target.semantic_framing(&base)?);
+            } else if !target.also.is_empty()
                 && matches!(
                     base.document
                         .nodes()

@@ -56,6 +56,52 @@ whose plays `]r` then steps independently. `Backspace` keeps each outer play
 choice. The inspector's Previous/Next buttons and the footer teach the keys.
 Stepping is read-only, like `:scope`, and Macros do not record it.
 
+## Framing a range in This play
+
+Choose This play at every enclosing Repeat, select a visible child, then use
+`v`, frame motions and `v` to retain a half-open Time selection on the root Edit
+clock. Moving its head keeps the selection in the same owner and concrete play.
+Changing owner, play, scope or authored revision clears it; the first Escape
+clears the range before another Escape leaves the inspector.
+
+`:zoom`, `:creep` and their comma keys use that selection only when its complete
+root interval lies inside the selected occurrence. The canonical plan maps both
+boundaries through enclosing Repeat positions, Retime transforms and crops into
+the owner's exact output clock. A partially visible fractional boundary refuses;
+seeking a sampled picture there does not prove the whole frame interval belongs
+to that occurrence. The stopped cursor must also show the selected owner.
+All plays, mixed or several-play choices, a plain nested Retime without a Play,
+empty ranges and ranges crossing an occurrence boundary refuse atomically.
+
+Keep-center and explicit `target=center` work when the existing static baseline
+permits the ranged edit. On a fixed Follow, only implicit Keep-center creep is
+available: it retains the live target and both scale bases, and uses the selected
+owner's exact output clock. A new ranged scoped edit cannot sample a current,
+selected, named, face or region target. Existing whole-owner framing behavior is
+unchanged.
+
+The retained scoped Time selection is for framing and read-only audition. Other
+owner parameters, including gain, Hold duration, pause insertion and Camera,
+refuse until Escape clears it; independent placed-sound controls keep their
+captured sound target. Object, mark, transcript and multi-range selections do
+not become scoped framing authority. The inspector describes the saved recipe
+with Follows, Scale before, Creep, Window and Framing clock rows, including
+retained duration and offset when present.
+
+Slice placement and structural replacement require returning to the parent,
+even without a Time range. Their pointer controls and command routes use the
+same scope rule; a destination captured before entering contents also refuses.
+
+Finish `v` / motion / `v` before starting `q`. Record only the resulting Zoom
+intent or a named framing call. Scoped navigation and selection gestures remain
+unrecordable; each named or dot invocation needs a fresh selected range and
+explicit play choices, and derives its own window from that invocation.
+See [framing](FRAMING.md#zoom-and-creep-commands),
+[macro authority](SEMANTIC_MACROS.md#one-play-zoom-and-creep) and the
+[scoped range qualification record](qualification/scoped-framing-ranges-2026-10-25.md).
+
+## Scope-aware parameters
+
 Gain, Camera, Hold audio and [AI pictures](AI_HOLDS.md#repeat-and-retime-scopes) use the captured scope. Changing a shared node in
 This play isolates only the necessary selected ancestors, then applies the
 value in the same reversible transaction. An unchanged value creates no
@@ -82,16 +128,19 @@ Mixed owned-gap Hold resizing, Repeat/Retime timing combinations, copy/paste
 and general macros inside these contents remain required work;
 their native actions refuse without editing the retained outer beat.
 
-Freeze/black pauses, existing Hold duration and sound, and whole-owner Zoom and Creep with
-Keep or OriginalCenter intent support recording and dot when This play is explicit at every enclosing
-Repeat. Saved programs retain length/picture or framing intent; invocation
+Freeze/black pauses, existing Hold duration and sound, and whole-owner or
+supported ranged Zoom and Creep with Keep or OriginalCenter intent support
+recording and dot when This play is explicit at every enclosing Repeat. Saved
+programs retain length/picture or framing intent; invocation
 captures the current play and maps its authoring and presentation addresses
 through isolation. A pause continues from its actual new Hold, keeping the
 ordinary cursor and enclosing selection. A duration setter continues at the
 resized Hold's exact start, even when shrinking past the old interior cursor.
 Hold sound changes retain the absolute cursor and preserve picture and timing.
-Only InsertPause, SetHoldDuration, SetHoldAudio, SetRoomTone, Zoom and nested
-named calls are admitted. Scope navigation cancels recording and
+Without Visual selection, InsertPause, SetHoldDuration, SetHoldAudio,
+SetRoomTone, whole-owner audio setters, Zoom and nested named calls retain their
+existing admission. With the scoped Time range retained, only Zoom and named
+framing calls are admitted. Scope navigation cancels recording and
 permanently revokes any queued macro's inspector continuation. See
 [one-play framing macros](SEMANTIC_MACROS.md#one-play-zoom-and-creep).
 See [one-play pause intent](SEMANTIC_MACROS.md#one-play-pause-intent) for pause
@@ -283,6 +332,7 @@ for test, rendered and native evidence, source provenance and remaining limits.
 Implicit default gaps have no authored node, so neither `j` nor `]r` selects
 them; they need their own recipe controls. Multi-play selection is chosen only
 by command; the inspector shows it but has no pointer control for it. This boundary does not implement occurrence-local cuts, replacement, Repeat
-count changes, Retime changes, implicit gap recipe editing, semantic recording
-inside occurrences beyond freeze/black pauses and whole-owner Zoom intent, or complete definition previews. Those remain part of the
+count changes, Retime changes, implicit gap recipe editing, general semantic
+recording of scoped navigation or arbitrary occurrence edits, or complete
+definition previews. Those remain part of the
 normative specification. No full-product requirement or gate is complete.

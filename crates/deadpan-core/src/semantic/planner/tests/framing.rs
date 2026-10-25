@@ -101,6 +101,7 @@ fn zoom_intent_rebinds_oriented_ranges_and_preserves_outside_pose_with_one_inver
                 assert_eq!(site.frame, ProjectFrame(head));
                 assert!(!site.original_center);
                 Ok(SemanticFramingState {
+                    normalized_range: None,
                     duration: FrameDuration::new(100).unwrap(),
                     current: before,
                     original_center: None,
@@ -165,6 +166,7 @@ fn zoom_resolves_after_earlier_duration_edits_and_nested_calls_on_the_staged_own
             assert_eq!(site.frame, ProjectFrame(30));
             assert!(site.original_center);
             Ok(SemanticFramingState {
+                normalized_range: None,
                 duration: FrameDuration::new(80).unwrap(),
                 current: FramingPose::identity(),
                 original_center: Some([
@@ -233,6 +235,7 @@ fn zoom_refuses_empty_cross_owner_ranges_and_missing_projected_center_without_a_
         &BTreeMap::new(),
         |_, _| {
             Ok(SemanticFramingState {
+                normalized_range: None,
                 duration: FrameDuration::new(20).unwrap(),
                 current: FramingPose::identity(),
                 original_center: None,
@@ -255,6 +258,7 @@ fn zoom_noop_has_no_history_and_late_path_refusal_keeps_input_and_bank_unchanged
         &BTreeMap::new(),
         |_, _| {
             Ok(SemanticFramingState {
+                normalized_range: None,
                 duration: FrameDuration::new(20).unwrap(),
                 current: FramingPose::identity(),
                 original_center: None,
@@ -279,6 +283,7 @@ fn zoom_noop_has_no_history_and_late_path_refusal_keeps_input_and_bank_unchanged
         &bank,
         |_, _| {
             Ok(SemanticFramingState {
+                normalized_range: None,
                 duration: FrameDuration::new(20).unwrap(),
                 current: FramingPose::identity(),
                 original_center: None,
@@ -367,6 +372,7 @@ fn zoom_ordinary_owner_remains_available_with_retained_nested_tape_pause_clocks(
         |_, site| {
             assert_eq!(site.frame, ProjectFrame(60));
             Ok(SemanticFramingState {
+                normalized_range: None,
                 duration: FrameDuration::new(163).unwrap(),
                 current: FramingPose::identity(),
                 original_center: None,
@@ -486,6 +492,7 @@ fn ordinary_follow_creep_resolves_whole_and_ranged_owners_with_atomic_refusals()
     );
     let resolver = |doc: &ProjectDocument, _: &SemanticFramingSite| {
         Ok(SemanticFramingState {
+            normalized_range: None,
             duration: doc.node_duration(&node("held")).unwrap(),
             current: FramingPose::identity(),
             original_center: None,

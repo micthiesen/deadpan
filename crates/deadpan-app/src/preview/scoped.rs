@@ -7,7 +7,11 @@ use crate::project::scoped::Target;
 
 pub(super) mod model;
 
+#[cfg(test)]
+mod range_tests;
+
 const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Repeat pauses follow each level's All plays, This play or selected plays choice. Pause length follows each level's All plays or This play choice for one Hold; AI pauses require one play at every level. Other timing edits and range copying require the parent.";
+const FRAMING_RANGE_ONLY: &str = "This play's Edit range is for :zoom or :creep. Clear the range with Escape before other beat edits.";
 
 impl DeadpanApp {
     pub(super) fn focus_scoped_pane(&mut self, pane: Pane) {
@@ -33,6 +37,9 @@ impl DeadpanApp {
         target: Target,
     ) {
         let request = (|| {
+            if self.has_scoped_visual_selection() {
+                return Err(FRAMING_RANGE_ONLY.into());
+            }
             if self.view != View::Sequence
                 || matches!(self.pane, Pane::Sources | Pane::Sounds)
                 || self.scoped_target()?.as_ref() != Some(&target)
@@ -405,6 +412,19 @@ impl DeadpanApp {
         if self.scoped.is_none() {
             return false;
         }
+        if matches!(command, Ok(Entry::Action(Action::VisualMoment)))
+            && let Err(error) = self.scoped_visual_framing_authority()
+        {
+            self.error = Some(error);
+            return true;
+        }
+        if self.has_scoped_visual_selection()
+            && let Ok(command) = command
+            && !scoped_range_command_allowed(command, self.scoped_hold_parameter().is_some())
+        {
+            self.error = Some(FRAMING_RANGE_ONLY.into());
+            return true;
+        }
         let blocked = matches!(
             command,
             Ok(Entry::Splice | Entry::Slip(_) | Entry::Trim(_) | Entry::Group { .. })
@@ -437,6 +457,20 @@ impl DeadpanApp {
         {
             return false;
         }
+        if self.has_scoped_visual_selection()
+            && !scoped_range_action_allowed(&action, duration_entry)
+        {
+            self.error = Some(FRAMING_RANGE_ONLY.into());
+            return true;
+        }
+        if action == Action::VisualMoment {
+            if let Err(error) = self.scoped_visual_framing_authority() {
+                self.error = Some(error);
+                return true;
+            }
+            // The ordinary handler owns the Time selection and macro policy.
+            return false;
+        }
         if scoped_structural_action(&action) {
             self.error = Some(STRUCTURE_UNAVAILABLE.into());
             return true;
@@ -463,6 +497,8 @@ impl DeadpanApp {
                             Action::Step { forward: false, count } => self.sequence_cursor.saturating_sub(u64::from(count)).clamp(presentation.frames.start, end),
                             _ => unreachable!(),
                         };
+                        self.reconcile_edit_range();
+                        self.edit_range.move_to(self.sequence_cursor);
                         self.request_picture(false);
                     }
                     Ok(None) => self.error = Some("This definition has no sampled picture in the selected play. Choose a visible play to seek.".into()),
@@ -470,6 +506,11 @@ impl DeadpanApp {
                 }
             }
             Action::Escape if !self.help_open => {
+                if self.edit_range.has_bounds() {
+                    // Selection Escape runs before inspector Escape, including
+                    // the ordinary recording of a cancelled selection.
+                    return false;
+                }
                 self.revoke_scoped_continuation();
                 if self.macros.recording() {
                     self.cancel_macro_recording();
@@ -677,6 +718,8 @@ impl DeadpanApp {
         let scope = state.scope_label(workspace).unwrap_or_else(|error| error);
         let scope_hint = state.edit_scope_hint();
         let reason = state.no_picture_reason(workspace).ok().flatten();
+        let framing_fields =
+            scoped_framing_fields(node.framing.as_ref(), &|target| self.target_label(target));
         let interval = state.visible_range(workspace).ok().flatten().map(|range| {
             let boundary = |value: deadpan_core::ExactRatio| {
                 if value.denominator() == 1 {
@@ -702,13 +745,27 @@ impl DeadpanApp {
                     style::ink_padded_label(ui, style::semibold(label).size(16.0), None);
                     ui.colored_label(style::LAVENDER, scope);
                     if let Some(interval) = interval { ui.small(interval); }
+                    // Full-width values have no row limit: the saved window
+                    // must remain readable in the narrow scoped inspector.
+                    // The stable namespace isolates controls from field count.
+                    ui.push_id("scoped-saved-framing", |ui| {
+                        for (label, value) in &framing_fields {
+                            ui.add_space(4.0);
+                            ui.label(egui::RichText::new(*label).size(12.0).weak());
+                            ui.add(egui::Label::new(egui::RichText::new(value).size(12.5)).wrap());
+                        }
+                    });
                     ui.small(scope_hint);
                     if let Some(reason) = reason { ui.add_space(8.0); ui.weak(reason); ui.small("The viewer retains its last displayed picture."); }
                     let ready = !self.service.is_busy() && !self.dialogs.is_open();
+                    let framing_range = self.has_scoped_visual_selection();
+                    let parameters_ready = ready && !framing_range;
+                    if framing_range { ui.small(FRAMING_RANGE_ONLY); }
+                    else { ui.skip_ahead_auto_ids(1); }
                     ui.add_space(4.0);
                     if composite && ui.add(style::row_action(ui, "Enter contents", self.editor_key(EditorKey::EnterGroup)).fill(style::SELECTED)).clicked() { self.enter_scoped(ui.ctx()); }
                     if hold_parameter.is_some()
-                        && ui.add_enabled(ready, style::row_action(ui, "Change duration…", self.editor_key(EditorKey::EnterGroup))).clicked() {
+                        && ui.add_enabled(parameters_ready, style::row_action(ui, "Change duration…", self.editor_key(EditorKey::EnterGroup))).clicked() {
                         self.open_inspector_parameter(ui.ctx());
                     }
                     if hold && hold_parameter.is_none() {
@@ -716,28 +773,78 @@ impl DeadpanApp {
                     }
                     ui.add_space(8.0);
                     ui.label(style::section_title("EDIT", false));
-                    if ui.add_enabled(ready, style::row_action(ui, "Camera…", self.editor_key(EditorKey::Camera))).clicked() {
+                    if ui.add_enabled(parameters_ready, style::row_action(ui, "Camera…", self.editor_key(EditorKey::Camera))).clicked() {
                         self.framing_action(navigation::FramingAction::EnterCamera, ui.ctx());
                     }
-                    if ui.add_enabled(ready, style::row_action(ui, "Insert pause", self.editor_key(EditorKey::Hold)))
+                    if ui.add_enabled(parameters_ready, style::row_action(ui, "Insert pause", self.editor_key(EditorKey::Hold)))
                         .on_hover_text("Insert 0.5 s at the cursor in the selected Repeat scopes. Each selected play captures its own freeze picture.").clicked() {
                         self.edit(BeatEdit::InsertHold(navigation::duration::DurationInput::half_seconds(1)));
                     }
-                    if ui.add_enabled(ready, style::row_action(ui, "Insert AI pause", self.editor_key(EditorKey::GenerateAi)))
+                    if ui.add_enabled(parameters_ready, style::row_action(ui, "Insert AI pause", self.editor_key(EditorKey::GenerateAi)))
                         .on_hover_text("Save the pause in This play, then request pictures. Accepting a candidate is a separate edit.").clicked() {
                         self.edit(BeatEdit::InsertAiHold(navigation::duration::DurationInput::half_seconds(1)));
                     }
-                    if ui.add_enabled(ready, style::row_action(ui, "Insert pause of…", ":hold")).clicked() {
+                    if ui.add_enabled(parameters_ready, style::row_action(ui, "Insert pause of…", ":hold")).clicked() {
                         self.open_command("hold 0.5s".into(), ui.ctx());
                     }
-                    if hold { self.ai_inspector(ui, ready); self.hold_audio_controls(ui, ready); }
-                    self.gain_inspector(ui, ready);
+                    if hold { self.ai_inspector(ui, parameters_ready); self.hold_audio_controls(ui, parameters_ready); }
+                    self.gain_inspector(ui, parameters_ready);
                     ui.add_space(4.0);
                     ui.small(format!("{} children · {} enter · {} parent", self.editor_pair(EditorKey::BeatPrevious, EditorKey::BeatNext, "/"), self.editor_key(EditorKey::EnterGroup), self.editor_key(EditorKey::LeaveGroup)));
                     ui.small(STRUCTURE_UNAVAILABLE);
                 });
             });
     }
+}
+
+/// Read the saved owner recipe; occurrence projection is navigation evidence,
+/// never a substitute for its framing clock or normalized transition window.
+fn scoped_framing_fields(
+    framing: Option<&deadpan_core::Framing>,
+    target_label: &dyn Fn(&deadpan_core::TargetId) -> String,
+) -> Vec<(&'static str, String)> {
+    let mut fields = Vec::new();
+    match framing.map(|framing| &framing.value) {
+        Some(deadpan_core::FramingValue::Follow {
+            target,
+            scale,
+            scale_transition,
+            ..
+        }) => {
+            fields.push(("Follows", target_label(target)));
+            if let Some(range_fields) = scale_transition
+                .and_then(|transition| navigation::zoom::follow_range_fields(*scale, transition))
+            {
+                fields.extend(range_fields);
+            } else {
+                fields.push((
+                    "Scale",
+                    navigation::zoom::follow_scale_label(*scale, *scale_transition),
+                ));
+            }
+        }
+        _ => fields.push(("Framing", navigation::zoom::describe(framing, target_label))),
+    }
+    if let Some(framing) = framing {
+        match framing.clock {
+            deadpan_core::FramingClock::OwnerOutput => {
+                fields.push(("Framing clock", "Owner output".into()));
+            }
+            deadpan_core::FramingClock::RetainedOutput { offset, duration } => {
+                let frames = |value: deadpan_core::ExactRatio| {
+                    if value.denominator() == 1 {
+                        format!("{} f", value.numerator())
+                    } else {
+                        format!("{}/{} f", value.numerator(), value.denominator())
+                    }
+                };
+                fields.push(("Framing clock", "Retained output".into()));
+                fields.push(("Framing duration", frames(duration)));
+                fields.push(("Clock offset", frames(offset)));
+            }
+        }
+    }
+    fields
 }
 
 fn scoped_structural_action(action: &Action) -> bool {
@@ -762,7 +869,6 @@ fn scoped_structural_action(action: &Action) -> bool {
             | Action::OfferInsert
             | Action::Edit(_)
             | Action::Trim
-            | Action::VisualMoment
             | Action::CopyMoment
             | Action::Operator { .. }
             | Action::Repeat { .. }
@@ -770,4 +876,82 @@ fn scoped_structural_action(action: &Action) -> bool {
             | Action::DeleteFrames(_)
             | Action::PasteMoment { .. }
     )
+}
+
+// A new scoped Time selection must not make an old whole-owner parameter
+// handler silently ignore the range. Non-authoring controls retain their
+// existing routing; Zoom/Call/dot perform their own captured-range admission.
+fn scoped_range_action_allowed(action: &Action, duration_entry: bool) -> bool {
+    matches!(
+        action,
+        Action::New
+            | Action::NewLinked
+            | Action::InitializeLinked
+            | Action::NewFromUrl
+            | Action::Open
+            | Action::Import
+            | Action::Render
+            | Action::Undo
+            | Action::Redo
+            | Action::Playback
+            | Action::Audition
+            | Action::LeaveGroup
+            | Action::Play { .. }
+            | Action::Beat { .. }
+            | Action::Step { .. }
+            | Action::First
+            | Action::Last
+            | Action::Pane { .. }
+            | Action::Search
+            | Action::Command
+            | Action::Help
+            | Action::Escape
+            | Action::VisualMoment
+            | Action::Framing(_)
+            | Action::RepeatLast
+            | Action::MacroRecord(_)
+            | Action::MacroStop
+            | Action::MacroCancel
+            | Action::MacroExecute { .. }
+            | Action::SelectRegister(_)
+            | Action::SaveFraming(_)
+            | Action::SetMark(_)
+            | Action::JumpMark(_)
+            | Action::DeleteMark(_)
+            | Action::JumpHistory { .. }
+            | Action::Marks
+            | Action::Sound(_)
+            | Action::Invalid(_)
+    ) || (action == &Action::EnterGroup && !duration_entry)
+}
+
+fn scoped_range_command_allowed(command: &Entry, duration_entry: bool) -> bool {
+    match command {
+        Entry::Action(action) => scoped_range_action_allowed(action, duration_entry),
+        Entry::Zoom(_)
+        | Entry::Scope(_)
+        | Entry::Source
+        | Entry::Sequence
+        | Entry::SoundRelink
+        | Entry::Help
+        | Entry::Renders
+        | Entry::Takes
+        | Entry::Recovery
+        | Entry::Models
+        | Entry::Diagnostics
+        | Entry::Storage
+        | Entry::Backups
+        | Entry::Jobs
+        | Entry::PortableCopy
+        | Entry::Close
+        | Entry::Monitor(_)
+        | Entry::Proxies(_)
+        | Entry::SoundChannels(_)
+        | Entry::AuditionContext { .. }
+        | Entry::GagInspect(_)
+        | Entry::GagPresets
+        | Entry::RecipeInspect(_)
+        | Entry::Empty => true,
+        _ => false,
+    }
 }

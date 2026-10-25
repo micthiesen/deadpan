@@ -519,6 +519,9 @@ pub struct SemanticFramingSite {
     pub presentation: Option<crate::InstancePath>,
     pub frame: ProjectFrame,
     pub original_center: bool,
+    /// A scoped framing range on the root Edit clock. The host must resolve
+    /// these exact boundaries against the captured concrete occurrence.
+    pub root_range: Option<FrameRange>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -529,6 +532,9 @@ pub struct SemanticFramingState {
     pub duration: crate::FrameDuration,
     /// Original picture center projected into this owner's input canvas.
     pub original_center: Option<[crate::ExactRatio; 2]>,
+    /// The requested root range mapped exactly into normalized owner output.
+    /// Present if and only if `SemanticFramingSite::root_range` was requested.
+    pub normalized_range: Option<(crate::ExactRatio, crate::ExactRatio)>,
 }
 
 type FramingResolver<'a> = dyn FnMut(&ProjectDocument, &SemanticFramingSite) -> Result<SemanticFramingState, EditError>
@@ -895,6 +901,17 @@ where
             {
                 return Err(invalid(
                     "ordinary inspected Hold authority supports only Hold duration and named duration calls",
+                ));
+            }
+            if self.context.scoped.is_some()
+                && self.context.visual_selection.is_some()
+                && !matches!(
+                    instruction,
+                    SemanticInstruction::Zoom { .. } | SemanticInstruction::Call { .. }
+                )
+            {
+                return Err(unavailable(
+                    "a single-play Visual range supports only framing intent and named framing calls",
                 ));
             }
             if self.context.scoped.is_some()
@@ -1610,7 +1627,7 @@ pub(super) fn validate_context(
     shared_hold_duration::validate_context(document, context)?;
     mixed_hold_duration::validate_context(document, context)?;
     selected_hold_duration::validate_context(document, context)?;
-    framing::validate_scoped_context(document, context)?;
+    framing::validate_scoped_identity(document, context)?;
     Ok(bounds)
 }
 

@@ -35,6 +35,10 @@ use picture_definition::{PictureBudget, PictureContinuity, PictureWalk};
 mod picture_definition_index;
 use picture_definition_index::DefinitionIndex;
 
+#[path = "picture_occurrence.rs"]
+mod picture_occurrence;
+pub use picture_occurrence::PictureOwnerMap;
+
 #[path = "audio.rs"]
 mod audio;
 pub use audio::*;

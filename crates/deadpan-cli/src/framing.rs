@@ -5,9 +5,9 @@
 //! creates a decoder, selects a proxy, or allocates a picture raster.
 
 use deadpan_core::{
-    AssetId, EditError, EditErrorCode, ExactRatio, GeneratedArtifact, GeneratedObjectRef,
-    GeneratedSamplingMap, ProjectDocument, SemanticFramingSite, SemanticFramingState,
-    SourceTimeBase, SourceTimestamp,
+    AssetId, BoundaryQueryLimits, EditError, EditErrorCode, ExactRatio, GeneratedArtifact,
+    GeneratedObjectRef, GeneratedSamplingMap, ProjectDocument, SemanticFramingSite,
+    SemanticFramingState, SourceTimeBase, SourceTimestamp,
 };
 use deadpan_jobs::GenerationPlan;
 use deadpan_media::protocol::VideoContract;
@@ -40,6 +40,27 @@ pub(crate) fn resolve(
     // Follow evaluation belongs to the plan, which retains its exact live and
     // authored clocks. Framing::evaluate_exact would return Follow's fallback.
     let current = sample.framing[index].pose.unwrap_or_default();
+    let normalized_range = site
+        .root_range
+        .map(|range| {
+            let instance = site.presentation.as_ref().ok_or_else(|| {
+                unavailable("a scoped framing range needs its concrete presentation")
+            })?;
+            let limits = BoundaryQueryLimits {
+                max_scopes: 2 * (deadpan_core::MAX_DOCUMENT_DEPTH + 1),
+                max_comparisons: 2 * BoundaryQueryLimits::default().max_comparisons,
+            };
+            let mapping = plan
+                .picture_owner_map(instance, site.frame, limits)
+                .map_err(unavailable)?;
+            if mapping.effective_duration != sample.framing[index].effective_duration {
+                return Err(unavailable(
+                    "the framed occurrence has a different exact output extent",
+                ));
+            }
+            mapping.normalized_range(range).map_err(unavailable)
+        })
+        .transpose()?;
     let metadata = provider_metadata(store, staged, &sample.picture)?;
     let original_center = if site.original_center {
         let layers = crate::picture::render_layers(&sample.framing, sample.gap_after.is_some())
@@ -69,6 +90,7 @@ pub(crate) fn resolve(
         current,
         original_center,
         duration: sample.framing[index].duration,
+        normalized_range,
     })
 }
 

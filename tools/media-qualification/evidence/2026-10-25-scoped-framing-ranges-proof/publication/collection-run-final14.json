@@ -1,0 +1,18 @@
+{
+  "cap_bytes_each": 268435456,
+  "collector_sha256": "a435a0ee061a871ce9ae107dfc29572bfd7e0c2450955a0ed01b121f31b1f118",
+  "files_including_metadata": 607,
+  "inventory_sha256": "9ca637b223f55acf25b44303265f6c45d9b8da0db1942fe95658671fcd4f778d",
+  "logical_inputs": 1101,
+  "mode": "collected",
+  "omission_count": 2,
+  "payload_objects": 604,
+  "plan_sha256": "338ef288e149e416f0fdfe69aeec4332a44daa9f52579ae3e379121a1add4b57",
+  "published_tree_verified": true,
+  "totals_including_metadata": {
+    "bytes": 18962335,
+    "decoded_bytes": 237179716,
+    "raw_bytes": 237179716
+  },
+  "verified_inputs_and_guards": 1185
+}

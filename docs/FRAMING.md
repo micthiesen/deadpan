@@ -226,7 +226,7 @@ construction and its numeric tests live in
 | `,c` | `:creep to=1.35`. |
 | `:zoom S [target=…] [curve=step]` | Smash zoom. On the whole beat with a target: `Follow { target, scale: S, fallback }`, a live step onto the target. Otherwise a static pose at scale `S`. |
 | `:zoom S curve=linear\|smoothstep` | An eased change from the current pose, as `:creep to=S`. |
-| `:creep [from=S] [to=S] [target=…] [curve=smoothstep\|linear]` | Eases from `from` (default: current scale) to `to` (default 1.35). With no `target=`, a Source, Hold, Sequence, Repeat or Retime with a fixed Follow retains live targeting and animates scale. Ordinary owners support whole-beat or contained Edit ranges; explicit Play scopes support whole owners. Other cases use a fixed-center envelope. |
+| `:creep [from=S] [to=S] [target=…] [curve=smoothstep\|linear]` | Eases from `from` (default: current scale) to `to` (default 1.35). With no `target=`, a Source, Hold, Sequence, Repeat or Retime with a fixed Follow retains live targeting and animates scale. Ordinary owners and explicit single-Play scopes support whole owners or contained Edit ranges. Other cases use a fixed-center envelope. |
 | `:zoom S target=face:N …`, `:creep … target=face:N` | Face `N` (1 to 64, left to right) proposed in the displayed picture, saved as a target together with the framing ([face proposals](#face-proposals)). |
 | `:zoom S target=region:N …`, `:creep … target=region:N` | Salient region `N` (1 to 64, geometrically ordered) proposed in the displayed picture, saved as a target together with the framing. |
 | `:zoom off` | Abrupt return: no framing on the whole beat, or a step out to the full picture over the Edit range. |
@@ -268,11 +268,12 @@ Nothing flattens an existing path implicitly. On the whole beat:
   scale. The fallback uses the same proportional change from its own base;
   neither branch takes its center from the stopped picture. A full-length Visual
   range retains its explicit range intent.
-  Within a Repeat, clear Visual selection and choose This play at every
-  enclosing Repeat level. The existing scoped edit
+  Within a Repeat, choose This play at every enclosing Repeat level. A root
+  Edit Time selection may retain an exactly contained transition window;
+  without a range the whole owner is framed. The existing scoped edit
   isolates only those concrete occurrences, retaining stable play identities and
   the other plays' pictures, gap recipes and audio. Default, mixed, missing or
-  mismatched Play scopes refuse. The whole selected owner's local output clock
+  mismatched Play scopes refuse. The selected owner's local output clock
   controls scale even when enclosing Retimes map it to a different project clock;
 - a camera path (envelope or animated Follow) refuses `,z`, `,c`, `:zoom` and `:creep` unless the
   command names `target=` explicitly, which replaces the path on request;
@@ -282,9 +283,11 @@ Animated Follow stores one optional `scale_transition` with a terminal `factor`
 and `linear`, `smoothstep` or raw `step` curve. The live scale and fallback scale
 retain separate initial values; each terminal value is its own initial scale
 times the factor. An explicit `from=` proportionally adjusts both bases before
-creating the transition. New creep spans the current whole Source, Hold, Sequence, Repeat or Retime; later
-structural edits retain its authored normalization clock. Interpolation uses the
-existing Q32 round-even numeric contract. Fallback centers and exact endpoint
+creating the transition. A new transition uses OwnerOutput over the current exact
+owner extent, even if its fixed Follow previously had a retained clock. Its
+window is normalized to that new framing duration; later structural edits retain
+the authored normalization clock. Interpolation uses the existing Q32 round-even
+numeric contract. Fallback centers and exact endpoint
 scales stay exact; resolved target poses use the existing whole-pose grid.
 An optional `range` stores exact normalized `start` and `end` plus `from_factor`
 relative to each unchanged base. Its endpoints use the same denominator bound
@@ -310,7 +313,10 @@ adjustments proportionally change both bases while retaining the factor and
 clock, and refuse if either endpoint would be invalid. `t` explicitly releases
 the target at the installed picture pose and removes the scale animation;
 Enter saves that static framing, and Escape keeps the entry framing. The
-inspector and Camera show both scale endpoints and the curve.
+inspector and Camera show both scale endpoints and the curve. The scoped
+inspector separates Follows, Scale before, Creep, Window and Framing clock;
+its window names percentages of framing duration, and a retained clock also
+shows its exact duration and offset. These rows describe the saved recipe.
 
 With an Edit range inside the beat, only that range changes: Step segments hold
 the beat's static pose before it, the range gets the new pose, and a step
@@ -321,7 +327,22 @@ static pose is constant), except that implicit Keep-center creep also accepts
 one fixed Follow as described above. Ranged step/off and explicitly sampled
 target edits on a Follow, or any ranged edit on an existing camera path, refuse
 with their own reason.
-A range outside the beat refuses; a Repeat play is always framed whole.
+A range outside the selected owner refuses. Inside a Repeat, choose This play
+at every enclosing Repeat, then finish `v` / frame motion / `v` before entering
+the framing command. Endpoints stay on the root Edit clock. The plan maps the
+complete interval through enclosing Retimes and crops to the owner's exact output clock;
+it never subtracts a rounded visible-frame start. A frame only partly inside a
+fractional occurrence boundary refuses, even when its center samples the owner.
+The stopped cursor must show that owner. Empty, cross-occurrence, All/mixed or
+several-play selections and a plain nested Retime without Play authority refuse.
+The scoped selection is framing-only: Camera and other owner parameters refuse
+until Escape clears it; read-only audition and independent sound controls remain
+available. The first Escape clears the range before leaving the inspector.
+Slice placement and replacement require the parent even after the range is
+cleared; their pointer controls follow the same scope rule as their keys.
+New scoped ranged target sampling refuses; Keep and OriginalCenter remain
+available when the static baseline permits them, while a fixed Follow admits
+only implicit Keep creep. Existing whole-owner paths keep their previous behavior.
 Envelope progress is exact (`frame / beat frames`, reduced, at most one million).
 
 `:zoom` and `:creep` capture the session, revision, view, selected beat, Repeat
@@ -335,11 +356,15 @@ resolves the invocation's selected owner and exact range against each staged
 document. It retains no old range fractions or sampled target point. A
 successful ranged Apply supplies the same invocation-relative intent for `.`.
 Recording a range that samples a selected, current, named or face target
-refuses. With This play chosen at every enclosing Repeat, whole-owner framing
-uses the same Zoom intent for recording and dot. Each invocation captures its
+refuses. With This play chosen at every enclosing Repeat, whole-owner or
+supported ranged framing uses the same Zoom intent for recording and dot.
+Each invocation captures its
 own exact play, maps authoring and presentation addresses through staged
 isolation, and returns a scoped receipt. Only Zoom and named framing calls are
-admitted there; All/mixed/multiple plays and sampled-target recording refuse.
+admitted with a scoped Time range; All/mixed/multiple plays and sampled-target
+recording refuse. Select and finish the range before `q`: scoped selection
+gestures and navigation remain unrecordable. Named and dot replay resolve a fresh
+range in the newly selected play, including its current crop and exact output duration.
 See [one-play framing macros](SEMANTIC_MACROS.md#one-play-zoom-and-creep).
 
 The native and semantic paths share the pure
@@ -352,7 +377,9 @@ remain. Pending picture
 work keeps the full macro capture; Escape or `:record-cancel` cancels it before
 it can submit delayed framing. See [semantic macros](SEMANTIC_MACROS.md#ranged-zoom-and-creep)
 and [ranged framing qualification](qualification/ranged-framing-macros-2026-10-18.md)
-for implementation and verification scope.
+for implementation and verification scope. The
+[scoped range qualification record](qualification/scoped-framing-ranges-2026-10-25.md)
+tracks the added occurrence-range boundary.
 
 The save message describes the committed framing (`Framing saved: 1.350×
 following Target 1`), and the inspector shows `Path · 1.00–1.35×` for camera

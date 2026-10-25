@@ -6,6 +6,8 @@ use deadpan_core::{
 
 use super::*;
 
+mod ranges;
+
 #[test]
 fn semantic_scoped_framing_matches_the_exact_play_and_returns_intrinsic_owner_duration() -> Result {
     let fixture = Fixture::source("cfr-bframes.mp4")?;
@@ -47,6 +49,7 @@ fn semantic_scoped_framing_matches_the_exact_play_and_returns_intrinsic_owner_du
         frame: ProjectFrame(frame),
         original_center: true,
         presentation: Some(instance.clone()),
+        root_range: None,
     };
     // Both plays still share one node here. Node-only lookup would accept this
     // wrong concrete occurrence at the second play's cursor.
@@ -246,6 +249,7 @@ fn semantic_scoped_zoom_keep_preserves_live_follow_and_retained_clock_after_isol
             presentation: Some(presentation),
             frame: ProjectFrame(49),
             original_center: false,
+            root_range: None,
         },
     )?;
     assert_eq!(
@@ -288,6 +292,7 @@ fn semantic_scoped_zoom_keep_preserves_live_follow_and_retained_clock_after_isol
             presentation: Some(mapped.presentation.clone()),
             frame: ProjectFrame(49),
             original_center: false,
+            root_range: None,
         },
     )?;
     assert_eq!(

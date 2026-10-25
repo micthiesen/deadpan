@@ -391,6 +391,10 @@ impl DeadpanApp {
         context: &egui::Context,
         target: Result<moment::PlacementTarget, String>,
     ) {
+        if let Err(error) = self.check_placement_scope() {
+            self.error = Some(error);
+            return;
+        }
         self.copied.clear_selection();
         let captured = (|| {
             let target = target?;

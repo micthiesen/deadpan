@@ -7,15 +7,36 @@ pub(super) fn validate_scoped_context(
     document: &ProjectDocument,
     context: &SemanticContext,
 ) -> Result<(), EditError> {
+    validate_scoped_identity(document, context)?;
+    if context.scoped.is_some() && context.visual_selection.is_some() {
+        return Err(unavailable(
+            "single-play editing requires Your edit with no Visual selection",
+        ));
+    }
+    Ok(())
+}
+
+/// Shared occurrence authority. A Visual range is admitted only as context;
+/// the instruction dispatcher and framing resolver grant its operation.
+pub(super) fn validate_scoped_identity(
+    document: &ProjectDocument,
+    context: &SemanticContext,
+) -> Result<(), EditError> {
     let Some(scoped) = &context.scoped else {
         return Ok(());
     };
-    if context.original.is_some()
-        || context.visual_selection.is_some()
-        || context.selected_hold_duration.is_some()
-    {
+    if context.original.is_some() || context.selected_hold_duration.is_some() {
         return Err(unavailable(
             "single-play editing requires Your edit with no Visual selection",
+        ));
+    }
+    if context
+        .visual_selection
+        .as_ref()
+        .is_some_and(|selection| !matches!(selection, SemanticVisualSelection::Time { .. }))
+    {
+        return Err(unavailable(
+            "single-play framing requires one contiguous Edit time range",
         ));
     }
     let Some(NodeKind::Sequence { children }) =
@@ -71,6 +92,19 @@ pub(super) fn validate_scoped_context(
 
 fn unavailable(message: &str) -> EditError {
     EditError::new(EditErrorCode::SelectionUnavailable, message)
+}
+
+fn resolved_window(
+    site: &SemanticFramingSite,
+    state: &SemanticFramingState,
+) -> Result<Option<(crate::ExactRatio, crate::ExactRatio)>, EditError> {
+    match (site.root_range, state.normalized_range) {
+        (None, None) => Ok(None),
+        (Some(_), Some(window)) => Ok(Some(window)),
+        _ => Err(unavailable(
+            "the scoped framing provider did not return the requested exact range",
+        )),
+    }
 }
 
 impl<F, R, S, P> Planner<'_, F, R, S, P>
@@ -159,8 +193,10 @@ where
             frame: ProjectFrame(self.context.cursor.0.min(terminal)),
             original_center: center == SemanticZoomCenter::OriginalCenter
                 && kind != framing_zoom::ZoomKind::Off,
+            root_range: None,
         };
         let state = (self.resolve_framing)(&self.current, &site)?;
+        let _ = resolved_window(&site, &state)?;
         state
             .current
             .validate()
@@ -226,7 +262,23 @@ where
         center: SemanticZoomCenter,
         scoped: SemanticScopedContext,
     ) -> Result<(), EditError> {
-        validate_scoped_context(&self.current, &self.context)?;
+        validate_scoped_identity(&self.current, &self.context)?;
+        let root_range = match &self.context.visual_selection {
+            Some(SemanticVisualSelection::Time { anchor, head, .. }) => {
+                let range = FrameRange::new((*anchor).min(*head), (*anchor).max(*head))
+                    .map_err(crate::DocumentError::from)?;
+                if range.start() >= range.end() {
+                    return Err(unavailable("select a nonempty single-play framing range"));
+                }
+                Some(range)
+            }
+            None => None,
+            _ => {
+                return Err(unavailable(
+                    "single-play framing requires one contiguous Edit time range",
+                ));
+            }
+        };
         let terminal = self
             .current
             .duration()?
@@ -239,8 +291,10 @@ where
             frame: ProjectFrame(self.context.cursor.0.min(terminal)),
             original_center: center == SemanticZoomCenter::OriginalCenter
                 && kind != framing_zoom::ZoomKind::Off,
+            root_range,
         };
         let state = (self.resolve_framing)(&self.current, &site)?;
+        let normalized_range = resolved_window(&site, &state)?;
         state
             .current
             .validate()
@@ -258,24 +312,26 @@ where
             framing_zoom::Center::Keep
         };
         let entry = self.current.nodes()[&scoped.target.node].framing.as_ref();
-        let framing = framing_zoom::build(
-            kind,
-            &resolved_center,
-            &framing_zoom::Shot {
-                whole_owner: match &self.current.nodes()[&scoped.target.node].kind {
-                    NodeKind::Source { .. } => Some(framing_zoom::WholeFollowOwner::Source),
-                    NodeKind::Hold { .. } => Some(framing_zoom::WholeFollowOwner::Hold),
-                    NodeKind::Sequence { .. } => Some(framing_zoom::WholeFollowOwner::Sequence),
-                    NodeKind::Repeat { .. } => Some(framing_zoom::WholeFollowOwner::Repeat),
-                    NodeKind::Retime { .. } => Some(framing_zoom::WholeFollowOwner::Retime),
-                },
-                entry,
-                current: state.current,
-                frames,
-                range: None,
-                explicit: center == SemanticZoomCenter::OriginalCenter,
+        let shot = framing_zoom::Shot {
+            whole_owner: match &self.current.nodes()[&scoped.target.node].kind {
+                NodeKind::Source { .. } => Some(framing_zoom::WholeFollowOwner::Source),
+                NodeKind::Hold { .. } => Some(framing_zoom::WholeFollowOwner::Hold),
+                NodeKind::Sequence { .. } => Some(framing_zoom::WholeFollowOwner::Sequence),
+                NodeKind::Repeat { .. } => Some(framing_zoom::WholeFollowOwner::Repeat),
+                NodeKind::Retime { .. } => Some(framing_zoom::WholeFollowOwner::Retime),
             },
-        )
+            entry,
+            current: state.current,
+            frames,
+            range: None,
+            explicit: center == SemanticZoomCenter::OriginalCenter,
+        };
+        let framing = match normalized_range {
+            Some(window) => {
+                framing_zoom::build_normalized_range(kind, &resolved_center, &shot, window)
+            }
+            None => framing_zoom::build(kind, &resolved_center, &shot),
+        }
         .map_err(|message| EditError::new(EditErrorCode::InvalidCommand, message))?;
         self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
         // The before/after scoped contexts retain the exact authoring and
@@ -283,6 +339,7 @@ where
         self.trace[trace_index].resolved_selection = Some(SliceCaptureSelection::Child {
             node: scoped.target.node.clone(),
         });
+        self.trace[trace_index].resolved_range = root_range;
         if framing.as_ref() == entry {
             return Ok(());
         }
@@ -347,6 +404,6 @@ where
         }
         self.commit_leaf(leaf)?;
         self.context.scoped = Some(mapped);
-        validate_scoped_context(&self.current, &self.context)
+        validate_scoped_identity(&self.current, &self.context)
     }
 }

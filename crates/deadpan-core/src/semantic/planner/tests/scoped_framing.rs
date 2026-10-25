@@ -139,6 +139,7 @@ fn state(
     instance.validate(staged).unwrap();
     let duration = staged.node_duration(&site.node).unwrap();
     Ok(SemanticFramingState {
+        normalized_range: None,
         current: staged.nodes()[&site.node]
             .framing
             .as_ref()
@@ -160,6 +161,20 @@ fn resolve(
     bank: &BTreeMap<RegisterName, Arc<RegisterValue>>,
     allocator: impl FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
 ) -> Result<SemanticPlan, EditError> {
+    resolve_with_state(document, context, instructions, bank, allocator, state)
+}
+
+fn resolve_with_state(
+    document: &ProjectDocument,
+    context: &SemanticContext,
+    instructions: Vec<SemanticInstruction>,
+    bank: &BTreeMap<RegisterName, Arc<RegisterValue>>,
+    allocator: impl FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
+    framing: impl FnMut(
+        &ProjectDocument,
+        &SemanticFramingSite,
+    ) -> Result<SemanticFramingState, EditError>,
+) -> Result<SemanticPlan, EditError> {
     plan_semantic_with_framing(
         document,
         context,
@@ -174,7 +189,7 @@ fn resolve(
         |_| Err(speech_unavailable()),
         |_, _| Err(pause_unavailable()),
         None,
-        state,
+        framing,
     )
 }
 
@@ -201,6 +216,298 @@ fn allocator(
                 .collect(),
         },
     })
+}
+
+fn ranged_context(anchor: i64, head: i64) -> SemanticContext {
+    SemanticContext {
+        visual_selection: Some(SemanticVisualSelection::Time {
+            anchor: ProjectFrame(anchor),
+            head: ProjectFrame(head),
+            extending: false,
+        }),
+        ..entry()
+    }
+}
+
+/// A pure test provider for this fixture's four-frame `a` occurrences. Real
+/// hosts obtain this map from the decoder-free compiled picture plan.
+fn ranged_state(
+    staged: &ProjectDocument,
+    site: &SemanticFramingSite,
+) -> Result<SemanticFramingState, EditError> {
+    let mut result = state(staged, site)?;
+    if let Some(range) = site.root_range {
+        let instance = site.presentation.as_ref().unwrap();
+        let start = 18 * i64::from(instance.repeats[0].iteration.ordinal)
+            + 2
+            + 7 * i64::from(instance.repeats[1].iteration.ordinal);
+        if range.start().0 < start
+            || range.end().0 > start + 4
+            || site.frame.0 < start
+            || site.frame.0 >= start + 4
+        {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "test range lies outside the concrete owner",
+            ));
+        }
+        result.normalized_range = Some((
+            ExactRatio::new(i128::from(range.start().0 - start), 4).unwrap(),
+            ExactRatio::new(i128::from(range.end().0 - start), 4).unwrap(),
+        ));
+    }
+    Ok(result)
+}
+
+#[test]
+fn scoped_time_ranges_reach_the_host_exactly_and_keep_one_isolation_and_inverse() {
+    let document = fixture();
+    for (anchor, head) in [(28, 30), (30, 28)] {
+        let context = ranged_context(anchor, head);
+        let mut requests = Vec::new();
+        let plan = resolve_with_state(
+            &document,
+            &context,
+            vec![zoom(2)],
+            &BTreeMap::new(),
+            |request| {
+                requests.push(request.clone());
+                allocator("ranged", request)
+            },
+            |staged, site| {
+                assert_eq!(
+                    site.root_range,
+                    Some(FrameRange::new(ProjectFrame(28), ProjectFrame(30)).unwrap())
+                );
+                ranged_state(staged, site)
+            },
+        )
+        .unwrap();
+        assert_eq!(requests.len(), 1);
+        assert_eq!(plan.context.visual_selection, context.visual_selection);
+        assert_eq!(plan.context.cursor, context.cursor);
+        assert_eq!(
+            plan.trace[0].resolved_range,
+            Some(FrameRange::new(ProjectFrame(28), ProjectFrame(30)).unwrap())
+        );
+        let mapped = plan.context.scoped.as_ref().unwrap();
+        assert!(
+            mapped
+                .target
+                .matches_instance(&plan.document, &mapped.presentation)
+                .unwrap()
+        );
+        assert_ne!(mapped.target.node, node("a"));
+        assert!(plan.document.nodes()[&node("a")].framing.is_none());
+        let framing = plan.document.nodes()[&mapped.target.node]
+            .framing
+            .as_ref()
+            .unwrap();
+        for (local, scale) in [(1, 1), (3, 2), (5, 2), (7, 1)] {
+            assert_eq!(
+                framing
+                    .evaluate(
+                        ExactRatio::new(local, 2).unwrap(),
+                        FrameDuration::new(4).unwrap()
+                    )
+                    .unwrap()
+                    .scale,
+                ExactRatio::integer(scale)
+            );
+        }
+        let replay =
+            crate::replay_compound::<EditError>(&document, plan.request.as_ref().unwrap(), |_| {
+                Ok(())
+            })
+            .unwrap();
+        assert_eq!(replay.document, plan.document);
+        assert_eq!(replay.edit.inverse.apply(&plan.document).unwrap(), document);
+    }
+}
+
+#[test]
+fn scoped_range_calls_resolve_fresh_ranges_and_occurrences_without_captured_geometry() {
+    let document = fixture();
+    let bank = BTreeMap::from([
+        (name('a'), macro_value(vec![call('b', 1)])),
+        (name('b'), macro_value(vec![zoom(2)])),
+    ]);
+    let before = bank.clone();
+    let first = resolve_with_state(
+        &document,
+        &ranged_context(28, 30),
+        vec![call('a', 1)],
+        &bank,
+        |r| allocator("call-one", r),
+        ranged_state,
+    )
+    .unwrap();
+    let mut other = ranged_context(2, 4);
+    other.cursor = ProjectFrame(3);
+    let scoped = other.scoped.as_mut().unwrap();
+    scoped.target.repeats[0].branch = RepeatEditBranch::Play {
+        iteration: iteration("outer", 0),
+    };
+    scoped.target.repeats[1].branch = RepeatEditBranch::Play {
+        iteration: iteration("inner", 0),
+    };
+    scoped.presentation = presentation(0, 0);
+    let second = resolve_with_state(
+        &document,
+        &other,
+        vec![call('a', 1)],
+        &bank,
+        |r| allocator("call-two", r),
+        ranged_state,
+    )
+    .unwrap();
+    let first_node = &first.context.scoped.as_ref().unwrap().target.node;
+    let second_node = &second.context.scoped.as_ref().unwrap().target.node;
+    let initial = |plan: &SemanticPlan, node: &NodeId| {
+        plan.document.nodes()[node]
+            .framing
+            .as_ref()
+            .unwrap()
+            .evaluate(
+                ExactRatio::new(1, 2).unwrap(),
+                FrameDuration::new(4).unwrap(),
+            )
+            .unwrap()
+            .scale
+    };
+    assert_eq!(initial(&first, first_node), ExactRatio::ONE);
+    assert_eq!(initial(&second, second_node), ExactRatio::integer(2));
+    assert_eq!(
+        first.context.visual_selection,
+        ranged_context(28, 30).visual_selection
+    );
+    assert_eq!(second.context.visual_selection, other.visual_selection);
+    assert_eq!(bank, before);
+    let saved = serde_json::to_string(bank[&name('b')].as_ref()).unwrap();
+    assert!(!saved.contains("normalized_range") && !saved.contains("root_range"));
+}
+
+#[test]
+fn scoped_ranges_require_matching_host_windows_and_refuse_unrepresentable_geometry_before_allocation()
+ {
+    let document = fixture();
+    let context = ranged_context(28, 30);
+    let error = resolve(&document, &context, vec![zoom(2)], &BTreeMap::new(), |_| {
+        panic!("missing map allocated")
+    })
+    .unwrap_err();
+    assert!(error.message.contains("requested exact range"));
+    for window in [
+        (ExactRatio::new(-1, 4).unwrap(), ExactRatio::ONE),
+        (ExactRatio::ONE, ExactRatio::ONE),
+        (ExactRatio::new(1, 4).unwrap(), ExactRatio::integer(2)),
+        (
+            ExactRatio::new(1, 1_000_003).unwrap(),
+            ExactRatio::new(1, 2).unwrap(),
+        ),
+    ] {
+        assert!(
+            resolve_with_state(
+                &document,
+                &context,
+                vec![zoom(2)],
+                &BTreeMap::new(),
+                |_| panic!("invalid window allocated"),
+                |staged, site| {
+                    let mut result = state(staged, site)?;
+                    result.normalized_range = Some(window);
+                    Ok(result)
+                }
+            )
+            .is_err()
+        );
+    }
+    assert!(
+        resolve_with_state(
+            &document,
+            &entry(),
+            vec![zoom(2)],
+            &BTreeMap::new(),
+            |_| panic!("unsolicited window allocated"),
+            |staged, site| {
+                let mut result = state(staged, site)?;
+                result.normalized_range = Some((ExactRatio::ZERO, ExactRatio::ONE));
+                Ok(result)
+            }
+        )
+        .is_err()
+    );
+    assert!(
+        resolve_with_state(
+            &document,
+            &ranged_context(28, 28),
+            vec![zoom(2)],
+            &BTreeMap::new(),
+            |_| panic!("empty range allocated"),
+            |_, _| panic!("empty range reached host")
+        )
+        .is_err()
+    );
+    assert!(
+        resolve_with_state(
+            &document,
+            &ranged_context(26, 30),
+            vec![zoom(2)],
+            &BTreeMap::new(),
+            |_| panic!("cross-owner range allocated"),
+            ranged_state
+        )
+        .is_err()
+    );
+}
+
+#[test]
+fn scoped_visual_authority_rejects_nonframing_leaves_including_after_a_staged_zoom_and_inside_calls()
+ {
+    let document = fixture();
+    let context = ranged_context(28, 30);
+    let forbidden = [
+        SemanticInstruction::SetAudio {
+            change: crate::AudioChange::Step {
+                millidecibels: 3000,
+            },
+        },
+        SemanticInstruction::Split,
+        SemanticInstruction::SetFraming { framing: None },
+        motion(true, 1),
+        SemanticInstruction::BeginSelection,
+    ];
+    for leaf in forbidden {
+        let bank = BTreeMap::from([(name('a'), macro_value(vec![leaf.clone()]))]);
+        let before = bank.clone();
+        let error = resolve_with_state(
+            &document,
+            &context,
+            vec![leaf],
+            &bank,
+            |_| panic!("nonframing range allocated"),
+            ranged_state,
+        )
+        .unwrap_err();
+        assert!(error.message.contains("supports only framing intent"));
+        let mut allocated = 0;
+        let error = resolve_with_state(
+            &document,
+            &context,
+            vec![zoom(2), call('a', 1)],
+            &bank,
+            |request| {
+                allocated += 1;
+                allocator("atomic-range", request)
+            },
+            ranged_state,
+        )
+        .unwrap_err();
+        assert!(error.message.contains("supports only framing intent"));
+        assert_eq!(allocated, 1);
+        assert_eq!(document, fixture());
+        assert_eq!(bank, before);
+    }
 }
 
 #[test]
@@ -482,6 +789,82 @@ fn scoped_follow_creep_all_owner_kinds_use_validated_nested_plays_and_exact_isol
             },
             center: SemanticZoomCenter::Keep,
         };
+        for clock in [
+            crate::FramingClock::OwnerOutput,
+            crate::FramingClock::RetainedOutput {
+                offset: ExactRatio::new(1, 3).unwrap(),
+                duration: ExactRatio::new(14, 3).unwrap(),
+            },
+        ] {
+            let mut ranged_document = document.clone();
+            ranged_document
+                .nodes
+                .get_mut(&node("a"))
+                .unwrap()
+                .framing
+                .as_mut()
+                .unwrap()
+                .clock = clock;
+            ranged_document.validate().unwrap();
+            let ranged = resolve_with_state(
+                &ranged_document,
+                &ranged_context(28, 30),
+                vec![SemanticInstruction::Zoom {
+                    kind: ZoomKind::Creep {
+                        from: Some(ExactRatio::integer(3)),
+                        to: ExactRatio::integer(4),
+                        curve: ZoomCurve::Linear,
+                    },
+                    center: SemanticZoomCenter::Keep,
+                }],
+                &BTreeMap::new(),
+                |request| allocator("ranged-follow", request),
+                ranged_state,
+            )
+            .unwrap();
+            let owner = &ranged.context.scoped.as_ref().unwrap().target.node;
+            let framing = ranged.document.nodes()[owner].framing.as_ref().unwrap();
+            assert_eq!(framing.clock, crate::FramingClock::OwnerOutput);
+            for (local, live, fallback) in [
+                (0, ExactRatio::integer(2), ExactRatio::new(1, 2).unwrap()),
+                (1, ExactRatio::integer(3), ExactRatio::new(3, 4).unwrap()),
+                (
+                    2,
+                    ExactRatio::new(7, 2).unwrap(),
+                    ExactRatio::new(7, 8).unwrap(),
+                ),
+                (3, ExactRatio::integer(4), ExactRatio::ONE),
+                (4, ExactRatio::integer(4), ExactRatio::ONE),
+            ] {
+                let value = framing
+                    .evaluate_with_follow_exact(ExactRatio::integer(local), ExactRatio::integer(4))
+                    .unwrap();
+                assert_eq!(value.follow.unwrap().1, live, "{kind}/{clock:?}/{local}");
+                assert_eq!(value.pose.scale, fallback);
+            }
+            assert_eq!(
+                ranged.document.nodes()[&node("a")]
+                    .framing
+                    .as_ref()
+                    .unwrap()
+                    .clock,
+                clock
+            );
+            let replay = crate::replay_compound::<EditError>(
+                &ranged_document,
+                ranged.request.as_ref().unwrap(),
+                |_| Ok(()),
+            )
+            .unwrap();
+            assert_eq!(
+                replay.edit.inverse.apply(&ranged.document).unwrap(),
+                ranged_document
+            );
+            assert_eq!(
+                ProjectDocument::from_json(&ranged.document.to_json().unwrap()).unwrap(),
+                ranged.document
+            );
+        }
         let mut requests = vec![];
         let plan = resolve(
             &document,

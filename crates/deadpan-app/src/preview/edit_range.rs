@@ -1,6 +1,9 @@
-//! An Edit selection owns one exact revision and ordinary Sequence scope.
+//! An Edit selection owns one exact revision and ordinary Sequence scope,
+//! optionally bound to one explicitly selected Repeat occurrence for framing.
 
-use deadpan_core::{FrameRange, ProjectId, SemanticObjectSelection, SemanticVisualSelection};
+use deadpan_core::{
+    FrameRange, ProjectId, SemanticObjectSelection, SemanticScopedContext, SemanticVisualSelection,
+};
 
 use super::*;
 
@@ -11,6 +14,38 @@ pub(super) struct Identity {
     revision: RevisionId,
     scope: SequenceScope,
     parent: NodeId,
+    // Cursor and native navigation generation are deliberately absent. A
+    // moving head keeps the same authored and concrete occurrence address.
+    scoped: Option<SemanticScopedContext>,
+}
+
+/// Cheap equality data from the inspector's revision-checked state, not edit
+/// admission. Entry and parameter capture still call `semantic_framing`, which
+/// validates the complete target against the immutable workspace.
+fn scoped_identity(target: &crate::project::scoped::Target) -> Option<SemanticScopedContext> {
+    if !target.has_single_play_authority() {
+        return None;
+    }
+    Some(SemanticScopedContext {
+        root: target.root.clone(),
+        target: target.target.clone(),
+        presentation: target.presentation.clone()?,
+    })
+}
+
+fn validate_scoped_selection(
+    identity: Option<&Identity>,
+    selection: Option<&SemanticVisualSelection>,
+) -> Result<(), String> {
+    if identity.is_some_and(|identity| identity.scoped.is_some())
+        && !matches!(selection, None | Some(SemanticVisualSelection::Time { .. }))
+    {
+        return Err(
+            "Inside This play, select time for framing; objects and range sets need the parent."
+                .into(),
+        );
+    }
+    Ok(())
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -179,6 +214,7 @@ impl Selection {
         end: u64,
         object_range: Option<FrameRange>,
     ) -> Result<(), String> {
+        validate_scoped_selection(self.identity.as_ref(), selection.as_ref())?;
         let restored = selection
             .as_ref()
             .map(|selection| match selection {
@@ -394,6 +430,7 @@ impl DeadpanApp {
             return Err("The Edit selection belongs to an earlier editing context.".into());
         }
         let selection = self.edit_range.semantic()?;
+        validate_scoped_selection(self.edit_range.identity.as_ref(), selection.as_ref())?;
         if let Some(SemanticVisualSelection::Nodes { nodes }) = &selection {
             self.resolve_native_node_set(nodes)?;
             return Ok(selection);
@@ -440,6 +477,7 @@ impl DeadpanApp {
         let identity = self
             .edit_range_identity()
             .ok_or("The macro edit is no longer visible.")?;
+        validate_scoped_selection(Some(&identity), selection.as_ref())?;
         let workspace = self
             .workspace
             .as_ref()
@@ -489,6 +527,7 @@ impl DeadpanApp {
         if identity.session != range.session
             || identity.project != range.project
             || identity.parent != range.parent
+            || identity.scoped.is_some()
             || self.last_committed.as_ref() != Some(&identity.revision)
             || range.range.start().0 < self.scope_start as i64
             || range.range.end().0 > self.scope_end as i64
@@ -507,13 +546,35 @@ impl DeadpanApp {
     fn edit_range_identity(&self) -> Option<Identity> {
         let workspace = self.workspace.as_ref()?;
         let scope = self.sequence_scope.resolve(workspace).ok()?;
+        let scoped = match self.scoped_target().ok()? {
+            Some(target) => Some(scoped_identity(&target)?),
+            None => None,
+        };
         Some(Identity {
             session: workspace.session,
             project: workspace.document.project_id().clone(),
             revision: workspace.document.revision_id().clone(),
             scope: self.sequence_scope.clone(),
             parent: scope.owner.clone(),
+            scoped,
         })
+    }
+
+    /// Strict command-entry authority from the current immutable workspace.
+    /// Native command captures retain navigation separately; the returned
+    /// equality data contains only stable authoring/presentation addresses.
+    pub(super) fn scoped_visual_framing_authority(
+        &self,
+    ) -> Result<Option<SemanticScopedContext>, String> {
+        let Some(target) = self.scoped_target()? else {
+            return Ok(None);
+        };
+        let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
+        target.semantic_framing(workspace).map(Some)
+    }
+
+    pub(super) fn has_scoped_visual_selection(&self) -> bool {
+        self.scoped.is_some() && self.edit_range.has_bounds() && self.edit_range_is_current()
     }
 
     fn edit_range_is_current(&self) -> bool {
@@ -1001,6 +1062,10 @@ impl DeadpanApp {
         if !self.macro_action_allowed(Action::VisualMoment) {
             return;
         }
+        if let Err(error) = self.scoped_visual_framing_authority() {
+            self.error = Some(error);
+            return;
+        }
         self.bindings.clear();
         self.reconcile_edit_range();
         if self.edit_range.identity.is_none() {
@@ -1020,7 +1085,21 @@ impl DeadpanApp {
         self.edit_range.toggle(self.sequence_cursor);
         self.record_macro_local(instruction);
         self.error = None;
-        self.message = Some(if self.edit_range.active {
+        self.message = Some(if self.has_scoped_visual_selection() {
+            if self.edit_range.active {
+                format!(
+                    "{} extends the Edit framing range in This play; {} finishes; {} clears. Select before recording.",
+                    self.editor_pair(EditorKey::FramePrevious, EditorKey::FrameNext, "/"),
+                    self.editor_key(EditorKey::Visual),
+                    self.editor_key(EditorKey::Escape)
+                )
+            } else {
+                format!(
+                    "This play's Edit range is retained for :zoom or :creep. {} clears; other edits need the range cleared.",
+                    self.editor_key(EditorKey::Escape)
+                )
+            }
+        } else if self.edit_range.active {
             format!(
                 "{} and {} extend the Edit range; {} copies; {} cuts; {} finishes; {} clears.",
                 self.editor_pair(EditorKey::FramePrevious, EditorKey::FrameNext, "/"),
@@ -1137,13 +1216,18 @@ impl DeadpanApp {
         }
         if self.edit_selection() == navigation::EditSelection::Empty {
             return Some(format!(
-                "Edit range empty · move to select time · {} clears",
+                "Edit range empty{} · move to select time · {} clears",
+                if self.has_scoped_visual_selection() {
+                    " · This play · framing"
+                } else {
+                    ""
+                },
                 self.editor_key(EditorKey::Escape)
             ));
         }
         self.selected_edit_range().map(|range| {
             format!(
-                "Edit [{}..{}) · {} f · {}",
+                "Edit [{}..{}) · {} f · {}{}",
                 range.start().0,
                 range.end().0,
                 range.end().0 - range.start().0,
@@ -1151,6 +1235,11 @@ impl DeadpanApp {
                     "extending"
                 } else {
                     "selected"
+                },
+                if self.has_scoped_visual_selection() {
+                    " · This play · framing"
+                } else {
+                    ""
                 },
             )
         })
@@ -1168,7 +1257,169 @@ mod tests {
             revision: RevisionId::new(revision).unwrap(),
             scope,
             parent: NodeId::new("sequence").unwrap(),
+            scoped: None,
         }
+    }
+
+    fn scoped_target(ordinal: u32) -> crate::project::scoped::Target {
+        use deadpan_core::{
+            InstancePath, IterationId, RepeatEditBranch, RepeatEditStep, RepeatInstance,
+            ScopedNodeTarget,
+        };
+        let repeat = NodeId::new("repeat").unwrap();
+        let node = NodeId::new("source").unwrap();
+        let iteration = IterationId {
+            allocation: RevisionId::new("allocation").unwrap(),
+            ordinal,
+        };
+        crate::project::scoped::Target {
+            session: 1,
+            navigation: 10,
+            project: ProjectId::new("project").unwrap(),
+            revision: RevisionId::new("a").unwrap(),
+            scope: SequenceScope::default(),
+            root: repeat.clone(),
+            target: ScopedNodeTarget {
+                node: node.clone(),
+                repeats: vec![RepeatEditStep {
+                    repeat: repeat.clone(),
+                    branch: RepeatEditBranch::Play {
+                        iteration: iteration.clone(),
+                    },
+                }],
+            },
+            presentation: Some(InstancePath {
+                node,
+                repeats: vec![RepeatInstance {
+                    node: repeat,
+                    iteration,
+                }],
+            }),
+            cursor: ProjectFrame(12),
+            also: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn scoped_time_identity_keeps_forward_and_backward_heads_across_cursor_navigation() {
+        for (anchor, head) in [(12, 32), (32, 12)] {
+            let mut target = scoped_target(1);
+            let original = Identity {
+                scoped: scoped_identity(&target),
+                ..identity("a", SequenceScope::default())
+            };
+            let mut selection = Selection::default();
+            selection.reconcile(Some(original.clone()));
+            selection.toggle(anchor);
+            target.cursor = ProjectFrame(head as i64);
+            target.navigation += 7;
+            selection.move_to(head);
+            let fresh = Identity {
+                scoped: scoped_identity(&target),
+                ..original.clone()
+            };
+            assert_eq!(fresh, original);
+            selection.reconcile(Some(fresh));
+            assert_eq!(
+                selection.range(),
+                Some(FrameRange::new(ProjectFrame(12), ProjectFrame(32)).unwrap())
+            );
+            assert_eq!(
+                selection.semantic().unwrap(),
+                Some(SemanticVisualSelection::Time {
+                    anchor: ProjectFrame(anchor as i64),
+                    head: ProjectFrame(head as i64),
+                    extending: true,
+                })
+            );
+        }
+    }
+
+    #[test]
+    fn different_play_owner_or_presentation_discards_scoped_time() {
+        let target = scoped_target(1);
+        let original = Identity {
+            scoped: scoped_identity(&target),
+            ..identity("a", SequenceScope::default())
+        };
+        let mut another_owner = target.clone();
+        another_owner.target.node = NodeId::new("another-source").unwrap();
+        another_owner.presentation.as_mut().unwrap().node = another_owner.target.node.clone();
+        let mut another_root = target.clone();
+        another_root.root = NodeId::new("another-repeat").unwrap();
+        let mut another_presentation = target.clone();
+        another_presentation.presentation.as_mut().unwrap().repeats[0]
+            .iteration
+            .ordinal = 2;
+        for changed in [
+            scoped_target(2),
+            another_owner,
+            another_root,
+            another_presentation,
+        ] {
+            let mut selection = Selection::default();
+            selection.reconcile(Some(original.clone()));
+            selection.toggle(12);
+            selection.move_to(32);
+            selection.reconcile(Some(Identity {
+                scoped: scoped_identity(&changed),
+                ..original.clone()
+            }));
+            assert!(!selection.has_bounds());
+            assert!(!selection.active);
+        }
+    }
+
+    #[test]
+    fn unavailable_single_play_identity_cannot_keep_a_scoped_range() {
+        let target = scoped_target(1);
+        let original = Identity {
+            scoped: scoped_identity(&target),
+            ..identity("a", SequenceScope::default())
+        };
+        let mut default = target.clone();
+        default.target.repeats[0].branch = deadpan_core::RepeatEditBranch::Default;
+        let mut many = target.clone();
+        many.also.push(target.target.clone());
+        let mut dormant = target.clone();
+        dormant.presentation = None;
+        let mut no_play = target.clone();
+        no_play.target.repeats.clear();
+        for unavailable in [default, many, dormant, no_play] {
+            assert!(scoped_identity(&unavailable).is_none());
+            let mut selection = Selection::default();
+            selection.reconcile(Some(original.clone()));
+            selection.toggle(12);
+            selection.move_to(32);
+            selection.reconcile(None);
+            assert_eq!(selection.range(), None);
+            assert!(!selection.active);
+        }
+    }
+
+    #[test]
+    fn scoped_restore_refuses_object_geometry_without_replacing_retained_time() {
+        let mut selection = Selection::default();
+        selection.reconcile(Some(Identity {
+            scoped: scoped_identity(&scoped_target(1)),
+            ..identity("a", SequenceScope::default())
+        }));
+        selection.toggle(12);
+        selection.move_to(32);
+        let before = selection.clone();
+        assert!(
+            selection
+                .restore_semantic(
+                    Some(SemanticVisualSelection::Node {
+                        node: NodeId::new("source").unwrap(),
+                    }),
+                    0,
+                    100,
+                    Some(FrameRange::new(ProjectFrame(12), ProjectFrame(32)).unwrap()),
+                )
+                .is_err()
+        );
+        assert_eq!(selection, before);
     }
 
     // An inert descriptor for host equality tests. This creates no media,
@@ -1556,36 +1807,41 @@ mod tests {
 
     #[test]
     fn revision_session_project_scope_or_owner_change_discards_range() {
-        let original = identity("a", SequenceScope::default());
-        for changed in [
-            Identity {
-                revision: RevisionId::new("b").unwrap(),
-                ..original.clone()
-            },
-            Identity {
-                session: 2,
-                ..original.clone()
-            },
-            Identity {
-                project: ProjectId::new("other").unwrap(),
-                ..original.clone()
-            },
-            Identity {
-                scope: SequenceScope::test_path(vec![NodeId::new("child").unwrap()]),
-                ..original.clone()
-            },
-            Identity {
-                parent: NodeId::new("other").unwrap(),
-                ..original.clone()
-            },
-        ] {
-            let mut selection = Selection::default();
-            selection.reconcile(Some(original.clone()));
-            selection.toggle(10);
-            selection.move_to(40);
-            selection.reconcile(Some(changed));
-            assert_eq!(selection.range(), None);
-            assert!(!selection.active);
+        for scoped in [None, scoped_identity(&scoped_target(1))] {
+            let original = Identity {
+                scoped,
+                ..identity("a", SequenceScope::default())
+            };
+            for changed in [
+                Identity {
+                    revision: RevisionId::new("b").unwrap(),
+                    ..original.clone()
+                },
+                Identity {
+                    session: 2,
+                    ..original.clone()
+                },
+                Identity {
+                    project: ProjectId::new("other").unwrap(),
+                    ..original.clone()
+                },
+                Identity {
+                    scope: SequenceScope::test_path(vec![NodeId::new("child").unwrap()]),
+                    ..original.clone()
+                },
+                Identity {
+                    parent: NodeId::new("other").unwrap(),
+                    ..original.clone()
+                },
+            ] {
+                let mut selection = Selection::default();
+                selection.reconcile(Some(original.clone()));
+                selection.toggle(10);
+                selection.move_to(40);
+                selection.reconcile(Some(changed));
+                assert_eq!(selection.range(), None);
+                assert!(!selection.active);
+            }
         }
     }
 

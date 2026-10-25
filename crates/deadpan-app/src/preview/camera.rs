@@ -135,15 +135,31 @@ pub(super) fn dispatch_key(
     )
 }
 
+/// A captured selection retains its declared clock until the owner is resolved.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum ZoomRange {
+    Beat((u64, u64)),
+    ScopedRoot(deadpan_core::FrameRange),
+}
+
+impl ZoomRange {
+    fn beat(self) -> Option<(u64, u64)> {
+        match self {
+            Self::Beat(range) => Some(range),
+            Self::ScopedRoot(_) => None,
+        }
+    }
+}
+
 /// What a framing key or command asks for once its picture is displayed.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) enum FramingRequest {
     Camera,
     /// `,z`, `,c`, `:zoom` and `:creep`, with the Edit range captured inside
-    /// the beat at entry (beat-local frames).
+    /// the owner at entry, retaining ordinary or concrete-play clock authority.
     Zoom {
         input: crate::navigation::zoom::ZoomInput,
-        range: Option<(u64, u64)>,
+        range: Option<ZoomRange>,
     },
 }
 
@@ -1143,6 +1159,10 @@ impl DeadpanApp {
     }
 
     fn framing_request(&mut self, mut request: FramingRequest, context: &egui::Context) {
+        if matches!(request, FramingRequest::Camera) && self.has_scoped_visual_selection() {
+            self.error = Some("Use :zoom or :creep for this play's range, or clear the range before opening Camera. No edit was made.".into());
+            return;
+        }
         self.zoom_note = None;
         if self.view != View::Sequence {
             self.error = Some("Camera edits Your edit. The Original stays intact.".into());
@@ -1183,16 +1203,30 @@ impl DeadpanApp {
             return;
         };
         if let FramingRequest::Zoom { range, .. } = &mut request {
-            let captured = if scoped.is_some() {
-                // A Repeat play is framed whole.
-                if self.selected_edit_range().is_some() {
-                    self.error = Some("A range cannot be framed inside one Repeat play yet; clear the range to frame the whole play.".into());
-                    return;
+            let captured = if scoped.is_some() && self.edit_range.has_bounds() {
+                match self.selected_edit_range() {
+                    Some(range) => match self.scoped_visual_framing_authority() {
+                        Ok(Some(_)) => Some(ZoomRange::ScopedRoot(range)),
+                        Ok(None) => {
+                            self.error =
+                                Some("The range has no single-play framing authority.".into());
+                            return;
+                        }
+                        Err(error) => {
+                            self.error = Some(error);
+                            return;
+                        }
+                    },
+                    None => {
+                        self.error = Some("Select a nonempty Time range inside the chosen play; no edit was made.".into());
+                        return;
+                    }
                 }
+            } else if scoped.is_some() {
                 None
             } else {
                 match self.zoom_range(node) {
-                    Ok(range) => range,
+                    Ok(range) => range.map(ZoomRange::Beat),
                     Err(error) => {
                         self.error = Some(error);
                         return;
@@ -1292,6 +1326,14 @@ impl DeadpanApp {
                 })
             })
         });
+        let scoped_range = matches!(range, Some(ZoomRange::ScopedRoot(_)));
+        if scoped_range && !scoped_follow {
+            self.error = Some(
+                "The range lost its captured single-play framing authority; no edit was made."
+                    .into(),
+            );
+            return;
+        }
         let follow_creep = range.is_none()
             && self.workspace.as_ref().is_some_and(|workspace| {
                 session
@@ -1327,7 +1369,7 @@ impl DeadpanApp {
                 session.picker.iter().any(|entry| entry.saved.is_some()),
             )
         });
-        if self.macros.recording()
+        if (self.macros.recording() || scoped_range)
             && let Some(Err(error)) = &center_intent
         {
             self.error = Some(error.clone());
@@ -1335,11 +1377,23 @@ impl DeadpanApp {
         }
         let center_intent = center_intent.and_then(Result::ok);
         if let crate::navigation::zoom::TargetChoice::Face(number) = input.target {
-            self.start_proposal_zoom(session, input, range, DetectorKind::Faces, number);
+            self.start_proposal_zoom(
+                session,
+                input,
+                range.and_then(ZoomRange::beat),
+                DetectorKind::Faces,
+                number,
+            );
             return;
         }
         if let crate::navigation::zoom::TargetChoice::Region(number) = input.target {
-            self.start_proposal_zoom(session, input, range, DetectorKind::SalientRegions, number);
+            self.start_proposal_zoom(
+                session,
+                input,
+                range.and_then(ZoomRange::beat),
+                DetectorKind::SalientRegions,
+                number,
+            );
             return;
         }
         match self.zoom_framing(&session, &input, range, scoped_follow, None) {
@@ -1418,11 +1472,36 @@ impl DeadpanApp {
         &self,
         session: &CameraSession,
         input: &crate::navigation::zoom::ZoomInput,
-        range: Option<(u64, u64)>,
+        range: Option<ZoomRange>,
         captured_scoped: bool,
         proposal: Option<(&TargetId, &AttentionTarget)>,
     ) -> Result<(Option<Framing>, Option<String>), String> {
         use crate::navigation::zoom::{self, Center, Resolved, TargetChoice};
+        let root_range = match range {
+            Some(ZoomRange::ScopedRoot(range)) => Some(range),
+            _ => None,
+        };
+        let range = range.and_then(ZoomRange::beat);
+        let normalized_range = root_range
+            .map(|range| -> Result<_, String> {
+                if !captured_scoped || session.scoped.is_none() {
+                    return Err("A range needs its captured single-play framing authority.".into());
+                }
+                let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
+                let at =
+                    ProjectFrame(i64::try_from(session.cursor).map_err(|error| error.to_string())?);
+                let limits = deadpan_core::BoundaryQueryLimits {
+                    max_scopes: 2 * (deadpan_core::MAX_DOCUMENT_DEPTH + 1),
+                    max_comparisons: 2 * deadpan_core::BoundaryQueryLimits::default()
+                        .max_comparisons,
+                };
+                workspace
+                    .plan
+                    .picture_owner_map(&session.scope, at, limits)
+                    .and_then(|mapping| mapping.normalized_range(range))
+                    .map_err(|error| error.to_string())
+            })
+            .transpose()?;
         let followed = match &session.entry {
             Some(Framing {
                 value: FramingValue::Follow { target, .. },
@@ -1448,6 +1527,9 @@ impl DeadpanApp {
                 self.resolve_target(text)
             })?,
         };
+        if normalized_range.is_some() && matches!(resolved, Resolved::Target(_)) {
+            return Err("A single-play range keeps its current center or uses target=center; sampled targets require a whole owner.".into());
+        }
         let label = |id: &TargetId| match proposal {
             Some((proposed, target)) if proposed == id => target.label.clone(),
             _ => self.target_label(id),
@@ -1490,7 +1572,21 @@ impl DeadpanApp {
             range,
             explicit: !matches!(input.target, TargetChoice::Keep | TargetChoice::Selected),
         };
-        let framing = zoom::build(input.kind, &center, &shot)?;
+        let framing = match normalized_range {
+            Some(window) => deadpan_core::framing_zoom::build_normalized_range(
+                input.kind, &center, &shot, window,
+            )?,
+            None => zoom::build(input.kind, &center, &shot)?,
+        };
+        if let (Some(range), Some((_, end)), zoom::ZoomKind::Creep { .. }) =
+            (root_range, normalized_range, input.kind)
+            && end.compare(ExactRatio::ONE).is_lt()
+        {
+            note = Some(format!(
+                "The creep reaches Edit boundary {}; its end scale or pose is held through the remaining owner output.",
+                range.end().0
+            ));
+        }
         if let (Some((_, end)), zoom::ZoomKind::Creep { .. }) = (range, input.kind)
             && end < frames
         {
@@ -1674,7 +1770,7 @@ impl DeadpanApp {
             let (framing, note) = self.zoom_framing(
                 &pending.camera,
                 &pending.input,
-                pending.range,
+                pending.range.map(ZoomRange::Beat),
                 false,
                 Some((&id, &target)),
             )?;

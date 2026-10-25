@@ -79,6 +79,7 @@ fn site(owner: &str, frame: i64, original_center: bool) -> SemanticFramingSite {
         frame: ProjectFrame(frame),
         original_center,
         presentation: None,
+        root_range: None,
     }
 }
 
@@ -409,6 +410,7 @@ fn semantic_framing_uses_live_follow_pose_at_retimed_source_clock_instead_of_fal
         node: node("source"),
         frame: ProjectFrame(70),
         original_center: false,
+        root_range: None,
         presentation: Some(deadpan_core::InstancePath {
             node: node("source"),
             repeats: vec![deadpan_core::RepeatInstance {

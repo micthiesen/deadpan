@@ -480,9 +480,38 @@ fn headless_scoped_zoom_wire_and_occurrence_refusals_leave_the_bank_and_history_
     let mut invalid = request.clone();
     invalid["operation"]["scoped"]["target"]["repeats"][0]["branch"] = json!({"type":"default"});
     reject(&package, &input, &invalid)?;
+    // A contained range is now valid. Dry-run the actual qualified host wire,
+    // including OriginalCenter, while retaining the untouched baseline for
+    // every refusal below.
+    let mut supported = request.clone();
+    supported["operation"]["visual_selection"] =
+        json!({"type":"time","anchor":121,"head":122,"extending":false});
+    let frozen = state(&package)?;
+    let rows = history_rows(&package)?;
+    let predicted = prepared_plan(&package, &supported)?;
+    let preview = invoke(&package, &input, &supported, true)?;
+    assert_eq!(preview["committed"], false);
+    assert_eq!(state(&package)?, frozen);
+    assert_eq!(history_rows(&package)?, rows);
+    let mapped = &predicted.context.scoped.as_ref().unwrap().presentation;
+    let planned = RenderPlan::compile(&predicted.document)?;
+    for (frame, scale) in [(120, 1), (121, 2), (122, 1)] {
+        let picture = planned.picture(ProjectFrame(frame))?;
+        let pose = picture
+            .framing
+            .iter()
+            .find(|layer| &layer.instance == mapped && !layer.escalation)
+            .unwrap()
+            .pose
+            .unwrap_or_default();
+        assert_eq!(
+            pose,
+            FramingPose::new(ratio(1, 2), ratio(1, 2), ExactRatio::integer(scale))?
+        );
+    }
     let mut invalid = request.clone();
     invalid["operation"]["visual_selection"] =
-        json!({"type":"time","anchor":121,"head":122,"extending":false});
+        json!({"type":"time","anchor":119,"head":122,"extending":false});
     reject(&package, &input, &invalid)?;
     let mut invalid = request.clone();
     invalid["operation"]["scoped"]["root"] = json!("camera-source");
