@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "version": "1.31.0",
+  "architecture": "macos-arm64",
+  "prefix": "/private/tmp/deadpan-word-refinement-2026-10-25/ort-bootstrap-final/prefix",
+  "existing_verified": false,
+  "user_agent": "OpenAI File Downloader, XaiImageApiFetch/1.0",
+  "header_commit": "402979ac1bef89dcd55add41eaa7277c407599eb",
+  "headers": {
+    "onnxruntime_c_api.h": {
+      "url": "https://raw.githubusercontent.com/microsoft/onnxruntime/402979ac1bef89dcd55add41eaa7277c407599eb/include/onnxruntime/core/session/onnxruntime_c_api.h",
+      "bytes": 422790,
+      "sha256": "43d584f596ef66820421317df32a79a95fc1d39ee46cb3971a870c08d8ba4baa"
+    },
+    "onnxruntime_cxx_api.h": {
+      "url": "https://raw.githubusercontent.com/microsoft/onnxruntime/402979ac1bef89dcd55add41eaa7277c407599eb/include/onnxruntime/core/session/onnxruntime_cxx_api.h",
+      "bytes": 175424,
+      "sha256": "1e80d494c47091b07d84de60ad570326f82ed841c6de66e5b3eb7dce17bfc467"
+    },
+    "onnxruntime_cxx_inline.h": {
+      "url": "https://raw.githubusercontent.com/microsoft/onnxruntime/402979ac1bef89dcd55add41eaa7277c407599eb/include/onnxruntime/core/session/onnxruntime_cxx_inline.h",
+      "bytes": 164869,
+      "sha256": "908a50414c3f67f32fd556cd16f7779fa78380e12e9d08e44f5e6f66b965a7be"
+    },
+    "onnxruntime_float16.h": {
+      "url": "https://raw.githubusercontent.com/microsoft/onnxruntime/402979ac1bef89dcd55add41eaa7277c407599eb/include/onnxruntime/core/session/onnxruntime_float16.h",
+      "bytes": 17991,
+      "sha256": "88b242845d25981633a0bbd1c148e273cf8bfb016ea3f57c4af41a06530f72b0"
+    },
+    "onnxruntime_ep_c_api.h": {
+      "url": "https://raw.githubusercontent.com/microsoft/onnxruntime/402979ac1bef89dcd55add41eaa7277c407599eb/include/onnxruntime/core/session/onnxruntime_ep_c_api.h",
+      "bytes": 165249,
+      "sha256": "b64036772115dbc6f06a900487ce22d34e862100db03e2ad62210758e27a19b2"
+    },
+    "onnxruntime_error_code.h": {
+      "url": "https://raw.githubusercontent.com/microsoft/onnxruntime/402979ac1bef89dcd55add41eaa7277c407599eb/include/onnxruntime/core/session/onnxruntime_error_code.h",
+      "bytes": 2775,
+      "sha256": "5ce3b054e798eced8d14f5b86e98692fd33470463f96194ce0700a2d53dd8721"
+    }
+  },
+  "wheel": {
+    "url": "https://files.pythonhosted.org/packages/e0/2b/117f94d73a3bac4276c285c47e384e1b3ea67b191aa4c7592df9d3f4a136/onnxruntime-1.31.0-cp313-cp313-macosx_14_0_arm64.whl",
+    "bytes": 20881803,
+    "sha256": "0ba02a44acb6203040354d9a1f160e3f37a43feac7bb05caa3e0ea545efed505",
+    "extracted_member": "onnxruntime/capi/libonnxruntime.1.31.0.dylib"
+  },
+  "library": {
+    "bytes": 33037336,
+    "sha256": "9d2945b4de2ca594608f33b99498c8a81e6696e75da7ae9c67bc9ad3cc36c0d6"
+  },
+  "scope": "Pinned build input only; wheel never installed or imported. No model data."
+}

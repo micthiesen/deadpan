@@ -16,6 +16,7 @@ pub mod generated_geometry;
 pub mod generated_region;
 pub mod generation_quality;
 pub mod recognition;
+pub mod refinement;
 pub mod shots;
 pub mod tracking;
 pub mod transcript;

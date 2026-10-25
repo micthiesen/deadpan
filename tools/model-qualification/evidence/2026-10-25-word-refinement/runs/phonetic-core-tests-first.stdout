@@ -1,0 +1,10 @@
+
+running 5 tests
+test refinement::tests::input_rejection_and_cooperative_cancellation_precede_offers ... ok
+test refinement::tests::normalization_and_dictionary_order_are_explicit ... ok
+test refinement::tests::sentence_with_millions_of_pronunciation_tuples_is_bounded_polynomial_work ... ok
+test refinement::tests::dag_matches_cartesian_reference_including_repeats_and_exact_ties ... ok
+test refinement::tests::all_twenty_four_observed_backends_retain_paths_intervals_support_and_guard ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 187 filtered out; finished in 0.01s
+

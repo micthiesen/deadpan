@@ -1,0 +1,50 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
+   Compiling thiserror v2.0.20
+   Compiling syn v3.0.6
+   Compiling thiserror-impl v2.0.20
+   Compiling xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 3.91s
+     Running `target/debug/xtask bundle --output /tmp/deadpan-word-refinement-2026-10-25/bundle-first`
+   Compiling num-traits v0.2.19
+   Compiling rustix v1.1.5
+   Compiling syn v3.0.6
+   Compiling errno v0.3.14
+   Compiling syn v2.0.119
+   Compiling once_cell v1.21.4
+   Compiling objc2 v0.6.4
+   Compiling bytemuck v1.25.2
+   Compiling strength_reduce v0.2.4
+   Compiling deadpan-align v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-align)
+   Compiling num-integer v0.1.47
+   Compiling moxcms v0.8.1
+   Compiling num-complex v0.4.6
+   Compiling transpose v0.2.3
+   Compiling primal-check v0.3.4
+   Compiling objc2-core-foundation v0.3.2
+   Compiling objc2-foundation v0.3.2
+   Compiling rustfft v6.4.1
+   Compiling serde_derive v1.0.229
+   Compiling thiserror-impl v2.0.20
+   Compiling deadpan-native-process v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-process)
+   Compiling tempfile v3.27.0
+   Compiling objc2-core-video v0.3.2
+   Compiling thiserror v2.0.20
+   Compiling prettyplease v0.2.37
+   Compiling objc2-vision v0.3.2
+   Compiling bindgen v0.72.1
+   Compiling serde v1.0.229
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling image v0.25.10
+   Compiling whisper-rs-sys v0.15.0
+   Compiling deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+   Compiling deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling whisper-rs v0.16.0
+   Compiling deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+   Compiling deadpan-transcribe v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-transcribe)
+   Compiling deadpan-track v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-track)
+    Finished `release` profile [optimized] target(s) in 1m 20s
+xtask: /private/tmp/deadpan-word-refinement-2026-10-25/bundle-first/.Deadpan.alignment-pins-54822/Deadpan.app/Contents/MacOS/deadpan-align: not an admissible signed Mach-O executable: data hidden after the signature superblob

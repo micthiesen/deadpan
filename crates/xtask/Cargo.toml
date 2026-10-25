@@ -9,6 +9,7 @@ publish.workspace = true
 description = "Developer tasks: the full validation gate, build-directory hygiene and app bundling"
 
 [dependencies]
+thiserror.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
 

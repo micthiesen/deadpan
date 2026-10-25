@@ -1,0 +1,90 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error[E0308]: mismatched types
+    --> crates/deadpan-app/src/preview/refinement/ui.rs:316:48
+     |
+ 316 |             egui::CentralPanel::default().show(context, |ui| {
+     |                                           ---- ^^^^^^^ types differ in mutability
+     |                                           |
+     |                                           arguments to this method are incorrect
+     |
+     = note: expected mutable reference `&mut Ui`
+                        found reference `&eframe::egui::Context`
+note: method defined here
+    --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/egui-0.36.2/src/containers/panel.rs:1212:12
+     |
+1212 |     pub fn show<R>(self, ui: &mut Ui, add_contents: impl FnOnce(&mut Ui) -> R) -> InnerResponse<R> {
+     |            ^^^^
+
+error[E0599]: no method named `run` found for struct `eframe::egui::Context` in the current scope
+   --> crates/deadpan-app/src/preview/refinement/ui.rs:325:25
+    |
+325 |         let _ = context.run(egui::RawInput::default(), |context| paint(context, true));
+    |                         ^^^
+    |
+help: there is a method `run_ui` with a similar name
+    |
+325 |         let _ = context.run_ui(egui::RawInput::default(), |context| paint(context, true));
+    |                            +++
+
+error[E0599]: no method named `run` found for struct `eframe::egui::Context` in the current scope
+   --> crates/deadpan-app/src/preview/refinement/ui.rs:334:25
+    |
+334 |         let _ = context.run(
+    |                 --------^^^
+    |
+help: there is a method `run_ui` with a similar name
+    |
+334 |         let _ = context.run_ui(
+    |                            +++
+
+error[E0308]: mismatched types
+    --> crates/deadpan-app/src/preview/refinement/ui.rs:377:52
+     |
+ 377 |                 egui::CentralPanel::default().show(context, |ui| {
+     |                                               ---- ^^^^^^^ types differ in mutability
+     |                                               |
+     |                                               arguments to this method are incorrect
+     |
+     = note: expected mutable reference `&mut Ui`
+                        found reference `&eframe::egui::Context`
+note: method defined here
+    --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/egui-0.36.2/src/containers/panel.rs:1212:12
+     |
+1212 |     pub fn show<R>(self, ui: &mut Ui, add_contents: impl FnOnce(&mut Ui) -> R) -> InnerResponse<R> {
+     |            ^^^^
+
+error[E0599]: no method named `run` found for struct `eframe::egui::Context` in the current scope
+   --> crates/deadpan-app/src/preview/refinement/ui.rs:385:29
+    |
+385 |             let _ = context.run(egui::RawInput::default(), |context| paint(context, true));
+    |                             ^^^
+    |
+help: there is a method `run_ui` with a similar name
+    |
+385 |             let _ = context.run_ui(egui::RawInput::default(), |context| paint(context, true));
+    |                                +++
+
+error[E0599]: no method named `run` found for struct `eframe::egui::Context` in the current scope
+   --> crates/deadpan-app/src/preview/refinement/ui.rs:393:29
+    |
+393 |             let _ = context.run(
+    |                     --------^^^
+    |
+help: there is a method `run_ui` with a similar name
+    |
+393 |             let _ = context.run_ui(
+    |                                +++
+
+error[E0560]: struct `RawInput` has no field named `modifiers`
+   --> crates/deadpan-app/src/preview/refinement/ui.rs:396:21
+    |
+396 |                     modifiers,
+    |                     ^^^^^^^^^ `RawInput` does not have this field
+    |
+    = note: available fields are: `viewport_id`, `viewports`, `safe_area_insets`, `screen_rect`, `max_texture_side` ... and 6 others
+
+Some errors have detailed explanations: E0308, E0560, E0599.
+For more information about an error, try `rustc --explain E0308`.
+error: could not compile `deadpan-app` (bin "deadpan-app" test) due to 7 previous errors
+warning: build failed, waiting for other jobs to finish...

@@ -1,0 +1,83 @@
+[
+  {
+    "label": "regressions",
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tools/tests",
+      "-p",
+      "test_prepare_ort.py",
+      "-v"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.1249089241027832,
+    "script_sha256": "8c597e901f9a430ca99aef837d529817cc99cd7c14a40e6a98192499a1e7574e"
+  },
+  {
+    "label": "download",
+    "command": [
+      "python3",
+      "tools/prepare-ort.py",
+      "--prefix",
+      "/tmp/deadpan-word-refinement-2026-10-25/ort-bootstrap-final/prefix"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.9677510261535645,
+    "script_sha256": "8c597e901f9a430ca99aef837d529817cc99cd7c14a40e6a98192499a1e7574e"
+  },
+  {
+    "label": "verify",
+    "command": [
+      "python3",
+      "tools/prepare-ort.py",
+      "--prefix",
+      "/tmp/deadpan-word-refinement-2026-10-25/ort-bootstrap-final/prefix",
+      "--verify-only"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.06255388259887695,
+    "script_sha256": "8c597e901f9a430ca99aef837d529817cc99cd7c14a40e6a98192499a1e7574e"
+  },
+  {
+    "label": "existing",
+    "command": [
+      "python3",
+      "tools/prepare-ort.py",
+      "--prefix",
+      "/tmp/deadpan-word-refinement-2026-10-25/ort-bootstrap-final/prefix"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.05283522605895996,
+    "script_sha256": "8c597e901f9a430ca99aef837d529817cc99cd7c14a40e6a98192499a1e7574e"
+  },
+  {
+    "label": "corrupt",
+    "command": [
+      "python3",
+      "tools/prepare-ort.py",
+      "--prefix",
+      "/tmp/deadpan-word-refinement-2026-10-25/ort-bootstrap-final/negative-corrupt"
+    ],
+    "exit_code": 1,
+    "expected_success": false,
+    "elapsed_seconds": 0.056182861328125,
+    "script_sha256": "8c597e901f9a430ca99aef837d529817cc99cd7c14a40e6a98192499a1e7574e"
+  },
+  {
+    "label": "durable-verify",
+    "command": [
+      "python3",
+      "tools/prepare-ort.py",
+      "--prefix",
+      "/Users/michael/Library/Developer/Deadpan/onnxruntime-1.31.0-qualified-1/prefix",
+      "--verify-only"
+    ],
+    "exit_code": 0,
+    "expected_success": true,
+    "elapsed_seconds": 0.06365299224853516,
+    "script_sha256": "8c597e901f9a430ca99aef837d529817cc99cd7c14a40e6a98192499a1e7574e"
+  }
+]

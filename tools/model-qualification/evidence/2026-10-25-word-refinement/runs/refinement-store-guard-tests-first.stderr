@@ -1,0 +1,5 @@
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Finished `test` profile [optimized + debuginfo] target(s) in 28.34s
+     Running tests/analysis_corrections.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/analysis_corrections-4ade37f7871e0ecf)

@@ -1,0 +1,307 @@
+[
+  {
+    "label": "force-rewrite-ort",
+    "command": [
+      "install_name_tool",
+      "-id",
+      "@rpath/libonnxruntime.1.dylib",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/force/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "label": "force-rewrite-worker",
+    "command": [
+      "install_name_tool",
+      "-change",
+      "@rpath/libonnxruntime.1.dylib",
+      "@rpath/libonnxruntime.1.dylib",
+      "-delete_rpath",
+      "/Users/michael/Library/Developer/Deadpan/onnxruntime-1.31.0-qualified-1/prefix/lib",
+      "-add_rpath",
+      "@executable_path/../Frameworks",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/force/Deadpan.app/Contents/MacOS/deadpan-align"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "label": "force-sign-libonnxruntime.1.dylib",
+    "command": [
+      "codesign",
+      "--force",
+      "--options",
+      "runtime",
+      "--timestamp=none",
+      "-s",
+      "-",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/force/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/force/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib: replacing existing signature\n"
+  },
+  {
+    "label": "force-verify-libonnxruntime.1.dylib",
+    "command": [
+      "codesign",
+      "--verify",
+      "--strict",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/force/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "label": "force-sign-deadpan-align",
+    "command": [
+      "codesign",
+      "--force",
+      "--options",
+      "runtime",
+      "--timestamp=none",
+      "-s",
+      "-",
+      "-i",
+      "dev.deadpan.Deadpan.deadpan-align",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/force/Deadpan.app/Contents/MacOS/deadpan-align"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/force/Deadpan.app/Contents/MacOS/deadpan-align: replacing existing signature\n"
+  },
+  {
+    "label": "force-verify-deadpan-align",
+    "command": [
+      "codesign",
+      "--verify",
+      "--strict",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/force/Deadpan.app/Contents/MacOS/deadpan-align"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "label": "remove-first-rewrite-ort",
+    "command": [
+      "install_name_tool",
+      "-id",
+      "@rpath/libonnxruntime.1.dylib",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/remove-first/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "label": "remove-first-rewrite-worker",
+    "command": [
+      "install_name_tool",
+      "-change",
+      "@rpath/libonnxruntime.1.dylib",
+      "@rpath/libonnxruntime.1.dylib",
+      "-delete_rpath",
+      "/Users/michael/Library/Developer/Deadpan/onnxruntime-1.31.0-qualified-1/prefix/lib",
+      "-add_rpath",
+      "@executable_path/../Frameworks",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/remove-first/Deadpan.app/Contents/MacOS/deadpan-align"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "label": "remove-first-remove-libonnxruntime.1.dylib",
+    "command": [
+      "codesign",
+      "--remove-signature",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/remove-first/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "label": "remove-first-sign-libonnxruntime.1.dylib",
+    "command": [
+      "codesign",
+      "--force",
+      "--options",
+      "runtime",
+      "--timestamp=none",
+      "-s",
+      "-",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/remove-first/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "label": "remove-first-verify-libonnxruntime.1.dylib",
+    "command": [
+      "codesign",
+      "--verify",
+      "--strict",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/remove-first/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "label": "remove-first-remove-deadpan-align",
+    "command": [
+      "codesign",
+      "--remove-signature",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/remove-first/Deadpan.app/Contents/MacOS/deadpan-align"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "label": "remove-first-sign-deadpan-align",
+    "command": [
+      "codesign",
+      "--force",
+      "--options",
+      "runtime",
+      "--timestamp=none",
+      "-s",
+      "-",
+      "-i",
+      "dev.deadpan.Deadpan.deadpan-align",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/remove-first/Deadpan.app/Contents/MacOS/deadpan-align"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "label": "remove-first-verify-deadpan-align",
+    "command": [
+      "codesign",
+      "--verify",
+      "--strict",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/remove-first/Deadpan.app/Contents/MacOS/deadpan-align"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "label": "remove-first-repeat-rewrite-ort",
+    "command": [
+      "install_name_tool",
+      "-id",
+      "@rpath/libonnxruntime.1.dylib",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/remove-first-repeat/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "label": "remove-first-repeat-rewrite-worker",
+    "command": [
+      "install_name_tool",
+      "-change",
+      "@rpath/libonnxruntime.1.dylib",
+      "@rpath/libonnxruntime.1.dylib",
+      "-delete_rpath",
+      "/Users/michael/Library/Developer/Deadpan/onnxruntime-1.31.0-qualified-1/prefix/lib",
+      "-add_rpath",
+      "@executable_path/../Frameworks",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/remove-first-repeat/Deadpan.app/Contents/MacOS/deadpan-align"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "label": "remove-first-repeat-remove-libonnxruntime.1.dylib",
+    "command": [
+      "codesign",
+      "--remove-signature",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/remove-first-repeat/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "label": "remove-first-repeat-sign-libonnxruntime.1.dylib",
+    "command": [
+      "codesign",
+      "--force",
+      "--options",
+      "runtime",
+      "--timestamp=none",
+      "-s",
+      "-",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/remove-first-repeat/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "label": "remove-first-repeat-verify-libonnxruntime.1.dylib",
+    "command": [
+      "codesign",
+      "--verify",
+      "--strict",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/remove-first-repeat/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "label": "remove-first-repeat-remove-deadpan-align",
+    "command": [
+      "codesign",
+      "--remove-signature",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/remove-first-repeat/Deadpan.app/Contents/MacOS/deadpan-align"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "label": "remove-first-repeat-sign-deadpan-align",
+    "command": [
+      "codesign",
+      "--force",
+      "--options",
+      "runtime",
+      "--timestamp=none",
+      "-s",
+      "-",
+      "-i",
+      "dev.deadpan.Deadpan.deadpan-align",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/remove-first-repeat/Deadpan.app/Contents/MacOS/deadpan-align"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "label": "remove-first-repeat-verify-deadpan-align",
+    "command": [
+      "codesign",
+      "--verify",
+      "--strict",
+      "/tmp/deadpan-word-refinement-2026-10-25/signature-layout/remove-first-repeat/Deadpan.app/Contents/MacOS/deadpan-align"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  }
+]

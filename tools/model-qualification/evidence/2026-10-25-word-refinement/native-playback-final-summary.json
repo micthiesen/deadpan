@@ -1,0 +1,488 @@
+{
+  "failed": false,
+  "mode": "performance",
+  "metadata": {
+    "binary_sha256": "23adcfb893f82052ef96694ed410e0cd5721e40d3760637c9c894dcbb341914d",
+    "build_profile": "release",
+    "cache_state": "real installed phoneme model and Original decoder in a fresh replay process/private project copy; repeated job runs share process caches; OS file cache uncontrolled",
+    "cargo_lock_sha256_at_run": "92239e21cdeb857a8c9f876b8abacc4278f3913a752a5309410e7601ed43cbb7",
+    "fixture": "qualified Original project with its actual transcript and a manually pinned neighbor (replayed from a private portable copy; no timing-quality oracle)",
+    "fixture_identity_file": "/private/tmp/deadpan-word-refinement-2026-10-25/workflow/Source.deadpan/project.sqlite",
+    "fixture_sha256": "7a40b25511a8992c70cb3cdc5613a214113c22b58f7e1aaf1bacda8e794486ff",
+    "git_revision": "32b0620c726406e0deef1cf51cc93cf738a8b3b7",
+    "git_status": "M .github/workflows/ci.yml\n M Cargo.lock\n M Cargo.toml\n M crates/deadpan-analysis/Cargo.toml\n M crates/deadpan-analysis/src/lib.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/corrections.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/corrections.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/model_packs.rs\n M crates/deadpan-app/src/preview/playback.rs\n M crates/deadpan-app/src/project.rs\n M crates/deadpan-app/src/project/service.rs\n M crates/deadpan-app/src/project/service/headless.rs\n M crates/deadpan-app/src/project/service/readonly.rs\n M crates/deadpan-app/src/project/service/transcripts.rs\n M crates/deadpan-app/src/project/tests.rs\n M crates/deadpan-app/src/ui_harness.rs\n M crates/deadpan-cli/src/bundle.rs\n M crates/deadpan-cli/src/lib.rs\n M crates/deadpan-cli/src/live_project.rs\n M crates/deadpan-cli/src/models.rs\n M crates/deadpan-cli/tests/model_packs.rs\n M crates/deadpan-cli/tests/proxy_resume.rs\n M crates/deadpan-jobs/src/lib.rs\n M crates/deadpan-models/src/packs.rs\n M crates/deadpan-models/src/packs/constraints.rs\n M crates/deadpan-models/src/packs/tests.rs\n M crates/deadpan-models/src/packs/updates.rs\n M crates/deadpan-models/src/packs/updates/tests.rs\n M crates/deadpan-store/src/analysis_corrections.rs\n M crates/deadpan-store/tests/analysis_corrections.rs\n M crates/xtask/Cargo.toml\n M crates/xtask/src/bundle.rs\n M crates/xtask/src/bundle/macho.rs\n M crates/xtask/src/bundle/notices.rs\n M docs/DEVELOPMENT.md\n M docs/PACKAGING.md\n M docs/REQUIREMENTS.md\n M docs/spec/AGENT_HANDOFF.md\n M fuzz/Cargo.lock\n M packaging/notices/sources.json\n M tools/build-app.py\n?? .claude/\n?? crates/deadpan-analysis/src/refinement.rs\n?? crates/deadpan-analysis/src/refinement/\n?? crates/deadpan-app/src/preview/harness/word_refinement.rs\n?? crates/deadpan-app/src/preview/refinement.rs\n?? crates/deadpan-app/src/preview/refinement/\n?? crates/deadpan-app/src/project/refinement.rs\n?? crates/deadpan-app/src/project/tests/refinement.rs\n?? crates/deadpan-cli/src/bundle/\n?? crates/deadpan-cli/src/models/\n?? crates/deadpan-cli/src/refinement.rs\n?? crates/deadpan-cli/src/refinement/\n?? crates/deadpan-cli/tests/refinement.rs\n?? crates/deadpan-cli/tests/refinement_acceptance.rs\n?? crates/deadpan-jobs/src/refinement.rs\n?? crates/deadpan-jobs/src/refinement/\n?? crates/deadpan-models/src/packs/tests/\n?? crates/deadpan-models/src/packs/updates/refinement_tests.rs\n?? crates/xtask/src/bundle/macho/\n?? crates/xtask/src/bundle/notices/\n?? crates/xtask/src/bundle/refinement.rs\n?? docs/WORD_REFINEMENT.md\n?? models/licenses/cmudict-license.txt\n?? models/licenses/phoneme-author-bsd-2-clause.txt\n?? models/packs/phoneme-ctc-en-1.json\n?? native/deadpan-align/\n?? packaging/notices/onnxruntime/\n?? packaging/notices/refinement/\n?? tools/prepare-ort.py\n?? tools/tests/",
+    "gpu_readback_in_timing_run": false,
+    "hardware": "Apple M5 Max",
+    "os": "26.5.2",
+    "physical_display_measured": false,
+    "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+    "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+    "region_scenario_audio_fixture": "/Users/michael/Code/deadpan/crates/deadpan-app/../../native/deadpan-track/tests/fixtures/salient-audio.wav",
+    "region_scenario_audio_fixture_sha256": "8f2ede07d4e8aa6743b6f441f5fb3cc6c6347a333f7b4ede15c52315f7195089",
+    "region_scenario_fixture": "/Users/michael/Code/deadpan/crates/deadpan-app/../../native/deadpan-track/tests/fixtures/salient-regions.mp4",
+    "region_scenario_fixture_sha256": "aaffac5cc021297348101e3ce500a3febac48fc45021a511468cb3fd76784e93",
+    "replay_hz": 60,
+    "replay_wall_ms": 2749.2720830000003,
+    "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+    "started_unix_ms": 1792962592302,
+    "tracked_diff_sha256_at_run": "d0c558f9e36bab654a4afa9211be4df216810f1466911a39355997f388be83b3",
+    "viewport_points": [
+      1280,
+      820
+    ],
+    "wait_strategy": "egui_repaint_callback_v1"
+  },
+  "scenarios": [
+    {
+      "name": "kestrel-shortcuts",
+      "failed": false,
+      "findings": [],
+      "skipped": [],
+      "checks": [
+        {
+          "actual": {
+            "conflicts": [],
+            "live_source_sha256": null,
+            "reserved_bindings": 62,
+            "routing_cases": 21885504,
+            "source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2"
+          },
+          "expected": {
+            "conflicts": 0,
+            "source_drift": false
+          },
+          "name": "Production key routing reserves all Kestrel globals",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "word-refinement-playback",
+      "failed": false,
+      "findings": [
+        {
+          "message": "2 frame(s) settled their layout only on a second retry: [{\"frame\":33,\"input\":\"Command monitor 5%\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5753)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5888)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4226)\"]},{\"frame\":35,\"input\":\"Command correct\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5753)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5888)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4226)\"]}]",
+          "severity": "warning"
+        },
+        {
+          "message": "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":31,\"input\":\"Private playback fixture copy opened\",\"new_input\":false,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4226)\"]},{\"frame\":32,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6205)\"]},{\"frame\":33,\"input\":\"Command monitor 5%\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5753)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5888)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4226)\"]},{\"frame\":34,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6205)\"]},{\"frame\":35,\"input\":\"Command correct\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5753)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5888)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4226)\"]}]]",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "Native inference, canonical AudioRange preparation and macOS device delivery are real in this lane. Acoustic listening, physical display timing, VoiceOver speech and OS-delivered IME remain owner checks; this is workflow verification, not a phonetic accuracy evaluation.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and acoustic listening"
+      ],
+      "checks": [
+        {
+          "actual": {
+            "cleanup_on_exit": false,
+            "documents_root": "/private/tmp/deadpan-word-refinement-2026-10-25/native-playback-final/projects/word-refinement-playback/Documents",
+            "exclusive_creation": true,
+            "scenario": "word-refinement-playback"
+          },
+          "expected": {
+            "cleanup_on_exit": false,
+            "exclusive_creation": true,
+            "scenario": "word-refinement-playback"
+          },
+          "name": "Private replay project root retained for native QA after worker shutdown",
+          "passed": true
+        },
+        {
+          "actual": "Apple M5 Max",
+          "expected": "Metal",
+          "name": "Metal renderer",
+          "passed": true
+        },
+        {
+          "actual": {
+            "decoded": {
+              "label": "Showing sequence frame 1",
+              "location": "Project { session: 1, project: ProjectId(\"81175426-b335-45b7-a35b-76694125c80a\"), revision: RevisionId(\"f0081ed5-c0e6-452f-b125-dc5e7f612313\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 1, request: 1 }"
+            },
+            "decoded_framing": "[PictureFraming { instance: InstancePath { node: NodeId(\"90894abb-2f07-4b8f-86cb-784253fd896e\"), repeats: [] }, local_position: ExactRatio { numerator: 1, denominator: 2 }, duration: FrameDuration(158), effective_duration: ExactRatio { numerator: 158, denominator: 1 }, pose: None, escalation: false }, PictureFraming { instance: InstancePath { node: NodeId(\"cd8a636b-d3f6-41c3-b28b-11b1ef50f49a\"), repeats: [] }, local_position: ExactRatio { numerator: 1, denominator: 2 }, duration: FrameDuration(158), effective_duration: ExactRatio { numerator: 158, denominator: 1 }, pose: None, escalation: false }]",
+            "decoded_geometry_revision": 0,
+            "decoded_tier": "Original",
+            "displayed": {
+              "label": "Showing sequence frame 1",
+              "location": "Project { session: 1, project: ProjectId(\"81175426-b335-45b7-a35b-76694125c80a\"), revision: RevisionId(\"f0081ed5-c0e6-452f-b125-dc5e7f612313\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 1, request: 1 }"
+            },
+            "displayed_tier": "Original",
+            "error": null,
+            "geometry_revision": 0,
+            "loading": false,
+            "needs_render": false,
+            "requested": {
+              "label": "Showing sequence frame 1",
+              "location": "Project { session: 1, project: ProjectId(\"81175426-b335-45b7-a35b-76694125c80a\"), revision: RevisionId(\"f0081ed5-c0e6-452f-b125-dc5e7f612313\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 1, request: 1 }"
+            },
+            "source_frame": 0
+          },
+          "expected": {
+            "error": null,
+            "revision": "f0081ed5-c0e6-452f-b125-dc5e7f612313",
+            "view": "Sequence { frame: ProjectFrame(0) }"
+          },
+          "name": "Settled picture matches the current session, revision, context and cursor",
+          "passed": true
+        },
+        {
+          "actual": {
+            "decoded": {
+              "label": "Showing sequence frame 1",
+              "location": "Project { session: 1, project: ProjectId(\"81175426-b335-45b7-a35b-76694125c80a\"), revision: RevisionId(\"f0081ed5-c0e6-452f-b125-dc5e7f612313\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 1, request: 1 }"
+            },
+            "decoded_framing": "[PictureFraming { instance: InstancePath { node: NodeId(\"90894abb-2f07-4b8f-86cb-784253fd896e\"), repeats: [] }, local_position: ExactRatio { numerator: 1, denominator: 2 }, duration: FrameDuration(158), effective_duration: ExactRatio { numerator: 158, denominator: 1 }, pose: None, escalation: false }, PictureFraming { instance: InstancePath { node: NodeId(\"cd8a636b-d3f6-41c3-b28b-11b1ef50f49a\"), repeats: [] }, local_position: ExactRatio { numerator: 1, denominator: 2 }, duration: FrameDuration(158), effective_duration: ExactRatio { numerator: 158, denominator: 1 }, pose: None, escalation: false }]",
+            "decoded_geometry_revision": 0,
+            "decoded_tier": "Original",
+            "displayed": {
+              "label": "Showing sequence frame 1",
+              "location": "Project { session: 1, project: ProjectId(\"81175426-b335-45b7-a35b-76694125c80a\"), revision: RevisionId(\"f0081ed5-c0e6-452f-b125-dc5e7f612313\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 1, request: 1 }"
+            },
+            "displayed_tier": "Original",
+            "error": null,
+            "geometry_revision": 0,
+            "loading": false,
+            "needs_render": false,
+            "requested": {
+              "label": "Showing sequence frame 1",
+              "location": "Project { session: 1, project: ProjectId(\"81175426-b335-45b7-a35b-76694125c80a\"), revision: RevisionId(\"f0081ed5-c0e6-452f-b125-dc5e7f612313\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }",
+              "ticket": "Ticket { transport: None, source: 1, request: 1 }"
+            },
+            "source_frame": 0
+          },
+          "expected": {
+            "error": null,
+            "revision": "f0081ed5-c0e6-452f-b125-dc5e7f612313",
+            "view": "Sequence { frame: ProjectFrame(0) }"
+          },
+          "name": "Settled picture matches the current session, revision, context and cursor",
+          "passed": true
+        },
+        {
+          "actual": "running",
+          "expected": true,
+          "name": "Local refinement opens as an unsaved owned request",
+          "passed": true
+        },
+        {
+          "actual": "deadpan-phoneme-alpha06-ort-cpu-1",
+          "expected": "deadpan-phoneme-alpha06-ort-cpu-1",
+          "name": "Real device lane starts from a verified native model proposal",
+          "passed": true
+        },
+        {
+          "actual": {
+            "faults": 0,
+            "generation": "Some(Generation { channel: 1, serial: 1 })",
+            "generations": 1,
+            "reports": 8,
+            "sample": 2482,
+            "silent_frames": 0,
+            "starved": 0
+          },
+          "expected": {
+            "faults": 0,
+            "padding": 0,
+            "real_device": true,
+            "starvation": 0
+          },
+          "name": "Actual prepared PCM reaches a healthy device generation",
+          "passed": true
+        },
+        {
+          "actual": {
+            "independent_cursor": 2482,
+            "retained_sample": 2482
+          },
+          "expected": {
+            "minimum_sample": 2482,
+            "paused": true
+          },
+          "name": "Pause retains an independent exact context sample and the same window",
+          "passed": true
+        },
+        {
+          "actual": {
+            "sample": 2482,
+            "window": [
+              0,
+              68640
+            ]
+          },
+          "expected": {
+            "sample": 2482,
+            "window": [
+              0,
+              68640
+            ]
+          },
+          "name": "Resume starts at the retained device estimate rather than restarting the context",
+          "passed": true
+        },
+        {
+          "actual": {
+            "bytes": 3665,
+            "sha256": "2dd07d35b6c5492b8628d9656dac7cc565fdf47ea26329990c38ee384056b2c3",
+            "complete_value_in_replay_archive": true
+          },
+          "expected": {
+            "editor_location": "retained",
+            "picture": {
+              "decoded": {
+                "label": "Showing sequence frame 1",
+                "location": "Project { session: 1, project: ProjectId(\"81175426-b335-45b7-a35b-76694125c80a\"), revision: RevisionId(\"f0081ed5-c0e6-452f-b125-dc5e7f612313\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }",
+                "ticket": "Ticket { transport: None, source: 1, request: 1 }"
+              },
+              "decoded_framing": "[PictureFraming { instance: InstancePath { node: NodeId(\"90894abb-2f07-4b8f-86cb-784253fd896e\"), repeats: [] }, local_position: ExactRatio { numerator: 1, denominator: 2 }, duration: FrameDuration(158), effective_duration: ExactRatio { numerator: 158, denominator: 1 }, pose: None, escalation: false }, PictureFraming { instance: InstancePath { node: NodeId(\"cd8a636b-d3f6-41c3-b28b-11b1ef50f49a\"), repeats: [] }, local_position: ExactRatio { numerator: 1, denominator: 2 }, duration: FrameDuration(158), effective_duration: ExactRatio { numerator: 158, denominator: 1 }, pose: None, escalation: false }]",
+              "decoded_geometry_revision": 0,
+              "decoded_tier": "Original",
+              "displayed": {
+                "label": "Showing sequence frame 1",
+                "location": "Project { session: 1, project: ProjectId(\"81175426-b335-45b7-a35b-76694125c80a\"), revision: RevisionId(\"f0081ed5-c0e6-452f-b125-dc5e7f612313\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }",
+                "ticket": "Ticket { transport: None, source: 1, request: 1 }"
+              },
+              "displayed_tier": "Original",
+              "error": null,
+              "geometry_revision": 0,
+              "loading": false,
+              "needs_render": false,
+              "requested": {
+                "label": "Showing sequence frame 1",
+                "location": "Project { session: 1, project: ProjectId(\"81175426-b335-45b7-a35b-76694125c80a\"), revision: RevisionId(\"f0081ed5-c0e6-452f-b125-dc5e7f612313\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }",
+                "ticket": "Ticket { transport: None, source: 1, request: 1 }"
+              },
+              "source_frame": 0
+            }
+          },
+          "name": "Real context audition preserves both editor clocks, selection and submitted picture identity",
+          "passed": true
+        },
+        {
+          "actual": {
+            "bytes": 3622,
+            "sha256": "c83a51d2ece7dd924b0d7b0235d4848f3b9ae990cf7f3206e06b00f4bc344a8e",
+            "complete_value_in_replay_archive": true
+          },
+          "expected": {
+            "editor_location": "retained",
+            "faults": 0,
+            "phase": "Ended",
+            "resume": false,
+            "sample": 68640,
+            "starved": 0,
+            "transport": false
+          },
+          "name": "Natural context completion clears transport and resume without moving editor clocks or picture",
+          "passed": true
+        },
+        {
+          "actual": {
+            "revision": "f0081ed5-c0e6-452f-b125-dc5e7f612313",
+            "words": [
+              {
+                "end_cs": 52,
+                "probability": 0.8451359868049622,
+                "segment": 0,
+                "start_cs": 21,
+                "text": "Copper,"
+              },
+              {
+                "end_cs": 101,
+                "probability": 0.7425822019577026,
+                "segment": 0,
+                "start_cs": 76,
+                "text": "birds,"
+              },
+              {
+                "end_cs": 163,
+                "probability": 0.948849081993103,
+                "segment": 0,
+                "start_cs": 130,
+                "text": "cross,"
+              },
+              {
+                "end_cs": 227,
+                "probability": 0.9908676147460938,
+                "segment": 0,
+                "start_cs": 191,
+                "text": "quiet,"
+              },
+              {
+                "end_cs": 273,
+                "probability": 1.0,
+                "segment": 0,
+                "start_cs": 253,
+                "text": "roofs."
+              }
+            ]
+          },
+          "expected": {
+            "revision": "f0081ed5-c0e6-452f-b125-dc5e7f612313",
+            "words": [
+              {
+                "end_cs": 52,
+                "probability": 0.8451359868049622,
+                "segment": 0,
+                "start_cs": 21,
+                "text": "Copper,"
+              },
+              {
+                "end_cs": 101,
+                "probability": 0.7425822019577026,
+                "segment": 0,
+                "start_cs": 76,
+                "text": "birds,"
+              },
+              {
+                "end_cs": 163,
+                "probability": 0.948849081993103,
+                "segment": 0,
+                "start_cs": 130,
+                "text": "cross,"
+              },
+              {
+                "end_cs": 227,
+                "probability": 0.9908676147460938,
+                "segment": 0,
+                "start_cs": 191,
+                "text": "quiet,"
+              },
+              {
+                "end_cs": 273,
+                "probability": 1.0,
+                "segment": 0,
+                "start_cs": 253,
+                "text": "roofs."
+              }
+            ]
+          },
+          "name": "Natural AudioRange completion preserves annotations and authored history",
+          "passed": true
+        },
+        {
+          "actual": {
+            "sample": 0,
+            "window": [
+              0,
+              68640
+            ]
+          },
+          "expected": {
+            "sample": 0,
+            "window": [
+              0,
+              68640
+            ]
+          },
+          "name": "Fresh Space after completion restarts the same context at its beginning",
+          "passed": true
+        },
+        {
+          "actual": {
+            "revision": "f0081ed5-c0e6-452f-b125-dc5e7f612313",
+            "words": [
+              {
+                "end_cs": 52,
+                "probability": 0.8451359868049622,
+                "segment": 0,
+                "start_cs": 21,
+                "text": "Copper,"
+              },
+              {
+                "end_cs": 101,
+                "probability": 0.7425822019577026,
+                "segment": 0,
+                "start_cs": 76,
+                "text": "birds,"
+              },
+              {
+                "end_cs": 163,
+                "probability": 0.948849081993103,
+                "segment": 0,
+                "start_cs": 130,
+                "text": "cross,"
+              },
+              {
+                "end_cs": 227,
+                "probability": 0.9908676147460938,
+                "segment": 0,
+                "start_cs": 191,
+                "text": "quiet,"
+              },
+              {
+                "end_cs": 273,
+                "probability": 1.0,
+                "segment": 0,
+                "start_cs": 253,
+                "text": "roofs."
+              }
+            ]
+          },
+          "expected": {
+            "revision": "f0081ed5-c0e6-452f-b125-dc5e7f612313",
+            "words": [
+              {
+                "end_cs": 52,
+                "probability": 0.8451359868049622,
+                "segment": 0,
+                "start_cs": 21,
+                "text": "Copper,"
+              },
+              {
+                "end_cs": 101,
+                "probability": 0.7425822019577026,
+                "segment": 0,
+                "start_cs": 76,
+                "text": "birds,"
+              },
+              {
+                "end_cs": 163,
+                "probability": 0.948849081993103,
+                "segment": 0,
+                "start_cs": 130,
+                "text": "cross,"
+              },
+              {
+                "end_cs": 227,
+                "probability": 0.9908676147460938,
+                "segment": 0,
+                "start_cs": 191,
+                "text": "quiet,"
+              },
+              {
+                "end_cs": 273,
+                "probability": 1.0,
+                "segment": 0,
+                "start_cs": 253,
+                "text": "roofs."
+              }
+            ]
+          },
+          "name": "Real device audition never accepts timing or edits the Original",
+          "passed": true
+        },
+        {
+          "actual": [],
+          "expected": [],
+          "name": "Every painted frame has a settled layout (no ignored retry)",
+          "passed": true
+        },
+        {
+          "actual": [],
+          "expected": [],
+          "name": "No layout retry repeats for three frames without new input",
+          "passed": true
+        }
+      ]
+    }
+  ]
+}

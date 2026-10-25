@@ -12,6 +12,7 @@ signature is needed, and is never notarized or distributed.
 
 ```sh
 export DEADPAN_FFMPEG_PREFIX="$HOME/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix"   # build time only
+export DEADPAN_ORT_PREFIX="/absolute/path/to/qualified-onnxruntime-1.31.0"   # build time only
 cargo xtask bundle --output /tmp/deadpan-bundle
 cargo xtask bundle-verify /tmp/deadpan-bundle/Deadpan.app
 ```
@@ -33,7 +34,8 @@ cargo xtask bundle-verify /tmp/deadpan-bundle/Deadpan.app
 
 The build runs `cargo build --release --locked --bins
 --message-format=json-render-diagnostics` for `deadpan-app`, `deadpan-cli`,
-`deadpan-media-worker`, `deadpan-transcribe` and `deadpan-track`. It uses its own
+`deadpan-media-worker`, `deadpan-transcribe`, `deadpan-track` and
+`deadpan-align`. It uses its own
 target directory, `<cargo metadata target_directory>/bundle`, and takes each
 executable path from Cargo's artifact messages, never a hard-coded
 `target/release`. The build assembles the bundle in a hidden staging directory
@@ -68,12 +70,13 @@ build-time tool only.
 | Path | Contents |
 | --- | --- |
 | `Contents/MacOS/deadpan-app` | Main executable; also `--headless` and the render worker. |
-| `Contents/MacOS/deadpan-cli`, `deadpan-media-worker`, `deadpan-transcribe`, `deadpan-track` | Helper tools. Workers already resolve beside the running executable, so no lookup changed. |
+| `Contents/MacOS/deadpan-cli`, `deadpan-media-worker`, `deadpan-transcribe`, `deadpan-track`, `deadpan-align` | Helper tools. Workers already resolve beside the running executable, so no lookup changed. |
 | `Contents/Frameworks/lib{avcodec.62,avformat.62,avutil.60,avfilter.11,swresample.6,swscale.9}.dylib` | The transitive pinned LGPL FFmpeg 8.0.3 libraries the executables load. |
+| `Contents/Frameworks/libonnxruntime.1.dylib` | Qualified ONNX Runtime 1.31.0 for the native word-refinement worker, with system-only dependencies. |
 | `Contents/Resources/helpers/{yt-dlp,deno}/<version>/` and `manifest.json` | Read-only downloader baseline. |
 | `Contents/Resources/ai-runtime/` | Private AI runtime: `python/` (CPython 3.12.13 with the locked wheels), `ltx-2-mlx/` (139 pinned source files), `worker/`, `bin/{ffmpeg,ffprobe}` (GPL) and `runtime.json`. See [AI runtime](#ai-runtime). |
-| `Contents/Resources/Notices/` | `THIRD_PARTY_NOTICES.txt`, FFmpeg, Opus, dav1d, yt-dlp, yt-dlp-ejs and Deno upstream notices, the aggregated Deno/V8 notices (`deno/THIRD_PARTY_NOTICES.txt`, `deno/notices-manifest.json`), SPDX texts, `sbom.cdx.json`. |
-| `Contents/Resources/build-provenance.json` | Commit, tracked-change flag, rustc, Xcode, SDK, FFmpeg configuration, signature kind and limitations. |
+| `Contents/Resources/Notices/` | `THIRD_PARTY_NOTICES.txt`, FFmpeg, Opus, dav1d, ONNX Runtime, yt-dlp, yt-dlp-ejs and Deno upstream notices, the aggregated Deno/V8 notices (`deno/THIRD_PARTY_NOTICES.txt`, `deno/notices-manifest.json`), SPDX texts, `sbom.cdx.json`. |
+| `Contents/Resources/build-provenance.json` | Commit, tracked-change flag, rustc, Xcode, SDK, FFmpeg configuration, ONNX Runtime source/shipped identities, signature kind and limitations. |
 | `Contents/Resources/Assets.car`, `Deadpan.icns` | Layered icon and ICNS fallback. |
 
 `Info.plist` declares `DeadpanPackaging = xtask-bundle-1`, which marks a packaged
@@ -81,6 +84,83 @@ bundle (below), and `dev.deadpan.Deadpan`, the workspace version,
 `LSMinimumSystemVersion` 15.0, arm64 and folder-access usage strings for
 Documents (the project library), Desktop, Downloads and removable volumes. The
 app uses no camera, microphone or other privacy-gated service.
+
+## ONNX Runtime for word refinement
+
+The native deadpan-align worker directly links ONNX Runtime 1.31.0 on CPU.
+DEADPAN_ORT_PREFIX must explicitly select its build-time prefix, including
+lib/libonnxruntime.1.dylib (the qualified prefix uses an internal alias to
+libonnxruntime.1.31.0.dylib). No Python environment, dyld search path, Homebrew
+directory or dlopen fallback selects the library. The native build separately
+checks its pinned headers and runtime; bundle construction checks its own
+compiled runtime pin before copying it.
+
+Qualified original runtime: 33,037,336 bytes, SHA-256
+9d2945b4de2ca594608f33b99498c8a81e6696e75da7ae9c67bc9ad3cc36c0d6.
+Its source is the original macOS arm64 library in
+onnxruntime-1.31.0-cp313-cp313-macosx_14_0_arm64.whl (20,881,803 bytes,
+SHA-256 0ba02a44acb6203040354d9a1f160e3f37a43feac7bb05caa3e0ea545efed505).
+This wheel is build provenance, not a shipping Python dependency. The current
+qualification prefix is /Users/michael/Library/Developer/Deadpan/onnxruntime-1.31.0-qualified-1/prefix;
+a different absolute location is allowed only with the same qualified bytes.
+
+Only the exact load command @rpath/libonnxruntime.1.dylib resolves through
+that selected prefix. ORT's install name must match and every transitive
+dependency must be a normalized macOS system path. Other @rpath references
+remain refused during library collection. FFmpeg sources still must resolve
+inside their own pinned prefix; a symlink cannot escape it. Basename collisions
+between different references or aliases are refused unless original content
+hashes agree. Preexisting unowned Frameworks destinations are refused.
+
+The runtime is copied as Contents/Frameworks/libonnxruntime.1.dylib and follows
+the ordinary bundle-relative relocation, inside-out signing and load audit.
+Its original source hash is recorded separately from its relocated/signed hash
+in build-provenance.json and the SBOM. The exact MIT LICENSE and 338,088-byte
+ThirdPartyNotices.txt from the wheel are hash-pinned under
+packaging/notices/onnxruntime and copied under Resources/Notices/onnxruntime.
+Third-party components retain their own notices and terms.
+
+The bundle build first builds workers, then privately copies, relocates and
+signs deadpan-align and ORT with the same operations used in final assembly.
+Their signature-independent content hashes become
+DEADPAN_ALIGN_WORKER_CONTENT_SHA256 and DEADPAN_ALIGN_ORT_CONTENT_SHA256 in a
+second build of the final App and CLI. Cargo tracks both option_env values;
+inherited values are removed from the worker build. Host rebuilding must leave
+the independently prepared worker bytes unchanged. Final assembly compares
+both relocated images to those pins after signing.
+Both stages remove the old signatures from their private worker and ORT copies
+before signing. Measured forced in-place replacement left nonzero old signature
+bytes after the new superblob. The content parser continues to reject these
+bytes; only zero-filled signature reservations are permitted. Cargo outputs
+and the qualified ORT input are never stripped or re-signed.
+
+Before every packaged refinement launch the host checks both content pins,
+the application's resource seal, its own signature and the worker/library
+signatures. It uses the existing application signer requirement when available;
+ad hoc builds require signature validity and the independent content pins.
+Package-owned paths must be regular files in real directories, with no
+symlinks or entries writable by other users. A pin-built host refuses to run
+refinement outside its app or after removal/change of its DeadpanPackaging
+marker. A packaged host without both pins refuses refinement. Ordinary
+unpinned development builds retain sibling-worker selection.
+
+Both the final CLI and App's headless entry execute refinement-runtime-qualify
+inside the signed staging bundle before publication. The reported compiled
+pins must equal the independently prepared image pins. This also applies with
+--no-build: stale or unpinned hosts cannot be packaged successfully. The
+provenance JSON records these pins for inspection but supplies no launch
+authority. These checks cover the new alignment path; they do not establish
+equivalent runtime pin checks for the existing transcription worker.
+
+Model checkpoints and learned feature statistics are not runtime assets and
+are not bundled or redistributed. The original-source phoneme model pack
+installs through Models; its unspecified separate checkpoint terms remain
+visible. The worker assembles its fixed graph in memory from verified original
+bytes and needs no Python, Torch or pickle evaluation.
+
+This packaging implementation does not establish a successful packaged
+refinement workflow. A rebuilt bundle, scrubbed copy, installed-pack worker
+smoke, native load audit and signature checks remain required local evidence.
 
 ## FFmpeg relocation
 
@@ -95,7 +175,8 @@ notice and source pin in the SBOM. Native builds and bundle construction require
 software decoder named `libdav1d`. The checkasm dependency is only an upstream
 test tool and is not shipped.
 
-Every non-system load command must name a file in the pinned prefix. Each such
+Apart from the exact qualified ONNX Runtime load name above, every non-system
+load command must name a file in the pinned FFmpeg prefix. Each such
 library is copied to `Contents/Frameworks`, its install name becomes
 `@rpath/<name>`, and every reference in executables and libraries is rewritten
 to `@rpath/<name>`. Executables gain `@executable_path/../Frameworks`, libraries
@@ -742,3 +823,12 @@ To verify (owner):
   not require two builds to have identical bytes.
 - `tools/build-app.py` remains the quick wrapper for an existing debug
   executable. It is not relocatable.
+
+
+Alignment signing removes the previous signature from private worker/ORT copies
+before creating the new one, both while freezing pins and during final assembly.
+Forced re-signing alone left stale nonzero reserved signature bytes in the
+measured images. The strict content parser remains unchanged. Cargo executables
+and the qualified original input library are never modified by this cleanup.
+See [qualification](qualification/word-refinement-2026-10-25.md). The existing
+transcribe/track/media worker launch-trust gap is still open under DP-22.

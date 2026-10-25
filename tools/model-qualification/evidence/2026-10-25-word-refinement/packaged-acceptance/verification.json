@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "proposal_id": "08e46edf2ac8be0b19dec8d872986694853b863d6ea15e154d24d3f5d505e27b",
+  "bounds": {
+    "end_cs": 68,
+    "start_cs": 16
+  },
+  "correction_versions": [
+    1,
+    2,
+    3
+  ],
+  "pinned_neighbor_unchanged": true,
+  "other_words_unchanged": true,
+  "authored_document_unchanged": true,
+  "one_undo_restores_all_words": true,
+  "revision": "f0081ed5-c0e6-452f-b125-dc5e7f612313",
+  "scope": "Workflow, not phonetic accuracy."
+}

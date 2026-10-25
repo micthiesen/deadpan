@@ -1,0 +1,9 @@
+
+running 4 tests
+test lifecycle_guard_rejection_rolls_back_values_versions_and_both_stacks ... ok
+test corrections_apply_undo_redo_and_reopen_without_touching_history ... ok
+test damaged_corrections_fail_validation_and_can_be_discarded ... ok
+test a_new_change_clears_redo_and_undo_is_bounded ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.85s
+

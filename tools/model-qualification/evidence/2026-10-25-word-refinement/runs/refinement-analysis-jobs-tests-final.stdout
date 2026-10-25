@@ -1,0 +1,439 @@
+
+running 201 tests
+test activity::tests::digital_silence_quantizes_to_the_floor_and_full_scale_to_the_top ... ok
+test activity::tests::stored_values_are_validated ... ok
+test activity::tests::hysteresis_keeps_a_dip_inside_speech ... ok
+test activity::tests::analysis_samples_map_exactly_to_original_time ... ok
+test activity::tests::a_pause_between_words_is_refined_to_the_quiet_frames ... ok
+test activity::tests::short_gaps_are_not_pauses_and_quiet_ends_are ... ok
+test corrections::tests::no_corrections_leave_the_recognized_words ... ok
+test endpoint_quality::tests::invalid_dimensions_strides_buffers_and_pixel_bounds_are_rejected ... ok
+test corrections::tests::edges_are_large_energy_steps_and_pause_bounds ... ok
+test endpoint_quality::tests::mismatched_dimensions_invalid_regions_and_thresholds_are_rejected ... ok
+test endpoint_quality::tests::identical_and_modest_rgb_changes_are_measured_without_gross_coverage ... ok
+test endpoint_quality::tests::nondivisible_grid_edges_are_weighted_by_source_pixel_area ... ok
+test endpoint_quality::tests::opposite_chromatic_changes_do_not_cancel_at_matching_encoded_luma ... ok
+test corrections::tests::a_zero_length_word_at_the_end_of_the_audio_is_refused_not_dropped ... ok
+test corrections::tests::corrections_survive_a_new_transcription_and_win_over_straddling_words ... ok
+test endpoint_quality::tests::local_change_has_local_coverage_while_broad_change_counts_by_area ... ok
+test corrections::tests::moving_an_edge_shortens_the_neighbour_instead_of_overlapping_it ... ok
+test endpoint_quality::tests::alpha_is_ignored_and_row_padding_is_not_read_as_pixels ... ok
+test corrections::tests::detection_again_keeps_corrected_pauses_and_drops_short_remainders ... ok
+test endpoint_quality::tests::the_supplied_region_is_half_open_and_does_not_trim_black_bars ... ok
+test corrections::tests::editing_text_splits_merges_and_deletes_words ... ok
+test corrections::tests::corrections_from_another_clock_or_beyond_the_audio_do_not_apply ... ok
+test corrections::tests::pauses_can_be_removed_added_and_resized ... ok
+test endpoint_quality::tests::tiny_images_have_no_empty_grid_cell_dilution ... ok
+test endpoint_quality::tests::threshold_is_inclusive_and_gross_replacements_cover_their_area ... ok
+test generated_extension::tests::admits_single_generated_picture_without_fabricating_an_endpoint ... ok
+test generated_extension::tests::coverage_keeps_canonical_ordinals_and_separate_tracking_order ... ok
+test generated_extension::tests::rejects_contextless_interior_empty_and_unbounded_coverage ... ok
+test generated_geometry::extension::tests::raw_observations_cannot_include_context_or_omit_reorder_reclock_generated_frames ... ok
+test generated_geometry::extension::tests::measured_drift_prefix_remains_rejected_after_loss_in_each_outward_direction ... ok
+test generated_geometry::extension::tests::single_generated_picture_measures_geometry_but_cannot_invent_sustained_checks ... ok
+test generated_geometry::extension::tests::mouth_does_not_compare_anchor_or_reverse_chronological_leading_coverage ... ok
+test generated_geometry::extension::tests::mouth_is_chronological_generated_only_and_a_later_loss_cannot_erase_rejection ... ok
+test generated_geometry::extension::tests::geometry_expects_one_static_anchor_and_preserves_unavailable_features ... ok
+test generated_geometry::extension::tests::association_never_jumps_across_a_gap_or_ambiguous_anchor ... ok
+test generated_geometry::tests::eye_nose_geometry_is_roll_normalized_on_odd_non_square_raster ... ok
+test corrections::tests::stored_corrections_round_trip_and_reject_invalid_regions ... ok
+test generated_geometry::tests::geometry_rejects_sustained_drift_but_ignores_one_picture_spike ... ok
+test generated_geometry::tests::geometry_rejects_sustained_scale_and_aspect_change ... ok
+test generated_geometry::tests::boxes_and_landmarks_outside_presentation_do_not_contribute ... ok
+test generated_geometry::tests::landmarks_outside_presentation_are_excluded_from_feature_and_mouth_checks ... ok
+test generated_geometry::tests::detector_unavailability_and_low_confidence_remain_explicit ... ok
+test generated_geometry::tests::landmark_unavailability_keeps_its_actual_reason_in_both_assessments ... ok
+test generated_geometry::tests::matching_is_order_independent_and_crossings_become_unavailable ... ok
+test generated_geometry::tests::missing_landmarks_and_authored_black_boundaries_are_explicit ... ok
+test generated_geometry::tests::mouth_checks_a_later_face_beside_an_existing_face ... ok
+test generated_geometry::tests::mouth_does_not_join_changes_across_a_gap_or_ambiguous_crossing ... ok
+test generated_geometry::tests::mouth_opening_and_closing_is_rejected_but_constant_opening_is_not ... ok
+test generated_geometry::tests::mouth_rejection_survives_later_occlusion_or_missing_landmarks ... ok
+test generated_geometry::tests::mouth_requires_enough_observed_frames_for_each_late_face ... ok
+test generated_geometry::tests::policy_thresholds_are_retained_and_recomputed_exactly ... ok
+test generated_geometry::tests::raw_batch_requires_exact_ordered_native_picture_coverage ... ok
+test generated_geometry::extension::tests::recomputation_rejects_every_changed_policy_identity_and_assessment ... ok
+test generated_geometry::extension::tests::static_anchor_and_generated_only_coverage_are_explicit_for_both_directions ... ok
+test generated_geometry::tests::raw_faces_are_bounded_finite_and_canonically_ordered ... ok
+test generated_region::extension::tests::aspect_drift_uses_the_shared_log_size_threshold ... ok
+test generated_region::extension::tests::both_directions_measure_generated_pictures_only_on_canonical_clock ... ok
+test generated_region::extension::tests::bad_anchor_cannot_be_replaced_by_a_later_confident_box ... ok
+test generated_region::extension::tests::inclusive_native_confidence_boundary_applies_to_anchor_and_generated_pictures ... ok
+test generated_region::extension::tests::isolated_and_interrupted_excess_cannot_form_a_sustained_rejection ... ok
+test generated_region::extension::tests::loss_stops_outward_tracking_permanently_in_both_directions ... ok
+test generated_region::extension::tests::nonfinite_and_out_of_range_confidence_reject_even_after_track_loss ... ok
+test generated_region::extension::tests::observations_in_padding_end_tracking_and_invalid_seed_geometry_rejects ... ok
+test generated_region::extension::tests::maximum_generated_and_context_counts_are_bounded_independently ... ok
+test generated_region::extension::tests::one_generated_picture_is_measured_without_a_fabricated_second_endpoint ... ok
+test generated_region::extension::tests::one_static_seed_rejects_drift_without_interpolating_toward_an_opposite_box ... ok
+test generated_region::extension::tests::raw_coverage_rejects_context_frames_wrong_clocks_and_reordered_observations ... ok
+test generated_region::extension::tests::reverse_rejection_reports_the_lowest_measured_sustained_interval ... ok
+test generated_region::extension::tests::sustained_rejection_before_loss_survives_with_chronological_start_ordinal ... ok
+test generated_region::tests::an_interrupted_spike_cannot_join_a_later_spike ... ok
+test generated_region::extension::tests::report_roundtrip_recomputes_and_rejects_changed_measurements_policy_and_coverage ... ok
+test generated_region::tests::confidence_lower_bound_is_inclusive_in_the_native_f32_domain ... ok
+test generated_region::tests::each_raw_unavailability_reason_remains_visible ... ok
+test generated_region::tests::geometry_bounds_fail_before_policy_evaluation ... ok
+test generated_region::tests::isolated_spikes_do_not_form_a_sustained_rejection ... ok
+test generated_region::extension::tests::report_wire_requires_nullable_fields_and_rejects_unknown_nested_fields ... ok
+test generated_region::tests::left_boundary_loss_or_seed_mismatch_prevents_native_measurement ... ok
+test generated_region::tests::log_size_policy_catches_aspect_drift_even_when_area_is_unchanged ... ok
+test generated_geometry::tests::mouth_segment_counts_do_not_saturate_at_a_byte ... ok
+test generated_region::tests::missing_or_weak_prefix_never_restarts_on_later_boxes ... ok
+test generated_region::tests::missing_suffix_keeps_the_earlier_rejection_and_stops_coverage ... ok
+test generated_region::tests::maximum_frame_count_has_complete_bounded_coverage ... ok
+test generated_region::tests::odd_non_square_crop_preserves_equal_pixel_distances_on_both_axes ... ok
+test generated_region::tests::padding_is_unavailable_and_cannot_be_a_seed ... ok
+test generated_region::tests::raw_validation_rejects_schema_count_order_ordinal_pts_and_confidence_changes ... ok
+test generated_region::tests::malformed_geometry_and_unknown_raw_fields_are_rejected ... ok
+test generated_region::tests::right_boundary_loss_or_mismatch_does_not_erase_native_rejection ... ok
+test generated_region::tests::recomputation_rejects_altered_raw_evidence_and_retained_policy ... ok
+test generated_region::tests::signed_pts_extremes_do_not_overflow ... ok
+test generated_region::tests::stable_native_path_uses_the_exact_pts_fraction ... ok
+test generated_region::tests::two_native_frames_are_enough_for_a_sustained_rejection ... ok
+test generated_region::tests::weak_suffix_keeps_earlier_rejection_without_accepting_later_confidence ... ok
+test generated_region::tests::sustained_drift_reports_the_earliest_run ... ok
+test generation_quality::tests::input_shape_limits_and_arithmetic_are_checked_before_reading_pixels ... ok
+test generation_quality::tests::an_identical_textured_picture_has_confident_zero_motion ... ok
+test generation_quality::tests::reduction_preserves_replicated_pixels_and_ignores_alpha_and_row_padding ... ok
+test recognition::tests::a_confident_loop_is_flagged_at_its_shortest_period ... ok
+test generation_quality::tests::clipped_flash_and_a_distinct_region_do_not_hide_coherent_lighting ... ok
+test recognition::tests::a_loop_passage_runs_between_its_unflagged_neighbors ... ok
+test recognition::tests::a_second_pass_must_cover_exactly_its_passage ... ok
+test recognition::tests::mismatched_activity_is_reported_not_guessed ... ok
+test recognition::tests::ordinary_repetition_is_not_a_loop ... ok
+test generation_quality::tests::too_little_coverage_or_search_edge_matches_do_not_claim_measured_motion ... ok
+test generation_quality::tests::uniform_and_ambiguous_pictures_have_unavailable_motion ... ok
+test generation_quality::tests::a_uniform_lighting_step_does_not_become_motion ... ok
+test activity::tests::pauses_are_ordered_disjoint_and_long_enough ... ok
+test generation_quality::tests::flash_entry_and_return_remain_visible_as_opposite_steps ... ok
+test recognition::tests::overlapping_flags_merge_into_one_passage ... ok
+test recognition::tests::pauses_between_words_are_not_unrecognized_speech ... ok
+test recognition::tests::speech_with_no_words_at_all_is_one_stretch ... ok
+test recognition::tests::punctuation_and_case_do_not_hide_a_loop ... ok
+test recognition::tests::speech_after_the_last_word_is_flagged ... ok
+test recognition::tests::a_loop_needs_both_copies_and_words ... ok
+test recognition::tests::recognizing_a_passage_again_replaces_only_its_words_once ... ok
+test recognition::tests::zero_length_words_divide_stretches ... ok
+test recognition::tests::the_check_never_changes_the_transcript ... ok
+test refinement::selection::tests::exact_fractional_centisecond_terminal_is_retained_and_ceil_is_explicit ... ok
+test refinement::selection::tests::accepting_multiple_words_is_one_region_and_preserves_later_pin_owner ... ok
+test refinement::selection::tests::capture_keeps_complete_neighboring_segments_and_exact_global_offset ... ok
+test refinement::selection::tests::offers_crossing_visible_or_pinned_neighbors_refuse_without_trimming ... ok
+test refinement::selection::tests::pinned_and_unavailable_diagnostics_never_become_accepted ... ok
+test refinement::selection::tests::oversized_or_overlapping_context_seams_are_not_truncated ... ok
+test refinement::selection::tests::stale_transcript_origin_corrections_origins_and_hidden_base_all_refuse ... ok
+test refinement::selection::tests::unselected_middle_word_cannot_be_incidentally_pinned_by_multiword_acceptance ... ok
+test refinement::tests::input_rejection_and_cooperative_cancellation_precede_offers ... ok
+test refinement::tests::native_emissions_preserve_all_observed_proposal_and_guard_structure ... ok
+test refinement::tests::normalization_and_dictionary_order_are_explicit ... ok
+test generation_quality::tests::translated_texture_measures_displacement_in_picture_coordinates ... ok
+test generated_region::extension::tests::raw_wire_is_strict_and_bounded ... ok
+test shots::context::tests::equally_bright_different_pictures_still_have_an_abrupt_seam ... ok
+test refinement::tests::sentence_with_millions_of_pronunciation_tuples_is_bounded_polynomial_work ... ok
+test shots::signatures::tests::empty_context_has_a_valid_header ... ok
+test shots::context::tests::nearby_changes_and_initial_changes_are_not_navigation_suppressed ... ok
+test shots::signatures::tests::malformed_wire_shapes_are_rejected ... ok
+test shots::signatures::tests::invalid_histograms_are_rejected_on_encode_and_decode ... ok
+test shots::context::tests::real_source_edges_clip_padding_without_fabricated_signatures ... ok
+test shots::signatures::tests::rgba_round_trip_preserves_signatures_and_derived_measurements ... ok
+test shots::signatures::tests::encoder_rejects_invalid_shape_and_oversized_context ... ok
+test shots::context::tests::missing_left_or_right_padding_is_refused ... ok
+test shots::context::tests::interval_and_total_allocation_bounds_are_checked_before_measurement ... ok
+test shots::context::tests::a_one_picture_change_hidden_between_sparse_samples_is_rejected ... ok
+test shots::signatures::tests::recomputed_context_qualification_survives_round_trip ... ok
+test shots::tests::a_fade_whose_range_reaches_an_accepted_transition_is_not_also_accepted ... ok
+test shots::tests::a_cut_between_scenes_is_one_boundary ... ok
+test shots::tests::a_flash_frame_returning_to_its_scene_is_not_a_cut ... ok
+test shots::tests::a_slow_pan_within_one_scene_is_not_a_cut ... ok
+test shots::tests::identical_pictures_do_not_change ... ok
+test refinement::tests::dag_matches_cartesian_reference_including_repeats_and_exact_ties ... ok
+test shots::tests::padded_rows_are_read_by_stride ... ok
+test shots::tests::cuts_closer_than_six_pictures_keep_the_first ... ok
+test shots::tests::stored_changes_and_buffers_are_validated ... ok
+test shots::tests::a_fade_to_black_ends_at_the_first_black_picture ... ok
+test shots::tests::a_cut_is_not_also_a_transition_and_keeps_its_picture ... ok
+test shots::tests::a_fade_from_black_begins_at_the_first_lit_picture ... ok
+test tracking::tests::a_confident_jump_to_another_subject_is_a_loss ... ok
+test tracking::tests::a_trailing_gap_is_lost_and_strides_scale_motion ... ok
+test tracking::tests::confident_observations_track_and_short_gaps_interpolate ... ok
+test tracking::tests::corrections_at_unanalysed_pictures_are_all_or_nothing ... ok
+test shots::context::tests::constant_context_reports_complete_real_coverage_and_policy ... ok
+test shots::tests::measures_round_trip_and_progress_is_validated ... ok
+test tracking::tests::distance_is_measured_in_the_display_aspect ... ok
+test tracking::tests::interpolation_is_bounded_in_pictures_not_observations ... ok
+test tracking::tests::invalid_inputs_are_refused ... ok
+test tracking::tests::long_gaps_are_lost_then_held_until_corrected ... ok
+test tracking::tests::mapping_rounds_and_maps_states_and_confidence ... ok
+test tracking::tests::paths_round_trip_through_validated_json ... ok
+test tracking::tests::rectangle_retracking_refuses_point_target_without_mutation ... ok
+test tracking::tests::regions_are_bounded_and_rotations_round_trip ... ok
+test tracking::tests::rotations_are_inverse ... ok
+test generated_geometry::extension::tests::extension_raw_wire_bounds_every_collection_and_rejects_hidden_fields ... ok
+test tracking::tests::shot_boundaries_and_limits_end_the_range ... ok
+test corrections::tests::reapplied_corrections_reproduce_the_edited_words ... ok
+test tracking::tests::corrections_invalidate_only_their_range ... ok
+test transcript::tests::a_second_pass_that_repeats_earlier_words_is_detected ... ok
+test transcript::tests::analysis_centiseconds_map_exactly_to_original_audio_samples ... ok
+test refinement::tests::all_twenty_four_observed_backends_retain_paths_intervals_support_and_guard ... ok
+test transcript::tests::editing_search_never_truncates_query_or_returns_partial_matches ... ok
+test transcript::tests::leading_punctuation_and_out_of_range_tokens_stay_valid_and_bounded ... ok
+test transcript::tests::recognized_again_passages_must_be_ordered_and_inside_the_audio ... ok
+test transcript::tests::recorded_tokens_become_words_with_punctuation_segments_and_confidence ... ok
+test transcript::tests::search_matches_phrases_in_order_and_prefixes_the_last_word ... ok
+test transcript::tests::stored_transcripts_revalidate_and_reject_tampered_values ... ok
+test transcript::tests::word_at_uses_half_open_heard_intervals ... ok
+test transcript::tests::word_times_map_to_the_picture_presented_at_that_instant_and_back ... ok
+test shots::tests::transitions_and_cuts_merge_in_order ... ok
+test shots::context::tests::cut_outside_requested_interval_does_not_reject_a_post_cut_freeze ... ok
+test shots::tests::appended_progress_tails_equal_the_whole_progress ... ok
+test shots::tests::slow_pans_and_flashes_are_not_transitions ... ok
+test tracking::tests::the_policy_never_follows_an_implausible_or_unbounded_path ... ok
+test tracking::tests::saved_targets_reproduce_the_path_and_corrections_replace_only_their_range ... ok
+test shots::context::tests::a_freeze_inside_a_fade_is_rejected_by_the_blended_range ... ok
+test shots::context::tests::full_dissolve_range_rejects_context_before_its_middle_boundary ... ok
+test transcript::tests::arbitrary_recognizer_output_validates_or_fails_without_panicking ... ok
+test shots::tests::the_signature_equals_the_direct_per_pixel_reduction ... ok
+test tracking::tests::dense_paths_compact_within_core_bounds_or_refuse ... ok
+test shots::tests::a_dissolve_is_one_transition_with_one_middle_boundary ... ok
+test shots::tests::a_resumed_measurement_equals_an_uninterrupted_one ... ok
+test shots::context::tests::exact_padding_and_larger_windows_produce_the_same_absolute_result ... ok
+test tracking::tests::adversarial_tracker_artifacts ... ok
+test transcript::tests::adversarial_recognizer_and_stored_transcript_json ... ok
+test shots::context::tests::overlapping_gradual_candidates_are_not_globally_suppressed ... ok
+
+test result: ok. 201 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+
+
+running 99 tests
+test extension_plan::tests::extension_plan_reports_inserted_generated_context_and_movie_intervals_separately ... ok
+test extension_plan::tests::extension_capability_enforces_duration_before_rounding_but_accepts_its_exact_limit ... ok
+test extension_plan::tests::extension_capability_uses_legal_counts_inside_unaligned_bounds ... ok
+test extension_plan::tests::extension_plan_rounds_generated_count_with_shorter_ties_and_keeps_requested_time ... ok
+test extension_plan::tests::extension_plan_fractional_rates_choose_and_report_exactly ... ok
+test generation_operation::tests::explicit_modes_require_their_anchors_and_do_not_change_direction ... ok
+test generation_operation::tests::automatic_uses_real_presence_and_never_substitutes_an_unsupported_operation ... ok
+test extension_plan::tests::extension_plan_sampling_never_fetches_context_in_both_directions ... ok
+test hold_prompt::tests::resolving_omission_captures_presence_or_absence_once ... ok
+test generation_inputs::tests::authored_black_identity_refuses_hidden_fields ... ok
+test extension_plan::tests::extension_plan_maximum_counts_and_extreme_rates_are_bounded_without_allocation ... ok
+test extension_plan::tests::extension_provider_rules_are_stricter_than_core_operation_facts ... ok
+test extension_plan::tests::extension_plan_revalidates_capability_and_cannot_silently_change_operation ... ok
+test hold_prompt::tests::resolved_constraints_capture_explicit_mode_and_apply_keeps_the_resolution ... ok
+test landmarks::tests::extension_completion_counts_are_captured_independently_of_generic_reply_bounds ... ok
+test hold_prompt::tests::options_default_to_automatic_but_reject_unknown_or_nonstring_modes ... ok
+test hold_prompt::tests::instructions_are_bounded_utf8_text_and_never_control_characters ... ok
+test generation_inputs::tests::optional_input_observations_require_explicit_null ... ok
+test generation_operation::tests::mode_and_declared_support_have_closed_wire_shapes ... ok
+test extension_plan::tests::extension_plan_wire_is_strict_versioned_and_revalidated_without_a_model ... ok
+test landmarks::tests::completion_is_bound_to_attempt_exact_artifact_counts_and_pinned_runtime ... ok
+test generation_inputs::tests::source_interpretation_is_retained_and_automatic_wire_is_unchanged ... ok
+test landmarks::tests::generated_masters_refuse_original_interpretation_overrides ... ok
+test landmarks::tests::authored_region_seeds_require_both_boundaries_and_canonical_orientation ... ok
+test landmarks::tests::optional_boundaries_change_the_exact_analysed_count ... ok
+test landmarks::tests::observations_bind_complete_native_pts_and_exact_optional_seeds ... ok
+test generation_operation::tests::tagged_plan_preserves_each_inner_wire_and_getter_semantics ... ok
+test picture_proposals::tests::detector_provenance_is_kind_bound_and_only_saliency_revision_two_is_accepted ... ok
+test picture_proposals::tests::per_kind_order_and_confidence_are_independent_and_strict ... ok
+test landmarks::tests::extension_observations_bind_anchor_coverage_complete_pts_and_optional_seed ... ok
+test picture_proposals::tests::all_three_modes_bind_attempt_exact_pts_and_collection_presence ... ok
+test process::pause::tests::acknowledged_pause_has_a_separate_bounded_lifetime ... ok
+test landmarks::tests::strict_wire_rejects_unknown_fields_and_other_worker_modes ... ok
+test process::pause::tests::pause_updates_coalesce_and_only_sent_acknowledgements_change_the_clock ... ok
+test process::pause::tests::superseded_resume_is_observable_and_stops_discounting_compute_time ... ok
+test process::tests::cancellation_eof_is_recorded_only_when_the_reader_observes_it ... ok
+test landmarks::tests::region_runtime_is_pinned_and_present_exactly_when_requested ... ok
+test landmarks::tests::inputs_outputs_and_deadlines_cannot_escape_their_bounds ... ok
+test picture_proposals::tests::requests_preserve_source_stream_timeout_and_closed_mode_bounds ... ok
+test picture_proposals::tests::raw_geometry_unknown_duplicate_fields_and_frame_bytes_refuse ... ok
+test landmarks::tests::request_requires_a_complete_bounded_ordered_sequence ... ok
+test landmarks::tests::extension_requests_bound_native_index_generated_coverage_anchor_and_canonical_clock ... ok
+test picture_proposals::tests::wire_completion_refuses_unknown_and_cross_kind_engine_labels ... ok
+test picture_proposals::tests::raw_collection_caps_refuse_before_decoding_item_sixty_five ... ok
+test refinement::tests::binds_completed_identity_input_scope_output_bytes_and_every_runtime_pin ... ok
+test refinement::tests::bounds_exact_model_pins_pcm_scope_and_shape ... ok
+test refinement::tests::cancellation_needs_all_three_identities ... ok
+test refinement::tests::framed_round_trips_reject_unknown_fields_and_wrong_protocol ... ok
+test render::admission::tests::cancellation_without_runtime_preserves_absence_and_no_selected_evidence ... ok
+test render::admission::tests::frozen_fallback_graph_never_uses_generic_failures_or_diagnostic_text ... ok
+test render::admission::tests::decision_binding_rejects_a_different_owner_document_or_committed_interval ... ok
+test render::admission::tests::aborted_final_runtime_change_remains_evidence_without_allowing_fallback ... ok
+test render::admission::tests::hdr_settings_are_the_frozen_sdr_controls_with_scaled_bitrate ... ok
+test render::admission::tests::measured_decision_preserves_full_success_rejection_and_output_evidence ... ok
+test render::admission::tests::media_duration_correction_requires_exact_bounded_reordering_evidence ... ok
+test render::admission::tests::pinned_controls_recipe_and_project_origin_reject_silent_retiming ... ok
+test render::admission::tests::hdr_decisions_validate_and_round_trip_for_pq_and_hlg ... ok
+test render::admission::tests::sdr_decision_bytes_and_probe_recipe_are_unchanged_by_hdr_support ... ok
+test render::admission::tests::hdr_decision_rejects_mismatched_algorithm_color_metadata_and_evidence ... ok
+test render::admission::tests::saved_success_rejects_changed_controls_hashes_clocks_and_measured_events ... ok
+test render::admission::tests::selected_decision_requires_the_ordered_typed_failure_and_runtime_binding ... ok
+test render::admission::tests::stored_aac_preroll_evidence_requires_one_coherent_version ... ok
+test render::publication::tests::strict_intent_names_and_versions ... ok
+test render::admission::tests::stored_quality_controls_bind_abi_three_and_four_without_an_extra_aac_block ... ok
+test render::tests::automatic_grammar_rejects_mixed_versions_loose_controls_and_null_fields ... ok
+test render::tests::engineering_wire_is_unchanged_and_frozen_parser_never_admits_automatic ... ok
+test render::tests::lifecycle_requires_checkpoint_and_confirmed_teardown ... ok
+test render::tests::strict_intent_rejects_new_policy_and_foreign_fields ... ok
+test render::tests::document_identity_preserves_exact_serialization_and_controls ... ok
+test render::tests::verification_evidence_is_bounded_and_versioned ... ok
+test tracking::tests::completions_must_match_the_attempt_scope_and_picture_counts ... ok
+test tracking::tests::requests_bound_source_range_stride_scope_and_timeout ... ok
+test artifact::tests::contained_metadata_classifies_device_and_owner_changes ... ok
+test tracking::tests::retained_clean_aperture_is_bounded_and_roundtrips_in_worker_requests ... ok
+test tracking::tests::source_interpretation_roundtrips_and_empty_choices_are_refused ... ok
+test transcription::tests::each_attempt_accepts_only_its_own_completion_kind ... ok
+test transcription::tests::framed_messages_round_trip_and_reject_unknown_fields ... ok
+test transcription::tests::languages_are_auto_or_two_lowercase_letters ... ok
+test transcription::tests::requests_bound_paths_audio_scope_budget_and_timeout ... ok
+test artifact::tests::mutation_after_open_is_rejected_deterministically ... ok
+test process::tests::failed_reap_prevents_a_second_pid_wait ... ok
+test artifact::tests::growth_after_open_stops_at_the_declared_length ... ok
+test transcription::tests::responses_bind_identity_scope_budget_and_the_verified_model ... ok
+test transcription::tests::speech_detection_requests_bound_their_probability_budget ... ok
+test transcription::tests::speech_detection_messages_round_trip ... ok
+test render::admission::tests::strict_decision_grammar_rejects_null_unknown_and_missing_fields ... ok
+test artifact::tests::cancellation_and_deadline_abort_between_copy_chunks ... ok
+test process::tests::setup_failure_keeps_primary_and_unconfirmed_group_cleanup ... ok
+test process::tests::joined_pump_panic_is_distinct_from_successful_pump_completion ... ok
+test process::tests::poll_samples_a_live_worker_footprint_and_releases_it_after_exit ... ok
+test process::tests::failed_membership_remains_unconfirmed_after_successful_leader_fallback ... ok
+test process::tests::explicit_cleanup_reaps_and_joins_before_issuing_receipt ... ok
+test process::tests::failed_explicit_wait_never_retries_pid_operations ... ok
+test tracking::tests::adversarial_tracking_frames ... ok
+test picture_proposals::tests::adversarial_face_frames ... ok
+test transcription::tests::adversarial_transcription_frames ... ok
+test process::tests::setup_failures_report_cleanup_for_every_partial_initialization ... ok
+test process::tests::cancellation_escalation_preserves_independent_read_faults ... ok
+test process::tests::unresolved_held_pump_does_not_block_failure_delivery_during_drop ... ok
+
+test result: ok. 99 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.51s
+
+
+running 9 tests
+test output_scope_is_component_aware_and_strict ... ok
+test controlled_snapshot_reports_typed_interruption_before_filesystem_access ... ok
+test sha256_matches_the_standard_abc_known_answer ... ok
+test hash_length_and_budget_failures_are_distinct ... ok
+test final_and_intermediate_symlinks_are_rejected ... ok
+test valid_artifact_is_frozen_and_later_source_changes_do_not_reach_snapshot ... ok
+test retained_workspace_descriptor_ignores_later_root_path_replacement ... ok
+test hardlinks_inside_or_outside_the_workspace_are_rejected ... ok
+test directories_fifos_and_sockets_are_rejected_without_blocking ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 1 test
+test adversarial_extension_plans_preserve_generated_only_samples ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+
+running 10 tests
+test formula_and_dimension_limits_reject_invalid_bounds ... ok
+test fractional_rates_choose_nearest_legal_count_and_report_exact_timing ... ok
+test huge_requests_fail_boundedly_without_sample_allocation ... ok
+test rejects_unsupported_bridge_dimensions_and_out_of_capability_duration ... ok
+test legal_rounding_uses_distance_and_breaks_exact_ties_upward ... ok
+test deserialized_plan_can_be_checked_against_selected_capability ... ok
+test samples_are_lazy_exact_and_exclude_both_conditioning_endpoints ... ok
+test sampling_map_preserves_exact_plan_contract ... ok
+test one_frame_maps_to_strict_native_midpoint ... ok
+test serialization_is_strict_and_revalidates_derived_fields ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 19 tests
+test buffered_stage_and_progress_are_ignored_during_cancellation ... ok
+test context_hash_changes_stale_a_job_but_unrelated_revision_is_not_a_binding ... ok
+test completion_during_cancellation_waits_for_host_reap_without_candidate ... ok
+test completion_requires_explicit_host_validation_before_ready ... ok
+test cooperative_pause_does_not_change_authored_lifecycle_and_cancellation_wins ... ok
+test host_can_finalize_killed_worker_or_record_process_failure ... ok
+test durable_checkpoint_rejects_impossible_state_payload_combinations ... ok
+test extension::extension_late_completion_stays_discarded_through_checkpoint_and_reap ... ok
+test extension::extension_lifecycle_rejects_crossed_completion_versions_and_attempts ... ok
+test extension::extension_completion_requires_exact_extension_validation_and_round_trips_checkpoint ... ok
+test host_failure_and_cancellation_remain_available_during_validation ... ok
+test rejects_wrong_identity_regressions_and_post_terminal_messages ... ok
+test lifecycle_rejects_message_and_checkpoint_protocol_crossovers ... ok
+test progress_is_monotonic_within_the_announced_stage ... ok
+test native_bridge_completion_requires_exact_bundle_validation ... ok
+test stale_or_detached_binding_never_silently_revives_or_authorizes_edit ... ok
+test v2_late_completion_during_cancellation_is_discarded_until_reap ... ok
+test worker_cancellation_acknowledgement_is_durable_but_not_reaped ... ok
+test worker_messages_after_completion_cannot_bypass_host_validation ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 18 tests
+test attempt_providers_are_seeded_variants_below_the_worker_seed_limit ... ok
+test distinguishes_truncated_header_and_body ... ok
+test rejects_oversized_length_before_body_allocation_or_read ... ok
+test rejects_protocol_operation_crossovers_and_plan_mismatch ... ok
+test progress_is_stage_local_exact_units ... ok
+test request_round_trip_preserves_exact_typed_contract ... ok
+test legacy_v1_wire_shape_is_unchanged ... ok
+test cooperative_pause_wire_contract_is_versioned_and_nonzero ... ok
+test round_trips_fragmented_frames_and_clean_eof ... ok
+test extension::extension_v3_stage_progress_failure_and_cancel_keep_version_and_identity ... ok
+test rejects_malformed_unknown_and_wrong_protocol_payloads ... ok
+test bridge_v2_round_trips_strict_plan_and_native_declaration ... ok
+test native_manifest_rejects_duplicate_references_and_unknown_fields ... ok
+test validates_paths_ids_hashes_dimensions_and_progress_during_deserialization ... ok
+test extension::extension_v3_shared_fixtures_round_trip_fragmented_wire_and_both_directions ... ok
+test extension::extension_v3_rejects_crossed_versions_operations_and_constraints ... ok
+test extension::extension_v3_wire_revalidates_plan_unknown_fields_and_native_references ... ok
+test adversarial_generation_frames ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 24 tests
+test independent_protocol::adapter_rejects_invalid_initial_operations_before_launch ... ok
+test independent_protocol::different_protocol_cancel_uses_its_own_identity_and_terminal_variant ... ok
+test pause::unsolicited_pause_acknowledgement_is_a_protocol_fault ... ok
+test response_protocol_must_match_initial_request ... ok
+test orphaned_descendant_cannot_keep_worker_pipes_open ... ok
+test workspace_symlinks_relative_executables_and_unbounded_deadlines_are_rejected ... ok
+test late_poll_observes_exit_before_applying_a_timeout ... ok
+test pause::cooperative_pause_has_a_real_bounded_lifetime ... ok
+test independent_protocol::different_protocol_retains_fragmented_progress_and_holds_success_until_clean_exit ... ok
+test extension::extension_supervisor_delivers_distinct_bundle_after_clean_exit_then_snapshots_exact_bytes ... ok
+test pause::cooperative_pause_discounts_compute_deadline_and_cancellation_still_reaches_worker ... ok
+test stderr_is_drained_but_retained_tail_is_bounded ... ok
+test pause::rapid_pause_resume_pause_delivers_superseded_physical_resume_before_next_pause ... ok
+test cooperative_cancel_preserves_identity_and_does_not_escalate ... ok
+test wrong_attempt_and_messages_after_completion_are_rejected ... ok
+test independent_protocol::different_protocol_checks_identity_terminal_order_and_failed_exit ... ok
+test dropping_a_flooding_worker_releases_pipe_backpressure ... ok
+test private_environment_and_fragmented_messages_finish_before_exit ... ok
+test extension::extension_supervisor_rejects_crossed_versions_wrong_attempts_and_failed_teardown ... ok
+test escalated_cancellation_does_not_report_the_frame_its_kill_truncated ... ok
+test unresponsive_worker_is_killed_after_grace_and_deadline ... ok
+test successful_worker_cleans_up_many_forking_descendants_before_delivering_candidate ... ok
+test escaped_descendant_cannot_hang_pipe_cleanup ... ok
+test invalid_protocol_missing_completion_and_bad_exit_never_pass ... ok
+
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.17s
+
+
+running 3 tests
+test supported::tests::clean_exit_without_candidate_is_not_success ... ok
+test supported::tests::supervisor_faults_fail_and_keep_the_first_terminal_reason ... ok
+test supported::tests::reaping_finishes_cancel_when_completion_was_suppressed ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

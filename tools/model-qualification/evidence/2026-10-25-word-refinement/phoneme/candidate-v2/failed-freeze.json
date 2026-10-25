@@ -1,0 +1,272 @@
+{
+  "created_utc": "2026-10-25T18:11:28.260776+00:00",
+  "status": "rejected, frozen; no candidate selected",
+  "reason": [
+    "paired original-offer retention below 80 percent",
+    "foreign-word energy above 0.1 percent"
+  ],
+  "iteration_2": "not run; omitted-content failure trigger false",
+  "fresh_final_test": "not run or accessed",
+  "files": [
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/plan.json",
+      "bytes": 3696,
+      "sha256": "19ffffb3693f17f1207b9883003a78b6dec174a2eeedae07f24ab4d63a6ae694"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/guard.py",
+      "bytes": 4759,
+      "sha256": "6c10053ba98f2b700f191473ddbebb915cf3c793d60a51c1507cd9e2ecf0bdc7"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/develop_guard.py",
+      "bytes": 6396,
+      "sha256": "9734afd268a122e91b0e3bfeb72cd6d91b930bf21fa67a63e8bc20a9cbd9f200"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/README.md",
+      "bytes": 2838,
+      "sha256": "59583564409b671954105222a8c3df41daad2070bd83aa7ef13e8660fb5a3e8f"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case01-silence.json",
+      "bytes": 23256,
+      "sha256": "7b56a04a80950fb75c7fa7f9c80868ff10a820b09433f1a8952ade4031fda314"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case01-wrong.json",
+      "bytes": 58667,
+      "sha256": "a55e60533c363ec8ebf264c06ed4a80f92f0df25bf17a14fc5e27b1811fda088"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case01.json",
+      "bytes": 62219,
+      "sha256": "3bc790dcddffd0b136345d1bc8d43ab9bfd70611c01fc09237f00346623ba55a"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case02-silence.json",
+      "bytes": 21431,
+      "sha256": "70d3ca86e5d8a592ab813713ee4dd4e1cf5189df090faf11d84af21ae0b960f1"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case02-wrong.json",
+      "bytes": 64190,
+      "sha256": "d9d9ee5c1304e359e54da90edb27ca93458bfad1bb5dd636cda5ace3417c1855"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case02.json",
+      "bytes": 66600,
+      "sha256": "3e43701310ccc667066571da32550c11ab6abaa7b477a060fe91b3b157c1c113"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case03-silence.json",
+      "bytes": 21759,
+      "sha256": "d33930fe6256281a7a77aede46f219ce807e6fae430031c4cda6ec81eda70b6e"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case03-wrong.json",
+      "bytes": 51092,
+      "sha256": "83850f08827540908140e217ff2790cba69c8abdf19b779216f2c24b74d845a0"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case03.json",
+      "bytes": 56111,
+      "sha256": "3238fc53070573910304c1a394d3f425f981f6b768f2838f2ea8a8caaf913569"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case04-silence.json",
+      "bytes": 30679,
+      "sha256": "c6c4d16430432c5a3feaadb9a7b96863287154e783ee8f520af5093cac8d2326"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case04-wrong.json",
+      "bytes": 75956,
+      "sha256": "b37005866fe9712bf9024e687a012cb6c9666932e90ac893f2e543530c5e7fea"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case04.json",
+      "bytes": 81008,
+      "sha256": "7fc54197a23a1065bca5a8408741f237fdbec23d0f9599fb0d3c0f3ae4c44e0b"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case05-silence.json",
+      "bytes": 26575,
+      "sha256": "25faf194d804ef0a7d57df675e627e0f227f5a9b37c7ac62f649312ecb00f5ca"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case05-wrong.json",
+      "bytes": 64128,
+      "sha256": "f5d873125f7b8c193294c39b0cfbc8582b64eb9f3e297fe8163c4929624582ab"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case05.json",
+      "bytes": 67263,
+      "sha256": "0b827737bf88db62691378359e235a000c3c8b889495408fe5db43d826754cf9"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case06-silence.json",
+      "bytes": 22350,
+      "sha256": "20105b074fd7a353f5d22178de1e44a2ce2bb041b5d70548bbe889bad3958026"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case06-wrong.json",
+      "bytes": 55177,
+      "sha256": "d26b100882c087d377c903418e06023083f0172cd8f5d6ad91f7f14f822fe07a"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case06.json",
+      "bytes": 60338,
+      "sha256": "cf1a2ddfad6911d8cfa173794532604d0cb12a08fbbf6878511187d5cfe3adfa"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case07-silence.json",
+      "bytes": 28945,
+      "sha256": "26ceb2a21176b09aaf5f4f1c5184c446302823990727574c9c923a4192692355"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case07-wrong.json",
+      "bytes": 59042,
+      "sha256": "d280e673625e94582b429fbd102ca48ae1c6f79860dc7ceb81025c22382df7d0"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case07.json",
+      "bytes": 63709,
+      "sha256": "f25a3dab3dc18fedd2905d714ec8a6cc69346472e4bd269301d228d6fc9e90b7"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case08-silence.json",
+      "bytes": 26060,
+      "sha256": "5349fc8da6f1a1be4b5ad31023724fe862dd746d1e1d2d08f05842b0bef6232d"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case08-wrong.json",
+      "bytes": 59407,
+      "sha256": "e3ba1550d23c4ec599ca3633fd26bf0de4a2ed13ebc2da66c6e0cc07051b4913"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case08.json",
+      "bytes": 60900,
+      "sha256": "cba1247bd25b998f40630517a84e350ae872135cc9de1922e052394be59da070"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case09-silence.json",
+      "bytes": 21453,
+      "sha256": "5b8154fb93e869f01b68aad7da33d858575926f379be2da2cf3538676147b74a"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case09-wrong.json",
+      "bytes": 52976,
+      "sha256": "27ee5da7decf8e47195b4c44b7916ebafefbec6b36dbcc28bdb62fc76dcacfab"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case09.json",
+      "bytes": 57633,
+      "sha256": "3f779cef16787517cac4d738bd82cac251f753aa0022f616967b11df75b18598"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case10-silence.json",
+      "bytes": 26753,
+      "sha256": "1e7676dcd3721d132d989bd7f6e1f440c09de8cdb8939813b99554e8aeb908b2"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case10-wrong.json",
+      "bytes": 63965,
+      "sha256": "8d6549e6db278ec2a96bc295e365eb58696f431b8edc709f54cc9b824493cd7f"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/case10.json",
+      "bytes": 66054,
+      "sha256": "57f8f1a39fef84d215c1cf9e8563a417f0fd9fcf5afd4aee57082551be88afb1"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/held01.json",
+      "bytes": 76551,
+      "sha256": "e6ad98805ebb5925a4de273c16c073664b5da240fa5c39831ed210dc30a2faf2"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/held02.json",
+      "bytes": 75991,
+      "sha256": "88ca017dc8f629646d8265e1fff098ca8b7c59298e60dbd14ed2e32aea806355"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/held03.json",
+      "bytes": 80189,
+      "sha256": "59c5b56d995fa2867d52d01e9aa8d2515b4acfca450aa4066903957967b67551"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/held04.json",
+      "bytes": 65081,
+      "sha256": "e3ec170106ff624d53104f2e36fbf224148a662ef9ea4ed662dcdc759d36eff6"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/held05.json",
+      "bytes": 78860,
+      "sha256": "5074cea15dc80365f419f532020fd1e19b6b37e9b934b5555b737c5610276194"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/held06.json",
+      "bytes": 68359,
+      "sha256": "6784941715dfee8915e8efcf774fdb246671d928603386b32f275fff8a4f8648"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/held07.json",
+      "bytes": 71503,
+      "sha256": "d55b90b2f514a293f1102327a5f90aa5b377fee201f35d228addbec1c26f8348"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/held08.json",
+      "bytes": 66970,
+      "sha256": "58da92ccfecf07093da3918a7360463ca1da441c86f41bbbebb81ea6f68da559"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/held09.json",
+      "bytes": 74242,
+      "sha256": "84a4efb99482723da4c931e44d5dc5a1dbfb8cd3a9ac0be45466bfa8f93244e5"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/held10.json",
+      "bytes": 78584,
+      "sha256": "759c54862bddc0fad519addb9bcf6652c3295e610365e99550aefb36a508e3e2"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/held11.json",
+      "bytes": 46052,
+      "sha256": "ae72d6cba5c77e5615537b4974045b99f804f4b3e0aa1861cb1adbaafb658327"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/held12.json",
+      "bytes": 44299,
+      "sha256": "fa92599cc9b90899f8c9572e836c16b4d1c16757e0fd0595146c0680fe9982db"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/held13.json",
+      "bytes": 70637,
+      "sha256": "e7ee3204be15b2d002b8dbff4ec802e59bf930fef18949c9fc8d74c195d7fbd1"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/held14.json",
+      "bytes": 91282,
+      "sha256": "e1220ea37a44aef2686efe9e8b45c5eae445cce7d50c843a188e45c995a0cdc8"
+    },
+    {
+      "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/iteration-1/summary.json",
+      "bytes": 9175,
+      "sha256": "5fb775a34bf115fcfc67514157cb1239090dd6c6dc6abe006b71e4793c15f419"
+    }
+  ],
+  "base": {
+    "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/align.py",
+    "bytes": 8188,
+    "sha256": "bcc450c5f628b59b22db7f903ccd5d82d4c9f730908f1f81c6b9c1dbdb57e787"
+  },
+  "onnx": {
+    "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme/export-first/phoneme-alpha-0.6.onnx",
+    "bytes": 19217986,
+    "sha256": "640bdf5da6928ce096c8d4d9216fb0613dfc7310b42d9182bd64214fa4719cbb"
+  },
+  "runner_receipt": {
+    "path": "/tmp/deadpan-word-refinement-2026-10-25/phoneme-guard-development-first.json",
+    "bytes": 34359,
+    "sha256": "95703d2b0efdc6bc62eb75f84bda2881e5ebbc7c4cfd68dd3d8debeb3f4f1059"
+  }
+}

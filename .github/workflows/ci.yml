@@ -55,6 +55,12 @@ jobs:
             --work "$RUNNER_TEMP/deadpan-ffmpeg" \
             --output "$RUNNER_TEMP/deadpan-ffmpeg-build.json"
           echo "DEADPAN_FFMPEG_PREFIX=$RUNNER_TEMP/deadpan-ffmpeg/prefix" >> "$GITHUB_ENV"
+      - name: Prepare pinned ONNX Runtime
+        run: |
+          python3 -m unittest discover -s tools/tests -p 'test_prepare_ort.py' -v
+          python3 tools/prepare-ort.py --prefix "$RUNNER_TEMP/deadpan-ort/prefix" \
+            > "$RUNNER_TEMP/deadpan-ort-build.json"
+          echo "DEADPAN_ORT_PREFIX=$RUNNER_TEMP/deadpan-ort/prefix" >> "$GITHUB_ENV"
       - name: Install test tools
         # Fixture and synthetic-worker tests run Homebrew's ffmpeg (with
         # libx264), separate from the pinned LGPL build the product uses. The

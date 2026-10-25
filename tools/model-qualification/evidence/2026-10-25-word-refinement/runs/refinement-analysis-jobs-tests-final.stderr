@@ -1,0 +1,16 @@
+   Compiling rusty-fork v0.3.1
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling proptest v1.11.0
+   Compiling deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+    Finished `test` profile [optimized + debuginfo] target(s) in 12.61s
+     Running unittests src/lib.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_analysis-9578d58a555ad5a7)
+     Running unittests src/lib.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_jobs-6d1e5e9ff028880b)
+     Running tests/artifact.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/artifact-b524bf6a1d2fb709)
+     Running tests/extension_adversarial.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/extension_adversarial-adf1e1a81fa135eb)
+     Running tests/generation_plan.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/generation_plan-1018b46f6a333a8e)
+     Running tests/lifecycle.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/lifecycle-f2133ca2d4add491)
+     Running tests/protocol.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/protocol-d91434a1fefb26b0)
+     Running tests/supervisor.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/supervisor-c6b371b7c2174276)
+     Running unittests examples/qualify_model_worker.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/examples/qualify_model_worker-e6737eed80ff181d)
+   Doc-tests deadpan_analysis
+   Doc-tests deadpan_jobs

@@ -1,0 +1,15 @@
+{
+  "explicit_accept": true,
+  "neighbor_pin_preserved": true,
+  "other_words_identical": true,
+  "undo_restored_target": true,
+  "versions": [
+    1,
+    2,
+    3
+  ],
+  "no_authored_revision_change": "f0081ed5-c0e6-452f-b125-dc5e7f612313",
+  "limits": "Synthetic SAY workflow fixture; no phonetic or listening quality claim.",
+  "authored_document_identical_to_seed": true,
+  "observed_revision_id": "f0081ed5-c0e6-452f-b125-dc5e7f612313"
+}

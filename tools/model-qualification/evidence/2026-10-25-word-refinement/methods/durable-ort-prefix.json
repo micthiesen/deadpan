@@ -1,0 +1,8 @@
+{
+  "source": "/tmp/deadpan-word-refinement-2026-10-25/ort-prefix",
+  "destination": "/Users/michael/Library/Developer/Deadpan/onnxruntime-1.31.0-qualified-1/prefix",
+  "verified_equal": true,
+  "runtime": "1.31.0",
+  "sha256": "9d2945b4de2ca594608f33b99498c8a81e6696e75da7ae9c67bc9ad3cc36c0d6",
+  "scope": "Durable copy of the already-qualified explicit development build input; temporary prefix retained for in-flight binaries. No shell or host configuration changed."
+}

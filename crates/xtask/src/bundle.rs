@@ -22,6 +22,7 @@ pub mod ai_runtime;
 pub mod deno_notices;
 pub mod macho;
 pub mod notices;
+mod refinement;
 pub mod spdx;
 pub mod verify;
 
@@ -541,7 +542,12 @@ fn remaps(workspace: &Path) -> Vec<(PathBuf, &'static str)> {
 
 /// Release-build the shipped binaries into `target` with path remapping and
 /// return each executable as Cargo reports it.
-fn build(workspace: &Path, target: &Path) -> Result<BTreeMap<String, PathBuf>> {
+fn build(
+    workspace: &Path,
+    target: &Path,
+    packages: &[&str],
+    pins: Option<&refinement::Pins>,
+) -> Result<BTreeMap<String, PathBuf>> {
     let remaps = remaps(workspace);
     let rust: Vec<String> = remaps
         .iter()
@@ -568,19 +574,20 @@ fn build(workspace: &Path, target: &Path) -> Result<BTreeMap<String, PathBuf>> {
         "--target-dir".into(),
         target.display().to_string(),
     ];
-    for package in notices::SHIPPED_PACKAGES {
-        arguments.extend(["-p".into(), package.into()]);
+    for package in packages {
+        arguments.extend(["-p".into(), (*package).into()]);
     }
     println!("bundle: cargo {}", arguments.join(" "));
-    let result = Command::new("cargo")
+    let mut command = Command::new("cargo");
+    command
         .args(&arguments)
         .current_dir(workspace)
         .env("CARGO_ENCODED_RUSTFLAGS", rust.join("\x1f"))
         .env("CFLAGS", with_existing("CFLAGS"))
         .env("CXXFLAGS", with_existing("CXXFLAGS"))
-        .stderr(std::process::Stdio::inherit())
-        .output()
-        .map_err(|e| e.to_string())?;
+        .stderr(std::process::Stdio::inherit());
+    refinement::build_environment(&mut command, pins);
+    let result = command.output().map_err(|e| e.to_string())?;
     if !result.status.success() {
         return Err(format!("release build failed ({})", result.status));
     }
@@ -636,6 +643,12 @@ pub fn run(arguments: &[String]) -> Result<()> {
             "DEADPAN_FFMPEG_PREFIX must name the absolute pinned FFmpeg prefix (build time only)",
         )?;
     let prefix_lib = prefix.join("lib");
+    let ort_prefix = std::env::var_os("DEADPAN_ORT_PREFIX")
+        .map(PathBuf::from)
+        .ok_or(
+            "DEADPAN_ORT_PREFIX must explicitly select the qualified ONNX Runtime 1.31.0 prefix",
+        )?;
+    let ort = macho::qualified_ort(&ort_prefix)?;
     let helpers_root = match &options.helpers_from {
         Some(root) => root.clone(),
         None => PathBuf::from(std::env::var_os("HOME").ok_or("HOME is not set")?)
@@ -667,14 +680,39 @@ pub fn run(arguments: &[String]) -> Result<()> {
     }
 
     let target = cargo_target_directory(&workspace)?.join("bundle");
-    let executables = if options.build {
-        build(&workspace, &target)?
+    let workers: Vec<_> = notices::SHIPPED_PACKAGES
+        .iter()
+        .copied()
+        .filter(|name| !refinement::HOSTS.contains(name))
+        .collect();
+    let mut executables = if options.build {
+        build(&workspace, &target, &workers, None)?
     } else {
         notices::SHIPPED_PACKAGES
             .iter()
             .map(|name| ((*name).to_owned(), target.join("release").join(name)))
             .collect()
     };
+    let refinement_pins = refinement::prepare(
+        &output_directory,
+        &executables,
+        &prefix_lib,
+        &ort,
+        &Signer {
+            identity: options.identity.as_deref(),
+        },
+    )?;
+    if options.build {
+        executables.extend(build(
+            &workspace,
+            &target,
+            &refinement::HOSTS,
+            Some(&refinement_pins),
+        )?);
+    }
+    if sha256_file(&executables["deadpan-align"])? != refinement_pins.source_worker_sha256 {
+        return Err("host pin rebuild changed the independently prepared alignment worker".into());
+    }
 
     let ai = if options.ai_runtime {
         let cache = match &options.ai_runtime_cache {
@@ -707,6 +745,8 @@ pub fn run(arguments: &[String]) -> Result<()> {
         &workspace,
         &prefix,
         &prefix_lib,
+        &ort,
+        &refinement_pins,
         &helpers_root,
         &executables,
         &staging,
@@ -812,6 +852,8 @@ fn assemble(
     workspace: &Path,
     prefix: &Path,
     prefix_lib: &Path,
+    ort: &macho::OrtRuntime,
+    refinement_pins: &refinement::Pins,
     helpers_root: &Path,
     built: &BTreeMap<String, PathBuf>,
     staging: &Path,
@@ -844,10 +886,14 @@ fn assemble(
         executables.push(destination);
     }
 
-    // FFmpeg libraries.
-    let libraries = macho::bundle_libraries(&executables, &frameworks, prefix_lib)?;
+    // Closed FFmpeg and independently pinned ONNX Runtime libraries.
+    let libraries = macho::bundle_libraries(&executables, &frameworks, prefix_lib, Some(ort))?;
+    let ort_library = frameworks.join(macho::ORT_LIBRARY_NAME);
+    if !libraries.contains(&ort_library) {
+        return Err("deadpan-align did not directly load the qualified ONNX Runtime".into());
+    }
     println!(
-        "bundle: {} FFmpeg libraries -> Contents/Frameworks",
+        "bundle: {} FFmpeg/ONNX Runtime libraries -> Contents/Frameworks",
         libraries.len()
     );
 
@@ -964,7 +1010,11 @@ fn assemble(
     // Nested code, inside-out: libraries, then auxiliary executables. The main
     // executable is signed with the bundle, which seals every resource.
     for library in &libraries {
-        signer.sign(library, None, None)?;
+        if library.file_name() == Some(OsStr::new(macho::ORT_LIBRARY_NAME)) {
+            refinement::sign_image(&signer, library, None)?;
+        } else {
+            signer.sign(library, None, None)?;
+        }
     }
     let ai_code = match &ai_directory {
         Some(directory) => {
@@ -986,12 +1036,14 @@ fn assemble(
         .filter(|path| !path.ends_with(MAIN_EXECUTABLE))
     {
         let name = executable.file_name().unwrap().to_string_lossy();
-        signer.sign(
-            executable,
-            Some(&format!("{DEFAULT_BUNDLE_ID}.{name}")),
-            None,
-        )?;
+        let identifier = format!("{DEFAULT_BUNDLE_ID}.{name}");
+        if name == "deadpan-align" {
+            refinement::sign_image(&signer, executable, Some(&identifier))?;
+        } else {
+            signer.sign(executable, Some(&identifier), None)?;
+        }
     }
+    refinement::verify_images(&contents, refinement_pins)?;
 
     // Notices, SBOM and provenance.
     let crates = notices::shipped_crates(workspace)?;
@@ -1035,6 +1087,7 @@ fn assemble(
         configuration: configuration.clone(),
         libraries: libraries
             .iter()
+            .filter(|library| library.file_name() != Some(OsStr::new(macho::ORT_LIBRARY_NAME)))
             .map(|library| {
                 Ok((
                     library.file_name().unwrap().to_string_lossy().into_owned(),
@@ -1080,6 +1133,7 @@ fn assemble(
         .unwrap_or_default();
     let timestamp = now();
     let mut native = native_components(workspace, &crates)?;
+    native.push(notices::ort_component(&sha256_file(&ort_library)?));
     let opus = &ffmpeg_pins["opus"];
     if !version_text.contains("--enable-libopus")
         || !version_text.contains("--disable-decoder=opus")
@@ -1148,6 +1202,21 @@ fn assemble(
         "profile": "release",
         "path_remapping": options.build.then(|| remaps(workspace).iter().map(|(_, to)| *to).collect::<Vec<_>>()),
         "ffmpeg_configuration": configuration,
+        "onnxruntime": {
+            "version": macho::ORT_VERSION,
+            "source_bytes": macho::ORT_SOURCE_BYTES,
+            "source_sha256": macho::ORT_SOURCE_SHA256,
+            "wheel_url": notices::ORT_WHEEL_URL,
+            "wheel_sha256": notices::ORT_WHEEL_SHA256,
+            "shipped_library": format!("Contents/Frameworks/{}", macho::ORT_LIBRARY_NAME),
+            "shipped_sha256": sha256_file(&ort_library)?,
+            "load_policy": "direct link from deadpan-align; qualified source and system-only transitive dependencies",
+        },
+        "refinement_host_content_pins": {
+            "worker": refinement_pins.worker,
+            "ort": refinement_pins.ort,
+            "authority": "independently embedded into the final App and CLI; this provenance is informational",
+        },
         "signature": signer.kind(),
         "notarization": if options.notary_profile.is_some() { "requested" } else { "none" },
         "ai_runtime": ai.map(|built| json!({
@@ -1209,6 +1278,7 @@ fn assemble(
         ));
     }
     check_staged_helpers(&app, staging)?;
+    refinement::check_hosts(&app, refinement_pins)?;
     let ai_check = match &ai_directory {
         Some(directory) => {
             let checked = ai_runtime::check_staged(directory, staging)?;

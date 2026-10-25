@@ -1,0 +1,86 @@
+[
+  {
+    "name": "model-0.6.ckpt",
+    "url": "https://raw.githubusercontent.com/huangruizhe/audio/a4749fe14f17b19c071fe5b20005575ec0509ca3/examples/asr/librispeech_alignment/alignment/checkpoints/ctc_tdnndnn_k2_0.6/epoch%3D9-step%3D65369.ckpt",
+    "size": 57562900,
+    "git_blob_sha1": "d9ab88e4e3e01f30e6fdce039c200bf7e191f5c3",
+    "sha256": "4070c3b89fb27129e2999f550ddb55c747ec77da843fa8a520989b8c5d09723f"
+  },
+  {
+    "name": "model-0.0.ckpt",
+    "url": "https://raw.githubusercontent.com/huangruizhe/audio/a4749fe14f17b19c071fe5b20005575ec0509ca3/examples/asr/librispeech_alignment/alignment/checkpoints/ctc_tdnndnn_k2_0.0/epoch%3D9-step%3D65369.ckpt",
+    "size": 57562836,
+    "git_blob_sha1": "c24ee63d2f622307900fd81e26d598b464fc73c7",
+    "sha256": "8a604d856fba57ca14793dd287f8b2613b3cdad05ae41ceb357417780bc6b3b7"
+  },
+  {
+    "name": "models.py",
+    "url": "https://raw.githubusercontent.com/huangruizhe/audio/a4749fe14f17b19c071fe5b20005575ec0509ca3/examples/asr/librispeech_alignment/models.py",
+    "size": 12012,
+    "git_blob_sha1": "4fdca88168393ab38a834171bad6c2e6aa6c1eb3",
+    "sha256": "90268c861ac699424103c5b4415c4091244554dea2e7a04cef16a27adc9c650b"
+  },
+  {
+    "name": "transforms.py",
+    "url": "https://raw.githubusercontent.com/huangruizhe/audio/a4749fe14f17b19c071fe5b20005575ec0509ca3/examples/asr/librispeech_alignment/transforms.py",
+    "size": 4548,
+    "git_blob_sha1": "58ae43f476398bee5c25ec64b290935277a457d1",
+    "sha256": "b0e1c2d87dec020ef4272e6a2bd0d61c0786d91fd8ad24422ee555b88f82fe7c"
+  },
+  {
+    "name": "global_stats.json",
+    "url": "https://raw.githubusercontent.com/huangruizhe/audio/a4749fe14f17b19c071fe5b20005575ec0509ca3/examples/asr/librispeech_alignment/global_stats.json",
+    "size": 3905,
+    "git_blob_sha1": "c182ce7c654698c8fc18c3ace47435b1eff8a4dc",
+    "sha256": "be2f80418ef66bad30dcd5556e194f95234d75c5d2b94a92d7a766d31900df87"
+  },
+  {
+    "name": "tokenizer.py",
+    "url": "https://raw.githubusercontent.com/huangruizhe/audio/a4749fe14f17b19c071fe5b20005575ec0509ca3/examples/asr/librispeech_alignment/alignment/tokenizer.py",
+    "size": 9966,
+    "git_blob_sha1": "dfcd51b873313ea91511427a63a9b3e4711715b0",
+    "sha256": "894818b4d0d3acaab4f0c3c72bb1c6d232452bb647928f5e0a0fbc20e67aa17b"
+  },
+  {
+    "name": "README.md",
+    "url": "https://raw.githubusercontent.com/huangruizhe/audio/a4749fe14f17b19c071fe5b20005575ec0509ca3/examples/asr/librispeech_alignment/README.md",
+    "size": 2257,
+    "git_blob_sha1": "cd0e9627ac60e4ddaaeb9cb530e983d186720781",
+    "sha256": "c2e7131a8702b53a66a646600419c13724ad858b800fff8f11a8c4b7ee5761b9"
+  },
+  {
+    "name": "LICENSE",
+    "url": "https://raw.githubusercontent.com/huangruizhe/audio/a4749fe14f17b19c071fe5b20005575ec0509ca3/LICENSE",
+    "size": 1338,
+    "git_blob_sha1": "1bec23eaf1dd562ae3d3216420b1b1bbfbd39cbc",
+    "sha256": "93a58861a858cc108e6b6b833e08e76e8b2a66339e4a8007c8a5a8c1ff9c40d6"
+  },
+  {
+    "name": "lightning.py",
+    "url": "https://raw.githubusercontent.com/huangruizhe/audio/a4749fe14f17b19c071fe5b20005575ec0509ca3/examples/asr/librispeech_alignment/lightning.py",
+    "size": 6301,
+    "git_blob_sha1": "015876b376d2e514724784009f70c5f16649e814",
+    "sha256": "489c5a2e83070b997db7a98ef4b4c5c5dc5863ef8631bef835e4fa75e7f7e94d"
+  },
+  {
+    "name": "cmudict.dict",
+    "url": "https://raw.githubusercontent.com/cmusphinx/cmudict/74790861f652b15e4ac49015a90074ad62a27690/cmudict.dict",
+    "size": 3618488,
+    "git_blob_sha1": "2c0411740cce3e2026a80b90b650d5f6a7258164",
+    "sha256": "81917843c7f44ce2b094ac63873c2c7a4cf802040792c455ba3ca406891c3d22"
+  },
+  {
+    "name": "cmudict.phones",
+    "url": "https://raw.githubusercontent.com/cmusphinx/cmudict/74790861f652b15e4ac49015a90074ad62a27690/cmudict.phones",
+    "size": 382,
+    "git_blob_sha1": "f02d34711061230f862dfc2c2bee8a15ebbc9622",
+    "sha256": "ffb588a5e55684723582c7256e1d2f9fadb130011392d9e59237c76e34c2cfd6"
+  },
+  {
+    "name": "CMUDICT-LICENSE",
+    "url": "https://raw.githubusercontent.com/cmusphinx/cmudict/74790861f652b15e4ac49015a90074ad62a27690/LICENSE",
+    "size": 1754,
+    "git_blob_sha1": "81a0ae8ec00962d2ccce9f93c1dcb17d3cb57abb",
+    "sha256": "bd4ce8e44170a5f9f481310ca85c51de3c4f851a65e679b40e603b143bd3542a"
+  }
+]

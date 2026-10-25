@@ -157,6 +157,10 @@ pub enum ShortOperation {
     Corrections {
         request: Box<crate::corrections::Request>,
     },
+    /// Explicit approximate word timing acceptance against a frozen analysis.
+    AcceptWordRefinement {
+        request: Box<crate::refinement::AcceptanceRequest>,
+    },
     /// Remove unreferenced project files unchanged for the grace period
     /// (Storage P/R). With `expire_variants`, first expire due AI variants,
     /// confirming the clock, so their files are removable in the same run.
@@ -724,6 +728,10 @@ pub fn execute_short(
         ShortOperation::Corrections { request } => {
             (crate::corrections::execute_on(store, request)?, None)
         }
+        ShortOperation::AcceptWordRefinement { request } => (
+            crate::refinement::execute_acceptance_on(store, request)?,
+            None,
+        ),
         ShortOperation::CleanStorage {
             grace_seconds,
             expire_variants,

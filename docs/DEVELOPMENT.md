@@ -26,6 +26,32 @@ reads the prefix at run time; see [Packaging](#packaging).
 CI builds the same pinned dependency before running the complete gate.
 These developer tools must never become end-user requirements.
 
+The workspace also requires the qualified ONNX Runtime 1.31.0 arm64 prefix
+for the native word-refinement worker. Prepare it with Python's standard
+library only, before Cargo builds:
+
+```sh
+python3 tools/prepare-ort.py \
+  --prefix "$HOME/Library/Developer/Deadpan/onnxruntime-1.31.0-qualified-1/prefix"
+export DEADPAN_ORT_PREFIX="$HOME/Library/Developer/Deadpan/onnxruntime-1.31.0-qualified-1/prefix"
+```
+
+The preparer downloads the hash-pinned official wheel as data, extracts only
+its exact native library, and downloads six hash-pinned headers from the
+qualified source commit. It never installs or imports the wheel or changes
+host configuration. An existing prefix is verified without overwriting or
+repairing it; corrupt inputs, symlinks other than the two exact internal
+library aliases, and nonregular files fail explicitly. Use the same command
+with `--verify-only` for a read-only, network-free check. Additional retained
+provenance does not override the compiled pins. Keep this durable prefix
+available for Cargo-built executables; packaged apps carry their own library.
+Preparation retains a regular advisory lock file beside the prefix; a live
+owner causes an immediate refusal, while normal exit or a crash releases the
+lock automatically. Do not delete that file to recover from a crash.
+CI runs the preparer's offline regressions and prepares/exports the prefix
+before Lint and Test. Run its regressions locally with
+`python3 -m unittest discover -s tools/tests -p 'test_prepare_ort.py' -v`.
+
 Use a durable development directory for this dependency. macOS's temporary-file
 cleanup removed headers from the former `/private/tmp/deadpan-ui-ffmpeg/prefix`.
 On 2026-10-09 the pinned builder created the dav1d-qualified prefix with suffix

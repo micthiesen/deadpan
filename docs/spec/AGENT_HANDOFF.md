@@ -8,7 +8,7 @@ The [progress reassessment](../PROGRESS_ASSESSMENT.md) supersedes the inherited
 89% estimate with about **83% acceptance coverage**. Use the fixed 162-criterion
 ledger in progress.json; tools/progress/update.py computes the score. Preserve
 legacy history and never infer a progress rate across the calibration change.
-Eight requirements remain Complete, sixteen Partial; all seven gates stay open
+Seven requirements are Complete, seventeen Partial after the older native-helper trust audit; all seven gates stay open
 and picture effects remain five of thirteen. DP-12 behavior scores fully covered
 but strict closure needs reconciliation; runtime optimizations, bakeoff and
 performance remain owed under DP-24 and Gates A/E/G. This reporting correction
@@ -26,21 +26,45 @@ debug-cancellation finding is fixed. Evidence retains the initial unsupported
 PCM MOV fixture failure, corrected admitted negative-PTS AAC fixture and the
 reversed-range lint failure. No new schema or full-app/release claim.
 
-Current work: integrate the real local word-refinement proposal workflow after
-backend qualification. Scratch /tmp/deadpan-word-refinement-2026-10-25 contains
-all real inference and failed experiments. Read the
-[qualification plan](../../tools/model-qualification/word-refinement/plan.md).
-DTW separator refinement fails held-out coverage. The 5M label-prior phoneme
-model materially improves timing and exports to ONNX, but its original and
-context-guard experiments fail their stricter numerical gates. Preserve those
-failures. Independent evaluation audit distinguishes them from the spec's
-explicit approximate annotation workflow; do not claim automatic precision or
-relabel either experiment as passed. Use the frozen guarded backend for the
-next production proposal integration, with visible approximation, audition,
-manual adjustment, explicit acceptance, pinned corrections/cuts and actual
-worker/app parity. Human phonetic acceptability belongs on the owner list under
-§29.1. Native inference/features, model/runtime packaging and integration are
-still owed; DP-10.3 remains unimplemented and coverage stays 83%.
+[Word timing proposals are locally qualified](../qualification/word-refinement-2026-10-25.md):
+real CPU inference, frozen guarded DAG, native waveform/review/manual adjustment,
+device comparison audition through exact completion/restart, explicit acceptance
+and one correction Undo, CLI and relocated packaged workflow. English-only
+admission refuses other cached language keys before model loading. Source,
+other words, pinned/removed regions and authored history stay unchanged.
+
+DP-10.3 receives full local credit; DP-10's broader work remains open. The stricter
+experiment still fails at 71.43% retention and 1.4865% maximum foreign energy.
+All 24 cases are observed development/parity data. Never call them an unseen
+split or relabel those quality gates passed. Human phonetic/listening judgment
+has exact owner steps under §29.1.
+
+The broad changed-package run has 3,587 passes/three failures, followed by the
+bounded corrected/isolated three-test continuation. Later language admission and
+clean-signing checks pass, including 69 xtask tests and 15 focused app tests.
+Final release replays pass 29 visual and 16 actual-device checks, plus shortcut
+audits. Real packaged import/inference, acceptance/Undo, seven expected host
+refusals and general relocated bundle verification pass. Evidence is under
+tools/model-qualification/evidence/2026-10-25-word-refinement.
+
+Use tools/prepare-ort.py and the DEVELOPMENT.md command for the explicit durable
+ORT prefix. CI prepares the same pinned input as data; 15 Python regressions and
+actual download/lock-crash recovery pass. Clean-sign private alignment/ORT images
+before pinning and final assembly; do not relax the strict Mach-O parser for
+the measured stale signature tail. No model weights/raw learned stats enter Git.
+
+Next local implementation work: DP-22 older native-helper launch trust. Existing
+transcribe, track and media-worker selectors only locate siblings; no global
+startup verifier covers them. Keep trust policy in CLI bundle, at preparation/
+CLI launch boundaries, not generic process/media crates. Transcription supervise
+is already off UI. Track/proposal and AI runtime selection currently happens on
+the project writer; proxy selection happens on UI, so do not add hashing or
+codesign there unchanged. Qualify at the tracking/proposal supervised launch,
+proxy builder, YouTube worker and AI job preparation, or first move selectors
+into their job threads. Expand compiled worker/library identity and expected-
+signer admission, then exercise relocated, damaged/substituted/marker failures.
+Ad hoc/local signing is authorized; Developer ID/notarization is not required.
+DP-22 remains Partial until that actual older gap is fixed and verified.
 
 ## Earlier scoped framing ranges, 2026-10-25
 

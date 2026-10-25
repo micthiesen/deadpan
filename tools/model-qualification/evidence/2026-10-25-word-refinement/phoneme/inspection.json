@@ -1,0 +1,623 @@
+{
+  "torch": "2.8.0",
+  "torchaudio": "2.8.0",
+  "numpy": "2.3.3",
+  "labels": [
+    "<blk>",
+    "AA",
+    "AE",
+    "AH",
+    "AO",
+    "AW",
+    "AY",
+    "B",
+    "CH",
+    "D",
+    "DH",
+    "EH",
+    "ER",
+    "EY",
+    "F",
+    "G",
+    "HH",
+    "IH",
+    "IY",
+    "JH",
+    "K",
+    "L",
+    "M",
+    "N",
+    "NG",
+    "OW",
+    "OY",
+    "P",
+    "R",
+    "S",
+    "SH",
+    "T",
+    "TH",
+    "UH",
+    "UW",
+    "V",
+    "W",
+    "Y",
+    "Z",
+    "ZH",
+    "<unk>"
+  ],
+  "label_count": 41,
+  "checkpoints": [
+    {
+      "alpha": "0.0",
+      "state_keys": [
+        "model.encoder.layers.0.0.weight",
+        "model.encoder.layers.0.0.bias",
+        "model.encoder.layers.0.2.running_mean",
+        "model.encoder.layers.0.2.running_var",
+        "model.encoder.layers.0.2.num_batches_tracked",
+        "model.encoder.layers.1.0.weight",
+        "model.encoder.layers.1.0.bias",
+        "model.encoder.layers.1.2.running_mean",
+        "model.encoder.layers.1.2.running_var",
+        "model.encoder.layers.1.2.num_batches_tracked",
+        "model.encoder.layers.2.0.weight",
+        "model.encoder.layers.2.0.bias",
+        "model.encoder.layers.2.2.running_mean",
+        "model.encoder.layers.2.2.running_var",
+        "model.encoder.layers.2.2.num_batches_tracked",
+        "model.encoder.layers.3.ffn.0.weight",
+        "model.encoder.layers.3.ffn.0.bias",
+        "model.encoder.layers.3.ffn.3.weight",
+        "model.encoder.layers.3.ffn.3.bias",
+        "model.encoder.layers.3.ffn.6.weight",
+        "model.encoder.layers.3.ffn.6.bias",
+        "model.encoder.layers.3.ffn.9.weight",
+        "model.encoder.layers.3.ffn.9.bias",
+        "model.encoder.layers.3.ffn.12.weight",
+        "model.encoder.layers.3.ffn.12.bias",
+        "model.encoder_output_layer.weight",
+        "model.encoder_output_layer.bias"
+      ],
+      "extra": {},
+      "tensors": [
+        {
+          "name": "encoder.layers.0.0.weight",
+          "shape": [
+            640,
+            80,
+            5
+          ],
+          "dtype": "torch.float32",
+          "numel": 256000,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.0.0.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.0.2.running_mean",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.0.2.running_var",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.0.2.num_batches_tracked",
+          "shape": [],
+          "dtype": "torch.int64",
+          "numel": 1,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.1.0.weight",
+          "shape": [
+            640,
+            640,
+            3
+          ],
+          "dtype": "torch.float32",
+          "numel": 1228800,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.1.0.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.1.2.running_mean",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.1.2.running_var",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.1.2.num_batches_tracked",
+          "shape": [],
+          "dtype": "torch.int64",
+          "numel": 1,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.2.0.weight",
+          "shape": [
+            640,
+            640,
+            3
+          ],
+          "dtype": "torch.float32",
+          "numel": 1228800,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.2.0.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.2.2.running_mean",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.2.2.running_var",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.2.2.num_batches_tracked",
+          "shape": [],
+          "dtype": "torch.int64",
+          "numel": 1,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.0.weight",
+          "shape": [
+            640,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 409600,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.0.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.3.weight",
+          "shape": [
+            640,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 409600,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.3.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.6.weight",
+          "shape": [
+            640,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 409600,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.6.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.9.weight",
+          "shape": [
+            640,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 409600,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.9.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.12.weight",
+          "shape": [
+            640,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 409600,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.12.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder_output_layer.weight",
+          "shape": [
+            41,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 26240,
+          "finite": true
+        },
+        {
+          "name": "encoder_output_layer.bias",
+          "shape": [
+            41
+          ],
+          "dtype": "torch.float32",
+          "numel": 41,
+          "finite": true
+        }
+      ],
+      "parameters": 4793001,
+      "checkpoint_sha256": "8a604d856fba57ca14793dd287f8b2613b3cdad05ae41ceb357417780bc6b3b7"
+    },
+    {
+      "alpha": "0.6",
+      "state_keys": [
+        "model.encoder.layers.0.0.weight",
+        "model.encoder.layers.0.0.bias",
+        "model.encoder.layers.0.2.running_mean",
+        "model.encoder.layers.0.2.running_var",
+        "model.encoder.layers.0.2.num_batches_tracked",
+        "model.encoder.layers.1.0.weight",
+        "model.encoder.layers.1.0.bias",
+        "model.encoder.layers.1.2.running_mean",
+        "model.encoder.layers.1.2.running_var",
+        "model.encoder.layers.1.2.num_batches_tracked",
+        "model.encoder.layers.2.0.weight",
+        "model.encoder.layers.2.0.bias",
+        "model.encoder.layers.2.2.running_mean",
+        "model.encoder.layers.2.2.running_var",
+        "model.encoder.layers.2.2.num_batches_tracked",
+        "model.encoder.layers.3.ffn.0.weight",
+        "model.encoder.layers.3.ffn.0.bias",
+        "model.encoder.layers.3.ffn.3.weight",
+        "model.encoder.layers.3.ffn.3.bias",
+        "model.encoder.layers.3.ffn.6.weight",
+        "model.encoder.layers.3.ffn.6.bias",
+        "model.encoder.layers.3.ffn.9.weight",
+        "model.encoder.layers.3.ffn.9.bias",
+        "model.encoder.layers.3.ffn.12.weight",
+        "model.encoder.layers.3.ffn.12.bias",
+        "model.encoder_output_layer.weight",
+        "model.encoder_output_layer.bias"
+      ],
+      "extra": {},
+      "tensors": [
+        {
+          "name": "encoder.layers.0.0.weight",
+          "shape": [
+            640,
+            80,
+            5
+          ],
+          "dtype": "torch.float32",
+          "numel": 256000,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.0.0.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.0.2.running_mean",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.0.2.running_var",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.0.2.num_batches_tracked",
+          "shape": [],
+          "dtype": "torch.int64",
+          "numel": 1,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.1.0.weight",
+          "shape": [
+            640,
+            640,
+            3
+          ],
+          "dtype": "torch.float32",
+          "numel": 1228800,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.1.0.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.1.2.running_mean",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.1.2.running_var",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.1.2.num_batches_tracked",
+          "shape": [],
+          "dtype": "torch.int64",
+          "numel": 1,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.2.0.weight",
+          "shape": [
+            640,
+            640,
+            3
+          ],
+          "dtype": "torch.float32",
+          "numel": 1228800,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.2.0.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.2.2.running_mean",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.2.2.running_var",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.2.2.num_batches_tracked",
+          "shape": [],
+          "dtype": "torch.int64",
+          "numel": 1,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.0.weight",
+          "shape": [
+            640,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 409600,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.0.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.3.weight",
+          "shape": [
+            640,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 409600,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.3.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.6.weight",
+          "shape": [
+            640,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 409600,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.6.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.9.weight",
+          "shape": [
+            640,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 409600,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.9.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.12.weight",
+          "shape": [
+            640,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 409600,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.12.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder_output_layer.weight",
+          "shape": [
+            41,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 26240,
+          "finite": true
+        },
+        {
+          "name": "encoder_output_layer.bias",
+          "shape": [
+            41
+          ],
+          "dtype": "torch.float32",
+          "numel": 41,
+          "finite": true
+        }
+      ],
+      "parameters": 4793001,
+      "checkpoint_sha256": "4070c3b89fb27129e2999f550ddb55c747ec77da843fa8a520989b8c5d09723f"
+    }
+  ]
+}

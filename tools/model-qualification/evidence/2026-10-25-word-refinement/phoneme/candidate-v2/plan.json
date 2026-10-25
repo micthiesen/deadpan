@@ -1,0 +1,43 @@
+{
+  "objective": "Abstain on incomplete or ambiguously placed supplied context evidenced by unconstrained phonetic content; preserve frozen acoustic model, full raw paths/endpoints and .5/.1 word/phone gates.",
+  "base_policy_sha256": "bcc450c5f628b59b22db7f903ccd5d82d4c9f730908f1f81c6b9c1dbdb57e787",
+  "base_onnx_sha256": "640bdf5da6928ce096c8d4d9216fb0613dfc7310b42d9182bd64214fa4719cbb",
+  "data_status": "Original cases01-10 and observed14fresh cases are DEVELOPMENT/VALIDATION now. No new final heldout access is authorized before freeze.",
+  "bounds": {
+    "max_seconds": 30,
+    "max_target_phones": 256,
+    "max_pronunciation_paths": 128,
+    "optimal_path_tie_policy": "diagonal then delete-expected then insert-observed; pronunciation input order; deterministic"
+  },
+  "guard_thresholds": {
+    "minimum_residual_phone_events": 3,
+    "minimum_residual_duration_frames": 6,
+    "output_frame_ms": 20,
+    "each_residual_mean_posterior_minimum": 0.5
+  },
+  "threshold_reason": "At least three model-supported phone events over120ms indicates a short content fragment rather than a single-phone confusion or one-frame boundary disagreement. These uncalibrated scores are not correctness probabilities.",
+  "finite_candidates": [
+    {
+      "iteration": 1,
+      "residual_definition": "A contiguous run of inserted observed greedy phones in minimum-unit-edit correspondence against any allowed pronunciation path."
+    },
+    {
+      "iteration": 2,
+      "only_if": "Iteration1 fails to detect known omitted-content negative; no other tuning.",
+      "residual_definition": "A contiguous observed run of inserted OR substituted greedy phones; expected-phone deletions do not add audio or break observed contiguity."
+    }
+  ],
+  "selection_rule": "Use iteration1 if it meets mechanism and coverage checks. Evaluate at most iteration2 if omitted-content negative still offers. Never change posterior, duration or run-count thresholds after viewing outcomes.",
+  "development_quality_gates": {
+    "mechanism": "All critical negative cases must have0wordoffers, including omitted repeated-prefix context and prior substituted-word/silence diagnostics.",
+    "coverage": "At least40percent of eligible positive words offered overall AND at least80percent of v1 offeredpositivewords retained on paired same cases.",
+    "negative_monotonicity": "No negative offers can be added, and previously rejected silence/noise/clearlywrongtext/substitutedword cases stay rejected.",
+    "span_invariance": "All retained offers preserve exactly the frozen candidate endpoint samples and base scores.",
+    "honesty": "Report false context refusals, abstained correct words, raw residual paths, unmatched phones and coverage denominators. Passing development does not establish safe product behavior.",
+    "start_end_quality": "Offered absolute start/endp95<=80ms each against explicit available support references; natural interior words excluded from timing denominators, never silently treated correct.",
+    "signal_quality": "Every offered positive interval own-signalenergy>=90percent andforeign-wordenergy<=0.1percent using currentexplicitconstructionreference definitions.",
+    "premeasurement_revision": "Root supplied stricter gates before any candidate measurement; earlier50percentretention/25percentoverall gates superseded."
+  },
+  "stop_rule": "Stop/report if finite candidates cannot detect incomplete context without losing declared useful coverage; do not blacklist caseIDs or change supplied text.",
+  "final_test": "Freeze candidate source/dependency SHA before Root supplies new oracle-free inputs. Root will restrict filesystem truth access and grade outside inference."
+}

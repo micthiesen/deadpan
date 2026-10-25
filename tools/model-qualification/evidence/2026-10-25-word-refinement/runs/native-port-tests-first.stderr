@@ -1,0 +1,30 @@
+   Compiling crc32fast v1.5.2
+   Compiling simd-adler32 v0.3.10
+   Compiling num-traits v0.2.19
+   Compiling strength_reduce v0.2.4
+   Compiling deadpan-align v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-align)
+   Compiling miniz_oxide v0.9.1
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>>: LowerHex` is not satisfied
+ --> native/deadpan-align/build.rs:7:32
+  |
+7 |     assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected,
+  |                         ----   ^^^^^^^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>, ...>>`
+  |                         |
+  |                         required by this formatting parameter
+  |
+  = help: the following other types implement trait `LowerHex`:
+            &T
+            &mut T
+            Saturating<T>
+            Wrapping<T>
+            compiler_builtins::math::libm_math::support::big::i256
+            compiler_builtins::math::libm_math::support::big::u256
+            compiler_builtins::math::libm_math::support::hex_float::hex_fmt::Hex<T>
+            i128
+          and 12 others
+  = note: the full name for the type has been written to '/tmp/deadpan-follow-creep-2026-10-24/target/debug/build/deadpan-align-96c6125a4947c3e6/build_script_build-96c6125a4947c3e6.long-type-2431401379792488140.txt'
+  = note: consider using `--verbose` to print the full type name to the console
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `deadpan-align` (build script) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

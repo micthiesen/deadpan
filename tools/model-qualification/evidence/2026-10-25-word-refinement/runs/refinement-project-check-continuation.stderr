@@ -1,0 +1,29 @@
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.17s
+     Running `/tmp/deadpan-follow-creep-2026-10-24/target/debug/xtask check --since 32b0620c --filter 'test(native_emissions_preserve_all_observed_proposal_and_guard_structure) | test(list_shows_every_pack_with_size_licenses_and_free_space) | test(a_killed_worker_leaves_completed_ranges_for_the_next_build)'`
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 16.60s
+    Checking deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 10.95s
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Finished `test` profile [optimized + debuginfo] target(s) in 26.60s
+────────────
+ Nextest run ID d9cf41d5-780e-42a2-909c-3c8282e00347 with nextest profile: default
+    Starting 3 tests across 110 binaries (3622 tests skipped)
+        PASS [   0.032s] (1/3) deadpan-analysis refinement::tests::native_emissions_preserve_all_observed_proposal_and_guard_structure
+        PASS [   0.043s] (2/3) deadpan-cli::model_packs list_shows_every_pack_with_size_licenses_and_free_space
+        PASS [   0.949s] (3/3) deadpan-cli::proxy_resume a_killed_worker_leaves_completed_ranges_for_the_next_build
+────────────
+     Summary [   0.952s] 3 tests run: 3 passed, 3622 skipped

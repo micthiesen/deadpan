@@ -1,0 +1,125 @@
+{
+  "schema": 4,
+  "pack_id": "phoneme-ctc-en",
+  "pack_version": "1",
+  "title": "Approximate English word timing proposals (phoneme CTC)",
+  "model_family": "tdnn-phoneme-ctc-label-prior-0.6",
+  "runtime_id": "deadpan-align",
+  "runtime_versions": [
+    "1"
+  ],
+  "operations": [
+    "refine_words"
+  ],
+  "languages": [
+    "en"
+  ],
+  "constraints": {
+    "hardware": {
+      "architecture": "apple_silicon",
+      "minimum_macos": {
+        "major": 15,
+        "minor": 0
+      },
+      "accelerators": [
+        "cpu"
+      ]
+    },
+    "weight_precisions": [
+      "float32"
+    ],
+    "conditioning": [
+      "mono_audio"
+    ],
+    "audio": {
+      "sample_rate": 16000,
+      "channels": 1,
+      "maximum_samples": 480000
+    },
+    "bridge": null
+  },
+  "files": [
+    {
+      "name": "model-0.6.ckpt",
+      "url": "https://raw.githubusercontent.com/huangruizhe/audio/a4749fe14f17b19c071fe5b20005575ec0509ca3/examples/asr/librispeech_alignment/alignment/checkpoints/ctc_tdnndnn_k2_0.6/epoch%3D9-step%3D65369.ckpt",
+      "sha256": "4070c3b89fb27129e2999f550ddb55c747ec77da843fa8a520989b8c5d09723f",
+      "bytes": 57562900,
+      "license": "checkpoint-terms"
+    },
+    {
+      "name": "global_stats.json",
+      "url": "https://raw.githubusercontent.com/huangruizhe/audio/a4749fe14f17b19c071fe5b20005575ec0509ca3/examples/asr/librispeech_alignment/global_stats.json",
+      "sha256": "be2f80418ef66bad30dcd5556e194f95234d75c5d2b94a92d7a766d31900df87",
+      "bytes": 3905,
+      "license": "checkpoint-terms"
+    },
+    {
+      "name": "cmudict.dict",
+      "url": "https://raw.githubusercontent.com/cmusphinx/cmudict/74790861f652b15e4ac49015a90074ad62a27690/cmudict.dict",
+      "sha256": "81917843c7f44ce2b094ac63873c2c7a4cf802040792c455ba3ca406891c3d22",
+      "bytes": 3618488,
+      "license": "cmudict"
+    },
+    {
+      "name": "cmudict.phones",
+      "url": "https://raw.githubusercontent.com/cmusphinx/cmudict/74790861f652b15e4ac49015a90074ad62a27690/cmudict.phones",
+      "sha256": "ffb588a5e55684723582c7256e1d2f9fadb130011392d9e59237c76e34c2cfd6",
+      "bytes": 382,
+      "license": "cmudict"
+    },
+    {
+      "name": "AUTHOR-LICENSE",
+      "url": "https://raw.githubusercontent.com/huangruizhe/audio/a4749fe14f17b19c071fe5b20005575ec0509ca3/LICENSE",
+      "sha256": "93a58861a858cc108e6b6b833e08e76e8b2a66339e4a8007c8a5a8c1ff9c40d6",
+      "bytes": 1338,
+      "license": "author-source"
+    },
+    {
+      "name": "CMUDICT-LICENSE",
+      "url": "https://raw.githubusercontent.com/cmusphinx/cmudict/74790861f652b15e4ac49015a90074ad62a27690/LICENSE",
+      "sha256": "bd4ce8e44170a5f9f481310ca85c51de3c4f851a65e679b40e603b143bd3542a",
+      "bytes": 1754,
+      "license": "cmudict"
+    }
+  ],
+  "licenses": [
+    {
+      "id": "checkpoint-terms",
+      "title": "Checkpoint and statistics terms not separately specified",
+      "spdx": "LicenseRef-Phoneme-Checkpoint-Terms-Unspecified",
+      "attribution": "Ruizhe Huang, original label-prior phoneme CTC alpha0.6 checkpoint and feature statistics in huangruizhe/audio at a4749fe14f17b19c071fe5b20005575ec0509ca3.",
+      "url": "https://github.com/huangruizhe/audio/tree/a4749fe14f17b19c071fe5b20005575ec0509ca3/examples/asr/librispeech_alignment",
+      "terms": "The author repository carries a BSD 2-Clause source license, retained separately. No separately explicit checkpoint/statistics license or model card was found at this pin. This notice does not establish model-data redistribution permission or substitute the source license for a model-weight grant.",
+      "redistribution": false,
+      "access": "Public original-source download; no account or upstream acceptance flow identified.",
+      "acceptance_required": false
+    },
+    {
+      "id": "author-source",
+      "title": "Author repository BSD 2-Clause source notice",
+      "spdx": "BSD-2-Clause",
+      "attribution": "Author repository huangruizhe/audio; retained notice: Copyright (c) 2017 Facebook Inc. (Soumith Chintala).",
+      "url": "https://raw.githubusercontent.com/huangruizhe/audio/a4749fe14f17b19c071fe5b20005575ec0509ca3/LICENSE",
+      "text": "phoneme-author-bsd-2-clause.txt",
+      "terms": "Retain the exact author repository source/binary notice and disclaimer. This source-code notice is separate from the checkpoint/statistics terms and does not establish a separately explicit model-weight grant.",
+      "redistribution": true,
+      "access": "Public source notice; no account or acceptance required.",
+      "acceptance_required": false
+    },
+    {
+      "id": "cmudict",
+      "title": "CMU Pronouncing Dictionary license",
+      "spdx": "BSD-2-Clause",
+      "attribution": "Copyright (C) 1993-2015 Carnegie Mellon University. Original cmusphinx/cmudict data and phone inventory at 74790861f652b15e4ac49015a90074ad62a27690.",
+      "url": "https://raw.githubusercontent.com/cmusphinx/cmudict/74790861f652b15e4ac49015a90074ad62a27690/LICENSE",
+      "text": "cmudict-license.txt",
+      "terms": "Original CMUDict data and phone inventory, with its exact independent notice and disclaimer. Source and binary redistribution must retain the copyright, conditions and disclaimer. No GPL Python wrapper or generated pronunciation code is included.",
+      "redistribution": true,
+      "access": "Public original dictionary data; no account or acceptance required.",
+      "acceptance_required": false
+    }
+  ],
+  "memory_bytes": 268435456,
+  "temporary_bytes": 19219161,
+  "qualification_report": "tools/model-qualification/word-refinement/plan.md"
+}

@@ -1,0 +1,78 @@
+{
+  "correction_rule": "deadpan-corrections-1",
+  "corrections_error": null,
+  "corrections_version": 1,
+  "protocol": 1,
+  "transcripts": [
+    {
+      "corrected_words": [
+        4
+      ],
+      "corrections_skipped": 0,
+      "key": {
+        "audio_stream": 1,
+        "content": "blake3:5177b5e17d31a75b8c2c9ca4ae999728481f87b518e020c574df48f69d0a4dce",
+        "engine": "whisper.cpp 1.8.3",
+        "language": "en",
+        "model_sha256": "a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002"
+      },
+      "recognition": {
+        "coverage": {
+          "reason": "speech activity of this audio has not been detected",
+          "status": "unchecked"
+        },
+        "flagged": false,
+        "longest_repetition": null,
+        "loops": [],
+        "passages": [],
+        "recognized_again": [],
+        "rule": "deadpan-recognition-1"
+      },
+      "replaced_recognized_words": 1,
+      "transcript": {
+        "audio": {
+          "duration_cs": 322,
+          "origin": 0,
+          "sample_rate": 48000
+        },
+        "words": [
+          {
+            "end_cs": 52,
+            "probability": 0.8451359868049622,
+            "segment": 0,
+            "start_cs": 21,
+            "text": "Copper,"
+          },
+          {
+            "end_cs": 101,
+            "probability": 0.7425822019577026,
+            "segment": 0,
+            "start_cs": 76,
+            "text": "birds,"
+          },
+          {
+            "end_cs": 163,
+            "probability": 0.948849081993103,
+            "segment": 0,
+            "start_cs": 130,
+            "text": "cross,"
+          },
+          {
+            "end_cs": 227,
+            "probability": 0.9908676147460938,
+            "segment": 0,
+            "start_cs": 191,
+            "text": "quiet,"
+          },
+          {
+            "end_cs": 273,
+            "probability": 1.0,
+            "segment": 0,
+            "start_cs": 253,
+            "text": "roofs."
+          }
+        ]
+      }
+    }
+  ]
+}

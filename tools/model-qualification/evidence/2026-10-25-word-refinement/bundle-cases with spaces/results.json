@@ -1,0 +1,79 @@
+{
+  "source_bundle": "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-second/Deadpan.app",
+  "environment": {
+    "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+    "HOME": "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases with spaces/home",
+    "TMPDIR": "/tmp"
+  },
+  "records": [
+    {
+      "name": "copy",
+      "command": [
+        "/bin/cp",
+        "-cR",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-second/Deadpan.app",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7603034162893891,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "relocated-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "refinement-runtime-qualify"
+      ],
+      "exit_code": 0,
+      "seconds": 1.5436997497454286,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "relocated-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "refinement-runtime-qualify"
+      ],
+      "exit_code": 0,
+      "seconds": 1.870658041909337,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "offline-model-import",
+      "command": [
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "models",
+        "import",
+        "phoneme-ctc-en",
+        "/tmp/deadpan-word-refinement-2026-10-25/original-pack-source",
+        "--root",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases with spaces/models"
+      ],
+      "exit_code": 0,
+      "seconds": 1.6971719162538648,
+      "expected_success": true,
+      "expected_message": "\"event\":\"smoke_test\""
+    },
+    {
+      "name": "actual-refinement",
+      "command": [
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "refine-words",
+        "/tmp/deadpan-word-refinement-2026-10-25/workflow/Source.deadpan",
+        "--word",
+        "0",
+        "--models-root",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases with spaces/models"
+      ],
+      "exit_code": 0,
+      "seconds": 2.0105846663936973,
+      "expected_success": true,
+      "expected_message": null
+    }
+  ],
+  "scope": "Relocated real inference and re-signed admission failures; no same-user concurrent-writer containment claim."
+}

@@ -1,0 +1,11 @@
+{
+  "protocol": 1,
+  "expected_version": 0,
+  "change": {
+    "type": "set_word_bounds",
+    "word": 4,
+    "expected_text": "roofs.",
+    "start_cs": 253,
+    "end_cs": 273
+  }
+}

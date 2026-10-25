@@ -1,0 +1,3819 @@
+{
+  "id": "case04",
+  "kind": "positive_isolated",
+  "base": {
+    "words": [
+      {
+        "index": 0,
+        "word": "soft",
+        "phones": [
+          {
+            "phone": "S",
+            "start_frame": 8,
+            "end_frame": 19,
+            "frames": 11,
+            "mean_posterior": 0.9574637540023813,
+            "minimum_posterior": 0.6127127898191351
+          },
+          {
+            "phone": "AA",
+            "start_frame": 19,
+            "end_frame": 28,
+            "frames": 9,
+            "mean_posterior": 0.49415250951252054,
+            "minimum_posterior": 0.28126663866629636
+          },
+          {
+            "phone": "F",
+            "start_frame": 28,
+            "end_frame": 36,
+            "frames": 8,
+            "mean_posterior": 0.5025291155522615,
+            "minimum_posterior": 0.18487293833108273
+          },
+          {
+            "phone": "T",
+            "start_frame": 36,
+            "end_frame": 39,
+            "frames": 3,
+            "mean_posterior": 0.7000010302442385,
+            "minimum_posterior": 0.5492508226744558
+          }
+        ],
+        "start_frame": 8,
+        "end_frame": 39,
+        "interval_samples": [
+          2560,
+          12480
+        ],
+        "mean_phone_frame_posterior": 0.6806358030577319,
+        "minimum_phone_mean_posterior": 0.49415250951252054,
+        "status": "proposed",
+        "refusal": null,
+        "confidence": "uncalibrated CTC path posterior, not a correctness probability"
+      },
+      {
+        "index": 1,
+        "word": "silver",
+        "phones": [
+          {
+            "phone": "S",
+            "start_frame": 46,
+            "end_frame": 56,
+            "frames": 10,
+            "mean_posterior": 0.9369893109418408,
+            "minimum_posterior": 0.406229283692335
+          },
+          {
+            "phone": "IH",
+            "start_frame": 56,
+            "end_frame": 57,
+            "frames": 1,
+            "mean_posterior": 0.7308654818367083,
+            "minimum_posterior": 0.7308654818367083
+          },
+          {
+            "phone": "L",
+            "start_frame": 57,
+            "end_frame": 62,
+            "frames": 5,
+            "mean_posterior": 0.838824983295955,
+            "minimum_posterior": 0.5883565769590864
+          },
+          {
+            "phone": "V",
+            "start_frame": 62,
+            "end_frame": 67,
+            "frames": 5,
+            "mean_posterior": 0.9436871752300039,
+            "minimum_posterior": 0.7915210406141027
+          },
+          {
+            "phone": "ER",
+            "start_frame": 67,
+            "end_frame": 76,
+            "frames": 9,
+            "mean_posterior": 0.6169696829281024,
+            "minimum_posterior": 0.4776824732490172
+          }
+        ],
+        "start_frame": 46,
+        "end_frame": 76,
+        "interval_samples": [
+          14720,
+          24320
+        ],
+        "mean_phone_frame_posterior": 0.8188682176745945,
+        "minimum_phone_mean_posterior": 0.6169696829281024,
+        "status": "proposed",
+        "refusal": null,
+        "confidence": "uncalibrated CTC path posterior, not a correctness probability"
+      },
+      {
+        "index": 2,
+        "word": "leaves",
+        "phones": [
+          {
+            "phone": "L",
+            "start_frame": 84,
+            "end_frame": 91,
+            "frames": 7,
+            "mean_posterior": 0.911418789689776,
+            "minimum_posterior": 0.6405689714372235
+          },
+          {
+            "phone": "IY",
+            "start_frame": 91,
+            "end_frame": 100,
+            "frames": 9,
+            "mean_posterior": 0.4224833433312884,
+            "minimum_posterior": 0.17455734004194345
+          },
+          {
+            "phone": "V",
+            "start_frame": 100,
+            "end_frame": 103,
+            "frames": 3,
+            "mean_posterior": 0.38120128018799937,
+            "minimum_posterior": 0.29816246870635127
+          },
+          {
+            "phone": "Z",
+            "start_frame": 103,
+            "end_frame": 111,
+            "frames": 8,
+            "mean_posterior": 0.40331472036124305,
+            "minimum_posterior": 0.12444010902603811
+          }
+        ],
+        "start_frame": 84,
+        "end_frame": 111,
+        "interval_samples": [
+          26880,
+          35520
+        ],
+        "mean_phone_frame_posterior": 0.5389778970838507,
+        "minimum_phone_mean_posterior": 0.38120128018799937,
+        "status": "proposed",
+        "refusal": null,
+        "confidence": "uncalibrated CTC path posterior, not a correctness probability"
+      },
+      {
+        "index": 3,
+        "word": "drift",
+        "phones": [
+          {
+            "phone": "D",
+            "start_frame": 119,
+            "end_frame": 120,
+            "frames": 1,
+            "mean_posterior": 0.10681721654915298,
+            "minimum_posterior": 0.10681721654915298
+          },
+          {
+            "phone": "R",
+            "start_frame": 120,
+            "end_frame": 131,
+            "frames": 11,
+            "mean_posterior": 0.8203380257941846,
+            "minimum_posterior": 0.1640647806653314
+          },
+          {
+            "phone": "IH",
+            "start_frame": 131,
+            "end_frame": 133,
+            "frames": 2,
+            "mean_posterior": 0.1017744581147613,
+            "minimum_posterior": 0.03327950840572461
+          },
+          {
+            "phone": "F",
+            "start_frame": 133,
+            "end_frame": 139,
+            "frames": 6,
+            "mean_posterior": 0.38865118084376515,
+            "minimum_posterior": 0.1457681262347603
+          },
+          {
+            "phone": "T",
+            "start_frame": 139,
+            "end_frame": 142,
+            "frames": 3,
+            "mean_posterior": 0.6090715805089683,
+            "minimum_posterior": 0.2586874495257645
+          }
+        ],
+        "start_frame": 119,
+        "end_frame": 142,
+        "interval_samples": [
+          38080,
+          45440
+        ],
+        "mean_phone_frame_posterior": 0.5866611410045305,
+        "minimum_phone_mean_posterior": 0.1017744581147613,
+        "status": "proposed",
+        "refusal": null,
+        "confidence": "uncalibrated CTC path posterior, not a correctness probability"
+      },
+      {
+        "index": 4,
+        "word": "past",
+        "phones": [
+          {
+            "phone": "P",
+            "start_frame": 154,
+            "end_frame": 155,
+            "frames": 1,
+            "mean_posterior": 0.4514589630139094,
+            "minimum_posterior": 0.4514589630139094
+          },
+          {
+            "phone": "AE",
+            "start_frame": 155,
+            "end_frame": 167,
+            "frames": 12,
+            "mean_posterior": 0.6877346173890947,
+            "minimum_posterior": 0.306464185363148
+          },
+          {
+            "phone": "S",
+            "start_frame": 167,
+            "end_frame": 175,
+            "frames": 8,
+            "mean_posterior": 0.8630561686274609,
+            "minimum_posterior": 0.5259165675271392
+          },
+          {
+            "phone": "T",
+            "start_frame": 175,
+            "end_frame": 180,
+            "frames": 5,
+            "mean_posterior": 0.8677118727936936,
+            "minimum_posterior": 0.739601869042878
+          }
+        ],
+        "start_frame": 154,
+        "end_frame": 180,
+        "interval_samples": [
+          49280,
+          57600
+        ],
+        "mean_phone_frame_posterior": 0.767203195564277,
+        "minimum_phone_mean_posterior": 0.4514589630139094,
+        "status": "proposed",
+        "refusal": null,
+        "confidence": "uncalibrated CTC path posterior, not a correctness probability"
+      },
+      {
+        "index": 5,
+        "word": "windows",
+        "phones": [
+          {
+            "phone": "W",
+            "start_frame": 187,
+            "end_frame": 194,
+            "frames": 7,
+            "mean_posterior": 0.9489944793752099,
+            "minimum_posterior": 0.6626490981250408
+          },
+          {
+            "phone": "IH",
+            "start_frame": 194,
+            "end_frame": 195,
+            "frames": 1,
+            "mean_posterior": 0.11858275440587418,
+            "minimum_posterior": 0.11858275440587418
+          },
+          {
+            "phone": "N",
+            "start_frame": 195,
+            "end_frame": 197,
+            "frames": 2,
+            "mean_posterior": 0.9921323456459907,
+            "minimum_posterior": 0.9863424745304641
+          },
+          {
+            "phone": "D",
+            "start_frame": 197,
+            "end_frame": 203,
+            "frames": 6,
+            "mean_posterior": 0.6719499611768386,
+            "minimum_posterior": 0.10091111436763431
+          },
+          {
+            "phone": "OW",
+            "start_frame": 203,
+            "end_frame": 209,
+            "frames": 6,
+            "mean_posterior": 0.07172376780816085,
+            "minimum_posterior": 0.04090746950740878
+          },
+          {
+            "phone": "Z",
+            "start_frame": 209,
+            "end_frame": 220,
+            "frames": 11,
+            "mean_posterior": 0.4391329483127805,
+            "minimum_posterior": 0.30670803302091126
+          }
+        ],
+        "start_frame": 187,
+        "end_frame": 220,
+        "interval_samples": [
+          59840,
+          70400
+        ],
+        "mean_phone_frame_posterior": 0.5466155638386336,
+        "minimum_phone_mean_posterior": 0.07172376780816085,
+        "status": "refused",
+        "refusal": "a phone path posterior below threshold",
+        "confidence": "uncalibrated CTC path posterior, not a correctness probability"
+      }
+    ],
+    "pronunciation_choices": 2,
+    "selected_pronunciations": [
+      [
+        "S",
+        "AA",
+        "F",
+        "T"
+      ],
+      [
+        "S",
+        "IH",
+        "L",
+        "V",
+        "ER"
+      ],
+      [
+        "L",
+        "IY",
+        "V",
+        "Z"
+      ],
+      [
+        "D",
+        "R",
+        "IH",
+        "F",
+        "T"
+      ],
+      [
+        "P",
+        "AE",
+        "S",
+        "T"
+      ],
+      [
+        "W",
+        "IH",
+        "N",
+        "D",
+        "OW",
+        "Z"
+      ]
+    ],
+    "path_score": -108.05222282509308,
+    "path_score_per_frame": -0.46775854036836834,
+    "frame_state_path": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      7,
+      7,
+      7,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      9,
+      9,
+      9,
+      9,
+      9,
+      9,
+      9,
+      9,
+      9,
+      9,
+      11,
+      13,
+      13,
+      13,
+      13,
+      13,
+      15,
+      15,
+      15,
+      15,
+      15,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      18,
+      18,
+      18,
+      18,
+      18,
+      18,
+      18,
+      18,
+      19,
+      19,
+      19,
+      19,
+      19,
+      19,
+      19,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      23,
+      23,
+      23,
+      25,
+      25,
+      25,
+      25,
+      25,
+      25,
+      25,
+      25,
+      26,
+      26,
+      26,
+      26,
+      26,
+      26,
+      26,
+      26,
+      27,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      31,
+      31,
+      33,
+      33,
+      33,
+      33,
+      33,
+      33,
+      35,
+      35,
+      35,
+      36,
+      36,
+      36,
+      36,
+      36,
+      36,
+      36,
+      36,
+      36,
+      36,
+      36,
+      36,
+      37,
+      39,
+      39,
+      39,
+      39,
+      39,
+      39,
+      39,
+      39,
+      39,
+      39,
+      39,
+      39,
+      41,
+      41,
+      41,
+      41,
+      41,
+      41,
+      41,
+      41,
+      43,
+      43,
+      43,
+      43,
+      43,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      45,
+      45,
+      45,
+      45,
+      45,
+      45,
+      45,
+      47,
+      49,
+      49,
+      51,
+      51,
+      51,
+      51,
+      51,
+      51,
+      53,
+      53,
+      53,
+      53,
+      53,
+      53,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      56,
+      56,
+      56,
+      56,
+      56,
+      56,
+      56,
+      56,
+      56,
+      56,
+      56
+    ],
+    "frame_label_path": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      14,
+      14,
+      14,
+      14,
+      14,
+      14,
+      14,
+      14,
+      31,
+      31,
+      31,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      17,
+      21,
+      21,
+      21,
+      21,
+      21,
+      35,
+      35,
+      35,
+      35,
+      35,
+      12,
+      12,
+      12,
+      12,
+      12,
+      12,
+      12,
+      12,
+      12,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      18,
+      18,
+      18,
+      18,
+      18,
+      18,
+      18,
+      18,
+      18,
+      35,
+      35,
+      35,
+      38,
+      38,
+      38,
+      38,
+      38,
+      38,
+      38,
+      38,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      9,
+      28,
+      28,
+      28,
+      28,
+      28,
+      28,
+      28,
+      28,
+      28,
+      28,
+      28,
+      17,
+      17,
+      14,
+      14,
+      14,
+      14,
+      14,
+      14,
+      31,
+      31,
+      31,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      27,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      31,
+      31,
+      31,
+      31,
+      31,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      36,
+      36,
+      36,
+      36,
+      36,
+      36,
+      36,
+      17,
+      23,
+      23,
+      9,
+      9,
+      9,
+      9,
+      9,
+      9,
+      25,
+      25,
+      25,
+      25,
+      25,
+      25,
+      38,
+      38,
+      38,
+      38,
+      38,
+      38,
+      38,
+      38,
+      38,
+      38,
+      38,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "frame_blank_fraction": 0.26406926406926406,
+    "raw_candidate_intervals": "always retained even when refused; not automatically accepted"
+  },
+  "guard": {
+    "iteration": 1,
+    "configuration": {
+      "rule": "phonetic-context-residual-1",
+      "minimum_phone_events": 3,
+      "minimum_duration_frames": 6,
+      "posterior_minimum": 0.5,
+      "output_frame_ms": 20,
+      "scope": "whole captured context",
+      "semantics": "Unexplained high-support greedy phonetic content makes context incomplete or placement ambiguous; raw timing is retained but all offers abstain.",
+      "original_word_gate": 0.5,
+      "original_phone_gate": 0.1
+    },
+    "greedy_phones": [
+      {
+        "label": 29,
+        "phone": "S",
+        "start_frame": 8,
+        "end_frame": 19,
+        "frames": 11,
+        "mean_posterior": 0.9574637540023813
+      },
+      {
+        "label": 4,
+        "phone": "AO",
+        "start_frame": 19,
+        "end_frame": 21,
+        "frames": 2,
+        "mean_posterior": 0.4827940456291454
+      },
+      {
+        "label": 1,
+        "phone": "AA",
+        "start_frame": 21,
+        "end_frame": 28,
+        "frames": 7,
+        "mean_posterior": 0.5335000698145604
+      },
+      {
+        "label": 35,
+        "phone": "V",
+        "start_frame": 28,
+        "end_frame": 29,
+        "frames": 1,
+        "mean_posterior": 0.3623448084819512
+      },
+      {
+        "label": 14,
+        "phone": "F",
+        "start_frame": 29,
+        "end_frame": 32,
+        "frames": 3,
+        "mean_posterior": 0.7603134406847004
+      },
+      {
+        "label": 35,
+        "phone": "V",
+        "start_frame": 32,
+        "end_frame": 34,
+        "frames": 2,
+        "mean_posterior": 0.7948828891029072
+      },
+      {
+        "label": 14,
+        "phone": "F",
+        "start_frame": 34,
+        "end_frame": 36,
+        "frames": 2,
+        "mean_posterior": 0.5280618947650465
+      },
+      {
+        "label": 31,
+        "phone": "T",
+        "start_frame": 36,
+        "end_frame": 39,
+        "frames": 3,
+        "mean_posterior": 0.7000010302442385
+      },
+      {
+        "label": 29,
+        "phone": "S",
+        "start_frame": 46,
+        "end_frame": 56,
+        "frames": 10,
+        "mean_posterior": 0.9369893109418408
+      },
+      {
+        "label": 17,
+        "phone": "IH",
+        "start_frame": 56,
+        "end_frame": 57,
+        "frames": 1,
+        "mean_posterior": 0.7308654818367083
+      },
+      {
+        "label": 21,
+        "phone": "L",
+        "start_frame": 57,
+        "end_frame": 62,
+        "frames": 5,
+        "mean_posterior": 0.838824983295955
+      },
+      {
+        "label": 35,
+        "phone": "V",
+        "start_frame": 62,
+        "end_frame": 67,
+        "frames": 5,
+        "mean_posterior": 0.9436871752300039
+      },
+      {
+        "label": 12,
+        "phone": "ER",
+        "start_frame": 67,
+        "end_frame": 69,
+        "frames": 2,
+        "mean_posterior": 0.8083181045642004
+      },
+      {
+        "label": 28,
+        "phone": "R",
+        "start_frame": 69,
+        "end_frame": 71,
+        "frames": 2,
+        "mean_posterior": 0.5206433086038247
+      },
+      {
+        "label": 12,
+        "phone": "ER",
+        "start_frame": 71,
+        "end_frame": 76,
+        "frames": 5,
+        "mean_posterior": 0.5956223861477081
+      },
+      {
+        "label": 21,
+        "phone": "L",
+        "start_frame": 84,
+        "end_frame": 91,
+        "frames": 7,
+        "mean_posterior": 0.911418789689776
+      },
+      {
+        "label": 18,
+        "phone": "IY",
+        "start_frame": 91,
+        "end_frame": 93,
+        "frames": 2,
+        "mean_posterior": 0.549055753929456
+      },
+      {
+        "label": 13,
+        "phone": "EY",
+        "start_frame": 93,
+        "end_frame": 95,
+        "frames": 2,
+        "mean_posterior": 0.5571766690195531
+      },
+      {
+        "label": 18,
+        "phone": "IY",
+        "start_frame": 95,
+        "end_frame": 96,
+        "frames": 1,
+        "mean_posterior": 0.6616284145309772
+      },
+      {
+        "label": 13,
+        "phone": "EY",
+        "start_frame": 96,
+        "end_frame": 100,
+        "frames": 4,
+        "mean_posterior": 0.6139934276000161
+      },
+      {
+        "label": 35,
+        "phone": "V",
+        "start_frame": 100,
+        "end_frame": 103,
+        "frames": 3,
+        "mean_posterior": 0.38120128018799937
+      },
+      {
+        "label": 29,
+        "phone": "S",
+        "start_frame": 103,
+        "end_frame": 106,
+        "frames": 3,
+        "mean_posterior": 0.8181345498109449
+      },
+      {
+        "label": 38,
+        "phone": "Z",
+        "start_frame": 106,
+        "end_frame": 108,
+        "frames": 2,
+        "mean_posterior": 0.6175180181099115
+      },
+      {
+        "label": 29,
+        "phone": "S",
+        "start_frame": 108,
+        "end_frame": 109,
+        "frames": 1,
+        "mean_posterior": 0.577392042062991
+      },
+      {
+        "label": 38,
+        "phone": "Z",
+        "start_frame": 109,
+        "end_frame": 111,
+        "frames": 2,
+        "mean_posterior": 0.5722036610870302
+      },
+      {
+        "label": 31,
+        "phone": "T",
+        "start_frame": 119,
+        "end_frame": 120,
+        "frames": 1,
+        "mean_posterior": 0.34705061666826137
+      },
+      {
+        "label": 19,
+        "phone": "JH",
+        "start_frame": 120,
+        "end_frame": 121,
+        "frames": 1,
+        "mean_posterior": 0.3987158814891895
+      },
+      {
+        "label": 28,
+        "phone": "R",
+        "start_frame": 121,
+        "end_frame": 130,
+        "frames": 9,
+        "mean_posterior": 0.9567198496778566
+      },
+      {
+        "label": 11,
+        "phone": "EH",
+        "start_frame": 130,
+        "end_frame": 133,
+        "frames": 3,
+        "mean_posterior": 0.45814015407477154
+      },
+      {
+        "label": 23,
+        "phone": "N",
+        "start_frame": 133,
+        "end_frame": 134,
+        "frames": 1,
+        "mean_posterior": 0.23754443471925143
+      },
+      {
+        "label": 14,
+        "phone": "F",
+        "start_frame": 134,
+        "end_frame": 135,
+        "frames": 1,
+        "mean_posterior": 0.4387586936498976
+      },
+      {
+        "label": 35,
+        "phone": "V",
+        "start_frame": 135,
+        "end_frame": 137,
+        "frames": 2,
+        "mean_posterior": 0.5927905986794095
+      },
+      {
+        "label": 14,
+        "phone": "F",
+        "start_frame": 137,
+        "end_frame": 139,
+        "frames": 2,
+        "mean_posterior": 0.5387424255005712
+      },
+      {
+        "label": 35,
+        "phone": "V",
+        "start_frame": 139,
+        "end_frame": 140,
+        "frames": 1,
+        "mean_posterior": 0.40297732321529156
+      },
+      {
+        "label": 31,
+        "phone": "T",
+        "start_frame": 140,
+        "end_frame": 142,
+        "frames": 2,
+        "mean_posterior": 0.7842636460005702
+      },
+      {
+        "label": 16,
+        "phone": "HH",
+        "start_frame": 152,
+        "end_frame": 154,
+        "frames": 2,
+        "mean_posterior": 0.5500367188539881
+      },
+      {
+        "label": 27,
+        "phone": "P",
+        "start_frame": 154,
+        "end_frame": 155,
+        "frames": 1,
+        "mean_posterior": 0.4514589630139094
+      },
+      {
+        "label": 16,
+        "phone": "HH",
+        "start_frame": 155,
+        "end_frame": 156,
+        "frames": 1,
+        "mean_posterior": 0.6064468289152101
+      },
+      {
+        "label": 2,
+        "phone": "AE",
+        "start_frame": 156,
+        "end_frame": 167,
+        "frames": 11,
+        "mean_posterior": 0.7223955657550898
+      },
+      {
+        "label": 29,
+        "phone": "S",
+        "start_frame": 167,
+        "end_frame": 175,
+        "frames": 8,
+        "mean_posterior": 0.8630561686274609
+      },
+      {
+        "label": 31,
+        "phone": "T",
+        "start_frame": 175,
+        "end_frame": 180,
+        "frames": 5,
+        "mean_posterior": 0.8677118727936936
+      },
+      {
+        "label": 36,
+        "phone": "W",
+        "start_frame": 187,
+        "end_frame": 194,
+        "frames": 7,
+        "mean_posterior": 0.9489944793752099
+      },
+      {
+        "label": 11,
+        "phone": "EH",
+        "start_frame": 194,
+        "end_frame": 195,
+        "frames": 1,
+        "mean_posterior": 0.6305491663620582
+      },
+      {
+        "label": 23,
+        "phone": "N",
+        "start_frame": 195,
+        "end_frame": 197,
+        "frames": 2,
+        "mean_posterior": 0.9921323456459907
+      },
+      {
+        "label": 9,
+        "phone": "D",
+        "start_frame": 197,
+        "end_frame": 202,
+        "frames": 5,
+        "mean_posterior": 0.7861577305386793
+      },
+      {
+        "label": 1,
+        "phone": "AA",
+        "start_frame": 202,
+        "end_frame": 203,
+        "frames": 1,
+        "mean_posterior": 0.3660141363113952
+      },
+      {
+        "label": 21,
+        "phone": "L",
+        "start_frame": 203,
+        "end_frame": 209,
+        "frames": 6,
+        "mean_posterior": 0.6532244176925376
+      },
+      {
+        "label": 38,
+        "phone": "Z",
+        "start_frame": 209,
+        "end_frame": 210,
+        "frames": 1,
+        "mean_posterior": 0.3225913666257684
+      },
+      {
+        "label": 29,
+        "phone": "S",
+        "start_frame": 210,
+        "end_frame": 216,
+        "frames": 6,
+        "mean_posterior": 0.5770592080084996
+      },
+      {
+        "label": 38,
+        "phone": "Z",
+        "start_frame": 216,
+        "end_frame": 220,
+        "frames": 4,
+        "mean_posterior": 0.5711138694565394
+      }
+    ],
+    "selected_pronunciation_path": 0,
+    "selected_pronunciations": [
+      [
+        "S",
+        "AA",
+        "F",
+        "T"
+      ],
+      [
+        "S",
+        "IH",
+        "L",
+        "V",
+        "ER"
+      ],
+      [
+        "L",
+        "IY",
+        "V",
+        "Z"
+      ],
+      [
+        "D",
+        "R",
+        "IH",
+        "F",
+        "T"
+      ],
+      [
+        "P",
+        "AE",
+        "S",
+        "T"
+      ],
+      [
+        "W",
+        "IH",
+        "N",
+        "D",
+        "OW",
+        "Z"
+      ]
+    ],
+    "expected_phones": [
+      "S",
+      "AA",
+      "F",
+      "T",
+      "S",
+      "IH",
+      "L",
+      "V",
+      "ER",
+      "L",
+      "IY",
+      "V",
+      "Z",
+      "D",
+      "R",
+      "IH",
+      "F",
+      "T",
+      "P",
+      "AE",
+      "S",
+      "T",
+      "W",
+      "IH",
+      "N",
+      "D",
+      "OW",
+      "Z"
+    ],
+    "minimum_edit_distance": 26,
+    "alignment_steps": [
+      {
+        "op": "match",
+        "expected_index": 0,
+        "observed_index": 0,
+        "expected": 29,
+        "observed": 29
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 1,
+        "expected": null,
+        "observed": 4
+      },
+      {
+        "op": "match",
+        "expected_index": 1,
+        "observed_index": 2,
+        "expected": 1,
+        "observed": 1
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 3,
+        "expected": null,
+        "observed": 35
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 4,
+        "expected": null,
+        "observed": 14
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 5,
+        "expected": null,
+        "observed": 35
+      },
+      {
+        "op": "match",
+        "expected_index": 2,
+        "observed_index": 6,
+        "expected": 14,
+        "observed": 14
+      },
+      {
+        "op": "match",
+        "expected_index": 3,
+        "observed_index": 7,
+        "expected": 31,
+        "observed": 31
+      },
+      {
+        "op": "match",
+        "expected_index": 4,
+        "observed_index": 8,
+        "expected": 29,
+        "observed": 29
+      },
+      {
+        "op": "match",
+        "expected_index": 5,
+        "observed_index": 9,
+        "expected": 17,
+        "observed": 17
+      },
+      {
+        "op": "match",
+        "expected_index": 6,
+        "observed_index": 10,
+        "expected": 21,
+        "observed": 21
+      },
+      {
+        "op": "match",
+        "expected_index": 7,
+        "observed_index": 11,
+        "expected": 35,
+        "observed": 35
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 12,
+        "expected": null,
+        "observed": 12
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 13,
+        "expected": null,
+        "observed": 28
+      },
+      {
+        "op": "match",
+        "expected_index": 8,
+        "observed_index": 14,
+        "expected": 12,
+        "observed": 12
+      },
+      {
+        "op": "match",
+        "expected_index": 9,
+        "observed_index": 15,
+        "expected": 21,
+        "observed": 21
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 16,
+        "expected": null,
+        "observed": 18
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 17,
+        "expected": null,
+        "observed": 13
+      },
+      {
+        "op": "match",
+        "expected_index": 10,
+        "observed_index": 18,
+        "expected": 18,
+        "observed": 18
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 19,
+        "expected": null,
+        "observed": 13
+      },
+      {
+        "op": "match",
+        "expected_index": 11,
+        "observed_index": 20,
+        "expected": 35,
+        "observed": 35
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 21,
+        "expected": null,
+        "observed": 29
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 22,
+        "expected": null,
+        "observed": 38
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 23,
+        "expected": null,
+        "observed": 29
+      },
+      {
+        "op": "match",
+        "expected_index": 12,
+        "observed_index": 24,
+        "expected": 38,
+        "observed": 38
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 25,
+        "expected": null,
+        "observed": 31
+      },
+      {
+        "op": "substitute",
+        "expected_index": 13,
+        "observed_index": 26,
+        "expected": 9,
+        "observed": 19
+      },
+      {
+        "op": "match",
+        "expected_index": 14,
+        "observed_index": 27,
+        "expected": 28,
+        "observed": 28
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 28,
+        "expected": null,
+        "observed": 11
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 29,
+        "expected": null,
+        "observed": 23
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 30,
+        "expected": null,
+        "observed": 14
+      },
+      {
+        "op": "substitute",
+        "expected_index": 15,
+        "observed_index": 31,
+        "expected": 17,
+        "observed": 35
+      },
+      {
+        "op": "match",
+        "expected_index": 16,
+        "observed_index": 32,
+        "expected": 14,
+        "observed": 14
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 33,
+        "expected": null,
+        "observed": 35
+      },
+      {
+        "op": "match",
+        "expected_index": 17,
+        "observed_index": 34,
+        "expected": 31,
+        "observed": 31
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 35,
+        "expected": null,
+        "observed": 16
+      },
+      {
+        "op": "match",
+        "expected_index": 18,
+        "observed_index": 36,
+        "expected": 27,
+        "observed": 27
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 37,
+        "expected": null,
+        "observed": 16
+      },
+      {
+        "op": "match",
+        "expected_index": 19,
+        "observed_index": 38,
+        "expected": 2,
+        "observed": 2
+      },
+      {
+        "op": "match",
+        "expected_index": 20,
+        "observed_index": 39,
+        "expected": 29,
+        "observed": 29
+      },
+      {
+        "op": "match",
+        "expected_index": 21,
+        "observed_index": 40,
+        "expected": 31,
+        "observed": 31
+      },
+      {
+        "op": "match",
+        "expected_index": 22,
+        "observed_index": 41,
+        "expected": 36,
+        "observed": 36
+      },
+      {
+        "op": "substitute",
+        "expected_index": 23,
+        "observed_index": 42,
+        "expected": 17,
+        "observed": 11
+      },
+      {
+        "op": "match",
+        "expected_index": 24,
+        "observed_index": 43,
+        "expected": 23,
+        "observed": 23
+      },
+      {
+        "op": "match",
+        "expected_index": 25,
+        "observed_index": 44,
+        "expected": 9,
+        "observed": 9
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 45,
+        "expected": null,
+        "observed": 1
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 46,
+        "expected": null,
+        "observed": 21
+      },
+      {
+        "op": "insert_observed",
+        "expected_index": null,
+        "observed_index": 47,
+        "expected": null,
+        "observed": 38
+      },
+      {
+        "op": "substitute",
+        "expected_index": 26,
+        "observed_index": 48,
+        "expected": 25,
+        "observed": 29
+      },
+      {
+        "op": "match",
+        "expected_index": 27,
+        "observed_index": 49,
+        "expected": 38,
+        "observed": 38
+      }
+    ],
+    "edit_counts": {
+      "match": 24,
+      "substitute": 4,
+      "delete_expected": 0,
+      "insert_observed": 22
+    },
+    "residual_runs": [
+      {
+        "observed_indices": [
+          4,
+          5
+        ],
+        "phones": [
+          "F",
+          "V"
+        ],
+        "start_frame": 29,
+        "end_frame": 34,
+        "supported_frames": 5,
+        "events": 2,
+        "minimum_mean_posterior": 0.7603134406847004,
+        "qualifies": false
+      },
+      {
+        "observed_indices": [
+          12,
+          13
+        ],
+        "phones": [
+          "ER",
+          "R"
+        ],
+        "start_frame": 67,
+        "end_frame": 71,
+        "supported_frames": 4,
+        "events": 2,
+        "minimum_mean_posterior": 0.5206433086038247,
+        "qualifies": false
+      },
+      {
+        "observed_indices": [
+          16,
+          17
+        ],
+        "phones": [
+          "IY",
+          "EY"
+        ],
+        "start_frame": 91,
+        "end_frame": 95,
+        "supported_frames": 4,
+        "events": 2,
+        "minimum_mean_posterior": 0.549055753929456,
+        "qualifies": false
+      },
+      {
+        "observed_indices": [
+          19
+        ],
+        "phones": [
+          "EY"
+        ],
+        "start_frame": 96,
+        "end_frame": 100,
+        "supported_frames": 4,
+        "events": 1,
+        "minimum_mean_posterior": 0.6139934276000161,
+        "qualifies": false
+      },
+      {
+        "observed_indices": [
+          21,
+          22,
+          23
+        ],
+        "phones": [
+          "S",
+          "Z",
+          "S"
+        ],
+        "start_frame": 103,
+        "end_frame": 109,
+        "supported_frames": 6,
+        "events": 3,
+        "minimum_mean_posterior": 0.577392042062991,
+        "qualifies": true
+      },
+      {
+        "observed_indices": [
+          35
+        ],
+        "phones": [
+          "HH"
+        ],
+        "start_frame": 152,
+        "end_frame": 154,
+        "supported_frames": 2,
+        "events": 1,
+        "minimum_mean_posterior": 0.5500367188539881,
+        "qualifies": false
+      },
+      {
+        "observed_indices": [
+          37
+        ],
+        "phones": [
+          "HH"
+        ],
+        "start_frame": 155,
+        "end_frame": 156,
+        "supported_frames": 1,
+        "events": 1,
+        "minimum_mean_posterior": 0.6064468289152101,
+        "qualifies": false
+      },
+      {
+        "observed_indices": [
+          46
+        ],
+        "phones": [
+          "L"
+        ],
+        "start_frame": 203,
+        "end_frame": 209,
+        "supported_frames": 6,
+        "events": 1,
+        "minimum_mean_posterior": 0.6532244176925376,
+        "qualifies": false
+      }
+    ],
+    "context_status": "incomplete_or_placement_ambiguous",
+    "abstain": true,
+    "reason": "Unexplained high-support greedy phonetic content makes context incomplete or placement ambiguous; raw timing is retained but all offers abstain.",
+    "confidence": "uncalibrated phonetic consistency test, never proof of complete or unique context"
+  },
+  "filtered": {
+    "words": [
+      {
+        "index": 0,
+        "word": "soft",
+        "phones": [
+          {
+            "phone": "S",
+            "start_frame": 8,
+            "end_frame": 19,
+            "frames": 11,
+            "mean_posterior": 0.9574637540023813,
+            "minimum_posterior": 0.6127127898191351
+          },
+          {
+            "phone": "AA",
+            "start_frame": 19,
+            "end_frame": 28,
+            "frames": 9,
+            "mean_posterior": 0.49415250951252054,
+            "minimum_posterior": 0.28126663866629636
+          },
+          {
+            "phone": "F",
+            "start_frame": 28,
+            "end_frame": 36,
+            "frames": 8,
+            "mean_posterior": 0.5025291155522615,
+            "minimum_posterior": 0.18487293833108273
+          },
+          {
+            "phone": "T",
+            "start_frame": 36,
+            "end_frame": 39,
+            "frames": 3,
+            "mean_posterior": 0.7000010302442385,
+            "minimum_posterior": 0.5492508226744558
+          }
+        ],
+        "start_frame": 8,
+        "end_frame": 39,
+        "interval_samples": [
+          2560,
+          12480
+        ],
+        "mean_phone_frame_posterior": 0.6806358030577319,
+        "minimum_phone_mean_posterior": 0.49415250951252054,
+        "status": "refused",
+        "refusal": "context incomplete or placement ambiguous: supported unexplained phonetic run",
+        "confidence": "uncalibrated CTC path posterior, not a correctness probability",
+        "base_status": "proposed",
+        "base_refusal": null
+      },
+      {
+        "index": 1,
+        "word": "silver",
+        "phones": [
+          {
+            "phone": "S",
+            "start_frame": 46,
+            "end_frame": 56,
+            "frames": 10,
+            "mean_posterior": 0.9369893109418408,
+            "minimum_posterior": 0.406229283692335
+          },
+          {
+            "phone": "IH",
+            "start_frame": 56,
+            "end_frame": 57,
+            "frames": 1,
+            "mean_posterior": 0.7308654818367083,
+            "minimum_posterior": 0.7308654818367083
+          },
+          {
+            "phone": "L",
+            "start_frame": 57,
+            "end_frame": 62,
+            "frames": 5,
+            "mean_posterior": 0.838824983295955,
+            "minimum_posterior": 0.5883565769590864
+          },
+          {
+            "phone": "V",
+            "start_frame": 62,
+            "end_frame": 67,
+            "frames": 5,
+            "mean_posterior": 0.9436871752300039,
+            "minimum_posterior": 0.7915210406141027
+          },
+          {
+            "phone": "ER",
+            "start_frame": 67,
+            "end_frame": 76,
+            "frames": 9,
+            "mean_posterior": 0.6169696829281024,
+            "minimum_posterior": 0.4776824732490172
+          }
+        ],
+        "start_frame": 46,
+        "end_frame": 76,
+        "interval_samples": [
+          14720,
+          24320
+        ],
+        "mean_phone_frame_posterior": 0.8188682176745945,
+        "minimum_phone_mean_posterior": 0.6169696829281024,
+        "status": "refused",
+        "refusal": "context incomplete or placement ambiguous: supported unexplained phonetic run",
+        "confidence": "uncalibrated CTC path posterior, not a correctness probability",
+        "base_status": "proposed",
+        "base_refusal": null
+      },
+      {
+        "index": 2,
+        "word": "leaves",
+        "phones": [
+          {
+            "phone": "L",
+            "start_frame": 84,
+            "end_frame": 91,
+            "frames": 7,
+            "mean_posterior": 0.911418789689776,
+            "minimum_posterior": 0.6405689714372235
+          },
+          {
+            "phone": "IY",
+            "start_frame": 91,
+            "end_frame": 100,
+            "frames": 9,
+            "mean_posterior": 0.4224833433312884,
+            "minimum_posterior": 0.17455734004194345
+          },
+          {
+            "phone": "V",
+            "start_frame": 100,
+            "end_frame": 103,
+            "frames": 3,
+            "mean_posterior": 0.38120128018799937,
+            "minimum_posterior": 0.29816246870635127
+          },
+          {
+            "phone": "Z",
+            "start_frame": 103,
+            "end_frame": 111,
+            "frames": 8,
+            "mean_posterior": 0.40331472036124305,
+            "minimum_posterior": 0.12444010902603811
+          }
+        ],
+        "start_frame": 84,
+        "end_frame": 111,
+        "interval_samples": [
+          26880,
+          35520
+        ],
+        "mean_phone_frame_posterior": 0.5389778970838507,
+        "minimum_phone_mean_posterior": 0.38120128018799937,
+        "status": "refused",
+        "refusal": "context incomplete or placement ambiguous: supported unexplained phonetic run",
+        "confidence": "uncalibrated CTC path posterior, not a correctness probability",
+        "base_status": "proposed",
+        "base_refusal": null
+      },
+      {
+        "index": 3,
+        "word": "drift",
+        "phones": [
+          {
+            "phone": "D",
+            "start_frame": 119,
+            "end_frame": 120,
+            "frames": 1,
+            "mean_posterior": 0.10681721654915298,
+            "minimum_posterior": 0.10681721654915298
+          },
+          {
+            "phone": "R",
+            "start_frame": 120,
+            "end_frame": 131,
+            "frames": 11,
+            "mean_posterior": 0.8203380257941846,
+            "minimum_posterior": 0.1640647806653314
+          },
+          {
+            "phone": "IH",
+            "start_frame": 131,
+            "end_frame": 133,
+            "frames": 2,
+            "mean_posterior": 0.1017744581147613,
+            "minimum_posterior": 0.03327950840572461
+          },
+          {
+            "phone": "F",
+            "start_frame": 133,
+            "end_frame": 139,
+            "frames": 6,
+            "mean_posterior": 0.38865118084376515,
+            "minimum_posterior": 0.1457681262347603
+          },
+          {
+            "phone": "T",
+            "start_frame": 139,
+            "end_frame": 142,
+            "frames": 3,
+            "mean_posterior": 0.6090715805089683,
+            "minimum_posterior": 0.2586874495257645
+          }
+        ],
+        "start_frame": 119,
+        "end_frame": 142,
+        "interval_samples": [
+          38080,
+          45440
+        ],
+        "mean_phone_frame_posterior": 0.5866611410045305,
+        "minimum_phone_mean_posterior": 0.1017744581147613,
+        "status": "refused",
+        "refusal": "context incomplete or placement ambiguous: supported unexplained phonetic run",
+        "confidence": "uncalibrated CTC path posterior, not a correctness probability",
+        "base_status": "proposed",
+        "base_refusal": null
+      },
+      {
+        "index": 4,
+        "word": "past",
+        "phones": [
+          {
+            "phone": "P",
+            "start_frame": 154,
+            "end_frame": 155,
+            "frames": 1,
+            "mean_posterior": 0.4514589630139094,
+            "minimum_posterior": 0.4514589630139094
+          },
+          {
+            "phone": "AE",
+            "start_frame": 155,
+            "end_frame": 167,
+            "frames": 12,
+            "mean_posterior": 0.6877346173890947,
+            "minimum_posterior": 0.306464185363148
+          },
+          {
+            "phone": "S",
+            "start_frame": 167,
+            "end_frame": 175,
+            "frames": 8,
+            "mean_posterior": 0.8630561686274609,
+            "minimum_posterior": 0.5259165675271392
+          },
+          {
+            "phone": "T",
+            "start_frame": 175,
+            "end_frame": 180,
+            "frames": 5,
+            "mean_posterior": 0.8677118727936936,
+            "minimum_posterior": 0.739601869042878
+          }
+        ],
+        "start_frame": 154,
+        "end_frame": 180,
+        "interval_samples": [
+          49280,
+          57600
+        ],
+        "mean_phone_frame_posterior": 0.767203195564277,
+        "minimum_phone_mean_posterior": 0.4514589630139094,
+        "status": "refused",
+        "refusal": "context incomplete or placement ambiguous: supported unexplained phonetic run",
+        "confidence": "uncalibrated CTC path posterior, not a correctness probability",
+        "base_status": "proposed",
+        "base_refusal": null
+      },
+      {
+        "index": 5,
+        "word": "windows",
+        "phones": [
+          {
+            "phone": "W",
+            "start_frame": 187,
+            "end_frame": 194,
+            "frames": 7,
+            "mean_posterior": 0.9489944793752099,
+            "minimum_posterior": 0.6626490981250408
+          },
+          {
+            "phone": "IH",
+            "start_frame": 194,
+            "end_frame": 195,
+            "frames": 1,
+            "mean_posterior": 0.11858275440587418,
+            "minimum_posterior": 0.11858275440587418
+          },
+          {
+            "phone": "N",
+            "start_frame": 195,
+            "end_frame": 197,
+            "frames": 2,
+            "mean_posterior": 0.9921323456459907,
+            "minimum_posterior": 0.9863424745304641
+          },
+          {
+            "phone": "D",
+            "start_frame": 197,
+            "end_frame": 203,
+            "frames": 6,
+            "mean_posterior": 0.6719499611768386,
+            "minimum_posterior": 0.10091111436763431
+          },
+          {
+            "phone": "OW",
+            "start_frame": 203,
+            "end_frame": 209,
+            "frames": 6,
+            "mean_posterior": 0.07172376780816085,
+            "minimum_posterior": 0.04090746950740878
+          },
+          {
+            "phone": "Z",
+            "start_frame": 209,
+            "end_frame": 220,
+            "frames": 11,
+            "mean_posterior": 0.4391329483127805,
+            "minimum_posterior": 0.30670803302091126
+          }
+        ],
+        "start_frame": 187,
+        "end_frame": 220,
+        "interval_samples": [
+          59840,
+          70400
+        ],
+        "mean_phone_frame_posterior": 0.5466155638386336,
+        "minimum_phone_mean_posterior": 0.07172376780816085,
+        "status": "refused",
+        "refusal": "context incomplete or placement ambiguous: supported unexplained phonetic run",
+        "confidence": "uncalibrated CTC path posterior, not a correctness probability",
+        "base_status": "refused",
+        "base_refusal": "a phone path posterior below threshold"
+      }
+    ],
+    "pronunciation_choices": 2,
+    "selected_pronunciations": [
+      [
+        "S",
+        "AA",
+        "F",
+        "T"
+      ],
+      [
+        "S",
+        "IH",
+        "L",
+        "V",
+        "ER"
+      ],
+      [
+        "L",
+        "IY",
+        "V",
+        "Z"
+      ],
+      [
+        "D",
+        "R",
+        "IH",
+        "F",
+        "T"
+      ],
+      [
+        "P",
+        "AE",
+        "S",
+        "T"
+      ],
+      [
+        "W",
+        "IH",
+        "N",
+        "D",
+        "OW",
+        "Z"
+      ]
+    ],
+    "path_score": -108.05222282509308,
+    "path_score_per_frame": -0.46775854036836834,
+    "frame_state_path": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      7,
+      7,
+      7,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      9,
+      9,
+      9,
+      9,
+      9,
+      9,
+      9,
+      9,
+      9,
+      9,
+      11,
+      13,
+      13,
+      13,
+      13,
+      13,
+      15,
+      15,
+      15,
+      15,
+      15,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      17,
+      18,
+      18,
+      18,
+      18,
+      18,
+      18,
+      18,
+      18,
+      19,
+      19,
+      19,
+      19,
+      19,
+      19,
+      19,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      23,
+      23,
+      23,
+      25,
+      25,
+      25,
+      25,
+      25,
+      25,
+      25,
+      25,
+      26,
+      26,
+      26,
+      26,
+      26,
+      26,
+      26,
+      26,
+      27,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      31,
+      31,
+      33,
+      33,
+      33,
+      33,
+      33,
+      33,
+      35,
+      35,
+      35,
+      36,
+      36,
+      36,
+      36,
+      36,
+      36,
+      36,
+      36,
+      36,
+      36,
+      36,
+      36,
+      37,
+      39,
+      39,
+      39,
+      39,
+      39,
+      39,
+      39,
+      39,
+      39,
+      39,
+      39,
+      39,
+      41,
+      41,
+      41,
+      41,
+      41,
+      41,
+      41,
+      41,
+      43,
+      43,
+      43,
+      43,
+      43,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      44,
+      45,
+      45,
+      45,
+      45,
+      45,
+      45,
+      45,
+      47,
+      49,
+      49,
+      51,
+      51,
+      51,
+      51,
+      51,
+      51,
+      53,
+      53,
+      53,
+      53,
+      53,
+      53,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      56,
+      56,
+      56,
+      56,
+      56,
+      56,
+      56,
+      56,
+      56,
+      56,
+      56
+    ],
+    "frame_label_path": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      14,
+      14,
+      14,
+      14,
+      14,
+      14,
+      14,
+      14,
+      31,
+      31,
+      31,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      17,
+      21,
+      21,
+      21,
+      21,
+      21,
+      35,
+      35,
+      35,
+      35,
+      35,
+      12,
+      12,
+      12,
+      12,
+      12,
+      12,
+      12,
+      12,
+      12,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      18,
+      18,
+      18,
+      18,
+      18,
+      18,
+      18,
+      18,
+      18,
+      35,
+      35,
+      35,
+      38,
+      38,
+      38,
+      38,
+      38,
+      38,
+      38,
+      38,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      9,
+      28,
+      28,
+      28,
+      28,
+      28,
+      28,
+      28,
+      28,
+      28,
+      28,
+      28,
+      17,
+      17,
+      14,
+      14,
+      14,
+      14,
+      14,
+      14,
+      31,
+      31,
+      31,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      27,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      29,
+      31,
+      31,
+      31,
+      31,
+      31,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      36,
+      36,
+      36,
+      36,
+      36,
+      36,
+      36,
+      17,
+      23,
+      23,
+      9,
+      9,
+      9,
+      9,
+      9,
+      9,
+      25,
+      25,
+      25,
+      25,
+      25,
+      25,
+      38,
+      38,
+      38,
+      38,
+      38,
+      38,
+      38,
+      38,
+      38,
+      38,
+      38,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "frame_blank_fraction": 0.26406926406926406,
+    "raw_candidate_intervals": "always retained even when refused; not automatically accepted",
+    "context_guard": {
+      "iteration": 1,
+      "configuration": {
+        "rule": "phonetic-context-residual-1",
+        "minimum_phone_events": 3,
+        "minimum_duration_frames": 6,
+        "posterior_minimum": 0.5,
+        "output_frame_ms": 20,
+        "scope": "whole captured context",
+        "semantics": "Unexplained high-support greedy phonetic content makes context incomplete or placement ambiguous; raw timing is retained but all offers abstain.",
+        "original_word_gate": 0.5,
+        "original_phone_gate": 0.1
+      },
+      "greedy_phones": [
+        {
+          "label": 29,
+          "phone": "S",
+          "start_frame": 8,
+          "end_frame": 19,
+          "frames": 11,
+          "mean_posterior": 0.9574637540023813
+        },
+        {
+          "label": 4,
+          "phone": "AO",
+          "start_frame": 19,
+          "end_frame": 21,
+          "frames": 2,
+          "mean_posterior": 0.4827940456291454
+        },
+        {
+          "label": 1,
+          "phone": "AA",
+          "start_frame": 21,
+          "end_frame": 28,
+          "frames": 7,
+          "mean_posterior": 0.5335000698145604
+        },
+        {
+          "label": 35,
+          "phone": "V",
+          "start_frame": 28,
+          "end_frame": 29,
+          "frames": 1,
+          "mean_posterior": 0.3623448084819512
+        },
+        {
+          "label": 14,
+          "phone": "F",
+          "start_frame": 29,
+          "end_frame": 32,
+          "frames": 3,
+          "mean_posterior": 0.7603134406847004
+        },
+        {
+          "label": 35,
+          "phone": "V",
+          "start_frame": 32,
+          "end_frame": 34,
+          "frames": 2,
+          "mean_posterior": 0.7948828891029072
+        },
+        {
+          "label": 14,
+          "phone": "F",
+          "start_frame": 34,
+          "end_frame": 36,
+          "frames": 2,
+          "mean_posterior": 0.5280618947650465
+        },
+        {
+          "label": 31,
+          "phone": "T",
+          "start_frame": 36,
+          "end_frame": 39,
+          "frames": 3,
+          "mean_posterior": 0.7000010302442385
+        },
+        {
+          "label": 29,
+          "phone": "S",
+          "start_frame": 46,
+          "end_frame": 56,
+          "frames": 10,
+          "mean_posterior": 0.9369893109418408
+        },
+        {
+          "label": 17,
+          "phone": "IH",
+          "start_frame": 56,
+          "end_frame": 57,
+          "frames": 1,
+          "mean_posterior": 0.7308654818367083
+        },
+        {
+          "label": 21,
+          "phone": "L",
+          "start_frame": 57,
+          "end_frame": 62,
+          "frames": 5,
+          "mean_posterior": 0.838824983295955
+        },
+        {
+          "label": 35,
+          "phone": "V",
+          "start_frame": 62,
+          "end_frame": 67,
+          "frames": 5,
+          "mean_posterior": 0.9436871752300039
+        },
+        {
+          "label": 12,
+          "phone": "ER",
+          "start_frame": 67,
+          "end_frame": 69,
+          "frames": 2,
+          "mean_posterior": 0.8083181045642004
+        },
+        {
+          "label": 28,
+          "phone": "R",
+          "start_frame": 69,
+          "end_frame": 71,
+          "frames": 2,
+          "mean_posterior": 0.5206433086038247
+        },
+        {
+          "label": 12,
+          "phone": "ER",
+          "start_frame": 71,
+          "end_frame": 76,
+          "frames": 5,
+          "mean_posterior": 0.5956223861477081
+        },
+        {
+          "label": 21,
+          "phone": "L",
+          "start_frame": 84,
+          "end_frame": 91,
+          "frames": 7,
+          "mean_posterior": 0.911418789689776
+        },
+        {
+          "label": 18,
+          "phone": "IY",
+          "start_frame": 91,
+          "end_frame": 93,
+          "frames": 2,
+          "mean_posterior": 0.549055753929456
+        },
+        {
+          "label": 13,
+          "phone": "EY",
+          "start_frame": 93,
+          "end_frame": 95,
+          "frames": 2,
+          "mean_posterior": 0.5571766690195531
+        },
+        {
+          "label": 18,
+          "phone": "IY",
+          "start_frame": 95,
+          "end_frame": 96,
+          "frames": 1,
+          "mean_posterior": 0.6616284145309772
+        },
+        {
+          "label": 13,
+          "phone": "EY",
+          "start_frame": 96,
+          "end_frame": 100,
+          "frames": 4,
+          "mean_posterior": 0.6139934276000161
+        },
+        {
+          "label": 35,
+          "phone": "V",
+          "start_frame": 100,
+          "end_frame": 103,
+          "frames": 3,
+          "mean_posterior": 0.38120128018799937
+        },
+        {
+          "label": 29,
+          "phone": "S",
+          "start_frame": 103,
+          "end_frame": 106,
+          "frames": 3,
+          "mean_posterior": 0.8181345498109449
+        },
+        {
+          "label": 38,
+          "phone": "Z",
+          "start_frame": 106,
+          "end_frame": 108,
+          "frames": 2,
+          "mean_posterior": 0.6175180181099115
+        },
+        {
+          "label": 29,
+          "phone": "S",
+          "start_frame": 108,
+          "end_frame": 109,
+          "frames": 1,
+          "mean_posterior": 0.577392042062991
+        },
+        {
+          "label": 38,
+          "phone": "Z",
+          "start_frame": 109,
+          "end_frame": 111,
+          "frames": 2,
+          "mean_posterior": 0.5722036610870302
+        },
+        {
+          "label": 31,
+          "phone": "T",
+          "start_frame": 119,
+          "end_frame": 120,
+          "frames": 1,
+          "mean_posterior": 0.34705061666826137
+        },
+        {
+          "label": 19,
+          "phone": "JH",
+          "start_frame": 120,
+          "end_frame": 121,
+          "frames": 1,
+          "mean_posterior": 0.3987158814891895
+        },
+        {
+          "label": 28,
+          "phone": "R",
+          "start_frame": 121,
+          "end_frame": 130,
+          "frames": 9,
+          "mean_posterior": 0.9567198496778566
+        },
+        {
+          "label": 11,
+          "phone": "EH",
+          "start_frame": 130,
+          "end_frame": 133,
+          "frames": 3,
+          "mean_posterior": 0.45814015407477154
+        },
+        {
+          "label": 23,
+          "phone": "N",
+          "start_frame": 133,
+          "end_frame": 134,
+          "frames": 1,
+          "mean_posterior": 0.23754443471925143
+        },
+        {
+          "label": 14,
+          "phone": "F",
+          "start_frame": 134,
+          "end_frame": 135,
+          "frames": 1,
+          "mean_posterior": 0.4387586936498976
+        },
+        {
+          "label": 35,
+          "phone": "V",
+          "start_frame": 135,
+          "end_frame": 137,
+          "frames": 2,
+          "mean_posterior": 0.5927905986794095
+        },
+        {
+          "label": 14,
+          "phone": "F",
+          "start_frame": 137,
+          "end_frame": 139,
+          "frames": 2,
+          "mean_posterior": 0.5387424255005712
+        },
+        {
+          "label": 35,
+          "phone": "V",
+          "start_frame": 139,
+          "end_frame": 140,
+          "frames": 1,
+          "mean_posterior": 0.40297732321529156
+        },
+        {
+          "label": 31,
+          "phone": "T",
+          "start_frame": 140,
+          "end_frame": 142,
+          "frames": 2,
+          "mean_posterior": 0.7842636460005702
+        },
+        {
+          "label": 16,
+          "phone": "HH",
+          "start_frame": 152,
+          "end_frame": 154,
+          "frames": 2,
+          "mean_posterior": 0.5500367188539881
+        },
+        {
+          "label": 27,
+          "phone": "P",
+          "start_frame": 154,
+          "end_frame": 155,
+          "frames": 1,
+          "mean_posterior": 0.4514589630139094
+        },
+        {
+          "label": 16,
+          "phone": "HH",
+          "start_frame": 155,
+          "end_frame": 156,
+          "frames": 1,
+          "mean_posterior": 0.6064468289152101
+        },
+        {
+          "label": 2,
+          "phone": "AE",
+          "start_frame": 156,
+          "end_frame": 167,
+          "frames": 11,
+          "mean_posterior": 0.7223955657550898
+        },
+        {
+          "label": 29,
+          "phone": "S",
+          "start_frame": 167,
+          "end_frame": 175,
+          "frames": 8,
+          "mean_posterior": 0.8630561686274609
+        },
+        {
+          "label": 31,
+          "phone": "T",
+          "start_frame": 175,
+          "end_frame": 180,
+          "frames": 5,
+          "mean_posterior": 0.8677118727936936
+        },
+        {
+          "label": 36,
+          "phone": "W",
+          "start_frame": 187,
+          "end_frame": 194,
+          "frames": 7,
+          "mean_posterior": 0.9489944793752099
+        },
+        {
+          "label": 11,
+          "phone": "EH",
+          "start_frame": 194,
+          "end_frame": 195,
+          "frames": 1,
+          "mean_posterior": 0.6305491663620582
+        },
+        {
+          "label": 23,
+          "phone": "N",
+          "start_frame": 195,
+          "end_frame": 197,
+          "frames": 2,
+          "mean_posterior": 0.9921323456459907
+        },
+        {
+          "label": 9,
+          "phone": "D",
+          "start_frame": 197,
+          "end_frame": 202,
+          "frames": 5,
+          "mean_posterior": 0.7861577305386793
+        },
+        {
+          "label": 1,
+          "phone": "AA",
+          "start_frame": 202,
+          "end_frame": 203,
+          "frames": 1,
+          "mean_posterior": 0.3660141363113952
+        },
+        {
+          "label": 21,
+          "phone": "L",
+          "start_frame": 203,
+          "end_frame": 209,
+          "frames": 6,
+          "mean_posterior": 0.6532244176925376
+        },
+        {
+          "label": 38,
+          "phone": "Z",
+          "start_frame": 209,
+          "end_frame": 210,
+          "frames": 1,
+          "mean_posterior": 0.3225913666257684
+        },
+        {
+          "label": 29,
+          "phone": "S",
+          "start_frame": 210,
+          "end_frame": 216,
+          "frames": 6,
+          "mean_posterior": 0.5770592080084996
+        },
+        {
+          "label": 38,
+          "phone": "Z",
+          "start_frame": 216,
+          "end_frame": 220,
+          "frames": 4,
+          "mean_posterior": 0.5711138694565394
+        }
+      ],
+      "selected_pronunciation_path": 0,
+      "selected_pronunciations": [
+        [
+          "S",
+          "AA",
+          "F",
+          "T"
+        ],
+        [
+          "S",
+          "IH",
+          "L",
+          "V",
+          "ER"
+        ],
+        [
+          "L",
+          "IY",
+          "V",
+          "Z"
+        ],
+        [
+          "D",
+          "R",
+          "IH",
+          "F",
+          "T"
+        ],
+        [
+          "P",
+          "AE",
+          "S",
+          "T"
+        ],
+        [
+          "W",
+          "IH",
+          "N",
+          "D",
+          "OW",
+          "Z"
+        ]
+      ],
+      "expected_phones": [
+        "S",
+        "AA",
+        "F",
+        "T",
+        "S",
+        "IH",
+        "L",
+        "V",
+        "ER",
+        "L",
+        "IY",
+        "V",
+        "Z",
+        "D",
+        "R",
+        "IH",
+        "F",
+        "T",
+        "P",
+        "AE",
+        "S",
+        "T",
+        "W",
+        "IH",
+        "N",
+        "D",
+        "OW",
+        "Z"
+      ],
+      "minimum_edit_distance": 26,
+      "alignment_steps": [
+        {
+          "op": "match",
+          "expected_index": 0,
+          "observed_index": 0,
+          "expected": 29,
+          "observed": 29
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 1,
+          "expected": null,
+          "observed": 4
+        },
+        {
+          "op": "match",
+          "expected_index": 1,
+          "observed_index": 2,
+          "expected": 1,
+          "observed": 1
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 3,
+          "expected": null,
+          "observed": 35
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 4,
+          "expected": null,
+          "observed": 14
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 5,
+          "expected": null,
+          "observed": 35
+        },
+        {
+          "op": "match",
+          "expected_index": 2,
+          "observed_index": 6,
+          "expected": 14,
+          "observed": 14
+        },
+        {
+          "op": "match",
+          "expected_index": 3,
+          "observed_index": 7,
+          "expected": 31,
+          "observed": 31
+        },
+        {
+          "op": "match",
+          "expected_index": 4,
+          "observed_index": 8,
+          "expected": 29,
+          "observed": 29
+        },
+        {
+          "op": "match",
+          "expected_index": 5,
+          "observed_index": 9,
+          "expected": 17,
+          "observed": 17
+        },
+        {
+          "op": "match",
+          "expected_index": 6,
+          "observed_index": 10,
+          "expected": 21,
+          "observed": 21
+        },
+        {
+          "op": "match",
+          "expected_index": 7,
+          "observed_index": 11,
+          "expected": 35,
+          "observed": 35
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 12,
+          "expected": null,
+          "observed": 12
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 13,
+          "expected": null,
+          "observed": 28
+        },
+        {
+          "op": "match",
+          "expected_index": 8,
+          "observed_index": 14,
+          "expected": 12,
+          "observed": 12
+        },
+        {
+          "op": "match",
+          "expected_index": 9,
+          "observed_index": 15,
+          "expected": 21,
+          "observed": 21
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 16,
+          "expected": null,
+          "observed": 18
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 17,
+          "expected": null,
+          "observed": 13
+        },
+        {
+          "op": "match",
+          "expected_index": 10,
+          "observed_index": 18,
+          "expected": 18,
+          "observed": 18
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 19,
+          "expected": null,
+          "observed": 13
+        },
+        {
+          "op": "match",
+          "expected_index": 11,
+          "observed_index": 20,
+          "expected": 35,
+          "observed": 35
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 21,
+          "expected": null,
+          "observed": 29
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 22,
+          "expected": null,
+          "observed": 38
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 23,
+          "expected": null,
+          "observed": 29
+        },
+        {
+          "op": "match",
+          "expected_index": 12,
+          "observed_index": 24,
+          "expected": 38,
+          "observed": 38
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 25,
+          "expected": null,
+          "observed": 31
+        },
+        {
+          "op": "substitute",
+          "expected_index": 13,
+          "observed_index": 26,
+          "expected": 9,
+          "observed": 19
+        },
+        {
+          "op": "match",
+          "expected_index": 14,
+          "observed_index": 27,
+          "expected": 28,
+          "observed": 28
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 28,
+          "expected": null,
+          "observed": 11
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 29,
+          "expected": null,
+          "observed": 23
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 30,
+          "expected": null,
+          "observed": 14
+        },
+        {
+          "op": "substitute",
+          "expected_index": 15,
+          "observed_index": 31,
+          "expected": 17,
+          "observed": 35
+        },
+        {
+          "op": "match",
+          "expected_index": 16,
+          "observed_index": 32,
+          "expected": 14,
+          "observed": 14
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 33,
+          "expected": null,
+          "observed": 35
+        },
+        {
+          "op": "match",
+          "expected_index": 17,
+          "observed_index": 34,
+          "expected": 31,
+          "observed": 31
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 35,
+          "expected": null,
+          "observed": 16
+        },
+        {
+          "op": "match",
+          "expected_index": 18,
+          "observed_index": 36,
+          "expected": 27,
+          "observed": 27
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 37,
+          "expected": null,
+          "observed": 16
+        },
+        {
+          "op": "match",
+          "expected_index": 19,
+          "observed_index": 38,
+          "expected": 2,
+          "observed": 2
+        },
+        {
+          "op": "match",
+          "expected_index": 20,
+          "observed_index": 39,
+          "expected": 29,
+          "observed": 29
+        },
+        {
+          "op": "match",
+          "expected_index": 21,
+          "observed_index": 40,
+          "expected": 31,
+          "observed": 31
+        },
+        {
+          "op": "match",
+          "expected_index": 22,
+          "observed_index": 41,
+          "expected": 36,
+          "observed": 36
+        },
+        {
+          "op": "substitute",
+          "expected_index": 23,
+          "observed_index": 42,
+          "expected": 17,
+          "observed": 11
+        },
+        {
+          "op": "match",
+          "expected_index": 24,
+          "observed_index": 43,
+          "expected": 23,
+          "observed": 23
+        },
+        {
+          "op": "match",
+          "expected_index": 25,
+          "observed_index": 44,
+          "expected": 9,
+          "observed": 9
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 45,
+          "expected": null,
+          "observed": 1
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 46,
+          "expected": null,
+          "observed": 21
+        },
+        {
+          "op": "insert_observed",
+          "expected_index": null,
+          "observed_index": 47,
+          "expected": null,
+          "observed": 38
+        },
+        {
+          "op": "substitute",
+          "expected_index": 26,
+          "observed_index": 48,
+          "expected": 25,
+          "observed": 29
+        },
+        {
+          "op": "match",
+          "expected_index": 27,
+          "observed_index": 49,
+          "expected": 38,
+          "observed": 38
+        }
+      ],
+      "edit_counts": {
+        "match": 24,
+        "substitute": 4,
+        "delete_expected": 0,
+        "insert_observed": 22
+      },
+      "residual_runs": [
+        {
+          "observed_indices": [
+            4,
+            5
+          ],
+          "phones": [
+            "F",
+            "V"
+          ],
+          "start_frame": 29,
+          "end_frame": 34,
+          "supported_frames": 5,
+          "events": 2,
+          "minimum_mean_posterior": 0.7603134406847004,
+          "qualifies": false
+        },
+        {
+          "observed_indices": [
+            12,
+            13
+          ],
+          "phones": [
+            "ER",
+            "R"
+          ],
+          "start_frame": 67,
+          "end_frame": 71,
+          "supported_frames": 4,
+          "events": 2,
+          "minimum_mean_posterior": 0.5206433086038247,
+          "qualifies": false
+        },
+        {
+          "observed_indices": [
+            16,
+            17
+          ],
+          "phones": [
+            "IY",
+            "EY"
+          ],
+          "start_frame": 91,
+          "end_frame": 95,
+          "supported_frames": 4,
+          "events": 2,
+          "minimum_mean_posterior": 0.549055753929456,
+          "qualifies": false
+        },
+        {
+          "observed_indices": [
+            19
+          ],
+          "phones": [
+            "EY"
+          ],
+          "start_frame": 96,
+          "end_frame": 100,
+          "supported_frames": 4,
+          "events": 1,
+          "minimum_mean_posterior": 0.6139934276000161,
+          "qualifies": false
+        },
+        {
+          "observed_indices": [
+            21,
+            22,
+            23
+          ],
+          "phones": [
+            "S",
+            "Z",
+            "S"
+          ],
+          "start_frame": 103,
+          "end_frame": 109,
+          "supported_frames": 6,
+          "events": 3,
+          "minimum_mean_posterior": 0.577392042062991,
+          "qualifies": true
+        },
+        {
+          "observed_indices": [
+            35
+          ],
+          "phones": [
+            "HH"
+          ],
+          "start_frame": 152,
+          "end_frame": 154,
+          "supported_frames": 2,
+          "events": 1,
+          "minimum_mean_posterior": 0.5500367188539881,
+          "qualifies": false
+        },
+        {
+          "observed_indices": [
+            37
+          ],
+          "phones": [
+            "HH"
+          ],
+          "start_frame": 155,
+          "end_frame": 156,
+          "supported_frames": 1,
+          "events": 1,
+          "minimum_mean_posterior": 0.6064468289152101,
+          "qualifies": false
+        },
+        {
+          "observed_indices": [
+            46
+          ],
+          "phones": [
+            "L"
+          ],
+          "start_frame": 203,
+          "end_frame": 209,
+          "supported_frames": 6,
+          "events": 1,
+          "minimum_mean_posterior": 0.6532244176925376,
+          "qualifies": false
+        }
+      ],
+      "context_status": "incomplete_or_placement_ambiguous",
+      "abstain": true,
+      "reason": "Unexplained high-support greedy phonetic content makes context incomplete or placement ambiguous; raw timing is retained but all offers abstain.",
+      "confidence": "uncalibrated phonetic consistency test, never proof of complete or unique context"
+    }
+  },
+  "metrics": [
+    {
+      "index": 0,
+      "word": "Soft",
+      "status": "proposed",
+      "candidate": {
+        "onset_support_error_ms": -41.625,
+        "offset_support_error_ms": 28.9375,
+        "onset_construction_error_ms": -40.0,
+        "offset_construction_error_ms": -0.875,
+        "retained_own_energy": 1.0,
+        "retained_support_samples": 1.0,
+        "foreign_word_energy_fraction": 0.0,
+        "below_threshold_ms": 72.125,
+        "outside_construction_ms": 40.0
+      },
+      "whisper": {
+        "onset_support_error_ms": 98.375,
+        "offset_support_error_ms": -291.0625,
+        "onset_construction_error_ms": 100.0,
+        "offset_construction_error_ms": -320.875,
+        "retained_own_energy": 0.646744412417281,
+        "retained_support_samples": 0.2918092630618298,
+        "foreign_word_energy_fraction": 0.0,
+        "below_threshold_ms": 0.125,
+        "outside_construction_ms": 0.0
+      }
+    },
+    {
+      "index": 1,
+      "word": "silver",
+      "status": "proposed",
+      "candidate": {
+        "onset_support_error_ms": -22.375,
+        "offset_support_error_ms": 42.0,
+        "onset_construction_error_ms": -20.875,
+        "offset_construction_error_ms": 9.6875,
+        "retained_own_energy": 1.0,
+        "retained_support_samples": 1.0,
+        "foreign_word_energy_fraction": 0.0,
+        "below_threshold_ms": 54.25,
+        "outside_construction_ms": 30.5625
+      },
+      "whisper": {
+        "onset_support_error_ms": 107.625,
+        "offset_support_error_ms": -98.0,
+        "onset_construction_error_ms": 109.125,
+        "offset_construction_error_ms": -130.3125,
+        "retained_own_energy": 0.9407811106467184,
+        "retained_support_samples": 0.6043289051763628,
+        "foreign_word_energy_fraction": 0.0,
+        "below_threshold_ms": 0.1875,
+        "outside_construction_ms": 0.0
+      }
+    },
+    {
+      "index": 2,
+      "word": "leaves",
+      "status": "proposed",
+      "candidate": {
+        "onset_support_error_ms": 8.125,
+        "offset_support_error_ms": 22.8125,
+        "onset_construction_error_ms": 9.6875,
+        "offset_construction_error_ms": -9.5625,
+        "retained_own_energy": 0.9999635285868133,
+        "retained_support_samples": 0.9802289281997919,
+        "foreign_word_energy_fraction": 0.0,
+        "below_threshold_ms": 10.125,
+        "outside_construction_ms": 0.0
+      },
+      "whisper": {
+        "onset_support_error_ms": 8.125,
+        "offset_support_error_ms": -137.1875,
+        "onset_construction_error_ms": 9.6875,
+        "offset_construction_error_ms": -169.5625,
+        "retained_own_energy": 0.9965803465741883,
+        "retained_support_samples": 0.7021620996647011,
+        "foreign_word_energy_fraction": 0.0,
+        "below_threshold_ms": 0.4375,
+        "outside_construction_ms": 0.0
+      }
+    },
+    {
+      "index": 3,
+      "word": "drift",
+      "status": "proposed",
+      "candidate": {
+        "onset_support_error_ms": -9.9375,
+        "offset_support_error_ms": 1.75,
+        "onset_construction_error_ms": -9.5625,
+        "offset_construction_error_ms": -30.0625,
+        "retained_own_energy": 0.9999995314494086,
+        "retained_support_samples": 0.965869352356973,
+        "foreign_word_energy_fraction": 0.0,
+        "below_threshold_ms": 28.4375,
+        "outside_construction_ms": 9.5625
+      },
+      "whisper": {
+        "onset_support_error_ms": 100.0625,
+        "offset_support_error_ms": -148.25,
+        "onset_construction_error_ms": 100.4375,
+        "offset_construction_error_ms": -180.0625,
+        "retained_own_energy": 0.7018641870969367,
+        "retained_support_samples": 0.4470555322422716,
+        "foreign_word_energy_fraction": 0.0,
+        "below_threshold_ms": 0.25,
+        "outside_construction_ms": 0.0
+      }
+    },
+    {
+      "index": 4,
+      "word": "past",
+      "status": "proposed",
+      "candidate": {
+        "onset_support_error_ms": 48.75,
+        "offset_support_error_ms": 45.9375,
+        "onset_construction_error_ms": 49.9375,
+        "offset_construction_error_ms": 17.5625,
+        "retained_own_energy": 0.9961162491047866,
+        "retained_support_samples": 0.905993089479328,
+        "foreign_word_energy_fraction": 0.0,
+        "below_threshold_ms": 44.75,
+        "outside_construction_ms": 17.5625
+      },
+      "whisper": {
+        "onset_support_error_ms": 58.75,
+        "offset_support_error_ms": -194.0625,
+        "onset_construction_error_ms": 59.9375,
+        "offset_construction_error_ms": -222.4375,
+        "retained_own_energy": 0.9812323911544351,
+        "retained_support_samples": 0.5147146431550101,
+        "foreign_word_energy_fraction": 0.0,
+        "below_threshold_ms": 0.0,
+        "outside_construction_ms": 0.0
+      }
+    },
+    {
+      "index": 5,
+      "word": "windows",
+      "status": "refused",
+      "candidate": {
+        "onset_support_error_ms": -5.8125,
+        "offset_support_error_ms": 28.3125,
+        "onset_construction_error_ms": -2.4375,
+        "offset_construction_error_ms": -4.3125,
+        "retained_own_energy": 1.0,
+        "retained_support_samples": 1.0,
+        "foreign_word_energy_fraction": 0.0,
+        "below_threshold_ms": 19.125,
+        "outside_construction_ms": 2.4375
+      },
+      "whisper": {
+        "onset_support_error_ms": 4.1875,
+        "offset_support_error_ms": -141.6875,
+        "onset_construction_error_ms": 7.5625,
+        "offset_construction_error_ms": -174.3125,
+        "retained_own_energy": 0.9971724244716221,
+        "retained_support_samples": 0.7484883947727716,
+        "foreign_word_energy_fraction": 0.0,
+        "below_threshold_ms": 0.3125,
+        "outside_construction_ms": 0.0
+      }
+    }
+  ],
+  "reference": "isolated TTS construction and threshold support; no human phonetic oracle"
+}

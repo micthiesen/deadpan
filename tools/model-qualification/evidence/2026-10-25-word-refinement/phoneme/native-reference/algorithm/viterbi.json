@@ -1,0 +1,216 @@
+[
+  {
+    "name": "repeat-phone",
+    "target_phone_ids": [
+      1,
+      1
+    ],
+    "emissions": {
+      "file": "algorithm/repeat-phone.f64le",
+      "bytes": 120,
+      "sha256": "5436f3140f43d07956fdbd7f1f5f5c931c6db7ca3b082abe31d259e8b66fb2e2",
+      "shape": [
+        5,
+        3
+      ],
+      "dtype": "<f8",
+      "layout": "C row-major little-endian"
+    },
+    "score": -0.9979347209146652,
+    "state_path": [
+      1,
+      1,
+      2,
+      3,
+      4
+    ],
+    "label_path": [
+      1,
+      1,
+      0,
+      1,
+      0
+    ],
+    "phone_spans": [
+      {
+        "phone": "AA",
+        "start_frame": 0,
+        "end_frame": 2,
+        "frames": 2,
+        "mean_posterior": 0.8,
+        "minimum_posterior": 0.8
+      },
+      {
+        "phone": "AA",
+        "start_frame": 3,
+        "end_frame": 4,
+        "frames": 1,
+        "mean_posterior": 0.8,
+        "minimum_posterior": 0.8
+      }
+    ]
+  },
+  {
+    "name": "duration-stays",
+    "target_phone_ids": [
+      1,
+      2
+    ],
+    "emissions": {
+      "file": "algorithm/duration-stays.f64le",
+      "bytes": 144,
+      "sha256": "a4564caacbb8ea4aa2948a198244a217f39e7b86fe8d10fee07cd1bb53d86435",
+      "shape": [
+        6,
+        3
+      ],
+      "dtype": "<f8",
+      "layout": "C row-major little-endian"
+    },
+    "score": -1.3388613078852583,
+    "state_path": [
+      0,
+      1,
+      1,
+      3,
+      3,
+      4
+    ],
+    "label_path": [
+      0,
+      1,
+      1,
+      2,
+      2,
+      0
+    ],
+    "phone_spans": [
+      {
+        "phone": "AA",
+        "start_frame": 1,
+        "end_frame": 3,
+        "frames": 2,
+        "mean_posterior": 0.8,
+        "minimum_posterior": 0.8
+      },
+      {
+        "phone": "AE",
+        "start_frame": 3,
+        "end_frame": 5,
+        "frames": 2,
+        "mean_posterior": 0.8,
+        "minimum_posterior": 0.8
+      }
+    ]
+  },
+  {
+    "name": "tie-stay-first",
+    "target_phone_ids": [
+      1,
+      2
+    ],
+    "emissions": {
+      "file": "algorithm/tie-stay-first.f64le",
+      "bytes": 168,
+      "sha256": "ea9aa48608b1d2ee081bdd886549685e20468861af43138188495bd38342dee1",
+      "shape": [
+        7,
+        3
+      ],
+      "dtype": "<f8",
+      "layout": "C row-major little-endian"
+    },
+    "score": -7.690286020676769,
+    "state_path": [
+      1,
+      3,
+      4,
+      4,
+      4,
+      4,
+      4
+    ],
+    "label_path": [
+      1,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "phone_spans": [
+      {
+        "phone": "AA",
+        "start_frame": 0,
+        "end_frame": 1,
+        "frames": 1,
+        "mean_posterior": 0.3333333333333333,
+        "minimum_posterior": 0.3333333333333333
+      },
+      {
+        "phone": "AE",
+        "start_frame": 1,
+        "end_frame": 2,
+        "frames": 1,
+        "mean_posterior": 0.3333333333333333,
+        "minimum_posterior": 0.3333333333333333
+      }
+    ]
+  },
+  {
+    "name": "tie-repeat",
+    "target_phone_ids": [
+      1,
+      1
+    ],
+    "emissions": {
+      "file": "algorithm/tie-repeat.f64le",
+      "bytes": 168,
+      "sha256": "ea9aa48608b1d2ee081bdd886549685e20468861af43138188495bd38342dee1",
+      "shape": [
+        7,
+        3
+      ],
+      "dtype": "<f8",
+      "layout": "C row-major little-endian"
+    },
+    "score": -7.690286020676769,
+    "state_path": [
+      1,
+      2,
+      3,
+      4,
+      4,
+      4,
+      4
+    ],
+    "label_path": [
+      1,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "phone_spans": [
+      {
+        "phone": "AA",
+        "start_frame": 0,
+        "end_frame": 1,
+        "frames": 1,
+        "mean_posterior": 0.3333333333333333,
+        "minimum_posterior": 0.3333333333333333
+      },
+      {
+        "phone": "AA",
+        "start_frame": 2,
+        "end_frame": 3,
+        "frames": 1,
+        "mean_posterior": 0.3333333333333333,
+        "minimum_posterior": 0.3333333333333333
+      }
+    ]
+  }
+]

@@ -1,0 +1,28 @@
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking deadpan-dsp v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-dsp)
+    Checking wgpu-core-deps-apple v30.0.1
+    Checking wgpu-core v30.0.1
+    Checking deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking wgpu v30.0.1
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-align v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-align)
+    Checking deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+error: this loop could be written as a `while let` loop
+  --> native/deadpan-align/src/main.rs:54:13
+   |
+54 | /             loop {
+55 | |                 match read_host(&mut input) {
+56 | |                     Ok(Some(message @ HostMessage::Cancel { .. })) => {
+57 | |                         if message.cancels(&request, &attempt, &cancellation_token) {
+...  |
+65 | |             }
+   | |_____________^ help: try: `while let Ok(Some(message @ HostMessage::Cancel { .. })) = read_host(&mut input) { .. }`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#while_let_loop
+   = note: `-D clippy::while-let-loop` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::while_let_loop)]`
+
+error: could not compile `deadpan-align` (bin "deadpan-align") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-align` (bin "deadpan-align" test) due to 1 previous error

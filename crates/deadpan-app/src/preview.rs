@@ -61,6 +61,7 @@ mod palette;
 mod playback;
 mod proxies;
 mod recovery;
+mod refinement;
 mod render;
 mod repeat_queue;
 mod repeats;
@@ -187,6 +188,7 @@ pub struct DeadpanApp {
     room_tone: Option<room_tone::Draft>,
     /// `:correct`: the transcript and pause correction sheet.
     correction: Option<corrections::Draft>,
+    refinement: refinement::State,
     gain_command_target: Option<Result<crate::project::gain::Target, String>>,
     gain: Option<gain::Draft>,
     slip_command_target: Option<Result<slip::Capture, String>>,
@@ -400,6 +402,7 @@ impl DeadpanApp {
             hold_command_target: None,
             room_tone: None,
             correction: None,
+            refinement: refinement::State::default(),
             gain_command_target: None,
             gain: None,
             slip_command_target: None,
@@ -1217,6 +1220,7 @@ impl DeadpanApp {
             self.transcription
                 .receive_activity_save(update.activity_save);
             self.shots.receive_save(update.shot_save);
+            self.receive_refinement_save(update.correction_save.as_ref());
             self.receive_correction_save(update.correction_save);
             // A service publication can replace the captured head before a
             // stopped decode is polled below. Revoke that proposal now, not
@@ -2601,6 +2605,10 @@ impl DeadpanApp {
         }
         if self.room_tone.is_some() {
             self.room_tone_keyboard(context);
+            return None;
+        }
+        if self.refinement.open() {
+            self.refinement_keyboard(context);
             return None;
         }
         if self.correction.is_some() {
@@ -5654,6 +5662,7 @@ impl eframe::App for DeadpanApp {
             self.reconcile_diagnostics(&context);
             self.reconcile_storage(&context);
             self.reconcile_transcription(&context);
+            self.reconcile_refinement(&context);
             self.reconcile_shots(&context);
             self.reconcile_proxies(&context);
             self.reconcile_youtube(&context);
@@ -5951,6 +5960,7 @@ impl eframe::App for DeadpanApp {
         self.endpoint_worker.shutdown();
         self.thumbnails.shutdown();
         self.transcription.shutdown();
+        self.refinement.shutdown();
         // Cancel a model install; partial bytes stay for Resume.
         self.models.manager.shutdown(Duration::from_secs(3));
         self.shots.shutdown();

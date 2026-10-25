@@ -156,6 +156,7 @@ impl DeadpanApp {
 
     fn follow_stopped_playback(&mut self, looping: bool) {
         if self.room_tone.is_none()
+            && !self.refinement.open()
             && self.gain.is_none()
             && self.splice.is_none()
             && self.slip.is_none()
@@ -484,6 +485,7 @@ impl DeadpanApp {
                         }
                         Domain::Sound(_) => self.sound_cursor = position.cursor,
                         Domain::AudioRange(_) => {
+                            self.refinement.follow_audition(position.cursor);
                             if let Some(draft) = &mut self.room_tone {
                                 draft.cursor = position.cursor;
                             }
@@ -545,6 +547,7 @@ impl DeadpanApp {
                 }
                 Domain::Sound(_) => self.sound_cursor = frame,
                 Domain::AudioRange(_) => {
+                    self.refinement.follow_audition(frame);
                     if let Some(draft) = &mut self.room_tone {
                         draft.cursor = frame;
                     }

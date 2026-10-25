@@ -1,0 +1,6 @@
+{
+  "crates/xtask/src/bundle.rs": "fc946e627348b5bd630b644259cd461c4e961a73a3823dd7758c54d26c7961e5",
+  "crates/xtask/src/bundle/refinement.rs": "6317dc0a9ef3f73a4253f619cad6ee38fd0d03418980cf5e430d302ace75abc2",
+  "crates/deadpan-cli/src/youtube/macho_content.rs": "c4d31bead2b5ae3a515d98a3b6ff2deb2561796a4e87f15f2d0c7ea5605de875",
+  "docs/PACKAGING.md": "5b0fad42f7cb87114affe976e8ba12a2c3795141345f3ff9ec257f569d5eabbc"
+}

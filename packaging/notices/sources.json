@@ -85,6 +85,69 @@
       "component": "SPDX License List 3.27.0 exception identifiers (licenseExceptionId values, sorted)",
       "source": "derived from https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/json/exceptions.json",
       "sha256": "daa89db93fef17ed707c6d3418190b1d68f28e7cb07b7a27969bafefd15068f6"
+    },
+    {
+      "path": "onnxruntime/LICENSE",
+      "component": "ONNX Runtime 1.31.0 native macOS arm64 library",
+      "source": "https://files.pythonhosted.org/packages/e0/2b/117f94d73a3bac4276c285c47e384e1b3ea67b191aa4c7592df9d3f4a136/onnxruntime-1.31.0-cp313-cp313-macosx_14_0_arm64.whl (onnxruntime/LICENSE)",
+      "sha256": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c",
+      "source_artifact": {
+        "filename": "onnxruntime-1.31.0-cp313-cp313-macosx_14_0_arm64.whl",
+        "bytes": 20881803,
+        "sha256": "0ba02a44acb6203040354d9a1f160e3f37a43feac7bb05caa3e0ea545efed505"
+      },
+      "retrieved": "2026-10-25"
+    },
+    {
+      "path": "onnxruntime/ThirdPartyNotices.txt",
+      "component": "ONNX Runtime 1.31.0 native macOS arm64 library",
+      "source": "https://files.pythonhosted.org/packages/e0/2b/117f94d73a3bac4276c285c47e384e1b3ea67b191aa4c7592df9d3f4a136/onnxruntime-1.31.0-cp313-cp313-macosx_14_0_arm64.whl (onnxruntime/ThirdPartyNotices.txt)",
+      "sha256": "143764b952fdb1a7c69ce653bfba74a7744d6a8a573bfb73e235fba356c83de3",
+      "source_artifact": {
+        "filename": "onnxruntime-1.31.0-cp313-cp313-macosx_14_0_arm64.whl",
+        "bytes": 20881803,
+        "sha256": "0ba02a44acb6203040354d9a1f160e3f37a43feac7bb05caa3e0ea545efed505"
+      },
+      "retrieved": "2026-10-25"
+    },
+    {
+      "path": "refinement/AUTHOR-LICENSE",
+      "component": "Phoneme CTC zero-weight graph architecture and mathematical feature constants (no checkpoint or learned statistics)",
+      "source": "https://raw.githubusercontent.com/huangruizhe/audio/a4749fe14f17b19c071fe5b20005575ec0509ca3/LICENSE (exact native/deadpan-align/assets/AUTHOR-LICENSE)",
+      "sha256": "93a58861a858cc108e6b6b833e08e76e8b2a66339e4a8007c8a5a8c1ff9c40d6",
+      "retained_from": "native/deadpan-align/assets/AUTHOR-LICENSE",
+      "provenance": {
+        "author_commit": "a4749fe14f17b19c071fe5b20005575ec0509ca3",
+        "derivative": "fixed zero-weight ONNX graph and Hann/Mel mathematical constants; no model data"
+      },
+      "retrieved": "2026-10-25"
+    },
+    {
+      "path": "refinement/UNICODE-LICENSE",
+      "component": "Frozen Unicode 15.1.0 casefold, alphabetic and decimal semantic tables",
+      "source": "Retained local Cargo registry unicode-ident 1.0.24/LICENSE-UNICODE; Unicode License V3, Copyright 1991-2023 Unicode Inc. No new upstream retrieval performed.",
+      "sha256": "f7db81051789b729fea528a63ec4c938fdcb93d9d61d97dc8cc2e9df6d47f2a1",
+      "retained_from": "crates/deadpan-analysis/src/refinement/UNICODE-LICENSE",
+      "provenance": {
+        "notice_source_package": "unicode-ident 1.0.24 (local registry)",
+        "table_version": "Unicode 15.1.0",
+        "generator": "qualification CPython 3.13.15 char.casefold/str.isalpha/str.isdecimal enumeration"
+      },
+      "retrieved": "2026-10-25"
+    },
+    {
+      "path": "refinement/PYTHON-LICENSE",
+      "component": "CPython-derived generated lexical semantic data, not a Python runtime",
+      "source": "Qualification CPython 3.13.15 managed interpreter lib/python3.13/LICENSE.txt; byte-exact retained local copy. No new upstream retrieval performed.",
+      "sha256": "78b12c3a81360b357002334f0e70ea0e92eebf7a9b358805c03c48484945f3bb",
+      "retained_from": "crates/deadpan-analysis/src/refinement/PYTHON-LICENSE",
+      "provenance": {
+        "interpreter": "CPython 3.13.15 macOS aarch64",
+        "build": "main, Aug 25 2026, 13:50:12; Clang 22.1.3",
+        "unicode_data": "15.1.0",
+        "derivative": "Generated casefold differences and alphabetic/decimal ranges only; no CPython code or runtime copied"
+      },
+      "retrieved": "2026-10-25"
     }
   ]
 }

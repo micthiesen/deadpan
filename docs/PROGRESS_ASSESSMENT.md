@@ -11,11 +11,11 @@ signing and verification during bundling do not bind those later launches to
 independent compiled image pins and the expected signer.
 
 DP-22.3 therefore changes from 1 to 0.5, and DP-22 reopens from Complete to
-Partial. The same 162-criterion ledger now scores 82.7307%, still displayed
+Partial. At this audit correction, the same 162-criterion ledger scored 82.7307%, still displayed
 as about 83%, with **7/24 strictly complete and 0/7 gates closed**. This is a
 correction of earlier credit, not a change to the denominator or product scope.
 
-The new alignment path is being qualified with those checks; it does not
+The new alignment path is now qualified with those checks; it does not
 cover the older helpers. Bind all three older workers and their library closure
 before launch, keep verification off the UI/audio threads, and exercise damaged,
 substituted and relocated bundles before closing DP-22 again.
@@ -24,6 +24,17 @@ Source: crates/deadpan-cli/src/transcription.rs (TranscriptionRuntime),
 tracking.rs (TrackingRuntime), proxy.rs, youtube/acquire.rs,
 generation/runtime.rs, and crates/deadpan-jobs/src/process.rs. No global
 App/CLI startup verifier covers those paths.
+
+## Subsequent word-refinement qualification
+
+The [English word-refinement workflow](qualification/word-refinement-2026-10-25.md)
+now receives DP-10.3 credit after real native/CLI/device and relocated packaged
+verification. Its experimental quality failures remain explicit; §11.2 calls
+for a reviewed approximate proposal, not an invented accuracy threshold.
+This adds 0.5952 percentage points to the corrected ledger: 83.3259%, still
+about 83% after rounding. Strict completion remains seven; DP-10's other work
+and DP-22's older worker trust are open. The unchanged headline is rounding
+over one completed criterion and one audit correction, not inherited 89%.
 
 ## Why 89% stopped moving
 
@@ -39,7 +50,7 @@ The full criterion ledger, citations and remaining work are in [progress.json](p
 
 - Each of the 24 normative requirements receives equal weight.
 - Each has 3–8 major acceptance criteria, 162 total. Score 1 for implemented and locally verified, 0.5 for meaningful confirmed partial implementation or incomplete local verification, and 0 for absent.
-- Average within each requirement, then average the 24 scores: 83.1473%, displayed as about 83%. Criteria are not weighted by expected engineering hours.
+- Average within each requirement, then average the 24 scores. The initial baseline was 83.1473%; the amendments above bring it to 83.3259%, displayed as about 83%. Criteria are not weighted by expected engineering hours.
 - Keep criterion identities and scope fixed. Record a versioned reassessment if the denominator needs correction; never split completed work or merge missing work to move the score.
 - Gates and effects remain visible separately. They overlap requirements and are not counted again in the numeric denominator.
 - Owner-only checks under §29.1 remain on the owner list and do not block local completion. No product scope has been removed.
@@ -80,14 +91,14 @@ The full criterion ledger, citations and remaining work are in [progress.json](p
 
 - Composability matrix: structural timing transforms must preserve sample-phase history, owned sounds, nested Repeat overrides and fixed/pitch Retime clocks. Latest narrow admissions do not complete general scopes.
 - DP-09 is broad audio workflow work: sample-resolution range authoring, variable rate, custom silence/tail policy and sound-bearing transforms remain, beyond polishing existing commands.
-- DP-10 automatic local alignment is absent; cursor-priority incremental analysis/tracking needs architecture and real integration, not another synthetic success case.
+- DP-10 now includes reviewed English word-boundary proposals. Cursor-priority incremental analysis/tracking still needs architecture and real integration.
 - DP-08 post-insertion parameter edit gap is directly confirmed in source: Keep refuses an existing animated Follow; Camera exposes no independent factor/curve controls.
 - Full shared picture/audio effects and mastering, incremental RenderPlan fragments and filtered cache lifecycle remain implementation work.
 - Native workflow integration, HDR/output quality and hostile real-worker stress remain local acceptance work.
 - Large-project visible edit/pause latency still misses its target; diagnostic median improvements are not a target or p95 pass.
 - Model warm reuse, embedding cache and reference-Mac candidate bakeoff/performance remain under DP-24 and Gates A/E/G despite DP-12 behavior scoring fully covered.
 
-Automatic local word-boundary refinement and cursor-priority incremental analysis are missing. Variable-rate DSP and sample-resolution audio editing remain incomplete. Existing Follow creep cannot independently retune its arrival scale/curve. Full effects/mastering and native placement/inspector workflows remain open. The latest measured large-project offscreen first-pause median is 183.389625 ms, so the 100 ms Hold target remains unfulfilled. See [Performance](PERFORMANCE.md) and per-criterion evidence.
+Cursor-priority incremental analysis is missing. Variable-rate DSP and sample-resolution audio editing remain incomplete. Existing Follow creep cannot independently retune its arrival scale/curve. Full effects/mastering and native placement/inspector workflows remain open. The latest measured large-project offscreen first-pause median is 183.389625 ms, so the 100 ms Hold target remains unfulfilled. See [Performance](PERFORMANCE.md) and per-criterion evidence.
 
 ## Delivery gates
 

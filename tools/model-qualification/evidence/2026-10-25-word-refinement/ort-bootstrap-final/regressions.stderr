@@ -1,0 +1,16 @@
+test_archive_requires_unique_exact_regular_member (test_prepare_ort.PrepareOrtTests.test_archive_requires_unique_exact_regular_member) ... ok
+test_atomic_data_only_install_then_existing_verification_needs_no_network (test_prepare_ort.PrepareOrtTests.test_atomic_data_only_install_then_existing_verification_needs_no_network) ... ok
+test_atomic_publication_never_replaces_even_an_empty_existing_directory (test_prepare_ort.PrepareOrtTests.test_atomic_publication_never_replaces_even_an_empty_existing_directory) ... ok
+test_corrupt_existing_prefix_is_never_repaired_or_overwritten (test_prepare_ort.PrepareOrtTests.test_corrupt_existing_prefix_is_never_repaired_or_overwritten) ... ok
+test_download_sets_user_agent_and_bounds_size_and_hash (test_prepare_ort.PrepareOrtTests.test_download_sets_user_agent_and_bounds_size_and_hash) ... ok
+test_redirects_cannot_downgrade_https_or_change_host (test_prepare_ort.PrepareOrtTests.test_redirects_cannot_downgrade_https_or_change_host) ... ok
+test_relative_prefix_and_existing_lock_are_refused (test_prepare_ort.PrepareOrtTests.test_relative_prefix_and_existing_lock_are_refused) ... ok
+test_symlink_prefix_header_alias_escape_and_fifo_fail_without_hanging (test_prepare_ort.PrepareOrtTests.test_symlink_prefix_header_alias_escape_and_fifo_fail_without_hanging) ... ok
+test_wrong_download_leaves_no_published_prefix_or_staging (test_prepare_ort.PrepareOrtTests.test_wrong_download_leaves_no_published_prefix_or_staging) ... ok
+test_ci_prepares_and_exports_ort_before_lint_and_tests (test_prepare_ort.RepositoryContractTests.test_ci_prepares_and_exports_ort_before_lint_and_tests) ... ok
+test_runtime_and_all_six_header_pins_match_the_native_build (test_prepare_ort.RepositoryContractTests.test_runtime_and_all_six_header_pins_match_the_native_build) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.012s
+
+OK

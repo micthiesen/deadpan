@@ -33,6 +33,8 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "original-moment",
     "transcript",
     "corrections",
+    "word-refinement",
+    "word-refinement-playback",
     "shots",
     "proxy-seek",
     "source-interpretation",
@@ -129,6 +131,8 @@ pub(crate) struct Options {
     pub baseline: Option<PathBuf>,
     pub retain_projects: bool,
     pub project: Option<PathBuf>,
+    pub refinement_models_root: Option<PathBuf>,
+    pub refinement_word: usize,
 }
 
 impl Options {
@@ -141,6 +145,9 @@ impl Options {
         let mut baseline = None;
         let mut retain_projects = false;
         let mut project = None;
+        let mut refinement_models_root = None;
+        let mut refinement_word = 0;
+        let mut refinement_word_set = false;
         let mut args = arguments.iter();
         while let Some(flag) = args.next() {
             if flag == "--retain-projects" {
@@ -168,6 +175,17 @@ impl Options {
                 "--kestrel-source" => kestrel_source = Some(PathBuf::from(value)),
                 "--baseline" => baseline = Some(PathBuf::from(value)),
                 "--project" if project.is_none() => project = Some(PathBuf::from(value)),
+                "--refinement-models-root" if refinement_models_root.is_none() => {
+                    refinement_models_root = Some(PathBuf::from(value));
+                }
+                "--refinement-word" => {
+                    refinement_word_set = true;
+                    refinement_word = value
+                        .parse()
+                        .ok()
+                        .filter(|word| *word < deadpan_analysis::MAX_WORDS)
+                        .ok_or("--refinement-word must be a bounded zero-based word index")?;
+                }
                 "--hz" => {
                     hz = value
                         .parse()
@@ -181,12 +199,27 @@ impl Options {
         if baseline.is_some() && mode != RunMode::Visual {
             return Err("Baseline comparison requires visual mode".into());
         }
+        if scenario
+            .as_deref()
+            .is_some_and(|name| name.starts_with("word-refinement"))
+        {
+            if refinement_models_root
+                .as_ref()
+                .is_none_or(|path| !path.is_absolute())
+            {
+                return Err(
+                    "word-refinement requires an explicit absolute --refinement-models-root".into(),
+                );
+            }
+        } else if refinement_models_root.is_some() || refinement_word_set {
+            return Err("refinement fixture options require --scenario word-refinement".into());
+        }
         let fixture_scenario = scenario
             .as_deref()
             .is_some_and(|name| PROJECT_FIXTURE_SCENARIOS.contains(&name));
         if project.is_some() && !fixture_scenario {
             return Err(
-                "--project requires generated-picture, generated-playback, generated-loop, ai-playback-interference, ai-pause-ready or large-first-pause".into(),
+                "--project requires generated-picture, generated-playback, generated-loop, ai-playback-interference, ai-pause-ready, large-first-pause or word-refinement".into(),
             );
         }
         if fixture_scenario && project.is_none() {
@@ -209,6 +242,9 @@ impl Options {
         if project.is_some()
             && retain_projects
             && scenario.as_deref() != Some("ai-playback-interference")
+            && !scenario
+                .as_deref()
+                .is_some_and(|name| name.starts_with("word-refinement"))
         {
             return Err(
                 "The explicit --project fixture is already retained; omit --retain-projects".into(),
@@ -223,6 +259,8 @@ impl Options {
             baseline,
             retain_projects,
             project,
+            refinement_models_root,
+            refinement_word,
         })
     }
 
@@ -275,6 +313,8 @@ fn binary_sha256() -> Option<String> {
 /// Scenarios that replay an explicit `--project` fixture instead of the
 /// built-in Original; ordinary runs report them as skipped.
 pub(crate) const PROJECT_FIXTURE_SCENARIOS: &[&str] = &[
+    "word-refinement",
+    "word-refinement-playback",
     "generated-picture",
     "generated-playback",
     "generated-loop",
@@ -286,8 +326,39 @@ pub(crate) const PROJECT_FIXTURE_SCENARIOS: &[&str] = &[
 pub(crate) fn real_playback(name: &str) -> bool {
     matches!(
         name,
-        "generated-playback" | "generated-loop" | "ai-playback-interference"
+        "generated-playback"
+            | "generated-loop"
+            | "ai-playback-interference"
+            | "word-refinement-playback"
     )
+}
+
+fn fixture_identity_path(
+    fixture: &Path,
+    scenario: Option<&str>,
+    explicit_project: bool,
+) -> Result<PathBuf, String> {
+    if matches!(
+        scenario,
+        Some(
+            "ai-pause-ready"
+                | "generated-playback"
+                | "generated-loop"
+                | "ai-playback-interference"
+                | "large-first-pause"
+                | "word-refinement"
+                | "word-refinement-playback"
+        )
+    ) {
+        Ok(fixture.join("project.sqlite"))
+    } else if explicit_project {
+        Ok(fixture
+            .parent()
+            .ok_or("Fixture package has no parent")?
+            .join("generated-picture-fixture.json"))
+    } else {
+        Ok(fixture.to_path_buf())
+    }
 }
 
 /// One scenario per line for tools such as `cargo xtask replays`. A
@@ -312,7 +383,7 @@ pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
     }
     if arguments == ["--help"] {
         println!(
-            "Usage: deadpan-app --ui-check --output NEW_DIRECTORY [--mode visual|performance] [--scenario NAME] [--hz 60|120] [--kestrel-source Shortcuts.swift] [--baseline PRIOR_DIRECTORY] [--retain-projects]\n       deadpan-app --ui-check --list-scenarios\n\nScenarios: {}\nVisual mode writes report.json, report.html and actual offscreen PNG frames.\nPerformance mode submits full UI + picture GPU work without screenshot readback.\nUse --release for performance. Projects use private temporary storage by default.\n--retain-projects keeps each scenario's Documents root under output/projects/NAME for native QA after replay exits.\nGenerated picture replay requires --scenario generated-picture --project /absolute/accepted.deadpan, exported by the real bundle qualification test with DEADPAN_GENERATED_PICTURE_FIXTURE_ROOT. It opens the generic compatibility fixture without editing it.\nlarge-first-pause requires --project /absolute/fresh.deadpan made by perf make-large --beats 10000; one hold 12f at frame 17933 on a private copy. Timings describe offscreen Background acceptance/composition, n=1 diagnostic only; no percentile or latency-budget PASS.\nai-pause-ready requires --project /absolute/project.deadpan whose last edit accepted real AI pictures; it replays a private copy.\ngenerated-playback requires --mode performance --project and runs real device audio at 5% monitor gain on a private copy of a <=32-second accepted project. generated-loop uses the same real-audio setup, selects from the first through last Generated picture (at most eight seconds), and loops for at least 30 seconds. ai-playback-interference requires --mode performance --project with a fresh full-source Original of at least 40 seconds and the installed Extension model; it uses real inference, production scheduling and device audio at 5% monitor gain on a private project copy. All other scenarios simulate audio delivery. Native pickers are scripted; no desktop window is opened.",
+            "Usage: deadpan-app --ui-check --output NEW_DIRECTORY [--mode visual|performance] [--scenario NAME] [--hz 60|120] [--kestrel-source Shortcuts.swift] [--baseline PRIOR_DIRECTORY] [--retain-projects]\n       deadpan-app --ui-check --list-scenarios\n\nScenarios: {}\nVisual mode writes report.json, report.html and actual offscreen PNG frames.\nPerformance mode submits full UI + picture GPU work without screenshot readback.\nUse --release for performance. Projects use private temporary storage by default.\n--retain-projects keeps each scenario's Documents root under output/projects/NAME for native QA after replay exits.\nGenerated picture replay requires --scenario generated-picture --project /absolute/accepted.deadpan, exported by the real bundle qualification test with DEADPAN_GENERATED_PICTURE_FIXTURE_ROOT. It opens the generic compatibility fixture without editing it.\nlarge-first-pause requires --project /absolute/fresh.deadpan made by perf make-large --beats 10000; one hold 12f at frame 17933 on a private copy. Timings describe offscreen Background acceptance/composition, n=1 diagnostic only; no percentile or latency-budget PASS.\nai-pause-ready requires --project /absolute/project.deadpan whose last edit accepted real AI pictures; it replays a private copy.\ngenerated-playback requires --mode performance --project and runs real device audio at 5% monitor gain on a private copy of a <=32-second accepted project. generated-loop uses the same real-audio setup, selects from the first through last Generated picture (at most eight seconds), and loops for at least 30 seconds. ai-playback-interference requires --mode performance --project with a fresh full-source Original of at least 40 seconds and the installed Extension model; it uses real inference, production scheduling and device audio at 5% monitor gain on a private project copy. word-refinement requires --project /absolute/Source.deadpan --refinement-models-root /absolute/verified-models and uses the actual installed phoneme model and isolated native worker on a private portable project copy. The project must contain its actual transcript, an unpinned target and a manually pinned neighbor. --refinement-word N selects the zero-based target word (default 0). This visual lane simulates audition routing and feedback; canonical playback PCM and device output are not exercised. word-refinement-playback requires the same explicit project/model/word options plus --mode performance; it exercises actual canonical AudioRange preparation and macOS device delivery at 5% monitor gain, including exact pause/resume and close. All scenarios except generated-playback, generated-loop, ai-playback-interference and word-refinement-playback simulate audio delivery. Native pickers are scripted; no desktop window is opened.",
             SCENARIOS.join(", ")
         );
         return Ok(());
@@ -360,17 +431,16 @@ pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
             "ai-pause-ready" | "generated-playback" | "generated-loop" | "ai-playback-interference"
         )
     );
-    let fixture_identity = if ready_fixture || large_first_pause {
-        fixture.join("project.sqlite")
-    } else if options.project.is_some() {
-        fixture
-            .parent()
-            .ok_or("Fixture package has no parent")?
-            .join("generated-picture-fixture.json")
-    } else {
-        fixture.clone()
-    };
-    let fixture_hash = if ready_fixture || large_first_pause {
+    let refinement_fixture = matches!(
+        options.scenario.as_deref(),
+        Some("word-refinement" | "word-refinement-playback")
+    );
+    let fixture_identity = fixture_identity_path(
+        &fixture,
+        options.scenario.as_deref(),
+        options.project.is_some(),
+    )?;
+    let fixture_hash = if ready_fixture || large_first_pause || refinement_fixture {
         let mut bytes = Vec::new();
         std::fs::File::open(&fixture_identity)
             .map_err(|error| error.to_string())?
@@ -412,7 +482,7 @@ pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
             "hardware": command_output("sysctl", &["-n", "machdep.cpu.brand_string"]),
             "os": command_output("sw_vers", &["-productVersion"]),
             "rust": command_output("rustc", &["--version"]),
-            "fixture": if large_first_pause { "pristine perf make-large --beats 10000 Background/Silence Holds (private portable copy; no source media)" } else if interference { "full-source Original project (replayed from a private portable copy)" } else if ready_fixture { "project with real accepted AI pictures (replayed from a private copy)" } else if options.project.is_some() { "accepted Generated compatibility project" } else if options.scenario.as_deref() == Some("regions") { "generated salient-regions.mp4 (blank/mug/two-object sections)" } else { "cfr-bframes.mp4" },
+            "fixture": if large_first_pause { "pristine perf make-large --beats 10000 Background/Silence Holds (private portable copy; no source media)" } else if refinement_fixture { "qualified Original project with its actual transcript and a manually pinned neighbor (replayed from a private portable copy; no timing-quality oracle)" } else if interference { "full-source Original project (replayed from a private portable copy)" } else if ready_fixture { "project with real accepted AI pictures (replayed from a private copy)" } else if options.project.is_some() { "accepted Generated compatibility project" } else if options.scenario.as_deref() == Some("regions") { "generated salient-regions.mp4 (blank/mug/two-object sections)" } else { "cfr-bframes.mp4" },
             "fixture_identity_file": fixture_identity,
             "fixture_sha256": fixture_hash,
             "region_scenario_fixture": regions_fixture,
@@ -423,7 +493,7 @@ pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
             "physical_display_measured": false, "gpu_readback_in_timing_run": false,
             "wait_strategy": "egui_repaint_callback_v1",
             "picture_worker_timing": "request_start_finish_publication_receipt_v1",
-            "cache_state": if large_first_pause { "one first pause in a fresh process/private project copy; initial Background settled; OS file cache uncontrolled" } else if interference { "baseline precedes inference in the same process; decoder and model caches are not reset; OS file cache uncontrolled" } else if options.project.is_some() { "first six-object generated admission/index cold, subsequent navigation warm; OS file cache uncontrolled" } else { "first import/index cold, subsequent operations warm; OS file cache uncontrolled" },
+            "cache_state": if large_first_pause { "one first pause in a fresh process/private project copy; initial Background settled; OS file cache uncontrolled" } else if refinement_fixture { "real installed phoneme model and Original decoder in a fresh replay process/private project copy; repeated job runs share process caches; OS file cache uncontrolled" } else if interference { "baseline precedes inference in the same process; decoder and model caches are not reset; OS file cache uncontrolled" } else if options.project.is_some() { "first six-object generated admission/index cold, subsequent navigation warm; OS file cache uncontrolled" } else { "first import/index cold, subsequent operations warm; OS file cache uncontrolled" },
             "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
         }),
     );
@@ -451,6 +521,14 @@ pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
             .as_deref()
             .is_none_or(|selected| selected == **name)
     }) {
+        if matches!(*name, "word-refinement" | "word-refinement-playback")
+            && (options.project.is_none() || options.refinement_models_root.is_none())
+        {
+            let mut skipped = ScenarioReport::new(*name);
+            skipped.skipped.push("Requires an explicit --scenario, --project and --refinement-models-root; --refinement-word selects the zero-based target (default 0). Uses the actual qualified Original, transcript and installed model on a private portable copy. The playback lane also requires --mode performance and uses real device audio.".into());
+            report.scenarios.push(skipped);
+            continue;
+        }
         if real_playback(name) && options.project.is_none() {
             let mut skipped = ScenarioReport::new(*name);
             skipped.skipped.push("Requires an explicit scenario, --mode performance and --project; opens real device audio at 5% monitor gain on a private accepted-project copy.".into());
@@ -524,6 +602,55 @@ pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn word_refinement_identifies_the_original_project_database() {
+        let fixture = Path::new("/tmp/workflow/Source.deadpan");
+        for name in ["word-refinement", "word-refinement-playback"] {
+            assert_eq!(
+                fixture_identity_path(fixture, Some(name), true).unwrap(),
+                Path::new("/tmp/workflow/Source.deadpan/project.sqlite")
+            );
+            let arguments = [
+                "--output",
+                "/tmp/replay",
+                "--scenario",
+                name,
+                "--mode",
+                if real_playback(name) {
+                    "performance"
+                } else {
+                    "visual"
+                },
+                "--project",
+                "/tmp/workflow/Source.deadpan",
+                "--refinement-models-root",
+                "/tmp/verified-models",
+                "--refinement-word",
+                "2",
+            ]
+            .map(str::to_owned);
+            let options = Options::parse(&arguments).unwrap();
+            assert_eq!(options.refinement_word, 2);
+            assert_eq!(
+                options.refinement_models_root.as_deref(),
+                Some(Path::new("/tmp/verified-models"))
+            );
+            for flag in ["--project", "--refinement-models-root"] {
+                let index = arguments
+                    .iter()
+                    .position(|argument| argument == flag)
+                    .unwrap();
+                let mut incomplete = arguments.to_vec();
+                incomplete.drain(index..index + 2);
+                assert!(Options::parse(&incomplete).is_err(), "{name} {flag}");
+            }
+        }
+        assert_eq!(
+            fixture_identity_path(fixture, Some("generated-picture"), true).unwrap(),
+            Path::new("/tmp/workflow/generated-picture-fixture.json")
+        );
+    }
+
     #[test]
     fn scenario_list_names_every_scenario_once_and_marks_fixture_replays() {
         let list = scenario_list();

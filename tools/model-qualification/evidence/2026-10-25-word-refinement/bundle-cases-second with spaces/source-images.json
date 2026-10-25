@@ -1,0 +1,18 @@
+{
+  "Contents/MacOS/deadpan-cli": {
+    "bytes": 50246768,
+    "sha256": "b4b8bb3c830b4a68d8734f1274a399beed7ba5f5d7cf04d0bfa6ba3492e50d28"
+  },
+  "Contents/MacOS/deadpan-app": {
+    "bytes": 68969216,
+    "sha256": "8e7c14810ad2182d99bcc933766f4e4aef9e348fe361c228a44c30bd8feec203"
+  },
+  "Contents/MacOS/deadpan-align": {
+    "bytes": 1475376,
+    "sha256": "79f78ff18116f2e4fbb5576666d4977b3008625802113f03af521ba7688b43d0"
+  },
+  "Contents/Frameworks/libonnxruntime.1.dylib": {
+    "bytes": 32863344,
+    "sha256": "9f18a61164575cff3047c3df17309bf95312891fea9e40d2c0340309ce68a888"
+  }
+}

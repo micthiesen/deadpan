@@ -1,0 +1,7 @@
+{
+  "protocol": 1,
+  "expected_version": 2,
+  "change": {
+    "type": "undo"
+  }
+}

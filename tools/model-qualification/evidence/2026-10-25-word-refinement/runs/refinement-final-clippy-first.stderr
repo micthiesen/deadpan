@@ -1,0 +1,60 @@
+    Checking tempfile v3.27.0
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Checking half v2.7.1
+    Checking deadpan-chaos v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-chaos)
+    Checking deadpan-filesystem v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-filesystem)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-sqlite-status v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-sqlite-status)
+    Checking deadpan-dsp v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-dsp)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking euclid v0.22.14
+    Checking deadpan-output v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-output)
+    Checking deadpan-lifecycle v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-lifecycle)
+    Checking xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+    Checking rusty-fork v0.3.1
+    Checking tiff v0.11.3
+    Checking naga v30.0.1
+    Checking guillotiere v0.7.0
+    Checking proptest v1.11.0
+    Checking vello_common v0.1.0
+    Checking image v0.25.10
+    Checking vello_cpu v0.1.0
+    Checking epaint v0.36.2
+    Checking arboard v3.6.1
+    Checking egui v0.36.2
+    Checking wgpu-naga-bridge v30.0.1
+    Checking wgpu-hal v30.0.1
+    Checking egui-winit v0.36.2
+    Checking wgpu-core-deps-apple v30.0.1
+    Checking wgpu-core v30.0.1
+    Checking wgpu v30.0.1
+    Checking egui-wgpu v0.36.2
+    Checking eframe v0.36.2
+    Checking egui_kittest v0.36.2
+    Checking deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+    Checking deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-align v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-align)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error: items after a test module
+   --> crates/deadpan-app/src/preview/refinement.rs:394:1
+    |
+394 | mod tests {
+    | ^^^^^^^^^
+...
+418 | impl State {
+    | ^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#items_after_test_module
+    = note: `-D clippy::items-after-test-module` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::items_after_test_module)]`
+    = help: move the items to before the test module was defined
+
+error: could not compile `deadpan-app` (bin "deadpan-app" test) due to 1 previous error

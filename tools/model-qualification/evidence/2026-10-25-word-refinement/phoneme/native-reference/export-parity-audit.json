@@ -1,0 +1,174 @@
+{
+  "cases": [
+    {
+      "case": "case01",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 204,
+      "maximum_absolute_float_difference": 2.404545375611633e-05,
+      "largest_difference_field": "/proposal/path_score"
+    },
+    {
+      "case": "case02",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 206,
+      "maximum_absolute_float_difference": 1.4886660210322589e-05,
+      "largest_difference_field": "/proposal/path_score"
+    },
+    {
+      "case": "case03",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 182,
+      "maximum_absolute_float_difference": 1.542495738249272e-05,
+      "largest_difference_field": "/proposal/path_score"
+    },
+    {
+      "case": "case04",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 264,
+      "maximum_absolute_float_difference": 2.2044027048195858e-05,
+      "largest_difference_field": "/proposal/path_score"
+    },
+    {
+      "case": "case05",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 224,
+      "maximum_absolute_float_difference": 8.02520753495628e-06,
+      "largest_difference_field": "/proposal/path_score"
+    },
+    {
+      "case": "case06",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 186,
+      "maximum_absolute_float_difference": 5.616559064947069e-06,
+      "largest_difference_field": "/proposal/path_score"
+    },
+    {
+      "case": "case07",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 206,
+      "maximum_absolute_float_difference": 2.213809096707209e-06,
+      "largest_difference_field": "/proposal/words/1/phones/0/minimum_posterior"
+    },
+    {
+      "case": "case08",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 204,
+      "maximum_absolute_float_difference": 2.567737828940153e-05,
+      "largest_difference_field": "/proposal/path_score"
+    },
+    {
+      "case": "case09",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 184,
+      "maximum_absolute_float_difference": 1.3807671621179907e-05,
+      "largest_difference_field": "/proposal/path_score"
+    },
+    {
+      "case": "case10",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 214,
+      "maximum_absolute_float_difference": 2.653860508416983e-05,
+      "largest_difference_field": "/proposal/path_score"
+    },
+    {
+      "case": "held01",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 264,
+      "maximum_absolute_float_difference": 0.0,
+      "largest_difference_field": "/proposal/words/5/phones/4/minimum_posterior"
+    },
+    {
+      "case": "held02",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 262,
+      "maximum_absolute_float_difference": 0.0,
+      "largest_difference_field": "/proposal/words/5/phones/3/minimum_posterior"
+    },
+    {
+      "case": "held03",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 254,
+      "maximum_absolute_float_difference": 0.0,
+      "largest_difference_field": "/proposal/words/5/phones/3/minimum_posterior"
+    },
+    {
+      "case": "held04",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 222,
+      "maximum_absolute_float_difference": 0.0,
+      "largest_difference_field": "/proposal/words/5/phones/6/minimum_posterior"
+    },
+    {
+      "case": "held05",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 262,
+      "maximum_absolute_float_difference": 0.0,
+      "largest_difference_field": "/proposal/words/5/phones/5/minimum_posterior"
+    },
+    {
+      "case": "held06",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 234,
+      "maximum_absolute_float_difference": 0.0,
+      "largest_difference_field": "/proposal/words/5/phones/6/minimum_posterior"
+    },
+    {
+      "case": "held07",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 240,
+      "maximum_absolute_float_difference": 0.0,
+      "largest_difference_field": "/proposal/words/5/phones/6/minimum_posterior"
+    },
+    {
+      "case": "held08",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 230,
+      "maximum_absolute_float_difference": 0.0,
+      "largest_difference_field": "/proposal/words/5/phones/5/minimum_posterior"
+    },
+    {
+      "case": "held09",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 294,
+      "maximum_absolute_float_difference": 0.0,
+      "largest_difference_field": "/proposal/words/7/phones/4/minimum_posterior"
+    },
+    {
+      "case": "held10",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 308,
+      "maximum_absolute_float_difference": 0.0,
+      "largest_difference_field": "/proposal/words/8/phones/2/minimum_posterior"
+    },
+    {
+      "case": "held11",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 160,
+      "maximum_absolute_float_difference": 0.0,
+      "largest_difference_field": "/proposal/words/5/phones/4/minimum_posterior"
+    },
+    {
+      "case": "held12",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 152,
+      "maximum_absolute_float_difference": 0.0,
+      "largest_difference_field": "/proposal/words/5/phones/3/minimum_posterior"
+    },
+    {
+      "case": "held13",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 248,
+      "maximum_absolute_float_difference": 0.0,
+      "largest_difference_field": "/proposal/words/5/phones/5/minimum_posterior"
+    },
+    {
+      "case": "held14",
+      "all_nonfloat_fields_identical": true,
+      "float_fields_compared": 300,
+      "maximum_absolute_float_difference": 0.0,
+      "largest_difference_field": "/proposal/words/5/phones/3/minimum_posterior"
+    }
+  ],
+  "full_guard_paths_residuals_spans_choices_statuses_identical": true,
+  "meaning": "Compare every JSON key, array length and non-float field including every path, edit operation, residual qualification and refusal. Float diagnostics reported, never rounded for comparison."
+}

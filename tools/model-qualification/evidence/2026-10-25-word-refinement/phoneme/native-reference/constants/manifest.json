@@ -1,0 +1,44 @@
+{
+  "hann": {
+    "file": "constants/hann.f32le",
+    "bytes": 1600,
+    "sha256": "c692d19f0b2bd745f0dfc967261c3e3d21a2473e485a677d219e9b4a73e0218e",
+    "shape": [
+      400
+    ],
+    "dtype": "<f4",
+    "layout": "C row-major little-endian"
+  },
+  "mel_filter": {
+    "file": "constants/mel-filter.f32le",
+    "bytes": 64320,
+    "sha256": "69a241210255f24e37926762346701739943709f3179732f821f0823605fe6d7",
+    "shape": [
+      201,
+      80
+    ],
+    "dtype": "<f4",
+    "layout": "C row-major little-endian"
+  },
+  "mean": {
+    "file": "constants/mean.f32le",
+    "bytes": 320,
+    "sha256": "c709c46f355ff99ced996a70938b7b38ddbc337d436c283e4e6e78cb008cb1bb",
+    "shape": [
+      80
+    ],
+    "dtype": "<f4",
+    "layout": "C row-major little-endian"
+  },
+  "inverse_stddev": {
+    "file": "constants/inverse-stddev.f32le",
+    "bytes": 320,
+    "sha256": "4b565c3c2267a8a2a0e67201d10fd7153c4d30f087bb50508d5427841270cd31",
+    "shape": [
+      80
+    ],
+    "dtype": "<f4",
+    "layout": "C row-major little-endian"
+  },
+  "gain": 1073676289.0000038
+}

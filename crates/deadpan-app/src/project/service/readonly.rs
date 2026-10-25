@@ -110,6 +110,14 @@ impl Service {
                     error: Some(reason.clone()),
                 });
             }
+            ProjectRequest::AcceptRefinement(request) => {
+                self.correction_save = Some(project::TranscriptSave {
+                    session: request.expected_session,
+                    attempt: request.attempt,
+                    interrupted: false,
+                    error: Some(reason.clone()),
+                });
+            }
             ProjectRequest::Target(
                 Target::Save { ticket, .. }
                 | Target::Delete { ticket, .. }

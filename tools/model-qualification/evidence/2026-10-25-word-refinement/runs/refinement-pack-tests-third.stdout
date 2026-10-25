@@ -1,0 +1,64 @@
+
+running 59 tests
+test packs::constraints::tests::speech_constraints_keep_the_real_pcm_worker_bounds ... ok
+test packs::constraints::tests::declared_bridge_drives_the_qualified_count_and_raster_contract ... ok
+test packs::constraints::extension_tests::extension_duration_is_floored_on_each_project_grid_without_clamping_requests ... ok
+test packs::interrupted_download_tests::the_system_trust_store_resumes_from_hugging_face ... ignored, requires network access to huggingface.co
+test packs::constraints::extension_tests::existing_approved_manifest_values_and_absent_extension_wire_stay_unchanged ... ok
+test packs::constraints::extension_tests::extension_round_trip_declares_temporal_conditioning_without_bridge_authority ... ok
+test packs::constraints::tests::bridge_prompt_capabilities_are_required_manifest_fields ... ok
+test packs::constraints::tests::missing_constraints_and_unknown_nested_fields_cannot_be_admitted ... ok
+test packs::tests::archive_numbers_accept_octal_and_base_256 ... ok
+test packs::constraints::extension_tests::extension_rejects_missing_cross_operation_and_false_endpoint_conditioning ... ok
+test packs::constraints::extension_tests::extension_fields_are_required_and_unknown_fields_never_imply_support ... ok
+test packs::constraints::tests::invalid_formulas_dimensions_and_incomplete_conditioning_fail_validation ... ok
+test packs::tests::content_ranges_parse_their_first_byte_and_space_is_measurable ... ok
+test packs::tests::extension_catalog_has_independent_capability_and_the_same_pinned_assets ... ok
+test packs::constraints::extension_tests::extension_rejects_invalid_counts_duration_rates_geometry_and_prompt_bounds ... ok
+test packs::tests::a_license_requiring_acceptance_refuses_before_any_byte ... ok
+test packs::tests::install_verifies_stages_and_activates_one_complete_version ... ok
+test packs::tests::manifests_require_https_approved_hosts_safe_names_and_hashes ... ok
+test packs::tests::a_tampered_receipt_or_truncated_file_is_not_installed ... ok
+test packs::tests::pack_state_reports_partial_bytes_and_discard_clears_them ... ok
+test packs::tests::corrupt_space_starved_and_cancelled_installs_never_activate ... ok
+test packs::tests::refinement::original_refinement_pack_pins_source_data_and_bounded_audio_contract ... ok
+test packs::tests::refinement::original_source_host_is_exact_and_does_not_admit_lookalikes_credentials_or_ports ... ok
+test packs::tests::refinement::refinement_keeps_checkpoint_ambiguity_and_exact_source_dictionary_notices_separate ... ok
+test packs::interrupted_download_tests::the_production_trust_store_rejects_the_test_ca_and_plain_http ... ok
+test packs::tests::refinement::refinement_roles_require_operation_and_exact_names_independent_of_file_order ... ok
+test packs::tests::the_approved_bridge_pack_matches_the_qualified_receipt ... ok
+test packs::tests::the_approved_whisper_pack_is_valid_and_pinned ... ok
+test packs::updates::extension_tests::extension_pack_cannot_enter_through_an_existing_bridge_update ... ok
+test packs::updates::extension_tests::extension_update_keeps_its_independent_runtime_data_and_duration_contract ... ok
+test packs::updates::refinement_tests::refinement_operation_cannot_be_smuggled_into_the_transcription_pack ... ok
+test packs::updates::refinement_tests::valid_signature_cannot_replace_the_compiled_refinement_checkpoint ... ok
+test packs::updates::refinement_tests::refinement_updates_may_change_descriptions_but_keep_all_qualified_source_identities ... ok
+test packs::tests::interrupted_downloads_resume_and_range_ignoring_servers_restart ... ok
+test packs::updates::tests::a_valid_signature_cannot_expand_the_shipped_runtime_constraints ... ok
+test packs::tests::a_new_version_copies_identical_files_from_an_installed_one ... ok
+test packs::tests::offline_folders_install_verified_copies_and_refuse_tampering ... ok
+test packs::updates::tests::new_or_changed_licenses_need_explicit_acceptance ... ok
+test packs::tests::cancelling_a_stalled_download_returns_promptly_and_keeps_its_bytes ... ok
+test packs::updates::tests::shared_pointer_directories_are_refused ... ok
+test packs::updates::tests::pointer_directory_sync_failure_reports_the_committed_selection ... ok
+test packs::updates::tests::a_damaged_selected_version_falls_back_to_the_compiled_pack ... ok
+test packs::updates::tests::untrusted_tampered_and_incompatible_updates_are_refused ... ok
+test packs::updates::tests::downgrades_replays_and_conflicts_are_refused ... ok
+test packs::tests::adversarial_pack_manifests ... ok
+test packs::updates::tests::torn_retained_files_are_replaced_and_notes_explain_fallbacks ... ok
+test packs::updates::tests::a_signed_update_installs_side_by_side_activates_and_rolls_back ... ok
+test packs::tests::exported_archives_import_and_hostile_archives_are_refused ... ok
+test packs::interrupted_download_tests::cancellation_keeps_partial_bytes_and_the_next_attempt_resumes ... ok
+test packs::interrupted_download_tests::a_server_ignoring_the_range_restarts_the_file_and_still_verifies ... ok
+test packs::interrupted_download_tests::resumes_only_while_the_entity_tag_matches ... ok
+test packs::interrupted_download_tests::a_corrupt_resumed_byte_fails_verification_and_discards_the_part ... ok
+test packs::interrupted_download_tests::dropped_connections_resume_from_the_partial_file_until_verified ... ok
+test packs::tests::unexpected_resume_offsets_keep_the_partial_and_installs_are_exclusive ... ok
+test packs::updates::tests::concurrent_updates_and_rollbacks_never_select_a_replayed_serial ... ok
+test packs::tests::a_released_lock_still_shared_with_a_child_is_awaited_not_busy ... ok
+test packs::disk_full_tests::a_volume_that_fills_during_a_download_fails_truthfully_and_resumes ... ok
+test packs::tests::adversarial_pack_archives ... ok
+test packs::tests::installed_update_revalidation_checks_bytes_without_removing_damaged_files ... ok
+
+test result: ok. 58 passed; 0 failed; 1 ignored; 0 measured; 135 filtered out; finished in 6.22s
+

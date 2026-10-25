@@ -216,6 +216,7 @@ Section 24 defines boundaries, not an obligation to create empty crates. Introdu
 | `deadpan-ui` | Panes, keyboard routing, focus, inspectors, audition, and accessibility. | Planned; source preview UI currently belongs to the app. |
 | `deadpan-app` | Lifecycle, platform integration, document host, and command dispatch. | Native one-Original lifecycle and Documents library, bounded service mailboxes, visible contextual keys, whole-original reuse/history, frame inspection and the captured combined Source Trim draft described above. Generic legacy projects keep their original profile and media. Automatic SDR Render, explicit preview decisions, existing-owner CLI routing with background preparation and [recovery](RECOVERY.md) reporting/relink are implemented. Complete editorial workflow and release acceptance remain open. |
 | `deadpan-cli` | Headless validation/dump, revision-aware commands, render/plan inspection, benchmarks, diagnostics. | Project/command/history/migration, picture/audio-plan and source-PCM inspection, boundary resolution, isolated committed SDR encoding, finished-file structural/decode verification and library destination publication with historical provenance and explicit durable restart reconciliation implemented. Native/public headless Render use the automatic SDR policy. Existing-owner routing covers revision-bound edits, Render and worker-prepared retention/relink/source registration/checkpoints, with exact targets and preserved receipts. Full audio/effects/HDR, native persisted-job recovery, complete output qualification and benchmarks remain open. |
+| `native/deadpan-align` | Process-isolated bounded English phoneme inference. | Pinned original checkpoint/statistics become a verified fixed graph; native 16 kHz features and ORT CPU inference emit contained log probabilities. No transcript ownership, acceptance or authored state. See [word refinement](WORD_REFINEMENT.md). |
 | `native/` | Narrow platform and DSP bridges with isolated unsafe lifetime handling. | `deadpan-process` provides bounded Darwin worker-group teardown with unreaped ownership and membership checks, and owned-worker and own-process footprint sampling (its only unsafe code is two bounded libproc calls); `deadpan-fileclone` wraps descriptor cloning; `deadpan-filesystem` supplies descriptor-based APFS volume identity for publication recovery; `deadpan-sqlite-status` reads and resets one connection's SQLite page-cache counters for diagnostics (one `sqlite3_db_status` call); `deadpan-media-worker` isolates generated-video conversion; `deadpan-source` owns persistent source decoding; `deadpan-dsp` binds the canonical worker stretch schedule. Full audio pipeline and device integration remain open. |
 | `workers/` | Qualified private model runtime and provider adapters. | Planned. |
 | `recipes/` | Versioned declarative starter gags built from ordinary primitives. | Planned. |
@@ -270,3 +271,17 @@ The specification has selected Rust, egui/eframe/wgpu, a narrow FFmpeg/native me
 Gate A must qualify actual media decode/seek/encode, Metal preview, audio DSP/output, model candidates, and private-runtime packaging. It also compares isolated Cutlass extraction with a direct media adapter. Record exact versions/commits, build configurations, licenses, codec capability, hardware/OS, measurements, and failures in decision records. Library choice or compilation alone is not qualification.
 
 Model selection remains empirical: usable holds per minute under editing load decides the default, not MLX loyalty, Rust purity, weight size, or upstream throughput claims. The specification's performance figures remain targets until Deadpan's own measured reports establish results.
+
+
+## Local word timing boundary
+
+The pure analysis crate owns bounded pronunciation alignment and correction
+review/acceptance. CLI host preparation owns the exact Original window,
+supervised native process, output snapshot and guarded annotation transaction.
+The model manager owns original-source pack verification and activation smoke.
+The app owns cancellable jobs, immutable capture, waveform and independent
+AudioRange audition; the sole project writer saves one correction Undo.
+No inference, hashing, dictionary parsing or full analysis snapshot clone runs
+on the UI/audio thread. The alignment path authenticates its compiled worker/
+ORT identities before launch. Equivalent trust admission for the three older
+native workers remains DP-22 implementation work.

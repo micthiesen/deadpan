@@ -50,6 +50,8 @@ pub mod picture_proposals;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod proxy;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod refinement;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod render;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod render_worker;
@@ -156,6 +158,7 @@ const HELP: &str = "Deadpan headless commands:
   models remove <pack> [--partial] [--root <dir>]
   transcribe <project.deadpan> [--model <ggml.bin> --sha256 <hex>] [--vad-model <ggml-silero.bin> --vad-sha256 <hex>] [--language <auto|xx>] [--asset <id>] [--again <start_cs>:<end_cs>]
   transcript <project.deadpan> [--search <words>] [--asset <id>]
+  refine-words <project.deadpan> --word <zero-based-index> [--accept <proposal-id>] [--models-root <dir>]
   corrections <project.deadpan> [--asset <id>]
   corrections <project.deadpan> --json <request.json> [--dry-run]
   pauses <project.deadpan> [--asset <id>]
@@ -243,6 +246,9 @@ pub enum CliError {
     Transcription(#[from] transcription::TranscriptionError),
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
+    Refinement(#[from] refinement::RefinementError),
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
     ModelPack(#[from] deadpan_models::packs::PackError),
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
@@ -311,6 +317,16 @@ impl CliError {
             }
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::Transcription(_) => "TranscriptionFailed",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Refinement(refinement::RefinementError::Cancelled) => "RefinementCancelled",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Refinement(refinement::RefinementError::Deadline) => "RefinementDeadline",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Refinement(refinement::RefinementError::Configuration(_)) => {
+                "RefinementUnavailable"
+            }
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Refinement(_) => "RefinementFailed",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::ModelPack(deadpan_models::packs::PackError::Cancelled) => "ModelPackCancelled",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -640,6 +656,20 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         ["transcript", rest @ ..] => transcription::run_transcript(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["corrections", rest @ ..] => corrections::run(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["refine-words", rest @ ..] => refinement::run(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["refinement-runtime-qualify"] => {
+            let worker = bundle::qualify_refinement_worker()?;
+            let (worker_pin, ort_pin) = bundle::refinement_content_pins().ok_or_else(|| {
+                CliError::Usage("This host has no compiled packaged refinement pins".into())
+            })?;
+            write_json(&serde_json::json!({
+                "worker": worker,
+                "worker_content_sha256": worker_pin,
+                "ort_content_sha256": ort_pin,
+            }))
+        }
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["pauses", rest @ ..] => activity::run_pauses(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]

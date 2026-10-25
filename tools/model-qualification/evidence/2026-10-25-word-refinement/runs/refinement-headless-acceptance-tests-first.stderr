@@ -1,0 +1,3 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [optimized + debuginfo] target(s) in 41.59s
+     Running tests/refinement_acceptance.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/refinement_acceptance-d8d270ff81f8b492)

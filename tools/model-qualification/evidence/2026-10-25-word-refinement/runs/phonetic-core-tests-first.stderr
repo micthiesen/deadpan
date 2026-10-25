@@ -1,0 +1,14 @@
+    Updating crates.io index
+     Locking 6 packages to latest Rust 1.97 compatible versions
+      Adding num-complex v0.4.6
+      Adding num-integer v0.1.47
+      Adding primal-check v0.3.4
+      Adding rustfft v6.4.1
+      Adding strength_reduce v0.2.4
+      Adding transpose v0.2.3
+   Compiling tempfile v3.27.0
+   Compiling rusty-fork v0.3.1
+   Compiling proptest v1.11.0
+   Compiling deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+    Finished `test` profile [optimized + debuginfo] target(s) in 7.34s
+     Running unittests src/lib.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_analysis-0b7019ec669cb0c9)

@@ -1,0 +1,8 @@
+
+running 3 tests
+test invalid_cancelled_and_expired_contexts_never_launch_a_worker ... ok
+test qualified_original_preparation_is_read_only_and_manual_words_stay_pinned ... ok
+test real_isolated_worker_preserves_all_observed_native_emissions ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.52s
+

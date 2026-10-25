@@ -1,0 +1,10 @@
+   Compiling xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.00s
+     Running unittests src/main.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/xtask-dfa5ebbf362cd622)
+
+thread 'bundle::macho::ort_tests::selected_ort_prefix_accepts_internal_aliases_and_rejects_escape_or_wrong_bytes' (187335656) panicked at crates/xtask/src/bundle/macho/ort_tests.rs:97:5:
+assertion `left == right` failed
+  left: "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/xtask-ort-source-76116/prefix/lib/libonnxruntime.1.31.0.dylib"
+ right: "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/xtask-ort-source-76116/prefix/lib/libonnxruntime.1.31.0.dylib"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `-p xtask --bin xtask`

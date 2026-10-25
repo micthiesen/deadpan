@@ -1,0 +1,28 @@
+{
+  "status": "open",
+  "criterion": "DP-22.3",
+  "score": 0.5,
+  "source_revision": "32b0620c",
+  "workers": {
+    "deadpan-transcribe": [
+      "crates/deadpan-cli/src/transcription.rs:45",
+      "crates/deadpan-cli/src/transcription.rs:318"
+    ],
+    "deadpan-track": [
+      "crates/deadpan-cli/src/tracking.rs:52",
+      "crates/deadpan-cli/src/tracking.rs:494",
+      "crates/deadpan-cli/src/generation/runtime.rs:562"
+    ],
+    "deadpan-media-worker": [
+      "crates/deadpan-cli/src/proxy.rs:527",
+      "crates/deadpan-cli/src/youtube/acquire.rs:1378",
+      "crates/deadpan-cli/src/generation/runtime.rs:555"
+    ]
+  },
+  "launchers": [
+    "crates/deadpan-jobs/src/process.rs:394",
+    "native/deadpan-process/src/spawn.rs:18"
+  ],
+  "finding": "Build-time signing exists; no global launch verifier or compiled image/library pins cover these three existing native workers.",
+  "thread_constraints": "Proxy selection currently runs on UI; tracking/proposal and AI runtime selection runs on the project writer. Put expensive qualification at preparation/CLI launch boundaries, not those early selectors."
+}

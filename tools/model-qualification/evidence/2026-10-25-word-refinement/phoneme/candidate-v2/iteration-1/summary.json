@@ -1,0 +1,386 @@
+{
+  "iteration": 1,
+  "policy": {
+    "path": "/private/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/guard.py",
+    "bytes": 4759,
+    "sha256": "6c10053ba98f2b700f191473ddbebb915cf3c793d60a51c1507cd9e2ecf0bdc7"
+  },
+  "plan": {
+    "path": "/private/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/plan.json",
+    "bytes": 3696,
+    "sha256": "19ffffb3693f17f1207b9883003a78b6dec174a2eeedae07f24ab4d63a6ae694"
+  },
+  "expected_positive_words": 126,
+  "v1_positive_offers": 91,
+  "v2_positive_offers": 65,
+  "all_positive_offer_coverage": 0.5158730158730159,
+  "paired_v1_offer_retention": 0.7142857142857143,
+  "offered_start_abs_ms": {
+    "n": 54,
+    "minimum": 0.625,
+    "median": 18.6875,
+    "p95": 48.9375,
+    "maximum": 122.375
+  },
+  "offered_end_abs_ms": {
+    "n": 54,
+    "minimum": 0.1875,
+    "median": 18.09375,
+    "p95": 61.875,
+    "maximum": 106.375
+  },
+  "offered_own_signal_energy": {
+    "n": 52,
+    "minimum": 0.9459311744416959,
+    "median": 0.9999937288529102,
+    "p95": 1.0,
+    "maximum": 1.0000001017530422
+  },
+  "offered_foreign_word_energy": {
+    "n": 52,
+    "minimum": 0.0,
+    "median": 0.0,
+    "p95": 0.00043922007450280625,
+    "maximum": 0.014864820639660584
+  },
+  "signal_failures": [
+    {
+      "case": "case06",
+      "word": "we",
+      "metrics": {
+        "onset_support_error_ms": -20.5,
+        "offset_support_error_ms": 56.6875,
+        "onset_construction_error_ms": -20.0,
+        "offset_construction_error_ms": 35.625,
+        "retained_own_energy": 1.0,
+        "retained_support_samples": 1.0,
+        "foreign_word_energy_fraction": 0.0011206689132534846,
+        "below_threshold_ms": 35.0625,
+        "outside_construction_ms": 55.625
+      }
+    },
+    {
+      "case": "case06",
+      "word": "safe",
+      "metrics": {
+        "onset_support_error_ms": -122.375,
+        "offset_support_error_ms": -30.375,
+        "onset_construction_error_ms": -122.125,
+        "offset_construction_error_ms": -45.75,
+        "retained_own_energy": 0.9999161999754732,
+        "retained_support_samples": 0.9229273036712862,
+        "foreign_word_energy_fraction": 0.014864820639660584,
+        "below_threshold_ms": 9.0,
+        "outside_construction_ms": 122.125
+      }
+    }
+  ],
+  "negative_cases": [
+    {
+      "case": "case01-wrong",
+      "kind": "negative_substituted_word",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "case01-silence",
+      "kind": "negative_silence",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "case02-wrong",
+      "kind": "negative_substituted_word",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "case02-silence",
+      "kind": "negative_silence",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "case03-wrong",
+      "kind": "negative_substituted_word",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "case03-silence",
+      "kind": "negative_silence",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "case04-wrong",
+      "kind": "negative_substituted_word",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "case04-silence",
+      "kind": "negative_silence",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "case05-wrong",
+      "kind": "negative_substituted_word",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "case05-silence",
+      "kind": "negative_silence",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "case06-wrong",
+      "kind": "negative_substituted_word",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "case06-silence",
+      "kind": "negative_silence",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "case07-wrong",
+      "kind": "negative_substituted_word",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "case07-silence",
+      "kind": "negative_silence",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "case08-wrong",
+      "kind": "negative_substituted_word",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "case08-silence",
+      "kind": "negative_silence",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "case09-wrong",
+      "kind": "negative_substituted_word",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "case09-silence",
+      "kind": "negative_silence",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "case10-wrong",
+      "kind": "negative_substituted_word",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "case10-silence",
+      "kind": "negative_silence",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "held11",
+      "kind": "negative_silence",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "held12",
+      "kind": "negative_seeded_low_noise",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "held13",
+      "kind": "negative_clearly_wrong_transcript",
+      "critical_offered_indices": []
+    },
+    {
+      "case": "held14",
+      "kind": "negative_missing_repeated_phrase_ambiguity",
+      "critical_offered_indices": []
+    }
+  ],
+  "positive_context_refusals": [
+    {
+      "case": "case01",
+      "base_offers": 5,
+      "unexplained": [
+        {
+          "observed_indices": [
+            7,
+            8,
+            9
+          ],
+          "phones": [
+            "F",
+            "ER",
+            "R"
+          ],
+          "start_frame": 25,
+          "end_frame": 31,
+          "supported_frames": 6,
+          "events": 3,
+          "minimum_mean_posterior": 0.5708919007088992,
+          "qualifies": true
+        }
+      ]
+    },
+    {
+      "case": "case02",
+      "base_offers": 5,
+      "unexplained": [
+        {
+          "observed_indices": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "phones": [
+            "K",
+            "AE",
+            "P",
+            "V",
+            "DH"
+          ],
+          "start_frame": 10,
+          "end_frame": 24,
+          "supported_frames": 14,
+          "events": 5,
+          "minimum_mean_posterior": 0.5042732429720191,
+          "qualifies": true
+        }
+      ]
+    },
+    {
+      "case": "case04",
+      "base_offers": 5,
+      "unexplained": [
+        {
+          "observed_indices": [
+            21,
+            22,
+            23
+          ],
+          "phones": [
+            "S",
+            "Z",
+            "S"
+          ],
+          "start_frame": 103,
+          "end_frame": 109,
+          "supported_frames": 6,
+          "events": 3,
+          "minimum_mean_posterior": 0.577392042062991,
+          "qualifies": true
+        }
+      ]
+    },
+    {
+      "case": "case05",
+      "base_offers": 3,
+      "unexplained": [
+        {
+          "observed_indices": [
+            15,
+            16,
+            17,
+            18
+          ],
+          "phones": [
+            "P",
+            "P",
+            "P",
+            "L"
+          ],
+          "start_frame": 91,
+          "end_frame": 99,
+          "supported_frames": 6,
+          "events": 4,
+          "minimum_mean_posterior": 0.6211339573361461,
+          "qualifies": true
+        }
+      ]
+    },
+    {
+      "case": "held03",
+      "base_offers": 3,
+      "unexplained": [
+        {
+          "observed_indices": [
+            22,
+            23,
+            24,
+            25
+          ],
+          "phones": [
+            "B",
+            "SH",
+            "JH",
+            "SH"
+          ],
+          "start_frame": 94,
+          "end_frame": 100,
+          "supported_frames": 6,
+          "events": 4,
+          "minimum_mean_posterior": 0.5119931542882201,
+          "qualifies": true
+        },
+        {
+          "observed_indices": [
+            42,
+            43,
+            44
+          ],
+          "phones": [
+            "V",
+            "D",
+            "JH"
+          ],
+          "start_frame": 160,
+          "end_frame": 171,
+          "supported_frames": 11,
+          "events": 3,
+          "minimum_mean_posterior": 0.5450634240181835,
+          "qualifies": true
+        }
+      ]
+    },
+    {
+      "case": "held04",
+      "base_offers": 5,
+      "unexplained": [
+        {
+          "observed_indices": [
+            34,
+            35,
+            36,
+            37
+          ],
+          "phones": [
+            "N",
+            "S",
+            "Z",
+            "S"
+          ],
+          "start_frame": 125,
+          "end_frame": 132,
+          "supported_frames": 7,
+          "events": 4,
+          "minimum_mean_posterior": 0.5250740382824282,
+          "qualifies": true
+        }
+      ]
+    }
+  ],
+  "all_retained_raw_spans_and_base_scores_identical": true,
+  "natural_interior_timing": "UNKNOWN; never included in timing/signal oracle denominators",
+  "gates": {
+    "negative_offers_zero": true,
+    "overall_coverage_at_least_40percent": true,
+    "retain_at_least_80percent_v1offers": false,
+    "start_p95_at_most_80ms": true,
+    "end_p95_at_most_80ms": true,
+    "own_signal_at_least_90percent": true,
+    "foreign_word_energy_at_most_0_1percent": false
+  },
+  "all_gates_pass": false
+}

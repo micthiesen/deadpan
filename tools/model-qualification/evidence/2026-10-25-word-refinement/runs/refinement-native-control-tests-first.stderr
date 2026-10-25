@@ -1,0 +1,10 @@
+   Compiling deadpan-align v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-align)
+error[E0425]: cannot find function `mkfifoat` in module `rustix::fs`
+   --> native/deadpan-align/tests/worker.rs:309:29
+    |
+309 |                 rustix::fs::mkfifoat(rustix::fs::CWD, &path, Mode::from_raw_mode(0o600)).unwrap();
+    |                             ^^^^^^^^ not found in `rustix::fs`
+
+For more information about this error, try `rustc --explain E0425`.
+error: could not compile `deadpan-align` (test "worker") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

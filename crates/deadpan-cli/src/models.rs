@@ -23,6 +23,9 @@ use deadpan_models::packs::{
 use crate::CliError;
 use crate::transcription::{AnalysisInput, TranscriptionRuntime, transcribe};
 
+mod refinement;
+pub use refinement::{RefinementModels, installed_refinement_models};
+
 /// The per-user model directory shared by every project:
 /// `~/Library/Application Support/Deadpan/Models` on macOS and
 /// `$XDG_DATA_HOME/deadpan/models` (default `~/.local/share`) on Linux.
@@ -533,6 +536,14 @@ fn smoke_test_with_generation(
             &model,
             &silence,
             "pack-smoke-activity",
+            cancelled,
+            Instant::now() + Duration::from_secs(60),
+        )?;
+    }
+    if manifest.supports(Operation::RefineWords) {
+        refinement::smoke(
+            manifest,
+            directory,
             cancelled,
             Instant::now() + Duration::from_secs(60),
         )?;

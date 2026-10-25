@@ -1,0 +1,18 @@
+{
+  "tools/prepare-ort.py": {
+    "bytes": 10612,
+    "sha256": "8c597e901f9a430ca99aef837d529817cc99cd7c14a40e6a98192499a1e7574e"
+  },
+  "tools/tests/test_prepare_ort.py": {
+    "bytes": 9392,
+    "sha256": "14262e0135a04286644ca9484c0a9f7440c1c585b3d7a5d2990a31c6ee572b4c"
+  },
+  ".github/workflows/ci.yml": {
+    "bytes": 4166,
+    "sha256": "f77b39af73a7603bbd98dcb9d36fde729f38ed9606fff81b90e0e9ccf971bdbb"
+  },
+  "docs/DEVELOPMENT.md": {
+    "bytes": 43622,
+    "sha256": "3f04d764eee453d88e44405ad6113ffd40882fa7b1e73d7ca32b7f78aa2b5038"
+  }
+}

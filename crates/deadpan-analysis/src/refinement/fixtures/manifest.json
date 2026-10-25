@@ -1,0 +1,121 @@
+{
+  "kind": "observed deterministic backend parity, no timing truth",
+  "files": {
+    "CMUDICT-LICENSE": {
+      "bytes": 1754,
+      "sha256": "bd4ce8e44170a5f9f481310ca85c51de3c4f851a65e679b40e603b143bd3542a"
+    },
+    "README.md": {
+      "bytes": 1198,
+      "sha256": "c5af228721ccfbad902cb32972395f4a42dfb89e0a6f84503dc42368182770b8"
+    },
+    "case01.f64le": {
+      "bytes": 52808,
+      "sha256": "ebbe062b8dc6c5ab76ead3cf54943d55dfea35ee311f1987588a61da8eed2760"
+    },
+    "case02.f64le": {
+      "bytes": 54448,
+      "sha256": "e77fb299fe7924c536146d9d54cf7a172e091365955c85904a5b6bf56021f7c4"
+    },
+    "case03.f64le": {
+      "bytes": 43952,
+      "sha256": "0e1b209dd4635b770475ae44f6c7015050595cf1a995b074970ae3619b503786"
+    },
+    "case04.f64le": {
+      "bytes": 75768,
+      "sha256": "8db5c65cf3c3899ff2bfc399bb88a286e57ffe7ebb6999711b7b1410a938daa3"
+    },
+    "case05.f64le": {
+      "bytes": 63632,
+      "sha256": "1de26f3cdcfd768e0fede606e38e9b217df514c01c5e0afc71e6935c25beb06b"
+    },
+    "case06.f64le": {
+      "bytes": 48544,
+      "sha256": "d1a72156a0b477cb1eb3cdc9197b5932b3fa5b9901e990e8b201c4e816a1a421"
+    },
+    "case07.f64le": {
+      "bytes": 78720,
+      "sha256": "272f6644e778a4ce35a4f856631d7df9c4b31266def2ad82ab2fc93b86471bfe"
+    },
+    "case08.f64le": {
+      "bytes": 58056,
+      "sha256": "ab4f31279757313037d24efecb13c8956fb268555f4c8c211933c2d9d22bd5ee"
+    },
+    "case09.f64le": {
+      "bytes": 45264,
+      "sha256": "4e1bcd70e5fb1570195720c7fba19511a9406c707a8e9bb69d8b5a5c1596b0cd"
+    },
+    "case10.f64le": {
+      "bytes": 73472,
+      "sha256": "db658781c0cf77f2f78b028e4d3d3f121f5e1cbc3e5784fe1c19775a5ef935c5"
+    },
+    "cmudict-subset.dict": {
+      "bytes": 2551,
+      "sha256": "cd2b1b92920191137abf8b32450790cfb10a0eef407862cee64206585d916eec"
+    },
+    "cmudict.phones": {
+      "bytes": 382,
+      "sha256": "ffb588a5e55684723582c7256e1d2f9fadb130011392d9e59237c76e34c2cfd6"
+    },
+    "goldens.json": {
+      "bytes": 553880,
+      "sha256": "071fbacc0d07ee5d7c8ac3c788594f9cb3db7c1c8f3d3e6ed97ba56cd3101317"
+    },
+    "held01.f64le": {
+      "bytes": 63632,
+      "sha256": "91bc0ee495e0774f9a9f4c9f035ad621032274a6dc423366c0dea79747e637fd"
+    },
+    "held02.f64le": {
+      "bytes": 54120,
+      "sha256": "becdf3a3edcd51aea411a6de844927ef5888bf0a5bca1ca166d6a431a8f7a00a"
+    },
+    "held03.f64le": {
+      "bytes": 71176,
+      "sha256": "d2f36f8f5427f35f6aacb7ff97106e882c724b9babc1af195dc4a449d48cd13f"
+    },
+    "held04.f64le": {
+      "bytes": 47232,
+      "sha256": "63d1b84c48e997b10c3f2256c2be29c81c9716d27195e600830c39e781d7fd5e"
+    },
+    "held05.f64le": {
+      "bytes": 72488,
+      "sha256": "1837710741e427da762eb2713ec6bd8f01b811861629bbfbb1641c339e8df143"
+    },
+    "held06.f64le": {
+      "bytes": 54776,
+      "sha256": "aed05febaba5b29d5da7f20dc3874cf8c79a656933a94486a142d492b265638a"
+    },
+    "held07.f64le": {
+      "bytes": 69208,
+      "sha256": "cb2d3c432b76366ff1cfabf24517985859f18e7a833f2f372124cd5c300ee8ab"
+    },
+    "held08.f64le": {
+      "bytes": 65928,
+      "sha256": "97069409b032ad3922a6e47d47c397382d13fd62377c9b7ac454eed9633fcfd3"
+    },
+    "held09.f64le": {
+      "bytes": 48544,
+      "sha256": "49e8c6656df3b1a9f71530f4183c39ae37a3fe5b8b6e914d43cbd0eea7aa8450"
+    },
+    "held10.f64le": {
+      "bytes": 44936,
+      "sha256": "ee6c91b850f92f1381a57a54b67ec8a54a65073d48bb583e1d9bc3f63743266f"
+    },
+    "held11.f64le": {
+      "bytes": 65928,
+      "sha256": "a06126e7296260eb8c0e1c4e525ad87c50ce87f11d3b8829177ab9724a70fe1c"
+    },
+    "held12.f64le": {
+      "bytes": 65928,
+      "sha256": "06d8d1e63bb88995040f7236d1cfd3097e44981979d279aad63c85f80e07f062"
+    },
+    "held13.f64le": {
+      "bytes": 63632,
+      "sha256": "91bc0ee495e0774f9a9f4c9f035ad621032274a6dc423366c0dea79747e637fd"
+    },
+    "held14.f64le": {
+      "bytes": 103320,
+      "sha256": "72afbf8ef7d0085a334709e38c7a087088e73c1e1f029e3fdd269e0abaed7de3"
+    }
+  }
+}

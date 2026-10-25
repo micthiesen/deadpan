@@ -54,12 +54,14 @@ def main():
         for name in ("Assets.car", "Deadpan.icns"):
             shutil.copy2(compiled / name, resources / name)
         shutil.copy2(binary, macos / "deadpan-app")
-        # The transcription worker runs beside the app executable.
-        worker = binary.parent / "deadpan-transcribe"
-        if worker.is_file() and os.access(worker, os.X_OK):
-            shutil.copy2(worker, macos / "deadpan-transcribe")
-        else:
-            print(f"warning: {worker} is missing; transcription will be unavailable in this bundle")
+        # Local speech workers resolve beside the app executable.
+        for name, purpose in (("deadpan-transcribe", "transcription"),
+                              ("deadpan-align", "word refinement")):
+            worker = binary.parent / name
+            if worker.is_file() and os.access(worker, os.X_OK):
+                shutil.copy2(worker, macos / name)
+            else:
+                print(f"warning: {worker} is missing; {purpose} will be unavailable in this bundle")
         info = {
             "CFBundleDevelopmentRegion": "en",
             "CFBundleDisplayName": "Deadpan",

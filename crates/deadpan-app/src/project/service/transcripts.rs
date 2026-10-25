@@ -139,6 +139,14 @@ impl Service {
         &mut self,
         request: crate::project::CorrectionRequest,
     ) {
+        self.change_corrections_with_lifecycle(request, None);
+    }
+
+    fn change_corrections_with_lifecycle(
+        &mut self,
+        request: crate::project::CorrectionRequest,
+        lifecycle_epoch: Option<u64>,
+    ) {
         let crate::project::CorrectionRequest {
             expected_session,
             attempt,
@@ -148,6 +156,7 @@ impl Service {
             transcript: seen_transcript,
             activity: seen_activity,
         } = request;
+        let mut interrupted = false;
         let result = (|| -> Result<Arc<Workspace>> {
             let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
             if workspace.session != expected_session {
@@ -188,9 +197,16 @@ impl Service {
                 ));
             }
             let store = self.store.as_ref().ok_or("Open a project first")?;
+            let lifecycle = self.shared.job_board.lifecycle();
             let stored = store
-                .change_analysis_corrections(&key, expected_version, change)
-                .map_err(display)?;
+                .change_analysis_corrections_guarded(&key, expected_version, change, || {
+                    annotation_lifecycle_guard(&lifecycle, lifecycle_epoch)
+                })
+                .map_err(|error| {
+                    interrupted =
+                        matches!(error, deadpan_store::StoreError::AnalysisInterrupted(_));
+                    display(error)
+                })?;
             let transcript = match &workspace.transcript {
                 Some(_) => Some(Arc::new(crate::project::OriginalTranscript::new(
                     deadpan_cli::speech::stored_words(store, &key.content).ok_or(
@@ -227,7 +243,7 @@ impl Service {
         self.correction_save = Some(crate::project::TranscriptSave {
             session: expected_session,
             attempt,
-            interrupted: false,
+            interrupted,
             error,
         });
     }
@@ -283,4 +299,90 @@ fn require_original(workspace: &Workspace, content: &str, audio_stream: u32) -> 
         return Err("The analysis belongs to different media than the project's Original".into());
     }
     Ok(())
+}
+
+impl Service {
+    pub(super) fn accept_refinement_command(
+        &mut self,
+        request: crate::project::refinement::Request,
+    ) {
+        let prepared = (|| -> Result<crate::project::CorrectionRequest> {
+            let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
+            if !request.matches(workspace) {
+                return Err(
+                    "The project, transcript or corrections changed; request refinement again"
+                        .into(),
+                );
+            }
+            let lifecycle = self.shared.job_board.lifecycle();
+            annotation_lifecycle_guard(&lifecycle, Some(request.lifecycle_epoch))
+                .map_err(display)?;
+            let store = self.store.as_ref().ok_or("Open a project first")?;
+            if store.head_revision().map_err(display)? != request.expected_revision {
+                return Err(
+                    "The edit changed while reviewing timing; request refinement again".into(),
+                );
+            }
+            let key = &request.corrections.key;
+            require_original(workspace, &key.content, key.audio_stream)?;
+            let words = deadpan_cli::speech::stored_words(store, &key.content)
+                .ok_or("The captured transcript is no longer available")?;
+            if words.key != request.transcript.key || words.corrections_error.is_some() {
+                return Err(
+                    "The stored transcript or corrections changed; request refinement again".into(),
+                );
+            }
+            let stored = store.analysis_corrections(key).map_err(display)?;
+            let version = stored.as_ref().map_or(0, |stored| stored.version);
+            if version != request.corrections.version() {
+                return Err("The stored corrections changed; request refinement again".into());
+            }
+            let current = stored.map_or_else(
+                || {
+                    deadpan_analysis::Corrections::empty(deadpan_analysis::Corrections::clock_of(
+                        &words.proposal,
+                    ))
+                },
+                |stored| stored.corrections,
+            );
+            let corrections = request
+                .review
+                .accept(
+                    &words.proposal,
+                    &words.corrected,
+                    &current,
+                    &request.selected_words,
+                )
+                .map_err(display)?;
+            Ok(crate::project::CorrectionRequest {
+                expected_session: request.expected_session,
+                attempt: request.attempt,
+                key: key.clone(),
+                expected_version: version,
+                change: deadpan_store::CorrectionChange::Apply {
+                    corrections,
+                    label: "Accept approximate local word timing".to_owned(),
+                },
+                transcript: Some(request.transcript.clone()),
+                activity: workspace.speech_activity.clone(),
+            })
+        })();
+        match prepared {
+            Ok(prepared) => {
+                self.change_corrections_with_lifecycle(prepared, Some(request.lifecycle_epoch))
+            }
+            Err(error) => {
+                self.correction_save = Some(crate::project::TranscriptSave {
+                    session: request.expected_session,
+                    attempt: request.attempt,
+                    interrupted: self
+                        .shared
+                        .job_board
+                        .lifecycle()
+                        .interrupted_since(request.lifecycle_epoch),
+                    error: Some(error.to_string()),
+                });
+            }
+        }
+    }
 }

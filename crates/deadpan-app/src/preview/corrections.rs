@@ -282,13 +282,35 @@ impl DeadpanApp {
         let events = context.input(|input| input.events.clone());
         help_scroll::observe_composition(&events, &mut self.ime_composing);
         self.bindings.clear();
-        if pointer_focus_transition(&events) {
-            return;
-        }
         let ime = self.ime_composing
             || events
                 .iter()
                 .any(|event| matches!(event, egui::Event::Ime(_)));
+        if self.refinement.entry_focused(context) {
+            super::refinement::retain_native_activation(context, ime);
+        }
+        // A focused native Refine button owns Enter; do not turn its activation
+        // into Edit text before egui can process it.
+        if self.refinement.entry_focused(context)
+            && !ime
+            && events.iter().any(|event| {
+                matches!(
+                    event,
+                    egui::Event::Key {
+                        key: egui::Key::Enter,
+                        modifiers: egui::Modifiers::NONE,
+                        pressed: true,
+                        repeat: false,
+                        ..
+                    }
+                )
+            })
+        {
+            return;
+        }
+        if pointer_focus_transition(&events) {
+            return;
+        }
         // An open text draft owns Enter and Escape even after focus moved.
         let field = context.memory(|memory| memory.has_focus(egui::Id::new(TEXT_ID)))
             || self
@@ -343,6 +365,10 @@ impl DeadpanApp {
     }
 
     pub(super) fn corrections_sheet(&mut self, context: &egui::Context) {
+        if self.refinement.open() {
+            self.refinement_sheet(context);
+            return;
+        }
         let Some(workspace) = self.workspace.clone() else {
             self.correction = None;
             return;
@@ -865,6 +891,7 @@ impl DeadpanApp {
             .and_then(|item| items.iter().position(|(entry, _, _)| *entry == item));
         let mut clicked: Option<Item> = None;
         let mut button: Option<CorrectionKey> = None;
+        let mut refine = None;
         let width = (context.content_rect().width() - 64.0).clamp(300.0, 620.0);
         let words = workspace.transcript.as_ref();
         let pauses = workspace
@@ -995,8 +1022,18 @@ impl DeadpanApp {
                 ui.separator();
                 let stored = workspace.corrections.as_ref().and_then(|corrections| corrections.stored.as_ref());
                 let busy = draft.pending.is_some();
+                let pinned = matches!(draft.item, Some(Item::Word(index)) if words.is_some_and(|words| words.corrected(index)));
+                let refinement_language_problem = words.and_then(|words| super::refinement::language_problem(&words.key.language));
                 ui.horizontal_wrapped(|ui| {
                     let word = matches!(draft.item, Some(Item::Word(_)));
+                    let response = ui.add_enabled(word && refinement_language_problem.is_none() && !pinned && !busy && !draft.unsaved(),
+                        egui::Button::new("Refine word timing locally…"));
+                    self.refinement.set_entry(response.id);
+                    if response.clicked()
+                        && let Some(Item::Word(index)) = draft.item
+                    {
+                        refine = Some(index);
+                    }
                     for (label, key, enabled, action) in [
                         ("Previous / next", "h l", true, CorrectionKey::Next),
                         ("Edit text", "c", word && !busy, CorrectionKey::EditText),
@@ -1011,6 +1048,16 @@ impl DeadpanApp {
                         }
                     }
                 });
+                if matches!(draft.item, Some(Item::Word(_)))
+                    && let Some(problem) = &refinement_language_problem
+                {
+                    ui.weak(format!("Refinement unavailable: {problem}. Start edge and End edge remain available for manual adjustment."));
+                }
+                if pinned {
+                    ui.weak("This word's timing is manually pinned. Start edge and End edge remain available for explicit manual adjustment.");
+                } else if refinement_language_problem.is_none() && matches!(draft.item, Some(Item::Word(_))) {
+                    ui.weak("Tab to Refine word timing locally and press Enter to request an approximate proposal.");
+                }
                 ui.horizontal_wrapped(|ui| {
                     let undo = stored.and_then(|stored| stored.undo.as_deref());
                     let redo = stored.and_then(|stored| stored.redo.as_deref());
@@ -1044,6 +1091,9 @@ impl DeadpanApp {
                 );
             });
         self.correction = Some(draft);
+        if let Some(word) = refine {
+            self.start_refinement(word, context);
+        }
         if let Some(item) = clicked
             && let Some(draft) = &mut self.correction
         {
@@ -1218,5 +1268,48 @@ fn capitalized(text: &str) -> String {
     match chars.next() {
         Some(first) => first.to_uppercase().chain(chars).collect(),
         None => String::new(),
+    }
+}
+
+impl DeadpanApp {
+    pub(super) fn finish_refinement_correction(&mut self) {
+        if let Some(draft) = &mut self.correction {
+            draft.message = Some("Saved approximate local word timing as one correction. Existing cuts and other word edges are unchanged.".into());
+            draft.error = None;
+            draft.bounds = None;
+            draft.edge = None;
+            draft.focus_pending = true;
+        }
+        self.after_correction();
+    }
+
+    pub(super) fn restore_correction_focus(&mut self) {
+        if let Some(draft) = &mut self.correction {
+            draft.focus_pending = true;
+        }
+    }
+
+    /// Manual adjustment begins from the retained current edges. An unavailable
+    /// model candidate never becomes a prefilled manual acceptance.
+    pub(super) fn begin_refinement_manual(&mut self, index: usize) {
+        let bounds = self
+            .workspace
+            .as_ref()
+            .and_then(|workspace| workspace.transcript.as_ref())
+            .and_then(|transcript| transcript.transcript.words().get(index))
+            .map(|word| {
+                (
+                    u64::from(word.start_cs) * CENTISECOND_SAMPLES,
+                    u64::from(word.end_cs) * CENTISECOND_SAMPLES,
+                )
+            });
+        if let Some(draft) = &mut self.correction {
+            draft.item = Some(Item::Word(index));
+            draft.edge = Some(Edge::Start);
+            draft.bounds = bounds;
+            draft.text = None;
+            draft.focus_pending = true;
+            draft.message = Some("Manual adjustment of existing edges: h/l moves 10 ms, b/e chooses an edge, Enter applies, Esc discards.".into());
+        }
     }
 }

@@ -143,6 +143,9 @@ impl PackUpdate {
         if self.pack.supports(Operation::BridgeHold) || baseline.supports(Operation::BridgeHold) {
             validate_bridge_update(&self.pack, &baseline)?;
         }
+        if self.pack.supports(Operation::RefineWords) || baseline.supports(Operation::RefineWords) {
+            validate_refinement_update(&self.pack, &baseline)?;
+        }
         if self
             .pack
             .operations
@@ -166,6 +169,32 @@ impl PackUpdate {
             )
         })
     }
+}
+
+/// Native word refinement assembles one exact original checkpoint using
+/// compiled byte ranges and uses pinned normalization/dictionary semantics.
+/// A signed metadata update cannot change that source/runtime contract.
+fn validate_refinement_update(
+    pack: &PackManifest,
+    baseline: &PackManifest,
+) -> Result<(), PackError> {
+    if pack.operations != baseline.operations
+        || pack.model_family != baseline.model_family
+        || pack.runtime_id != baseline.runtime_id
+        || pack.runtime_versions != baseline.runtime_versions
+        || pack.languages != baseline.languages
+        || pack.memory_bytes != baseline.memory_bytes
+        || pack.temporary_bytes != baseline.temporary_bytes
+        || pack.constraints != baseline.constraints
+        || pack.files != baseline.files
+        || pack.licenses != baseline.licenses
+    {
+        return Err(refuse(
+            "UpdateIncompatible",
+            "word-refinement runtime, original model data, dictionary or terms changed; update the qualified application first",
+        ));
+    }
+    Ok(())
 }
 
 /// Extension data updates have no independently qualified replacement-weight
@@ -942,3 +971,6 @@ mod tests;
 
 #[cfg(test)]
 mod extension_tests;
+
+#[cfg(test)]
+mod refinement_tests;

@@ -12,6 +12,9 @@
 
 use std::path::{Path, PathBuf};
 
+mod refinement;
+pub use refinement::{qualify_refinement_worker, refinement_content_pins};
+
 /// Downloader baseline below `Contents`.
 pub const HELPERS_DIRECTORY: &str = "Resources/helpers";
 /// Bundled FFmpeg libraries below `Contents`.

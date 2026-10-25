@@ -104,11 +104,26 @@ impl ProjectStore {
         expected_version: u64,
         change: CorrectionChange,
     ) -> Result<StoredCorrections, StoreError> {
+        self.change_analysis_corrections_guarded(key, expected_version, change, || Ok(()))
+    }
+
+    /// Apply one correction only while the caller's captured lifecycle and
+    /// analysis identities remain current. Rejection at admission or directly
+    /// before commit rolls back the value, version and both history stacks.
+    pub fn change_analysis_corrections_guarded(
+        &self,
+        key: &CorrectionsKey,
+        expected_version: u64,
+        change: CorrectionChange,
+        mut guard: impl FnMut() -> Result<(), StoreError>,
+    ) -> Result<StoredCorrections, StoreError> {
         self.require_writer()?;
         key.validate()?;
         let transaction = self.connection.unchecked_transaction()?;
+        guard()?;
         if let CorrectionChange::DiscardUnreadable { clock } = change {
             let stored = discard_unreadable(&transaction, key, expected_version, clock)?;
+            guard()?;
             transaction.commit()?;
             return Ok(stored);
         }
@@ -197,6 +212,7 @@ impl ProjectStore {
         }
         let stored = read(&transaction, key)?
             .ok_or_else(|| invalid("corrections vanished while changing"))?;
+        guard()?;
         transaction.commit()?;
         Ok(stored)
     }

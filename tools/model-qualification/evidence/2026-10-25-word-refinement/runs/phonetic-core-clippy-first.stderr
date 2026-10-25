@@ -1,0 +1,82 @@
+    Checking errno v0.3.14
+    Checking zerocopy v0.8.57
+    Checking num-traits v0.2.19
+    Checking deadpan-chaos v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-chaos)
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Checking rustix v1.1.5
+    Checking tempfile v3.27.0
+    Checking rusty-fork v0.3.1
+    Checking ppv-lite86 v0.2.21
+    Checking rand_chacha v0.9.0
+    Checking proptest v1.11.0
+    Checking deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+error: manual implementation of `.is_multiple_of()`
+   --> crates/deadpan-analysis/src/refinement/alignment.rs:163:12
+    |
+163 |         if state % 2 != 0 {
+    |            ^^^^^^^^^^^^^^ help: replace with: `!state.is_multiple_of(2)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#manual_is_multiple_of
+    = note: `-D clippy::manual-is-multiple-of` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::manual_is_multiple_of)]`
+
+error: this `if` statement can be collapsed
+   --> crates/deadpan-analysis/src/refinement/guard.rs:129:9
+    |
+129 | /         if let Some(index) = step.observed_index {
+130 | |             if step.operation == EditOperation::InsertObserved && greedy[index].mean_posterior >= 0.5 {
+131 | |                 run.push(index);
+132 | |                 continue;
+133 | |             }
+134 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#collapsible_if
+    = note: `-D clippy::collapsible-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+    |
+129 ~         if let Some(index) = step.observed_index
+130 ~             && step.operation == EditOperation::InsertObserved && greedy[index].mean_posterior >= 0.5 {
+131 |                 run.push(index);
+132 |                 continue;
+133 ~             }
+    |
+
+error: this `if` statement can be collapsed
+  --> crates/deadpan-analysis/src/refinement/lexical.rs:73:13
+   |
+73 | /             if let Some((prefix, suffix)) = spelling.rsplit_once('(') {
+74 | |                 if suffix.strip_suffix(')').is_some_and(|s| !s.is_empty() && s.chars().all(|c| in_ranges(c, unicode::DECIMAL))) {
+75 | |                     stem = prefix;
+76 | |                 }
+77 | |             }
+   | |_____________^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#collapsible_if
+help: collapse nested if block
+   |
+73 ~             if let Some((prefix, suffix)) = spelling.rsplit_once('(')
+74 ~                 && suffix.strip_suffix(')').is_some_and(|s| !s.is_empty() && s.chars().all(|c| in_ranges(c, unicode::DECIMAL))) {
+75 |                     stem = prefix;
+76 ~                 }
+   |
+
+error: could not compile `deadpan-analysis` (lib) due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: this `if` statement can be collapsed
+  --> crates/deadpan-analysis/src/refinement/tests.rs:67:13
+   |
+67 | /             if let Some((score, labels)) = brute(&logp, frames, &phones) {
+68 | |                 if expected.as_ref().is_none_or(|p| score > p.0) { expected = Some((score, labels, path)); }
+69 | |             }
+   | |_____________^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#collapsible_if
+help: collapse nested if block
+   |
+67 ~             if let Some((score, labels)) = brute(&logp, frames, &phones)
+68 ~                 && expected.as_ref().is_none_or(|p| score > p.0) { expected = Some((score, labels, path)); }
+   |
+
+error: could not compile `deadpan-analysis` (lib test) due to 4 previous errors

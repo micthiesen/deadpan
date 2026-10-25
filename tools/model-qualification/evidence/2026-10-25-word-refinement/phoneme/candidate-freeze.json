@@ -1,0 +1,661 @@
+{
+  "policy": {
+    "path": "/private/tmp/deadpan-word-refinement-2026-10-25/phoneme/align.py",
+    "bytes": 8188,
+    "sha256": "bcc450c5f628b59b22db7f903ccd5d82d4c9f730908f1f81c6b9c1dbdb57e787"
+  },
+  "policy_configuration": {
+    "rule": "phoneme-prior-pilot-1",
+    "sample_rate": 16000,
+    "feature_hop": 160,
+    "output_step": 320,
+    "max_audio_samples": 480000,
+    "max_phones": 256,
+    "max_pronunciation_paths": 128,
+    "word_mean_posterior_min": 0.5,
+    "phone_mean_posterior_min": 0.1,
+    "word_min_frames": 1,
+    "blank_id": 0,
+    "normalization": "author sequential piecewise transform + pinned global stats; no waveform normalization",
+    "clock": "centered Mel frame0 at input sample0; TDNN stride2; intervals [frame*320,end_frame*320), clipped at PCM end"
+  },
+  "model": {
+    "path": "/private/tmp/deadpan-word-refinement-2026-10-25/phoneme/export-first/phoneme-alpha-0.6.onnx",
+    "bytes": 19217986,
+    "sha256": "640bdf5da6928ce096c8d4d9216fb0613dfc7310b42d9182bd64214fa4719cbb"
+  },
+  "upstream_pins": {
+    "path": "/private/tmp/deadpan-word-refinement-2026-10-25/phoneme/download-pins.json",
+    "bytes": 4264,
+    "sha256": "de5c494669f2e928b82919d5c8af0531344d360024a94f5d510e63e5024d38d1"
+  },
+  "checkpoints": [
+    {
+      "alpha": "0.0",
+      "state_keys": [
+        "model.encoder.layers.0.0.weight",
+        "model.encoder.layers.0.0.bias",
+        "model.encoder.layers.0.2.running_mean",
+        "model.encoder.layers.0.2.running_var",
+        "model.encoder.layers.0.2.num_batches_tracked",
+        "model.encoder.layers.1.0.weight",
+        "model.encoder.layers.1.0.bias",
+        "model.encoder.layers.1.2.running_mean",
+        "model.encoder.layers.1.2.running_var",
+        "model.encoder.layers.1.2.num_batches_tracked",
+        "model.encoder.layers.2.0.weight",
+        "model.encoder.layers.2.0.bias",
+        "model.encoder.layers.2.2.running_mean",
+        "model.encoder.layers.2.2.running_var",
+        "model.encoder.layers.2.2.num_batches_tracked",
+        "model.encoder.layers.3.ffn.0.weight",
+        "model.encoder.layers.3.ffn.0.bias",
+        "model.encoder.layers.3.ffn.3.weight",
+        "model.encoder.layers.3.ffn.3.bias",
+        "model.encoder.layers.3.ffn.6.weight",
+        "model.encoder.layers.3.ffn.6.bias",
+        "model.encoder.layers.3.ffn.9.weight",
+        "model.encoder.layers.3.ffn.9.bias",
+        "model.encoder.layers.3.ffn.12.weight",
+        "model.encoder.layers.3.ffn.12.bias",
+        "model.encoder_output_layer.weight",
+        "model.encoder_output_layer.bias"
+      ],
+      "extra": {},
+      "tensors": [
+        {
+          "name": "encoder.layers.0.0.weight",
+          "shape": [
+            640,
+            80,
+            5
+          ],
+          "dtype": "torch.float32",
+          "numel": 256000,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.0.0.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.0.2.running_mean",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.0.2.running_var",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.0.2.num_batches_tracked",
+          "shape": [],
+          "dtype": "torch.int64",
+          "numel": 1,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.1.0.weight",
+          "shape": [
+            640,
+            640,
+            3
+          ],
+          "dtype": "torch.float32",
+          "numel": 1228800,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.1.0.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.1.2.running_mean",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.1.2.running_var",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.1.2.num_batches_tracked",
+          "shape": [],
+          "dtype": "torch.int64",
+          "numel": 1,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.2.0.weight",
+          "shape": [
+            640,
+            640,
+            3
+          ],
+          "dtype": "torch.float32",
+          "numel": 1228800,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.2.0.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.2.2.running_mean",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.2.2.running_var",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.2.2.num_batches_tracked",
+          "shape": [],
+          "dtype": "torch.int64",
+          "numel": 1,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.0.weight",
+          "shape": [
+            640,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 409600,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.0.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.3.weight",
+          "shape": [
+            640,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 409600,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.3.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.6.weight",
+          "shape": [
+            640,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 409600,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.6.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.9.weight",
+          "shape": [
+            640,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 409600,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.9.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.12.weight",
+          "shape": [
+            640,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 409600,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.12.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder_output_layer.weight",
+          "shape": [
+            41,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 26240,
+          "finite": true
+        },
+        {
+          "name": "encoder_output_layer.bias",
+          "shape": [
+            41
+          ],
+          "dtype": "torch.float32",
+          "numel": 41,
+          "finite": true
+        }
+      ],
+      "parameters": 4793001,
+      "checkpoint_sha256": "8a604d856fba57ca14793dd287f8b2613b3cdad05ae41ceb357417780bc6b3b7"
+    },
+    {
+      "alpha": "0.6",
+      "state_keys": [
+        "model.encoder.layers.0.0.weight",
+        "model.encoder.layers.0.0.bias",
+        "model.encoder.layers.0.2.running_mean",
+        "model.encoder.layers.0.2.running_var",
+        "model.encoder.layers.0.2.num_batches_tracked",
+        "model.encoder.layers.1.0.weight",
+        "model.encoder.layers.1.0.bias",
+        "model.encoder.layers.1.2.running_mean",
+        "model.encoder.layers.1.2.running_var",
+        "model.encoder.layers.1.2.num_batches_tracked",
+        "model.encoder.layers.2.0.weight",
+        "model.encoder.layers.2.0.bias",
+        "model.encoder.layers.2.2.running_mean",
+        "model.encoder.layers.2.2.running_var",
+        "model.encoder.layers.2.2.num_batches_tracked",
+        "model.encoder.layers.3.ffn.0.weight",
+        "model.encoder.layers.3.ffn.0.bias",
+        "model.encoder.layers.3.ffn.3.weight",
+        "model.encoder.layers.3.ffn.3.bias",
+        "model.encoder.layers.3.ffn.6.weight",
+        "model.encoder.layers.3.ffn.6.bias",
+        "model.encoder.layers.3.ffn.9.weight",
+        "model.encoder.layers.3.ffn.9.bias",
+        "model.encoder.layers.3.ffn.12.weight",
+        "model.encoder.layers.3.ffn.12.bias",
+        "model.encoder_output_layer.weight",
+        "model.encoder_output_layer.bias"
+      ],
+      "extra": {},
+      "tensors": [
+        {
+          "name": "encoder.layers.0.0.weight",
+          "shape": [
+            640,
+            80,
+            5
+          ],
+          "dtype": "torch.float32",
+          "numel": 256000,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.0.0.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.0.2.running_mean",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.0.2.running_var",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.0.2.num_batches_tracked",
+          "shape": [],
+          "dtype": "torch.int64",
+          "numel": 1,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.1.0.weight",
+          "shape": [
+            640,
+            640,
+            3
+          ],
+          "dtype": "torch.float32",
+          "numel": 1228800,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.1.0.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.1.2.running_mean",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.1.2.running_var",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.1.2.num_batches_tracked",
+          "shape": [],
+          "dtype": "torch.int64",
+          "numel": 1,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.2.0.weight",
+          "shape": [
+            640,
+            640,
+            3
+          ],
+          "dtype": "torch.float32",
+          "numel": 1228800,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.2.0.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.2.2.running_mean",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.2.2.running_var",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.2.2.num_batches_tracked",
+          "shape": [],
+          "dtype": "torch.int64",
+          "numel": 1,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.0.weight",
+          "shape": [
+            640,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 409600,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.0.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.3.weight",
+          "shape": [
+            640,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 409600,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.3.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.6.weight",
+          "shape": [
+            640,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 409600,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.6.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.9.weight",
+          "shape": [
+            640,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 409600,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.9.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.12.weight",
+          "shape": [
+            640,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 409600,
+          "finite": true
+        },
+        {
+          "name": "encoder.layers.3.ffn.12.bias",
+          "shape": [
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 640,
+          "finite": true
+        },
+        {
+          "name": "encoder_output_layer.weight",
+          "shape": [
+            41,
+            640
+          ],
+          "dtype": "torch.float32",
+          "numel": 26240,
+          "finite": true
+        },
+        {
+          "name": "encoder_output_layer.bias",
+          "shape": [
+            41
+          ],
+          "dtype": "torch.float32",
+          "numel": 41,
+          "finite": true
+        }
+      ],
+      "parameters": 4793001,
+      "checkpoint_sha256": "4070c3b89fb27129e2999f550ddb55c747ec77da843fa8a520989b8c5d09723f"
+    }
+  ],
+  "tokenizer": "pinned CMUDict phone order; stress removed; known pronunciation alternatives; no GPL wrapper/G2P",
+  "preprocessing": "deterministic1.0x; exact pure author nonlinear+stats; equivalence established",
+  "sample_clock": "16k input; centered10msMel hop;20msoutput; spans [start_frame*320,end_frame*320), clipped to PCM end",
+  "development_cases": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "fresh_heldout_read": false,
+  "offer_thresholds": "word mean posterior>=0.5 and every phone mean>=0.1; no subsequent tuning",
+  "warning": "Development improvements include failures; no product completion or fresh-heldout claim.",
+  "experiment": {
+    "path": "/private/tmp/deadpan-word-refinement-2026-10-25/phoneme/develop.py",
+    "bytes": 4311,
+    "sha256": "c68e2ade89d2befc353bab15ecb7b420eb157961c804870d5914876d60c73038"
+  },
+  "export_proof": {
+    "path": "/private/tmp/deadpan-word-refinement-2026-10-25/phoneme/prove_export.py",
+    "bytes": 4628,
+    "sha256": "f0fef8c045141fd2096129639eef5952f1f02334aacfe721ee76d265752f0080"
+  },
+  "versions": {
+    "torch": "2.8.0",
+    "torchaudio": "2.8.0",
+    "onnx_version": "1.19.1",
+    "onnxruntime": "1.31.0",
+    "numpy": "2.3.3"
+  },
+  "license_evidence": {
+    "author_repo": "BSD2 root; no separately explicit weight license found",
+    "cmudict": "original CMU permissive data notice retained; Python GPL wrapper excluded",
+    "runtime": "PyTorch/Torchaudio source notices and ONNX RuntimeMIT; dependencies retained by exact env receipt"
+  },
+  "retained_failures": [
+    "phoneme-inspect-first: local inspect.py shadowed stdlib; moved into failed-import/",
+    "phoneme-inspect-second: AST assertion included nonexecuted tokenizer main guard",
+    "phoneme-inspect-third: weights_only refused pathlib.PosixPath",
+    "phoneme-inspect-fourth: Python3.13 internal class module required explicit legacy safe-global name"
+  ],
+  "successful_receipt_labels": [
+    "phoneme-fetch-first",
+    "phoneme-setup-first",
+    "phoneme-inspect-fifth",
+    "phoneme-development-first",
+    "phoneme-summary-first",
+    "phoneme-export-first",
+    "phoneme-env-final"
+  ]
+}

@@ -1,0 +1,31 @@
+   Compiling objc2 v0.6.4
+   Compiling hashbrown v0.17.1
+   Compiling tempfile v3.27.0
+   Compiling deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+   Compiling smallvec v1.16.1
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling uuid v1.26.1
+   Compiling deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+error: failed to run custom build command for `deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)`
+
+Caused by:
+  process didn't exit successfully: `/tmp/deadpan-follow-creep-2026-10-24/target/debug/build/deadpan-source-b8493d8d09d89423/build-script-build` (exit status: 101)
+  --- stdout
+  cargo:rerun-if-env-changed=DEADPAN_FFMPEG_PREFIX
+  cargo:rerun-if-changed=src/decoder.c
+  cargo:rerun-if-changed=src/decoder.h
+  cargo:rerun-if-changed=src/hardware.h
+  cargo:rerun-if-changed=src/vp9.h
+  cargo:rerun-if-changed=src/prores.h
+  cargo:rerun-if-changed=src/av1.h
+  cargo:rerun-if-changed=src/deinterlace.c
+  cargo:rerun-if-changed=src/deinterlace.h
+  cargo:rerun-if-changed=src/audio_decoder.c
+  cargo:rerun-if-changed=src/audio_decoder.h
+
+  --- stderr
+
+  thread 'main' (187282480) panicked at native/deadpan-source/build.rs:44:10:
+  DEADPAN_FFMPEG_PREFIX must name the qualified FFmpeg 8.0.3 prefix
+  note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+warning: build failed, waiting for other jobs to finish...

@@ -149,9 +149,11 @@ closer than a pixel.
 
 ## Remaining
 
-Audition of the selected word or pause from the sheet, correcting sentence
-boundaries, and a local alignment pass that proposes word edges (corrections
-snap to measured energy edges only).
+General audition of the selected word or pause directly from the sheet and
+correcting sentence boundaries remain. [Local English word refinement](WORD_REFINEMENT.md)
+now provides a measured waveform, comparison-context audition, manual adjustment
+and explicit proposal acceptance. Existing manual pins and removed-word regions
+survive; one correction Undo restores the prior state.
 
 Headless correction is implemented: `corrections <project> --json <request.json>
 [--dry-run]` in `crates/deadpan-cli/src/corrections.rs` accepts the changes

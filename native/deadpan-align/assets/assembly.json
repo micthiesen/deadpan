@@ -1,0 +1,457 @@
+{
+  "schema": "deadpan-phoneme-assembly-1",
+  "source": {
+    "bytes": 57562900,
+    "sha256": "4070c3b89fb27129e2999f550ddb55c747ec77da843fa8a520989b8c5d09723f"
+  },
+  "onnx": {
+    "bytes": 19219161,
+    "sha256": "fe1e1890f968e7c19c0d4dde3ac7e15dfca15fd3bf2f9d5c41b2a5d1f120c57d"
+  },
+  "template": {
+    "bytes": 19219161,
+    "sha256": "298a8c669ee3fb8e0d50294eaa9317f535e2ba0ee6afde97663936d1ea58e770"
+  },
+  "template_gzip": {
+    "bytes": 22230,
+    "sha256": "31e5325dba8a7c25827997e0ce6df6887d7b63656069a6469cb29133ad79ac78"
+  },
+  "patches": [
+    {
+      "initializer": "encoder.layers.0.0.weight",
+      "destination_offset": 30659,
+      "checkpoint_tensor": "model.encoder.layers.0.0.weight",
+      "archive_entry": "archive/data/0",
+      "zip_local_header_offset": 14458,
+      "zip_payload_offset": 14528,
+      "storage_offset_elements": 0,
+      "source_offset": 14528,
+      "length": 1024000,
+      "shape": [
+        640,
+        80,
+        5
+      ],
+      "dtype": "f32le",
+      "sha256": "16a50432310cfa56c3e07f40feed5e4380a0ffe05980f7c90a691140a8a4e55e"
+    },
+    {
+      "initializer": "encoder.layers.0.0.bias",
+      "destination_offset": 1054695,
+      "checkpoint_tensor": "model.encoder.layers.0.0.bias",
+      "archive_entry": "archive/data/1",
+      "zip_local_header_offset": 1038544,
+      "zip_payload_offset": 1038592,
+      "storage_offset_elements": 0,
+      "source_offset": 1038592,
+      "length": 2560,
+      "shape": [
+        640
+      ],
+      "dtype": "f32le",
+      "sha256": "638919058712edfa2ed07f90206c682aa89990288c9afad572c3ca0fb006a953"
+    },
+    {
+      "initializer": "encoder.layers.0.2.running_mean",
+      "destination_offset": 1057299,
+      "checkpoint_tensor": "model.encoder.layers.0.2.running_mean",
+      "archive_entry": "archive/data/2",
+      "zip_local_header_offset": 10885648,
+      "zip_payload_offset": 10885696,
+      "storage_offset_elements": 0,
+      "source_offset": 10885696,
+      "length": 2560,
+      "shape": [
+        640
+      ],
+      "dtype": "f32le",
+      "sha256": "f3dfda64d7c50f591b06856f39a19fddfed429e9d4b446aceabb7d5330685a23"
+    },
+    {
+      "initializer": "encoder.layers.0.2.running_var",
+      "destination_offset": 1059902,
+      "checkpoint_tensor": "model.encoder.layers.0.2.running_var",
+      "archive_entry": "archive/data/3",
+      "zip_local_header_offset": 14279124,
+      "zip_payload_offset": 14279232,
+      "storage_offset_elements": 0,
+      "source_offset": 14279232,
+      "length": 2560,
+      "shape": [
+        640
+      ],
+      "dtype": "f32le",
+      "sha256": "62397e945360d39841a9a27037fe2adce6728d1159b848c03904f7c9d4613755"
+    },
+    {
+      "initializer": "encoder.layers.1.0.weight",
+      "destination_offset": 1062509,
+      "checkpoint_tensor": "model.encoder.layers.1.0.weight",
+      "archive_entry": "archive/data/5",
+      "zip_local_header_offset": 26173076,
+      "zip_payload_offset": 26173184,
+      "storage_offset_elements": 0,
+      "source_offset": 26173184,
+      "length": 4915200,
+      "shape": [
+        640,
+        640,
+        3
+      ],
+      "dtype": "f32le",
+      "sha256": "b50ca004ddb55994bd642e78863c5e72c6f715511c8b358faf23fbf29fd651c7"
+    },
+    {
+      "initializer": "encoder.layers.1.0.bias",
+      "destination_offset": 5977745,
+      "checkpoint_tensor": "model.encoder.layers.1.0.bias",
+      "archive_entry": "archive/data/6",
+      "zip_local_header_offset": 44204560,
+      "zip_payload_offset": 44204608,
+      "storage_offset_elements": 0,
+      "source_offset": 44204608,
+      "length": 2560,
+      "shape": [
+        640
+      ],
+      "dtype": "f32le",
+      "sha256": "c6e3fdd7d8eab6d11f8fa26df2230067264c0d50af72c2bac1c401228369081f"
+    },
+    {
+      "initializer": "encoder.layers.1.2.running_mean",
+      "destination_offset": 5980349,
+      "checkpoint_tensor": "model.encoder.layers.1.2.running_mean",
+      "archive_entry": "archive/data/7",
+      "zip_local_header_offset": 50769744,
+      "zip_payload_offset": 50769792,
+      "storage_offset_elements": 0,
+      "source_offset": 50769792,
+      "length": 2560,
+      "shape": [
+        640
+      ],
+      "dtype": "f32le",
+      "sha256": "7fe0693d7e1809240bd9cd0fb1b718c6bcb9f952674a1844a0cd65e233634c3e"
+    },
+    {
+      "initializer": "encoder.layers.1.2.running_var",
+      "destination_offset": 5982952,
+      "checkpoint_tensor": "model.encoder.layers.1.2.running_var",
+      "archive_entry": "archive/data/8",
+      "zip_local_header_offset": 54060692,
+      "zip_payload_offset": 54060800,
+      "storage_offset_elements": 0,
+      "source_offset": 54060800,
+      "length": 2560,
+      "shape": [
+        640
+      ],
+      "dtype": "f32le",
+      "sha256": "c7be299f9094909356451ac463609c39ab73ffc94170df83cb450b7eb47db3ac"
+    },
+    {
+      "initializer": "encoder.layers.2.0.weight",
+      "destination_offset": 5985559,
+      "checkpoint_tensor": "model.encoder.layers.2.0.weight",
+      "archive_entry": "archive/data/10",
+      "zip_local_header_offset": 1041168,
+      "zip_payload_offset": 1041280,
+      "storage_offset_elements": 0,
+      "source_offset": 1041280,
+      "length": 4915200,
+      "shape": [
+        640,
+        640,
+        3
+      ],
+      "dtype": "f32le",
+      "sha256": "851fde6a8bc822cac77064796ee1835e2eff50d4259e63325e04101b758e3fed"
+    },
+    {
+      "initializer": "encoder.layers.2.0.bias",
+      "destination_offset": 10900795,
+      "checkpoint_tensor": "model.encoder.layers.2.0.bias",
+      "archive_entry": "archive/data/11",
+      "zip_local_header_offset": 5956496,
+      "zip_payload_offset": 5956608,
+      "storage_offset_elements": 0,
+      "source_offset": 5956608,
+      "length": 2560,
+      "shape": [
+        640
+      ],
+      "dtype": "f32le",
+      "sha256": "83c73289518288c4656ad90c752548fd5fd7bee1500a3f8f123fa3ac531cb640"
+    },
+    {
+      "initializer": "encoder.layers.2.2.running_mean",
+      "destination_offset": 10903399,
+      "checkpoint_tensor": "model.encoder.layers.2.2.running_mean",
+      "archive_entry": "archive/data/12",
+      "zip_local_header_offset": 5959184,
+      "zip_payload_offset": 5959296,
+      "storage_offset_elements": 0,
+      "source_offset": 5959296,
+      "length": 2560,
+      "shape": [
+        640
+      ],
+      "dtype": "f32le",
+      "sha256": "c196bc91b8cbce679656f95b6eefb4886fe9502e2e7e4179ca15cadf7c6cb1d7"
+    },
+    {
+      "initializer": "encoder.layers.2.2.running_var",
+      "destination_offset": 10906002,
+      "checkpoint_tensor": "model.encoder.layers.2.2.running_var",
+      "archive_entry": "archive/data/13",
+      "zip_local_header_offset": 5961872,
+      "zip_payload_offset": 5961984,
+      "storage_offset_elements": 0,
+      "source_offset": 5961984,
+      "length": 2560,
+      "shape": [
+        640
+      ],
+      "dtype": "f32le",
+      "sha256": "7bf877dc91bc89b74d0e92494036b55a537d310165a6d6ffdc7f8b0c0966982a"
+    },
+    {
+      "initializer": "encoder.layers.3.ffn.0.weight",
+      "destination_offset": 10908609,
+      "checkpoint_tensor": "model.encoder.layers.3.ffn.0.weight",
+      "archive_entry": "archive/data/15",
+      "zip_local_header_offset": 5964696,
+      "zip_payload_offset": 5964800,
+      "storage_offset_elements": 0,
+      "source_offset": 5964800,
+      "length": 1638400,
+      "shape": [
+        640,
+        640
+      ],
+      "dtype": "f32le",
+      "sha256": "a50348ad96ffab10bf7014321d898cd031f76f33cb1252bdf8eda1f17a6a8954"
+    },
+    {
+      "initializer": "encoder.layers.3.ffn.0.bias",
+      "destination_offset": 12547049,
+      "checkpoint_tensor": "model.encoder.layers.3.ffn.0.bias",
+      "archive_entry": "archive/data/16",
+      "zip_local_header_offset": 7603216,
+      "zip_payload_offset": 7603328,
+      "storage_offset_elements": 0,
+      "source_offset": 7603328,
+      "length": 2560,
+      "shape": [
+        640
+      ],
+      "dtype": "f32le",
+      "sha256": "9a865b650c5655382617dd20f2e41847cc17cf6ce5bbebd3c8871e426a280301"
+    },
+    {
+      "initializer": "encoder.layers.3.ffn.3.weight",
+      "destination_offset": 12549656,
+      "checkpoint_tensor": "model.encoder.layers.3.ffn.3.weight",
+      "archive_entry": "archive/data/17",
+      "zip_local_header_offset": 7605904,
+      "zip_payload_offset": 7606016,
+      "storage_offset_elements": 0,
+      "source_offset": 7606016,
+      "length": 1638400,
+      "shape": [
+        640,
+        640
+      ],
+      "dtype": "f32le",
+      "sha256": "b0e460582323580629d0bc80ed46805856df7d504001d2d8248a4eca88f3a624"
+    },
+    {
+      "initializer": "encoder.layers.3.ffn.3.bias",
+      "destination_offset": 14188096,
+      "checkpoint_tensor": "model.encoder.layers.3.ffn.3.bias",
+      "archive_entry": "archive/data/18",
+      "zip_local_header_offset": 9244432,
+      "zip_payload_offset": 9244544,
+      "storage_offset_elements": 0,
+      "source_offset": 9244544,
+      "length": 2560,
+      "shape": [
+        640
+      ],
+      "dtype": "f32le",
+      "sha256": "5e8e1d7e90bfbc2d855a6196ae9beffeacbd951a22ee5c911eb96e57265ff5be"
+    },
+    {
+      "initializer": "encoder.layers.3.ffn.6.weight",
+      "destination_offset": 14190703,
+      "checkpoint_tensor": "model.encoder.layers.3.ffn.6.weight",
+      "archive_entry": "archive/data/19",
+      "zip_local_header_offset": 9247120,
+      "zip_payload_offset": 9247232,
+      "storage_offset_elements": 0,
+      "source_offset": 9247232,
+      "length": 1638400,
+      "shape": [
+        640,
+        640
+      ],
+      "dtype": "f32le",
+      "sha256": "115398c23bf54ecc26514da917f53bae04dee961388b5b853ad9a49c1ad82e7f"
+    },
+    {
+      "initializer": "encoder.layers.3.ffn.6.bias",
+      "destination_offset": 15829143,
+      "checkpoint_tensor": "model.encoder.layers.3.ffn.6.bias",
+      "archive_entry": "archive/data/20",
+      "zip_local_header_offset": 10888272,
+      "zip_payload_offset": 10888384,
+      "storage_offset_elements": 0,
+      "source_offset": 10888384,
+      "length": 2560,
+      "shape": [
+        640
+      ],
+      "dtype": "f32le",
+      "sha256": "0a166fdb6fe21ca773403bd77edbe65a1074f4cc5651b64b7724b04f3127b01e"
+    },
+    {
+      "initializer": "encoder.layers.3.ffn.9.weight",
+      "destination_offset": 15831750,
+      "checkpoint_tensor": "model.encoder.layers.3.ffn.9.weight",
+      "archive_entry": "archive/data/21",
+      "zip_local_header_offset": 10890960,
+      "zip_payload_offset": 10891072,
+      "storage_offset_elements": 0,
+      "source_offset": 10891072,
+      "length": 1638400,
+      "shape": [
+        640,
+        640
+      ],
+      "dtype": "f32le",
+      "sha256": "51aff68377bdd14c6bde8d72e677221417c9c26faeb91f895cf5974d703b373a"
+    },
+    {
+      "initializer": "encoder.layers.3.ffn.9.bias",
+      "destination_offset": 17470190,
+      "checkpoint_tensor": "model.encoder.layers.3.ffn.9.bias",
+      "archive_entry": "archive/data/22",
+      "zip_local_header_offset": 12529488,
+      "zip_payload_offset": 12529600,
+      "storage_offset_elements": 0,
+      "source_offset": 12529600,
+      "length": 2560,
+      "shape": [
+        640
+      ],
+      "dtype": "f32le",
+      "sha256": "c45473f198e9400072bfe52c33ecf233a8d8323b2000492acc16f3e9ec32be9c"
+    },
+    {
+      "initializer": "encoder.layers.3.ffn.12.weight",
+      "destination_offset": 17472798,
+      "checkpoint_tensor": "model.encoder.layers.3.ffn.12.weight",
+      "archive_entry": "archive/data/23",
+      "zip_local_header_offset": 12532176,
+      "zip_payload_offset": 12532288,
+      "storage_offset_elements": 0,
+      "source_offset": 12532288,
+      "length": 1638400,
+      "shape": [
+        640,
+        640
+      ],
+      "dtype": "f32le",
+      "sha256": "83229a1a2af1cba85bd4ca6ff07fa86618a0484b41759bc1611ec715cce6a500"
+    },
+    {
+      "initializer": "encoder.layers.3.ffn.12.bias",
+      "destination_offset": 19111239,
+      "checkpoint_tensor": "model.encoder.layers.3.ffn.12.bias",
+      "archive_entry": "archive/data/24",
+      "zip_local_header_offset": 14170704,
+      "zip_payload_offset": 14170816,
+      "storage_offset_elements": 0,
+      "source_offset": 14170816,
+      "length": 2560,
+      "shape": [
+        640
+      ],
+      "dtype": "f32le",
+      "sha256": "26b78046dadc3b63d2cade1363bd1de486ab0bf009e9240b344b09b0202e29ab"
+    },
+    {
+      "initializer": "encoder_output_layer.weight",
+      "destination_offset": 19113843,
+      "checkpoint_tensor": "model.encoder_output_layer.weight",
+      "archive_entry": "archive/data/25",
+      "zip_local_header_offset": 14173392,
+      "zip_payload_offset": 14173504,
+      "storage_offset_elements": 0,
+      "source_offset": 14173504,
+      "length": 104960,
+      "shape": [
+        41,
+        640
+      ],
+      "dtype": "f32le",
+      "sha256": "f28ce9eeb97ba2c7f43435dd22e0c216f7e0baf97e9d99f98f73adc2cd654ac3"
+    },
+    {
+      "initializer": "encoder_output_layer.bias",
+      "destination_offset": 19218840,
+      "checkpoint_tensor": "model.encoder_output_layer.bias",
+      "archive_entry": "archive/data/26",
+      "zip_local_header_offset": 14278480,
+      "zip_payload_offset": 14278592,
+      "storage_offset_elements": 0,
+      "source_offset": 14278592,
+      "length": 164,
+      "shape": [
+        41
+      ],
+      "dtype": "f32le",
+      "sha256": "659414f7a9dfeb1d284a699b985139518e303e6e1eb9919b0efe61abea4c1240"
+    }
+  ],
+  "unused_checkpoint_buffers": {
+    "encoder.layers.0.2.num_batches_tracked": {
+      "checkpoint_tensor": "model.encoder.layers.0.2.num_batches_tracked",
+      "archive_entry": "archive/data/4",
+      "zip_local_header_offset": 16331088,
+      "zip_payload_offset": 16331136,
+      "storage_offset_elements": 0,
+      "source_offset": 16331136,
+      "length": 8,
+      "shape": [],
+      "dtype": "i64le",
+      "sha256": "d171da7aed031d75bae7fe300082e9005edd07a71d50ae3def1a8ce699ef7cf1"
+    },
+    "encoder.layers.1.2.num_batches_tracked": {
+      "checkpoint_tensor": "model.encoder.layers.1.2.num_batches_tracked",
+      "archive_entry": "archive/data/9",
+      "zip_local_header_offset": 57556660,
+      "zip_payload_offset": 57556736,
+      "storage_offset_elements": 0,
+      "source_offset": 57556736,
+      "length": 8,
+      "shape": [],
+      "dtype": "i64le",
+      "sha256": "d171da7aed031d75bae7fe300082e9005edd07a71d50ae3def1a8ce699ef7cf1"
+    },
+    "encoder.layers.2.2.num_batches_tracked": {
+      "checkpoint_tensor": "model.encoder.layers.2.2.num_batches_tracked",
+      "archive_entry": "archive/data/14",
+      "zip_local_header_offset": 5964560,
+      "zip_payload_offset": 5964672,
+      "storage_offset_elements": 0,
+      "source_offset": 5964672,
+      "length": 8,
+      "shape": [],
+      "dtype": "i64le",
+      "sha256": "d171da7aed031d75bae7fe300082e9005edd07a71d50ae3def1a8ce699ef7cf1"
+    }
+  },
+  "semantics": "Copy exact verified source byte ranges into exact protobuf raw_data ranges. No tensor transformation, unpickling, Python or Torch is needed by assembler.",
+  "protobuf": "ModelProto field7 GraphProto; GraphProto field5 TensorProto; TensorProto field8 name and field9 raw_data"
+}

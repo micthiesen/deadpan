@@ -26,6 +26,7 @@ mod moment;
 mod pause;
 mod readonly;
 mod recovery;
+mod refinement;
 mod registers;
 mod render;
 mod render_history;

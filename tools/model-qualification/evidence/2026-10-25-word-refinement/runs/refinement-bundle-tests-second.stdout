@@ -1,0 +1,36 @@
+
+running 31 tests
+test bundle::macho::tests::loader_relative_paths_normalize_lexically ... ok
+test bundle::macho::tests::system_references_must_be_normalized ... ok
+test bundle::macho::ort_tests::runtime_resolution_is_closed_over_explicit_qualified_sources ... ok
+test bundle::macho::ort_tests::basename_aliases_require_same_actual_content ... ok
+test bundle::macho::tests::otool_text_parsers_handle_universal_files_and_ids ... ok
+test bundle::notices::tests::license_names_match_common_spellings ... ok
+test bundle::macho::ort_tests::ort_transitive_dependencies_are_system_only_not_other_approved_runtimes ... ok
+test bundle::notices::ort_tests::ort_sbom_distinguishes_original_runtime_wheel_and_signed_shipped_bytes ... ok
+test bundle::notices::refinement_tests::derivative_sbom_uses_independent_terms_and_claims_no_python_or_model_runtime ... ok
+test bundle::notices::tests::crate_expressions_normalize_and_reference_license_files ... ok
+test bundle::spdx::tests::legacy_slashes_become_or ... ok
+test bundle::tests::notarization_requires_an_identity ... ok
+test bundle::spdx::tests::expressions_validate_and_evaluate ... ok
+test bundle::notices::tests::sbom_is_cyclonedx_with_valid_spdx_and_closed_references ... ok
+test bundle::tests::public_configuration_drops_only_host_paths ... ok
+test bundle::tests::rfc3339_matches_known_instants ... ok
+test bundle::notices::tests::lock_checksums_read_registry_entries_only ... ok
+test bundle::notices::ort_tests::qualified_wheel_notices_are_exact_and_required_even_without_a_manifest_claim ... ok
+test bundle::tests::vendored_versions_read_defines_and_cmake ... ok
+test bundle::macho::ort_tests::selected_ort_prefix_accepts_internal_aliases_and_rejects_escape_or_wrong_bytes ... ok
+test bundle::deno_notices::tests::loads_renders_and_deduplicates_a_complete_set ... ok
+test bundle::deno_notices::tests::sbom_nests_linked_components_under_the_helper ... ok
+test bundle::deno_notices::tests::load_refuses_dangling_references_and_uncovered_crates ... ok
+test bundle::deno_notices::tests::load_refuses_changed_missing_or_unlisted_texts ... ok
+test bundle::notices::refinement_tests::compiled_derivative_notices_are_exact_and_cannot_be_omitted_or_relabelled ... ok
+test bundle::deno_notices::tests::audit_refuses_a_different_deno_or_a_changed_set ... ok
+test bundle::deno_notices::tests::audit_checks_executable_bytes_and_the_sbom_inventory ... ok
+test bundle::deno_notices::tests::audit_accepts_installed_notices_and_reports_each_defect ... ok
+test bundle::notices::refinement_tests::actual_notice_generation_copies_and_references_all_compiled_derivative_terms ... ok
+test bundle::deno_notices::tests::vendored_set_for_the_pinned_deno_verifies ... ok
+test bundle::macho::tests::relocation_and_audit_on_real_mach_o_files ... ok
+
+test result: ok. 31 passed; 0 failed; 0 ignored; 0 measured; 30 filtered out; finished in 0.83s
+

@@ -564,7 +564,7 @@ impl Service {
                 self.generation.variants_changed();
                 "Discarded an interrupted AI attempt from the command line. The pause is unchanged."
             }
-            Short::Corrections { .. } => {
+            Short::Corrections { .. } | Short::AcceptWordRefinement { .. } => {
                 if let Err(error) = self.reload_corrections() {
                     self.set_error(Some(error));
                 }

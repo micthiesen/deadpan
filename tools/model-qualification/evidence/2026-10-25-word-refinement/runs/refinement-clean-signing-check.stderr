@@ -1,0 +1,101 @@
+   Compiling xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 2.81s
+     Running `/tmp/deadpan-follow-creep-2026-10-24/target/debug/xtask check --since 32b0620c --filter 'package(xtask)'`
+   Compiling ring v0.17.14
+    Checking xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+   Compiling rustls v0.23.45
+    Checking rustls-webpki v0.103.16
+    Checking rustls-platform-verifier v0.7.1
+    Checking ureq v3.4.2
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 17.41s
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 9.81s
+   Compiling ring v0.17.14
+   Compiling xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+   Compiling rustls-webpki v0.103.16
+   Compiling rustls v0.23.45
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `test` profile [optimized + debuginfo] target(s) in 39.45s
+────────────
+ Nextest run ID 58af015e-fca8-4d83-9128-96fe09a5ed53 with nextest profile: default
+    Starting 69 tests across 1 binary (109 binaries skipped)
+        PASS [   0.008s] ( 1/69) xtask::bin/xtask bundle::macho::tests::loader_relative_paths_normalize_lexically
+        PASS [   0.008s] ( 2/69) xtask::bin/xtask bundle::macho::ort_tests::basename_aliases_require_same_actual_content
+        PASS [   0.010s] ( 3/69) xtask::bin/xtask bundle::macho::ort_tests::ort_transitive_dependencies_are_system_only_not_other_approved_runtimes
+        PASS [   0.010s] ( 4/69) xtask::bin/xtask bundle::deno_notices::tests::loads_renders_and_deduplicates_a_complete_set
+        PASS [   0.012s] ( 5/69) xtask::bin/xtask bundle::macho::ort_tests::runtime_resolution_is_closed_over_explicit_qualified_sources
+        PASS [   0.012s] ( 6/69) xtask::bin/xtask bundle::macho::tests::otool_text_parsers_handle_universal_files_and_ids
+        PASS [   0.012s] ( 7/69) xtask::bin/xtask bundle::macho::tests::system_references_must_be_normalized
+        PASS [   0.013s] ( 8/69) xtask::bin/xtask bundle::deno_notices::tests::sbom_nests_linked_components_under_the_helper
+        PASS [   0.014s] ( 9/69) xtask::bin/xtask bundle::notices::ort_tests::ort_sbom_distinguishes_original_runtime_wheel_and_signed_shipped_bytes
+        PASS [   0.013s] (10/69) xtask::bin/xtask bundle::macho::ort_tests::selected_ort_prefix_accepts_internal_aliases_and_rejects_escape_or_wrong_bytes
+        PASS [   0.014s] (11/69) xtask::bin/xtask bundle::deno_notices::tests::audit_refuses_a_different_deno_or_a_changed_set
+        PASS [   0.015s] (12/69) xtask::bin/xtask bundle::notices::ort_tests::qualified_wheel_notices_are_exact_and_required_even_without_a_manifest_claim
+        PASS [   0.015s] (13/69) xtask::bin/xtask bundle::deno_notices::tests::audit_accepts_installed_notices_and_reports_each_defect
+        PASS [   0.015s] (14/69) xtask::bin/xtask bundle::deno_notices::tests::load_refuses_dangling_references_and_uncovered_crates
+        PASS [   0.015s] (15/69) xtask::bin/xtask bundle::deno_notices::tests::audit_checks_executable_bytes_and_the_sbom_inventory
+        PASS [   0.016s] (16/69) xtask::bin/xtask bundle::deno_notices::tests::load_refuses_changed_missing_or_unlisted_texts
+        PASS [   0.008s] (17/69) xtask::bin/xtask bundle::notices::refinement_tests::derivative_sbom_uses_independent_terms_and_claims_no_python_or_model_runtime
+        PASS [   0.009s] (18/69) xtask::bin/xtask bundle::notices::tests::crate_expressions_normalize_and_reference_license_files
+        PASS [   0.008s] (19/69) xtask::bin/xtask bundle::notices::tests::license_names_match_common_spellings
+        PASS [   0.009s] (20/69) xtask::bin/xtask bundle::notices::tests::sbom_is_cyclonedx_with_valid_spdx_and_closed_references
+        PASS [   0.008s] (21/69) xtask::bin/xtask bundle::refinement::macho_content::tests::data_outside_the_hashed_content_is_refused
+        PASS [   0.009s] (22/69) xtask::bin/xtask bundle::notices::tests::lock_checksums_read_registry_entries_only
+        PASS [   0.008s] (23/69) xtask::bin/xtask bundle::refinement::macho_content::tests::large_zero_signature_reservations_are_allowed_but_stale_signature_bytes_are_not
+        PASS [   0.014s] (24/69) xtask::bin/xtask bundle::notices::refinement_tests::actual_notice_generation_copies_and_references_all_compiled_derivative_terms
+        PASS [   0.008s] (25/69) xtask::bin/xtask bundle::refinement::macho_content::tests::re_signing_keeps_the_content_hash
+        PASS [   0.009s] (26/69) xtask::bin/xtask bundle::refinement::macho_content::tests::print_content_pin_when_requested
+        PASS [   0.008s] (27/69) xtask::bin/xtask bundle::refinement::macho_content::tests::universal_files_hash_every_slice_and_nothing_else
+        PASS [   0.008s] (28/69) xtask::bin/xtask bundle::refinement::tests::worker_build_removes_inherited_pins_and_host_build_sets_both
+        PASS [   0.014s] (29/69) xtask::bin/xtask bundle::notices::refinement_tests::compiled_derivative_notices_are_exact_and_cannot_be_omitted_or_relabelled
+        PASS [   0.008s] (30/69) xtask::bin/xtask bundle::refinement::tests::missing_partial_stale_and_changed_host_pin_reports_cannot_pass_no_build
+        PASS [   0.009s] (31/69) xtask::bin/xtask bundle::spdx::tests::expressions_validate_and_evaluate
+        PASS [   0.007s] (32/69) xtask::bin/xtask bundle::spdx::tests::legacy_slashes_become_or
+        PASS [   0.007s] (33/69) xtask::bin/xtask bundle::tests::notarization_requires_an_identity
+        PASS [   0.008s] (34/69) xtask::bin/xtask bundle::tests::public_configuration_drops_only_host_paths
+        PASS [   0.008s] (35/69) xtask::bin/xtask bundle::tests::rfc3339_matches_known_instants
+        PASS [   0.008s] (36/69) xtask::bin/xtask chaos::tests::options_parse_and_reject_invalid_values
+        PASS [   0.008s] (37/69) xtask::bin/xtask bundle::tests::vendored_versions_read_defines_and_cmake
+        PASS [   0.007s] (38/69) xtask::bin/xtask fuzz::tests::options_parse_and_reject_invalid_values
+        PASS [   0.008s] (39/69) xtask::bin/xtask fuzz::tests::classified_streams_pair_first_requests_with_responses
+        PASS [   0.009s] (40/69) xtask::bin/xtask chaos::tests::entry_names_are_unique
+        PASS [   0.008s] (41/69) xtask::bin/xtask fuzz::tests::failures_without_artifacts_never_pass
+        PASS [   0.009s] (42/69) xtask::bin/xtask fuzz::tests::statistics_read_the_final_libfuzzer_line
+        PASS [   0.010s] (43/69) xtask::bin/xtask fuzz::tests::every_fuzz_target_has_a_committed_corpus
+        PASS [   0.008s] (44/69) xtask::bin/xtask offline_dist::tests::existing_output_is_refused
+        PASS [   0.010s] (45/69) xtask::bin/xtask offline_dist::tests::edited_manifest_is_refused_by_sums
+        PASS [   0.010s] (46/69) xtask::bin/xtask offline_dist::tests::escaping_link_is_refused
+        PASS [   0.008s] (47/69) xtask::bin/xtask offline_dist::tests::intact_fixture_verifies
+        PASS [   0.008s] (48/69) xtask::bin/xtask offline_dist::tests::manifest_rejects_escapes_and_wrong_schema
+        PASS [   0.035s] (49/69) xtask::bin/xtask bundle::deno_notices::tests::vendored_set_for_the_pinned_deno_verifies
+        PASS [   0.008s] (50/69) xtask::bin/xtask offline_dist::tests::manifest_round_trips
+        PASS [   0.009s] (51/69) xtask::bin/xtask offline_dist::tests::options_require_packs_and_refuse_repeats
+        PASS [   0.010s] (52/69) xtask::bin/xtask offline_dist::tests::sums_parse_and_refuse_bad_lines
+        PASS [   0.010s] (53/69) xtask::bin/xtask offline_dist::tests::tampered_archive_is_refused
+        PASS [   0.008s] (54/69) xtask::bin/xtask perf::tests::time_report_fields_parse
+        PASS [   0.008s] (55/69) xtask::bin/xtask perf::tests::playback_must_cover_its_interval_and_every_frame
+        PASS [   0.011s] (56/69) xtask::bin/xtask offline_dist::tests::signed_update_versions_are_refused
+        PASS [   0.010s] (57/69) xtask::bin/xtask percentile::tests::nearest_rank_percentiles
+        PASS [   0.008s] (58/69) xtask::bin/xtask perf::tests::verdicts_need_success_samples_quiet_and_full_runs
+        PASS [   0.010s] (59/69) xtask::bin/xtask perf::tests::missing_workloads_are_never_passes
+        PASS [   0.010s] (60/69) xtask::bin/xtask perf::tests::options_reject_unknown_stages_and_bad_names
+        PASS [   0.012s] (61/69) xtask::bin/xtask offline_dist::tests::uncovered_archive_is_refused
+        PASS [   0.008s] (62/69) xtask::bin/xtask replays::tests::options_split_scenarios_and_reject_unknown_flags
+        PASS [   0.014s] (63/69) xtask::bin/xtask offline_dist::tests::missing_file_is_refused
+        PASS [   0.009s] (64/69) xtask::bin/xtask replays::tests::reports_count_failed_checks_failures_and_layout_retries
+        PASS [   0.010s] (65/69) xtask::bin/xtask target_hygiene::tests::only_cargo_profile_directories_are_measured
+        PASS [   0.011s] (66/69) xtask::bin/xtask replays::tests::the_app_and_its_helpers_run_from_hashed_private_copies
+        PASS [   0.007s] (67/69) xtask::bin/xtask target_hygiene::tests::the_oldest_incremental_state_is_pruned_first
+        PASS [   0.061s] (68/69) xtask::bin/xtask bundle::refinement::tests::clean_signing_of_an_already_signed_image_retains_strict_content_identity
+        PASS [   0.861s] (69/69) xtask::bin/xtask bundle::macho::tests::relocation_and_audit_on_real_mach_o_files
+────────────
+     Summary [   0.862s] 69 tests run: 69 passed, 0 skipped

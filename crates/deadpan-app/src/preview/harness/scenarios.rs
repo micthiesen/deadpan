@@ -24,6 +24,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "original-moment" => super::moment::run(d),
         "transcript" => super::transcript::run(d),
         "corrections" => super::corrections::run(d),
+        "word-refinement" => super::word_refinement::run(d),
         "shots" => super::shots::run(d),
         "proxy-seek" => super::proxy::run(d),
         "source-interpretation" => super::source_interpretation::run(d),

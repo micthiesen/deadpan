@@ -1,0 +1,1476 @@
+{
+  "kind": "oracle-free deterministic backend parity goldens; not a new quality evaluation",
+  "source_policy": {
+    "path": "/private/tmp/deadpan-word-refinement-2026-10-25/phoneme/align.py",
+    "bytes": 8188,
+    "sha256": "bcc450c5f628b59b22db7f903ccd5d82d4c9f730908f1f81c6b9c1dbdb57e787"
+  },
+  "guard_policy": {
+    "path": "/private/tmp/deadpan-word-refinement-2026-10-25/phoneme/candidate-v2/guard.py",
+    "bytes": 4759,
+    "sha256": "6c10053ba98f2b700f191473ddbebb915cf3c793d60a51c1507cd9e2ecf0bdc7"
+  },
+  "labels": [
+    "<blk>",
+    "AA",
+    "AE",
+    "AH",
+    "AO",
+    "AW",
+    "AY",
+    "B",
+    "CH",
+    "D",
+    "DH",
+    "EH",
+    "ER",
+    "EY",
+    "F",
+    "G",
+    "HH",
+    "IH",
+    "IY",
+    "JH",
+    "K",
+    "L",
+    "M",
+    "N",
+    "NG",
+    "OW",
+    "OY",
+    "P",
+    "R",
+    "S",
+    "SH",
+    "T",
+    "TH",
+    "UH",
+    "UW",
+    "V",
+    "W",
+    "Y",
+    "Z",
+    "ZH",
+    "<unk>"
+  ],
+  "constants": {
+    "hann": {
+      "file": "constants/hann.f32le",
+      "bytes": 1600,
+      "sha256": "c692d19f0b2bd745f0dfc967261c3e3d21a2473e485a677d219e9b4a73e0218e",
+      "shape": [
+        400
+      ],
+      "dtype": "<f4",
+      "layout": "C row-major little-endian"
+    },
+    "mel_filter": {
+      "file": "constants/mel-filter.f32le",
+      "bytes": 64320,
+      "sha256": "69a241210255f24e37926762346701739943709f3179732f821f0823605fe6d7",
+      "shape": [
+        201,
+        80
+      ],
+      "dtype": "<f4",
+      "layout": "C row-major little-endian"
+    },
+    "mean": {
+      "file": "constants/mean.f32le",
+      "bytes": 320,
+      "sha256": "c709c46f355ff99ced996a70938b7b38ddbc337d436c283e4e6e78cb008cb1bb",
+      "shape": [
+        80
+      ],
+      "dtype": "<f4",
+      "layout": "C row-major little-endian"
+    },
+    "inverse_stddev": {
+      "file": "constants/inverse-stddev.f32le",
+      "bytes": 320,
+      "sha256": "4b565c3c2267a8a2a0e67201d10fd7153c4d30f087bb50508d5427841270cd31",
+      "shape": [
+        80
+      ],
+      "dtype": "<f4",
+      "layout": "C row-major little-endian"
+    },
+    "gain": 1073676289.0000038
+  },
+  "records": [
+    {
+      "case": "case01",
+      "input": {
+        "file": "goldens/case01/input.json",
+        "bytes": 147,
+        "sha256": "ce14712dbfbca7156fab729f69889fd39982f665b10bf373c8bddf030762f80b"
+      },
+      "pcm": {
+        "file": "goldens/case01/audio.f32le",
+        "bytes": 205496,
+        "sha256": "db7a64e937fc7a5b1459d72ff7184de529d51ced508553448fb62a8c470687dd"
+      },
+      "features": {
+        "file": "goldens/case01/features.f32le",
+        "bytes": 103040,
+        "sha256": "6495630d9a3a061c0844cb00f2e046031e9515f3b1759c2ebd64601aa6d9b055",
+        "shape": [
+          1,
+          322,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 322,
+      "emissions": {
+        "file": "goldens/case01/emissions.f64le",
+        "bytes": 52808,
+        "sha256": "ebbe062b8dc6c5ab76ead3cf54943d55dfea35ee311f1987588a61da8eed2760",
+        "shape": [
+          161,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen PyTorch alpha0.6 development emission",
+      "raw": {
+        "file": "goldens/case01/raw-suggestion.json",
+        "bytes": 10059,
+        "sha256": "2db7f7c1f8b912c51bd03a043516867f3c7beeabce3a79376ed538f7d23ce114"
+      },
+      "guard": {
+        "file": "goldens/case01/guard-output.json",
+        "bytes": 14764,
+        "sha256": "2df6756ffef3b1fba9b6c175acc6abc0c599f5756d2550b954f852689132b529"
+      },
+      "filtered": {
+        "file": "goldens/case01/filtered-suggestion.json",
+        "bytes": 27010,
+        "sha256": "ff20639fa44f193a2a1b0dc7fa004999a8222af97983795f545b20d3ee7be7af"
+      },
+      "extra": {
+        "power_spectrum": {
+          "file": "goldens/case01/power.f32le",
+          "bytes": 258888,
+          "sha256": "72dbfaba762a9bca43fe56daf68d010f6e3502f63ed837922d6626a4186c51de",
+          "shape": [
+            201,
+            322
+          ],
+          "dtype": "<f4",
+          "layout": "C row-major little-endian"
+        },
+        "mel_before_gain": {
+          "file": "goldens/case01/mel.f32le",
+          "bytes": 103040,
+          "sha256": "6d250a119f242cd90106e32f817d6584a789f7ef805b988b6934456bcdf4a520",
+          "shape": [
+            322,
+            80
+          ],
+          "dtype": "<f4",
+          "layout": "C row-major little-endian"
+        }
+      },
+      "base_offers": 5,
+      "filtered_offers": 0
+    },
+    {
+      "case": "case02",
+      "input": {
+        "file": "goldens/case02/input.json",
+        "bytes": 137,
+        "sha256": "c5ea2528c250ed43c24f32a6935c2c62fcadafd37a862c191e92ab8565d0713a"
+      },
+      "pcm": {
+        "file": "goldens/case02/audio.f32le",
+        "bytes": 212440,
+        "sha256": "3a61261559dd792f7c9228c44a445a2cfe1122971cfcb92e410651d04b0e803d"
+      },
+      "features": {
+        "file": "goldens/case02/features.f32le",
+        "bytes": 106240,
+        "sha256": "ee1abb376dc49430a0a581df46507b381c1de1f823062271ae7cd0376c071317",
+        "shape": [
+          1,
+          332,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 332,
+      "emissions": {
+        "file": "goldens/case02/emissions.f64le",
+        "bytes": 54448,
+        "sha256": "e77fb299fe7924c536146d9d54cf7a172e091365955c85904a5b6bf56021f7c4",
+        "shape": [
+          166,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen PyTorch alpha0.6 development emission",
+      "raw": {
+        "file": "goldens/case02/raw-suggestion.json",
+        "bytes": 9151,
+        "sha256": "c042795a2a3ab8b3f8fa15543249bb55a674251625a33c17f71958606a380a75"
+      },
+      "guard": {
+        "file": "goldens/case02/guard-output.json",
+        "bytes": 18196,
+        "sha256": "d8b21e279c4d6e2d502f26bf91778c4d4ba063b4697454677b3e68c5d0963278"
+      },
+      "filtered": {
+        "file": "goldens/case02/filtered-suggestion.json",
+        "bytes": 29991,
+        "sha256": "63fd15df617fc30e687cdf60830590099f8814a1b8c05ed71362fdd627270d58"
+      },
+      "extra": {},
+      "base_offers": 5,
+      "filtered_offers": 0
+    },
+    {
+      "case": "case03",
+      "input": {
+        "file": "goldens/case03/input.json",
+        "bytes": 143,
+        "sha256": "3073eac31393741f46e8120a9a2ce46b883b190c95da45ae1a19f07d672cc9d2"
+      },
+      "pcm": {
+        "file": "goldens/case03/audio.f32le",
+        "bytes": 171368,
+        "sha256": "1d43109655deed6486e4e3584e72c4d61223d696c86fa5410569927df60a4d30"
+      },
+      "features": {
+        "file": "goldens/case03/features.f32le",
+        "bytes": 85760,
+        "sha256": "37566f57e72580a76f9901b5ad9b77ad4f794bb9f28b2bb13370d288f8f25c7f",
+        "shape": [
+          1,
+          268,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 268,
+      "emissions": {
+        "file": "goldens/case03/emissions.f64le",
+        "bytes": 43952,
+        "sha256": "0e1b209dd4635b770475ae44f6c7015050595cf1a995b074970ae3619b503786",
+        "shape": [
+          134,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen PyTorch alpha0.6 development emission",
+      "raw": {
+        "file": "goldens/case03/raw-suggestion.json",
+        "bytes": 9350,
+        "sha256": "901e1fd37bf7c47a98bf0caf961293ba08b69a0c6976871e6e855020a37158d2"
+      },
+      "guard": {
+        "file": "goldens/case03/guard-output.json",
+        "bytes": 12445,
+        "sha256": "03a0a7fcc887670ffcdda48d7e6e37a33a21c42616896f06fe92c4b99eb38655"
+      },
+      "filtered": {
+        "file": "goldens/case03/filtered-suggestion.json",
+        "bytes": 23455,
+        "sha256": "1a13d33e822cc59464f256e1f09d1000488d5e8c42ec1eeaae4db4e241656e90"
+      },
+      "extra": {},
+      "base_offers": 6,
+      "filtered_offers": 6
+    },
+    {
+      "case": "case04",
+      "input": {
+        "file": "goldens/case04/input.json",
+        "bytes": 154,
+        "sha256": "098eb37c24564682ab41b3b7d6337171424014b46dc2c9a299b4b6f8bbcaea1b"
+      },
+      "pcm": {
+        "file": "goldens/case04/audio.f32le",
+        "bytes": 294676,
+        "sha256": "1f14b8d612e639e2a6e1433f4d5666f4dc94cbcf6e4461b99eedf73defb9deb6"
+      },
+      "features": {
+        "file": "goldens/case04/features.f32le",
+        "bytes": 147520,
+        "sha256": "e6604bcce6b43b76d166bd9e6281c49fe198a592bd8105c72840a2c35be4deda",
+        "shape": [
+          1,
+          461,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 461,
+      "emissions": {
+        "file": "goldens/case04/emissions.f64le",
+        "bytes": 75768,
+        "sha256": "8db5c65cf3c3899ff2bfc399bb88a286e57ffe7ebb6999711b7b1410a938daa3",
+        "shape": [
+          231,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen PyTorch alpha0.6 development emission",
+      "raw": {
+        "file": "goldens/case04/raw-suggestion.json",
+        "bytes": 13290,
+        "sha256": "e386f17c24f0432d548d8998852422f3c062d12739737cb1b56f4f2879a98113"
+      },
+      "guard": {
+        "file": "goldens/case04/guard-output.json",
+        "bytes": 19226,
+        "sha256": "dee2648127b57c5f7f55ce69af840d6e4e24cb6fd24411094bf3eb6d64951534"
+      },
+      "filtered": {
+        "file": "goldens/case04/filtered-suggestion.json",
+        "bytes": 35296,
+        "sha256": "5c7fdb148c2b888ad6f78b29bae5d279b26bc66d3cb248958bf5b9bb4c309ad0"
+      },
+      "extra": {},
+      "base_offers": 5,
+      "filtered_offers": 0
+    },
+    {
+      "case": "case05",
+      "input": {
+        "file": "goldens/case05/input.json",
+        "bytes": 150,
+        "sha256": "e91d9e126823bc827f9324d34fe5bf295efe75168e6883573a319d0904c647ac"
+      },
+      "pcm": {
+        "file": "goldens/case05/audio.f32le",
+        "bytes": 248164,
+        "sha256": "5d43c999e29d68db07be442eb6957186666b62d7a7e0f5ad4205afd9e4d9e65d"
+      },
+      "features": {
+        "file": "goldens/case05/features.f32le",
+        "bytes": 124160,
+        "sha256": "ac7e552598aed6da339a0d31ed566b0faf22c4b0f50c138ec91c0148ec52cfce",
+        "shape": [
+          1,
+          388,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 388,
+      "emissions": {
+        "file": "goldens/case05/emissions.f64le",
+        "bytes": 63632,
+        "sha256": "1de26f3cdcfd768e0fede606e38e9b217df514c01c5e0afc71e6935c25beb06b",
+        "shape": [
+          194,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen PyTorch alpha0.6 development emission",
+      "raw": {
+        "file": "goldens/case05/raw-suggestion.json",
+        "bytes": 11600,
+        "sha256": "3bbdbc6933be7f932cdeef8b969e74fc4c1c3c05812c8a006ef51592becff3cf"
+      },
+      "guard": {
+        "file": "goldens/case05/guard-output.json",
+        "bytes": 16065,
+        "sha256": "0370b2938c4f5134196049338af7528b428403d6fcfca9518c64bd925e386f91"
+      },
+      "filtered": {
+        "file": "goldens/case05/filtered-suggestion.json",
+        "bytes": 30125,
+        "sha256": "a47885a6c99e21f4706793966e61dc5c777c8782443e74a7ffa7116face7313f"
+      },
+      "extra": {},
+      "base_offers": 3,
+      "filtered_offers": 0
+    },
+    {
+      "case": "case06",
+      "input": {
+        "file": "goldens/case06/input.json",
+        "bytes": 140,
+        "sha256": "7e3750ed3de6dd71bb9c70bc0018590205acc5f6fc0d0a100bfd74369abf3933"
+      },
+      "pcm": {
+        "file": "goldens/case06/audio.f32le",
+        "bytes": 188528,
+        "sha256": "8a5fab1cb37c6c89a678150c4f4deab35b0b3fcebced679382bfd208e192e818"
+      },
+      "features": {
+        "file": "goldens/case06/features.f32le",
+        "bytes": 94400,
+        "sha256": "908f75472445d1beaa584966e568bc0dfb2cb88def7e93268141a9fc6d6238bf",
+        "shape": [
+          1,
+          295,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 295,
+      "emissions": {
+        "file": "goldens/case06/emissions.f64le",
+        "bytes": 48544,
+        "sha256": "d1a72156a0b477cb1eb3cdc9197b5932b3fa5b9901e990e8b201c4e816a1a421",
+        "shape": [
+          148,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen PyTorch alpha0.6 development emission",
+      "raw": {
+        "file": "goldens/case06/raw-suggestion.json",
+        "bytes": 9584,
+        "sha256": "9a4c76edb08b07186ddd4a8916871b297840282308f8ffaf33dc46f25cbd8846"
+      },
+      "guard": {
+        "file": "goldens/case06/guard-output.json",
+        "bytes": 13614,
+        "sha256": "4cb00b9e10edd9491c6e26caba13dcbd735c83d6daf27b7c0528a4438d6d1626"
+      },
+      "filtered": {
+        "file": "goldens/case06/filtered-suggestion.json",
+        "bytes": 25025,
+        "sha256": "b20b67b9577273e71d451f353299eec28bc4562e88b3c9243a6ebc95fc8ad828"
+      },
+      "extra": {},
+      "base_offers": 7,
+      "filtered_offers": 7
+    },
+    {
+      "case": "case07",
+      "input": {
+        "file": "goldens/case07/input.json",
+        "bytes": 154,
+        "sha256": "b3b219a171068c93d7b4f491c27c4318684d29859b1eab9730b04751c5d76932"
+      },
+      "pcm": {
+        "file": "goldens/case07/audio.f32le",
+        "bytes": 306304,
+        "sha256": "64a2556ed02ec2cb1b72c4841a893f2a2f18b249dfd8b9240aa90e797e1c908a"
+      },
+      "features": {
+        "file": "goldens/case07/features.f32le",
+        "bytes": 153280,
+        "sha256": "d0f1610ed4c9a415776b8885f97d05cfd0cd4b914ea537d96a5eb4a602717b5e",
+        "shape": [
+          1,
+          479,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 479,
+      "emissions": {
+        "file": "goldens/case07/emissions.f64le",
+        "bytes": 78720,
+        "sha256": "272f6644e778a4ce35a4f856631d7df9c4b31266def2ad82ab2fc93b86471bfe",
+        "shape": [
+          240,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen PyTorch alpha0.6 development emission",
+      "raw": {
+        "file": "goldens/case07/raw-suggestion.json",
+        "bytes": 12443,
+        "sha256": "608395d97594d53d54054dd323e0be8165dc1a522a52e02a8dcb18930d156597"
+      },
+      "guard": {
+        "file": "goldens/case07/guard-output.json",
+        "bytes": 12597,
+        "sha256": "100f7771b39f7331ac62fde51bbf59c6b5cd801ba40d586c83efaf4525b552e6"
+      },
+      "filtered": {
+        "file": "goldens/case07/filtered-suggestion.json",
+        "bytes": 26726,
+        "sha256": "0b796484b2bd7972fa64e735835921baf989cb7972e8bebb190f940b53c1e353"
+      },
+      "extra": {},
+      "base_offers": 6,
+      "filtered_offers": 6
+    },
+    {
+      "case": "case08",
+      "input": {
+        "file": "goldens/case08/input.json",
+        "bytes": 148,
+        "sha256": "fa958cd99865745cbf0d829b5e5b472d7cc882a466f3224ebbcab05938178a2e"
+      },
+      "pcm": {
+        "file": "goldens/case08/audio.f32le",
+        "bytes": 225564,
+        "sha256": "871508c00e5709f04319bde418a780edf301fab0eacf62d1ca2ee2d531a2b22c"
+      },
+      "features": {
+        "file": "goldens/case08/features.f32le",
+        "bytes": 112960,
+        "sha256": "1e5f4f7951e5ddca0f9d14ea8aec1b5cd0a02c7df49df4ea8bc13a6cbe921eef",
+        "shape": [
+          1,
+          353,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 353,
+      "emissions": {
+        "file": "goldens/case08/emissions.f64le",
+        "bytes": 58056,
+        "sha256": "ab4f31279757313037d24efecb13c8956fb268555f4c8c211933c2d9d22bd5ee",
+        "shape": [
+          177,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen PyTorch alpha0.6 development emission",
+      "raw": {
+        "file": "goldens/case08/raw-suggestion.json",
+        "bytes": 11320,
+        "sha256": "e2bc4c3df938a21f7faa26be175368222ba8012e580b5b28a3690d9eba79fc56"
+      },
+      "guard": {
+        "file": "goldens/case08/guard-output.json",
+        "bytes": 13480,
+        "sha256": "7485bce029af93f9f569833fe76d0d708907e56175d61be9a9e2f6968c99dab2"
+      },
+      "filtered": {
+        "file": "goldens/case08/filtered-suggestion.json",
+        "bytes": 26720,
+        "sha256": "705b02843cf171aba58c215544bfbaf67202a16e4be447b7e3db9ce07a036de8"
+      },
+      "extra": {},
+      "base_offers": 4,
+      "filtered_offers": 4
+    },
+    {
+      "case": "case09",
+      "input": {
+        "file": "goldens/case09/input.json",
+        "bytes": 140,
+        "sha256": "0565f1d5cc0c93b80c7ee6a1edbcd5c239c33aa4276007b86c43895506461e6a"
+      },
+      "pcm": {
+        "file": "goldens/case09/audio.f32le",
+        "bytes": 176496,
+        "sha256": "1aba05d5b8bdea19106e840eb02f707b03eda2aa130949354d8bacd72e7ca260"
+      },
+      "features": {
+        "file": "goldens/case09/features.f32le",
+        "bytes": 88320,
+        "sha256": "47e18c34040a74688b70fa43aa5ea73ae591e9aaf67868f969e861386b39d2e1",
+        "shape": [
+          1,
+          276,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 276,
+      "emissions": {
+        "file": "goldens/case09/emissions.f64le",
+        "bytes": 45264,
+        "sha256": "4e1bcd70e5fb1570195720c7fba19511a9406c707a8e9bb69d8b5a5c1596b0cd",
+        "shape": [
+          138,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen PyTorch alpha0.6 development emission",
+      "raw": {
+        "file": "goldens/case09/raw-suggestion.json",
+        "bytes": 9211,
+        "sha256": "2d4674751b53b8c9ea85fc36cfb90c495f8976daf867629331a2cb6bf557bc85"
+      },
+      "guard": {
+        "file": "goldens/case09/guard-output.json",
+        "bytes": 13304,
+        "sha256": "1f5e1251daaa91c318b88525884065fb48928ae32d158e7d5e540b9cb19e5ca9"
+      },
+      "filtered": {
+        "file": "goldens/case09/filtered-suggestion.json",
+        "bytes": 24255,
+        "sha256": "732d72ed56817b602d1e3889fd5c647c52b932f39b9ead1fe41be3876ff569e1"
+      },
+      "extra": {},
+      "base_offers": 6,
+      "filtered_offers": 6
+    },
+    {
+      "case": "case10",
+      "input": {
+        "file": "goldens/case10/input.json",
+        "bytes": 148,
+        "sha256": "b7b2cc8bc16ba153d6d94d23eb98874c00a588bb46d1bc01e810fe05d3e256bc"
+      },
+      "pcm": {
+        "file": "goldens/case10/audio.f32le",
+        "bytes": 286044,
+        "sha256": "a6b66bc38a380728fdfe03833d4b39bde2240f7f781937e2eb2a848b54845028"
+      },
+      "features": {
+        "file": "goldens/case10/features.f32le",
+        "bytes": 143040,
+        "sha256": "05efc729f0bff93a1b61ec1fbedd01491161ae1e92177e6ae0c51b542e25dccd",
+        "shape": [
+          1,
+          447,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 447,
+      "emissions": {
+        "file": "goldens/case10/emissions.f64le",
+        "bytes": 73472,
+        "sha256": "db658781c0cf77f2f78b028e4d3d3f121f5e1cbc3e5784fe1c19775a5ef935c5",
+        "shape": [
+          224,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen PyTorch alpha0.6 development emission",
+      "raw": {
+        "file": "goldens/case10/raw-suggestion.json",
+        "bytes": 11651,
+        "sha256": "38116bf01efd12f33171f605eee100b7054f4a3bc9291e8f64d62ed191dc27e1"
+      },
+      "guard": {
+        "file": "goldens/case10/guard-output.json",
+        "bytes": 15540,
+        "sha256": "4a8308b71a01f6be53374f4ad97476e88d579706e8148e00496245626c915437"
+      },
+      "filtered": {
+        "file": "goldens/case10/filtered-suggestion.json",
+        "bytes": 29296,
+        "sha256": "21335d01ac0600c399bc50c106dab50a93cefd31f264fbfe9e0a7418ef37244c"
+      },
+      "extra": {},
+      "base_offers": 2,
+      "filtered_offers": 2
+    },
+    {
+      "case": "held01",
+      "input": {
+        "file": "goldens/held01/input.json",
+        "bytes": 159,
+        "sha256": "6e3b10bd5bbfb01b52cfab4624e1a6dc15bd4433b4cf20c3c8137d70d41c06a0"
+      },
+      "pcm": {
+        "file": "goldens/held01/audio.f32le",
+        "bytes": 247500,
+        "sha256": "5b36545f10ba41ece4670366e9981f811b2dee900725b0f36d374bc13a1aee2b"
+      },
+      "features": {
+        "file": "goldens/held01/features.f32le",
+        "bytes": 123840,
+        "sha256": "52da2826f33f48ce25398ade726a0f27f0c7f1ed72a0021eb660f4a4d8d8f018",
+        "shape": [
+          1,
+          387,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 387,
+      "emissions": {
+        "file": "goldens/held01/emissions.f64le",
+        "bytes": 63632,
+        "sha256": "91bc0ee495e0774f9a9f4c9f035ad621032274a6dc423366c0dea79747e637fd",
+        "shape": [
+          194,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen folded ONNX alpha0.6 observed-development emission",
+      "raw": {
+        "file": "goldens/held01/raw-suggestion.json",
+        "bytes": 13606,
+        "sha256": "caa0c9bd21a0dbfe5a6c0eeb1cbbb53802fd4d17b8bceefd5c8df0b06b0eced4"
+      },
+      "guard": {
+        "file": "goldens/held01/guard-output.json",
+        "bytes": 17405,
+        "sha256": "a3c3eb03cc1cd9c4e469505586c05fab6ce32f9228c4e1156a11983a6e96c8fa"
+      },
+      "filtered": {
+        "file": "goldens/held01/filtered-suggestion.json",
+        "bytes": 33360,
+        "sha256": "4ed3db2331d1df2c70d1154fe642cf714501898ccad9ab0f0d21c0d000473f02"
+      },
+      "extra": {},
+      "base_offers": 1,
+      "filtered_offers": 1
+    },
+    {
+      "case": "held02",
+      "input": {
+        "file": "goldens/held02/input.json",
+        "bytes": 154,
+        "sha256": "12ae3b51d24b07fc2459e0d2680a52e453ce101c40021d7e313ebd97294893be"
+      },
+      "pcm": {
+        "file": "goldens/held02/audio.f32le",
+        "bytes": 211072,
+        "sha256": "f48da088b185c4f3b145d97d691c68183572ef6ac6e637d8dee9a4003b4a91a5"
+      },
+      "features": {
+        "file": "goldens/held02/features.f32le",
+        "bytes": 105600,
+        "sha256": "fd35a5df190798828e51b07b728be09e2d7fd2a62e05ecc0afa72acdb816721a",
+        "shape": [
+          1,
+          330,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 330,
+      "emissions": {
+        "file": "goldens/held02/emissions.f64le",
+        "bytes": 54120,
+        "sha256": "becdf3a3edcd51aea411a6de844927ef5888bf0a5bca1ca166d6a431a8f7a00a",
+        "shape": [
+          165,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen folded ONNX alpha0.6 observed-development emission",
+      "raw": {
+        "file": "goldens/held02/raw-suggestion.json",
+        "bytes": 12579,
+        "sha256": "28910e7e3af9332ebee4ab9407c104cc31535a3fb6019e6adfa7bef84489a6b0"
+      },
+      "guard": {
+        "file": "goldens/held02/guard-output.json",
+        "bytes": 18161,
+        "sha256": "77ab1a034a062390c8e6267b64419306875a190c515340f2d487fb7f06f2a9d8"
+      },
+      "filtered": {
+        "file": "goldens/held02/filtered-suggestion.json",
+        "bytes": 33085,
+        "sha256": "f041681b68ab4a3031e252f793731a961420564508a75abd79126c44c1674d95"
+      },
+      "extra": {},
+      "base_offers": 3,
+      "filtered_offers": 3
+    },
+    {
+      "case": "held03",
+      "input": {
+        "file": "goldens/held03/input.json",
+        "bytes": 155,
+        "sha256": "af80addaff0886e6a36f73b62c960476647ef376bd8b1aff34ad3cdade2edb40"
+      },
+      "pcm": {
+        "file": "goldens/held03/audio.f32le",
+        "bytes": 276900,
+        "sha256": "1a24908a15cc8f7771ebf1ed1740afc26e39ca85671261b9016591d9a9c1eba0"
+      },
+      "features": {
+        "file": "goldens/held03/features.f32le",
+        "bytes": 138560,
+        "sha256": "301df787e7f4c9a7187f5773148be2a9ae6910b41ca460b5d697d4299ab015c2",
+        "shape": [
+          1,
+          433,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 433,
+      "emissions": {
+        "file": "goldens/held03/emissions.f64le",
+        "bytes": 71176,
+        "sha256": "d2f36f8f5427f35f6aacb7ff97106e882c724b9babc1af195dc4a449d48cd13f",
+        "shape": [
+          217,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen folded ONNX alpha0.6 observed-development emission",
+      "raw": {
+        "file": "goldens/held03/raw-suggestion.json",
+        "bytes": 12177,
+        "sha256": "9b22b3da304a973980ff2579f7d79ac97cc5854504672e7e6e810069081650dd"
+      },
+      "guard": {
+        "file": "goldens/held03/guard-output.json",
+        "bytes": 20131,
+        "sha256": "266608525cfc2c6194bf76097ef09dba44f176e227c019604d5dd860f35847f8"
+      },
+      "filtered": {
+        "file": "goldens/held03/filtered-suggestion.json",
+        "bytes": 35166,
+        "sha256": "7ea4336fef1a3750727b06f5ff7f86ed6f956cc101a4c557c542e12f3bb65524"
+      },
+      "extra": {},
+      "base_offers": 3,
+      "filtered_offers": 0
+    },
+    {
+      "case": "held04",
+      "input": {
+        "file": "goldens/held04/input.json",
+        "bytes": 152,
+        "sha256": "2df1f8d3e2b8859ea7193146c2f4f56e7c7a03bc30daa4ab545179f326f4fd57"
+      },
+      "pcm": {
+        "file": "goldens/held04/audio.f32le",
+        "bytes": 183352,
+        "sha256": "c8086aa949fe088a4dd4d8d292c5b04b86761a15f952064eecfd7a50255215cd"
+      },
+      "features": {
+        "file": "goldens/held04/features.f32le",
+        "bytes": 91840,
+        "sha256": "399902b09d7bf1dbfc5f2157e048b50199da40bcda2ea868808ab6d3ea9fb641",
+        "shape": [
+          1,
+          287,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 287,
+      "emissions": {
+        "file": "goldens/held04/emissions.f64le",
+        "bytes": 47232,
+        "sha256": "63d1b84c48e997b10c3f2256c2be29c81c9716d27195e600830c39e781d7fd5e",
+        "shape": [
+          144,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen folded ONNX alpha0.6 observed-development emission",
+      "raw": {
+        "file": "goldens/held04/raw-suggestion.json",
+        "bytes": 11228,
+        "sha256": "892908767f3348fc7c3eaebc4275fe966203f13d75238e1ad62232e12a1d1d54"
+      },
+      "guard": {
+        "file": "goldens/held04/guard-output.json",
+        "bytes": 14606,
+        "sha256": "7e7d482e1afcd06d81f92165af61e5fb021b4b15b72b5394101aa942054ae7f2"
+      },
+      "filtered": {
+        "file": "goldens/held04/filtered-suggestion.json",
+        "bytes": 28152,
+        "sha256": "d8d26ddbf8361d56b933dc1152e2701f60a25ae6fb4b2937a7dbab4a65f263c3"
+      },
+      "extra": {},
+      "base_offers": 5,
+      "filtered_offers": 0
+    },
+    {
+      "case": "held05",
+      "input": {
+        "file": "goldens/held05/input.json",
+        "bytes": 154,
+        "sha256": "7a2f63fd660c7a4273cbf49b113410d9947130eba6eb41282437a8775ae9c442"
+      },
+      "pcm": {
+        "file": "goldens/held05/audio.f32le",
+        "bytes": 282792,
+        "sha256": "9a189c73f977d7caebdaad65f219ae0fc5fc46f9ff5311f9c2eeae6bcd10c6ac"
+      },
+      "features": {
+        "file": "goldens/held05/features.f32le",
+        "bytes": 141440,
+        "sha256": "e96cdb8bdb4b2e7fa54bf76e12649423d44bc2a61f1d212d90f49ab2c6245d83",
+        "shape": [
+          1,
+          442,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 442,
+      "emissions": {
+        "file": "goldens/held05/emissions.f64le",
+        "bytes": 72488,
+        "sha256": "1837710741e427da762eb2713ec6bd8f01b811861629bbfbb1641c339e8df143",
+        "shape": [
+          221,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen folded ONNX alpha0.6 observed-development emission",
+      "raw": {
+        "file": "goldens/held05/raw-suggestion.json",
+        "bytes": 13143,
+        "sha256": "d4be1e34f798eea2682cfdda6f5fb0013a34e33ce67a7ba7cc0461db4ccb3956"
+      },
+      "guard": {
+        "file": "goldens/held05/guard-output.json",
+        "bytes": 18773,
+        "sha256": "617153f2bd05e6d93a8c4f66c4d0f66678703d54487d66b1e210c4b53c27cf10"
+      },
+      "filtered": {
+        "file": "goldens/held05/filtered-suggestion.json",
+        "bytes": 34248,
+        "sha256": "ea19ae8228c303ecfc00dda6c432ab40c675ca07204984ac43ccc7596157eb16"
+      },
+      "extra": {},
+      "base_offers": 5,
+      "filtered_offers": 5
+    },
+    {
+      "case": "held06",
+      "input": {
+        "file": "goldens/held06/input.json",
+        "bytes": 154,
+        "sha256": "fe05af98a8a75f39c11057977256d9634c9da29f3f8a744c988ebf7c7f3b4ebe"
+      },
+      "pcm": {
+        "file": "goldens/held06/audio.f32le",
+        "bytes": 213640,
+        "sha256": "ad873970f2910f3e27410ad9a9fb8dec7ecc94648326bac1c4a06626b6649a45"
+      },
+      "features": {
+        "file": "goldens/held06/features.f32le",
+        "bytes": 106880,
+        "sha256": "f709364cdbddc51eae735f11556ce55d86ab2a6070cdecc41f2916fc615668aa",
+        "shape": [
+          1,
+          334,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 334,
+      "emissions": {
+        "file": "goldens/held06/emissions.f64le",
+        "bytes": 54776,
+        "sha256": "aed05febaba5b29d5da7f20dc3874cf8c79a656933a94486a142d492b265638a",
+        "shape": [
+          167,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen folded ONNX alpha0.6 observed-development emission",
+      "raw": {
+        "file": "goldens/held06/raw-suggestion.json",
+        "bytes": 11854,
+        "sha256": "fecc6011cb459c3b09334480c96998fab43ec610acbd1953d2c011590a520c4a"
+      },
+      "guard": {
+        "file": "goldens/held06/guard-output.json",
+        "bytes": 15573,
+        "sha256": "511bd43dd29bac38884e4f6494a042a85640f920bafea77f727fb4ac90aed35c"
+      },
+      "filtered": {
+        "file": "goldens/held06/filtered-suggestion.json",
+        "bytes": 29449,
+        "sha256": "f716a2bca5f1b86ee4b40041448e00623a38c4c423823e52069af9ca60e89a13"
+      },
+      "extra": {},
+      "base_offers": 5,
+      "filtered_offers": 5
+    },
+    {
+      "case": "held07",
+      "input": {
+        "file": "goldens/held07/input.json",
+        "bytes": 155,
+        "sha256": "8ee3c6a3ead18f7249b93467607831303d84e1920ee501b1cebfd49fafac1e14"
+      },
+      "pcm": {
+        "file": "goldens/held07/audio.f32le",
+        "bytes": 268960,
+        "sha256": "a348bc1942b611a0495256c6fcb43aa15b60447aa43eb2e34c8a342511a236a9"
+      },
+      "features": {
+        "file": "goldens/held07/features.f32le",
+        "bytes": 134720,
+        "sha256": "d9577890b9f31cfd0a316e4627a11c2d5a7df4b03c5bdadb253da9c46229db85",
+        "shape": [
+          1,
+          421,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 421,
+      "emissions": {
+        "file": "goldens/held07/emissions.f64le",
+        "bytes": 69208,
+        "sha256": "cb2d3c432b76366ff1cfabf24517985859f18e7a833f2f372124cd5c300ee8ab",
+        "shape": [
+          211,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen folded ONNX alpha0.6 observed-development emission",
+      "raw": {
+        "file": "goldens/held07/raw-suggestion.json",
+        "bytes": 12788,
+        "sha256": "2e78704ab39f11bc0c3473718b333f936aaca2795b296ecc18332c8d807e9b33"
+      },
+      "guard": {
+        "file": "goldens/held07/guard-output.json",
+        "bytes": 15982,
+        "sha256": "cf3e7a26cd205a1f7631bb8a9ab69e80a644358c4aa4e2ae94fbf79d84ceb86c"
+      },
+      "filtered": {
+        "file": "goldens/held07/filtered-suggestion.json",
+        "bytes": 30864,
+        "sha256": "6c7e4a0aca6310f8f5f588d75487ad3b3a6b51e6323962bfc3a507b913e168ce"
+      },
+      "extra": {},
+      "base_offers": 4,
+      "filtered_offers": 4
+    },
+    {
+      "case": "held08",
+      "input": {
+        "file": "goldens/held08/input.json",
+        "bytes": 155,
+        "sha256": "5760554fbfe164d152f8670e2e03a44d53494e72297fa392a0bbc2126cdc5e3c"
+      },
+      "pcm": {
+        "file": "goldens/held08/audio.f32le",
+        "bytes": 256616,
+        "sha256": "0d8b376274acf7890c6d0603fe761a55d036e2eeabbfb2187cb6c3d6da8650e2"
+      },
+      "features": {
+        "file": "goldens/held08/features.f32le",
+        "bytes": 128320,
+        "sha256": "76e8dbf4afb39c5ed308a69be6bce561822ebec1e3dc4c24ecb8362d2b4bfc0f",
+        "shape": [
+          1,
+          401,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 401,
+      "emissions": {
+        "file": "goldens/held08/emissions.f64le",
+        "bytes": 65928,
+        "sha256": "97069409b032ad3922a6e47d47c397382d13fd62377c9b7ac454eed9633fcfd3",
+        "shape": [
+          201,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen folded ONNX alpha0.6 observed-development emission",
+      "raw": {
+        "file": "goldens/held08/raw-suggestion.json",
+        "bytes": 12905,
+        "sha256": "df76dfba8c13998c12e6c3a6034660dcff01b79753161b9985815fdec4644750"
+      },
+      "guard": {
+        "file": "goldens/held08/guard-output.json",
+        "bytes": 13838,
+        "sha256": "649f6f851b8af2e60af88d14332efa02492dbc331aefa3f288f9f6fee1fcb824"
+      },
+      "filtered": {
+        "file": "goldens/held08/filtered-suggestion.json",
+        "bytes": 28668,
+        "sha256": "5536a76ef874a7d79eff0d4bd69c89cfb7da9772eadaf9ace055a03e294c0d3e"
+      },
+      "extra": {},
+      "base_offers": 3,
+      "filtered_offers": 3
+    },
+    {
+      "case": "held09",
+      "input": {
+        "file": "goldens/held09/input.json",
+        "bytes": 172,
+        "sha256": "8e3354f0965600cc6c42fefd09a15305fa289ac1a26c68f8cb0fb55e87f6aad3"
+      },
+      "pcm": {
+        "file": "goldens/held09/audio.f32le",
+        "bytes": 189264,
+        "sha256": "39c15a34d04122879beb7a34e87093b3b3df1e98fbcc101784ae158ca9a2e4ae"
+      },
+      "features": {
+        "file": "goldens/held09/features.f32le",
+        "bytes": 94720,
+        "sha256": "9a4c81c9f61fef9f1c3f78ac7d9e2cee4c704322e03e6e220e1edb878e9b0891",
+        "shape": [
+          1,
+          296,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 296,
+      "emissions": {
+        "file": "goldens/held09/emissions.f64le",
+        "bytes": 48544,
+        "sha256": "49e8c6656df3b1a9f71530f4183c39ae37a3fe5b8b6e914d43cbd0eea7aa8450",
+        "shape": [
+          148,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen folded ONNX alpha0.6 observed-development emission",
+      "raw": {
+        "file": "goldens/held09/raw-suggestion.json",
+        "bytes": 14770,
+        "sha256": "caa129de8a1fb8524d9857c58b88689a3777af4e1c14f275baea601a445791d6"
+      },
+      "guard": {
+        "file": "goldens/held09/guard-output.json",
+        "bytes": 17466,
+        "sha256": "cc210e839fa1e1995b3f5724b93f88562315efa87340c3ea81e3aa0bd1653034"
+      },
+      "filtered": {
+        "file": "goldens/held09/filtered-suggestion.json",
+        "bytes": 34568,
+        "sha256": "57e565dd5d5f11996c02e0a243a30f94ad00ff2e183c39cc207febd547142752"
+      },
+      "extra": {},
+      "base_offers": 8,
+      "filtered_offers": 8
+    },
+    {
+      "case": "held10",
+      "input": {
+        "file": "goldens/held10/input.json",
+        "bytes": 169,
+        "sha256": "274e02fa72f4e64947c8a5da133d110e3083cfab095c2305697ad766daca8681"
+      },
+      "pcm": {
+        "file": "goldens/held10/audio.f32le",
+        "bytes": 174844,
+        "sha256": "8359bbfd45824494e9e9a5de315fac0d4bf1730156253d32a1971abbc1af9180"
+      },
+      "features": {
+        "file": "goldens/held10/features.f32le",
+        "bytes": 87680,
+        "sha256": "154d8ec69e261764bc297531b1fb5fb2f3c3d8117f18bbc29fb659fe1db83d3f",
+        "shape": [
+          1,
+          274,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 274,
+      "emissions": {
+        "file": "goldens/held10/emissions.f64le",
+        "bytes": 44936,
+        "sha256": "ee6c91b850f92f1381a57a54b67ec8a54a65073d48bb583e1d9bc3f63743266f",
+        "shape": [
+          137,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen folded ONNX alpha0.6 observed-development emission",
+      "raw": {
+        "file": "goldens/held10/raw-suggestion.json",
+        "bytes": 15439,
+        "sha256": "acce806249af42232e8091f3a054280a837aa14f592e011fff538353e8d26f18"
+      },
+      "guard": {
+        "file": "goldens/held10/guard-output.json",
+        "bytes": 18677,
+        "sha256": "0d56a30185ef3f93948f1ec10903859617ed6504e9b48f7152ea29f4a0d61266"
+      },
+      "filtered": {
+        "file": "goldens/held10/filtered-suggestion.json",
+        "bytes": 36763,
+        "sha256": "fff0921b26a6b93601a50d154426705efd8c09e0b86c9cf0d4d79098ad83ab89"
+      },
+      "extra": {},
+      "base_offers": 5,
+      "filtered_offers": 5
+    },
+    {
+      "case": "held11",
+      "input": {
+        "file": "goldens/held11/input.json",
+        "bytes": 159,
+        "sha256": "6e3b10bd5bbfb01b52cfab4624e1a6dc15bd4433b4cf20c3c8137d70d41c06a0"
+      },
+      "pcm": {
+        "file": "goldens/held11/audio.f32le",
+        "bytes": 256000,
+        "sha256": "24a046dc04fefdb652e4077b41162490b344a4dd45f918505477f84c592f3070"
+      },
+      "features": {
+        "file": "goldens/held11/features.f32le",
+        "bytes": 128320,
+        "sha256": "47bb671351edac71f92dbe9a7a93694afd04d45c39fb294df7e9bce5ef278a78",
+        "shape": [
+          1,
+          401,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 401,
+      "emissions": {
+        "file": "goldens/held11/emissions.f64le",
+        "bytes": 65928,
+        "sha256": "a06126e7296260eb8c0e1c4e525ad87c50ce87f11d3b8829177ab9724a70fe1c",
+        "shape": [
+          201,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen folded ONNX alpha0.6 observed-development emission",
+      "raw": {
+        "file": "goldens/held11/raw-suggestion.json",
+        "bytes": 13804,
+        "sha256": "f199de4bc173aa9c9d6b06e9f82f0c218e81bdfd1ebc740d1f03979151a01b36"
+      },
+      "guard": {
+        "file": "goldens/held11/guard-output.json",
+        "bytes": 6248,
+        "sha256": "347a6775e69ea537cd7ba004680a5267d742f9ea7c99f93562af455923f3b093"
+      },
+      "filtered": {
+        "file": "goldens/held11/filtered-suggestion.json",
+        "bytes": 21278,
+        "sha256": "533193ed94464104a9aae0c8ba07064d7a6e533f119b84420774b496f64f5ba1"
+      },
+      "extra": {},
+      "base_offers": 0,
+      "filtered_offers": 0
+    },
+    {
+      "case": "held12",
+      "input": {
+        "file": "goldens/held12/input.json",
+        "bytes": 154,
+        "sha256": "12ae3b51d24b07fc2459e0d2680a52e453ce101c40021d7e313ebd97294893be"
+      },
+      "pcm": {
+        "file": "goldens/held12/audio.f32le",
+        "bytes": 256000,
+        "sha256": "1b1c31ac68356732c70feac5af7ff8b2b5fa3878692ec34ad0b269e781bdfbc1"
+      },
+      "features": {
+        "file": "goldens/held12/features.f32le",
+        "bytes": 128320,
+        "sha256": "9a8019c62f07626eb45b41e126f99dd29cb8039f17b9b9a7b7b82fc2ec94765b",
+        "shape": [
+          1,
+          401,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 401,
+      "emissions": {
+        "file": "goldens/held12/emissions.f64le",
+        "bytes": 65928,
+        "sha256": "06d8d1e63bb88995040f7236d1cfd3097e44981979d279aad63c85f80e07f062",
+        "shape": [
+          201,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen folded ONNX alpha0.6 observed-development emission",
+      "raw": {
+        "file": "goldens/held12/raw-suggestion.json",
+        "bytes": 13344,
+        "sha256": "90d68c3c22f0270da0239c4ecd4bf5d23b66cae445687d206bc4c84894ab70cc"
+      },
+      "guard": {
+        "file": "goldens/held12/guard-output.json",
+        "bytes": 5917,
+        "sha256": "8e0b410fa182bfa721ac846db122a979381989b301eefb16799cc474c7b740a7"
+      },
+      "filtered": {
+        "file": "goldens/held12/filtered-suggestion.json",
+        "bytes": 20451,
+        "sha256": "7d7cc76336806a83f8c53762513f175389d040475befa4cf87cf41c469196923"
+      },
+      "extra": {},
+      "base_offers": 0,
+      "filtered_offers": 0
+    },
+    {
+      "case": "held13",
+      "input": {
+        "file": "goldens/held13/input.json",
+        "bytes": 157,
+        "sha256": "5fc57b4402d372017a5d5d61f43f8324412aa943baa117c02d663a32f8d20644"
+      },
+      "pcm": {
+        "file": "goldens/held13/audio.f32le",
+        "bytes": 247500,
+        "sha256": "5b36545f10ba41ece4670366e9981f811b2dee900725b0f36d374bc13a1aee2b"
+      },
+      "features": {
+        "file": "goldens/held13/features.f32le",
+        "bytes": 123840,
+        "sha256": "52da2826f33f48ce25398ade726a0f27f0c7f1ed72a0021eb660f4a4d8d8f018",
+        "shape": [
+          1,
+          387,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 387,
+      "emissions": {
+        "file": "goldens/held13/emissions.f64le",
+        "bytes": 63632,
+        "sha256": "91bc0ee495e0774f9a9f4c9f035ad621032274a6dc423366c0dea79747e637fd",
+        "shape": [
+          194,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen folded ONNX alpha0.6 observed-development emission",
+      "raw": {
+        "file": "goldens/held13/raw-suggestion.json",
+        "bytes": 12743,
+        "sha256": "4c3aa07c4b746a8650675cf92c8fe578496ab7056f4832f17ae02c5157ff6144"
+      },
+      "guard": {
+        "file": "goldens/held13/guard-output.json",
+        "bytes": 17821,
+        "sha256": "4760dac593155e864638f4416ccc3cfbb17a776cdf626681035b5157aca8dfa3"
+      },
+      "filtered": {
+        "file": "goldens/held13/filtered-suggestion.json",
+        "bytes": 33206,
+        "sha256": "22e041f31ecfb097855f7b92779b8949ef0758d160cd7dfa2b8bf03219ce4730"
+      },
+      "extra": {},
+      "base_offers": 0,
+      "filtered_offers": 0
+    },
+    {
+      "case": "held14",
+      "input": {
+        "file": "goldens/held14/input.json",
+        "bytes": 154,
+        "sha256": "12ae3b51d24b07fc2459e0d2680a52e453ce101c40021d7e313ebd97294893be"
+      },
+      "pcm": {
+        "file": "goldens/held14/audio.f32le",
+        "bytes": 402164,
+        "sha256": "f0b8dc9cb8061eb8f330a7b6d7d487e737112f9ecd075d3d6b89b11d313121a4"
+      },
+      "features": {
+        "file": "goldens/held14/features.f32le",
+        "bytes": 201280,
+        "sha256": "1c6cc1370786d2dfc7e1e2eb069b5d25db745d4eaeec82baf144bdd51d2e5bc3",
+        "shape": [
+          1,
+          629,
+          80
+        ],
+        "dtype": "<f4",
+        "layout": "C row-major little-endian"
+      },
+      "feature_length": 629,
+      "emissions": {
+        "file": "goldens/held14/emissions.f64le",
+        "bytes": 103320,
+        "sha256": "72afbf8ef7d0085a334709e38c7a087088e73c1e1f029e3fdd269e0abaed7de3",
+        "shape": [
+          315,
+          41
+        ],
+        "dtype": "<f8",
+        "layout": "C row-major little-endian"
+      },
+      "emission_origin": "frozen folded ONNX alpha0.6 observed-development emission",
+      "raw": {
+        "file": "goldens/held14/raw-suggestion.json",
+        "bytes": 14865,
+        "sha256": "9fe055ca8137cf5f7dee313b91c02596223c0a8009062fbb4fd931faa6529d45"
+      },
+      "guard": {
+        "file": "goldens/held14/guard-output.json",
+        "bytes": 24501,
+        "sha256": "25442066b7e7f4f9c1c716e222bf0f381ebff0650b7a5cd8a0f2c355225a2977"
+      },
+      "filtered": {
+        "file": "goldens/held14/filtered-suggestion.json",
+        "bytes": 42672,
+        "sha256": "c0c9016d0c46e08018f4450abfa42d633a7011ba63ec0b1a74c151b8e06fd7df"
+      },
+      "extra": {},
+      "base_offers": 4,
+      "filtered_offers": 0
+    }
+  ],
+  "versions": {
+    "torch": "2.8.0",
+    "torchaudio": "2.8.0",
+    "numpy": "2.3.3"
+  },
+  "no_truth_files_read": true,
+  "no_model_inference_rerun": true
+}

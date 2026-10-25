@@ -1,0 +1,155 @@
+{
+  "script_sha256": "3657a2521f813d813d7f23349b4c967c72f714f072e0b91e8c8d0021a5e44b7c",
+  "environment": {
+    "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+    "HOME": "/tmp/deadpan-word-refinement-2026-10-25/packaged-acceptance/home",
+    "TMPDIR": "/tmp"
+  },
+  "records": [
+    {
+      "name": "copy",
+      "command": [
+        "/tmp/deadpan-word-refinement-2026-10-25/bundle-second/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "project",
+        "copy-portable",
+        "/tmp/deadpan-word-refinement-2026-10-25/workflow/Source.deadpan",
+        "/tmp/deadpan-word-refinement-2026-10-25/packaged-acceptance/Accepted.deadpan"
+      ],
+      "exit_code": 0,
+      "seconds": 0.12057362496852875,
+      "expected_success": true
+    },
+    {
+      "name": "document-before",
+      "command": [
+        "/tmp/deadpan-word-refinement-2026-10-25/bundle-second/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "project",
+        "dump",
+        "/tmp/deadpan-word-refinement-2026-10-25/packaged-acceptance/Accepted.deadpan",
+        "--json"
+      ],
+      "exit_code": 0,
+      "seconds": 0.013201124966144562,
+      "expected_success": true
+    },
+    {
+      "name": "transcript-before",
+      "command": [
+        "/tmp/deadpan-word-refinement-2026-10-25/bundle-second/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "transcript",
+        "/tmp/deadpan-word-refinement-2026-10-25/packaged-acceptance/Accepted.deadpan"
+      ],
+      "exit_code": 0,
+      "seconds": 0.011528458446264267,
+      "expected_success": true
+    },
+    {
+      "name": "proposal",
+      "command": [
+        "/tmp/deadpan-word-refinement-2026-10-25/bundle-second/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "refine-words",
+        "/tmp/deadpan-word-refinement-2026-10-25/packaged-acceptance/Accepted.deadpan",
+        "--word",
+        "0",
+        "--models-root",
+        "/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/models"
+      ],
+      "exit_code": 0,
+      "seconds": 1.2450588336214423,
+      "expected_success": true
+    },
+    {
+      "name": "accept",
+      "command": [
+        "/tmp/deadpan-word-refinement-2026-10-25/bundle-second/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "refine-words",
+        "/tmp/deadpan-word-refinement-2026-10-25/packaged-acceptance/Accepted.deadpan",
+        "--word",
+        "0",
+        "--models-root",
+        "/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/models",
+        "--accept",
+        "08e46edf2ac8be0b19dec8d872986694853b863d6ea15e154d24d3f5d505e27b"
+      ],
+      "exit_code": 0,
+      "seconds": 1.256126125343144,
+      "expected_success": true
+    },
+    {
+      "name": "transcript-accepted",
+      "command": [
+        "/tmp/deadpan-word-refinement-2026-10-25/bundle-second/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "transcript",
+        "/tmp/deadpan-word-refinement-2026-10-25/packaged-acceptance/Accepted.deadpan"
+      ],
+      "exit_code": 0,
+      "seconds": 0.011230375617742538,
+      "expected_success": true
+    },
+    {
+      "name": "document-accepted",
+      "command": [
+        "/tmp/deadpan-word-refinement-2026-10-25/bundle-second/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "project",
+        "dump",
+        "/tmp/deadpan-word-refinement-2026-10-25/packaged-acceptance/Accepted.deadpan",
+        "--json"
+      ],
+      "exit_code": 0,
+      "seconds": 0.009377832524478436,
+      "expected_success": true
+    },
+    {
+      "name": "undo",
+      "command": [
+        "/tmp/deadpan-word-refinement-2026-10-25/bundle-second/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "corrections",
+        "/tmp/deadpan-word-refinement-2026-10-25/packaged-acceptance/Accepted.deadpan",
+        "--json",
+        "/tmp/deadpan-word-refinement-2026-10-25/packaged-acceptance/undo.json"
+      ],
+      "exit_code": 0,
+      "seconds": 0.03038749936968088,
+      "expected_success": true
+    },
+    {
+      "name": "transcript-undone",
+      "command": [
+        "/tmp/deadpan-word-refinement-2026-10-25/bundle-second/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "transcript",
+        "/tmp/deadpan-word-refinement-2026-10-25/packaged-acceptance/Accepted.deadpan"
+      ],
+      "exit_code": 0,
+      "seconds": 0.01014583371579647,
+      "expected_success": true
+    },
+    {
+      "name": "document-undone",
+      "command": [
+        "/tmp/deadpan-word-refinement-2026-10-25/bundle-second/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "project",
+        "dump",
+        "/tmp/deadpan-word-refinement-2026-10-25/packaged-acceptance/Accepted.deadpan",
+        "--json"
+      ],
+      "exit_code": 0,
+      "seconds": 0.009069416671991348,
+      "expected_success": true
+    },
+    {
+      "name": "pinned-refusal",
+      "command": [
+        "/tmp/deadpan-word-refinement-2026-10-25/bundle-second/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "refine-words",
+        "/tmp/deadpan-word-refinement-2026-10-25/packaged-acceptance/Accepted.deadpan",
+        "--word",
+        "4",
+        "--models-root",
+        "/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/models"
+      ],
+      "exit_code": 1,
+      "seconds": 0.7581032505258918,
+      "expected_success": false
+    }
+  ]
+}

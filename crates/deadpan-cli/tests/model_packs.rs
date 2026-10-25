@@ -43,7 +43,8 @@ fn list_shows_every_pack_with_size_licenses_and_free_space() {
         [
             "whisper-base-en",
             "ltx-2.3-q4-bridge",
-            "ltx-2.3-q4-extension"
+            "ltx-2.3-q4-extension",
+            "phoneme-ctc-en"
         ]
     );
     let bridge = &packs[1];
@@ -67,6 +68,18 @@ fn list_shows_every_pack_with_size_licenses_and_free_space() {
     assert_eq!(packs[2]["bytes"], bridge["bytes"]);
     assert_eq!(packs[2]["licenses"], bridge["licenses"]);
     assert!(packs[2]["installed"].is_null());
+    let refinement = &packs[3];
+    assert_eq!(refinement["bytes"], 61_188_767_u64);
+    assert_eq!(refinement["remaining_bytes"], 61_188_767_u64);
+    assert_eq!(refinement["files"], 6);
+    assert!(refinement["installed"].is_null());
+    let licenses = refinement["licenses"].as_array().unwrap();
+    assert_eq!(licenses.len(), 3);
+    assert_eq!(
+        licenses[0]["title"],
+        "Checkpoint and statistics terms not separately specified"
+    );
+    assert_eq!(licenses[2]["title"], "CMU Pronouncing Dictionary license");
 }
 
 #[test]

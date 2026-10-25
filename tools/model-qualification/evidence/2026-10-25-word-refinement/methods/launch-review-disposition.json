@@ -1,0 +1,12 @@
+{
+  "reviewer": "refinement_backend_review",
+  "finding": "Checks return a worker pathname; a concurrent writer with bundle write authority could replace it before exec.",
+  "disposition": "Retained limitation, outside the untrusted project/model admission boundary; not treated as a fixed race.",
+  "basis": [
+    "Every package entry is owner/root-controlled and cannot be group/other writable.",
+    "Such a writer also controls the host executable; this app is not a same-user code containment boundary.",
+    "The app does not update its installed bundle in place. Bundle construction refuses existing destinations and publishes by rename.",
+    "This change checks content pins, valid signatures, signer when present and resource seal at admission. It does not claim atomic verified-file execution."
+  ],
+  "other_findings": "Reviewer found no compiled-pin, signer, marker downgrade or build/no-build defect."
+}

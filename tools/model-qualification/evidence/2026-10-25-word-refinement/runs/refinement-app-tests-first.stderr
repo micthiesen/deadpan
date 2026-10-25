@@ -1,0 +1,211 @@
+   Compiling deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+   Compiling tempfile v3.27.0
+   Compiling deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error[E0624]: method `refinement_sheet` is private
+   --> crates/deadpan-app/src/preview/corrections.rs:364:18
+    |
+364 |             self.refinement_sheet(context);
+    |                  ^^^^^^^^^^^^^^^^ private method
+    |
+   ::: crates/deadpan-app/src/preview/refinement/ui.rs:89:5
+    |
+ 89 |     pub(super) fn refinement_sheet(&mut self, context: &egui::Context) {
+    |     ------------------------------------------------------------------ private method defined here
+
+error[E0624]: method `refinement_keyboard` is private
+    --> crates/deadpan-app/src/preview.rs:2611:18
+     |
+2611 |             self.refinement_keyboard(context);
+     |                  ^^^^^^^^^^^^^^^^^^^ private method
+     |
+    ::: crates/deadpan-app/src/preview/refinement/ui.rs:50:5
+     |
+  50 |     pub(super) fn refinement_keyboard(&mut self, context: &egui::Context) {
+     |     --------------------------------------------------------------------- private method defined here
+
+error[E0277]: `?` couldn't convert the error to `std::string::String`
+   --> crates/deadpan-app/src/project/service/transcripts.rs:318:82
+    |
+318 |             annotation_lifecycle_guard(&lifecycle, Some(request.lifecycle_epoch))?;
+    |             ---------------------------------------------------------------------^ the trait `From<deadpan_store::StoreError>` is not implemented for `std::string::String`
+    |             |
+    |             this can't be annotated with `?` because it has type `Result<_, deadpan_store::StoreError>`
+    |
+    = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+    = help: `std::string::String` implements trait `From<T>`:
+              From<&mut str>
+              From<&std::string::String>
+              From<&str>
+              From<AttemptId>
+              From<Box<str>>
+              From<CancellationToken>
+              From<Cow<'_, str>>
+              From<Diagnostic>
+            and 26 others
+
+error[E0277]: `?` couldn't convert the error to `std::string::String`
+   --> crates/deadpan-app/src/project/service/transcripts.rs:320:37
+    |
+320 |             if store.head_revision()? != request.expected_revision {
+    |                      ---------------^ the trait `From<deadpan_store::StoreError>` is not implemented for `std::string::String`
+    |                      |
+    |                      this can't be annotated with `?` because it has type `Result<_, deadpan_store::StoreError>`
+    |
+    = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+    = help: `std::string::String` implements trait `From<T>`:
+              From<&mut str>
+              From<&std::string::String>
+              From<&str>
+              From<AttemptId>
+              From<Box<str>>
+              From<CancellationToken>
+              From<Cow<'_, str>>
+              From<Diagnostic>
+            and 26 others
+
+error[E0277]: `?` couldn't convert the error to `std::string::String`
+   --> crates/deadpan-app/src/project/service/transcripts.rs:334:57
+    |
+334 |             let stored = store.analysis_corrections(key)?;
+    |                                -------------------------^ the trait `From<deadpan_store::StoreError>` is not implemented for `std::string::String`
+    |                                |
+    |                                this can't be annotated with `?` because it has type `Result<_, deadpan_store::StoreError>`
+    |
+    = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+    = help: `std::string::String` implements trait `From<T>`:
+              From<&mut str>
+              From<&std::string::String>
+              From<&str>
+              From<AttemptId>
+              From<Box<str>>
+              From<CancellationToken>
+              From<Cow<'_, str>>
+              From<Diagnostic>
+            and 26 others
+
+error[E0277]: `?` couldn't convert the error to `std::string::String`
+   --> crates/deadpan-app/src/project/service/transcripts.rs:352:14
+    |
+347 |               let corrections = request.review.accept(
+    |  ______________________________________________-
+348 | |                 &words.proposal,
+349 | |                 &words.corrected,
+350 | |                 &current,
+351 | |                 &request.selected_words,
+352 | |             )?;
+    | |             -^ the trait `From<RefinementSelectionError>` is not implemented for `std::string::String`
+    | |_____________|
+    |               this can't be annotated with `?` because it has type `Result<_, RefinementSelectionError>`
+    |
+    = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+    = help: `std::string::String` implements trait `From<T>`:
+              From<&mut str>
+              From<&std::string::String>
+              From<&str>
+              From<AttemptId>
+              From<Box<str>>
+              From<CancellationToken>
+              From<Cow<'_, str>>
+              From<Diagnostic>
+            and 26 others
+
+error[E0277]: `?` couldn't convert the error to `std::string::String`
+   --> crates/deadpan-app/src/project/service/transcripts.rs:318:82
+    |
+318 |             annotation_lifecycle_guard(&lifecycle, Some(request.lifecycle_epoch))?;
+    |             ---------------------------------------------------------------------^ the trait `From<deadpan_store::StoreError>` is not implemented for `std::string::String`
+    |             |
+    |             this can't be annotated with `?` because it has type `Result<_, deadpan_store::StoreError>`
+    |
+    = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+    = help: `std::string::String` implements trait `From<T>`:
+              From<&mut str>
+              From<&std::string::String>
+              From<&str>
+              From<Box<str>>
+              From<CancellationToken>
+              From<Cow<'_, str>>
+              From<Diagnostic>
+              From<ProviderPackId>
+            and 26 others
+
+error[E0277]: `?` couldn't convert the error to `std::string::String`
+   --> crates/deadpan-app/src/project/service/transcripts.rs:320:37
+    |
+320 |             if store.head_revision()? != request.expected_revision {
+    |                      ---------------^ the trait `From<deadpan_store::StoreError>` is not implemented for `std::string::String`
+    |                      |
+    |                      this can't be annotated with `?` because it has type `Result<_, deadpan_store::StoreError>`
+    |
+    = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+    = help: `std::string::String` implements trait `From<T>`:
+              From<&mut str>
+              From<&std::string::String>
+              From<&str>
+              From<Box<str>>
+              From<CancellationToken>
+              From<Cow<'_, str>>
+              From<Diagnostic>
+              From<ProviderPackId>
+            and 26 others
+
+error[E0277]: `?` couldn't convert the error to `std::string::String`
+   --> crates/deadpan-app/src/project/service/transcripts.rs:334:57
+    |
+334 |             let stored = store.analysis_corrections(key)?;
+    |                                -------------------------^ the trait `From<deadpan_store::StoreError>` is not implemented for `std::string::String`
+    |                                |
+    |                                this can't be annotated with `?` because it has type `Result<_, deadpan_store::StoreError>`
+    |
+    = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+    = help: `std::string::String` implements trait `From<T>`:
+              From<&mut str>
+              From<&std::string::String>
+              From<&str>
+              From<Box<str>>
+              From<CancellationToken>
+              From<Cow<'_, str>>
+              From<Diagnostic>
+              From<ProviderPackId>
+            and 26 others
+
+error[E0277]: `?` couldn't convert the error to `std::string::String`
+   --> crates/deadpan-app/src/project/service/transcripts.rs:352:14
+    |
+347 |               let corrections = request.review.accept(
+    |  ______________________________________________-
+348 | |                 &words.proposal,
+349 | |                 &words.corrected,
+350 | |                 &current,
+351 | |                 &request.selected_words,
+352 | |             )?;
+    | |             -^ the trait `From<RefinementSelectionError>` is not implemented for `std::string::String`
+    | |_____________|
+    |               this can't be annotated with `?` because it has type `Result<_, RefinementSelectionError>`
+    |
+    = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+    = help: `std::string::String` implements trait `From<T>`:
+              From<&mut str>
+              From<&std::string::String>
+              From<&str>
+              From<Box<str>>
+              From<CancellationToken>
+              From<Cow<'_, str>>
+              From<Diagnostic>
+              From<ProviderPackId>
+            and 26 others
+
+Some errors have detailed explanations: E0277, E0624.
+For more information about an error, try `rustc --explain E0277`.
+error: could not compile `deadpan-app` (bin "deadpan-app") due to 6 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-app` (bin "deadpan-app" test) due to 6 previous errors

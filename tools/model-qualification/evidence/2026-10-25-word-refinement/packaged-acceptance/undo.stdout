@@ -1,0 +1,31 @@
+{
+  "before_version": 2,
+  "committed": true,
+  "corrections": {
+    "clock": {
+      "origin": 0,
+      "sample_rate": 48000
+    },
+    "pauses": [],
+    "rule": "deadpan-corrections-1",
+    "words": [
+      {
+        "end_cs": 274,
+        "start_cs": 252,
+        "words": [
+          {
+            "end_cs": 273,
+            "start_cs": 253,
+            "text": "roofs."
+          }
+        ]
+      }
+    ]
+  },
+  "dry_run": false,
+  "label": "undid Accept approximate word timing",
+  "protocol": 1,
+  "redo": "Accept approximate word timing",
+  "undo": "move “roofs.” to 253–273 cs",
+  "version": 3
+}

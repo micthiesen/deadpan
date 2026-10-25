@@ -1,0 +1,2 @@
+bundle: warning: the working tree has uncommitted or untracked changes; build-provenance.json records this
+bundle: cargo build --release --locked --bins --message-format=json-render-diagnostics --target-dir /Users/michael/Code/deadpan/target/bundle -p deadpan-media-worker -p deadpan-transcribe -p deadpan-track -p deadpan-align

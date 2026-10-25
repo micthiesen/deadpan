@@ -56,6 +56,74 @@ fn merged() -> Corrections {
 }
 
 #[test]
+fn lifecycle_guard_rejection_rolls_back_values_versions_and_both_stacks() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let path = project(&scratch)?;
+    let store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    let head = store.head_revision()?;
+    for reject_at in [1, 2] {
+        let mut calls = 0;
+        let result = store.change_analysis_corrections_guarded(
+            &key(),
+            0,
+            CorrectionChange::Apply {
+                corrections: merged(),
+                label: "refine".into(),
+            },
+            || {
+                calls += 1;
+                if calls == reject_at {
+                    Err(StoreError::AnalysisInterrupted("interrupted".into()))
+                } else {
+                    Ok(())
+                }
+            },
+        );
+        assert!(matches!(result, Err(StoreError::AnalysisInterrupted(_))));
+        assert_eq!(calls, reject_at);
+        assert_eq!(store.analysis_corrections(&key())?, None);
+        assert_eq!(store.head_revision()?, head);
+    }
+    let saved = store.change_analysis_corrections(
+        &key(),
+        0,
+        CorrectionChange::Apply {
+            corrections: merged(),
+            label: "refine".into(),
+        },
+    )?;
+    let undone =
+        store.change_analysis_corrections(&key(), saved.version, CorrectionChange::Undo)?;
+    assert!(undone.redo.is_some());
+    for change in [
+        CorrectionChange::Redo,
+        CorrectionChange::Apply {
+            corrections: merged(),
+            label: "new".into(),
+        },
+    ] {
+        let mut calls = 0;
+        let result =
+            store.change_analysis_corrections_guarded(&key(), undone.version, change, || {
+                calls += 1;
+                if calls == 2 {
+                    Err(StoreError::AnalysisInterrupted("interrupted".into()))
+                } else {
+                    Ok(())
+                }
+            });
+        assert!(matches!(result, Err(StoreError::AnalysisInterrupted(_))));
+        assert_eq!(store.analysis_corrections(&key())?, Some(undone.clone()));
+    }
+    let restored =
+        store.change_analysis_corrections(&key(), undone.version, CorrectionChange::Redo)?;
+    assert_eq!(restored.corrections, saved.corrections);
+    assert_eq!(store.head_revision()?, head);
+    store.validate_full()?;
+    Ok(())
+}
+
+#[test]
 fn corrections_apply_undo_redo_and_reopen_without_touching_history() -> Result {
     let scratch = tempfile::tempdir()?;
     let path = project(&scratch)?;

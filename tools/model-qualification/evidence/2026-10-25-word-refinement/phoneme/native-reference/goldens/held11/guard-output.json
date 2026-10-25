@@ -1,0 +1,325 @@
+{
+  "iteration": 1,
+  "configuration": {
+    "rule": "phonetic-context-residual-1",
+    "minimum_phone_events": 3,
+    "minimum_duration_frames": 6,
+    "posterior_minimum": 0.5,
+    "output_frame_ms": 20,
+    "scope": "whole captured context",
+    "semantics": "Unexplained high-support greedy phonetic content makes context incomplete or placement ambiguous; raw timing is retained but all offers abstain.",
+    "original_word_gate": 0.5,
+    "original_phone_gate": 0.1
+  },
+  "greedy_phones": [],
+  "selected_pronunciation_path": 0,
+  "selected_pronunciations": [
+    [
+      "L",
+      "IH",
+      "T",
+      "AH",
+      "L"
+    ],
+    [
+      "R",
+      "AE",
+      "B",
+      "AH",
+      "T",
+      "S"
+    ],
+    [
+      "K",
+      "AE",
+      "R",
+      "IY"
+    ],
+    [
+      "Y",
+      "EH",
+      "L",
+      "OW"
+    ],
+    [
+      "B",
+      "AE",
+      "S",
+      "K",
+      "AH",
+      "T",
+      "S"
+    ],
+    [
+      "AH",
+      "P",
+      "HH",
+      "IH",
+      "L"
+    ]
+  ],
+  "expected_phones": [
+    "L",
+    "IH",
+    "T",
+    "AH",
+    "L",
+    "R",
+    "AE",
+    "B",
+    "AH",
+    "T",
+    "S",
+    "K",
+    "AE",
+    "R",
+    "IY",
+    "Y",
+    "EH",
+    "L",
+    "OW",
+    "B",
+    "AE",
+    "S",
+    "K",
+    "AH",
+    "T",
+    "S",
+    "AH",
+    "P",
+    "HH",
+    "IH",
+    "L"
+  ],
+  "minimum_edit_distance": 31,
+  "alignment_steps": [
+    {
+      "op": "delete_expected",
+      "expected_index": 0,
+      "observed_index": null,
+      "expected": 21,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 1,
+      "observed_index": null,
+      "expected": 17,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 2,
+      "observed_index": null,
+      "expected": 31,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 3,
+      "observed_index": null,
+      "expected": 3,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 4,
+      "observed_index": null,
+      "expected": 21,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 5,
+      "observed_index": null,
+      "expected": 28,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 6,
+      "observed_index": null,
+      "expected": 2,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 7,
+      "observed_index": null,
+      "expected": 7,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 8,
+      "observed_index": null,
+      "expected": 3,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 9,
+      "observed_index": null,
+      "expected": 31,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 10,
+      "observed_index": null,
+      "expected": 29,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 11,
+      "observed_index": null,
+      "expected": 20,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 12,
+      "observed_index": null,
+      "expected": 2,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 13,
+      "observed_index": null,
+      "expected": 28,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 14,
+      "observed_index": null,
+      "expected": 18,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 15,
+      "observed_index": null,
+      "expected": 37,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 16,
+      "observed_index": null,
+      "expected": 11,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 17,
+      "observed_index": null,
+      "expected": 21,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 18,
+      "observed_index": null,
+      "expected": 25,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 19,
+      "observed_index": null,
+      "expected": 7,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 20,
+      "observed_index": null,
+      "expected": 2,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 21,
+      "observed_index": null,
+      "expected": 29,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 22,
+      "observed_index": null,
+      "expected": 20,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 23,
+      "observed_index": null,
+      "expected": 3,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 24,
+      "observed_index": null,
+      "expected": 31,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 25,
+      "observed_index": null,
+      "expected": 29,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 26,
+      "observed_index": null,
+      "expected": 3,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 27,
+      "observed_index": null,
+      "expected": 27,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 28,
+      "observed_index": null,
+      "expected": 16,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 29,
+      "observed_index": null,
+      "expected": 17,
+      "observed": null
+    },
+    {
+      "op": "delete_expected",
+      "expected_index": 30,
+      "observed_index": null,
+      "expected": 21,
+      "observed": null
+    }
+  ],
+  "edit_counts": {
+    "match": 0,
+    "substitute": 0,
+    "delete_expected": 31,
+    "insert_observed": 0
+  },
+  "residual_runs": [],
+  "context_status": "no_large_supported_residual_detected",
+  "abstain": false,
+  "reason": null,
+  "confidence": "uncalibrated phonetic consistency test, never proof of complete or unique context"
+}

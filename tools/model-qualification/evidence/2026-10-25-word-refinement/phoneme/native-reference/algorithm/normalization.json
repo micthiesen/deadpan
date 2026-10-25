@@ -1,0 +1,166 @@
+[
+  {
+    "input": "Copper birds cross quiet roofs",
+    "words": [
+      "copper",
+      "birds",
+      "cross",
+      "quiet",
+      "roofs"
+    ],
+    "alternatives": [
+      {
+        "pronunciations": [
+          [
+            "K",
+            "AA",
+            "P",
+            "ER"
+          ],
+          [
+            "B",
+            "ER",
+            "D",
+            "Z"
+          ],
+          [
+            "K",
+            "R",
+            "AO",
+            "S"
+          ],
+          [
+            "K",
+            "W",
+            "AY",
+            "AH",
+            "T"
+          ],
+          [
+            "R",
+            "UW",
+            "F",
+            "S"
+          ]
+        ],
+        "phone_ids": [
+          20,
+          1,
+          27,
+          12,
+          7,
+          12,
+          9,
+          38,
+          20,
+          28,
+          4,
+          29,
+          20,
+          36,
+          6,
+          3,
+          31,
+          28,
+          34,
+          14,
+          29
+        ]
+      }
+    ]
+  },
+  {
+    "input": "can't",
+    "words": [
+      "can't"
+    ],
+    "alternatives": [
+      {
+        "pronunciations": [
+          [
+            "K",
+            "AE",
+            "N",
+            "T"
+          ]
+        ],
+        "phone_ids": [
+          20,
+          2,
+          23,
+          31
+        ]
+      }
+    ]
+  },
+  {
+    "input": "I\u2019m",
+    "words": [
+      "i'm"
+    ],
+    "alternatives": [
+      {
+        "pronunciations": [
+          [
+            "AY",
+            "M"
+          ]
+        ],
+        "phone_ids": [
+          6,
+          22
+        ]
+      },
+      {
+        "pronunciations": [
+          [
+            "AH",
+            "M"
+          ]
+        ],
+        "phone_ids": [
+          3,
+          22
+        ]
+      }
+    ]
+  },
+  {
+    "input": "co-op",
+    "words": [
+      "coop"
+    ],
+    "alternatives": [
+      {
+        "pronunciations": [
+          [
+            "K",
+            "UW",
+            "P"
+          ]
+        ],
+        "phone_ids": [
+          20,
+          34,
+          27
+        ]
+      }
+    ]
+  },
+  {
+    "input": "...",
+    "error": "empty lexical word"
+  },
+  {
+    "input": "123",
+    "error": "empty lexical word"
+  },
+  {
+    "input": "Stra\u00dfe",
+    "error": "dictionary OOV: strasse"
+  },
+  {
+    "input": "the the the the the the the the",
+    "error": "pronunciation path budget exceeded"
+  }
+]

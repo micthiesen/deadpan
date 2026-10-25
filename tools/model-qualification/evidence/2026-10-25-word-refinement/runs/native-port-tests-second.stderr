@@ -1,0 +1,37 @@
+   Compiling crc32fast v1.5.2
+   Compiling num-traits v0.2.19
+   Compiling deadpan-align v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-align)
+   Compiling flate2 v1.1.10
+   Compiling num-integer v0.1.47
+   Compiling num-complex v0.4.6
+   Compiling transpose v0.2.3
+   Compiling primal-check v0.3.4
+   Compiling rustfft v6.4.1
+    Finished `test` profile [optimized + debuginfo] target(s) in 7.07s
+     Running unittests src/lib.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_align-f70ed9e04c57b7ee)
+     Running tests/parity.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/parity-680feb7a295bba1f)
+case01: feature max=0.000180960 mean=0.000001241; emission max=Some(0.00011444091796875)
+case02: feature max=0.000110447 mean=0.000001026; emission max=Some(8.7738037109375e-5)
+case03: feature max=0.000128627 mean=0.000000721; emission max=Some(0.0001010894775390625)
+case04: feature max=0.000098944 mean=0.000000957; emission max=Some(9.632110595703125e-5)
+case05: feature max=0.000191808 mean=0.000001008; emission max=Some(0.00012111663818359375)
+case06: feature max=0.000130057 mean=0.000000864; emission max=Some(8.392333984375e-5)
+case07: feature max=0.000147581 mean=0.000001269; emission max=Some(0.000125885009765625)
+case08: feature max=0.000169754 mean=0.000001473; emission max=Some(0.00019073486328125)
+case09: feature max=0.000129342 mean=0.000001350; emission max=Some(0.00014495849609375)
+case10: feature max=0.000355005 mean=0.000001484; emission max=Some(0.00011444091796875)
+held01: feature max=0.000126123 mean=0.000001205; emission max=Some(9.5367431640625e-5)
+held02: feature max=0.000104547 mean=0.000000921; emission max=Some(8.869171142578125e-5)
+held03: feature max=0.000125647 mean=0.000001392; emission max=Some(0.000133514404296875)
+held04: feature max=0.000184357 mean=0.000001768; emission max=Some(0.0002288818359375)
+held05: feature max=0.000136375 mean=0.000000951; emission max=Some(9.059906005859375e-5)
+held06: feature max=0.000111699 mean=0.000001319; emission max=Some(9.918212890625e-5)
+held07: feature max=0.000137091 mean=0.000001354; emission max=Some(0.00017404556274414063)
+held08: feature max=0.000197649 mean=0.000001338; emission max=Some(0.0001392364501953125)
+held09: feature max=0.000171661 mean=0.000001585; emission max=Some(0.000164031982421875)
+held10: feature max=0.000119567 mean=0.000001131; emission max=Some(7.152557373046875e-5)
+held11: feature max=0.000000000 mean=0.000000000; emission max=Some(0.0)
+held12: feature max=0.000001431 mean=0.000000033; emission max=Some(3.0517578125e-5)
+held13: feature max=0.000126123 mean=0.000001205; emission max=Some(9.5367431640625e-5)
+held14: feature max=0.000158668 mean=0.000000926; emission max=Some(8.392333984375e-5)
+   Doc-tests deadpan_align

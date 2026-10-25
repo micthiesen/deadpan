@@ -1,6 +1,8 @@
 use super::*;
 use std::sync::Mutex;
 
+mod refinement;
+
 /// Serves bytes from memory, optionally failing after a byte budget or
 /// ignoring range requests, and records every requested offset.
 struct Memory {
@@ -83,7 +85,7 @@ fn payload() -> Vec<u8> {
 #[test]
 fn the_approved_whisper_pack_is_valid_and_pinned() {
     let packs = approved_packs();
-    assert_eq!(packs.len(), 3);
+    assert_eq!(packs.len(), 4);
     let whisper = &packs[0];
     assert_eq!(whisper.pack_id, "whisper-base-en");
     assert_eq!(whisper.pack_version, "2");
@@ -1433,7 +1435,7 @@ fn adversarial_pack_manifests() {
     use deadpan_chaos::{Target, Verdict, fuzz, reject};
     let directory = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../models/packs");
     let seeds = deadpan_chaos::seeds_from_dir(&directory);
-    assert_eq!(seeds.len(), 3);
+    assert_eq!(seeds.len(), 4);
     let report = fuzz(
         Target::json("models-pack-manifest").iterations(600),
         seeds,

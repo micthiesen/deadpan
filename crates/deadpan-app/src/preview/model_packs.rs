@@ -76,6 +76,8 @@ fn purpose(pack: &PackManifest) -> &'static str {
         "Bridge AI pause pictures, conditioned on both sides"
     } else if pack.supports(Operation::ExtensionHold) {
         "Extension AI pause pictures, conditioned from the left or right"
+    } else if pack.supports(Operation::RefineWords) {
+        "Approximate local word timing (Refine word timing in :correct)"
     } else if pack.supports(Operation::Transcribe) {
         "Transcription and pause detection (TRANSCRIPT in the Original rail)"
     } else {

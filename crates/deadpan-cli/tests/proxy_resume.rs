@@ -260,9 +260,13 @@ fn kill(pid: &str) -> bool {
 fn kill_a_running_worker(stub: &Stub, root: &Path, key: &ProxyKey) -> String {
     let deadline = Instant::now() + Duration::from_secs(60);
     loop {
-        assert!(Instant::now() < deadline, "no worker to kill");
         let done = journaled(root, key);
         let pids = stub.pids();
+        assert!(
+            Instant::now() < deadline,
+            "no worker to kill: journaled={done}, worker_pids={pids:?}, alive={:?}",
+            pids.iter().map(|pid| alive(pid)).collect::<Vec<_>>()
+        );
         if done >= 1
             && pids.len() > done
             && let Some(pid) = pids.last()

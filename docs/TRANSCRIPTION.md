@@ -24,7 +24,8 @@ accumulated rounding. Recognizer timing itself is approximate: whisper.cpp
 describes word timestamps as experimental. Each word keeps its lowest token
 probability, and words below 0.6 are presented as approximate. People correct
 words and their edges by hand ([analysis corrections](ANALYSIS_CORRECTIONS.md));
-an automatic refinement pass remains required.
+[Local English refinement](WORD_REFINEMENT.md) now proposes reviewed timing
+through the native phoneme pack; cuts and manual bounds stay pinned.
 
 Word construction drops special tokens, starts a word at each token beginning
 with a space, and attaches subword pieces and punctuation to the current word.
@@ -339,8 +340,9 @@ every word per query.
 ## Remaining
 
 Original operators with word motions, background scheduling by visible range,
-automatic word-boundary refinement from speech activity (manual edges snap to
-measured edges), and accuracy on conversational and noisy speech. The
+broader sentence correction and accuracy on conversational and noisy speech.
+The local English phoneme pass is implemented as an explicit approximate
+proposal; its stricter experimental quality targets remain failed. The
 recognizer failure check is calibrated only on read English audiobook speech:
 loops with small variations between copies, failures shorter than 5 s of
 speech, wrong words with plausible timing, and false flags on music, singing

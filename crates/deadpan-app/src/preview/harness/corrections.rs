@@ -249,7 +249,7 @@ pub(super) fn save_activity(d: &mut Driver<'_>) -> Result<(), String> {
 }
 
 /// Move the selection with real `l`/`h` presses until it reaches `item`.
-fn select(d: &mut Driver<'_>, item: Item) -> Result<(), String> {
+pub(super) fn select(d: &mut Driver<'_>, item: Item) -> Result<(), String> {
     for _ in 0..12 {
         let current = d.app().correction_item();
         if current == Some(item) {

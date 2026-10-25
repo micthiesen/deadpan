@@ -176,7 +176,10 @@ impl PackConstraints {
         let bridge = operations.contains(&Operation::BridgeHold);
         let extension = operations.contains(&Operation::ExtensionHold);
         let audio = operations.iter().any(|operation| {
-            matches!(operation, Operation::Transcribe | Operation::SpeechActivity)
+            matches!(
+                operation,
+                Operation::Transcribe | Operation::SpeechActivity | Operation::RefineWords
+            )
         });
         if self.bridge.is_some() != bridge
             || self.extension.is_some() != extension

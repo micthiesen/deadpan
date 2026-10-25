@@ -44,10 +44,10 @@ pub const USER_AGENT: &str = "OpenAI File Downloader, XaiImageApiFetch/1.0";
 /// Space kept free beyond the remaining download.
 pub const FREE_SPACE_MARGIN: u64 = 256 * 1024 * 1024;
 const RECEIPT: &str = "receipt.json";
-const ALLOWED_HOSTS: [&str; 1] = ["huggingface.co"];
+const ALLOWED_HOSTS: [&str; 2] = ["huggingface.co", "raw.githubusercontent.com"];
 
 /// Full license texts the approved manifests name, compiled into the build.
-const LICENSE_TEXTS: [(&str, &str); 2] = [
+const LICENSE_TEXTS: [(&str, &str); 4] = [
     (
         "ltx-2-community-license.txt",
         include_str!("../../../models/licenses/ltx-2-community-license.txt"),
@@ -55,6 +55,14 @@ const LICENSE_TEXTS: [(&str, &str); 2] = [
     (
         "gemma-terms-of-use.txt",
         include_str!("../../../models/licenses/gemma-terms-of-use.txt"),
+    ),
+    (
+        "phoneme-author-bsd-2-clause.txt",
+        include_str!("../../../models/licenses/phoneme-author-bsd-2-clause.txt"),
+    ),
+    (
+        "cmudict-license.txt",
+        include_str!("../../../models/licenses/cmudict-license.txt"),
     ),
 ];
 
@@ -79,6 +87,7 @@ pub fn approved_packs() -> Vec<PackManifest> {
         include_str!("../../../models/packs/whisper-base-en-2.json"),
         include_str!("../../../models/packs/ltx-2.3-q4-bridge-1.json"),
         include_str!("../../../models/packs/ltx-2.3-q4-extension-1.json"),
+        include_str!("../../../models/packs/phoneme-ctc-en-1.json"),
     ]
     .into_iter()
     .map(|text| {
@@ -123,6 +132,8 @@ pub enum Operation {
     Transcribe,
     /// Voice activity detection: one speech probability per analysis hop.
     SpeechActivity,
+    /// Approximate local word-boundary proposals, requiring explicit acceptance.
+    RefineWords,
     /// Generated pictures between two boundary frames (an AI pause).
     BridgeHold,
     /// Generated pictures continuing one chronological temporal context, with
@@ -399,6 +410,32 @@ impl PackManifest {
                     .find(|file| file.name.starts_with("ggml-silero-"))
             })
             .flatten()
+    }
+
+    fn refinement_file(&self, name: &str) -> Option<&PackFile> {
+        self.supports(Operation::RefineWords)
+            .then(|| self.files.iter().find(|file| file.name == name))
+            .flatten()
+    }
+
+    /// The original author checkpoint, verified before fixed native assembly.
+    pub fn refinement_checkpoint_file(&self) -> Option<&PackFile> {
+        self.refinement_file("model-0.6.ckpt")
+    }
+
+    /// The original author's feature-normalization statistics.
+    pub fn refinement_statistics_file(&self) -> Option<&PackFile> {
+        self.refinement_file("global_stats.json")
+    }
+
+    /// The original CMUDict pronunciations; no executable tokenizer or G2P.
+    pub fn refinement_dictionary_file(&self) -> Option<&PackFile> {
+        self.refinement_file("cmudict.dict")
+    }
+
+    /// The original CMUDict phone inventory, in the qualified label order.
+    pub fn refinement_phones_file(&self) -> Option<&PackFile> {
+        self.refinement_file("cmudict.phones")
     }
 }
 

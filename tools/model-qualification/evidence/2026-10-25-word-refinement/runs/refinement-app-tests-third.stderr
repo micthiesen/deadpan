@@ -1,0 +1,16 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1m 12s
+     Running unittests src/lib.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_app-888703593c7feae6)
+     Running unittests src/main.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_app-259389e5b1f76d5d)
+
+thread '<unnamed>' (187428624) panicked at crates/deadpan-app/src/preview/refinement.rs:398:44:
+intentional refinement worker fault witness
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'preview::refinement::ui::tests::actual_button_focus_keeps_space_activation_out_of_the_audition_router' (187428613) panicked at /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/epaint-0.36.2/src/textures.rs:337:9:
+Dropped TexturesDelta with 1 unapplied deltas. Deltas need to be handled. If you want to drop this intentionally call `clear` before dropping.
+
+thread 'preview::refinement::ui::tests::composed_held_and_modified_native_button_keys_cannot_accept' (187428614) panicked at /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/epaint-0.36.2/src/textures.rs:337:9:
+Dropped TexturesDelta with 1 unapplied deltas. Deltas need to be handled. If you want to drop this intentionally call `clear` before dropping.
+error: test failed, to rerun pass `-p deadpan-app --bin deadpan-app`

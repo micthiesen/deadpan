@@ -1,0 +1,23 @@
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.07s
+     Running `/tmp/deadpan-follow-creep-2026-10-24/target/debug/xtask check --since 32b0620c --filter 'test(non_english_cached_words_refuse_before_model_loading_or_annotation_changes)'`
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 3.07s
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 10.35s
+   Compiling ring v0.17.14
+   Compiling rustls-webpki v0.103.16
+   Compiling rustls v0.23.45
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1m 04s
+────────────
+ Nextest run ID 783d95da-2670-4273-95bd-96e8a09c5d2c with nextest profile: default
+    Starting 1 test across 110 binaries (3626 tests skipped)
+        PASS [   0.189s] (1/1) deadpan-cli::refinement non_english_cached_words_refuse_before_model_loading_or_annotation_changes
+────────────
+     Summary [   0.192s] 1 test run: 1 passed, 3626 skipped

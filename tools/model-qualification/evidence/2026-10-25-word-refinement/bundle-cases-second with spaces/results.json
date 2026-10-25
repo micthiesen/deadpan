@@ -1,0 +1,904 @@
+{
+  "source_bundle": "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-second/Deadpan.app",
+  "environment": {
+    "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+    "HOME": "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/home",
+    "TMPDIR": "/tmp"
+  },
+  "records": [
+    {
+      "name": "copy",
+      "command": [
+        "/bin/cp",
+        "-cR",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-second/Deadpan.app",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7913541663438082,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "relocated-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "refinement-runtime-qualify"
+      ],
+      "exit_code": 0,
+      "seconds": 1.5345605416223407,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "relocated-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "refinement-runtime-qualify"
+      ],
+      "exit_code": 0,
+      "seconds": 1.876473749987781,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "offline-model-import",
+      "command": [
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "models",
+        "import",
+        "phoneme-ctc-en",
+        "/tmp/deadpan-word-refinement-2026-10-25/original-pack-source",
+        "--root",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/models"
+      ],
+      "exit_code": 0,
+      "seconds": 1.7231009174138308,
+      "expected_success": true,
+      "expected_message": "\"event\":\"smoke_test\""
+    },
+    {
+      "name": "actual-refinement",
+      "command": [
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "refine-words",
+        "/tmp/deadpan-word-refinement-2026-10-25/workflow/Source.deadpan",
+        "--word",
+        "0",
+        "--models-root",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/models"
+      ],
+      "exit_code": 0,
+      "seconds": 2.020301374606788,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "substituted-worker-worker-remove-signature",
+      "command": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-align"
+      ],
+      "exit_code": 0,
+      "seconds": 0.01005866751074791,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "substituted-worker-worker-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-align"
+      ],
+      "exit_code": 0,
+      "seconds": 0.008145040832459927,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "substituted-worker-ort-remove-signature",
+      "command": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+      ],
+      "exit_code": 0,
+      "seconds": 0.015255250036716461,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "substituted-worker-ort-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+      ],
+      "exit_code": 0,
+      "seconds": 0.03208774980157614,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "substituted-worker-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7529434580355883,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "substituted-worker-valid-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.3037067074328661,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "substituted-worker-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "refinement-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.00873312447220087,
+      "expected_success": false,
+      "expected_message": "compiled content pin"
+    },
+    {
+      "name": "substituted-worker-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "refinement-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.009212958626449108,
+      "expected_success": false,
+      "expected_message": "compiled content pin"
+    },
+    {
+      "name": "restored-worker-worker-remove-signature",
+      "command": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-align"
+      ],
+      "exit_code": 0,
+      "seconds": 0.0084091667085886,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-worker-worker-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-align"
+      ],
+      "exit_code": 0,
+      "seconds": 0.007883499376475811,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-worker-ort-remove-signature",
+      "command": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+      ],
+      "exit_code": 0,
+      "seconds": 0.023593958467245102,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-worker-ort-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+      ],
+      "exit_code": 0,
+      "seconds": 0.03818070888519287,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-worker-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7217190004885197,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-worker-valid-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.31593979243189096,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-worker-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "refinement-runtime-qualify"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8161632912233472,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "substituted-ort-worker-remove-signature",
+      "command": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-align"
+      ],
+      "exit_code": 0,
+      "seconds": 0.008888124488294125,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "substituted-ort-worker-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-align"
+      ],
+      "exit_code": 0,
+      "seconds": 0.008730749599635601,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "substituted-ort-ort-remove-signature",
+      "command": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+      ],
+      "exit_code": 0,
+      "seconds": 0.007671667262911797,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "substituted-ort-ort-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+      ],
+      "exit_code": 0,
+      "seconds": 0.007206542417407036,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "substituted-ort-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7204846665263176,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "substituted-ort-valid-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2959847906604409,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "substituted-ort-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "refinement-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.008975417353212833,
+      "expected_success": false,
+      "expected_message": "compiled content pin"
+    },
+    {
+      "name": "substituted-ort-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "refinement-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.00982216652482748,
+      "expected_success": false,
+      "expected_message": "compiled content pin"
+    },
+    {
+      "name": "restored-ort-worker-remove-signature",
+      "command": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-align"
+      ],
+      "exit_code": 0,
+      "seconds": 0.009427833370864391,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-ort-worker-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-align"
+      ],
+      "exit_code": 0,
+      "seconds": 0.008561207912862301,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-ort-ort-remove-signature",
+      "command": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+      ],
+      "exit_code": 0,
+      "seconds": 0.0349569171667099,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-ort-ort-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+      ],
+      "exit_code": 0,
+      "seconds": 0.048472375608980656,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-ort-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7286263331770897,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-ort-valid-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.3029333744198084,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-ort-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "refinement-runtime-qualify"
+      ],
+      "exit_code": 0,
+      "seconds": 0.819515666924417,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "removed-marker-worker-remove-signature",
+      "command": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-align"
+      ],
+      "exit_code": 0,
+      "seconds": 0.009443792514503002,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "removed-marker-worker-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-align"
+      ],
+      "exit_code": 0,
+      "seconds": 0.008280083537101746,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "removed-marker-ort-remove-signature",
+      "command": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+      ],
+      "exit_code": 0,
+      "seconds": 0.03393329121172428,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "removed-marker-ort-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+      ],
+      "exit_code": 0,
+      "seconds": 0.04519445821642876,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "removed-marker-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7700126254931092,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "removed-marker-valid-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.31630516704171896,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "removed-marker-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "refinement-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.008219958283007145,
+      "expected_success": false,
+      "expected_message": "lost its DeadpanPackaging marker"
+    },
+    {
+      "name": "removed-marker-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "refinement-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.008990583010017872,
+      "expected_success": false,
+      "expected_message": "lost its DeadpanPackaging marker"
+    },
+    {
+      "name": "restored-marker-worker-remove-signature",
+      "command": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-align"
+      ],
+      "exit_code": 0,
+      "seconds": 0.008584750816226006,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-marker-worker-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-align"
+      ],
+      "exit_code": 0,
+      "seconds": 0.007995374500751495,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-marker-ort-remove-signature",
+      "command": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+      ],
+      "exit_code": 0,
+      "seconds": 0.01493091695010662,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-marker-ort-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+      ],
+      "exit_code": 0,
+      "seconds": 0.036079457961022854,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-marker-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7032882925122976,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-marker-valid-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.3103915425017476,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-marker-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "refinement-runtime-qualify"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8381364597007632,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "unpinned-host-worker-remove-signature",
+      "command": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-align"
+      ],
+      "exit_code": 0,
+      "seconds": 0.01205291785299778,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "unpinned-host-worker-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-align"
+      ],
+      "exit_code": 0,
+      "seconds": 0.008565584197640419,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "unpinned-host-ort-remove-signature",
+      "command": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+      ],
+      "exit_code": 0,
+      "seconds": 0.019991625100374222,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "unpinned-host-ort-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+      ],
+      "exit_code": 0,
+      "seconds": 0.03166100010275841,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "unpinned-host-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.6988477492704988,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "unpinned-host-valid-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.302798124961555,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "unpinned-host-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "refinement-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.009668458253145218,
+      "expected_success": false,
+      "expected_message": "requires both compiled content pins"
+    },
+    {
+      "name": "restored-host-worker-remove-signature",
+      "command": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-align"
+      ],
+      "exit_code": 0,
+      "seconds": 0.012016542255878448,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-host-worker-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-align"
+      ],
+      "exit_code": 0,
+      "seconds": 0.008323708549141884,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-host-ort-remove-signature",
+      "command": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+      ],
+      "exit_code": 0,
+      "seconds": 0.019168540835380554,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-host-ort-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib"
+      ],
+      "exit_code": 0,
+      "seconds": 0.028065208345651627,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-host-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7045685416087508,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-host-valid-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.31086308415979147,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-host-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "refinement-runtime-qualify"
+      ],
+      "exit_code": 0,
+      "seconds": 0.6840704595670104,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "restored-host-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-word-refinement-2026-10-25/bundle-cases-second with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "refinement-runtime-qualify"
+      ],
+      "exit_code": 0,
+      "seconds": 0.9897928331047297,
+      "expected_success": true,
+      "expected_message": null
+    }
+  ],
+  "script_sha256": "50ccc64f6961d29bbbadc662de0207cafadc949741cb29d0ab6427fa2bf9a331",
+  "scope": "Relocated real inference and re-signed admission failures; no same-user concurrent-writer containment claim."
+}

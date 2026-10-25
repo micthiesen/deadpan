@@ -1,0 +1,29 @@
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 14 tests
+test preview::refinement::ui::tests::refinement_modal_requires_explicit_acceptance_and_keeps_native_button_focus ... ok
+test preview::refinement::worker::tests::audition_enclosure_keeps_fractional_source_phase_and_negative_origins ... ok
+test preview::refinement::worker::tests::waveform_is_measured_bounded_and_does_not_normalize_the_input ... ok
+test ui_harness::tests::word_refinement_identifies_the_original_project_database ... ok
+test presentation::tests::proxy_tier_is_a_distinct_identity_and_survives_a_failed_refinement ... ok
+test preview::refinement::tests::a_panicked_worker_settles_running_instead_of_spinning_forever ... ok
+test preview::refinement::ui::tests::actual_button_focus_keeps_space_activation_out_of_the_audition_router ... ok
+test preview::refinement::ui::tests::composed_held_and_modified_native_button_keys_cannot_accept ... ok
+test project::tests::slip::zero_abandon_and_failed_refinement_never_reuse_a_previous_ready_slip ... ok
+test project::tests::edited_slice::refinement_stays_historical_and_source_view_survives_invalid_destination_and_reuses_media ... ok
+test project::tests::splice::cached_refinement_and_abandon_leave_history_unchanged_and_exact_commit_undo_once ... ok
+test project::tests::refinement::refinement_acceptance_refuses_stale_and_sleep_then_saves_one_undo_without_editing ... ok
+test project::tests::edited_slice::move_range::move_refinement_uses_current_source_range_and_saved_refresh_failure_retains_its_exact_selection ... ok
+test worker::project_tests::proxy_tests::a_newer_seek_before_the_rest_period_cancels_refinement ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 1352 filtered out; finished in 1.04s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+

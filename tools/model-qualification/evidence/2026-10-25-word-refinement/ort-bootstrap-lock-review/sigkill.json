@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python3",
+    "-B",
+    "-c",
+    "import importlib.util,pathlib,sys; s=importlib.util.spec_from_file_location('ort',sys.argv[1]); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); fd=m._open_lock(pathlib.Path(sys.argv[2])); print('locked',flush=True); sys.stdin.read()",
+    "/Users/michael/Code/deadpan/tools/prepare-ort.py",
+    "/tmp/deadpan-word-refinement-2026-10-25/ort-bootstrap-final/.prefix.prepare-ort.lock"
+  ],
+  "returncode": -9,
+  "stdout_after_ready": "",
+  "stderr": "",
+  "lock_inode": 155609140
+}

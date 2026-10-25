@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "sample_rate": 16000,
+  "channels": 1,
+  "pcm_f32le": "audio.f32le",
+  "transcript": "Tick tick tap tap stop now"
+}

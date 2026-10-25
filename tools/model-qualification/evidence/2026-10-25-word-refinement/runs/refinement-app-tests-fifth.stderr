@@ -1,0 +1,16 @@
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `test` profile [optimized + debuginfo] target(s) in 54.69s
+     Running unittests src/lib.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_app-888703593c7feae6)
+     Running unittests src/main.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_app-259389e5b1f76d5d)
+
+thread '<unnamed>' (187467858) panicked at crates/deadpan-app/src/preview/refinement.rs:398:44:
+intentional refinement worker fault witness
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'preview::refinement::ui::tests::composed_held_and_modified_native_button_keys_cannot_accept' (187467848) panicked at crates/deadpan-app/src/preview/refinement/ui.rs:418:13:
+Enter Modifiers::NONE, repeat=true, ime=false
+error: test failed, to rerun pass `-p deadpan-app --bin deadpan-app`

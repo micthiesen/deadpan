@@ -26,6 +26,7 @@ pub mod generation;
 pub mod macros;
 pub mod marks;
 mod pause;
+pub mod refinement;
 pub mod registers;
 pub mod render_history;
 pub mod retime;
@@ -1103,6 +1104,8 @@ pub enum ProjectRequest {
     /// Apply, undo or redo a correction of the Original's transcript or
     /// pauses. Corrections live outside document history.
     ChangeCorrections(CorrectionRequest),
+    /// Explicitly accept a captured local word-timing proposal.
+    AcceptRefinement(refinement::Request),
     Marks(marks::Request),
     /// AI pause generation. Only Accept edits the project.
     Generation(generation::GenerationOperation),

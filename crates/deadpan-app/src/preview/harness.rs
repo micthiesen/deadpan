@@ -90,6 +90,7 @@ mod transcript;
 mod trim;
 mod wake;
 mod wet_returns;
+mod word_refinement;
 mod youtube;
 mod zoom;
 
@@ -289,10 +290,10 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                     .join("ai-pause-ready.deadpan");
                 copy_package(fixture, &copy)?;
                 copy
-            } else if ui_harness::real_playback(name) || name == "large-first-pause" {
+            } else if ui_harness::real_playback(name) || name == "large-first-pause" || name == "word-refinement" {
                 let root = documents.parent().ok_or("Replay Documents root has no parent")?;
                 std::fs::create_dir_all(root).map_err(|error| error.to_string())?;
-                let copy = root.join(if name == "large-first-pause" { "large-first-pause.deadpan" } else { "generated-playback.deadpan" });
+                let copy = root.join(if name == "large-first-pause" { "large-first-pause.deadpan" } else if name.starts_with("word-refinement") { "word-refinement.deadpan" } else { "generated-playback.deadpan" });
                 deadpan_store::portable::copy_portable(fixture, &copy, &AtomicBool::new(false))
                     .map_err(|error| error.to_string())?;
                 copy
@@ -434,6 +435,10 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                             app.models.manager.set_root(models.clone());
                             app.models.manager.set_helpers_root(models.join("helpers"));
                         }
+                        if name.starts_with("word-refinement") {
+                            app.models.manager.set_root(options.refinement_models_root.clone()
+                                .ok_or("word-refinement needs its explicit verified models root")?);
+                        }
                         if name == "model-packs" {
                             // Only the installer is scripted: the panel, its
                             // gating, the store's state and its receipts are real.
@@ -517,9 +522,18 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                     })?;
                     return if name == "ai-playback-interference" {
                         ai_playback_interference::run(&mut driver)
+                    } else if name == "word-refinement-playback" {
+                        word_refinement::run_playback(&mut driver)
                     } else {
                         generated_playback::run(&mut driver, name == "generated-loop")
                     };
+                }
+                if name == "word-refinement" {
+                    driver.click("Open project…  ⌘O")?;
+                    driver.wait_for("Private word-refinement fixture copy opened", |app| {
+                        app.workspace.is_some() && !app.service.is_busy()
+                    })?;
+                    return word_refinement::run(&mut driver);
                 }
                 if name == "generated-picture" {
                     driver.click("Open project…  ⌘O")?;
@@ -1269,6 +1283,15 @@ impl Driver<'_> {
     }
 
     fn wait_for(&mut self, label: &str, ready: impl Fn(&DeadpanApp) -> bool) -> Result<(), String> {
+        self.wait_for_limit(label, Duration::from_secs(15), ready)
+    }
+
+    fn wait_for_limit(
+        &mut self,
+        label: &str,
+        limit: Duration,
+        ready: impl Fn(&DeadpanApp) -> bool,
+    ) -> Result<(), String> {
         let started = Instant::now();
         let capture_started = self.capture_wall;
         let mut count = 0;
@@ -1276,7 +1299,7 @@ impl Driver<'_> {
             if started
                 .elapsed()
                 .saturating_sub(self.capture_wall - capture_started)
-                > Duration::from_secs(15)
+                > limit
             {
                 self.metric(
                     label,
@@ -1294,7 +1317,7 @@ impl Driver<'_> {
                 let elapsed = started
                     .elapsed()
                     .saturating_sub(self.capture_wall - capture_started);
-                let remaining = Duration::from_secs(15).saturating_sub(elapsed);
+                let remaining = limit.saturating_sub(elapsed);
                 self.wake.wait_until(Instant::now() + remaining);
             }
         }

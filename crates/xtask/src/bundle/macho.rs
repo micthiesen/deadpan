@@ -9,10 +9,61 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 
-use super::{Result, output, run_tool};
+use super::{Result, output, run_tool, sha256_file};
 
 pub const EXECUTABLE_RPATH: &str = "@executable_path/../Frameworks";
 pub const LIBRARY_RPATH: &str = "@loader_path";
+pub const ORT_VERSION: &str = "1.31.0";
+pub const ORT_LIBRARY_NAME: &str = "libonnxruntime.1.dylib";
+pub const ORT_INSTALL_NAME: &str = "@rpath/libonnxruntime.1.dylib";
+pub const ORT_SOURCE_BYTES: u64 = 33_037_336;
+pub const ORT_SOURCE_SHA256: &str =
+    "9d2945b4de2ca594608f33b99498c8a81e6696e75da7ae9c67bc9ad3cc36c0d6";
+
+/// A source verified against this build's independent runtime pin.
+/// Construction never searches dyld paths or a Python environment.
+pub struct OrtRuntime {
+    source: PathBuf,
+}
+
+fn select_ort_source(prefix: &Path) -> Result<PathBuf> {
+    if !prefix.is_absolute() {
+        return Err("DEADPAN_ORT_PREFIX must be an absolute qualified ONNX Runtime prefix".into());
+    }
+    let library = fs::canonicalize(prefix.join("lib")).map_err(|e| e.to_string())?;
+    let source = fs::canonicalize(library.join(ORT_LIBRARY_NAME)).map_err(|e| e.to_string())?;
+    if source.parent() != Some(library.as_path()) || !source.is_file() {
+        return Err(
+            "ONNX Runtime library must resolve to a regular file in the selected prefix/lib".into(),
+        );
+    }
+    Ok(source)
+}
+
+fn ort_dependencies_are_system(dependencies: &BTreeSet<String>) -> Result<()> {
+    if let Some(reference) = dependencies.iter().find(|reference| !is_system(reference)) {
+        return Err(format!(
+            "the pinned ONNX Runtime must have only system dependencies: {reference}"
+        ));
+    }
+    Ok(())
+}
+
+pub fn qualified_ort(prefix: &Path) -> Result<OrtRuntime> {
+    let source = select_ort_source(prefix)?;
+    if fs::metadata(&source).map_err(|e| e.to_string())?.len() != ORT_SOURCE_BYTES
+        || sha256_file(&source)? != ORT_SOURCE_SHA256
+    {
+        return Err(format!(
+            "DEADPAN_ORT_PREFIX is not the qualified ONNX Runtime {ORT_VERSION} bytes"
+        ));
+    }
+    if install_names(&source)? != BTreeSet::from([ORT_INSTALL_NAME.to_owned()]) {
+        return Err("ONNX Runtime has a different install name".into());
+    }
+    ort_dependencies_are_system(&dependencies(&source)?)?;
+    Ok(OrtRuntime { source })
+}
 
 /// Load commands that macOS itself provides on every supported system.
 const SYSTEM_PREFIXES: [&str; 2] = ["/System/Library/", "/usr/lib/"];
@@ -156,46 +207,105 @@ fn file_name(reference: &str) -> Result<String> {
         .ok_or_else(|| format!("library reference without a file name: {reference}"))
 }
 
-/// Copy the transitive FFmpeg libraries that `executables` load from `prefix`
-/// into `frameworks` and rewrite every reference. Any other non-system
-/// reference is refused. Returns the copied library paths.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ReferenceKind {
+    Ffmpeg,
+    Ort,
+}
+
+fn reference_kind(
+    reference: &str,
+    prefix: &Path,
+    canonical: &Path,
+    ort: bool,
+) -> Result<ReferenceKind> {
+    if reference == ORT_INSTALL_NAME && ort {
+        return Ok(ReferenceKind::Ort);
+    }
+    let normalized = lexical_normalize(Path::new(reference));
+    if Path::new(reference).is_absolute()
+        && (normalized.starts_with(prefix) || normalized.starts_with(canonical))
+    {
+        return Ok(ReferenceKind::Ffmpeg);
+    }
+    Err(format!(
+        "reference {reference} is neither a system library, an absolute library in the pinned FFmpeg prefix, nor the exact qualified ONNX Runtime install name"
+    ))
+}
+
+fn register_library(
+    copied: &mut BTreeMap<String, (PathBuf, String)>,
+    name: &str,
+    source: &Path,
+    sha256: &str,
+) -> Result<bool> {
+    if let Some((previous, known)) = copied.get(name) {
+        if known != sha256 {
+            return Err(format!(
+                "library basename collision for {name}: {} and {} have different actual content",
+                previous.display(),
+                source.display()
+            ));
+        }
+        return Ok(false);
+    }
+    copied.insert(name.to_owned(), (source.to_owned(), sha256.to_owned()));
+    Ok(true)
+}
+
+/// Close the FFmpeg prefix plus the one explicitly qualified ORT load name.
+/// No other non-system reference or arbitrary @rpath lookup is admitted.
 pub fn bundle_libraries(
     executables: &[PathBuf],
     frameworks: &Path,
     prefix: &Path,
+    ort: Option<&OrtRuntime>,
 ) -> Result<Vec<PathBuf>> {
     let canonical = fs::canonicalize(prefix).map_err(|e| format!("{}: {e}", prefix.display()))?;
-    let from_prefix = |reference: &str| {
-        let normalized = lexical_normalize(Path::new(reference));
-        Path::new(reference).is_absolute()
-            && (normalized.starts_with(prefix) || normalized.starts_with(&canonical))
-    };
     fs::create_dir_all(frameworks).map_err(|e| e.to_string())?;
     // Reference string -> bundled file name, for every image's rewrite.
     let mut bundled: BTreeMap<String, String> = BTreeMap::new();
+    let mut copied = BTreeMap::new();
     let mut libraries = Vec::new();
     let mut queue: Vec<PathBuf> = executables.to_vec();
     while let Some(image) = queue.pop() {
         for reference in dependencies(&image)? {
-            if is_system(&reference) {
+            if is_system(&reference) || bundled.contains_key(&reference) {
                 continue;
             }
-            if !from_prefix(&reference) {
-                return Err(format!(
-                    "{} references {reference}, which is neither a system library nor in the pinned FFmpeg prefix",
-                    image.display()
-                ));
-            }
-            if bundled.contains_key(&reference) {
-                continue;
+            let kind = reference_kind(&reference, prefix, &canonical, ort.is_some())
+                .map_err(|error| format!("{}: {error}", image.display()))?;
+            let source = match kind {
+                ReferenceKind::Ort => ort.ok_or("missing qualified ONNX Runtime")?.source.clone(),
+                ReferenceKind::Ffmpeg => {
+                    let source =
+                        fs::canonicalize(&reference).map_err(|e| format!("{reference}: {e}"))?;
+                    if !source.starts_with(&canonical) {
+                        return Err(format!(
+                            "{reference} resolves outside the pinned FFmpeg prefix"
+                        ));
+                    }
+                    source
+                }
+            };
+            let source_sha256 = sha256_file(&source)?;
+            if kind == ReferenceKind::Ort && source_sha256 != ORT_SOURCE_SHA256 {
+                return Err("qualified ONNX Runtime changed before bundling".into());
             }
             let name = file_name(&reference)?;
             let destination = frameworks.join(&name);
-            if !destination.exists() {
-                let source =
-                    fs::canonicalize(&reference).map_err(|e| format!("{reference}: {e}"))?;
+            if register_library(&mut copied, &name, &source, &source_sha256)? {
+                if fs::symlink_metadata(&destination).is_ok() {
+                    return Err(format!(
+                        "unowned library destination already exists: {}",
+                        destination.display()
+                    ));
+                }
                 fs::copy(&source, &destination)
                     .map_err(|e| format!("copy {}: {e}", source.display()))?;
+                if sha256_file(&destination)? != source_sha256 {
+                    return Err(format!("library changed during copy: {}", source.display()));
+                }
                 set_mode(&destination, 0o644)?;
                 libraries.push(destination.clone());
                 queue.push(destination);
@@ -622,8 +732,13 @@ mod tests {
         );
 
         let frameworks = app.join("Contents/Frameworks");
-        let copied =
-            bundle_libraries(std::slice::from_ref(&executable), &frameworks, &prefix).unwrap();
+        let copied = bundle_libraries(
+            std::slice::from_ref(&executable),
+            &frameworks,
+            &prefix,
+            None,
+        )
+        .unwrap();
         assert_eq!(copied.len(), 2);
         assert!(
             rpaths(&executable)
@@ -796,8 +911,12 @@ mod tests {
             &[stray],
             &other.join("Frameworks"),
             &root.join("prefix-absent"),
+            None,
         );
         assert!(refused.is_err());
         fs::remove_dir_all(&root).unwrap();
     }
 }
+
+#[cfg(test)]
+mod ort_tests;

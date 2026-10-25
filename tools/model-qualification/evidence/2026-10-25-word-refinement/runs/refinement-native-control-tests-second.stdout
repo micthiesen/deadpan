@@ -1,0 +1,38 @@
+
+running 3 tests
+test assembly::tests::compiled_template_and_tensor_ranges_are_sound ... ok
+test assembly::tests::rejects_size_and_corrupted_checkpoint_without_interpreting_it ... ok
+test features::tests::rejects_bad_statistics_and_features ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+
+running 3 tests
+test tests::bounded_reads_verify_exact_owned_bytes_and_observe_cancellation ... ok
+test tests::compiled_library_and_protocol_pins_match ... ok
+test tests::workspace_inputs_and_output_reject_symlinks_and_existing_files ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 2 tests
+test cancellation_and_deadline_do_not_return_model_output ... ok
+test offline_native_reference_feature_and_emission_parity ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.32s
+
+
+running 5 tests
+test real_worker_ignores_unrelated_cancel_and_completes_actual_inference ... ok
+test real_worker_refuses_pcm_hash_nonfinite_symlink_and_fifo_without_models ... ok
+test real_worker_rejects_wrong_statistics_and_invalid_control_limits_without_models ... ok
+test real_worker_revokes_ownership_on_eof_malformed_or_second_infer_and_honors_deadline ... ok
+test shared_supervisor_sends_matching_cancel_and_confirms_worker_cleanup ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

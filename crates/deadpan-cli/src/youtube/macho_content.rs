@@ -253,6 +253,26 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn large_zero_signature_reservations_are_allowed_but_stale_signature_bytes_are_not() {
+        // Measured macOS codesign reservation after re-signing deadpan-align:
+        // datasize 21104, superblob length 3098, 18006 reserved trailing bytes.
+        let mut file = synthetic(b"payload", 21_104);
+        let offset = u32::from_le_bytes(file[112..116].try_into().unwrap()) as usize;
+        let length = 3_098usize;
+        file[offset + 4..offset + 8].copy_from_slice(&(length as u32).to_be_bytes());
+        file[offset + length..].fill(0);
+        assert_eq!(
+            content_sha256(&file).unwrap(),
+            content_sha256(&synthetic(b"payload", 64)).unwrap()
+        );
+        for relative in [0, 8_388, 18_005] {
+            let mut stale = file.clone();
+            stale[offset + length + relative] = 1;
+            assert!(content_sha256(&stale).is_err());
+        }
+    }
+
+    #[test]
     fn universal_files_hash_every_slice_and_nothing_else() {
         let slice = synthetic(b"slice", 64);
         let mut fat = vec![0u8; 0x1000];

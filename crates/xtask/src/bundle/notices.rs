@@ -18,13 +18,95 @@ use super::spdx;
 use super::{Result, output_in, sha256_file, sha256_hex};
 
 /// Binaries shipped in the bundle.
-pub const SHIPPED_PACKAGES: [&str; 5] = [
+pub const SHIPPED_PACKAGES: [&str; 6] = [
     "deadpan-app",
     "deadpan-cli",
     "deadpan-media-worker",
     "deadpan-transcribe",
     "deadpan-track",
+    "deadpan-align",
 ];
+
+pub const ORT_WHEEL_URL: &str = "https://files.pythonhosted.org/packages/e0/2b/117f94d73a3bac4276c285c47e384e1b3ea67b191aa4c7592df9d3f4a136/onnxruntime-1.31.0-cp313-cp313-macosx_14_0_arm64.whl";
+pub const ORT_WHEEL_SHA256: &str =
+    "0ba02a44acb6203040354d9a1f160e3f37a43feac7bb05caa3e0ea545efed505";
+pub const ORT_LICENSE_SHA256: &str =
+    "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c";
+pub const ORT_THIRD_PARTY_SHA256: &str =
+    "143764b952fdb1a7c69ce653bfba74a7744d6a8a573bfb73e235fba356c83de3";
+const REFINEMENT_NOTICE_PINS: [(&str, &str); 3] = [
+    (
+        "refinement/AUTHOR-LICENSE",
+        "93a58861a858cc108e6b6b833e08e76e8b2a66339e4a8007c8a5a8c1ff9c40d6",
+    ),
+    (
+        "refinement/UNICODE-LICENSE",
+        "f7db81051789b729fea528a63ec4c938fdcb93d9d61d97dc8cc2e9df6d47f2a1",
+    ),
+    (
+        "refinement/PYTHON-LICENSE",
+        "78b12c3a81360b357002334f0e70ea0e92eebf7a9b358805c03c48484945f3bb",
+    ),
+];
+
+fn refinement_components() -> Vec<Value> {
+    vec![
+        json!({
+            "type": "file", "bom-ref": "native:phoneme-compiled-assets",
+            "name": "Phoneme CTC zero-weight graph and mathematical feature constants",
+            "version": "a4749fe14f17b19c071fe5b20005575ec0509ca3",
+            "licenses": [{ "license": { "id": "BSD-2-Clause" } }],
+            "externalReferences": [{
+                "type": "vcs",
+                "url": "https://github.com/huangruizhe/audio/tree/a4749fe14f17b19c071fe5b20005575ec0509ca3"
+            }],
+            "properties": [
+                { "name": "deadpan:embedded-by", "value": "deadpan-align" },
+                { "name": "deadpan:notice", "value": "refinement/AUTHOR-LICENSE" },
+                { "name": "deadpan:notice-sha256", "value": REFINEMENT_NOTICE_PINS[0].1 },
+                { "name": "deadpan:derivation", "value": "Author architecture exported to fixed ONNX with checkpoint-derived tensor buffers zeroed; mathematical Hann/Mel constants. No checkpoint, learned statistics, Torch or Python runtime." },
+                { "name": "deadpan:model-weight-terms", "value": "Separate installed original-source pack; no separately explicit model-weight grant established by this source-code notice." }
+            ]
+        }),
+        json!({
+            "type": "file", "bom-ref": "native:refinement-unicode-data",
+            "name": "Generated Unicode lexical semantic tables",
+            "version": "15.1.0+cpython3.13.15",
+            "licenses": [{ "expression": "Unicode-3.0 AND Python-2.0" }],
+            "properties": [
+                { "name": "deadpan:embedded-by", "value": "deadpan-analysis" },
+                { "name": "deadpan:unicode-notice", "value": "refinement/UNICODE-LICENSE" },
+                { "name": "deadpan:python-notice", "value": "refinement/PYTHON-LICENSE" },
+                { "name": "deadpan:unicode-notice-sha256", "value": REFINEMENT_NOTICE_PINS[1].1 },
+                { "name": "deadpan:python-notice-sha256", "value": REFINEMENT_NOTICE_PINS[2].1 },
+                { "name": "deadpan:derivation", "value": "Qualification CPython 3.13.15 with Unicode 15.1.0: enumerate casefold differences and alphabetic/decimal ranges; generated semantic data only, no CPython code or interpreter." }
+            ]
+        }),
+    ]
+}
+
+/// Record both the qualified upstream binary and the relocated, signed bytes.
+/// The Python wheel is provenance only; no Python interpreter is shipped here.
+pub fn ort_component(shipped_sha256: &str) -> Value {
+    json!({
+        "type": "library", "bom-ref": "native:onnxruntime", "name": "ONNX Runtime",
+        "version": super::macho::ORT_VERSION,
+        "licenses": [{ "license": { "id": "MIT" } }],
+        "hashes": [{ "alg": "SHA-256", "content": shipped_sha256 }],
+        "externalReferences": [
+            { "type": "distribution", "url": ORT_WHEEL_URL },
+            { "type": "vcs", "url": "https://github.com/microsoft/onnxruntime/tree/v1.31.0" }
+        ],
+        "properties": [
+            { "name": "deadpan:upstream-library-sha256", "value": super::macho::ORT_SOURCE_SHA256 },
+            { "name": "deadpan:upstream-library-bytes", "value": super::macho::ORT_SOURCE_BYTES.to_string() },
+            { "name": "deadpan:source-wheel-sha256", "value": ORT_WHEEL_SHA256 },
+            { "name": "deadpan:notice", "value": "onnxruntime/LICENSE" },
+            { "name": "deadpan:third-party-notice", "value": "onnxruntime/ThirdPartyNotices.txt" },
+            { "name": "deadpan:load-policy", "value": "deadpan-align direct link; qualified explicit prefix; system-only transitive dependencies" }
+        ]
+    })
+}
 
 const LICENSE_NAMES: [&str; 6] = [
     "LICENSE",
@@ -354,6 +436,39 @@ pub struct Helper {
     pub signature: String,
 }
 
+fn require_ort_notices(vendored: &[VendoredNotice]) -> Result<()> {
+    for (name, expected) in [
+        ("onnxruntime/LICENSE", ORT_LICENSE_SHA256),
+        ("onnxruntime/ThirdPartyNotices.txt", ORT_THIRD_PARTY_SHA256),
+    ] {
+        let notice = vendored
+            .iter()
+            .find(|notice| notice.path == name)
+            .ok_or_else(|| format!("the qualified ONNX Runtime notice is missing: {name}"))?;
+        if sha256_file(&notice.file)? != expected {
+            return Err(format!(
+                "ONNX Runtime notice differs from the compiled pin: {name}"
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn require_refinement_notices(vendored: &[VendoredNotice]) -> Result<()> {
+    for (name, expected) in REFINEMENT_NOTICE_PINS {
+        let notice = vendored
+            .iter()
+            .find(|notice| notice.path == name)
+            .ok_or_else(|| format!("compiled refinement data notice is missing: {name}"))?;
+        if sha256_file(&notice.file)? != expected {
+            return Err(format!(
+                "compiled refinement data notice pin differs: {name}"
+            ));
+        }
+    }
+    Ok(())
+}
+
 /// Write `THIRD_PARTY_NOTICES.txt` and copy the vendored notice files.
 /// Returns the crates that carry no license file.
 pub fn write_notices(
@@ -364,6 +479,8 @@ pub fn write_notices(
     ffmpeg: &Ffmpeg,
     helpers: &[Helper],
 ) -> Result<Vec<String>> {
+    require_ort_notices(vendored)?;
+    require_refinement_notices(vendored)?;
     fs::create_dir_all(directory).map_err(|e| e.to_string())?;
     let identifiers = spdx_identifiers(workspace)?;
     let spdx_texts = workspace.join("packaging/notices/spdx");
@@ -414,7 +531,38 @@ Build configuration: {configuration}\n",
 
     text.push_str("Opus is statically linked into FFmpeg libavcodec under BSD-3-Clause.\nIts complete copyright, conditions and patent-license references are retained\nin opus/COPYING. The pinned source version and archive hash are in the SBOM.\n\n");
     text.push_str("dav1d is statically linked into FFmpeg libavcodec under BSD-2-Clause.\nIts complete copyright and conditions are retained in dav1d/COPYING.\nThe pinned source version and archive hash are in the SBOM.\n\n");
+    let _ = writeln!(
+        text,
+        "{rule}\nONNX Runtime {} (Contents/Frameworks/{})\n{rule}\n\
+The native deadpan-align worker directly links this MIT-licensed runtime.\n\
+Microsoft's exact LICENSE and ThirdPartyNotices.txt from the qualified wheel\n\
+are retained under onnxruntime/. Third-party components retain their own terms.\n\
+Source wheel: {ORT_WHEEL_URL}\n  SHA-256 {ORT_WHEEL_SHA256}\n\
+Original library SHA-256 {} ({} bytes).\n\
+Only bundle-relative install/rpath commands and the code signature may change.\n\
+No Python interpreter, model checkpoint or learned feature statistics are\n\
+included with this runtime; original model data installs as a separate pack.\n",
+        super::macho::ORT_VERSION,
+        super::macho::ORT_LIBRARY_NAME,
+        super::macho::ORT_SOURCE_SHA256,
+        super::macho::ORT_SOURCE_BYTES,
+    );
 
+    text.push_str(
+        "\nCompiled word-refinement derivatives (separate from model weights)\n\
+The zero-weight phoneme graph follows the author's pinned architecture; Hann\n\
+and Mel constants are mathematical preprocessing data. Retain the exact BSD\n\
+2-Clause source notice in refinement/AUTHOR-LICENSE. No checkpoint or learned\n\
+feature statistics are included in these compiled assets. That source notice\n\
+does not establish separately explicit terms for the installed model weights.\n\n\
+Frozen Unicode 15.1.0 lexical tables were generated by enumerating casefold,\n\
+alphabetic and decimal semantics in qualification CPython 3.13.15. Their\n\
+retained terms are refinement/UNICODE-LICENSE (Unicode License V3) and\n\
+refinement/PYTHON-LICENSE (the complete qualification-interpreter terms).\n\
+Only generated semantic data is compiled; no CPython code, Python interpreter\n\
+or Torch runtime is included by this feature. Exact local provenance and\n\
+notice hashes are retained in packaging/notices/sources.json and the SBOM.\n\n",
+    );
     for helper in helpers {
         let _ = writeln!(
             text,
@@ -636,6 +784,7 @@ pub fn sbom(
         }));
     }
     components.extend(native.iter().cloned());
+    components.extend(refinement_components());
     let dependencies: Vec<Value> = crates
         .iter()
         .map(|item| {
@@ -818,3 +967,9 @@ mod tests {
         assert_eq!(checksums[&("a".into(), "1.0.0".into())], "abc");
     }
 }
+
+#[cfg(test)]
+mod ort_tests;
+
+#[cfg(test)]
+mod refinement_tests;

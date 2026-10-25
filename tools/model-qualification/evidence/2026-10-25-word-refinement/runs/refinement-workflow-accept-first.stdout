@@ -1,0 +1,12 @@
+{
+  "before_version": 1,
+  "committed": true,
+  "end_cs": 68,
+  "protocol": 1,
+  "redo": null,
+  "revision_id": "f0081ed5-c0e6-452f-b125-dc5e7f612313",
+  "start_cs": 16,
+  "undo": "Accept approximate word timing",
+  "version": 2,
+  "word": 0
+}

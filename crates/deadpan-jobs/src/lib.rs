@@ -23,6 +23,8 @@ pub mod picture_proposals;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod process;
 pub mod protocol;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod refinement;
 pub mod render;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod supervisor;

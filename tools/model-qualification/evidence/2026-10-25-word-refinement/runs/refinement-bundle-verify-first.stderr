@@ -1,0 +1,2 @@
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.10s
+     Running `target/debug/xtask bundle-verify /tmp/deadpan-word-refinement-2026-10-25/bundle-second/Deadpan.app --fixture /tmp/deadpan-word-refinement-2026-10-25/workflow/Original-qualified.mp4 --keep`

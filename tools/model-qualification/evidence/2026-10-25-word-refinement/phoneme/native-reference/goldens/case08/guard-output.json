@@ -1,0 +1,688 @@
+{
+  "iteration": 1,
+  "configuration": {
+    "rule": "phonetic-context-residual-1",
+    "minimum_phone_events": 3,
+    "minimum_duration_frames": 6,
+    "posterior_minimum": 0.5,
+    "output_frame_ms": 20,
+    "scope": "whole captured context",
+    "semantics": "Unexplained high-support greedy phonetic content makes context incomplete or placement ambiguous; raw timing is retained but all offers abstain.",
+    "original_word_gate": 0.5,
+    "original_phone_gate": 0.1
+  },
+  "greedy_phones": [
+    {
+      "label": 10,
+      "phone": "DH",
+      "start_frame": 9,
+      "end_frame": 11,
+      "frames": 2,
+      "mean_posterior": 0.5896400835831733
+    },
+    {
+      "label": 21,
+      "phone": "L",
+      "start_frame": 11,
+      "end_frame": 18,
+      "frames": 7,
+      "mean_posterior": 0.8471150026978117
+    },
+    {
+      "label": 12,
+      "phone": "ER",
+      "start_frame": 18,
+      "end_frame": 23,
+      "frames": 5,
+      "mean_posterior": 0.34235044941017395
+    },
+    {
+      "label": 34,
+      "phone": "UW",
+      "start_frame": 23,
+      "end_frame": 27,
+      "frames": 4,
+      "mean_posterior": 0.3816517397033703
+    },
+    {
+      "label": 22,
+      "phone": "M",
+      "start_frame": 34,
+      "end_frame": 35,
+      "frames": 1,
+      "mean_posterior": 0.41158097706970354
+    },
+    {
+      "label": 28,
+      "phone": "R",
+      "start_frame": 35,
+      "end_frame": 42,
+      "frames": 7,
+      "mean_posterior": 0.9730683868397632
+    },
+    {
+      "label": 13,
+      "phone": "EY",
+      "start_frame": 42,
+      "end_frame": 51,
+      "frames": 9,
+      "mean_posterior": 0.8522029887225988
+    },
+    {
+      "label": 22,
+      "phone": "M",
+      "start_frame": 51,
+      "end_frame": 53,
+      "frames": 2,
+      "mean_posterior": 0.5727808691582594
+    },
+    {
+      "label": 23,
+      "phone": "N",
+      "start_frame": 53,
+      "end_frame": 54,
+      "frames": 1,
+      "mean_posterior": 0.7041428581113942
+    },
+    {
+      "label": 31,
+      "phone": "T",
+      "start_frame": 58,
+      "end_frame": 64,
+      "frames": 6,
+      "mean_posterior": 0.9594307766865219
+    },
+    {
+      "label": 8,
+      "phone": "CH",
+      "start_frame": 64,
+      "end_frame": 67,
+      "frames": 3,
+      "mean_posterior": 0.7049598680275037
+    },
+    {
+      "label": 11,
+      "phone": "EH",
+      "start_frame": 67,
+      "end_frame": 70,
+      "frames": 3,
+      "mean_posterior": 0.49943131271251495
+    },
+    {
+      "label": 2,
+      "phone": "AE",
+      "start_frame": 70,
+      "end_frame": 75,
+      "frames": 5,
+      "mean_posterior": 0.6188422663644768
+    },
+    {
+      "label": 7,
+      "phone": "B",
+      "start_frame": 75,
+      "end_frame": 79,
+      "frames": 4,
+      "mean_posterior": 0.6749724669639507
+    },
+    {
+      "label": 29,
+      "phone": "S",
+      "start_frame": 79,
+      "end_frame": 86,
+      "frames": 7,
+      "mean_posterior": 0.6573187423226549
+    },
+    {
+      "label": 10,
+      "phone": "DH",
+      "start_frame": 86,
+      "end_frame": 88,
+      "frames": 2,
+      "mean_posterior": 0.689884299312783
+    },
+    {
+      "label": 3,
+      "phone": "AH",
+      "start_frame": 88,
+      "end_frame": 90,
+      "frames": 2,
+      "mean_posterior": 0.39538096045266646
+    },
+    {
+      "label": 20,
+      "phone": "K",
+      "start_frame": 91,
+      "end_frame": 92,
+      "frames": 1,
+      "mean_posterior": 0.44129176943104526
+    },
+    {
+      "label": 4,
+      "phone": "AO",
+      "start_frame": 97,
+      "end_frame": 99,
+      "frames": 2,
+      "mean_posterior": 0.3526388167871405
+    },
+    {
+      "label": 1,
+      "phone": "AA",
+      "start_frame": 99,
+      "end_frame": 101,
+      "frames": 2,
+      "mean_posterior": 0.3922798339518732
+    },
+    {
+      "label": 6,
+      "phone": "AY",
+      "start_frame": 101,
+      "end_frame": 103,
+      "frames": 2,
+      "mean_posterior": 0.2724507146748962
+    },
+    {
+      "label": 26,
+      "phone": "OY",
+      "start_frame": 103,
+      "end_frame": 105,
+      "frames": 2,
+      "mean_posterior": 0.624707646164531
+    },
+    {
+      "label": 21,
+      "phone": "L",
+      "start_frame": 105,
+      "end_frame": 112,
+      "frames": 7,
+      "mean_posterior": 0.8326754686819073
+    },
+    {
+      "label": 9,
+      "phone": "D",
+      "start_frame": 112,
+      "end_frame": 115,
+      "frames": 3,
+      "mean_posterior": 0.8814377764113198
+    },
+    {
+      "label": 31,
+      "phone": "T",
+      "start_frame": 115,
+      "end_frame": 121,
+      "frames": 6,
+      "mean_posterior": 0.7730922663283893
+    },
+    {
+      "label": 30,
+      "phone": "SH",
+      "start_frame": 121,
+      "end_frame": 124,
+      "frames": 3,
+      "mean_posterior": 0.7055720510573771
+    },
+    {
+      "label": 9,
+      "phone": "D",
+      "start_frame": 124,
+      "end_frame": 125,
+      "frames": 1,
+      "mean_posterior": 0.48239322365908627
+    },
+    {
+      "label": 17,
+      "phone": "IH",
+      "start_frame": 125,
+      "end_frame": 128,
+      "frames": 3,
+      "mean_posterior": 0.5455733200462382
+    },
+    {
+      "label": 23,
+      "phone": "N",
+      "start_frame": 128,
+      "end_frame": 137,
+      "frames": 9,
+      "mean_posterior": 0.9616743809864133
+    },
+    {
+      "label": 28,
+      "phone": "R",
+      "start_frame": 142,
+      "end_frame": 152,
+      "frames": 10,
+      "mean_posterior": 0.8625551505561546
+    },
+    {
+      "label": 13,
+      "phone": "EY",
+      "start_frame": 152,
+      "end_frame": 153,
+      "frames": 1,
+      "mean_posterior": 0.5269282315470913
+    },
+    {
+      "label": 12,
+      "phone": "ER",
+      "start_frame": 153,
+      "end_frame": 155,
+      "frames": 2,
+      "mean_posterior": 0.2403428290818066
+    },
+    {
+      "label": 38,
+      "phone": "Z",
+      "start_frame": 155,
+      "end_frame": 156,
+      "frames": 1,
+      "mean_posterior": 0.38408016157329034
+    },
+    {
+      "label": 32,
+      "phone": "TH",
+      "start_frame": 156,
+      "end_frame": 160,
+      "frames": 4,
+      "mean_posterior": 0.3836893779371194
+    },
+    {
+      "label": 38,
+      "phone": "Z",
+      "start_frame": 160,
+      "end_frame": 163,
+      "frames": 3,
+      "mean_posterior": 0.6954019833630124
+    },
+    {
+      "label": 14,
+      "phone": "F",
+      "start_frame": 163,
+      "end_frame": 164,
+      "frames": 1,
+      "mean_posterior": 0.33163654351545185
+    }
+  ],
+  "selected_pronunciation_path": 0,
+  "selected_pronunciations": [
+    [
+      "B",
+      "L",
+      "UW"
+    ],
+    [
+      "R",
+      "EY",
+      "N"
+    ],
+    [
+      "T",
+      "AE",
+      "P",
+      "S"
+    ],
+    [
+      "DH",
+      "AH"
+    ],
+    [
+      "OW",
+      "L",
+      "D"
+    ],
+    [
+      "T",
+      "IH",
+      "N"
+    ],
+    [
+      "R",
+      "UW",
+      "F"
+    ]
+  ],
+  "expected_phones": [
+    "B",
+    "L",
+    "UW",
+    "R",
+    "EY",
+    "N",
+    "T",
+    "AE",
+    "P",
+    "S",
+    "DH",
+    "AH",
+    "OW",
+    "L",
+    "D",
+    "T",
+    "IH",
+    "N",
+    "R",
+    "UW",
+    "F"
+  ],
+  "minimum_edit_distance": 19,
+  "alignment_steps": [
+    {
+      "op": "substitute",
+      "expected_index": 0,
+      "observed_index": 0,
+      "expected": 7,
+      "observed": 10
+    },
+    {
+      "op": "match",
+      "expected_index": 1,
+      "observed_index": 1,
+      "expected": 21,
+      "observed": 21
+    },
+    {
+      "op": "insert_observed",
+      "expected_index": null,
+      "observed_index": 2,
+      "expected": null,
+      "observed": 12
+    },
+    {
+      "op": "match",
+      "expected_index": 2,
+      "observed_index": 3,
+      "expected": 34,
+      "observed": 34
+    },
+    {
+      "op": "insert_observed",
+      "expected_index": null,
+      "observed_index": 4,
+      "expected": null,
+      "observed": 22
+    },
+    {
+      "op": "match",
+      "expected_index": 3,
+      "observed_index": 5,
+      "expected": 28,
+      "observed": 28
+    },
+    {
+      "op": "match",
+      "expected_index": 4,
+      "observed_index": 6,
+      "expected": 13,
+      "observed": 13
+    },
+    {
+      "op": "insert_observed",
+      "expected_index": null,
+      "observed_index": 7,
+      "expected": null,
+      "observed": 22
+    },
+    {
+      "op": "match",
+      "expected_index": 5,
+      "observed_index": 8,
+      "expected": 23,
+      "observed": 23
+    },
+    {
+      "op": "match",
+      "expected_index": 6,
+      "observed_index": 9,
+      "expected": 31,
+      "observed": 31
+    },
+    {
+      "op": "insert_observed",
+      "expected_index": null,
+      "observed_index": 10,
+      "expected": null,
+      "observed": 8
+    },
+    {
+      "op": "insert_observed",
+      "expected_index": null,
+      "observed_index": 11,
+      "expected": null,
+      "observed": 11
+    },
+    {
+      "op": "match",
+      "expected_index": 7,
+      "observed_index": 12,
+      "expected": 2,
+      "observed": 2
+    },
+    {
+      "op": "substitute",
+      "expected_index": 8,
+      "observed_index": 13,
+      "expected": 27,
+      "observed": 7
+    },
+    {
+      "op": "match",
+      "expected_index": 9,
+      "observed_index": 14,
+      "expected": 29,
+      "observed": 29
+    },
+    {
+      "op": "match",
+      "expected_index": 10,
+      "observed_index": 15,
+      "expected": 10,
+      "observed": 10
+    },
+    {
+      "op": "match",
+      "expected_index": 11,
+      "observed_index": 16,
+      "expected": 3,
+      "observed": 3
+    },
+    {
+      "op": "insert_observed",
+      "expected_index": null,
+      "observed_index": 17,
+      "expected": null,
+      "observed": 20
+    },
+    {
+      "op": "insert_observed",
+      "expected_index": null,
+      "observed_index": 18,
+      "expected": null,
+      "observed": 4
+    },
+    {
+      "op": "insert_observed",
+      "expected_index": null,
+      "observed_index": 19,
+      "expected": null,
+      "observed": 1
+    },
+    {
+      "op": "insert_observed",
+      "expected_index": null,
+      "observed_index": 20,
+      "expected": null,
+      "observed": 6
+    },
+    {
+      "op": "substitute",
+      "expected_index": 12,
+      "observed_index": 21,
+      "expected": 25,
+      "observed": 26
+    },
+    {
+      "op": "match",
+      "expected_index": 13,
+      "observed_index": 22,
+      "expected": 21,
+      "observed": 21
+    },
+    {
+      "op": "match",
+      "expected_index": 14,
+      "observed_index": 23,
+      "expected": 9,
+      "observed": 9
+    },
+    {
+      "op": "match",
+      "expected_index": 15,
+      "observed_index": 24,
+      "expected": 31,
+      "observed": 31
+    },
+    {
+      "op": "insert_observed",
+      "expected_index": null,
+      "observed_index": 25,
+      "expected": null,
+      "observed": 30
+    },
+    {
+      "op": "insert_observed",
+      "expected_index": null,
+      "observed_index": 26,
+      "expected": null,
+      "observed": 9
+    },
+    {
+      "op": "match",
+      "expected_index": 16,
+      "observed_index": 27,
+      "expected": 17,
+      "observed": 17
+    },
+    {
+      "op": "match",
+      "expected_index": 17,
+      "observed_index": 28,
+      "expected": 23,
+      "observed": 23
+    },
+    {
+      "op": "match",
+      "expected_index": 18,
+      "observed_index": 29,
+      "expected": 28,
+      "observed": 28
+    },
+    {
+      "op": "insert_observed",
+      "expected_index": null,
+      "observed_index": 30,
+      "expected": null,
+      "observed": 13
+    },
+    {
+      "op": "insert_observed",
+      "expected_index": null,
+      "observed_index": 31,
+      "expected": null,
+      "observed": 12
+    },
+    {
+      "op": "insert_observed",
+      "expected_index": null,
+      "observed_index": 32,
+      "expected": null,
+      "observed": 38
+    },
+    {
+      "op": "insert_observed",
+      "expected_index": null,
+      "observed_index": 33,
+      "expected": null,
+      "observed": 32
+    },
+    {
+      "op": "substitute",
+      "expected_index": 19,
+      "observed_index": 34,
+      "expected": 34,
+      "observed": 38
+    },
+    {
+      "op": "match",
+      "expected_index": 20,
+      "observed_index": 35,
+      "expected": 14,
+      "observed": 14
+    }
+  ],
+  "edit_counts": {
+    "match": 17,
+    "substitute": 4,
+    "delete_expected": 0,
+    "insert_observed": 15
+  },
+  "residual_runs": [
+    {
+      "observed_indices": [
+        7
+      ],
+      "phones": [
+        "M"
+      ],
+      "start_frame": 51,
+      "end_frame": 53,
+      "supported_frames": 2,
+      "events": 1,
+      "minimum_mean_posterior": 0.5727808691582594,
+      "qualifies": false
+    },
+    {
+      "observed_indices": [
+        10
+      ],
+      "phones": [
+        "CH"
+      ],
+      "start_frame": 64,
+      "end_frame": 67,
+      "supported_frames": 3,
+      "events": 1,
+      "minimum_mean_posterior": 0.7049598680275037,
+      "qualifies": false
+    },
+    {
+      "observed_indices": [
+        25
+      ],
+      "phones": [
+        "SH"
+      ],
+      "start_frame": 121,
+      "end_frame": 124,
+      "supported_frames": 3,
+      "events": 1,
+      "minimum_mean_posterior": 0.7055720510573771,
+      "qualifies": false
+    },
+    {
+      "observed_indices": [
+        30
+      ],
+      "phones": [
+        "EY"
+      ],
+      "start_frame": 152,
+      "end_frame": 153,
+      "supported_frames": 1,
+      "events": 1,
+      "minimum_mean_posterior": 0.5269282315470913,
+      "qualifies": false
+    }
+  ],
+  "context_status": "no_large_supported_residual_detected",
+  "abstain": false,
+  "reason": null,
+  "confidence": "uncalibrated phonetic consistency test, never proof of complete or unique context"
+}

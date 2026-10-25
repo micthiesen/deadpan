@@ -595,6 +595,10 @@ impl Service {
                 self.change_corrections_command(request);
                 return Ok(());
             }
+            ProjectRequest::AcceptRefinement(request) => {
+                self.accept_refinement_command(request);
+                return Ok(());
+            }
             ProjectRequest::CaptureEditSlice(request) => {
                 self.capture_edit_slice_command(request);
                 return Ok(());
@@ -699,7 +703,8 @@ impl Service {
             | ProjectRequest::SaveSpeechActivity { .. }
             | ProjectRequest::SaveShotAnalysis { .. }
             | ProjectRequest::SaveShotProgress { .. }
-            | ProjectRequest::ChangeCorrections(_) => {
+            | ProjectRequest::ChangeCorrections(_)
+            | ProjectRequest::AcceptRefinement(_) => {
                 unreachable!("analysis annotations use independent feedback")
             }
             ProjectRequest::Render(_) => unreachable!("render commands use their own feedback"),
