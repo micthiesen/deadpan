@@ -1,6 +1,29 @@
 # Progress reassessment, October 25, 2026
 
-**Assessed requirement coverage is about 83%. Strict completion remains 8/24. All seven delivery gates remain open; picture effect families are 5/13 complete.**
+**Initial reassessment: requirement coverage is about 83%. Strict completion was 8/24. All seven delivery gates remain open; picture effect families are 5/13 complete.**
+
+## Packaged helper trust amendment
+
+A later source audit found an over-credited part of DP-22.3. The existing
+transcription, tracking and media-worker selectors choose sibling executables,
+and the shared supervisor checks only an absolute existing file. Inside-out
+signing and verification during bundling do not bind those later launches to
+independent compiled image pins and the expected signer.
+
+DP-22.3 therefore changes from 1 to 0.5, and DP-22 reopens from Complete to
+Partial. The same 162-criterion ledger now scores 82.7307%, still displayed
+as about 83%, with **7/24 strictly complete and 0/7 gates closed**. This is a
+correction of earlier credit, not a change to the denominator or product scope.
+
+The new alignment path is being qualified with those checks; it does not
+cover the older helpers. Bind all three older workers and their library closure
+before launch, keep verification off the UI/audio threads, and exercise damaged,
+substituted and relocated bundles before closing DP-22 again.
+
+Source: crates/deadpan-cli/src/transcription.rs (TranscriptionRuntime),
+tracking.rs (TrackingRuntime), proxy.rs, youtube/acquire.rs,
+generation/runtime.rs, and crates/deadpan-jobs/src/process.rs. No global
+App/CLI startup verifier covers those paths.
 
 ## Why 89% stopped moving
 
@@ -24,7 +47,7 @@ The full criterion ledger, citations and remaining work are in [progress.json](p
 
 **83% measures covered acceptance scope. It does not mean 17% of the engineering time remains or imply a near release.** Rounding and criterion judgment limit precision. Historical estimates remain unchanged and labeled legacy; they cannot be compared to this baseline as a delivery rate.
 
-## Requirement scores
+## Requirement scores at initial reassessment
 
 | Requirement | Coverage | Complete / partial / absent criteria |
 | --- | ---: | ---: |

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-25T18:30:13Z",
+  "updated_at": "2026-10-25T21:29:43Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Exact Original analysis windows are committed and verified. Integrating the real local word-refinement proposal workflow: frozen phoneme backend, explicit approximation and acceptance, pinned corrections, native inference and model/runtime packaging. Prior model precision/coverage experiment failures remain explicit. Coverage 83%; 8/24 requirements complete; 0/7 gates closed.",
+  "focus": "Qualifying real local word-refinement packaging after passing CLI and native review/playback workflows. A source audit reopens the older native-worker launch-trust work in DP-22. Coverage about 83%; 7/24 requirements complete; 0/7 gates closed.",
   "features": [
     {
       "id": "editing",
@@ -125,12 +125,12 @@
     {
       "id": "release",
       "name": "App packaging, privacy and security",
-      "status": "done",
+      "status": "mostly",
       "requirements": [
         "DP-22",
         "DP-23"
       ],
-      "note": "Self-contained app, relocation, release audit and offline installation verified here."
+      "note": "Self-contained app, relocation, release audit and offline installation verified here. A launch-time audit reopens DP-22: transcribe, tracking and media workers still need independent compiled executable/library pins and expected-signer checks before launch. Build-time signing alone does not satisfy that requirement."
     }
   ],
   "history": [
@@ -1369,6 +1369,15 @@
       "revision": "883c9970d70dd0abeea4b1fd05508f2865e31af0",
       "retrospective": false,
       "summary": "Verified Original analysis-window preparation retains full source origin, exact global sample offset and canonical resampling phase. Four real CLI tests cover 44.1/48 kHz, zero/positive/negative origins, fractional/terminal crops, preflight refusal and cache reuse. The debug-adoption interruption regression, strict CLI/Media/Store all-target checks and formatting pass. Original fixture/lint failures and exact evidence remain retained. This is preparation for refinement, not implemented word proposals: DP-10.3 remains open and assessed coverage stays 83%."
+    },
+    {
+      "date": "2026-10-25",
+      "percent": 83,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 7,
+      "revision": "32b0620c",
+      "retrospective": false,
+      "summary": "Source audit corrects over-credit: DP-22.3 falls from 1 to 0.5 because the three older native workers lack launch-time compiled identity and signer checks. DP-22 reopens; 7/24 strictly complete. Same 162 criteria; 82.7307% rounds to 83%. Word-refinement integration is not credited yet."
     }
   ],
   "assessment": {
@@ -3274,13 +3283,18 @@
           {
             "id": "DP-22.3",
             "deliverable": "Actual hardened inside-out personal signing, immutable baseline and compiled helper trust pins",
-            "score": 1,
+            "score": 0.5,
             "evidence": [
               "docs/PACKAGING.md:120-157",
               "docs/PACKAGING.md:275-299",
-              "docs/RELEASE_AUDIT.md"
+              "docs/RELEASE_AUDIT.md",
+              "docs/PROGRESS_ASSESSMENT.md#packaged-helper-trust-amendment",
+              "crates/deadpan-cli/src/transcription.rs",
+              "crates/deadpan-cli/src/tracking.rs",
+              "crates/deadpan-cli/src/proxy.rs",
+              "crates/deadpan-cli/src/generation/runtime.rs"
             ],
-            "remaining": "",
+            "remaining": "Existing transcribe, track and media-worker launch paths lack independent compiled executable/library pins and expected-signer admission. Build-time signing is verified; launch-time verification remains implementation work. The new alignment path does not close that older gap.",
             "confidence": "high"
           },
           {
