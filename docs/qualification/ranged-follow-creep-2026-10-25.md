@@ -151,8 +151,9 @@ not alter product evidence; the completed audit and finite-bit check pass.
 
 No detector quality, physical display, listening, second-Mac, full packaging or
 overall latency claim follows. Repeat play ranges, other target controls and
-the remaining normative product scope stay open. The implementation commit and
-progress milestone150 are still pending.
+the remaining normative product scope stay open. Implementation commit
+`3e069f99a48c9af99a2e2c3096ce705a3e251318` is pushed to main and recorded as
+progress milestone150.
 
 ## Retained evidence and publication audit
 

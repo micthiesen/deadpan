@@ -28,7 +28,8 @@ The qualification retains the native selection assertion failure, dependency
 path typo and other exact scope limits. The [immutable evidence inventory](../tools/media-qualification/evidence/2026-10-25-ranged-follow-creep/files.json)
 retains 274 logical inputs in 141 files, with metadata-inclusive caps and a
 passing independent [byte audit](../tools/media-qualification/evidence/2026-10-25-ranged-follow-creep-audit.json).
-The implementation commit and milestone150 are pending; DP-08 stays Partial,
+Implementation `3e069f99a48c9af99a2e2c3096ce705a3e251318` is pushed to main
+and recorded as progress milestone150; DP-08 stays Partial,
 coverage 89%, eight Complete/sixteen Partial,
 effects five of thirteen. Remaining target controls and framing scopes stay open.
 

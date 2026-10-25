@@ -42,10 +42,11 @@ the independent [byte audit](../../tools/media-qualification/evidence/2026-10-25
 passes with result SHA42b9659650db0a379777faf98c407074fa0e29d1d0d7f8edd4d857a4dcd20786.
 Actual audit verifier/receipt, collector receipts and eleven guard-test proofs
 are retained separately, without changing the immutable collection.
-Root is preparing the implementation commit and milestone150.
-Progress artifact milestone149 is already refreshed, all 1,331
-lines/fields and 149 history entries compared with pushed JSON and phone view
-inspected. Coverage remains 89%, eight Complete/sixteen Partial, effects five of
+Implementation `3e069f99a48c9af99a2e2c3096ce705a3e251318` is pushed to main
+and recorded as milestone150. Root is refreshing and checking the progress
+artifact against that JSON. The earlier milestone149 refresh matched all 1,331
+lines/fields and 149 history entries, with phone view inspected.
+Coverage remains 89%, eight Complete/sixteen Partial, effects five of
 thirteen; DP-08 stays Partial. Continue remaining target controls/framing scopes
 after publication. Preserve foreign `fuzz/Cargo.lock` and `.claude/`.
 
