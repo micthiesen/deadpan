@@ -5,7 +5,8 @@
 use super::*;
 use deadpan_cli::audio::ProjectAudioSession;
 use deadpan_core::{
-    FollowScaleTransition, SemanticInstruction, SemanticZoomCenter, TargetCorrection,
+    FollowScaleRange, FollowScaleTransition, SemanticInstruction, SemanticZoomCenter,
+    TargetCorrection,
     framing_zoom::{ZoomCurve, ZoomKind},
 };
 use std::sync::atomic::AtomicBool;
@@ -24,27 +25,43 @@ fn quantized(value: ExactRatio) -> Result<ExactRatio> {
     ratio(grid(value)?, GRID)
 }
 
-fn scale(base: ExactRatio, frame: i64) -> Result<ExactRatio> {
+fn scale(base: ExactRatio, frame: i64, ranged: bool) -> Result<ExactRatio> {
     // The picture is sampled at owner position frame+1/2. Quantize progress
     // and actual endpoint scales separately, then round the weighted sum.
     // Multiplying by a rounded scale factor would give a different answer.
-    let t = grid(ratio(i128::from(2 * frame + 1), i128::from(2 * FRAMES))?)?;
-    let start = grid(base)?;
-    let end = grid(base.checked_mul(ratio(4, 3)?)?)?;
+    if ranged && frame < 20 {
+        return Ok(base);
+    }
+    let end_factor = if ranged { ratio(8, 5)? } else { ratio(4, 3)? };
+    let end = base.checked_mul(end_factor)?;
+    if ranged && frame >= 80 {
+        return Ok(end);
+    }
+    let t = grid(if ranged {
+        ratio(i128::from(2 * (frame - 20) + 1), 120)?
+    } else {
+        ratio(i128::from(2 * frame + 1), i128::from(2 * FRAMES))?
+    })?;
+    let start = grid(if ranged {
+        base.checked_mul(ratio(6, 5)?)?
+    } else {
+        base
+    })?;
+    let end = grid(end)?;
     ratio(
         ratio(start * (GRID - t) + end * t, GRID)?.round_even()?,
         GRID,
     )
 }
 
-fn expected_pose(frame: i64) -> Result<FramingPose> {
+fn expected_pose(frame: i64, ranged: bool) -> Result<FramingPose> {
     if !(10..110).contains(&frame) {
         // No target region outside its half-open span. Fallback centers are
         // authored exact values, including 1/3, and must not be quantized.
         return Ok(FramingPose::new(
             ratio(1, 3)?,
             ratio(2, 5)?,
-            scale(ratio(5, 4)?, frame)?,
+            scale(ratio(5, 4)?, frame, ranged)?,
         )?);
     }
     let x = match frame {
@@ -59,11 +76,11 @@ fn expected_pose(frame: i64) -> Result<FramingPose> {
     Ok(FramingPose::new(
         quantized(ratio(i128::from(x), 1_000_000)?)?,
         quantized(ratio(2, 5)?)?,
-        scale(ratio(3, 2)?, frame)?,
+        quantized(scale(ratio(3, 2)?, frame, ranged)?)?,
     )?)
 }
 
-fn check_poses(document: &ProjectDocument, owner: &NodeId) -> Result<Value> {
+fn check_poses(document: &ProjectDocument, owner: &NodeId, ranged: bool) -> Result<Value> {
     let plan = deadpan_plan::RenderPlan::compile(document)?;
     assert_eq!(document.duration()?.frames(), FRAMES);
     let mut evidence = Vec::new();
@@ -77,7 +94,7 @@ fn check_poses(document: &ProjectDocument, owner: &NodeId) -> Result<Value> {
         assert!(layer.instance.repeats.is_empty());
         assert_eq!(layer.local_position, ratio(i128::from(2 * frame + 1), 2)?);
         assert_eq!(layer.effective_duration, ExactRatio::integer(FRAMES));
-        let expected = expected_pose(frame)?;
+        let expected = expected_pose(frame, ranged)?;
         assert_eq!(layer.pose, Some(expected), "follow creep frame {frame}");
         evidence.push(json!({
             "frame":frame,"owner_position":layer.local_position,
@@ -177,7 +194,22 @@ fn same_authored(actual: &ProjectDocument, expected: &ProjectDocument) -> Result
 }
 
 pub fn build(directory: &Path) -> Result<Fixture> {
-    let mut project = Project::create(directory, "follow-creep")?;
+    build_with_range(directory, false)
+}
+
+pub fn build_ranged(directory: &Path) -> Result<Fixture> {
+    build_with_range(directory, true)
+}
+
+fn build_with_range(directory: &Path, ranged: bool) -> Result<Fixture> {
+    let mut project = Project::create(
+        directory,
+        if ranged {
+            "ranged-follow-creep"
+        } else {
+            "follow-creep"
+        },
+    )?;
     let asset = project.asset.clone();
     let owner = root_child_at(&project.document()?, 0)?.0;
     assert!(matches!(
@@ -269,8 +301,12 @@ pub fn build(directory: &Path) -> Result<Fixture> {
     );
     let instruction = SemanticInstruction::Zoom {
         kind: ZoomKind::Creep {
-            from: None,
-            to: ExactRatio::integer(2),
+            from: ranged.then(|| ratio(9, 5)).transpose()?,
+            to: if ranged {
+                ratio(12, 5)?
+            } else {
+                ExactRatio::integer(2)
+            },
             curve: ZoomCurve::Linear,
         },
         center: SemanticZoomCenter::Keep,
@@ -279,6 +315,7 @@ pub fn build(directory: &Path) -> Result<Fixture> {
         json!({
             "type":"apply","program":{"instructions":[instruction]},
             "parent":before.root(),"cursor":20,"selected_child":owner,
+            "visual_selection":if ranged { json!({"type":"time","anchor":20,"head":80,"extending":false}) } else { Value::Null },
         }),
         false,
     )?;
@@ -305,13 +342,22 @@ pub fn build(directory: &Path) -> Result<Fixture> {
                 scale: ratio(3, 2)?,
                 fallback: FramingPose::new(ratio(1, 3)?, ratio(2, 5)?, ratio(5, 4)?)?,
                 scale_transition: Some(FollowScaleTransition {
-                    factor: ratio(4, 3)?,
-                    curve: ZoomCurve::Linear
+                    factor: if ranged { ratio(8, 5)? } else { ratio(4, 3)? },
+                    curve: ZoomCurve::Linear,
+                    range: if ranged {
+                        Some(FollowScaleRange {
+                            start: ratio(1, 6)?,
+                            end: ratio(2, 3)?,
+                            from_factor: ratio(6, 5)?,
+                        })
+                    } else {
+                        None
+                    },
                 }),
             },
         })
     );
-    let poses = check_poses(&after, &owner)?;
+    let poses = check_poses(&after, &owner, ranged)?;
     let actual = pcm(&project.package, &[37, 251, 173])?;
     fs::write(
         directory.join("follow-creep-after-pcm.json"),
@@ -336,7 +382,7 @@ pub fn build(directory: &Path) -> Result<Fixture> {
     ])?;
     let restored = project.document()?;
     same_authored(&restored, &after)?;
-    assert_eq!(check_poses(&restored, &owner)?, poses);
+    assert_eq!(check_poses(&restored, &owner, ranged)?, poses);
     let store = ProjectStore::open(&project.package, AccessMode::ReadOnly)?;
     let history = store.validate_report(true)?;
     drop(store);
@@ -347,12 +393,13 @@ pub fn build(directory: &Path) -> Result<Fixture> {
             "history":history,"poses":poses,
             "independent_pose_oracle":true,"independent_DSP_claim":false,
             "tracking_accuracy_claim":false,"listening_claim":false,
+            "range":if ranged { json!([20,80]) } else { Value::Null },
         }))?,
     )?;
     let mut fixture = project.finish(
         vec!["Slow creep", "Framing"],
         (0..u64::try_from(FRAMES)?).map(|frame| (frame, original(frame))).collect(),
-        vec!["Qualified 120-picture A/V CFR Original; manually authored deterministic target regions move, hold through Lost, receive a correction, and fall back outside their span. Keep-center creep is authored through the shared semantic CLI; live 1.5->2 and fallback 1.25->5/3 use one owner clock. Every picture is checked against independent Q32 pose arithmetic; all 192192 stereo authored/limited samples and limiter gain bits equal the pre-creep baseline. The source picture is the existing counter fixture, not a generated moving subject; this does not qualify tracking accuracy, listening or independent DSP.".into()],
+        vec![format!("Qualified 120-picture A/V CFR Original; manually authored deterministic target regions move, hold through Lost, receive a correction, and fall back outside their span. Keep-center creep is authored through the shared semantic CLI; {}. Every picture is checked against independent Q32 pose arithmetic; all 192192 stereo authored/limited samples and limiter gain bits equal the pre-creep baseline. The source picture is the existing counter fixture, not a generated moving subject; this does not qualify tracking accuracy, listening or independent DSP.", if ranged { "range [20,80) keeps live 1.5/fallback1.25 before it, jumps to live1.8/fallback1.5 at its start, ramps to live2.4/fallback2, then holds terminal scale while centers keep following" } else { "live 1.5->2 and fallback 1.25->5/3 use one owner clock" })],
     )?;
     let portable = directory.join("follow-creep-portable.deadpan");
     let copied = success(&[
@@ -365,7 +412,7 @@ pub fn build(directory: &Path) -> Result<Fixture> {
     assert_eq!(copied["portable_copy"]["originals"][0]["from"], "managed");
     let store = ProjectStore::open(&portable, AccessMode::ReadOnly)?;
     same_authored(&store.snapshot()?, &restored)?;
-    assert_eq!(check_poses(&store.snapshot()?, &owner)?, poses);
+    assert_eq!(check_poses(&store.snapshot()?, &owner, ranged)?, poses);
     store.validate_report(true)?;
     drop(store);
     same_pcm(&pcm(&portable, &[173, 37, 251])?, &oracle, "portable PCM");

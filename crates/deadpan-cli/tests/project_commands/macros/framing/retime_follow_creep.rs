@@ -271,7 +271,7 @@ fn whole_retime_follow_creep_keeps_nonzero_map_fractional_target_clock_and_histo
         let cursor = selection
             .filter(|(_, _, extending)| *extending)
             .map_or(2, |(_, head, _)| head);
-        let error = reject(
+        assert_ranged_follow_preview(
             &package,
             &input,
             &invocation(
@@ -281,21 +281,13 @@ fn whole_retime_follow_creep_keeps_nonzero_map_fractional_target_clock_and_histo
                 "retime",
                 cursor,
                 selection,
-                "range-refused",
+                "range-preview",
             ),
+            "retime",
+            0,
+            12,
+            selection.map(|(a, b, _)| (a, b)).unwrap(),
         )?;
-        let expected = if selection.is_some_and(|(a, b, _)| a.abs_diff(b) == 12) {
-            deadpan_core::framing_zoom::FOLLOW_CREEP_REFUSAL
-        } else {
-            deadpan_core::framing_zoom::RANGED_FOLLOW_REFUSAL
-        };
-        assert!(
-            error["error"]["message"]
-                .as_str()
-                .unwrap()
-                .ends_with(expected),
-            "{error}"
-        );
     }
     let request = invocation(&before, bank.version, "c", "retime", 2, None, "creep");
     let predicted = preview_framing(&package, &request, "retime")?;
@@ -316,6 +308,7 @@ fn whole_retime_follow_creep_keeps_nonzero_map_fractional_target_clock_and_histo
         *scale_transition = Some(FollowScaleTransition {
             factor: ratio(2, 1),
             curve: ZoomCurve::Linear,
+            range: None,
         });
     }
     assert_eq!(predicted, (Some(expected.clone()), 132));
@@ -434,7 +427,7 @@ fn whole_retime_follow_creep_keeps_nonzero_map_fractional_target_clock_and_histo
     );
     let staged = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
     assert!(matches!(&staged.nodes()[&node("retime")].framing,
-        Some(Framing {clock:FramingClock::OwnerOutput,value:FramingValue::Follow {target,scale,fallback,scale_transition:Some(FollowScaleTransition {factor,curve:ZoomCurve::Linear})}})
+        Some(Framing {clock:FramingClock::OwnerOutput,value:FramingValue::Follow {target,scale,fallback,scale_transition:Some(FollowScaleTransition {factor,curve:ZoomCurve::Linear, range: None })}})
         if target.as_str()=="other"&&*scale==ratio(2,1)&&fallback.scale==ratio(2,1)&&*factor==ratio(2,1)));
     retained(&reset, &staged)?;
     for frame in 0..12 {

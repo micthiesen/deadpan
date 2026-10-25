@@ -426,7 +426,7 @@ fn effect(
         && normalized(json!(new_audio.spans), &aliases) == json!(old_audio.spans);
     d.check(label,
         matches!(&animated,Some(Framing {clock:FramingClock::OwnerOutput,value:FramingValue::Follow {
-            target,scale,fallback,scale_transition:Some(FollowScaleTransition {factor,curve:ZoomCurve::Linear})}})
+            target,scale,fallback,scale_transition:Some(FollowScaleTransition {factor,curve:ZoomCurve::Linear,range:None})}})
             if target.as_str()=="target-1"&&*scale==ratio(11,10)&&fallback.scale==ratio(11,10)&&*factor==ExactRatio::integer(2))
             && stable_address&&concrete&&override_paths_exact&&originals_unchanged&&clones_exact&&frames_exact&&audio_exact
             && selected.target.node!=captured.target.node

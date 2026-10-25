@@ -1,6 +1,53 @@
 use super::*;
 
 #[test]
+fn ranged_follow_window_counts_before_reading_its_fields_and_null_is_absent() {
+    let mut counts = Counts {
+        records: MAX_FRAMING_RECORDS - 2,
+        nodes: 0,
+    };
+    let mut decoder =
+        serde_json::Deserializer::from_str(r#"{"fallback":{},"scale_transition":{"range":{"#);
+    let error = Scan {
+        role: Role::Value,
+        counts: &mut counts,
+        charge: false,
+    }
+    .deserialize(&mut decoder)
+    .unwrap_err();
+    assert!(
+        error
+            .to_string()
+            .contains("aggregate framing record limit exceeded"),
+        "{error}"
+    );
+    assert_eq!(counts.records, MAX_FRAMING_RECORDS);
+    let mut counts = Counts::default();
+    let mut decoder =
+        serde_json::Deserializer::from_str(r#"{"fallback":{},"scale_transition":{"range":null}}"#);
+    Scan {
+        role: Role::Value,
+        counts: &mut counts,
+        charge: false,
+    }
+    .deserialize(&mut decoder)
+    .unwrap();
+    assert_eq!(counts.records, 2);
+    let mut decoder = serde_json::Deserializer::from_str(
+        r#"{"fallback":{},"scale_transition":{"ra\u006ege":{}}}"#,
+    );
+    let mut counts = Counts::default();
+    Scan {
+        role: Role::Value,
+        counts: &mut counts,
+        charge: false,
+    }
+    .deserialize(&mut decoder)
+    .unwrap();
+    assert_eq!(counts.records, 3);
+}
+
+#[test]
 fn mixed_fixed_animated_and_pose_envelope_records_share_the_real_preflight_cap() {
     let fixed = r#"{"framing":{"value":{"fallback":{}}}}"#;
     let animated = r#"{"framing":{"value":{"fallback":{},"sc\u0061le_transition":{}}}}"#;

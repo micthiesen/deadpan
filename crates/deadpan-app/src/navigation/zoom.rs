@@ -300,6 +300,48 @@ fn scale_label(scale: ExactRatio) -> String {
     )
 }
 
+pub fn follow_window_label(range: deadpan_core::FollowScaleRange) -> String {
+    let percent = |value: ExactRatio| {
+        let fixed = format!(
+            "{:.3}",
+            100.0 * value.numerator() as f64 / value.denominator() as f64
+        );
+        format!("{}%", fixed.trim_end_matches('0').trim_end_matches('.'))
+    };
+    format!(
+        "{}–{} of framing duration",
+        percent(range.start),
+        percent(range.end)
+    )
+}
+
+/// Separate rows keep the complete saved window visible in a narrow inspector.
+pub fn follow_range_fields(
+    scale: ExactRatio,
+    transition: deadpan_core::FollowScaleTransition,
+) -> Option<[(&'static str, String); 3]> {
+    let range = transition.range?;
+    let from = scale.checked_mul(range.from_factor).ok()?;
+    let end = scale.checked_mul(transition.factor).ok()?;
+    Some([
+        ("Scale before", scale_label(scale)),
+        (
+            "Creep",
+            format!(
+                "{} → {} ({})",
+                scale_label(from),
+                scale_label(end),
+                match transition.curve {
+                    ZoomCurve::Step => "step",
+                    ZoomCurve::Linear => "linear",
+                    ZoomCurve::Smoothstep => "smoothstep",
+                }
+            ),
+        ),
+        ("Window", follow_window_label(range)),
+    ])
+}
+
 pub fn follow_scale_label(
     scale: ExactRatio,
     transition: Option<deadpan_core::FollowScaleTransition>,
@@ -307,18 +349,28 @@ pub fn follow_scale_label(
     let Some(transition) = transition else {
         return scale_label(scale);
     };
-    match scale.checked_mul(transition.factor) {
-        Ok(end) => format!(
-            "{} → {} ({})",
-            scale_label(scale),
-            scale_label(end),
-            match transition.curve {
-                ZoomCurve::Step => "step",
-                ZoomCurve::Linear => "linear",
-                ZoomCurve::Smoothstep => "smoothstep",
-            }
-        ),
-        Err(_) => "invalid scale animation".into(),
+    let curve = match transition.curve {
+        ZoomCurve::Step => "step",
+        ZoomCurve::Linear => "linear",
+        ZoomCurve::Smoothstep => "smoothstep",
+    };
+    let Ok(end) = scale.checked_mul(transition.factor) else {
+        return "invalid scale animation".into();
+    };
+    match transition.range {
+        None => format!("{} → {} ({curve})", scale_label(scale), scale_label(end)),
+        Some(range) => {
+            let Ok(from) = scale.checked_mul(range.from_factor) else {
+                return "invalid scale animation".into();
+            };
+            format!(
+                "{} before; {} → {} ({curve}, {})",
+                scale_label(scale),
+                scale_label(from),
+                scale_label(end),
+                follow_window_label(range)
+            )
+        }
     }
 }
 
@@ -374,6 +426,23 @@ mod tests {
 
     fn ratio(n: i128, d: i128) -> ExactRatio {
         ExactRatio::new(n, d).unwrap()
+    }
+
+    #[test]
+    fn ranged_follow_label_names_prefix_ramp_scales_and_framing_window() {
+        let transition = deadpan_core::FollowScaleTransition {
+            factor: ratio(2, 1),
+            curve: ZoomCurve::Linear,
+            range: Some(deadpan_core::FollowScaleRange {
+                start: ratio(1, 4),
+                end: ratio(3, 4),
+                from_factor: ratio(3, 2),
+            }),
+        };
+        assert_eq!(
+            follow_scale_label(ExactRatio::ONE, Some(transition)),
+            "1.000× before; 1.500× → 2.000× (linear, 25%–75% of framing duration)"
+        );
     }
 
     #[test]

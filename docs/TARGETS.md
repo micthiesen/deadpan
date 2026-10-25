@@ -79,6 +79,11 @@ remains an inner scope and applies to the following gap.
 On a Retime the scale uses its output clock, while the target uses the exact
 mapped Original point. Fractional coordinates remain exact even when several
 output pictures decode the same source ordinal.
+On an ordinary selected owner, implicit Keep-center creep can use a contained
+Edit range: scale stays at its old value before In, ramps within the range and
+holds its terminal value afterward. The target stays live on both sides of the
+window. An explicit `from=` changes the ramp's start scale only at In, including
+the proportional fallback scale; it does not change the preceding pictures.
 Inside Repeat contents, selecting This play at every enclosing Repeat gives the
 same whole-owner behavior through occurrence isolation. Scale uses that selected
 owner's local output clock; enclosing Retimes and Repeat occurrences do not
@@ -197,5 +202,4 @@ copy and history paths. The viewer draws points with a cross and center
 marker. Region-based AI conditioning reports `point_target` unavailable for
 points, retaining their identity without inventing a subject rectangle.
 
-Pointer rectangle dragging, general
-(non-face) region proposals and quality evidence on real people remain open.
+Pointer rectangle dragging and quality evidence on real people remain open.

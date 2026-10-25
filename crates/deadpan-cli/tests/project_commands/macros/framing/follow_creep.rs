@@ -86,8 +86,8 @@ fn keep_creep_rebinds_follow_bases_and_target_with_atomic_refusal_and_durable_hi
     )?;
     let bank = ProjectStore::open(&package, AccessMode::ReadOnly)?.registers()?;
 
-    // Full-length Visual selection remains an explicit range. It must not
-    // become eligible merely because the builder normalizes its endpoints.
+    // Every ordinary Visual selection keeps live Follow and normalizes its
+    // own exact window, including a backward full-length selection.
     for selection in [
         Some((0, 120, false)),
         Some((10, 90, false)),
@@ -103,20 +103,32 @@ fn keep_creep_rebinds_follow_bases_and_target_with_atomic_refusal_and_durable_hi
             "camera-source",
             cursor,
             selection,
-            "range-refused",
+            "range-preview",
         );
-        let error = reject(&package, &input, &request)?;
-        let expected = if selection.is_some_and(|(anchor, head, _)| anchor.abs_diff(head) == 120) {
-            deadpan_core::framing_zoom::FOLLOW_CREEP_REFUSAL
-        } else {
-            deadpan_core::framing_zoom::RANGED_FOLLOW_REFUSAL
+        let frozen = state(&package)?;
+        let (framing, frames) = preview_framing(&package, &request, "camera-source")?;
+        invoke(&package, &input, &request, true)?;
+        assert_eq!(state(&package)?, frozen);
+        assert_eq!(frames, 120);
+        let Some(Framing {
+            value:
+                FramingValue::Follow {
+                    target,
+                    scale_transition: Some(transition),
+                    ..
+                },
+            ..
+        }) = framing
+        else {
+            panic!("live ranged Follow")
         };
-        assert!(
-            error["error"]["message"]
-                .as_str()
-                .is_some_and(|message| message.ends_with(expected)),
-            "{error}"
-        );
+        assert_eq!(target.as_str(), "left");
+        assert_eq!(transition.factor, ratio(2, 1));
+        let (anchor, head, _) = selection.unwrap();
+        let range = transition.range.unwrap();
+        assert_eq!(range.start, ratio(i128::from(anchor.min(head)), 120));
+        assert_eq!(range.end, ratio(i128::from(anchor.max(head)), 120));
+        assert_eq!(range.from_factor, ExactRatio::ONE);
     }
     let request = invocation(
         &before,
@@ -147,6 +159,7 @@ fn keep_creep_rebinds_follow_bases_and_target_with_atomic_refusal_and_durable_hi
             scale_transition: Some(FollowScaleTransition {
                 factor: ratio(2, 1),
                 curve: ZoomCurve::Linear,
+                range: None,
             }),
         },
     };
@@ -223,7 +236,7 @@ fn keep_creep_rebinds_follow_bases_and_target_with_atomic_refusal_and_durable_hi
     let after = store.snapshot()?;
     assert!(matches!(&after.nodes()[&node("camera-source")].framing,
         Some(Framing { value: FramingValue::Follow { target, scale, fallback,
-            scale_transition: Some(FollowScaleTransition { factor, curve: ZoomCurve::Linear }) }, .. })
+            scale_transition: Some(FollowScaleTransition { factor, curve: ZoomCurve::Linear, range: None }) }, .. })
         if target.as_str() == "right" && *scale == ratio(2, 1)
             && fallback.scale == ratio(1, 2) && *factor == ratio(3, 2)));
     assert_eq!(store.registers()?, bank);

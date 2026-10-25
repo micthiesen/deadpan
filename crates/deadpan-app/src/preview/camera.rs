@@ -1490,8 +1490,16 @@ impl DeadpanApp {
             && end < frames
         {
             let held = format!(
-                "The creep arrives at frame {} and holds its end pose to the end of the beat.",
-                self.zoom_absolute(session, end).0
+                "The creep arrives at frame {} and {} to the end of the beat.",
+                self.zoom_absolute(session, end).0,
+                if framing
+                    .as_ref()
+                    .is_some_and(|framing| matches!(framing.value, FramingValue::Follow { .. }))
+                {
+                    "holds its end scale while continuing to follow the target"
+                } else {
+                    "holds its end pose"
+                }
             );
             note = Some(match note {
                 Some(note) => format!("{note} {held}"),
@@ -3930,6 +3938,7 @@ mod tests {
                 scale_transition: Some(deadpan_core::FollowScaleTransition {
                     factor: r(2, 1),
                     curve: deadpan_core::framing_zoom::ZoomCurve::Linear,
+                    range: None,
                 }),
             };
             let mut draft = CameraDraft::new(handle).unwrap();
@@ -3978,6 +3987,11 @@ mod tests {
         let transition = deadpan_core::FollowScaleTransition {
             factor: r(2, 1),
             curve: deadpan_core::framing_zoom::ZoomCurve::Linear,
+            range: Some(deadpan_core::FollowScaleRange {
+                start: r(1, 4),
+                end: r(3, 4),
+                from_factor: r(3, 2),
+            }),
         };
         let follow = FollowDraft {
             target: TargetId::new("speaker").unwrap(),
@@ -4059,6 +4073,43 @@ mod tests {
             matches!(switched.value, FramingValue::Follow { target, scale_transition: Some(value), .. }
             if target.as_str() == "other" && value == transition)
         );
+    }
+
+    #[test]
+    fn camera_scale_validates_the_ranged_start_of_both_follow_branches() {
+        let r = |n, d| ExactRatio::new(n, d).unwrap();
+        for (live, fallback) in [(r(2, 1), r(1, 1)), (r(1, 1), r(2, 1))] {
+            let follow = FollowDraft {
+                target: TargetId::new("speaker").unwrap(),
+                center: [r(1, 2), r(1, 2)],
+                base_scale: ExactRatio::ONE,
+                base_live: live,
+                base_fallback: FramingPose::new(r(1, 3), r(2, 7), fallback).unwrap(),
+                clock: FramingClock::OwnerOutput,
+                scale_transition: Some(deadpan_core::FollowScaleTransition {
+                    factor: ExactRatio::ONE,
+                    curve: deadpan_core::framing_zoom::ZoomCurve::Linear,
+                    range: Some(deadpan_core::FollowScaleRange {
+                        start: r(1, 4),
+                        end: r(3, 4),
+                        from_factor: r(16, 1),
+                    }),
+                }),
+            };
+            let handle = FramingPose::identity();
+            assert!(followed_framing(&follow, handle).is_ok());
+            assert!(
+                followed_framing(
+                    &follow,
+                    FramingPose {
+                        scale: r(3, 1),
+                        ..handle
+                    }
+                )
+                .is_err(),
+                "the ranged start exceeds 64 although the prefix and terminal scales fit"
+            );
+        }
     }
 
     #[test]

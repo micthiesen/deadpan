@@ -382,8 +382,40 @@ fn zoom_ordinary_owner_remains_available_with_retained_nested_tape_pause_clocks(
     assert_eq!(replay.edit.inverse.apply(&replay.document).unwrap(), paused);
 }
 
+fn assert_ranged_follow_plan(before: &ProjectDocument, plan: &SemanticPlan, start: i64, end: i64) {
+    let framing = plan.document.nodes()[&node("held")]
+        .framing
+        .as_ref()
+        .unwrap();
+    let duration = ExactRatio::integer(before.node_duration(&node("held")).unwrap().frames());
+    let at = |local| framing.evaluate_with_follow_exact(local, duration).unwrap();
+    if start > 0 {
+        let prefix = at(ExactRatio::integer(start - 1));
+        assert_eq!(prefix.follow.unwrap().1, ExactRatio::integer(2));
+        assert_eq!(prefix.pose.scale, ExactRatio::new(1, 2).unwrap());
+    }
+    let middle = at(ExactRatio::new(i128::from(start + end), 2).unwrap());
+    assert_eq!(middle.follow.unwrap().1, ExactRatio::integer(3));
+    assert_eq!(middle.pose.scale, ExactRatio::new(3, 4).unwrap());
+    let terminal = at(ExactRatio::integer(end));
+    assert_eq!(terminal.follow.unwrap().1, ExactRatio::integer(4));
+    assert_eq!(terminal.pose.scale, ExactRatio::ONE);
+    assert_eq!(terminal.follow.unwrap().0.as_str(), "subject");
+    assert_eq!(terminal.pose.center_x, ExactRatio::new(1, 3).unwrap());
+    let mut expected = before.clone();
+    expected.revision_id = plan.document.revision_id().clone();
+    expected.nodes.get_mut(&node("held")).unwrap().framing = Some(framing.clone());
+    assert_eq!(plan.document, expected);
+    let replay =
+        crate::replay_compound::<EditError>(before, plan.request.as_ref().unwrap(), |_| Ok(()))
+            .unwrap();
+    assert_eq!(replay.document, plan.document);
+    assert_eq!(replay.edit.inverse.apply(&plan.document).unwrap(), *before);
+    assert_eq!(plan.trace[0].resolved_range, Some(range(start, end)));
+}
+
 #[test]
-fn whole_ordinary_follow_creep_resolves_actual_owners_with_atomic_refusals() {
+fn ordinary_follow_creep_resolves_whole_and_ranged_owners_with_atomic_refusals() {
     let mut document = fixture(8);
     let tb = crate::SourceTimeBase::new(1, 30).unwrap();
     let span = crate::SourceSpan::new(
@@ -459,6 +491,47 @@ fn whole_ordinary_follow_creep_resolves_actual_owners_with_atomic_refusals() {
             original_center: None,
         })
     };
+    let jumped = resolve(
+        &document,
+        &selected(3, visual(2, 6)),
+        vec![zoom(
+            ZoomKind::Creep {
+                from: Some(ExactRatio::integer(3)),
+                to: ExactRatio::integer(4),
+                curve: ZoomCurve::Linear,
+            },
+            SemanticZoomCenter::Keep,
+        )],
+        &BTreeMap::new(),
+        resolver,
+    )
+    .unwrap();
+    let framing = jumped.document.nodes()[&node("held")]
+        .framing
+        .as_ref()
+        .unwrap();
+    for (frame, n, d) in [(1, 2, 1), (2, 3, 1), (4, 7, 2), (7, 4, 1)] {
+        let state = framing
+            .evaluate_with_follow_exact(ExactRatio::integer(frame), ExactRatio::integer(8))
+            .unwrap();
+        let expected = ExactRatio::new(n, d).unwrap();
+        assert_eq!(state.follow.unwrap().1, expected);
+        assert_eq!(
+            state.pose.scale,
+            expected.checked_div(ExactRatio::integer(4)).unwrap()
+        );
+    }
+    let jumped_replay = crate::replay_compound::<EditError>(
+        &document,
+        jumped.request.as_ref().unwrap(),
+        |_| Ok(()),
+    )
+    .unwrap();
+    assert_eq!(jumped_replay.document, jumped.document);
+    assert_eq!(
+        jumped_replay.edit.inverse.apply(&jumped.document).unwrap(),
+        document
+    );
     let plan = resolve(
         &document,
         &selected(3, None),
@@ -487,17 +560,16 @@ fn whole_ordinary_follow_creep_resolves_actual_owners_with_atomic_refusals() {
             .unwrap();
     assert_eq!(replay.document, plan.document);
     assert_eq!(replay.edit.inverse.apply(&plan.document).unwrap(), before);
-    for selection in [visual(0, 8), visual(1, 7), visual(8, 0)] {
-        assert!(
-            resolve(
-                &document,
-                &selected(3, selection),
-                vec![instruction.clone()],
-                &BTreeMap::new(),
-                resolver
-            )
-            .is_err()
-        );
+    for (anchor, head) in [(0, 8), (1, 7), (8, 0)] {
+        let ranged = resolve(
+            &document,
+            &selected(3, visual(anchor, head)),
+            vec![instruction.clone()],
+            &BTreeMap::new(),
+            resolver,
+        )
+        .unwrap();
+        assert_ranged_follow_plan(&document, &ranged, anchor.min(head), anchor.max(head));
     }
     assert!(
         resolve(
@@ -570,17 +642,16 @@ fn whole_ordinary_follow_creep_resolves_actual_owners_with_atomic_refusals() {
             .clock,
         crate::FramingClock::OwnerOutput
     );
-    for selection in [visual(0, 8), visual(1, 7), visual(8, 0)] {
-        assert!(
-            resolve(
-                &sequence,
-                &selected(3, selection),
-                vec![instruction.clone()],
-                &BTreeMap::new(),
-                resolver,
-            )
-            .is_err()
-        );
+    for (anchor, head) in [(0, 8), (1, 7), (8, 0)] {
+        let ranged = resolve(
+            &sequence,
+            &selected(3, visual(anchor, head)),
+            vec![instruction.clone()],
+            &BTreeMap::new(),
+            resolver,
+        )
+        .unwrap();
+        assert_ranged_follow_plan(&sequence, &ranged, anchor.min(head), anchor.max(head));
     }
     document.nodes.insert(
         node("inside"),
@@ -634,17 +705,16 @@ fn whole_ordinary_follow_creep_resolves_actual_owners_with_atomic_refusals() {
     only_framing.nodes.get_mut(&node("held")).unwrap().framing =
         planned.document.nodes()[&node("held")].framing.clone();
     assert_eq!(planned.document, only_framing);
-    for selection in [visual(0, 28), visual(1, 27), visual(28, 0)] {
-        assert!(
-            resolve(
-                &repeat,
-                &selected(13, selection),
-                vec![instruction.clone()],
-                &BTreeMap::new(),
-                resolver
-            )
-            .is_err()
-        );
+    for (anchor, head) in [(0, 28), (1, 27), (28, 0)] {
+        let ranged = resolve(
+            &repeat,
+            &selected(13, visual(anchor, head)),
+            vec![instruction.clone()],
+            &BTreeMap::new(),
+            resolver,
+        )
+        .unwrap();
+        assert_ranged_follow_plan(&repeat, &ranged, anchor.min(head), anchor.max(head));
     }
     // An inner Repeat cannot acquire ordinary authority by omitting the
     // occurrence context and naming its containing Sequence directly.
@@ -719,17 +789,16 @@ fn whole_ordinary_follow_creep_resolves_actual_owners_with_atomic_refusals() {
     only_framing.nodes.get_mut(&node("held")).unwrap().framing =
         planned.document.nodes()[&node("held")].framing.clone();
     assert_eq!(planned.document, only_framing);
-    for selection in [visual(0, 9), visual(1, 8), visual(9, 0)] {
-        assert!(
-            resolve(
-                &retime,
-                &selected(3, selection),
-                vec![instruction.clone()],
-                &BTreeMap::new(),
-                resolver
-            )
-            .is_err()
-        );
+    for (anchor, head) in [(0, 9), (1, 8), (9, 0)] {
+        let ranged = resolve(
+            &retime,
+            &selected(3, visual(anchor, head)),
+            vec![instruction.clone()],
+            &BTreeMap::new(),
+            resolver,
+        )
+        .unwrap();
+        assert_ranged_follow_plan(&retime, &ranged, anchor.min(head), anchor.max(head));
     }
     nested.nodes.get_mut(&node("held")).unwrap().kind = retime.nodes()[&node("held")].kind.clone();
     nested.validate().unwrap();

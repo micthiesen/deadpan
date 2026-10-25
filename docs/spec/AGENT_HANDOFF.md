@@ -4,6 +4,53 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-25
 
+[Ordinary ranged live Follow creep](../qualification/ranged-follow-creep-2026-10-25.md)
+is implemented and locally verified. Fixed Follow owners keep live target
+resolution while a contained Edit range controls scale. Prefix live/fallback
+bases remain; `from=` takes effect at In and the terminal scales hold after Out.
+All five ordinary owner kinds are covered; Repeat play ranges, sampled-target
+replacement and existing camera paths retain their refusal boundaries.
+The optional closed scale window uses exact normalized endpoints and existing
+Q32 interpolation; Core 58 / SQLite 87 remain current.
+
+Base f31d3347c38566d882de8e3903d17c224c52c6e6; scratch
+`/tmp/deadpan-ranged-follow-2026-10-25`. Final source-fourth pins 37 changed Rust
+files plus three configuration files. Core 1,584 and Plan 488 pass; integrated
+1,830 retains one invalid active-selection fixture failure, followed by a clean
+three-case serial recheck including the two original leak warnings. Final strict
+checks and five focused App tests pass. Release and final optimized-dev zoom
+each pass 296 checks plus Kestrel. The only change between those native builds
+is stronger inspector-row paint assertions. Root inspects both saved-window
+captures. Separate inspector rows keep prefix, ramp and window values visible.
+
+Actual release Source export verifies 120 pictures and independent exact poses,
+full 192,192 stereo sample-frame authored/limited PCM and limiter-bit equality,
+and portable authored/history tables. Neighbor counts are 228 observable/ten
+unobservable; audio has four signal/396 silent blocks and three zero-offset
+witnesses. Independent raw audit passes, with no retained audit-script claim.
+Preserve the original native Redo selection assertion failure, the corrected
+existing revision-bound selection contract, wrong-FFmpeg-prefix build refusal,
+intentional command-reference writer failure and all distinct source/binary
+phases. No all-green original integrated run, physical latency, listening,
+tracking quality, second-Mac or full packaging claim.
+
+The immutable [evidence inventory](../../tools/media-qualification/evidence/2026-10-25-ranged-follow-creep/files.json)
+pins 274 logical inputs/138 payloads/141 files: 5,140,421 stored and 84,166,968
+raw/decoded bytes including metadata, each below 256 MiB. Seven explicit
+nonauthored omissions total 65,536 bytes. Inventory SHA ce1f352010fbb5b77af9afa4733b1c030ba7fa2ec0ffe82870d94601fb58c539;
+the independent [byte audit](../../tools/media-qualification/evidence/2026-10-25-ranged-follow-creep-audit.json)
+passes with result SHA42b9659650db0a379777faf98c407074fa0e29d1d0d7f8edd4d857a4dcd20786.
+Actual audit verifier/receipt, collector receipts and eleven guard-test proofs
+are retained separately, without changing the immutable collection.
+Root is preparing the implementation commit and milestone150.
+Progress artifact milestone149 is already refreshed, all 1,331
+lines/fields and 149 history entries compared with pushed JSON and phone view
+inspected. Coverage remains 89%, eight Complete/sixteen Partial, effects five of
+thirteen; DP-08 stays Partial. Continue remaining target controls/framing scopes
+after publication. Preserve foreign `fuzz/Cargo.lock` and `.claude/`.
+
+## Earlier Camera continuation, 2026-10-25
+
 [Camera salient-region proposals](../qualification/camera-regions-2026-10-25.md)
 are implemented and verified on the current release through native regions/
 faces, inspected visuals, quiet performance, actual media/portable history and

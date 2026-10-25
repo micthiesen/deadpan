@@ -790,6 +790,7 @@ mod tests {
             scale_transition: Some(deadpan_core::FollowScaleTransition {
                 factor: ratio(2, 1),
                 curve: deadpan_core::framing_zoom::ZoomCurve::Smoothstep,
+                range: None,
             }),
         };
         camera.follow = Some(follow.clone());

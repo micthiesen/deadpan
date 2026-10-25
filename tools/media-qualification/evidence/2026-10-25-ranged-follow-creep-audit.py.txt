@@ -1,0 +1,68 @@
+"""Independent read-only verification of the published ranged Follow bytes."""
+import gzip
+import hashlib
+import io
+import json
+from pathlib import Path
+
+root = Path('/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-25-ranged-follow-creep')
+sha = lambda data: hashlib.sha256(data).hexdigest()
+inventory_bytes = (root / 'files.json').read_bytes()
+assert sha(inventory_bytes) == 'ce1f352010fbb5b77af9afa4733b1c030ba7fa2ec0ffe82870d94601fb58c539'
+inventory = json.loads(inventory_bytes)
+plan_bytes = (root / 'plan.json').read_bytes()
+assert sha(plan_bytes) == 'a6bfe19b294428a1cc5dd548390966520dd443bdd029dec631fc5bee0ab6c5d2'
+plan = json.loads(plan_bytes)
+expected = {row['path'] for row in inventory['files']} | {'files.json'}
+assert len(expected) == 141 == inventory['file_count_including_inventory']
+assert {p.relative_to(root).as_posix() for p in root.rglob('*') if p.is_file()} == expected
+assert not any(p.is_symlink() for p in root.rglob('*'))
+raw = {}
+stored = len(inventory_bytes)
+decoded_size = len(inventory_bytes)
+for row in inventory['files']:
+    path = root / row['path']
+    assert not path.name.endswith('.rs')
+    data = path.read_bytes()
+    assert len(data) == row['bytes'] and sha(data) == row['sha256']
+    if row['encoding'] == 'gzip':
+        with gzip.GzipFile(fileobj=io.BytesIO(data)) as stream:
+            body = stream.read(268435457)
+            assert len(body) <= 268435456 and stream.read(1) == b''
+    else:
+        assert row['encoding'] == 'identity'
+        body = data
+    assert len(body) == row['raw_bytes'] == row['decoded_bytes']
+    if 'input_sha256' in row:
+        assert sha(body) == row['input_sha256']
+    raw[row['path']] = body
+    stored += len(data)
+    decoded_size += len(body)
+assert inventory['totals_including_inventory'] == {'bytes': stored, 'raw_bytes': decoded_size, 'decoded_bytes': decoded_size}
+assert max(stored, decoded_size) <= 268435456
+by_logical = {item['logical']: item for item in plan['inputs']}
+contents = {}
+for item in plan['objects']:
+    body = raw[item['path']]
+    for alias in item['aliases']:
+        pin = by_logical[alias]
+        assert sha(body) == pin['sha256'] and len(body) == pin['bytes']
+        assert alias not in contents
+        contents[alias] = body
+assert len(contents) == len(by_logical) == 274
+for phase, info in plan['source_phases'].items():
+    identity = json.loads(contents[info['identity_file']])
+    assert identity['base'] == plan['base']
+    assert len(identity['files']) == info['inputs']
+    for name, pin in identity['files'].items():
+        data = contents[f'sources/{phase}/{name}.txt']
+        assert len(data) == pin['bytes'] and sha(data) == pin['sha256']
+        if phase == 'fourth':
+            assert Path('/Users/michael/Code/deadpan', name).read_bytes() == data
+for pin in plan['runtime_guards']:
+    data = Path(pin['source']).read_bytes()
+    assert len(data) == pin['bytes'] and sha(data) == pin['sha256']
+for name, expected_failure in [('native-zoom-first', True), ('native-zoom-third', False), ('native-zoom-fourth', False)]:
+    report = json.loads(contents[f'{name}/report.json'])
+    assert report['failed'] is expected_failure
+print(json.dumps({'passed': True, 'findings': [], 'inventory_sha256': sha(inventory_bytes), 'files': len(expected), 'logical_inputs': len(contents), 'source_phases': {key: value['inputs'] for key, value in plan['source_phases'].items()}, 'current_source_inputs': 40, 'live_source_binary_guards': len(plan['runtime_guards']), 'stored_bytes': stored, 'raw_and_gzip_decoded_bytes': decoded_size, 'omissions': len(plan['omissions']), 'scope': 'Read-only byte, map, cap, source, executable identity and native report-state audit; no product or collector commands executed; multimedia raster expansion is outside decoded-size metric'}, indent=2))

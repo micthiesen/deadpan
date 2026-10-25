@@ -176,7 +176,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     let animated = framing(d);
     d.check("Implicit creep animates scale while retaining the saved target",
         matches!(&animated, Some(Framing { value: FramingValue::Follow { target, scale,
-            scale_transition: Some(FollowScaleTransition { factor, curve: ZoomCurve::Linear }), .. }, .. })
+            scale_transition: Some(FollowScaleTransition { factor, curve: ZoomCurve::Linear, range: None }), .. }, .. })
             if target.as_str() == "target-1" && *scale == ExactRatio::new(27, 20).unwrap()
                 && *factor == ExactRatio::integer(2))
             && d.app().sequence_length() == duration && d.app().source_cursor == original_cursor
@@ -317,5 +317,281 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!(animated),
         json!(framing(d)),
     )?;
-    undo_to(d, &fixed)
+    undo_to(d, &fixed)?;
+    ranged(d, &fixed)
+}
+
+fn at(d: &mut Driver<'_>, frame: u64) -> Result<(), String> {
+    d.key(Key::Escape)?;
+    let mut keys = vec![Key::G, Key::G];
+    if frame > 0 {
+        for digit in frame.to_string().chars() {
+            keys.push(Key::from_name(&digit.to_string()).ok_or("Invalid frame digit")?);
+        }
+        keys.push(Key::L);
+    }
+    d.chord(&keys)?;
+    d.settled()
+}
+
+fn select(d: &mut Driver<'_>, anchor: u64, head: u64) -> Result<(), String> {
+    at(d, anchor)?;
+    d.key(Key::V)?;
+    let mut keys = Vec::new();
+    for digit in anchor.abs_diff(head).to_string().chars() {
+        keys.push(Key::from_name(&digit.to_string()).ok_or("Invalid range digit")?);
+    }
+    keys.push(if head > anchor { Key::L } else { Key::H });
+    keys.push(Key::V);
+    d.chord(&keys)?;
+    d.settled()
+}
+
+fn point_saved(d: &mut Driver<'_>) -> Result<(), String> {
+    d.wait_for("Point save retains Camera on the new head", |app| {
+        app.camera.as_ref().is_some_and(|camera| {
+            let state = camera.harness_state();
+            state["saving"] == false
+                && state["rebasing"] == false
+                && state["phase"] == "Adjust"
+                && app.workspace.as_ref().is_some_and(|workspace| {
+                    state["revision"] == workspace.document.revision_id().as_str()
+                })
+        })
+    })?;
+    d.key(Key::Escape)?;
+    idle(d)
+}
+
+fn window(framing: &Option<Framing>) -> Option<deadpan_core::FollowScaleRange> {
+    match &framing.as_ref()?.value {
+        FramingValue::Follow {
+            scale_transition: Some(transition),
+            ..
+        } => transition.range,
+        _ => None,
+    }
+}
+
+fn ranged(d: &mut Driver<'_>, original: &Option<Framing>) -> Result<(), String> {
+    let ratio = |n, den| ExactRatio::new(n, den).unwrap();
+    let source_cursor = d.app().source_cursor;
+    let duration = d.app().sequence_length();
+    at(d, 10)?;
+    camera(d)?;
+    d.chord(&[Key::N, Key::N, Key::Enter])?;
+    point_saved(d)?;
+    at(d, 20)?;
+    camera(d)?;
+    d.chord(&[Key::F, Key::Num2, Key::C, Key::Num8, Key::L, Key::Enter])?;
+    point_saved(d)?;
+    let target = d
+        .app()
+        .workspace
+        .as_ref()
+        .unwrap()
+        .document
+        .targets()
+        .get(&deadpan_core::TargetId::new("target-2").unwrap())
+        .cloned()
+        .ok_or("Missing ranged Follow point")?;
+    d.check(
+        "A native point correction supplies distinct live centers within the creep range",
+        target.region.is_point()
+            && target.samples.is_empty()
+            && target.corrections.len() == 1
+            && target.region.center_ratio() != target.corrections[0].region.center_ratio(),
+        json!({"kind":"point","corrections":1,"tracked_samples":0}),
+        json!(target),
+    )?;
+    let revision = d.revision();
+    d.command("zoom 1.35 target=target-2")?;
+    d.changed(&revision)?;
+    idle(d)?;
+    let fixed = framing(d);
+    select(d, 15, 25)?;
+    d.chord(&[Key::Q, Key::Y])?;
+    let revision = d.revision();
+    d.command("creep from=1.5 to=2.25 curve=linear")?;
+    d.changed(&revision)?;
+    idle(d)?;
+    let animated = framing(d);
+    let selected = d.app().selected_edit_range();
+    let poses: Vec<_> = [0, 12, 18, 22, 30]
+        .into_iter()
+        .map(|frame| planned_pose(d, frame))
+        .collect();
+    d.check("Ranged Follow preserves its prefix and keeps a moving center through and after the scale ramp",
+        window(&animated) == Some(deadpan_core::FollowScaleRange {
+            start: ratio(15, i128::from(duration)), end: ratio(25, i128::from(duration)),
+            from_factor: ratio(10, 9),
+        }) && poses.iter().all(Option::is_some)
+            && (scale_of(poses[0]) - 1.35).abs() < 1e-7
+            && (scale_of(poses[1]) - 1.35).abs() < 1e-7
+            && (scale_of(poses[2]) - 1.7625).abs() < 1e-7
+            && (scale_of(poses[3]) - 2.0625).abs() < 1e-7
+            && (scale_of(poses[4]) - 2.25).abs() < 1e-7
+            && poses[2].unwrap().center_x != poses[3].unwrap().center_x
+            && poses[3].unwrap().center_x == poses[4].unwrap().center_x
+            && d.app().message.as_deref().is_some_and(|message| message.contains("end scale while continuing to follow"))
+            && d.app().source_cursor == source_cursor && d.app().sequence_length() == duration,
+        json!({"range":[15,25],"scales":[1.35,1.35,1.7625,2.0625,2.25],"live_center":"changes at correction","Original":source_cursor}),
+        json!({"framing":animated,"poses":poses,"message":d.app().message}))?;
+    d.key(Key::Q)?;
+    d.wait_for("Ranged Follow macro saves", |app| {
+        !app.service.is_busy() && !app.macros.recording() && !app.macros.is_pending()
+    })?;
+    let program = d
+        .app()
+        .copied
+        .entries()
+        .find_map(|(name, content)| match content {
+            Content::Macro(program) if name == 'y' => Some(program.instructions().to_vec()),
+            _ => None,
+        });
+    d.check(
+        "Ranged Follow records only scale, curve and Keep intent",
+        program
+            == Some(vec![I::Zoom {
+                kind: ZoomKind::Creep {
+                    from: Some(ratio(3, 2)),
+                    to: ratio(9, 4),
+                    curve: ZoomCurve::Linear,
+                },
+                center: SemanticZoomCenter::Keep,
+            }]),
+        json!({"owner":null,"range":null,"center":"keep"}),
+        json!(program),
+    )?;
+    d.capture("Ranged Follow keeps the target live and shows its saved scale window")?;
+    let description = d
+        .app()
+        .inspector_description()
+        .ok_or("Missing ranged Follow inspector")?;
+    let inspector = d.rect("Selected beat inspector pane")?;
+    let complete = |row: &serde_json::Value, text: &str| {
+        row["text"].as_str() == Some(text)
+            && row["elided"] == false
+            && row["fully_visible"] == true
+            && row["bounds"][0]
+                .as_f64()
+                .is_some_and(|x| x >= f64::from(inspector.left()))
+            && row["bounds"][1]
+                .as_f64()
+                .is_some_and(|y| y >= f64::from(inspector.bottom()))
+    };
+    for label in ["Scale before", "Creep", "Window"] {
+        let value = description
+            .fields
+            .iter()
+            .find(|(name, _)| *name == label)
+            .map(|(_, value)| value)
+            .ok_or("Missing ranged Follow detail")?;
+        let labels = super::super::scenarios::text_paint_visibility(d, label);
+        let paint = super::super::scenarios::text_paint_visibility(d, value);
+        let same_row = labels.iter().any(|key| {
+            complete(key, label)
+                && paint.iter().any(|row| {
+                    complete(row, value)
+                        && row["bounds"][0].as_f64() > key["bounds"][2].as_f64()
+                        && row["bounds"][1]
+                            .as_f64()
+                            .zip(key["bounds"][1].as_f64())
+                            .is_some_and(|(value_y, label_y)| (value_y - label_y).abs() <= 8.0)
+                })
+        });
+        d.check(
+            "The ranged Follow inspector paints the complete saved scale and window text",
+            same_row,
+            json!({"field":label,"value":value,"fully_visible":true,"elided":false,"same_inspector_row":true}),
+            json!({"labels":labels,"values":paint}),
+        )?;
+    }
+    let unchanged = d.app().workspace.as_ref().unwrap().document.clone();
+    for command in [
+        "zoom 2",
+        "zoom off",
+        "creep to=3",
+        "creep to=3 target=current",
+    ] {
+        let revision = d.revision();
+        d.command(command)?;
+        idle(d)?;
+        d.check("A ranged Follow animation refuses implicit replacement and target sampling without changing any authored field",
+            d.revision() == revision && d.app().workspace.as_ref().unwrap().document == unchanged
+                && d.app().selected_edit_range() == selected && d.app().error.is_some(),
+            json!({"command":command,"authored":"unchanged","range":selected}), d.snapshot())?;
+    }
+    let history_cursor = d.app().sequence_cursor;
+    undo_to(d, &fixed)?;
+    let revision = d.revision();
+    d.command("redo")?;
+    d.changed(&revision)?;
+    idle(d)?;
+    d.check(
+        "Redo restores the complete ranged Follow without reviving an expired Visual selection",
+        framing(d) == animated
+            && d.app().selected_edit_range().is_none()
+            && d.app().sequence_cursor == history_cursor
+            && d.app().source_cursor == source_cursor,
+        json!({"framing":animated,"range":null,"Edit_cursor":history_cursor,"Original_cursor":source_cursor}),
+        json!({"framing":framing(d),"range":d.app().selected_edit_range(),"Edit_cursor":d.app().sequence_cursor,"Original_cursor":d.app().source_cursor}),
+    )?;
+    at(d, 22)?;
+    let revision = d.revision();
+    camera(d)?;
+    d.key(Key::Enter)?;
+    idle(d)?;
+    d.check(
+        "Unchanged Camera Enter preserves the complete ranged Follow without a new revision",
+        d.revision() == revision && framing(d) == animated,
+        json!(animated),
+        json!(framing(d)),
+    )?;
+    scale_adjustment(d, &animated)?;
+    undo_to(d, &fixed)?;
+    select(d, 35, 25)?;
+    let revision = d.revision();
+    super::super::macros::execute(d, 'y', None)?;
+    d.changed(&revision)?;
+    idle(d)?;
+    d.check(
+        "Named ranged Follow rebinds a new backward invocation range",
+        window(&framing(d)).is_some_and(|window| {
+            window.start == ratio(25, i128::from(duration))
+                && window.end == ratio(35, i128::from(duration))
+        }) && d
+            .app()
+            .selected_edit_range()
+            .is_some_and(|range| range.start().0 == 25 && range.end().0 == 35),
+        json!({"range":[25,35],"recorded_range":[15,25]}),
+        json!(framing(d)),
+    )?;
+    undo_to(d, &fixed)?;
+    select(d, 15, 25)?;
+    let revision = d.revision();
+    d.command("creep from=1.5 to=2.25 curve=linear")?;
+    d.changed(&revision)?;
+    idle(d)?;
+    undo_to(d, &fixed)?;
+    select(d, 30, 40)?;
+    let revision = d.revision();
+    d.key(Key::Period)?;
+    d.changed(&revision)?;
+    idle(d)?;
+    d.check(
+        "Dot rebinds ranged Follow to fresh bounds after Undo",
+        window(&framing(d)).is_some_and(|window| {
+            window.start == ratio(30, i128::from(duration))
+                && window.end == ratio(40, i128::from(duration))
+        }),
+        json!({"range":[30,40]}),
+        json!(framing(d)),
+    )?;
+    undo_to(d, &fixed)?;
+    undo_to(d, original)?;
+    // The correction and the independent target save precede framing.
+    undo_to(d, original)?;
+    undo_to(d, original)?;
+    at(d, 10)
 }

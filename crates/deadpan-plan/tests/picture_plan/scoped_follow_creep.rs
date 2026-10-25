@@ -85,6 +85,7 @@ fn follow(repeat_owner: bool, animated: bool) -> Framing {
                 } else {
                     ZoomCurve::Linear
                 },
+                range: None,
             }),
         },
     }

@@ -135,6 +135,21 @@ following the closed-field convention above, with no migration or promise
 that an older binary can open a package containing points. Region-based AI
 conditioning retains point identity and reports `point_target` unavailable.
 
+## Ranged Follow scale windows (2026-10-25)
+
+`FollowScaleTransition` admits an optional `range` with exact normalized
+`start`, `end` and `from_factor`. Absent windows retain the whole-owner
+transition vocabulary and serialize identically. A window preserves both
+original scale bases before its start, applies the relative start factor at
+In, reaches the existing terminal factor at Out and holds it afterward.
+The target remains live throughout. Endpoints share the framing-envelope
+denominator bound, and both live/fallback start and end scales validate.
+
+This is additive closed vocabulary under core 58 / SQLite 87. Older binaries
+refuse a transition containing `range`; no migration or old-reader support is
+claimed. Commands, history patches, copies and captured framing retain the
+same typed value and normalization clock.
+
 ## Current validation and prior-format refusal
 
 ```sh

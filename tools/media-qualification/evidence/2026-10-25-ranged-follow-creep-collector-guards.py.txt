@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+"""Dry-run-only guards; reduced-cap case is explicitly fault injected."""
+from contextlib import redirect_stdout
+import copy
+import gzip
+import hashlib
+import importlib.util
+import io
+import json
+import os
+from pathlib import Path
+import sys
+
+P = Path(__file__).resolve().parent
+script = P / 'collect-evidence.py'
+spec = importlib.util.spec_from_file_location('collector_guard_subject', script)
+m = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(m)
+root = P / 'collector-guard-fixtures'
+root.mkdir(exist_ok=False)
+source = root / 'input.txt'
+source.write_bytes(b'bounded input\n')
+script_sha = hashlib.sha256(script.read_bytes()).hexdigest()
+
+
+def plan():
+    raw = source.read_bytes(); sha = hashlib.sha256(raw).hexdigest()
+    stored = gzip.compress(raw, compresslevel=9, mtime=0)
+    return {'schema_version': 1, 'base': 'guard-fixture', 'cap_bytes': m.CAP,
+        'collector': {'sha256': script_sha}, 'allowed_input_roots': [str(root)],
+        'inputs': [{'source': str(source), 'logical': 'input.txt', 'kind': 'evidence', 'bytes': len(raw), 'sha256': sha}],
+        'runtime_guards': [], 'omissions': [], 'source_phases': {},
+        'objects': [{'path': f'payloads/{sha}.bin.gz', 'encoding': 'gzip', 'aliases': ['input.txt'],
+            'stored_bytes': len(stored), 'stored_sha256': hashlib.sha256(stored).hexdigest()}],
+        'exclusions': [], 'limits': {}, 'audit_note': 'synthetic guard fixture'}
+
+
+results = []
+
+
+def reject(name, callback, needle=None):
+    try:
+        callback()
+    except (ValueError, FileNotFoundError) as error:
+        if needle is not None:
+            assert needle in str(error), (name, str(error))
+        results.append({'name': name, 'passed': True, 'error': str(error)})
+    else:
+        raise AssertionError(f'{name} unexpectedly passed')
+
+
+def dry(value, approved_script=script_sha):
+    path = root / 'plan.json'
+    data = m.document(value); path.write_bytes(data)
+    sys.argv = [str(script), '--plan', str(path), '--approved-plan-sha256', hashlib.sha256(data).hexdigest(),
+        '--approved-script-sha256', approved_script, '--dry-run']
+    with redirect_stdout(io.StringIO()):
+        m.main()
+
+
+reject('parent traversal', lambda: m.relative('../escape'), 'unsafe output')
+reject('absolute output payload', lambda: m.relative('/escape'), 'unsafe output')
+reject('bare Rust evidence path', lambda: m.relative('source/file.rs'), 'bare Rust')
+link = root / 'link'; link.symlink_to(source)
+reject('symlink input', lambda: m.regular_bytes(str(link)), 'symlink')
+fifo = root / 'fifo'; os.mkfifo(fifo)
+reject('FIFO is nonblocking and refused', lambda: m.regular_bytes(str(fifo)), 'not a regular input')
+reject('wrong collector approval hash', lambda: dry(plan(), '0' * 64), 'collector approval')
+missing = plan(); missing['inputs'][0]['source'] = str(root / 'missing')
+reject('missing pinned input', lambda: dry(missing))
+wrong = plan(); wrong['inputs'][0]['sha256'] = '0' * 64
+reject('changed input before collection', lambda: dry(wrong), 'pinned input differs')
+duplicate = plan(); duplicate['objects'][0]['aliases'].append('input.txt')
+reject('duplicate logical alias', lambda: dry(duplicate), 'input/object map incomplete')
+
+original_read = m.regular_bytes
+calls = 0
+
+
+def mutate_after_capture(name, maximum=m.CAP):
+    global calls
+    if Path(name) == source:
+        calls += 1
+        if calls == 3:
+            source.write_bytes(b'changed input\n')
+    return original_read(name, maximum)
+
+
+before = plan()
+m.regular_bytes = mutate_after_capture
+reject('post-capture input mutation', lambda: dry(before), 'pinned input differs')
+m.regular_bytes = original_read
+source.write_bytes(b'bounded input\n')
+
+original_cap = m.CAP
+m.CAP = 65536
+small_cap = plan(); small_cap['exclusions'] = ['x' * 40000]
+reject('metadata counts toward aggregate cap (64 KiB fault injection)', lambda: dry(small_cap), 'collection exceeds a cap including metadata')
+m.CAP = original_cap
+assert not any(x.name == 'files.json' for x in root.rglob('*'))
+report = {'collector_sha256': script_sha, 'tests': results, 'passed': len(results),
+    'publication_executed': False, 'reduced_cap_test': 'module constant changed in memory to64KiB; real collector source remains256MiB'}
+(P / 'collector-guard-results.json').write_text(json.dumps(report, indent=2) + '\n')
+print(json.dumps({'passed': len(results), 'collector_sha256': script_sha, 'publication_executed': False}))

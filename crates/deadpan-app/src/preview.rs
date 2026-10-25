@@ -4800,12 +4800,19 @@ impl DeadpanApp {
                 },
             ..
         }) = &node.framing
-            && let Some(field) = description
+            && let Some(index) = description
                 .fields
-                .iter_mut()
-                .find(|(label, _)| *label == "Framing")
+                .iter()
+                .position(|(label, _)| *label == "Framing")
         {
-            *field = (
+            if let Some(fields) = scale_transition
+                .and_then(|transition| navigation::zoom::follow_range_fields(*scale, transition))
+            {
+                description.fields[index] = ("Follows", self.target_label(target));
+                description.fields.splice(index + 1..index + 1, fields);
+                return Some(description);
+            }
+            description.fields[index] = (
                 "Follows",
                 match scale_transition {
                     Some(transition) => format!(

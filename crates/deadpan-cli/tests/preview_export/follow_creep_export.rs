@@ -44,9 +44,26 @@ fn retained_render(fixture: &Fixture, root: &Path) -> Result<PathBuf> {
     ignore = "slow in debug builds; run with --release (see docs/PREVIEW_EXPORT_VERIFICATION.md)"
 )]
 fn follow_creep_preserves_live_motion_lost_correction_fallback_and_verified_av() -> Result {
+    run(false)
+}
+
+#[test]
+#[cfg_attr(
+    debug_assertions,
+    ignore = "slow in debug builds; run with --release (see docs/PREVIEW_EXPORT_VERIFICATION.md)"
+)]
+fn ranged_follow_creep_preserves_prefix_live_motion_and_verified_complete_av() -> Result {
+    run(true)
+}
+
+fn run(ranged: bool) -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     eprintln!("follow creep Render evidence: {}", root.display());
-    let fixture = recipes::follow_creep::build(&root.join("fixture"))?;
+    let fixture = if ranged {
+        recipes::follow_creep::build_ranged(&root.join("fixture"))?
+    } else {
+        recipes::follow_creep::build(&root.join("fixture"))?
+    };
     check(&fixture)?;
     if skip_without_physical_mac("target-following creep encoded Render") {
         return Ok(());

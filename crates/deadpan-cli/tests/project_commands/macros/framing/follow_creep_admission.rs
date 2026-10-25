@@ -69,6 +69,7 @@ fn explicit_follow_creep_from_rebases_both_scales_and_invalid_endpoints_never_pu
         *scale_transition = Some(FollowScaleTransition {
             factor: ratio(3, 2),
             curve: ZoomCurve::Smoothstep,
+            range: None,
         });
     }
     assert_eq!(

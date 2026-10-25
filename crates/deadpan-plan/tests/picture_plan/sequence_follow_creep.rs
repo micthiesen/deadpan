@@ -145,6 +145,7 @@ fn fixture(point: bool, curve: ZoomCurve) -> (ProjectDocument, ProjectDocument) 
         serde_json::to_value(FollowScaleTransition {
             factor: r(5, 3),
             curve,
+            range: None,
         })
         .unwrap();
     let animated = ProjectDocument::from_json(&wire.to_string()).unwrap();

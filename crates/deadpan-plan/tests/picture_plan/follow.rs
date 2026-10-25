@@ -2,6 +2,9 @@
 
 use super::*;
 
+#[path = "follow/ranged.rs"]
+mod ranged;
+
 fn ratio(numerator: i128, denominator: i128) -> ExactRatio {
     ExactRatio::new(numerator, denominator).unwrap()
 }
@@ -258,6 +261,7 @@ fn animated(document: &ProjectDocument, owner: &str) -> ProjectDocument {
         serde_json::to_value(FollowScaleTransition {
             factor: ratio(2, 1),
             curve: framing_zoom::ZoomCurve::Linear,
+            range: None,
         })
         .unwrap();
     ProjectDocument::from_json(&value.to_string()).unwrap()

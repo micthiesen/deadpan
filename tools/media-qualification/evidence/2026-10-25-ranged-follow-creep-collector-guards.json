@@ -1,0 +1,63 @@
+{
+  "collector_sha256": "a435a0ee061a871ce9ae107dfc29572bfd7e0c2450955a0ed01b121f31b1f118",
+  "tests": [
+    {
+      "name": "parent traversal",
+      "passed": true,
+      "error": "unsafe output path: ../escape"
+    },
+    {
+      "name": "absolute output payload",
+      "passed": true,
+      "error": "unsafe output path: /escape"
+    },
+    {
+      "name": "bare Rust evidence path",
+      "passed": true,
+      "error": "bare Rust evidence path: source/file.rs"
+    },
+    {
+      "name": "symlink input",
+      "passed": true,
+      "error": "symlink input component: /private/tmp/deadpan-ranged-follow-2026-10-25/collector-guard-fixtures/link"
+    },
+    {
+      "name": "FIFO is nonblocking and refused",
+      "passed": true,
+      "error": "not a regular input: /private/tmp/deadpan-ranged-follow-2026-10-25/collector-guard-fixtures/fifo"
+    },
+    {
+      "name": "wrong collector approval hash",
+      "passed": true,
+      "error": "collector approval hash differs"
+    },
+    {
+      "name": "missing pinned input",
+      "passed": true,
+      "error": "[Errno 2] No such file or directory: '/private/tmp/deadpan-ranged-follow-2026-10-25/collector-guard-fixtures/missing'"
+    },
+    {
+      "name": "changed input before collection",
+      "passed": true,
+      "error": "pinned input differs: /private/tmp/deadpan-ranged-follow-2026-10-25/collector-guard-fixtures/input.txt"
+    },
+    {
+      "name": "duplicate logical alias",
+      "passed": true,
+      "error": "input/object map incomplete"
+    },
+    {
+      "name": "post-capture input mutation",
+      "passed": true,
+      "error": "pinned input differs: /private/tmp/deadpan-ranged-follow-2026-10-25/collector-guard-fixtures/input.txt"
+    },
+    {
+      "name": "metadata counts toward aggregate cap (64 KiB fault injection)",
+      "passed": true,
+      "error": "collection exceeds a cap including metadata"
+    }
+  ],
+  "passed": 11,
+  "publication_executed": false,
+  "reduced_cap_test": "module constant changed in memory to64KiB; real collector source remains256MiB"
+}

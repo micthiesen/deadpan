@@ -61,6 +61,7 @@ fn follow_owner(
         serde_json::to_value(FollowScaleTransition {
             factor: ratio(2, 1),
             curve,
+            range: None,
         })
         .unwrap();
     ProjectDocument::from_json(&value.to_string()).unwrap()

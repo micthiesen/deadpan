@@ -22,6 +22,7 @@ enum Role {
     Segment,
     Curve,
     Transition,
+    FollowRange,
     Other,
 }
 
@@ -84,9 +85,9 @@ impl<'de> Visitor<'de> for Scan<'_> {
         Ok(())
     }
     fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<(), A::Error> {
-        // An explicit null is the same absent transition as None, so charge
-        // only an actual scalar record, before reading its fields.
-        if self.role == Role::Transition {
+        // An explicit null is the same absent transition/range as None, so
+        // charge only an actual scalar record, before reading its fields.
+        if matches!(self.role, Role::Transition | Role::FollowRange) {
             if self.counts.records == MAX_FRAMING_RECORDS {
                 return Err(A::Error::custom("aggregate framing record limit exceeded"));
             }
@@ -107,6 +108,7 @@ impl<'de> Visitor<'de> for Scan<'_> {
                 (Role::Value, "pose") => (Role::Other, true),
                 (Role::Value, "fallback") => (Role::Other, true),
                 (Role::Value, "scale_transition") => (Role::Transition, false),
+                (Role::Transition, "range") => (Role::FollowRange, false),
                 (Role::Value, "envelope") => (Role::Envelope, false),
                 (Role::Envelope, "initial") => (Role::Other, true),
                 (Role::Envelope, "segments") => (Role::Segments, false),

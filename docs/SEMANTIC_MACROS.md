@@ -283,7 +283,8 @@ its exact duration from the preceding staged document, then converts the
 invocation's selection to that owner's local frames. Time selections retain
 their oriented state; Object selections resolve their exact owned range.
 An empty or cross-owner range refuses. A range spanning the complete owner
-uses the existing whole-owner behavior.
+uses the existing whole-owner behavior, except that Keep-center creep on a
+fixed Follow retains its explicit window.
 
 No target keeps the retained framing center. Explicit `target=center` projects
 the Original picture's center through the framing entering the selected owner;
@@ -295,8 +296,13 @@ available. Existing ordinary whole-beat presets keep their `SetFraming` behavior
 
 Native commands and semantic replay share the pure `framing_zoom` builder.
 A ranged smash restores the preceding static pose after the range; a creep
-holds its arrival pose. Existing dynamic paths and follows refuse ranged
-replacement when their outside behavior cannot be preserved. The shared host
+holds its arrival pose. Keep-center creep on a fixed Follow retains the target
+throughout, preserves both original scales before In, applies `from=` only at
+In and holds the terminal scale after Out. Its named replay and dot derive the
+window and both branch factors from the invocation's fixed Follow, rather than
+recording the old target, scales or clock. Existing dynamic paths and other
+ranged Follow edits refuse replacement when their outside behavior cannot be
+preserved. The shared host
 resolver uses the staged render plan's evaluated pose and clock, qualified
 provider metadata and composed picture geometry. It opens no source media,
 creates no decoder or picture raster and reads no proxy. The invocation cursor

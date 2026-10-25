@@ -472,7 +472,7 @@ fn whole_repeat_follow_creep_preserves_plays_gaps_escalation_and_invocation_rela
             let cursor = selection
                 .filter(|(_, _, extending)| *extending)
                 .map_or(2, |(_, head, _)| head);
-            let error = reject(
+            assert_ranged_follow_preview(
                 &package,
                 &input,
                 &invocation(
@@ -482,21 +482,13 @@ fn whole_repeat_follow_creep_preserves_plays_gaps_escalation_and_invocation_rela
                     "repeat",
                     cursor,
                     selection,
-                    "range-refused",
+                    "range-preview",
                 ),
+                "repeat",
+                0,
+                17,
+                selection.map(|(a, b, _)| (a, b)).unwrap(),
             )?;
-            let expected = if selection.is_some_and(|(a, b, _)| a.abs_diff(b) == 17) {
-                deadpan_core::framing_zoom::FOLLOW_CREEP_REFUSAL
-            } else {
-                deadpan_core::framing_zoom::RANGED_FOLLOW_REFUSAL
-            };
-            assert!(
-                error["error"]["message"]
-                    .as_str()
-                    .unwrap()
-                    .ends_with(expected),
-                "{variant}: {error}"
-            );
         }
         let request = invocation(&before, bank.version, "c", "repeat", 2, None, "creep");
         let predicted = preview_framing(&package, &request, "repeat")?;
@@ -517,6 +509,7 @@ fn whole_repeat_follow_creep_preserves_plays_gaps_escalation_and_invocation_rela
             *scale_transition = Some(FollowScaleTransition {
                 factor: ratio(2, 1),
                 curve: ZoomCurve::Linear,
+                range: None,
             });
         }
         assert_eq!(predicted, (Some(expected.clone()), 137));
@@ -574,7 +567,7 @@ fn whole_repeat_follow_creep_preserves_plays_gaps_escalation_and_invocation_rela
         let staged = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
         assert!(matches!(&staged.nodes()[&node("repeat")].framing,
             Some(Framing { clock: FramingClock::OwnerOutput, value: FramingValue::Follow { target, scale, fallback,
-                scale_transition: Some(FollowScaleTransition { factor, curve: ZoomCurve::Linear }) } })
+                scale_transition: Some(FollowScaleTransition { factor, curve: ZoomCurve::Linear, range: None }) } })
             if target.as_str() == "other" && *scale == ratio(2, 1) && fallback.scale == ratio(2, 1) && *factor == ratio(2, 1)));
         for frame in 0..17 {
             assert_eq!(

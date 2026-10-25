@@ -559,7 +559,17 @@ fn follow_creep_keeps_both_bases_and_requires_a_whole_admitted_owner() {
         assert_eq!(initial.follow.unwrap().1, ratio(3, 1));
         assert_eq!(initial.pose.scale, ratio(3, 4));
         for range in [Some((0, 10)), Some((1, 9))] {
-            assert!(build(kind, &Center::Keep, &Shot { range, ..admitted }).is_err());
+            let ranged = build(kind, &Center::Keep, &Shot { range, ..admitted })
+                .unwrap()
+                .unwrap();
+            assert_eq!(ranged.clock, FramingClock::OwnerOutput);
+            assert!(matches!(
+                ranged.value,
+                FramingValue::Follow {
+                    scale_transition: Some(crate::FollowScaleTransition { range: Some(_), .. }),
+                    ..
+                }
+            ));
         }
         assert!(
             build(
@@ -611,4 +621,97 @@ fn follow_creep_keeps_both_bases_and_requires_a_whole_admitted_owner() {
             FramingValue::Envelope { .. }
         ));
     }
+}
+
+#[test]
+fn ranged_follow_creep_preserves_prefix_and_separate_bases_with_an_explicit_from_jump() {
+    let entry = Framing {
+        clock: FramingClock::RetainedOutput {
+            offset: ratio(-7, 1),
+            duration: ratio(50, 1),
+        },
+        value: FramingValue::Follow {
+            target: TargetId::new("moving").unwrap(),
+            scale: ratio(2, 1),
+            fallback: FramingPose::new(ratio(1, 3), ratio(2, 7), ratio(1, 2)).unwrap(),
+            scale_transition: None,
+        },
+    };
+    let base = Shot {
+        whole_owner: Some(WholeFollowOwner::Source),
+        entry: Some(&entry),
+        current: FramingPose::identity(),
+        range: Some((2, 6)),
+        frames: 8,
+        explicit: false,
+    };
+    let kind = ZoomKind::Creep {
+        from: Some(ratio(3, 1)),
+        to: ratio(4, 1),
+        curve: ZoomCurve::Linear,
+    };
+    let result = build(kind, &Center::Keep, &base).unwrap().unwrap();
+    let at = |frame| {
+        result
+            .evaluate_with_follow_exact(ratio(frame, 1), ratio(8, 1))
+            .unwrap()
+    };
+    for (frame, live) in [
+        (0, ratio(2, 1)),
+        (1, ratio(2, 1)),
+        (2, ratio(3, 1)),
+        (4, ratio(7, 2)),
+        (6, ratio(4, 1)),
+        (8, ratio(4, 1)),
+    ] {
+        let state = at(frame);
+        assert_eq!(state.follow.unwrap().0.as_str(), "moving");
+        assert_eq!(state.follow.unwrap().1, live);
+        assert_eq!(state.pose.scale, live.checked_div(ratio(4, 1)).unwrap());
+        assert_eq!(state.pose.center_x, ratio(1, 3));
+        assert_eq!(state.pose.center_y, ratio(2, 7));
+    }
+    assert_eq!(result.clock, FramingClock::OwnerOutput);
+    assert!(
+        build(
+            kind,
+            &Center::Keep,
+            &Shot {
+                whole_owner: None,
+                ..base
+            }
+        )
+        .is_err()
+    );
+    // A path or a different center cannot replace the live context outside
+    // this range. The ranged feature does not weaken those refusals.
+    assert!(
+        build(
+            kind,
+            &Center::Keep,
+            &Shot {
+                entry: Some(&result),
+                ..base
+            }
+        )
+        .is_err()
+    );
+    assert!(build(kind, &Center::Point([ratio(1, 2), ratio(1, 2)]), &base).is_err());
+    assert!(build(ZoomKind::Off, &Center::Keep, &base).is_err());
+    assert!(build(ZoomKind::Smash { scale: ratio(3, 1) }, &Center::Keep, &base).is_err());
+    for range in [Some((0, 0)), Some((4, 4)), Some((6, 2)), Some((1, 9))] {
+        assert!(build(kind, &Center::Keep, &Shot { range, ..base }).is_err());
+    }
+    assert!(
+        build(
+            kind,
+            &Center::Keep,
+            &Shot {
+                frames: 1_000_003,
+                range: Some((1, 2)),
+                ..base
+            }
+        )
+        .is_err()
+    );
 }

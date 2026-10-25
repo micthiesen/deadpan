@@ -250,7 +250,7 @@ fn whole_sequence_follow_creep_crosses_source_cuts_and_replays_staged_keep_with_
         let cursor = selection
             .filter(|(_, _, extending)| *extending)
             .map_or(5, |(_, head, _)| head);
-        let error = reject(
+        assert_ranged_follow_preview(
             &package,
             &input,
             &invocation(
@@ -260,21 +260,13 @@ fn whole_sequence_follow_creep_crosses_source_cuts_and_replays_staged_keep_with_
                 "group",
                 cursor,
                 selection,
-                "range-refused",
+                "range-preview",
             ),
+            "group",
+            2,
+            8,
+            selection.map(|(a, b, _)| (a, b)).unwrap(),
         )?;
-        let expected = if selection.is_some_and(|(anchor, head, _)| anchor.abs_diff(head) == 8) {
-            deadpan_core::framing_zoom::FOLLOW_CREEP_REFUSAL
-        } else {
-            deadpan_core::framing_zoom::RANGED_FOLLOW_REFUSAL
-        };
-        assert!(
-            error["error"]["message"]
-                .as_str()
-                .unwrap()
-                .ends_with(expected),
-            "{selection:?}: {error}"
-        );
     }
     let request = invocation(
         &before,
@@ -303,6 +295,7 @@ fn whole_sequence_follow_creep_crosses_source_cuts_and_replays_staged_keep_with_
         *scale_transition = Some(FollowScaleTransition {
             factor: ratio(2, 1),
             curve: ZoomCurve::Linear,
+            range: None,
         });
     }
     assert_eq!(predicted, (Some(expected.clone()), 130));
@@ -402,7 +395,7 @@ fn whole_sequence_follow_creep_crosses_source_cuts_and_replays_staged_keep_with_
     let staged = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
     assert!(matches!(&staged.nodes()[&node("group")].framing,
         Some(Framing { clock: FramingClock::OwnerOutput, value: FramingValue::Follow {
-            target, scale, fallback, scale_transition: Some(FollowScaleTransition { factor, curve: ZoomCurve::Linear }) } })
+            target, scale, fallback, scale_transition: Some(FollowScaleTransition { factor, curve: ZoomCurve::Linear, range: None }) } })
         if target.as_str() == "other" && *scale == ratio(2, 1) && fallback.scale == ratio(2, 1) && *factor == ratio(3, 2)));
     only_group_framing(&reset, &staged)?;
     for frame in 0..8 {

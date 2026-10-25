@@ -428,7 +428,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     expected_retime.framing = animated.clone();
     d.check("One Keep creep changes only the retime framing and records invocation-relative intent",
         matches!(&animated, Some(Framing {clock:FramingClock::OwnerOutput,value:FramingValue::Follow {
-            target,scale,fallback,scale_transition:Some(FollowScaleTransition {factor,curve:ZoomCurve::Linear})}})
+            target,scale,fallback,scale_transition:Some(FollowScaleTransition {factor,curve:ZoomCurve::Linear,range:None})}})
             if target.as_str()=="target-1" && *scale==ratio(11,10) && fallback.scale==ratio(11,10) && *factor==ExactRatio::integer(2))
             && other_nodes_unchanged && current.document.nodes().get(&retime)==Some(&expected_retime)
             && baseline.document.nodes().len()==current.document.nodes().len()

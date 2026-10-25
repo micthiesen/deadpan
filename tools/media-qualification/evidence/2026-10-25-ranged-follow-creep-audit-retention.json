@@ -1,0 +1,53 @@
+{
+  "files": [
+    {
+      "path": "2026-10-25-ranged-follow-creep-audit.json",
+      "source": "/tmp/deadpan-ranged-follow-2026-10-25/evidence-independent-audit.stdout",
+      "bytes": 619,
+      "sha256": "42b9659650db0a379777faf98c407074fa0e29d1d0d7f8edd4d857a4dcd20786"
+    },
+    {
+      "path": "2026-10-25-ranged-follow-creep-audit.py.txt",
+      "source": "/tmp/deadpan-ranged-follow-2026-10-25/verify-published.py",
+      "bytes": 3821,
+      "sha256": "78cc7cb12568c6ba13ce4bc0b67c423fe41fe117034488a3db03fee2c5af2036"
+    },
+    {
+      "path": "2026-10-25-ranged-follow-creep-audit.run.json",
+      "source": "/tmp/deadpan-ranged-follow-2026-10-25/evidence-independent-audit.json",
+      "bytes": 17527,
+      "sha256": "838a4593899a7579eb869e3ae13491e6d4cdb5cd3e5b89b45c5f763bb8123eea"
+    },
+    {
+      "path": "2026-10-25-ranged-follow-creep-audit.stderr",
+      "source": "/tmp/deadpan-ranged-follow-2026-10-25/evidence-independent-audit.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "2026-10-25-ranged-follow-creep-collection.json",
+      "source": "/tmp/deadpan-ranged-follow-2026-10-25/evidence-collected.json",
+      "bytes": 620,
+      "sha256": "e9815d638b145074ee72a6660b91ec7a4548c8fa7aa91a49cbc6f71b3165d56b"
+    },
+    {
+      "path": "2026-10-25-ranged-follow-creep-collection.run.json",
+      "source": "/tmp/deadpan-ranged-follow-2026-10-25/evidence-collect.json",
+      "bytes": 17993,
+      "sha256": "1990a1978df180708ead5dfcc23169133918dba7cff388fd0546f616ef1d14f9"
+    },
+    {
+      "path": "2026-10-25-ranged-follow-creep-collector-guards.py.txt",
+      "source": "/tmp/deadpan-ranged-follow-2026-10-25/test-collector-guards.py",
+      "bytes": 4434,
+      "sha256": "66aa201784b8c9bcb99c6bd947079e5e60c2a37a2ffabc122f0027673427ccdd"
+    },
+    {
+      "path": "2026-10-25-ranged-follow-creep-collector-guards.json",
+      "source": "/tmp/deadpan-ranged-follow-2026-10-25/collector-guard-results.json",
+      "bytes": 2054,
+      "sha256": "69803dca732935a9129ef5d58d3e488f53e79abfe32d5b6047739cf029dd849b"
+    }
+  ],
+  "note": "Standalone actual post-publication audit, collector receipt and guard proofs, outside the immutable 141-file collection"
+}

@@ -3,6 +3,9 @@
 //! Timeline and segment selection are exact. Interior interpolation uses a
 //! declared Q32 round-even numeric grid; it never changes the sampled time.
 
+#[cfg(test)]
+mod follow_range_tests;
+
 mod numeric;
 mod preflight;
 pub(crate) use preflight::check as preflight;
@@ -227,6 +230,20 @@ pub enum FramingValue {
 pub struct FollowScaleTransition {
     pub factor: ExactRatio,
     pub curve: crate::framing_zoom::ZoomCurve,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub range: Option<FollowScaleRange>,
+}
+
+/// A scale change confined to normalized coordinates of the declared owner
+/// clock. Before `start` both branches retain their original scale. At `start`
+/// they step to their base times `from_factor`, then reach the transition's
+/// terminal factor at `end` and hold it afterward. The target remains live.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FollowScaleRange {
+    pub start: ExactRatio,
+    pub end: ExactRatio,
+    pub from_factor: ExactRatio,
 }
 
 /// Framing before the plan resolves a target against the provider picture.
@@ -340,6 +357,26 @@ impl Framing {
                     if !transition.factor.compare_integer(0).is_gt() {
                         return Err(FramingError::PoseRange);
                     }
+                    if let Some(range) = transition.range {
+                        if range.start.denominator() > MAX_PROGRESS_DENOMINATOR
+                            || range.end.denominator() > MAX_PROGRESS_DENOMINATOR
+                            || range.start.compare_integer(0).is_lt()
+                            || !numeric::compare(range.end, range.start).is_gt()
+                            || range.end.compare_integer(1).is_gt()
+                        {
+                            return Err(FramingError::EnvelopeRange);
+                        }
+                        if !range.from_factor.compare_integer(0).is_gt() {
+                            return Err(FramingError::PoseRange);
+                        }
+                        for base in [*scale, fallback.scale] {
+                            FramingPose::new(
+                                fallback.center_x,
+                                fallback.center_y,
+                                base.checked_mul(range.from_factor)?,
+                            )?;
+                        }
+                    }
                     for base in [*scale, fallback.scale] {
                         FramingPose::new(
                             fallback.center_x,
@@ -383,7 +420,10 @@ impl Framing {
             FramingValue::Static { .. } => 1,
             FramingValue::Follow {
                 scale_transition, ..
-            } => 1 + usize::from(scale_transition.is_some()),
+            } => {
+                1 + usize::from(scale_transition.is_some())
+                    + usize::from(scale_transition.is_some_and(|value| value.range.is_some()))
+            }
             FramingValue::Envelope { envelope } => {
                 1 + envelope
                     .segments
@@ -509,19 +549,34 @@ fn follow_scale(
     duration: ExactRatio,
 ) -> Result<ExactRatio, FramingError> {
     let end = base.checked_mul(transition.factor)?;
+    let (start, terminal, from) = if let Some(range) = transition.range {
+        if numeric::compare_progress(local, duration, range.start)?.is_lt() {
+            return Ok(base);
+        }
+        if !numeric::compare_progress(local, duration, range.end)?.is_lt() {
+            return Ok(end);
+        }
+        let from = base.checked_mul(range.from_factor)?;
+        if numeric::compare_progress(local, duration, range.start)?.is_eq() {
+            return Ok(from);
+        }
+        (range.start, range.end, from)
+    } else {
+        (ExactRatio::ZERO, ExactRatio::ONE, base)
+    };
     if local == duration {
         return Ok(end);
     }
     if local == ExactRatio::ZERO || transition.curve == crate::framing_zoom::ZoomCurve::Step {
-        return Ok(base);
+        return Ok(from);
     }
-    let progress = numeric::segment_progress(local, duration, ExactRatio::ZERO, ExactRatio::ONE)?;
+    let progress = numeric::segment_progress(local, duration, start, terminal)?;
     let progress = if transition.curve == crate::framing_zoom::ZoomCurve::Smoothstep {
         smoothstep(progress)?
     } else {
         progress
     };
-    let value = numeric::lerp(numeric::quantize(base)?, numeric::quantize(end)?, progress)?;
+    let value = numeric::lerp(numeric::quantize(from)?, numeric::quantize(end)?, progress)?;
     Ok(ExactRatio::new(
         i128::from(value),
         i128::from(FRAMING_NUMERIC_SCALE),
@@ -700,6 +755,7 @@ mod follow_transition_tests {
                 scale_transition: Some(FollowScaleTransition {
                     factor: ratio(2, 1),
                     curve,
+                    range: None,
                 }),
             },
         }

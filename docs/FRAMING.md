@@ -216,7 +216,7 @@ construction and its numeric tests live in
 | `,c` | `:creep to=1.35`. |
 | `:zoom S [target=…] [curve=step]` | Smash zoom. On the whole beat with a target: `Follow { target, scale: S, fallback }`, a live step onto the target. Otherwise a static pose at scale `S`. |
 | `:zoom S curve=linear\|smoothstep` | An eased change from the current pose, as `:creep to=S`. |
-| `:creep [from=S] [to=S] [target=…] [curve=smoothstep\|linear]` | Eases from `from` (default: current scale) to `to` (default 1.35). With no `target=`, a whole Source, Hold, Sequence, Repeat or Retime with a fixed Follow retains live targeting and animates scale, either as an ordinary selected beat or within explicit Play scopes. Other cases use a fixed-center envelope. |
+| `:creep [from=S] [to=S] [target=…] [curve=smoothstep\|linear]` | Eases from `from` (default: current scale) to `to` (default 1.35). With no `target=`, a Source, Hold, Sequence, Repeat or Retime with a fixed Follow retains live targeting and animates scale. Ordinary owners support whole-beat or contained Edit ranges; explicit Play scopes support whole owners. Other cases use a fixed-center envelope. |
 | `:zoom S target=face:N …`, `:creep … target=face:N` | Face `N` (1 to 64, left to right) proposed in the displayed picture, saved as a target together with the framing ([face proposals](#face-proposals)). |
 | `:zoom S target=region:N …`, `:creep … target=region:N` | Salient region `N` (1 to 64, geometrically ordered) proposed in the displayed picture, saved as a target together with the framing. |
 | `:zoom off` | Abrupt return: no framing on the whole beat, or a step out to the full picture over the Edit range. |
@@ -225,7 +225,7 @@ construction and its numeric tests live in
 only saved target covering the displayed picture; several refuse and name them.
 `target=center` is the Original's center; `target=face:N` is a face proposal
 and `target=region:N` a salient-region proposal (below); any other value is a target id or label (quote labels with spaces). A whole-beat step with a target follows it
-live. An eased edit that explicitly names a target, or a ranged edit, uses a fixed point: the target's center exactly
+live. An eased edit that explicitly names a target uses a fixed point: the target's center exactly
 as a follow would resolve it (`deadpan_plan::follow_pose_in_context`) at the frame where a
 step lands (the range's first frame) or where a creep arrives (its last frame).
 The status line names that frame and says the framing does not follow. A target
@@ -251,8 +251,15 @@ Nothing flattens an existing path implicitly. On the whole beat:
   Original point for the target, including fractional coordinates rather than
   the rounded decoded picture ordinal. Its child framing and pitch policy stay
   unchanged.
-  Clear Visual selection first, including a full-length range. Within a Repeat,
-  choose This play at every enclosing Repeat level. The existing scoped edit
+  An ordinary contained Edit range changes only the scale transition window:
+  the original live and fallback scales remain before In, `from=` takes effect
+  exactly at In, scale reaches `to=` at Out and holds afterward, and the target
+  remains live throughout. With no `from=`, the ramp starts at the original live
+  scale. The fallback uses the same proportional change from its own base;
+  neither branch takes its center from the stopped picture. A full-length Visual
+  range retains its explicit range intent.
+  Within a Repeat, clear Visual selection and choose This play at every
+  enclosing Repeat level. The existing scoped edit
   isolates only those concrete occurrences, retaining stable play identities and
   the other plays' pictures, gap recipes and audio. Default, mixed, missing or
   mismatched Play scopes refuse. The whole selected owner's local output clock
@@ -269,6 +276,11 @@ creating the transition. New creep spans the current whole Source, Hold, Sequenc
 structural edits retain its authored normalization clock. Interpolation uses the
 existing Q32 round-even numeric contract. Fallback centers and exact endpoint
 scales stay exact; resolved target poses use the existing whole-pose grid.
+An optional `range` stores exact normalized `start` and `end` plus `from_factor`
+relative to each unchanged base. Its endpoints use the same denominator bound
+of one million as ordinary framing envelopes. Outside the window the target
+continues to resolve against each picture's Original time. Later structural
+edits retain the authored window through the existing normalization clock.
 Raw validated framing supports the transition on every supported owner type.
 
 Lost tracking holds the last retained region while scale continues changing.
@@ -295,7 +307,10 @@ the beat's static pose before it, the range gets the new pose, and a step
 returns to the previous pose after it. A ranged creep arrives at the range end
 and then holds its end pose to the end of the beat, which the status line says.
 A ranged edit needs a beat with no framing or one static pose on any clock (a
-static pose is constant); a follow or camera path refuses with its own reason.
+static pose is constant), except that implicit Keep-center creep also accepts
+one fixed Follow as described above. Ranged step/off and explicitly sampled
+target edits on a Follow, or any ranged edit on an existing camera path, refuse
+with their own reason.
 A range outside the beat refuses; a Repeat play is always framed whole.
 Envelope progress is exact (`frame / beat frames`, reduced, at most one million).
 
@@ -322,7 +337,8 @@ The native and semantic paths share the pure
 [numeric tests](../crates/deadpan-core/src/framing_zoom/tests.rs). The shared
 host resolver uses the staged render plan's evaluated pose and qualified
 provider geometry to project the Original center without decoding or proxy
-access. Existing outside-range path/follow refusals remain. Pending picture
+access. Existing outside-range path refusals and non-creep Follow refusals
+remain. Pending picture
 work keeps the full macro capture; Escape or `:record-cancel` cancels it before
 it can submit delayed framing. See [semantic macros](SEMANTIC_MACROS.md#ranged-zoom-and-creep)
 and [ranged framing qualification](qualification/ranged-framing-macros-2026-10-18.md)

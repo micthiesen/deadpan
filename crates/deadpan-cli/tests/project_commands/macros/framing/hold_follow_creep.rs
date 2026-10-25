@@ -207,14 +207,13 @@ fn whole_hold_keep_follow_creep_replays_live_and_captured_fallback_with_durable_
         false,
     )?;
     let bank = ProjectStore::open(&package, AccessMode::ReadOnly)?.registers()?;
-    // Full and interior ranges are explicit selections, even if their endpoints
-    // would normalize to the complete Hold in the framing builder.
+    // Full and interior ranges retain explicit local Follow windows.
     for selection in [
         Some((120, 128, false)),
         Some((121, 127, false)),
         Some((128, 120, true)),
     ] {
-        reject(
+        assert_ranged_follow_preview(
             &package,
             &input,
             &invocation(
@@ -222,10 +221,18 @@ fn whole_hold_keep_follow_creep_replays_live_and_captured_fallback_with_durable_
                 bank.version,
                 "h",
                 "live",
-                123,
+                if selection.is_some_and(|(_, _, extending)| extending) {
+                    120
+                } else {
+                    123
+                },
                 selection,
-                "range-refused",
+                "range-preview",
             ),
+            "live",
+            120,
+            8,
+            selection.map(|(a, b, _)| (a, b)).unwrap(),
         )?;
     }
     let request = invocation(&before, bank.version, "h", "live", 123, None, "live-creep");
@@ -247,6 +254,7 @@ fn whole_hold_keep_follow_creep_replays_live_and_captured_fallback_with_durable_
         *scale_transition = Some(FollowScaleTransition {
             factor: ratio(2, 1),
             curve: ZoomCurve::Linear,
+            range: None,
         });
     }
     assert_eq!(prediction, (Some(expected.clone()), 144));
@@ -318,7 +326,7 @@ fn whole_hold_keep_follow_creep_replays_live_and_captured_fallback_with_durable_
     let other = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
     assert!(matches!(&other.nodes()[&node("other")].framing,
         Some(Framing{clock:FramingClock::OwnerOutput,value:FramingValue::Follow{target,scale,fallback,
-            scale_transition:Some(FollowScaleTransition{factor,curve:ZoomCurve::Linear})}})
+            scale_transition:Some(FollowScaleTransition {factor,curve:ZoomCurve::Linear, range: None })}})
         if target.as_str()=="right" && *scale==ratio(2,1) && fallback.scale==ratio(1,2) && *factor==ratio(3,2)));
     assert_recipe_and_picture(&redone, &other, "other", 131)?;
     invoke(

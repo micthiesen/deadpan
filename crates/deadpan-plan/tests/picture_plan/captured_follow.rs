@@ -265,6 +265,7 @@ fn captured_hold_follow_uses_frozen_source_point_and_complete_output_clock() {
     wire["nodes"]["h"]["framing"] = serde_json::to_value(follow(Some(FollowScaleTransition {
         factor: q(2, 1),
         curve: ZoomCurve::Linear,
+        range: None,
     })))
     .unwrap();
     wire["nodes"]["g"]["framing"] = serde_json::to_value(follow(None)).unwrap();

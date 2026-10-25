@@ -14,6 +14,7 @@ fn follow() -> Framing {
             scale_transition: Some(FollowScaleTransition {
                 factor: ratio(2, 1),
                 curve: framing_zoom::ZoomCurve::Linear,
+                range: None,
             }),
         },
     }
@@ -179,6 +180,61 @@ fn mixed_and_escaped_follow_transition_documents_keep_wire_counts_and_closed_fie
         raw["nodes"]["hold"]["framing"]["value"]["scale_transition"][field] = json!([]);
         assert!(ProjectDocument::from_json(&raw.to_string()).is_err());
     }
+}
+
+#[test]
+fn ranged_follow_raw_document_and_command_validate_from_factor_before_publication() {
+    let before = targeted();
+    let mut framing = follow();
+    let FramingValue::Follow {
+        scale_transition, ..
+    } = &mut framing.value
+    else {
+        unreachable!()
+    };
+    scale_transition.as_mut().unwrap().range = Some(FollowScaleRange {
+        start: ratio(1, 4),
+        end: ratio(3, 4),
+        from_factor: ratio(3, 2),
+    });
+    let framed = edit(
+        &before,
+        Command::SetFraming {
+            node: id("hold"),
+            framing: Some(framing.clone()),
+        },
+    );
+    let raw = framed
+        .to_json()
+        .unwrap()
+        .replace("\"range\"", "\"ra\\u006ege\"");
+    assert_eq!(ProjectDocument::from_json(&raw).unwrap(), framed);
+    let FramingValue::Follow {
+        scale_transition, ..
+    } = &mut framing.value
+    else {
+        unreachable!()
+    };
+    scale_transition
+        .as_mut()
+        .unwrap()
+        .range
+        .as_mut()
+        .unwrap()
+        .from_factor = ExactRatio::ZERO;
+    let command: Command = serde_json::from_str(
+        &serde_json::to_string(&Command::SetFraming {
+            node: id("hold"),
+            framing: Some(framing.clone()),
+        })
+        .unwrap(),
+    )
+    .unwrap();
+    assert_framing_refusal(apply(&before, &request(&before, command)).unwrap_err());
+    let mut raw = serde_json::to_value(&framed).unwrap();
+    raw["nodes"]["hold"]["framing"] = serde_json::to_value(framing).unwrap();
+    assert_framing_refusal(ProjectDocument::from_json(&raw.to_string()).unwrap_err());
+    assert_eq!(before, targeted());
 }
 
 #[test]

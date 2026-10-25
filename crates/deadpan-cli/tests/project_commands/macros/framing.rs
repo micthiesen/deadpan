@@ -23,6 +23,9 @@ mod follow_creep;
 #[path = "framing/follow_creep_admission.rs"]
 mod follow_creep_admission;
 
+#[path = "framing/ranged_follow_creep.rs"]
+mod ranged_follow_creep;
+
 #[path = "framing/hold_follow_creep.rs"]
 mod hold_follow_creep;
 
@@ -448,6 +451,49 @@ fn preview_framing(
         document.nodes()[&node(owner)].framing.clone(),
         document.duration()?.frames(),
     ))
+}
+
+fn assert_ranged_follow_preview(
+    package: &Path,
+    input: &Path,
+    request: &Value,
+    owner: &str,
+    owner_start: i64,
+    frames: i64,
+    selection: (i64, i64),
+) -> Result {
+    let frozen = state(package)?;
+    let (framing, _) = preview_framing(package, request, owner)?;
+    invoke(package, input, request, true)?;
+    assert_eq!(state(package)?, frozen);
+    let Some(deadpan_core::Framing {
+        value:
+            FramingValue::Follow {
+                scale_transition: Some(transition),
+                ..
+            },
+        ..
+    }) = framing
+    else {
+        panic!("ranged Follow preview")
+    };
+    let range = transition.range.ok_or("missing explicit Follow range")?;
+    assert_eq!(
+        range.start,
+        ratio(
+            i128::from(selection.0.min(selection.1) - owner_start),
+            i128::from(frames)
+        )
+    );
+    assert_eq!(
+        range.end,
+        ratio(
+            i128::from(selection.0.max(selection.1) - owner_start),
+            i128::from(frames)
+        )
+    );
+    assert_eq!(range.from_factor, ExactRatio::ONE);
+    Ok(())
 }
 
 #[test]
