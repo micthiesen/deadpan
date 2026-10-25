@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-24T12:07:38Z",
+  "updated_at": "2026-10-25T07:14:20Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Whole Retime following creep is verified and committed. Continuing live following within explicit Repeat plays and remaining target/proposal authoring; coverage remains 89%.",
+  "focus": "Explicit Repeat-play following creep is verified and committed. Continuing general non-face region proposals and remaining target controls; coverage remains 89%.",
   "features": [
     {
       "id": "editing",
@@ -35,7 +35,7 @@
         "DP-08",
         "DP-11"
       ],
-      "note": "Source, Hold, Sequence, Repeat and Retime owners keep live targets while creep scales their output clocks. Retimed targets use exact fractional Original time. Follow respects captured and live crops, with fallback for hidden targets. Camera paths, tracking, the paged face picker and editable point targets work. Native replays, complete exports and exact portable history are verified. Scoped following creep, general non-face region proposals and other target controls remain."
+      "note": "Source, Hold, Sequence, Repeat and Retime owners keep live targets while creep scales their local output clocks, in ordinary selection and explicit Repeat Play scopes. Targets use exact mapped Original time. Follow respects captured and live crops, with fallback for hidden targets. Camera paths, tracking, the paged face picker and editable point targets work. Nested-play native replay, complete export and exact portable history are verified. General non-face region proposals and other target controls remain."
     },
     {
       "id": "audio",
@@ -1309,6 +1309,14 @@
       "revision": "9885725a637737b8ca462bcece052bfe25c8b4c0",
       "retrospective": false,
       "summary": "Whole Retime following creep uses owner output time for scale and exact fractional Original time for target centers. Independent review, 2,056 Core/Plan, 1,304 App and fifteen CLI tests, a 129-check native workflow and a verified 120-picture/full 192,192-sample export with exact portable history pass."
+    },
+    {
+      "date": "2026-10-25",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "dbcf4de69543578353bcbd7218066bf2829420f1",
+      "retrospective": false,
+      "summary": "Whole-owner following creep now works in explicit nested Repeat plays through the existing isolation transaction. Independent review, 2,059 Core/Plan, 1,304 App and sixteen CLI framing tests pass. The 155-check native workflow, all 240 exported pictures, full 384,384-sample audio at zero offset and exact portable history are verified. Evidence preserves both media-driver stops and the corrected offline audit."
     }
   ]
 }
