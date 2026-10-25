@@ -572,11 +572,11 @@ fn whole_sequence_follow_creep_crosses_source_cuts_and_replays_staged_keep_with_
         "retime",
         11,
         None,
-        "scope-refused",
+        "scoped-creep",
     );
     request["operation"]["scoped"] = serde_json::to_value(scoped)?;
-    // The group's existing transition also retains the path refusal inside an
-    // occurrence; clearing it first isolates the scope-admission boundary.
+    // Existing animation still refuses implicit replacement. Use a fixed Follow
+    // to exercise creation inside this concrete play.
     let plain = command(
         &package,
         &input,
@@ -587,13 +587,19 @@ fn whole_sequence_follow_creep_crosses_source_cuts_and_replays_staged_keep_with_
         "plain-scoped-group",
     )?;
     request["expected_revision"] = json!(plain.revision_id());
-    let error = reject(&package, &input, &request)?;
-    assert!(
-        error["error"]["message"]
-            .as_str()
-            .unwrap()
-            .ends_with(deadpan_core::framing_zoom::FOLLOW_CREEP_REFUSAL)
-    );
+    let result = invoke(&package, &input, &request, false)?;
+    let (after, mapped, frames) = assert_scoped_follow_commit(&package, &plain, &result)?;
+    assert_eq!(frames, (10..18).collect::<Vec<_>>());
+    assert!(matches!(&after.nodes()[&mapped.target.node].framing,
+        Some(Framing { value: FramingValue::Follow { target, scale, scale_transition: Some(FollowScaleTransition { factor, .. }), .. }, .. })
+        if target.as_str() == "other" && *scale == ratio(5, 4) && *factor == ratio(12, 5)));
+    let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    writer.undo(
+        after.revision_id(),
+        RevisionId::new("scoped-sequence-undo")?,
+    )?;
+    same_document(&writer.snapshot()?, &plain)?;
+    drop(writer);
     assert_eq!(
         ProjectStore::open(&package, AccessMode::ReadOnly)?.registers()?,
         bank

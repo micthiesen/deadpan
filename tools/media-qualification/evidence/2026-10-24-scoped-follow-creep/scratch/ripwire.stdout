@@ -1,0 +1,212 @@
+<ctx task="zoom_scoped SetFramingScoped FramingClock OrdinaryFollowOwner crates/deadpan-core/src/semantic/planner/framing.rs crates/deadpan-app/src/preview/camera.rs" route=" [routed: subtoken+body BM25 — name-exact declined: anchor &apos;crates/deadpan-core/src/semantic/planner/framing.rs&apos; is a common name (0 name-carriers, 103 defs); conceptual ranker used]" bundle="auto" bodies="5"><!-- ripwire lens for "zoom_scoped SetFramingScoped FramingClock OrdinaryFollowOwner crates/deadpan-core/src/semantic/planner/framing.rs crates/deadpan-app/src/preview/camera.rs" [mention anchor: 2 files + 6 symbols named in the task lifted near the top] [doc mentions: 2 docs discussing 1 top-ranked symbol surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="4453" --><sigs capped="1"><f p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-24-repeat-follow-creep/scratch/worker-run.py"><d l="7" n="OWNED" cx="0" ccx="0" in="0" churn="1">OWNED = [ &apos;crates/deadpan-core/src/framing_zoom.rs&apos;, &apos;crates/deadpan-core/src/framing_zoom/tests.rs&apos;, &apos;crates/deadpan-core/src/semantic/planner/framing.rs&apos;, &apos;cr…</d></f><f p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-24-sequence-follow-creep/scratch/worker-run.py"><d l="7" n="OWNED" cx="0" ccx="0" in="0" churn="1">OWNED = [ &apos;crates/deadpan-core/src/framing_zoom.rs&apos;, &apos;crates/deadpan-core/src/framing_zoom/tests.rs&apos;, &apos;crates/deadpan-core/src/semantic/planner/framing.rs&apos;, &apos;cr…</d></f><f p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-24-retime-follow-creep/scratch/worker-run.py"><d l="7" n="OWNED" cx="0" ccx="0" in="0">OWNED = [ &apos;crates/deadpan-core/src/framing_zoom.rs&apos;, &apos;crates/deadpan-core/src/framing_zoom/tests.rs&apos;, &apos;crates/deadpan-core/src/semantic/planner/framing.rs&apos;, &apos;cr…</d><d l="19" n="basis" cx="1" ccx="0" in="1" amp="1">def basis():</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/framing.rs"><d l="6" n="validate_scoped_context" cx="11" ccx="10" in="7" churn="13" amp="7" tested="1">pub(super) fn validate_scoped_context( document: &amp;ProjectDocument, context: &amp;SemanticContext, ) -&gt; Result&lt;(), EditError&gt;</d><d l="83" n="zoom" id="/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/framing.rs::Planner::zoom" cx="20" ccx="11" in="0" churn="13">pub(super) fn zoom( &amp;mut self, trace_index: usize, kind: framing_zoom::ZoomKind, center: SemanticZoomCenter, ) -&gt; Result&lt;(), EditError&gt;</d><d l="222" n="zoom_scoped" id="/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/framing.rs::Planner::zoom_scoped" cx="12" ccx="13" in="1" churn="13" amp="1">fn zoom_scoped( &amp;mut self, trace_index: usize, kind: framing_zoom::ZoomKind, center: SemanticZoomCenter, scoped: SemanticScopedContext, ) -&gt; Result&lt;(), EditErro…</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera.rs"><d l="226" n="CameraPending" cx="0" ccx="0" in="0" churn="32" amp="63">pub(super) struct CameraPending</d><d l="853" n="ordinary_follow_owner" id="/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera.rs::CameraSession::ordinary_follow_owner" cx="10" ccx="4" in="2" churn="32" amp="65" tested="1">fn ordinary_follow_owner( &amp;self, document: &amp;deadpan_core::ProjectDocument, ) -&gt; Option&lt;deadpan_core::framing_zoom::OrdinaryFollowOwner&gt;</d></f></sigs><bodies shown="5" total="6" capped="1"><b t="var" l="7" p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-24-repeat-follow-creep/scratch/worker-run.py" n="OWNED"><![CDATA[OWNED = [
+ 'crates/deadpan-core/src/framing_zoom.rs',
+ 'crates/deadpan-core/src/framing_zoom/tests.rs',
+ 'crates/deadpan-core/src/semantic/planner/framing.rs',
+ 'crates/deadpan-core/src/semantic/planner/tests/framing.rs',
+ 'crates/deadpan-cli/tests/project_commands/macros/framing.rs',
+ 'crates/deadpan-cli/tests/project_commands/macros/framing/sequence_follow_creep.rs',
+ 'crates/deadpan-cli/tests/project_commands/macros/framing/repeat_follow_creep.rs',
+]]]></b><b t="var" l="7" p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-24-sequence-follow-creep/scratch/worker-run.py" n="OWNED"><![CDATA[OWNED = [
+ 'crates/deadpan-core/src/framing_zoom.rs',
+ 'crates/deadpan-core/src/framing_zoom/tests.rs',
+ 'crates/deadpan-core/src/semantic/planner/framing.rs',
+ 'crates/deadpan-core/src/semantic/planner/tests/framing.rs',
+ 'crates/deadpan-cli/tests/project_commands/macros/framing.rs',
+ 'crates/deadpan-cli/tests/project_commands/macros/framing/sequence_follow_creep.rs',
+]]]></b><b t="var" l="7" p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-24-retime-follow-creep/scratch/worker-run.py" n="OWNED"><![CDATA[OWNED = [
+ 'crates/deadpan-core/src/framing_zoom.rs',
+ 'crates/deadpan-core/src/framing_zoom/tests.rs',
+ 'crates/deadpan-core/src/semantic/planner/framing.rs',
+ 'crates/deadpan-core/src/semantic/planner/tests/framing.rs',
+ 'crates/deadpan-cli/tests/project_commands/macros/framing.rs',
+ 'crates/deadpan-cli/tests/project_commands/macros/framing/sequence_follow_creep.rs',
+ 'crates/deadpan-cli/tests/project_commands/macros/framing/repeat_follow_creep.rs',
+ 'crates/deadpan-cli/tests/project_commands/macros/framing/retime_follow_creep.rs',
+]]]></b><b t="fn" l="6" p="/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/framing.rs" n="validate_scoped_context"><![CDATA[pub(super) fn validate_scoped_context(
+    document: &ProjectDocument,
+    context: &SemanticContext,
+) -> Result<(), EditError> {
+    let Some(scoped) = &context.scoped else {
+        return Ok(());
+    };
+    if context.original.is_some()
+        || context.visual_selection.is_some()
+        || context.selected_hold_duration.is_some()
+    {
+        return Err(unavailable(
+            "single-play editing requires Your edit with no Visual selection",
+        ));
+    }
+    let Some(NodeKind::Sequence { children }) =
+        document.nodes().get(&context.parent).map(|node| &node.kind)
+    else {
+        return Err(unavailable(
+            "single-play editing requires an ordinary Sequence parent",
+        ));
+    };
+    if !children.contains(&scoped.root)
+        || !matches!(
+            document.nodes().get(&scoped.root).map(|node| &node.kind),
+            Some(NodeKind::Repeat { .. } | NodeKind::Retime { .. })
+        )
+    {
+        return Err(unavailable(
+            "single-play editing root must be a direct Repeat or Retime child",
+        ));
+    }
+    if scoped.target.repeats.is_empty()
+        || scoped
+            .target
+            .repeats
+            .iter()
+            .any(|step| !matches!(step.branch, crate::RepeatEditBranch::Play { .. }))
+    {
+        return Err(unavailable(
+            "single-play editing requires every Repeat ancestor to name one explicit Play",
+        ));
+    }
+    if !scoped
+        .target
+        .matches_instance(document, &scoped.presentation)?
+    {
+        return Err(unavailable(
+            "single-play editing presentation differs from its authoring target",
+        ));
+    }
+    let mut node = scoped.target.node.clone();
+    for _ in 0..=crate::MAX_DOCUMENT_DEPTH {
+        if node == scoped.root {
+            return Ok(());
+        }
+        let Some(parent) = document.parent_of(&node) else {
+            break;
+        };
+        node = parent;
+    }
+    Err(unavailable(
+        "single-play editing target lies outside its captured inspector root",
+    ))
+}]]><calls total="5"><c n="any" l="174">const fn any(self) -&gt; bool</c><c n="parent_of" l="1023">pub(crate) fn parent_of(&amp;self, id: &amp;NodeId) -&gt; Option&lt;NodeId&gt;</c><c n="matches_instance" l="109">pub fn matches_instance( &amp;self, document: &amp;ProjectDocument, instance: &amp;InstancePath, ) -&gt; Result&lt;bool, EditError&gt;</c><c n="unavailable" l="72">fn unavailable(message: &amp;str) -&gt; EditError</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><!-- body omitted (over budget): zoom --><b t="method" l="222" p="/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/framing.rs" n="zoom_scoped"><![CDATA[fn zoom_scoped(
+        &mut self,
+        trace_index: usize,
+        kind: framing_zoom::ZoomKind,
+        center: SemanticZoomCenter,
+        scoped: SemanticScopedContext,
+    ) -> Result<(), EditError> {
+        validate_scoped_context(&self.current, &self.context)?;
+        let terminal = self
+            .current
+            .duration()?
+            .frames()
+            .checked_sub(1)
+            .ok_or_else(|| unavailable("the edit has no picture to frame"))?;
+        let site = SemanticFramingSite {
+            node: scoped.target.node.clone(),
+            presentation: Some(scoped.presentation.clone()),
+            frame: ProjectFrame(self.context.cursor.0.min(terminal)),
+            original_center: center == SemanticZoomCenter::OriginalCenter
+                && kind != framing_zoom::ZoomKind::Off,
+        };
+        let state = (self.resolve_framing)(&self.current, &site)?;
+        state
+            .current
+            .validate()
+            .map_err(|error| invalid(&error.to_string()))?;
+        let frames = u64::try_from(state.duration.frames())
+            .map_err(|_| unavailable("the scoped framing owner has a negative extent"))?;
+        if frames == 0 {
+            return Err(unavailable("an empty scoped owner has no picture to frame"));
+        }
+        let resolved_center = if site.original_center {
+            framing_zoom::Center::Point(state.original_center.ok_or_else(|| {
+                unavailable("the Original picture center is clipped before the framed owner")
+            })?)
+        } else {
+            framing_zoom::Center::Keep
+        };
+        let entry = self.current.nodes()[&scoped.target.node].framing.as_ref();
+        let framing = framing_zoom::build(
+            kind,
+            &resolved_center,
+            &framing_zoom::Shot {
+                ordinary_owner: None,
+                entry,
+                current: state.current,
+                frames,
+                range: None,
+                explicit: center == SemanticZoomCenter::OriginalCenter,
+            },
+        )
+        .map_err(|message| EditError::new(EditErrorCode::InvalidCommand, message))?;
+        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
+        // The before/after scoped contexts retain the exact authoring and
+        // presentation addresses. Do not describe this as the ordinary root.
+        self.trace[trace_index].resolved_selection = Some(SliceCaptureSelection::Child {
+            node: scoped.target.node.clone(),
+        });
+        if framing.as_ref() == entry {
+            return Ok(());
+        }
+        let edit = crate::ScopedNodeEdit::SetFraming { framing };
+        let requirements = self
+            .current
+            .scoped_edit_requirements(&scoped.target, &edit)?;
+        if requirements.unchanged {
+            return Ok(());
+        }
+        self.charge_step(false)?;
+        let SemanticAllocation::Isolation {
+            new_revision,
+            identities,
+        } = (self.allocate)(SemanticAllocationRequest::Isolation {
+            step_index: self.steps.len(),
+            nodes: requirements.nodes,
+            marks: requirements.marks,
+        })?
+        else {
+            return Err(invalid("single-play zoom requires an Isolation allocation"));
+        };
+        if identities.nodes.len() != requirements.nodes
+            || identities.marks.len() != requirements.marks
+        {
+            return Err(invalid(
+                "single-play zoom requires its exact isolation identity pools",
+            ));
+        }
+        self.reserve_revision(&new_revision)?;
+        for node in &identities.nodes {
+            self.reserve_node(node)?;
+        }
+        for mark in &identities.marks {
+            if !self.marks.insert(mark.clone()) {
+                return Err(identity(
+                    "macro reuses an authored or allocated mark identity",
+                ));
+            }
+        }
+        let leaf = LeafEdit::new(
+            new_revision,
+            Command::EditScoped {
+                target: scoped.target.clone(),
+                edit,
+                identities,
+            },
+        )?;
+        let prepared = crate::prepare_scoped_edit(&self.current, &leaf.request(&self.current))?;
+        let mapped = SemanticScopedContext {
+            root: scoped.root,
+            target: prepared.map_target(&self.current, &scoped.target)?,
+            presentation: prepared.map_instance(&self.current, &scoped.presentation)?,
+        };
+        if !mapped
+            .target
+            .matches_instance(&prepared.document, &mapped.presentation)?
+        {
+            return Err(invalid(
+                "single-play zoom lost its concrete presentation during isolation",
+            ));
+        }
+        self.commit_leaf(leaf)?;
+        self.context.scoped = Some(mapped);
+        validate_scoped_context(&self.current, &self.context)
+    }]]><calls total="15" shown="6" capped="1"><c n="min" l="328">fn min(left: ExactRatio, right: ExactRatio) -&gt; ExactRatio</c><c n="new" l="3729">pub(crate) fn new(code: EditErrorCode, message: impl Into&lt;String&gt;) -&gt; Self</c><c n="new" l="188">pub fn new(new_revision: RevisionId, command: Command) -&gt; Result&lt;Self, EditError&gt;</c><c n="checked_sub" l="112">pub fn checked_sub(self, other: Self) -&gt; Result&lt;Self, TimeError&gt;</c><c n="build" l="159">pub fn build(kind: ZoomKind, center: &amp;Center, shot: &amp;Shot&lt;&apos;_&gt;) -&gt; Result&lt;Option&lt;Framing&gt;, String&gt;</c><c n="matches_instance" l="109">pub fn matches_instance( &amp;self, document: &amp;ProjectDocument, instance: &amp;InstancePath, ) -&gt; Result&lt;bool, EditError&gt;</c></calls></b></bodies></ctx>

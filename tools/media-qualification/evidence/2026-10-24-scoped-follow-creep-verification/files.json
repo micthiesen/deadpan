@@ -1,0 +1,86 @@
+{
+  "collect.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "collect.stdout": {
+    "bytes": 235,
+    "sha256": "b92f118ffed2818d7cfc5b6505e95adc924498874829cf9c682fa00f5347530b"
+  },
+  "package-audit-history/first-in-memory-sqlite-reader-stop/package-verification.json": {
+    "bytes": 8182,
+    "sha256": "600c60a52b98c97921c03dd9905c98d9b7a0f63f90854ece4615af8758cbdb30"
+  },
+  "package-audit-history/first-in-memory-sqlite-reader-stop/package-verification.stderr": {
+    "bytes": 583,
+    "sha256": "80aa2658b96cc994c565d67364a2d9fa83babea5eb2f32bb4e37a4c044187993"
+  },
+  "package-audit-history/first-in-memory-sqlite-reader-stop/package-verification.stdout": {
+    "bytes": 339,
+    "sha256": "1e9305724f16128c6dc503e7edfd5ed8efb3d8d4b3e0da1539add70432b05b0c"
+  },
+  "package-audit-history/first-in-memory-sqlite-reader-stop/preservation.json": {
+    "bytes": 871,
+    "sha256": "7e36433e59b0a19993439d13d7cd0d597f979fd520bb237b40a6d0273abfe57e"
+  },
+  "package-audit-history/first-in-memory-sqlite-reader-stop/verify-scoped-package.py": {
+    "bytes": 25309,
+    "sha256": "926d7281ad976900fb2d63523555b9e619087e14a3fec1ad0fde92b1c96a3dc1"
+  },
+  "package-audit-history/passing-retry-before-checkpoint-binding/package-verification.json": {
+    "bytes": 18427,
+    "sha256": "025e1be2618b66e29722af6051baf33ab4a6a058643e2c3c1c267c492f29bf18"
+  },
+  "package-audit-history/passing-retry-before-checkpoint-binding/package-verification.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "package-audit-history/passing-retry-before-checkpoint-binding/package-verification.stdout": {
+    "bytes": 273,
+    "sha256": "eaac1f1b311bf0d5a5aa7b1980aab85da5964213c0ec2b5c184d60aa8532a19a"
+  },
+  "package-audit-history/passing-retry-before-checkpoint-binding/preservation.json": {
+    "bytes": 778,
+    "sha256": "ce00a4bbda3e48c02d1e82d05ad018276ffbd452a1edfed862cd152f98623772"
+  },
+  "package-audit-history/passing-retry-before-checkpoint-binding/verify-scoped-package.py": {
+    "bytes": 26226,
+    "sha256": "e5ae5073a9a9e14ef45ee422b1a021256613c9481fd8a47d1c42a95988823ff9"
+  },
+  "package-verification.json": {
+    "bytes": 19867,
+    "sha256": "eae0eb895d7552cd821cf71bada8488e07e5d98e1b80a0969f63e81c56f53aae"
+  },
+  "package-verification.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "package-verification.stdout": {
+    "bytes": 273,
+    "sha256": "eaac1f1b311bf0d5a5aa7b1980aab85da5964213c0ec2b5c184d60aa8532a19a"
+  },
+  "publication.json": {
+    "bytes": 4237,
+    "sha256": "73acaf32e1ad6f5915af882787b4a0be09ce24fc19a0a676c1e918bc1f8a64aa"
+  },
+  "publish-verification.py.txt": {
+    "bytes": 3472,
+    "sha256": "80add1ec33fbddf8116793c7f9243d898f843b348ccab7c39f2ae322a18f8f26"
+  },
+  "regressions-collect.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "regressions-collect.stdout": {
+    "bytes": 245,
+    "sha256": "385ddb040d9e4507eaee85bf3609722509767cb1addf9d4238ff4a819f301778"
+  },
+  "root-package-readback.json": {
+    "bytes": 6297,
+    "sha256": "842e8812509f4069f1f3937d5a863e7137463169b51f98ad6923965449066023"
+  },
+  "verify-scoped-package.py": {
+    "bytes": 27335,
+    "sha256": "bf3fc552768a10331588ab5216d28bd4472e182e01a1e944a64156b1d3192379"
+  }
+}

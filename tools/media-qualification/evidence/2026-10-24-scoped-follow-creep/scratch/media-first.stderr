@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/tmp/deadpan-scoped-follow-creep-2026-10-24/media.py", line 82, in <module>
+    assert not scenario.get('skipped', [])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

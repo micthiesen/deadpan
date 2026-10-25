@@ -1,0 +1,8 @@
+
+running 3 tests
+test framing_zoom::tests::follow_creep_keeps_both_bases_and_requires_a_whole_admitted_owner ... ok
+test semantic::planner::tests::framing::whole_ordinary_follow_creep_resolves_actual_owners_with_atomic_refusals ... ok
+test semantic::planner::tests::scoped_framing::scoped_follow_creep_all_owner_kinds_use_validated_nested_plays_and_exact_isolation ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 743 filtered out; finished in 0.08s
+

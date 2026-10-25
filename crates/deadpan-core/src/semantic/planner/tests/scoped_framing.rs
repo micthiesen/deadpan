@@ -370,6 +370,266 @@ fn scoped_zoom_reuses_existing_override_and_exact_noop_never_allocates_or_author
 }
 
 #[test]
+fn scoped_follow_creep_all_owner_kinds_use_validated_nested_plays_and_exact_isolation() {
+    for kind in ["source", "hold", "sequence", "repeat", "retime"] {
+        let mut document = fixture();
+        let asset = crate::AssetId::new("original").unwrap();
+        let clock = crate::SourceTimeBase::new(1, 30).unwrap();
+        let span = crate::SourceSpan::new(
+            crate::SourceTimestamp {
+                ticks: 0,
+                time_base: clock,
+            },
+            crate::SourceTimestamp {
+                ticks: 100,
+                time_base: clock,
+            },
+        )
+        .unwrap();
+        document.assets.insert(
+            asset.clone(),
+            crate::AssetRecord {
+                label: "Original".into(),
+                content_hash: "a".repeat(64),
+                video: Some(span),
+                audio: None,
+                still_image: false,
+                frame_count: None,
+                source_qualification: None,
+            },
+        );
+        let target = crate::TargetId::new("subject").unwrap();
+        document.targets.insert(
+            target.clone(),
+            crate::AttentionTarget {
+                label: "Subject".into(),
+                asset: asset.clone(),
+                span,
+                region: crate::TargetPoint {
+                    center: [400_000, 500_000],
+                }
+                .into(),
+                samples: vec![],
+                corrections: vec![],
+                provenance: None,
+                display_aspect: None,
+            },
+        );
+        let replacement = match kind {
+            "source" => NodeKind::Source {
+                source: SourceNode {
+                    duration: FrameDuration::new(4).unwrap(),
+                    edit_window: None,
+                    video: crate::SourceVideo::Stream { asset, span },
+                    video_mapping: crate::SourceVideoMapping::FitBeat,
+                    audio: None,
+                    audio_mapping: crate::SourceAudioMapping::FitBeat,
+                    link: crate::LinkRelation::Independent,
+                    audio_offset: crate::AudioSample(0),
+                },
+            },
+            "hold" => document.nodes()[&node("a")].kind.clone(),
+            "sequence" => {
+                document.nodes.insert(node("leaf"), hold(4));
+                NodeKind::Sequence {
+                    children: vec![node("leaf")],
+                }
+            }
+            "repeat" => {
+                document.nodes.insert(node("leaf"), hold(2));
+                NodeKind::Repeat {
+                    child: node("leaf"),
+                    iterations: IterationOrder::new(revision("owner-plays"), 2).unwrap(),
+                    gap: None,
+                    escalation: None,
+                }
+            }
+            "retime" => {
+                document.nodes.insert(node("leaf"), hold(6));
+                NodeKind::Retime {
+                    child: node("leaf"),
+                    duration: FrameDuration::new(4).unwrap(),
+                    mapping: range(0, 6),
+                    pitch: crate::PitchPolicy::FollowSpeed,
+                    purpose: crate::RetimePurpose::Edit,
+                }
+            }
+            _ => unreachable!(),
+        };
+        let fixed = crate::Framing {
+            clock: crate::FramingClock::OwnerOutput,
+            value: crate::FramingValue::Follow {
+                target,
+                scale: ExactRatio::integer(2),
+                fallback: FramingPose::new(
+                    ExactRatio::new(1, 3).unwrap(),
+                    ExactRatio::new(2, 3).unwrap(),
+                    ExactRatio::new(1, 2).unwrap(),
+                )
+                .unwrap(),
+                scale_transition: None,
+            },
+        };
+        let owner = document.nodes.get_mut(&node("a")).unwrap();
+        owner.kind = replacement;
+        owner.framing = Some(fixed.clone());
+        document.validate().unwrap();
+        let instruction = SemanticInstruction::Zoom {
+            kind: ZoomKind::Creep {
+                from: None,
+                to: ExactRatio::integer(4),
+                curve: ZoomCurve::Linear,
+            },
+            center: SemanticZoomCenter::Keep,
+        };
+        let mut requests = vec![];
+        let plan = resolve(
+            &document,
+            &entry(),
+            vec![instruction.clone()],
+            &BTreeMap::new(),
+            |request| {
+                requests.push(request.clone());
+                allocator(kind, request)
+            },
+        )
+        .unwrap();
+        let mapped = plan.context.scoped.as_ref().unwrap();
+        assert_ne!(mapped.target.node, node("a"));
+        assert!(
+            mapped
+                .target
+                .matches_instance(&plan.document, &mapped.presentation)
+                .unwrap()
+        );
+        assert_eq!(requests.len(), 1);
+        let SemanticAllocationRequest::Isolation { nodes, marks, .. } = requests[0] else {
+            panic!("isolation")
+        };
+        assert_eq!(plan.document.nodes().len() - document.nodes().len(), nodes);
+        assert_eq!(plan.document.marks().len() - document.marks().len(), marks);
+        for (id, old) in document.nodes() {
+            assert_eq!(&plan.document.nodes()[id], old);
+        }
+        let framing = plan.document.nodes()[&mapped.target.node]
+            .framing
+            .as_ref()
+            .unwrap();
+        assert_eq!(framing.clock, crate::FramingClock::OwnerOutput);
+        for (local, live, fallback) in [
+            (
+                ExactRatio::new(1, 2).unwrap(),
+                ExactRatio::new(9, 4).unwrap(),
+                ExactRatio::new(9, 16).unwrap(),
+            ),
+            (
+                ExactRatio::new(7, 2).unwrap(),
+                ExactRatio::new(15, 4).unwrap(),
+                ExactRatio::new(15, 16).unwrap(),
+            ),
+        ] {
+            let value = framing
+                .evaluate_with_follow_exact(local, ExactRatio::integer(4))
+                .unwrap();
+            assert_eq!(value.follow.unwrap().1, live);
+            assert_eq!(value.pose.scale, fallback);
+        }
+        let request = plan.request.as_ref().unwrap();
+        let Command::Compound { transaction } = &request.command else {
+            panic!("Compound")
+        };
+        for outer in 0..3 {
+            for inner in 0..2 {
+                let mut instance = presentation(outer, inner);
+                let mut staged = document.clone();
+                for step in transaction.steps() {
+                    let leaf = step.edit().unwrap();
+                    let prepared =
+                        crate::prepare_scoped_edit(&staged, &leaf.request(&staged)).unwrap();
+                    instance = prepared.map_instance(&staged, &instance).unwrap();
+                    staged = prepared.document;
+                }
+                assert_eq!(
+                    matches!(
+                        &plan.document.nodes()[&instance.node]
+                            .framing
+                            .as_ref()
+                            .unwrap()
+                            .value,
+                        crate::FramingValue::Follow {
+                            scale_transition: Some(_),
+                            ..
+                        }
+                    ),
+                    outer == 1 && inner == 1
+                );
+            }
+        }
+        let replay = crate::replay_compound::<EditError>(&document, request, |_| Ok(())).unwrap();
+        assert_eq!(replay.document, plan.document);
+        assert_eq!(replay.edit.inverse.apply(&plan.document).unwrap(), document);
+        assert_eq!(
+            ProjectDocument::from_json(&plan.document.to_json().unwrap()).unwrap(),
+            plan.document
+        );
+        assert!(
+            resolve(
+                &plan.document,
+                &plan.context,
+                vec![instruction.clone()],
+                &BTreeMap::new(),
+                |_| panic!("animated path allocated")
+            )
+            .unwrap_err()
+            .message
+            .contains("camera path")
+        );
+        for variant in 0..7 {
+            let mut context = entry();
+            match variant {
+                0 => {
+                    context.scoped.as_mut().unwrap().target.repeats[0].branch =
+                        RepeatEditBranch::Default
+                }
+                1 => {
+                    context.scoped.as_mut().unwrap().target.repeats[1].branch =
+                        RepeatEditBranch::Default
+                }
+                2 => context.scoped.as_mut().unwrap().target.repeats.clear(),
+                3 => {
+                    context.scoped.as_mut().unwrap().presentation.repeats[0].iteration =
+                        iteration("outer", 0)
+                }
+                4 => {
+                    context.visual_selection = Some(SemanticVisualSelection::Time {
+                        anchor: ProjectFrame(27),
+                        head: ProjectFrame(31),
+                        extending: false,
+                    })
+                }
+                5 => {
+                    context.scoped = None;
+                    context.selected_child = Some(node("a"));
+                }
+                6 => context.scoped.as_mut().unwrap().root = node("inner"),
+                _ => unreachable!(),
+            }
+            assert!(
+                resolve(
+                    &document,
+                    &context,
+                    vec![instruction.clone()],
+                    &BTreeMap::new(),
+                    |_| panic!("invalid Follow authority allocated")
+                )
+                .is_err(),
+                "{kind}/{variant}"
+            );
+        }
+    }
+}
+
+#[test]
 fn scoped_zoom_refuses_default_mixed_absent_foreign_and_mismatched_authority_before_allocation() {
     let document = fixture();
     for variant in 0..10 {

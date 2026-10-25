@@ -1,0 +1,75 @@
+{
+  "packages": [
+    {
+      "package": "2026-10-24-scoped-follow-creep",
+      "payloads": 218,
+      "stored_bytes": 15245224,
+      "inventory": {
+        "bytes": 32406,
+        "sha256": "b7858060082699ba66d5cf68e954414c4fb6a018ab6eb309b6dbf8f96bc10a6b"
+      },
+      "collection": {
+        "claim": "Stable retained bytes and identities; no automatic requirement certification.",
+        "final_source_paths": 22,
+        "limitations": [
+          "Twenty-two listed final source paths and five sibling executable identities; not an attestation of every repository file.",
+          "One release candidate, qualified by first/final source and binary byte equality; native-scoped-first is final if that equality passes.",
+          "All six native report JSON and HTML pairs are retained across this Primary and its separate regressions package to keep each complete collection below256MiB. Reports are neither truncated nor omitted.",
+          "Four Root-inspected named PNG checkpoints are retained beside their scoped report. Other intermediate screenshots are not included; raw reports retain their original references.",
+          "Focused Core3 and scoped59 overlap one case, giving61unique. CLI16 is a framing integration filter, not the complete CLI suite. Plan2 cover200picture samples over four bounded typed target cases.",
+          "Two initial CLI oracle failures, first Clippy101 and both stopped media drivers are retained with exact prior source. They are not first-pass successes. No product change followed scoped admission except test-only lint syntax.",
+          "The first media driver stopped before CLI on standard declared harness exclusions. The second stopped after one read-only dump on an inherited fallback expectation. The centered entry fallback and live target center are intentionally distinct.",
+          "Offscreen Metal and scripted input do not prove physical display/input, OS IME, VoiceOver speech, listening or native OS picker delivery. Exact standard exclusions, warnings and eleven existing ignored App tests remain declared.",
+          "App unit binary identity was observed during execution and again at terminal completion, not archived or attested continuously.",
+          "Native all-frame independent pose/time observations and committed shared-reference emitted-picture/full-PCM verification are separate evidence. No independent renderer or acoustic listening is claimed.",
+          "Actual native and portable projects retain complete immutable history and exact encoder-delay metadata.",
+          "Collector outputs and later package-verification receipts remain separate to avoid recursive publication."
+        ],
+        "plan_sha256": "7594bc835b6a14c78f317bf732501402455a43aa03df3d25678ab9b8fd2fceb2",
+        "raw_payload_bytes": 202592698,
+        "schema_version": 1,
+        "script_sha256": "320e79dbf00568d68d7657e3c31d968402772533071529e7c9c494f9aacc6f0e"
+      },
+      "archive_keys": null,
+      "archives_count": 16,
+      "encodings_count": 215,
+      "all_file_names_and_hashes_equal": true
+    },
+    {
+      "package": "2026-10-24-scoped-follow-creep-regressions",
+      "payloads": 56,
+      "stored_bytes": 6111277,
+      "inventory": {
+        "bytes": 9040,
+        "sha256": "0a980f41b3e92c3115c2699d4fcf33606cd89f30de69bd3c7fac8bd7ebcdf5d9"
+      },
+      "collection": {
+        "claim": "Stable retained bytes and identities; no automatic requirement certification.",
+        "final_source_paths": 22,
+        "limitations": [
+          "Twenty-two listed final source paths and five sibling executable identities; not an attestation of every repository file.",
+          "One release candidate, qualified by first/final source and binary byte equality; native-scoped-first is final if that equality passes.",
+          "All six native report JSON and HTML pairs are retained across this Primary and its separate regressions package to keep each complete collection below256MiB. Reports are neither truncated nor omitted.",
+          "Four Root-inspected named PNG checkpoints are retained beside their scoped report. Other intermediate screenshots are not included; raw reports retain their original references.",
+          "Focused Core3 and scoped59 overlap one case, giving61unique. CLI16 is a framing integration filter, not the complete CLI suite. Plan2 cover200picture samples over four bounded typed target cases.",
+          "Two initial CLI oracle failures, first Clippy101 and both stopped media drivers are retained with exact prior source. They are not first-pass successes. No product change followed scoped admission except test-only lint syntax.",
+          "The first media driver stopped before CLI on standard declared harness exclusions. The second stopped after one read-only dump on an inherited fallback expectation. The centered entry fallback and live target center are intentionally distinct.",
+          "Offscreen Metal and scripted input do not prove physical display/input, OS IME, VoiceOver speech, listening or native OS picker delivery. Exact standard exclusions, warnings and eleven existing ignored App tests remain declared.",
+          "App unit binary identity was observed during execution and again at terminal completion, not archived or attested continuously.",
+          "Native all-frame independent pose/time observations and committed shared-reference emitted-picture/full-PCM verification are separate evidence. No independent renderer or acoustic listening is claimed.",
+          "Actual native and portable projects retain complete immutable history and exact encoder-delay metadata.",
+          "Collector outputs and later package-verification receipts remain separate to avoid recursive publication."
+        ],
+        "plan_sha256": "54d36cdb1880c4a4538c0fa68cc41ed60f5d7625a562da41051ede45043f4fba",
+        "raw_payload_bytes": 109235808,
+        "schema_version": 1,
+        "script_sha256": "320e79dbf00568d68d7657e3c31d968402772533071529e7c9c494f9aacc6f0e"
+      },
+      "archive_keys": null,
+      "archives_count": 0,
+      "encodings_count": 53,
+      "all_file_names_and_hashes_equal": true
+    }
+  ],
+  "claim": "Root full regular-file name and byte-hash readback. Independent decoding/TAR/original verification remains separate."
+}

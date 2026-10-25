@@ -330,6 +330,11 @@ The invocation captures the authoring target and its separate concrete
 presentation, plus the ordinary Sequence context. Each staged instruction
 resolves that exact plan layer and its intrinsic owner clock, isolates only
 changed selected branches, and maps both addresses for the next instruction.
+Keep creep on a fixed Follow retains its target and separate live/fallback
+scale bases for all five whole owner kinds. Each invocation resolves the
+selected owner's complete local output duration, even beneath enclosing
+Retimes, and the target follows each emitted provider's exact Original point.
+It does not sample one target center into the recorded program.
 Existing overrides need no additional isolation; unchanged framing creates no
 revision. One run commits once, and one Undo restores framing and isolation.
 The native receipt retains the mapped inspector. Any scope navigation revokes

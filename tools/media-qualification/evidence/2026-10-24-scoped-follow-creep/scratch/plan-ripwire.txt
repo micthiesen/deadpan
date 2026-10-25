@@ -1,0 +1,53 @@
+<ctx task="prepare_scoped_edit EditScoped Framing FollowScaleTransition tests/picture_plan/scoped_follow_creep.rs picture_plan.rs" route=" [routed: subtoken+body BM25 — name-exact declined: anchor &apos;framing&apos; is a common name (9416 name-carriers, 60 defs); conceptual ranker used]" bundle="auto" bodies="6"><!-- ripwire lens for "prepare_scoped_edit EditScoped Framing FollowScaleTransition tests/picture_plan/scoped_follow_creep.rs picture_plan.rs": reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="2773" --><sigs capped="1"><f p="/Users/michael/Code/deadpan/crates/deadpan-core/src/scoped_edit/proof_tests.rs"><d l="357" n="scoped_reversion_rejects_other_picture_providers_before_identity_allocation" cx="3" ccx="3" in="0" churn="5" amp="24">fn scoped_reversion_rejects_other_picture_providers_before_identity_allocation()</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-core/src/framing.rs"><d l="204" n="FramingValue" cx="0" ccx="0" in="0" churn="7" amp="41">pub enum FramingValue</d><d l="227" n="FollowScaleTransition" cx="0" ccx="0" in="0" churn="7" amp="41">pub struct FollowScaleTransition</d><d l="427" n="evaluate_with_follow_exact" id="/Users/michael/Code/deadpan/crates/deadpan-core/src/framing.rs::Framing::evaluate_with_follow_exact" cx="15" ccx="13" in="9" churn="7" amp="50" tested="1">pub fn evaluate_with_follow_exact( &amp;self, local: ExactRatio, duration: ExactRatio, ) -&gt; Result&lt;EvaluatedFraming&lt;&apos;_&gt;, FramingError&gt;</d><d l="505" n="follow_scale" cx="5" ccx="5" in="1" churn="7" amp="42" tested="1">fn follow_scale( base: ExactRatio, transition: FollowScaleTransition, local: ExactRatio, duratio…</d><d l="686" n="follow_transition_tests" cx="0" ccx="0" in="0" churn="7" amp="41">mod follow_transition_tests</d><d l="693" n="framing" id="/Users/michael/Code/deadpan/crates/deadpan-core/src/framing.rs::follow_transition_tests::framing" cx="1" ccx="0" in="5" churn="7" amp="46">fn framing(curve: ZoomCurve) -&gt; Framing</d><d l="850" n="follow_transition_typed_aggregate_admission_uses_the_real_record_limit" id="/Users/michael/Code/deadpan/crates/deadpan-core/src/framing.rs::follow_transition_tests::follow_transition_typed_aggregate_admission_uses_the_real_record_limit" cx="2" ccx="1" in="0" churn="7" amp="41">fn follow_transition_typed_aggregate_admission_uses_the_real_record_limit()</d><d l="875" n="follow_transition_validates_both_branches_and_closed_raw_vocabulary" id="/Users/michael/Code/deadpan/crates/deadpan-core/src/framing.rs::follow_transition_tests::follow_transition_validates_both_branches_and_closed_raw_vocabulary" cx="6" ccx="6" in="0" churn="7" amp="41">fn follow_transition_validates_both_branches_and_closed_raw_vocabulary()</d></f><f p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-24-repeat-follow-creep/scratch/plan-run.py"><d l="7" n="owned" cx="0" ccx="0" in="0" churn="1">owned=[&apos;crates/deadpan-plan/tests/picture_plan.rs&apos;,&apos;crates/deadpan-plan/tests/picture_plan/repeat_follow_creep.rs&apos;]</d></f><f p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-24-retime-follow-creep/scratch/plan-run.py"><d l="7" n="owned" cx="0" ccx="0" in="0" churn="1">owned=[&apos;crates/deadpan-plan/tests/picture_plan.rs&apos;,&apos;crates/deadpan-plan/tests/picture_plan/retime_follow_creep.rs&apos;]</d></f></sigs><bodies shown="6" total="6" capped="0"><b t="fn" l="357" p="/Users/michael/Code/deadpan/crates/deadpan-core/src/scoped_edit/proof_tests.rs" n="scoped_reversion_rejects_other_picture_providers_before_identity_allocation"><![CDATA[fn scoped_reversion_rejects_other_picture_providers_before_identity_allocation() {
+    for before in holds_without_generated_fallback() {
+        let original = before.clone();
+        for (outer, inner) in [
+            (None, None),
+            (None, Some(1)),
+            (Some(1), None),
+            (Some(1), Some(1)),
+        ] {
+            let selected = target(outer, inner);
+            let error = before
+                .scoped_edit_requirements(&selected, &ScopedNodeEdit::RevertGeneratedHold)
+                .unwrap_err();
+            assert_eq!(error.code, EditErrorCode::InvalidCommand);
+            let request = CommandRequest {
+                project_id: before.project_id().clone(),
+                expected_revision: before.revision_id().clone(),
+                new_revision: revision("refused-scoped-revert"),
+                command: Command::EditScoped {
+                    target: selected,
+                    edit: ScopedNodeEdit::RevertGeneratedHold,
+                    identities: OccurrenceIdentities {
+                        nodes: Vec::new(),
+                        marks: Vec::new(),
+                    },
+                },
+            };
+            let error = prepare_scoped_edit(&before, &request).unwrap_err();
+            assert_eq!(error.code, EditErrorCode::InvalidCommand);
+            assert!(
+                error
+                    .message
+                    .contains("no saved generated-picture fallback")
+            );
+            assert!(apply_with_result(&before, &request).is_err());
+            assert_eq!(before, original);
+        }
+    }
+}]]><calls total="6"><c n="scoped_edit_requirements" l="275">pub fn scoped_edit_requirements( &amp;self, target: &amp;ScopedNodeTarget, edit: &amp;ScopedNodeEdit, ) -&gt; Result&lt;ScopedEditRequirements, EditError&gt;</c><c n="prepare_scoped_edit" l="348">pub fn prepare_scoped_edit( document: &amp;ProjectDocument, request: &amp;CommandRequest, ) -&gt; Result&lt;PreparedScopedEdit, EditError&gt;</c><c n="target" l="269">fn target(instance: &amp;InstancePath) -&gt; ScopedNodeTarget</c><c n="holds_without_generated_fallback" l="300">fn holds_without_generated_fallback() -&gt; Vec&lt;ProjectDocument&gt;</c><c n="revision" l="13">fn revision(name: &amp;str) -&gt; RevisionId</c><c n="target" l="82">fn target(outer: Option&lt;u32&gt;, inner: Option&lt;u32&gt;) -&gt; ScopedNodeTarget</c></calls></b><b t="cls" l="227" p="/Users/michael/Code/deadpan/crates/deadpan-core/src/framing.rs" n="FollowScaleTransition"><![CDATA[pub struct FollowScaleTransition {
+    pub factor: ExactRatio,
+    pub curve: crate::framing_zoom::ZoomCurve,
+}]]></b><b t="var" l="7" p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-24-repeat-follow-creep/scratch/plan-run.py" n="owned"><![CDATA[owned=['crates/deadpan-plan/tests/picture_plan.rs','crates/deadpan-plan/tests/picture_plan/repeat_follow_creep.rs']]]></b><b t="var" l="7" p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-24-retime-follow-creep/scratch/plan-run.py" n="owned"><![CDATA[owned=['crates/deadpan-plan/tests/picture_plan.rs','crates/deadpan-plan/tests/picture_plan/retime_follow_creep.rs']]]></b><b t="var" l="7" p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-24-sequence-follow-creep/scratch/plan-run.py" n="owned"><![CDATA[owned=['crates/deadpan-plan/tests/picture_plan.rs','crates/deadpan-plan/tests/picture_plan/sequence_follow_creep.rs']]]></b><b t="cls" l="305" p="/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera.rs" n="FollowDraft"><![CDATA[pub(super) struct FollowDraft {
+    target: TargetId,
+    /// The draft center while following. Nudges are refused instead of
+    /// silently diverging from the target-supplied center.
+    center: [ExactRatio; 2],
+    base_scale: ExactRatio,
+    /// Authored base, distinct from the scale handle evaluated at this picture.
+    base_live: ExactRatio,
+    base_fallback: FramingPose,
+    clock: FramingClock,
+    scale_transition: Option<deadpan_core::FollowScaleTransition>,
+}]]></b></bodies></ctx>

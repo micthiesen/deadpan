@@ -363,10 +363,14 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
                     matches!(&scoped.target.repeats[0].branch,deadpan_core::RepeatEditBranch::Play {iteration} if iteration==&enclosing_second)
                 },
             json!({"inner_repeat":repeat,"enclosing":enclosing,"scope":choice}),json!({"target":scoped.target,"scope":choice}))?;
-        refused(
-            d,
-            "An inner Repeat under enclosing all-play or one-play authority refuses Keep creep",
-        )?;
+        if choice == "scope all" {
+            refused(
+                d,
+                "An inner Repeat under enclosing Default authority refuses Keep creep",
+            )?;
+        } else {
+            super::scoped_follow_creep::prove_concrete_play(d)?;
+        }
     }
     d.key(Key::Backspace)?;
     idle(d)?;

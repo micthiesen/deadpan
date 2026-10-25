@@ -1,0 +1,439 @@
+#!/usr/bin/env python3
+"""Qualify an actual native-authored scoped Follow project, without authoring one.
+
+Native report observations supply poses/exact clocks; verify-export supplies
+emitted-picture and full-PCM evidence. Neither is substituted for the other.
+"""
+import argparse
+import copy
+from fractions import Fraction
+import hashlib
+import json
+import os
+from pathlib import Path
+import sqlite3
+import subprocess
+import time
+
+
+def sha(path):
+    h = hashlib.sha256()
+    with path.open('rb') as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b''):
+            h.update(block)
+    return h.hexdigest()
+
+
+def canonical(value):
+    return json.dumps(value, sort_keys=True, separators=(',', ':'))
+
+
+def ratio(value):
+    return Fraction(int(value['numerator']), int(value['denominator']))
+
+
+def round_even(value):
+    a, remainder = divmod(value.numerator, value.denominator)
+    return a + (2 * remainder > value.denominator or
+                (2 * remainder == value.denominator and a % 2 != 0))
+
+
+Q = 1 << 32
+
+
+def quantized(value):
+    return Fraction(round_even(value * Q), Q)
+
+
+def scale_at(j):
+    first = round_even(Fraction(11 * Q, 10))
+    last = round_even(Fraction(11 * Q, 5))
+    progress = round_even(Fraction((2 * j + 1) * Q, 72))
+    return Fraction(first + round_even(Fraction((last - first) * progress, Q)), Q)
+
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--project', type=Path, required=True)
+parser.add_argument('--bin', type=Path, required=True)
+parser.add_argument('--native-report', type=Path, required=True)
+parser.add_argument('--output', type=Path, required=True)
+args = parser.parse_args()
+args.project = args.project.resolve(strict=True)
+args.bin = args.bin.resolve(strict=True)
+args.native_report = args.native_report.resolve(strict=True)
+args.output = args.output.absolute()
+assert not args.output.exists()
+assert args.project not in args.output.parents and args.output not in args.project.parents
+args.output.mkdir()
+cli = args.bin / 'deadpan-cli'
+app = args.bin / 'deadpan-app'
+pins = {'runner_sha256': sha(Path(__file__)), 'cli_sha256': sha(cli),
+        'native_app_sha256': sha(app), 'native_report_sha256': sha(args.native_report)}
+report_bytes = args.native_report.read_bytes()
+(args.output / 'native-report.json').write_bytes(report_bytes)
+report = json.loads(report_bytes)
+assert report['metadata']['build_profile'] == 'release'
+assert report['metadata']['binary_sha256'] == pins['native_app_sha256']
+scenarios = [s for s in report['scenarios'] if s['name'] == 'scoped-follow-creep']
+assert len(scenarios) == 1
+scenario = scenarios[0]
+assert scenario['checks'] and all(c['passed'] for c in scenario['checks'])
+assert not any(f['severity'] == 'failure' for f in scenario.get('findings', []))
+assert not scenario.get('skipped', [])
+checks = scenario['checks']
+
+
+def last_check(name):
+    matches = [c for c in checks if c['name'] == name]
+    assert matches, name
+    return matches[-1]['actual']
+
+
+commands = []
+
+
+def run(name, *arguments):
+    assert sha(cli) == pins['cli_sha256']
+    command = [str(cli), *map(str, arguments)]
+    started = time.monotonic()
+    row = {'name': name, 'argv': command, 'started_unix': time.time(),
+           'environment': {key: os.environ.get(key) for key in (
+               'DEADPAN_FFMPEG_PREFIX', 'DYLD_LIBRARY_PATH', 'DYLD_FALLBACK_LIBRARY_PATH',
+               'DEADPAN_PAUSE_ROUTE_PROFILE')}}
+    commands.append(row)
+    (args.output / 'commands.json').write_text(json.dumps(commands, indent=2) + '\n')
+    with (args.output / f'{name}.stdout').open('xb') as stdout:
+        with (args.output / f'{name}.stderr').open('xb') as stderr:
+            result = subprocess.run(command, stdout=stdout, stderr=stderr)
+    row.update(exit_code=result.returncode, seconds=time.monotonic() - started)
+    (args.output / 'commands.json').write_text(json.dumps(commands, indent=2) + '\n')
+    result.check_returncode()
+    return (args.output / f'{name}.stdout').read_text()
+
+
+def history(package):
+    # Read-only SQLite, including current WAL, never immutable=1 or a writer.
+    with sqlite3.connect((package / 'project.sqlite').as_uri() + '?mode=ro', uri=True) as db:
+        queries = {
+            'revisions': 'SELECT id,parent_id,kind FROM revisions ORDER BY id',
+            'history': 'SELECT id,parent_id,revision_id,request,edit FROM history ORDER BY id',
+            'redo': 'SELECT position,history_id FROM redo ORDER BY position',
+            'state': 'SELECT head_revision,cursor,workflow FROM state ORDER BY singleton',
+        }
+        values = {name: db.execute(query).fetchall() for name, query in queries.items()}
+    return {'counts': {name: len(rows) for name, rows in values.items()},
+            'sha256': hashlib.sha256(canonical(values).encode()).hexdigest(),
+            'state': values['state'],
+            'revision_kinds': {kind: sum(row[2] == kind for row in values['revisions'])
+                               for kind in ('initial', 'edit', 'undo', 'redo')}}
+
+
+document = json.loads(run('dump', 'project', 'dump', args.project, '--json'))
+revision = document['revision_id']
+before_history = history(args.project)
+assert before_history['state'][0][0] == revision
+assert all(before_history['revision_kinds'][kind] > 0 for kind in ('edit', 'undo', 'redo'))
+snapshot = last_check('Final export retains outer Play2 inner Play2 and the independent Original cursor')
+assert snapshot['revision'] == revision and snapshot['duration'] == 240
+assert snapshot['sequence_cursor'] == 182 and snapshot['error'] is None
+summary = snapshot['source_summary']
+assert (summary['width'], summary['height'], summary['frame_count']) == (320, 180, 120)
+assert summary['time_base'] == [1, 30000]
+assert summary['first_pts'] == 0 and summary['terminal_pts'] == 120120
+clock = {'numerator': 1, 'denominator': 30000}
+assert document['presentation_basis'] == {
+    **document['presentation_basis'], 'width': 320, 'height': 180,
+    'frame_rate': {'numerator': 30000, 'denominator': 1001}}
+assert len(document['targets']) == 1
+target = document['targets']['target-1']
+assert target['region'] == {'center': [580000, 500000]}
+assert not target.get('samples', [])
+assert target['corrections'] == [{'at': 12012, 'region': {'center': [680000, 500000]}}]
+assert target['display_aspect'] == {'numerator': '16', 'denominator': '9'}
+assert target['span'] == {'start': {'ticks': 0, 'time_base': clock},
+                          'end': {'ticks': 120120, 'time_base': clock}}
+nodes = document['nodes']
+root = nodes[document['root']]['kind']
+assert root['type'] == 'sequence' and len(root['children']) == 1
+outer = root['children'][0]
+outer_kind = nodes[outer]['kind']
+assert outer_kind['type'] == 'repeat'
+inner = outer_kind['child']
+inner_kind = nodes[inner]['kind']
+assert inner_kind['type'] == 'repeat'
+template = inner_kind['child']
+retime = nodes[template]['kind']
+assert retime == {'type': 'retime', 'child': retime['child'], 'duration': 36,
+                  'mapping': {'start': 0, 'end': 24}, 'pitch': 'follow_speed'}
+assert not document.get('gap_overrides', {})
+assert not outer_kind.get('escalation') and not inner_kind.get('escalation')
+assert not nodes[outer].get('framing') and not nodes[inner].get('framing')
+assert not nodes[document['root']].get('framing')
+
+
+def iterations(kind, count):
+    values = []
+    for part in kind['iterations']['runs']:
+        values.extend({'allocation': part['allocation'], 'ordinal': part['first'] + j}
+                      for j in range(part['count']))
+    assert len(values) == count
+    return values
+
+
+outer_iterations = iterations(outer_kind, 2)
+inner_iterations = iterations(inner_kind, 3)
+overrides = document['overrides']
+assert len(overrides) == 2
+assert len(overrides[outer]) == 1
+assert overrides[outer][0]['iteration'] == outer_iterations[1]
+cloned_inner = overrides[outer][0]['root']
+assert len(overrides[cloned_inner]) == 1
+assert overrides[cloned_inner][0]['iteration'] == inner_iterations[1]
+selected = overrides[cloned_inner][0]['root']
+assert set(overrides) == {outer, cloned_inner}
+aliases = {}
+
+
+def children(name):
+    kind = nodes[name]['kind']
+    if kind['type'] == 'sequence':
+        return kind['children']
+    if kind['type'] in ('repeat', 'retime'):
+        return [kind['child']]
+    return []
+
+
+def pair(new, old):
+    assert new != old and new not in (outer, inner, template, document['root'])
+    if new in aliases:
+        assert aliases[new] == old
+        return
+    aliases[new] = old
+    assert nodes[new]['kind']['type'] == nodes[old]['kind']['type']
+    assert len(children(new)) == len(children(old))
+    for a, b in zip(children(new), children(old)):
+        pair(a, b)
+
+
+pair(cloned_inner, inner)
+pair(selected, template)
+
+
+def normalize(value):
+    if isinstance(value, str):
+        return aliases.get(value, value)
+    if isinstance(value, list):
+        return [normalize(v) for v in value]
+    if isinstance(value, dict):
+        return {k: normalize(v) for k, v in value.items()}
+    return value
+
+
+fixed = nodes[template]['framing']
+assert 'clock' not in fixed
+follow = fixed['value']
+assert follow['type'] == 'follow' and follow['target'] == 'target-1'
+assert ratio(follow['scale']) == Fraction(11, 10)
+assert ratio(follow['fallback']['scale']) == Fraction(11, 10)
+assert ratio(follow['fallback']['center_x']) == quantized(Fraction(58, 100))
+assert ratio(follow['fallback']['center_y']) == Fraction(1, 2)
+assert 'scale_transition' not in follow
+animated = copy.deepcopy(fixed)
+animated['value']['scale_transition'] = {
+    'factor': {'numerator': '2', 'denominator': '1'}, 'curve': 'linear'}
+assert nodes[selected]['framing'] == animated
+for new, old in aliases.items():
+    expected = copy.deepcopy(nodes[old])
+    if new == selected:
+        expected['framing'] = animated
+    assert normalize(nodes[new]) == expected, (new, old)
+assert sum(bool(n.get('framing', {}).get('value', {}).get('scale_transition'))
+           for n in nodes.values() if n.get('framing')) == 1
+assert iterations(nodes[cloned_inner]['kind'], 3) == inner_iterations
+proof = last_check('The final export has exactly one animated concrete branch')
+assert proof['aliases'] == aliases and proof['altered_frames'] == 36
+assert all(proof[k] for k in ('override_paths_exact', 'originals_unchanged',
+                              'clones_exact', 'frames_exact', 'audio_exact'))
+assert proof['selected']['node'] == selected
+assert proof['framing'] == animated
+
+
+def gap_recipe(kind, frames):
+    gap = kind['gap']
+    assert gap['duration'] == frames and gap['audio'] == {'type': 'silence'}
+    assert gap['video'] == {'type': 'freeze', 'asset': target['asset'],
+                            'timestamp': {'ticks': 23023, 'time_base': clock}}
+    assert gap.get('picture_context', {}).get('canvases')
+    for canvas in gap['picture_context']['canvases']:
+        assert (canvas['width'], canvas['height']) == (320, 180)
+        assert canvas['fit'] == 'fit'
+        for pose in canvas['layers']:
+            if pose is not None:
+                assert ratio(pose['scale']) == quantized(Fraction(11, 10))
+                assert ratio(pose['center_x']) == quantized(Fraction(68, 100))
+                assert ratio(pose['center_y']) == Fraction(1, 2)
+    return gap
+
+
+inner_gap = gap_recipe(inner_kind, 4)
+outer_gap = gap_recipe(outer_kind, 8)
+assert nodes[cloned_inner]['kind']['gap'] == inner_gap
+
+
+def source_at(name, position):
+    kind = nodes[name]['kind']
+    if kind['type'] == 'retime':
+        assert kind.get('purpose') == 'partition' and kind['pitch'] == 'preserve'
+        mapping = kind['mapping']
+        slope = Fraction(mapping['end'] - mapping['start'], kind['duration'])
+        assert slope == 1
+        return source_at(kind['child'], mapping['start'] + position * slope)
+    if kind['type'] == 'sequence':
+        for child in kind['children']:
+            length = duration(child)
+            if position < length:
+                return source_at(child, position)
+            position -= length
+        raise AssertionError('Source point outside Sequence')
+    assert kind['type'] == 'source'
+    source = kind['source']
+    video = source['video']
+    assert video['type'] == 'stream' and video['asset'] == target['asset']
+    assert video['span']['start']['time_base'] == video['span']['end']['time_base'] == clock
+    mapping = source['video_mapping']
+    if mapping['type'] == 'fit_beat':
+        placement, frames = Fraction(0), Fraction(source['duration'])
+    else:
+        assert mapping['type'] in ('duration', 'placement', 'selected_placement')
+        placement = ratio(mapping['start']) if 'start' in mapping else Fraction(0)
+        frames = ratio(mapping['frames'])
+    span = video['span']
+    ticks = span['start']['ticks'] + (position - placement) * (
+        span['end']['ticks'] - span['start']['ticks']) / frames
+    return name, ticks
+
+
+def duration(name):
+    kind = nodes[name]['kind']
+    if kind['type'] == 'source':
+        return kind['source']['duration']
+    if kind['type'] == 'retime':
+        return kind['duration']
+    if kind['type'] == 'sequence':
+        return sum(duration(c) for c in kind['children'])
+    if kind['type'] == 'repeat':
+        count = sum(r['count'] for r in kind['iterations']['runs'])
+        return count * duration(kind['child']) + (count - 1) * kind.get('gap', {}).get('duration', 0)
+    raise AssertionError(kind['type'])
+
+
+assert duration(inner) == 116 and duration(document['root']) == 240
+assert source_at(retime['child'], Fraction(0))[1] == 0
+assert source_at(retime['child'], Fraction(24))[1] == 24024
+observation = last_check('All 240 frames retain exact providers and captured gaps while only the selected 36-frame owner creeps')
+assert observation['exact'] and observation['fractional'] == 144 and observation['override_edges']
+assert observation['selected'] == proof['selected']
+rows = observation['frames']
+assert len(rows) == 240
+oracle = []
+for f, row in enumerate(rows):
+    op, ol = divmod(f, 124)
+    ip, j = divmod(ol, 40)
+    outer_gap_frame = ol >= 116
+    gap = outer_gap_frame or j >= 36
+    ordinal = 23 if gap else (2 * j + 1) // 3
+    ticks = Fraction(23023) if gap else Fraction((2 * j + 1) * 1001, 3)
+    actual_inner = cloned_inner if op == 1 else inner
+    owner = selected if op == 1 and ip == 1 else nodes[actual_inner]['kind']['child']
+    expected_repeats = [{'node': outer, 'iteration': outer_iterations[op]}]
+    if not gap:
+        expected_repeats.append({'node': actual_inner, 'iteration': inner_iterations[ip]})
+        provider, mapped = source_at(nodes[owner]['kind']['child'], Fraction(2 * j + 1, 3))
+        assert mapped == ticks
+        pose = row['owner_pose']
+        assert ratio(pose['center_x']) == quantized(Fraction(58 if ordinal < 12 else 68, 100))
+        assert ratio(pose['center_y']) == Fraction(1, 2)
+        assert ratio(pose['scale']) == (scale_at(j) if 164 <= f < 200 else quantized(Fraction(11, 10)))
+        assert row['gap_after'] is None
+    else:
+        provider = outer if outer_gap_frame else actual_inner
+        if outer_gap_frame:
+            expected_repeats = []
+        assert row['owner_pose'] is None
+        assert row['gap_after'] == (outer_iterations[op] if outer_gap_frame else inner_iterations[ip])
+    assert row['Edit'] == f and row['gap'] == gap and row['Original_ordinal'] == ordinal
+    assert ratio(row['expected_point']['ticks']) == ticks
+    assert row['expected_point']['time_base'] == clock
+    assert row['provider'] == {'node': provider, 'repeats': expected_repeats}
+    oracle.append({'Edit': f, 'gap': gap, 'Original_ordinal': ordinal,
+                   'ticks': str(ticks), 'provider': provider,
+                   'selected': 164 <= f < 200, 'owner_pose': row['owner_pose']})
+(args.output / 'independent-native-oracle.json').write_text(json.dumps(oracle, indent=2) + '\n')
+
+run('validate', 'project', 'validate', args.project)
+movie = args.output / 'scoped-follow-creep.mp4'
+run('render', 'render', args.project, '--output', args.output,
+    '--name', movie.name, '--expected', revision)
+run('verify', 'verify-export', args.project, '--movie', movie,
+    '--revision', revision, '--every', 1, '--samples', '0:384384',
+    '--report', args.output / 'verification.json')
+verification = json.loads((args.output / 'verification.json').read_text())
+assert verification['passed'] and not verification['failures']
+assert verification['revision_id'] == revision
+assert verification['range'] == [0, 240]
+assert verification['frame_rate'] == [30000, 1001]
+assert verification['canvas'] == verification['raster'] == [320, 180]
+assert verification['movie']['video_frames'] == verification['movie']['expected_video_frames'] == 240
+assert verification['movie']['expected_audio_samples'] == 384384
+assert verification['movie']['audio']['presented_end'] == 384384
+assert not verification['movie']['audio']['gaps']
+assert verification['summary']['pictures_checked'] == 240
+assert verification['summary']['pictures_failed'] == 0
+assert len(verification['pictures']) == 240
+for f, picture in enumerate(verification['pictures']):
+    assert picture['passed'] and picture['output_frame'] == picture['project_frame'] == f
+    assert picture['provenance'] == {
+        'kind': 'original', 'asset': target['asset'],
+        'source_frame': oracle[f]['Original_ordinal'],
+        'source_pts': 1001 * oracle[f]['Original_ordinal']}
+assert len(verification['audio']) == 1
+audio = verification['audio'][0]
+assert audio['window'] == audio['project_samples'] == [0, 384384]
+assert audio['passed'] and audio['uncovered_samples'] == 0
+assert audio['offset_status'] == 'verified_zero' and audio['measured_offset_samples'] == 0
+assert audio['segments'] and all(s['status'] == 'verified_zero' and s['peak_lag'] == 0
+                                 for s in audio['segments'])
+assert verification['summary']['nonzero_offsets'] == verification['summary']['audio_windows_failed'] == 0
+portable = args.output / 'portable.deadpan'
+run('copy', 'project', 'copy-portable', args.project, portable)
+run('portable-validate', 'project', 'validate', portable)
+copied = json.loads(run('portable-dump', 'project', 'dump', portable, '--json'))
+assert copied == document
+assert history(portable) == before_history
+run('checkpoint', 'project', 'checkpoint', args.project)
+run('portable-checkpoint', 'project', 'checkpoint', portable)
+assert history(args.project) == history(portable) == before_history
+assert sha(args.native_report) == pins['native_report_sha256']
+assert sha(app) == pins['native_app_sha256'] and sha(cli) == pins['cli_sha256']
+assert len(commands) == 9
+result = {
+    'fixture': 'actual native-authored nested explicit scoped Follow replay project',
+    'fixture_origin': 'retained native replay project; this driver authors no document',
+    'derived_fixture': False, 'project': str(args.project), 'revision': revision,
+    'native_report': str(args.native_report), 'pins': pins,
+    'native_source_metadata': report['metadata'],
+    'owner': selected, 'outer': outer, 'inner': inner, 'cloned_inner': cloned_inner,
+    'clone_aliases': aliases, 'stable_iterations': [outer_iterations, inner_iterations],
+    'frames': 240, 'live_frames': 216, 'gap_frames': 24,
+    'selected_output_range': [164, 200], 'fractional_provider_frames': 144,
+    'audio_samples': 384384, 'portable_document_equal': True,
+    'history_before_after_and_portable': before_history, 'commands': len(commands),
+    'movie_bytes': movie.stat().st_size, 'movie_sha256': sha(movie),
+    'verification_report_sha256': sha(args.output / 'verification.json'),
+    'evidence_scope': {
+        'native': 'passed native plan assertions; 240 observed provider/pose rows independently checked with Fraction and integer half-even Q32 math',
+        'export': 'every emitted picture provenance and shared-reference fidelity; complete PCM at its declared zero offset',
+        'history': 'actual row counts and identity/request/edit digests preserved, including Undo/Redo, across portable copy and checkpoints',
+        'not_claimed': 'CLI pose introspection, independent renderer, acoustic listening or physical desktop input'}}
+(args.output / 'result.json').write_text(json.dumps(result, indent=2) + '\n')
+print(json.dumps(result))

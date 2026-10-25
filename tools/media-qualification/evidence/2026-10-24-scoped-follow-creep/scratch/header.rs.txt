@@ -1,0 +1,149 @@
+//! Live Follow creep on one explicitly selected nested Repeat-play owner.
+//! Every authored change uses production Camera keys or the project writer.
+
+use super::*;
+use crate::preview::copied::Content;
+use deadpan_core::{
+    AudioSample, ExactRatio, FollowScaleTransition, Framing, FramingClock, FramingPose,
+    FramingValue, NodeId, NodeKind, ProjectFrame, SemanticInstruction, SemanticZoomCenter,
+    TargetId, TargetPoint,
+    framing_zoom::{ZoomCurve, ZoomKind},
+};
+use egui::Key;
+
+fn ratio(n: i128, d: i128) -> ExactRatio {
+    ExactRatio::new(n, d).unwrap()
+}
+
+fn center(percent: i128) -> ExactRatio {
+    let q = i128::from(deadpan_core::FRAMING_NUMERIC_SCALE);
+    let n = percent * q;
+    let a = n / 100;
+    let r = n % 100;
+    ratio(
+        a + i128::from(r * 2 > 100 || (r * 2 == 100 && a % 2 != 0)),
+        q,
+    )
+}
+
+/// Independent integer, half-even Q32 oracle at frame centers of a complete selected owner.
+fn expected_scale(j: i128, frames: i128) -> ExactRatio {
+    let q = i128::from(deadpan_core::FRAMING_NUMERIC_SCALE);
+    let round = |n: i128, d: i128| {
+        let a = n / d;
+        let r = n % d;
+        a + i128::from(r * 2 > d || (r * 2 == d && a % 2 != 0))
+    };
+    let first = round(11 * q, 10);
+    let last = round(11 * q, 5);
+    let progress = round((2 * j + 1) * q, 2 * frames);
+    ratio(first + round((last - first) * progress, q), q)
+}
+
+fn framing(d: &Driver<'_>, id: &NodeId) -> Option<Framing> {
+    d.app()
+        .workspace
+        .as_ref()?
+        .document
+        .nodes()
+        .get(id)?
+        .framing
+        .clone()
+}
+
+fn camera(d: &Driver<'_>) -> Value {
+    d.app()
+        .camera
+        .as_ref()
+        .map_or(Value::Null, |camera| camera.harness_state())
+}
+
+fn idle(d: &mut Driver<'_>) -> Result<(), String> {
+    d.wait_for("Retime framing receipt finishes", |app| {
+        !app.service.is_busy() && !app.macros.is_pending() && app.camera_pending.is_none()
+    })?;
+    d.settled()
+}
+
+fn at(d: &mut Driver<'_>, frame: u32) -> Result<(), String> {
+    let mut keys = vec![Key::G, Key::G];
+    if frame > 0 {
+        for digit in frame.to_string().chars() {
+            keys.push(Key::from_name(&digit.to_string()).ok_or("Invalid frame digit")?);
+        }
+        keys.push(Key::L);
+    }
+    d.chord(&keys)?;
+    d.settled()
+}
+
+fn edit(d: &mut Driver<'_>, command: &str) -> Result<(), String> {
+    let revision = d.revision();
+    d.command(command)?;
+    d.changed(&revision)?;
+    idle(d)
+}
+
+fn open_camera(d: &mut Driver<'_>) -> Result<(), String> {
+    d.chord(&[Key::Comma, Key::F])?;
+    d.wait_for("Camera opens on the selected ordinary owner", |app| {
+        app.camera.is_some()
+    })?;
+    d.settled()
+}
+
+fn continued(d: &mut Driver<'_>) -> Result<(), String> {
+    d.wait_for("Point save continues Camera on the saved head", |app| {
+        app.camera.as_ref().is_some_and(|camera| {
+            let state = camera.harness_state();
+            state["saving"] == false
+                && state["rebasing"] == false
+                && state["phase"] == "Adjust"
+                && app.workspace.as_ref().is_some_and(|workspace| {
+                    state["revision"] == workspace.document.revision_id().as_str()
+                })
+        })
+    })?;
+    d.settled()
+}
+
+fn undo_to(d: &mut Driver<'_>, retime: &NodeId, expected: &Option<Framing>) -> Result<(), String> {
+    edit(d, "undo")?;
+    d.check(
+        "One Undo restores the exact Retime Follow recipe",
+        framing(d, retime) == *expected,
+        json!(expected),
+        json!(framing(d, retime)),
+    )
+}
+
+fn refused(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
+    let revision = d.revision();
+    let selection = d.app().edit_range.semantic()?;
+    let original_cursor = d.app().source_cursor;
+    let edit_cursor = d.app().sequence_cursor;
+    let document = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("No workspace")?
+        .document
+        .clone();
+    d.command("creep from=1.1 to=2.2 curve=linear")?;
+    idle(d)?;
+    d.check(
+        label,
+        d.revision() == revision
+            && d.app()
+                .workspace
+                .as_ref()
+                .is_some_and(|workspace| workspace.document == document)
+            && d.app().edit_range.semantic()? == selection
+            && d.app().source_cursor == original_cursor
+            && d.app().sequence_cursor == edit_cursor
+            && d.app().error.is_some(),
+        json!({"revision":revision,"write":false}),
+        json!({"revision":d.revision(),"error":d.app().error}),
+    )
+}
+

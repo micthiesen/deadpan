@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "repository": "/Users/michael/Code/deadpan",
+  "raw_byte_limit": 268435456,
+  "gzip_threshold_bytes": 65536,
+  "inputs": {
+    "Cargo.lock": {
+      "bytes": 135252,
+      "sha256": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b"
+    },
+    "Cargo.toml": {
+      "bytes": 3509,
+      "sha256": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3"
+    },
+    "rust-toolchain.toml": {
+      "bytes": 86,
+      "sha256": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+    },
+    ".cargo/config.toml": {
+      "bytes": 147,
+      "sha256": "b906738cab8f6f289180e1bcf32826d3e2996899cb5055dc7f0c6838655c340d"
+    },
+    "crates/deadpan-app/src/navigation/registry/baseline-routing.txt": {
+      "bytes": 796287,
+      "sha256": "a181ba1d3f2db1c030fbdf1feaf2d5ae8efd5edd885114bcea9c161ac774cd8d"
+    },
+    "docs/COMMANDS.md": {
+      "bytes": 97592,
+      "sha256": "85ab69de18d2609b0c02635add2051ad6ea9ae8616164d5fb834fbc0ef9bf2cd"
+    },
+    "docs/TARGETS.md": {
+      "bytes": 12418,
+      "sha256": "82f2b4071fa6824e95a5c298e1ae31a438c8a39a05571801376b063fa511ce21"
+    },
+    "docs/FRAMING.md": {
+      "bytes": 29962,
+      "sha256": "31a82004f6d82c9f46ea848d5540386c3e931d9e791224a14b3c1a2231a04624"
+    },
+    "docs/SEMANTIC_MACROS.md": {
+      "bytes": 60386,
+      "sha256": "f938ed7f849123e84b6867b82b1da3fdc784200e5b4d3b00af58674403ac5baf"
+    },
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": {
+      "bytes": 39157,
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+    }
+  },
+  "post_run_sources": {},
+  "limitations": [
+    "Twenty-two listed final source paths and five sibling executable identities; not an attestation of every repository file.",
+    "One release candidate, qualified by first/final source and binary byte equality; native-scoped-first is final if that equality passes.",
+    "All six native report JSON and HTML pairs are retained across this Primary and its separate regressions package to keep each complete collection below256MiB. Reports are neither truncated nor omitted.",
+    "Four Root-inspected named PNG checkpoints are retained beside their scoped report. Other intermediate screenshots are not included; raw reports retain their original references.",
+    "Focused Core3 and scoped59 overlap one case, giving61unique. CLI16 is a framing integration filter, not the complete CLI suite. Plan2 cover200picture samples over four bounded typed target cases.",
+    "Two initial CLI oracle failures, first Clippy101 and both stopped media drivers are retained with exact prior source. They are not first-pass successes. No product change followed scoped admission except test-only lint syntax.",
+    "The first media driver stopped before CLI on standard declared harness exclusions. The second stopped after one read-only dump on an inherited fallback expectation. The centered entry fallback and live target center are intentionally distinct.",
+    "Offscreen Metal and scripted input do not prove physical display/input, OS IME, VoiceOver speech, listening or native OS picker delivery. Exact standard exclusions, warnings and eleven existing ignored App tests remain declared.",
+    "App unit binary identity was observed during execution and again at terminal completion, not archived or attested continuously.",
+    "Native all-frame independent pose/time observations and committed shared-reference emitted-picture/full-PCM verification are separate evidence. No independent renderer or acoustic listening is claimed.",
+    "Actual native and portable projects retain complete immutable history and exact encoder-delay metadata.",
+    "Collector outputs and later package-verification receipts remain separate to avoid recursive publication."
+  ],
+  "destination": "tools/media-qualification/evidence/2026-10-24-scoped-follow-creep-regressions",
+  "files": [
+    {
+      "source": "/private/tmp/deadpan-scoped-follow-creep-2026-10-24/native-zoom-final/report.json",
+      "path": "native-zoom-final/report.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-scoped-follow-creep-2026-10-24/native-zoom-final/report.html",
+      "path": "native-zoom-final/report.html"
+    },
+    {
+      "source": "/private/tmp/deadpan-scoped-follow-creep-2026-10-24/native-sequence-follow-creep-final/report.json",
+      "path": "native-sequence-follow-creep-final/report.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-scoped-follow-creep-2026-10-24/native-sequence-follow-creep-final/report.html",
+      "path": "native-sequence-follow-creep-final/report.html"
+    },
+    {
+      "source": "/private/tmp/deadpan-scoped-follow-creep-2026-10-24/native-hold-follow-creep-final/report.json",
+      "path": "native-hold-follow-creep-final/report.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-scoped-follow-creep-2026-10-24/native-hold-follow-creep-final/report.html",
+      "path": "native-hold-follow-creep-final/report.html"
+    },
+    {
+      "source": "/private/tmp/deadpan-scoped-follow-creep-2026-10-24/native-zoom-final.json",
+      "path": "scratch/native-zoom-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-scoped-follow-creep-2026-10-24/native-zoom-final.stdout",
+      "path": "scratch/native-zoom-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-scoped-follow-creep-2026-10-24/native-zoom-final.stderr",
+      "path": "scratch/native-zoom-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-scoped-follow-creep-2026-10-24/native-sequence-follow-creep-final.json",
+      "path": "scratch/native-sequence-follow-creep-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-scoped-follow-creep-2026-10-24/native-sequence-follow-creep-final.stdout",
+      "path": "scratch/native-sequence-follow-creep-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-scoped-follow-creep-2026-10-24/native-sequence-follow-creep-final.stderr",
+      "path": "scratch/native-sequence-follow-creep-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-scoped-follow-creep-2026-10-24/native-hold-follow-creep-final.json",
+      "path": "scratch/native-hold-follow-creep-final.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-scoped-follow-creep-2026-10-24/native-hold-follow-creep-final.stdout",
+      "path": "scratch/native-hold-follow-creep-final.stdout"
+    },
+    {
+      "source": "/private/tmp/deadpan-scoped-follow-creep-2026-10-24/native-hold-follow-creep-final.stderr",
+      "path": "scratch/native-hold-follow-creep-final.stderr"
+    },
+    {
+      "source": "/private/tmp/deadpan-scoped-follow-creep-2026-10-24/first-identities.json",
+      "path": "scratch/first-identities.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-scoped-follow-creep-2026-10-24/final-identities.json",
+      "path": "scratch/final-identities.json"
+    },
+    {
+      "source": "/private/tmp/deadpan-scoped-follow-creep-2026-10-24/candidate-equivalence.json",
+      "path": "scratch/candidate-equivalence.json"
+    }
+  ],
+  "archives": []
+}

@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/tmp/deadpan-scoped-follow-creep-2026-10-24/verify-scoped-package.py", line 200, in <module>
+    hn,kn=sqlite_rows(original['project.sqlite']);hp,kp=sqlite_rows(m['portable.deadpan/project.sqlite'])
+          ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/deadpan-scoped-follow-creep-2026-10-24/verify-scoped-package.py", line 45, in sqlite_rows
+    need(c.execute('pragma quick_check').fetchall()==[('ok',)],'archived SQLite integrity')
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: unable to open database file

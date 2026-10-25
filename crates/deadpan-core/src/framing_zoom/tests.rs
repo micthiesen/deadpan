@@ -102,7 +102,7 @@ fn zoom_intent_wire_roundtrips_and_refuses_unknown_fields() {
 
 fn shot(range: Option<(u64, u64)>) -> Shot<'static> {
     Shot {
-        ordinary_owner: None,
+        whole_owner: None,
         entry: None,
         current: FramingPose::identity(),
         frames: 10,
@@ -270,7 +270,7 @@ fn abrupt_return_steps_out_over_a_range_and_never_flattens_a_path() {
         Framing::static_pose(FramingPose::new(ratio(2, 5), ratio(1, 2), ratio(3, 2)).unwrap())
             .unwrap();
     let shot = Shot {
-        ordinary_owner: None,
+        whole_owner: None,
         entry: Some(&zoomed),
         current: FramingPose::new(ratio(2, 5), ratio(1, 2), ratio(3, 2)).unwrap(),
         frames: 10,
@@ -424,7 +424,7 @@ fn retained_clock_static_poses_are_ranged_like_any_static_pose() {
         value: FramingValue::Static { pose: zoomed },
     };
     let shot = Shot {
-        ordinary_owner: None,
+        whole_owner: None,
         entry: Some(&retained),
         current: zoomed,
         frames: 10,
@@ -466,7 +466,7 @@ fn retained_clock_static_poses_are_ranged_like_any_static_pose() {
 #[test]
 fn ranges_beyond_the_progress_grid_refuse_with_the_frame_limit() {
     let shot = Shot {
-        ordinary_owner: None,
+        whole_owner: None,
         entry: None,
         current: FramingPose::identity(),
         frames: 1_000_003,
@@ -500,7 +500,7 @@ fn targets_are_sampled_where_a_step_lands_or_a_creep_arrives() {
 }
 
 #[test]
-fn follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_admitted_owner() {
+fn follow_creep_keeps_both_bases_and_requires_a_whole_admitted_owner() {
     let fallback = FramingPose::new(ratio(1, 3), ratio(2, 7), ratio(1, 2)).unwrap();
     let entry = Framing {
         clock: FramingClock::RetainedOutput {
@@ -520,15 +520,15 @@ fn follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_admitted_owner() 
         curve: ZoomCurve::Linear,
     };
     for owner in [
-        OrdinaryFollowOwner::Source,
-        OrdinaryFollowOwner::Hold,
-        OrdinaryFollowOwner::Sequence,
-        OrdinaryFollowOwner::Repeat,
-        OrdinaryFollowOwner::Retime,
+        WholeFollowOwner::Source,
+        WholeFollowOwner::Hold,
+        WholeFollowOwner::Sequence,
+        WholeFollowOwner::Repeat,
+        WholeFollowOwner::Retime,
     ] {
         let admitted = Shot {
             entry: Some(&entry),
-            ordinary_owner: Some(owner),
+            whole_owner: Some(owner),
             ..shot(None)
         };
         let result = build(kind, &Center::Keep, &admitted).unwrap().unwrap();
@@ -566,7 +566,7 @@ fn follow_creep_keeps_both_bases_and_requires_a_whole_ordinary_admitted_owner() 
                 kind,
                 &Center::Keep,
                 &Shot {
-                    ordinary_owner: None,
+                    whole_owner: None,
                     ..admitted
                 }
             )

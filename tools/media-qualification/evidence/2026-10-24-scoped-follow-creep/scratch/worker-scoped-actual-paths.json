@@ -1,0 +1,21 @@
+{
+  "actual_changed_paths": [
+    "crates/deadpan-core/src/framing_zoom.rs",
+    "crates/deadpan-core/src/framing_zoom/tests.rs",
+    "crates/deadpan-core/src/semantic/planner/framing.rs",
+    "crates/deadpan-core/src/semantic/planner/tests/scoped_framing.rs",
+    "crates/deadpan-cli/src/framing/tests.rs",
+    "crates/deadpan-cli/tests/project_commands/macros/framing.rs",
+    "crates/deadpan-cli/tests/project_commands/macros/framing/scoped_follow_creep.rs",
+    "crates/deadpan-cli/tests/project_commands/macros/framing/sequence_follow_creep.rs",
+    "crates/deadpan-cli/tests/project_commands/macros/framing/repeat_follow_creep.rs",
+    "crates/deadpan-cli/tests/project_commands/macros/framing/retime_follow_creep.rs",
+    "crates/deadpan-cli/tests/project_commands/macros/framing/hold_follow_creep.rs"
+  ],
+  "unchanged_owned_dependency": [
+    "crates/deadpan-core/src/semantic/planner/tests/framing.rs"
+  ],
+  "actual_changed_count": 11,
+  "owned_frozen_count": 12,
+  "scope": "Worker changes only; Root-owned production/native paths excluded"
+}

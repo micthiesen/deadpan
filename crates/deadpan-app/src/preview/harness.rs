@@ -65,6 +65,7 @@ mod retime_follow_creep;
 mod room_tone;
 mod scale;
 mod scenarios;
+mod scoped_follow_creep;
 mod scoped_plays;
 mod semantic;
 mod sequence_follow_creep;

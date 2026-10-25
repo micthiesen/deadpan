@@ -108,9 +108,9 @@ pub enum Center {
     },
 }
 
-/// Resolved whole ordinary owner eligible to create a Keep Follow transition.
+/// Resolved whole owner eligible to create a Keep Follow transition.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum OrdinaryFollowOwner {
+pub enum WholeFollowOwner {
     Source,
     Hold,
     Sequence,
@@ -120,9 +120,9 @@ pub enum OrdinaryFollowOwner {
 
 /// The beat being framed, as Camera sees it at the displayed picture.
 pub struct Shot<'a> {
-    /// Resolved ordinary owner outside occurrence editing. This admits only
-    /// creation of a whole-owner Follow transition, never raw payload validity.
-    pub ordinary_owner: Option<OrdinaryFollowOwner>,
+    /// Resolved whole owner after the host validates ordinary or explicit-play
+    /// context. This admits transition construction, never raw payload validity.
+    pub whole_owner: Option<WholeFollowOwner>,
     /// The beat's authored framing before the edit.
     pub entry: Option<&'a Framing>,
     /// The beat's evaluated pose at the displayed picture.
@@ -145,7 +145,7 @@ fn progress(frame: u64, frames: u64) -> Result<ExactRatio, String> {
 }
 
 pub const PATH_REFUSAL: &str = "This beat has a camera path, and this would replace it. Use :zoom off first, or name the target (target=current, center or an id) to replace it explicitly.";
-pub const FOLLOW_CREEP_REFUSAL: &str = "Following creep requires one whole ordinary Source, Hold, Sequence, Repeat or Retime with no Visual range or single-play scope. Name target= to creep to a fixed point, or clear the range and select an ordinary Source, Hold, Sequence, Repeat or Retime.";
+pub const FOLLOW_CREEP_REFUSAL: &str = "Following creep requires one whole beat with no Visual range and This play for every enclosing Repeat. Name target= to creep to a fixed point, or clear the range and choose each enclosing play explicitly.";
 pub const RANGED_FOLLOW_REFUSAL: &str = "This beat follows a target; a range would stop following it outside the range. Apply to the whole beat (clear the Visual range) or :zoom off first.";
 pub const RANGED_PATH_REFUSAL: &str = "This beat has a camera path; a range would replace it outside the range. Apply to the whole beat (clear the Visual range) or :zoom off first.";
 
@@ -243,7 +243,7 @@ pub fn build(kind: ZoomKind, center: &Center, shot: &Shot<'_>) -> Result<Option<
                         ..
                     }) = entry
                 {
-                    if shot.ordinary_owner.is_none() || shot.range.is_some() {
+                    if shot.whole_owner.is_none() || shot.range.is_some() {
                         return Err(FOLLOW_CREEP_REFUSAL.into());
                     }
                     let from = from.unwrap_or(*scale);

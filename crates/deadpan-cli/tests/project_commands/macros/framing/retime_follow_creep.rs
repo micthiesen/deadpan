@@ -522,16 +522,27 @@ fn whole_retime_follow_creep_keeps_nonzero_map_fractional_target_clock_and_histo
             "scoped-refused",
         );
         request["operation"]["scoped"] = serde_json::to_value(scoped)?;
-        let error = reject(&package, &input, &request)?;
-        let message = error["error"]["message"].as_str().unwrap();
-        assert!(
-            if explicit_play {
-                message.ends_with(deadpan_core::framing_zoom::FOLLOW_CREEP_REFUSAL)
-            } else {
-                message.contains("single-play")
-            },
-            "{error}"
-        );
+        if explicit_play {
+            let result = invoke(&package, &input, &request, false)?;
+            let (after, mapped, frames) = assert_scoped_follow_commit(&package, &nested, &result)?;
+            assert_eq!(frames, (12..24).collect::<Vec<_>>());
+            assert!(matches!(&after.nodes()[&mapped.target.node].framing,
+                Some(Framing { value: FramingValue::Follow { target, scale, scale_transition: Some(FollowScaleTransition { factor, .. }), .. }, .. })
+                if target.as_str() == "subject" && *scale == ratio(2, 1) && *factor == ratio(2, 1)));
+            let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+            writer.undo(after.revision_id(), RevisionId::new("scoped-retime-undo")?)?;
+            same_document(&writer.snapshot()?, &nested)?;
+            drop(writer);
+        } else {
+            let error = reject(&package, &input, &request)?;
+            assert!(
+                error["error"]["message"]
+                    .as_str()
+                    .unwrap()
+                    .contains("single-play"),
+                "{error}"
+            );
+        }
     }
     assert_eq!(
         ProjectStore::open(&package, AccessMode::ReadOnly)?.registers()?,

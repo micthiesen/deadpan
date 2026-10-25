@@ -35,6 +35,254 @@ mod repeat_follow_creep;
 #[path = "framing/retime_follow_creep.rs"]
 mod retime_follow_creep;
 
+#[path = "framing/scoped_follow_creep.rs"]
+mod scoped_follow_creep;
+
+/// Verify physical isolation independently of value/picture comparisons. The
+/// command comes from durable history, so this follows the identities actually
+/// committed, rather than the separate random IDs allocated by dry-run.
+fn assert_scoped_follow_commit(
+    package: &Path,
+    before: &ProjectDocument,
+    result: &Value,
+) -> Result<(
+    ProjectDocument,
+    deadpan_core::SemanticScopedContext,
+    Vec<i64>,
+)> {
+    let after = ProjectStore::open(package, AccessMode::ReadOnly)?.snapshot()?;
+    let mapped: deadpan_core::SemanticScopedContext =
+        serde_json::from_value(result["context"]["scoped"].clone())?;
+    assert!(
+        mapped
+            .target
+            .matches_instance(&after, &mapped.presentation)?
+    );
+    let raw: String = rusqlite::Connection::open(package.join("project.sqlite"))?.query_row(
+        "SELECT request FROM history WHERE revision_id=?1",
+        [after.revision_id().as_str()],
+        |row| row.get(0),
+    )?;
+    let request: deadpan_core::CommandRequest = serde_json::from_str(&raw)?;
+    let Command::Compound { transaction } = &request.command else {
+        panic!("scoped semantic Compound")
+    };
+    let baseline = RenderPlan::compile(before)?;
+    let mut identities = BTreeMap::new();
+    for frame in 0..baseline.duration().frames() {
+        let sample = baseline.picture(ProjectFrame(frame))?;
+        identities.insert(sample.instance.clone(), sample.instance);
+        for layer in sample.framing {
+            identities.insert(layer.instance.clone(), layer.instance);
+        }
+    }
+    let mut inverse_nodes = BTreeMap::<String, String>::new();
+    let mut staged = before.clone();
+    for step in transaction.steps() {
+        let leaf = step.edit().unwrap();
+        let Command::EditScoped {
+            target,
+            edit,
+            identities: allocated,
+        } = leaf.command.as_command()
+        else {
+            panic!("scoped framing leaf")
+        };
+        let requirements = staged.scoped_edit_requirements(target, edit)?;
+        assert_eq!(allocated.nodes.len(), requirements.nodes);
+        assert_eq!(allocated.marks.len(), requirements.marks);
+        let prepared = deadpan_core::prepare_scoped_edit(&staged, &leaf.request(&staged))?;
+        let mut used = std::collections::BTreeSet::new();
+        for isolation in prepared.isolation().steps() {
+            assert!(
+                isolation
+                    .before_prefix()
+                    .iter()
+                    .all(|step| matches!(step.branch, deadpan_core::RepeatEditBranch::Play { .. }))
+            );
+            for (old, new) in isolation.nodes() {
+                assert!(allocated.nodes.contains(new));
+                assert!(!staged.nodes().contains_key(new));
+                assert!(used.insert(new.clone()));
+                let origin = inverse_nodes
+                    .get(old.as_str())
+                    .cloned()
+                    .unwrap_or_else(|| old.as_str().to_owned());
+                inverse_nodes.insert(new.as_str().to_owned(), origin);
+            }
+        }
+        assert_eq!(used.len(), allocated.nodes.len());
+        for instance in identities.values_mut() {
+            *instance = prepared.map_instance(&staged, instance)?;
+        }
+        staged = prepared.document;
+    }
+    // Leaf preparation ends on its private step revision. The aggregate below
+    // restores the caller's outer revision and must match it exactly.
+    same_document(&staged, &after)?;
+    let replay =
+        deadpan_core::replay_compound::<deadpan_core::EditError>(before, &request, |_| Ok(()))?;
+    assert_eq!(replay.document, after);
+    assert_eq!(replay.edit.inverse.apply(&after)?, *before);
+    fn canonical(value: &mut Value, ids: &BTreeMap<String, String>) {
+        match value {
+            Value::String(id) => {
+                if let Some(original) = ids.get(id) {
+                    *id = original.clone();
+                }
+            }
+            Value::Array(values) => {
+                for value in values {
+                    canonical(value, ids);
+                }
+            }
+            Value::Object(values) => {
+                for value in values.values_mut() {
+                    canonical(value, ids);
+                }
+            }
+            _ => (),
+        }
+    }
+    for (fresh, original) in &inverse_nodes {
+        let mut actual = serde_json::to_value(&after.nodes()[&node(fresh)])?;
+        canonical(&mut actual, &inverse_nodes);
+        let mut expected = serde_json::to_value(&before.nodes()[&node(original)])?;
+        if fresh == mapped.target.node.as_str() {
+            expected["framing"] = actual["framing"].clone();
+        }
+        assert_eq!(actual, expected, "clone {fresh} from {original}");
+    }
+    for (id, old) in before.nodes() {
+        let mut expected = old.clone();
+        if id == &mapped.target.node {
+            expected.framing = after.nodes()[id].framing.clone();
+        }
+        assert_eq!(after.nodes()[id], expected, "retained template {id}");
+    }
+    assert_eq!(after.assets(), before.assets());
+    assert_eq!(after.targets(), before.targets());
+    assert_eq!(after.duration()?, before.duration()?);
+    let edited = RenderPlan::compile(&after)?;
+    let mut changed_frames = vec![];
+    for frame in 0..baseline.duration().frames() {
+        let a = baseline.picture(ProjectFrame(frame))?;
+        let b = edited.picture(ProjectFrame(frame))?;
+        assert_eq!(
+            &b.instance, &identities[&a.instance],
+            "physical provider {frame}"
+        );
+        assert_eq!(a.picture, b.picture);
+        assert_eq!(a.picture_context, b.picture_context);
+        assert_eq!(a.local_position, b.local_position);
+        assert_eq!(a.gap_after, b.gap_after);
+        let mut captions = serde_json::to_value(&b.captions)?;
+        canonical(&mut captions, &inverse_nodes);
+        assert_eq!(captions, serde_json::to_value(&a.captions)?);
+        assert_eq!(a.framing.len(), b.framing.len());
+        let selected = b
+            .framing
+            .iter()
+            .position(|layer| layer.instance == mapped.presentation && !layer.escalation);
+        for (index, (old, actual)) in a.framing.iter().zip(&b.framing).enumerate() {
+            assert_eq!(
+                &actual.instance, &identities[&old.instance],
+                "physical layer {frame}"
+            );
+            let mut expected = old.clone();
+            expected.instance = actual.instance.clone();
+            if actual.instance == mapped.presentation && !actual.escalation {
+                expected.pose = actual.pose;
+                changed_frames.push(frame);
+            } else if selected.is_some_and(|selected| index > selected)
+                && !actual.escalation
+                && let Some(framing) = &after.nodes()[&actual.instance.node].framing
+                && matches!(framing.value, FramingValue::Follow { .. })
+            {
+                // An ancestor Follow remains authored identically, but must
+                // reproject its subject through the edited inner view. Even
+                // same-target centering can shift one unit after Q32 rounding.
+                let value = framing
+                    .evaluate_with_follow_exact(actual.local_position, actual.effective_duration)?;
+                let (target, live_scale) = value.follow.unwrap();
+                let mut pose = value.pose;
+                if let Some((asset, point)) = b.picture.follow_point()
+                    && &after.targets()[target].asset == asset
+                    && let Some((region, _)) = after.targets()[target].region_at(point)
+                {
+                    assert!(
+                        b.picture_context.is_none(),
+                        "ancestor oracle fixture has no captured canvas"
+                    );
+                    let mut center = region.center_ratio();
+                    if let Some(aspect) = after.targets()[target].display_aspect {
+                        center = deadpan_core::fit_source_point(
+                            center,
+                            aspect,
+                            [
+                                after.presentation_basis().width,
+                                after.presentation_basis().height,
+                            ],
+                        )
+                        .unwrap();
+                    }
+                    let half = ratio(1, 2);
+                    let mut visible = true;
+                    for inner in &b.framing[..index] {
+                        if let Some(inner) = inner.pose {
+                            center = [
+                                center[0]
+                                    .checked_sub(inner.center_x)?
+                                    .checked_mul(inner.scale)?
+                                    .checked_add(half)?,
+                                center[1]
+                                    .checked_sub(inner.center_y)?
+                                    .checked_mul(inner.scale)?
+                                    .checked_add(half)?,
+                            ];
+                        }
+                        visible &= center.iter().all(|x| {
+                            !x.compare(ExactRatio::ZERO).is_lt()
+                                && !x.compare(ExactRatio::ONE).is_gt()
+                        });
+                    }
+                    if visible {
+                        let quantize = |x: ExactRatio| -> std::result::Result<
+                            ExactRatio,
+                            deadpan_core::TimeError,
+                        > {
+                            let grid = 1_i128 << 32;
+                            ExactRatio::new(x.checked_mul(ratio(grid, 1))?.round_even()?, grid)
+                        };
+                        pose = FramingPose::new(
+                            quantize(center[0])?,
+                            quantize(center[1])?,
+                            quantize(live_scale)?,
+                        )?;
+                    }
+                }
+                expected.pose = Some(pose);
+            }
+            assert_eq!(actual, &expected, "scope semantics {frame}");
+        }
+    }
+    let end = baseline.audio_duration()?;
+    assert_eq!(end, edited.audio_duration()?);
+    let expected = baseline.audio(deadpan_core::AudioSample(0)..end, Default::default())?;
+    let actual = edited.audio(deadpan_core::AudioSample(0)..end, Default::default())?;
+    for span in &actual.spans {
+        assert!(
+            identities
+                .values()
+                .any(|instance| instance == &span.instance)
+        );
+    }
+    let mut actual = serde_json::to_value(actual.spans)?;
+    canonical(&mut actual, &inverse_nodes);
+    assert_eq!(actual, serde_json::to_value(expected.spans)?);
+    Ok((after, mapped, changed_frames))
+}
+
 #[cfg(all(target_os = "macos", feature = "synthetic-worker"))]
 #[allow(dead_code)]
 #[path = "../../preview_export/recipes.rs"]

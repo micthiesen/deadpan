@@ -1,0 +1,237 @@
+{
+  "current_sources_unchanged": true,
+  "findings": [
+    {
+      "message": "unable to open database file",
+      "type": "OperationalError"
+    }
+  ],
+  "finished_utc": "2026-10-25T07:08:59.255053+00:00",
+  "limitations": [
+    "Read-only independent package verification only; no collector/payload script/product/Cargo/test/worker/decoder/model/Git command run.",
+    "Two separate complete inventories and individual256MiB raw budgets; no claim that their combined raw charge fits one package.",
+    "Current22 source paths and named historical subsets are not whole-repository compilation. One first/final byte-identical candidate.",
+    "Prior focused CLI/test-only lint and media-driver assertion failures remain failed; all three raw-auditor attempts are retained honestly.",
+    "Native physical/picker exclusions, layout warnings,11 existing App ignores and262observable/216unobservable neighbors retained.",
+    "Selected PNG integrity binds Root visual review without independent visual/physical judgment.",
+    "Shared committed picture and limited-DSP references do not prove independent DSP/listening, encoded PCM bit equality, latency or requirement completion.",
+    "Archived SQLite bytes read through query-only isolated in-memory copies; no package database or sidecar opened writable."
+  ],
+  "package_trees_unchanged": {
+    "primary": true,
+    "regressions": true
+  },
+  "primary": {
+    "archive_source_bytes": 83121341,
+    "archives": [
+      {
+        "metadata_omissions": 0,
+        "path": "archives/audit-history.tar.gz",
+        "retained_member_bytes": 823833,
+        "retained_members": 15,
+        "source_bytes": 823833,
+        "source_files": 15
+      },
+      {
+        "metadata_omissions": 0,
+        "path": "archives/media-first.tar.gz",
+        "retained_member_bytes": 20693704,
+        "retained_members": 1,
+        "source_bytes": 20693704,
+        "source_files": 1
+      },
+      {
+        "metadata_omissions": 0,
+        "path": "archives/media-preflight-3-output.tar.gz",
+        "retained_member_bytes": 107484,
+        "retained_members": 1,
+        "source_bytes": 107484,
+        "source_files": 1
+      },
+      {
+        "metadata_omissions": 0,
+        "path": "archives/media-second.tar.gz",
+        "retained_member_bytes": 20738420,
+        "retained_members": 4,
+        "source_bytes": 20738420,
+        "source_files": 4
+      },
+      {
+        "metadata_omissions": 2,
+        "path": "archives/media-third.tar.gz",
+        "retained_member_bytes": 23344957,
+        "retained_members": 32,
+        "source_bytes": 23377725,
+        "source_files": 34
+      },
+      {
+        "metadata_omissions": 0,
+        "path": "archives/native-source.tar.gz",
+        "retained_member_bytes": 278352,
+        "retained_members": 6,
+        "source_bytes": 278352,
+        "source_files": 6
+      },
+      {
+        "metadata_omissions": 0,
+        "path": "archives/plan-focused-1-source.tar.gz",
+        "retained_member_bytes": 6007388,
+        "retained_members": 304,
+        "source_bytes": 6007388,
+        "source_files": 304
+      },
+      {
+        "metadata_omissions": 0,
+        "path": "archives/plan-focused-2-source.tar.gz",
+        "retained_member_bytes": 6007376,
+        "retained_members": 304,
+        "source_bytes": 6007376,
+        "source_files": 304
+      },
+      {
+        "metadata_omissions": 0,
+        "path": "archives/source-first.tar.gz",
+        "retained_member_bytes": 967927,
+        "retained_members": 22,
+        "source_bytes": 967927,
+        "source_files": 22
+      },
+      {
+        "metadata_omissions": 0,
+        "path": "archives/worker-cli-1-source.tar.gz",
+        "retained_member_bytes": 263706,
+        "retained_members": 12,
+        "source_bytes": 263706,
+        "source_files": 12
+      },
+      {
+        "metadata_omissions": 0,
+        "path": "archives/worker-cli-2-source.tar.gz",
+        "retained_member_bytes": 263862,
+        "retained_members": 12,
+        "source_bytes": 263862,
+        "source_files": 12
+      },
+      {
+        "metadata_omissions": 0,
+        "path": "archives/worker-cli-3-source.tar.gz",
+        "retained_member_bytes": 267494,
+        "retained_members": 12,
+        "source_bytes": 267494,
+        "source_files": 12
+      },
+      {
+        "metadata_omissions": 0,
+        "path": "archives/worker-cli-unit-1-source.tar.gz",
+        "retained_member_bytes": 267494,
+        "retained_members": 12,
+        "source_bytes": 267494,
+        "source_files": 12
+      },
+      {
+        "metadata_omissions": 0,
+        "path": "archives/worker-core-1-source.tar.gz",
+        "retained_member_bytes": 263706,
+        "retained_members": 12,
+        "source_bytes": 263706,
+        "source_files": 12
+      },
+      {
+        "metadata_omissions": 0,
+        "path": "archives/worker-core-scoped-1-source.tar.gz",
+        "retained_member_bytes": 263706,
+        "retained_members": 12,
+        "source_bytes": 263706,
+        "source_files": 12
+      },
+      {
+        "metadata_omissions": 2,
+        "path": "archives/actual-native-scoped-project.tar.gz",
+        "retained_member_bytes": 2496396,
+        "retained_members": 13,
+        "source_bytes": 2529164,
+        "source_files": 15
+      }
+    ],
+    "authored_omissions": 0,
+    "decoded_ledger_bytes": 203214077,
+    "encoded_stored_bytes": 14994407,
+    "encoding_rows": 215,
+    "encodings": {
+      "gzip": 21,
+      "identity": 178,
+      "tar+gzip": 16
+    },
+    "files": 219,
+    "gzip_streams": 37,
+    "inventory_sha256": "b7858060082699ba66d5cf68e954414c4fb6a018ab6eb309b6dbf8f96bc10a6b",
+    "metadata_omissions": [
+      {
+        "archive": "archives/media-third.tar.gz",
+        "bytes": 32768,
+        "path": "portable.deadpan/project.sqlite-shm",
+        "reason": "paired SQLite WAL observed empty; nonauthored sidecar",
+        "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+      },
+      {
+        "archive": "archives/media-third.tar.gz",
+        "bytes": 0,
+        "path": "portable.deadpan/project.sqlite-wal",
+        "reason": "paired SQLite WAL observed empty; nonauthored sidecar",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "archive": "archives/actual-native-scoped-project.tar.gz",
+        "bytes": 32768,
+        "path": "project.sqlite-shm",
+        "reason": "paired SQLite WAL observed empty; nonauthored sidecar",
+        "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+      },
+      {
+        "archive": "archives/actual-native-scoped-project.tar.gz",
+        "bytes": 0,
+        "path": "project.sqlite-wal",
+        "reason": "paired SQLite WAL observed empty; nonauthored sidecar",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "payload_bytes": 15245224,
+    "payloads": 218,
+    "plan_sha256": "7594bc835b6a14c78f317bf732501402455a43aa03df3d25678ab9b8fd2fceb2",
+    "raw_byte_limit": 268435456,
+    "raw_payload_bytes": 202592698,
+    "raw_regular_bytes": 119471357,
+    "retained_archive_bytes": 83055805,
+    "tar_members": 774
+  },
+  "prior_audit_files_unchanged": true,
+  "prior_audit_history_unchanged": true,
+  "regressions": {
+    "archive_source_bytes": 0,
+    "archives": [],
+    "authored_omissions": 0,
+    "decoded_ledger_bytes": 109235808,
+    "encoded_stored_bytes": 6085949,
+    "encoding_rows": 53,
+    "encodings": {
+      "gzip": 13,
+      "identity": 40
+    },
+    "files": 57,
+    "gzip_streams": 13,
+    "inventory_sha256": "0a980f41b3e92c3115c2699d4fcf33606cd89f30de69bd3c7fac8bd7ebcdf5d9",
+    "metadata_omissions": [],
+    "payload_bytes": 6111277,
+    "payloads": 56,
+    "plan_sha256": "54d36cdb1880c4a4538c0fa68cc41ed60f5d7625a562da41051ede45043f4fba",
+    "raw_byte_limit": 268435456,
+    "raw_payload_bytes": 109235808,
+    "raw_regular_bytes": 109235808,
+    "retained_archive_bytes": 0,
+    "tar_members": 0
+  },
+  "schema_version": 1,
+  "started_utc": "2026-10-25T07:08:58.016866+00:00",
+  "status": "findings",
+  "verifier_sha256": "926d7281ad976900fb2d63523555b9e619087e14a3fec1ad0fde92b1c96a3dc1"
+}

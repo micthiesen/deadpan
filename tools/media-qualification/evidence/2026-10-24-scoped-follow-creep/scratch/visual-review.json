@@ -1,0 +1,37 @@
+{
+  "observed_at": "2026-10-25T06:54:37.241203+00:00",
+  "reviewer": "Root, direct inspection of four native harness PNGs",
+  "images": [
+    {
+      "path": "/tmp/deadpan-scoped-follow-creep-2026-10-24/native-scoped-first/scoped-follow-creep-121.png",
+      "bytes": 356441,
+      "sha256": "0ba04fff0a652df87c82074fa6a87bfdb6cddb07cf2b945a1ac91dbfc7a08d27"
+    },
+    {
+      "path": "/tmp/deadpan-scoped-follow-creep-2026-10-24/native-scoped-first/scoped-follow-creep-122.png",
+      "bytes": 340680,
+      "sha256": "09fb2b209515169caf33ccf761a744ade8d06de7abb9ee5c79f44521ab5052ac"
+    },
+    {
+      "path": "/tmp/deadpan-scoped-follow-creep-2026-10-24/native-scoped-first/scoped-follow-creep-123.png",
+      "bytes": 338654,
+      "sha256": "7b471a4354870044c7c0f83106bffa4e82306d57c90871171566b2013ee233cb"
+    },
+    {
+      "path": "/tmp/deadpan-scoped-follow-creep-2026-10-24/native-scoped-first/scoped-follow-creep-124.png",
+      "bytes": 338654,
+      "sha256": "7b471a4354870044c7c0f83106bffa4e82306d57c90871171566b2013ee233cb"
+    }
+  ],
+  "observations": [
+    "Camera shows explicit outer Play2/2 and inner Play2/3, target label and retained1.100x->2.200x linear animation; Apply/Cancel and keyboard hints remain visible.",
+    "Mapped correction captures show Original ordinal11->12 at Edit boundary181->182, with the intended change of target center and same selected interval[164,200).",
+    "Final saved workspace retains Original120/Edit240 clocks, nested Play breadcrumb and selection, Retime inspector, clear focused Beats pane and discoverable scoped controls.",
+    "No overlapping or obscured interactive controls in these captures. Long Camera explanation reaches the right pane clipping boundary; this review does not claim its entire text fits at once."
+  ],
+  "limits": [
+    "Harness captures do not prove physical display delivery, VoiceOver speech, native OS IME or physical keyboard behavior.",
+    "Existing physical/picker exclusions and three layout/screenshot warnings remain declared."
+  ],
+  "product_changes_from_visual_review": []
+}

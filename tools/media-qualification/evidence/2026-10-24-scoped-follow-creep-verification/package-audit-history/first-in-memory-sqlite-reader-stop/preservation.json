@@ -1,0 +1,21 @@
+{
+  "reason": "Verifier deserialize to :memory: cannot open a WAL-format SQLite checkpoint journal. All inventory/encoding/TAR/source/test/native/media checks before SQLite passed; both Primary trees and original raw audit unchanged. No product or collector rerun.",
+  "files": {
+    "verify-scoped-package.py": {
+      "bytes": 25309,
+      "sha256": "926d7281ad976900fb2d63523555b9e619087e14a3fec1ad0fde92b1c96a3dc1"
+    },
+    "package-verification.json": {
+      "bytes": 8182,
+      "sha256": "600c60a52b98c97921c03dd9905c98d9b7a0f63f90854ece4615af8758cbdb30"
+    },
+    "package-verification.stdout": {
+      "bytes": 339,
+      "sha256": "1e9305724f16128c6dc503e7edfd5ed8efb3d8d4b3e0da1539add70432b05b0c"
+    },
+    "package-verification.stderr": {
+      "bytes": 583,
+      "sha256": "80aa2658b96cc994c565d67364a2d9fa83babea5eb2f32bb4e37a4c044187993"
+    }
+  }
+}

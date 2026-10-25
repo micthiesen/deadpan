@@ -1,0 +1,61 @@
+pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
+    d.wait_for("Shot analysis stored before target authoring", |app| {
+        app.workspace
+            .as_ref()
+            .is_some_and(|workspace| workspace.shot_analysis.is_some())
+    })?;
+    super::transcript::focus_your_edit(d)?;
+    at(d, 0)?;
+    let original = d.app().workspace.clone().ok_or("No Original workspace")?;
+    d.check(
+        "Scoped witness starts with 120 Original pictures at 30000/1001",
+        d.app().sequence_length() == 120
+            && original.document.presentation_basis().frame_rate
+                == deadpan_core::FrameRate::new(30000, 1001).map_err(|error| error.to_string())?,
+        json!({"frames":120,"rate":"30000/1001"}),
+        json!({"frames":d.app().sequence_length(),"rate":original.document.presentation_basis().frame_rate}),
+    )?;
+
+    open_camera(d)?;
+    d.chord(&[Key::N, Key::N, Key::Num8, Key::L, Key::Enter])?;
+    continued(d)?;
+    d.key(Key::Escape)?;
+    idle(d)?;
+    at(d, 12)?;
+    open_camera(d)?;
+    d.chord(&[
+        Key::F,
+        Key::Num1,
+        Key::C,
+        Key::Num1,
+        Key::Num0,
+        Key::L,
+        Key::Enter,
+    ])?;
+    continued(d)?;
+    d.key(Key::Escape)?;
+    idle(d)?;
+    let target = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("No workspace")?
+        .document
+        .targets()
+        .get(&TargetId::new("target-1").unwrap())
+        .cloned()
+        .ok_or("No saved point")?;
+    let index = original
+        .sources
+        .get(&target.asset)
+        .and_then(|source| source.video_index.as_ref())
+        .ok_or("No qualified Original index")?;
+    d.check("Manual correction gives the same point distinct centers on either side of the future cut",
+        target.region == TargetPoint { center:[580000,500000] }.into()
+            && target.corrections.len() == 1 && target.corrections[0].at == index.frames()[12].pts
+            && target.corrections[0].region == TargetPoint {center:[680000,500000]}.into()
+            && target.span.start().ticks == index.frames()[0].pts && target.samples.is_empty()
+            && d.app().targets.job().is_none()
+            && d.app().workspace.as_ref().unwrap().document.nodes().values().all(|node| node.framing.is_none()),
+        json!({"early":[580000,500000],"later":[680000,500000],"correction_ordinal":12,"framing":null}), json!(target))?;
+

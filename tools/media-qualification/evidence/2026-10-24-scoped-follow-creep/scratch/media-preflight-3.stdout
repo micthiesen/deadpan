@@ -1,0 +1,31 @@
+{
+  "scope": "read-only retained dump/native-report guard preflight; no CLI/native/render execution",
+  "passed": true,
+  "native_checks_passed": 155,
+  "oracle_rows_checked": 240,
+  "clone_aliases_checked": 7,
+  "revision": "5d5dc124-efe0-4218-8703-36585eca8fe4",
+  "history_observed": {
+    "counts": {
+      "revisions": 25,
+      "history": 15,
+      "redo": 0,
+      "state": 1
+    },
+    "sha256": "4dae063c100a608771634cfebcf9c9da1da1ae78a471ae3465c8ab0451087945",
+    "state": [
+      [
+        "5d5dc124-efe0-4218-8703-36585eca8fe4",
+        15,
+        "single_source_v1"
+      ]
+    ],
+    "revision_kinds": {
+      "initial": 1,
+      "edit": 15,
+      "undo": 7,
+      "redo": 2
+    }
+  },
+  "driver_sha256": "fc83b1a7623994c9a579048cbc3ac1d5c9d07b2466a256d6e855cb9363e1d228"
+}

@@ -850,35 +850,59 @@ impl CameraSession {
         )
     }
 
-    fn ordinary_follow_owner(
+    fn whole_follow_owner(
         &self,
         document: &deadpan_core::ProjectDocument,
-    ) -> Option<deadpan_core::framing_zoom::OrdinaryFollowOwner> {
-        use deadpan_core::framing_zoom::OrdinaryFollowOwner;
-        if self.scoped.is_some() || !self.scope.repeats.is_empty() {
-            return None;
-        }
-        let parent = self
-            .navigation_scope
-            .groups()
-            .last()
-            .unwrap_or(document.root());
-        if !document.nodes().get(parent).is_some_and(|node| {
-            matches!(&node.kind,
-            deadpan_core::NodeKind::Sequence { children } if children.contains(&self.scope.node))
-        }) {
-            return None;
+        captured_scoped: bool,
+    ) -> Option<deadpan_core::framing_zoom::WholeFollowOwner> {
+        use deadpan_core::framing_zoom::WholeFollowOwner;
+        if let Some(target) = &self.scoped {
+            // Preview eligibility uses the command's exact captured scope.
+            // The semantic planner revalidates it before any isolation/write.
+            if !captured_scoped
+                || target.session != self.session
+                || target.revision != self.revision
+                || document.project_id() != &target.project
+                || document.revision_id() != &target.revision
+                || target.target.node != self.scope.node
+                || target.presentation.as_ref() != Some(&self.scope)
+                || !target.also.is_empty()
+                || target.target.repeats.is_empty()
+                || target
+                    .target
+                    .repeats
+                    .iter()
+                    .any(|step| !matches!(step.branch, deadpan_core::RepeatEditBranch::Play { .. }))
+                || !target.target.matches_instance(document, &self.scope).ok()?
+            {
+                return None;
+            }
+        } else {
+            if !self.scope.repeats.is_empty() {
+                return None;
+            }
+            let parent = self
+                .navigation_scope
+                .groups()
+                .last()
+                .unwrap_or(document.root());
+            if !document.nodes().get(parent).is_some_and(|node| {
+                matches!(&node.kind,
+                deadpan_core::NodeKind::Sequence { children } if children.contains(&self.scope.node))
+            }) {
+                return None;
+            }
         }
         match document
             .nodes()
             .get(&self.scope.node)
             .map(|node| &node.kind)
         {
-            Some(deadpan_core::NodeKind::Source { .. }) => Some(OrdinaryFollowOwner::Source),
-            Some(deadpan_core::NodeKind::Hold { .. }) => Some(OrdinaryFollowOwner::Hold),
-            Some(deadpan_core::NodeKind::Sequence { .. }) => Some(OrdinaryFollowOwner::Sequence),
-            Some(deadpan_core::NodeKind::Repeat { .. }) => Some(OrdinaryFollowOwner::Repeat),
-            Some(deadpan_core::NodeKind::Retime { .. }) => Some(OrdinaryFollowOwner::Retime),
+            Some(deadpan_core::NodeKind::Source { .. }) => Some(WholeFollowOwner::Source),
+            Some(deadpan_core::NodeKind::Hold { .. }) => Some(WholeFollowOwner::Hold),
+            Some(deadpan_core::NodeKind::Sequence { .. }) => Some(WholeFollowOwner::Sequence),
+            Some(deadpan_core::NodeKind::Repeat { .. }) => Some(WholeFollowOwner::Repeat),
+            Some(deadpan_core::NodeKind::Retime { .. }) => Some(WholeFollowOwner::Retime),
             _ => None,
         }
     }
@@ -1224,9 +1248,18 @@ impl DeadpanApp {
                     .as_ref()
                     .is_ok_and(|captured| captured.has_scoped_framing_authority())
             });
+        let scoped_follow = session.scoped.as_ref().is_some_and(|target| {
+            semantic_capture.as_ref().is_some_and(|captured| {
+                captured.as_ref().is_ok_and(|captured| {
+                    captured.has_scoped_framing_authority() && captured.captures_scope(target)
+                })
+            })
+        });
         let follow_creep = range.is_none()
             && self.workspace.as_ref().is_some_and(|workspace| {
-                session.ordinary_follow_owner(&workspace.document).is_some()
+                session
+                    .whole_follow_owner(&workspace.document, scoped_follow)
+                    .is_some()
             })
             && matches!(input.target, crate::navigation::zoom::TargetChoice::Keep)
             && matches!(
@@ -1268,7 +1301,7 @@ impl DeadpanApp {
             self.start_face_zoom(session, input, range, number);
             return;
         }
-        match self.zoom_framing(&session, &input, range, None) {
+        match self.zoom_framing(&session, &input, range, scoped_follow, None) {
             Ok((framing, note))
                 if self.macros.recording()
                     || (session.scoped.is_none() && range.is_none())
@@ -1345,6 +1378,7 @@ impl DeadpanApp {
         session: &CameraSession,
         input: &crate::navigation::zoom::ZoomInput,
         range: Option<(u64, u64)>,
+        captured_scoped: bool,
         proposal: Option<(&TargetId, &AttentionTarget)>,
     ) -> Result<(Option<Framing>, Option<String>), String> {
         use crate::navigation::zoom::{self, Center, Resolved, TargetChoice};
@@ -1375,7 +1409,8 @@ impl DeadpanApp {
             Some((proposed, target)) if proposed == id => target.label.clone(),
             _ => self.target_label(id),
         };
-        let frames = session.duration.frames() as u64;
+        let frames = u64::try_from(session.duration.frames())
+            .map_err(|_| "The framing owner has an invalid duration.")?;
         let center = match resolved {
             Resolved::Keep => Center::Keep,
             Resolved::Center => Center::Point(
@@ -1403,10 +1438,9 @@ impl DeadpanApp {
             },
         };
         let shot = zoom::Shot {
-            ordinary_owner: self
-                .workspace
-                .as_ref()
-                .and_then(|workspace| session.ordinary_follow_owner(&workspace.document)),
+            whole_owner: self.workspace.as_ref().and_then(|workspace| {
+                session.whole_follow_owner(&workspace.document, captured_scoped)
+            }),
             entry: session.entry.as_ref(),
             current: session.entry_pose.unwrap_or_default(),
             frames,
@@ -1563,6 +1597,7 @@ impl DeadpanApp {
                 &pending.camera,
                 &pending.input,
                 pending.range,
+                false,
                 Some((&id, &target)),
             )?;
             let camera = &pending.camera;

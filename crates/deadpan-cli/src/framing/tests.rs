@@ -390,6 +390,61 @@ fn semantic_framing_uses_live_follow_pose_at_retimed_source_clock_instead_of_fal
         .unwrap();
     assert_eq!(state.current, layer.pose.unwrap());
     assert_ne!(layer.local_position, q(21, 2));
+    let repeated = staged(
+        &retimed,
+        Command::WrapRepeat {
+            node: node("retime"),
+            id: node("outer"),
+            plays: 2,
+            gap: None,
+            anchor_policy: Default::default(),
+        },
+        "repeated",
+    );
+    let deadpan_core::NodeKind::Repeat { iterations, .. } = &repeated.nodes()[&node("outer")].kind
+    else {
+        panic!("Repeat")
+    };
+    let scoped = SemanticFramingSite {
+        node: node("source"),
+        frame: ProjectFrame(70),
+        original_center: false,
+        presentation: Some(deadpan_core::InstancePath {
+            node: node("source"),
+            repeats: vec![deadpan_core::RepeatInstance {
+                node: node("outer"),
+                iteration: iterations.at(1).unwrap(),
+            }],
+        }),
+    };
+    let state = resolve(&fixture.store, &repeated, &scoped)?;
+    assert_eq!(state.duration.frames(), 120);
+    assert_eq!(
+        state.current,
+        FramingPose::new(q(1, 4), q(1, 2), ExactRatio::integer(2))?
+    );
+    let transition = deadpan_core::framing_zoom::build(
+        deadpan_core::framing_zoom::ZoomKind::Creep {
+            from: None,
+            to: ExactRatio::integer(4),
+            curve: deadpan_core::framing_zoom::ZoomCurve::Linear,
+        },
+        &deadpan_core::framing_zoom::Center::Keep,
+        &deadpan_core::framing_zoom::Shot {
+            whole_owner: Some(deadpan_core::framing_zoom::WholeFollowOwner::Source),
+            entry: repeated.nodes()[&node("source")].framing.as_ref(),
+            current: state.current,
+            frames: u64::try_from(state.duration.frames())?,
+            range: None,
+            explicit: false,
+        },
+    )
+    .map_err(std::io::Error::other)?
+    .unwrap();
+    assert!(
+        matches!(transition.value, FramingValue::Follow { scale, fallback, scale_transition: Some(transition), .. }
+        if scale == ExactRatio::integer(2) && fallback.scale == ExactRatio::integer(3) && transition.factor == ExactRatio::integer(2))
+    );
     Ok(())
 }
 

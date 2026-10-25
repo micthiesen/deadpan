@@ -1,0 +1,112 @@
+{
+  "frozen_at": "2026-10-24T12:45:11.559170+00:00",
+  "base_supplied_by_root": "fb38159bae82f2c08e7dfd96f112c24d6571b8e2",
+  "source_frozen": true,
+  "changed_paths": [
+    {
+      "path": "crates/deadpan-app/src/preview/harness/scoped_follow_creep.rs",
+      "bytes": 44597,
+      "sha256": "38c893fdba7192f8ca74d801870c3f160f14341034b4a10048cfb60ba0ad64f4",
+      "source_copy": "/tmp/deadpan-scoped-follow-creep-2026-10-24/native-source/crates/deadpan-app/src/preview/harness/scoped_follow_creep.rs.txt"
+    },
+    {
+      "path": "crates/deadpan-app/src/preview/harness/repeat_follow_creep.rs",
+      "bytes": 27917,
+      "sha256": "6eccb723e39dfef032875fedb0ada412c14719445a36631c1e86c9d1b39d9b78",
+      "source_copy": "/tmp/deadpan-scoped-follow-creep-2026-10-24/native-source/crates/deadpan-app/src/preview/harness/repeat_follow_creep.rs.txt"
+    },
+    {
+      "path": "crates/deadpan-app/src/preview/harness/retime_follow_creep.rs",
+      "bytes": 27279,
+      "sha256": "e833c87bf4ff6fc9d00c7b6aef20eea1aa94035020b5b3185b5e393ffd8a5603",
+      "source_copy": "/tmp/deadpan-scoped-follow-creep-2026-10-24/native-source/crates/deadpan-app/src/preview/harness/retime_follow_creep.rs.txt"
+    },
+    {
+      "path": "crates/deadpan-app/src/preview/harness.rs",
+      "bytes": 59342,
+      "sha256": "53433a89f26c176894a8cf77798d240b54e6fcdb17907e5910599f4efd5ab8c1",
+      "source_copy": "/tmp/deadpan-scoped-follow-creep-2026-10-24/native-source/crates/deadpan-app/src/preview/harness.rs.txt"
+    },
+    {
+      "path": "crates/deadpan-app/src/preview/harness/scenarios.rs",
+      "bytes": 89503,
+      "sha256": "a7f31aa742d746b5a3d13854399d6cf0b230ba9b14953ec3c4a06f53f48fcae9",
+      "source_copy": "/tmp/deadpan-scoped-follow-creep-2026-10-24/native-source/crates/deadpan-app/src/preview/harness/scenarios.rs.txt"
+    },
+    {
+      "path": "crates/deadpan-app/src/ui_harness.rs",
+      "bytes": 29714,
+      "sha256": "4b0f3224170b1a1e42e6bf0cdfe4d97df60de32ce6e29a9d7d275776610232f4",
+      "source_copy": "/tmp/deadpan-scoped-follow-creep-2026-10-24/native-source/crates/deadpan-app/src/ui_harness.rs.txt"
+    }
+  ],
+  "format_command": "rustfmt --edition 2024 --config skip_children=true crates/deadpan-app/src/preview/harness/scoped_follow_creep.rs crates/deadpan-app/src/preview/harness/repeat_follow_creep.rs crates/deadpan-app/src/preview/harness/retime_follow_creep.rs",
+  "format_exit": 0,
+  "registration_checks": "one each",
+  "executed_cargo": false,
+  "executed_product_runtime": false,
+  "executed_git": false,
+  "verification_owner": "Root",
+  "output_frames": 240,
+  "audio_samples": 384384,
+  "selected_owner_frames": [
+    164,
+    200
+  ],
+  "final_edit_cursor": 182,
+  "selected_boundaries": [
+    {
+      "local": 0,
+      "global": 164,
+      "source_coordinate": "1/3",
+      "ordinal": 0,
+      "scale": "2395040791/2147483648",
+      "center_x": "311385129/536870912"
+    },
+    {
+      "local": 1,
+      "global": 165,
+      "source_coordinate": "1",
+      "ordinal": 1,
+      "scale": "2460658347/2147483648",
+      "center_x": "311385129/536870912"
+    },
+    {
+      "local": 17,
+      "global": 181,
+      "source_coordinate": "35/3",
+      "ordinal": 11,
+      "scale": "3510539241/2147483648",
+      "center_x": "311385129/536870912"
+    },
+    {
+      "local": 18,
+      "global": 182,
+      "source_coordinate": "37/3",
+      "ordinal": 12,
+      "scale": "7152313595/4294967296",
+      "center_x": "2920577761/4294967296"
+    },
+    {
+      "local": 34,
+      "global": 198,
+      "source_coordinate": "23",
+      "ordinal": 23,
+      "scale": "9252075383/4294967296",
+      "center_x": "2920577761/4294967296"
+    },
+    {
+      "local": 35,
+      "global": 199,
+      "source_coordinate": "71/3",
+      "ordinal": 23,
+      "scale": "9383310495/4294967296",
+      "center_x": "2920577761/4294967296"
+    }
+  ],
+  "native_guard_limits": [
+    "Visual entry itself is refused by the real scoped router; no Visual range is forged.",
+    "A mismatched target/presentation cannot be created through the paired native capture without forged state; Core/CLI owns that guard.",
+    "A pending real command plus genuine writer Undo exercises stale captured authority; capture/revision fields are retained in failed assertions."
+  ]
+}

@@ -216,7 +216,7 @@ construction and its numeric tests live in
 | `,c` | `:creep to=1.35`. |
 | `:zoom S [target=…] [curve=step]` | Smash zoom. On the whole beat with a target: `Follow { target, scale: S, fallback }`, a live step onto the target. Otherwise a static pose at scale `S`. |
 | `:zoom S curve=linear\|smoothstep` | An eased change from the current pose, as `:creep to=S`. |
-| `:creep [from=S] [to=S] [target=…] [curve=smoothstep\|linear]` | Eases from `from` (default: current scale) to `to` (default 1.35). With no `target=`, a whole ordinary Source, Hold, Sequence, Repeat or Retime with a fixed Follow retains live targeting and animates scale. Other cases use a fixed-center envelope. |
+| `:creep [from=S] [to=S] [target=…] [curve=smoothstep\|linear]` | Eases from `from` (default: current scale) to `to` (default 1.35). With no `target=`, a whole Source, Hold, Sequence, Repeat or Retime with a fixed Follow retains live targeting and animates scale, either as an ordinary selected beat or within explicit Play scopes. Other cases use a fixed-center envelope. |
 | `:zoom S target=face:N …`, `:creep … target=face:N` | Face `N` (1 to 64, left to right) proposed in the displayed picture, saved as a target together with the framing ([face proposals](#face-proposals)). |
 | `:zoom off` | Abrupt return: no framing on the whole beat, or a step out to the full picture over the Edit range. |
 
@@ -234,7 +234,7 @@ Nothing flattens an existing path implicitly. On the whole beat:
 
 - a fixed Follow keeps following when `:zoom S` or `,z` changes only its scale
   (the fallback keeps its center; the clock is kept);
-- a whole ordinary Source, Hold, Sequence, Repeat or Retime with a fixed Follow accepts `,c` or `:creep` without
+- a whole Source, Hold, Sequence, Repeat or Retime with a fixed Follow accepts `,c` or `:creep` without
   `target=`. Its center keeps following the target at each picture's Original
   time while scale changes on that owner's output clock. A frozen Hold keeps
   its exact Original moment while scale progresses over the Hold's duration.
@@ -250,9 +250,12 @@ Nothing flattens an existing path implicitly. On the whole beat:
   Original point for the target, including fractional coordinates rather than
   the rounded decoded picture ordinal. Its child framing and pitch policy stay
   unchanged.
-  Clear Visual selection
-  first, including a full-length range. Single-play and other occurrence scopes
-  currently refuse this operation;
+  Clear Visual selection first, including a full-length range. Within a Repeat,
+  choose This play at every enclosing Repeat level. The existing scoped edit
+  isolates only those concrete occurrences, retaining stable play identities and
+  the other plays' pictures, gap recipes and audio. Default, mixed, missing or
+  mismatched Play scopes refuse. The whole selected owner's local output clock
+  controls scale even when enclosing Retimes map it to a different project clock;
 - a camera path (envelope or animated Follow) refuses `,z`, `,c`, `:zoom` and `:creep` unless the
   command names `target=` explicitly, which replaces the path on request;
   `:zoom off` always removes framing.
@@ -297,7 +300,7 @@ Envelope progress is exact (`frame / beat frames`, reduced, at most one million)
 
 `:zoom` and `:creep` capture the session, revision, view, selected beat, Repeat
 scope, cursor and Edit range when `:` opens, including their absence; any
-change before Enter refuses instead of retargeting. Whole-Source Keep-center
+change before Enter refuses instead of retargeting. Whole-owner Keep-center
 Follow creep records semantic `Zoom` intent, so named replay and dot resolve the
 invocation's target, both scale bases and duration. Other ordinary whole-beat
 macro presets retain their `SetFraming` behavior. Ordinary ranged commands record `Zoom`
@@ -420,9 +423,9 @@ recipe boundary and migration fixture.
 Saved point and region targets, keyboard creation, following and selected-region
 tracking are implemented (above, [targets](TARGETS.md), [tracking](TRACKING.md)).
 General non-face region proposals and pointer dragging of
-rectangles remain required. Whole ordinary Source, Hold, Sequence, Repeat and Retime following creep animates
-scale while retaining the live target, as described above; broader authoring
-scopes remain open. Follow centers are placed on a letterboxed or
+rectangles remain required. Whole Source, Hold, Sequence, Repeat and Retime following creep animates
+scale while retaining the live target in ordinary selection and explicit Play
+scopes, as described above. Follow centers are placed on a letterboxed or
 pillarboxed canvas for targets that record their display aspect
 ([qualification](qualification/letterbox-follow-2026-10-15.md)). Centered per-play scale
 escalation is in [Repeat escalation](REPEAT_ESCALATION.md). Ungroup moves a group's camera path onto its unframed

@@ -701,23 +701,19 @@ fn whole_repeat_follow_creep_preserves_plays_gaps_escalation_and_invocation_rela
                     }],
                 },
             };
-            let mut request = invocation(
-                &nested,
-                bank.version,
-                "c",
-                "outer",
-                20,
-                None,
-                "inner-refused",
-            );
+            let mut request =
+                invocation(&nested, bank.version, "c", "outer", 20, None, "inner-creep");
             request["operation"]["scoped"] = serde_json::to_value(scoped)?;
-            let error = reject(&package, &input, &request)?;
-            assert!(
-                error["error"]["message"]
-                    .as_str()
-                    .unwrap()
-                    .ends_with(deadpan_core::framing_zoom::FOLLOW_CREEP_REFUSAL)
-            );
+            let result = invoke(&package, &input, &request, false)?;
+            let (after, mapped, frames) = assert_scoped_follow_commit(&package, &nested, &result)?;
+            assert_eq!(frames, (17..34).collect::<Vec<_>>());
+            assert!(matches!(&after.nodes()[&mapped.target.node].framing,
+                Some(Framing { value: FramingValue::Follow { target, scale, scale_transition: Some(FollowScaleTransition { factor, .. }), .. }, .. })
+                if target.as_str() == "subject" && *scale == ratio(2, 1) && *factor == ratio(2, 1)));
+            let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+            writer.undo(after.revision_id(), RevisionId::new("scoped-repeat-undo")?)?;
+            same_document(&writer.snapshot()?, &nested)?;
+            drop(writer);
         }
         assert_eq!(
             ProjectStore::open(&package, AccessMode::ReadOnly)?.registers()?,

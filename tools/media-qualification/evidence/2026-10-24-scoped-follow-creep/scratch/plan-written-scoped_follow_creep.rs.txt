@@ -1,0 +1,613 @@
+//! Real scoped preparation, independently addressed clones, and exact Plan clocks.
+use super::*;
+use deadpan_core::framing_zoom::ZoomCurve;
+use deadpan_plan::{AudioContent, AudioQueryLimits};
+use std::collections::BTreeSet;
+
+const Q: i128 = 4_294_967_296;
+fn r(n: i128, d: i128) -> ExactRatio {
+    ExactRatio::new(n, d).unwrap()
+}
+fn even_div(n: i128, d: i128) -> i128 {
+    let (a, b) = (n / d, n % d);
+    a + i128::from(2 * b > d || (2 * b == d && a % 2 != 0))
+}
+fn grid(n: i128, d: i128) -> ExactRatio {
+    r(even_div(n * Q, d), Q)
+}
+fn scale(local: i64, repeat_owner: bool, fallback: bool) -> ExactRatio {
+    // Retime: (f+1/2)/6. Repeat: retained (f+1/2+1)/24.
+    let (n, d) = if repeat_owner {
+        (2 * i128::from(local) + 3, 48)
+    } else {
+        (2 * i128::from(local) + 1, 12)
+    };
+    let t = even_div(n * Q, d);
+    let t = if repeat_owner {
+        even_div(t * t * (3 * Q - 2 * t), Q * Q)
+    } else {
+        t
+    };
+    // Independent integer Q32 contract, live3/2->5/2, fallback3/4->5/4.
+    r(
+        if fallback {
+            3 * Q / 4 + even_div(t, 2)
+        } else {
+            3 * Q / 2 + t
+        },
+        Q,
+    )
+}
+fn iteration(name: &str, ordinal: u32) -> IterationId {
+    IterationId {
+        allocation: revision(name),
+        ordinal,
+    }
+}
+fn step(name: &str, ordinal: u32) -> RepeatEditStep {
+    RepeatEditStep {
+        repeat: id(name),
+        branch: RepeatEditBranch::Play {
+            iteration: iteration(name, ordinal),
+        },
+    }
+}
+fn geometry(point: bool, x: u32) -> TargetGeometry {
+    let center = [x, 500000];
+    if point {
+        TargetPoint { center }.into()
+    } else {
+        TargetRegion {
+            center,
+            size: [100000, 100000],
+        }
+        .into()
+    }
+}
+fn follow(repeat_owner: bool, animated: bool) -> Framing {
+    Framing {
+        clock: if repeat_owner {
+            FramingClock::RetainedOutput {
+                offset: r(1, 1),
+                duration: r(24, 1),
+            }
+        } else {
+            FramingClock::OwnerOutput
+        },
+        value: FramingValue::Follow {
+            target: TargetId::new("subject").unwrap(),
+            scale: r(3, 2),
+            fallback: FramingPose::new(r(1, 8), r(7, 8), r(3, 4)).unwrap(),
+            scale_transition: animated.then_some(FollowScaleTransition {
+                factor: r(5, 3),
+                curve: if repeat_owner {
+                    ZoomCurve::Smoothstep
+                } else {
+                    ZoomCurve::Linear
+                },
+            }),
+        },
+    }
+}
+fn fixture(point: bool, repeat_owner: bool) -> ProjectDocument {
+    let mut source = source(4, 0, 4004);
+    let NodeKind::Source { source: voice } = &mut source.kind else {
+        unreachable!()
+    };
+    voice.audio = Some(SourceAudio {
+        asset: asset_id("video"),
+        span: span(0, 4004),
+    });
+    source.framing =
+        Some(Framing::static_pose(FramingPose::new(r(3, 4), r(1, 2), r(2, 1)).unwrap()).unwrap());
+    let mut provider = BeatNode::sequence("Provider", vec![id("source")]);
+    provider.framing =
+        Some(Framing::static_pose(FramingPose::new(r(1, 2), r(1, 2), r(1, 2)).unwrap()).unwrap());
+    let mut inner = repeat("owner", 3, 1, "inner");
+    if repeat_owner {
+        let NodeKind::Repeat { escalation, .. } = &mut inner.kind else {
+            unreachable!()
+        };
+        *escalation = Some(RepeatEscalation {
+            gain_step: GainDb::UNITY,
+            zoom: Some(ZoomStep {
+                step: r(1, 8),
+                progression: ZoomProgression::Add,
+                target: None,
+            }),
+        });
+    }
+    let before = document(
+        &["prefix", "outer", "suffix"],
+        vec![
+            ("prefix", hold(2)),
+            ("outer", repeat("body", 2, 2, "outer")),
+            (
+                "body",
+                BeatNode::sequence("Body", vec![id("lead"), id("inner"), id("tail")]),
+            ),
+            ("lead", hold(1)),
+            ("inner", inner),
+            ("tail", hold(1)),
+            ("owner", retime("provider", 6, 0, 4)),
+            ("provider", provider),
+            ("source", source),
+            ("suffix", hold(2)),
+        ],
+    );
+    let target = AttentionTarget {
+        label: "Scoped moving target".into(),
+        asset: asset_id("video"),
+        span: span(0, 3500),
+        region: geometry(point, 250000),
+        samples: vec![
+            TargetSample {
+                at: 0,
+                region: geometry(point, 250000),
+                confidence: 950,
+                state: TrackState::Tracked,
+            },
+            TargetSample {
+                at: 2002,
+                region: geometry(point, 750000),
+                confidence: 950,
+                state: TrackState::Tracked,
+            },
+            TargetSample {
+                at: 2202,
+                region: geometry(point, 750000),
+                confidence: 0,
+                state: TrackState::Lost,
+            },
+        ],
+        corrections: vec![TargetCorrection {
+            at: 3003,
+            region: geometry(point, 875000),
+        }],
+        provenance: None,
+        display_aspect: Some(r(16, 9)),
+    };
+    let mut wire = serde_json::to_value(before).unwrap();
+    wire["targets"] = serde_json::to_value(BTreeMap::from([(
+        TargetId::new("subject").unwrap(),
+        target,
+    )]))
+    .unwrap();
+    wire["nodes"][if repeat_owner { "inner" } else { "owner" }]["framing"] =
+        serde_json::to_value(follow(repeat_owner, false)).unwrap();
+    ProjectDocument::from_json(&wire.to_string()).unwrap()
+}
+fn children(document: &ProjectDocument, node: &NodeId) -> Vec<NodeId> {
+    let NodeKind::Sequence { children } = &document.nodes()[node].kind else {
+        panic!("expected Sequence")
+    };
+    children.clone()
+}
+fn child(document: &ProjectDocument, node: &NodeId) -> NodeId {
+    match &document.nodes()[node].kind {
+        NodeKind::Repeat { child, .. } | NodeKind::Retime { child, .. } => child.clone(),
+        _ => panic!("expected child owner"),
+    }
+}
+fn has_play(instance: &InstancePath, name: &str, ordinal: u32) -> bool {
+    instance
+        .repeats
+        .iter()
+        .any(|scope| scope.node == id(name) && scope.iteration == iteration(name, ordinal))
+}
+struct Maps {
+    first: BTreeMap<NodeId, NodeId>,
+    second: BTreeMap<NodeId, NodeId>,
+    selected: NodeId,
+}
+impl Maps {
+    fn node(&self, node: &NodeId, address: &InstancePath) -> NodeId {
+        let mut mapped = node.clone();
+        if has_play(address, "outer", 1) {
+            if let Some(next) = self.first.get(&mapped) {
+                mapped = next.clone();
+            }
+            if has_play(address, "inner", 1) {
+                if let Some(next) = self.second.get(&mapped) {
+                    mapped = next.clone();
+                }
+            }
+        }
+        mapped
+    }
+    fn instance(&self, before: &InstancePath) -> InstancePath {
+        InstancePath {
+            node: self.node(&before.node, before),
+            repeats: before
+                .repeats
+                .iter()
+                .map(|scope| RepeatInstance {
+                    node: self.node(&scope.node, before),
+                    iteration: scope.iteration.clone(),
+                })
+                .collect(),
+        }
+    }
+}
+fn rewire(mut node: BeatNode, map: &BTreeMap<NodeId, NodeId>) -> BeatNode {
+    let mapped = |node: &NodeId| map.get(node).cloned().unwrap_or_else(|| node.clone());
+    match &mut node.kind {
+        NodeKind::Sequence { children } => *children = children.iter().map(mapped).collect(),
+        NodeKind::Repeat { child, .. } | NodeKind::Retime { child, .. } => *child = mapped(child),
+        _ => {}
+    }
+    node
+}
+fn prepare(before: &ProjectDocument, repeat_owner: bool) -> (PreparedScopedEdit, Maps) {
+    let target = ScopedNodeTarget {
+        node: id(if repeat_owner { "inner" } else { "owner" }),
+        repeats: if repeat_owner {
+            vec![step("outer", 1)]
+        } else {
+            vec![step("outer", 1), step("inner", 1)]
+        },
+    };
+    let presentation = InstancePath {
+        node: target.node.clone(),
+        repeats: target
+            .repeats
+            .iter()
+            .map(|step| {
+                let RepeatEditBranch::Play { iteration } = &step.branch else {
+                    unreachable!()
+                };
+                RepeatInstance {
+                    node: step.repeat.clone(),
+                    iteration: iteration.clone(),
+                }
+            })
+            .collect(),
+    };
+    assert!(target.matches_instance(before, &presentation).unwrap());
+    let edit = ScopedNodeEdit::SetFraming {
+        framing: Some(follow(repeat_owner, true)),
+    };
+    let requirements = before.scoped_edit_requirements(&target, &edit).unwrap();
+    let expected_nodes = if repeat_owner { 7 } else { 10 };
+    assert_eq!(requirements.nodes, expected_nodes);
+    assert_eq!(requirements.marks, 0);
+    let allocated = (0..expected_nodes)
+        .map(|n| id(&format!("isolated-{n}")))
+        .collect::<Vec<_>>();
+    let request = CommandRequest {
+        project_id: before.project_id().clone(),
+        expected_revision: before.revision_id().clone(),
+        new_revision: revision("scoped-animated"),
+        command: Command::EditScoped {
+            target: target.clone(),
+            edit,
+            identities: OccurrenceIdentities {
+                nodes: allocated.clone(),
+                marks: vec![],
+            },
+        },
+    };
+    let replay: CommandRequest =
+        serde_json::from_str(&serde_json::to_string(&request).unwrap()).unwrap();
+    assert_eq!(replay, request);
+    let prepared = prepare_scoped_edit(before, &replay).unwrap();
+    assert_eq!(prepared.transaction, apply(before, &request).unwrap());
+    assert_eq!(
+        prepared.transaction.forward.apply(before).unwrap(),
+        prepared.document
+    );
+    assert_eq!(
+        prepared
+            .transaction
+            .inverse
+            .apply(&prepared.document)
+            .unwrap(),
+        *before
+    );
+    assert_eq!(
+        ProjectDocument::from_json(&prepared.document.to_json().unwrap()).unwrap(),
+        prepared.document
+    );
+    let record: ScopedIsolationRecord =
+        serde_json::from_str(&serde_json::to_string(prepared.isolation()).unwrap()).unwrap();
+    record
+        .validate(before, &request, &prepared.document)
+        .unwrap();
+    let after = &prepared.document;
+    // Derive expected identities from authored branch ownership and exact tree
+    // shape, not from the isolation record or map_instance under test.
+    let body = after.overrides()[&id("outer")]
+        .get(&iteration("outer", 1))
+        .unwrap()
+        .clone();
+    let body_children = children(after, &body);
+    assert_eq!(body_children.len(), 3);
+    let inner = body_children[1].clone();
+    let owner = child(after, &inner);
+    let provider = child(after, &owner);
+    let source = children(after, &provider)[0].clone();
+    let first = BTreeMap::from([
+        (id("body"), body),
+        (id("lead"), body_children[0].clone()),
+        (id("inner"), inner.clone()),
+        (id("owner"), owner.clone()),
+        (id("provider"), provider.clone()),
+        (id("source"), source.clone()),
+        (id("tail"), body_children[2].clone()),
+    ]);
+    let mut second = BTreeMap::new();
+    let selected = if repeat_owner {
+        inner.clone()
+    } else {
+        let isolated = after.overrides()[&inner]
+            .get(&iteration("inner", 1))
+            .unwrap()
+            .clone();
+        let isolated_provider = child(after, &isolated);
+        let isolated_source = children(after, &isolated_provider)[0].clone();
+        second = BTreeMap::from([
+            (owner, isolated.clone()),
+            (provider, isolated_provider),
+            (source, isolated_source),
+        ]);
+        isolated
+    };
+    let maps = Maps {
+        first,
+        second,
+        selected,
+    };
+    let steps = prepared.isolation().steps();
+    assert_eq!(steps.len(), if repeat_owner { 1 } else { 2 });
+    assert_eq!(steps[0].before_prefix(), &[step("outer", 1)]);
+    assert_eq!(steps[0].after_prefix(), &[step("outer", 1)]);
+    assert_eq!(steps[0].nodes(), &maps.first);
+    if !repeat_owner {
+        let expected_prefix = vec![
+            step("outer", 1),
+            RepeatEditStep {
+                repeat: inner.clone(),
+                branch: RepeatEditBranch::Play {
+                    iteration: iteration("inner", 1),
+                },
+            },
+        ];
+        assert_eq!(steps[1].before_prefix(), expected_prefix);
+        assert_eq!(steps[1].after_prefix(), expected_prefix);
+        assert_eq!(steps[1].nodes(), &maps.second);
+    }
+    let destinations = maps
+        .first
+        .values()
+        .chain(maps.second.values())
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    assert_eq!(destinations, allocated.into_iter().collect());
+    assert_eq!(destinations.len(), expected_nodes);
+    assert_eq!(after.nodes().len(), before.nodes().len() + expected_nodes);
+    assert_eq!(after.overrides().len(), if repeat_owner { 1 } else { 2 });
+    assert!(after.gap_overrides().is_empty());
+    for (name, node) in before.nodes() {
+        assert_eq!(&after.nodes()[name], node);
+    }
+    for (old, fresh) in &maps.first {
+        let mut expected = rewire(before.nodes()[old].clone(), &maps.first);
+        if fresh == &maps.selected {
+            expected.framing = Some(follow(repeat_owner, true));
+        }
+        assert_eq!(after.nodes()[fresh], expected);
+    }
+    for (old, fresh) in &maps.second {
+        let mut expected = rewire(after.nodes()[old].clone(), &maps.second);
+        if fresh == &maps.selected {
+            expected.framing = Some(follow(repeat_owner, true));
+        }
+        assert_eq!(after.nodes()[fresh], expected);
+    }
+    let mapped_presentation = maps.instance(&presentation);
+    assert_eq!(mapped_presentation.node, maps.selected);
+    assert_eq!(
+        prepared.map_instance(before, &presentation).unwrap(),
+        mapped_presentation
+    );
+    let expected_target = ScopedNodeTarget {
+        node: maps.selected.clone(),
+        repeats: mapped_presentation
+            .repeats
+            .iter()
+            .map(|scope| RepeatEditStep {
+                repeat: scope.node.clone(),
+                branch: RepeatEditBranch::Play {
+                    iteration: scope.iteration.clone(),
+                },
+            })
+            .collect(),
+    };
+    assert_eq!(prepared.target, expected_target);
+    assert_eq!(
+        prepared.map_target(before, &target).unwrap(),
+        expected_target
+    );
+    assert!(
+        prepared
+            .target
+            .matches_instance(after, &mapped_presentation)
+            .unwrap()
+    );
+    assert_eq!(before.targets(), after.targets());
+    assert_eq!(before.assets(), after.assets());
+    (prepared, maps)
+}
+fn live_center(frame: usize, play: i64) -> ExactRatio {
+    // Source points1001/3,1001,5005/3,7007/3,3003,11011/3:
+    // moving millionth centers333333,500000,666667; Lost750000;
+    // correction875000; final point outside target. Child2x-1 then zoom1/2
+    // gives target-1/4 for survivors. Apply centered Repeat escalation last.
+    let (n, d) = match frame {
+        1 => (1, 4),
+        2 => (416667, 1000000),
+        3 => (1, 2),
+        4 => (5, 8),
+        _ => panic!("fallback frame"),
+    };
+    grid(8 * d + (2 * n - d) * (8 + i128::from(play)), 16 * d)
+}
+fn verify(point: bool, repeat_owner: bool) {
+    let before = fixture(point, repeat_owner);
+    let (prepared, maps) = prepare(&before, repeat_owner);
+    let old = RenderPlan::compile(&before).unwrap();
+    let new = RenderPlan::compile(&prepared.document).unwrap();
+    assert_eq!(old.duration(), duration(50));
+    assert_eq!(new.duration(), old.duration());
+    let source_index = index("video", clock(), &[0, 1001, 2002, 3003, 4004], 5005);
+    let source_points = [
+        r(1001, 3),
+        r(1001, 1),
+        r(5005, 3),
+        r(7007, 3),
+        r(3003, 1),
+        r(11011, 3),
+    ];
+    let decoded = [0, 1, 1, 2, 3, 3];
+    let selected_range = if repeat_owner { 27..47 } else { 34..40 };
+    let mut changed_frames = 0;
+    for frame in 0..50 {
+        let prior = old.picture(ProjectFrame(frame)).unwrap();
+        let sample = new.picture(ProjectFrame(frame)).unwrap();
+        assert_eq!(sample.picture, prior.picture);
+        assert_eq!(sample.picture_context, prior.picture_context);
+        assert_eq!(sample.gap_after, prior.gap_after);
+        assert_eq!(sample.local_position, prior.local_position);
+        assert_eq!(sample.captions, prior.captions);
+        let expected_instance = maps.instance(&prior.instance);
+        assert_eq!(sample.instance, expected_instance);
+        assert_eq!(
+            prepared.map_instance(&before, &prior.instance).unwrap(),
+            expected_instance
+        );
+        let selected = selected_range.contains(&frame);
+        let mut expected_layers = prior.framing.clone();
+        for layer in &mut expected_layers {
+            layer.instance = maps.instance(&layer.instance);
+            if selected && layer.instance.node == maps.selected && !layer.escalation {
+                let local = frame - selected_range.start;
+                let (within, play) = if repeat_owner {
+                    (usize::try_from(local % 7).unwrap(), local / 7)
+                } else {
+                    (usize::try_from(local).unwrap(), 0)
+                };
+                let fallback = within == 0 || within >= 5;
+                layer.pose = Some(
+                    FramingPose::new(
+                        if fallback {
+                            r(1, 8)
+                        } else {
+                            live_center(within, play)
+                        },
+                        if fallback { r(7, 8) } else { r(1, 2) },
+                        scale(local, repeat_owner, fallback),
+                    )
+                    .unwrap(),
+                );
+                changed_frames += 1;
+            }
+        }
+        assert_eq!(
+            sample.framing, expected_layers,
+            "point={point} repeat_owner={repeat_owner} frame={frame}"
+        );
+        let selected_owner = sample
+            .framing
+            .iter()
+            .find(|layer| layer.instance.node == maps.selected && !layer.escalation);
+        assert_eq!(selected_owner.is_some(), selected);
+        if let Some(owner) = selected_owner {
+            assert_eq!(
+                owner.effective_duration,
+                r(if repeat_owner { 20 } else { 6 }, 1)
+            );
+            assert_eq!(
+                owner.local_position,
+                r(2 * i128::from(frame - selected_range.start) + 1, 2)
+            );
+        }
+        let inner_scope = prior
+            .instance
+            .repeats
+            .iter()
+            .find(|scope| scope.node == id("inner"));
+        if prior.picture.follow_point().is_some() {
+            let local = prior
+                .framing
+                .iter()
+                .find(|layer| layer.instance.node == id("owner"))
+                .unwrap()
+                .local_position;
+            let output = usize::try_from(local.floor()).unwrap();
+            let (_, source) = sample.picture.follow_point().unwrap();
+            assert_eq!(source.ticks, source_points[output]);
+            assert_eq!(source.time_base, clock());
+            assert_eq!(
+                sample
+                    .picture
+                    .select_source_frame(&source_index)
+                    .unwrap()
+                    .identity
+                    .0,
+                decoded[output]
+            );
+            assert!(inner_scope.is_some());
+        }
+    }
+    assert_eq!(changed_frames, if repeat_owner { 20 } else { 6 });
+    assert!(matches!(
+        new.picture(ProjectFrame(50)),
+        Err(PlanError::FrameOutOfRange { .. })
+    ));
+    let end = old.audio_duration().unwrap();
+    assert_eq!(new.audio_duration().unwrap(), end);
+    let a = old
+        .audio(AudioSample(0)..end, AudioQueryLimits::default())
+        .unwrap();
+    let b = new
+        .audio(AudioSample(0)..end, AudioQueryLimits::default())
+        .unwrap();
+    assert_eq!(a.spans.len(), b.spans.len());
+    assert!(
+        a.spans
+            .iter()
+            .any(|span| matches!(span.content, AudioContent::Source { .. }))
+    );
+    for (mut expected, actual) in a.spans.into_iter().zip(b.spans) {
+        let address = expected.instance.clone();
+        expected.instance = maps.instance(&address);
+        assert!(expected.definition.is_none());
+        for boundary in expected
+            .boundaries
+            .start
+            .iter_mut()
+            .chain(expected.boundaries.end.iter_mut())
+        {
+            boundary.instance = maps.instance(&boundary.instance);
+        }
+        for stage in &mut expected.retimes {
+            stage.node = maps.node(&stage.node, &address);
+        }
+        assert_eq!(
+            actual, expected,
+            "complete audio allocation/support/provenance must map exactly"
+        );
+    }
+}
+#[test]
+fn scoped_follow_creep_nested_explicit_plays_isolate_fractional_retime_owner_and_addresses() {
+    for point in [false, true] {
+        verify(point, false);
+    }
+}
+#[test]
+fn scoped_follow_creep_selected_repeat_retains_clock_escalation_and_inner_gap_fallback() {
+    for point in [false, true] {
+        verify(point, true);
+    }
+}

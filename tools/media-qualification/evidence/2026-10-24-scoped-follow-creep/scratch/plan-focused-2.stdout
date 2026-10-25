@@ -1,0 +1,7 @@
+
+running 2 tests
+test scoped_follow_creep::scoped_follow_creep_nested_explicit_plays_isolate_fractional_retime_owner_and_addresses ... ok
+test scoped_follow_creep::scoped_follow_creep_selected_repeat_retains_clock_escalation_and_inner_gap_fallback ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 136 filtered out; finished in 0.03s
+

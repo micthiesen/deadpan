@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-10-25T07:05:41.105305+00:00",
+  "regressions_package": "tools/media-qualification/evidence/2026-10-24-scoped-follow-creep-regressions",
+  "inventory": {
+    "bytes": 9040,
+    "sha256": "0a980f41b3e92c3115c2699d4fcf33606cd89f30de69bd3c7fac8bd7ebcdf5d9"
+  },
+  "payloads": 56,
+  "stored_payload_bytes": 6111277,
+  "complete_file_name_and_hash_readback": true,
+  "original_report_and_run_stream_pins": {
+    "native-zoom-final/report.json": {
+      "bytes": 21989763,
+      "sha256": "f738b98446fc669cdd621022ea3d2e8c56c1b303996f768c4e66bbd20222e022"
+    },
+    "native-zoom-final/report.html": {
+      "bytes": 19981387,
+      "sha256": "1defd738c000afc4adfeb2566fdad580f5862cd4674050d3b09832ce720741ed"
+    },
+    "scratch/native-zoom-final.json": {
+      "bytes": 10803,
+      "sha256": "dcd41171639bcc2089cdc83242793c6407b98021545f89dcc432e9d08e1e252a"
+    },
+    "scratch/native-zoom-final.stdout": {
+      "bytes": 106,
+      "sha256": "aa6e771a4454724cbc86a1f9936cccfa558989fb17783da5702afe135a500ff9"
+    },
+    "scratch/native-zoom-final.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "native-sequence-follow-creep-final/report.json": {
+      "bytes": 18110561,
+      "sha256": "c4f8fbb11e3348b1a21a1188c375cfdcaf7c1ca73ff79031c0d5c62a377a485f"
+    },
+    "native-sequence-follow-creep-final/report.html": {
+      "bytes": 16405188,
+      "sha256": "38b334e0f34d82ccd28b9952da9affd1330a4c3d6669d713a2abe56ab1bd9e81"
+    },
+    "scratch/native-sequence-follow-creep-final.json": {
+      "bytes": 10872,
+      "sha256": "05ffb3ab4e21ad364958b0cb28668e67809368783878cb0a1f209e7c84acd765"
+    },
+    "scratch/native-sequence-follow-creep-final.stdout": {
+      "bytes": 140,
+      "sha256": "c3c2348ea42b8c0e672cef70b92411c0f7809bb715d1827ee9af3bad2587ac29"
+    },
+    "scratch/native-sequence-follow-creep-final.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "native-hold-follow-creep-final/report.json": {
+      "bytes": 16058150,
+      "sha256": "c7df932626d00905fe9fc4ed3ea2f7036a89bac665b53f768030baa134b6049f"
+    },
+    "native-hold-follow-creep-final/report.html": {
+      "bytes": 14468248,
+      "sha256": "7d7ff64fc1cfdcce10ddfebadf7a2524415339acd6cf0bc473f1fa64b251c9f2"
+    },
+    "scratch/native-hold-follow-creep-final.json": {
+      "bytes": 10856,
+      "sha256": "d24d0fcee089f5ca8f6ca827d233357428e29765bcd5bb75d72f6f01723c349b"
+    },
+    "scratch/native-hold-follow-creep-final.stdout": {
+      "bytes": 132,
+      "sha256": "f25b5219383c5c63f48d656e0a20375b5f151f5c6351633abfb7f07810c96c6b"
+    },
+    "scratch/native-hold-follow-creep-final.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "shared_witnesses": {
+    "first-identities.json": {
+      "bytes": 5171,
+      "sha256": "432aa30f8741aac9884e95bf89f154694ed854b3218d581f3bfe70f2dcf2e33d"
+    },
+    "final-identities.json": {
+      "bytes": 5171,
+      "sha256": "b716baa1ab2af045240a56e503bb136b3a17fdadbdb3760724e9614d4e68b45d"
+    },
+    "candidate-equivalence.json": {
+      "bytes": 1069,
+      "sha256": "8dee08ccf7a142d94c6bc4647c6e0250de7e6c3cea0803f59cb8858eeda6cf6a"
+    }
+  },
+  "scope": "The Primary retains this binding; independent final package verifier checks both inventories and these original report/receipt pins. No cyclic inventory reference."
+}

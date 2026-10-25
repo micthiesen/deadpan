@@ -1,0 +1,34 @@
+{
+  "base_supplied_by_root": "fb38159bae82f2c08e7dfd96f112c24d6571b8e2",
+  "frozen_at": "2026-10-25T06:37:56.414731+00:00",
+  "owned_sources": {
+    "crates/deadpan-plan/tests/picture_plan.rs": {
+      "bytes": 91083,
+      "sha256": "872a4f0494a5cb5a9b0a19cd854c6e9314ef22a2b8a44ba1190f12ab49cfa04c"
+    },
+    "crates/deadpan-plan/tests/picture_plan/scoped_follow_creep.rs": {
+      "bytes": 21889,
+      "sha256": "2df29ab6958ba388e3db8d7982f7cddeb7b7e427364739bc172eeb51e36151e9"
+    }
+  },
+  "focused_receipt": "plan-focused-2.json",
+  "result": "2passed0failed0ignored136filtered terminal0",
+  "reason": "Single Clippy collapsible_if let-chain fix; no behavior change. Original freeze/handoff/receipt/source preserved.",
+  "prior_freeze": {
+    "path": "plan-freeze.json",
+    "sha256": "f5109acec2a6db8c7fe14fb391101ac68b66dd94ff4f67c714b1d9b86342c76c"
+  },
+  "clippy_failure_retained": "clippy-first.stderr",
+  "named_manifest_present_count": 22,
+  "named_manifest_missing": [],
+  "named_manifest_unchanged_during_run": true,
+  "core_plan_basis_unchanged_during_run": true,
+  "executed_binary": {
+    "path": "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/picture_plan-8377682556489926",
+    "bytes": 63968256,
+    "sha256": "790dde437991cb217f07d15f1f42a0ce71f7eb4202ac92460ae4e70e39cd04f1"
+  },
+  "active_processes": [],
+  "cargo_target": "released to Root",
+  "scope_limit": "Focused rerun only; Root owns strict Clippy rerun and final broad/native/media verification."
+}

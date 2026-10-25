@@ -90,7 +90,7 @@ fn assert_owner_boundaries(
 }
 
 #[test]
-fn whole_hold_keep_follow_creep_replays_live_and_captured_fallback_with_durable_undo_and_scope_refusals()
+fn whole_hold_keep_follow_creep_replays_live_and_captured_fallback_with_durable_undo_and_scoped_replay()
 -> Result {
     let scratch = tempfile::tempdir()?;
     let package = qualified_project(scratch.path())?;
@@ -426,16 +426,19 @@ fn whole_hold_keep_follow_creep_replays_live_and_captured_fallback_with_durable_
         "repeated-hold",
         137,
         None,
-        "scoped-refused",
+        "scoped-creep",
     );
     request["operation"]["scoped"] = serde_json::to_value(scoped)?;
-    let error = reject(&package, &input, &request)?;
-    assert!(
-        error["error"]["message"]
-            .as_str()
-            .unwrap()
-            .ends_with(deadpan_core::framing_zoom::FOLLOW_CREEP_REFUSAL)
-    );
+    let result = invoke(&package, &input, &request, false)?;
+    let (after, mapped, frames) = assert_scoped_follow_commit(&package, &wrapped, &result)?;
+    assert_eq!(frames, (136..144).collect::<Vec<_>>());
+    assert!(matches!(&after.nodes()[&mapped.target.node].framing,
+        Some(Framing { value: FramingValue::Follow { target, scale, scale_transition: Some(FollowScaleTransition { factor, .. }), .. }, .. })
+        if target.as_str() == "right" && *scale == ratio(2, 1) && *factor == ratio(3, 2)));
+    let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    writer.undo(after.revision_id(), RevisionId::new("scoped-hold-undo")?)?;
+    same_document(&writer.snapshot()?, &wrapped)?;
+    drop(writer);
     assert_eq!(
         ProjectStore::open(&package, AccessMode::ReadOnly)?.registers()?,
         bank

@@ -1,0 +1,10 @@
+{
+  "observed_at": "2026-10-25T06:44:08.738240+00:00",
+  "run": "app-units-final",
+  "run_pid": 21705,
+  "binary": "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_app-c75853e20f9b0baa",
+  "bytes": 245292400,
+  "sha256": "e51e3136b2c818c690e223e5e3297e2b7d03b6a13e8f9930a31adcb099788197",
+  "phase": "live",
+  "basis": "Cargo Running line and current terminal/nonterminal run receipt"
+}

@@ -26,6 +26,8 @@ mod repeat_follow_creep;
 mod retained_framing;
 #[path = "picture_plan/retime_follow_creep.rs"]
 mod retime_follow_creep;
+#[path = "picture_plan/scoped_follow_creep.rs"]
+mod scoped_follow_creep;
 #[path = "picture_plan/sequence_follow_creep.rs"]
 mod sequence_follow_creep;
 

@@ -66,7 +66,7 @@ picture time. The document map is `targets`; patches carry `targets` changes.
 
 `FramingValue::Follow { target, scale, fallback }` centers a framing layer on
 the target at the source time of the picture shown, at its evaluated scale.
-A whole ordinary Source, Hold, Sequence, Repeat or Retime can retain a live-target scale transition
+A whole Source, Hold, Sequence, Repeat or Retime can retain a live-target scale transition
 ([following creep](FRAMING.md#zoom-and-creep-commands)). The plan
 resolves it after descending to the picture (`RenderPlan::resolve_follows`): the
 target point is carried outward through every inner posed layer, innermost
@@ -79,6 +79,11 @@ remains an inner scope and applies to the following gap.
 On a Retime the scale uses its output clock, while the target uses the exact
 mapped Original point. Fractional coordinates remain exact even when several
 output pictures decode the same source ordinal.
+Inside Repeat contents, selecting This play at every enclosing Repeat gives the
+same whole-owner behavior through occurrence isolation. Scale uses that selected
+owner's local output clock; enclosing Retimes and Repeat occurrences do not
+replace it with the project clock. The target still resolves the actual mapped
+Original point. Default or incomplete Play choices and Visual ranges refuse.
 Before that, a target with a `display_aspect` has
 its center placed on the presentation canvas exactly where the renderer fits
 the whole picture (`deadpan_core::fit_source_point`, the `Fit` letterbox or

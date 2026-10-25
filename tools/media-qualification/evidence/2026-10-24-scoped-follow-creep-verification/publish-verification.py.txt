@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+"""Retain final independent two-package verification without mutating either package."""
+import argparse,hashlib,json,runpy,shutil,tempfile
+from pathlib import Path
+scratch=Path(__file__).resolve().parent
+repo=Path('/Users/michael/Code/deadpan')
+destination=repo/'tools/media-qualification/evidence/2026-10-24-scoped-follow-creep-verification'
+parser=argparse.ArgumentParser()
+parser.add_argument('--receipt-sha256',required=True)
+a=parser.parse_args()
+helper=scratch/'bundle-helpers.py'
+assert hashlib.sha256(helper.read_bytes()).hexdigest()=='2758fa2c837e63d41b33f38b34f728017feda8b0c05aa21499eeb40f4764df13'
+h=runpy.run_path(str(helper));limit=4*1024*1024
+assert not destination.exists()
+inventories={}
+for name,digest in [('2026-10-24-scoped-follow-creep','b7858060082699ba66d5cf68e954414c4fb6a018ab6eb309b6dbf8f96bc10a6b'),('2026-10-24-scoped-follow-creep-regressions','0a980f41b3e92c3115c2699d4fcf33606cd89f30de69bd3c7fac8bd7ebcdf5d9')]:
+ p=repo/'tools/media-qualification/evidence'/name/'files.json';pin=h['hash_regular'](p,limit)
+ assert pin['sha256']==digest;inventories[str(p)]=pin
+stage=Path(tempfile.mkdtemp(prefix='.scoped-verification-',dir=scratch));published=False
+try:
+ names=['verify-scoped-package.py','package-verification.json','package-verification.stdout','package-verification.stderr','collect.stdout','collect.stderr','regressions-collect.stdout','regressions-collect.stderr','root-package-readback.json']
+ originals={}
+ for name in names:
+  source=scratch/name;data=h['read_regular'](source,limit);originals[name]=h['hash_regular'](source,limit)
+  with (stage/name).open('xb') as out:out.write(data)
+  assert h['read_regular'](stage/name,limit)==data
+ history=scratch/'package-audit-history'
+ if history.exists():
+  for name,source in h['safe_tree'](history):
+   data=h['read_regular'](source,limit)
+   target=stage/'package-audit-history'/name;target.parent.mkdir(parents=True,exist_ok=True)
+   with target.open('xb') as out:out.write(data)
+   originals['package-audit-history/'+name]=h['hash_regular'](source,limit)
+ assert originals['package-verification.json']['sha256']==a.receipt_sha256
+ script=Path(__file__).read_bytes();(stage/'publish-verification.py.txt').write_bytes(script)
+ metadata={'package_inventories':inventories,'collector_exit_codes':[0,0],'verification_receipt_sha256':a.receipt_sha256,'source_files':originals,'publisher_sha256':hashlib.sha256(script).hexdigest(),'scope':'Post-publication receipts; neither evidence package nor product/build inputs changed. Any package-auditor stops are retained separately.'}
+ (stage/'publication.json').write_bytes(h['json_bytes'](metadata))
+ inventory={name:h['hash_regular'](path,limit) for name,path in h['safe_tree'](stage)}
+ assert sum(row['bytes'] for row in inventory.values())<limit
+ (stage/'files.json').write_bytes(h['json_bytes'](inventory))
+ assert {name:h['hash_regular'](path,limit) for name,path in h['safe_tree'](stage) if name!='files.json'}==inventory
+ assert all(h['hash_regular'](scratch/name,limit)==pin for name,pin in originals.items())
+ assert all(h['hash_regular'](Path(name),limit)==pin for name,pin in inventories.items())
+ h['exclusive_publish'](stage,destination);published=True
+ print(json.dumps({'published':str(destination),'payloads':len(inventory),'bytes':sum(row['bytes'] for row in inventory.values()),'inventory_sha256':hashlib.sha256(h['json_bytes'](inventory)).hexdigest()}))
+finally:
+ if not published:shutil.rmtree(stage)

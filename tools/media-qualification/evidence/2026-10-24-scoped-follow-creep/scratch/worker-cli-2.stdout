@@ -1,0 +1,35 @@
+
+running 16 tests
+test macros::framing::scoped::headless_scoped_zoom_wire_and_occurrence_refusals_leave_the_bank_and_history_untouched ... ok
+test macros::framing::follow_creep_admission::explicit_follow_creep_from_rebases_both_scales_and_invalid_endpoints_never_publish ... ok
+test macros::framing::headless_creep_macro_resolves_after_staged_hold_duration_edit_and_nested_call_in_one_undo ... ok
+test macros::framing::headless_zoom_macro_late_range_path_and_provider_refusals_leave_captures_marks_and_history_untouched ... ok
+test macros::framing::headless_zoom_macro_dry_run_rebinds_backward_range_and_changed_owner_duration_with_durable_undo ... ok
+test macros::framing::scoped::scoped_pause::headless_scoped_pause_refuses_late_unsupported_calls_mixed_authority_and_foreign_freeze_parent_without_writes ... ok
+test macros::framing::scoped_duration::headless_scoped_hold_duration_noop_and_late_unsupported_call_leave_history_and_bank_unchanged ... ok
+test macros::framing::scoped_duration::headless_scoped_hold_duration_from_interior_maps_named_zoom_pause_and_durable_history ... ok
+test macros::framing::scoped::headless_scoped_zoom_macro_rebinds_nested_plays_and_maps_calls_with_one_durable_undo ... ok
+test macros::framing::scoped::scoped_pause::headless_scoped_pause_macro_keeps_qualified_freeze_maps_calls_and_zoom_with_dry_run_and_history ... ok
+test macros::framing::follow_creep::keep_creep_rebinds_follow_bases_and_target_with_atomic_refusal_and_durable_history ... ok
+test macros::framing::retime_follow_creep::whole_retime_follow_creep_keeps_nonzero_map_fractional_target_clock_and_history ... ok
+test macros::framing::hold_follow_creep::whole_hold_keep_follow_creep_replays_live_and_captured_fallback_with_durable_undo_and_scoped_replay ... ok
+test macros::framing::repeat_follow_creep::whole_repeat_follow_creep_preserves_plays_gaps_escalation_and_invocation_relative_history ... FAILED
+test macros::framing::sequence_follow_creep::whole_sequence_follow_creep_crosses_source_cuts_and_replays_staged_keep_with_one_undo ... ok
+test macros::framing::scoped_follow_creep::scoped_follow_creep_all_five_owners_keep_nested_play_clocks_isolation_and_durable_history ... ok
+
+failures:
+
+---- macros::framing::repeat_follow_creep::whole_repeat_follow_creep_preserves_plays_gaps_escalation_and_invocation_relative_history stdout ----
+
+thread 'macros::framing::repeat_follow_creep::whole_repeat_follow_creep_preserves_plays_gaps_escalation_and_invocation_relative_history' (182713971) panicked at crates/deadpan-cli/tests/project_commands/macros/framing.rs:194:13:
+assertion `left == right` failed: scope semantics 26
+  left: PictureFraming { instance: InstancePath { node: NodeId("b45bcd9d-99cc-4a4d-9cf4-c77c9ed20542"), repeats: [RepeatInstance { node: NodeId("outer"), iteration: IterationId { allocation: RevisionId("outer"), ordinal: 1 } }] }, local_position: ExactRatio { numerator: 19, denominator: 2 }, duration: FrameDuration(17), effective_duration: ExactRatio { numerator: 17, denominator: 1 }, pose: Some(FramingPose { center_x: ExactRatio { numerator: 2147483649, denominator: 4294967296 }, center_y: ExactRatio { numerator: 1, denominator: 2 }, scale: ExactRatio { numerator: 2, denominator: 1 } }), escalation: false }
+ right: PictureFraming { instance: InstancePath { node: NodeId("b45bcd9d-99cc-4a4d-9cf4-c77c9ed20542"), repeats: [RepeatInstance { node: NodeId("outer"), iteration: IterationId { allocation: RevisionId("outer"), ordinal: 1 } }] }, local_position: ExactRatio { numerator: 19, denominator: 2 }, duration: FrameDuration(17), effective_duration: ExactRatio { numerator: 17, denominator: 1 }, pose: Some(FramingPose { center_x: ExactRatio { numerator: 1, denominator: 2 }, center_y: ExactRatio { numerator: 1, denominator: 2 }, scale: ExactRatio { numerator: 2, denominator: 1 } }), escalation: false }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    macros::framing::repeat_follow_creep::whole_repeat_follow_creep_preserves_plays_gaps_escalation_and_invocation_relative_history
+
+test result: FAILED. 15 passed; 1 failed; 0 ignored; 0 measured; 46 filtered out; finished in 8.77s
+

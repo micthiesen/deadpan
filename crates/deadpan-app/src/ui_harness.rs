@@ -43,6 +43,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "sequence-follow-creep",
     "repeat-follow-creep",
     "retime-follow-creep",
+    "scoped-follow-creep",
     "tail-sends",
     "wet-returns",
     "audio-treatments",

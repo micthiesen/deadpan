@@ -1,0 +1,15 @@
+{
+  "base_supplied_by_root": "fb38159bae82f2c08e7dfd96f112c24d6571b8e2",
+  "frozen_at": "2026-10-24T12:33:39.012613+00:00",
+  "owned_sources": {
+    "crates/deadpan-plan/tests/picture_plan.rs": {
+      "bytes": 91083,
+      "sha256": "872a4f0494a5cb5a9b0a19cd854c6e9314ef22a2b8a44ba1190f12ab49cfa04c"
+    },
+    "crates/deadpan-plan/tests/picture_plan/scoped_follow_creep.rs": {
+      "bytes": 21549,
+      "sha256": "5a06962081ed12448901ed3b4fb0569c423af3a43f0db400810acaebdafe2009"
+    }
+  },
+  "status": "prepared/scoped formatted; no Cargo yet, await Core lane release and Root allocation"
+}

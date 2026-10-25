@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "runner_executed": false,
+  "python_ast_parse": "passed",
+  "retained_actual_first_failure": "media-first.stderr: assertion at line82 before any CLI call",
+  "actual_native_checks": {
+    "total": 155,
+    "passed": 155
+  },
+  "allowed_exact_native_exclusions": [
+    "OS picker behavior: only its selected path is scripted",
+    "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+  ],
+  "change_scope": "Replace blanket skipped-list refusal with exact two standard owner-verification exclusions; retain them in result.evidence_scope. All scoped checks still must pass.",
+  "pins": {
+    "media.py": "659c5930c45955ea84e14e44a6e08dc6aff254eed538f328ed88c1950d3f4a7f",
+    "media-first-driver.py.txt": "d63a53ee979ea11089595a475eadf654b14cce49434b597770e29b89982c9fdf",
+    "media-preparation.json": "d862cc49d44812aa61c1b092f6ab672dcd65a7811bb3923267adc55f2cce8a04",
+    "media-preparation-handoff.md": "1087dacf0883ab3731c7de77ea2126bee9ec6b017aa83ab10680a65e4757812f",
+    "media-first-preparation.json.txt": "d862cc49d44812aa61c1b092f6ab672dcd65a7811bb3923267adc55f2cce8a04",
+    "media-first-preparation-handoff.md.txt": "1087dacf0883ab3731c7de77ea2126bee9ec6b017aa83ab10680a65e4757812f",
+    "media-first.stderr": "3208d6b0545b759272328c75de94d506a59880beed89972b54f9c03fdd47628c",
+    "media-first.json": "81859e7555aa3c719c869ebcc2f5a4dc20d43e05642626b8e97b1ec3e7c39e8d",
+    "report.json": "31d1ee7e8999fd84de82179db87ac316b2d2a78598996dcc088c0807611110e4"
+  }
+}

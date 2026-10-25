@@ -1,0 +1,18 @@
+{
+  "checks": {
+    "python_ast_parse": "passed",
+    "runner_executed": false,
+    "cargo_or_product_commands": false
+  },
+  "pins": {
+    "/tmp/deadpan-scoped-follow-creep-2026-10-24/media.py": "d63a53ee979ea11089595a475eadf654b14cce49434b597770e29b89982c9fdf",
+    "/tmp/deadpan-retime-follow-creep-2026-10-24/media.py": "e46dccbfaaec39a34fa97b1a326c40211d535dcf41bfa0e6308e28af054286cc",
+    "/tmp/deadpan-scoped-follow-creep-2026-10-24/design.md": "3fae33f17c5430dcc1af6fe08349d457e7a496ea0d61b8f36d68fba4e27eeced",
+    "/tmp/deadpan-scoped-follow-creep-2026-10-24/native-harness-handoff.md": "f24f3e99cd31214d4f602597e428c5746a3284c50ef8962a5023ec1832ccb134",
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness/scoped_follow_creep.rs": "38c893fdba7192f8ca74d801870c3f160f14341034b4a10048cfb60ba0ad64f4",
+    "/Users/michael/Code/deadpan/crates/deadpan-core/src/repeat_layout.rs": "30e4350dc9eeb65212624dd576089f06b009c29b782836c04ddcf45176d69510",
+    "/Users/michael/Code/deadpan/crates/deadpan-core/src/occurrence.rs": "8850cca1bfab8b663c179f8ef5b1054c08a6aaeb57f3d95e7d76e1c7781d8330",
+    "/Users/michael/Code/deadpan/crates/deadpan-core/src/document.rs": "2763bb86bbaba1afe9f11ade4e0077c154ffc12c9452bc2836fc9b0105865d10",
+    "/Users/michael/Code/deadpan/crates/deadpan-cli/src/export_verification.rs": "e03ab55aaccab89c7f00521ae50bed48dfeb7ea8ed231f705583d44734015ee0"
+  }
+}

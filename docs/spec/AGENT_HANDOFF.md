@@ -4,6 +4,111 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-24
 
+[Scoped whole-owner following creep](../qualification/scoped-follow-creep-2026-10-24.md)
+is implemented and locally verified through broad/native/media and independent
+raw/history/package checks. Whole Source/Hold/Sequence/Repeat/Retime owners
+use unchanged explicit all-Play
+authority, including nested Plays and supported Retime traversal. The internal
+marker is WholeFollowOwner; this grants no serialized authority or new clock.
+Ordinary admission stays direct-child-only. Scoped Camera requires the exact
+captured target/scope, and the planner revalidates before existing EditScoped
+isolation and staged re-resolution. Scale uses complete owner output; centers
+use exact fractional provider Original points. Default, invalid/stale scope,
+full/interior Visual ranges and implicit animation replacement still refuse.
+Core 58 / SQLite 87, dependencies and raw/numeric contracts remain unchanged.
+
+Base fb38159bae82f2c08e7dfd96f112c24d6571b8e2; scratch
+/tmp/deadpan-scoped-follow-creep-2026-10-24, twenty-two listed sources.
+Core builder 3/scoped semantic 59 have sixty-one unique cases; CLI framing 16
+plus resolver 1 pass. Plan 2 pass after a test-only let-chain lint correction:
+four point/region cases, 200 pictures/fifty-two owner samples, independent
+fractional target/retained owner clocks, clipping/loss/fallback/escalation and
+complete clone-mapped picture/audio preservation. Earlier scoped negatives
+are reconciled with positive isolation/preservation/Undo; real invalid-scope
+negatives remain. Three independent reviews have no findings and ran no checks.
+
+Retain both CLI proof-helper failures: private-leaf versus outer revision,
+then legitimate ancestor Follow one-Q32 reprojection. Production admission
+did not change to fix these oracles. Retain Clippy-first 101 collapsible_if
+and exact old Plan sources; focused Plan rerun, current App check/format/
+strict all pass with all twenty-two paths unchanged. Intentional command
+writer 101 remains distinct; ordinary reference validation passes in full App.
+
+Full Core/Plan passes 2,059 tests with zero failed/ignored in 300.500 seconds,
+all twenty-two sources unchanged. Full App passes 1,304 with eleven existing
+ignored in 236.4356 seconds, all twenty-two sources unchanged. Matching live
+2026-10-25 06:44:08.738240 UTC and terminal 2026-10-25 06:48:09.991876 UTC observations
+retain e51e3136…/245,292,400 bytes; no pre-run capture/archive is claimed.
+The slice filename/date remains 2026-10-24; post-switch runs occurred 25 UTC.
+Fresh host 06:39:40.176363 UTC on 25 retains Mac17,7/128GiB/eighteen cores/
+HV0/macOS26.5.2; power/thermal/cache state is uncontrolled.
+Release passes in 283.7249 seconds with all twenty-two sources unchanged.
+First candidate binds twenty-two sources/five binaries: App ee1b8280…,
+CLI 46407b9b…. Native-scoped-first passes 155 plus Kestrel in 14.068 seconds,
+all twenty-two source/App guards unchanged. Repeat 134/Retime 134/zoom 213/
+Sequence 101/Hold 67 each pass plus Kestrel on that candidate, with three
+warnings each except Hold's two. Standard two physical/picker exclusions
+remain, with no failed scoped checks. Actual nested fixture has 240 frames/
+384384 canonical samples, selected outer Play2/inner Play2 [164,200).
+All-frame fractional/clone/audio preservation and Camera/history/macro/dot/
+stale-field assertions pass. Root inspected Camera121/before122/after123/
+final124: controls visible, long Camera explanation reaches pane clip.
+Do not claim all explanation text fits. First media driver failed before
+any CLI command on an overstrict exclusion assertion; original retained,
+driver correction only. Second driver stopped before render after one dump:
+oracle .58 was wrong; Smash Follow retains entry fallback (.5,.5) in both
+fixed template/animated clone. Preserve both drivers/failures, no product
+change/native rerun. media-third passes 0/all nine commands in 8.4987 seconds,
+unchanged source/binary guards. Actual 240 pictures/full 384384 stereo samples
+verify at zero offset/uncovered/gaps; 262 observable/216 unobservable neighbors.
+MP4 164,670B SHA a3cce65f…; AAC one edit/no empty/media_time 2048, first PTS -2048,
+physical 387072/presented 384384. Portable document/history digest equal:
+twenty-five revisions/fifteen history, one initial/fifteen edit/seven Undo/
+two Redo. First/final twenty-two source/five executable bytes identical,
+one candidate/scoped workflow. Raw auditor retains
+first-historical-worker-scope-stop (shared CLI proof helper changed after focused
+historical runs; production/named basis stable, broad current twenty-two paths)
+and second-q32-stage-oracle-stop (one rounding versus documented Q32 stages). Offline audit
+assertion fixes only; scripts/receipts/streams retained, no product/evidence
+input change or product rerun. Third passing-before-final-integrity-guard is
+also retained. Final fourth audit exits 0/no_findings, receipt 19a50d47…,
+script 6359c61d…; all seven native/portable tables exactly equal: revisions 25/
+history 15/patches 9/transaction_steps 10/receipt 1/state 1/redo 0. Never call this
+first-pass auditing. Regression collection has 56 payloads/6,111,277B plus
+inventory 0a980f41…. Primary 218 payloads/15,245,224B plus inventory b7858060…;
+215 encodings/16 archives/774 members 83,055,805B/raw 202,592,698B. Four metadata
+omissions: native/portable each SHM 32768B+empty WAL 0B, zero authored omissions.
+Regression 53 encodings/no archives/raw 109,235,808B. Both complete Root readbacks
+pass. First package verifier stops on SQLite deserialize into :memory:
+journal readback, after prior inventory/encoding/TAR/native/test/PNG checks.
+Exact attempt retained under package-audit-history; retry uses byte-pinned
+extracted checkpointed DBs mode=ro&immutable=1 with empty-WAL/checkpoint basis.
+Package/product/collector unchanged. Preserve
+passing-retry-before-checkpoint-binding too; final success is third verifier
+execution, receipt eae0eb89…, script bf3fc552…. It verifies 274 payloads/
+276 files/21,356,501 stored payload bytes, 268 encodings
+(218 identity/34 gzip/16 TAR+gzip), fifty gzip streams and
+312,449,885 decoded ledger bytes across separately bounded collections.
+Original inventories/current22/raw audit/history remain unchanged.
+Verification supplement has 21 payloads/142,949B plus inventory 62e518ae….
+Root's all-three-package-readback.json confirms complete file-name/hash
+readback of all three trees. Staged authored code/docs checks pass; full
+cached diff retains exactly ten raw blank-at-EOF warnings:
+commands-write.stdout, header.rs.txt, setup.rs.txt, plan-focused-1.stdout,
+plan-focused-2.stdout, worker-cli-2.stdout, worker-cli-3.stdout,
+worker-cli-unit-1.stdout, worker-core-1.stdout, worker-core-scoped-1.stdout.
+Preserve those immutable bytes; do not trim them.
+Six native JSON/HTML pairs are split across collections; the four reviewed
+PNGs remain beside native-scoped-first HTML.
+
+Root owns FRAMING/TARGETS/SEMANTIC_MACROS/COMMANDS, final runtime/evidence,
+Git/progress/artifact. Preserve concurrent/foreign changes and all previous
+immutable evidence. Coverage remains 89%, eight Complete/sixteen Partial and
+Section8 effects five of thirteen. No requirement/gate closes. Ranged live
+following, non-face proposals, remaining acceptance and full goal stay open.
+
+## Earlier whole-Retime continuation, 2026-10-24
+
 [Whole-Retime following creep](../qualification/retime-follow-creep-2026-10-24.md)
 is implemented and locally verified. Retime is the fifth ordinary
 whole owner. The actual selected direct child of an ordinary Sequence must

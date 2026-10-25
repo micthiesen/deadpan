@@ -1,0 +1,21 @@
+{
+  "scope": "22 paths in source-files.json, plus three new modules within it; no foreign fuzz/Cargo.lock/.claude",
+  "reviews": [
+    {
+      "path": "review-general.md",
+      "findings": 0,
+      "mode": "independent read-only static review"
+    },
+    {
+      "path": "review-authority.md",
+      "findings": 0,
+      "mode": "independent read-only static review"
+    },
+    {
+      "path": "review-test.md",
+      "findings": 0,
+      "mode": "independent read-only static review"
+    }
+  ],
+  "root_triage": "No proposed findings. Root inspected complete production diff and Camera authority route; no extra implementation changes applied. The later Plan Clippy fix is conditional syntax only; prior exact source is retained. Runtime qualification remains separate."
+}

@@ -1,0 +1,6 @@
+
+running 1 test
+test framing::tests::semantic_framing_uses_live_follow_pose_at_retimed_source_clock_instead_of_fallback ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 538 filtered out; finished in 0.14s
+

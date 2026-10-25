@@ -1,0 +1,28 @@
+{
+  "base_supplied_by_root": "fb38159bae82f2c08e7dfd96f112c24d6571b8e2",
+  "frozen_at": "2026-10-24T12:55:26.534484+00:00",
+  "owned_sources": {
+    "crates/deadpan-plan/tests/picture_plan.rs": {
+      "bytes": 91083,
+      "sha256": "872a4f0494a5cb5a9b0a19cd854c6e9314ef22a2b8a44ba1190f12ab49cfa04c"
+    },
+    "crates/deadpan-plan/tests/picture_plan/scoped_follow_creep.rs": {
+      "bytes": 21901,
+      "sha256": "1320d7c5dccb97239ca9686cbdc590c9d66b02f456e2e600c8efb0285e6f87d7"
+    }
+  },
+  "focused_receipt": "plan-focused-1.json",
+  "result": "2passed0failed0ignored136filtered terminal0",
+  "named_manifest_present_count": 22,
+  "named_manifest_missing": [],
+  "named_manifest_unchanged_during_run": true,
+  "core_plan_basis_unchanged_during_run": true,
+  "executed_binary": {
+    "path": "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/picture_plan-8377682556489926",
+    "bytes": 63968256,
+    "sha256": "8a4590bb64a9fc53bac0021e763459737058df6794023af9d8c7e2fd1d49f747"
+  },
+  "active_processes": [],
+  "cargo_target": "released to Root",
+  "scope_limit": "Observed focused-run scopes only; Root owns final source freeze/broad/native/media/semantic authority verification."
+}

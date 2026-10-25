@@ -1,0 +1,21 @@
+{
+  "reason": "Passing retry preserved before adding explicit checkpoint-receipt/artifact SQL equality and requested package-audit-history path. No package/product changes.",
+  "files": {
+    "verify-scoped-package.py": {
+      "bytes": 26226,
+      "sha256": "e5ae5073a9a9e14ef45ee422b1a021256613c9481fd8a47d1c42a95988823ff9"
+    },
+    "package-verification.json": {
+      "bytes": 18427,
+      "sha256": "025e1be2618b66e29722af6051baf33ab4a6a058643e2c3c1c267c492f29bf18"
+    },
+    "package-verification.stdout": {
+      "bytes": 273,
+      "sha256": "eaac1f1b311bf0d5a5aa7b1980aab85da5964213c0ec2b5c184d60aa8532a19a"
+    },
+    "package-verification.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

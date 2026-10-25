@@ -1,0 +1,64 @@
+{
+  "version": 3,
+  "python_ast_parse": "passed",
+  "media_runner_executed": false,
+  "repo_cargo_git_product_invocations": false,
+  "corrected_oracle": "Fallback is centered unframed entry pose(1/2,1/2); live target center remains .58/.68. Animated Keep preserves distinct fallback.",
+  "retained_actual_second_failure": "media-second.stderr line242 after dump exit0, before validate/render/verify",
+  "preflight": {
+    "argv": [
+      "python",
+      "/tmp/deadpan-scoped-follow-creep-2026-10-24/media-preflight-3.py"
+    ],
+    "exit_code": 0,
+    "scope": "pure retained dump/report guards plus read-only SQLite; no run() calls or subprocess allowed by AST guard",
+    "observations": {
+      "scope": "read-only retained dump/native-report guard preflight; no CLI/native/render execution",
+      "passed": true,
+      "native_checks_passed": 155,
+      "oracle_rows_checked": 240,
+      "clone_aliases_checked": 7,
+      "revision": "5d5dc124-efe0-4218-8703-36585eca8fe4",
+      "history_observed": {
+        "counts": {
+          "revisions": 25,
+          "history": 15,
+          "redo": 0,
+          "state": 1
+        },
+        "sha256": "4dae063c100a608771634cfebcf9c9da1da1ae78a471ae3465c8ab0451087945",
+        "state": [
+          [
+            "5d5dc124-efe0-4218-8703-36585eca8fe4",
+            15,
+            "single_source_v1"
+          ]
+        ],
+        "revision_kinds": {
+          "initial": 1,
+          "edit": 15,
+          "undo": 7,
+          "redo": 2
+        }
+      },
+      "driver_sha256": "fc83b1a7623994c9a579048cbc3ac1d5c9d07b2466a256d6e855cb9363e1d228"
+    }
+  },
+  "pins": {
+    "media.py": "fc83b1a7623994c9a579048cbc3ac1d5c9d07b2466a256d6e855cb9363e1d228",
+    "media-second-driver.py.txt": "659c5930c45955ea84e14e44a6e08dc6aff254eed538f328ed88c1950d3f4a7f",
+    "media-preparation.json": "d862cc49d44812aa61c1b092f6ab672dcd65a7811bb3923267adc55f2cce8a04",
+    "media-preparation-handoff.md": "1087dacf0883ab3731c7de77ea2126bee9ec6b017aa83ab10680a65e4757812f",
+    "media-preparation-2.json": "c4327e4441b28b510e9a49aa9cfa4a17bfba67b4d08bb70b4f4f843dc623f79a",
+    "media-preparation-handoff-2.md": "e7aca8850b9f1db5d48834ac85da763ac6d908fb7d1dfab411ceb621d4cbcbe9",
+    "media-first.stderr": "3208d6b0545b759272328c75de94d506a59880beed89972b54f9c03fdd47628c",
+    "media-first.json": "81859e7555aa3c719c869ebcc2f5a4dc20d43e05642626b8e97b1ec3e7c39e8d",
+    "media-second.stderr": "b321b9ca1dc852c0c7539e60e41bf8de69c5ee2c3bc7b22287efaa3a05a36c54",
+    "media-second.json": "c16f4961d06ef2a522696cc1f81a729cc71c39bd9ce739d19434bd36e57594fa",
+    "media-second/dump.stdout": "07f7c38ffb325dd9f8b29ce6381f6326cfc8f6d54aad08f8b8ed03c86da14223",
+    "native-scoped-first/report.json": "31d1ee7e8999fd84de82179db87ac316b2d2a78598996dcc088c0807611110e4",
+    "media-preflight-3.py": "3347c16d0ecd745a7d131efb216c8b75f9ff86212b600e3f9c6f0b211e2f22b3",
+    "media-preflight-3.stdout": "df2412a6afb5fee320e14010f4727db1a768019f94b18cdd87e255824cd9ace3",
+    "media-preflight-3.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

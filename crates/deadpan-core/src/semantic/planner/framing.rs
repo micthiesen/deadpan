@@ -177,12 +177,12 @@ where
             kind,
             &resolved_center,
             &framing_zoom::Shot {
-                ordinary_owner: match &self.current.nodes()[&selected].kind {
-                    NodeKind::Source { .. } => Some(framing_zoom::OrdinaryFollowOwner::Source),
-                    NodeKind::Hold { .. } => Some(framing_zoom::OrdinaryFollowOwner::Hold),
-                    NodeKind::Sequence { .. } => Some(framing_zoom::OrdinaryFollowOwner::Sequence),
-                    NodeKind::Repeat { .. } => Some(framing_zoom::OrdinaryFollowOwner::Repeat),
-                    NodeKind::Retime { .. } => Some(framing_zoom::OrdinaryFollowOwner::Retime),
+                whole_owner: match &self.current.nodes()[&selected].kind {
+                    NodeKind::Source { .. } => Some(framing_zoom::WholeFollowOwner::Source),
+                    NodeKind::Hold { .. } => Some(framing_zoom::WholeFollowOwner::Hold),
+                    NodeKind::Sequence { .. } => Some(framing_zoom::WholeFollowOwner::Sequence),
+                    NodeKind::Repeat { .. } => Some(framing_zoom::WholeFollowOwner::Repeat),
+                    NodeKind::Retime { .. } => Some(framing_zoom::WholeFollowOwner::Retime),
                 },
                 entry,
                 current: state.current,
@@ -262,7 +262,13 @@ where
             kind,
             &resolved_center,
             &framing_zoom::Shot {
-                ordinary_owner: None,
+                whole_owner: match &self.current.nodes()[&scoped.target.node].kind {
+                    NodeKind::Source { .. } => Some(framing_zoom::WholeFollowOwner::Source),
+                    NodeKind::Hold { .. } => Some(framing_zoom::WholeFollowOwner::Hold),
+                    NodeKind::Sequence { .. } => Some(framing_zoom::WholeFollowOwner::Sequence),
+                    NodeKind::Repeat { .. } => Some(framing_zoom::WholeFollowOwner::Repeat),
+                    NodeKind::Retime { .. } => Some(framing_zoom::WholeFollowOwner::Retime),
+                },
                 entry,
                 current: state.current,
                 frames,

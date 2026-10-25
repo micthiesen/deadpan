@@ -1,0 +1,14 @@
+{
+  "frozen_at": "2026-10-24T12:40:27.404106+00:00",
+  "owned_sources": {
+    "crates/deadpan-plan/tests/picture_plan.rs": {
+      "bytes": 91083,
+      "sha256": "872a4f0494a5cb5a9b0a19cd854c6e9314ef22a2b8a44ba1190f12ab49cfa04c"
+    },
+    "crates/deadpan-plan/tests/picture_plan/scoped_follow_creep.rs": {
+      "bytes": 21901,
+      "sha256": "1320d7c5dccb97239ca9686cbdc590c9d66b02f456e2e600c8efb0285e6f87d7"
+    }
+  },
+  "status": "still never executed; added distinct future Tracked2802 point to prove no interpolation across Lost2202; same2tests/4cases"
+}
