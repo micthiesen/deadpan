@@ -148,8 +148,8 @@ and write nothing. Headless requests carry an explicit `parent`, `cursor`,
 | `:zoom … target=region:N`, `:creep … target=region:N` | `detect-regions <p> --at <pts>`, then one `command` Compound with `set_target` and `set_framing` for the chosen region | R, D | Equivalent |
 | `:framing-save a`, `@a` | `macro` `save` of a `set_framing` program, `macro` `run` | R, D | Equivalent |
 | `:track`, Camera `T` | `track <p> … [--save <id>]` | R (head at start) | Equivalent |
-| Camera `c` (correct region) | `track-correct <p> --target <id> --at <pts> --region <r>` | R (head at start) | Equivalent |
-| Camera `n` (new region) | `command` `set_target` | R, D | Equivalent |
+| Camera `c` (correct point or rectangle, keys or pointer then Enter) | `command` `set_target` for a point or manual seed correction; `track-correct <p> --target <id> --at <pts> --region <r>` for a tracked rectangle | R (head at start) | Equivalent |
+| Camera `n` (new point or rectangle, keys or pointer then Enter) | `command` `set_target` with the completed geometry | R, D | Equivalent |
 | `:track-cancel` | SIGINT to the running `track` process | - | GUI-only |
 
 ## Audio and gain

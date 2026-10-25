@@ -5255,7 +5255,10 @@ impl DeadpanApp {
                 ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, message, egui::FontId::proportional(18.0), style::muted(ui));
             }
             ui.painter().rect_stroke(rect, 2.0, egui::Stroke::new(1.0, if self.pane == Pane::Viewer { style::LAVENDER } else { accessibility::border(ui.ctx()) }), egui::StrokeKind::Inside);
-            self.camera_overlay(ui, canvas);
+            let painted = self.target.as_ref().map(|target| fit_rect(rect,
+                target.target.width() as f32 / target.target.height() as f32));
+            self.camera_pointer_surface(ui, painted);
+            if let Some(painted) = painted { self.camera_overlay(ui, painted); }
             // At minimum height the displayed-picture caption shares the
             // read-only clock row (see `merged_caption`) instead of its own.
             if merged_caption {
@@ -5864,6 +5867,7 @@ impl eframe::App for DeadpanApp {
             context.request_discard("Sounds heading changed placement");
         }
         if !context.will_discard() {
+            self.finish_camera_pointer(&context);
             if self.trim.is_none() {
                 if self.render.requested {
                     self.begin_render(&context);

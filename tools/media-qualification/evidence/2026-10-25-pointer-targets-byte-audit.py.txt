@@ -1,0 +1,325 @@
+#!/usr/bin/env python3
+"""Independent verifier for a published Deadpan pointer evidence bundle."""
+import argparse
+import gzip
+import hashlib
+import json
+import os
+from pathlib import Path
+import stat
+import sys
+
+EXPECTED = {
+    "inventory_sha256": "e1dbbc0cd8ba1f7b8bf1062c388faf5d4d8cff7af4e151ca0e0eed9c00197827",
+    "plan_sha256": "42be73feb7ea49cf4e716abdafab2618b98e1e9ba74f62c34b5d71cadff8d24f",
+    "collector_sha256": "a435a0ee061a871ce9ae107dfc29572bfd7e0c2450955a0ed01b121f31b1f118",
+    "logical_inputs": 249,
+    "payload_objects": 136,
+    "metadata_files": 3,
+    "all_files": 139,
+    "stored_bytes": 5115865,
+    "raw_bytes": 127505055,
+    "decoded_bytes": 127505055,
+    "per_file_cap": 268435456,
+}
+PHASES = {"first": 12, "second": 13, "third": 13, "fourth": 13, "fifth": 13, "sixth": 13, "seventh": 13}
+ROOT_REL = "tools/media-qualification/evidence/2026-10-25-pointer-targets"
+
+
+class AuditError(Exception):
+    pass
+
+
+def need(ok, msg):
+    if not ok:
+        raise AuditError(msg)
+
+
+def sha(b):
+    return hashlib.sha256(b).hexdigest()
+
+
+def read_regular(path, cap=None):
+    st = path.lstat()
+    need(stat.S_ISREG(st.st_mode), f"not a regular non-symlink file: {path}")
+    if cap is not None:
+        need(st.st_size <= cap, f"file exceeds cap: {path}")
+    with path.open("rb") as f:
+        data = f.read((cap + 1) if cap is not None else -1)
+    if cap is not None:
+        need(len(data) <= cap, f"read exceeded cap: {path}")
+    return data
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--root", required=True, help="repository root")
+    ap.add_argument("--result", required=True, help="write bounded JSON result here")
+    args = ap.parse_args()
+    repo = Path(args.root).resolve(strict=True)
+    root = repo / ROOT_REL
+    errors = []
+    checks = {}
+    try:
+        need(root.is_dir() and not root.is_symlink(), "bundle root missing or symlink")
+        plan_bytes = read_regular(root / "plan.json", 2_000_000)
+        collection_bytes = read_regular(root / "collection.json", 2_000_000)
+        inventory_bytes = read_regular(root / "files.json", 2_000_000)
+        plan = json.loads(plan_bytes)
+        collection = json.loads(collection_bytes)
+        inventory = json.loads(inventory_bytes)
+
+        need(sha(plan_bytes) == EXPECTED["plan_sha256"], "plan digest differs")
+        need(plan.get("collector", {}).get("sha256") == EXPECTED["collector_sha256"], "collector pin differs")
+        need(sha(inventory_bytes) == EXPECTED["inventory_sha256"], "inventory digest differs")
+        need(collection.get("plan_sha256") == EXPECTED["plan_sha256"], "collection plan pin differs")
+        need(collection.get("collector_sha256") == EXPECTED["collector_sha256"], "collection collector pin differs")
+        need(collection.get("logical_inputs") == EXPECTED["logical_inputs"], "logical input count differs")
+        need(collection.get("payload_objects") == EXPECTED["payload_objects"], "payload count differs")
+        need(collection.get("omissions") == [], "collection has omissions")
+
+        inputs = plan.get("inputs", [])
+        objects = plan.get("objects", [])
+        aliases = {}
+        for obj in objects:
+            for alias in obj.get("aliases", []):
+                need(alias not in aliases, f"duplicate logical alias {alias}")
+                aliases[alias] = obj
+        need(len(inputs) == EXPECTED["logical_inputs"], "plan input inventory count differs")
+        need(len(aliases) == EXPECTED["logical_inputs"], "logical aliases are incomplete")
+        need(len(objects) == EXPECTED["payload_objects"], "plan object count differs")
+        for row in inputs:
+            logical = row["logical"]
+            need(logical in aliases, f"missing alias {logical}")
+            need(row.get("sha256") == row.get("sha256", "").lower() and len(row.get("sha256", "")) == 64,
+                 f"malformed input digest {logical}")
+        checks["logical_aliases"] = len(aliases)
+
+        inv_rows = inventory.get("files", [])
+        expected_paths = {r["path"] for r in inv_rows} | {"files.json"}
+        actual_paths = set()
+        actual_dirs = set()
+        for base, dirs, files in os.walk(root, followlinks=False):
+            bp = Path(base)
+            for d in list(dirs):
+                p = bp / d
+                need(not p.is_symlink(), f"symlink directory: {p}")
+                actual_dirs.add(p.relative_to(root).as_posix())
+            for f in files:
+                p = bp / f
+                rel = p.relative_to(root).as_posix()
+                need(not p.is_symlink(), f"symlink file: {rel}")
+                actual_paths.add(rel)
+        need(actual_paths == expected_paths, f"tree mismatch missing={sorted(expected_paths-actual_paths)[:4]} extra={sorted(actual_paths-expected_paths)[:4]}")
+        expected_dirs = {str(Path(name).parent) for name in expected_paths if str(Path(name).parent) != "."}
+        expected_dirs |= {str(parent) for name in expected_paths for parent in Path(name).parents if str(parent) != "."}
+        need(actual_dirs == expected_dirs,
+             f"directory tree mismatch extra={sorted(actual_dirs-expected_dirs)[:4]} missing={sorted(expected_dirs-actual_dirs)[:4]}")
+        need(len(inv_rows) == EXPECTED["all_files"] - 1, "inventory listed file count differs")
+        need(inventory.get("file_count_including_inventory") == EXPECTED["all_files"], "inventory total file count differs")
+        inventory_record = {r["path"]: r for r in inv_rows}
+        metadata = {"collection.json", "files.json", "plan.json"}
+        need(metadata <= expected_paths, "metadata files missing")
+        payload_rows = [r for r in inv_rows if r["path"] not in metadata]
+        need(len(payload_rows) == EXPECTED["payload_objects"], "payload object count in inventory differs")
+
+        sums = {"stored_bytes": 0, "raw_bytes": 0, "decoded_bytes": 0}
+        payload_bytes_by_path = {}
+        for row in inv_rows:
+            rel = row["path"]
+            blob = read_regular(root / rel, EXPECTED["per_file_cap"])
+            need(len(blob) == row["bytes"], f"byte count mismatch {rel}")
+            need(sha(blob) == row["sha256"], f"published hash mismatch {rel}")
+            sums["stored_bytes"] += len(blob)
+            if rel in metadata:
+                decoded = blob
+            elif row.get("encoding") == "gzip":
+                dec = gzip.GzipFile(fileobj=__import__("io").BytesIO(blob))
+                chunks, total = [], 0
+                while True:
+                    piece = dec.read(min(1024 * 1024, EXPECTED["per_file_cap"] + 1 - total))
+                    if not piece:
+                        break
+                    chunks.append(piece)
+                    total += len(piece)
+                    need(total <= EXPECTED["per_file_cap"], f"decoded payload exceeds cap {rel}")
+                decoded = b"".join(chunks)
+                need(row.get("input_sha256") == Path(rel).name.split(".")[0], f"input digest/name mismatch {rel}")
+            else:
+                decoded = blob
+            need(len(decoded) == row["decoded_bytes"], f"decoded byte count mismatch {rel}")
+            need(len(decoded) == row["raw_bytes"], f"raw byte count mismatch {rel}")
+            sums["decoded_bytes"] += len(decoded)
+            sums["raw_bytes"] += row["raw_bytes"]
+            if rel not in metadata:
+                payload_bytes_by_path[rel] = decoded
+        # files.json is deliberately not self-listed; count its bytes as metadata.
+        inv_size = len(inventory_bytes)
+        sums["stored_bytes"] += inv_size
+        sums["raw_bytes"] += inv_size
+        sums["decoded_bytes"] += inv_size
+        need(inventory.get("inventory_not_self_listed") is True, "inventory self-listing contract differs")
+        for k in sums:
+            need(sums[k] == EXPECTED[k], f"{k} total mismatch {sums[k]}")
+        checks["published_files"] = len(actual_paths)
+        checks.update(sums)
+
+        by_obj_path = {o["path"]: o for o in objects}
+        for logical, obj in aliases.items():
+            inv_rel = obj["path"]
+            need(inv_rel in payload_bytes_by_path, f"alias payload missing {logical}")
+            raw = payload_bytes_by_path[inv_rel]
+            input_row = next((r for r in inputs if r["logical"] == logical), None)
+            need(input_row is not None and len(raw) == input_row["bytes"]
+                 and sha(raw) == input_row["sha256"], f"alias bytes mismatch {logical}")
+        for path, obj in by_obj_path.items():
+            need(path in payload_bytes_by_path, f"planned object absent {path}")
+            need(sha(payload_bytes_by_path[path]) == next((r["sha256"] for r in inputs if r["logical"] in obj["aliases"]), None), f"object source digest mismatch {path}")
+
+        phases = collection.get("source_phases", {})
+        need(set(phases) == set(PHASES), "source phase set differs")
+        phase_identities = {}
+        for phase, count in PHASES.items():
+            need(phases[phase]["inputs"] == count, f"{phase} input count differs")
+            ident = f"metadata/{phase}-source-identities.json"
+            need(ident in aliases, f"phase identity metadata alias missing: {phase}")
+            identity = json.loads(payload_bytes_by_path[aliases[ident]["path"]])
+            files = identity.get("files", {})
+            need(identity.get("base") == "7ef56b822d6decfe705e3501b22b3657a3359d74",
+                 f"{phase} identity base differs")
+            need(len(files) == count, f"{phase} identity content count differs")
+            for rel, pin in files.items():
+                relpath = Path(rel)
+                need(not relpath.is_absolute() and ".." not in relpath.parts,
+                     f"unsafe relative source identity path: {phase}/{rel}")
+                source_alias = f"sources/{phase}/{rel}.txt"
+                need(source_alias in aliases, f"source snapshot alias missing: {source_alias}")
+                source_bytes = payload_bytes_by_path[aliases[source_alias]["path"]]
+                need(len(source_bytes) == pin["bytes"] and sha(source_bytes) == pin["sha256"],
+                     f"source snapshot does not match {phase} pin: {rel}")
+            phase_identities[phase] = files
+        latest = phase_identities["seventh"]
+        for rel, pin in latest.items():
+            live = read_regular(repo / rel, EXPECTED["per_file_cap"])
+            need(len(live) == pin["bytes"] and sha(live) == pin["sha256"],
+                 f"latest source differs from current live bytes: {rel}")
+        runtime_guards = collection.get("runtime_guards", [])
+        need(len(runtime_guards) == 43, "runtime guard count differs")
+        for guard in runtime_guards:
+            live = read_regular(Path(guard["source"]), EXPECTED["per_file_cap"])
+            need(len(live) == guard["bytes"] and sha(live) == guard["sha256"],
+                 f"live runtime guard differs: {guard['source']}")
+        checks["source_phase_inputs"] = PHASES
+        checks["source_phase_pins_verified"] = 7
+        checks["latest_live_source_files_verified"] = len(latest)
+        checks["runtime_guard_bytes_verified"] = len(runtime_guards)
+
+        # Verify retained real native reports, including honest failed and incomplete records.
+        reports = {}
+        for logical, obj in aliases.items():
+            if logical.startswith("native/") and logical.endswith("/report.json"):
+                reports[logical] = json.loads(payload_bytes_by_path[obj["path"]])
+        def report_for(part):
+            matches = [r for k, r in reports.items() if part in k]
+            need(len(matches) == 1, f"expected exactly one report for {part}")
+            return matches[0]
+        def scenario(report, name):
+            matches = [s for s in report.get("scenarios", []) if s.get("name") == name]
+            need(len(matches) == 1, f"scenario absent/duplicate: {name}")
+            return matches[0]
+        release = report_for("native-release-seventh")
+        camera = report_for("native-camera-seventh")
+        targets60 = scenario(release, "targets")
+        targets120 = scenario(report_for("native-120-seventh"), "targets")
+        cam = scenario(camera, "camera")
+        need(release.get("metadata", {}).get("replay_hz") == 60, "release target replay frequency differs")
+        need(report_for("native-120-seventh").get("metadata", {}).get("replay_hz") == 120,
+             "120 Hz target replay frequency differs")
+        need(camera.get("metadata", {}).get("replay_hz") == 60, "Camera replay frequency differs")
+        for label, sc, count in (("release targets", targets60, 72), ("120 Hz targets", targets120, 72),
+                                 ("Camera", cam, 17)):
+            need(sc.get("failed") is False and len(sc.get("checks", [])) == count,
+                 f"{label} scenario failed or check count differs")
+            need(all(check.get("passed") is True for check in sc["checks"]),
+                 f"{label} has a failed assertion")
+        for logical, report in reports.items():
+            for sc in report.get("scenarios", []):
+                need(all(check.get("passed") is True for check in sc.get("checks", [])),
+                     f"native report contains failed check: {logical}/{sc.get('name')}")
+        kestrel = [sc for report in reports.values() for sc in report.get("scenarios", [])
+                   if sc.get("name") == "kestrel-shortcuts"]
+        need(len(kestrel) == 6 and all(len(sc.get("checks", [])) == 1 and sc["checks"][0].get("passed") is True
+                                      for sc in kestrel),
+             "native Kestrel checks are absent or failed")
+        failed_reports = sum(1 for report in reports.values() if report.get("failed") is True)
+        passed_reports = sum(1 for report in reports.values() if report.get("failed") is False)
+        need((len(reports), failed_reports, passed_reports) == (6, 2, 4),
+             "complete native report outcomes differ from 6 total, 2 failed, 4 passed")
+
+        # Actual runner association ledger: preserve complete terminal results and the
+        # one setup failure that never obtained a PID, exit code, or native report.
+        assoc_name = "metadata/run-source-associations.json"
+        need(assoc_name in aliases, "runner association ledger missing")
+        associations = json.loads(payload_bytes_by_path[aliases[assoc_name]["path"]])
+        need(len(associations) == 29, "runner association ledger count differs")
+        complete = [value for value in associations.values() if value.get("complete_terminal_receipt") is True]
+        partial = [value for value in associations.values() if value.get("complete_terminal_receipt") is not True]
+        need(len(complete) == 28 and len(partial) == 1, "expected 28 complete and 1 partial runner record")
+        expected_exits = {
+            "unit-first.json": 101,
+            "commands-write.json": 100,
+            "tiny-body-negative-sixth.json": 100,
+            "native-first-corrected.json": 1,
+            "native-third.json": 1,
+        }
+        for name, value in associations.items():
+            for stream, stream_info in value.get("actual_streams", {}).items():
+                logical_stream = "metadata/" + name.removesuffix(".json") + "." + stream
+                need(logical_stream in aliases, f"runner stream absent from evidence: {logical_stream}")
+                stream_blob = payload_bytes_by_path[aliases[logical_stream]["path"]]
+                need(len(stream_blob) == stream_info["bytes"] and sha(stream_blob) == stream_info["sha256"],
+                     f"runner stream hash/size differs: {logical_stream}")
+        for name, code in expected_exits.items():
+            need(associations.get(name, {}).get("exit_code") == code,
+                 f"recorded expected failure exit code differs: {name}")
+        for name, value in associations.items():
+            if name not in expected_exits and name != "native-first.json":
+                need(value.get("complete_terminal_receipt") is True and value.get("exit_code") == 0,
+                     f"unexpected terminal outcome in runner ledger: {name}")
+        incomplete = associations.get("native-first.json", {})
+        need(incomplete.get("complete_terminal_receipt") is False
+             and incomplete.get("pid_recorded") is None and incomplete.get("exit_code") is None,
+             "incomplete prelaunch record is not honestly marked")
+        first_record = json.loads(payload_bytes_by_path[aliases["metadata/native-first.json"]["path"]])
+        need("pid" not in first_record and "exit_code" not in first_record,
+             "incomplete runner record falsely contains process result")
+        need(not any(name.endswith("native-first/report.json") for name in aliases),
+             "incomplete first runner unexpectedly has a native report")
+        checks["expected_failures"] = {}
+        for name, expected_text in {
+            "metadata/unit-first.stderr": "cannot find type",
+            "metadata/commands-write.stderr": "COMMANDS.md rewritten",
+            "metadata/tiny-body-negative-sixth.stderr": "minimum_rectangle_body_stays_movable_when_corner_hit_areas_overlap",
+        }.items():
+            need(name in aliases, f"expected failure stream missing: {name}")
+            failure_text = payload_bytes_by_path[aliases[name]["path"]].decode("utf-8", "replace")
+            need(expected_text in failure_text, f"expected failure detail missing in {name}")
+            checks["expected_failures"][name] = expected_text
+        checks["native_reports"] = {"complete_reports": len(reports),
+                                    "complete_report_outcomes": {"failed": failed_reports, "passed": passed_reports},
+                                    "targets_checks": {"60_hz": 72, "120_hz": 72},
+                                    "camera_existing_checks": 17, "kestrel_checks": len(kestrel),
+                                    "runner_receipts": {"complete": len(complete), "partial": len(partial)},
+                                    "incomplete_first_runner_record_retained": True}
+        result = {"ok": True, "checks": checks, "bundle": ROOT_REL}
+    except Exception as e:
+        result = {"ok": False, "error": str(e), "checks": checks}
+    out = Path(args.result)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    print(json.dumps(result, sort_keys=True))
+    return 0 if result["ok"] else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

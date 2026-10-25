@@ -539,6 +539,7 @@ mod tests {
             follow: None,
             selected_target: None,
             region_purpose: None,
+            pointer: super::super::region_pointer_ui::State::default(),
             saving: None,
             rebase: None,
         }

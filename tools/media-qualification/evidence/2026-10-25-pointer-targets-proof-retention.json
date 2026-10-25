@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "scope": "Actual independent post-collection audit and corrected collector/dry-run outcomes; kept outside the immutable inventory to avoid circular evidence.",
+  "verified_readback": true,
+  "files": [
+    {
+      "source": "/tmp/deadpan-pointer-targets-2026-10-25/audit/byte_audit.py",
+      "path": "2026-10-25-pointer-targets-byte-audit.py.txt",
+      "bytes": 18513,
+      "sha256": "735e5c97b1444874508859741b756fa81abf5318e9db7290854a279ae7beb7c0"
+    },
+    {
+      "source": "/tmp/deadpan-pointer-targets-2026-10-25/audit/byte-result.json",
+      "path": "2026-10-25-pointer-targets-byte-audit.json",
+      "bytes": 1246,
+      "sha256": "11a704d016b5be754188972aa69a80cd809436aa86e34b7c67b3869e70494c8c"
+    },
+    {
+      "source": "/tmp/deadpan-pointer-targets-2026-10-25/byte-audit-final.json",
+      "path": "2026-10-25-pointer-targets-byte-audit.run.json",
+      "bytes": 6252,
+      "sha256": "2ebb70088d4c85aef3b9e6c0b066aa79dde1755f2d4070ce0ed46f3ff60929b0"
+    },
+    {
+      "source": "/tmp/deadpan-pointer-targets-2026-10-25/byte-audit-final.stdout",
+      "path": "2026-10-25-pointer-targets-byte-audit.stdout",
+      "bytes": 998,
+      "sha256": "20219350b12428d3818008bad07ad28daf994d5f623a9595f0e28a50299f11aa"
+    },
+    {
+      "source": "/tmp/deadpan-pointer-targets-2026-10-25/byte-audit-final.stderr",
+      "path": "2026-10-25-pointer-targets-byte-audit.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/tmp/deadpan-pointer-targets-2026-10-25/evidence/collection-run-corrected.json",
+      "path": "2026-10-25-pointer-targets-collection.json",
+      "bytes": 622,
+      "sha256": "d1b6b90aa4fb1efb7aa4618c37f5f22c5f8ea6d244a9c4a7fec1d171cbf4fb66"
+    },
+    {
+      "source": "/tmp/deadpan-pointer-targets-2026-10-25/evidence-collect-corrected.json",
+      "path": "2026-10-25-pointer-targets-collection.run.json",
+      "bytes": 6646,
+      "sha256": "8142d78139588cd063895e01da94f8984d02ab338b0306e5c560cf2ee6c0743b"
+    },
+    {
+      "source": "/tmp/deadpan-pointer-targets-2026-10-25/evidence-collect-corrected.stdout",
+      "path": "2026-10-25-pointer-targets-collection.stdout",
+      "bytes": 580,
+      "sha256": "638762b18e34d26de6bca1a00be44cb46232296c7ee9968a37757cbcc23b705f"
+    },
+    {
+      "source": "/tmp/deadpan-pointer-targets-2026-10-25/evidence-collect-corrected.stderr",
+      "path": "2026-10-25-pointer-targets-collection.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/tmp/deadpan-pointer-targets-2026-10-25/evidence/dry-run-corrected.json",
+      "path": "2026-10-25-pointer-targets-dry-run.json",
+      "bytes": 621,
+      "sha256": "45f2d6e37efa0073cb44e04acc69e5db6770ba497c93ac3a1c8c26d2984a4f2a"
+    },
+    {
+      "source": "/tmp/deadpan-pointer-targets-2026-10-25/evidence-dry-run-corrected.json",
+      "path": "2026-10-25-pointer-targets-dry-run.run.json",
+      "bytes": 6544,
+      "sha256": "fd3ec3bba86a39892cd4c49aa429ed971cb40610f2eb618dcd837ac528e7517c"
+    },
+    {
+      "source": "/tmp/deadpan-pointer-targets-2026-10-25/evidence-dry-run-corrected.stdout",
+      "path": "2026-10-25-pointer-targets-dry-run.stdout",
+      "bytes": 579,
+      "sha256": "3c26bf376c2fc6bd4eb26d973d05d394178028f85d454cb2273063066150f72e"
+    },
+    {
+      "source": "/tmp/deadpan-pointer-targets-2026-10-25/evidence-dry-run-corrected.stderr",
+      "path": "2026-10-25-pointer-targets-dry-run.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

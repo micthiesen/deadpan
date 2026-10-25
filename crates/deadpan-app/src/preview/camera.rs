@@ -4,7 +4,7 @@
 //! Camera also owns attention targets at the stopped picture: the numbered
 //! picker lists saved targets, center and corners, then detected face and region proposals
 //! in pages of nine; `t` follows the selected target; `n` draws a new
-//! target rectangle and `c` corrects the selected one with the keyboard; `T`
+//! target rectangle and `c` corrects the selected one with keys or dragging; `T`
 //! tracks it in the background. A target save continues the same Camera on
 //! the revision it created; any other revision change revokes the draft.
 
@@ -23,6 +23,8 @@ use deadpan_render::FramingLayer;
 use super::*;
 
 mod proposal_picker;
+mod region_pointer;
+mod region_pointer_ui;
 
 use deadpan_cli::picture_proposals::{DetectorKind, ProposalSelection};
 
@@ -378,6 +380,7 @@ pub(super) struct CameraSession {
     follow: Option<FollowDraft>,
     selected_target: Option<TargetId>,
     region_purpose: Option<RegionPurpose>,
+    pointer: region_pointer_ui::State,
     /// The ticket of a target command Camera waits for.
     saving: Option<u64>,
     /// Continuing on the revision this Camera's own target save created.
@@ -855,6 +858,7 @@ impl CameraSession {
                 .then(|| frame.metadata().display_aspect())
                 .flatten(),
             region_purpose: None,
+            pointer: region_pointer_ui::State::default(),
             saving: None,
             rebase: None,
         })
@@ -966,6 +970,7 @@ impl CameraSession {
             "selected": self.selected_target.as_ref().map(|id| id.as_str().to_owned()),
             "saving": self.saving.is_some(),
             "rebasing": self.rebase.is_some(),
+            "region_pointer": self.pointer.active(),
             "picker": self
                 .picker
                 .iter()
@@ -2089,6 +2094,8 @@ impl DeadpanApp {
         let Some(camera) = &mut self.camera else {
             return;
         };
+        // A held pointer must never overwrite a subsequent keyboard edit.
+        camera.pointer.revoke();
         if camera.blocked() {
             if key == CameraKey::Cancel && !camera.committing && camera.rebase.is_none() {
                 // Escape always leaves; a target save in flight still lands.
@@ -3364,9 +3371,9 @@ impl DeadpanApp {
                                     });
                             }
                             ui.weak(if region.is_point() {
-                                "Percent of the upright Original picture. Arrows or h/j/k/l move the point by 1%, Shift by 5%; counts repeat. Tab keeps the center field."
+                                "Drag on the picture to move the point. Arrows or h/j/k/l move it by 1% of the upright Original, Shift by 5%; counts repeat. Tab keeps the center field."
                             } else {
-                                "Percent of the upright Original picture. Tab moves between center, width and height; arrows or h/j/k/l change the focused part by 1%, Shift by 5%; counts repeat."
+                                "Drag the rectangle to move it, a corner to resize, or elsewhere on the picture to draw. Tab chooses center, width or height; arrows or h/j/k/l change 1% of the upright Original, Shift 5%; counts repeat."
                             });
                             if region.kind_locked() { ui.weak("A correction keeps this target's geometry kind."); }
                             ui.add_space(4.0);

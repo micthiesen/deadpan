@@ -171,7 +171,17 @@ point; arrows or
 counts repeat. Width and Height grow with Right/Up and shrink with Left/Down,
 never below 1%; centers stay inside the picture. Enter saves; Escape returns to
 framing without an edit. Points draw a cross and center marker, never an
-invented bounding box. The mouse is not required and not yet supported.
+invented bounding box.
+
+The same draft also supports pointer input: drag visible picture outside the
+rectangle to draw, its body to move, and any corner to resize against the
+opposite corner. Points can be moved by dragging their marker or placed by
+starting elsewhere on the visible picture. Pointer coordinates pass through
+the actual retained raster and every captured crop and framing layer into the
+upright Original. Bars and clipped source areas cannot supply coordinates.
+Release keeps the draft unsaved; Enter is still the save action. Keyboard
+input, focus loss or a changed picture/raster revokes a held drag. See
+[pointer qualification](qualification/pointer-targets-2026-10-25.md).
 
 A new target is one undoable `SetTarget` with a fresh `target-N` id and
 `Target N` label. Its span starts at the displayed picture's indexed PTS (the
@@ -460,8 +470,8 @@ recipe boundary and migration fixture.
 
 Saved point and region targets, keyboard creation, following and selected-region
 tracking are implemented (above, [targets](TARGETS.md), [tracking](TRACKING.md)).
-General non-face region proposals and pointer dragging of
-rectangles remain required. Whole Source, Hold, Sequence, Repeat and Retime following creep animates
+General region proposals and pointer target drawing are also implemented.
+Whole Source, Hold, Sequence, Repeat and Retime following creep animates
 scale while retaining the live target in ordinary selection and explicit Play
 scopes, as described above. Follow centers are placed on a letterboxed or
 pillarboxed canvas for targets that record their display aspect

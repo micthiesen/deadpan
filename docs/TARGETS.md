@@ -135,7 +135,13 @@ Camera picks, draws, follows and corrects targets ([framing](FRAMING.md#native-i
 - `n` opens a new target with the keyboard; `n` in that editor switches
   rectangle / point. Rectangles have center, width and height; points have
   only center, and Tab stays there. Both use
-  arrows or `h/j/k/l`, Shift for 5%, counts, and Enter saves one undoable
+  arrows or `h/j/k/l`, Shift for 5%, and counts. On the exact stopped picture,
+  drag a rectangle's body to move it, a corner to resize it, or visible picture
+  outside it to draw another rectangle. Drag a point to move it, or start
+  elsewhere on the visible picture to place it. Coordinates use the upright
+  Original through all retained crops and framing. Black bars and clipped
+  picture areas cannot supply target coordinates. Releasing stays temporary;
+  Enter saves one undoable
   `SetTarget` with a fresh `target-N` id and `Target N` label, no samples and no
   provenance. Its span starts at the displayed picture's indexed PTS, where the
   target was selected, and ends at the next stored shot boundary of the
@@ -202,4 +208,4 @@ copy and history paths. The viewer draws points with a cross and center
 marker. Region-based AI conditioning reports `point_target` unavailable for
 points, retaining their identity without inventing a subject rectangle.
 
-Pointer rectangle dragging and quality evidence on real people remain open.
+Quality evidence on real people remains on the owner verification list.

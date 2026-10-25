@@ -17,6 +17,8 @@ use egui::{Key, Modifiers};
 use super::*;
 use crate::project::targets::{Backend, Outcome, Script, ScriptEnding, ScriptQueue};
 
+mod pointer;
+
 /// Every start tracks a subject moving right, slowly enough to show progress.
 pub(super) fn backend() -> Backend {
     Backend::Scripted(Arc::new(ScriptQueue::new([Script {
@@ -422,5 +424,6 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         "Detected face proposals and their Camera picker are covered by the faces scenario; target punch-in and :zoom target= are covered by zoom."
             .into(),
     );
-    d.capture("Targets after undo")
+    d.capture("Targets after undo")?;
+    pointer::run(d)
 }

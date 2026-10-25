@@ -1,0 +1,312 @@
+{
+  "audit_note": "Run/source associations are derived from actual retained source-before/source-after pins. native-first.json is an incomplete real runner record with no pid, exit, or native report; no successful execution is claimed. Failed complete runs remain retained. The builder does not create terminal receipts or run product/build/native commands.",
+  "base": "7ef56b822d6decfe705e3501b22b3657a3359d74",
+  "collector_sha256": "a435a0ee061a871ce9ae107dfc29572bfd7e0c2450955a0ed01b121f31b1f118",
+  "exclusions": [
+    "Executable bytes and Cargo targets; copied/executed runtime bytes are hash-guarded only.",
+    "Native report.html duplicates, unselected PNG sequences and native replay project trees except the exact project files explicitly listed as retained extras.",
+    "Foreign fuzz/Cargo.lock and .claude content; current mutable documentation is not snapshotted."
+  ],
+  "inventory_self_hash": "files.json is not self-listed; its bytes count toward every cap and its hash is returned",
+  "limits": {
+    "decoded": "Bounded gzip-decoded payload bytes plus identity payloads and all metadata; no nested archives.",
+    "multimedia": "PNG bytes are retained screenshots, not a bound on decoded raster expansion.",
+    "raw": "Unique retained input bytes plus all metadata.",
+    "stored": "All published bytes including inventory and other metadata."
+  },
+  "logical_inputs": 249,
+  "omissions": [],
+  "payload_objects": 136,
+  "plan_sha256": "42be73feb7ea49cf4e716abdafab2618b98e1e9ba74f62c34b5d71cadff8d24f",
+  "runtime_guards": [
+    {
+      "bytes": 135252,
+      "kind": "final_source",
+      "sha256": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+      "source": "/Users/michael/Code/deadpan/Cargo.lock"
+    },
+    {
+      "bytes": 3509,
+      "kind": "final_source",
+      "sha256": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3",
+      "source": "/Users/michael/Code/deadpan/Cargo.toml"
+    },
+    {
+      "bytes": 63650,
+      "kind": "final_source",
+      "sha256": "b2b47ba3aa26734fcb5a1f837417e8410e7c8f0efc4c0c8e166062f2137e9d8e",
+      "source": "/Users/michael/Code/deadpan/crates/deadpan-app/src/navigation/camera.rs"
+    },
+    {
+      "bytes": 138946,
+      "kind": "final_source",
+      "sha256": "79d421dd7fc9de76085e97c9990d249cbf76f2dbf6bea855ad1672611ce5f597",
+      "source": "/Users/michael/Code/deadpan/crates/deadpan-app/src/navigation/registry/entries.rs"
+    },
+    {
+      "bytes": 333384,
+      "kind": "final_source",
+      "sha256": "8f16076aff9961e5968dc39ac9a2d595b89c85d3eb9fd07a86f4bca086e0a0ab",
+      "source": "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview.rs"
+    },
+    {
+      "bytes": 178195,
+      "kind": "final_source",
+      "sha256": "033e2d4f1540c325ca8e7609ca5f3ea061046309d36ea9870e7bb673ead19e06",
+      "source": "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera.rs"
+    },
+    {
+      "bytes": 42299,
+      "kind": "final_source",
+      "sha256": "f323849a0083abb9385536abaa3a3ee747f8dd4002dcf76dd63f15ebb5d27eb5",
+      "source": "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera/proposal_picker.rs"
+    },
+    {
+      "bytes": 10285,
+      "kind": "final_source",
+      "sha256": "7feeed9cffe016d771dc3d9cd5a5cbbb880d9f88168fbfc6f40cc8ffa8762bd2",
+      "source": "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera/region_pointer.rs"
+    },
+    {
+      "bytes": 11400,
+      "kind": "final_source",
+      "sha256": "b28c0a6cb0eff27c9580a80e0679603ab737084d0db7f27b25bc1d94ee33b1c8",
+      "source": "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera/region_pointer/tests.rs"
+    },
+    {
+      "bytes": 7923,
+      "kind": "final_source",
+      "sha256": "7ca9bfe3536bc28f2a799ac4d56b4523aea4eb3b5e72df97f0fb9b1e6fc0de15",
+      "source": "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/camera/region_pointer_ui.rs"
+    },
+    {
+      "bytes": 17322,
+      "kind": "final_source",
+      "sha256": "78855793f666e9bae8a04b23674fc4775db7887a349b2b1f7ca6d75129329443",
+      "source": "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness/targets.rs"
+    },
+    {
+      "bytes": 16687,
+      "kind": "final_source",
+      "sha256": "e7102fa5b3c7406c40d99f22462d8860ca78d76ae4980636b067a96da778170a",
+      "source": "/Users/michael/Code/deadpan/crates/deadpan-app/src/preview/harness/targets/pointer.rs"
+    },
+    {
+      "bytes": 86,
+      "kind": "final_source",
+      "sha256": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+      "source": "/Users/michael/Code/deadpan/rust-toolchain.toml"
+    },
+    {
+      "bytes": 114509088,
+      "kind": "copied_runtime_binary",
+      "sha256": "01ef8ca50d1f3fe97c533ee92859799e60fd9811263c4efc487ce3cced5965e7",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-debug-first/deadpan-app"
+    },
+    {
+      "bytes": 50118736,
+      "kind": "copied_runtime_binary",
+      "sha256": "d51e5e0614662bd7ad4135131bcddd9445414d79afb595ad3f7be10f0ed3dd41",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-debug-first/deadpan-cli"
+    },
+    {
+      "bytes": 1169872,
+      "kind": "copied_runtime_binary",
+      "sha256": "991bb45c03444f6a175e330b4fd4054be5a5b6aba06733171b17e7fbcd0d4504",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-debug-first/deadpan-media-worker"
+    },
+    {
+      "bytes": 1681696,
+      "kind": "copied_runtime_binary",
+      "sha256": "252c82a40224c85efae5290568a6b81dc8b5b7440b16cdc6be00b1d057dff39d",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-debug-first/deadpan-track"
+    },
+    {
+      "bytes": 2603984,
+      "kind": "copied_runtime_binary",
+      "sha256": "8d07055ed004c008f0eb3ec82678b9900fb19628f1563c33c7ccaa3149ef3a91",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-debug-first/deadpan-transcribe"
+    },
+    {
+      "bytes": 114508512,
+      "kind": "copied_runtime_binary",
+      "sha256": "4014cd8c46ffbda297dc01deba19b503963e31eedb9513ddeae16139b8ff6942",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-debug-fourth/deadpan-app"
+    },
+    {
+      "bytes": 50118736,
+      "kind": "copied_runtime_binary",
+      "sha256": "d51e5e0614662bd7ad4135131bcddd9445414d79afb595ad3f7be10f0ed3dd41",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-debug-fourth/deadpan-cli"
+    },
+    {
+      "bytes": 1169872,
+      "kind": "copied_runtime_binary",
+      "sha256": "991bb45c03444f6a175e330b4fd4054be5a5b6aba06733171b17e7fbcd0d4504",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-debug-fourth/deadpan-media-worker"
+    },
+    {
+      "bytes": 1681696,
+      "kind": "copied_runtime_binary",
+      "sha256": "252c82a40224c85efae5290568a6b81dc8b5b7440b16cdc6be00b1d057dff39d",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-debug-fourth/deadpan-track"
+    },
+    {
+      "bytes": 2603984,
+      "kind": "copied_runtime_binary",
+      "sha256": "8d07055ed004c008f0eb3ec82678b9900fb19628f1563c33c7ccaa3149ef3a91",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-debug-fourth/deadpan-transcribe"
+    },
+    {
+      "bytes": 114509088,
+      "kind": "copied_runtime_binary",
+      "sha256": "df639ba06c98d55e0e2e269971452f200a1f10f98f894529d997449514bdf2e1",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-debug-third/deadpan-app"
+    },
+    {
+      "bytes": 50118736,
+      "kind": "copied_runtime_binary",
+      "sha256": "d51e5e0614662bd7ad4135131bcddd9445414d79afb595ad3f7be10f0ed3dd41",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-debug-third/deadpan-cli"
+    },
+    {
+      "bytes": 1169872,
+      "kind": "copied_runtime_binary",
+      "sha256": "991bb45c03444f6a175e330b4fd4054be5a5b6aba06733171b17e7fbcd0d4504",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-debug-third/deadpan-media-worker"
+    },
+    {
+      "bytes": 1681696,
+      "kind": "copied_runtime_binary",
+      "sha256": "252c82a40224c85efae5290568a6b81dc8b5b7440b16cdc6be00b1d057dff39d",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-debug-third/deadpan-track"
+    },
+    {
+      "bytes": 2603984,
+      "kind": "copied_runtime_binary",
+      "sha256": "8d07055ed004c008f0eb3ec82678b9900fb19628f1563c33c7ccaa3149ef3a91",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-debug-third/deadpan-transcribe"
+    },
+    {
+      "bytes": 78804992,
+      "kind": "copied_runtime_binary",
+      "sha256": "d6e0054e6c840d9291786d71b5c683d8ac27606e36ff535fca11c467c48cb2f9",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-release-fifth/deadpan-app"
+    },
+    {
+      "bytes": 50118736,
+      "kind": "copied_runtime_binary",
+      "sha256": "d51e5e0614662bd7ad4135131bcddd9445414d79afb595ad3f7be10f0ed3dd41",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-release-fifth/deadpan-cli"
+    },
+    {
+      "bytes": 1169872,
+      "kind": "copied_runtime_binary",
+      "sha256": "991bb45c03444f6a175e330b4fd4054be5a5b6aba06733171b17e7fbcd0d4504",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-release-fifth/deadpan-media-worker"
+    },
+    {
+      "bytes": 1681696,
+      "kind": "copied_runtime_binary",
+      "sha256": "252c82a40224c85efae5290568a6b81dc8b5b7440b16cdc6be00b1d057dff39d",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-release-fifth/deadpan-track"
+    },
+    {
+      "bytes": 2603984,
+      "kind": "copied_runtime_binary",
+      "sha256": "8d07055ed004c008f0eb3ec82678b9900fb19628f1563c33c7ccaa3149ef3a91",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-release-fifth/deadpan-transcribe"
+    },
+    {
+      "bytes": 78805152,
+      "kind": "copied_runtime_binary",
+      "sha256": "445bf22e25ca70ac14e34f576014cbfa7a3e5f1cfabe0a8c098b1f49b9dccb25",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-release-fourth/deadpan-app"
+    },
+    {
+      "bytes": 50118736,
+      "kind": "copied_runtime_binary",
+      "sha256": "d51e5e0614662bd7ad4135131bcddd9445414d79afb595ad3f7be10f0ed3dd41",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-release-fourth/deadpan-cli"
+    },
+    {
+      "bytes": 1169872,
+      "kind": "copied_runtime_binary",
+      "sha256": "991bb45c03444f6a175e330b4fd4054be5a5b6aba06733171b17e7fbcd0d4504",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-release-fourth/deadpan-media-worker"
+    },
+    {
+      "bytes": 1681696,
+      "kind": "copied_runtime_binary",
+      "sha256": "252c82a40224c85efae5290568a6b81dc8b5b7440b16cdc6be00b1d057dff39d",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-release-fourth/deadpan-track"
+    },
+    {
+      "bytes": 2603984,
+      "kind": "copied_runtime_binary",
+      "sha256": "8d07055ed004c008f0eb3ec82678b9900fb19628f1563c33c7ccaa3149ef3a91",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-release-fourth/deadpan-transcribe"
+    },
+    {
+      "bytes": 78804992,
+      "kind": "copied_runtime_binary",
+      "sha256": "daec54b73d39a3f86990e1834a1293adb835afa3b1002ad6de993f1b34efa8c3",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-release-seventh/deadpan-app"
+    },
+    {
+      "bytes": 50118736,
+      "kind": "copied_runtime_binary",
+      "sha256": "d51e5e0614662bd7ad4135131bcddd9445414d79afb595ad3f7be10f0ed3dd41",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-release-seventh/deadpan-cli"
+    },
+    {
+      "bytes": 1169872,
+      "kind": "copied_runtime_binary",
+      "sha256": "991bb45c03444f6a175e330b4fd4054be5a5b6aba06733171b17e7fbcd0d4504",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-release-seventh/deadpan-media-worker"
+    },
+    {
+      "bytes": 1681696,
+      "kind": "copied_runtime_binary",
+      "sha256": "252c82a40224c85efae5290568a6b81dc8b5b7440b16cdc6be00b1d057dff39d",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-release-seventh/deadpan-track"
+    },
+    {
+      "bytes": 2603984,
+      "kind": "copied_runtime_binary",
+      "sha256": "8d07055ed004c008f0eb3ec82678b9900fb19628f1563c33c7ccaa3149ef3a91",
+      "source": "/private/tmp/deadpan-pointer-targets-2026-10-25/bin-release-seventh/deadpan-transcribe"
+    }
+  ],
+  "schema_version": 1,
+  "source_phases": {
+    "fifth": {
+      "identity_file": "metadata/fifth-source-identities.json",
+      "inputs": 13
+    },
+    "first": {
+      "identity_file": "metadata/first-source-identities.json",
+      "inputs": 12
+    },
+    "fourth": {
+      "identity_file": "metadata/fourth-source-identities.json",
+      "inputs": 13
+    },
+    "second": {
+      "identity_file": "metadata/second-source-identities.json",
+      "inputs": 13
+    },
+    "seventh": {
+      "identity_file": "metadata/seventh-source-identities.json",
+      "inputs": 13
+    },
+    "sixth": {
+      "identity_file": "metadata/sixth-source-identities.json",
+      "inputs": 13
+    },
+    "third": {
+      "identity_file": "metadata/third-source-identities.json",
+      "inputs": 13
+    }
+  }
+}

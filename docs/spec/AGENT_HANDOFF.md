@@ -4,6 +4,52 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-25
 
+[Camera pointer targets](../qualification/pointer-targets-2026-10-25.md) are
+implemented and locally qualified. `n`/`c` use the same temporary geometry for
+keys, rectangle drawing/body/corner drags and point placement/correction.
+Release never saves; Enter retains the existing captured typed save. Exact
+Original presentation, retained raster, composed visibility and final-pass
+admission govern pointer input. Keyboard, focus and basis changes revoke a held
+drag. Minimum rectangles retain a movable central body and perimeter corners.
+
+Base `7ef56b822d6decfe705e3501b22b3657a3359d74`; scratch
+`/tmp/deadpan-pointer-targets-2026-10-25`. Final source-seventh pins ten Rust
+files plus three configuration inputs. The source-fourth full App run passes
+1,339 tests with eleven configured skips and two passing leak warnings; both
+warning cases pass a clean serial recheck. Final focused 61, strict Clippy and
+formatting pass. The minimum-body regression first fails on source-sixth's old
+hit rule, then passes after the central-body fix. Preserve this negative proof,
+the initial compile failure, surface-registration failure and corrected Help/
+span-start fixture assumptions. The final release app SHA is
+`daec54b73d39a3f86990e1834a1293adb835afa3b1002ad6de993f1b34efa8c3`.
+
+Final release targets passes 72 checks plus Kestrel at visual 60 Hz and
+performance 120 Hz; Camera passes seventeen plus Kestrel. Root inspects the
+release rectangle/point captures. Both final target projects pass independent
+SQLite reconstruction, target-only mutations, durable two-Undo and all 46
+database/close-backup table/schema comparisons. Scope skips and retry warnings
+stay explicit; no physical display, speech, tracking-quality or new export
+claim. DP-08 stays Partial; coverage 89%, eight Complete/sixteen Partial,
+effects five of thirteen. Preserve foreign `fuzz/Cargo.lock` and `.claude/`.
+
+The corrected immutable collection retains seven source phases, all actual
+failures and both final projects. The first manifest's overbroad project-tree
+exclusion text is preserved with its real receipts. See the qualification for
+current inventory and independent byte-audit identities. Update the progress
+artifact after the implementation is pushed, retaining every prior history row.
+
+Next: contained framing ranges inside an explicit single Play at every enclosing
+Repeat. Read-only explorers locate independent guards in Camera, macro capture
+and Core's global scoped validator. Do not simply remove them: gain/pause/retime
+share that validator. A shared decoder-free exact root-to-owner map must account
+for nested repeats, isolation, Retime crops and fractional owner extents. The
+private native `Affine` walker is a reference, not portable authority; audio
+occurrence queries prune on the sample grid and cannot supply picture scope.
+Native scoped Visual entry also currently refuses. Preserve whole-owner and
+Default/mixed/selected-play refusal boundaries until each is implemented.
+
+## Earlier ranged Follow continuation, 2026-10-25
+
 [Ordinary ranged live Follow creep](../qualification/ranged-follow-creep-2026-10-25.md)
 is implemented and locally verified. Fixed Follow owners keep live target
 resolution while a contained Edit range controls scale. Prefix live/fallback

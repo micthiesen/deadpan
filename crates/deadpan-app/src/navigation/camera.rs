@@ -241,6 +241,7 @@ pub enum CameraError {
     Closed,
     NotEditingRegion,
     TargetKindLocked,
+    TargetKindMismatch,
     Framing(FramingError),
 }
 
@@ -268,6 +269,7 @@ impl fmt::Display for CameraError {
             Self::Closed => f.write_str("Camera mode has already closed."),
             Self::NotEditingRegion => f.write_str("No target geometry is being edited."),
             Self::TargetKindLocked => f.write_str("A correction keeps the target's geometry kind. Create a new target to switch between point and rectangle."),
+            Self::TargetKindMismatch => f.write_str("Pointer editing keeps the target's geometry kind. Use n to switch a new target between point and rectangle."),
             Self::Framing(error) => error.fmt(f),
         }
     }
@@ -382,6 +384,39 @@ impl CameraDraft {
         self.phase = CameraPhase::Region;
         self.clear_count();
         CameraEffect::RegionChanged(draft.geometry())
+    }
+
+    /// Replace temporary target geometry from a source-coordinate pointer
+    /// gesture. Pointer input keeps the geometry kind and keyboard field;
+    /// only Enter emits the separate save request.
+    pub fn set_region_geometry(&mut self, geometry: TargetGeometry) -> CameraEffect {
+        if self.phase == CameraPhase::Closed {
+            return CameraEffect::Rejected(CameraError::Closed);
+        }
+        if self.phase != CameraPhase::Region {
+            return CameraEffect::Rejected(CameraError::NotEditingRegion);
+        }
+        self.clear_count();
+        let region = self.region.as_mut().expect("region phase has a region");
+        let before = region.geometry();
+        match (geometry, region.point) {
+            (TargetGeometry::Point(point), true) => {
+                region.region.center = point.center.map(|value| value.min(TARGET_UNITS));
+            }
+            (TargetGeometry::Region(candidate), false) => {
+                region.region.center = candidate.center.map(|value| value.min(TARGET_UNITS));
+                region.region.size = candidate
+                    .size
+                    .map(|value| value.clamp(MIN_REGION_SIZE, TARGET_UNITS));
+            }
+            _ => return CameraEffect::Rejected(CameraError::TargetKindMismatch),
+        }
+        let geometry = region.geometry();
+        if geometry == before {
+            CameraEffect::None
+        } else {
+            CameraEffect::RegionChanged(geometry)
+        }
     }
 
     /// Leave rectangle editing, after a save or Escape.
@@ -1456,6 +1491,151 @@ mod tests {
         assert_eq!(draft.phase(), CameraPhase::Adjust);
         assert!(draft.region().is_none());
         assert_eq!(draft.pose(), FramingPose::identity());
+    }
+
+    #[test]
+    fn pointer_geometry_requires_region_phase_without_changing_other_drafts() {
+        let candidate = region([600_000, 400_000], [300_000, 100_000]).into();
+        let mut draft = new_draft();
+        draft.input(CameraKey::Digit(3), None);
+        let before = draft.clone();
+        assert_eq!(
+            draft.set_region_geometry(candidate),
+            CameraEffect::Rejected(CameraError::NotEditingRegion)
+        );
+        assert_eq!(draft, before);
+        draft.input(CameraKey::ClearCount, None);
+        draft.input(CameraKey::RefreshTargets, None);
+        let before = draft.clone();
+        assert_eq!(
+            draft.set_region_geometry(candidate),
+            CameraEffect::Rejected(CameraError::NotEditingRegion)
+        );
+        assert_eq!(draft, before);
+        draft.input(CameraKey::Cancel, None);
+        draft.input(CameraKey::Cancel, None);
+        let before = draft.clone();
+        assert_eq!(
+            draft.set_region_geometry(candidate),
+            CameraEffect::Rejected(CameraError::Closed)
+        );
+        assert_eq!(draft, before);
+    }
+
+    #[test]
+    fn pointer_rectangle_clamps_keeps_field_and_continues_with_keyboard() {
+        let mut draft = new_draft();
+        draft.open_geometry(region([500_000; 2], [200_000; 2]).into(), true);
+        draft.input(CameraKey::Tab { reverse: false }, None);
+        draft.input(CameraKey::Digit(9), None);
+        let clamped = region([TARGET_UNITS, 0], [MIN_REGION_SIZE, TARGET_UNITS]);
+        assert_eq!(
+            draft.set_region_geometry(region([u32::MAX, 0], [0, u32::MAX]).into()),
+            CameraEffect::RegionChanged(clamped.into())
+        );
+        assert_eq!(draft.pending_count(), None);
+        assert!(!draft.count_overflowed());
+        assert_eq!(draft.region().unwrap().field(), RegionField::Width);
+        assert!(draft.region().unwrap().kind_locked());
+        assert_eq!(draft.phase(), CameraPhase::Region);
+        assert_eq!(draft.pose(), FramingPose::identity());
+        draft.input(CameraKey::Digit(4), None);
+        assert_eq!(
+            draft.set_region_geometry(clamped.into()),
+            CameraEffect::None
+        );
+        assert_eq!(
+            draft.pending_count(),
+            None,
+            "even an unchanged drag clears counts"
+        );
+        let continued = region(
+            [TARGET_UNITS, 0],
+            [MIN_REGION_SIZE + REGION_STEP, TARGET_UNITS],
+        );
+        assert_eq!(
+            draft.input(CameraKey::Arrow(Direction::Right), None),
+            CameraEffect::RegionChanged(continued.into())
+        );
+        assert_eq!(
+            draft.input(CameraKey::Commit, None),
+            CameraEffect::RegionCommit(continued.into())
+        );
+        assert_eq!(
+            draft.phase(),
+            CameraPhase::Region,
+            "Enter requests a save without closing"
+        );
+        assert_eq!(
+            draft.input(CameraKey::Cancel, None),
+            CameraEffect::RegionClosed
+        );
+        assert!(draft.region().is_none());
+        assert_eq!(draft.pose(), FramingPose::identity());
+    }
+
+    #[test]
+    fn pointer_point_keeps_temporary_rectangle_size_out_of_serialized_geometry() {
+        let mut draft = new_draft();
+        let size = [340_000, 120_000];
+        draft.open_region(region([500_000; 2], size));
+        draft.input(CameraKey::NewRegion, None);
+        for _ in 0..11 {
+            draft.input(CameraKey::Digit(9), None);
+        }
+        assert!(draft.count_overflowed());
+        let point = TargetGeometry::Point(TargetPoint {
+            center: [0, TARGET_UNITS],
+        });
+        assert_eq!(
+            draft.set_region_geometry(
+                TargetPoint {
+                    center: [0, u32::MAX]
+                }
+                .into()
+            ),
+            CameraEffect::RegionChanged(point)
+        );
+        assert_eq!(draft.pending_count(), None);
+        assert!(!draft.count_overflowed());
+        assert_eq!(draft.region().unwrap().field(), RegionField::Center);
+        assert_eq!(draft.region().unwrap().region().size, size);
+        assert_eq!(
+            serde_json::to_value(draft.region().unwrap().geometry()).unwrap(),
+            serde_json::json!({"center":[0,1000000]})
+        );
+        assert_eq!(
+            draft.input(CameraKey::Commit, None),
+            CameraEffect::RegionCommit(point)
+        );
+        draft.input(CameraKey::NewRegion, None);
+        assert_eq!(
+            draft.region().unwrap().geometry(),
+            region([0, TARGET_UNITS], size).into()
+        );
+    }
+
+    #[test]
+    fn pointer_cannot_toggle_geometry_kind_for_new_targets_or_corrections() {
+        let rectangle = TargetGeometry::from(region([500_000; 2], [200_000; 2]));
+        let point = TargetGeometry::from(TargetPoint {
+            center: [400_000, 600_000],
+        });
+        for locked in [false, true] {
+            for (initial, candidate) in [(rectangle, point), (point, rectangle)] {
+                let mut draft = new_draft();
+                draft.open_geometry(initial, locked);
+                draft.input(CameraKey::Digit(2), None);
+                assert_eq!(
+                    draft.set_region_geometry(candidate),
+                    CameraEffect::Rejected(CameraError::TargetKindMismatch)
+                );
+                assert_eq!(draft.region().unwrap().geometry(), initial);
+                assert_eq!(draft.region().unwrap().kind_locked(), locked);
+                assert_eq!(draft.pending_count(), None);
+                assert_eq!(draft.pose(), FramingPose::identity());
+            }
+        }
     }
 
     #[test]

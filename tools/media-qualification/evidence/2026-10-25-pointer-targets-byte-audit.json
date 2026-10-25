@@ -1,0 +1,46 @@
+{
+  "bundle": "tools/media-qualification/evidence/2026-10-25-pointer-targets",
+  "checks": {
+    "decoded_bytes": 127505055,
+    "expected_failures": {
+      "metadata/commands-write.stderr": "COMMANDS.md rewritten",
+      "metadata/tiny-body-negative-sixth.stderr": "minimum_rectangle_body_stays_movable_when_corner_hit_areas_overlap",
+      "metadata/unit-first.stderr": "cannot find type"
+    },
+    "latest_live_source_files_verified": 13,
+    "logical_aliases": 249,
+    "native_reports": {
+      "camera_existing_checks": 17,
+      "complete_report_outcomes": {
+        "failed": 2,
+        "passed": 4
+      },
+      "complete_reports": 6,
+      "incomplete_first_runner_record_retained": true,
+      "kestrel_checks": 6,
+      "runner_receipts": {
+        "complete": 28,
+        "partial": 1
+      },
+      "targets_checks": {
+        "120_hz": 72,
+        "60_hz": 72
+      }
+    },
+    "published_files": 139,
+    "raw_bytes": 127505055,
+    "runtime_guard_bytes_verified": 43,
+    "source_phase_inputs": {
+      "fifth": 13,
+      "first": 12,
+      "fourth": 13,
+      "second": 13,
+      "seventh": 13,
+      "sixth": 13,
+      "third": 13
+    },
+    "source_phase_pins_verified": 7,
+    "stored_bytes": 5115865
+  },
+  "ok": true
+}

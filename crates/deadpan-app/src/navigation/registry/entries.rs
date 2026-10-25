@@ -1908,7 +1908,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::CAMERA,
         replay: Replay::NotRecorded,
         headless: eq("command set_target; track-correct", CAM),
-        help: "Draw a new target, or correct the chosen target at this picture. While drawing, n switches rectangle / point; corrections keep their kind. Tab moves between center, width and height for rectangles, or stays on center for points; arrows or h/j/k/l change 1%, Shift 5%, counts repeat. Enter saves one undoable edit; Escape returns to framing.",
+        help: "Draw a new target, or correct the chosen target at this picture. Drag the rectangle to move it, a corner to resize, or elsewhere on the visible picture to draw; points move by dragging. While drawing, n switches rectangle / point; corrections keep their kind. Tab moves between center, width and height for rectangles, or stays on center for points; arrows or h/j/k/l change 1%, Shift 5%, counts repeat. Dragging is temporary. Enter saves one undoable edit; Escape returns to framing.",
     },
     Spec {
         id: "camera.fields",
