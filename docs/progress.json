@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-25T15:00:01Z",
-  "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Milestone 151: Camera targets can be drawn, moved and resized with the pointer. Saves remain explicit, and small targets stay movable. Continuing framing ranges within Repeat plays; coverage remains 89%.",
+  "updated_at": "2026-10-25T17:12:51Z",
+  "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
+  "focus": "Coverage recalibrated to about 83% after a full requirements audit. Eight of 24 requirements are Complete; all seven delivery gates remain open. Finishing scoped framing ranges, then closing remaining audio, effects, analysis, UI and performance obligations.",
   "features": [
     {
       "id": "editing",
@@ -53,7 +53,7 @@
       "requirements": [
         "DP-10"
       ],
-      "note": "Local transcription, corrections, proposals and corrected transcript-search selectors work. Refinement and remaining analysis qualification stay open."
+      "note": "Local transcription, corrections, pause/shot proposals and corrected transcript-search selectors work. Automatic tighter word-boundary refinement, cursor-priority incremental scheduling and broader local analysis qualification remain."
     },
     {
       "id": "ai",
@@ -83,7 +83,7 @@
         "DP-16",
         "DP-17"
       ],
-      "note": "Exact timing is complete. Optional VideoToolbox decoding matches software pixels, but slower long-GOP seeks keep preview on software. Remaining renderer, effects and output qualification stay open."
+      "note": "Exact timing is complete. Shared canonical paths verify current recipes, but full picture/audio effects and mastering, incremental render-plan reuse, native playback stress and broader HDR/encoder quality qualification remain."
     },
     {
       "id": "ui",
@@ -92,7 +92,7 @@
       "requirements": [
         "DP-20"
       ],
-      "note": "Keyboard teaching, focus and accessibility are implemented. Full workflow polish remains."
+      "note": "Complete timeline/detail, placement, inspector and audition workflows remain. Keyboard teaching, focus, accessibility and the main workspace are implemented."
     },
     {
       "id": "performance",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "The narrow compound count-reuse change is promoted after 729 Core unit tests, 35 integration tests, 12 release Store tests, strict/format and real-media history/PCM verification. Both 45-picture, 72,072-sample exports verify at zero offset. Five fresh uninstrumented timing pairs pass 70 pause and 10 Kestrel checks, with all five improving: paired median reductions are 5.737334 ms to commit and 5.692792 ms to offscreen composition. Candidate medians are 180.792875/183.389625 ms. Counts are local to actual serialized values, every work charge remains and original full-serializer refusals are retained. No memory lane, p95 or 100 ms/50 ms target pass is claimed."
+      "note": "Measured optimizations improve large-project first-pause latency, but the latest offscreen median is 183.389625 ms; the 100 ms Hold and 50 ms edit targets remain unfulfilled. Primary-Mac native percentile, full effects/inference stress, cold-seek, resource-envelope and diagnostics qualification remain. Narrow passing benchmarks do not close these requirements."
     },
     {
       "id": "models",
@@ -1341,6 +1341,2247 @@
       "revision": "be315fd28344f970c841d5c0ad05886f79a4cfec",
       "retrospective": false,
       "summary": "Camera targets support pointer rectangle drawing, body/corner edits and point placement/correction, with temporary drags and explicit Enter saves. A small-target regression fails the old hit rule and passes after the fix. The full App lane passes 1,339 tests, with two passing leak warnings clearing in a serial recheck; final focused 61, Clippy and formatting pass. Final release targets passes 72 checks at 60/120 Hz plus Kestrel; Camera passes seventeen plus Kestrel. Independent SQLite audits verify both durable Undo chains and all 46 database/backup tables. The 139-file evidence audit passes. Original compile, setup, fixture, negative-test and manifest-correction evidence remains retained. Repeat-play framing ranges remain open; coverage stays 89%."
+    },
+    {
+      "date": "2026-10-25",
+      "percent": 83,
+      "complete_sections": 8,
+      "revision": "cced3e3519e111514e049c8b3e9d96ce3c4acd7d",
+      "retrospective": false,
+      "kind": "reassessment",
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "summary": "Recalibrated legacy 89% to about 83% using 162 explicit acceptance criteria across all 24 requirements. The old estimate first reached 89% on October 8 and remained there for 137 observations while strict completion increased from four to eight. This is a reporting correction, not lost implementation. All seven gates remain open; picture effects are five of thirteen. Remaining integration and verification effort was underestimated. The dashboard no longer infers progress rate from old estimates."
     }
-  ]
+  ],
+  "assessment": {
+    "id": "acceptance-v1-2026-10-25",
+    "date": "2026-10-25",
+    "method": "Each DP-01 through DP-24 has equal weight. Average its 3-8 fixed major acceptance criteria: 1 implemented and locally verified; 0.5 meaningful confirmed partial or incomplete local verification; 0 absent. Coarse acceptance scope, not remaining effort, time or release readiness.",
+    "scope": "Full normative spec under Section 29.1 local-Mac verification. Owner-only checks remain separately recorded. Read-only source/evidence audit, not a fresh full-product qualification run.",
+    "requirements": [
+      {
+        "id": "DP-01",
+        "name": "Project library, history and recovery",
+        "notes": "Complete status supported by dedicated obligation reconciliation; unavailable physical/provider checks excluded.",
+        "criteria": [
+          {
+            "id": "DP-01.1",
+            "deliverable": "Safe system Documents library creation, cancellation and asynchronous preparation",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/project-acceptance-2026-10-09.md acceptance mapping 20.1",
+              "crates/deadpan-app/src/library.rs"
+            ],
+            "remaining": "",
+            "normative": "20.1"
+          },
+          {
+            "id": "DP-01.2",
+            "deliverable": "Immutable Original, full-source initialization and protected undo baseline",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/linked-original-2026-10-09.md",
+              "crates/deadpan-store/tests/single_source.rs"
+            ],
+            "remaining": "",
+            "normative": "20.2"
+          },
+          {
+            "id": "DP-01.3",
+            "deliverable": "Durable atomic autosave, complete Undo/Redo and named takes",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/project-acceptance-2026-10-09.md",
+              "crates/deadpan-store/tests/revision_storage.rs",
+              "docs/qualification/named-takes-2026-10-08.md"
+            ],
+            "remaining": "",
+            "normative": "20.2"
+          },
+          {
+            "id": "DP-01.4",
+            "deliverable": "Managed/linked assets, identity-verified relink and truthful missing media",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/relink-volumes-2026-10-08.md",
+              "docs/qualification/linked-original-2026-10-09.md"
+            ],
+            "remaining": "",
+            "normative": "20.3"
+          },
+          {
+            "id": "DP-01.5",
+            "deliverable": "Unclean-exit and worker reconciliation, rotating backups and storage-failure recovery",
+            "score": 1,
+            "evidence": [
+              "docs/BACKUPS.md process kills",
+              "docs/qualification/render-host-crash-2026-10-08.md",
+              "docs/qualification/storage-errors-2026-10-08.md"
+            ],
+            "remaining": "",
+            "normative": "20.4"
+          },
+          {
+            "id": "DP-01.6",
+            "deliverable": "Read-only newer schemas and backup/copy/validate/promote migration behavior",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/readonly-controls-2026-10-08.md",
+              "docs/BACKUPS.md release migration policy"
+            ],
+            "remaining": "New development migrations are excluded by standing owner authorization.",
+            "normative": "20.4"
+          },
+          {
+            "id": "DP-01.7",
+            "deliverable": "Single writer, authenticated live CLI and concurrent fixed-revision inspection",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/project-inspection-2026-10-09.md",
+              "docs/HEADLESS.md"
+            ],
+            "remaining": "",
+            "normative": "20.5"
+          }
+        ]
+      },
+      {
+        "id": "DP-02",
+        "name": "Exact frame, sample and source clocks",
+        "notes": "Complete status supported. Timing completeness does not establish every creative operation or performance budget.",
+        "criteria": [
+          {
+            "id": "DP-02.1",
+            "deliverable": "Separate typed rational clocks, checked arithmetic and half-open ranges",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/exact-timing-acceptance-2026-10-11.md Section 4 audit",
+              "crates/deadpan-core/src/time.rs"
+            ],
+            "remaining": "",
+            "normative": "4.1"
+          },
+          {
+            "id": "DP-02.2",
+            "deliverable": "Origin-based ties-to-even sample allocation including arbitrary sound sample starts",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/aac-preroll-2026-10-08.md 10000 fractional-rate edits",
+              "docs/SOUND_EVENTS.md"
+            ],
+            "remaining": "",
+            "normative": "4.2"
+          },
+          {
+            "id": "DP-02.3",
+            "deliverable": "Presentation-order VFR indexes, exact PTS/duration and terminal evidence",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/vfr-recipes-2026-10-09.md",
+              "docs/qualification/exact-timing-acceptance-2026-10-11.md"
+            ],
+            "remaining": "",
+            "normative": "4.3"
+          },
+          {
+            "id": "DP-02.4",
+            "deliverable": "Preserved offsets, rotation, aperture, aspect and codec-delay semantics",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/source-origins-2026-10-01.md",
+              "docs/qualification/fractional-aperture-2026-10-09.md",
+              "docs/qualification/source-interpretation-2026-10-11.md"
+            ],
+            "remaining": "",
+            "normative": "4.3"
+          },
+          {
+            "id": "DP-02.5",
+            "deliverable": "Exact primitive durations and attachment independence from host length",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/exact-timing-acceptance-2026-10-11.md combined operations matrix",
+              "crates/deadpan-plan/tests/picture_plan.rs"
+            ],
+            "remaining": "",
+            "normative": "4.4"
+          },
+          {
+            "id": "DP-02.6",
+            "deliverable": "Typed time inputs and outward frame snapping with exact source/audio boundaries retained",
+            "score": 1,
+            "evidence": [
+              "docs/SOURCE_MOMENTS.md",
+              "docs/qualification/source-moments-2026-09-26.md"
+            ],
+            "remaining": "",
+            "normative": "4.4-4.5"
+          },
+          {
+            "id": "DP-02.7",
+            "deliverable": "Deterministic interval sampling and subordinate proxy identity",
+            "score": 1,
+            "evidence": [
+              "docs/PROXIES.md",
+              "docs/qualification/exact-timing-acceptance-2026-10-11.md"
+            ],
+            "remaining": "",
+            "normative": "4.3"
+          }
+        ]
+      },
+      {
+        "id": "DP-03",
+        "name": "Structural primitives",
+        "notes": "",
+        "criteria": [
+          {
+            "id": "DP-03.1",
+            "deliverable": "Validated small typed tree, stable IDs, one parent, bounded depth and legal finite parameters",
+            "score": 1,
+            "evidence": [
+              "docs/STRUCTURAL_PROPERTIES.md",
+              "docs/ARCHITECTURE.md"
+            ],
+            "remaining": "",
+            "normative": "5.1,5.4"
+          },
+          {
+            "id": "DP-03.2",
+            "deliverable": "Source primitive retains independent linked picture/sound selections and exact valid mappings",
+            "score": 1,
+            "evidence": [
+              "docs/SOURCE_VIDEO_MAPPING.md",
+              "docs/AUDIO_PLAN.md",
+              "crates/deadpan-plan/tests/picture_plan.rs fractional_source_centers_and_vfr_selection_preserve_original_pts"
+            ],
+            "remaining": "",
+            "normative": "5.1,4.4"
+          },
+          {
+            "id": "DP-03.3",
+            "deliverable": "Sequence composition, split/group/ungroup and reversible transformations preserve child output and ownership",
+            "score": 0.5,
+            "evidence": [
+              "docs/STRUCTURAL_SELECTIONS.md",
+              "docs/AUDIO_GAIN.md owner clocks",
+              "docs/REQUIREMENTS.md DP-08 remainder"
+            ],
+            "remaining": "Ungroup of treated/framed groups with independently treated/framed children and some sound-bearing structural combinations still refuse.",
+            "normative": "5.1,5.4,6.3"
+          },
+          {
+            "id": "DP-03.4",
+            "deliverable": "Hold has exact duration, independent picture/sound providers and retained captured context",
+            "score": 1,
+            "evidence": [
+              "docs/CAPTURED_FRAMING.md",
+              "docs/GENERATED_HOLDS.md",
+              "docs/qualification/owned-gap-hold-duration-semantics-2026-10-22.md"
+            ],
+            "remaining": "",
+            "normative": "5.1,4.4"
+          },
+          {
+            "id": "DP-03.5",
+            "deliverable": "Compact Repeat primitive, exact total plays/gaps and sparse owned play definitions",
+            "score": 1,
+            "evidence": [
+              "docs/OVERRIDE_VERIFICATION.md",
+              "docs/OCCURRENCE_VERIFICATION.md",
+              "docs/REPEAT_GAP_BRANCHES.md"
+            ],
+            "remaining": "General transformation limitations are counted in DP-04 rather than declaring the primitive absent.",
+            "normative": "5.1-5.2"
+          },
+          {
+            "id": "DP-03.6",
+            "deliverable": "Retime primitive maps explicit output extent into valid child time without flattening",
+            "score": 1,
+            "evidence": [
+              "docs/RETIME_EDITING.md",
+              "crates/deadpan-plan/tests/picture_plan.rs exact_video_mapping_composes_nested_retimes_before_pts_selection",
+              "docs/qualification/vfr-recipes-2026-10-09.md"
+            ],
+            "remaining": "Variable-rate creative processing is DP-09; general parameter editing restrictions also affect DP-07.",
+            "normative": "5.1,4.4"
+          }
+        ]
+      },
+      {
+        "id": "DP-04",
+        "name": "Anchors, attachments and occurrences",
+        "notes": "",
+        "criteria": [
+          {
+            "id": "DP-04.1",
+            "deliverable": "Stable repeat iteration identity survives count changes and reorder without aliasing old overrides",
+            "score": 1,
+            "evidence": [
+              "docs/OVERRIDE_VERIFICATION.md",
+              "crates/deadpan-core/tests/marks.rs occurrence_marks_preserve_ids_without_cloning_on_growth_or_reviving_after_shrink"
+            ],
+            "remaining": "",
+            "normative": "5.2"
+          },
+          {
+            "id": "DP-04.2",
+            "deliverable": "Source/local/occurrence/sequence anchors, insertion bias and explicit loss policy",
+            "score": 1,
+            "evidence": [
+              "crates/deadpan-core/tests/marks.rs pinned_sequence_time_stays_fixed_and_trimmed_hold_points_do_not_retarget",
+              "crates/deadpan-core/tests/marks.rs source_marks_use_original_clock_independent_of_owner_and_timeline_usage",
+              "docs/STRUCTURAL_PROPERTIES.md"
+            ],
+            "remaining": "",
+            "normative": "5.3"
+          },
+          {
+            "id": "DP-04.3",
+            "deliverable": "Copy/paste creates independent authored IDs and preserves owned attachments and source sharing",
+            "score": 1,
+            "evidence": [
+              "docs/EXPLODE_DUPLICATE.md",
+              "docs/NAMED_REGISTERS.md",
+              "docs/OWNED_SOUND_VOICES.md copying retained sound clocks"
+            ],
+            "remaining": "",
+            "normative": "5.2,5.4"
+          },
+          {
+            "id": "DP-04.4",
+            "deliverable": "Move/ripple/cut transforms preserve and trim attached events through composition",
+            "score": 0.5,
+            "evidence": [
+              "docs/ATOMIC_MOVES.md",
+              "docs/OWNED_SOUND_VOICES.md",
+              "docs/qualification/aligned-sound-scope-2026-10-23.md"
+            ],
+            "remaining": "Attached sound journal scopes still refuse transformations that change their processing subtree; general temporal transforms remain incomplete.",
+            "normative": "5.4"
+          },
+          {
+            "id": "DP-04.5",
+            "deliverable": "Explicit All plays/This play uses sparse isolation without modifying unrelated occurrences",
+            "score": 1,
+            "evidence": [
+              "docs/SCOPED_EDITING.md",
+              "docs/OCCURRENCE_VERIFICATION.md",
+              "docs/qualification/scoped-framing-ranges-2026-10-25.md"
+            ],
+            "remaining": "Milestone152 counts only its qualified exact contained Time ranges.",
+            "normative": "5.2"
+          },
+          {
+            "id": "DP-04.6",
+            "deliverable": "Explode preserves all current picture, sound, timing, targets and overrides reversibly",
+            "score": 0.5,
+            "evidence": [
+              "docs/EXPLODE_DUPLICATE.md",
+              "docs/REPEAT_ESCALATION.md Remaining",
+              "docs/REQUIREMENTS.md DP-04"
+            ],
+            "remaining": "Explode refuses target escalation and retained beat-sound journal scopes.",
+            "normative": "5.2"
+          },
+          {
+            "id": "DP-04.7",
+            "deliverable": "Nested occurrences support ordinary structural edits and selected-play transformations",
+            "score": 0.5,
+            "evidence": [
+              "docs/SCOPED_EDITING.md",
+              "docs/STRUCTURAL_SELECTIONS.md"
+            ],
+            "remaining": "General cuts/copy/paste and timing edits across or inside selected plays remain restricted; scoped152 framing is a narrow admission.",
+            "normative": "5.2,6.3"
+          }
+        ]
+      },
+      {
+        "id": "DP-05",
+        "name": "Complete keyboard editing flow",
+        "notes": "",
+        "criteria": [
+          {
+            "id": "DP-05.1",
+            "deliverable": "Counted frame/beat/word/shot/pause navigation, marks, search and independent transport contexts",
+            "score": 1,
+            "evidence": [
+              "docs/NATIVE_WORKSPACE.md",
+              "docs/MARK_NAVIGATION.md",
+              "docs/TRANSCRIPTION.md",
+              "docs/UI_FEEDBACK.md full-session"
+            ],
+            "remaining": "",
+            "normative": "7.2"
+          },
+          {
+            "id": "DP-05.2",
+            "deliverable": "Normal/Visual/operator/command focus, native text and transient cancellation semantics",
+            "score": 1,
+            "evidence": [
+              "docs/KEYMAP.md",
+              "docs/qualification/footer-layout-2026-09-27.md",
+              "docs/qualification/workspace-layout-2026-09-27.md"
+            ],
+            "remaining": "Physical keyboard and real OS IME output remain owner-only.",
+            "normative": "7.1"
+          },
+          {
+            "id": "DP-05.3",
+            "deliverable": "All semantic text objects/selectors have correct context, role and boundary behavior",
+            "score": 0.5,
+            "evidence": [
+              "docs/STRUCTURAL_SELECTIONS.md",
+              "docs/TRANSCRIPTION.md Remaining",
+              "docs/SHOT_DETECTION.md"
+            ],
+            "remaining": "Original operator word motions and shot transition handles remain incomplete; scope/role restrictions prevent full object composition.",
+            "normative": "6.2,7.3"
+          },
+          {
+            "id": "DP-05.4",
+            "deliverable": "Delete/yank/repeat/paste/split/group and role operations compose across supported editable structures",
+            "score": 0.5,
+            "evidence": [
+              "docs/ROLE_EDITS.md",
+              "docs/STRUCTURAL_SELECTIONS.md",
+              "docs/SCOPED_EDITING.md"
+            ],
+            "remaining": "Role selectors and sound-bearing Repeat transforms, general occurrence temporal operations and cross-structure ranges remain partial.",
+            "normative": "6.3,6.5,7.4"
+          },
+          {
+            "id": "DP-05.5",
+            "deliverable": "Camera and Trim provide keyboard adjustment, exact previews, Enter transaction and Escape restoration",
+            "score": 1,
+            "evidence": [
+              "docs/FRAMING.md",
+              "docs/COMBINED_TRIM.md",
+              "docs/qualification/native-trim-2026-10-01.md"
+            ],
+            "remaining": "Existing creep parameter editing is separately incomplete in DP-08.",
+            "normative": "7.6-7.7"
+          },
+          {
+            "id": "DP-05.6",
+            "deliverable": "Original slice selection, destination preview/adjustment, insertion/replacement and audition",
+            "score": 0.5,
+            "evidence": [
+              "docs/SOURCE_MOMENTS.md",
+              "docs/EDITED_SLICES.md",
+              "docs/qualification/place-slice-macros-2026-10-18.md",
+              "docs/SCOPED_EDITING.md"
+            ],
+            "remaining": "Placement remains ordinary-Sequence scoped and refuses nested occurrence destinations; broader placement intent remains open.",
+            "normative": "9.7,7.4"
+          },
+          {
+            "id": "DP-05.7",
+            "deliverable": "Keyboard access to explicit all/single/multiple play and gap editing scopes",
+            "score": 0.5,
+            "evidence": [
+              "docs/SCOPED_EDITING.md",
+              "docs/REPEAT_GAP_BRANCHES.md"
+            ],
+            "remaining": "Native general gap content editing, occurrence copy/paste and remaining temporal scopes refuse.",
+            "normative": "5.2,7.2"
+          },
+          {
+            "id": "DP-05.8",
+            "deliverable": "Visible key teaching, pending prefixes, contextual palette and global shortcut compatibility",
+            "score": 1,
+            "evidence": [
+              "docs/KEYMAP.md action registry",
+              "docs/KEYBINDING_COMPATIBILITY.md",
+              "docs/qualification/palette-forms-2026-10-17.md"
+            ],
+            "remaining": "",
+            "normative": "7.1"
+          }
+        ]
+      },
+      {
+        "id": "DP-06",
+        "name": "Registers, semantic macros, dot and configurable bindings",
+        "notes": "",
+        "criteria": [
+          {
+            "id": "DP-06.1",
+            "deliverable": "Typed persistent registers retain editable Original/Edit captures and named programs",
+            "score": 1,
+            "evidence": [
+              "docs/NAMED_REGISTERS.md",
+              "docs/qualification/discontiguous-range-selectors-2026-10-22.md"
+            ],
+            "remaining": "",
+            "normative": "7.4"
+          },
+          {
+            "id": "DP-06.2",
+            "deliverable": "Macros record semantic operations and parameters across complete creative editing surface",
+            "score": 0.5,
+            "evidence": [
+              "docs/SEMANTIC_MACROS.md",
+              "docs/SECTION8_COVERAGE.md Semantic macros"
+            ],
+            "remaining": "General occurrence editing and broader placement instructions remain incomplete. Sampled-target ranged recording is expressly forbidden by current §7.4 and is NOT counted as a missing requirement.",
+            "normative": "6.1,7.4"
+          },
+          {
+            "id": "DP-06.3",
+            "deliverable": "Dot re-resolves semantic selector and exact parameters at invocation context",
+            "score": 0.5,
+            "evidence": [
+              "docs/SEMANTIC_REPEAT.md",
+              "docs/qualification/scoped-framing-ranges-2026-10-25.md"
+            ],
+            "remaining": "Many creative operations work, but general one-play/temporal edits and their dot intent remain restricted.",
+            "normative": "6.2,7.4"
+          },
+          {
+            "id": "DP-06.4",
+            "deliverable": "Macros validate atomically, limit recursion/instructions, stage named calls and commit once",
+            "score": 1,
+            "evidence": [
+              "docs/COMPOUND_TRANSACTIONS.md",
+              "docs/SEMANTIC_MACROS.md"
+            ],
+            "remaining": "",
+            "normative": "7.4"
+          },
+          {
+            "id": "DP-06.5",
+            "deliverable": "Semantic selectors cover marks, motion, source, node/search and discontiguous sets with proper invocation authority",
+            "score": 0.5,
+            "evidence": [
+              "docs/qualification/named-mark-selectors-2026-10-22.md",
+              "docs/qualification/explicit-node-selectors-2026-10-22.md",
+              "docs/qualification/transcript-search-selectors-2026-10-22.md"
+            ],
+            "remaining": "Node/search unions are ordinary Sequence operations; general occurrence and role selectors remain constrained.",
+            "normative": "6.2"
+          },
+          {
+            "id": "DP-06.6",
+            "deliverable": "Configurable declarative trie rejects ambiguity and retains teaching/audit behavior",
+            "score": 1,
+            "evidence": [
+              "docs/KEYMAP.md",
+              "docs/KEYBINDING_COMPATIBILITY.md"
+            ],
+            "remaining": "",
+            "normative": "7.1"
+          },
+          {
+            "id": "DP-06.7",
+            "deliverable": "Schema-driven typed argument grammar and completion show default selector, units and parameters",
+            "score": 0.5,
+            "evidence": [
+              "docs/KEYMAP.md action registry",
+              "docs/SECTION8_COVERAGE.md Shared command/help registry"
+            ],
+            "remaining": "Shared registry and bounded typed parsers exist, but full schema-driven argument grammar/default-selector completion is explicitly open.",
+            "normative": "6.4"
+          }
+        ]
+      },
+      {
+        "id": "DP-07",
+        "name": "Time/delivery creative operations",
+        "notes": "",
+        "criteria": [
+          {
+            "id": "DP-07.1",
+            "deliverable": "Dead air, frozen stare and living stare insert exact independent time and preserve following speech",
+            "score": 1,
+            "evidence": [
+              "docs/INSERT_TIME.md",
+              "docs/GENERATED_HOLDS.md",
+              "docs/qualification/ai-insertion-2026-10-07.md"
+            ],
+            "remaining": "",
+            "normative": "8.1"
+          },
+          {
+            "id": "DP-07.2",
+            "deliverable": "Micro-loops, ping-pong Holds and reverse hiccups have explicit seams and correct endpoint behavior",
+            "score": 1,
+            "evidence": [
+              "docs/CUTAWAYS.md",
+              "docs/REVERSE_AND_TAILS.md",
+              "docs/qualification/preview-export-2026-10-04.md"
+            ],
+            "remaining": "Composite/general-speed reverse belongs to remaining broad DSP composition rather than making these existing recipes absent.",
+            "normative": "8.1"
+          },
+          {
+            "id": "DP-07.3",
+            "deliverable": "Linked and audio-only word/syllable stutter with explicit overflow and inter-play behavior",
+            "score": 0.5,
+            "evidence": [
+              "docs/REPEAT_SELECTION.md",
+              "docs/ROLE_EDITS.md",
+              "docs/SECTION8_COVERAGE.md Word / syllable stutter"
+            ],
+            "remaining": "Frame-based role ranges cannot fully deliver sample-resolution subframe syllable editing; audio-only inter-play Holds are not implemented.",
+            "normative": "8.1,4.5,6.5"
+          },
+          {
+            "id": "DP-07.4",
+            "deliverable": "Editable Repeat escalation covers gain, framing, speed and gap progression",
+            "score": 0.5,
+            "evidence": [
+              "docs/REPEAT_ESCALATION.md",
+              "docs/REPEAT_GAP_BRANCHES.md"
+            ],
+            "remaining": "Per-play speed progression remains absent; gain/zoom/gap progression implemented and export-verified.",
+            "normative": "8.1"
+          },
+          {
+            "id": "DP-07.5",
+            "deliverable": "False starts, interrupted answers and callbacks are constructible and retain editable structure",
+            "score": 1,
+            "evidence": [
+              "docs/SOURCE_MOMENTS.md",
+              "docs/NAMED_REGISTERS.md",
+              "docs/SECTION8_COVERAGE.md",
+              "docs/qualification/preview-export-2026-10-15.md"
+            ],
+            "remaining": "Dedicated convenience commands are optional; composed accepted constructions count.",
+            "normative": "8.1"
+          },
+          {
+            "id": "DP-07.6",
+            "deliverable": "Slow delivery exposes tape-speed or Preserve and exact resulting duration",
+            "score": 1,
+            "evidence": [
+              "docs/RETIME_EDITING.md",
+              "docs/qualification/clocked-speed-update-2026-10-20.md",
+              "docs/qualification/preview-export-2026-10-04.md"
+            ],
+            "remaining": "Variable rate is separately mandatory under §10.5/DP-09.",
+            "normative": "8.1"
+          },
+          {
+            "id": "DP-07.7",
+            "deliverable": "All time operations remain adjustable and compose within nested authored structures",
+            "score": 0.5,
+            "evidence": [
+              "docs/SCOPED_EDITING.md",
+              "docs/RETIME_EDITING.md",
+              "docs/REQUIREMENTS.md DP-07"
+            ],
+            "remaining": "Timing edits involving processing subtrees, general Retime/Repeat ranges and sound-bearing structural scopes still refuse.",
+            "normative": "8 preamble,6.3"
+          },
+          {
+            "id": "DP-07.8",
+            "deliverable": "Six versioned starter recipes expose parameters, inspection, detachment/local save and pinned variation",
+            "score": 1,
+            "evidence": [
+              "docs/GAGS.md",
+              "docs/SECTION8_COVERAGE.md Saved gags",
+              "docs/qualification/preview-export-2026-10-15.md"
+            ],
+            "remaining": "Seeded framing variation is optional, not a mandatory missing capability.",
+            "normative": "8.4"
+          }
+        ]
+      },
+      {
+        "id": "DP-08",
+        "name": "Framing and picture creative operations",
+        "notes": "Current DP-08 remainder is stale in places:152 resolves contained scoped framing ranges; general non-face proposals and native target picking now exist. Do not count old target display-aspect compatibility as new required work under owner breaking-format authorization.",
+        "criteria": [
+          {
+            "id": "DP-08.1",
+            "deliverable": "Keyboard point/rectangle targets, saved presets and face/region target picking",
+            "score": 1,
+            "evidence": [
+              "docs/TARGETS.md",
+              "docs/qualification/point-targets-2026-10-24.md",
+              "docs/qualification/camera-regions-2026-10-25.md"
+            ],
+            "remaining": "Real-person quality judgement is owner-only; synthetic positives do not establish detector general accuracy.",
+            "normative": "7.6,8.2"
+          },
+          {
+            "id": "DP-08.2",
+            "deliverable": "Smash zoom and abrupt return at selected boundaries preserve existing framing intent",
+            "score": 0.5,
+            "evidence": [
+              "docs/FRAMING.md",
+              "docs/SECTION8_COVERAGE.md Abrupt return"
+            ],
+            "remaining": "Existing paths cannot step out over every arbitrary selected range; current command explicitly refuses.",
+            "normative": "8.2"
+          },
+          {
+            "id": "DP-08.3",
+            "deliverable": "Slow creep on beat/Hold/repeated group supports exact ownership, live targets and later parameter adjustment",
+            "score": 0.5,
+            "evidence": [
+              "docs/qualification/scoped-framing-ranges-2026-10-25.md",
+              "docs/qualification/ranged-follow-creep-2026-10-25.md",
+              "crates/deadpan-core/src/framing_zoom.rs build_at",
+              "crates/deadpan-app/src/preview/camera_fields.rs Component"
+            ],
+            "remaining": "152 completes contained explicit-Play Time ranges narrowly. Existing animated Follow cannot independently change arrival factor/curve through Keep creep; Camera has only center/scale fields. Scoped sampled targets and occurrence-crossing ranges still refuse.",
+            "normative": "8 preamble,8.2"
+          },
+          {
+            "id": "DP-08.4",
+            "deliverable": "Escalating crops remain compact, targeted, editable and transformable",
+            "score": 0.5,
+            "evidence": [
+              "docs/REPEAT_ESCALATION.md",
+              "crates/deadpan-plan/tests/picture_plan.rs escalation_scales_each_later_play_and_its_gap_inside_the_repeat_framing"
+            ],
+            "remaining": "Target escalation cannot explode without changing moving-target/clamp semantics; targeted export coverage remains incomplete.",
+            "normative": "8.2,5.2"
+          },
+          {
+            "id": "DP-08.5",
+            "deliverable": "Same-Original reaction cutaways and alternating reaction moments preserve or explicitly switch sound",
+            "score": 1,
+            "evidence": [
+              "docs/CUTAWAYS.md",
+              "docs/SECTION8_COVERAGE.md Reaction ping-pong",
+              "docs/qualification/preview-export-2026-10-15.md"
+            ],
+            "remaining": "Composed alternating cutaways count; one convenience alternation command is not required. Broader host-scope limitations remain in DP-04/05.",
+            "normative": "8.2"
+          },
+          {
+            "id": "DP-08.6",
+            "deliverable": "Off-center stare and freeze-detail target framing persist as reusable edits",
+            "score": 1,
+            "evidence": [
+              "docs/FRAMING.md",
+              "docs/CAPTURED_FRAMING.md",
+              "docs/qualification/hold-follow-creep-2026-10-24.md",
+              "docs/qualification/preview-export-2026-10-15.md"
+            ],
+            "remaining": "",
+            "normative": "8.2"
+          },
+          {
+            "id": "DP-08.7",
+            "deliverable": "Black-frame punctuation with explicit sound policy and exact adjustable duration",
+            "score": 1,
+            "evidence": [
+              "docs/INSERT_TIME.md",
+              "docs/ROOM_TONE_AUDIO.md",
+              "docs/qualification/preview-export-2026-10-04.md"
+            ],
+            "remaining": "A separate convenience black-provider setter is not required to construct the operation.",
+            "normative": "8.2"
+          },
+          {
+            "id": "DP-08.8",
+            "deliverable": "Delayed caption attachment with editable local delay/per-play reveal and shared preview/export",
+            "score": 1,
+            "evidence": [
+              "docs/CAPTIONS.md",
+              "docs/qualification/preview-export-2026-10-04.md"
+            ],
+            "remaining": "Wrapping/styling and split-screen comparison are not normative requirements for this operation.",
+            "normative": "8.2"
+          }
+        ]
+      },
+      {
+        "id": "DP-09",
+        "name": "Audio creative surface and intentional dynamics",
+        "notes": "",
+        "criteria": [
+          {
+            "id": "DP-09.1",
+            "deliverable": "Arbitrary word/breath/click emphasis and sudden silence with exact sample-level range control",
+            "score": 0.5,
+            "evidence": [
+              "docs/AUDIO_GAIN.md",
+              "docs/SECTION8_COVERAGE.md selective emphasis/sudden silence"
+            ],
+            "remaining": "Frame-based automation and mute work; sample-resolution click/syllable ranges and waveform range editing remain absent.",
+            "normative": "8.3,4.5"
+          },
+          {
+            "id": "DP-09.2",
+            "deliverable": "Approved room-tone selection, visible waveform/range, audition and bounded crossfade loops",
+            "score": 0.5,
+            "evidence": [
+              "docs/ROOM_TONE_AUDIO.md",
+              "docs/WAVEFORMS.md"
+            ],
+            "remaining": "Range/audition and exact loops exist; room-tone waveform display and native Repeat-gap/fragment controls are explicitly open.",
+            "normative": "8.3,10.4"
+          },
+          {
+            "id": "DP-09.3",
+            "deliverable": "Hanging tails, selected sends and explicit silence/room-tone/tail/custom policy across compositions",
+            "score": 0.5,
+            "evidence": [
+              "docs/FINITE_WET_EFFECTS.md",
+              "docs/REVERSE_AND_TAILS.md",
+              "docs/qualification/tail-sends-2026-10-12.md"
+            ],
+            "remaining": "Custom Hold policy and broader incoming-tail/loop interactions remain incomplete; tails inside speed changes refuse.",
+            "normative": "8.3,10.4"
+          },
+          {
+            "id": "DP-09.4",
+            "deliverable": "Bleep, linked audio lag and J/L cuts preserve independent sound/picture timing and remain adjustable",
+            "score": 0.5,
+            "evidence": [
+              "docs/ROLE_EDITS.md",
+              "docs/SECTION8_COVERAGE.md Audio"
+            ],
+            "remaining": "Bleep across cuts/groups, offset Source Trim/Slip and J/L cuts across group/Hold boundaries remain restricted. Tone overlay itself is an alternative, not a mandatory missing mode.",
+            "normative": "8.3"
+          },
+          {
+            "id": "DP-09.5",
+            "deliverable": "Saturation, independent pitch, tape/Preserve, reverse and variable-rate processing use canonical DSP",
+            "score": 0.5,
+            "evidence": [
+              "docs/AUDIO_DSP.md",
+              "docs/RETIME_EDITING.md",
+              "docs/REVERSE_AND_TAILS.md"
+            ],
+            "remaining": "Variable rate is unimplemented; general composite/speed-transformed reverse still refuses. Existing fixed pitch, saturation and Preserve/Tape paths are verified.",
+            "normative": "8.3,10.5"
+          },
+          {
+            "id": "DP-09.6",
+            "deliverable": "Beds and stings preserve owned sound clocks and anchor semantics through edits",
+            "score": 0.5,
+            "evidence": [
+              "docs/SOUND_EVENTS.md",
+              "docs/OWNED_SOUND_VOICES.md",
+              "docs/SECTION8_COVERAGE.md Bed drop/Wrongly triumphant sting"
+            ],
+            "remaining": "Root bed drop and synthesized sting work; sound following cuts and beat-attached bed transforms remain incomplete.",
+            "normative": "8.3,5.4"
+          },
+          {
+            "id": "DP-09.7",
+            "deliverable": "Explicit 48k stereo downmix, ordered voice/group effects and independent contribution clocks",
+            "score": 1,
+            "evidence": [
+              "docs/AUDIO_PREPARATION.md",
+              "docs/qualification/group-mix-2026-10-11.md",
+              "docs/qualification/shared-automation-2026-10-12.md",
+              "docs/qualification/shared-eq-2026-10-12.md"
+            ],
+            "remaining": "",
+            "normative": "10.1-10.2"
+          },
+          {
+            "id": "DP-09.8",
+            "deliverable": "Preserved source dynamics, authored gain, finite true-peak limiting, edge fades and monitor independence",
+            "score": 1,
+            "evidence": [
+              "docs/AUDIO_MASTERING.md",
+              "docs/AUDIO_EDGES.md",
+              "docs/PLAYBACK.md"
+            ],
+            "remaining": "Listening is owner-only; existing numerical PCM qualification earns local credit. Broader devices/performance belong DP-16/24.",
+            "normative": "10.3-10.4"
+          }
+        ]
+      },
+      {
+        "id": "DP-10",
+        "name": "Local transcript, refinement and proposals",
+        "notes": "",
+        "criteria": [
+          {
+            "id": "DP-10.1",
+            "deliverable": "Measured waveform/peak generation remains local, bounded and independent of authored edits",
+            "score": 1,
+            "evidence": [
+              "docs/WAVEFORMS.md",
+              "docs/qualification/gain-waveform-2026-09-28.md"
+            ],
+            "remaining": "Broader waveform editing is scored under DP-09.",
+            "normative": "11.1"
+          },
+          {
+            "id": "DP-10.2",
+            "deliverable": "Real local word transcription, confidence, exact analysis-clock projection and failure reporting",
+            "score": 1,
+            "evidence": [
+              "docs/TRANSCRIPTION.md",
+              "docs/qualification/transcription-accuracy-2026-10-05.md"
+            ],
+            "remaining": "Measured English corpus verifies real recognizer; this is not a claim of conversational/noisy-speech accuracy.",
+            "normative": "11.1-11.2"
+          },
+          {
+            "id": "DP-10.3",
+            "deliverable": "Automatic tighter local word-boundary refinement proposes timing without changing pinned edits",
+            "score": 0,
+            "evidence": [
+              "docs/TRANSCRIPTION.md Timing/Remaining",
+              "docs/ANALYSIS_CORRECTIONS.md Remaining"
+            ],
+            "remaining": "An automatic refinement/alignment pass is explicitly still required; manual energy snapping is not that implementation.",
+            "normative": "11.2; DP-10 timing refinement"
+          },
+          {
+            "id": "DP-10.4",
+            "deliverable": "VAD plus measured energy generates trustworthy editable pause intervals and sentence segmentation",
+            "score": 0.5,
+            "evidence": [
+              "docs/SPEECH_ACTIVITY.md",
+              "docs/TRANSCRIPTION.md",
+              "docs/REQUIREMENTS.md DP-10"
+            ],
+            "remaining": "Pause calibration remains predominantly synthesized speech; sentence-boundary correction and broader real-speech qualification remain open.",
+            "normative": "11.1-11.2"
+          },
+          {
+            "id": "DP-10.5",
+            "deliverable": "Shot and gradual-transition proposals use source-frame boundaries and verified accuracy",
+            "score": 0.5,
+            "evidence": [
+              "docs/SHOT_DETECTION.md",
+              "docs/qualification/shots-2026-10-05.md"
+            ],
+            "remaining": "Hard cuts and gradual proposals implemented; gradual qualification is one film with partial recall, low-change/short-blend coverage remains incomplete.",
+            "normative": "11.1-11.2"
+          },
+          {
+            "id": "DP-10.6",
+            "deliverable": "Manual word/pause corrections survive proposal regeneration with separate versioned Undo/Redo",
+            "score": 1,
+            "evidence": [
+              "docs/ANALYSIS_CORRECTIONS.md",
+              "crates/deadpan-cli/tests/corrections.rs"
+            ],
+            "remaining": "Correction-sheet audition and sentence correction remain limited; core pinning/correction workflow itself is verified.",
+            "normative": "11.2,19.2"
+          },
+          {
+            "id": "DP-10.7",
+            "deliverable": "Incremental range scheduling prioritizes visible cursor and caches by source/model/settings/version",
+            "score": 0.5,
+            "evidence": [
+              "docs/TRANSCRIPTION.md Remaining",
+              "docs/SHOT_DETECTION.md",
+              "docs/REQUIREMENTS.md DP-10"
+            ],
+            "remaining": "Versioned caching and resumable shot scans exist, but cursor-priority range scheduling for analysis and local refinement is not implemented.",
+            "normative": "11.4"
+          }
+        ]
+      },
+      {
+        "id": "DP-11",
+        "name": "Tracking with correction and loss handling",
+        "notes": "Old general non-face proposal remainder is superseded by camera-regions2026-10-25. Point targets explicitly refuse rectangle tracking before work; normative tracking starts from selected region so this is not counted as missing.",
+        "criteria": [
+          {
+            "id": "DP-11.1",
+            "deliverable": "Targets retain source-time geometry, confidence, sparse/per-frame transforms and manual overrides",
+            "score": 1,
+            "evidence": [
+              "docs/TARGETS.md",
+              "docs/TRACKING.md",
+              "docs/qualification/point-targets-2026-10-24.md"
+            ],
+            "remaining": "",
+            "normative": "11.3"
+          },
+          {
+            "id": "DP-11.2",
+            "deliverable": "Real local selected-region worker decodes exact Original pictures and saves validated paths",
+            "score": 1,
+            "evidence": [
+              "docs/TRACKING.md Evidence",
+              "native/deadpan-track/tests/worker.rs",
+              "crates/deadpan-cli/tests/tracking.rs"
+            ],
+            "remaining": "",
+            "normative": "11.1,11.3"
+          },
+          {
+            "id": "DP-11.3",
+            "deliverable": "Shot stopping, occlusion/loss, bounded gap interpolation and held manual fallback prevent retargeting",
+            "score": 1,
+            "evidence": [
+              "docs/TRACKING.md Evidence",
+              "native/deadpan-track/tests/worker.rs"
+            ],
+            "remaining": "Synthetic occlusion/cut fixture qualifies software behavior; real-person perceptual quality is owner-only.",
+            "normative": "11.3"
+          },
+          {
+            "id": "DP-11.4",
+            "deliverable": "Manual correction retracks only affected source range and preserves history/revision authority",
+            "score": 1,
+            "evidence": [
+              "docs/TRACKING.md Evidence",
+              "crates/deadpan-cli/tests/tracking.rs"
+            ],
+            "remaining": "",
+            "normative": "11.3"
+          },
+          {
+            "id": "DP-11.5",
+            "deliverable": "Native keyboard tracking/correction/cancel lifecycle works with actual bundled worker",
+            "score": 0.5,
+            "evidence": [
+              "docs/TRACKING.md In the app/Remaining",
+              "crates/deadpan-app/src/project/service/targets.rs"
+            ],
+            "remaining": "Service/routing tested with scripted Vision seam; real worker is tested separately, but actual app-to-real-worker path remains unexercised locally.",
+            "normative": "7.6,11.3"
+          },
+          {
+            "id": "DP-11.6",
+            "deliverable": "Tracking schedules incremental cursor-priority ranges with versioned private results",
+            "score": 0.5,
+            "evidence": [
+              "docs/TRACKING.md Remaining",
+              "docs/qualification/tracking-evidence-2026-10-15.md incremental scheduling not implemented"
+            ],
+            "remaining": "Private, versioned, cancellable worker exists; progressive continuation/reverse neighborhood scheduling and app priority remain unimplemented.",
+            "normative": "11.4"
+          }
+        ]
+      },
+      {
+        "id": "DP-12",
+        "name": "Local AI Hold behavior",
+        "notes": "Current Partial status is not supported by DP-12 behavior gaps in its own row. Resident reuse/text-embedding cache,2B precision bakeoff and cold/warm measurements belong §13/DP-13/DP-24 or gates. Full rights-cleared-person corpus/perceptual seams are owner-only. Recommend Complete after parent confirms allocation; do not silently drop those obligations elsewhere.",
+        "criteria": [
+          {
+            "id": "DP-12.1",
+            "deliverable": "Immediate deterministic fallback and separate exact time insertion/picture-provider acceptance",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/ai-insertion-2026-10-07.md",
+              "docs/GENERATED_HOLDS.md"
+            ],
+            "remaining": "",
+            "normative": "12.1-12.2"
+          },
+          {
+            "id": "DP-12.2",
+            "deliverable": "Real bridge generation captures both boundaries/context and samples exactly N interior pictures",
+            "score": 1,
+            "evidence": [
+              "docs/AI_HOLDS.md",
+              "docs/qualification/bridge-scopes-2026-10-07.md",
+              "docs/qualification/ai-runtime-2026-10-05.md"
+            ],
+            "remaining": "",
+            "normative": "12.2"
+          },
+          {
+            "id": "DP-12.3",
+            "deliverable": "One-sided extension explicitly declares directional context and conditioned/unconditioned seams",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/extension-native-2026-10-08.md",
+              "docs/qualification/extension-bundles-2026-10-08.md",
+              "docs/qualification/extension-saved-2026-10-08.md"
+            ],
+            "remaining": "",
+            "normative": "12.2"
+          },
+          {
+            "id": "DP-12.4",
+            "deliverable": "Machine-readable capabilities, legal internal duration/aspect/color conversion and early refusal",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/extension-bundles-2026-10-08.md",
+              "docs/qualification/conditioning-color-2026-10-07.md",
+              "docs/AI_HOLDS.md Source and colour context"
+            ],
+            "remaining": "",
+            "normative": "12.3-12.4"
+          },
+          {
+            "id": "DP-12.5",
+            "deliverable": "Motion controls and all automated endpoint/motion/lighting/geometry/mouth rejection preserve fallback",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/hold-controls-2026-10-07.md",
+              "docs/qualification/bridge-quality-2026-10-07.md",
+              "docs/qualification/bridge-endpoints-2026-10-07.md",
+              "docs/qualification/bridge-landmarks-2026-10-07.md",
+              "docs/qualification/bridge-region-2026-10-07.md"
+            ],
+            "remaining": "Threshold calibration and rights-cleared real-person/perceptual corpus are owner-only under29.1, not absent implementation.",
+            "normative": "12.5"
+          },
+          {
+            "id": "DP-12.6",
+            "deliverable": "Keyboard candidate/variant audition, compare, reject/regenerate/accept/revert and stale/cancel lifecycle",
+            "score": 1,
+            "evidence": [
+              "docs/AI_HOLDS.md Native app workflow/Comparing variants",
+              "docs/GENERATION_ACCEPTANCE.md",
+              "docs/qualification/ai-boundaries-2026-10-07.md"
+            ],
+            "remaining": "",
+            "normative": "12.6"
+          },
+          {
+            "id": "DP-12.7",
+            "deliverable": "Shortening reuse, longer/boundary-change fallback and replacement intent remain reversible",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/ai-replacements-2026-10-07.md",
+              "docs/qualification/ai-boundaries-2026-10-07.md",
+              "docs/GENERATED_HOLDS.md"
+            ],
+            "remaining": "",
+            "normative": "12.7"
+          },
+          {
+            "id": "DP-12.8",
+            "deliverable": "Immutable accepted media and full generation provenance survive model-free reopen/portable export",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/extension-saved-2026-10-08.md",
+              "docs/qualification/extension-native-2026-10-08.md",
+              "docs/qualification/ai-runtime-2026-10-05.md"
+            ],
+            "remaining": "",
+            "normative": "12.7"
+          }
+        ]
+      },
+      {
+        "id": "DP-13",
+        "name": "Model/runtime manager, safe downloads, offline packs",
+        "criteria": [
+          {
+            "id": "DP-13.1",
+            "deliverable": "Declared approved pack/runtime contract, constraints and separate license acceptance",
+            "score": 1,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:797-835",
+              "docs/MODEL_PACKS.md:8-104",
+              "docs/qualification/model-constraints-2026-10-07.md:8-81",
+              "crates/deadpan-models/src/packs.rs"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-13.2",
+            "deliverable": "Resumable, cancellable HTTPS installation with disk and cryptographic checks",
+            "score": 1,
+            "evidence": [
+              "docs/MODEL_PACKS.md:104-141",
+              "docs/REQUIREMENTS.md DP-13 real HttpsTransport drop/resume/If-Range qualification",
+              "crates/deadpan-models/src/packs.rs:1151"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-13.3",
+            "deliverable": "Smoke-tested atomic activation preserving known-good versions and safe removal",
+            "score": 1,
+            "evidence": [
+              "docs/MODEL_PACKS.md:104-192",
+              "crates/deadpan-models/src/packs.rs:1046",
+              "docs/qualification/followup-2026-10-07.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-13.4",
+            "deliverable": "Verified offline folder/archive installation and export distribution",
+            "score": 1,
+            "evidence": [
+              "docs/MODEL_PACKS.md:247-280",
+              "docs/PACKAGING.md:574-718",
+              "docs/qualification/ai-runtime-2026-10-05.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-13.5",
+            "deliverable": "Signed compatible pack updates, version selection and rollback",
+            "score": 1,
+            "evidence": [
+              "docs/UPDATES.md",
+              "docs/qualification/model-constraints-2026-10-07.md:58-81",
+              "docs/qualification/followup-2026-10-07.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-13.6",
+            "deliverable": "Native Models workflow and CLI parity with truthful refusals",
+            "score": 1,
+            "evidence": [
+              "docs/MODEL_PACKS.md:281-363",
+              "crates/deadpan-app/src/model_packs.rs",
+              "docs/REQUIREMENTS.md DP-13 model-packs replay"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          }
+        ]
+      },
+      {
+        "id": "DP-14",
+        "name": "Single YouTube Original acquisition",
+        "criteria": [
+          {
+            "id": "DP-14.1",
+            "deliverable": "Bundled verified yt-dlp/EJS/Deno, isolated execution and signed updates/rollback",
+            "score": 1,
+            "evidence": [
+              "docs/YOUTUBE_IMPORT.md",
+              "docs/UPDATES.md",
+              "docs/REQUIREMENTS.md DP-14 real signed helper activation/probe/rollback",
+              "crates/deadpan-cli/src/youtube.rs"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-14.2",
+            "deliverable": "Single-video normalization, metadata/rights confirmation and no playlist expansion",
+            "score": 1,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:847-867",
+              "docs/YOUTUBE_IMPORT.md",
+              "crates/deadpan-app/src/youtube/tests.rs:8-411"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-14.3",
+            "deliverable": "Useful original quality, retained provenance and atomic full-source project baseline",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/youtube-quality-2026-10-09.md",
+              "docs/REQUIREMENTS.md DP-14 real 146-second Blender import",
+              "docs/SINGLE_ORIGINAL.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-14.4",
+            "deliverable": "Cancelable native and headless acquisition with actionable transport/auth/format failures",
+            "score": 1,
+            "evidence": [
+              "docs/YOUTUBE_IMPORT.md",
+              "crates/deadpan-app/src/youtube.rs",
+              "crates/deadpan-app/src/youtube/tests.rs",
+              "docs/qualification/native-install-2026-10-06.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-14.5",
+            "deliverable": "Untrusted URL/title/resource protection and explicit secret cookies lifecycle",
+            "score": 1,
+            "evidence": [
+              "docs/YOUTUBE_IMPORT.md",
+              "docs/RELEASE_AUDIT.md",
+              "docs/REQUIREMENTS.md DP-14 argument/environment/cookie refusal tests"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          }
+        ]
+      },
+      {
+        "id": "DP-15",
+        "name": "Local Original, audio-only imports, ownership and relinking",
+        "criteria": [
+          {
+            "id": "DP-15.1",
+            "deliverable": "Immutable complete Original and measured atomic baseline, cancellation and recovery",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/local-import-acceptance-2026-10-11.md:8-24",
+              "docs/SINGLE_ORIGINAL.md",
+              "docs/qualification/linked-original-2026-10-09.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-15.2",
+            "deliverable": "Supported audio-only imports with explicit stream choice and content/stream deduplication",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/local-import-acceptance-2026-10-11.md:16-18",
+              "crates/deadpan-store/tests/source_registration.rs"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-15.3",
+            "deliverable": "Managed clone/verified copy and explicit linked ownership/bookmarks",
+            "score": 1,
+            "evidence": [
+              "docs/ORIGINAL_MEDIA.md",
+              "docs/qualification/local-import-acceptance-2026-10-11.md:19",
+              "docs/qualification/linked-original-2026-10-09.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-15.4",
+            "deliverable": "Identity-checked moved/missing/corrupt Original and sound repair",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/relink-volumes-2026-10-08.md",
+              "docs/qualification/sound-recovery-2026-10-11.md",
+              "docs/qualification/local-import-acceptance-2026-10-11.md:20-21"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-15.5",
+            "deliverable": "Separate sound catalog and explicit placement preserving picture duration and Original audio",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/native-sound-placement-2026-09-27.md",
+              "docs/SOUND_EVENTS.md",
+              "docs/qualification/local-import-acceptance-2026-10-11.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-15.6",
+            "deliverable": "Portable ownership and emitted-media proof, including truthful missing-sound refusal",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/local-import-acceptance-2026-10-11.md:24-69",
+              "crates/deadpan-store/tests/source_registration.rs"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          }
+        ]
+      },
+      {
+        "id": "DP-16",
+        "name": "Shared realtime/offline renderer and bounded media paths",
+        "criteria": [
+          {
+            "id": "DP-16.1",
+            "deliverable": "Persistent indexed bounded decoding and explicit admission/failure",
+            "score": 1,
+            "evidence": [
+              "docs/SOURCE_REGISTRATION.md",
+              "docs/qualification/source-preview-2026-09-21.md",
+              "docs/REQUIREMENTS.md DP-16 seek-storm bounded mailbox and memory",
+              "crates/deadpan-media/src/source_session.rs"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-16.2",
+            "deliverable": "Identity-preserving proxy production, fallback, refinement and exact-path isolation",
+            "score": 1,
+            "evidence": [
+              "docs/PROXIES.md",
+              "docs/qualification/proxy-2026-10-05.md",
+              "docs/qualification/playback-proxy-2026-10-06.md",
+              "crates/deadpan-media/src/proxy.rs"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-16.3",
+            "deliverable": "Shared full picture/audio effect evaluation for preview and final output",
+            "score": 0.5,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:903-945",
+              "docs/PREVIEW_EXPORT_VERIFICATION.md",
+              "docs/SECTION8_COVERAGE.md",
+              "docs/ARCHITECTURE.md:209"
+            ],
+            "remaining": "Existing recipes share canonical picture/audio semantics; remaining full effects, group voice/mastering graph and composition coverage prevent full acceptance.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-16.4",
+            "deliverable": "Incremental render-plan fragment cache and ancestor-only recompilation",
+            "score": 0,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:905-909",
+              "docs/ARCHITECTURE.md:209",
+              "docs/REQUIREMENTS.md DP-03 and Gate B"
+            ],
+            "remaining": "Indexed plans exist; render-plan fragment reuse is explicitly open. Store timing/history incremental improvements do not prove incremental RenderPlan fragments.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-16.5",
+            "deliverable": "Stateful effect/random-access preparation and reusable bounded caches",
+            "score": 0.5,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:935-939",
+              "docs/qualification/streamed-input-2026-10-11.md",
+              "docs/qualification/disk-pcm-2026-10-11.md",
+              "docs/ARCHITECTURE.md:61-62"
+            ],
+            "remaining": "Canonical Preserve/state-aware paths and persistent reuse exist, but full voice/effect graph and filtered-cache lifecycle remain open.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-16.6",
+            "deliverable": "Qualified source format/color handling and HDR shared preview/export path",
+            "score": 0.5,
+            "evidence": [
+              "docs/HDR_PIXELS.md",
+              "docs/HDR_OUTPUT.md",
+              "docs/qualification/exact-timing-acceptance-2026-10-11.md",
+              "docs/REQUIREMENTS.md DP-16"
+            ],
+            "remaining": "Broad common-codec and two HDR recipes qualify; full format/color/effect matrix and wider HDR preview/export remain open. Owner-only physical display/real camera footage is excluded.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-16.7",
+            "deliverable": "Audio-clock realtime transport, Generated loops/transitions and native application playback stress",
+            "score": 0.5,
+            "evidence": [
+              "docs/PLAYBACK.md",
+              "docs/qualification/generated-app-playback-2026-10-11.md",
+              "docs/qualification/loop-lookahead-2026-10-11.md",
+              "docs/qualification/terminal-picture-2026-10-11.md"
+            ],
+            "remaining": "Real-device/offscreen Metal playback is substantial. Native-window playback, full mastered/effects stress and endpoint realtime latency remain local acceptance work.",
+            "confidence": "high"
+          }
+        ]
+      },
+      {
+        "id": "DP-17",
+        "name": "Automatic SDR/HDR encoded output",
+        "criteria": [
+          {
+            "id": "DP-17.1",
+            "deliverable": "One-action committed-snapshot automatic Render with explicit temporary-preview decisions",
+            "score": 1,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:1149-1155",
+              "docs/RENDER_JOBS.md",
+              "docs/LIVE_PROJECT.md",
+              "docs/qualification/render-history-2026-09-30.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-17.2",
+            "deliverable": "Original-derived geometry/rational frame rate, legal raster, no incidental upscale/rebasis",
+            "score": 1,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:1157-1167",
+              "docs/qualification/exact-timing-acceptance-2026-10-11.md",
+              "docs/qualification/local-import-acceptance-2026-10-11.md",
+              "docs/AUTOMATIC_ENCODER_ADMISSION.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-17.3",
+            "deliverable": "Qualified automatic SDR encoder/bitrate-quality policy over required raster/content/runtime matrix",
+            "score": 0.5,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:1169-1203",
+              "docs/qualification/encoder-quality-2026-10-10.md",
+              "docs/AUTOMATIC_ENCODER_ADMISSION.md"
+            ],
+            "remaining": "Hardware QP24/rate-ceiling path is measured including concurrent and packaged exports. Expanded raster/content/runtime qualification and available OS software fallback remain open. Do not demand an unavailable OS encoder property as a universal implementation blocker.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-17.4",
+            "deliverable": "Automatic HDR eligibility, tone-mapped SDR fallback, preserved/recomputed metadata",
+            "score": 0.5,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:1205-1211",
+              "docs/HDR_OUTPUT.md",
+              "docs/HDR_PIXELS.md",
+              "docs/qualification/hdr-output-2026-10-05.md"
+            ],
+            "remaining": "PQ/HLG end-to-end recipes exist. Wider HDR/effect/metadata corpus remains locally exercisable; physical EDR appearance and unavailable owner media excluded.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-17.5",
+            "deliverable": "Complete authored mix/master safety processing before AAC, shared with preview",
+            "score": 0.5,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:1213-1219",
+              "docs/ARCHITECTURE.md:61-62",
+              "docs/REQUIREMENTS.md DP-17"
+            ],
+            "remaining": "Current edge-faded/limited canonical bus is implemented. Full mastering/effect graph remains open and cannot be inferred from encoder timing correctness.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-17.6",
+            "deliverable": "Independent emitted-file picture, metadata, terminal frame/sample and A/V verification",
+            "score": 1,
+            "evidence": [
+              "docs/FINISHED_FILE_VERIFICATION.md",
+              "docs/PREVIEW_EXPORT_VERIFICATION.md",
+              "docs/qualification/exact-timing-acceptance-2026-10-11.md",
+              "docs/qualification/real-generated-export-2026-10-11.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-17.7",
+            "deliverable": "Durable verification-before-publication, retry/reconciliation, provenance and disclosure reminder",
+            "score": 1,
+            "evidence": [
+              "docs/RENDER_PUBLICATION.md",
+              "docs/RENDER_JOBS.md",
+              "docs/qualification/publication-recovery-2026-09-30.md",
+              "docs/qualification/native-install-2026-10-06.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          }
+        ]
+      },
+      {
+        "id": "DP-18",
+        "name": "Nonblocking workers, cancellation and stale results",
+        "criteria": [
+          {
+            "id": "DP-18.1",
+            "deliverable": "Isolated bounded versioned protocols and contained verified worker artifacts",
+            "score": 1,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:947-980",
+              "crates/deadpan-jobs/src/protocol.rs",
+              "crates/deadpan-jobs/src/artifact.rs",
+              "docs/ARTIFACT_VERIFICATION.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-18.2",
+            "deliverable": "Persistent revision-bound attempts, candidate acceptance, restart/retry and stale rejection",
+            "score": 1,
+            "evidence": [
+              "docs/GENERATION_REQUESTS.md",
+              "docs/GENERATION_ATTEMPTS.md",
+              "crates/deadpan-jobs/src/lifecycle.rs",
+              "docs/RENDER_JOBS.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-18.3",
+            "deliverable": "Bounded cancellation, owned-process teardown and truthful failure/recovery",
+            "score": 1,
+            "evidence": [
+              "docs/JOBS.md:172-212",
+              "docs/qualification/render-host-crash-2026-10-08.md",
+              "docs/qualification/sanitizers-2026-10-15.md",
+              "crates/deadpan-jobs/src/process.rs"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-18.4",
+            "deliverable": "Priority scheduling and cooperative inference with realtime work",
+            "score": 0.5,
+            "evidence": [
+              "docs/JOBS.md:25-83",
+              "docs/qualification/inference-scheduling-2026-10-17.md",
+              "docs/qualification/inference-interference-2026-10-17.md"
+            ],
+            "remaining": "Real ordinary playback/inference loops qualify. Wider effects, render/inference interference and other model workers remain unqualified.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-18.5",
+            "deliverable": "Observed memory/headroom admission and bounded runtime resource envelopes",
+            "score": 0.5,
+            "evidence": [
+              "docs/qualification/memory-admission-2026-10-17.md",
+              "docs/REQUIREMENTS.md DP-18",
+              "crates/deadpan-app/src/jobs.rs"
+            ],
+            "remaining": "Estimate-plus-reserve admission is implemented; broader measured per-job footprint envelopes and runtime allocation/resource-exhaustion limits remain open.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-18.6",
+            "deliverable": "Actual stages, elapsed time, historical estimates and indeterminate/queued feedback",
+            "score": 0.5,
+            "evidence": [
+              "docs/JOBS.md:256-300",
+              "docs/JOBS.md:444-470",
+              "docs/REQUIREMENTS.md DP-18"
+            ],
+            "remaining": "Jobs UI and current-rate remaining estimates exist; sufficient-data historical estimates are explicitly absent.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-18.7",
+            "deliverable": "Sleep/power/thermal/disk and quit policies across worker types",
+            "score": 0.5,
+            "evidence": [
+              "docs/qualification/transcription-sleep-2026-10-17.md",
+              "docs/qualification/activity-sleep-2026-10-17.md",
+              "docs/qualification/inference-scheduling-2026-10-17.md",
+              "docs/qualification/native-quit-2026-10-09.md"
+            ],
+            "remaining": "Generation/transcription/pause detection and native Cmd-Q have evidence. Remaining analysis-worker sleep and running model policies remain local work; physical events and Dock/logout are owner checks.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-18.8",
+            "deliverable": "Hostile real-worker/media and concurrent chaos acceptance",
+            "score": 0.5,
+            "evidence": [
+              "docs/ADVERSARIAL.md",
+              "docs/qualification/adversarial-2026-10-05.md",
+              "docs/qualification/sanitizers-2026-10-15.md",
+              "docs/REQUIREMENTS.md DP-18"
+            ],
+            "remaining": "Scripted protocol and lifecycle chaos exists. Hostile media/resource exhaustion inside actual encoder/Vision/whisper/MLX and wider real-process chaos are not established.",
+            "confidence": "high"
+          }
+        ]
+      },
+      {
+        "id": "DP-19",
+        "name": "Cache integrity and accepted-media portability",
+        "criteria": [
+          {
+            "id": "DP-19.1",
+            "deliverable": "Versioned exact content/provenance cache identities and canonical durable generated masters",
+            "score": 1,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:1002-1030",
+              "docs/ARTIFACT_VERIFICATION.md",
+              "docs/MEDIA_CONVERSION.md",
+              "docs/STORAGE.md:354-406",
+              "docs/qualification/generated-pictures-2026-09-29.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-19.2",
+            "deliverable": "Reference tracking across history/registers/live attempts/checkpoints retains accepted/original dependencies",
+            "score": 1,
+            "evidence": [
+              "docs/STORAGE.md:11-73",
+              "docs/qualification/accepted-portability-2026-10-07.md",
+              "docs/GENERATION_ACCEPTANCE.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-19.3",
+            "deliverable": "Visible bounded cleanup/retention with fresh reference/identity/reader checks",
+            "score": 1,
+            "evidence": [
+              "docs/STORAGE.md:74-269",
+              "docs/qualification/accepted-portability-2026-10-07.md",
+              "docs/REQUIREMENTS.md DP-19"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-19.4",
+            "deliverable": "Verified portable copies preserve complete accepted media, authoring and history",
+            "score": 1,
+            "evidence": [
+              "docs/STORAGE.md:270-329",
+              "docs/qualification/accepted-portability-2026-10-07.md:39-63"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-19.5",
+            "deliverable": "Offline accepted playback/render after Original/model/runtime removal, corruption failures and undo/redo",
+            "score": 1,
+            "evidence": [
+              "docs/STORAGE.md:330-406",
+              "docs/qualification/accepted-portability-2026-10-07.md",
+              "docs/qualification/generated-pictures-2026-09-29.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          }
+        ]
+      },
+      {
+        "id": "DP-20",
+        "name": "Focused native UI, keyboard teaching and accessibility",
+        "criteria": [
+          {
+            "id": "DP-20.1",
+            "deliverable": "One-Original onboarding and picture-first workspace, separate clocks/panes/sounds/focus",
+            "score": 1,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:525-545",
+              "docs/qualification/ui-design-pass-2026-10-04.md",
+              "docs/qualification/gui-review-2026-10-15.md",
+              "docs/qualification/gui-findings-2026-10-15.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-20.2",
+            "deliverable": "Story/timing/detail timeline representations, waveforms and virtualized structural/attachment views",
+            "score": 0.5,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:546-552",
+              "docs/INTERACTION_REVIEW.md",
+              "docs/qualification/gain-waveform-2026-09-28.md",
+              "crates/deadpan-app/src/preview/trim.rs"
+            ],
+            "remaining": "Story cards, thumbnails, Gain and Trim waveforms exist; timeline waveform strips at other scales and complete multi-detail attachment view remain incomplete.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-20.3",
+            "deliverable": "Original moments/search/tags and dual-clock transcript browsing/correction",
+            "score": 0.5,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:554-562",
+              "docs/SOURCE_MOMENTS.md",
+              "docs/TRANSCRIPTION.md",
+              "docs/ANALYSIS_CORRECTIONS.md",
+              "docs/REQUIREMENTS.md DP-20"
+            ],
+            "remaining": "Substantial Original moments/transcript/corrections implementation. Full fuzzy/tagged named moments and complete edited-transcript/selection workflow are not established by current audit.",
+            "confidence": "medium"
+          },
+          {
+            "id": "DP-20.4",
+            "deliverable": "Complete relevant inspectors, prefix teaching and searchable action/scope/availability palette",
+            "score": 0.5,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:564-568",
+              "docs/qualification/gui-findings-2026-10-15.md",
+              "docs/INTERACTION_REVIEW.md",
+              "docs/REQUIREMENTS.md DP-20"
+            ],
+            "remaining": "Key teaching, Help and selected inspectors are implemented. Remaining creative grammar, shared registry, all controls and known busy-command/layout behavior prevent full acceptance.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-20.5",
+            "deliverable": "Consistent candidate/before-after audition and temporary preview commit/cancel across workflows",
+            "score": 0.5,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:570-574",
+              "docs/PLAYBACK.md",
+              "docs/GENERATION_ACCEPTANCE.md",
+              "docs/REQUIREMENTS.md DP-20"
+            ],
+            "remaining": "Camera/Trim/Gain/AI and context loops have real evidence, but full workflow consistency across incomplete operations remains open.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-20.6",
+            "deliverable": "Meaningful native accessibility, keyboard onboarding/error recovery, text gating and system appearance",
+            "score": 1,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:576-580",
+              "docs/qualification/accessibility-2026-10-05.md",
+              "docs/qualification/native-install-2026-10-06.md",
+              "docs/qualification/gui-findings-2026-10-15.md"
+            ],
+            "remaining": "Owner-only speech, real IME/physical layout/keyboard trials are excluded from completion blocker. New workflows retain their own UI acceptance obligations.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-20.7",
+            "deliverable": "Complete keyboard visual slice select/refine/propose/join audition/cancel/commit/move with occurrence scope",
+            "score": 0.5,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:582-596",
+              "docs/SOURCE_MOMENTS.md",
+              "docs/REQUIREMENTS.md DP-05/DP-20 and ranged Place-slice qualification"
+            ],
+            "remaining": "Ordinary linked Place slice is implemented and verified, including visual endpoints. Full picture/audio policies, nested/retimed occurrence destination and atomic move variants remain required. Current scoped framing milestone does not close this workflow.",
+            "confidence": "high"
+          }
+        ]
+      },
+      {
+        "id": "DP-21",
+        "name": "CLI/JSON engineering API and parity",
+        "criteria": [
+          {
+            "id": "DP-21.1",
+            "deliverable": "Pure shared typed command execution, versioned request/errors, revision checks and no-write dry-run",
+            "score": 1,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:1084-1123",
+              "docs/HEADLESS.md:21-215",
+              "crates/deadpan-cli/tests/headless_parity.rs",
+              "crates/deadpan-cli/tests/corrections.rs"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-21.2",
+            "deliverable": "Shipped headless project/render/inspect/benchmark/doctor and historical operations",
+            "score": 1,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:1125-1139",
+              "docs/HEADLESS.md",
+              "docs/PACKAGING.md",
+              "crates/deadpan-cli/tests/source_registration.rs"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-21.3",
+            "deliverable": "Full semantic selector/text/occurrence command surface with explicit headless context",
+            "score": 0.5,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:1107-1123",
+              "docs/HEADLESS.md:787-966",
+              "docs/REQUIREMENTS.md DP-21"
+            ],
+            "remaining": "Child/Time/Object, discontiguous unions, named-mark and qualified macro forms exist. Broader selector/semantic grammar remains open with DP05/06.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-21.4",
+            "deliverable": "Native and headless committed-action parity through closed and authenticated live writers",
+            "score": 1,
+            "evidence": [
+              "docs/PARITY.md:1-43",
+              "docs/LIVE_PROJECT.md",
+              "crates/deadpan-cli/tests/headless_parity.rs",
+              "crates/deadpan-app/src/project/tests/headless/operations.rs"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-21.5",
+            "deliverable": "Declarative recipes/macros/keymaps/parameter customization through safe extension boundaries",
+            "score": 0.5,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:1141-1145",
+              "docs/HEADLESS.md",
+              "docs/SECTION8_COVERAGE.md",
+              "docs/REQUIREMENTS.md DP-06/DP-21"
+            ],
+            "remaining": "Named macros and keymaps exist, but full semantic macros/recipe/selector surface remains partial.",
+            "confidence": "medium"
+          },
+          {
+            "id": "DP-21.6",
+            "deliverable": "Complete conflicts, recovery and failure acceptance with private diagnostic output",
+            "score": 0.5,
+            "evidence": [
+              "docs/PARITY.md",
+              "docs/qualification/readonly-controls-2026-10-08.md",
+              "docs/RELEASE_AUDIT.md",
+              "docs/REQUIREMENTS.md DP-21"
+            ],
+            "remaining": "Substantial stale/read-only/restore and no-write evidence exists. Tracker explicitly retains complete recovery/failure acceptance; no complete normative matrix reviewed here.",
+            "confidence": "medium"
+          }
+        ]
+      },
+      {
+        "id": "DP-22",
+        "name": "Self-contained personal app bundle",
+        "criteria": [
+          {
+            "id": "DP-22.1",
+            "deliverable": "Relocatable Apple Silicon app with pinned executable/library/helper/runtime closure",
+            "score": 1,
+            "evidence": [
+              "docs/PACKAGING.md:66-274",
+              "docs/qualification/ai-runtime-2026-10-05.md",
+              "docs/qualification/native-install-2026-10-06.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-22.2",
+            "deliverable": "Private model Python isolation without user environment, installers or external setup",
+            "score": 1,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:797-811",
+              "docs/PACKAGING.md:158-227",
+              "docs/qualification/followup-2026-10-07.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-22.3",
+            "deliverable": "Actual hardened inside-out personal signing, immutable baseline and compiled helper trust pins",
+            "score": 1,
+            "evidence": [
+              "docs/PACKAGING.md:120-157",
+              "docs/PACKAGING.md:275-299",
+              "docs/RELEASE_AUDIT.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-22.4",
+            "deliverable": "Online and full offline distribution install/generate/accept/restart/render on reference Mac",
+            "score": 1,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:1405-1409",
+              "docs/qualification/native-install-2026-10-06.md",
+              "docs/qualification/followup-2026-10-07.md"
+            ],
+            "remaining": "True clean/second Mac and physical whole-app network disconnection remain owner-only.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-22.5",
+            "deliverable": "App/runtime/model/helper identities, provenance, independent update and rollback policy",
+            "score": 1,
+            "evidence": [
+              "docs/PACKAGING.md:52-65",
+              "docs/UPDATES.md",
+              "docs/RELEASE_AUDIT.md:96-103",
+              "docs/qualification/followup-2026-10-07.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          }
+        ]
+      },
+      {
+        "id": "DP-23",
+        "name": "License, SBOM, privacy and security",
+        "criteria": [
+          {
+            "id": "DP-23.1",
+            "deliverable": "Explicit original/dependency/weight license layers and shipped notices",
+            "score": 1,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:1411-1425",
+              "docs/DEPENDENCIES.md",
+              "docs/PACKAGING.md:348-450",
+              "docs/RELEASE_AUDIT.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-23.2",
+            "deliverable": "Checksums, pinned build/toolchain/component provenance and SBOM",
+            "score": 1,
+            "evidence": [
+              "docs/PACKAGING.md:52-65",
+              "docs/PACKAGING.md:348-450",
+              "docs/RELEASE_AUDIT.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-23.3",
+            "deliverable": "Untrusted media/project/recipe/protocol/path/archive limits and malicious-input tests",
+            "score": 1,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:1427-1431",
+              "docs/RELEASE_AUDIT.md",
+              "docs/ADVERSARIAL.md",
+              "crates/deadpan-jobs/src/adversarial.rs"
+            ],
+            "remaining": "Sustained real-worker/native-media resource-exhaustion qualification remains Gate G/DP18 work, not proof all trust boundaries are perfect.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-23.4",
+            "deliverable": "Trusted data-only packs, signed executable updates and safe serialization/runtime isolation",
+            "score": 1,
+            "evidence": [
+              "docs/MODEL_PACKS.md",
+              "docs/UPDATES.md",
+              "docs/PACKAGING.md:158-274",
+              "docs/RELEASE_AUDIT.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-23.5",
+            "deliverable": "Local-first network policy, secret/path/URL redaction and explicit diagnostic export without media",
+            "score": 1,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:1433-1437",
+              "docs/RELEASE_AUDIT.md",
+              "docs/REQUIREMENTS.md DP-23 acceptance audit"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          }
+        ]
+      },
+      {
+        "id": "DP-24",
+        "name": "Measured performance budgets and diagnostics",
+        "criteria": [
+          {
+            "id": "DP-24.1",
+            "deliverable": "Reproducible attributed hardware/build/cache/power benchmark suite and key-state latency",
+            "score": 1,
+            "evidence": [
+              "docs/PERFORMANCE.md",
+              "docs/qualification/performance-2026-10-04.md",
+              "docs/qualification/footer-layout-2026-09-27.md"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-24.2",
+            "deliverable": "Cached visible ordinary edits and committed Hold fallback budgets at realistic project scale",
+            "score": 0.5,
+            "evidence": [
+              "docs/PERFORMANCE.md:1-42",
+              "docs/PERFORMANCE.md:250-320",
+              "docs/qualification/compound-wire-reuse-2026-10-24.md"
+            ],
+            "remaining": "Real gains are measured, latest offscreen first-pause median 183.389625 ms; 100 ms Hold and 50 ms edit budgets remain open, with no current large native percentile claim.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-24.3",
+            "deliverable": "Warm and cold common-codec seeks with immediate progressive/proxy feedback",
+            "score": 0.5,
+            "evidence": [
+              "docs/qualification/pause-and-cold-seek-2026-10-06.md",
+              "docs/qualification/store-and-seek-2026-10-15.md",
+              "docs/qualification/proxy-2026-10-05.md"
+            ],
+            "remaining": "Proxy/1080p warm paths qualify. Cold page-cache-cold runs were INFO due load; 4K Original warm remains 167 ms p95. Exact-source latency and full quiet suite remain open.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-24.4",
+            "deliverable": "1080p60/4K30 audio-master playback without underruns under editing/inference stress",
+            "score": 0.5,
+            "evidence": [
+              "docs/qualification/playback-proxy-2026-10-06.md",
+              "docs/qualification/generated-app-playback-2026-10-11.md",
+              "docs/qualification/inference-interference-2026-10-17.md"
+            ],
+            "remaining": "Ordinary-source real inference loops and Generated media have strong evidence. Full effects/render/inference stress and native-window performance remain open.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-24.5",
+            "deliverable": "Stopped/idle event-driven behavior with no runaway work",
+            "score": 1,
+            "evidence": [
+              "docs/qualification/command-work-2026-10-05.md",
+              "docs/PERFORMANCE.md",
+              "docs/REQUIREMENTS.md DP-24 idle release 0.65-0.67 percent CPU over 60 seconds"
+            ],
+            "remaining": "",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-24.6",
+            "deliverable": "Full qualified AI latency/memory and workload-specific export speed measurements",
+            "score": 0.5,
+            "evidence": [
+              "docs/MODEL_PACKS.md",
+              "docs/qualification/inference-interference-2026-10-17.md",
+              "docs/qualification/performance-2026-10-04.md"
+            ],
+            "remaining": "Real pack/export measurements exist; full primary-Mac inference distributions/memory pressure and broader effect export workloads remain. Other hardware tiers excluded.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-24.7",
+            "deliverable": "Indexed long-project operations, compact repeats, virtualized assets and bounded algorithmic work",
+            "score": 0.5,
+            "evidence": [
+              "docs/spec/DEADPAN_SPEC.md:1347-1353",
+              "docs/TIMING_STORAGE.md",
+              "docs/qualification/edit-latency-2026-10-15.md",
+              "docs/ARCHITECTURE.md:209"
+            ],
+            "remaining": "10,000-beat navigation and direct store edits pass measured budgets. Native first-pause, fragment reuse and complete waveform/timeline virtualization remain open.",
+            "confidence": "high"
+          },
+          {
+            "id": "DP-24.8",
+            "deliverable": "Stage diagnostics and actual decoder/encoder/tier/model/fallback attribution in doctor/native UI",
+            "score": 0.5,
+            "evidence": [
+              "docs/PERFORMANCE.md:429",
+              "crates/deadpan-app/src/preview/diagnostics.rs",
+              "docs/REQUIREMENTS.md DP-24"
+            ],
+            "remaining": "Counters/report/panel exist, including footprint and SQLite. Egui own GPU submission, separate Metal memory, transient SQLite connections and native-window/real-model diagnostics observation remain unestablished.",
+            "confidence": "high"
+          }
+        ]
+      }
+    ],
+    "gates": [
+      {
+        "id": "A",
+        "tracker_status": "Partial",
+        "assessment": "Partial; qualification work materially exists",
+        "local_blockers": [
+          "Full format/color and large workload qualification",
+          "Full mastering/filtered cache lifecycle",
+          "Risky model candidate comparisons if still required by selection decision"
+        ],
+        "excluded_owner": [
+          "Listening",
+          "Other hardware tiers"
+        ],
+        "notes": "Do not repeat obsolete initial raw DSP failures as if canonical qualified path still fails."
+      },
+      {
+        "id": "B",
+        "tracker_status": "Partial",
+        "assessment": "Partial",
+        "local_blockers": [
+          "Temporal attachment lifecycle",
+          "Remaining semantic selectors/operators",
+          "Incremental RenderPlan fragments",
+          "Complete shared audio rendering"
+        ],
+        "excluded_owner": [],
+        "notes": "Typed time, nested identities, inverse/history and representative picture/sample plans are substantial."
+      },
+      {
+        "id": "C",
+        "tracker_status": "Partial",
+        "assessment": "Partial",
+        "local_blockers": [
+          "Complete pane/selection/inspector and keyboard flow",
+          "Mastered audio/playback",
+          "Native editorial latency acceptance"
+        ],
+        "excluded_owner": [
+          "Physical IME/keyboard",
+          "VoiceOver speech"
+        ],
+        "notes": "Gate row import-management remainder is stale in light of DP14/15 Complete; do not subtract it again."
+      },
+      {
+        "id": "D",
+        "tracker_status": "Open",
+        "assessment": "Open exit criterion despite broad implementation",
+        "local_blockers": [
+          "All Section8 operations and recipes completed",
+          "All supported scopes/overrides and editable native paths",
+          "Every recipe shared preview/export verified",
+          "Shared command/help registry"
+        ],
+        "excluded_owner": [],
+        "notes": "SECTION8_COVERAGE inventory says 85 implemented/10 partial/0 missing but none Gate-D complete; row counts do not establish weighted product completion. Milestone152 closes only its ranged framing scope."
+      },
+      {
+        "id": "E",
+        "tracker_status": "Open",
+        "assessment": "Open exit criterion with real analysis and AI already implemented",
+        "local_blockers": [
+          "Complete analysis/tracking/AI contracts and integration for remaining DP10-12 scope",
+          "Reference-Mac quality/validation/latency corpus still required beyond existing generation cases"
+        ],
+        "excluded_owner": [
+          "Rights-cleared real-person corpus/human quality review",
+          "Other hardware tiers"
+        ],
+        "notes": "Do not call AI simulated or model installation unimplemented; actual local generation/explicit acceptance/offline rendering are verified."
+      },
+      {
+        "id": "F",
+        "tracker_status": "Partial",
+        "assessment": "Partial; several gate-row remainders stale",
+        "local_blockers": [
+          "Remaining DP17 output/effect/HDR-quality qualification"
+        ],
+        "excluded_owner": [
+          "True clean/second Mac",
+          "Authenticated import unavailable account"
+        ],
+        "notes": "Native installation evidence records keyboard URL/local-to-MP4 workflow, model install/generate/restart and offline distribution. Gate text still asks keyboard URL-to-MP4 after DP22 audit says it passed. Original/recovery/backup/update/license/package work is implemented."
+      },
+      {
+        "id": "G",
+        "tracker_status": "Open",
+        "assessment": "Open",
+        "local_blockers": [
+          "Complete all required product operations",
+          "Sustained corpus-merging fuzz campaigns",
+          "Hostile media/resource exhaustion inside actual native/model workers",
+          "Real long-media stress with export",
+          "Current release-candidate complete acceptance reruns",
+          "Primary-Mac native performance and remaining diagnostic coverage"
+        ],
+        "excluded_owner": [
+          "Clean/second Mac",
+          "Lower tiers",
+          "Listening and physical display/power/input/VoiceOver"
+        ],
+        "notes": "Suite existence/one bounded campaign does not establish sustained qualification. Gate row idle CPU/inference unmeasured text is partly stale: idle and ordinary real-inference measurements now exist."
+      }
+    ],
+    "effects": {
+      "complete": 5,
+      "total": 13
+    },
+    "risks": [
+      "Composability matrix: structural timing transforms must preserve sample-phase history, owned sounds, nested Repeat overrides and fixed/pitch Retime clocks. Latest narrow admissions do not complete general scopes.",
+      "DP-09 is broad audio workflow work: sample-resolution range authoring, variable rate, custom silence/tail policy and sound-bearing transforms remain, beyond polishing existing commands.",
+      "DP-10 automatic local alignment is absent; cursor-priority incremental analysis/tracking needs architecture and real integration, not another synthetic success case.",
+      "DP-08 post-insertion parameter edit gap is directly confirmed in source: Keep refuses an existing animated Follow; Camera exposes no independent factor/curve controls.",
+      "Full shared picture/audio effects and mastering, incremental RenderPlan fragments and filtered cache lifecycle remain implementation work.",
+      "Native workflow integration, HDR/output quality and hostile real-worker stress remain local acceptance work.",
+      "Large-project visible edit/pause latency still misses its target; diagnostic median improvements are not a target or p95 pass.",
+      "Model warm reuse, embedding cache and reference-Mac candidate bakeoff/performance remain under DP-24 and Gates A/E/G despite DP-12 behavior scoring fully covered."
+    ]
+  }
 }

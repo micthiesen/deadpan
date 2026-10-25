@@ -2,6 +2,23 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Progress reassessment, 2026-10-25
+
+[The requirements audit](PROGRESS_ASSESSMENT.md) replaces the inherited 89%
+estimate with about **83% assessed acceptance coverage** from 162 explicit
+criteria, equally weighted within each of the 24 requirements. The old number
+first appeared October 8 and persisted through 137 observations, while strict
+completion rose from four requirements to eight. It concealed substantial
+remaining integration and verification effort. No product scope is removed.
+
+Strict completion remains eight Complete/sixteen Partial, all seven delivery
+gates remain open, and picture effects remain five of thirteen. The percentage
+is neither remaining engineering effort nor release readiness. Historical
+estimates stay intact; the dashboard removes their misleading daily rate and
+shows the scored requirement ledger and gates. Future percentages are computed
+from criterion evidence rather than manually carried forward. Earlier 89%
+statements below describe their historical reporting state.
+
 ## Camera pointer targets, 2026-10-25
 
 [Pointer target authoring](qualification/pointer-targets-2026-10-25.md) adds

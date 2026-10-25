@@ -4,6 +4,16 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-25
 
+The [progress reassessment](../PROGRESS_ASSESSMENT.md) supersedes the inherited
+89% estimate with about **83% acceptance coverage**. Use the fixed 162-criterion
+ledger in progress.json; tools/progress/update.py computes the score. Preserve
+legacy history and never infer a progress rate across the calibration change.
+Eight requirements remain Complete, sixteen Partial; all seven gates stay open
+and picture effects remain five of thirteen. DP-12 behavior scores fully covered
+but strict closure needs reconciliation; runtime optimizations, bakeoff and
+performance remain owed under DP-24 and Gates A/E/G. This reporting correction
+does not close the scoped framing range implementation currently being qualified.
+
 [Camera pointer targets](../qualification/pointer-targets-2026-10-25.md) are
 implemented and locally qualified. `n`/`c` use the same temporary geometry for
 keys, rectangle drawing/body/corner drags and point placement/correction.

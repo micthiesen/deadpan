@@ -2,6 +2,7 @@
 """Maintain the small, versioned data file shown by the Deadpan progress artifact."""
 import argparse
 from datetime import date, datetime, timezone
+from fractions import Fraction
 import json
 from pathlib import Path
 import re
@@ -11,6 +12,33 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 REPORT = ROOT / 'docs/progress.json'
 STAGES = {'planned', 'partial', 'mostly', 'done'}
+
+
+def assessment_score(assessment):
+    """Equal requirement weights; criteria within each requirement share its weight."""
+    if not assessment.get('id') or not assessment.get('method'):
+        raise ValueError('Assessment identity and method are required')
+    rows = assessment['requirements']
+    if sorted(row['id'] for row in rows) != [f'DP-{i:02}' for i in range(1, 25)]:
+        raise ValueError('Assess each of the 24 requirements exactly once')
+    scores = []
+    for row in rows:
+        criteria = row['criteria']
+        if not 3 <= len(criteria) <= 8:
+            raise ValueError(f'{row["id"]}: expected 3-8 major acceptance criteria')
+        if len({item['id'] for item in criteria}) != len(criteria):
+            raise ValueError(f'{row["id"]}: duplicate criterion')
+        for item in criteria:
+            if type(item['score']) not in (int, float) or item['score'] not in (0, 0.5, 1):
+                raise ValueError('Criterion scores must be 0, 0.5 or 1')
+            if not item['deliverable'] or not item['evidence']:
+                raise ValueError('Each criterion needs a deliverable and evidence')
+            if item['score'] < 1 and not item['remaining']:
+                raise ValueError('Partial and absent criteria need concrete remaining work')
+        scores.append(sum(Fraction(str(item['score'])) for item in criteria) / len(criteria))
+    percent = 100 * sum(scores) / len(scores)
+    # Round halves upward, independent of floating point and Python's even rounding.
+    return (2 * percent.numerator + percent.denominator) // (2 * percent.denominator)
 
 
 def requirements():
@@ -59,6 +87,11 @@ def validate(report, statuses):
         if type(point['complete_sections']) is not int or not 0 <= point['complete_sections'] <= 24:
             raise ValueError('Invalid complete-section count')
     current = report['history'][-1]
+    assessment = report.get('assessment')
+    if assessment is not None:
+        score = assessment_score(assessment)
+        if current.get('assessment_id') != assessment['id'] or current['percent'] != score:
+            raise ValueError('Current percentage must match the identified acceptance ledger')
     complete = sum(value == 'Complete' for value in statuses.values())
     if current['complete_sections'] != complete:
         raise ValueError('Strict completion count changed; record a milestone')
@@ -72,7 +105,7 @@ def main():
     sub.add_parser('check', help='Validate the report against Requirements')
     sub.add_parser('show', help='Print a concise progress summary')
     record = sub.add_parser('record', help='Append a meaningful milestone; never commits or pushes')
-    record.add_argument('--percent', type=int, required=True)
+    record.add_argument('--percent', type=int, help='Optional assertion; the acceptance ledger computes coverage')
     record.add_argument('--summary', required=True)
     record.add_argument('--focus', required=True)
     record.add_argument('--stage', action='append', default=[], metavar='FEATURE=STATUS')
@@ -81,6 +114,9 @@ def main():
     report = json.loads(REPORT.read_text())
     statuses = requirements()
     if args.command == 'record':
+        percent = assessment_score(report['assessment'])
+        if args.percent is not None and args.percent != percent:
+            raise ValueError(f'Ledger computes {percent}%; update criterion evidence before changing progress')
         for change in args.stage:
             identifier, separator, status = change.partition('=')
             feature = next((f for f in report['features'] if f['id'] == identifier), None)
@@ -93,7 +129,8 @@ def main():
         report['updated_at'] = now.isoformat(timespec='seconds').replace('+00:00', 'Z')
         report['focus'] = args.focus
         report['history'].append({
-            'date': now.date().isoformat(), 'percent': args.percent,
+            'date': now.date().isoformat(), 'percent': percent,
+            'assessment_id': report['assessment']['id'],
             'complete_sections': sum(s == 'Complete' for s in statuses.values()),
             'revision': revision, 'retrospective': False, 'summary': args.summary,
         })
@@ -103,8 +140,8 @@ def main():
         temporary.replace(REPORT)
     else:
         validate(report, statuses)
-    current, baseline = report['history'][-1], report['history'][0]
-    print(f"~{current['percent']}% estimated coverage; {current['percent'] - baseline['percent']:+d} points since {baseline['date']}")
+    current = report['history'][-1]
+    print(f"~{current['percent']}% assessed requirement coverage; not time remaining or release readiness")
     print(f"{current['complete_sections']}/24 requirement sections complete; updated {report['updated_at']}")
     print(report['focus'])
 
