@@ -16,7 +16,7 @@ fn fixture() -> (tempfile::TempDir, PathBuf) {
     fs::write(
         contents.join("Info.plist"),
         format!(
-            "<key>{}</key><string>{}</string>",
+            "<plist version=\"1.0\"><dict><key>{}</key><string>{}</string></dict></plist>",
             super::super::PACKAGING_KEY,
             super::super::PACKAGING_LAYOUT
         ),
@@ -179,6 +179,19 @@ fn actual_content_reader_refuses_non_macho_and_symlink_files() {
     assert!(content(&image).is_err());
     std::os::unix::fs::symlink("/bin/echo", temp.path().join("alias")).unwrap();
     assert!(content(&temp.path().join("alias")).is_err());
+}
+
+#[test]
+fn other_native_family_pins_cannot_enable_alignment_development_fallback() {
+    assert!(
+        qualify_using(
+            Path::new("/tmp/deadpan-cli"),
+            (None, None),
+            true,
+            |_, _| panic!("must refuse before image inspection"),
+        )
+        .is_err()
+    );
 }
 
 #[test]

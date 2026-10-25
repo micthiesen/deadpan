@@ -461,6 +461,14 @@ fn run_worker(
             "an attempt name is one plain path component".into(),
         ));
     }
+    let admission = crate::bundle::qualify_native_worker_interruptible(
+        crate::bundle::NativeWorker::Track,
+        &runtime.executable,
+        cancelled,
+        deadline,
+    );
+    check(cancelled, deadline)?;
+    admission?;
     let scope = format!("{OUTPUT_SCOPE}/{attempt}");
     let scope_ref = WorkspaceRef::new(scope.clone()).map_err(protocol_error)?;
     // Each run writes below its own output scope.

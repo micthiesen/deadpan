@@ -1,0 +1,217 @@
+   Compiling xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 2.93s
+     Running `/tmp/deadpan-follow-creep-2026-10-24/target/debug/xtask check --since 8b418a82 --filter 'package(xtask) or binary(privacy_network_audit) or test(bundle::) or test(youtube::macho_content::) or test(youtube::helpers::) or test(generation::attempt::) or test(generation::runtime::) or test(transcription::) or test(tracking::) or test(picture_proposals::) or test(proxy::tests::) or test(youtube::acquire::)'`
+    Checking xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 14.86s
+   Compiling xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1m 35s
+────────────
+ Nextest run ID f7e1ff15-f60c-4d54-b8cb-afd8e874ecc4 with nextest profile: default
+    Starting 203 tests across 46 binaries (797 tests skipped)
+        PASS [   0.013s] (  1/203) deadpan-cli bundle::image::signer::tests::local_requirement_rejects_extra_expressions_malformed_hashes_and_ambiguous_definitions
+        PASS [   0.014s] (  2/203) deadpan-cli bundle::image::signer::command::tests::cancellation_or_deadline_precedes_even_executable_lookup
+        PASS [   0.014s] (  3/203) deadpan-cli bundle::native::tests::caller_interruption_precedes_runtime_selection_even_in_development
+        PASS [   0.015s] (  4/203) deadpan-cli bundle::image::tests::cancellation_is_rechecked_between_signature_commands
+        PASS [   0.016s] (  5/203) deadpan-cli bundle::native::tests::complete_compiled_map_is_required_and_rejects_paths_or_hashes_from_a_manifest
+        PASS [   0.016s] (  6/203) deadpan-cli bundle::native::tests::mutable_resource_manifest_cannot_authorize_substitution
+        PASS [   0.016s] (  7/203) deadpan-cli bundle::image::signer::tests::only_explicit_adhoc_or_a_bound_supported_signer_is_accepted
+        PASS [   0.016s] (  8/203) deadpan-cli bundle::image::tests::even_one_empty_or_partial_pin_variable_requires_a_package
+        PASS [   0.017s] (  9/203) deadpan-cli bundle::image::tests::expired_or_cancelled_admission_never_opens_the_image_or_package
+        PASS [   0.017s] ( 10/203) deadpan-cli bundle::image::signer::command::tests::cancellation_after_spawn_confirms_group_cleanup_and_reaps_the_leader
+        PASS [   0.018s] ( 11/203) deadpan-cli bundle::native::tests::expected_signer_is_checked_for_resource_seal_hosts_and_every_admitted_image
+        PASS [   0.018s] ( 12/203) deadpan-cli bundle::native::tests::every_native_worker_and_every_library_has_an_independent_pin
+        PASS [   0.019s] ( 13/203) deadpan-cli bundle::image::tests::cancellation_during_a_hash_prevents_signer_work_and_later_admission
+        PASS [   0.019s] ( 14/203) deadpan-cli bundle::native::tests::any_family_of_compiled_pins_prevents_development_downgrade
+        PASS [   0.020s] ( 15/203) deadpan-cli bundle::native::tests::packaged_worker_role_cannot_select_another_worker_or_external_executable
+        PASS [   0.021s] ( 16/203) deadpan-cli bundle::image::signer::command::tests::an_observation_error_still_cleans_and_reaps_its_owned_command
+        PASS [   0.025s] ( 17/203) deadpan-cli bundle::image::signer::command::tests::overflowing_capture_stops_and_reaps_the_entire_command_group
+        PASS [   0.013s] ( 18/203) deadpan-cli bundle::refinement::tests::both_images_are_independently_checked_before_any_signature_or_launch
+        PASS [   0.014s] ( 19/203) deadpan-cli bundle::refinement::tests::actual_content_reader_refuses_non_macho_and_symlink_files
+        PASS [   0.013s] ( 20/203) deadpan-cli bundle::refinement::tests::other_native_family_pins_cannot_enable_alignment_development_fallback
+        PASS [   0.014s] ( 21/203) deadpan-cli bundle::refinement::tests::expected_signer_failure_refuses_each_image_and_success_checks_the_resource_seal
+        PASS [   0.013s] ( 22/203) deadpan-cli bundle::tests::only_contents_macos_inside_an_app_is_a_bundle
+        PASS [   0.013s] ( 23/203) deadpan-cli bundle::tests::only_the_packaging_key_marks_a_packaged_bundle
+        PASS [   0.014s] ( 24/203) deadpan-cli bundle::tests::checked_selection_never_downgrades_any_pin_built_host
+        PASS [   0.016s] ( 25/203) deadpan-cli bundle::refinement::tests::packaged_hosts_require_both_pins_and_cannot_downgrade_by_removing_the_marker
+        PASS [   0.124s] ( 26/203) deadpan-cli bundle::image::signer::command::tests::a_hung_command_respects_the_shared_deadline_and_is_reaped
+        PASS [   0.116s] ( 27/203) deadpan-cli bundle::refinement::tests::real_system_signature_cannot_satisfy_a_different_signer_requirement
+        PASS [   0.161s] ( 28/203) deadpan-cli bundle::refinement::tests::other_users_cannot_replace_package_owned_images_or_directories
+        PASS [   0.258s] ( 29/203) deadpan-cli bundle::refinement::tests::packaged_file_and_directory_symlinks_are_refused
+        PASS [   1.047s] ( 30/203) deadpan-cli generation::attempt::tests::cancellation_before_launch_is_recorded_as_cancelled
+        PASS [   1.080s] ( 31/203) deadpan-cli bundle::native::tests::private_regular_package_paths_are_required_before_hashing
+        PASS [   1.079s] ( 32/203) deadpan-cli generation::attempt::tests::a_worker_failure_the_store_missed_is_recorded_as_a_host_failure
+        PASS [   1.072s] ( 33/203) deadpan-cli generation::attempt::tests::extension::bridge_capture_uses_selected_plan_and_refuses_a_different_saved_clock
+        PASS [   1.070s] ( 34/203) deadpan-cli generation::attempt::tests::extension::extension_completion_requires_v3_operation_native_contract_and_selected_provider
+        PASS [   1.081s] ( 35/203) deadpan-cli generation::attempt::tests::a_worker_that_exits_without_a_candidate_fails_truthfully
+        PASS [   1.083s] ( 36/203) deadpan-cli generation::attempt::tests::a_cancelled_run_whose_cancel_record_was_lost_still_finishes_cancelled
+        PASS [   0.010s] ( 37/203) deadpan-cli generation::attempt::tests::runtime_admission_failure_is_not_recorded_as_invalid_candidate_output
+        PASS [   1.102s] ( 38/203) deadpan-cli generation::attempt::tests::allocation_records_a_current_bridge_request_and_a_queued_attempt
+        PASS [   1.268s] ( 39/203) deadpan-cli generation::attempt::tests::ai_network_inference_host_preserves_files_protocol_and_owned_group
+        PASS [   1.146s] ( 40/203) deadpan-cli generation::attempt::tests::independent_failure_observed_before_sleep_keeps_its_original_cause
+        PASS [   1.855s] ( 41/203) deadpan-cli generation::attempt::tests::extension::extension_workspace_refuses_wrong_provider_missing_context_and_changed_signatures
+        PASS [   1.036s] ( 42/203) deadpan-cli generation::attempt::tests::selected_pack_identity_is_durable_and_variants_keep_that_identity
+        PASS [   1.044s] ( 43/203) deadpan-cli generation::attempt::tests::reaping_finishes_cancel_and_keeps_the_first_failure
+        PASS [   0.011s] ( 44/203) deadpan-cli generation::runtime::check::tests::smoke_report_must_match_every_captured_identity_and_operation
+        PASS [   0.012s] ( 45/203) deadpan-cli generation::runtime::check::tests::complete_worker_smoke_report_requires_every_well_formed_adapter_source
+        PASS [   2.145s] ( 46/203) deadpan-cli generation::attempt::tests::extension::extension_allocation_retains_operation_origin_and_rejects_changed_variants
+        PASS [   0.017s] ( 47/203) deadpan-cli generation::runtime::launch::tests::ai_network_launcher_refuses_missing_isolation_and_invalid_python
+        PASS [   0.012s] ( 48/203) deadpan-cli generation::runtime::selection::constraints::tests::launch_constraints_cannot_bypass_raster_duration_or_operation_limits
+        PASS [   0.011s] ( 49/203) deadpan-cli generation::runtime::selection::constraints::tests::narrower_controls_refuse_motion_and_count_instruction_bytes_for_each_operation
+        PASS [   0.012s] ( 50/203) deadpan-cli generation::runtime::selection::tests::provider_selection_never_grants_another_operation_or_a_wider_capability
+        PASS [   0.012s] ( 51/203) deadpan-cli generation::runtime::selection::tests::extension_selection_uses_manifest_duration_and_exact_project_grid
+        PASS [   0.058s] ( 52/203) deadpan-cli generation::runtime::tests::a_cleared_source_checkout_is_reported
+        PASS [   0.011s] ( 53/203) deadpan-cli generation::runtime::tests::a_missing_home_leaves_the_model_cache_unresolved
+        PASS [   0.111s] ( 54/203) deadpan-cli generation::runtime::tests::a_complete_runtime_resolves_to_canonical_paths
+        PASS [   0.206s] ( 55/203) deadpan-cli generation::runtime::tests::a_packaged_app_uses_only_its_bundled_runtime_and_installed_pack
+        PASS [   0.191s] ( 56/203) deadpan-cli generation::runtime::tests::an_installed_bridge_pack_does_not_satisfy_an_extension_request
+        PASS [   0.018s] ( 57/203) deadpan-cli generation::runtime::tests::bundles_use_only_explicit_variables
+        PASS [   0.011s] ( 58/203) deadpan-cli generation::runtime::tests::damaged_packaged_host_cannot_read_development_overrides_or_defaults
+        PASS [   0.027s] ( 59/203) deadpan-cli generation::runtime::tests::every_missing_piece_is_named_with_its_variable
+        PASS [   0.013s] ( 60/203) deadpan-cli generation::runtime::tests::selected_manifest_keeps_its_os_and_picture_constraints
+        PASS [   1.473s] ( 61/203) deadpan-cli generation::attempt::tests::sleep_before_or_during_cancel_finalization_remains_durably_interrupted
+        PASS [   0.012s] ( 62/203) deadpan-cli picture_proposals::tests::copy_witness_restores_nested_and_unwinding_scopes
+        PASS [   0.030s] ( 63/203) deadpan-cli generation::runtime::tests::the_bundled_runtime_names_its_minimum_macos
+        PASS [   0.197s] ( 64/203) deadpan-cli generation::runtime::tests::development_builds_prefer_an_installed_pack_over_the_qualification_cache
+        PASS [   0.683s] ( 65/203) deadpan-cli generation::runtime::network_tests::ai_network_smoke_check_denies_sockets_and_descendants_while_files_work
+        PASS [   0.013s] ( 66/203) deadpan-cli picture_proposals::tests::salient_numbering_and_command_refusals_are_explicit_without_writes
+        PASS [   0.208s] ( 67/203) deadpan-cli proxy::tests::export_paths_never_reach_proxies
+        PASS [   0.012s] ( 68/203) deadpan-cli proxy::tests::unavailable_runtime_does_not_poison_original_or_discard_resumable_ranges
+        PASS [   3.682s] ( 69/203) deadpan-cli generation::attempt::tests::extension::supervised_extension_cancel_and_host_refusals_are_terminal_before_ready
+        PASS [   2.640s] ( 70/203) deadpan-cli generation::attempt::tests::sleep_during_qualified_object_promotion_never_publishes_ready
+        PASS [   1.306s] ( 71/203) deadpan-cli picture_proposals::tests::exact_index_selection_and_all_admission_paths_keep_mode_pts_and_bounds
+        PASS [   0.011s] ( 72/203) deadpan-cli youtube::acquire::tests::arguments_disable_configuration_plugins_and_browser_sessions
+        PASS [   0.178s] ( 73/203) deadpan-cli youtube::acquire::tests::adversarial_metadata_json
+        PASS [   1.486s] ( 74/203) deadpan-cli picture_proposals::tests::face_facade_still_admits_only_face_mode_and_preserves_target_semantics
+        PASS [   1.083s] ( 75/203) deadpan-cli tracking::point_tests::point_target_correction_refuses_before_media_preparation_or_worker_launch
+        PASS [   1.604s] ( 76/203) deadpan-cli picture_proposals::tests::one_verified_copy_prepares_both_collections_without_changing_history
+        PASS [   0.011s] ( 77/203) deadpan-cli youtube::acquire::tests::downloader_errors_map_to_actionable_codes
+        PASS [   0.010s] ( 78/203) deadpan-cli youtube::acquire::tests::downloader_messages_redact_url_queries_and_credentials
+        PASS [   0.186s] ( 79/203) deadpan-cli youtube::acquire::tests::cookies_are_copied_owner_only_and_removed
+        PASS [   0.011s] ( 80/203) deadpan-cli youtube::acquire::tests::environment_is_private_and_complete
+        PASS [   0.468s] ( 81/203) deadpan-cli youtube::acquire::tests::confirmation_honors_a_tighter_transfer_limit
+        PASS [   0.687s] ( 82/203) deadpan-cli youtube::acquire::tests::a_passed_over_update_is_reported_before_metadata
+        PASS [   0.010s] ( 83/203) deadpan-cli youtube::acquire::tests::original_names_are_bounded_and_never_form_paths
+        PASS [   0.010s] ( 84/203) deadpan-cli youtube::acquire::tests::metadata_refuses_playlists_live_streams_other_videos_and_long_videos
+        PASS [   0.011s] ( 85/203) deadpan-cli youtube::acquire::tests::selection_keeps_resolution_hdr_and_original_dynamics_ahead_of_codec_bitrate
+        PASS [   0.325s] ( 86/203) deadpan-cli youtube::acquire::tests::confirming_an_inspection_refuses_an_existing_package_before_transfer
+        PASS [   0.013s] ( 87/203) deadpan-cli youtube::acquire::tests::selection_prefers_admissible_highest_quality_streams
+        PASS [   0.012s] ( 88/203) deadpan-cli youtube::acquire::tests::size_estimates_preserve_unknowns_and_the_inclusive_limit
+        PASS [   0.583s] ( 89/203) deadpan-cli youtube::acquire::tests::completed_transfer_rechecks_combined_size_before_assembly
+        PASS [   0.112s] ( 90/203) deadpan-cli youtube::helpers::tests::a_tampered_resigned_helper_fails_even_with_a_matching_manifest
+        PASS [   0.093s] ( 91/203) deadpan-cli youtube::helpers::tests::an_upstream_signed_helper_must_satisfy_its_signer
+        PASS [   0.223s] ( 92/203) deadpan-cli youtube::acquire::tests::inspection_waits_for_confirmation_and_declining_transfers_nothing
+        PASS [   0.036s] ( 93/203) deadpan-cli youtube::helpers::tests::bundled_permission_checks_stop_at_the_app
+        PASS [   0.044s] ( 94/203) deadpan-cli youtube::helpers::tests::bundled_baseline_rejects_inconsistent_or_missing_manifests
+        PASS [   0.020s] ( 95/203) deadpan-cli youtube::helpers::tests::helper_connection_and_body_failures_are_actionable_without_private_details
+        PASS [   0.016s] ( 96/203) deadpan-cli youtube::helpers::tests::inspection_reports_a_missing_bundle_baseline
+        PASS [   0.048s] ( 97/203) deadpan-cli youtube::helpers::tests::helpers_others_can_modify_are_refused
+        PASS [   0.013s] ( 98/203) deadpan-cli youtube::helpers::tests::pins_are_well_formed
+        PASS [   0.063s] ( 99/203) deadpan-cli youtube::helpers::tests::publication_never_replaces_a_racing_directory
+        PASS [   0.073s] (100/203) deadpan-cli youtube::helpers::tests::verified_install_publishes_once_and_never_overwrites
+        PASS [   0.069s] (101/203) deadpan-cli youtube::helpers::tests::wrong_bytes_never_publish
+        PASS [   0.057s] (102/203) deadpan-cli youtube::helpers::tests::zip_entries_extract_and_verify
+        PASS [   4.549s] (103/203) deadpan-cli generation::attempt::tests::missing_landmark_helper_fails_without_replacing_ready_or_fallback
+        PASS [   0.013s] (104/203) deadpan-cli youtube::macho_content::tests::data_outside_the_hashed_content_is_refused
+        PASS [   0.012s] (105/203) deadpan-cli youtube::macho_content::tests::large_zero_signature_reservations_are_allowed_but_stale_signature_bytes_are_not
+        PASS [   0.013s] (106/203) deadpan-cli youtube::macho_content::tests::hashing_interruption_checks_real_content_chunks_and_returns_no_partial_identity
+        PASS [   0.012s] (107/203) deadpan-cli youtube::macho_content::tests::re_signing_keeps_the_content_hash
+        PASS [   0.012s] (108/203) deadpan-cli youtube::macho_content::tests::print_content_pin_when_requested
+        PASS [   0.013s] (109/203) deadpan-cli youtube::macho_content::tests::universal_files_hash_every_slice_and_nothing_else
+        PASS [   3.564s] (110/203) deadpan-cli generation::attempt::tests::synthetic_one_frame_hold_measures_both_joins_at_the_same_sample
+        PASS [   0.008s] (111/203) deadpan-cli::privacy_network_audit local_engines_stay_offline_by_construction
+        PASS [   0.007s] (112/203) deadpan-cli::privacy_network_audit lockfile_has_one_reviewed_https_stack_and_no_telemetry
+        PASS [   0.470s] (113/203) deadpan-cli youtube::acquire::tests::transfer_failures_are_classified_and_create_no_project
+        PASS [   3.856s] (114/203) deadpan-cli generation::attempt::tests::synthetic_middle_flash_fails_qualification_and_preserves_ready_fallback
+        PASS [   0.096s] (115/203) xtask::bin/xtask bundle::deno_notices::tests::audit_accepts_installed_notices_and_reports_each_defect
+        PASS [   0.163s] (116/203) deadpan-cli::privacy_network_audit secret_bearing_types_cannot_be_debug_formatted
+        PASS [   0.059s] (117/203) xtask::bin/xtask bundle::deno_notices::tests::audit_checks_executable_bytes_and_the_sbom_inventory
+        PASS [   0.023s] (118/203) xtask::bin/xtask bundle::deno_notices::tests::load_refuses_changed_missing_or_unlisted_texts
+        PASS [   0.049s] (119/203) xtask::bin/xtask bundle::deno_notices::tests::audit_refuses_a_different_deno_or_a_changed_set
+        PASS [   0.014s] (120/203) xtask::bin/xtask bundle::deno_notices::tests::load_refuses_dangling_references_and_uncovered_crates
+        PASS [   0.728s] (121/203) deadpan-cli youtube::acquire::tests::failures_before_transfer_create_no_project
+        PASS [   0.232s] (122/203) deadpan-cli::privacy_network_audit subprocess_launches_are_reviewed_and_name_no_network_tool
+        PASS [   0.043s] (123/203) xtask::bin/xtask bundle::deno_notices::tests::loads_renders_and_deduplicates_a_complete_set
+        PASS [   0.044s] (124/203) xtask::bin/xtask bundle::deno_notices::tests::sbom_nests_linked_components_under_the_helper
+        PASS [   0.010s] (125/203) xtask::bin/xtask bundle::macho::ort_tests::basename_aliases_require_same_actual_content
+        PASS [   0.691s] (126/203) deadpan-cli youtube::acquire::tests::oversized_metadata_is_refused_before_confirmation_or_transfer
+        PASS [   0.008s] (127/203) xtask::bin/xtask bundle::macho::ort_tests::ort_transitive_dependencies_are_system_only_not_other_approved_runtimes
+        PASS [   0.009s] (128/203) xtask::bin/xtask bundle::macho::ort_tests::runtime_resolution_is_closed_over_explicit_qualified_sources
+        PASS [   3.221s] (129/203) deadpan-cli generation::attempt::tests::synthetic_wrong_uniform_endpoints_preserve_ready_and_fallback
+        PASS [   0.008s] (130/203) xtask::bin/xtask bundle::macho::tests::loader_relative_paths_normalize_lexically
+        PASS [   0.007s] (131/203) xtask::bin/xtask bundle::macho::tests::otool_text_parsers_handle_universal_files_and_ids
+        PASS [   0.008s] (132/203) xtask::bin/xtask bundle::macho::tests::system_references_must_be_normalized
+        PASS [   0.020s] (133/203) xtask::bin/xtask bundle::macho::ort_tests::selected_ort_prefix_accepts_internal_aliases_and_rejects_escape_or_wrong_bytes
+        PASS [   0.010s] (134/203) xtask::bin/xtask bundle::native::tests::worker_build_removes_inherited_pin_map_and_hosts_get_canonical_map
+        PASS [   0.009s] (135/203) xtask::bin/xtask bundle::native::tests::missing_partial_stale_or_extra_native_pin_reports_refuse_no_build
+        PASS [   0.009s] (136/203) xtask::bin/xtask bundle::notices::ort_tests::ort_sbom_distinguishes_original_runtime_wheel_and_signed_shipped_bytes
+        PASS [   0.011s] (137/203) xtask::bin/xtask bundle::notices::ort_tests::qualified_wheel_notices_are_exact_and_required_even_without_a_manifest_claim
+        PASS [   0.014s] (138/203) xtask::bin/xtask bundle::notices::refinement_tests::compiled_derivative_notices_are_exact_and_cannot_be_omitted_or_relabelled
+        PASS [   0.008s] (139/203) xtask::bin/xtask bundle::notices::refinement_tests::derivative_sbom_uses_independent_terms_and_claims_no_python_or_model_runtime
+        PASS [   0.008s] (140/203) xtask::bin/xtask bundle::notices::tests::crate_expressions_normalize_and_reference_license_files
+        PASS [   0.008s] (141/203) xtask::bin/xtask bundle::notices::tests::license_names_match_common_spellings
+        PASS [   0.039s] (142/203) xtask::bin/xtask bundle::native::tests::host_rebuild_must_preserve_every_prepared_native_worker_source
+        PASS [   0.007s] (143/203) xtask::bin/xtask bundle::notices::tests::sbom_is_cyclonedx_with_valid_spdx_and_closed_references
+        PASS [   0.008s] (144/203) xtask::bin/xtask bundle::refinement::macho_content::tests::data_outside_the_hashed_content_is_refused
+        PASS [   0.021s] (145/203) xtask::bin/xtask bundle::notices::tests::lock_checksums_read_registry_entries_only
+        PASS [   0.008s] (146/203) xtask::bin/xtask bundle::refinement::macho_content::tests::large_zero_signature_reservations_are_allowed_but_stale_signature_bytes_are_not
+        PASS [   0.009s] (147/203) xtask::bin/xtask bundle::refinement::macho_content::tests::hashing_interruption_checks_real_content_chunks_and_returns_no_partial_identity
+        PASS [   0.009s] (148/203) xtask::bin/xtask bundle::refinement::macho_content::tests::re_signing_keeps_the_content_hash
+        PASS [   0.009s] (149/203) xtask::bin/xtask bundle::refinement::macho_content::tests::print_content_pin_when_requested
+        PASS [   0.007s] (150/203) xtask::bin/xtask bundle::refinement::macho_content::tests::universal_files_hash_every_slice_and_nothing_else
+        PASS [   0.118s] (151/203) xtask::bin/xtask bundle::deno_notices::tests::vendored_set_for_the_pinned_deno_verifies
+        PASS [   0.009s] (152/203) xtask::bin/xtask bundle::refinement::tests::worker_build_removes_inherited_pins_and_host_build_sets_both
+        PASS [   0.009s] (153/203) xtask::bin/xtask bundle::refinement::tests::missing_partial_stale_and_changed_host_pin_reports_cannot_pass_no_build
+        PASS [   0.009s] (154/203) xtask::bin/xtask bundle::spdx::tests::expressions_validate_and_evaluate
+        PASS [   0.064s] (155/203) xtask::bin/xtask bundle::notices::refinement_tests::actual_notice_generation_copies_and_references_all_compiled_derivative_terms
+        PASS [   0.010s] (156/203) xtask::bin/xtask bundle::spdx::tests::legacy_slashes_become_or
+        PASS [   0.339s] (157/203) deadpan-cli::privacy_network_audit network_clients_live_only_in_reviewed_download_paths
+        PASS [   0.009s] (158/203) xtask::bin/xtask bundle::tests::rfc3339_matches_known_instants
+        PASS [   0.009s] (159/203) xtask::bin/xtask bundle::tests::notarization_requires_an_identity
+        PASS [   0.009s] (160/203) xtask::bin/xtask bundle::tests::public_configuration_drops_only_host_paths
+        PASS [   0.009s] (161/203) xtask::bin/xtask bundle::tests::vendored_versions_read_defines_and_cmake
+        PASS [   0.009s] (162/203) xtask::bin/xtask chaos::tests::entry_names_are_unique
+        PASS [   0.009s] (163/203) xtask::bin/xtask fuzz::tests::classified_streams_pair_first_requests_with_responses
+        PASS [   0.009s] (164/203) xtask::bin/xtask fuzz::tests::failures_without_artifacts_never_pass
+        PASS [   0.010s] (165/203) xtask::bin/xtask chaos::tests::options_parse_and_reject_invalid_values
+        PASS [   0.009s] (166/203) xtask::bin/xtask fuzz::tests::options_parse_and_reject_invalid_values
+        PASS [   0.019s] (167/203) xtask::bin/xtask fuzz::tests::every_fuzz_target_has_a_committed_corpus
+        PASS [   0.008s] (168/203) xtask::bin/xtask fuzz::tests::statistics_read_the_final_libfuzzer_line
+        PASS [   0.013s] (169/203) xtask::bin/xtask offline_dist::tests::existing_output_is_refused
+        PASS [   0.009s] (170/203) xtask::bin/xtask offline_dist::tests::manifest_round_trips
+        PASS [   0.011s] (171/203) xtask::bin/xtask offline_dist::tests::manifest_rejects_escapes_and_wrong_schema
+        PASS [   0.007s] (172/203) xtask::bin/xtask offline_dist::tests::options_require_packs_and_refuse_repeats
+        PASS [   0.007s] (173/203) xtask::bin/xtask offline_dist::tests::signed_update_versions_are_refused
+        PASS [   0.039s] (174/203) xtask::bin/xtask offline_dist::tests::intact_fixture_verifies
+        PASS [   0.040s] (175/203) xtask::bin/xtask offline_dist::tests::edited_manifest_is_refused_by_sums
+        PASS [   0.008s] (176/203) xtask::bin/xtask offline_dist::tests::sums_parse_and_refuse_bad_lines
+        PASS [   0.050s] (177/203) xtask::bin/xtask offline_dist::tests::escaping_link_is_refused
+        PASS [   0.034s] (178/203) xtask::bin/xtask offline_dist::tests::missing_file_is_refused
+        PASS [   0.009s] (179/203) xtask::bin/xtask percentile::tests::nearest_rank_percentiles
+        PASS [   0.010s] (180/203) xtask::bin/xtask perf::tests::missing_workloads_are_never_passes
+        PASS [   0.016s] (181/203) xtask::bin/xtask offline_dist::tests::uncovered_archive_is_refused
+        PASS [   0.018s] (182/203) xtask::bin/xtask offline_dist::tests::tampered_archive_is_refused
+        PASS [   0.008s] (183/203) xtask::bin/xtask perf::tests::options_reject_unknown_stages_and_bad_names
+        PASS [   0.007s] (184/203) xtask::bin/xtask perf::tests::time_report_fields_parse
+        PASS [   0.008s] (185/203) xtask::bin/xtask perf::tests::playback_must_cover_its_interval_and_every_frame
+        PASS [   0.008s] (186/203) xtask::bin/xtask perf::tests::verdicts_need_success_samples_quiet_and_full_runs
+        PASS [   0.008s] (187/203) xtask::bin/xtask replays::tests::reports_count_failed_checks_failures_and_layout_retries
+        PASS [   0.008s] (188/203) xtask::bin/xtask replays::tests::options_split_scenarios_and_reject_unknown_flags
+        PASS [   0.026s] (189/203) xtask::bin/xtask target_hygiene::tests::the_oldest_incremental_state_is_pruned_first
+        PASS [   0.129s] (190/203) xtask::bin/xtask bundle::refinement::tests::clean_signing_of_an_already_signed_image_retains_strict_content_identity
+        PASS [   0.027s] (191/203) xtask::bin/xtask target_hygiene::tests::only_cargo_profile_directories_are_measured
+        PASS [   0.448s] (192/203) deadpan-cli::privacy_network_audit local_workers_cannot_reach_the_https_client
+        PASS [   0.036s] (193/203) xtask::bin/xtask replays::tests::the_app_and_its_helpers_run_from_hashed_private_copies
+        PASS [   4.308s] (194/203) deadpan-cli generation::attempt::tests::synthetic_variants_publish_distinct_ready_bundles_for_one_request
+        PASS [   5.608s] (195/203) deadpan-cli generation::attempt::tests::hostile_ai_provenance_claims_fail_before_media_qualification
+        PASS [   5.788s] (196/203) deadpan-cli generation::attempt::tests::hostile_ai_workers_fail_truthfully_and_leave_no_group_member
+        PASS [   4.914s] (197/203) deadpan-cli generation::attempt::tests::preparations::replacement_keeps_controls_rejects_stale_claims_and_needs_explicit_acceptance
+        PASS [   6.080s] (198/203) deadpan-cli generation::attempt::tests::extension::supervised_extension_both_directions_publish_all_inputs_then_accept_and_reopen
+        PASS [   1.263s] (199/203) xtask::bin/xtask bundle::macho::tests::relocation_and_audit_on_real_mach_o_files
+        PASS [   5.453s] (200/203) deadpan-cli generation::attempt::tests::synthetic_entry_and_exit_mismatches_are_checked_independently
+        PASS [   2.138s] (201/203) deadpan-cli youtube::helpers::tests::bundled_baseline_binds_resigned_bytes_to_the_compiled_pin
+        PASS [  10.860s] (202/203) deadpan-cli generation::attempt::tests::an_escaped_ai_worker_descendant_fails_the_attempt_and_is_not_contained
+        PASS [  11.391s] (203/203) deadpan-cli generation::attempt::tests::stalled_and_forking_ai_workers_are_stopped_by_cancellation
+────────────
+     Summary [  12.496s] 203 tests run: 203 passed, 797 skipped

@@ -26,7 +26,7 @@ pub(super) fn build_environment(command: &mut Command, pins: Option<&Pins>) {
     }
 }
 
-fn content(path: &Path) -> Result<String> {
+pub(super) fn content(path: &Path) -> Result<String> {
     let bytes = fs::read(path).map_err(|error| format!("{}: {error}", path.display()))?;
     macho_content::content_sha256(&bytes).map_err(|error| format!("{}: {error}", path.display()))
 }

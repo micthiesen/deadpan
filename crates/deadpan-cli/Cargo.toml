@@ -26,6 +26,8 @@ deadpan-store.workspace = true
 deadpan-plan.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+# Bounded structural extraction of the signed bundle's XML packaging marker.
+quick-xml = "=0.41.0"
 thiserror.workspace = true
 uuid = { workspace = true, features = ["serde"] }
 

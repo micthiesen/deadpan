@@ -21,6 +21,7 @@ use sha2::{Digest, Sha256};
 pub mod ai_runtime;
 pub mod deno_notices;
 pub mod macho;
+mod native;
 pub mod notices;
 mod refinement;
 pub mod spdx;
@@ -275,11 +276,7 @@ impl Signer<'_> {
     ) -> Result<()> {
         let mut arguments: Vec<&OsStr> =
             vec!["--force".as_ref(), "--options".as_ref(), "runtime".as_ref()];
-        arguments.push(if self.identity.is_some() {
-            "--timestamp".as_ref()
-        } else {
-            "--timestamp=none".as_ref()
-        });
+        arguments.push(self.timestamp_argument().as_ref());
         arguments.extend([OsStr::new("-s"), OsStr::new(self.identity.unwrap_or("-"))]);
         if let Some(identifier) = identifier {
             arguments.extend([OsStr::new("-i"), OsStr::new(identifier)]);
@@ -292,10 +289,18 @@ impl Signer<'_> {
     }
 
     fn kind(&self) -> &'static str {
-        if self.identity.is_some() {
-            "developer-id"
+        match self.identity {
+            Some(identity) if identity.contains("Developer ID") => "developer-id",
+            Some(_) => "local",
+            None => "ad-hoc",
+        }
+    }
+
+    fn timestamp_argument(&self) -> &'static str {
+        if self.kind() == "developer-id" {
+            "--timestamp"
         } else {
-            "ad-hoc"
+            "--timestamp=none"
         }
     }
 }
@@ -546,7 +551,7 @@ fn build(
     workspace: &Path,
     target: &Path,
     packages: &[&str],
-    pins: Option<&refinement::Pins>,
+    pins: Option<(&refinement::Pins, &native::Pins)>,
 ) -> Result<BTreeMap<String, PathBuf>> {
     let remaps = remaps(workspace);
     let rust: Vec<String> = remaps
@@ -586,7 +591,8 @@ fn build(
         .env("CFLAGS", with_existing("CFLAGS"))
         .env("CXXFLAGS", with_existing("CXXFLAGS"))
         .stderr(std::process::Stdio::inherit());
-    refinement::build_environment(&mut command, pins);
+    refinement::build_environment(&mut command, pins.map(|(refinement, _)| refinement));
+    native::build_environment(&mut command, pins.map(|(_, native)| native))?;
     let result = command.output().map_err(|e| e.to_string())?;
     if !result.status.success() {
         return Err(format!("release build failed ({})", result.status));
@@ -702,17 +708,26 @@ pub fn run(arguments: &[String]) -> Result<()> {
             identity: options.identity.as_deref(),
         },
     )?;
+    let native_pins = native::prepare(
+        &output_directory,
+        &executables,
+        &prefix_lib,
+        &Signer {
+            identity: options.identity.as_deref(),
+        },
+    )?;
     if options.build {
         executables.extend(build(
             &workspace,
             &target,
             &refinement::HOSTS,
-            Some(&refinement_pins),
+            Some((&refinement_pins, &native_pins)),
         )?);
     }
     if sha256_file(&executables["deadpan-align"])? != refinement_pins.source_worker_sha256 {
         return Err("host pin rebuild changed the independently prepared alignment worker".into());
     }
+    native::verify_sources(&executables, &native_pins)?;
 
     let ai = if options.ai_runtime {
         let cache = match &options.ai_runtime_cache {
@@ -747,6 +762,7 @@ pub fn run(arguments: &[String]) -> Result<()> {
         &prefix_lib,
         &ort,
         &refinement_pins,
+        &native_pins,
         &helpers_root,
         &executables,
         &staging,
@@ -786,7 +802,7 @@ pub fn run(arguments: &[String]) -> Result<()> {
             "schema": 1,
             "git_commit": source.commit,
             "git_changes": source.changes,
-            "signature": if options.identity.is_some() { "developer-id" } else { "ad-hoc" },
+            "signature": Signer { identity: options.identity.as_deref() }.kind(),
             "notarized": notarized,
             "stapled": notarized,
             "checksums": "Deadpan.app.SHA256SUMS",
@@ -854,6 +870,7 @@ fn assemble(
     prefix_lib: &Path,
     ort: &macho::OrtRuntime,
     refinement_pins: &refinement::Pins,
+    native_pins: &native::Pins,
     helpers_root: &Path,
     built: &BTreeMap<String, PathBuf>,
     staging: &Path,
@@ -1010,11 +1027,7 @@ fn assemble(
     // Nested code, inside-out: libraries, then auxiliary executables. The main
     // executable is signed with the bundle, which seals every resource.
     for library in &libraries {
-        if library.file_name() == Some(OsStr::new(macho::ORT_LIBRARY_NAME)) {
-            refinement::sign_image(&signer, library, None)?;
-        } else {
-            signer.sign(library, None, None)?;
-        }
+        refinement::sign_image(&signer, library, None)?;
     }
     let ai_code = match &ai_directory {
         Some(directory) => {
@@ -1037,13 +1050,14 @@ fn assemble(
     {
         let name = executable.file_name().unwrap().to_string_lossy();
         let identifier = format!("{DEFAULT_BUNDLE_ID}.{name}");
-        if name == "deadpan-align" {
+        if name == "deadpan-align" || native::WORKERS.contains(&name.as_ref()) {
             refinement::sign_image(&signer, executable, Some(&identifier))?;
         } else {
             signer.sign(executable, Some(&identifier), None)?;
         }
     }
     refinement::verify_images(&contents, refinement_pins)?;
+    native::verify_images(&contents, native_pins)?;
 
     // Notices, SBOM and provenance.
     let crates = notices::shipped_crates(workspace)?;
@@ -1217,6 +1231,10 @@ fn assemble(
             "ort": refinement_pins.ort,
             "authority": "independently embedded into the final App and CLI; this provenance is informational",
         },
+        "native_host_content_pins": {
+            "images": native_pins.content_pins,
+            "authority": "independently embedded into the final App and CLI; this provenance is informational",
+        },
         "signature": signer.kind(),
         "notarization": if options.notary_profile.is_some() { "requested" } else { "none" },
         "ai_runtime": ai.map(|built| json!({
@@ -1279,6 +1297,7 @@ fn assemble(
     }
     check_staged_helpers(&app, staging)?;
     refinement::check_hosts(&app, refinement_pins)?;
+    native::check_hosts(&app, native_pins)?;
     let ai_check = match &ai_directory {
         Some(directory) => {
             let checked = ai_runtime::check_staged(directory, staging)?;
@@ -1433,6 +1452,23 @@ pub fn print_audit(audit: &macho::Audit) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn local_signing_is_reported_truthfully_and_needs_no_timestamp_server() {
+        for (identity, kind, timestamp) in [
+            (None, "ad-hoc", "--timestamp=none"),
+            (Some("Deadpan Local Signing"), "local", "--timestamp=none"),
+            (
+                Some("Developer ID Application: Example (TEAM123)"),
+                "developer-id",
+                "--timestamp",
+            ),
+        ] {
+            let signer = Signer { identity };
+            assert_eq!(signer.kind(), kind);
+            assert_eq!(signer.timestamp_argument(), timestamp);
+        }
+    }
 
     #[test]
     fn public_configuration_drops_only_host_paths() {

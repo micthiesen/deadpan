@@ -671,6 +671,31 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             }))
         }
         #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["native-runtime-qualify"] => {
+            let pins = bundle::native_content_pins()?.ok_or_else(|| {
+                CliError::Usage("This host has no compiled packaged native-worker pins".into())
+            })?;
+            let directory = std::env::current_exe()?
+                .parent()
+                .ok_or_else(|| CliError::Usage("Executable has no directory".into()))?
+                .to_owned();
+            let cancelled = std::sync::atomic::AtomicBool::new(false);
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(60);
+            for (kind, name) in [
+                (bundle::NativeWorker::Transcribe, "deadpan-transcribe"),
+                (bundle::NativeWorker::Track, "deadpan-track"),
+                (bundle::NativeWorker::Media, "deadpan-media-worker"),
+            ] {
+                bundle::qualify_native_worker_interruptible(
+                    kind,
+                    &directory.join(name),
+                    &cancelled,
+                    deadline,
+                )?;
+            }
+            write_json(&serde_json::json!({ "content_pins": pins }))
+        }
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["pauses", rest @ ..] => activity::run_pauses(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["detect-shots", rest @ ..] => shots::run_detect_shots(rest),

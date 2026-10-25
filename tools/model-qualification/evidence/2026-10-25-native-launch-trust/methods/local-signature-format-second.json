@@ -1,0 +1,74 @@
+[
+  {
+    "command": [
+      "codesign",
+      "--verify",
+      "--strict",
+      "/tmp/deadpan-native-trust-2026-10-25/local-signature-probe"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "codesign",
+      "-d",
+      "--verbose=2",
+      "-r-",
+      "/tmp/deadpan-native-trust-2026-10-25/local-signature-probe"
+    ],
+    "exit_code": 0,
+    "stdout": "designated => identifier \"dev.deadpan.signer-probe\" and certificate leaf = H\"7d8ca64bd99cd51a4c1a9bfc0cb8d8bca76a057e\"\n",
+    "stderr": "Executable=/private/tmp/deadpan-native-trust-2026-10-25/local-signature-probe\nIdentifier=dev.deadpan.signer-probe\nFormat=Mach-O universal (x86_64 arm64e)\nCodeDirectory v=20400 size=273 flags=0x0(none) hashes=3+2 location=embedded\nSignature size=1731\nAuthority=Michael Dotfiles Local Signing\nSigned Time=Oct 25, 2026 at 3:31:15\u202fPM\nInfo.plist=not bound\nTeamIdentifier=not set\nSealed Resources=none\n"
+  },
+  {
+    "command": [
+      "codesign",
+      "--remove-signature",
+      "/tmp/deadpan-native-trust-2026-10-25/local-signature-probe"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "codesign",
+      "--sign",
+      "Michael Dotfiles Local Signing",
+      "--timestamp=none",
+      "--options",
+      "runtime",
+      "--identifier",
+      "dev.deadpan.signer-probe",
+      "/tmp/deadpan-native-trust-2026-10-25/local-signature-probe"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "codesign",
+      "--verify",
+      "--strict",
+      "/tmp/deadpan-native-trust-2026-10-25/local-signature-probe"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "codesign",
+      "-d",
+      "--verbose=2",
+      "-r-",
+      "/tmp/deadpan-native-trust-2026-10-25/local-signature-probe"
+    ],
+    "exit_code": 0,
+    "stdout": "designated => identifier \"dev.deadpan.signer-probe\" and certificate leaf = H\"7d8ca64bd99cd51a4c1a9bfc0cb8d8bca76a057e\"\n",
+    "stderr": "Executable=/private/tmp/deadpan-native-trust-2026-10-25/local-signature-probe\nIdentifier=dev.deadpan.signer-probe\nFormat=Mach-O universal (x86_64 arm64e)\nCodeDirectory v=20500 size=281 flags=0x10000(runtime) hashes=3+2 location=embedded\nSignature size=1731\nAuthority=Michael Dotfiles Local Signing\nSigned Time=Oct 25, 2026 at 3:31:24\u202fPM\nInfo.plist=not bound\nTeamIdentifier=not set\nRuntime Version=26.5.0\nSealed Resources=none\n"
+  }
+]

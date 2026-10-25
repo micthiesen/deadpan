@@ -121,13 +121,31 @@ fn canonical_slice(slice: &[u8]) -> Result<Vec<u8>, ContentError> {
 
 /// SHA-256 of the signature-independent content of a thin or universal file.
 pub fn content_sha256(file: &[u8]) -> Result<String, ContentError> {
+    content_sha256_interruptible(file, || true)
+}
+
+/// The same canonical identity with cooperative checks between bounded hash
+/// chunks. Returning false aborts without producing a partial identity.
+pub fn content_sha256_interruptible(
+    file: &[u8],
+    mut proceed: impl FnMut() -> bool,
+) -> Result<String, ContentError> {
+    if !proceed() {
+        return Err(ContentError("content hashing interrupted"));
+    }
     let mut hasher = Sha256::new();
     hasher.update(DOMAIN);
-    let mut add = |cpu: u32, subtype: u32, canonical: Vec<u8>| {
+    let mut add = |cpu: u32, subtype: u32, canonical: Vec<u8>| -> Result<(), ContentError> {
         hasher.update(cpu.to_be_bytes());
         hasher.update(subtype.to_be_bytes());
         hasher.update((canonical.len() as u64).to_be_bytes());
-        hasher.update(&canonical);
+        for chunk in canonical.chunks(64 * 1024) {
+            if !proceed() {
+                return Err(ContentError("content hashing interrupted"));
+            }
+            hasher.update(chunk);
+        }
+        Ok(())
     };
     if be32(file, 0)? == FAT_MAGIC {
         let count = index(be32(file, 4)?.into())?;
@@ -157,12 +175,12 @@ pub fn content_sha256(file: &[u8]) -> Result<String, ContentError> {
             return Err(ContentError("data follows the last slice"));
         }
         for (cpu, subtype, offset, end) in slices {
-            add(cpu, subtype, canonical_slice(&file[offset..end])?);
+            add(cpu, subtype, canonical_slice(&file[offset..end])?)?;
         }
     } else {
         let cpu = le32(file, 4)?;
         let subtype = le32(file, 8)?;
-        add(cpu, subtype, canonical_slice(file)?);
+        add(cpu, subtype, canonical_slice(file)?)?;
     }
     Ok(hasher
         .finalize()
@@ -215,6 +233,22 @@ pub(crate) mod tests {
             *byte = (i % 251) as u8 + 1;
         }
         file
+    }
+
+    #[test]
+    fn hashing_interruption_checks_real_content_chunks_and_returns_no_partial_identity() {
+        let file = synthetic(&vec![42; 1024 * 1024], 64);
+        let mut checks = 0;
+        let result = content_sha256_interruptible(&file, || {
+            checks += 1;
+            checks < 3
+        });
+        assert_eq!(result, Err(ContentError("content hashing interrupted")));
+        assert_eq!(checks, 3);
+        assert_eq!(
+            content_sha256_interruptible(&file, || true).unwrap(),
+            content_sha256(&file).unwrap()
+        );
     }
 
     #[test]

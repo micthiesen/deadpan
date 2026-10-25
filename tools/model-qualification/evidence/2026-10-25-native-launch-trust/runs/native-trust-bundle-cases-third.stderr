@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/tmp/deadpan-native-trust-2026-10-25/qualify_bundle.py", line 126, in <module>
+    sign_image(name, path)
+    ~~~~~~~~~~^^^^^^^^^^^^
+  File "/tmp/deadpan-native-trust-2026-10-25/qualify_bundle.py", line 72, in sign_image
+    run(name + '-sign', ['/usr/bin/codesign', '--sign', selected,
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                         '--timestamp=none', '--options', 'runtime'] + keychain + [path])
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/deadpan-native-trust-2026-10-25/qualify_bundle.py", line 46, in run
+    assert (r.returncode == 0) == success, (name, r.returncode, r.stderr)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('substitution-0-sign', 1, b'7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E: no identity found\n')

@@ -53,18 +53,37 @@ actual download/lock-crash recovery pass. Clean-sign private alignment/ORT image
 before pinning and final assembly; do not relax the strict Mach-O parser for
 the measured stale signature tail. No model weights/raw learned stats enter Git.
 
-Next local implementation work: DP-22 older native-helper launch trust. Existing
-transcribe, track and media-worker selectors only locate siblings; no global
-startup verifier covers them. Keep trust policy in CLI bundle, at preparation/
-CLI launch boundaries, not generic process/media crates. Transcription supervise
-is already off UI. Track/proposal and AI runtime selection currently happens on
-the project writer; proxy selection happens on UI, so do not add hashing or
-codesign there unchanged. Qualify at the tracking/proposal supervised launch,
-proxy builder, YouTube worker and AI job preparation, or first move selectors
-into their job threads. Expand compiled worker/library identity and expected-
-signer admission, then exercise relocated, damaged/substituted/marker failures.
-Ad hoc/local signing is authorized; Developer ID/notarization is not required.
-DP-22 remains Partial until that actual older gap is fixed and verified.
+[Native helper launch admission](../qualification/native-launch-trust-2026-10-25.md)
+is now implemented and qualified: compiled three-worker/six-library image pins,
+bounded interruptible prelaunch checks, exact local/ad hoc signer binding,
+checked signature-command teardown, truthful runtime failure codes and no
+damaged-marker fallback. Structural XML parsing closes the comment-marker
+bypass. Preserve the failed original 961-pass/one-failure run and parser lint
+failure; 203-test and final 147-test continuations pass with strict lint.
+
+The full local-certificate bundle and ad hoc no-build bundle pass both host
+probes; the local relocated workflow runs real transcription, tracking and
+face/saliency detection. Its final driver passes 169 operations with 34 expected
+refusals, zero timeouts and identical authored document bytes. General relocated
+startup/import/render/runtime and negative helper checks pass. Earlier fixture,
+identity lookup and signing-timeout attempts remain in evidence. Fixture signing
+uses the canonical owner identity; tested hosts keep isolated homes.
+
+DP-22.3 remains 0.5 and DP-22 Partial because the private AI runtime still lacks
+compiled inventory/app-seal admission BEFORE Python exec. Worker self-reports
+and build-time hashes cannot provide that authority. Next implementation:
+freeze the private runtime and notices before final host rebuild; clean-sign its
+62 Mach-O images; produce a closed relative-path inventory covering all scripts,
+pyc, .pth, Metal/data files and aliases; compile the inventory SHA-256 into hosts.
+Verify it at shared interruptible Check/Inference worker_launch, off UI/writer
+threads. The current tree has 10,722 files, 1,536 directories, six confined
+leaf links and 493,623,996 bytes. Keep model weights in their existing pack
+verification and preserve the explicit developer-runtime opt-in with a valid
+host. Reject added import hooks, altered inventory, path/link escapes, missing
+files, re-signed substitutions and stale/no-build host pins. Both published
+hosts must actually probe admission before Python/Metal smoke checks.
+No new crate or generic plugin framework. Standing ad hoc/local signing is
+authorized; no Developer ID/notarization gate.
 
 ## Earlier scoped framing ranges, 2026-10-25
 

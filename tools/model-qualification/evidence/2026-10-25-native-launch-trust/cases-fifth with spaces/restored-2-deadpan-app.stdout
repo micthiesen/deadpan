@@ -1,0 +1,13 @@
+{
+  "content_pins": {
+    "Frameworks/libavcodec.62.dylib": "527c1aa5cf89433fa0e7254e69fafebbb8514634ec6aab5e71f00f3f62ed6ad9",
+    "Frameworks/libavfilter.11.dylib": "583563dbeb9c6ebdb37d9cbc46f22f24355afb3dc538bb95f575c167b8f39c07",
+    "Frameworks/libavformat.62.dylib": "b719fb2d56e64df5f290b2a9d4aa64a939cf9ae35ac171152dfbb3813408231e",
+    "Frameworks/libavutil.60.dylib": "92810aa4437bd1e79165a18eeef7f5479e0e5e085fafe885a4344ddaa740df92",
+    "Frameworks/libswresample.6.dylib": "6063f4b1c96ae65e64d54f8184479eb39f392a416ef5e7c9fc1de00107550d09",
+    "Frameworks/libswscale.9.dylib": "5b00482b5b36859f7aa52d3952dad66e4fc6fee4189d6f41883120012ae9a16d",
+    "MacOS/deadpan-media-worker": "de83ac6877b4eabf218ebff3635d3cece8e12f9b8faabdd8b0ef34cc08a80867",
+    "MacOS/deadpan-track": "fa5bbc7c31b677dfe9aef2e558ce736c04a0ed4ce6da48f1e4e9a73df1513eaf",
+    "MacOS/deadpan-transcribe": "f0c5bfee975af42aa00707285bd2702fee28bc9ca79537d31d651f68ffeafaac"
+  }
+}

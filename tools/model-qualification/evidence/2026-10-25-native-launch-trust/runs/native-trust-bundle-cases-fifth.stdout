@@ -1,0 +1,1 @@
+{"passed": true, "operations": 169, "images": ["MacOS/deadpan-transcribe", "MacOS/deadpan-track", "MacOS/deadpan-media-worker", "Frameworks/libavcodec.62.dylib", "Frameworks/libavfilter.11.dylib", "Frameworks/libavformat.62.dylib", "Frameworks/libavutil.60.dylib", "Frameworks/libswresample.6.dylib", "Frameworks/libswscale.9.dylib"], "authored_document_unchanged": true}

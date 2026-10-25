@@ -242,7 +242,7 @@ fn run_inner(
     let result = match qualified {
         _ if cancelled.load(Ordering::Acquire) => cancel(&mut records),
         Ok(run) => RunResult::Qualified(Box::new(run)),
-        Err(error) => failed(HostFailureCode::OutputValidationFailed, &error),
+        Err(error) => failed(error.host_code(), &error.to_string()),
     };
     finish(result, timings, prepared.directory)
 }

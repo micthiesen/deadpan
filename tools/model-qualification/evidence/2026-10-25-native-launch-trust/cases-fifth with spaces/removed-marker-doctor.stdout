@@ -1,0 +1,243 @@
+{
+  "application": "deadpan",
+  "architecture": "aarch64",
+  "database_schema": 87,
+  "device_output": "macos-bounded-limited-sequence-audition",
+  "document_schema": 58,
+  "downloader": {
+    "baseline": null,
+    "distribution": "managed development install; run inside Deadpan.app for the bundled baseline",
+    "ejs": "0.8.0",
+    "helpers": [
+      {
+        "license": "Unlicense",
+        "name": "yt-dlp",
+        "path": null,
+        "present": false,
+        "problem": null,
+        "version": "2026.08.19"
+      },
+      {
+        "license": "MIT",
+        "name": "deno",
+        "path": null,
+        "present": false,
+        "problem": null,
+        "version": "2.9.7"
+      }
+    ],
+    "root": null,
+    "source": null,
+    "update": {
+      "problem": "pin-built host is outside its packaged application or lost its DeadpanPackaging marker"
+    }
+  },
+  "edge_faded_pcm": "authored-boundary-exceptions-after-time-mapping-before-voice-effects",
+  "internal_audio_sample_rate": 48000,
+  "limited_pcm": "original-and-root-sound-bus-with-finite-oversampled-limiter-before-missing-voice-effects",
+  "os": "macos",
+  "partial": [
+    "structural-editing-commands",
+    "sqlite-project-history",
+    "schema-1-through-57-development-format-refusal",
+    "persistent-copy-registers",
+    "resolved-compound-transactions",
+    "native-semantic-macros",
+    "headless-semantic-macros",
+    "single-original-project-baseline",
+    "headless-youtube-original-import",
+    "native-documents-project-library",
+    "indexed-picture-plan",
+    "indexed-audio-plan",
+    "worker-dsp-adapter",
+    "source-audio-preparation",
+    "plan-driven-source-pcm",
+    "transparent-audio-partitions",
+    "retained-context-split",
+    "atomic-sequence-pause-insertion",
+    "logical-mark-bindings",
+    "exact-boundary-selectors",
+    "persistent-marks",
+    "sparse-play-overrides",
+    "nested-occurrence-edits",
+    "persistent-generation-requests",
+    "persistent-generation-attempts",
+    "authored-generated-hold-semantics",
+    "generated-media-conversion",
+    "native-bridge-bundle-qualification",
+    "durable-generated-bundle-acceptance",
+    "durable-original-byte-ownership",
+    "identity-checked-relinking",
+    "persistent-source-decoding",
+    "measured-source-audio-indexes",
+    "independent-source-audio-mapping",
+    "independent-source-video-mapping",
+    "exact-source-stream-placement",
+    "measured-import-timing-candidates",
+    "measured-original-moment-candidates",
+    "exact-source-audio-selections",
+    "durable-source-qualification",
+    "atomic-source-registration-and-insertion",
+    "background-import-preparation",
+    "automatic-presentation-basis",
+    "timed-basis-locking",
+    "explicit-canvas-geometry",
+    "shared-sdr-picture-pipeline",
+    "authored-framing-envelopes",
+    "ordered-canvas-framing",
+    "captured-hold-framing",
+    "native-camera-draft",
+    "native-source-preview",
+    "native-project-workspace",
+    "native-sequence-audition",
+    "native-original-audition",
+    "selection-loop-audition",
+    "native-structural-speed-editing",
+    "root-sound-event-commands-and-mixing",
+    "saved-beat-sound-commands",
+    "root-sound-ripple-edit-history",
+    "hold-audio-policy-commands"
+  ],
+  "render": "automatic-sdr-committed-revision-macos-apfs",
+  "render_entrypoints": [
+    "native-cmd-e-and-render-command",
+    "closed-project-headless-render-and-recovery"
+  ],
+  "render_preview_choices": [
+    "commit-and-render",
+    "discard-and-render",
+    "keep-editing"
+  ],
+  "room_tone_pcm": "explicit-source-range-exact-overlap-before-effects",
+  "runtime": {
+    "ai_runtime": {
+      "bundled": null,
+      "ffmpeg": null,
+      "identity": null,
+      "lookup": "damaged packaged app; runtime launch is unavailable",
+      "missing": [
+        "pin-built host is outside its packaged application or lost its DeadpanPackaging marker"
+      ],
+      "model_data": null,
+      "python": null,
+      "ready": false,
+      "worker": null
+    },
+    "bundle": "/private/tmp/deadpan-native-trust-2026-10-25/cases-fifth with spaces/Deadpan.app",
+    "executable": "/private/tmp/deadpan-native-trust-2026-10-25/cases-fifth with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+    "ffmpeg": [
+      {
+        "inside_bundle": true,
+        "library": "avcodec",
+        "loaded": true,
+        "path": "/private/tmp/deadpan-native-trust-2026-10-25/cases-fifth with spaces/Deadpan.app/Contents/Frameworks/libavcodec.62.dylib"
+      },
+      {
+        "inside_bundle": true,
+        "library": "avformat",
+        "loaded": true,
+        "path": "/private/tmp/deadpan-native-trust-2026-10-25/cases-fifth with spaces/Deadpan.app/Contents/Frameworks/libavformat.62.dylib"
+      },
+      {
+        "inside_bundle": true,
+        "library": "avutil",
+        "loaded": true,
+        "path": "/private/tmp/deadpan-native-trust-2026-10-25/cases-fifth with spaces/Deadpan.app/Contents/Frameworks/libavutil.60.dylib"
+      },
+      {
+        "inside_bundle": true,
+        "library": "swscale",
+        "loaded": true,
+        "path": "/private/tmp/deadpan-native-trust-2026-10-25/cases-fifth with spaces/Deadpan.app/Contents/Frameworks/libswscale.9.dylib"
+      },
+      {
+        "inside_bundle": true,
+        "library": "avfilter",
+        "loaded": true,
+        "path": "/private/tmp/deadpan-native-trust-2026-10-25/cases-fifth with spaces/Deadpan.app/Contents/Frameworks/libavfilter.11.dylib"
+      }
+    ],
+    "models": [
+      {
+        "bytes": 148849309,
+        "installed": null,
+        "note": null,
+        "pack_id": "whisper-base-en",
+        "pack_version": "2",
+        "previous_version": null
+      },
+      {
+        "bytes": 36152862913,
+        "installed": null,
+        "note": null,
+        "pack_id": "ltx-2.3-q4-bridge",
+        "pack_version": "1",
+        "previous_version": null
+      },
+      {
+        "bytes": 36152862913,
+        "installed": null,
+        "note": null,
+        "pack_id": "ltx-2.3-q4-extension",
+        "pack_version": "1",
+        "previous_version": null
+      },
+      {
+        "bytes": 61188767,
+        "installed": null,
+        "note": null,
+        "pack_id": "phoneme-ctc-en",
+        "pack_version": "1",
+        "previous_version": null
+      }
+    ],
+    "models_root": "/private/tmp/deadpan-native-trust-2026-10-25/cases-fifth with spaces/home/Library/Application Support/Deadpan/Models",
+    "packaged": false,
+    "workers": [
+      {
+        "inside_bundle": true,
+        "name": "deadpan-media-worker",
+        "path": "/private/tmp/deadpan-native-trust-2026-10-25/cases-fifth with spaces/Deadpan.app/Contents/MacOS/deadpan-media-worker",
+        "present": true
+      },
+      {
+        "inside_bundle": true,
+        "name": "deadpan-transcribe",
+        "path": "/private/tmp/deadpan-native-trust-2026-10-25/cases-fifth with spaces/Deadpan.app/Contents/MacOS/deadpan-transcribe",
+        "present": true
+      },
+      {
+        "inside_bundle": true,
+        "name": "deadpan-track",
+        "path": "/private/tmp/deadpan-native-trust-2026-10-25/cases-fifth with spaces/Deadpan.app/Contents/MacOS/deadpan-track",
+        "present": true
+      }
+    ]
+  },
+  "schema_version": 1,
+  "sequence_audition": "immutable-revision-device-clock-pictures-exact-paused-sample-resume",
+  "sqlite_version": "3.53.2",
+  "stage": "development-foundation",
+  "time_mapped_pcm": "bounded-continuous-preserve-before-effects",
+  "timing_probe": {
+    "frame": 1,
+    "frame_rate_denominator": 1001,
+    "frame_rate_numerator": 30000,
+    "sample_boundary": 1602
+  },
+  "unimplemented": [
+    "mastered-preview-audio",
+    "full-device-and-acoustic-qualification",
+    "full-keyboard-editor",
+    "analysis",
+    "ai-generation",
+    "native-youtube-import",
+    "full-render-mastering",
+    "hdr-render",
+    "open-project-render-ipc",
+    "native-render-recovery-browser",
+    "signed-downloader-updates",
+    "developer-id-notarized-distribution"
+  ],
+  "version": "0.1.0"
+}

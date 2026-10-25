@@ -1,0 +1,121 @@
+{
+  "source_bundle": "/private/tmp/deadpan-native-trust-2026-10-25/bundle-local-second/Deadpan.app",
+  "environment": {
+    "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+    "HOME": "/private/tmp/deadpan-native-trust-2026-10-25/cases-first with spaces/home",
+    "TMPDIR": "/tmp"
+  },
+  "script_sha256": "2635d2a28b83407abe0e464879e16ace7407092cc153b86544460fd4741fbc62",
+  "records": [
+    {
+      "name": "copy",
+      "command": [
+        "/bin/cp",
+        "-cR",
+        "/private/tmp/deadpan-native-trust-2026-10-25/bundle-local-second/Deadpan.app",
+        "/private/tmp/deadpan-native-trust-2026-10-25/cases-first with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8687891662120819,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "relocated-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-native-trust-2026-10-25/cases-first with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "native-runtime-qualify"
+      ],
+      "exit_code": 0,
+      "seconds": 6.3938117092475295,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "relocated-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-native-trust-2026-10-25/cases-first with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "native-runtime-qualify"
+      ],
+      "exit_code": 0,
+      "seconds": 9.656799125485122,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "alignment-still-qualified",
+      "command": [
+        "/private/tmp/deadpan-native-trust-2026-10-25/cases-first with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "refinement-runtime-qualify"
+      ],
+      "exit_code": 0,
+      "seconds": 2.0186046669259667,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "project-copy",
+      "command": [
+        "/private/tmp/deadpan-native-trust-2026-10-25/cases-first with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "project",
+        "copy-portable",
+        "/tmp/deadpan-word-refinement-2026-10-25/workflow/Source.deadpan",
+        "/private/tmp/deadpan-native-trust-2026-10-25/cases-first with spaces/Workflow.deadpan"
+      ],
+      "exit_code": 0,
+      "seconds": 0.14519091602414846,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "document-before",
+      "command": [
+        "/private/tmp/deadpan-native-trust-2026-10-25/cases-first with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "project",
+        "dump",
+        "/private/tmp/deadpan-native-trust-2026-10-25/cases-first with spaces/Workflow.deadpan",
+        "--json"
+      ],
+      "exit_code": 0,
+      "seconds": 0.015341708436608315,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "actual-transcription",
+      "command": [
+        "/private/tmp/deadpan-native-trust-2026-10-25/cases-first with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "transcribe",
+        "/private/tmp/deadpan-native-trust-2026-10-25/cases-first with spaces/Workflow.deadpan",
+        "--model",
+        "/Users/michael/Library/Application Support/Deadpan/models/whisper-base-en/1/ggml-base.en.bin",
+        "--sha256",
+        "a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002"
+      ],
+      "exit_code": 0,
+      "seconds": 7.8318991251289845,
+      "expected_success": true,
+      "expected_message": null
+    },
+    {
+      "name": "actual-tracking",
+      "command": [
+        "/private/tmp/deadpan-native-trust-2026-10-25/cases-first with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "track",
+        "/private/tmp/deadpan-native-trust-2026-10-25/cases-first with spaces/Workflow.deadpan",
+        "--from",
+        "0",
+        "--to",
+        "1536",
+        "--region",
+        "0.2,0.2,0.4,0.4"
+      ],
+      "exit_code": 1,
+      "seconds": 0.02305158320814371,
+      "expected_success": true,
+      "expected_message": null
+    }
+  ],
+  "scope": "Admission and local workflow; no concurrent same-user writer containment claim."
+}

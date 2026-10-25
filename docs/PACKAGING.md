@@ -149,8 +149,7 @@ inside the signed staging bundle before publication. The reported compiled
 pins must equal the independently prepared image pins. This also applies with
 --no-build: stale or unpinned hosts cannot be packaged successfully. The
 provenance JSON records these pins for inspection but supplies no launch
-authority. These checks cover the new alignment path; they do not establish
-equivalent runtime pin checks for the existing transcription worker.
+authority. The native worker family below now uses the same admission policy.
 
 Model checkpoints and learned feature statistics are not runtime assets and
 are not bundled or redistributed. The original-source phoneme model pack
@@ -161,6 +160,43 @@ bytes and needs no Python, Torch or pickle evaluation.
 This packaging implementation does not establish a successful packaged
 refinement workflow. A rebuilt bundle, scrubbed copy, installed-pack worker
 smoke, native load audit and signature checks remain required local evidence.
+
+## Native helper launch admission
+
+The [2026-10-25 qualification](qualification/native-launch-trust-2026-10-25.md)
+adds compiled pins for `deadpan-transcribe`, `deadpan-track`,
+`deadpan-media-worker` and their complete six-library FFmpeg closure. Workers
+are privately relocated and clean-signed before both hosts are rebuilt with
+`DEADPAN_NATIVE_CONTENT_PINS`. Final assembly checks identical image content
+and actually runs `native-runtime-qualify` in each host, including `--no-build`.
+The resource provenance map is informational; compiled host data is authority.
+
+The six shared preparation/CLI launch boundaries enforce exact role/path,
+independent content and expected signatures before native execution. Admission
+has one deadline of at most 60 seconds, cooperative cancellation and checked
+group cleanup/reaping for signature commands. The local certificate's exact
+leaf identity is supported alongside Apple teams and explicit ad hoc signatures.
+Downloader signature checks share that policy. Early UI/writer selectors remain
+cheap. Proxy runtime faults preserve resumable Original work, and AI helper
+faults retain host failure codes.
+
+Package discovery now parses the actual top-level XML plist key with bounded
+depth/size. A marker hidden in a comment does not count. Any compiled runtime
+pin makes marker loss or a bare escaped host an error, including before default
+or explicit-root downloader execution and private-AI runtime selection/launch.
+
+Both local-certificate and ad hoc bundles pass the final host probes. The
+relocated local bundle passes actual transcription/Vision workflows, 169
+recorded operations with 34 expected refusals, and general bundle
+verification. The failed setup attempts and original test failures remain in
+the evidence. Local certificates report `local` and need no timestamp server;
+only an explicitly selected Developer ID identity requests a timestamp.
+
+DP-22 remains Partial: the private AI Python/worker/imported-code tree still
+needs a compiled inventory and signature/resource-seal admission before Python
+executes. Build-time input verification and worker self-reported hashes do not
+provide that prelaunch authority. This native-worker qualification does not
+close that separate runtime gap.
 
 ## FFmpeg relocation
 
@@ -374,7 +410,12 @@ When a feature needs a stable designated requirement (for example macOS privacy
 permissions that should survive rebuilds), sign with the dotfiles local signing
 identity, the same one Kestrel uses. Run `make maintain` in `~/.dotfiles` once so
 `~/Library/Keychains/dotfiles-signing.keychain-db` holds the identity, then pass
-its certificate ("Michael Dotfiles Local Signing") to `--identity`. The
+its exact certificate fingerprint to `--identity`. The qualification above
+retains a stalled label-based attempt and the successful fingerprint-based
+build. The canonical dotfiles signer prepares the existing identity for
+headless fixture signing; private key material is never part of Deadpan's
+bundle or runtime verification. Personal signatures report `local` and use
+`--timestamp=none`. The
 GPL-codec refusal applies only to Developer ID identities, so a personally signed
 build keeps the AI runtime's ffmpeg.
 

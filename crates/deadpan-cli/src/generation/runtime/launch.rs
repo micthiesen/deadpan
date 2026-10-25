@@ -25,6 +25,8 @@ pub struct WorkerLaunch {
 
 #[derive(Debug, thiserror::Error)]
 pub enum LaunchError {
+    #[error("the packaged AI host is damaged: {0}")]
+    InvalidHost(std::io::Error),
     #[error("AI network isolation requires macOS")]
     UnsupportedPlatform,
     #[error("the AI Python executable must be an absolute regular file")]
@@ -42,6 +44,7 @@ impl BridgeRuntime {
         configuration: &Path,
         mode: WorkerMode,
     ) -> Result<WorkerLaunch, LaunchError> {
+        crate::bundle::checked_packaged_contents().map_err(LaunchError::InvalidHost)?;
         if !cfg!(target_os = "macos") {
             return Err(LaunchError::UnsupportedPlatform);
         }

@@ -1,0 +1,28 @@
+[
+  {
+    "command": [
+      "codesign",
+      "--remove-signature",
+      "/tmp/deadpan-native-trust-2026-10-25/local-signature-probe"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "codesign",
+      "--sign",
+      "Michael Dotfiles Local Signing",
+      "--timestamp=none",
+      "--options",
+      "runtime",
+      "--identifier",
+      "dev.deadpan.signer-probe",
+      "/tmp/deadpan-native-trust-2026-10-25/local-signature-probe"
+    ],
+    "exit_code": -15,
+    "stdout": "",
+    "stderr": ""
+  }
+]

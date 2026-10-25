@@ -1,0 +1,17 @@
+{
+  "scope": "Current native helper admission, bundle construction and call sites; independent general/security/lifecycle reviews.",
+  "applied": [
+    "One shared admission deadline and cooperative cancellation through reads/hashes/system signature commands.",
+    "Checked process-group cleanup, leader fallback and sole reaping across every signature-command outcome.",
+    "Runtime admission errors remain host failures rather than candidate-output failures.",
+    "Cheap fallible packaged identity prevents downloader/AI discovery and retained launch values from downgrading after marker loss.",
+    "Structural XML marker extraction rejects the reviewed comment-only bypass."
+  ],
+  "open": [
+    "Private bundled AI Python/worker/imported-code tree still lacks a compiled inventory binding and app-seal admission before Python exec; DP-22.3 remains partial."
+  ],
+  "limitations": [
+    "No containment claim against a concurrent same-user writer who can replace the host itself.",
+    "No fresh full-product gate or clean/second-Mac claim."
+  ]
+}

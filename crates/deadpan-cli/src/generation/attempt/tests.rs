@@ -21,6 +21,30 @@ mod extension;
 mod extension_scheduling;
 mod preparations;
 
+#[test]
+fn runtime_admission_failure_is_not_recorded_as_invalid_candidate_output() {
+    for (kind, code) in [
+        (std::io::ErrorKind::InvalidData, HostFailureCode::Io),
+        (
+            std::io::ErrorKind::Interrupted,
+            HostFailureCode::Interrupted,
+        ),
+        (
+            std::io::ErrorKind::TimedOut,
+            HostFailureCode::DeadlineExceeded,
+        ),
+    ] {
+        let error = QualificationError::Runtime(std::io::Error::new(
+            kind,
+            "native runtime admission failed",
+        ));
+        let failure = host_failure(error.host_code(), &error.to_string());
+        assert_eq!(failure.code, code);
+    }
+    let invalid = QualificationError::Output("candidate pictures failed verification".into());
+    assert_eq!(invalid.host_code(), HostFailureCode::OutputValidationFailed);
+}
+
 fn fixture_rate(frames: i64) -> deadpan_core::FrameRate {
     // A single sampled frame must still request a native interval within the
     // real provider's minimum. At 2 fps its two boundaries span one second.

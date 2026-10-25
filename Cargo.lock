@@ -1016,6 +1016,7 @@ dependencies = [
  "flate2",
  "image",
  "pollster",
+ "quick-xml",
  "rusqlite",
  "rustix 1.1.5",
  "serde",

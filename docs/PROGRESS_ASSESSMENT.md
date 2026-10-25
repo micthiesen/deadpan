@@ -15,10 +15,8 @@ Partial. At this audit correction, the same 162-criterion ledger scored 82.7307%
 as about 83%, with **7/24 strictly complete and 0/7 gates closed**. This is a
 correction of earlier credit, not a change to the denominator or product scope.
 
-The new alignment path is now qualified with those checks; it does not
-cover the older helpers. Bind all three older workers and their library closure
-before launch, keep verification off the UI/audio threads, and exercise damaged,
-substituted and relocated bundles before closing DP-22 again.
+At that checkpoint the qualified alignment path did not cover the older
+helpers. Their required admission is now implemented and verified below.
 
 Source: crates/deadpan-cli/src/transcription.rs (TranscriptionRuntime),
 tracking.rs (TrackingRuntime), proxy.rs, youtube/acquire.rs,
@@ -33,8 +31,24 @@ verification. Its experimental quality failures remain explicit; §11.2 calls
 for a reviewed approximate proposal, not an invented accuracy threshold.
 This adds 0.5952 percentage points to the corrected ledger: 83.3259%, still
 about 83% after rounding. Strict completion remains seven; DP-10's other work
-and DP-22's older worker trust are open. The unchanged headline is rounding
+and DP-22's remaining runtime trust are open. The unchanged headline is rounding
 over one completed criterion and one audit correction, not inherited 89%.
+
+## Subsequent native-worker qualification
+
+[Native launch admission](qualification/native-launch-trust-2026-10-25.md)
+now binds all three older workers and their six-library closure to compiled
+pins, checks the expected local/ad hoc signer, and rejects marker loss before
+fallback. Local/ad hoc bundle builds, real packaged transcription/Vision work,
+169 recorded operations and general relocation verification pass.
+
+A further source audit confirmed that private AI Python, scripts, imported code
+and extensions still execute without a compiled tree inventory or prior app-seal
+admission. This is part of the same DP-22.3 acceptance scope. Its score therefore
+stays 0.5; DP-22 stays Partial. Current coverage remains 83.3259%, about 83%,
+seven strictly complete requirements and no closed gate. The milestone records
+delivered native behavior and the concrete remaining gap without changing the
+criterion identities or denominator.
 
 ## Why 89% stopped moving
 

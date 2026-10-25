@@ -287,6 +287,25 @@ pub(crate) fn supervise(
             "analysis audio contains non-finite samples",
         ));
     }
+    if cancelled.load(Ordering::Acquire) {
+        return Err(TranscriptionError::Cancelled);
+    }
+    if Instant::now() >= deadline {
+        return Err(TranscriptionError::Deadline);
+    }
+    let admission = crate::bundle::qualify_native_worker_interruptible(
+        crate::bundle::NativeWorker::Transcribe,
+        &runtime.executable,
+        cancelled,
+        deadline,
+    );
+    if cancelled.load(Ordering::Acquire) {
+        return Err(TranscriptionError::Cancelled);
+    }
+    if Instant::now() >= deadline {
+        return Err(TranscriptionError::Deadline);
+    }
+    admission?;
     let workspace = tempfile::Builder::new()
         .prefix("deadpan-transcribe-")
         .tempdir()?;

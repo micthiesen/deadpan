@@ -312,7 +312,7 @@ impl HelperSource {
     /// The baseline alone: the running bundle's, else the managed root's
     /// compiled pins.
     pub fn default_baseline() -> Result<Self, CliError> {
-        match bundled_root() {
+        match bundled_root()? {
             Some(root) => Ok(Self::Bundled(root)),
             None => Ok(Self::Managed(default_root()?)),
         }
@@ -481,98 +481,20 @@ fn read_bounded(path: &Path, bytes: u64) -> Result<Vec<u8>, CliError> {
 #[cfg(target_os = "macos")]
 pub(crate) mod signing {
     use std::path::Path;
-    use std::process::{Command, Stdio};
-    use std::sync::OnceLock;
-    use std::time::{Duration, Instant};
 
     use super::{CliError, helper_error};
 
-    const CODESIGN: &str = "/usr/bin/codesign";
-    const DEADLINE: Duration = Duration::from_secs(60);
-
-    fn run(arguments: &[&std::ffi::OsStr]) -> Result<(bool, String), CliError> {
-        let mut command = Command::new(CODESIGN);
-        command
-            .args(arguments)
-            .env_clear()
-            .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(Stdio::piped());
-        let mut child = deadpan_native_process::spawn(&mut command)?;
-        let started = Instant::now();
-        let status = loop {
-            if let Some(status) = child.try_wait()? {
-                break status;
-            }
-            if started.elapsed() > DEADLINE {
-                let _ = child.kill();
-                let _ = child.wait();
-                return Err(helper_error(
-                    "DownloaderHelperInvalid",
-                    "code-signature verification timed out",
-                ));
-            }
-            std::thread::sleep(Duration::from_millis(5));
-        };
-        let mut diagnostics = String::new();
-        if let Some(mut stderr) = child.stderr.take() {
-            use std::io::Read;
-            let _ = (&mut stderr)
-                .take(64 * 1024)
-                .read_to_string(&mut diagnostics);
-        }
-        Ok((status.success(), diagnostics))
-    }
-
-    /// `codesign --verify --strict`, against `requirement` when given.
+    /// Native and downloader images share bounded system verification.
     pub(crate) fn verify(path: &Path, requirement: Option<&str>) -> Result<(), CliError> {
-        let tested = requirement.map(|requirement| format!("-R={requirement}"));
-        let mut arguments: Vec<&std::ffi::OsStr> = vec!["--verify".as_ref(), "--strict".as_ref()];
-        if let Some(tested) = &tested {
-            arguments.push(tested.as_ref());
-        }
-        arguments.push(path.as_os_str());
-        let (valid, diagnostics) = run(&arguments)?;
-        if valid {
-            Ok(())
-        } else {
-            Err(helper_error(
-                "DownloaderHelperInvalid",
-                format!(
-                    "{} failed code-signature verification: {}",
-                    path.display(),
-                    diagnostics.trim()
-                ),
-            ))
-        }
+        crate::bundle::verify_signature(path, requirement)
+            .map_err(|error| helper_error("DownloaderHelperInvalid", error))
     }
 
-    /// For a Developer ID signed application, the requirement that its own
-    /// re-signed helpers carry its team's Developer ID signature. Ad hoc
-    /// development bundles have no signer identity; `None` checks validity.
+    /// Bind re-signed helpers to the verified host's Apple team or exact
+    /// local certificate; only an explicitly ad hoc host has no identity.
     pub(crate) fn application_requirement() -> Result<Option<String>, CliError> {
-        static TEAM: OnceLock<Option<String>> = OnceLock::new();
-        if let Some(team) = TEAM.get() {
-            return Ok(team.as_ref().map(|team| requirement(team)));
-        }
-        let executable = std::fs::canonicalize(std::env::current_exe()?)?;
-        let (_, details) = run(&[
-            "-dv".as_ref(),
-            "--verbose=2".as_ref(),
-            executable.as_os_str(),
-        ])?;
-        let team = details
-            .lines()
-            .find_map(|line| line.strip_prefix("TeamIdentifier="))
-            .map(str::trim)
-            .filter(|team| !team.is_empty() && team.chars().all(|c| c.is_ascii_alphanumeric()))
-            .map(str::to_owned);
-        let team = TEAM.get_or_init(|| team);
-        Ok(team.as_ref().map(|team| requirement(team)))
-    }
-
-    fn requirement(team: &str) -> String {
-        format!("anchor apple generic and certificate leaf[subject.OU] = \"{team}\"")
+        crate::bundle::application_signer_requirement()
+            .map_err(|error| helper_error("DownloaderHelperInvalid", error))
     }
 }
 
@@ -597,9 +519,9 @@ pub(crate) mod signing {
 /// The running packaged bundle's `Contents/Resources/helpers`. Inside a
 /// packaged bundle this is the source even when it is missing or damaged, so
 /// verification fails instead of silently using another copy.
-pub fn bundled_root() -> Option<PathBuf> {
-    crate::bundle::packaged_contents()
-        .map(|contents| contents.join(crate::bundle::HELPERS_DIRECTORY))
+pub fn bundled_root() -> Result<Option<PathBuf>, CliError> {
+    Ok(crate::bundle::checked_packaged_contents()?
+        .map(|contents| contents.join(crate::bundle::HELPERS_DIRECTORY)))
 }
 
 /// `~/Library/Application Support/Deadpan/helpers` on macOS.
@@ -822,6 +744,9 @@ impl Helpers {
     /// this check and exec only through this user's own access, which the
     /// directory permission checks restrict to this user.
     pub fn recheck(&self) -> Result<(), CliError> {
+        // A retained selection or an explicit managed root cannot turn a
+        // damaged shipping host into a development process before exec.
+        crate::bundle::checked_packaged_contents()?;
         let Some(source) = &self.pinned else {
             return Ok(());
         };

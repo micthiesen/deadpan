@@ -1,0 +1,57 @@
+[
+  {
+    "name": "fingerprint-only",
+    "command": [
+      "codesign",
+      "--force",
+      "--sign",
+      "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+      "--timestamp=none",
+      "--options",
+      "runtime",
+      "/tmp/deadpan-native-trust-2026-10-25/fingerprint-only.dylib"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "seconds": 0.06913887523114681
+  },
+  {
+    "name": "name-keychain",
+    "command": [
+      "codesign",
+      "--force",
+      "--sign",
+      "Michael Dotfiles Local Signing",
+      "--timestamp=none",
+      "--options",
+      "runtime",
+      "--keychain",
+      "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+      "/tmp/deadpan-native-trust-2026-10-25/name-keychain.dylib"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "seconds": 0.08094833325594664
+  },
+  {
+    "name": "fingerprint-keychain",
+    "command": [
+      "codesign",
+      "--force",
+      "--sign",
+      "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+      "--timestamp=none",
+      "--options",
+      "runtime",
+      "--keychain",
+      "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+      "/tmp/deadpan-native-trust-2026-10-25/fingerprint-keychain.dylib"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "seconds": 0.07636483293026686
+  }
+]

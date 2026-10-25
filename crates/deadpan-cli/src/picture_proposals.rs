@@ -295,6 +295,14 @@ pub fn detect_picture_proposals(
         RequestId::new(format!("picture-proposals-{attempt}")).map_err(protocol_error)?;
     let attempt_id = AttemptId::new(attempt).map_err(protocol_error)?;
     let token = CancellationToken::new(format!("cancel-{attempt}")).map_err(protocol_error)?;
+    let admission = crate::bundle::qualify_native_worker_interruptible(
+        crate::bundle::NativeWorker::Track,
+        &runtime.executable,
+        cancelled,
+        deadline,
+    );
+    crate::tracking::check(cancelled, deadline)?;
+    admission?;
     let remaining = deadline
         .saturating_duration_since(Instant::now())
         .min(Duration::from_secs(60 * 60));

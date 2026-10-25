@@ -1,0 +1,27 @@
+Traceback (most recent call last):
+  File "/tmp/deadpan-native-trust-2026-10-25/qualify_bundle.py", line 132, in <module>
+    sign_image(name, path)
+    ~~~~~~~~~~^^^^^^^^^^^^
+  File "/tmp/deadpan-native-trust-2026-10-25/qualify_bundle.py", line 78, in sign_image
+    run(name + '-sign', ['/usr/bin/codesign', '--sign', selected,
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                         '--timestamp=none', '--options', 'runtime'] + keychain + [path])
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/deadpan-native-trust-2026-10-25/qualify_bundle.py", line 41, in run
+    r = subprocess.run(command, env=used_environment, capture_output=True, timeout=240)
+  File "/opt/homebrew/Cellar/python@3.15/3.15.0_1/Frameworks/Python.framework/Versions/3.15/lib/python3.15/subprocess.py", line 671, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.15/3.15.0_1/Frameworks/Python.framework/Versions/3.15/lib/python3.15/subprocess.py", line 1395, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.15/3.15.0_1/Frameworks/Python.framework/Versions/3.15/lib/python3.15/subprocess.py", line 2424, in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        skip_check_and_raise=True)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.15/3.15.0_1/Frameworks/Python.framework/Versions/3.15/lib/python3.15/subprocess.py", line 1434, in _check_timeout
+    raise TimeoutExpired(
+    ...<2 lines>...
+            stderr=b''.join(stderr_seq) if stderr_seq else None)
+subprocess.TimeoutExpired: Command '['/usr/bin/codesign', '--sign', '7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E', '--timestamp=none', '--options', 'runtime', '--keychain', '/Users/michael/Library/Keychains/dotfiles-signing.keychain-db', '/private/tmp/deadpan-native-trust-2026-10-25/cases-fourth with spaces/Deadpan.app/Contents/MacOS/deadpan-transcribe']' timed out after 240 seconds

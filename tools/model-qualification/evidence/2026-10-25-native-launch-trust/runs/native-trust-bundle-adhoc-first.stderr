@@ -1,0 +1,2 @@
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.07s
+     Running `target/debug/xtask bundle --no-build --output /tmp/deadpan-native-trust-2026-10-25/bundle-adhoc-first`

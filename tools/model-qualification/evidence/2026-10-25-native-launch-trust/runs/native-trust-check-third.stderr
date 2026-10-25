@@ -1,0 +1,46 @@
+   Compiling xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 2.10s
+     Running `/tmp/deadpan-follow-creep-2026-10-24/target/debug/xtask check --since 8b418a82 --filter 'package(xtask) or test(bundle::) or binary(privacy_network_audit) or test(generation::runtime::) or test(youtube::helpers::)'`
+    Checking memchr v2.8.3
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking serde_json v1.0.151
+    Checking quick-xml v0.41.0
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Checking deadpan-chaos v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-chaos)
+    Checking xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+    Checking deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+    Checking deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+error: this `if` statement can be collapsed
+   --> crates/deadpan-cli/src/bundle/packaging_marker.rs:159:17
+    |
+159 | /                 if let Some(encoding) = value.encoding() {
+160 | |                     if !encoding.ok()?.as_ref().eq_ignore_ascii_case(b"utf-8") {
+161 | |                         return None;
+162 | |                     }
+163 | |                 }
+    | |_________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#collapsible_if
+    = note: `-D clippy::collapsible-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+    |
+159 ~                 if let Some(encoding) = value.encoding()
+160 ~                     && !encoding.ok()?.as_ref().eq_ignore_ascii_case(b"utf-8") {
+161 |                         return None;
+162 ~                     }
+    |
+
+error: could not compile `deadpan-cli` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-cli` (lib test) due to 1 previous error
+xtask: cargo clippy -p deadpan-cli -p xtask --all-targets --locked --features deadpan-cli/synthetic-worker -- -D warnings exited with exit status: 101

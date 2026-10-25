@@ -530,6 +530,7 @@ fn subprocess_launches_are_reviewed_and_name_no_network_tool() {
             "crates/deadpan-app/src/recovery.rs",
             "crates/deadpan-app/src/ui_harness.rs",
             "crates/deadpan-chaos/src/process.rs",
+            "crates/deadpan-cli/src/bundle/image/signer.rs",
             "crates/deadpan-cli/src/generation/attempt/synthetic.rs",
             "crates/deadpan-cli/src/system_conditions.rs",
             "crates/deadpan-cli/src/youtube/helpers.rs",

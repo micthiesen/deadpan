@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/tmp/deadpan-native-trust-2026-10-25/qualify_bundle.py", line 107, in <module>
+    cli('actual-tracking', track)
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/deadpan-native-trust-2026-10-25/qualify_bundle.py", line 55, in cli
+    return run(name, command + args, success, message)
+  File "/tmp/deadpan-native-trust-2026-10-25/qualify_bundle.py", line 45, in run
+    assert (r.returncode == 0) == success, (name, r.returncode, r.stderr)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('actual-tracking', 1, b'{"error":{"code":"TrackingUnavailable","current_revision":null,"message":"tracking is unavailable: no stored shot analysis; run detect-shots, or pass --through-shots","recovery_backup":null},"schema_version":1}\n')

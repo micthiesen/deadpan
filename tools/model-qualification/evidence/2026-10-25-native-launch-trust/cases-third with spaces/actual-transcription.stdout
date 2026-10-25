@@ -1,0 +1,32 @@
+{
+  "approximate_words": 0,
+  "audio_seconds": 3.210875,
+  "key": {
+    "audio_stream": 1,
+    "content": "blake3:5177b5e17d31a75b8c2c9ca4ae999728481f87b518e020c574df48f69d0a4dce",
+    "engine": "whisper.cpp 1.8.3",
+    "language": "en",
+    "model_sha256": "a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002"
+  },
+  "protocol": 1,
+  "recognition": {
+    "coverage": {
+      "reason": "speech activity of this audio has not been detected",
+      "status": "unchecked"
+    },
+    "flagged": false,
+    "longest_repetition": null,
+    "loops": [],
+    "passages": [],
+    "recognized_again": [],
+    "rule": "deadpan-recognition-1"
+  },
+  "runtime": {
+    "backend": "metal",
+    "engine": "whisper.cpp 1.8.3",
+    "model_sha256": "a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002"
+  },
+  "speech_activity": null,
+  "words": 5,
+  "worker_elapsed_ms": 285
+}

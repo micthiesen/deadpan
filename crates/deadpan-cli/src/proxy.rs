@@ -67,6 +67,8 @@ pub enum ProxyBuildError {
     },
     #[error("proxy I/O: {0}")]
     Io(#[from] std::io::Error),
+    #[error("proxy runtime is unavailable: {0}")]
+    Runtime(std::io::Error),
     #[error("proxy ranges cannot be joined: {0}")]
     Ranges(String),
 }
@@ -91,7 +93,9 @@ impl ProxyBuildError {
     /// failure.
     pub fn is_environmental(&self) -> bool {
         match self {
-            Self::Space { .. } | Self::Cache(ProxyCacheError::Budget { .. }) => true,
+            Self::Space { .. } | Self::Cache(ProxyCacheError::Budget { .. }) | Self::Runtime(_) => {
+                true
+            }
             _ if self.is_disk_full() => true,
             // Stopped from outside (memory pressure, a user): its completed
             // ranges stay for the next build.
@@ -408,6 +412,15 @@ pub fn build_subject_with_plan(
 ) -> Result<ProxyEntry, ProxyBuildError> {
     let started = Instant::now();
     deadpan_media::proxy::expressible(subject.index.index())?;
+    control.wait_while_paused()?;
+    let admission = crate::bundle::qualify_native_worker_interruptible(
+        crate::bundle::NativeWorker::Media,
+        worker,
+        control.cancelled,
+        started + Duration::from_secs(60),
+    );
+    control.wait_while_paused()?;
+    admission.map_err(ProxyBuildError::Runtime)?;
     let key = subject.key()?;
     let info = subject.info;
     let frames = subject.index.index().frames().len() as u64;
@@ -538,6 +551,16 @@ pub use crate::system_conditions::power_guard;
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn unavailable_runtime_does_not_poison_original_or_discard_resumable_ranges() {
+        let error = super::ProxyBuildError::Runtime(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "worker differs from its compiled content pin",
+        ));
+        assert!(error.is_environmental());
+        assert!(!error.is_cancellation());
+    }
+
     /// Proxies never reach export, render, verification, conditioning,
     /// tracking, shot analysis or thumbnails: outside the proxy modules
     /// themselves and the app's private preview reader, no source in any

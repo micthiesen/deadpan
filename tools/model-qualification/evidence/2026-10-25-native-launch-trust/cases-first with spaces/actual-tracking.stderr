@@ -1,0 +1,1 @@
+{"error":{"code":"TrackingUnavailable","current_revision":null,"message":"tracking is unavailable: no stored shot analysis; run detect-shots, or pass --through-shots","recovery_backup":null},"schema_version":1}

@@ -1,0 +1,28 @@
+{
+  "portable_copy": {
+    "destination": "/private/tmp/deadpan-native-trust-2026-10-25/cases-fifth with spaces/Workflow.deadpan",
+    "generated": [],
+    "omitted_generated": 0,
+    "omitted_render_candidates": 0,
+    "originals": [
+      {
+        "bytes": 55100,
+        "content": "blake3:5177b5e17d31a75b8c2c9ca4ae999728481f87b518e020c574df48f69d0a4dce",
+        "from": "managed",
+        "label": "Original-qualified.mp4",
+        "method": "cloned"
+      }
+    ],
+    "project_id": "81175426-b335-45b7-a35b-76694125c80a",
+    "revision_id": "f0081ed5-c0e6-452f-b125-dc5e7f612313",
+    "schema_version": 1,
+    "source": "/private/tmp/deadpan-word-refinement-2026-10-25/workflow/Source.deadpan",
+    "total_bytes": 632636,
+    "verified_history": {
+      "replayed": 0,
+      "revisions": 2,
+      "verified_by_receipt": 2
+    }
+  },
+  "protocol": 1
+}

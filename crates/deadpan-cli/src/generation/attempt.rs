@@ -1164,8 +1164,8 @@ pub fn run_worker_scheduled(
             _ if cancelled.load(Ordering::Acquire) => cancel_early(&mut records),
             Ok(run) => RunResult::Qualified(Box::new(run)),
             Err(error) => RunResult::Failed(JobFailure::Host(host_failure(
-                HostFailureCode::OutputValidationFailed,
-                &error,
+                error.host_code(),
+                &error.to_string(),
             ))),
         }
     } else {
@@ -1180,8 +1180,36 @@ pub fn run_worker_scheduled(
     }
 }
 
-/// Qualify a clean worker's declared bundle with the media worker after
-/// teardown: provenance, both masters and the captured conditioning inputs.
+/// Runtime admission failures belong to the host, independently of the
+/// candidate's provenance, pictures or audio validation.
+#[derive(Debug, thiserror::Error)]
+pub(super) enum QualificationError {
+    #[error("candidate qualification runtime: {0}")]
+    Runtime(std::io::Error),
+    #[error("{0}")]
+    Output(String),
+}
+
+impl From<String> for QualificationError {
+    fn from(error: String) -> Self {
+        Self::Output(error)
+    }
+}
+
+impl QualificationError {
+    fn host_code(&self) -> HostFailureCode {
+        match self {
+            Self::Runtime(error) => match error.kind() {
+                std::io::ErrorKind::Interrupted => HostFailureCode::Interrupted,
+                std::io::ErrorKind::TimedOut => HostFailureCode::DeadlineExceeded,
+                _ => HostFailureCode::Io,
+            },
+            Self::Output(_) => HostFailureCode::OutputValidationFailed,
+        }
+    }
+}
+
+/// Qualify a clean worker's declared bundle after teardown.
 pub(super) fn qualify_declared(
     allocated: &Allocated,
     media_worker: &Path,
@@ -1190,7 +1218,32 @@ pub(super) fn qualify_declared(
     conditioning: RetainedInputs,
     declaration: NativeCandidateManifest,
     cancelled: &AtomicBool,
-) -> Result<QualifiedRun, String> {
+) -> Result<QualifiedRun, QualificationError> {
+    if cancelled.load(Ordering::Acquire) {
+        return Err(QualificationError::Runtime(std::io::Error::new(
+            std::io::ErrorKind::Interrupted,
+            "candidate qualification cancelled",
+        )));
+    }
+    let admission_deadline = Instant::now() + Duration::from_secs(60);
+    for (kind, executable) in [
+        (crate::bundle::NativeWorker::Media, media_worker),
+        (crate::bundle::NativeWorker::Track, landmark_worker),
+    ] {
+        crate::bundle::qualify_native_worker_interruptible(
+            kind,
+            executable,
+            cancelled,
+            admission_deadline,
+        )
+        .map_err(QualificationError::Runtime)?;
+    }
+    if cancelled.load(Ordering::Acquire) {
+        return Err(QualificationError::Runtime(std::io::Error::new(
+            std::io::ErrorKind::Interrupted,
+            "candidate qualification cancelled",
+        )));
+    }
     let (bundle, receipt) = match conditioning {
         RetainedInputs::Bridge { selected, inputs } => {
             let bundle = qualify_bridge(

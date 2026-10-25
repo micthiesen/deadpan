@@ -1,0 +1,1 @@
+{"error":{"code":"IoFailure","current_revision":null,"message":"signature command failed: test-requirement: code failed to satisfy specified code requirement(s)","recovery_backup":null},"schema_version":1}

@@ -46,6 +46,12 @@ its own: updates and installs start only from the commands and buttons above
 
 Everything else is local:
 
+- Native worker admission invokes only `/usr/bin/codesign`, with fixed
+  verification/inspection arguments, a cleared environment and bundle image
+  paths. It passes no source media, transcript, generated picture, credential
+  or project data. The reviewed launch owner is
+  [`bundle/image/signer.rs`](../crates/deadpan-cli/src/bundle/image/signer.rs);
+  transcription, tracking and media workers remain outside the HTTP stack.
 - The linked FFmpeg is configured `--disable-network`; the build scripts of
   `deadpan-source`, `deadpan-encode` and `deadpan-media-worker` refuse a prefix
   configured otherwise. Decoders read descriptors, never URLs.

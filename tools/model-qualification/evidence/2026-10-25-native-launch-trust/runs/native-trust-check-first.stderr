@@ -1,0 +1,1027 @@
+   Compiling xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 3.08s
+     Running `/tmp/deadpan-follow-creep-2026-10-24/target/debug/xtask check --since 8b418a82`
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking rustls v0.23.45
+    Checking xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+    Checking deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+    Checking rustls-platform-verifier v0.7.1
+    Checking deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking ureq v3.4.2
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 18.58s
+   Compiling rustls v0.23.45
+   Compiling xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1m 52s
+────────────
+ Nextest run ID 733be619-a1e2-4341-b1c7-3e9f555ee73a with nextest profile: default
+    Starting 962 tests across 46 binaries (23 tests skipped)
+        PASS [   0.014s] (  1/962) deadpan-cli bundle::image::signer::tests::local_requirement_rejects_extra_expressions_malformed_hashes_and_ambiguous_definitions
+        PASS [   0.015s] (  2/962) deadpan-cli audio::cache_tests::aggregate_reservation_is_inclusive_checked_and_requires_nonempty_pcm_and_index
+        PASS [   0.015s] (  3/962) deadpan-cli bundle::image::signer::tests::only_explicit_adhoc_or_a_bound_supported_signer_is_accepted
+        PASS [   0.015s] (  4/962) deadpan-cli backup_settings::tests::untrusted_settings_keep_every_backup_without_changing_default_cadence
+        PASS [   0.015s] (  5/962) deadpan-cli backup_settings::tests::settings_are_bounded_and_strict_on_construction_and_deserialization
+        PASS [   0.018s] (  6/962) deadpan-cli backup_settings::tests::invalid_settings_file_is_not_treated_as_missing
+        PASS [   0.018s] (  7/962) deadpan-cli backup_settings::tests::missing_settings_use_defaults_without_creating_a_file
+        PASS [   0.010s] (  8/962) deadpan-cli bundle::native::tests::complete_compiled_map_is_required_and_rejects_paths_or_hashes_from_a_manifest
+        PASS [   0.067s] (  9/962) deadpan-cli backups::tests::cli_policy_rejects_incomplete_and_out_of_range_values_without_replacing
+        PASS [   0.072s] ( 10/962) deadpan-cli backup_settings::tests::settings_refuse_links_and_special_files_without_waiting_for_a_writer
+        PASS [   0.073s] ( 11/962) deadpan-cli backup_settings::tests::settings_survive_restart_and_are_private
+        PASS [   0.009s] ( 12/962) deadpan-cli bundle::refinement::tests::other_native_family_pins_cannot_enable_alignment_development_fallback
+        PASS [   0.053s] ( 13/962) deadpan-cli bundle::refinement::tests::actual_content_reader_refuses_non_macho_and_symlink_files
+        PASS [   0.112s] ( 14/962) deadpan-cli backups::tests::cli_policy_commands_share_the_persisted_settings_api
+        PASS [   0.109s] ( 15/962) deadpan-cli bundle::refinement::tests::both_images_are_independently_checked_before_any_signature_or_launch
+        PASS [   0.077s] ( 16/962) deadpan-cli bundle::refinement::tests::expected_signer_failure_refuses_each_image_and_success_checks_the_resource_seal
+        PASS [   0.010s] ( 17/962) deadpan-cli bundle::tests::only_contents_macos_inside_an_app_is_a_bundle
+        PASS [   0.043s] ( 18/962) deadpan-cli bundle::refinement::tests::real_system_signature_cannot_satisfy_a_different_signer_requirement
+        PASS [   0.063s] ( 19/962) deadpan-cli bundle::refinement::tests::packaged_hosts_require_both_pins_and_cannot_downgrade_by_removing_the_marker
+        PASS [   0.157s] ( 20/962) deadpan-cli bundle::native::tests::mutable_resource_manifest_cannot_authorize_substitution
+        PASS [   0.172s] ( 21/962) deadpan-cli bundle::native::tests::any_family_of_compiled_pins_prevents_development_downgrade
+        PASS [   0.158s] ( 22/962) deadpan-cli bundle::native::tests::packaged_worker_role_cannot_select_another_worker_or_external_executable
+        PASS [   0.019s] ( 23/962) deadpan-cli bundle::tests::only_the_packaging_key_marks_a_packaged_bundle
+        PASS [   0.160s] ( 24/962) deadpan-cli bundle::native::tests::expected_signer_is_checked_for_resource_seal_hosts_and_every_admitted_image
+        PASS [   0.160s] ( 25/962) deadpan-cli bundle::native::tests::every_native_worker_and_every_library_has_an_independent_pin
+        PASS [   0.111s] ( 26/962) deadpan-cli bundle::refinement::tests::other_users_cannot_replace_package_owned_images_or_directories
+        PASS [   0.014s] ( 27/962) deadpan-cli encoded_render::admission::content::tests::content_report_rejects_shifted_missing_swapped_and_unexpected_audio
+        PASS [   0.015s] ( 28/962) deadpan-cli encoded_render::admission::content::tests::content_error_limits_reject_bad_single_planes_and_inconsistent_claims
+        PASS [   0.013s] ( 29/962) deadpan-cli encoded_render::admission::content::tests::exact_plane_comparison_observes_cancellation
+        PASS [   0.019s] ( 30/962) deadpan-cli diagnostic_export::tests::captures_structure_and_closed_failure_context_without_authored_content
+        PASS [   0.013s] ( 31/962) deadpan-cli encoded_render::admission::content::tests::marker_observation_never_realigns_the_expected_coordinate
+        PASS [   0.020s] ( 32/962) deadpan-cli diagnostic_export::tests::bounded_serialization_stops_without_publishing_a_partial_report
+        PASS [   0.010s] ( 33/962) deadpan-cli encoded_render::admission::content::tests::worst_frame_errors_cannot_be_hidden_by_whole_movie_averages
+        PASS [   0.009s] ( 34/962) deadpan-cli encoded_render::admission::durable::tests::observation_projection_is_bounded_before_parsing
+        PASS [   0.009s] ( 35/962) deadpan-cli encoded_render::admission::durable::tests::invalidated_native_failure_retains_fault_boundary_instead_of_capability
+        PASS [   0.009s] ( 36/962) deadpan-cli encoded_render::admission::host::tests::selection_is_ordered_and_uses_only_exact_admitted_native_failures
+        PASS [   0.011s] ( 37/962) deadpan-cli encoded_render::admission::host::tests::every_noncapability_or_invalidated_failure_stops_selection
+        PASS [   0.011s] ( 38/962) deadpan-cli encoded_render::admission::durable::tests::retained_measured_probe_preserves_every_native_observation_and_frozen_control
+        PASS [   0.028s] ( 39/962) deadpan-cli diagnostic_export::tests::unavailable_project_exports_a_safe_code_without_its_path_or_error_text
+        PASS [   0.010s] ( 40/962) deadpan-cli encoded_render::admission::tests::probe_contract_has_its_own_exact_recipe_clock_and_identity
+        PASS [   0.010s] ( 41/962) deadpan-cli encoded_render::admission::tests::probe_rejects_ambiguous_picture_geometry_before_starting_a_worker
+        PASS [   0.010s] ( 42/962) deadpan-cli encoded_render::admission::tests::hdr_probe_specs_have_distinct_recipes_contracts_and_skip_sdr_color_bytes
+        PASS [   0.010s] ( 43/962) deadpan-cli encoded_render::admission::tests::wire_admission_rejects_loose_fields_versions_and_work_before_execution
+        PASS [   0.009s] ( 44/962) deadpan-cli encoded_render::admission::worker::tests::nonencoder_probe_errors_cannot_claim_capability_through_diagnostics
+        PASS [   0.009s] ( 45/962) deadpan-cli encoded_render::admission::worker::tests::queued_probe_controls_are_drained_before_any_terminal_claim
+        PASS [   0.021s] ( 46/962) deadpan-cli encoded_render::admission::tests::adversarial_admission_probe_frames
+        PASS [   0.009s] ( 47/962) deadpan-cli encoded_render::host::tests::artifact_admission_can_retain_the_native_maximum_without_the_raw_picture_spool_limit
+        PASS [   0.011s] ( 48/962) deadpan-cli encoded_render::host::tests::snapshot_interruption_retains_the_public_cancellation_and_deadline_outcomes
+        PASS [   0.018s] ( 49/962) deadpan-cli encoded_render::host::tests::finalization::confirmed_cleanup_preserves_the_primary_error
+        PASS [   0.010s] ( 50/962) deadpan-cli encoded_render::host::tests::supervision_errors_and_control_expiry_invalidate_typed_reports
+        PASS [   0.022s] ( 51/962) deadpan-cli encoded_render::host::tests::finalization::joined_pump_panic_cannot_promote_a_successful_stage
+        PASS [   0.022s] ( 52/962) deadpan-cli encoded_render::host::tests::finalization::joined_pump_panic_invalidates_a_typed_worker_report
+        PASS [   0.057s] ( 53/962) deadpan-cli encoded_render::admission::tests::pq_probe_declares_its_exact_per_pixel_input_light
+        PASS [   0.091s] ( 54/962) deadpan-cli diagnostic_export::tests::export_is_owner_only_atomic_and_never_overwrites_files_or_symlinks
+        PASS [   0.048s] ( 55/962) deadpan-cli encoded_render::admission::worker::tests::readonly_probe_input_is_the_same_owned_file_and_rejects_replacements
+        PASS [   0.009s] ( 56/962) deadpan-cli encoded_render::protocol::tests::completed_manifest_binds_identity_contract_artifact_and_all_host_budgets
+        PASS [   0.010s] ( 57/962) deadpan-cli encoded_render::protocol::tests::completion_rejects_forged_native_counts_clocks_policy_and_drain_claims
+        PASS [   0.010s] ( 58/962) deadpan-cli encoded_render::protocol::tests::explicit_software_b_frame_attempt_keeps_requested_and_observed_counts_distinct
+        PASS [   0.011s] ( 59/962) deadpan-cli encoded_render::protocol::tests::completion_rejects_media_duration_correction_for_an_incompatible_clock
+        PASS [   0.011s] ( 60/962) deadpan-cli encoded_render::protocol::tests::encoded_contract_keeps_absolute_audio_phase_and_exceeds_only_raw_sink_limits
+        PASS [   0.036s] ( 61/962) deadpan-cli encoded_render::protocol::tests::adversarial_encoded_render_frames
+        PASS [   0.010s] ( 62/962) deadpan-cli encoded_render::protocol::tests::historical_codec_only_priming_cannot_enter_current_worker_admission
+        PASS [   0.010s] ( 63/962) deadpan-cli encoded_render::protocol::tests::native_reconstruction_rejects_clock_geometry_and_encoding_bounds
+        PASS [   0.010s] ( 64/962) deadpan-cli encoded_render::protocol::tests::failures_require_a_strict_typed_boundary_independent_of_diagnostic_text
+        PASS [   0.010s] ( 65/962) deadpan-cli encoded_render::protocol::tests::noise_substitution_encoder_is_historical_without_live_admission
+        PASS [   0.011s] ( 66/962) deadpan-cli encoded_render::protocol::tests::progress_and_terminals_bind_both_counts_and_exact_attempt
+        PASS [   0.011s] ( 67/962) deadpan-cli encoded_render::protocol::tests::quality_policy_requires_current_controls_without_changing_aac_preroll
+        PASS [   0.011s] ( 68/962) deadpan-cli encoded_render::protocol::tests::request_limits_versions_and_bounded_scalars_are_admitted_before_allocation
+        PASS [   0.011s] ( 69/962) deadpan-cli encoded_render::protocol::tests::round_trip_handles_fragmented_frames_and_preserves_exact_cancellation
+        PASS [   0.011s] ( 70/962) deadpan-cli encoded_render::protocol::tests::runtime_bound_completion_requires_the_exact_requested_observation
+        PASS [   0.010s] ( 71/962) deadpan-cli encoded_render::protocol::tests::version_three_requires_explicit_binding_without_changing_persisted_manifest
+        PASS [   0.010s] ( 72/962) deadpan-cli encoded_render::protocol::tests::unknown_fields_and_unrecognized_encoder_choices_fail_closed
+        PASS [   0.161s] ( 73/962) deadpan-cli encoded_render::admission::host::tests::revoking_queued_owner_cancels_and_drains_an_active_probe
+        PASS [   0.010s] ( 74/962) deadpan-cli encoded_render::protocol::tests::wire_rejects_truncation_oversize_and_unbounded_diagnostics
+        PASS [   0.011s] ( 75/962) deadpan-cli encoded_render::publication::filesystem::recovery::tests::directory_evidence_has_strict_paths_components_and_non_utf8_round_trip
+        PASS [   0.254s] ( 76/962) deadpan-cli bundle::refinement::tests::packaged_file_and_directory_symlinks_are_refused
+        PASS [   0.012s] ( 77/962) deadpan-cli encoded_render::publication::filesystem::recovery::tests::saved_evidence_admits_only_tracking_addition_without_changing_equality
+        PASS [   0.011s] ( 78/962) deadpan-cli encoded_render::publication::filesystem::recovery::tests::strict_file_evidence_rejects_missing_identity_and_invalid_extents
+        PASS [   0.070s] ( 79/962) deadpan-cli encoded_render::publication::filesystem::recovery::tests::byte_identical_replacement_is_rejected_even_with_restored_mtime
+        PASS [   0.070s] ( 80/962) deadpan-cli encoded_render::publication::filesystem::recovery::tests::recovery_reads_are_bounded_controlled_and_detect_same_inode_mutation
+        PASS [   0.077s] ( 81/962) deadpan-cli encoded_render::publication::filesystem::recovery::tests::selected_symlink_replacement_and_canonical_ancestor_replacement_fail
+        PASS [   0.022s] ( 82/962) deadpan-cli encoded_render::publication::filesystem::tests::bounded_write_and_failed_exact_length_keep_partial_bytes
+        PASS [   0.055s] ( 83/962) deadpan-cli encoded_render::publication::filesystem::tests::bounded_copy_readback_and_no_replace_commit_preserve_owner_writable_mode
+        PASS [   0.175s] ( 84/962) deadpan-cli encoded_render::publication::filesystem::recovery::tests::foreign_links_symlinks_modes_and_types_are_never_read_or_modified
+        PASS [   0.067s] ( 85/962) deadpan-cli encoded_render::publication::filesystem::tests::cancellation_and_deadline_before_commit_leave_complete_partial
+        PASS [   0.070s] ( 86/962) deadpan-cli encoded_render::publication::filesystem::tests::control_errors_retain_typed_sources_through_read_and_write_traits
+        PASS [   0.112s] ( 87/962) deadpan-cli encoded_render::publication::filesystem::tests::cancellation_before_rename_retains_partial_but_after_rename_does_not_undo_success
+        PASS [   0.070s] ( 88/962) deadpan-cli encoded_render::publication::filesystem::tests::final_name_race_is_no_replace_and_keeps_complete_partial
+        PASS [   0.437s] ( 89/962) deadpan-cli encoded_render::jobs::tests::automatic_manifest_requires_exact_original_decision_and_completion_binding
+        PASS [   0.458s] ( 90/962) deadpan-cli encoded_render::jobs::tests::automatic_intent_algorithm_must_match_the_committed_color_branch
+        PASS [   0.441s] ( 91/962) deadpan-cli encoded_render::jobs::tests::legacy_manifest_bytes_keep_frozen_four_field_shape_and_reject_automatic_policy
+        PASS [   0.459s] ( 92/962) deadpan-cli encoded_render::jobs::tests::automatic_manifest_never_accepts_missing_evidence_or_future_fields
+        PASS [   0.184s] ( 93/962) deadpan-cli encoded_render::publication::filesystem::tests::every_sync_failure_reports_the_correct_side_of_the_commit_point
+        PASS [   0.112s] ( 94/962) deadpan-cli encoded_render::publication::filesystem::tests::extra_hard_link_and_same_inode_mutation_reject_readback_and_commit
+        PASS [   0.046s] ( 95/962) deadpan-cli encoded_render::publication::filesystem::tests::invalid_names_limits_and_existing_entries_never_change_destinations
+        PASS [   0.351s] ( 96/962) deadpan-cli encoded_render::publication::filesystem::recovery::tests::tracked_movie_and_report_recovery_require_complete_matching_hashes
+        PASS [   0.086s] ( 97/962) deadpan-cli encoded_render::publication::filesystem::tests::initial_directory_alias_is_allowed_but_later_retargeting_is_rejected
+        PASS [   0.600s] ( 98/962) deadpan-cli diagnostic_export::tests::package_capture_ignores_private_files_and_leaves_authored_history_unchanged
+        PASS [   0.106s] ( 99/962) deadpan-cli encoded_render::publication::filesystem::tests::published_hash_admission_rejects_same_length_mutation_with_restored_mtime
+        PASS [   0.101s] (100/962) deadpan-cli encoded_render::publication::filesystem::tests::recorded_partial_names_are_exclusive_and_owned_after_destination_drop
+        PASS [   0.088s] (101/962) deadpan-cli encoded_render::publication::filesystem::tests::replaced_partial_entry_never_writes_or_deletes_foreign_target
+        PASS [   0.016s] (102/962) deadpan-cli encoded_render::publication::provenance::tests::bounded_serialization_preserves_control_failures_and_stable_codes
+        PASS [   0.010s] (103/962) deadpan-cli encoded_render::publication::provenance::tests::full_artifact_identity_controls_coalescing_and_blank_seams_remain_separate
+        PASS [   0.166s] (104/962) deadpan-cli encoded_render::publication::filesystem::tests::final_name_replacement_and_later_report_mutation_are_observed_without_unlink
+        PASS [   0.103s] (105/962) deadpan-cli encoded_render::publication::filesystem::tests::revoked_guard_is_checked_after_last_sync_and_before_rename
+        PASS [   0.010s] (106/962) deadpan-cli encoded_render::publication::provenance::tests::generated_intervals_follow_retime_sparse_plays_and_effective_gap_branches
+        PASS [   0.009s] (107/962) deadpan-cli encoded_render::publication::provenance::tests::huge_compact_repeat_rejects_full_scan_but_admits_a_small_selected_suffix
+        PASS [   0.062s] (108/962) deadpan-cli encoded_render::publication::filesystem::tests::tracking_addition_preserves_every_other_stable_field
+        PASS [   0.009s] (109/962) deadpan-cli encoded_render::publication::provenance::tests::mixed_generation_operations_keep_distinct_export_provenance
+        PASS [   0.010s] (110/962) deadpan-cli encoded_render::publication::provenance::tests::report_versions_preserve_legacy_bytes_and_exact_automatic_decision
+        PASS [   0.165s] (111/962) deadpan-cli encoded_render::publication::filesystem::tests::replaced_parent_or_ancestor_fails_even_if_final_directory_inode_survives
+        PASS [   0.009s] (112/962) deadpan-cli encoded_render::publication::tests::destination_readback_requires_the_exact_extent_and_unmodified_bytes
+        PASS [   0.009s] (113/962) deadpan-cli encoded_render::runtime::tests::binding_rejects_policy_geometry_settings_and_inventory_changes
+        PASS [   0.008s] (114/962) deadpan-cli encoded_render::runtime::tests::runtime_hash_rejects_changed_extent_and_control_interruption
+        PASS [   0.041s] (115/962) deadpan-cli encoded_render::publication::tests::provenance_serialization_has_a_hard_byte_ceiling
+        PASS [   0.115s] (116/962) deadpan-cli encoded_render::publication::filesystem::tests::tracked_rebase_never_adopts_a_replaced_published_name
+        PASS [   0.182s] (117/962) deadpan-cli encoded_render::publication::filesystem::tests::sibling_destinations_share_the_same_directory_pin
+        PASS [   0.193s] (118/962) deadpan-cli encoded_render::publication::filesystem::tests::tracked_publication_rehashes_complete_bytes_after_rename_or_later_addition
+        PASS [   0.928s] (119/962) deadpan-cli bundle::native::tests::private_regular_package_paths_are_required_before_hashing
+        PASS [   0.193s] (120/962) deadpan-cli encoded_render::publication::filesystem::tests::tracked_publication_rejects_mutation_before_and_after_metadata_rebase
+        PASS [   0.207s] (121/962) deadpan-cli encoded_render::publication::provenance::tests::historical_capture_ignores_live_edits_and_omits_private_catalog_labels
+        PASS [   1.088s] (122/962) deadpan-cli audio::cache_tests::retained_context_and_cache_hits_recheck_the_captured_contracts
+        PASS [   0.019s] (123/962) deadpan-cli encoded_render::verification::inspect::light::tests::a_brighter_left_edge_does_not_raise_the_mean_above_the_host
+        PASS [   0.019s] (124/962) deadpan-cli encoded_render::verification::inspect::light::tests::lookup_matches_the_exact_pq_eotf
+        PASS [   1.131s] (125/962) deadpan-cli audio::cache_tests::metadata_pressure_evicts_before_preparation_without_charging_failed_reservation
+        PASS [   1.131s] (126/962) deadpan-cli audio::cache_tests::byte_pressure_evicts_before_preparation_without_charging_failed_reservation
+        PASS [   1.133s] (127/962) deadpan-cli audio::cache_tests::alternating_registered_sources_reuses_private_pcm_after_paths_disappear
+        PASS [   0.169s] (128/962) deadpan-cli encoded_render::verification::inspect::hdr_tests::retained_reordered_hdr_preserves_video_regression_but_refuses_retired_aac
+        PASS [   1.143s] (129/962) deadpan-cli audio::cache_tests::failed_cold_source_and_cancelled_hits_preserve_other_cache_entries
+        PASS [   0.019s] (130/962) deadpan-cli encoded_render::verification::inspect::light::tests::saturated_edges_do_not_inflate_the_site_bound
+        PASS [   0.017s] (131/962) deadpan-cli encoded_render::verification::inspect::light::tests::sparse_highlights_can_put_the_mean_bound_above_the_percentile_bound
+        PASS [   0.017s] (132/962) deadpan-cli encoded_render::verification::inspect::light::tests::sites_filter_luma_like_the_encoder_chroma_filter
+        PASS [   0.015s] (133/962) deadpan-cli encoded_render::verification::protocol::tests::completion_cannot_change_the_committed_contract_or_private_bytes
+        PASS [   0.014s] (134/962) deadpan-cli encoded_render::verification::protocol::tests::every_response_binds_the_complete_attempt_identity
+        PASS [   0.014s] (135/962) deadpan-cli encoded_render::verification::protocol::tests::fragmented_wire_round_trip_preserves_the_exact_cancellation_target
+        PASS [   0.014s] (136/962) deadpan-cli encoded_render::verification::protocol::tests::long_exports_require_enough_gops_and_actual_requested_reordering
+        PASS [   0.031s] (137/962) deadpan-cli encoded_render::verification::inspect::retained_software_b_frames_keep_complete_decoder_coverage_without_live_authority
+        PASS [   0.016s] (138/962) deadpan-cli encoded_render::verification::protocol::tests::malformed_or_oversized_frames_and_diagnostics_are_rejected
+        PASS [   0.014s] (139/962) deadpan-cli encoded_render::verification::protocol::tests::progress_totals_are_bound_to_each_captured_stage
+        PASS [   0.016s] (140/962) deadpan-cli encoded_render::verification::protocol::tests::report_rejects_inconsistent_clocks_runtime_and_physical_sample_claims
+        PASS [   0.017s] (141/962) deadpan-cli encoded_render::verification::protocol::tests::reordering_observations_must_use_whole_frames_within_the_captured_policy
+        PASS [   0.015s] (142/962) deadpan-cli encoded_render::verification::protocol::tests::request_rejects_invalid_scalars_and_insufficient_host_budgets
+        PASS [   0.048s] (143/962) deadpan-cli encoded_render::verification::protocol::tests::adversarial_verification_frames
+        PASS [   0.016s] (144/962) deadpan-cli encoded_render::verification::protocol::tests::unknown_fields_and_unrecognized_stages_fail_closed
+        PASS [   0.015s] (145/962) deadpan-cli encoded_render::verification::worker::tests::eof_and_truncated_controls_never_acknowledge_cancellation
+        PASS [   0.015s] (146/962) deadpan-cli encoded_render::verification::worker::tests::cancellation_requires_exact_token_request_attempt_and_protocol
+        PASS [   0.020s] (147/962) deadpan-cli encoded_render::verification::worker::tests::binary_hash_covers_all_chunks_without_moving_the_descriptor_position
+        PASS [   0.019s] (148/962) deadpan-cli encoded_render::verification::worker::tests::hashing_honors_cancellation_and_deadline_even_for_empty_files
+        PASS [   0.019s] (149/962) deadpan-cli encoded_render::verification::worker::tests::hashing_rejects_both_shrink_and_growth_against_the_captured_extent
+        PASS [   0.015s] (150/962) deadpan-cli encoded_render::worker::tests::contract_and_source_admission_failures_are_typed_before_output_allocation
+        PASS [   0.020s] (151/962) deadpan-cli encoded_render::verification::worker::tests::hashing_keeps_the_open_file_identity_after_its_path_is_replaced
+        PASS [   0.014s] (152/962) deadpan-cli encoded_render::worker::tests::fractional_range_rebases_absolute_audio_without_rounding_or_padding
+        PASS [   0.016s] (153/962) deadpan-cli encoded_render::worker::tests::encoded_output_is_private_exclusive_contained_and_hashed_through_its_descriptor
+        PASS [   0.017s] (154/962) deadpan-cli encoded_render::worker::tests::hashing_checks_exact_extent_and_interrupts_between_bounded_reads
+        PASS [   0.014s] (155/962) deadpan-cli encoded_render::worker::tests::native_failure_kinds_survive_worker_mapping_without_reading_prose
+        PASS [   0.015s] (156/962) deadpan-cli encoded_render::worker::tests::misleading_output_io_diagnostics_cannot_claim_encoder_capability
+        PASS [   0.015s] (157/962) deadpan-cli encoded_render::worker::tests::queued_encoded_cancellation_and_invalid_controls_are_drained_before_terminal
+        PASS [   0.320s] (158/962) deadpan-cli encoded_render::workflow::owner::tests::automatic_decision_write_failure_never_enqueues_encoding
+        PASS [   0.321s] (159/962) deadpan-cli encoded_render::workflow::owner::tests::automatic_decision_commits_before_encoding_command
+        PASS [   0.304s] (160/962) deadpan-cli encoded_render::workflow::owner::tests::capture_cancel_drains_real_worker_without_creating_job_or_media
+        PASS [   0.323s] (161/962) deadpan-cli encoded_render::workflow::owner::tests::cancellation_is_durable_before_atomic_signal_and_terminal_waits_for_release
+        PASS [   0.018s] (162/962) deadpan-cli encoded_render::workflow::owner::tests::diagnostics_remain_valid_at_utf8_and_nul_bounds
+        PASS [   0.327s] (163/962) deadpan-cli encoded_render::workflow::owner::tests::cancelled_selection_releases_unused_admission_without_encoding
+        PASS [   0.328s] (164/962) deadpan-cli encoded_render::workflow::owner::tests::automatic_retry_without_checkpoint_starts_fresh_qualification
+        PASS [   0.015s] (165/962) deadpan-cli encoded_render::workflow::owner::tests::publication_progress_serializes_as_a_status_snapshot
+        PASS [   0.305s] (166/962) deadpan-cli encoded_render::workflow::owner::tests::separate_coordinators_share_slot_until_worker_release
+        PASS [   0.322s] (167/962) deadpan-cli encoded_render::workflow::owner::tests::disconnected_release_channel_does_not_erase_commit_knowledge
+        PASS [   0.308s] (168/962) deadpan-cli encoded_render::workflow::owner::tests::observed_movie_commit_survives_terminal_journal_failure
+        PASS [   0.306s] (169/962) deadpan-cli encoded_render::workflow::owner::tests::reopening_writer_never_rebinds_old_coordinator
+        PASS [   0.601s] (170/962) deadpan-cli encoded_render::workflow::owner::tests::stale_revision_and_foreign_writer_are_rejected_before_work
+        PASS [   0.641s] (171/962) deadpan-cli encoded_render::workflow::owner::tests::captured_admission_failure_stays_consistent_when_cancellation_races
+        PASS [   0.324s] (172/962) deadpan-cli encoded_render::workflow::owner::tests::stale_selected_observation_cannot_authorize_current_attempt
+        PASS [   0.324s] (173/962) deadpan-cli encoded_render::workflow::owner::tests::unknown_cleanup_preserves_previously_observed_movie_commit
+        PASS [   0.330s] (174/962) deadpan-cli encoded_render::workflow::owner::tests::unknown_cleanup_persists_cancelling_and_fences_every_coordinator
+        PASS [   0.015s] (175/962) deadpan-cli encoded_render::workflow::worker::tests::durable_diagnostic_retains_the_typed_failure_boundary
+        PASS [   0.014s] (176/962) deadpan-cli export_picture::contract::tests::audio_boundaries_round_absolute_project_coordinates_independently
+        PASS [   0.015s] (177/962) deadpan-cli export_picture::contract::tests::empty_and_negative_captures_fail_explicitly
+        PASS [   0.013s] (178/962) deadpan-cli export_picture::contract::tests::encoder_rational_bounds_reject_without_retiming_the_project
+        PASS [   0.014s] (179/962) deadpan-cli export_picture::contract::tests::hdr_output_keeps_the_basis_transfer_or_falls_back_to_sdr
+        PASS [   0.014s] (180/962) deadpan-cli export_picture::contract::tests::largest_representable_boundaries_remain_exact
+        PASS [   0.014s] (181/962) deadpan-cli export_picture::contract::tests::odd_and_tiny_axes_use_the_shared_even_rule_with_signed_aspect_evidence
+        PASS [   0.014s] (182/962) deadpan-cli export_picture::contract::tests::output_terminal_and_audio_boundary_overflow_are_separate_admission_failures
+        PASS [   0.014s] (183/962) deadpan-cli export_picture::contract::tests::output_timestamps_are_exact_relative_to_the_selected_project_range
+        PASS [   0.014s] (184/962) deadpan-cli export_picture::contract::tests::raster_and_committed_canvas_obey_renderer_bounds_before_allocation
+        PASS [   0.016s] (185/962) deadpan-cli export_picture::contract::tests::serialized_evidence_retains_the_captured_identities_and_exact_clocks
+        PASS [   0.015s] (186/962) deadpan-cli export_picture::tests::cancellation_and_expired_deadline_stop_before_next_poll
+        PASS [   0.015s] (187/962) deadpan-cli export_picture::tests::completed_result_budget_is_released_on_worker_drop_and_failed_work
+        PASS [   0.018s] (188/962) deadpan-cli export_verification::movie::emitted_movie_cannot_be_repaired_by_source_deinterlacing
+        PASS [   0.015s] (189/962) deadpan-cli export_verification::tests::compression_can_erase_nearby_frame_identity_without_an_index_failure
+        PASS [   0.015s] (190/962) deadpan-cli export_verification::tests::index_observability_uses_strict_twice_bound_and_declared_depth_threshold
+        PASS [   0.043s] (191/962) deadpan-cli export_verification::tests::level_silence_and_gap_checks_fail_explicitly
+        PASS [   0.096s] (192/962) deadpan-cli export_verification::tests::audio_offsets_are_measured_reported_and_never_compensated
+        PASS [   0.016s] (193/962) deadpan-cli export_verification::tests::picture_checks_flag_index_shift_black_frame_and_gross_framing_change
+        PASS [   0.015s] (194/962) deadpan-cli export_verification::tests::selections_are_bounded_and_explicit
+        PASS [   0.561s] (195/962) deadpan-cli encoded_render::workflow::owner::tests::stopped_reconciliation_keeps_destination_uncertain_during_verification
+        PASS [   0.018s] (196/962) deadpan-cli export_verification::tests::small_missing_graphic_fails_the_local_gate_regardless_of_psnr
+        PASS [   0.015s] (197/962) deadpan-cli export_verification::tests::static_and_single_frame_reports_distinguish_unobservable_from_absent_neighbors
+        PASS [   0.196s] (198/962) deadpan-cli export_picture::tests::captured_contract_rejects_other_revision_clock_canvas_and_position
+        PASS [   0.263s] (199/962) deadpan-cli encoded_render::workflow::owner::tests::wrong_phase_reply_never_releases_an_encoding_slot
+        PASS [   0.014s] (200/962) deadpan-cli export_verification::tests::tight_planes_and_identical_pictures_pass_with_capped_psnr
+        PASS [   0.015s] (201/962) deadpan-cli export_verification::tests::ten_bit_pictures_use_peak_1023_and_eight_bit_equivalent_structure_gates
+        PASS [   0.016s] (202/962) deadpan-cli faces::tests::a_face_target_is_a_static_untracked_region_from_its_picture
+        PASS [   0.016s] (203/962) deadpan-cli faces::tests::faces_are_chosen_by_one_based_number_with_clear_refusals
+        PASS [   0.374s] (204/962) deadpan-cli encoded_render::workflow::owner::tests::unresolved_admission_cleanup_preserves_owner_fence
+        PASS [   0.236s] (205/962) deadpan-cli export_verification::tests::wrong_content_in_part_of_a_window_fails_per_block
+        PASS [   0.239s] (206/962) deadpan-cli framing::tests::scoped::ranges::semantic_scoped_range_named_call_resolves_fresh_range_and_play
+        PASS [   0.342s] (207/962) deadpan-cli export_verification::tests::small_offsets_of_smooth_aperiodic_content_fail_instead_of_looking_ambiguous
+        PASS [   0.422s] (208/962) deadpan-cli export_verification::tests::periodic_content_is_unobservable_not_offset_zero
+        PASS [   0.241s] (209/962) deadpan-cli framing::tests::scoped::ranges::semantic_scoped_range_refusals_leave_document_registers_and_history_untouched
+        PASS [   0.413s] (210/962) deadpan-cli framing::tests::scoped::ranges::semantic_scoped_range_follow_maps_exact_bounds_and_commits_one_durable_edit
+        PASS [   0.358s] (211/962) deadpan-cli framing::tests::scoped::ranges::semantic_scoped_range_rejects_fractional_allocation_overlap_and_maps_cropped_owner
+        PASS [   0.294s] (212/962) deadpan-cli framing::tests::scoped::semantic_scoped_zoom_keep_preserves_live_follow_and_retained_clock_after_isolation
+        PASS [   0.308s] (213/962) deadpan-cli framing::tests::scoped::semantic_scoped_framing_matches_the_exact_play_and_returns_intrinsic_owner_duration
+        PASS [   0.402s] (214/962) deadpan-cli framing::tests::scoped::ranges::semantic_scoped_range_reisolates_an_existing_override_beneath_an_outer_play
+        PASS [   0.373s] (215/962) deadpan-cli framing::tests::scoped::ranges::semantic_scoped_range_static_keep_and_original_center_restore_the_exact_prefix_and_suffix
+        PASS [   0.269s] (216/962) deadpan-cli framing::tests::semantic_framing_keeps_captured_hold_geometry_and_refuses_a_clipped_center
+        PASS [   0.017s] (217/962) deadpan-cli framing::tests::semantic_generated_framing_uses_retained_raster_and_exact_crop_and_rejects_changed_admission
+        PASS [   0.288s] (218/962) deadpan-cli framing::tests::semantic_framing_uses_live_follow_pose_at_retimed_source_clock_instead_of_fallback
+        PASS [   0.296s] (219/962) deadpan-cli framing::tests::semantic_framing_rejects_blank_and_changed_qualified_provider_contracts
+        PASS [   3.063s] (220/962) deadpan-cli encoded_render::publication::filesystem::recovery::tests::a_released_file_still_shared_with_a_child_is_awaited_not_in_use
+        PASS [   0.270s] (221/962) deadpan-cli generation::attempt::tests::a_cancelled_run_whose_cancel_record_was_lost_still_finishes_cancelled
+        PASS [   0.350s] (222/962) deadpan-cli framing::tests::semantic_framing_projects_through_default_gap_provider_clip_before_ordinary_owner
+        PASS [   0.317s] (223/962) deadpan-cli generation::attempt::tests::a_worker_failure_the_store_missed_is_recorded_as_a_host_failure
+        PASS [   0.372s] (224/962) deadpan-cli generation::attempt::tests::allocation_records_a_current_bridge_request_and_a_queued_attempt
+        PASS [   0.360s] (225/962) deadpan-cli generation::attempt::tests::cancellation_before_launch_is_recorded_as_cancelled
+        PASS [   0.417s] (226/962) deadpan-cli generation::attempt::tests::a_worker_that_exits_without_a_candidate_fails_truthfully
+        PASS [   0.317s] (227/962) deadpan-cli generation::attempt::tests::extension::bridge_capture_uses_selected_plan_and_refuses_a_different_saved_clock
+        PASS [   0.768s] (228/962) deadpan-cli framing::tests::semantic_framing_uses_qualified_sar_rotation_aperture_and_staged_nested_poses_without_media
+        PASS [   0.548s] (229/962) deadpan-cli generation::attempt::tests::ai_network_inference_host_preserves_files_protocol_and_owned_group
+        PASS [   0.352s] (230/962) deadpan-cli generation::attempt::tests::extension::extension_completion_requires_v3_operation_native_contract_and_selected_provider
+        PASS [   0.755s] (231/962) deadpan-cli generation::attempt::tests::extension::extension_allocation_retains_operation_origin_and_rejects_changed_variants
+        PASS [   0.770s] (232/962) deadpan-cli generation::attempt::tests::extension::extension_workspace_refuses_wrong_provider_missing_context_and_changed_signatures
+        PASS [   0.353s] (233/962) deadpan-cli generation::attempt::tests::independent_failure_observed_before_sleep_keeps_its_original_cause
+        PASS [   5.151s] (234/962) deadpan-cli audio::cache_tests::seventeenth_source_evicts_lru_and_missing_evicted_source_preserves_recent_pcm
+        PASS [   0.265s] (235/962) deadpan-cli generation::attempt::tests::reaping_finishes_cancel_and_keeps_the_first_failure
+        PASS [   1.663s] (236/962) deadpan-cli generation::attempt::tests::extension::supervised_extension_cancel_and_host_refusals_are_terminal_before_ready
+        PASS [   0.241s] (237/962) deadpan-cli generation::attempt::tests::selected_pack_identity_is_durable_and_variants_keep_that_identity
+        PASS [   0.573s] (238/962) deadpan-cli generation::attempt::tests::sleep_before_or_during_cancel_finalization_remains_durably_interrupted
+        PASS [   5.887s] (239/962) deadpan-cli encoded_render::verification::inspect::hdr_tests::hevc_nal_types_62_and_63_are_rejected_in_every_packet
+        PASS [   5.934s] (240/962) deadpan-cli encoded_render::verification::inspect::hdr_tests::hdr_files_with_wrong_boxes_fail_full_verification
+        PASS [   1.539s] (241/962) deadpan-cli generation::attempt::tests::sleep_during_qualified_object_promotion_never_publishes_ready
+        PASS [   6.311s] (242/962) deadpan-cli encoded_render::verification::inspect::hdr_tests::hdr_container_rejects_wrong_codec_color_and_static_metadata
+        PASS [   6.394s] (243/962) deadpan-cli encoded_render::verification::inspect::hdr_tests::hlg_container_rejects_static_pq_metadata_boxes
+        PASS [   2.821s] (244/962) deadpan-cli generation::attempt::tests::missing_landmark_helper_fails_without_replacing_ready_or_fallback
+        PASS [   0.013s] (245/962) deadpan-cli generation::color::tests::rec709_codes_convert_at_the_curve_break_and_across_the_full_byte_range
+        PASS [   0.011s] (246/962) deadpan-cli generation::color::tests::srgb_is_unchanged_and_other_interpretations_refuse
+        PASS [   0.012s] (247/962) deadpan-cli generation::command::options::tests::explicit_controls_are_bounded_and_cannot_change_another_request
+        PASS [   0.013s] (248/962) deadpan-cli generation::command::options::tests::modes_are_explicit_and_another_cannot_replace_the_captured_operation
+        PASS [   0.013s] (249/962) deadpan-cli generation::command::options::tests::scope_is_strict_bounded_and_names_the_requested_hold
+        PASS [   6.484s] (250/962) deadpan-cli encoded_render::verification::inspect::hdr_tests::report_content_light_is_required_for_pq_only_and_rechecked
+        PASS [   3.524s] (251/962) deadpan-cli generation::attempt::tests::hostile_ai_provenance_claims_fail_before_media_qualification
+        PASS [   0.012s] (252/962) deadpan-cli generation::conditioning::continuity::tests::measured_vfr_support_respects_direction_exact_endpoints_and_clamps
+        PASS [   0.013s] (253/962) deadpan-cli generation::conditioning::continuity::tests::interpretation_is_retained_across_context_frames_and_checked_at_seams
+        PASS [   0.018s] (254/962) deadpan-cli generation::conditioning::extension::tests::aggregate_png_limit_includes_opposite_and_cancellation_deadline_win_before_open
+        PASS [   0.011s] (255/962) deadpan-cli generation::conditioning::extension::tests::development_envelope_is_exact_at_integer_and_fractional_rates
+        PASS [   0.012s] (256/962) deadpan-cli generation::conditioning::extension::tests::development_project_rate_matches_worker_envelope_without_rounding
+        PASS [   0.011s] (257/962) deadpan-cli generation::conditioning::extension::tests::selected_capture_refuses_changed_hold_rate_and_unbounded_or_different_raster
+        PASS [   0.061s] (258/962) deadpan-cli generation::conditioning::extension::tests::assembly_rejects_wrong_scope_order_opposite_clock_and_controls
+        PASS [   0.066s] (259/962) deadpan-cli generation::conditioning::extension::tests::assembly_preserves_chronological_pngs_definition_clocks_geometry_and_absence
+        PASS [   0.011s] (260/962) deadpan-cli generation::conditioning::extension::tests::selected_capture_refuses_mismatched_provider_plan_or_operation_before_open
+        PASS [   0.025s] (261/962) deadpan-cli generation::conditioning::extension::tests::selected_one_second_plan_preserves_e24_inputs_and_authored_duration
+        PASS [   0.025s] (262/962) deadpan-cli generation::conditioning::extension::tests::selected_region_uses_direction_anchor_and_preserves_captured_controls
+        PASS [   0.011s] (263/962) deadpan-cli generation::conditioning::tests::colour_summary_reports_bt709_conversion_and_retained_approximations
+        PASS [   0.011s] (264/962) deadpan-cli generation::conditioning::tests::conditioning_and_join_measurements_sample_the_same_fractional_clean_image
+        PASS [   0.064s] (265/962) deadpan-cli generation::conditioning::tests::conditioning_refuses_extreme_sample_aspect_before_display_allocation
+        PASS [   0.064s] (266/962) deadpan-cli generation::conditioning::tests::conditioning_and_the_presentation_crop_cancel_out
+        PASS [   0.013s] (267/962) deadpan-cli generation::conditioning::tests::measured_colour_is_recorded_and_uncovered_colour_refuses
+        PASS [   0.014s] (268/962) deadpan-cli generation::conditioning::tests::prepared_png_converts_bt709_and_keeps_srgb_padding_and_alpha_separate
+        PASS [   0.013s] (269/962) deadpan-cli generation::joins::tests::boundary_pictures_and_presented_masters_share_one_space
+        PASS [   0.013s] (270/962) deadpan-cli generation::joins::tests::bt709_boundaries_and_srgb_masters_compare_in_the_same_transfer
+        PASS [   0.012s] (271/962) deadpan-cli generation::joins::tests::classes_follow_the_documented_thresholds
+        PASS [   0.013s] (272/962) deadpan-cli generation::joins::tests::extension_joins_distinguish_absent_opposite_from_authored_black
+        PASS [   0.012s] (273/962) deadpan-cli generation::joins::tests::identical_pictures_are_smooth_and_differences_are_exact_means
+        PASS [   0.013s] (274/962) deadpan-cli generation::joins::tests::malformed_inputs_are_refused
+        PASS [   0.162s] (275/962) deadpan-cli generation::conditioning::tests::captured_rectangles_match_portrait_odd_and_anamorphic_preparation
+        PASS [   0.012s] (276/962) deadpan-cli generation::joins::tests::only_the_centered_content_region_counts
+        PASS [   0.013s] (277/962) deadpan-cli generation::joins::tests::pngs_decode_only_at_the_expected_raster
+        PASS [   0.012s] (278/962) deadpan-cli generation::provider_tests::development_provider_uses_the_compiled_bridge_runtime_version
+        PASS [   0.012s] (279/962) deadpan-cli generation::provider_tests::rollback_to_a_different_pack_version_starts_a_distinct_request_identity
+        PASS [   0.013s] (280/962) deadpan-cli generation::runtime::check::tests::smoke_report_must_match_every_captured_identity_and_operation
+        PASS [   0.015s] (281/962) deadpan-cli generation::runtime::check::tests::complete_worker_smoke_report_requires_every_well_formed_adapter_source
+        PASS [   0.013s] (282/962) deadpan-cli generation::runtime::launch::tests::ai_network_launcher_refuses_missing_isolation_and_invalid_python
+        PASS [   0.011s] (283/962) deadpan-cli generation::runtime::selection::constraints::tests::launch_constraints_cannot_bypass_raster_duration_or_operation_limits
+        PASS [   0.013s] (284/962) deadpan-cli generation::runtime::selection::constraints::tests::narrower_controls_refuse_motion_and_count_instruction_bytes_for_each_operation
+        PASS [   0.014s] (285/962) deadpan-cli generation::runtime::selection::tests::extension_selection_uses_manifest_duration_and_exact_project_grid
+        PASS [   0.014s] (286/962) deadpan-cli generation::runtime::selection::tests::provider_selection_never_grants_another_operation_or_a_wider_capability
+        PASS [   0.013s] (287/962) deadpan-cli generation::runtime::tests::a_cleared_source_checkout_is_reported
+        PASS [   0.015s] (288/962) deadpan-cli generation::runtime::tests::a_complete_runtime_resolves_to_canonical_paths
+        PASS [   0.014s] (289/962) deadpan-cli generation::runtime::tests::a_missing_home_leaves_the_model_cache_unresolved
+        PASS [   0.019s] (290/962) deadpan-cli generation::runtime::tests::a_packaged_app_uses_only_its_bundled_runtime_and_installed_pack
+        PASS [   0.015s] (291/962) deadpan-cli generation::runtime::tests::bundles_use_only_explicit_variables
+        PASS [   0.033s] (292/962) deadpan-cli generation::runtime::tests::an_installed_bridge_pack_does_not_satisfy_an_extension_request
+        PASS [   3.674s] (293/962) deadpan-cli generation::attempt::tests::hostile_ai_workers_fail_truthfully_and_leave_no_group_member
+        PASS [   0.018s] (294/962) deadpan-cli generation::runtime::tests::development_builds_prefer_an_installed_pack_over_the_qualification_cache
+        PASS [   0.014s] (295/962) deadpan-cli generation::runtime::tests::every_missing_piece_is_named_with_its_variable
+        PASS [   0.012s] (296/962) deadpan-cli generation::runtime::tests::selected_manifest_keeps_its_os_and_picture_constraints
+        PASS [   0.012s] (297/962) deadpan-cli generation::runtime::tests::the_bundled_runtime_names_its_minimum_macos
+        PASS [   0.012s] (298/962) deadpan-cli generation_context::tests::a_selected_target_correction_or_removal_stales_only_requests_that_captured_it
+        PASS [   0.013s] (299/962) deadpan-cli generation_context::tests::identity_follows_the_holds_neighbours_not_its_position
+        PASS [   0.013s] (300/962) deadpan-cli generation_context::tests::measured::interpretation_changes_stale_captured_inputs_and_reset_restores_relevance
+        PASS [   0.012s] (301/962) deadpan-cli generation_context::tests::measured::measured_relevance_retains_identical_vfr_boundary_after_remote_span_change
+        PASS [   0.014s] (302/962) deadpan-cli generation_context::tests::scoped::a_missing_selected_region_is_never_filled_by_later_saved_targets
+        PASS [   0.014s] (303/962) deadpan-cli generation_context::tests::scoped::immutable_origin_plan_reuses_and_changes_at_project_or_revision
+        PASS [   0.015s] (304/962) deadpan-cli generation_context::tests::scoped::changed_inner_source_or_boundary_cutaway_stales_only_its_isolated_play
+        PASS [   0.013s] (305/962) deadpan-cli generation_context::tests::scoped::inserted_preparation_has_saved_controls_without_a_package_or_model
+        PASS [   0.014s] (306/962) deadpan-cli generation_context::tests::scoped::prepared_observations_bind_exact_snapshot_and_retry_reused_revision
+        PASS [   0.015s] (307/962) deadpan-cli generation_context::tests::scoped::outer_retime_gain_and_camera_keep_the_raw_definition_inputs_relevant
+        PASS [   0.013s] (308/962) deadpan-cli generation_context::tests::scoped::replacement_preparation_keeps_raw_context_through_proven_sibling_isolation
+        PASS [   0.014s] (309/962) deadpan-cli generation_context::tests::scoped::selected_region_changes_stale_the_mapped_request_without_changing_its_pictures
+        PASS [   0.014s] (310/962) deadpan-cli generation_context::tests::scoped::sibling_isolation_keeps_default_and_other_plays_separate_from_the_mapped_hold
+        PASS [   0.392s] (311/962) deadpan-cli generation::runtime::network_tests::ai_network_smoke_check_denies_sockets_and_descendants_while_files_work
+        PASS [   7.199s] (312/962) deadpan-cli encoded_render::verification::inspect::hdr_tests::small_hdr_outputs_bound_coded_padding_and_keep_the_exact_visible_raster
+        PASS [   0.484s] (313/962) deadpan-cli host::server::tests::expired_tickets_and_tickets_from_another_endpoint_cannot_reply
+        PASS [   0.487s] (314/962) deadpan-cli host::server::tests::failed_large_reply_keeps_ticket_and_compact_receipt_capacity
+        PASS [   0.011s] (315/962) deadpan-cli host::tests::accept_returns_would_block_while_a_spawn_owns_descriptor_creation
+        PASS [   7.728s] (316/962) deadpan-cli encoded_render::verification::inspect::hdr_tests::hdr_pq_and_hlg_main10_files_pass_complete_inspection
+        PASS [   8.205s] (317/962) deadpan-cli encoded_render::publication::filesystem::recovery::tests::unchanged_partial_and_renamed_file_reopen_with_original_evidence
+        PASS [   0.013s] (318/962) deadpan-cli host::tests::descriptor_setup_and_deadline_checks_are_explicit
+        PASS [   8.146s] (319/962) deadpan-cli encoded_render::verification::inspect::hdr_tests::os_software_pq_topleft_chroma_siting_is_rejected
+        PASS [   1.226s] (320/962) deadpan-cli host::server::tests::a_retired_endpoint_answers_only_its_admitted_request_after_the_owner_closes
+        PASS [   1.033s] (321/962) deadpan-cli host::server::tests::unread_large_reply_does_not_prevent_another_connection_completing
+        PASS [   4.266s] (322/962) deadpan-cli generation::attempt::tests::preparations::replacement_keeps_controls_rejects_stale_claims_and_needs_explicit_acceptance
+        PASS [   5.445s] (323/962) deadpan-cli generation::attempt::tests::extension::supervised_extension_both_directions_publish_all_inputs_then_accept_and_reopen
+        PASS [   0.878s] (324/962) deadpan-cli host::tests::adversarial_live_endpoint_frames
+        PASS [   0.910s] (325/962) deadpan-cli host::tests::client_roundtrip_preserves_identity_and_does_not_own_writer
+        PASS [   0.756s] (326/962) deadpan-cli host::tests::dense_json_is_refused_locally_before_any_request_bytes_are_sent
+        PASS [   0.731s] (327/962) deadpan-cli host::tests::endpoint_drop_preserves_a_replacement_runtime_directory
+        PASS [   0.520s] (328/962) deadpan-cli host::tests::lost_reply_after_delivery_is_uncertain_and_not_retried
+        PASS [   0.497s] (329/962) deadpan-cli host::tests::oversize_header_is_rejected_before_payload_allocation
+        PASS [   0.013s] (330/962) deadpan-cli live_project::preparation::client::tests::compact_receipt_and_post_commit_failure_are_preserved_in_cli_output
+        PASS [   0.011s] (331/962) deadpan-cli live_project::preparation::client::tests::known_terminal_failures_release_but_failed_commit_output_keeps_receipt
+        PASS [   0.582s] (332/962) deadpan-cli host::tests::partial_headers_and_four_connections_leave_dispatch_bounded
+        PASS [   0.012s] (333/962) deadpan-cli live_project::preparation::client::tests::unchanged_relink_version_is_a_valid_completed_noop
+        PASS [   0.654s] (334/962) deadpan-cli host::tests::revoked_owner_and_replaced_namespace_refuse_requests
+        PASS [   2.627s] (335/962) deadpan-cli generation::attempt::tests::synthetic_one_frame_hold_measures_both_joins_at_the_same_sample
+        PASS [   0.582s] (336/962) deadpan-cli host::tests::strict_frames_and_authentication_never_reach_dispatch
+        PASS [   1.566s] (337/962) deadpan-cli host::server::tests::wrong_response_owner_or_request_is_an_unknown_outcome
+        PASS [   0.010s] (338/962) deadpan-cli live_project::preparation::tests::checkpoint_publication_failure_keeps_a_completed_operational_receipt
+        PASS [   0.010s] (339/962) deadpan-cli live_project::preparation::tests::command_admission_bounds_paths_bookmarks_and_labels
+        PASS [   0.012s] (340/962) deadpan-cli live_project::preparation::tests::protocol_rejects_unknown_fields_at_each_preparation_boundary
+        PASS [   3.035s] (341/962) deadpan-cli generation::attempt::tests::synthetic_middle_flash_fails_qualification_and_preserves_ready_fallback
+        PASS [   0.578s] (342/962) deadpan-cli live_project::preparation::client::tests::admission_lost_reply_is_never_replayed
+        PASS [   8.936s] (343/962) deadpan-cli encoded_render::verification::inspect::hdr_tests::pq_content_light_below_decoded_pictures_is_rejected
+        PASS [   2.765s] (344/962) deadpan-cli generation::attempt::tests::synthetic_wrong_uniform_endpoints_preserve_ready_and_fallback
+        PASS [   0.713s] (345/962) deadpan-cli live_project::preparation::client::tests::cancellation_is_sent_once_then_observes_worker_drain
+        PASS [   0.012s] (346/962) deadpan-cli macros::tests::macro_larger_runtime_envelope_keeps_the_program_byte_limit_independent
+        PASS [   0.012s] (347/962) deadpan-cli macros::tests::macro_request_admits_maximum_depth_scoped_zoom_authority_and_bounds_raw_input
+        PASS [   0.013s] (348/962) deadpan-cli macros::tests::macro_scoped_authority_allowance_matches_widest_actual_serde_shape_for_apply_and_run
+        PASS [   0.010s] (349/962) deadpan-cli models::generation_smoke_tests::both_generation_operations_require_their_staged_pack_smoke_to_pass
+        PASS [   0.757s] (350/962) deadpan-cli live_project::preparation::client::tests::asynchronous_observation_retains_one_target_until_worker_completed
+        PASS [   0.011s] (351/962) deadpan-cli pause::tests::heard_sound_must_be_at_its_natural_rate
+        PASS [   0.734s] (352/962) deadpan-cli live_project::preparation::client::tests::commit_racing_cancel_keeps_completion_and_operational_receipt
+        PASS [   1.198s] (353/962) deadpan-cli host::tests::symlink_discovery_pins_the_resolved_package_across_alias_retargeting
+        PASS [   0.729s] (354/962) deadpan-cli live_project::preparation::tests::cancellation_before_commit_and_closed_session_preserve_inventory
+        PASS [   0.710s] (355/962) deadpan-cli live_project::preparation::tests::relink_rechecks_captured_version_and_retains_exact_mapping
+        PASS [   0.730s] (356/962) deadpan-cli live_project::preparation::tests::relinking_identical_location_is_a_successful_noop
+        PASS [   0.793s] (357/962) deadpan-cli live_project::preparation::tests::retention_prepares_off_writer_and_preserves_full_operational_receipt
+        PASS [   3.675s] (358/962) deadpan-cli generation::attempt::tests::synthetic_variants_publish_distinct_ready_bundles_for_one_request
+        PASS [   1.064s] (359/962) deadpan-cli live_project::preparation::tests::checkpoint_captures_actual_worker_revision_without_mutating_authored_history
+        PASS [   1.232s] (360/962) deadpan-cli live_project::preparation::tests::prepared_result_cannot_be_committed_under_another_command_or_owner
+        PASS [   1.384s] (361/962) deadpan-cli live_project::preparation::client::tests::wrong_target_and_backwards_state_are_unknown_not_cancelled
+        PASS [   1.050s] (362/962) deadpan-cli picture::tests::cached_verified_bytes_survive_path_loss_but_cold_or_changed_originals_fail
+        PASS [   0.943s] (363/962) deadpan-cli picture::tests::extension::extension_rejects_a_real_gradual_fade_after_one_frame_partitions_preserve_every_picture
+        PASS [   0.892s] (364/962) deadpan-cli picture::tests::extension::extension_rejects_same_original_source_jump_hidden_between_samples
+        PASS [   1.728s] (365/962) deadpan-cli live_project::preparation::tests::registration_retains_exact_intent_rejects_stale_then_accepts_noop_receipt
+        PASS [   1.124s] (366/962) deadpan-cli picture::tests::extension::extension_interior_capture_retains_the_existing_opposite_as_unconditioned
+        PASS [   0.956s] (367/962) deadpan-cli picture::tests::extension::extension_rejects_one_frame_cutaway_hidden_between_context_samples_without_mutation
+        PASS [   0.012s] (368/962) deadpan-cli picture::tests::shared_index_comparison_includes_terminal_evidence_and_cancels_in_chunks
+        PASS [   1.037s] (369/962) deadpan-cli picture::tests::extension::extension_relevance_keeps_editorial_edits_but_binds_saved_region_and_origin_descriptor
+        PASS [   0.011s] (370/962) deadpan-cli picture_proposals::tests::copy_witness_restores_nested_and_unwinding_scopes
+        PASS [   0.955s] (371/962) deadpan-cli picture::tests::progressive_preview_admission_serves_the_complete_admission_pictures
+        PASS [   2.585s] (372/962) deadpan-cli live_project::preparation::client::tests::registration_reuses_qualified_identity_but_rejects_inconsistent_detail_without_replay
+        PASS [   0.632s] (373/962) deadpan-cli picture::tests::shared_adapter_preserves_negative_pts_and_checks_decoded_geometry
+        PASS [   0.009s] (374/962) deadpan-cli picture_proposals::tests::salient_numbering_and_command_refusals_are_explicit_without_writes
+        PASS [   0.109s] (375/962) deadpan-cli proxy::cache::tests::a_replaced_cache_directory_is_never_written
+        PASS [   0.069s] (376/962) deadpan-cli proxy::cache::tests::a_sidecar_for_another_key_is_refused_and_symlinks_are_not_followed
+        PASS [   0.884s] (377/962) deadpan-cli picture::tests::source_interpretation_is_bound_to_the_captured_revision_and_undo
+        PASS [   2.159s] (378/962) deadpan-cli picture::tests::extension::extension_capture_at_both_definition_edges_retains_fractional_clocks_measured_ids_and_pngs
+        PASS [   0.100s] (379/962) deadpan-cli proxy::cache::tests::bytes_are_hashed_once_per_file_state_and_changed_bytes_are_damaged
+        PASS [   2.384s] (380/962) deadpan-cli picture::tests::definition_decode_retains_exact_clock_and_original_pixels_beneath_outer_owners
+        PASS [   0.176s] (381/962) deadpan-cli proxy::cache::tests::failures_are_remembered_until_published_or_forgotten
+        PASS [   0.234s] (382/962) deadpan-cli proxy::cache::tests::interpretations_have_separate_entries_failures_and_partial_builds
+        PASS [   1.268s] (383/962) deadpan-cli picture::tests::real_cut_frames_stay_exact_across_live_deletion_undo_and_writer_close
+        PASS [   0.320s] (384/962) deadpan-cli proxy::cache::tests::cleanup_handles_partial_state_by_recipe_publication_age_and_budget
+        PASS [   1.245s] (385/962) deadpan-cli picture::tests::real_retime_repeat_freeze_and_captured_framing_keep_distinct_clocks
+        PASS [   0.332s] (386/962) deadpan-cli proxy::cache::tests::cleanup_keeps_retained_and_in_use_entries_and_enforces_grace_and_budget
+        PASS [   0.010s] (387/962) deadpan-cli proxy::tests::unavailable_runtime_does_not_poison_original_or_discard_resumable_ranges
+        PASS [   0.102s] (388/962) deadpan-cli proxy::cache::tests::partial_state_is_private_locked_and_never_an_entry
+        PASS [   0.067s] (389/962) deadpan-cli proxy::tests::export_paths_never_reach_proxies
+        PASS [   0.206s] (390/962) deadpan-cli proxy::cache::tests::only_complete_entries_are_visible_and_publication_swaps_atomically
+        PASS [   2.088s] (391/962) deadpan-cli picture::tests::extension::extension_short_context_missing_anchor_and_cancellation_leave_project_unchanged
+        PASS [   2.018s] (392/962) deadpan-cli picture::tests::foreign_receipt_cannot_rebind_the_fixed_revision
+        PASS [   1.287s] (393/962) deadpan-cli picture_proposals::tests::exact_index_selection_and_all_admission_paths_keep_mode_pts_and_bounds
+        PASS [   1.291s] (394/962) deadpan-cli picture_proposals::tests::face_facade_still_admits_only_face_mode_and_preserves_target_semantics
+        PASS [   6.631s] (395/962) deadpan-cli generation::attempt::tests::synthetic_entry_and_exit_mismatches_are_checked_independently
+        PASS [   1.243s] (396/962) deadpan-cli picture_proposals::tests::one_verified_copy_prepares_both_collections_without_changing_history
+        PASS [   2.941s] (397/962) deadpan-cli picture::tests::extension::extension_outer_repeat_and_retime_do_not_change_definition_context_or_borrow_other_plays
+        PASS [   3.462s] (398/962) deadpan-cli picture::tests::blank_and_background_are_explicit_and_ranges_hdr_and_bounds_reject
+        PASS [   0.040s] (399/962) deadpan-cli render::cli::tests::broken_stdout_preserves_committed_and_unresolved_events_on_stderr
+        PASS [   0.823s] (400/962) deadpan-cli render::cli::live::tests::explicit_cancel_preserves_target_and_leaves_terminal_status_for_the_initiating_observer
+        PASS [   0.017s] (401/962) deadpan-cli render::cli::tests::json_output_bound_fails_before_writing_any_partial_record
+        PASS [   0.010s] (402/962) deadpan-cli render::cli::tests::owned_console_duplicates_close_on_exec
+        PASS [   0.876s] (403/962) deadpan-cli render::cli::live::tests::broken_output_requests_cancel_but_preserves_terminal_observation_on_stderr
+        PASS [   0.011s] (404/962) deadpan-cli render::cli::tests::parser_keeps_retry_reencode_and_reconciliation_explicit
+        PASS [   0.860s] (405/962) deadpan-cli render::cli::live::tests::historical_retry_context_is_retained_and_stale_poll_target_is_rejected
+        PASS [   0.856s] (406/962) deadpan-cli render::cli::live::tests::inconsistent_finished_claim_cannot_release_status_or_fabricate_completion
+        PASS [   0.010s] (407/962) deadpan-cli render::tests::public_start_uses_automatic_policy_and_fresh_independent_identities
+        PASS [   0.010s] (408/962) deadpan-cli render::tests::public_summary_preserves_authored_geometry_and_origin_based_samples
+        PASS [   0.761s] (409/962) deadpan-cli render::cli::live::tests::lost_admission_reply_is_unknown_and_never_replayed
+        PASS [   0.010s] (410/962) deadpan-cli render::tests::public_summary_selects_the_algorithm_from_the_committed_color_branch
+        PASS [   0.010s] (411/962) deadpan-cli render::tests::request_wire_rejects_policy_runtime_identity_overrides_and_unknown_versions
+        PASS [   0.042s] (412/962) deadpan-cli render::cli::tests::request_file_rejects_fifo_symlink_directory_and_oversized_regular_file
+        PASS [   0.009s] (413/962) deadpan-cli render_worker::host::tests::validation_copy_interruption_keeps_the_same_host_cancellation_and_deadline_outcome
+        PASS [   0.009s] (414/962) deadpan-cli render_worker::protocol::tests::checked_picture_lengths_and_request_budgets_bound_the_raw_sink
+        PASS [   0.020s] (415/962) deadpan-cli render_worker::protocol::tests::adversarial_render_worker_frames
+        PASS [   0.010s] (416/962) deadpan-cli render_worker::protocol::tests::classifier_binds_progress_and_completed_evidence_to_the_request
+        PASS [   0.010s] (417/962) deadpan-cli render_worker::protocol::tests::classifier_rejects_other_requests_stale_attempts_and_changed_versions
+        PASS [   0.010s] (418/962) deadpan-cli render_worker::protocol::tests::contract_rejects_forged_clock_geometry_and_unsupported_color
+        PASS [   0.009s] (419/962) deadpan-cli render_worker::protocol::tests::range_and_audio_checks_use_absolute_boundaries_without_duration_rounding
+        PASS [   0.917s] (420/962) deadpan-cli render::cli::live::tests::locked_writer_routes_once_and_waits_for_safe_completion_before_release
+        PASS [   0.010s] (421/962) deadpan-cli render_worker::protocol::tests::wire_rejects_truncated_or_oversized_frames_before_deserialization
+        PASS [   0.009s] (422/962) deadpan-cli render_worker::protocol::tests::wire_rejects_unknown_fields_at_every_structural_boundary
+        PASS [   0.009s] (423/962) deadpan-cli render_worker::protocol::tests::wire_rejects_versions_missing_fields_and_invalid_bounded_values
+        PASS [   0.009s] (424/962) deadpan-cli render_worker::protocol::tests::wire_round_trip_handles_fragmented_reads_and_preserves_cancellation
+        PASS [   2.302s] (425/962) deadpan-cli picture::tests::unqualified_source_still_and_accepted_providers_fail_without_fallback
+        PASS [   0.009s] (426/962) deadpan-cli render_worker::worker::control::tests::incomplete_initial_handshake_has_a_deadline
+        PASS [   0.010s] (427/962) deadpan-cli render_worker::worker::control::tests::oversized_control_rejects_without_waiting_for_its_payload
+        PASS [   0.011s] (428/962) deadpan-cli render_worker::worker::control::tests::queued_invalid_control_and_partial_body_cannot_be_hidden_by_finish
+        PASS [   0.010s] (429/962) deadpan-cli render_worker::worker::control::tests::shutdown_joins_a_partial_frame_with_the_host_still_open
+        PASS [   0.749s] (430/962) deadpan-cli render::cli::live::tests::native_preview_blocks_start_before_any_render_mutation
+        PASS [   0.014s] (431/962) deadpan-cli render_worker::worker::control::tests::shutdown_joins_an_idle_control_stream
+        PASS [   0.010s] (432/962) deadpan-cli render_worker::worker::control::tests::terminal_shutdown_drains_an_already_queued_cancel
+        PASS [   0.012s] (433/962) deadpan-cli render_worker::worker::control::tests::valid_cancel_sets_atomic_without_waiting_for_preparation
+        PASS [  10.570s] (434/962) deadpan-cli generation::attempt::tests::an_escaped_ai_worker_descendant_fails_the_attempt_and_is_not_contained
+        PASS [   0.832s] (435/962) deadpan-cli render::cli::live::tests::lost_observation_retains_last_known_status_without_false_finished
+        PASS [   0.015s] (436/962) deadpan-cli render_worker::worker::control::tests::wrong_token_and_host_eof_fail_closed
+        PASS [   0.010s] (437/962) deadpan-cli render_worker::worker::tests::picture_writes_stop_between_bounded_chunks_and_keep_partial_data
+        PASS [   0.011s] (438/962) deadpan-cli render_worker::worker::tests::progress_is_bounded_and_diagnostics_end_on_utf8_boundaries
+        PASS [   0.010s] (439/962) deadpan-cli single_original::tests::labels_are_bounded_single_line_text
+        PASS [   0.011s] (440/962) deadpan-cli speech::tests::a_picture_shows_the_latest_word_spoken_during_it
+        PASS [   0.041s] (441/962) deadpan-cli render_worker::worker::tests::output_creation_is_exclusive_and_rejects_symlink_components
+        PASS [   0.010s] (442/962) deadpan-cli speech::tests::failed_or_stale_corrections_refuse_with_a_reason
+        PASS [   0.009s] (443/962) deadpan-cli speech::tests::original_shots_split_pictures_at_boundaries
+        PASS [   0.009s] (444/962) deadpan-cli speech::tests::pictures_wholly_inside_a_pause_are_quiet
+        PASS [   0.010s] (445/962) deadpan-cli speech::transcript_search::tests::complete_phrase_crosses_split_source_ids_and_changed_positive_slopes
+        PASS [   0.010s] (446/962) deadpan-cli speech::transcript_search::tests::cutaways_do_not_change_provider_results
+        PASS [   0.011s] (447/962) deadpan-cli speech::transcript_search::tests::held_selection_slack_and_unmeasured_picture_tail_do_not_manufacture_hits
+        PASS [   0.011s] (448/962) deadpan-cli speech::transcript_search::tests::fractional_terminal_is_proved_but_an_enclosure_outside_scope_is_not_admitted
+        PASS [   3.005s] (449/962) deadpan-cli picture::tests::extension::retention::real_extension_evidence_survives_retention_and_matches_the_python_reader
+        PASS [   0.010s] (450/962) deadpan-cli speech::transcript_search::tests::nonzero_and_negative_audio_origins_share_container_time_with_video
+        PASS [   0.010s] (451/962) deadpan-cli speech::transcript_search::tests::hold_play_and_default_or_explicit_source_gaps_never_supply_phrase_coverage
+        PASS [   0.010s] (452/962) deadpan-cli speech::transcript_search::tests::removed_pause_or_middle_word_and_backtracking_cannot_complete_a_phrase
+        PASS [   0.010s] (453/962) deadpan-cli speech::transcript_search::tests::repeated_complete_occurrences_stay_separate_and_wraps_break_contiguous_overrides
+        PASS [   0.011s] (454/962) deadpan-cli speech::transcript_search::tests::overlapping_and_touching_enclosures_normalize_without_a_hull_over_gaps
+        PASS [   0.649s] (455/962) deadpan-cli render::cli::live::tests::owner_admission_rejection_is_returned_without_polling_or_retry
+        PASS [   0.637s] (456/962) deadpan-cli render::cli::live::tests::unavailable_cancel_owner_does_not_open_or_recover_a_writer
+        PASS [   0.010s] (457/962) deadpan-cli speech::transcript_search::tests::split_chains_continue_within_a_play_and_across_repeat_entry_and_exit
+        PASS [   0.010s] (458/962) deadpan-cli speech::transcript_search::tests::scope_filters_complete_occurrences_without_clipping_partial_phrases
+        PASS [   0.662s] (459/962) deadpan-cli render::cli::live::tests::signal_cancels_exact_admitted_target_then_keeps_observing
+        PASS [   0.010s] (460/962) deadpan-cli speech::transcript_search::tests::vfr_subpicture_words_and_fractional_retime_use_continuous_clock
+        PASS [   0.010s] (461/962) deadpan-cli speech::transcript_search::tests::unrelated_repeat_spans_do_not_exhaust_a_small_group_search_budget
+        PASS [   0.010s] (462/962) deadpan-cli storage::tests::the_cache_preview_includes_the_budget_pass_in_least_recently_used_order
+        PASS [   0.025s] (463/962) deadpan-cli speech::transcript_search::tests::unavailable_words_zero_timing_alias_and_limits_return_no_partial_geometry
+        PASS [   0.010s] (464/962) deadpan-cli system_conditions::tests::admission_preserves_reserve_and_checks_arithmetic
+        PASS [   0.011s] (465/962) deadpan-cli system_conditions::tests::headroom_counts_printed_speculative_once_and_excludes_other_reclaimable_fields
+        PASS [   0.010s] (466/962) deadpan-cli system_conditions::tests::headroom_rejects_missing_duplicate_invalid_and_overflowed_observations
+        PASS [   0.021s] (467/962) deadpan-cli system_conditions::tests::system_observations_reject_unsuccessful_commands
+        PASS [   0.009s] (468/962) deadpan-cli youtube::acquire::tests::arguments_disable_configuration_plugins_and_browser_sessions
+        PASS [   0.059s] (469/962) deadpan-cli storage::tests::saved_audio_cleanup_obeys_grace_and_reader_locks
+        PASS [   0.101s] (470/962) deadpan-cli storage::tests::user_cleanup_removes_only_old_rebuildable_entries_under_its_own_roots
+        PASS [   0.770s] (471/962) deadpan-cli render::cli::live::tests::unconfirmed_cleanup_never_finishes_until_owner_reports_safe_unresolved_release
+        PASS [   0.441s] (472/962) deadpan-cli render_worker::tests::cancelled_expired_and_over_budget_preflight_never_launch_the_runtime
+        PASS [   0.013s] (473/962) deadpan-cli youtube::acquire::tests::downloader_errors_map_to_actionable_codes
+        PASS [   0.564s] (474/962) deadpan-cli render::tests::retry_builders_keep_original_job_policy_and_reject_foreign_context
+        PASS [   0.517s] (475/962) deadpan-cli render_worker::protocol::tests::contract_evidence_matches_every_field_of_a_real_captured_revision
+        PASS [   0.011s] (476/962) deadpan-cli youtube::acquire::tests::downloader_messages_redact_url_queries_and_credentials
+        PASS [   0.010s] (477/962) deadpan-cli youtube::acquire::tests::environment_is_private_and_complete
+        PASS [   0.564s] (478/962) deadpan-cli render_worker::host::tests::every_plane_and_frame_is_checked_before_an_owned_range_can_be_read
+        PASS [   0.186s] (479/962) deadpan-cli youtube::acquire::tests::adversarial_metadata_json
+        PASS [   0.011s] (480/962) deadpan-cli youtube::acquire::tests::original_names_are_bounded_and_never_form_paths
+        PASS [   0.012s] (481/962) deadpan-cli youtube::acquire::tests::metadata_refuses_playlists_live_streams_other_videos_and_long_videos
+        PASS [   0.011s] (482/962) deadpan-cli youtube::acquire::tests::selection_keeps_resolution_hdr_and_original_dynamics_ahead_of_codec_bitrate
+        PASS [   0.011s] (483/962) deadpan-cli youtube::acquire::tests::selection_prefers_admissible_highest_quality_streams
+        PASS [   0.011s] (484/962) deadpan-cli youtube::acquire::tests::size_estimates_preserve_unknowns_and_the_inclusive_limit
+        PASS [   0.653s] (485/962) deadpan-cli render::cli::tests::requested_cancel_pumps_actual_capture_and_releases_the_writer_without_media_claims
+        PASS [   0.267s] (486/962) deadpan-cli youtube::acquire::tests::a_passed_over_update_is_reported_before_metadata
+        PASS [   0.587s] (487/962) deadpan-cli render_worker::tests::full_document_hash_detects_same_labelled_revision_with_different_authored_state
+        PASS [   0.059s] (488/962) deadpan-cli youtube::helpers::tests::an_upstream_signed_helper_must_satisfy_its_signer
+        PASS [   0.319s] (489/962) deadpan-cli tracking::point_tests::point_target_correction_refuses_before_media_preparation_or_worker_launch
+        PASS [   0.025s] (490/962) deadpan-cli youtube::helpers::tests::helper_connection_and_body_failures_are_actionable_without_private_details
+        PASS [   0.121s] (491/962) deadpan-cli youtube::helpers::tests::a_tampered_resigned_helper_fails_even_with_a_matching_manifest
+        PASS [   0.042s] (492/962) deadpan-cli youtube::helpers::tests::bundled_permission_checks_stop_at_the_app
+        PASS [   0.011s] (493/962) deadpan-cli youtube::helpers::tests::pins_are_well_formed
+        PASS [   0.018s] (494/962) deadpan-cli youtube::helpers::tests::inspection_reports_a_missing_bundle_baseline
+        PASS [   0.068s] (495/962) deadpan-cli youtube::helpers::tests::bundled_baseline_rejects_inconsistent_or_missing_manifests
+        PASS [   0.379s] (496/962) deadpan-cli youtube::acquire::tests::confirmation_honors_a_tighter_transfer_limit
+        PASS [   0.089s] (497/962) deadpan-cli youtube::helpers::tests::helpers_others_can_modify_are_refused
+        PASS [   0.069s] (498/962) deadpan-cli youtube::helpers::tests::publication_never_replaces_a_racing_directory
+        PASS [   0.306s] (499/962) deadpan-cli youtube::acquire::tests::cookies_are_copied_owner_only_and_removed
+        PASS [   0.069s] (500/962) deadpan-cli youtube::helpers::tests::verified_install_publishes_once_and_never_overwrites
+        PASS [   0.063s] (501/962) deadpan-cli youtube::helpers::tests::wrong_bytes_never_publish
+        PASS [   0.415s] (502/962) deadpan-cli youtube::acquire::tests::completed_transfer_rechecks_combined_size_before_assembly
+        PASS [   0.012s] (503/962) deadpan-cli youtube::macho_content::tests::large_zero_signature_reservations_are_allowed_but_stale_signature_bytes_are_not
+        PASS [   0.012s] (504/962) deadpan-cli youtube::macho_content::tests::data_outside_the_hashed_content_is_refused
+        PASS [   0.012s] (505/962) deadpan-cli youtube::macho_content::tests::print_content_pin_when_requested
+        PASS [   0.011s] (506/962) deadpan-cli youtube::macho_content::tests::re_signing_keeps_the_content_hash
+        PASS [   0.012s] (507/962) deadpan-cli youtube::macho_content::tests::universal_files_hash_every_slice_and_nothing_else
+        PASS [   0.011s] (508/962) deadpan-cli youtube::network::ip::tests::admits_public_cdn_addresses_and_checks_private_range_edges
+        PASS [   0.012s] (509/962) deadpan-cli youtube::network::ip::tests::refuses_local_shared_documentation_multicast_and_embedded_private_addresses
+        PASS [   0.012s] (510/962) deadpan-cli youtube::network::protocol::tests::adversarial_youtube_connect
+        PASS [   0.010s] (511/962) deadpan-cli youtube::network::protocol::tests::credential_encoding_uses_standard_padding
+        PASS [   0.010s] (512/962) deadpan-cli youtube::network::protocol::tests::every_tunnel_requires_the_owned_credential_and_a_supported_https_destination
+        PASS [   0.043s] (513/962) deadpan-cli youtube::helpers::tests::zip_entries_extract_and_verify
+        PASS [   0.376s] (514/962) deadpan-cli youtube::acquire::tests::confirming_an_inspection_refuses_an_existing_package_before_transfer
+        PASS [   0.010s] (515/962) deadpan-cli youtube::network::protocol::tests::refuses_plain_http_smuggling_ambiguous_headers_and_oversized_requests
+        PASS [   0.012s] (516/962) deadpan-cli youtube::network::tests::an_approved_hostname_resolving_to_private_addresses_never_connects
+        PASS [   0.013s] (517/962) deadpan-cli youtube::network::tests::cancellation_ends_an_idle_tunnel_without_waiting_for_its_peer
+        PASS [   0.015s] (518/962) deadpan-cli youtube::network::tests::relay_preserves_bytes_and_half_closed_replies_across_many_buffers
+        PASS [   0.035s] (519/962) deadpan-cli youtube::network::dns::tests::a_timed_out_lookup_retains_the_only_worker_slot_until_it_finishes
+        PASS [   0.010s] (520/962) deadpan-cli youtube::thumbnail::tests::absent_and_rejected_addresses_never_start_a_network_request
+        PASS [   0.011s] (521/962) deadpan-cli youtube::thumbnail::tests::body_reader_bounds_undeclared_responses_and_observes_cancellation_between_reads
+        PASS [   0.032s] (522/962) deadpan-cli youtube::network::tests::shutdown_drains_bounded_connections_waiting_for_headers
+        PASS [   0.011s] (523/962) deadpan-cli youtube::thumbnail::tests::cancellation_before_or_during_fetch_never_reaches_confirmation
+        PASS [   0.011s] (524/962) deadpan-cli youtube::thumbnail::tests::interrupted_body_is_unavailable_and_ureq_timeout_keeps_its_reason
+        PASS [   0.010s] (525/962) deadpan-cli youtube::thumbnail::tests::jpeg_orientation_is_applied_before_sizing
+        PASS [   0.338s] (526/962) deadpan-cli youtube::acquire::tests::inspection_waits_for_confirmation_and_declining_transfers_nothing
+        PASS [   0.025s] (527/962) deadpan-cli youtube::thumbnail::tests::decodes_the_three_remote_formats_to_owned_bounded_rgba_without_stretching
+        PASS [   0.010s] (528/962) deadpan-cli youtube::thumbnail::tests::lossy_webp_decodes_its_coded_raster_and_preserves_quadrants
+        PASS [   0.010s] (529/962) deadpan-cli youtube::thumbnail::tests::optional_thumbnail_failures_are_safe_confirmation_states
+        PASS [   0.055s] (530/962) deadpan-cli youtube::runner::tests::sweep_removes_only_abandoned_workspaces
+        PASS [   0.010s] (531/962) deadpan-cli youtube::thumbnail::url::tests::admits_only_supported_images_of_the_expected_video
+        PASS [   0.011s] (532/962) deadpan-cli youtube::thumbnail::url::tests::refuses_local_authorities_credentials_ports_path_traversal_and_header_injection
+        PASS [   0.019s] (533/962) deadpan-cli youtube::thumbnail::tests::refuses_encoded_dimension_and_area_limits_before_publishing_pixels
+        PASS [   0.012s] (534/962) deadpan-cli youtube::thumbnail::webp::tests::checks_coded_dimensions_independently_of_the_extended_canvas
+        PASS [   0.012s] (535/962) deadpan-cli youtube::thumbnail::webp::tests::forged_metadata_sizes_and_animations_are_rejected_before_decoder_allocation
+        PASS [   0.021s] (536/962) deadpan-cli youtube::updates::tests::a_content_pin_mismatch_refuses_installation
+        PASS [   0.099s] (537/962) deadpan-cli youtube::network::tests::unrelated_local_requests_cannot_authorize_tunnels_or_poison_the_import
+        PASS [   0.053s] (538/962) deadpan-cli youtube::updates::tests::adversarial_update_manifests
+        PASS [   0.055s] (539/962) deadpan-cli youtube::updates::tests::incompatible_or_malformed_manifests_never_install
+        PASS [   0.293s] (540/962) deadpan-cli youtube::runner::tests::stdout_overflow_reports_the_callers_code
+        PASS [   2.164s] (541/962) deadpan-cli proxy::cache::tests::process_kills_during_publication_leave_whole_entries_or_none
+        PASS [   0.010s] (542/962) deadpan-cli youtube::url::tests::accepts_every_supported_video_form
+        PASS [   0.010s] (543/962) deadpan-cli youtube::url::tests::canonical_url_drops_tracking_and_playlist_context
+        PASS [   0.012s] (544/962) deadpan-cli youtube::url::tests::normalization_is_total_and_preserves_ids
+        PASS [   0.408s] (545/962) deadpan-cli youtube::network::tests::sandbox_blocks_direct_bypass_and_gateway_rejects_local_http_and_https
+        PASS [   0.009s] (546/962) deadpan-cli youtube::url::tests::playlists_require_a_specific_video
+        PASS [   0.315s] (547/962) deadpan-cli youtube::updates::tests::integrity_failures_refuse_and_incompatibility_falls_back
+        PASS [   0.010s] (548/962) deadpan-cli youtube::url::tests::rejects_other_schemes_hosts_and_authorities
+        PASS [   0.396s] (549/962) deadpan-cli youtube::updates::tests::a_failed_probe_leaves_the_previous_selection_active
+        PASS [   0.436s] (550/962) deadpan-cli youtube::updates::tests::downgrades_and_replays_need_explicit_permission
+        PASS [   0.816s] (551/962) deadpan-cli youtube::acquire::tests::transfer_failures_are_classified_and_create_no_project
+        PASS [   0.783s] (552/962) deadpan-cli youtube::helpers::tests::bundled_baseline_binds_resigned_bytes_to_the_compiled_pin
+        PASS [   0.294s] (553/962) deadpan-cli youtube::updates::tests::torn_envelopes_are_replaced_and_shared_directories_refused
+        PASS [   0.503s] (554/962) deadpan-cli youtube::updates::tests::retained_serials_bound_replays_without_state
+        PASS [   0.531s] (555/962) deadpan-cli youtube::updates::tests::rollback_to_the_baseline_recovers_an_unreadable_state
+        PASS [   0.613s] (556/962) deadpan-cli youtube::updates::tests::a_signed_update_installs_probes_activates_and_rolls_back
+        PASS [   1.407s] (557/962) deadpan-cli single_original::tests::a_name_taken_during_the_build_moves_to_the_next_candidate
+        PASS [   1.107s] (558/962) deadpan-cli youtube::acquire::tests::failures_before_transfer_create_no_project
+        PASS [   1.195s] (559/962) deadpan-cli youtube::acquire::tests::oversized_metadata_is_refused_before_confirmation_or_transfer
+        PASS [   2.048s] (560/962) deadpan-cli render::cli::tests::full_stdout_preserves_committed_and_unresolved_events_on_stderr
+        PASS [   1.060s] (561/962) deadpan-cli::audio_context context_read_refuses_changed_linked_original_bytes
+        PASS [   1.060s] (562/962) deadpan-cli::audio_context context_host_rejects_valid_forgery_and_unavailable_revision
+        PASS [   0.979s] (563/962) deadpan-cli::audio_inspection gap::unplayed_gap_reads_revalidate_original_bytes_before_returning_pcm
+        PASS [   1.405s] (564/962) deadpan-cli::audio_inspection actual_aac_pcm_inspection_is_read_only_beside_writer_and_matches_original_impulse
+        PASS [   1.113s] (565/962) deadpan-cli::audio_inspection invalid_ranges_and_cancellation_fail_without_returning_partial_pcm
+        PASS [   1.558s] (566/962) deadpan-cli::audio_inspection frozen_session_resolves_historical_receipt_after_undo_and_asset_alias_reuse
+        PASS [   1.548s] (567/962) deadpan-cli::audio_inspection gap::pause_captures_unplayed_gap_then_growth_and_historical_reads_keep_verified_media
+        PASS [   1.397s] (568/962) deadpan-cli::audio_inspection mapped_inspection_prepares_preserve_from_historical_aac_without_writing
+        PASS [   1.813s] (569/962) deadpan-cli::audio_context captured_context_reopens_abandoned_source_after_alias_reuse_without_moving_history
+        PASS [   1.356s] (570/962) deadpan-cli::audio_inspection missing_and_corrupt_linked_originals_fail_before_pcm_is_exposed
+        PASS [   2.934s] (571/962) deadpan-cli single_original::tests::linked_creation_keeps_the_external_original_and_the_managed_default
+        PASS [   1.478s] (572/962) deadpan-cli::audio_inspection physical_domain_cli_reads_hidden_negative_source_and_retained_history
+        PASS [   2.167s] (573/962) deadpan-cli::audio_inspection definition_cli_reads_unplayed_default_from_current_and_historical_media
+        PASS [   2.063s] (574/962) deadpan-cli::audio_inspection gap::repeat_gap_cli_reads_unplayed_recipe_and_retained_history_without_writes
+        PASS [   0.447s] (575/962) deadpan-cli::boundary_location exact_nested_retime_location_round_trips_through_existing_occurrence_selection
+        PASS [   0.560s] (576/962) deadpan-cli::boundary_location endpoint_bias_and_query_budgets_are_explicit
+        PASS [   0.877s] (577/962) deadpan-cli::audio_inspection source_repeat_gaps_and_silent_hold_boundaries_follow_exact_sequence_allocation
+        PASS [   0.461s] (578/962) deadpan-cli::boundary_location implicit_gap_keeps_repeat_owner_and_bias_distinguishes_its_start
+        PASS [   0.705s] (579/962) deadpan-cli::backups a_newer_package_is_viewable_but_never_written
+        PASS [   0.452s] (580/962) deadpan-cli::boundary_location owned_gap_entry_is_distinct_from_a_play_and_sequence_indices_keep_empty_slots
+        PASS [   1.201s] (581/962) deadpan-cli::audio_inspection sounds::json_sound_command_reaches_shared_limited_bus_without_changing_picture_time
+        PASS [   1.013s] (582/962) deadpan-cli::audio_inspection unspecified_layout_and_legacy_unqualified_assets_are_not_guessed
+        PASS [   1.810s] (583/962) deadpan-cli::audio_inspection placement_cli_uses_selected_revision_recipe_and_never_changes_history
+        PASS [   1.815s] (584/962) deadpan-cli::audio_inspection room_tone_inspection_loops_an_explicit_aac_range_and_retains_silent_time
+        PASS [  11.829s] (585/962) deadpan-cli generation::attempt::tests::stalled_and_forking_ai_workers_are_stopped_by_cancellation
+        PASS [   0.031s] (586/962) deadpan-cli::doctor doctor_reports_real_timing_probe_and_missing_capabilities
+        PASS [   0.011s] (587/962) deadpan-cli::doctor unsupported_command_fails_without_success_output
+        PASS [   0.700s] (588/962) deadpan-cli::boundary_location stale_foreign_and_malformed_requests_fail_without_authored_changes
+        PASS [   3.025s] (589/962) deadpan-cli::audio_inspection gain::gain_command_authored_pcm_context_and_undo_share_one_durable_revision
+        PASS [   0.010s] (590/962) deadpan-cli::encoded_render cancelled_expired_and_invalid_limit_preflight_never_launch_the_runtime
+        PASS [   3.172s] (591/962) deadpan-cli::audio_inspection hold_audio::authored_room_tone_range_and_silence_share_cli_history_and_actual_pcm
+        PASS [   1.141s] (592/962) deadpan-cli::bridge_conditioning an_hdr_original_is_refused_with_a_truthful_reason
+        PASS [   0.852s] (593/962) deadpan-cli::encoded_render candidate_keeps_exact_nonzero_origin_and_private_bytes_after_paths_disappear
+        PASS [   1.268s] (594/962) deadpan-cli::doctor project_doctor_names_real_sources_and_times_revision_stages_read_only
+        PASS [   1.275s] (595/962) deadpan-cli::encoded_render artifact_hash_size_and_descriptor_containment_are_independent_admission_checks
+        PASS [   1.597s] (596/962) deadpan-cli::corrections committing_while_the_app_holds_the_writer_runs_on_its_live_endpoint
+        PASS [   2.165s] (597/962) deadpan-cli::bridge_conditioning manifest_records_the_measured_original_pictures_on_both_sides
+        PASS [   1.927s] (598/962) deadpan-cli::corrections pause_corrections_check_the_seen_bounds_and_dry_runs_write_nothing
+        PASS [   2.450s] (599/962) deadpan-cli::bridge_conditioning corrected_conditioning_retains_pixels_identity_and_historical_inputs
+        PASS [   3.580s] (600/962) deadpan-cli::audio_inspection sound_allowances::decoded_sound_allowance_preserves_other_silence_and_ripple_sample_history
+        PASS [   5.293s] (601/962) deadpan-cli youtube::runner::tests::escaped_descendants_cannot_hold_the_run_open
+        PASS [   2.294s] (602/962) deadpan-cli::bridge_conditioning saved_target_capture_is_bound_to_the_revision_and_retained_decoded_pictures
+        PASS [   3.151s] (603/962) deadpan-cli::backups backups_restore_and_view_through_the_cli
+        PASS [   2.649s] (604/962) deadpan-cli::corrections corrections_preview_apply_refuse_stale_requests_and_undo
+        PASS [   0.737s] (605/962) deadpan-cli::encoded_verification cancellation_after_real_progress_retains_a_retryable_candidate
+        PASS [   2.263s] (606/962) deadpan-cli::encoded_render host_preserves_the_first_worker_diagnostic_and_never_snapshots_failed_completion
+        PASS [   1.017s] (607/962) deadpan-cli::encoded_verification jobs::closing_owner_cancels_and_reaps_a_running_encode_without_user_cancellation
+        PASS [   2.916s] (608/962) deadpan-cli::encoded_render cancellation_after_progress_and_deadline_stop_the_process_before_snapshotting
+        PASS [   0.972s] (609/962) deadpan-cli::encoded_verification jobs::corrupted_retained_movie_cannot_reuse_saved_manifest_or_verification
+        PASS [   2.511s] (610/962) deadpan-cli::encoded_render completed_claims_bind_every_captured_clock_field_and_explicit_encoder_choice
+        PASS [   1.855s] (611/962) deadpan-cli::encoded_render hostile_movie_claims_outside_the_scope_or_not_regular_are_refused
+        PASS [   1.271s] (612/962) deadpan-cli::encoded_verification jobs::closing_owner_cancels_and_reaps_a_running_verifier_without_user_cancellation
+        PASS [   3.980s] (613/962) deadpan-cli::bridge_conditioning a_generated_neighbour_is_recorded_as_its_artifact
+        PASS [   4.169s] (614/962) deadpan-cli::bridge_conditioning definition_edges_refuse_even_when_outer_root_neighbors_exist
+        PASS [   1.752s] (615/962) deadpan-cli::encoded_verification hostile_verifier_messages_never_replace_private_bytes_with_success
+        PASS [   2.403s] (616/962) deadpan-cli::encoded_verification actual_finished_files_pass_complete_native_inspection_and_retain_exact_bytes
+        PASS [   1.486s] (617/962) deadpan-cli::encoded_verification jobs::owner_revocation_during_native_verification_cannot_admit_a_candidate
+        PASS [   3.035s] (618/962) deadpan-cli::encoded_render typed_failure_crosses_supervision_without_trusting_prose_or_legacy_workers
+        PASS [   4.881s] (619/962) deadpan-cli::bridge_conditioning repeat_and_retime_condition_the_complete_definition_with_identical_raw_pixels
+        PASS [   1.268s] (620/962) deadpan-cli::encoded_verification preflight_failures_and_missing_runtime_preserve_completed_bytes_for_retry
+        PASS [   1.887s] (621/962) deadpan-cli::encoded_verification jobs::restart_preserves_checkpoint_and_fresh_attempt_reverifies_exact_bytes
+        PASS [   1.696s] (622/962) deadpan-cli::encoded_verification journal::identical_reports_do_not_substitute_a_different_live_verification_attempt
+        PASS [   0.144s] (623/962) deadpan-cli::encoder_admission cancel_while_probe_is_live_stops_and_confirms_teardown
+        PASS [   1.923s] (624/962) deadpan-cli::encoded_verification journal::durable_report_precedes_movie_and_completed_publication_survives_reopen
+        PASS [   1.937s] (625/962) deadpan-cli::encoded_verification journal::each_rename_requires_its_exact_current_durable_permit
+        PASS [   0.197s] (626/962) deadpan-cli::encoder_admission changed_library_between_probes_invalidates_the_selection
+        PASS [   3.833s] (627/962) deadpan-cli::encoded_render inconsistent_encoder_reports_are_rejected_before_artifact_access
+        PASS [   0.420s] (628/962) deadpan-cli::encoder_admission real_supervision_keeps_each_probe_identity_and_only_allowed_selection_steps
+        PASS [   1.700s] (629/962) deadpan-cli::encoded_verification publication::cancellation_before_movie_rename_never_publishes_movie_and_retains_complete_candidate
+        PASS [   1.400s] (630/962) deadpan-cli::encoded_verification publication::publishes_identical_movie_after_durable_bound_report_without_editing_project
+        PASS [   1.585s] (631/962) deadpan-cli::encoder_admission capacity_prose_and_faults_after_failure_never_start_a_second_probe
+        PASS [   3.503s] (632/962) deadpan-cli::encoded_verification journal::closing_the_writer_revokes_both_report_and_movie_rename_authority
+        PASS [   2.745s] (633/962) deadpan-cli::encoded_verification publication::destination_or_report_mutation_cannot_publish_a_successful_movie
+        PASS [   2.603s] (634/962) deadpan-cli::encoded_verification recomputed_hashes_do_not_admit_altered_headers_clocks_or_h264_content
+        PASS [   3.038s] (635/962) deadpan-cli::encoded_verification publication::existing_and_competing_destinations_are_preserved_with_retryable_candidate
+        PASS [   6.328s] (636/962) deadpan-cli::encoded_render hostile_frames_floods_stalls_and_descendants_are_bounded_and_stopped
+        PASS [   4.370s] (637/962) deadpan-cli::encoded_verification journal::interruption_before_movie_authorization_never_adopts_or_touches_foreign_files
+        PASS [   3.955s] (638/962) deadpan-cli::encoded_verification publication::a_full_destination_volume_publishes_nothing_and_keeps_the_candidate
+        PASS [   6.986s] (639/962) deadpan-cli::encoded_verification hostile_verifier_processes_are_bounded_stopped_and_cannot_touch_the_candidate
+        PASS [   1.539s] (640/962) deadpan-cli::hostile_analysis_workers transcription_admits_only_a_contained_regular_transcript
+        PASS [   3.047s] (641/962) deadpan-cli::headless_parity original_copies_fill_named_registers_and_paste_like_a_native_yank
+        PASS [   3.718s] (642/962) deadpan-cli::headless_parity open_project_commands_run_on_the_owner_writer
+        PASS [   3.178s] (643/962) deadpan-cli::headless_parity reports_list_ai_variants_and_gag_steps_and_refuse_unknown_attempts
+        PASS [   0.785s] (644/962) deadpan-cli::live_generation a_lost_observation_reports_the_job_without_replaying
+        PASS [   3.108s] (645/962) deadpan-cli::headless_parity whole_original_reuse_inserts_the_registered_original_without_a_new_asset
+        PASS [   3.823s] (646/962) deadpan-cli::headless_parity placed_sound_edits_derive_the_native_events
+        PASS [   7.947s] (647/962) deadpan-cli::encoded_verification jobs::malformed_or_retargeted_retained_manifests_fail_before_verification
+        PASS [   0.012s] (648/962) deadpan-cli::live_project fieldless_variants_keep_their_wire_shape_and_reject_every_extra_field
+        PASS [   1.057s] (649/962) deadpan-cli::live_generation generate_and_accept_route_to_the_open_projects_owner
+        PASS [   0.012s] (650/962) deadpan-cli::live_project ipc_macro_requests_enforce_the_same_strict_program_and_envelope_contract
+        PASS [   0.009s] (651/962) deadpan-cli::live_project live_render_envelope_preserves_public_render_schema_and_size_checks
+        PASS [   0.664s] (652/962) deadpan-cli::live_project a_remote_commit_survives_refresh_failure_with_its_exact_revision_receipt
+        PASS [   0.758s] (653/962) deadpan-cli::live_preparation actual_cli_source_dry_run_coexists_without_contacting_owner
+        PASS [   0.581s] (654/962) deadpan-cli::live_project invalid_identity_revision_and_target_preserve_the_document_and_journal
+        PASS [   0.012s] (655/962) deadpan-cli::live_project request_schema_and_every_command_envelope_reject_unknown_fields
+        PASS [   0.516s] (656/962) deadpan-cli::live_project migration_of_a_live_current_schema_preserves_the_writer_and_history
+        PASS [   1.406s] (657/962) deadpan-cli::live_preparation actual_cli_routes_preparations_and_current_migration_coexists_with_owner
+        PASS [   0.030s] (658/962) deadpan-cli::model_packs export_requires_an_installed_pack_and_unknown_packs_are_usage_errors
+        PASS [   0.036s] (659/962) deadpan-cli::model_packs install_refuses_without_explicit_acceptance_before_staging_anything
+        PASS [   0.021s] (660/962) deadpan-cli::model_packs license_prints_summaries_links_and_full_texts
+        PASS [   0.030s] (661/962) deadpan-cli::model_packs list_shows_every_pack_with_size_licenses_and_free_space
+        PASS [   0.054s] (662/962) deadpan-cli::model_packs offline_import_names_missing_files_and_installs_nothing
+        PASS [   0.828s] (663/962) deadpan-cli::live_project remote_macro_save_retains_its_bank_receipt_without_an_authored_revision
+        PASS [   4.723s] (664/962) deadpan-cli::hostile_analysis_workers cancelling_a_worker_that_ignores_it_mid_frame_reports_cancellation
+        PASS [   7.176s] (665/962) deadpan-cli::encoder_admission hostile_probe_processes_are_bounded_stopped_and_never_retried
+        PASS [   1.356s] (666/962) deadpan-cli::live_project remote_dispatch_uses_the_same_commit_history_and_error_receipts
+        PASS [   1.938s] (667/962) deadpan-cli::live_project closed_dispatch_matches_shared_execution_and_preview_keeps_writer_lock
+        PASS [   1.288s] (668/962) deadpan-cli::live_project shared_executor_matches_direct_store_preview_commit_undo_and_redo
+        PASS [   9.089s] (669/962) deadpan-cli::encoded_verification journal::restart_reconciliation_requires_the_original_final_objects_and_fresh_verification
+        PASS [   7.402s] (670/962) deadpan-cli::generated_joins accepted_ai_pause_meets_the_original_with_exact_hard_cuts
+        PASS [   0.626s] (671/962) deadpan-cli::offline_audio offline_capture_and_reads_reject_control_failures_and_out_of_range_blocks
+        PASS [   4.243s] (672/962) deadpan-cli::hostile_analysis_workers transcription_bounds_frames_stderr_stalls_and_descendants
+        PASS [   0.840s] (673/962) deadpan-cli::offline_audio offline_reads_keep_the_captured_revision_through_edits_history_and_link_loss
+        PASS [   0.911s] (674/962) deadpan-cli::offline_audio offline_fractional_range_and_read_partitions_match_the_canonical_limited_bus
+        PASS [   1.877s] (675/962) deadpan-cli::node_sets nodes_cli_rejects_bad_members_and_late_failures_without_any_sql_publication
+        PASS [   0.866s] (676/962) deadpan-cli::original_commands original_mutations_respect_writer_lock_and_validate_arguments
+        PASS [   1.483s] (677/962) deadpan-cli::original_commands original_commands_retain_verify_list_and_relink_without_an_authored_edit
+        PASS [   5.185s] (678/962) deadpan-cli::hostile_analysis_workers transcription_escapee_keeping_pipes_fails_and_outlives_group_cleanup
+        PASS [   2.390s] (679/962) deadpan-cli::node_sets ranges_cli_rejects_invalid_offsets_and_late_failures_without_sql_publication
+        PASS [   2.600s] (680/962) deadpan-cli::node_sets ranges_cli_normalizes_relative_union_and_round_trips_one_cut_paste_transaction
+        PASS [   2.954s] (681/962) deadpan-cli::node_sets nodes_cli_reports_the_real_union_and_round_trips_one_cut_paste_transaction
+        PASS [   2.648s] (682/962) deadpan-cli::offline_audio offline_deadline_is_not_renewed_after_capture
+        PASS [   4.602s] (683/962) deadpan-cli::model_pack_import_disk_full offline_archive_enospc_preserves_the_previous_verified_installed_version
+        PASS [  11.199s] (684/962) deadpan-cli::generated_joins accepting_rejecting_or_switching_ai_pictures_never_moves_continuous_speech
+        PASS [  11.655s] (685/962) deadpan-cli::generated_joins accepting_rejecting_or_switching_ai_pictures_never_moves_the_click
+        PASS [  11.256s] (686/962) deadpan-cli::hostile_analysis_workers face_detection_refuses_hostile_frames_stalls_and_descendants
+        PASS [  14.544s] (687/962) deadpan-cli::golden_renders exploded_repeats_render_exactly_like_their_repeat_goldens
+        PASS [   4.455s] (688/962) deadpan-cli::model_pack_import_disk_full offline_folder_enospc_preserves_the_previous_verified_installed_version
+        PASS [  13.381s] (689/962) deadpan-cli::hostile_analysis_workers tracking_admits_only_contained_observations_and_stops_every_group
+        PASS [   9.599s] (690/962) deadpan-cli::preview_export black_pause_export_matches_preview_and_later_edits_are_reported
+        PASS [  12.609s] (691/962) deadpan-cli::offline_portable accepted_ai_pause_renders_offline_and_from_a_portable_copy
+        PASS [  13.534s] (692/962) deadpan-cli::preview_export clean_aperture_original_renders_at_its_visible_size_without_av_changes
+        PASS [   9.226s] (693/962) deadpan-cli::preview_export group_saturation_matches_summed_voice_oracle_and_verified_export
+        PASS [  12.622s] (694/962) deadpan-cli::preview_export fractional_clean_aperture_renders_at_its_visible_size_without_av_changes
+        PASS [  15.431s] (695/962) deadpan-cli::preview_export continuous_event_return_preserves_preview_and_verified_export
+        PASS [  24.694s] (696/962) deadpan-cli::golden_renders representative_structures_render_to_their_committed_goldens
+        PASS [  12.223s] (697/962) deadpan-cli::preview_export fractional_processed_owner_support_keeps_nonzero_shared_master_and_complete_export
+        PASS [  16.806s] (698/962) deadpan-cli::preview_export continuous_owner_return_preserves_preview_and_verified_export
+        PASS [   4.446s] (699/962) deadpan-cli::preview_export nested_equalized_sound_prepares_cold_and_split_reads
+        PASS [  14.016s] (700/962) deadpan-cli::preview_export inner_repeat_speed_update_preview_and_encoded_output_keep_physical_carriers
+        PASS [  20.796s] (701/962) deadpan-cli::preview_export fixed_retime_hold_duration_preview_and_encoded_output_keep_interior_source_clocks
+        PASS [   3.678s] (702/962) deadpan-cli::preview_export partial_copy_preserves_authored_mix_and_uses_current_mastering_context
+        PASS [   7.413s] (703/962) deadpan-cli::preview_export partial_attached_sound_copies_preserve_preview_and_verified_export
+        PASS [  11.921s] (704/962) deadpan-cli::preview_export opus_webm_originals_render_with_exact_source_samples_and_verified_encoded_audio
+        PASS [  15.074s] (705/962) deadpan-cli::preview_export occurrence_pause_preserves_attached_pcm_and_verified_export
+        PASS [  24.168s] (706/962) deadpan-cli::preview_export interlaced_originals_render_progressive_at_the_automatic_field_cadence
+        PASS [   9.333s] (707/962) deadpan-cli::preview_export post_shared_automation_preserves_preview_and_verified_export
+        PASS [  13.913s] (708/962) deadpan-cli::preview_export partial_repeat_attached_sounds_preserve_preview_and_encoded_fidelity
+        PASS [  16.276s] (709/962) deadpan-cli::preview_export partial_existing_repeat_attached_sounds_preserve_preview_and_encoded_fidelity
+        PASS [  34.051s] (710/962) deadpan-cli::preview_export mixed_repeat_pause_preview_and_encoded_output_keep_authored_source_clocks
+        PASS [  47.009s] (711/962) deadpan-cli::preview_export fixed_retime_output_owned_sound_keeps_retained_phase_through_hold_edits_and_complete_export
+        PASS [  32.705s] (712/962) deadpan-cli::preview_export ordinary_hold_duration_preview_and_encoded_output_keep_shared_source_clocks
+        PASS [  26.073s] (713/962) deadpan-cli::preview_export prores_originals_render_ten_bit_422_vfr_aspect_and_both_field_orders
+        PASS [  59.535s] (714/962) deadpan-cli::preview_export av1_originals_render_sdr_hdr_grain_superres_and_variable_timing
+        SLOW [> 60.000s] (───────) deadpan-cli::preview_export clocked_speed_update_preview_and_encoded_output_keep_exact_pause_clocks
+        PASS [  11.024s] (715/962) deadpan-cli::preview_export selected_tail_send_preserves_preview_and_verified_export
+        SLOW [> 60.000s] (───────) deadpan-cli::preview_export every_recipe_builds_a_valid_package_whose_plan_matches_its_expectations_part_1
+        SLOW [> 60.000s] (───────) deadpan-cli::preview_export every_recipe_builds_a_valid_package_whose_plan_matches_its_expectations_part_2
+        PASS [  60.562s] (716/962) deadpan-cli::preview_export clocked_speed_update_preview_and_encoded_output_keep_exact_pause_clocks
+        SLOW [> 60.000s] (───────) deadpan-cli::preview_export every_recipe_builds_a_valid_package_whose_plan_matches_its_expectations_part_3
+        PASS [  24.676s] (717/962) deadpan-cli::preview_export scoped_hold_duration_preview_and_encoded_output_keep_authored_source_clocks
+        PASS [  26.756s] (718/962) deadpan-cli::preview_export sdr_codec_originals_render_sdr_with_exact_picture_and_audio_timing
+        PASS [  38.046s] (719/962) deadpan-cli::preview_export processing_hold_duration_preview_and_encoded_output_keep_input_clocks
+        SLOW [> 60.000s] (───────) deadpan-cli::preview_export mixed_fixed_retime_hold_duration_preview_and_encoded_output_keep_fixed_windows
+        PASS [  58.194s] (720/962) deadpan-cli::preview_export mixed_hold_duration_semantics_preview_and_encoded_output_keep_selected_source_clocks
+        PASS [  20.252s] (721/962) deadpan-cli::preview_export shared_equalizer_preserves_mixed_preview_and_verified_export
+        PASS [  75.016s] (722/962) deadpan-cli::preview_export every_recipe_builds_a_valid_package_whose_plan_matches_its_expectations_part_1
+        SLOW [> 60.000s] (───────) deadpan-cli::preview_export nested_fixed_retime_hold_duration_preview_and_encoded_output_keep_fixed_windows
+        PASS [   9.890s] (723/962) deadpan-cli::preview_export source_interpretation_exports_are_revision_bound_and_undo_restores_picture_semantics
+        SLOW [> 60.000s] (───────) deadpan-cli::preview_export owned_gap_hold_duration_semantics_preview_and_encoded_output_keep_live_and_dormant_clocks
+        PASS [  12.166s] (724/962) deadpan-cli::preview_export split_attached_sounds_preserve_preview_and_verified_export
+        PASS [  25.347s] (725/962) deadpan-cli::preview_export shared_hold_duration_semantics_preview_and_encoded_output_keep_shared_source_clocks
+        PASS [  69.508s] (726/962) deadpan-cli::preview_export nested_fixed_retime_hold_duration_preview_and_encoded_output_keep_fixed_windows
+        PASS [  15.536s] (727/962) deadpan-cli::preview_export stereo_balance_keeps_channels_through_limited_preview_and_render
+        SLOW [> 60.000s] (───────) deadpan-cli::preview_export scoped_audio_chain_preview_and_complete_encoded_output_isolate_one_nested_play
+        PASS [   7.056s] (728/962) deadpan-cli::preview_export vp9_reference_pictures_render_without_adding_or_losing_timeline_frames
+        PASS [  11.269s] (729/962) deadpan-cli::preview_export treated_event_preserves_preview_and_verified_export
+        PASS [   1.095s] (730/962) deadpan-cli::preview_export_hdr automatic_output_branch_truth_table
+        PASS [  37.482s] (731/962) deadpan-cli::preview_export shared_fixed_retime_hold_duration_preview_and_encoded_output_keep_fixed_windows
+        PASS [  96.184s] (732/962) deadpan-cli::preview_export every_recipe_builds_a_valid_package_whose_plan_matches_its_expectations_part_2
+        PASS [   0.007s] (733/962) deadpan-cli::privacy_network_audit local_engines_stay_offline_by_construction
+        PASS [   0.491s] (734/962) deadpan-cli::privacy_network_audit local_workers_cannot_reach_the_https_client
+        PASS [   0.010s] (735/962) deadpan-cli::privacy_network_audit lockfile_has_one_reviewed_https_stack_and_no_telemetry
+        PASS [   2.914s] (736/962) deadpan-cli::preview_export_hdr sdr_original_renders_sdr_h264
+        PASS [   0.091s] (737/962) deadpan-cli::privacy_network_audit secret_bearing_types_cannot_be_debug_formatted
+        FAIL [   0.070s] (738/962) deadpan-cli::privacy_network_audit subprocess_launches_are_reviewed_and_name_no_network_tool
+  stdout ───
+
+    running 1 test
+    test subprocess_launches_are_reviewed_and_name_no_network_tool ... FAILED
+
+    failures:
+
+    failures:
+        subprocess_launches_are_reviewed_and_name_no_network_tool
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.06s
+
+  stderr ───
+
+    thread 'subprocess_launches_are_reviewed_and_name_no_network_tool' (188026638) panicked at crates/deadpan-cli/tests/privacy_network_audit.rs:354:5:
+    a subprocess launch appears outside the reviewed privacy allowlist: ["crates/deadpan-cli/src/bundle/image/signer.rs"]. Review the new path against specification Section 27.4, then update this test and docs/PRIVACY.md
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        PASS [   0.325s] (739/962) deadpan-cli::privacy_network_audit network_clients_live_only_in_reviewed_download_paths
+        SLOW [> 60.000s] (───────) deadpan-cli::preview_export selected_fixed_retime_hold_duration_preview_and_encoded_output_keep_fixed_windows
+        PASS [   5.608s] (740/962) deadpan-cli::preview_export_hdr hdr_references_place_captions_at_graphics_white_and_keep_highlights
+        PASS [   0.858s] (741/962) deadpan-cli::project_commands compound::headless_compound_validates_all_steps_and_commits_one_reversible_edit
+        PASS [  51.619s] (742/962) deadpan-cli::preview_export selected_hold_duration_semantics_preview_and_encoded_output_keep_each_source_clock
+        PASS [  81.701s] (743/962) deadpan-cli::preview_export owned_gap_hold_duration_semantics_preview_and_encoded_output_keep_live_and_dormant_clocks
+        PASS [   0.502s] (744/962) deadpan-cli::project_commands current_migration_rejects_bad_history_without_writes_or_backup
+        PASS [   0.678s] (745/962) deadpan-cli::project_commands current_generation_is_reconciled_by_cli_writes_and_preview_writes_nothing
+        PASS [   0.021s] (746/962) deadpan-cli::project_commands doctor_reports_sound_document_and_database_schemas
+        PASS [   6.235s] (747/962) deadpan-cli::preview_export_hdr pq_project_with_sdr_video_falls_back_to_tone_mapped_sdr_pictures
+        PASS [   1.193s] (748/962) deadpan-cli::project_commands delete::headless_delete_previews_and_commits_retained_timing_with_one_undo
+        PASS [  69.010s] (749/962) deadpan-cli::preview_export scoped_audio_chain_preview_and_complete_encoded_output_isolate_one_nested_play
+        PASS [   1.577s] (750/962) deadpan-cli::project_commands delete_range::headless_range_delete_dry_run_commit_and_history_keep_the_captured_ids
+        PASS [   1.555s] (751/962) deadpan-cli::project_commands dry_runs_report_warnings_and_required_jobs
+        PASS [   2.902s] (752/962) deadpan-cli::project_commands dry_run_and_commit_preserve_actionable_domain_errors
+        PASS [   1.951s] (753/962) deadpan-cli::project_commands headless_migration_and_plan_inspection_are_explicit_and_read_only
+        PASS [   2.715s] (754/962) deadpan-cli::project_commands headless_captured_view_is_inspectable_reversible_and_validated_before_commit
+        PASS [   3.537s] (755/962) deadpan-cli::project_commands edited_slice::headless_slice_payload_survives_deleted_source_and_commits_one_reversible_edit
+        PASS [   2.612s] (756/962) deadpan-cli::project_commands headless_edit_dry_run_conflict_and_durable_history
+        PASS [   1.472s] (757/962) deadpan-cli::project_commands headless_split_preview_commit_and_history_share_one_exact_command
+        PASS [   1.331s] (758/962) deadpan-cli::project_commands history_dry_runs_work_with_a_writer_and_preserve_the_redo_path
+        PASS [   1.800s] (759/962) deadpan-cli::project_commands macros::apply::inline_apply_previews_refuses_stale_revisions_and_commits_one_undo
+        PASS [   2.063s] (760/962) deadpan-cli::project_commands macros::counted_yank_paste_uses_staged_captures_and_round_trips_one_undo
+        PASS [   5.456s] (761/962) deadpan-cli::project_commands edited_slice::placement::headless_interior_and_replacement_preview_commit_and_undo_as_one_command
+        PASS [   2.100s] (762/962) deadpan-cli::project_commands macros::framing::follow_creep_admission::explicit_follow_creep_from_rebases_both_scales_and_invalid_endpoints_never_publish
+        PASS [   3.446s] (763/962) deadpan-cli::project_commands independent_stream_mappings_use_headless_commands_and_durable_undo
+        PASS [   1.891s] (764/962) deadpan-cli::project_commands macros::framing::headless_creep_macro_resolves_after_staged_hold_duration_edit_and_nested_call_in_one_undo
+        PASS [  31.484s] (765/962) deadpan-cli::preview_export stored_equalizer_changes_preview_and_matches_verified_export
+        PASS [   2.162s] (766/962) deadpan-cli::project_commands macros::framing::headless_zoom_macro_late_range_path_and_provider_refusals_leave_captures_marks_and_history_untouched
+        PASS [   2.425s] (767/962) deadpan-cli::project_commands macros::framing::headless_zoom_macro_dry_run_rebinds_backward_range_and_changed_owner_duration_with_durable_undo
+        PASS [   4.591s] (768/962) deadpan-cli::project_commands macros::framing::follow_creep::keep_creep_rebinds_follow_bases_and_target_with_atomic_refusal_and_durable_history
+        PASS [  10.969s] (769/962) deadpan-cli::privacy_sandbox local_workflows_succeed_and_downloads_fail_truthfully_without_network
+        PASS [   3.960s] (770/962) deadpan-cli::project_commands macros::framing::ranged_follow_creep::ranged_follow_creep_rebinds_each_invocation_and_keeps_durable_undo_and_registers
+        PASS [   4.650s] (771/962) deadpan-cli::project_commands macros::framing::headless_zoom_macro_resolves_real_accepted_generated_contract_with_one_durable_undo
+        PASS [   2.688s] (772/962) deadpan-cli::project_commands macros::framing::scoped::headless_scoped_zoom_wire_and_occurrence_refusals_leave_the_bank_and_history_untouched
+        PASS [   3.840s] (773/962) deadpan-cli::project_commands macros::framing::scoped::headless_scoped_zoom_macro_rebinds_nested_plays_and_maps_calls_with_one_durable_undo
+        PASS [   5.586s] (774/962) deadpan-cli::project_commands macros::framing::hold_follow_creep::whole_hold_keep_follow_creep_replays_live_and_captured_fallback_with_durable_undo_and_scoped_replay
+        PASS [   3.442s] (775/962) deadpan-cli::project_commands macros::framing::scoped::scoped_pause::headless_scoped_pause_macro_keeps_qualified_freeze_maps_calls_and_zoom_with_dry_run_and_history
+        PASS [   5.173s] (776/962) deadpan-cli::project_commands macros::framing::retime_follow_creep::whole_retime_follow_creep_keeps_nonzero_map_fractional_target_clock_and_history
+        PASS [  27.803s] (777/962) deadpan-cli::preview_export webm_originals_render_the_measured_clock_and_sample_aspect
+        PASS [   1.570s] (778/962) deadpan-cli::project_commands macros::groups::around_group_cut_from_inside_returns_outer_context_and_durable_copy
+        PASS [   3.288s] (779/962) deadpan-cli::project_commands macros::framing::scoped::scoped_pause::headless_scoped_pause_refuses_late_unsupported_calls_mixed_authority_and_foreign_freeze_parent_without_writes
+        PASS [   3.409s] (780/962) deadpan-cli::project_commands macros::framing::scoped_duration::headless_scoped_hold_duration_noop_and_late_unsupported_call_leave_history_and_bank_unchanged
+        PASS [   3.549s] (781/962) deadpan-cli::project_commands macros::framing::scoped_duration::headless_scoped_hold_duration_from_interior_maps_named_zoom_pause_and_durable_history
+        PASS [   1.270s] (782/962) deadpan-cli::project_commands macros::groups::empty_inner_group_is_a_visual_object_but_cannot_be_yanked_as_an_empty_forest
+        PASS [   2.269s] (783/962) deadpan-cli::project_commands macros::groups::counted_ungroup_reports_final_mark_losses_and_restores_all_bindings_on_undo
+        PASS [   1.611s] (784/962) deadpan-cli::project_commands macros::groups::object_visual_yank_and_exact_group_replacement_share_dry_run_and_commit
+        PASS [   2.057s] (785/962) deadpan-cli::project_commands macros::groups::range_group_dry_run_late_failure_and_reopen_preserve_exact_bank_and_history
+        PASS [   2.020s] (786/962) deadpan-cli::project_commands macros::macro_cli_saves_previews_moves_and_cuts_as_one_durable_undo
+        PASS [   1.759s] (787/962) deadpan-cli::project_commands macros::macro_yank_of_selected_empty_child_preserves_redo_and_has_only_a_bank_receipt
+        PASS [   3.431s] (788/962) deadpan-cli::project_commands macros::macro_cli_late_failures_guards_and_request_limits_leave_no_writes
+        PASS [   3.005s] (789/962) deadpan-cli::project_commands macros::mark_range::named_mark_range_macro_calls_resolve_staged_endpoints_and_fail_atomically
+        PASS [   2.178s] (790/962) deadpan-cli::project_commands macros::original::original_macro_admission_and_late_failure_leave_history_and_registers_untouched
+        PASS [   2.068s] (791/962) deadpan-cli::project_commands macros::original::original_macro_vfr_marks_dry_run_reopen_undo_redo_and_navigation_only
+        PASS [   7.010s] (792/962) deadpan-cli::project_commands macros::framing::sequence_follow_creep::whole_sequence_follow_creep_crosses_source_cuts_and_replays_staged_keep_with_one_undo
+        PASS [   3.042s] (793/962) deadpan-cli::project_commands macros::oriented_range_yank_and_staged_replacement_keep_exact_history_and_captures
+        PASS [   4.024s] (794/962) deadpan-cli::project_commands macros::node::explicit_node_named_calls_reresolve_staged_children_and_keep_durable_closed_captures
+        PASS [  58.322s] (795/962) deadpan-cli::preview_export source_formats_preserve_independent_clocks_through_combined_structural_edits_part_3
+        PASS [   0.747s] (796/962) deadpan-cli::project_commands malformed_or_future_protocol_is_rejected_before_mutation
+        PASS [   1.831s] (797/962) deadpan-cli::project_commands macros::staged_paste_then_failed_call_and_missing_selection_leave_the_package_unchanged
+        PASS [   0.403s] (798/962) deadpan-cli::project_commands obsolete_schema_cli_validation_and_migration_refuse_without_writes_or_backup
+        SLOW [> 60.000s] (───────) deadpan-cli::preview_export source_formats_preserve_independent_clocks_through_combined_structural_edits_part_1
+        PASS [   2.151s] (799/962) deadpan-cli::project_commands macros::visual_repeat_dry_run_and_late_refusal_preserve_bank_and_exact_undo_redo
+        SLOW [> 60.000s] (───────) deadpan-cli::preview_export source_formats_preserve_independent_clocks_through_combined_structural_edits_part_2
+        SLOW [>120.000s] (───────) deadpan-cli::preview_export every_recipe_builds_a_valid_package_whose_plan_matches_its_expectations_part_3
+        PASS [   3.309s] (800/962) deadpan-cli::project_commands macros::repeat_count_macro_dry_run_late_failure_and_counted_commit_keep_bank_and_exact_history
+        PASS [   0.947s] (801/962) deadpan-cli::project_commands selection_resolution_is_revision_checked_exact_and_read_only
+        PASS [   2.229s] (802/962) deadpan-cli::project_commands nested_occurrence_command_is_atomic_and_uses_the_same_headless_plan
+        PASS [   2.095s] (803/962) deadpan-cli::project_commands nested_pause::nested_pause_dry_run_commit_and_durable_history_share_one_transaction
+        PASS [  45.763s] (804/962) deadpan-cli::preview_export this_play_fixed_retime_hold_duration_preview_and_encoded_output_keep_fixed_windows
+        PASS [   3.679s] (805/962) deadpan-cli::project_commands macros::typed_motion_copies_keep_context_and_refuse_missing_stale_or_empty_selectors
+        PASS [   2.924s] (806/962) deadpan-cli::project_commands move_range::headless_move_range_is_one_durable_command_with_source_and_destination_revision_checks
+        PASS [   1.832s] (807/962) deadpan-cli::project_commands persistent_mark_queries_and_loss_states_share_the_headless_command_path
+        PASS [   0.535s] (808/962) deadpan-cli::project_commands writer_lock_is_enforced_between_processes_but_readers_and_dry_run_work
+        PASS [   0.012s] (809/962) deadpan-cli::proxy_resume host_process_for_kill_test
+        PASS [   0.012s] (810/962) deadpan-cli::refinement invalid_cancelled_and_expired_contexts_never_launch_a_worker
+        PASS [   1.529s] (811/962) deadpan-cli::project_commands sparse_override_commands_and_inspection_share_revision_and_dry_run_guards
+        PASS [   0.011s] (812/962) deadpan-cli::refinement qualified_original_preparation_is_read_only_and_manual_words_stay_pinned
+        PASS [   0.011s] (813/962) deadpan-cli::refinement real_isolated_worker_preserves_all_observed_native_emissions
+        PASS [   0.618s] (814/962) deadpan-cli::refinement non_english_cached_words_refuse_before_model_loading_or_annotation_changes
+        PASS [   0.597s] (815/962) deadpan-cli::refinement_acceptance headless_refinement_refuses_stale_pinned_and_crossing_requests_then_commits_one_undo
+        PASS [   0.572s] (816/962) deadpan-cli::relink_moved a_moved_linked_file_is_found_by_its_bookmark_and_verified
+        PASS [   0.452s] (817/962) deadpan-cli::render empty_and_stale_public_starts_fail_before_worker_admission
+        PASS [   0.026s] (818/962) deadpan-cli::render invalid_request_schema_is_rejected_before_opening_any_project
+        PASS [   0.022s] (819/962) deadpan-cli::render public_render_help_and_strict_automatic_options_are_exposed
+        PASS [   0.355s] (820/962) deadpan-cli::render public_render_rejects_an_open_writer_without_creating_an_attempt
+        PASS [   0.408s] (821/962) deadpan-cli::render render_status_is_read_only_during_another_writer_and_pages_without_losing_jobs
+        PASS [   2.179s] (822/962) deadpan-cli::proxy_resume a_killed_host_resumes_from_its_journal
+        PASS [  17.122s] (823/962) deadpan-cli::project_commands macros::framing::repeat_follow_creep::whole_repeat_follow_creep_preserves_plays_gaps_escalation_and_invocation_relative_history
+        PASS [   0.422s] (824/962) deadpan-cli::render_worker admitted_fixture_bytes_outlive_the_child_workspace_and_project_path
+        PASS [  63.637s] (825/962) deadpan-cli::preview_export source_formats_preserve_independent_clocks_through_combined_structural_edits_part_2
+        PASS [   0.374s] (826/962) deadpan-cli::render_worker host_preserves_the_worker_diagnostic_across_a_failed_process_exit
+        PASS [   0.596s] (827/962) deadpan-cli::render_worker host_independently_rejects_wrong_bytes_after_a_valid_completed_manifest
+        SLOW [> 60.000s] (───────) deadpan-cli::preview_export source_formats_preserve_independent_clocks_through_combined_structural_edits_part_4
+        PASS [   0.631s] (828/962) deadpan-cli::render_worker host_rejects_broken_framing_stale_attempts_and_unclean_completion
+        PASS [  64.415s] (829/962) deadpan-cli::preview_export source_formats_preserve_independent_clocks_through_combined_structural_edits_part_1
+        PASS [   0.501s] (830/962) deadpan-cli::render_worker real_worker_rejects_changed_document_and_contract_before_output
+        PASS [   5.865s] (831/962) deadpan-cli::project_commands mixed_pause::headless_mixed_pause_dry_run_commit_refusals_and_reopened_history_preserve_qualified_source
+        PASS [   0.660s] (832/962) deadpan-cli::shots a_cancelled_scan_stops_without_an_analysis
+        PASS [   1.165s] (833/962) deadpan-cli::render_worker hostile_artifact_claims_are_refused_without_following_them_outside
+        PASS [   3.763s] (834/962) deadpan-cli::proxy_resume a_killed_worker_leaves_completed_ranges_for_the_next_build
+        PASS [   1.093s] (835/962) deadpan-cli::shots every_picture_is_measured_in_index_order_and_stored_outside_history
+        PASS [   1.462s] (836/962) deadpan-cli::shots correcting_the_source_selects_fresh_shots_and_undo_restores_the_previous_cache
+        PASS [   1.159s] (837/962) deadpan-cli::shots shots_without_analysis_and_without_an_original_report_plainly
+        PASS [   2.589s] (838/962) deadpan-cli::render_worker setsid_escapees_are_not_contained_but_cannot_change_admitted_bytes
+        PASS [   1.305s] (839/962) deadpan-cli::source_registration beat_sounds::headless_beat_sound_strict_wire_and_missing_qualification_refuse_without_authoring
+        PASS [   5.888s] (840/962) deadpan-cli::proxy_resume corrected_range_builds_publish_separate_verified_variants
+        PASS [   2.244s] (841/962) deadpan-cli::source_registration beat_sounds::headless_beat_sound_commands_preview_inspect_and_restore_with_fresh_revisions
+        PASS [   3.404s] (842/962) deadpan-cli::shots a_scan_resumed_from_any_checkpoint_equals_an_uninterrupted_scan
+        PASS [   2.186s] (843/962) deadpan-cli::source_registration cfr_registration_previews_beside_writer_commits_once_and_preserves_undo_receipt
+        PASS [   3.283s] (844/962) deadpan-cli::source_registration automatic_creation_adopts_first_inserted_picture_and_secondary_preserves_the_clock
+        PASS [   4.507s] (845/962) deadpan-cli::render_worker hostile_frames_floods_stalls_and_descendants_are_bounded_and_stopped
+        SLOW [>120.000s] (───────) deadpan-cli::preview_export mixed_fixed_retime_hold_duration_preview_and_encoded_output_keep_fixed_windows
+        PASS [   1.084s] (846/962) deadpan-cli::source_registration explicit_geometry_cli_previews_then_changes_only_canvas_and_keeps_version_guards
+        PASS [   0.777s] (847/962) deadpan-cli::source_registration protocol_is_required_and_rejected_before_opening_the_project
+        PASS [   2.557s] (848/962) deadpan-cli::source_registration combined_trim::combined_zero_and_invalid_resources_preserve_nonempty_redo_and_all_rows
+        PASS [   8.081s] (849/962) deadpan-cli::project_commands storage_report_states_the_ai_variant_retention_policy
+        PASS [   2.392s] (850/962) deadpan-cli::source_registration combined_trim::used_qualification_refusal_including_retired_b_matches_both_dispatch_paths
+        PASS [   2.364s] (851/962) deadpan-cli::source_registration offset_av_and_audio_only_register_exact_measured_placements
+        PASS [   2.081s] (852/962) deadpan-cli::source_registration pending_generation_is_reconciled_by_the_boundary_resolver_on_commit
+        PASS [   1.089s] (853/962) deadpan-cli::source_registration stale_revision_is_checked_before_unavailable_original_bytes
+        PASS [   1.358s] (854/962) deadpan-cli::source_registration stream_selection_is_required_and_failed_audio_never_becomes_video_only
+        PASS [   2.135s] (855/962) deadpan-cli::source_registration slip::headless_slip_reports_clamp_and_noop_without_losing_revision_guards
+        PASS [   1.069s] (856/962) deadpan-cli::source_registration wide_pcm::nonfinite_float_wave_registration_refuses_without_an_authored_or_receipt_write
+        PASS [   2.267s] (857/962) deadpan-cli::source_registration trim::headless_trim_reports_zero_and_one_commit_preview_consistently
+        PASS [   1.566s] (858/962) deadpan-cli::source_registration unlabelled_wav_needs_an_explicit_interpretation_that_audio_preparation_then_uses
+        PASS [   3.058s] (859/962) deadpan-cli::source_registration roll::headless_roll_zero_and_invalid_metadata_match_live_without_writes
+        PASS [   0.815s] (860/962) deadpan-cli::takes live_takes_metadata_is_versioned_and_restore_keeps_its_commit_receipt
+        PASS [   0.903s] (861/962) deadpan-cli::takes takes_wire_commands_reject_unknown_fields_and_wrong_project_before_writes
+        PASS [   0.820s] (862/962) deadpan-cli::tracking track_refuses_bad_arguments_and_unavailable_analysis_without_writing
+        PASS [   2.028s] (863/962) deadpan-cli::takes cli_takes_survive_reopen_and_restore_as_one_undoable_edit
+        PASS [   1.116s] (864/962) deadpan-cli::tracking preparation_measures_the_exact_upright_aspect_targets_record
+        PASS [  21.972s] (865/962) deadpan-cli::project_commands macros::framing::scoped_follow_creep::scoped_follow_creep_all_five_owners_keep_nested_play_clocks_isolation_and_durable_history
+        PASS [   1.138s] (866/962) deadpan-cli::transcript_search complete_corrected_phrase_shared_host_preview_cut_copy_reopen_and_history
+        PASS [   0.932s] (867/962) deadpan-cli::transcript_search native_pinned_key_survives_another_key_and_missing_phrase_never_falls_back
+        PASS [   0.055s] (868/962) deadpan-cli::updates rollback_without_a_previous_version_refuses
+        PASS [   0.080s] (869/962) deadpan-cli::updates signing_refuses_untrusted_keys_and_describes_helpers
+        PASS [   0.053s] (870/962) deadpan-cli::updates untrusted_updates_are_refused_before_anything_is_written
+        PASS [  69.583s] (871/962) deadpan-cli::preview_export source_formats_preserve_independent_clocks_through_combined_structural_edits_part_4
+        PASS [   5.436s] (872/962) deadpan-cli::source_registration roll::headless_roll_cold_and_live_share_preview_one_commit_and_durable_history
+        PASS [   0.046s] (873/962) deadpan-cli::youtube_import invalid_urls_and_missing_helpers_create_nothing
+        PASS [   0.024s] (874/962) deadpan-cli::youtube_import status_reports_pins_without_installing
+        PASS [   2.280s] (875/962) deadpan-cli::tracking saving_respects_the_head_tracked_against_replacement_undo_and_corrections
+        PASS [   0.129s] (876/962) xtask::bin/xtask bundle::deno_notices::tests::audit_accepts_installed_notices_and_reports_each_defect
+        PASS [   0.124s] (877/962) xtask::bin/xtask bundle::deno_notices::tests::audit_checks_executable_bytes_and_the_sbom_inventory
+        PASS [   0.075s] (878/962) xtask::bin/xtask bundle::deno_notices::tests::audit_refuses_a_different_deno_or_a_changed_set
+        PASS [   1.366s] (879/962) deadpan-cli::transcription local_window_preflight_refuses_before_source_reads_and_retained_windows_reuse_the_cache
+        PASS [   0.047s] (880/962) xtask::bin/xtask bundle::deno_notices::tests::load_refuses_dangling_references_and_uncovered_crates
+        PASS [   0.061s] (881/962) xtask::bin/xtask bundle::deno_notices::tests::load_refuses_changed_missing_or_unlisted_texts
+        PASS [   0.054s] (882/962) xtask::bin/xtask bundle::deno_notices::tests::loads_renders_and_deduplicates_a_complete_set
+        PASS [   0.053s] (883/962) xtask::bin/xtask bundle::deno_notices::tests::sbom_nests_linked_components_under_the_helper
+        PASS [   0.007s] (884/962) xtask::bin/xtask bundle::macho::ort_tests::basename_aliases_require_same_actual_content
+        PASS [   0.007s] (885/962) xtask::bin/xtask bundle::macho::ort_tests::ort_transitive_dependencies_are_system_only_not_other_approved_runtimes
+        PASS [   0.007s] (886/962) xtask::bin/xtask bundle::macho::ort_tests::runtime_resolution_is_closed_over_explicit_qualified_sources
+        PASS [  12.399s] (887/962) deadpan-cli::proxy_resume damaged_or_foreign_partial_state_is_encoded_again_never_trusted
+        PASS [   0.007s] (888/962) xtask::bin/xtask bundle::macho::tests::otool_text_parsers_handle_universal_files_and_ids
+        PASS [   0.007s] (889/962) xtask::bin/xtask bundle::macho::tests::loader_relative_paths_normalize_lexically
+        PASS [   0.007s] (890/962) xtask::bin/xtask bundle::macho::tests::system_references_must_be_normalized
+        PASS [   0.006s] (891/962) xtask::bin/xtask bundle::native::tests::missing_partial_stale_or_extra_native_pin_reports_refuse_no_build
+        PASS [   0.006s] (892/962) xtask::bin/xtask bundle::native::tests::worker_build_removes_inherited_pin_map_and_hosts_get_canonical_map
+        PASS [   0.007s] (893/962) xtask::bin/xtask bundle::notices::ort_tests::ort_sbom_distinguishes_original_runtime_wheel_and_signed_shipped_bytes
+        PASS [   0.074s] (894/962) xtask::bin/xtask bundle::macho::ort_tests::selected_ort_prefix_accepts_internal_aliases_and_rejects_escape_or_wrong_bytes
+        PASS [   0.014s] (895/962) xtask::bin/xtask bundle::notices::ort_tests::qualified_wheel_notices_are_exact_and_required_even_without_a_manifest_claim
+        PASS [   0.105s] (896/962) xtask::bin/xtask bundle::deno_notices::tests::vendored_set_for_the_pinned_deno_verifies
+        PASS [   0.007s] (897/962) xtask::bin/xtask bundle::notices::refinement_tests::derivative_sbom_uses_independent_terms_and_claims_no_python_or_model_runtime
+        PASS [   0.019s] (898/962) xtask::bin/xtask bundle::notices::refinement_tests::compiled_derivative_notices_are_exact_and_cannot_be_omitted_or_relabelled
+        PASS [   0.007s] (899/962) xtask::bin/xtask bundle::notices::tests::crate_expressions_normalize_and_reference_license_files
+        PASS [   0.082s] (900/962) xtask::bin/xtask bundle::native::tests::host_rebuild_must_preserve_every_prepared_native_worker_source
+        PASS [   0.009s] (901/962) xtask::bin/xtask bundle::notices::tests::license_names_match_common_spellings
+        PASS [   0.008s] (902/962) xtask::bin/xtask bundle::notices::tests::sbom_is_cyclonedx_with_valid_spdx_and_closed_references
+        PASS [   0.007s] (903/962) xtask::bin/xtask bundle::refinement::macho_content::tests::large_zero_signature_reservations_are_allowed_but_stale_signature_bytes_are_not
+        PASS [   0.008s] (904/962) xtask::bin/xtask bundle::refinement::macho_content::tests::data_outside_the_hashed_content_is_refused
+        PASS [   0.031s] (905/962) xtask::bin/xtask bundle::notices::tests::lock_checksums_read_registry_entries_only
+        PASS [   0.006s] (906/962) xtask::bin/xtask bundle::refinement::macho_content::tests::re_signing_keeps_the_content_hash
+        PASS [   0.007s] (907/962) xtask::bin/xtask bundle::refinement::macho_content::tests::print_content_pin_when_requested
+        PASS [   0.006s] (908/962) xtask::bin/xtask bundle::refinement::macho_content::tests::universal_files_hash_every_slice_and_nothing_else
+        PASS [   0.007s] (909/962) xtask::bin/xtask bundle::refinement::tests::worker_build_removes_inherited_pins_and_host_build_sets_both
+        PASS [   0.008s] (910/962) xtask::bin/xtask bundle::refinement::tests::missing_partial_stale_and_changed_host_pin_reports_cannot_pass_no_build
+        PASS [   0.010s] (911/962) xtask::bin/xtask bundle::spdx::tests::legacy_slashes_become_or
+        PASS [   0.010s] (912/962) xtask::bin/xtask bundle::spdx::tests::expressions_validate_and_evaluate
+        PASS [   0.007s] (913/962) xtask::bin/xtask bundle::tests::notarization_requires_an_identity
+        PASS [   0.008s] (914/962) xtask::bin/xtask bundle::tests::public_configuration_drops_only_host_paths
+        PASS [   0.006s] (915/962) xtask::bin/xtask bundle::tests::rfc3339_matches_known_instants
+        PASS [   0.109s] (916/962) xtask::bin/xtask bundle::notices::refinement_tests::actual_notice_generation_copies_and_references_all_compiled_derivative_terms
+        PASS [   0.007s] (917/962) xtask::bin/xtask chaos::tests::entry_names_are_unique
+        PASS [   0.006s] (918/962) xtask::bin/xtask chaos::tests::options_parse_and_reject_invalid_values
+        PASS [   0.007s] (919/962) xtask::bin/xtask fuzz::tests::classified_streams_pair_first_requests_with_responses
+        PASS [   0.034s] (920/962) xtask::bin/xtask bundle::tests::vendored_versions_read_defines_and_cmake
+        PASS [   0.008s] (921/962) xtask::bin/xtask fuzz::tests::failures_without_artifacts_never_pass
+        PASS [   0.007s] (922/962) xtask::bin/xtask fuzz::tests::options_parse_and_reject_invalid_values
+        PASS [   0.023s] (923/962) xtask::bin/xtask fuzz::tests::every_fuzz_target_has_a_committed_corpus
+        PASS [   0.007s] (924/962) xtask::bin/xtask fuzz::tests::statistics_read_the_final_libfuzzer_line
+        PASS [   0.013s] (925/962) xtask::bin/xtask offline_dist::tests::existing_output_is_refused
+        PASS [   1.036s] (926/962) deadpan-cli::transcription transcript_commands_report_absence_usage_and_unavailable_sources
+        PASS [   0.025s] (927/962) xtask::bin/xtask offline_dist::tests::edited_manifest_is_refused_by_sums
+        PASS [   0.026s] (928/962) xtask::bin/xtask offline_dist::tests::escaping_link_is_refused
+        PASS [   0.013s] (929/962) xtask::bin/xtask offline_dist::tests::intact_fixture_verifies
+        PASS [   0.008s] (930/962) xtask::bin/xtask offline_dist::tests::manifest_rejects_escapes_and_wrong_schema
+        PASS [   0.007s] (931/962) xtask::bin/xtask offline_dist::tests::options_require_packs_and_refuse_repeats
+        PASS [   0.008s] (932/962) xtask::bin/xtask offline_dist::tests::manifest_round_trips
+        PASS [   0.007s] (933/962) xtask::bin/xtask offline_dist::tests::sums_parse_and_refuse_bad_lines
+        PASS [   0.008s] (934/962) xtask::bin/xtask offline_dist::tests::signed_update_versions_are_refused
+        PASS [   0.027s] (935/962) xtask::bin/xtask offline_dist::tests::missing_file_is_refused
+        PASS [   0.007s] (936/962) xtask::bin/xtask percentile::tests::nearest_rank_percentiles
+        PASS [   0.008s] (937/962) xtask::bin/xtask perf::tests::options_reject_unknown_stages_and_bad_names
+        PASS [   0.008s] (938/962) xtask::bin/xtask perf::tests::missing_workloads_are_never_passes
+        PASS [   0.148s] (939/962) xtask::bin/xtask bundle::refinement::tests::clean_signing_of_an_already_signed_image_retains_strict_content_identity
+        PASS [   0.031s] (940/962) xtask::bin/xtask offline_dist::tests::tampered_archive_is_refused
+        PASS [   0.007s] (941/962) xtask::bin/xtask perf::tests::time_report_fields_parse
+        PASS [   0.007s] (942/962) xtask::bin/xtask perf::tests::playback_must_cover_its_interval_and_every_frame
+        PASS [   0.006s] (943/962) xtask::bin/xtask replays::tests::options_split_scenarios_and_reject_unknown_flags
+        PASS [   0.007s] (944/962) xtask::bin/xtask perf::tests::verdicts_need_success_samples_quiet_and_full_runs
+        PASS [   0.006s] (945/962) xtask::bin/xtask replays::tests::reports_count_failed_checks_failures_and_layout_retries
+        PASS [   0.039s] (946/962) xtask::bin/xtask offline_dist::tests::uncovered_archive_is_refused
+        PASS [   0.030s] (947/962) xtask::bin/xtask target_hygiene::tests::the_oldest_incremental_state_is_pruned_first
+        PASS [   0.035s] (948/962) xtask::bin/xtask target_hygiene::tests::only_cargo_profile_directories_are_measured
+        PASS [   0.039s] (949/962) xtask::bin/xtask replays::tests::the_app_and_its_helpers_run_from_hashed_private_copies
+        PASS [   2.417s] (950/962) deadpan-cli::transcript_search analysis_replacement_after_prepare_refuses_selection_yank_and_cut_without_writes
+        PASS [   0.911s] (951/962) deadpan-cli::youtube_import failed_creation_leaves_nothing_and_the_path_stays_reusable
+        PASS [   1.921s] (952/962) deadpan-cli::transcription registered_audio_becomes_exact_length_mono_analysis_pcm
+        PASS [   9.175s] (953/962) deadpan-cli::source_registration combined_trim::combined_trim_cold_and_live_match_exact_geometry_transaction_and_fresh_history
+        PASS [   1.717s] (954/962) xtask::bin/xtask bundle::macho::tests::relocation_and_audit_on_real_mach_o_files
+        PASS [   6.036s] (955/962) deadpan-cli::transcription selected_analysis_windows_match_full_pcm_bits_on_the_global_phase_grid
+        PASS [  12.145s] (956/962) deadpan-cli::source_registration mp3::mp3_catalog_registration_placement_and_history_preserve_picture_and_exact_audio
+        PASS [ 139.496s] (957/962) deadpan-cli::preview_export every_recipe_builds_a_valid_package_whose_plan_matches_its_expectations_part_3
+        PASS [  18.567s] (958/962) deadpan-cli::proxy_disk_full a_full_cache_volume_fails_proxy_builds_truthfully_and_recovers
+        PASS [  59.119s] (959/962) deadpan-cli::preview_export vfr_recipe_plans_match_independent_source_clocks
+        PASS [  13.782s] (960/962) deadpan-cli::source_registration wide_pcm::wide_pcm_catalog_registration_placement_and_history_keep_exact_audio_and_picture
+        PASS [ 140.556s] (961/962) deadpan-cli::preview_export mixed_fixed_retime_hold_duration_preview_and_encoded_output_keep_fixed_windows
+        SLOW [>120.000s] (───────) deadpan-cli::preview_export selected_fixed_retime_hold_duration_preview_and_encoded_output_keep_fixed_windows
+        PASS [ 172.493s] (962/962) deadpan-cli::preview_export selected_fixed_retime_hold_duration_preview_and_encoded_output_keep_fixed_windows
+────────────
+     Summary [ 242.421s] 962 tests run: 961 passed (12 slow), 1 failed, 23 skipped
+        FAIL [   0.070s] (738/962) deadpan-cli::privacy_network_audit subprocess_launches_are_reviewed_and_name_no_network_tool
+error: test run failed
+xtask: cargo nextest run -p deadpan-cli -p xtask --locked --no-fail-fast --features deadpan-cli/synthetic-worker exited with exit status: 100

@@ -1,0 +1,37 @@
+{
+  "asset": "be900256-e225-4b2f-aa57-9fec9e73fe0f",
+  "content": "blake3:5177b5e17d31a75b8c2c9ca4ae999728481f87b518e020c574df48f69d0a4dce",
+  "decode_elapsed_ms": 1,
+  "elapsed_ms": 1911,
+  "faces": {
+    "faces": [],
+    "runtime": {
+      "detector": "faces",
+      "engine": "Apple Vision VNDetectFaceRectanglesRequest",
+      "request_revision": 3
+    }
+  },
+  "picture": 0,
+  "protocol": 2,
+  "pts": 0,
+  "revision": "f0081ed5-c0e6-452f-b125-dc5e7f612313",
+  "salient_regions": {
+    "regions": [],
+    "runtime": {
+      "detector": "salient_regions",
+      "engine": "Apple Vision VNGenerateObjectnessBasedSaliencyImageRequest",
+      "request_revision": 2
+    }
+  },
+  "selection": "both",
+  "stream": {
+    "rotation_quarter_turns": 0,
+    "stream_index": 0,
+    "time_base": [
+      1,
+      15360
+    ]
+  },
+  "vision_elapsed_ms": 76,
+  "worker_elapsed_ms": 78
+}

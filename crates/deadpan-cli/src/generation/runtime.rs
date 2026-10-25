@@ -77,6 +77,8 @@ pub enum Lookup {
     PackagedExplicit,
     /// Packaged app: the runtime inside the bundle and the installed pack.
     Bundled { runtime: PathBuf },
+    /// A pin-built host has lost its required package layout or marker.
+    Damaged { reason: String },
 }
 
 impl Lookup {
@@ -91,18 +93,22 @@ impl Lookup {
             Self::Bundled { .. } => {
                 "bundled private runtime with the installed model pack; environment variables are ignored"
             }
+            Self::Damaged { .. } => "damaged packaged app; runtime launch is unavailable",
         }
     }
 }
 
 /// The lookup for the running executable.
 pub fn lookup() -> Lookup {
-    match crate::bundle::packaged_contents() {
-        None => Lookup::Development,
-        Some(_) if std::env::var_os(DEVELOPER_OPT_IN).is_some_and(|value| value == "1") => {
+    match crate::bundle::checked_packaged_contents() {
+        Err(error) => Lookup::Damaged {
+            reason: error.to_string(),
+        },
+        Ok(None) => Lookup::Development,
+        Ok(Some(_)) if std::env::var_os(DEVELOPER_OPT_IN).is_some_and(|value| value == "1") => {
             Lookup::PackagedExplicit
         }
-        Some(contents) => Lookup::Bundled {
+        Ok(Some(contents)) => Lookup::Bundled {
             runtime: contents.join(BUNDLED_RUNTIME),
         },
     }
@@ -309,7 +315,7 @@ impl BridgeRuntime {
     ) -> Result<Self, RuntimeError> {
         let mode = selection::manifest_mode(manifest).map_err(|error| RuntimeError {
             missing: vec![error],
-            bundled: matches!(lookup(), Lookup::Bundled { .. }),
+            bundled: matches!(lookup(), Lookup::Bundled { .. } | Lookup::Damaged { .. }),
             needs_model_pack: false,
         })?;
         let executable_directory = std::env::current_exe()
@@ -376,6 +382,13 @@ impl BridgeRuntime {
         lookup: &Lookup,
         models: ModelLookup<'_>,
     ) -> Result<Self, RuntimeError> {
+        if let Lookup::Damaged { reason } = lookup {
+            return Err(RuntimeError {
+                missing: vec![reason.clone()],
+                bundled: true,
+                needs_model_pack: false,
+            });
+        }
         if let Lookup::Bundled { runtime } = lookup {
             return Self::bundled(runtime, executable_directory, models);
         }
@@ -746,6 +759,23 @@ fn model_component_directories(manifest: &PackManifest) -> Vec<String> {
 mod tests {
     use super::*;
     use std::collections::BTreeMap;
+
+    #[test]
+    fn damaged_packaged_host_cannot_read_development_overrides_or_defaults() {
+        let error = BridgeRuntime::resolve_with(
+            |_| panic!("a damaged packaged host cannot inspect development variables"),
+            Some(PathBuf::from("/developer-home")),
+            Some(Path::new("/developer-bin")),
+            &Lookup::Damaged {
+                reason: "required packaging marker is missing".into(),
+            },
+            None,
+        )
+        .unwrap_err();
+        assert!(error.bundled);
+        assert!(!error.needs_model_pack);
+        assert_eq!(error.missing, ["required packaging marker is missing"]);
+    }
 
     pub(super) fn file(path: &Path) {
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();

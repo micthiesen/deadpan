@@ -1,0 +1,94 @@
+{
+  "analysed": 3,
+  "asset": "be900256-e225-4b2f-aa57-9fec9e73fe0f",
+  "content": "blake3:5177b5e17d31a75b8c2c9ca4ae999728481f87b518e020c574df48f69d0a4dce",
+  "decode_elapsed_ms": 11,
+  "elapsed_ms": 2217,
+  "path": {
+    "display_aspect": 1.7777777777777777,
+    "end_pts": 1536,
+    "keyframes": [
+      {
+        "pts": 0,
+        "region": {
+          "height": 0.4,
+          "width": 0.4,
+          "x": 0.2,
+          "y": 0.2
+        }
+      }
+    ],
+    "policy": {
+      "max_area_ratio": 2.0,
+      "max_center_jump": 0.35,
+      "max_center_step": 0.1,
+      "max_interpolated_gap": 6,
+      "min_confidence": 0.30000001192092896
+    },
+    "rule": "deadpan-track-1",
+    "samples": [
+      {
+        "confidence": null,
+        "pts": 0,
+        "region": {
+          "height": 0.4,
+          "width": 0.4,
+          "x": 0.2,
+          "y": 0.2
+        },
+        "state": "manual"
+      },
+      {
+        "confidence": 0.5559999942779541,
+        "pts": 512,
+        "region": {
+          "height": 0.43872549268934463,
+          "width": 0.3847183704376221,
+          "x": 0.20282037258148194,
+          "y": 0.18242225646972648
+        },
+        "state": "tracked"
+      },
+      {
+        "confidence": 0.5559999942779541,
+        "pts": 1024,
+        "region": {
+          "height": 0.4712105221218533,
+          "width": 0.37363643646240235,
+          "x": 0.2034717321395874,
+          "y": 0.16799032423231341
+        },
+        "state": "tracked"
+      }
+    ],
+    "start_pts": 0,
+    "stop": {
+      "reason": "range_end"
+    }
+  },
+  "pictures": 3,
+  "protocol": 1,
+  "rule": "deadpan-track-1",
+  "runtime": {
+    "engine": "Apple Vision VNTrackObjectRequest",
+    "request_revision": 2,
+    "tracking_level": "accurate"
+  },
+  "shot_analysis": null,
+  "stream": {
+    "display_aspect": 1.7777777777777777,
+    "exact_display_aspect": {
+      "denominator": "9",
+      "numerator": "16"
+    },
+    "rotation_quarter_turns": 0,
+    "stream_index": 0,
+    "time_base": [
+      1,
+      15360
+    ]
+  },
+  "vision_elapsed_ms": 352,
+  "vision_ms_per_picture": 117.33333333333333,
+  "worker_elapsed_ms": 364
+}

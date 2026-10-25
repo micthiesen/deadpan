@@ -1,0 +1,8 @@
+bundle: warning: the working tree has uncommitted or untracked changes; build-provenance.json records this
+bundle: AI runtime /Users/michael/Library/Caches/Deadpan/build-inputs/ai-runtime-1575cc961aa327a5bf6c/runtime (471 MiB) ready in 0.8 s
+bundle: 7 FFmpeg/ONNX Runtime libraries -> Contents/Frameworks
+bundle: AI runtime signed (59 libraries, 3 executables)
+bundle: staged AI runtime runs: /private/tmp/deadpan-native-trust-2026-10-25/bundle-adhoc-first/.Deadpan.app.staging-70468/Deadpan.app/Contents/Resources/ai-runtime/python Device(gpu, 0)
+bundle: 77 Mach-O files audited, 286 crates in notices (40 without a license file), signature ad-hoc, AI runtime 59 libraries and 3 executables
+bundle: /private/tmp/deadpan-native-trust-2026-10-25/bundle-adhoc-first/Deadpan.app (789.7 MiB on disk)
+bundle: not notarized. Deadpan is a personal app and needs no notarization; sign with --identity (e.g. the dotfiles local signing certificate) when a stable signature is needed. See docs/PACKAGING.md

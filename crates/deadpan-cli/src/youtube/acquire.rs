@@ -19,7 +19,7 @@ use std::io::Write;
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use deadpan_store::original_provenance::{
@@ -1192,6 +1192,19 @@ pub fn download_and_create(
         deadpan_media::append_for_remux(&mut video, &mut audio, import.cancelled)
             .map_err(assembly_cancelled)?;
     drop(audio);
+    if import.cancelled.load(Ordering::Acquire) {
+        return Err(ImportError::new("ImportCancelled", "import was cancelled").into());
+    }
+    let admission = crate::bundle::qualify_native_worker_interruptible(
+        crate::bundle::NativeWorker::Media,
+        import.media_worker,
+        import.cancelled,
+        Instant::now() + Duration::from_secs(60),
+    );
+    if import.cancelled.load(Ordering::Acquire) {
+        return Err(ImportError::new("ImportCancelled", "import was cancelled").into());
+    }
+    admission.map_err(|error| ImportError::new("YouTubeAssemblyUnavailable", error.to_string()))?;
     deadpan_media::remux_joined(
         import.media_worker,
         video,

@@ -1,0 +1,5 @@
+   Compiling xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 2.36s
+     Running `target/debug/xtask bundle --output /tmp/deadpan-native-trust-2026-10-25/bundle-local-first --identity 'Michael Dotfiles Local Signing' --allow-dirty`
+    Finished `release` profile [optimized] target(s) in 0.14s
+xtask: codesign --force --options runtime --timestamp=none -s Michael Dotfiles Local Signing /private/tmp/deadpan-native-trust-2026-10-25/bundle-local-first/.Deadpan.alignment-pins-44322/Deadpan.app/Contents/Frameworks/libonnxruntime.1.dylib failed (signal: 15 (SIGTERM)): 
