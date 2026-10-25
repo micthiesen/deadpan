@@ -10,5 +10,8 @@
 tools/**/evidence/**/*.log -whitespace
 tools/**/evidence/**/*.patch -whitespace
 tools/**/evidence/**/*.diff -whitespace
+# Raw process streams retain their exact bytes, including terminal newlines.
+tools/**/evidence/**/*.stdout -text -whitespace
+tools/**/evidence/**/*.stderr -text -whitespace
 # Upstream notice texts stay byte-identical to their pinned sources.
 packaging/notices/** -text
