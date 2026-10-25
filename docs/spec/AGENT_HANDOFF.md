@@ -35,8 +35,10 @@ effects five of thirteen. Preserve foreign `fuzz/Cargo.lock` and `.claude/`.
 The corrected immutable collection retains seven source phases, all actual
 failures and both final projects. The first manifest's overbroad project-tree
 exclusion text is preserved with its real receipts. See the qualification for
-current inventory and independent byte-audit identities. Update the progress
-artifact after the implementation is pushed, retaining every prior history row.
+current inventory and independent byte-audit identities. Implementation
+`be315fd28344f970c841d5c0ad05886f79a4cfec` is pushed to main and recorded as
+milestone151. The progress artifact reads `docs/progress.json` on main;
+refresh and compare every field after each progress push, preserving history.
 
 Next: contained framing ranges inside an explicit single Play at every enclosing
 Repeat. Read-only explorers locate independent guards in Camera, macro capture

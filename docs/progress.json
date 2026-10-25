@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-25T14:00:04Z",
+  "updated_at": "2026-10-25T15:00:01Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Milestone 150: Ranged creep keeps following the target, with exact scale windows, fresh macro/dot ranges and readable inspector rows. Continuing remaining target controls and framing scopes; coverage remains 89%.",
+  "focus": "Milestone 151: Camera targets can be drawn, moved and resized with the pointer. Saves remain explicit, and small targets stay movable. Continuing framing ranges within Repeat plays; coverage remains 89%.",
   "features": [
     {
       "id": "editing",
@@ -35,7 +35,7 @@
         "DP-08",
         "DP-11"
       ],
-      "note": "Source, Hold, Sequence, Repeat and Retime owners keep live targets while creep scales their local output clocks, in ordinary selection and explicit Repeat Play scopes. Targets use exact mapped Original time. Follow respects captured and live crops, with fallback for hidden targets. Camera paths, tracking, the paged face picker and editable point targets work. Nested-play native replay, complete export and exact portable history are verified. Camera now offers paged face and salient-region proposals from one verified exact picture; choosing a proposal saves one ordinary target, and region:N atomically saves target and framing. Native workflows, full export PCM/picture fidelity, portable history and scoped copied-worker relocation are verified. Ordinary ranged creep now keeps live Follow on all five owner kinds, preserving prefix scales, applying explicit from= only at In and holding terminal scales after Out. Fresh macro/dot ranges, Camera preservation, readable native inspector rows, complete Source export PCM/picture fidelity and exact portable history are verified. Ranges within individual Repeat plays and other target controls remain."
+      "note": "Source, Hold, Sequence, Repeat and Retime owners keep live targets while creep scales their local output clocks, in ordinary selection and explicit Repeat Play scopes. Targets use exact mapped Original time. Follow respects captured and live crops, with fallback for hidden targets. Camera paths, tracking, the paged face picker and editable point targets work. Nested-play native replay, complete export and exact portable history are verified. Camera now offers paged face and salient-region proposals from one verified exact picture; choosing a proposal saves one ordinary target, and region:N atomically saves target and framing. Native workflows, full export PCM/picture fidelity, portable history and scoped copied-worker relocation are verified. Ordinary ranged creep now keeps live Follow on all five owner kinds, preserving prefix scales, applying explicit from= only at In and holding terminal scales after Out. Fresh macro/dot ranges, Camera preservation, readable native inspector rows, complete Source export PCM/picture fidelity and exact portable history are verified. Pointer drawing, body/corner editing and point correction now share the keyboard draft and explicit save. Final release replays, the small-target regression, durable history and the evidence byte audit pass. Ranges within individual Repeat plays and other picture controls remain."
     },
     {
       "id": "audio",
@@ -1333,6 +1333,14 @@
       "revision": "3e069f99a48c9af99a2e2c3096ce705a3e251318",
       "retrospective": false,
       "summary": "Ordinary ranged creep keeps live Follow on Source, Hold, Sequence, Repeat and Retime, with exact prefix/ramp/terminal scales and fresh macro/dot ranges. Independent reviews, 2,072 Core/Plan tests, App/CLI checks and bounded follow-ups pass. Release and final native zoom each pass 296 checks plus Kestrel. A real Source export verifies 120 pictures, complete 192,192 stereo sample-frame PCM and limiter equality, zero-offset audio and exact portable history. Original test/harness failures and scoped limits remain explicit in the audited evidence. Repeat-play ranges and other target controls stay open; coverage remains 89%."
+    },
+    {
+      "date": "2026-10-25",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "be315fd28344f970c841d5c0ad05886f79a4cfec",
+      "retrospective": false,
+      "summary": "Camera targets support pointer rectangle drawing, body/corner edits and point placement/correction, with temporary drags and explicit Enter saves. A small-target regression fails the old hit rule and passes after the fix. The full App lane passes 1,339 tests, with two passing leak warnings clearing in a serial recheck; final focused 61, Clippy and formatting pass. Final release targets passes 72 checks at 60/120 Hz plus Kestrel; Camera passes seventeen plus Kestrel. Independent SQLite audits verify both durable Undo chains and all 46 database/backup tables. The 139-file evidence audit passes. Original compile, setup, fixture, negative-test and manifest-correction evidence remains retained. Repeat-play framing ranges remain open; coverage stays 89%."
     }
   ]
 }
