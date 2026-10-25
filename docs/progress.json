@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-25T07:14:20Z",
+  "updated_at": "2026-10-25T10:49:49Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Explicit Repeat-play following creep is verified and committed. Continuing general non-face region proposals and remaining target controls; coverage remains 89%.",
+  "focus": "General non-face Camera proposals are implemented and under verification. Fixing picker visibility and completing native, media, packaging and replay checks. Last verified milestone: 148; coverage remains 89%.",
   "features": [
     {
       "id": "editing",
