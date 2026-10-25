@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-25T22:15:57Z",
+  "updated_at": "2026-10-25T23:39:22Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Word-timing proposals are locally qualified and committed. Next: bind older native helpers and their libraries to compiled identity and signer checks before launch. Coverage about 83%; 7/24 requirements complete; 0/7 gates closed.",
+  "focus": "Native-worker launch trust is qualified and committed. Next: bind the complete private AI runtime to a compiled inventory and verify it before Check/Inference executes. Coverage about 83%; 7/24 requirements complete; 0/7 gates closed.",
   "features": [
     {
       "id": "editing",
@@ -130,7 +130,7 @@
         "DP-22",
         "DP-23"
       ],
-      "note": "Self-contained app, relocation, release audit and offline installation verified here. A launch-time audit reopens DP-22: transcribe, tracking and media workers still need independent compiled executable/library pins and expected-signer checks before launch. Build-time signing alone does not satisfy that requirement."
+      "note": "Self-contained app, relocation, release audit and offline installation verified here. Native transcription, tracking and media workers now verify compiled executable/library pins and the expected signer before launch. DP-22 remains Partial because private AI Python and its imported-code tree still need a compiled inventory and app-seal admission before execution."
     }
   ],
   "history": [
@@ -1387,6 +1387,15 @@
       "revision": "b5bdf7a1",
       "retrospective": false,
       "summary": "DP-10.3 now has verified English word-timing proposals: native model, explicit waveform review and correction Undo, real device audition, and relocated packaged import/inference/acceptance plus tamper refusals. Its experimental quality targets remain failed. Together with the DP-22.3 trust correction, the same 162-criterion ledger is 83.3259%, rounded to 83%; 7/24 requirements and 0/7 gates complete."
+    },
+    {
+      "date": "2026-10-25",
+      "percent": 83,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 7,
+      "revision": "9d639426",
+      "retrospective": false,
+      "summary": "Packaged native-worker trust is implemented and qualified: three workers plus six FFmpeg libraries use compiled content pins and expected-signer checks before launch. Strict targeted checks, local/ad hoc bundles, real transcription/Vision work, 169 operations with 34 expected refusals and general relocation/render verification pass. DP-22.3 remains partial because private AI Python and its imported-code tree still need prelaunch inventory/seal admission. The unchanged 162-criterion ledger remains 83.3259%, rounded to 83%; 7/24 requirements and 0/7 gates complete."
     }
   ],
   "assessment": {
@@ -3302,12 +3311,17 @@
               "docs/PACKAGING.md:275-299",
               "docs/RELEASE_AUDIT.md",
               "docs/PROGRESS_ASSESSMENT.md#packaged-helper-trust-amendment",
+              "docs/qualification/native-launch-trust-2026-10-25.md",
+              "crates/deadpan-cli/src/bundle/native.rs",
+              "crates/deadpan-cli/src/bundle/image.rs",
+              "crates/xtask/src/bundle/native.rs",
+              "tools/model-qualification/evidence/2026-10-25-native-launch-trust/inventory.json",
               "crates/deadpan-cli/src/transcription.rs",
               "crates/deadpan-cli/src/tracking.rs",
               "crates/deadpan-cli/src/proxy.rs",
               "crates/deadpan-cli/src/generation/runtime.rs"
             ],
-            "remaining": "Existing transcribe, track and media-worker launch paths lack independent compiled executable/library pins and expected-signer admission. Build-time signing is verified; launch-time verification remains implementation work. The new alignment path does not close that older gap.",
+            "remaining": "Native-worker launch trust is now locally qualified. Private AI Python, worker scripts, imported code/bytecode, extensions and Metal/data files still need a closed compiled inventory and expected-signer/app-seal admission before Check or Inference executes. Build-time hashes and post-execution self-reports do not establish that authority.",
             "confidence": "high"
           },
           {
