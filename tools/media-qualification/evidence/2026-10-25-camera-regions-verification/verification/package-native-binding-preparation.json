@@ -1,0 +1,18 @@
+{
+  "scope": "Static scratch input-contract correction, no product qualification",
+  "driver": {
+    "bytes": 38531,
+    "sha256": "1304f07218a07702763e9c45f34e67c67e8fff69f933266a8cf4003ea7d1ca7c"
+  },
+  "example_config": {
+    "sha256": "82d6de942a4a5be2d83e1b5536c56aa428d76fdb604f8091627e710ad723e91f"
+  },
+  "prior_driver": "package-native-binding-before/package-checks.py.txt",
+  "actual_schema_reference": {
+    "path": "/tmp/deadpan-camera-regions-2026-10-25/native-regions-first/report.json",
+    "sha256": "c16189e8425bd932cdb6404d72f3bbbb2ac78f54453a33d93e52884be1370bde",
+    "failed": true
+  },
+  "validation": "Python compile passed. Actual failed Native report correctly rejected before discovery. No synthetic NativeReport wrapper generated.",
+  "positive_runtime": "Not run; successful actual raw regions report required."
+}

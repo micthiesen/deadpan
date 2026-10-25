@@ -1,0 +1,77 @@
+{
+  "driver_sha256": "739c2522410f287623f4823e9e032df0f2d573fe0e0cbce1fccd3d0272b7f38e",
+  "prior_driver_sha256": "4fc79ca0d35cdf5e14de258da70c5ca12c1ff68f2754f1542359707f9cbbb7a1",
+  "policy_source_basis": {
+    "crates/deadpan-cli/src/export_verification/audio_check.rs": {
+      "sha256": "69788196c3d31aeeaff69873cd13a187824c66d778de3341d4e5eaa20af86040",
+      "bytes": 7278
+    },
+    "crates/deadpan-cli/src/export_verification/metrics.rs": {
+      "sha256": "4974276fefbd2d99b8fbd607f970d9374d3cf5775f8ec3b8a04cf104ce225399",
+      "bytes": 18072
+    },
+    "crates/deadpan-cli/src/export_verification.rs": {
+      "sha256": "e03ab55aaccab89c7f00521ae50bed48dfeb7ea8ed231f705583d44734015ee0",
+      "bytes": 40256
+    },
+    "crates/deadpan-cli/src/export_verification/tests.rs": {
+      "sha256": "9b36e3588da708c3ca3eeb7bbea6b439f187d8d1312e1dd0e5699a96ae36b906",
+      "bytes": 29258
+    },
+    "docs/PREVIEW_EXPORT_VERIFICATION.md": {
+      "sha256": "09f0d0c27ea303404eb3befb0efd14adc3805b5db2ca73b1cd3233fb83920225",
+      "bytes": 26139
+    }
+  },
+  "py_compile": "exit0",
+  "pure_regression_command": [
+    "python",
+    "/tmp/deadpan-camera-regions-2026-10-25/media-periodic-regressions.py"
+  ],
+  "pure_regression_exit": 0,
+  "negative_mutations_rejected": 14,
+  "prior_actual_cli_invocations": [
+    {
+      "name": "dump",
+      "exit_code": 0
+    },
+    {
+      "name": "detect-blank-regions",
+      "exit_code": 0
+    },
+    {
+      "name": "detect-blank-both",
+      "exit_code": 0
+    },
+    {
+      "name": "detect-mug-regions",
+      "exit_code": 0
+    },
+    {
+      "name": "detect-mug-both",
+      "exit_code": 0
+    },
+    {
+      "name": "detect-mug_and_orange-regions",
+      "exit_code": 0
+    },
+    {
+      "name": "detect-mug_and_orange-both",
+      "exit_code": 0
+    },
+    {
+      "name": "validate",
+      "exit_code": 0
+    },
+    {
+      "name": "render",
+      "exit_code": 0
+    },
+    {
+      "name": "verify",
+      "exit_code": 0
+    }
+  ],
+  "new_product_invocations": 0,
+  "regression_receipt_sha256": "a9f49f70b07127c698cd66d7ff776ca481d6fc960b470187c436b4086ed523aa"
+}

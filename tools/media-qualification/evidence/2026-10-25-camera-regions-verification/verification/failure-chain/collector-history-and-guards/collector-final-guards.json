@@ -1,0 +1,27 @@
+{
+  "assertions": [
+    "exact-cap package accepted",
+    "one-byte-over metadata refused",
+    "pre-capture archive mismatch refused",
+    "missing reviewed archive inventory refused",
+    "post-capture archive mutation refused"
+  ],
+  "collector_sha256": "251e2eb49e2f75dedb81926c32a748652d32041ba87d880ff5ff09230f4b418d",
+  "command": [
+    "python3",
+    "/tmp/deadpan-camera-regions-2026-10-25/test-collector-guards.py"
+  ],
+  "exit_code": 0,
+  "guard_test_sha256": "f81faccc94646cbef8fde6aa0d2b95438697f9daf112b4131b1cf8a35380064e",
+  "scope": "Pure scratch-only checks; no collection or publication.",
+  "stderr": {
+    "bytes": 0,
+    "path": "collector-final-guards.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stdout": {
+    "bytes": 137,
+    "path": "collector-final-guards.stdout",
+    "sha256": "fa1baaa2124f68e3aad0f3b5eb74fdfba78dfda11eb83edbd6c67ff258300637"
+  }
+}

@@ -1,0 +1,171 @@
+
+running 3 tests
+test qualified_decoder_preserves_generated_picture_and_pcm_clocks ... FAILED
+test real_non_face_modes_blank_mug_and_two_objects_are_typed_and_atomic ... {
+  "basis_state": {
+    "geometry_origin": "explicit",
+    "primary": null,
+    "rate_origin": "explicit"
+  },
+  "duration_frames": 0,
+  "mark_count": 0,
+  "node_count": 1,
+  "presentation_basis": {
+    "color_policy": "sdr_rec709",
+    "frame_rate": {
+      "denominator": 1001,
+      "numerator": 30000
+    },
+    "height": 360,
+    "width": 640
+  },
+  "project_id": "14f10dec-6180-4fef-bd8d-0abaa6ca3cf3",
+  "protocol": 1,
+  "revision_id": "9392de13-9b04-401f-8bcf-9028b378b6a1",
+  "root": "295c9637-bf39-4847-b817-ccebfdc4214e",
+  "valid": true
+}
+{
+  "authored_asset_registered": false,
+  "protocol": 1,
+  "retained_original": {
+    "method": "cloned",
+    "record": {
+      "label": "source.media",
+      "linked": null,
+      "managed": true,
+      "object": {
+        "byte_length": 676082,
+        "content": {
+          "algorithm": "blake3",
+          "digest": "5264709cc57e0a22285bd2a3306778be514d4895c2e34c3869b91327db480235"
+        }
+      },
+      "sha256": [
+        36,
+        28,
+        172,
+        134,
+        129,
+        222,
+        6,
+        106,
+        61,
+        113,
+        156,
+        97,
+        39,
+        106,
+        172,
+        89,
+        162,
+        11,
+        139,
+        100,
+        87,
+        250,
+        159,
+        227,
+        51,
+        17,
+        95,
+        159,
+        201,
+        40,
+        251,
+        236
+      ],
+      "version": 1
+    }
+  }
+}
+FAILED
+test real_saliency_applies_sar_rotation_and_fractional_clean_aperture ... {
+  "basis_state": {
+    "geometry_origin": "explicit",
+    "primary": null,
+    "rate_origin": "explicit"
+  },
+  "duration_frames": 0,
+  "mark_count": 0,
+  "node_count": 1,
+  "presentation_basis": {
+    "color_policy": "sdr_rec709",
+    "frame_rate": {
+      "denominator": 1001,
+      "numerator": 30000
+    },
+    "height": 360,
+    "width": 640
+  },
+  "project_id": "3cbea687-7319-4847-81d4-8aa8c08668b9",
+  "protocol": 1,
+  "revision_id": "bb324310-59d0-41f6-a0ce-9a6b3632d5ac",
+  "root": "bc2260f0-f86e-417e-88cc-c81d022f5ec1",
+  "valid": true
+}
+{
+  "authored_asset_registered": false,
+  "protocol": 1,
+  "retained_original": {
+    "method": "cloned",
+    "record": {
+      "label": "source.media",
+      "linked": null,
+      "managed": true,
+      "object": {
+        "byte_length": 676094,
+        "content": {
+          "algorithm": "blake3",
+          "digest": "c27aca6321976ebe1b44bcfde7988d7f854438b22c736264c68393fd0011f5c9"
+        }
+      },
+      "sha256": [
+        201,
+        194,
+        129,
+        196,
+        48,
+        239,
+        92,
+        139,
+        199,
+        253,
+        76,
+        134,
+        211,
+        190,
+        173,
+        222,
+        99,
+        81,
+        22,
+        192,
+        231,
+        140,
+        134,
+        234,
+        194,
+        243,
+        30,
+        89,
+        60,
+        119,
+        218,
+        242
+      ],
+      "version": 1
+    }
+  }
+}
+FAILED
+
+failures:
+
+failures:
+    qualified_decoder_preserves_generated_picture_and_pcm_clocks
+    real_non_face_modes_blank_mug_and_two_objects_are_typed_and_atomic
+    real_saliency_applies_sar_rotation_and_fractional_clean_aperture
+
+test result: FAILED. 0 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.93s
+

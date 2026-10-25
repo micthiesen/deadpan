@@ -1,0 +1,11 @@
+{
+  "binary_identity_count": 5,
+  "claim": "Retained byte identities and execution receipts only; no automatic product qualification.",
+  "collector_sha256": "251e2eb49e2f75dedb81926c32a748652d32041ba87d880ff5ff09230f4b418d",
+  "identities_sha256": "eda59edea13827c5115bc87f284176c961ff3021308f4bf64f94eab739712d2b",
+  "payload_limit_bytes": 268435456,
+  "plan_sha256": "0829fbd9755857ec940e64bc50bcd674bdbcd4471ab2ab94e7764abc1636d861",
+  "raw_payload_bytes": 162174614,
+  "schema_version": 1,
+  "source_count": 59
+}

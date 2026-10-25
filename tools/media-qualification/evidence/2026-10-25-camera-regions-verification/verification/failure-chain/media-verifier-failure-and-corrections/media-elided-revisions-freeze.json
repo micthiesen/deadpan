@@ -1,0 +1,11 @@
+{
+  "classification": "pre-runtime driver correction for supported elided checkpoints; not product failure",
+  "driver_sha256": "4fc79ca0d35cdf5e14de258da70c5ca12c1ff68f2754f1542359707f9cbbb7a1",
+  "before_driver_sha256": "0abf5d5534335655751a3b40f96f09b9ce14b4c0d1529a40c6e231c03e21e9ee",
+  "source_app_regions_sha256": "dd0578a516a63b9a56f0cfa5702c0b575e78a1191c866de1f936c2aa21c985b8",
+  "static_review_sha256": "1186442c70730474ab9e0688fab4a97622754c3af771790cc1b98737b21a3b18",
+  "py_compile": "exit 0",
+  "product_invocations": 0,
+  "release_only_guard_unchanged": true,
+  "exact8table_conservation_unchanged": true
+}

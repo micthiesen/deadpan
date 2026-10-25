@@ -3,7 +3,7 @@
 //! read-only store and runs the supervised tracker; the writer saves the
 //! result expecting the revision the command was entered at. Session
 //! replacement and shutdown cancel the job and wait until it has drained.
-//! Face proposals use a second, independent job thread ([`faces`]).
+//! Picture proposals use a second, independent job thread ([`picture_proposals`]).
 
 use std::sync::mpsc::{self, Receiver, SyncSender};
 use std::time::Instant;
@@ -14,10 +14,10 @@ use deadpan_core::{SourceTimeBase, TargetId};
 
 use super::*;
 use crate::project::targets::{
-    Backend, FaceJob, Job, Operation, Outcome, Phase, Saved, TrackMode, Update,
+    Backend, Job, Operation, Outcome, Phase, ProposalJob, Saved, TrackMode, Update,
 };
 
-mod faces;
+mod picture_proposals;
 
 /// Progress reports the job thread may queue ahead of the writer.
 const EVENT_CAPACITY: usize = 16;
@@ -65,9 +65,9 @@ pub(super) struct State {
     job: Option<Job>,
     reply: Option<(u64, Option<String>)>,
     saved: Option<Saved>,
-    /// The face-detection job thread, independent of tracking.
-    faces_running: Option<faces::Running>,
-    faces: Option<FaceJob>,
+    /// One picture-analysis job thread, independent of tracking.
+    proposals_running: Option<picture_proposals::Running>,
+    proposals: Option<ProposalJob>,
 }
 
 impl State {
@@ -80,16 +80,16 @@ impl State {
 
     /// A job thread is live; the project must not be released.
     pub(super) fn active(&self) -> bool {
-        self.running.is_some() || self.faces_running.is_some()
+        self.running.is_some() || self.proposals_running.is_some()
     }
 
     fn reset(&mut self, session: u64) {
-        debug_assert!(self.running.is_none() && self.faces_running.is_none());
+        debug_assert!(self.running.is_none() && self.proposals_running.is_none());
         self.session = session;
         self.job = None;
         self.reply = None;
         self.saved = None;
-        self.faces = None;
+        self.proposals = None;
     }
 }
 
@@ -118,7 +118,7 @@ impl Service {
     /// Cancel any live tracking or face-detection job cooperatively; the
     /// pump drains it.
     pub(super) fn cancel_tracking(&mut self) {
-        self.cancel_faces();
+        self.cancel_proposals();
         if let Some(running) = &self.targets.running {
             running.cancelled.store(true, Ordering::Release);
             if let Some(job) = &mut self.targets.job
@@ -166,24 +166,48 @@ impl Service {
                         .job
                         .as_ref()
                         .is_some_and(|running| running.ticket == job && running.running());
+                let proposal_matches = self.targets.session == session
+                    && self
+                        .targets
+                        .proposals
+                        .as_ref()
+                        .is_some_and(|proposals| proposals.ticket == job);
                 let result = if matches {
                     self.cancel_tracking();
                     self.message = Some("Cancelling tracking…".into());
                     Ok(())
+                } else if proposal_matches {
+                    // Completion can race with closing the picker. Cancelling
+                    // that exact completed request is a harmless acknowledgement.
+                    if self.targets.proposals_running.is_some() {
+                        self.cancel_proposals();
+                        self.message = Some("Cancelling target search…".into());
+                    }
+                    Ok(())
                 } else {
-                    Err("No matching tracking job is running.".into())
+                    Err("No matching target job is running.".into())
                 };
                 (ticket, result)
             }
-            Operation::DetectFaces {
+            Operation::DetectPictureProposals {
                 ticket,
                 session,
                 revision,
                 asset,
                 pts,
+                selection,
             } => (
                 ticket,
-                self.start_faces(ticket, session, revision, asset, pts),
+                self.start_proposals(
+                    ticket,
+                    session,
+                    revision,
+                    deadpan_cli::picture_proposals::PictureProposalRequest {
+                        asset: Some(asset),
+                        at_pts: pts,
+                        selection,
+                    },
+                ),
             ),
             Operation::SaveFramed {
                 ticket,
@@ -221,7 +245,7 @@ impl Service {
         if let Some(workspace) = &self.workspace
             && self.targets.session != workspace.session
             && self.targets.running.is_none()
-            && self.targets.faces_running.is_none()
+            && self.targets.proposals_running.is_none()
         {
             self.targets.reset(workspace.session);
         }
@@ -447,9 +471,9 @@ impl Service {
                 }
                 Worker::Scripted(script)
             }
-            // Only face detection is scripted; tracking uses the installed worker.
+            // Only picture analysis is scripted; tracking uses the installed worker.
             #[cfg(any(test, feature = "ui-harness"))]
-            Backend::ScriptedFaces(_) => match TrackingRuntime::beside_current_executable() {
+            Backend::ScriptedProposals(_) => match TrackingRuntime::beside_current_executable() {
                 Ok(runtime) if runtime.executable.is_file() => Worker::Real(runtime),
                 _ => {
                     self.targets.job = Some(job);
@@ -517,9 +541,9 @@ impl Service {
                 .saved
                 .clone()
                 .filter(|saved| saved.session == session),
-            faces: self
+            proposals: self
                 .targets
-                .faces
+                .proposals
                 .clone()
                 .filter(|faces| faces.session == session),
         })
@@ -527,7 +551,7 @@ impl Service {
 
     /// Apply queued job events on the writer. True when published state changed.
     pub(super) fn pump_tracking(&mut self) -> bool {
-        let mut changed = self.pump_faces();
+        let mut changed = self.pump_proposals();
         for _ in 0..EVENT_CAPACITY + 1 {
             let Some(running) = &self.targets.running else {
                 return changed;

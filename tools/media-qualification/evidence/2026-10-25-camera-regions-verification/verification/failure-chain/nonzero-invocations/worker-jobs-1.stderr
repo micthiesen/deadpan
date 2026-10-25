@@ -1,0 +1,23 @@
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+error[E0308]: mismatched types
+   --> crates/deadpan-jobs/src/picture_proposals/tests.rs:376:9
+    |
+369 |     crate::adversarial::protocol::<PictureProposalProtocol>(
+    |     ------------------------------------------------------- arguments to this function are incorrect
+...
+376 |         read_host,
+    |         ^^^^^^^^^ one type is more general than the other
+    |
+    = note: expected fn pointer `for<'a, 'b> fn(&'a mut &'b [u8]) -> Result<_, _>`
+                  found fn item `for<'a> fn(&'a mut _) -> Result<_, _> {picture_proposals::read_host::<_>}`
+note: function defined here
+   --> crates/deadpan-jobs/src/adversarial.rs:30:15
+    |
+ 30 | pub(crate) fn protocol<P>(
+    |               ^^^^^^^^
+...
+ 34 |     read_host: HostReader<P>,
+    |     ------------------------
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `deadpan-jobs` (lib test) due to 1 previous error

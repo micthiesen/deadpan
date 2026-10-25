@@ -1,0 +1,28 @@
+{
+  "recorded_at": "2026-10-25T08:29:26.050996+00:00",
+  "owned_files": {
+    "native/deadpan-track/src/vision.rs": {
+      "sha256": "0d6f866b6680ee9ff927e803b9bfce82f98a1b46c28797099a7aa0de2b844c4c",
+      "bytes": 31898
+    },
+    "native/deadpan-track/src/picture_proposals.rs": {
+      "sha256": "8048a161df2fb8400a07886ca7a0faad76c405b229b66bd9c4a8b37406104468",
+      "bytes": 17175
+    },
+    "native/deadpan-track/tests/picture_proposals.rs": {
+      "sha256": "f0ebc4554f173f8e7fbb3cb7012455c16ef50a971d09bfceca2a4b17eba66b66",
+      "bytes": 13029
+    }
+  },
+  "expected_shared_constants": {
+    "module": "deadpan_jobs::picture_proposals",
+    "names": [
+      "FACE_ENGINE",
+      "SALIENCY_ENGINE"
+    ],
+    "owner": "single_leaf_net_impl"
+  },
+  "geometry_policy": "unchanged; native overflow clips under SDK contract, finding refuted",
+  "verification": "scoped rustfmt --check passed; Cargo deliberately not run before Root integration",
+  "prior_native_freeze": "native-final-freeze.json"
+}

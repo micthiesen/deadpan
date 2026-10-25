@@ -1,0 +1,8 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.14s
+────────────
+ Nextest run ID 6dfee01e-4efd-4444-8a28-5e607eff8c96 with nextest profile: default
+    Starting 2 tests across 7 binaries (35 tests and 53 binaries skipped)
+        PASS [   0.380s] (1/2) deadpan-track::faces vision_finds_both_drawn_faces_left_to_right_and_none_in_the_empty_picture
+        PASS [   0.033s] (2/2) deadpan-track::landmarks source_links_and_fifos_fail_without_waiting_for_a_writer
+────────────
+     Summary [   0.413s] 2 tests run: 2 passed, 35 skipped

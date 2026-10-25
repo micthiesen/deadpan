@@ -1,0 +1,5 @@
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.06s
+     Running `/tmp/deadpan-follow-creep-2026-10-24/target/debug/xtask check --since 889a06f0738a7347faf1bda53463cd7e35ae07b1 --no-test`
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.17s
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 15.62s

@@ -1,5 +1,6 @@
 #![cfg(target_os = "macos")]
-//! The real worker's `detect-faces` mode under the shared supervisor, end to
+//! The real worker's Faces-only `picture-proposals` mode through the public
+//! face facade and shared supervisor, end to
 //! end on a deterministic synthetic fixture (drawn, shaded cartoon heads, not
 //! person footage; see tests/generate_faces_fixture.py): pictures 0-1 show a
 //! larger head left of center and a smaller one right of center, pictures
@@ -223,7 +224,7 @@ fn vision_finds_both_drawn_faces_left_to_right_and_none_in_the_empty_picture() {
     assert!(target.samples.is_empty() && target.provenance.is_none());
     assert_eq!(
         target.region,
-        deadpan_analysis::target_region(&right.region)
+        deadpan_core::TargetGeometry::Region(deadpan_analysis::target_region(&right.region))
     );
     assert!(choose_face(&detection.faces, 3).is_err());
 

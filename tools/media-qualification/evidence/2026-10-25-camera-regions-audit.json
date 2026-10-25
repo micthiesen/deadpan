@@ -1,0 +1,128 @@
+{
+  "status": "passed",
+  "scope": "Independent read-only stored inventory, bounded decompression, TAR member/source pin/companion/cap verification; no product execution or changes to published packages. Binary identities are preserved metadata; binary bytes are intentionally not packaged.",
+  "verifier_sha256": "d38d3068acba4310905282481fa97327c1398664d5b6e58799b469cfd5453172",
+  "packages": [
+    {
+      "package": "2026-10-25-camera-regions",
+      "inventory_sha256": "4214e4791e630692c03be40990fd678411981ba3315650579eaf49c772b0392d",
+      "plan_sha256": "0829fbd9755857ec940e64bc50bcd674bdbcd4471ab2ab94e7764abc1636d861",
+      "payloads": 98,
+      "direct_files": 30,
+      "archive_details": [
+        {
+          "path": "archives/latest-project-package.tar.gz",
+          "retained_members": 16,
+          "omitted_sidecars": 0,
+          "raw_source_bytes": 3539035,
+          "tar_bytes": 3553280
+        }
+      ],
+      "raw_payload_bytes": 162174614,
+      "metadata_bytes": 61412,
+      "raw_and_metadata_bytes": 162236026,
+      "stored_bytes": 8351921,
+      "decoded_bytes": 162250271,
+      "source_rows": 59,
+      "binary_identity_rows": 5,
+      "forbidden_inputs": []
+    },
+    {
+      "package": "2026-10-25-camera-regions-regressions",
+      "inventory_sha256": "8aa48961430500cb2cbbee11d6d55299f67e556011ac282857eb73497dbbb781",
+      "plan_sha256": "20ab370622290944431aecace6852f9d00c8c47a622975642cd81830371009f4",
+      "payloads": 157,
+      "direct_files": 86,
+      "archive_details": [
+        {
+          "path": "archives/source-first.tar.gz",
+          "retained_members": 51,
+          "omitted_sidecars": 0,
+          "raw_source_bytes": 4132940,
+          "tar_bytes": 4177920
+        },
+        {
+          "path": "archives/source-second.tar.gz",
+          "retained_members": 52,
+          "omitted_sidecars": 0,
+          "raw_source_bytes": 4732316,
+          "tar_bytes": 4782080
+        },
+        {
+          "path": "archives/source-debug-first.tar.gz",
+          "retained_members": 52,
+          "omitted_sidecars": 0,
+          "raw_source_bytes": 4732542,
+          "tar_bytes": 4782080
+        },
+        {
+          "path": "archives/source-debug-second.tar.gz",
+          "retained_members": 52,
+          "omitted_sidecars": 0,
+          "raw_source_bytes": 4733588,
+          "tar_bytes": 4782080
+        }
+      ],
+      "raw_payload_bytes": 250600443,
+      "metadata_bytes": 136693,
+      "raw_and_metadata_bytes": 250737136,
+      "stored_bytes": 22538003,
+      "decoded_bytes": 250929910,
+      "source_rows": 59,
+      "binary_identity_rows": 5,
+      "forbidden_inputs": []
+    },
+    {
+      "package": "2026-10-25-camera-regions-verification",
+      "inventory_sha256": "5cb1ee835c32a371a70957f829ba1b6e4b2b136c71e4dd40a6f9f33e329b4cf2",
+      "plan_sha256": "3079d173d61002b7238706128e6bbde533ad4c485cbd81a62b483d868422d2a2",
+      "payloads": 321,
+      "direct_files": 250,
+      "archive_details": [
+        {
+          "path": "archives/media-verification.tar.gz",
+          "retained_members": 50,
+          "omitted_sidecars": 2,
+          "raw_source_bytes": 40902564,
+          "tar_bytes": 40908800
+        },
+        {
+          "path": "archives/package-build-metadata.tar.gz",
+          "retained_members": 93,
+          "omitted_sidecars": 0,
+          "raw_source_bytes": 6479779,
+          "tar_bytes": 6553600
+        },
+        {
+          "path": "archives/package-relocation-metadata.tar.gz",
+          "retained_members": 203,
+          "omitted_sidecars": 0,
+          "raw_source_bytes": 5700276,
+          "tar_bytes": 5847040
+        },
+        {
+          "path": "archives/actual-package-baselines.tar.gz",
+          "retained_members": 14,
+          "omitted_sidecars": 0,
+          "raw_source_bytes": 9555,
+          "tar_bytes": 20480
+        }
+      ],
+      "raw_payload_bytes": 63545626,
+      "metadata_bytes": 267618,
+      "raw_and_metadata_bytes": 63813244,
+      "stored_bytes": 7792292,
+      "decoded_bytes": 64050990,
+      "source_rows": 59,
+      "binary_identity_rows": 5,
+      "forbidden_inputs": []
+    }
+  ],
+  "companion_bindings": "Both actual primary/regression inventories and collection metadata equal the retained Verification payload bytes.",
+  "claim_limits": [
+    "On-this-Mac evidence only; scoped no-AI worker relocation, not full bundle/AI-runtime/clean-Mac qualification.",
+    "Old all107 reports remain hash-indexed; selected failures and corrections are packaged.",
+    "Old collector13425/14c source bytes unavailable and unexecuted; historical hashes only."
+  ],
+  "findings": []
+}

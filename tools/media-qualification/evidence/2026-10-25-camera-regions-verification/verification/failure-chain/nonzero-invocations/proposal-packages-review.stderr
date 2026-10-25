@@ -1,0 +1,83 @@
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 34.35s
+     Running unittests src/lib.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_cli-8fc8d56f80cfa034)
+[hevc_videotoolbox @ 0xbb04f1180] This device does not support the AllowOpenGop option. Value ignored.
+[hevc_videotoolbox @ 0xbb04f1180] This device does not support the AllowOpenGop option. Value ignored.
+[mp4 @ 0xbb2066580] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb046ea00] Qavg: 65395.852
+[mp4 @ 0xbb1289180] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb04f1f80] Qavg: 65395.852
+[mp4 @ 0xbb1060000] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb04f1f80] Qavg: 65395.852
+[mp4 @ 0xbb109f480] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb04f3800] Qavg: 65395.852
+[mp4 @ 0xbb1289900] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb04f3480] Qavg: 65395.852
+[mp4 @ 0xbb10af700] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb046d880] Qavg: 65395.852
+[mp4 @ 0xbb10ae080] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb046c000] Qavg: 65395.852
+[mp4 @ 0xbb128aa80] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb046ca80] Qavg: 65395.852
+[mp4 @ 0xbb10ae300] Starting second pass: moving the moov atom to the beginning of the file
+[mp4 @ 0xbb10af200] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb046dc00] Qavg: 65395.852
+[mp4 @ 0xbb10ade00] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb046c700] Qavg: 65395.852
+[mp4 @ 0xbb10acc80] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb046d500] Qavg: 65395.852
+[aac @ 0xbb046c380] Qavg: 65395.852
+[mp4 @ 0xbb109f980] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb04f3480] Qavg: 65395.852
+[mp4 @ 0xbb109c280] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb087c000] Qavg: 65395.852
+[mp4 @ 0xbb128a800] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb087c000] Qavg: 65395.852
+[mp4 @ 0xbb10a7c00] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb046f480] Qavg: 65395.852
+[hevc_videotoolbox @ 0xbb087ea00] This device does not support the AllowOpenGop option. Value ignored.
+[hevc_videotoolbox @ 0xbb087ea00] This device does not support the AllowOpenGop option. Value ignored.
+[mp4 @ 0xbb1060000] Starting second pass: moving the moov atom to the beginning of the file
+[mp4 @ 0xbb1063700] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb087df80] Qavg: 65395.852
+[aac @ 0xbb087ed80] Qavg: 65395.852
+[mp4 @ 0xbb1289b80] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb087ca80] Qavg: 65395.852
+[mp4 @ 0xbb109f980] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb087f100] Qavg: 65395.852
+[mp4 @ 0xbb109cc80] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb087d880] Qavg: 65395.852
+[mp4 @ 0xbb10a4000] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb087dc00] Qavg: 65395.852
+[mp4 @ 0xbb2064f00] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb046f800] Qavg: 65395.852
+[mp4 @ 0xbb1288000] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb087c000] Qavg: 65395.852
+[mp4 @ 0xbb1063980] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb087d880] Qavg: 65395.852
+[mp4 @ 0xbb2067c00] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb087c000] Qavg: 65395.852
+[mp4 @ 0xbb109ca00] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb087d880] Qavg: 65395.852
+[mp4 @ 0xbb9d49e00] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0xbb04f2d80] Qavg: 65395.852
+     Running unittests src/main.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_cli-2930535d47edec04)
+     Running tests/audio_context.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/audio_context-87f465db3859fc8e)
+     Running tests/audio_inspection.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/audio_inspection-5f5589b6db031ffe)
+     Running tests/backups.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/backups-69ddad9685f908c1)
+     Running tests/boundary_location.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/boundary_location-9d55aeced0851f9a)
+     Running tests/bridge_conditioning.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/bridge_conditioning-3da60e85b6a75964)
+     Running tests/corrections.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/corrections-6f0a8e9bf30e6be6)
+     Running tests/doctor.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/doctor-b8452cac8c30bb26)
+     Running tests/encoded_render.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/encoded_render-eb5b90144ce1a77b)
+     Running tests/encoded_verification.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/encoded_verification-db252c548915fd6d)
+     Running tests/encoder_admission.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/encoder_admission-c5bede2372dc9783)
+     Running tests/generated_joins.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/generated_joins-fd112b7d810de9ae)
+     Running tests/golden_renders.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/golden_renders-c27f64ac93c90ca5)
+     Running tests/headless_parity.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/headless_parity-0b3c2e08d18f9a7c)
+     Running tests/hostile_analysis_workers.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/hostile_analysis_workers-672155b92f588508)
+error: test failed, to rerun pass `-p deadpan-cli --test hostile_analysis_workers`

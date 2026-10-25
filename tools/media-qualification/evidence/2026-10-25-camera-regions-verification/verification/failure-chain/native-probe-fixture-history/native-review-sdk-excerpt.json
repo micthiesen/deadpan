@@ -1,0 +1,11 @@
+{
+  "source": "Xcode26.6 SDK26.5 Vision.framework/Headers/VNObservation.h",
+  "original_path": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/Vision.framework/Headers/VNObservation.h",
+  "full_header_bytes": 47076,
+  "full_header_sha256": "c7ee0eec0d151431341a651bdbe93e18f2e20bb800b3ecb4a94bf4923b81452e",
+  "line": 263,
+  "declaration": "VNRectangleObservation",
+  "excerpt": "All coordinates are normalized and the coordinates can be outside the image.",
+  "local_retained_copy": "/tmp/deadpan-camera-regions-2026-10-25/native-review-VNObservation.h.txt",
+  "publication_scope": "Publish this bounded excerpt/provenance, not the complete SDK header. Full local header remains retained in scratch."
+}

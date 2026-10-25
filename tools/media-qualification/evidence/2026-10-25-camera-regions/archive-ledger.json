@@ -1,0 +1,91 @@
+[
+  {
+    "members": [
+      {
+        "bytes": 0,
+        "path": ".render-candidates.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 0,
+        "path": ".writer.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 0,
+        "path": "Backups/.backups-active.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 0,
+        "path": "Backups/.backups.lock",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 569344,
+        "path": "Backups/backup-20261025T113303.807Z-close-8e7e838f.sqlite",
+        "sha256": "8d71f478a6457ded628c312e379d2345cd27d5cc6e7ef790b0af88e353bb63c2"
+      },
+      {
+        "bytes": 585089,
+        "path": "Media/Originals/blake3-1f051e4e2698b32942daa9abc420fdb3fbe86cd093fb40de13058e296425d2d6",
+        "sha256": "aaffac5cc021297348101e3ce500a3febac48fc45021a511468cb3fd76784e93"
+      },
+      {
+        "bytes": 768812,
+        "path": "Media/Originals/blake3-e1aaa8fe57b0747f45790c34034c0826966f1effcf32410d725678fc6ef9ede7",
+        "sha256": "8f2ede07d4e8aa6743b6f441f5fb3cc6c6347a333f7b4ede15c52315f7195089"
+      },
+      {
+        "bytes": 15134,
+        "path": "Media/RenderCandidates/blake3-ccad240980816185c5a3adb13d381bcc4f8e6eae6526d7b65a3e7e1c596fe42d",
+        "sha256": "e35a401c10986fb191bea9bf3898b90a24e772a1224c961c485bd821a8af5c89"
+      },
+      {
+        "bytes": 153334,
+        "path": "Media/RenderCandidates/blake3-fe20da7cea9b7e9735a14b35043b054609d00b25f6a474830941f0cd391dce0d",
+        "sha256": "c2ef81c7e1e0eb23915a7b8a02be778de3759211e6653746eafdc1f121d6a704"
+      },
+      {
+        "bytes": 585728,
+        "path": "Snapshots/.tmprulfop",
+        "sha256": "b65399643fddf4d427dedd0db14117e620b546bbaa1c512600838c7e2a219538"
+      },
+      {
+        "bytes": 32768,
+        "path": "Snapshots/.tmprulfop-shm",
+        "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+      },
+      {
+        "bytes": 0,
+        "path": "Snapshots/.tmprulfop-wal",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 82,
+        "path": "manifest.json",
+        "sha256": "0be316f7e5ed525c69358d6886c51811b9953d87b1255a4ddab2fb509a6f8e19"
+      },
+      {
+        "bytes": 569344,
+        "path": "project.sqlite",
+        "sha256": "9aa7862ca0846c95c6a074d8a7a44cf8c34e4cf9c7db9bf44f07ac37a79543ec"
+      },
+      {
+        "bytes": 32768,
+        "path": "project.sqlite-shm",
+        "sha256": "1aaa80efb262b7d79bfc2cf13b0ca2105b61193dd9442985cbbbbc4375c0e7fb"
+      },
+      {
+        "bytes": 226632,
+        "path": "project.sqlite-wal",
+        "sha256": "35e655bf51801833ed2596b54eb9512153a740eaaaad0a0b8197962d6bf4bfd4"
+      }
+    ],
+    "omitted_sidecars": {},
+    "path": "archives/latest-project-package.tar.gz",
+    "root": "/private/tmp/deadpan-camera-regions-2026-10-25/native-regions-verified/projects/regions/Documents/Deadpan/salient-regions.deadpan",
+    "source_bytes": 3539035,
+    "source_files": 16
+  }
+]

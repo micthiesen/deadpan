@@ -11,8 +11,8 @@
 //! protocol messages; diagnostics go to stderr, which the host keeps as a
 //! bounded tail. The worker applies no tracking policy: the host does.
 //!
-//! With the single argument `detect-faces` it instead runs Apple Vision's
-//! face rectangle detector on one indexed picture ([`faces`]).
+//! With the single argument `picture-proposals` it instead runs selected
+//! face/objectness detectors on one indexed picture ([`picture_proposals`]).
 
 use std::fs::File;
 use std::io::{self, Read, Seek, Write};
@@ -32,8 +32,8 @@ use deadpan_source::{DecodeControl, DecodeLimits, DecodedRgbaFrame, SourceDecode
 use rustix::fs::{Mode, OFlags};
 use sha2::Digest;
 
-mod faces;
 mod landmarks;
+mod picture_proposals;
 #[cfg(target_os = "macos")]
 #[allow(unsafe_code)]
 mod vision;
@@ -76,7 +76,9 @@ fn main() -> ExitCode {
     let mut arguments = std::env::args_os().skip(1);
     match (arguments.next(), arguments.next()) {
         (None, _) => {}
-        (Some(mode), None) if mode == deadpan_jobs::faces::WORKER_ARGUMENT => return faces::main(),
+        (Some(mode), None) if mode == deadpan_jobs::picture_proposals::WORKER_ARGUMENT => {
+            return picture_proposals::main();
+        }
         (Some(mode), None) if mode == deadpan_jobs::landmarks::WORKER_ARGUMENT => {
             return landmarks::main();
         }

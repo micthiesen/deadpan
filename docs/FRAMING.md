@@ -106,7 +106,7 @@ selection, navigation scope and cursor changes revoke the draft.
 | `h/j/k/l` | Move the center by 1% of the upright uncropped source width/height. |
 | `H/J/K/L` | Move by 5% of the same source dimensions. |
 | `+` / `-` | Multiply scale by 1.05 or its reciprocal. Counts repeat the operation. |
-| `f` | Toggle the numbered picker: saved targets covering this picture, center and corners, then detected face proposals. Digits pick there; they are counts in Adjust. |
+| `f` | Toggle the numbered picker: saved targets covering this picture, center and corners, then detected faces and salient regions. Digits pick there; they are counts in Adjust. |
 | `Tab` / `Shift+Tab` in the picker | Next / previous page of up to nine numbered targets. |
 | `t` | Follow the picked saved target (`FramingValue::Follow`, the current scale, fallback = the current pose); `t` again stops following at the pose shown. |
 | `n` | Draw a new target; `n` in the editor switches rectangle / point (below). |
@@ -126,8 +126,8 @@ two named gag commands have explicit replacement semantics.
 
 The picker lists saved targets whose
 asset is the displayed picture's and whose span covers its source time, then the
-center and four corners of the upright Original, then detected faces. Each page
-uses digits 1–9; Tab and Shift+Tab reach every page. Background face proposals
+center and four corners of the upright Original, then detected faces and salient
+regions. Each page uses digits 1–9; Tab and Shift+Tab reach every page. Background proposals
 append without changing existing entry positions. Saved targets are drawn as
 rectangles or point markers at `region_at` of the picture's exact source time,
 colored and labelled by how that geometry was obtained: `drawn` (the initial selection), `corrected`,
@@ -218,12 +218,13 @@ construction and its numeric tests live in
 | `:zoom S curve=linear\|smoothstep` | An eased change from the current pose, as `:creep to=S`. |
 | `:creep [from=S] [to=S] [target=…] [curve=smoothstep\|linear]` | Eases from `from` (default: current scale) to `to` (default 1.35). With no `target=`, a whole Source, Hold, Sequence, Repeat or Retime with a fixed Follow retains live targeting and animates scale, either as an ordinary selected beat or within explicit Play scopes. Other cases use a fixed-center envelope. |
 | `:zoom S target=face:N …`, `:creep … target=face:N` | Face `N` (1 to 64, left to right) proposed in the displayed picture, saved as a target together with the framing ([face proposals](#face-proposals)). |
+| `:zoom S target=region:N …`, `:creep … target=region:N` | Salient region `N` (1 to 64, geometrically ordered) proposed in the displayed picture, saved as a target together with the framing. |
 | `:zoom off` | Abrupt return: no framing on the whole beat, or a step out to the full picture over the Edit range. |
 
 `target=current` (and `,z`) means the target the beat already follows, else the
 only saved target covering the displayed picture; several refuse and name them.
 `target=center` is the Original's center; `target=face:N` is a face proposal
-(below); any other value is a target id or label (quote labels with spaces). A whole-beat step with a target follows it
+and `target=region:N` a salient-region proposal (below); any other value is a target id or label (quote labels with spaces). A whole-beat step with a target follows it
 live. An eased edit that explicitly names a target, or a ranged edit, uses a fixed point: the target's center exactly
 as a follow would resolve it (`deadpan_plan::follow_pose_in_context`) at the frame where a
 step lands (the range's first frame) or where a creep arrives (its last frame).
@@ -338,14 +339,16 @@ Undo, and the two-target refusal of `,z` followed by a quoted-label `:zoom`.
 ### Face proposals
 
 Camera's `f` picker requests proposals for its exact stopped Original picture
-through the same background face service. Saved targets, center and corners
-keep their positions; detected faces append after them, ordered left to right
-then top to bottom. Each page has digits 1–9. Tab advances a page, Shift+Tab
+through the shared picture-proposal service. One qualified source preparation,
+indexed decode, BGRA buffer and Vision image handler serve both face rectangles
+and objectness saliency. Saved targets, center and corners keep their positions;
+detected faces append, followed by salient regions. Each kind is ordered left
+to right, then top to bottom, with independent numbering. Each page has digits 1–9. Tab advances a page, Shift+Tab
 returns, and the inspector has matching page buttons. Pending, empty and failed
 detections leave ordinary choices available. Closing and reopening the picker
 refreshes proposals; a completion for a closed or changed Camera cannot act.
 
-Selecting a numbered face explicitly saves only that face as an ordinary
+Selecting a numbered face or region explicitly saves only that proposal as an ordinary
 target, then continues Camera centered on it. The scale and complete existing
 camera path remain temporary, including a Follow's clock and scale animation.
 Enter applies framing as a separate undoable edit. Escape restores entry
@@ -358,11 +361,11 @@ command below.
 names the `N`th face Apple Vision's face rectangle detector proposes in the
 stopped picture, counted from 1 left to right (then top to bottom). Detection
 proposes; it never edits. The command is captured and its picture displayed
-exactly as for any `:zoom`/`:creep`; the app then sends one `DetectFaces`
+exactly as for any `:zoom`/`:creep`; the app then sends one `DetectPictureProposals`
 command for that indexed Original picture and keeps editing while the project
-service's face job runs (`deadpan-track detect-faces`, see
+service's Faces-only job runs (`deadpan-track picture-proposals`, see
 [tracking](TRACKING.md#face-detection-mode)). The footer says
-`Finding faces in the displayed picture for face:N…`.
+`Finding Face N in the displayed picture… Nothing changes unless that proposal is found.`
 
 When the detection finishes, the command applies only if its session,
 revision, Visual/Edit range, selected beat, Repeat scope, cursor and Sequence
@@ -376,8 +379,8 @@ samples, corrections or provenance (core `TargetRule` is closed to tracking).
 The framing is built exactly as `target=ID` would build it for that target, and
 the target and the framing are committed as **one** `Compound` transaction
 (`SetTarget` then `SetFraming`) expecting the entry revision: one history entry,
-one Undo removes both. The message reads `Framing saved: 1.350× following
-Face 2. Face 2 is a new target from face detection; one Undo removes both.`
+one Undo removes both. The message identifies the framing and new detected
+target, and explains that one Undo removes both.
 
 Refusals make no edit: no face in the picture (`No faces were found in this
 picture.`), `face:N` beyond the count (`face:3 is out of range: this picture
@@ -397,6 +400,25 @@ only the worker's reported faces scripted) a delayed detection keeps the
 editor responsive, `face:2` saves `Face 2` and follows it at 1.35×, one Undo
 removes both, a cursor move during detection refuses the stale completion,
 `face:3` of two refuses with the count and `face:0` is refused at entry.
+
+`target=region:N` uses the same captured-context and atomic `SaveFramed` path,
+requesting only salient regions. It creates `region-K` / `Region N`, preserves
+the measured source display aspect, and refuses absent regions, out-of-range
+numbers, stale context, scoped direct commands and macro recording. Camera's
+picker can accept a proposal through its existing scoped target-save route.
+`detect-regions PROJECT --at PTS [--asset ID] [--include-faces]` lists results
+headlessly without edits; the flag requests both kinds atomically.
+
+Objectness saliency uses Apple Vision revision 2 and supplies rectangles without
+confidence scores, semantic names or a relevance ranking. The face request keeps
+its existing default revision policy. Each reports its actual runtime separately.
+At most 64 proposals per kind and one saliency image observation are accepted;
+these are safety limits. A successful empty collection differs from an absent
+unrequested collection. Any selected detector failure rejects the whole batch.
+Vision rectangles may extend beyond the image: finite positive rectangles are
+clipped to the image before upright rotation, and wholly outside boxes disappear.
+Invalid numeric geometry fails. See the [qualification record](qualification/camera-regions-2026-10-25.md)
+for actual checks and remaining verification.
 
 ## Framing presets
 

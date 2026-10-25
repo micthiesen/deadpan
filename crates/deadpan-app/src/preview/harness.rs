@@ -55,6 +55,7 @@ mod proxy;
 mod recipe_library;
 mod recipes;
 mod recovery;
+mod regions;
 mod registers;
 mod render;
 mod repeat_follow_creep;
@@ -295,6 +296,8 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                 deadpan_store::portable::copy_portable(fixture, &copy, &AtomicBool::new(false))
                     .map_err(|error| error.to_string())?;
                 copy
+            } else if name == "regions" {
+                regions::fixture().canonicalize().map_err(|error| format!("Resolve generated region fixture: {error}"))?
             } else {
                 fixture.to_owned()
             };
@@ -372,6 +375,8 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                                 targets::backend()
                             } else if name == "faces" {
                                 faces::backend()
+                            } else if name == "regions" {
+                                regions::backend()
                             } else {
                                 crate::project::targets::Backend::Environment
                             },
@@ -550,7 +555,27 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                     // Keyboard only from the start screen: ⌘N, not a click.
                     return full_session::run(&mut driver);
                 }
-                driver.click("Choose video…  ⌘N")?;
+                if name == "keymap-error" {
+                    // The startup diagnostic can disappear as a service update
+                    // arrives, moving the start card between pointer frames.
+                    // Verify its persistent notice, then use the shipped key.
+                    let status = driver.app().keymap_status().to_owned();
+                    let paint = scenarios::text_paint_visibility(&driver, "Keymap error");
+                    driver.check(
+                        "The rejected keymap diagnostic is visible before starting the Original",
+                        driver.app().keymap_error
+                            && status.contains("does.not.exist")
+                            && status.contains("All shipped editor keys remain active")
+                            && status.contains("Documents/keymap.json")
+                            && !paint.is_empty()
+                            && paint.iter().all(|part| part["fully_visible"] == true),
+                        json!("painted persistent keymap error and shipped fallback"),
+                        json!({"status":status,"paint":paint}),
+                    )?;
+                    driver.key_modified(egui::Key::N, egui::Modifiers::COMMAND)?;
+                } else {
+                    driver.click("Choose video…  ⌘N")?;
+                }
                 driver.wait_for("Original initialized and displayed", |app| {
                     app.workspace.as_ref().is_some_and(|w| {
                         matches!(w.single_source, Some(SingleSourceState::Ready { .. }))

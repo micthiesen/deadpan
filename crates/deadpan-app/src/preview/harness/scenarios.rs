@@ -11,6 +11,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "targets" => super::targets::run(d),
         "points" => super::points::run(d),
         "faces" => super::faces::run(d),
+        "regions" => super::regions::run(d),
         "menus" => menus(d),
         "palette" => super::palette::run(d),
         "delayed-preview" => delayed(d),

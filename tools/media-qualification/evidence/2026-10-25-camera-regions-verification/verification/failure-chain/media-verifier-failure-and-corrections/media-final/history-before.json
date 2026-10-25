@@ -1,0 +1,22 @@
+{
+  "sha256": "f1dc8a444c355d0da6c0be1f1cb582df89e2efb2741a01ce9aaa3c68fc1b8194",
+  "counts": {
+    "revisions": 18,
+    "history": 11,
+    "redo": 0,
+    "state": 1,
+    "register_state": 1,
+    "register_contents": 0,
+    "registers": 0,
+    "transaction_steps": 3
+  },
+  "head": "3db9aa51-faaf-4ac5-8705-e613b82e68ff",
+  "cursor": 11,
+  "workflow": "single_source_v1",
+  "kind_counts": {
+    "edit": 11,
+    "initial": 1,
+    "redo": 2,
+    "undo": 4
+  }
+}

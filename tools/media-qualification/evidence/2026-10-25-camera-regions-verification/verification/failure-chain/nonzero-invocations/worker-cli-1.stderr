@@ -1,0 +1,74 @@
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+error[E0616]: field `stream` of struct `picture_proposals::PreparedPictureProposals` is private
+   --> crates/deadpan-cli/src/faces.rs:230:38
+    |
+230 |             "stream_index": prepared.stream.stream_index,
+    |                                      ^^^^^^ private field
+    |
+help: a method `stream` also exists, call it with parentheses
+    |
+230 |             "stream_index": prepared.stream().stream_index,
+    |                                            ++
+
+error[E0616]: field `stream` of struct `picture_proposals::PreparedPictureProposals` is private
+   --> crates/deadpan-cli/src/faces.rs:231:36
+    |
+231 |             "time_base": [prepared.stream.time_base_num, prepared.stream.time_base_den],
+    |                                    ^^^^^^ private field
+    |
+help: a method `stream` also exists, call it with parentheses
+    |
+231 |             "time_base": [prepared.stream().time_base_num, prepared.stream.time_base_den],
+    |                                          ++
+
+error[E0616]: field `stream` of struct `picture_proposals::PreparedPictureProposals` is private
+   --> crates/deadpan-cli/src/faces.rs:231:67
+    |
+231 |             "time_base": [prepared.stream.time_base_num, prepared.stream.time_base_den],
+    |                                                                   ^^^^^^ private field
+    |
+help: a method `stream` also exists, call it with parentheses
+    |
+231 |             "time_base": [prepared.stream.time_base_num, prepared.stream().time_base_den],
+    |                                                                         ++
+
+error[E0616]: field `stream` of struct `picture_proposals::PreparedPictureProposals` is private
+   --> crates/deadpan-cli/src/faces.rs:232:48
+    |
+232 |             "rotation_quarter_turns": prepared.stream.rotation_quarter_turns,
+    |                                                ^^^^^^ private field
+    |
+help: a method `stream` also exists, call it with parentheses
+    |
+232 |             "rotation_quarter_turns": prepared.stream().rotation_quarter_turns,
+    |                                                      ++
+
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>>: LowerHex` is not satisfied
+   --> crates/deadpan-cli/src/picture_proposals/tests.rs:172:32
+    |
+172 |     assert_eq!(format!("{:x}", Sha256::digest(&copied)), prepared.content);
+    |                         ----   ^^^^^^^^^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>, ...>>`
+    |                         |
+    |                         required by this formatting parameter
+    |
+    = help: the following other types implement trait `LowerHex`:
+              &T
+              &mut T
+              AccelerationStructureBuildFlags
+              AccelerationStructureGeometryFlags
+              AccelerationStructureUses
+              AttachmentOps
+              Backends
+              BindGroupLayoutFlags
+            and 252 others
+    = note: the full name for the type has been written to '/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_cli-8fc8d56f80cfa034.long-type-13702828775113405879.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+Some errors have detailed explanations: E0277, E0616.
+For more information about an error, try `rustc --explain E0277`.
+error: could not compile `deadpan-cli` (lib test) due to 5 previous errors

@@ -1,0 +1,124 @@
+#!/usr/bin/env python3
+"""Independent read-only verification of three already published evidence packages."""
+import argparse,gzip,hashlib,io,json,os,pathlib,tarfile
+LIMIT=256*1024*1024
+COLLECTOR='251e2eb49e2f75dedb81926c32a748652d32041ba87d880ff5ff09230f4b418d'
+HELPER='2758fa2c837e63d41b33f38b34f728017feda8b0c05aa21499eeb40f4764df13'
+IDENTITIES='eda59edea13827c5115bc87f284176c961ff3021308f4bf64f94eab739712d2b'
+PLANS=['0829fbd9755857ec940e64bc50bcd674bdbcd4471ab2ab94e7764abc1636d861','20ab370622290944431aecace6852f9d00c8c47a622975642cd81830371009f4','3079d173d61002b7238706128e6bbde533ad4c485cbd81a62b483d868422d2a2']
+NAMES=['2026-10-25-camera-regions','2026-10-25-camera-regions-regressions','2026-10-25-camera-regions-verification']
+def check(ok,msg):
+ if not ok:raise RuntimeError(msg)
+def digest(b):return hashlib.sha256(b).hexdigest()
+def pin(b):return {'bytes':len(b),'sha256':digest(b)}
+def safe(n):
+ p=pathlib.PurePosixPath(n)
+ check(isinstance(n,str) and n and not p.is_absolute() and '..' not in p.parts and '.' not in p.parts and str(p)==n,'unsafe name: '+str(n))
+ return n
+def read(p):
+ check(p.is_file() and not p.is_symlink(),'not regular '+str(p))
+ check(p.stat().st_size<=LIMIT,'oversized '+str(p));return p.read_bytes()
+def tree(root):
+ out={}
+ for base,dirs,files in os.walk(root):
+  for name in dirs:check(not (pathlib.Path(base)/name).is_symlink(),'symlink directory')
+  for name in files:
+   p=pathlib.Path(base)/name;out[safe(p.relative_to(root).as_posix())]=pin(read(p))
+ return out
+def decode(b,kind):
+ if kind=='identity':return b
+ check(kind in ['gzip','tar+gzip'],'unknown encoding')
+ with gzip.GzipFile(fileobj=io.BytesIO(b)) as stream:
+  raw=stream.read(LIMIT+1);check(len(raw)<=LIMIT and stream.read(1)==b'','decoded cap')
+ return raw
+def verify(root,expected_inventory,expected_plan,repo):
+ inventory_bytes=read(root/'files.json');check(digest(inventory_bytes)==expected_inventory,'inventory outer pin')
+ inventory=json.loads(inventory_bytes);actual=tree(root)
+ check(actual.pop('files.json')==pin(inventory_bytes) and actual==inventory,'full stored tree inventory')
+ coll=json.loads(read(root/'collection.json'));ledger=json.loads(read(root/'encoding-ledger.json'));archives=json.loads(read(root/'archive-ledger.json'))
+ encoded={row['path']:row for row in ledger};check(len(encoded)==len(ledger),'duplicate encoded paths')
+ check(set(inventory)==set(encoded)|{'collection.json','encoding-ledger.json','archive-ledger.json'},'unaccounted payload')
+ def payload(logical):
+  choices=[n for n in [logical,logical+'.gz'] if n in encoded]
+  check(len(choices)==1,'missing/ambiguous logical payload '+logical)
+  row=encoded[choices[0]];return decode(read(root/row['path']),row['encoding'])
+ check(digest(payload('packaging/collect-regions.py.txt'))==COLLECTOR,'collector pin')
+ check(digest(payload('packaging/bundle-helpers.py.txt'))==HELPER,'helper pin')
+ plan_bytes=payload('packaging/collect-plan.json');check(digest(plan_bytes)==expected_plan,'plan pin')
+ plan=json.loads(plan_bytes);check(plan['collector_sha256']==COLLECTOR,'plan collector')
+ check(plan['ready_for_collection'] is True and plan['raw_byte_limit']==LIMIT,'plan readiness/cap')
+ ids_bytes=payload('identities/final-identities.json');check(digest(ids_bytes)==IDENTITIES,'identity manifest pin');ids=json.loads(ids_bytes)
+ check(len(ids['sources'])==59 and len(ids['binaries'])==5,'59sources/5bins')
+ check(coll['source_count']==59 and coll['binary_identity_count']==5,'collection counts')
+ check(coll['collector_sha256']==COLLECTOR and coll['plan_sha256']==expected_plan and coll['identities_sha256']==IDENTITIES,'collection companions')
+ for relative,row in ids['sources'].items():
+  check(pin(payload('source/'+relative+'.txt'))==row,'retained source '+relative)
+  check(pin(read(repo/relative))==row,'current source '+relative)
+ rs=bytearray()
+ for relative,row in sorted(ids['sources'].items()):
+  if relative.endswith('.rs'):
+   b=payload('source/'+relative+'.txt');rs.extend(b'\n// ===== '+relative.encode()+b' =====\n');rs.extend(b)
+   if not b.endswith(b'\n'):rs.extend(b'\n')
+ check(payload('source/snapshots.rs.txt')==rs,'concatenated Rust source')
+ for name,row in ids['binaries'].items():
+  check(pin(read(pathlib.Path(row['executed'])))=={k:row[k] for k in ['bytes','sha256']},'current executed binary '+name)
+ expected_logical={'packaging/collect-regions.py.txt','packaging/bundle-helpers.py.txt','packaging/collect-plan.json','identities/final-identities.json','source/snapshots.rs.txt'}
+ expected_logical.update('source/'+n+'.txt' for n in ids['sources'])
+ expected_logical.update(x['path'] for x in plan['files'])
+ expected_logical.update('archives/'+x['name']+'.tar.gz' for x in plan['archives'])
+ expected_stored=set()
+ for logical in expected_logical:
+  choices=[n for n in [logical,logical+'.gz'] if n in encoded]
+  check(len(choices)==1,'planned payload missing/ambiguous '+logical);expected_stored.add(choices[0])
+ check(expected_stored==set(encoded),'unexpected encoded payload')
+ forbidden=[]
+ for item in plan['files']:
+  check(digest(payload(item['path']))==item['sha256'],'planned direct pin '+item['path'])
+  if item.get('png'):check(payload(item['path']).startswith(b'\x89PNG\r\n\x1a\n'),'PNG signature')
+  if any(x in item['source'] for x in ['VNObservation.h.txt','formatter.rs','.app/','/target/']):forbidden.append(item['source'])
+ check(not forbidden,'forbidden inputs')
+ raw_payload=0;decoded_payload=0;archive_results=[]
+ for row in ledger:
+  stored=read(root/safe(row['path']));check(pin(stored)=={'bytes':row['stored_bytes'],'sha256':row['stored_sha256']},'stored encoded pin')
+  raw=decode(stored,row['encoding']);check(pin(raw)=={'bytes':row['decoded_bytes'],'sha256':row['decoded_sha256']},'decoded pin')
+  decoded_payload+=len(raw)
+  if row['encoding']=='tar+gzip':
+   matches=[a for a in archives if a['path']==row['path']];check(len(matches)==1,'archive ledger match');a=matches[0]
+   got=[]
+   with tarfile.open(fileobj=io.BytesIO(raw),mode='r:') as t:
+    for member in t.getmembers():
+     safe(member.name);check(member.isfile() and not member.issym() and not member.islnk(),'nonregular TAR member')
+     b=t.extractfile(member).read(LIMIT+1);check(len(b)==member.size and len(b)<=LIMIT,'TAR member size')
+     got.append({'path':member.name,**pin(b)})
+   check(got==a['members'],'TAR member ledger mismatch')
+   mapping={x['path']:{k:x[k] for k in ['bytes','sha256']} for x in got};check(len(mapping)==len(got),'duplicate TAR member')
+   for n,omitted in a['omitted_sidecars'].items():
+    safe(n);check(n not in mapping,'omission/member overlap');check(n.endswith(('.sqlite-wal','.sqlite-shm')),'unexpected omission')
+    check(omitted['reason']=='paired SQLite WAL observed empty; nonauthored sidecar','omission reason')
+    mapping[n]={k:omitted[k] for k in ['bytes','sha256']}
+   match=[x for x in plan['archives'] if row['path']=='archives/'+x['name']+'.tar.gz'];check(len(match)==1,'planned archive')
+   expected={x['path']:{k:x[k] for k in ['bytes','sha256']} for x in match[0]['expected_members']}
+   check(mapping==expected,'archive complete reviewed map')
+   check(sum(x['bytes'] for x in mapping.values())==a['source_bytes'] and len(mapping)==a['source_files'],'archive raw accounting')
+   raw_payload+=a['source_bytes'];archive_results.append({'path':row['path'],'retained_members':len(got),'omitted_sidecars':len(a['omitted_sidecars']),'raw_source_bytes':a['source_bytes'],'tar_bytes':len(raw)})
+  else:raw_payload+=len(raw)
+ check(len(archive_results)==len(archives)==len(plan['archives']),'archive count')
+ check(raw_payload==coll['raw_payload_bytes'],'collection raw accounting')
+ metadata=sum(len(read(root/n)) for n in ['collection.json','encoding-ledger.json','archive-ledger.json','files.json'])
+ stored_total=sum(x['bytes'] for x in inventory.values())+len(inventory_bytes)
+ decoded_total=decoded_payload+metadata;raw_total=raw_payload+metadata
+ check(max(stored_total,decoded_total,raw_total)<=LIMIT,'final package cap')
+ return {'package':root.name,'inventory_sha256':expected_inventory,'plan_sha256':expected_plan,'payloads':len(inventory),'direct_files':len(plan['files']),'archive_details':archive_results,'raw_payload_bytes':raw_payload,'metadata_bytes':metadata,'raw_and_metadata_bytes':raw_total,'stored_bytes':stored_total,'decoded_bytes':decoded_total,'source_rows':59,'binary_identity_rows':5,'forbidden_inputs':[]},payload
+def main():
+ p=argparse.ArgumentParser();p.add_argument('--repo',type=pathlib.Path,default=pathlib.Path('/Users/michael/Code/deadpan'));p.add_argument('--third-inventory-sha256',required=True);p.add_argument('--output',type=pathlib.Path,required=True);a=p.parse_args()
+ base=a.repo/'tools/media-qualification/evidence';pins=['4214e4791e630692c03be40990fd678411981ba3315650579eaf49c772b0392d','8aa48961430500cb2cbbee11d6d55299f67e556011ac282857eb73497dbbb781',a.third_inventory_sha256]
+ results=[];third=None
+ for n,i,plan in zip(NAMES,pins,PLANS):
+  row,payload=verify(base/n,i,plan,a.repo);results.append(row)
+  if n==NAMES[2]:third=payload
+ for n in NAMES[:2]:
+  for f in ['files.json','collection.json']:
+   check(third('verification/collected-packages/'+n+'/'+f)==read(base/n/f),'actual companion retained bytes '+n+'/'+f)
+ out={'status':'passed','scope':'Independent read-only stored inventory, bounded decompression, TAR member/source pin/companion/cap verification; no product execution or changes to published packages. Binary identities are preserved metadata; binary bytes are intentionally not packaged.','verifier_sha256':digest(pathlib.Path(__file__).read_bytes()),'packages':results,'companion_bindings':'Both actual primary/regression inventories and collection metadata equal the retained Verification payload bytes.','claim_limits':['On-this-Mac evidence only; scoped no-AI worker relocation, not full bundle/AI-runtime/clean-Mac qualification.','Old all107 reports remain hash-indexed; selected failures and corrections are packaged.','Old collector13425/14c source bytes unavailable and unexecuted; historical hashes only.'],'findings':[]}
+ a.output.write_text(json.dumps(out,indent=2)+'\n');print(json.dumps(out,indent=2))
+if __name__=='__main__':main()

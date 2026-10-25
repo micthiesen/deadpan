@@ -1,0 +1,16 @@
+{
+  "runner": "4fc79ca0d35cdf5e14de258da70c5ca12c1ff68f2754f1542359707f9cbbb7a1",
+  "binaries": {
+    "deadpan-app": "c5c45e2ef2853ed05901232cee1ab3740d3511d9b010fde5537d4d30e91a3124",
+    "deadpan-cli": "aa035d74848d2e4cda6ba127de591e5648f59ab67082a45744eca056b01d77f8",
+    "deadpan-media-worker": "b7939969613dd56f93f6e521293ef0686de6aef67dd6f09c7b2bfd9559ab4a1c",
+    "deadpan-transcribe": "ec622c8a766505a1b3145897423caf5f39d92147de343ffa32729159a1ad2f12",
+    "deadpan-track": "849e5315687a3fbd36f8399367c99188e64be4c0c2fb169cd617d2bfce40274c"
+  },
+  "native_report": "414ca2ea9a245ff72b7f62f3b9a8de3feb9d700dfb6abfd789423515325a780c",
+  "native_receipt": "6f4cc3e74b24d0833e1bc9e599952a402120218673ccb541a98eb8987e2302ca",
+  "identities": "3965e0bfc2143b7c4f984ce56d53365f02124b129742f6cb3466ad9042e7bfa0",
+  "fixture_manifest": "bcb45f5c135229159236a64376bdb0f5a35cf04b0007f1becd6db50abf4a51cf",
+  "video_fixture": "aaffac5cc021297348101e3ce500a3febac48fc45021a511468cb3fd76784e93",
+  "audio_fixture": "8f2ede07d4e8aa6743b6f441f5fb3cc6c6347a333f7b4ede15c52315f7195089"
+}

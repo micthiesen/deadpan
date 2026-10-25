@@ -65,7 +65,7 @@ const ESTIMATE_MIN_TIME: Duration = Duration::from_secs(5);
 pub enum JobKind {
     Render,
     Tracking,
-    Faces,
+    PictureProposals,
     Transcription,
     AiPause,
     SpeechActivity,
@@ -224,7 +224,7 @@ impl JobKind {
     pub const ALL: [Self; 11] = [
         Self::Render,
         Self::Tracking,
-        Self::Faces,
+        Self::PictureProposals,
         Self::Transcription,
         Self::AiPause,
         Self::SpeechActivity,
@@ -245,7 +245,7 @@ impl JobKind {
         let (priority, resource, yields) = match self {
             Self::Render => (Priority::Render, None, NONE),
             // The person asked and is waiting; Vision runs per picture.
-            Self::Tracking | Self::Faces => (Priority::Requested, None, NONE),
+            Self::Tracking | Self::PictureProposals => (Priority::Requested, None, NONE),
             Self::AiPause => (
                 Priority::Requested,
                 Some(Resource::Inference),
@@ -316,7 +316,7 @@ impl JobKind {
         match self {
             Self::Render => "Render",
             Self::Tracking => "Tracking",
-            Self::Faces => "Face detection",
+            Self::PictureProposals => "Find target regions",
             Self::Transcription => "Transcription",
             Self::AiPause => "AI pause pictures",
             Self::SpeechActivity => "Pause detection",
@@ -779,7 +779,9 @@ impl Board {
             return Some("an AI model is running".into());
         }
         if yields.tracking
-            && self.any_running(|other| matches!(other.kind, JobKind::Tracking | JobKind::Faces))
+            && self.any_running(|other| {
+                matches!(other.kind, JobKind::Tracking | JobKind::PictureProposals)
+            })
         {
             return Some("tracking is running".into());
         }
@@ -1639,7 +1641,7 @@ mod tests {
         let shots = jobs.register(spec(JobKind::Shots));
         let pauses = jobs.register(spec(JobKind::SpeechActivity));
         let tracking = jobs.register(spec(JobKind::Tracking));
-        let faces = jobs.register(spec(JobKind::Faces));
+        let faces = jobs.register(spec(JobKind::PictureProposals));
         let render = jobs.register(spec(JobKind::Render));
         let proxy = jobs.register(spec(JobKind::Proxy));
         assert!(shots.admitted() && !pauses.admitted());

@@ -1,0 +1,93 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+     Running unittests src/lib.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_cli-8fc8d56f80cfa034)
+[hevc_videotoolbox @ 0x9b0871c00] This device does not support the AllowOpenGop option. Value ignored.
+[hevc_videotoolbox @ 0x9b0871c00] This device does not support the AllowOpenGop option. Value ignored.
+[mp4 @ 0x9b2afd180] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9b0c75f80] Qavg: 65395.852
+[mp4 @ 0x9b200c780] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9b0c75c00] Qavg: 65395.852
+[mp4 @ 0x9b2afed00] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9b0c74e00] Qavg: 65395.852
+[mp4 @ 0x9b200f700] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9afc4f800] Qavg: 65395.852
+[mp4 @ 0x9b2aff200] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9b0c74e00] Qavg: 65395.852
+[mp4 @ 0x9b2b17700] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9b0c75880] Qavg: 65395.852
+[mp4 @ 0x9b2b16f80] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9b0c76a00] Qavg: 65395.852
+[mp4 @ 0x9b2b3c000] Starting second pass: moving the moov atom to the beginning of the file
+[mp4 @ 0x9b200c280] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9b0c77b80] Qavg: 65395.852
+[mp4 @ 0x9b2b17200] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9b0c76680] Qavg: 65395.852
+[mp4 @ 0x9b200fc00] Starting second pass: moving the moov atom to the beginning of the file
+[mp4 @ 0x9b2b17480] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9b0c77100] Qavg: 65395.852
+[aac @ 0x9b0c75500] Qavg: 65395.852
+[aac @ 0x9afc4c000] Qavg: 65395.852
+[mp4 @ 0x9b2b17980] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9afc4ca80] Qavg: 65395.852
+[mp4 @ 0x9b200c780] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9ac985500] Qavg: 65395.852
+[mp4 @ 0x9b2b3ea80] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9ac984380] Qavg: 65395.852
+[mp4 @ 0x9b2b17c00] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9afc4fb80] Qavg: 65395.852
+[hevc_videotoolbox @ 0x9b0871c00] This device does not support the AllowOpenGop option. Value ignored.
+[hevc_videotoolbox @ 0x9b0871c00] This device does not support the AllowOpenGop option. Value ignored.
+[mp4 @ 0x9b2b14c80] Starting second pass: moving the moov atom to the beginning of the file
+[mp4 @ 0x9b200ef80] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9ac984700] Qavg: 65395.852
+[aac @ 0x9b0c75180] Qavg: 65395.852
+[mp4 @ 0x9b200db80] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9ac984a80] Qavg: 65395.852
+[mp4 @ 0x9b200e580] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9b0871f80] Qavg: 65395.852
+[mp4 @ 0x9b2b16a80] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9b0870000] Qavg: 65395.852
+[mp4 @ 0x9b200f200] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9ac987b80] Qavg: 65395.852
+[mp4 @ 0x9b2b16580] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9ac986680] Qavg: 65395.852
+[mp4 @ 0x9b2b15b80] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9ac986d80] Qavg: 65395.852
+[mp4 @ 0x9b2b14f00] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9afc4df80] Qavg: 65395.852
+[mp4 @ 0x9b2b14c80] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9afc4ce00] Qavg: 65395.852
+[mp4 @ 0x9b2afd680] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9b0c75f80] Qavg: 65395.852
+[mp4 @ 0x9b5f9d680] Starting second pass: moving the moov atom to the beginning of the file
+[aac @ 0x9b0870700] Qavg: 65395.852
+     Running unittests src/main.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/deadpan_cli-2930535d47edec04)
+     Running tests/audio_context.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/audio_context-87f465db3859fc8e)
+     Running tests/audio_inspection.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/audio_inspection-5f5589b6db031ffe)
+     Running tests/backups.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/backups-69ddad9685f908c1)
+     Running tests/boundary_location.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/boundary_location-9d55aeced0851f9a)
+     Running tests/bridge_conditioning.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/bridge_conditioning-3da60e85b6a75964)
+     Running tests/corrections.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/corrections-6f0a8e9bf30e6be6)
+     Running tests/doctor.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/doctor-b8452cac8c30bb26)
+     Running tests/encoded_render.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/encoded_render-eb5b90144ce1a77b)
+     Running tests/encoded_verification.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/encoded_verification-db252c548915fd6d)
+     Running tests/encoder_admission.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/encoder_admission-c5bede2372dc9783)
+     Running tests/generated_joins.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/generated_joins-fd112b7d810de9ae)
+     Running tests/golden_renders.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/golden_renders-c27f64ac93c90ca5)
+     Running tests/headless_parity.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/headless_parity-0b3c2e08d18f9a7c)
+     Running tests/hostile_analysis_workers.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/hostile_analysis_workers-672155b92f588508)
+     Running tests/live_generation.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/live_generation-973a7e8f3f64dc55)
+     Running tests/live_preparation.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/live_preparation-8538b3e024d0e071)
+     Running tests/live_project.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/live_project-714d79ceef8d9c0f)
+     Running tests/model_pack_import_disk_full.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/model_pack_import_disk_full-f018a272bb70a063)
+     Running tests/model_packs.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/model_packs-ffb1746d22766a4c)
+     Running tests/node_sets.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/node_sets-ccf85ce3affeac10)
+     Running tests/offline_audio.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/offline_audio-9090949ce9e9d733)
+     Running tests/original_commands.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/original_commands-ff38d27961df5e33)
+     Running tests/preview_export.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/preview_export-e8e72b070b9f3c8c)
+     Running tests/preview_export_hdr.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/preview_export_hdr-2541856618a3589e)
+     Running tests/privacy_network_audit.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/privacy_network_audit-a8092e7ec43c249f)
+     Running tests/privacy_sandbox.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/privacy_sandbox-ca5ac2e0dfb95133)
+     Running tests/project_commands.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/project_commands-b909db8abc2c71b1)
+     Running tests/proxy_disk_full.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/proxy_disk_full-aae7f220dc9582a7)
+     Running tests/proxy_resume.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/proxy_resume-c8001ce83e47087b)
+error: test failed, to rerun pass `-p deadpan-cli --test proxy_resume`

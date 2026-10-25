@@ -1,0 +1,179 @@
+{
+  "baseline": {
+    "current_binary_count": 5,
+    "current_identity": "debug-fourth-identities.json",
+    "current_profile": "debug",
+    "current_source_count": 58,
+    "run_manifest": "all-replays-first.json",
+    "run_root": "all-replays-first"
+  },
+  "corrections": [
+    {
+      "case": "faces",
+      "expected": "Active exact Faces ticket ends Cancelled, state conserved.",
+      "source": "app-harness-faces-cancel-handoff.md"
+    },
+    {
+      "case": "keymap-error",
+      "expected": "Visible persistent diagnostic before ordinary Cmd+N bootstrap; preserve actual replay receipt.",
+      "source": "keymap-setup-proposal/handoff.md"
+    },
+    {
+      "case": "delete-range",
+      "expected": "Typed Split setup captures absence before late service result; verify native command refusal and conservation.",
+      "source": "full-replay-diagnosis/implemented-handoff.md"
+    },
+    {
+      "case": "scoped-plays",
+      "expected": "Valid unity Partition negative fixture, not the now-supported fixed Edit Retime case.",
+      "source": "full-replay-diagnosis/implemented-handoff.md"
+    },
+    {
+      "case": "backups",
+      "expected": "Wait for actual matching owner service update, not busy=false.",
+      "source": "harness-boundary-fixes/handoff.md"
+    },
+    {
+      "case": "storage-failure",
+      "expected": "Typed Edit-only DiskFull seam; subsequent native split still exercises recovery.",
+      "source": "harness-boundary-fixes/handoff.md"
+    }
+  ],
+  "current_debug_identity": "debug-fifth-identities.json",
+  "latest_runnable_coverage": {
+    "criterion": "94 original passes plus separate passes for the original seven failed runnable scenarios: model-packs same-binary retry and the six targeted continuations.",
+    "explicit_skips": 6,
+    "original_invocation_status": "failed; immutable original count remains 94 PASS / 7 FAIL / 6 SKIP",
+    "passed_scenarios": 101
+  },
+  "model_retry": {
+    "note": "27 model-packs checks plus one Kestrel shortcut check passed against the exact four official binary hashes copied by the original all-107 run. Keep working-tree source guard snapshots separate from binary build-source provenance.",
+    "output": "model-packs-space-retry",
+    "receipt": "model-packs-space-retry.json",
+    "scenario": "model-packs",
+    "status": "PASS_same_original_four_binary_hashes"
+  },
+  "narrow_continuations": {
+    "cases": [
+      {
+        "case": "faces",
+        "note": "Actual passing receipt on source58+5; retained as its own run identity, not represented as source59 execution.",
+        "output": "native-faces-debug-fourth",
+        "receipt": "native-faces-debug-fourth.json",
+        "run_identity": "debug-fourth-identities.json",
+        "status": "PASS_source58_debug_fourth"
+      },
+      {
+        "case": "keymap-error",
+        "note": "Actual passing receipt on source58+5; retained as its own run identity, not represented as source59 execution.",
+        "output": "native-keymap-error-debug-fourth",
+        "receipt": "native-keymap-error-debug-fourth.json",
+        "run_identity": "debug-fourth-identities.json",
+        "status": "PASS_source58_debug_fourth"
+      },
+      {
+        "case": "delete-range",
+        "note": "314 checks passed; official source59 check and debug source59 replay retained separately. The prior source58 fourth-run failure remains preserved.",
+        "output": "native-delete-range-debug-fifth",
+        "receipt": "native-delete-range-debug-fifth.json",
+        "run_identity": "debug-fifth-identities.json",
+        "status": "PASS_source59_debug_fifth"
+      },
+      {
+        "case": "scoped-plays",
+        "note": "Actual passing receipt on source58+5; retained as its own run identity, not represented as source59 execution.",
+        "output": "native-scoped-plays-debug-fourth",
+        "receipt": "native-scoped-plays-debug-fourth.json",
+        "run_identity": "debug-fourth-identities.json",
+        "status": "PASS_source58_debug_fourth"
+      },
+      {
+        "case": "backups",
+        "note": "Actual passing receipt on source58+5; retained as its own run identity, not represented as source59 execution.",
+        "output": "native-backups-debug-fourth",
+        "receipt": "native-backups-debug-fourth.json",
+        "run_identity": "debug-fourth-identities.json",
+        "status": "PASS_source58_debug_fourth"
+      },
+      {
+        "case": "storage-failure",
+        "note": "Actual passing receipt on source58+5; retained as its own run identity, not represented as source59 execution.",
+        "output": "native-storage-failure-debug-fourth",
+        "receipt": "native-storage-failure-debug-fourth.json",
+        "run_identity": "debug-fourth-identities.json",
+        "status": "PASS_source58_debug_fourth"
+      }
+    ],
+    "scope": "Six native debug-fourth reruns only. Never add their outcomes to or rewrite the original 107 result."
+  },
+  "original_all107": {
+    "failure_names": [
+      "backups",
+      "delete-range",
+      "faces",
+      "keymap-error",
+      "model-packs",
+      "scoped-plays",
+      "storage-failure"
+    ],
+    "failure_policy_and_correction_sources": [
+      "app-harness-faces-cancel-handoff.md",
+      "keymap-setup-proposal/handoff.md",
+      "full-replay-diagnosis/implemented-handoff.md",
+      "harness-boundary-fixes/handoff.md",
+      "model-space-diagnosis.json",
+      "all-replays-first.json",
+      "all-replays-first/summary.json"
+    ],
+    "full_reports": "Every available PASS/FAIL scenario report.json listed by the summary extractor (101 reports). Preserve the top-level summary and run receipt; do not substitute failure excerpts for reports.",
+    "immutable_status_counts": {
+      "FAIL": 7,
+      "PASS": 94,
+      "SKIP": 6
+    },
+    "preserve_all_six_skip_reasons": true,
+    "preserve_original_failures": true,
+    "skips": [
+      {
+        "reason": "needs an explicit --project fixture; run it directly with deadpan-app --ui-check",
+        "scenario": "large-first-pause"
+      },
+      {
+        "reason": "needs an explicit --project fixture; run it directly with deadpan-app --ui-check",
+        "scenario": "ai-pause-ready"
+      },
+      {
+        "reason": "needs an explicit --project fixture; run it directly with deadpan-app --ui-check",
+        "scenario": "generated-picture"
+      },
+      {
+        "reason": "needs an explicit --project fixture; run it directly with deadpan-app --ui-check",
+        "scenario": "generated-playback"
+      },
+      {
+        "reason": "needs an explicit --project fixture; run it directly with deadpan-app --ui-check",
+        "scenario": "generated-loop"
+      },
+      {
+        "reason": "needs an explicit --project fixture; run it directly with deadpan-app --ui-check",
+        "scenario": "ai-playback-interference"
+      }
+    ]
+  },
+  "repository": "/Users/michael/Code/deadpan",
+  "schema_version": 1,
+  "scratch": "/tmp/deadpan-camera-regions-2026-10-25",
+  "source_change_comparison": {
+    "interpretation_limit": "State only that no non-harness path differs within these recorded source manifests; do not generalize beyond their coverage.",
+    "method": "Compare original source_before/source_after identity entries with every source entry in the pinned current debug58 manifest; independently verify current source bytes and each executed binary against that manifest.",
+    "recorded_difference_paths": [
+      "crates/deadpan-app/src/preview/harness.rs",
+      "crates/deadpan-app/src/preview/harness/faces.rs",
+      "crates/deadpan-app/src/preview/harness/backups/inspection.rs",
+      "crates/deadpan-app/src/preview/harness/recovery.rs",
+      "crates/deadpan-app/src/preview/harness/delete_range/capture.rs",
+      "crates/deadpan-app/src/preview/harness/scoped_plays/hold_duration/refusals.rs"
+    ]
+  },
+  "source_transition_note": "Five narrow runs are source58/debug-fourth; delete-range is source59/debug-fifth. Source manifests must be shown per run. A source comparison may say only that the recorded delta is harness-only, after actual hashes verify it."
+}

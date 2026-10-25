@@ -1,0 +1,36 @@
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.45
+   Compiling rustls-webpki v0.103.16
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+   Compiling deadpan-track v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-track)
+    Finished `test` profile [optimized + debuginfo] target(s) in 12.44s
+────────────
+ Nextest run ID cb6dad41-f1ce-47e5-84d8-644162b170db with nextest profile: default
+    Starting 1 test across 60 binaries (2377 tests skipped)
+        FAIL [   0.031s] (1/1) deadpan-app::bin/deadpan-app navigation::registry::tests::routing_matches_the_pre_registry_baseline
+  stdout ───
+
+    running 1 test
+    test navigation::registry::tests::routing_matches_the_pre_registry_baseline ... FAILED
+
+    failures:
+
+    failures:
+        navigation::registry::tests::routing_matches_the_pre_registry_baseline
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1279 filtered out; finished in 0.02s
+
+  stderr ───
+
+    thread 'navigation::registry::tests::routing_matches_the_pre_registry_baseline' (185246720) panicked at crates/deadpan-app/src/navigation/registry/tests.rs:14:5:
+    /Users/michael/Code/deadpan/crates/deadpan-app/src/navigation/registry/baseline-routing.txt rewritten; review the diff, then rerun without DEADPAN_UPDATE_ROUTING_BASELINE
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+────────────
+     Summary [   0.033s] 1 test run: 0 passed, 1 failed, 2377 skipped
+        FAIL [   0.031s] (1/1) deadpan-app::bin/deadpan-app navigation::registry::tests::routing_matches_the_pre_registry_baseline
+error: test run failed

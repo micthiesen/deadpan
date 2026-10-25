@@ -1,0 +1,15 @@
+{
+  "reviewed_at": "2026-10-25T09:47:41.317766+00:00",
+  "before_sha256": "a181ba1d3f2db1c030fbdf1feaf2d5ae8efd5edd885114bcea9c161ac774cd8d",
+  "after_sha256": "264ac889542efa6536cf0c2ef664dd2342e95c72368342ce90f1f6c7c5643944",
+  "line_count": 7390,
+  "changed_lines": 3,
+  "byte_delta": 27,
+  "exact_change": "Only |region:N added to creep invalid-argument and zoom empty-input usage strings. All binding, verb, valid parse, fixed mode router and teaching rows unchanged.",
+  "writer_actual_exit": 100,
+  "writer_role": "Expected failing generator; not a successful test run.",
+  "writer_changed_inputs": [
+    "/Users/michael/Code/deadpan/crates/deadpan-app/src/navigation/registry/baseline-routing.txt"
+  ],
+  "other50_inputs_unchanged": true
+}

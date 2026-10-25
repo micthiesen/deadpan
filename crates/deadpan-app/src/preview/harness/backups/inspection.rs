@@ -1,18 +1,76 @@
 //! A real second project service owns the writer while the GUI inspects it.
 
+use std::cell::RefCell;
+use std::path::PathBuf;
+
 use super::*;
 use crate::project::ProjectUpdate;
+
+enum ExpectedUpdate {
+    Open(PathBuf),
+    History {
+        before: deadpan_core::RevisionId,
+        message: &'static str,
+    },
+    Closed,
+}
 
 fn command(
     d: &mut Driver<'_>,
     owner: &ProjectService,
     request: ProjectRequest,
 ) -> Result<ProjectUpdate, String> {
+    let expected = match &request {
+        ProjectRequest::Open(path) => {
+            ExpectedUpdate::Open(path.canonicalize().map_err(|error| error.to_string())?)
+        }
+        ProjectRequest::Undo { expected_revision } => ExpectedUpdate::History {
+            before: expected_revision.clone(),
+            message: "Undo saved",
+        },
+        ProjectRequest::Redo { expected_revision } => ExpectedUpdate::History {
+            before: expected_revision.clone(),
+            message: "Redo saved",
+        },
+        ProjectRequest::Close => ExpectedUpdate::Closed,
+        _ => return Err("Unsupported second-owner replay command".into()),
+    };
+    // Busy clears before publication, and take_update uses try_lock. Wait for
+    // the actual matching receipt instead of treating idle as its delivery.
+    let delivered = RefCell::new(None);
+    let _ = owner.take_update();
     owner.submit(request).map_err(|error| error.to_string())?;
     d.wait_for("Other window's project command completes", |_| {
-        !owner.is_busy()
+        if delivered.borrow().is_some() {
+            return true;
+        }
+        if owner.is_busy() {
+            return false;
+        }
+        let Some(update) = owner.take_update() else {
+            return false;
+        };
+        let matches = update.error.is_some()
+            || match &expected {
+                ExpectedUpdate::Open(path) => update
+                    .workspace
+                    .as_ref()
+                    .is_some_and(|workspace| &workspace.path == path),
+                ExpectedUpdate::History { before, message } => {
+                    update.message.as_deref() == Some(*message)
+                        && update
+                            .workspace
+                            .as_ref()
+                            .is_some_and(|workspace| workspace.document.revision_id() != before)
+                }
+                ExpectedUpdate::Closed => update.workspace.is_none(),
+            };
+        if matches {
+            *delivered.borrow_mut() = Some(update);
+        }
+        matches
     })?;
-    let update = owner.take_update().ok_or("Other owner did not reply")?;
+    let update = delivered.into_inner().ok_or("Other owner did not reply")?;
     if let Some(error) = &update.error {
         return Err(error.clone());
     }
@@ -26,7 +84,9 @@ pub(super) fn run(d: &mut Driver<'_>, path: &Path) -> Result<(), String> {
             && !app.service.is_busy()
             && !app.storage.backups.owned_workers_active_for_check
     })?;
-    let owner = ProjectService::new(Arc::new(|| {})).map_err(|error| error.to_string())?;
+    let context = d.harness.ctx.clone();
+    let owner = ProjectService::new(Arc::new(move || context.request_repaint()))
+        .map_err(|error| error.to_string())?;
     let original = command(d, &owner, ProjectRequest::Open(path.into()))?
         .workspace
         .ok_or("Other owner has no workspace")?;

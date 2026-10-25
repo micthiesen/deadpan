@@ -15,11 +15,12 @@ native app drives the same host code ([in the app](#in-the-app)).
 | [`deadpan_analysis::tracking`](../crates/deadpan-analysis/src/tracking.rs) | Pure, serde-serializable `TrackedPath` / `TrackSample` / `TrackState`, `NormalizedRect` with rotation mapping, the versioned `deadpan-track-1` policy, shot-boundary range ends, all-or-nothing corrections and range-local re-tracking. No I/O. |
 | [`deadpan_analysis::tracking` mapping](../crates/deadpan-analysis/src/tracking/target.rs) | `TrackedPath::to_target` and `retrack_target`: the exact mapping to a core `AttentionTarget`, compaction to its bounds, provenance. |
 | [`deadpan_jobs::tracking`](../crates/deadpan-jobs/src/tracking.rs) | Versioned, strictly framed worker protocol and the `TrackingProtocol` adapter for the shared `SupervisedProcess`. |
-| [`deadpan-track`](../native/deadpan-track/) | Process-isolated worker executable: pinned descriptor-only FFmpeg decoding through `deadpan-source`, Vision `VNTrackObjectRequest` through `objc2-vision`; with the argument `detect-faces`, `VNDetectFaceRectanglesRequest` on one picture ([face detection mode](#face-detection-mode)). |
-| [`deadpan_jobs::faces`](../crates/deadpan-jobs/src/faces.rs) | The separately versioned face-detection protocol and its `FaceProtocol` adapter. |
+| [`deadpan-track`](../native/deadpan-track/) | Process-isolated worker: pinned descriptor-only FFmpeg decoding and Vision tracking; `picture-proposals` runs selected face/objectness requests over one exact picture, buffer and handler ([proposal mode](#face-detection-mode)). |
+| [`deadpan_jobs::picture_proposals`](../crates/deadpan-jobs/src/picture_proposals.rs) | Ephemeral protocol2 and PictureProposalProtocol for Faces/SalientRegions/Both, exact identity/mode/PTS admission, bounded typed collections and exact canonical per-detector engine labels. |
 | [`deadpan_jobs::landmarks`](../crates/deadpan-jobs/src/landmarks.rs) | Separate bounded `inspect-landmarks` protocol for AI Hold qualification: every native picture and optional retained boundary PNGs, using pinned Vision face landmarks revision 3. |
 | [`deadpan_models::landmark_inspection`](../crates/deadpan-models/src/landmark_inspection.rs) | Host inspection with immutable input copies, shared deadline/cancellation, owned worker cleanup and strict artifact admission; [`generated_geometry`](../crates/deadpan-analysis/src/generated_geometry.rs) evaluates face geometry and mouth aperture. |
-| [`deadpan_cli::faces`](../crates/deadpan-cli/src/faces.rs) | Host face detection (picture resolution, verified copy, supervision, strict admission), `face_target` and the `detect-faces` command. |
+| [`deadpan_cli::picture_proposals`](../crates/deadpan-cli/src/picture_proposals.rs) | Shared exact-picture preparation, one verified attempt copy, supervision/cancellation and geometry/runtime admission; read-only `detect-regions`, region choice and target construction. |
+| [`deadpan_cli::faces`](../crates/deadpan-cli/src/faces.rs) | Thin Faces-only facade retaining `detect-faces`, face choice/error/JSON behavior and `face_target` through the shared host. |
 | [`deadpan_cli::tracking`](../crates/deadpan-cli/src/tracking.rs) | Host attempt (range resolution against the qualified index, the asset's video span and stored shots; verified source copy; supervision; artifact snapshot; exact decoded/observation check; policy), saving and correcting targets, and the `track` / `track-correct` commands. |
 
 ## Coordinates and time
@@ -224,48 +225,82 @@ one documented block per framework call; the rest of the worker denies it.
 
 ## Face detection mode
 
-Face proposals (specification §6.4 `target=face:2`, §7.6 numbered detected
-regions) reuse this worker and its isolation, not its tracking policy. The host
-launches `deadpan-track detect-faces` (the only accepted argument; any other
-argument list exits 2) and speaks a separate protocol,
-[`deadpan_jobs::faces`](../crates/deadpan-jobs/src/faces.rs) version 1, over the
-same 256 KiB length-framed transport: one `DetectFaces` message names the
-verified source copy below `input/` (copied exactly as for tracking, by the
-shared `copy_verified_original`), the expected stream and the exact PTS of one
-indexed picture, with a timeout of at most one hour; `Cancel` with the
-attempt's token, or end of stdin, cancels. The worker re-verifies length and
-SHA-256, opens the pinned decoder, seeks, decodes metadata up to the picture
-(which must exist at exactly that PTS), converts only that picture to BGRA and
-runs one `VNDetectFaceRectanglesRequest` on a fresh `VNImageRequestHandler`
-(revision as Vision reports it: 3 on macOS 26). More than 64 observations is
-an error, never a truncation. Boxes are mapped as tracking maps them (lower-left
-to top-left origin, coded to displayed orientation, clipped to the picture,
-discarded below the minimum extent), confidences clamped to `[0, 1]`, exact
-duplicates dropped, and sorted by left edge, then top edge, then size. The
-faces travel inline in `Completed { pts, faces, runtime, timings }`; there is
-no artifact.
+Face and salient-region proposals (specification §6.4 face/region framing and
+§7.6 numbered detected regions) reuse this worker's isolation, not its tracking
+policy. The shared host launches `deadpan-track picture-proposals` and speaks
+[`deadpan_jobs::picture_proposals`](../crates/deadpan-jobs/src/picture_proposals.rs)
+protocol2 over the existing256KiB length-framed transport. This replaces the
+old private `detect-faces` worker argument/protocol; public CLI `detect-faces`
+remains available through a thin Faces-only facade. Tracking and landmark modes
+remain separate.
 
-The host's `FaceProtocol` requires the attempt's identity and the requested
-PTS; `admit_faces` requires at most 64 valid rectangles (the same checked
-`NormalizedRect` deserialization), finite confidences in `[0, 1]` and a
-strictly increasing order, so face numbers are deterministic. Every face source,
-including the app's test seam, passes this admission. The picture is the one
-displayed at the requested PTS (the last indexed picture at or before it),
-inside the asset's measured video span; the receipt must be the one the head
-binds. Detection opens the project read-only and never edits.
+One DetectPictureProposals request names the verified attempt copy below
+input/, ExpectedStream, exact indexed PTS, timeout and Faces/SalientRegions/Both
+selection. Request/attempt/token, selection and PTS must match completion.
+One preparation/copy, exact-PTS decode/raster conversion, BGRA buffer and
+VNImageRequestHandler serve all selected requests. Faces uses the existing
+VNDetectFaceRectanglesRequest constructor/default revision; objectness uses
+VNGenerateObjectnessBasedSaliencyImageRequest revision2, checked for support
+and verified after execution. Revision2 is available from macOS14 and fits the
+unchanged minimum15.0. Unsupported revision refuses instead of falling back.
+Cancel matches full request/attempt/token; EOF/read failure cancels. Existing
+supervised deadlines and confirmed teardown apply; synchronous Vision remains
+cooperative.
+
+Faces and salient regions are separate typed optional collections with matching
+actual runtime records. Both requires both collections and completes atomically
+or fails when either selected detector fails. Some(empty) is successful empty
+detection; missing never substitutes for failure. At most64 proposals per kind,
+one saliency image observation and the transport budget are checked before
+unbounded iteration/deserialization. No heat-map pixels cross the pipe.
+Salient boxes have no confidence, score or inferred rank. Faces retain their
+existing confidence/geometry order; salient regions sort lexicographically by
+x/y/width/height and exactly deduplicate within their kind. Faces and regions
+are not deduplicated against each other.
+
+Native geometry retains aperture/SAR preparation, lower-left-to-top-left
+conversion, clipping and upright rotation. VNRectangleObservation's actual SDK
+contract explicitly permits coordinates outside the image; intentional native
+clipping remains, with wholly outside boxes discarded. Nonfinite or invalid-size
+observations fail. Wire NormalizedRect proposals must already satisfy their
+strict normalized geometry contract and are not repaired by host admission.
+Runtime engines must equal the matching canonical FACE_ENGINE or SALIENCY_ENGINE;
+saliency performed revision must equal2, face revision must be positive.
+Explicit scripted App observations pass shared geometry/mode/PTS admission and
+retain scripted origin without fabricating performed Vision runtime.
+
+The host resolves the last indexed picture at/before requested PTS inside the
+measured video span, bound to the head's source receipt, stream and measured
+display aspect. Camera additionally requires the installed exact Original picture,
+matching session/revision/ticket/scope and stopped presentation. Proposals never
+edit on arrival. An explicit Camera selection saves only that untracked rectangle
+target; Enter applies framing separately. Camera requests Both. Current
+numbered choices take priority over disabled pose fields while the picker is
+open; proposal acceptance and Enter framing remain separate. Explicit
+`target=face:N` requests Faces only; `target=region:N` requests SalientRegions
+only, saving one chosen target+framing atomically through SaveFramed. Sampled
+proposals cannot be recorded as semantic macro intent.
 
 ```sh
 deadpan-cli detect-faces <project.deadpan> --at <pts> [--asset <id>]
+deadpan-cli detect-regions <project.deadpan> --at <pts> [--asset <id>] [--include-faces]
 ```
 
-prints the content identity, asset, head revision, stream, analysed PTS and
-picture ordinal, runtime and timings, and `faces` numbered from 1 with region
-and confidence. Errors use `FaceDetectionUnavailable`, `FaceDetectionCancelled`,
-`FaceDetectionFailed` and `InvalidInput`. Saving a face is the app's
-`target=face:N` command ([face proposals](FRAMING.md#face-proposals)); in the
-app the service runs one face job at a time on its own bounded thread, beside
-the tracking job, and close, open and shutdown cancel and drain it like
-tracking.
+Both commands open read-only and never save. detect-regions defaults to
+SalientRegions; --include-faces requests Both, with separate numbered collections/
+runtimes. detect-faces preserves its public face JSON/numbering/errors, with
+the deliberately updated ephemeral protocol field2. Target storage, tracking
+provenance and Core/SQLite schemas are unchanged. One bounded App proposal job
+runs beside tracking; close/open/shutdown cancel and drain it through the
+existing service. Saved/fixed targets remain usable after detector failure.
+
+Current release/native/media verification, scoped copied-worker relocation,
+published immutable collections, passing raw/publication audits and retained
+historical failures/limits are in
+[Camera regions](qualification/camera-regions-2026-10-25.md#published-evidence-and-post-publication-audit).
+Publication retains two explicit nonauthored SQLite sidecar omissions; full raw
+replay reports remain pinned/indexed rather than all copied. The earlier
+face qualification below is retained as historical evidence.
 
 Evidence: [`native/deadpan-track/tests/faces.rs`](../native/deadpan-track/tests/faces.rs)
 runs the real worker on

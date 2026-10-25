@@ -1,0 +1,25 @@
+{
+  "helper_sha256": "2758fa2c837e63d41b33f38b34f728017feda8b0c05aa21499eeb40f4764df13",
+  "revisions": [
+    {
+      "role": "first Camera evidence collector pin",
+      "sha256": "13425f9fc716354666116929c16e6b4f4798339c12d11f4d1b5c50c46227be6f",
+      "source_bytes_retained": false
+    },
+    {
+      "role": "archive publication-boundary and exact package-cap fixes",
+      "sha256": "14cbe2bb13d734398f4937ef1dfcad9d17fa3e78ca5ec8710d6c20ad2582f2e2",
+      "source_bytes_retained": false
+    },
+    {
+      "role": "current source-bound archive-member pin and final package caps",
+      "sha256": "251e2eb49e2f75dedb81926c32a748652d32041ba87d880ff5ff09230f4b418d",
+      "source": "collect-regions.py",
+      "source_bytes_retained": true
+    }
+  ],
+  "scope": "Preparation history only; no collection or publication was run.",
+  "test_receipt": "collector-independent-guards.stdout",
+  "test_sha256": "f81faccc94646cbef8fde6aa0d2b95438697f9daf112b4131b1cf8a35380064e",
+  "test_source": "test-collector-guards.py"
+}

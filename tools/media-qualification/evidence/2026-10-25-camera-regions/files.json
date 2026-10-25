@@ -1,0 +1,394 @@
+{
+  "archive-ledger.json": {
+    "bytes": 3268,
+    "sha256": "cda1798fe37ed5126f5231efa2458f8e0a9e6b353e1328b28e51b012caf026c7"
+  },
+  "archives/latest-project-package.tar.gz": {
+    "bytes": 251142,
+    "sha256": "d65767cab6fab97ed9ef7298658c9d335c2fcde31b7e97008bc954cfda32cf7c"
+  },
+  "collection.json": {
+    "bytes": 518,
+    "sha256": "6d6ac85e76553bd192535aaafe773eceb622d562bb88ed8bd49c0d296b1360f7"
+  },
+  "encoding-ledger.json": {
+    "bytes": 41426,
+    "sha256": "1c79c707d9ecc94e10c6f5bc664ffb05aeab64a8662ff7586cd314bc055102be"
+  },
+  "identities/final-identities.json.gz": {
+    "bytes": 3745,
+    "sha256": "29aee5300d9e269c686f465e6aad24bb737a9fd496b7589d0f1b8d078d8df690"
+  },
+  "native/faces/faces-121.png": {
+    "bytes": 353103,
+    "sha256": "80a1e1757fab4fc2a49364fccc5963efee66a3178d65ae0268343da81be0568b"
+  },
+  "native/faces/report.json.gz": {
+    "bytes": 797320,
+    "sha256": "4577077a398d011533c424c176c34df3e2c6c43189371ef8ef120fc74c681a76"
+  },
+  "native/history/debug-third/report.json.gz": {
+    "bytes": 1004248,
+    "sha256": "a8d23e1a3bbb39965de6ae8bccd3218ddd40da843daf0a6e543245c1d3f85ecc"
+  },
+  "native/history/early-attempts/native-regions-debug-first/report.json.gz": {
+    "bytes": 845900,
+    "sha256": "846b5f621db4b14d94f87bc591806ee9cc9988eea6c0b35ee7a80d5538a17051"
+  },
+  "native/history/early-attempts/native-regions-debug-second/report.json.gz": {
+    "bytes": 851387,
+    "sha256": "d3fbaf62b5ecd6fd37ed3fac52f237d6b6b05f5aba06c1c9a0e311242a97027e"
+  },
+  "native/performance/report.json.gz": {
+    "bytes": 309147,
+    "sha256": "02fc3e7aaa1ce5d7e5d20e18823870d2e3b6f3463421ca0180fc4b464217a52e"
+  },
+  "native/regions/regions-070.png": {
+    "bytes": 307644,
+    "sha256": "b8c3dbb3505175709338e7d271d93b7e4138afb841c64f5be3bf05b4119ce7cb"
+  },
+  "native/regions/regions-122.png": {
+    "bytes": 319182,
+    "sha256": "5e29e66a7a21eabaed562db6cd8f8af5a5c7986366321babab0225c79dac7f0c"
+  },
+  "native/regions/regions-123.png": {
+    "bytes": 361295,
+    "sha256": "1b5fd71e33acb5fe1ff7d50dff99076364f4452f8f49635af8e6504b7aa3345e"
+  },
+  "native/regions/report.json.gz": {
+    "bytes": 1048504,
+    "sha256": "9fe7404489c4377da6eff6840494561fad3f0b91b8893c8ca7586db9ac42d9bc"
+  },
+  "packaging/bundle-helpers.py.txt.gz": {
+    "bytes": 6032,
+    "sha256": "f258bcf85bf3e1ecdabfa001a8714d64e5474785679e653cde0703cdfe0a7ae9"
+  },
+  "packaging/collect-plan.json.gz": {
+    "bytes": 3404,
+    "sha256": "91bcf2235d77b15d7493701f4f6a66868ef794f338cf6ee73afbed21d1fb609f"
+  },
+  "packaging/collect-regions.py.txt.gz": {
+    "bytes": 3720,
+    "sha256": "4a582bcd259b546ea602ac4b735320c4f71b8fcaafa92736c8eee7a091721ec9"
+  },
+  "review/verified-performance-summary.json.gz": {
+    "bytes": 3613,
+    "sha256": "e19357f0f9bd7776c263fb7b0636c4eb46dd81e10be629dd409129d8383a9bc9"
+  },
+  "review/verified-visual-review.json": {
+    "bytes": 2491,
+    "sha256": "59db5bcfc05ed12a9f88a3e525f77ac42943ac89275fa99eae14513407fb45e5"
+  },
+  "runs/native-faces-verified.json.gz": {
+    "bytes": 4583,
+    "sha256": "b3ed71f401b5bf3982a0b256cc8837cd18b9c6de749bbadc9f27703bf7e76812"
+  },
+  "runs/native-faces-verified.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "runs/native-faces-verified.stdout": {
+    "bytes": 106,
+    "sha256": "6b3ff37296bda2f9486cf2b7ebcdc91c5e07a21f2b16b144beea75ab3f2f2da5"
+  },
+  "runs/native-regions-debug-first.json.gz": {
+    "bytes": 4150,
+    "sha256": "192c616d8259155b8830e7d5f8c0ebc60dfb589c1d3a31a5a91db6ea8b9e252e"
+  },
+  "runs/native-regions-debug-first.stderr": {
+    "bytes": 72,
+    "sha256": "4c5a5669ba39fbdaf1bcceb4f7c99cbac040071a62dc3c972bb498db74a7f48b"
+  },
+  "runs/native-regions-debug-first.stdout": {
+    "bytes": 113,
+    "sha256": "87eb8a44c31c8c8f9a74d65b4daba7cc97c156c3fb519e9a8104d1a69a1a1d69"
+  },
+  "runs/native-regions-debug-second.json.gz": {
+    "bytes": 4149,
+    "sha256": "0f3fab7a8ab7165ddd83c19e18c9d8b2263e080fbb06011573956a99c22dd798"
+  },
+  "runs/native-regions-debug-second.stderr": {
+    "bytes": 72,
+    "sha256": "4c5a5669ba39fbdaf1bcceb4f7c99cbac040071a62dc3c972bb498db74a7f48b"
+  },
+  "runs/native-regions-debug-second.stdout": {
+    "bytes": 114,
+    "sha256": "3bb877bf1ae207b863bbe1095677b0a9e01da9c85eb972a2d788e3c19b835606"
+  },
+  "runs/native-regions-debug-third.json.gz": {
+    "bytes": 4147,
+    "sha256": "69be25de5e4706b9f646d1faba9cede278204a62eabeaae55ac7207b315be74b"
+  },
+  "runs/native-regions-debug-third.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "runs/native-regions-debug-third.stdout": {
+    "bytes": 113,
+    "sha256": "06aac86ee31cc8b970ad81de19e0dfaec1c7e40430dafb2ac2a0a77b2e63ece0"
+  },
+  "runs/native-regions-performance-verified.json.gz": {
+    "bytes": 4585,
+    "sha256": "56dcb8eabc36fad12b4b62d7a5f16a7bd09a9d8212b3a2d4646b48667b630870"
+  },
+  "runs/native-regions-performance-verified.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "runs/native-regions-performance-verified.stdout": {
+    "bytes": 122,
+    "sha256": "4ed02ac2b866629629ffd4afe08e43dd06b580aa52a6b286cd4a6e77022c875a"
+  },
+  "runs/native-regions-verified.json.gz": {
+    "bytes": 4583,
+    "sha256": "b7963dafaec8cfde363f2aff2b1537aa3c2fb2568e9c4c24b064e2bee67bfbe0"
+  },
+  "runs/native-regions-verified.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "runs/native-regions-verified.stdout": {
+    "bytes": 110,
+    "sha256": "7f2f6e1a9d4aaac8395f333b22fc356a245839f86cb54b92598c6e2b38edef67"
+  },
+  "source/crates/deadpan-app/src/jobs.rs.txt.gz": {
+    "bytes": 19253,
+    "sha256": "105407da25471b9c8ad36a4439e14584e6c3970d95d5954bcc09a02ebd395757"
+  },
+  "source/crates/deadpan-app/src/navigation/registry/baseline-routing.txt.txt.gz": {
+    "bytes": 68993,
+    "sha256": "9dfdf36649c443472e5348859a1e3b2d94bffd23511b7b3beb7660e905f91bd6"
+  },
+  "source/crates/deadpan-app/src/navigation/registry/entries.rs.txt.gz": {
+    "bytes": 30759,
+    "sha256": "9d11b060383ad90fa6f005096d8460e1304a096d2d81cad7b5075392aa4e923f"
+  },
+  "source/crates/deadpan-app/src/navigation/zoom.rs.txt.gz": {
+    "bytes": 5008,
+    "sha256": "9ef7e89068bc11d88c3c20ca6244a79d3275852be7b3d4f3615e425fb31838c3"
+  },
+  "source/crates/deadpan-app/src/preview/camera.rs.txt.gz": {
+    "bytes": 36819,
+    "sha256": "1568ee284b004afb1af9bed9fb36eabe6d83cd79fd2376fc8d171354554ca69d"
+  },
+  "source/crates/deadpan-app/src/preview/camera/proposal_picker.rs.txt.gz": {
+    "bytes": 8957,
+    "sha256": "57dc9c111d42961202d24a3a4dcd6a4001167f443ce0d5d09c7e61651e0466fe"
+  },
+  "source/crates/deadpan-app/src/preview/harness.rs.txt.gz": {
+    "bytes": 14509,
+    "sha256": "ff473d120436ef1f0fbdcd2bbcd4edd915d09816cd4951814e87857736397637"
+  },
+  "source/crates/deadpan-app/src/preview/harness/backups/inspection.rs.txt": {
+    "bytes": 6991,
+    "sha256": "c40c6f3ade564ffd5a6f453c613abb3e8cfc21b66bbabe53e311998ca1365e90"
+  },
+  "source/crates/deadpan-app/src/preview/harness/delete_range/capture.rs.txt": {
+    "bytes": 8021,
+    "sha256": "cb44cf4129bd25070ab1d0a290246bbb8afae39130dba7633e85454cf833d1b8"
+  },
+  "source/crates/deadpan-app/src/preview/harness/delete_range/frames.rs.txt.gz": {
+    "bytes": 6806,
+    "sha256": "07940aeb6b772348d62cbadd40aa11655609d6a833fb3532c8a80a4d6bd72802"
+  },
+  "source/crates/deadpan-app/src/preview/harness/faces.rs.txt.gz": {
+    "bytes": 3371,
+    "sha256": "9f39ea662e782fe2b471ab246ada5e174d5bfc322b44787cc095e532a962c0fc"
+  },
+  "source/crates/deadpan-app/src/preview/harness/faces/camera_picker.rs.txt.gz": {
+    "bytes": 3752,
+    "sha256": "6f568e675c535124d41f8598f41388faa6400a1676162f28e693843d859f2bfc"
+  },
+  "source/crates/deadpan-app/src/preview/harness/hold_follow_creep.rs.txt.gz": {
+    "bytes": 5614,
+    "sha256": "879117d64acd5473a65942fa3ad58adb815eee6c8e538005bf524638721b2858"
+  },
+  "source/crates/deadpan-app/src/preview/harness/recovery.rs.txt.gz": {
+    "bytes": 5197,
+    "sha256": "4ccec107115820706ad4603be8e095a5eef75465c28caa1087fae881e5818fef"
+  },
+  "source/crates/deadpan-app/src/preview/harness/regions.rs.txt.gz": {
+    "bytes": 9948,
+    "sha256": "84f447e5401f95ae9cf4d845cc7a31b623cebd956b13d9aa7c47a624235f01fc"
+  },
+  "source/crates/deadpan-app/src/preview/harness/scenarios.rs.txt.gz": {
+    "bytes": 21092,
+    "sha256": "a3d83aa937d476672c3f6bf0be93f9886927dbff684725018917d69dc769da8c"
+  },
+  "source/crates/deadpan-app/src/preview/harness/scoped_plays/hold_duration/refusals.rs.txt.gz": {
+    "bytes": 3777,
+    "sha256": "fb63c3d00ff8f55b142a246d6463196276a26fad133a8986f8b45852ca5653bf"
+  },
+  "source/crates/deadpan-app/src/preview/harness/targets.rs.txt.gz": {
+    "bytes": 4573,
+    "sha256": "7228269cbb2467fc94614fd06944b984b6fa7253c62ee67af064e833e797a399"
+  },
+  "source/crates/deadpan-app/src/preview/targets.rs.txt.gz": {
+    "bytes": 5380,
+    "sha256": "d16d8878a513ed294c3f5f7070871ae371885ca24e5fbefac666b8e066585245"
+  },
+  "source/crates/deadpan-app/src/project/service/readonly.rs.txt.gz": {
+    "bytes": 2402,
+    "sha256": "575ce5a2cb9e954e0be079ad8bb689ed91e0c1559733aff9c3016bea16c5d6a4"
+  },
+  "source/crates/deadpan-app/src/project/service/targets.rs.txt.gz": {
+    "bytes": 7190,
+    "sha256": "19b2b68c80b08c9e68d36d904cee2ba6303b8c7cdfe12a03fb1e9f9559f4fb61"
+  },
+  "source/crates/deadpan-app/src/project/service/targets/picture_proposals.rs.txt.gz": {
+    "bytes": 4672,
+    "sha256": "b0a096e1225a97c92aa284d45e655547f5334fd561370e9100aa844cb75bbe77"
+  },
+  "source/crates/deadpan-app/src/project/targets.rs.txt.gz": {
+    "bytes": 3836,
+    "sha256": "f2d7559921d4a56750beaa9a9c185e5da184cd4fce2dd9db924883819a3b38bd"
+  },
+  "source/crates/deadpan-app/src/project/tests/readonly.rs.txt.gz": {
+    "bytes": 5890,
+    "sha256": "ff4238934a639800cdd5c2792a9dd00701fb5a922857be0010d20409ee99631d"
+  },
+  "source/crates/deadpan-app/src/project/tests/targets.rs.txt.gz": {
+    "bytes": 4963,
+    "sha256": "45789132ebbf6a3d013224d0286839f8748f7cc5ab91cf5abe5b5ae5ab5afe49"
+  },
+  "source/crates/deadpan-app/src/project/tests/targets/faces.rs.txt.gz": {
+    "bytes": 2793,
+    "sha256": "716cdd577ba993421fd3f5bc511c249e4dd5dc5e97587178196daee868429609"
+  },
+  "source/crates/deadpan-app/src/project/tests/targets/picture_proposals.rs.txt.gz": {
+    "bytes": 3549,
+    "sha256": "7fc0610a83171c3b72ed7a84800e82a690ef65583417b7b77f733106d7ebba9a"
+  },
+  "source/crates/deadpan-app/src/ui_harness.rs.txt.gz": {
+    "bytes": 7774,
+    "sha256": "df1c8671fb1aa4819cee125dd4d11d8a301fec64c66bd201860410a6fdc510be"
+  },
+  "source/crates/deadpan-cli/src/faces.rs.txt.gz": {
+    "bytes": 3715,
+    "sha256": "0f89e66af61ae58967ca4c84010ad487d781b354a6e0860c60aa9c640c6bdbc5"
+  },
+  "source/crates/deadpan-cli/src/lib.rs.txt.gz": {
+    "bytes": 10344,
+    "sha256": "1821df329a5d61ea6aa3c25ed723a1122d0f60dc7cca1dbab21f05e806f48a22"
+  },
+  "source/crates/deadpan-cli/src/picture_proposals.rs.txt.gz": {
+    "bytes": 5963,
+    "sha256": "da5ba29409e75a16e610cdbe82eadc44963b652ac1b795bf1745efc2ebb83c0f"
+  },
+  "source/crates/deadpan-cli/src/picture_proposals/tests.rs.txt.gz": {
+    "bytes": 3750,
+    "sha256": "5837fbc455493db92bf8a534e8ce9b5b51a0108c4398c870b0ad1984ac083d59"
+  },
+  "source/crates/deadpan-cli/tests/hostile_analysis_workers.rs.txt.gz": {
+    "bytes": 4025,
+    "sha256": "814be76d6461b166e7f96b5652ead10f58019d1875eec9a1ea92cca07c7cb6e0"
+  },
+  "source/crates/deadpan-cli/tests/hostile_workers/analysis.py.txt": {
+    "bytes": 5004,
+    "sha256": "72802574bbf955928fbed1ae89101e9a5b291a9ef180a5c976f7df373de81646"
+  },
+  "source/crates/deadpan-jobs/src/lib.rs.txt": {
+    "bytes": 1429,
+    "sha256": "11d027ee9ea0ded0f28b130f461925cfb48e3cf20d4a96f984418d98c3a4d2fe"
+  },
+  "source/crates/deadpan-jobs/src/picture_proposals.rs.txt.gz": {
+    "bytes": 4244,
+    "sha256": "e2b9d143019f19ac30f4c5105df6238102f2735013af9d9f6c22b7868103d77a"
+  },
+  "source/crates/deadpan-jobs/src/picture_proposals/tests.rs.txt.gz": {
+    "bytes": 3546,
+    "sha256": "bb76c8c59ff1def5b20115e97d0ff8b401943607f4a07075e19f34c8a7f1c152"
+  },
+  "source/fuzz/fuzz_targets/jobs-faces-protocol.rs.txt": {
+    "bytes": 333,
+    "sha256": "1f9aead147339cb82f4c97bb051f32b35d3316d027112ee662fd03762c7aa63a"
+  },
+  "source/native/deadpan-track/Cargo.toml.txt": {
+    "bytes": 2187,
+    "sha256": "8ff4beca8a81da13520b785c1066e833ae30baab40bc0f017a34f1f16e46307c"
+  },
+  "source/native/deadpan-track/src/main.rs.txt.gz": {
+    "bytes": 6084,
+    "sha256": "2caf23e734fa803f7106ae94cf9b9d58a7ea6ef56133e5efbf84feb20fe7411f"
+  },
+  "source/native/deadpan-track/src/picture_proposals.rs.txt.gz": {
+    "bytes": 4741,
+    "sha256": "47b0bdf4203518cebd193643ecf7b6e4f921a2126f6287d6623dec369d45912c"
+  },
+  "source/native/deadpan-track/src/vision.rs.txt.gz": {
+    "bytes": 8191,
+    "sha256": "bbaa8605041ec4c98d15d78fa9dd651cb2194c0815173cf82a0486255b207923"
+  },
+  "source/native/deadpan-track/tests/faces.rs.txt.gz": {
+    "bytes": 3219,
+    "sha256": "c2359d0ebea3df352e658a1e4f4592683b1354e788ca94e87eac9ad53bbf24a5"
+  },
+  "source/native/deadpan-track/tests/fixtures/SALIENT_REGIONS.md.txt": {
+    "bytes": 4302,
+    "sha256": "6a053e7a2a666cd1e8d6e31f59cf17b630fddfd78003a4576d519e99ea8a804c"
+  },
+  "source/native/deadpan-track/tests/fixtures/salient-audio.wav.txt.gz": {
+    "bytes": 8548,
+    "sha256": "456a118eb90397458a39c1a7c8a68484fc11902d91ec059dcbdddd18d8e9b4df"
+  },
+  "source/native/deadpan-track/tests/fixtures/salient-blank.png.txt": {
+    "bytes": 4876,
+    "sha256": "95f59820f0abfb2f26c04ec6718960c6548e4687b5a15c5dc27f8b5900f1cd84"
+  },
+  "source/native/deadpan-track/tests/fixtures/salient-mug-aperture.mp4.txt.gz": {
+    "bytes": 3642,
+    "sha256": "de0770543606e114dd43105dac2570d8e99f2134300f203550ba83701221cd44"
+  },
+  "source/native/deadpan-track/tests/fixtures/salient-mug-rotated-90.mp4.txt.gz": {
+    "bytes": 3626,
+    "sha256": "983ce0bc668fbb65e053ef9c39302ed8877fc7c123dbdc3a36ed97804e5ed9a9"
+  },
+  "source/native/deadpan-track/tests/fixtures/salient-mug.png.txt.gz": {
+    "bytes": 6029,
+    "sha256": "47ef2503f05099f75fe7f3db274e7f22771d53ef883796ebc4d7c220bb2c464d"
+  },
+  "source/native/deadpan-track/tests/fixtures/salient-regions-fixtures.json.txt.gz": {
+    "bytes": 3522,
+    "sha256": "754c4f2d05609ff9c4d00dc033514ca05ffe0bafab00f4214d5bd41be0bedab2"
+  },
+  "source/native/deadpan-track/tests/fixtures/salient-regions-sar.mkv.txt.gz": {
+    "bytes": 510257,
+    "sha256": "cba16efdec902fd31c02e4a6f6f03fa22582c4e7964b441ca72d79aa09a3e84a"
+  },
+  "source/native/deadpan-track/tests/fixtures/salient-regions.mkv.txt.gz": {
+    "bytes": 510228,
+    "sha256": "ab9ee8bc4ea65b8aaa8571b54cf4e88dba45e5614e3cf6e5cc84e6d11a92826f"
+  },
+  "source/native/deadpan-track/tests/fixtures/salient-regions.mp4.txt.gz": {
+    "bytes": 19987,
+    "sha256": "ea10ea1bdefc69ebc61524c5cebac2e5bb44c1b86d267d400765ea4bcc428795"
+  },
+  "source/native/deadpan-track/tests/fixtures/salient-two.png.txt.gz": {
+    "bytes": 37070,
+    "sha256": "1a2571846e0ffe62f42e5d27d6994a22019ca27fb51f652fbdfff1d2ed1003ca"
+  },
+  "source/native/deadpan-track/tests/generate_salient_fixtures.py.txt.gz": {
+    "bytes": 3698,
+    "sha256": "cf3b04a845f01b7ca367de0ad994d820dc23d93a9cbcb25c079c884875f87dc3"
+  },
+  "source/native/deadpan-track/tests/generate_salient_images.swift.txt": {
+    "bytes": 5068,
+    "sha256": "2fccff2450ebd066cdeeb06ea327f8ff1d0aaca6a4106efed8ac6ba76dc708af"
+  },
+  "source/native/deadpan-track/tests/geometry.rs.txt.gz": {
+    "bytes": 5887,
+    "sha256": "2c6d333599efd1fde13071cc50c52d9ba7dee065c4927b0c2790025dd4f0370d"
+  },
+  "source/native/deadpan-track/tests/picture_proposals.rs.txt.gz": {
+    "bytes": 4081,
+    "sha256": "a28e689103b20f7216822bcf55522fc2e7b01821564094253dc282d8af622ef3"
+  },
+  "source/native/deadpan-track/tests/worker.rs.txt.gz": {
+    "bytes": 5713,
+    "sha256": "bf2ff0fc64f079affed4433c2c820b857e4e44464603c271283bc3265d12c4b3"
+  },
+  "source/snapshots.rs.txt.gz": {
+    "bytes": 276415,
+    "sha256": "9750e62bf09f3ff27dbf33a8e859e5affd2383a0983fef3a0faaa50befd2db6f"
+  }
+}

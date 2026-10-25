@@ -1,0 +1,46 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+   Compiling deadpan-track v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-track)
+    Finished `test` profile [optimized + debuginfo] target(s) in 8.24s
+────────────
+ Nextest run ID 782e61d2-bd5b-4761-8c4c-14ec812ed97a with nextest profile: default
+    Starting 37 tests across 7 binaries (53 binaries skipped)
+        PASS [   0.064s] ( 1/37) deadpan-track::landmarks cancellation_stops_the_owned_worker_without_a_completion
+        PASS [   0.153s] ( 2/37) deadpan-track::extension_landmarks extension_worker_cancellation_and_deadline_never_publish_a_completion
+        PASS [   0.153s] ( 3/37) deadpan-track::landmarks malformed_boundary_png_and_worker_deadline_do_not_produce_observations
+        PASS [   0.165s] ( 4/37) deadpan-track::landmarks vision_landmarks_cover_every_picture_and_optional_retained_pngs
+        PASS [   0.170s] ( 5/37) deadpan-track::extension_landmarks extension_worker_proves_unanalysed_context_pts_terminal_and_anchor_bytes
+        PASS [   0.317s] ( 6/37) deadpan-track::landmarks mismatched_pts_extra_pictures_and_source_hash_fail_the_inspection
+        PASS [   0.333s] ( 7/37) deadpan-track::extension_landmarks extension_face_observations_exclude_context_and_retain_one_actual_anchor
+        LEAK [   0.346s] ( 8/37) deadpan-track::landmarks source_links_and_fifos_fail_without_waiting_for_a_writer
+        PASS [   0.452s] ( 9/37) deadpan-track::landmarks pinned_region_tracker_follows_the_square_with_complete_native_and_endpoint_evidence
+        PASS [   0.516s] (10/37) deadpan-track::extension_landmarks extension_vision_tracks_outward_from_the_actual_anchor_and_returns_canonical_order
+        PASS [   0.571s] (11/37) deadpan-track::picture_proposals qualified_decoder_preserves_generated_picture_and_pcm_clocks
+        PASS [   0.017s] (12/37) deadpan-track::bin/deadpan-track landmarks::tests::a_lost_region_tracker_never_reuses_an_old_box_or_restarts_on_later_pixels
+        PASS [   0.015s] (13/37) deadpan-track::bin/deadpan-track landmarks::tests::observation_writer_checks_the_budget_before_adding_a_chunk
+        PASS [   0.012s] (14/37) deadpan-track::bin/deadpan-track landmarks::tests::raw_region_boxes_convert_coordinates_without_clamping_invalid_measurements
+        PASS [   0.011s] (15/37) deadpan-track::bin/deadpan-track picture_proposals::tests::cancellation_requires_request_attempt_and_token
+        PASS [   0.013s] (16/37) deadpan-track::bin/deadpan-track picture_proposals::tests::salient_geometry_is_bounded_sorted_deduplicated_and_upright
+        PASS [   0.011s] (17/37) deadpan-track::bin/deadpan-track picture_proposals::tests::salient_native_overflow_clips_before_rotation_without_repairing_invalid_geometry
+        PASS [   0.010s] (18/37) deadpan-track::bin/deadpan-track picture_proposals::tests::vision_boxes_become_ordered_clipped_displayed_rectangles
+        PASS [   0.012s] (19/37) deadpan-track::bin/deadpan-track vision::tests::face_local_points_convert_to_the_full_raster_and_display_rotation
+        PASS [   0.010s] (20/37) deadpan-track::bin/deadpan-track vision::tests::pixel_buffer_rejects_truncated_or_overflowing_input_before_allocation
+        PASS [   1.153s] (21/37) deadpan-track::faces cancellation_and_an_expired_deadline_return_typed_errors
+        PASS [   1.262s] (22/37) deadpan-track::faces fractional_aperture_excludes_the_hidden_face_and_reports_clean_coordinates
+        PASS [   1.305s] (23/37) deadpan-track::faces encoded_face_fixture_baseline
+        PASS [   1.412s] (24/37) deadpan-track::faces authored_interpretation_is_captured_and_used_by_face_detection
+        PASS [   1.459s] (25/37) deadpan-track::picture_proposals combined_request_preserves_positive_default_face_results
+        PASS [   1.492s] (26/37) deadpan-track::picture_proposals exact_cfr_fixture_admits_default_original_and_real_proposals
+        LEAK [   1.731s] (27/37) deadpan-track::faces vision_finds_both_drawn_faces_left_to_right_and_none_in_the_empty_picture
+        PASS [   1.498s] (28/37) deadpan-track::worker cancellation_and_an_expired_deadline_stop_without_a_path
+        PASS [   1.590s] (29/37) deadpan-track::worker fractional_aperture_tracking_and_shot_detection_use_the_clean_picture
+        PASS [   1.953s] (30/37) deadpan-track::geometry track_save_commits_through_the_open_projects_live_endpoint
+        PASS [   1.449s] (31/37) deadpan-track::worker tracking_through_the_cut_never_jumps_and_a_correction_retracks_only_its_range
+        PASS [   1.551s] (32/37) deadpan-track::worker the_tracker_follows_the_square_and_stops_at_the_cut
+        PASS [   1.687s] (33/37) deadpan-track::worker interpretation_changes_require_matching_shots_and_reach_the_real_tracker
+        PASS [   1.951s] (34/37) deadpan-track::worker a_saved_target_reloads_follows_in_the_plan_and_corrects_only_its_range
+        PASS [   1.972s] (35/37) deadpan-track::picture_proposals real_non_face_modes_blank_mug_and_two_objects_are_typed_and_atomic
+        PASS [   2.366s] (36/37) deadpan-track::picture_proposals real_saliency_applies_sar_rotation_and_fractional_clean_aperture
+        PASS [   2.571s] (37/37) deadpan-track::geometry rotated_and_anamorphic_originals_track_and_follow_in_upright_coordinates
+────────────
+     Summary [   2.572s] 37 tests run: 37 passed (2 leaky), 0 skipped

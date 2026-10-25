@@ -3,5 +3,8 @@
 use libfuzzer_sys::fuzz_target;
 
 fuzz_target!(|input: &[u8]| {
-    deadpan_fuzz::protocol::<deadpan_jobs::faces::FaceProtocol>(input, |reader| deadpan_jobs::faces::read_host(reader));
+    deadpan_fuzz::protocol::<deadpan_jobs::picture_proposals::PictureProposalProtocol>(
+        input,
+        |reader| deadpan_jobs::picture_proposals::read_host(reader),
+    );
 });

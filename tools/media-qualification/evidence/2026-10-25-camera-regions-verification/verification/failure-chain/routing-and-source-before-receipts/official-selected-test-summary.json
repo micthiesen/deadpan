@@ -1,0 +1,44 @@
+{
+  "label": "official-check-final",
+  "receipt_sha256": "496fc142ed75343e09f8b0ff16eb9e5ea3e06a162146e268ed6195b084b6f978",
+  "actual_exit_code": 1,
+  "source_inputs": 50,
+  "source_inputs_unchanged": true,
+  "environment": {
+    "DEADPAN_FFMPEG_PREFIX": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix",
+    "CARGO_TARGET_DIR": "/tmp/deadpan-follow-creep-2026-10-24/target",
+    "DEADPAN_REQUIRE_PHYSICAL_MAC": "1",
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "2"
+  },
+  "counts": {
+    "PASS": 1505,
+    "FAIL": 1
+  },
+  "reported_skipped": 872,
+  "packages": {
+    "deadpan-app": {
+      "PASS": 1272,
+      "FAIL": 1
+    },
+    "deadpan-cli": {
+      "PASS": 18
+    },
+    "deadpan-jobs": {
+      "PASS": 179
+    },
+    "deadpan-track": {
+      "PASS": 36
+    }
+  },
+  "failures": [
+    {
+      "status": "FAIL",
+      "seconds": 0.037,
+      "index": 301,
+      "total": 1506,
+      "binary": "deadpan-app::bin/deadpan-app",
+      "test": "navigation::registry::tests::routing_matches_the_pre_registry_baseline"
+    }
+  ],
+  "scope": "Observed failed selected run, never described as green. Its only subsequent source change was the reviewed usage-reference update; the failing test was retried separately."
+}

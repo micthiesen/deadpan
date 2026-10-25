@@ -9,17 +9,20 @@
 //! save instead of being overwritten. Session replacement and shutdown cancel
 //! the job and wait until it has drained.
 //!
-//! Face proposals run on a second bounded job thread the same way: one
-//! indexed picture, the supervised `deadpan-track detect-faces` worker, and
-//! admitted faces published as proposals. Nothing is saved until the person
+//! Picture proposals run on a second bounded job thread the same way: one
+//! indexed picture, the supervised `deadpan-track picture-proposals` worker, and
+//! admitted faces and salient regions. Nothing is saved until the person
 //! accepts one. Camera saves the chosen target independently; the explicit
-//! `:zoom … target=face:N` command saves it together with framing in one edit.
+//! `:zoom … target=face:N` or `target=region:N` saves it with framing in one edit.
 
 #[cfg(any(test, feature = "ui-harness"))]
 use std::sync::Arc;
 use std::time::Instant;
 
 use deadpan_cli::faces::DetectedFace;
+use deadpan_cli::picture_proposals::{
+    DetectedSalientRegion, DetectorRuntime, PictureProposals, ProposalSelection,
+};
 use deadpan_core::{AssetId, AttentionTarget, Framing, NodeId, RevisionId, TargetId, TargetRegion};
 
 /// A user command for targets. Every variant names the session it was issued
@@ -53,14 +56,15 @@ pub enum Operation {
     },
     /// Cancel the job started with ticket `job`.
     Cancel { ticket: u64, session: u64, job: u64 },
-    /// Propose faces in one indexed picture of `asset` in the background.
-    /// Detection never edits; [`FaceJob`] reports the proposals.
-    DetectFaces {
+    /// Analyse one indexed picture without editing. The selected detectors
+    /// share one verified input and report one complete proposal batch.
+    DetectPictureProposals {
         ticket: u64,
         session: u64,
         revision: RevisionId,
         asset: AssetId,
         pts: i64,
+        selection: ProposalSelection,
     },
     /// Save a chosen face as target `id` and set `node`'s framing toward it
     /// in one undoable transaction expecting `revision`.
@@ -77,9 +81,9 @@ pub enum Operation {
     },
 }
 
-/// The latest face detection of this session: proposals only.
+/// The latest picture analysis of this session: proposals only.
 #[derive(Clone, Debug)]
-pub struct FaceJob {
+pub struct ProposalJob {
     pub ticket: u64,
     pub session: u64,
     /// The head revision the picture was resolved against.
@@ -87,18 +91,57 @@ pub struct FaceJob {
     pub asset: AssetId,
     /// The indexed picture analysed.
     pub pts: i64,
+    pub selection: ProposalSelection,
     /// None while detection runs.
-    pub outcome: Option<FaceOutcome>,
+    pub outcome: Option<ProposalOutcome>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum FaceOutcome {
-    /// Admitted proposals, ordered left to right, then top to bottom.
-    Found(Vec<DetectedFace>),
+pub enum ProposalOutcome {
+    /// Complete admitted collections, each ordered geometrically.
+    Found(ProposedTargets),
     /// The detector or Original is missing; nothing was proposed.
     Unavailable(String),
     Failed(String),
     Cancelled,
+}
+
+/// Explicitly distinguish deterministic replay data from worker provenance.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ProposalOrigin {
+    Worker {
+        faces: Option<DetectorRuntime>,
+        salient_regions: Option<DetectorRuntime>,
+    },
+    #[cfg(any(test, feature = "ui-harness"))]
+    Scripted,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ProposedTargets {
+    pub faces: Option<Vec<DetectedFace>>,
+    pub salient_regions: Option<Vec<DetectedSalientRegion>>,
+    pub origin: ProposalOrigin,
+}
+
+impl ProposedTargets {
+    pub fn from_worker(proposals: PictureProposals) -> Self {
+        let (faces, face_runtime) = proposals.faces.map_or((None, None), |found| {
+            (Some(found.faces), Some(found.runtime))
+        });
+        let (salient_regions, region_runtime) =
+            proposals.salient_regions.map_or((None, None), |found| {
+                (Some(found.regions), Some(found.runtime))
+            });
+        Self {
+            faces,
+            salient_regions,
+            origin: ProposalOrigin::Worker {
+                faces: face_runtime,
+                salient_regions: region_runtime,
+            },
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -189,7 +232,7 @@ pub struct Update {
     /// The latest independent command's ticket and refusal, if any.
     pub reply: Option<(u64, Option<String>)>,
     pub saved: Option<Saved>,
-    pub faces: Option<FaceJob>,
+    pub proposals: Option<ProposalJob>,
 }
 
 /// How the project service tracks. Production always uses the worker
@@ -203,39 +246,40 @@ pub enum Backend {
     /// real; only the Vision worker is replaced by deterministic observations.
     #[cfg(any(test, feature = "ui-harness"))]
     Scripted(Arc<ScriptQueue>),
-    /// Test and replay seam for face proposals: picture resolution, the
-    /// verified Original copy and the host's face admission are real; each
-    /// detection takes the next run, and only `Faces` runs replace the Vision
-    /// worker. Tracking uses the installed worker.
+    /// Both mode and geometry are admitted normally. These results carry
+    /// explicit scripted origin and invent no Vision runtime or revision.
     #[cfg(any(test, feature = "ui-harness"))]
-    ScriptedFaces(Arc<FaceScript>),
+    ScriptedProposals(Arc<ProposalScript>),
 }
 
-/// Face detection runs in order, one per start; the last one repeats.
 #[cfg(any(test, feature = "ui-harness"))]
 #[derive(Debug)]
-pub struct FaceScript(std::sync::Mutex<std::collections::VecDeque<FaceRun>>);
+pub struct ProposalScript(std::sync::Mutex<std::collections::VecDeque<ProposalRun>>);
 
 #[cfg(any(test, feature = "ui-harness"))]
 #[derive(Clone, Debug)]
-pub enum FaceRun {
-    /// The installed `deadpan-track` worker with Apple Vision.
-    #[cfg_attr(not(feature = "ui-harness"), allow(dead_code, reason = "replay only"))]
+pub enum ProposalRun {
+    #[cfg(feature = "ui-harness")]
     Worker,
-    /// Report these faces after `delay`, through the host's admission.
-    Faces {
-        faces: Vec<DetectedFace>,
+    Proposals {
+        selection: ProposalSelection,
+        faces: Option<Vec<DetectedFace>>,
+        salient_regions: Option<Vec<DetectedSalientRegion>>,
+        delay: std::time::Duration,
+    },
+    Failed {
+        reason: String,
         delay: std::time::Duration,
     },
 }
 
 #[cfg(any(test, feature = "ui-harness"))]
-impl FaceScript {
-    pub fn new(runs: impl IntoIterator<Item = FaceRun>) -> Self {
+impl ProposalScript {
+    pub fn new(runs: impl IntoIterator<Item = ProposalRun>) -> Self {
         Self(std::sync::Mutex::new(runs.into_iter().collect()))
     }
 
-    pub fn next(&self) -> Option<FaceRun> {
+    pub fn next(&self) -> Option<ProposalRun> {
         let mut runs = self.0.lock().unwrap_or_else(|error| error.into_inner());
         if runs.len() > 1 {
             runs.pop_front()

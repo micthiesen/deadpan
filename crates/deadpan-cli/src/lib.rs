@@ -46,6 +46,8 @@ pub mod pause;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod picture;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod picture_proposals;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod proxy;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod render;
@@ -162,6 +164,7 @@ const HELP: &str = "Deadpan headless commands:
   track <project.deadpan> --from <pts> --to <pts> --region <x,y,w,h> [--asset <id>] [--stride <n>] [--through-shots] [--save <target-id> [--label <text>] [--replace]]
   track-correct <project.deadpan> --target <id> --at <pts> --region <x,y,w,h> [--stride <n>]
   detect-faces <project.deadpan> --at <pts> [--asset <id>]
+  detect-regions <project.deadpan> --at <pts> [--asset <id>] [--include-faces]
   generate-hold <project.deadpan> --hold <node-id> [--seed N] [--variants 1-4] [--another]
   accept-hold <project.deadpan> --request <request-id> [--attempt <attempt-id>]
   ai-variants <project.deadpan> [--hold <node-id>] [--joins]
@@ -250,6 +253,9 @@ pub enum CliError {
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
     Faces(#[from] faces::FaceError),
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
+    PictureProposals(#[from] picture_proposals::ProposalError),
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
     Generation(#[from] generation::attempt::GenerationError),
@@ -357,6 +363,18 @@ impl CliError {
             Self::Faces(faces::FaceError::Unavailable(_)) => "FaceDetectionUnavailable",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::Faces(_) => "FaceDetectionFailed",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::PictureProposals(picture_proposals::ProposalError::Cancelled) => {
+                "PictureProposalsCancelled"
+            }
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::PictureProposals(picture_proposals::ProposalError::Request(_)) => "InvalidInput",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::PictureProposals(picture_proposals::ProposalError::Unavailable(_)) => {
+                "PictureProposalsUnavailable"
+            }
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::PictureProposals(_) => "PictureProposalsFailed",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::Generation(error) => error.code(),
             #[cfg(target_os = "macos")]
@@ -634,6 +652,8 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         ["track-correct", rest @ ..] => tracking::run_track_correct(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["detect-faces", rest @ ..] => faces::run_detect_faces(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["detect-regions", rest @ ..] => picture_proposals::run_detect_regions(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["generate-hold", rest @ ..] => generation::command::run_generate(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]

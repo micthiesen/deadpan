@@ -190,11 +190,11 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!([{"number":1,"label":"Target 1"},{"number":2,"label":"Center"}]),
         picker["picker"].clone(),
     )?;
-    let painted = scenarios::text_paint_visibility(d, "1 Target 1 · drawn");
+    let painted = scenarios::text_paint_visibility(d, "1 Target 1 · untracked");
     d.check(
-        "The saved rectangle is drawn with its number, label and state",
+        "The saved rectangle is painted with its number, label and untracked state",
         !painted.is_empty(),
-        json!("1 Target 1 · drawn"),
+        json!("1 Target 1 · untracked"),
         json!(painted),
     )?;
     d.capture("Picker with a saved target")?;
@@ -322,12 +322,12 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"outcome":"Saved","samples":">0","follow":"target-1"}),
         json!({"outcome":format!("{outcome:?}"),"samples":tracked.samples.len(),"camera":camera(d)}),
     )?;
-    // The selection picture keeps its drawn rectangle; tracked pictures follow.
-    let painted = scenarios::text_paint_visibility(d, "Target 1 · drawn · following");
+    // The selection picture keeps its untracked seed; later pictures are tracked.
+    let painted = scenarios::text_paint_visibility(d, "Target 1 · untracked · following");
     d.check(
-        "The overlay shows the drawn seed at the selection picture",
+        "The overlay shows the untracked seed at the selection picture",
         !painted.is_empty(),
-        json!("Target 1 · drawn · following"),
+        json!("Target 1 · untracked · following"),
         json!(painted),
     )?;
     d.capture("Tracked target followed in Camera")?;

@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "scope": "Standalone post-publication read-only audit, retained beside the three immutable packages. Does not change their inventories or certify unperformed product paths.",
+  "inputs_and_result": [
+    {
+      "path": "2026-10-25-camera-regions-audit.json",
+      "source": "/tmp/deadpan-camera-regions-2026-10-25/published-packages-audit.json",
+      "bytes": 4626,
+      "sha256": "b07bfe825f80f703928fcc87e9486c1c2030d1ecc77b308517140673ec8cf9b0"
+    },
+    {
+      "path": "2026-10-25-camera-regions-audit.py.txt",
+      "source": "/tmp/deadpan-camera-regions-2026-10-25/verify-published-regions.py",
+      "bytes": 10182,
+      "sha256": "d38d3068acba4310905282481fa97327c1398664d5b6e58799b469cfd5453172"
+    },
+    {
+      "path": "2026-10-25-camera-regions-audit.runner.py.txt",
+      "source": "/tmp/deadpan-camera-regions-2026-10-25/run-published-audit.py",
+      "bytes": 1752,
+      "sha256": "d6a38c61c9592a3c7ce3792326667aa1c8271101c596cd6b80ff6bd313d8f13b"
+    },
+    {
+      "path": "2026-10-25-camera-regions-audit.run.json",
+      "source": "/tmp/deadpan-camera-regions-2026-10-25/published-packages-audit-run.json",
+      "bytes": 26591,
+      "sha256": "16303d3cdcbf289137566491928f0fc30d6e8cfac7dde5a7965fcad09ee176d5"
+    },
+    {
+      "path": "2026-10-25-camera-regions-audit.stderr",
+      "source": "/tmp/deadpan-camera-regions-2026-10-25/published-packages-audit.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "stdout": "Byte-identical to the retained audit result JSON; no duplicate payload.",
+  "published_packages": [
+    {
+      "path": "2026-10-25-camera-regions",
+      "inventory_sha256": "4214e4791e630692c03be40990fd678411981ba3315650579eaf49c772b0392d"
+    },
+    {
+      "path": "2026-10-25-camera-regions-regressions",
+      "inventory_sha256": "8aa48961430500cb2cbbee11d6d55299f67e556011ac282857eb73497dbbb781"
+    },
+    {
+      "path": "2026-10-25-camera-regions-verification",
+      "inventory_sha256": "5cb1ee835c32a371a70957f829ba1b6e4b2b136c71e4dd40a6f9f33e329b4cf2"
+    }
+  ],
+  "payload_byte_limit": 1048576,
+  "payload_bytes": 43151
+}

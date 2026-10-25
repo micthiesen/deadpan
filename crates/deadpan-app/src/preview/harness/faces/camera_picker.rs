@@ -32,7 +32,9 @@ fn open(d: &mut Driver<'_>) -> Result<(), String> {
 
 fn face_job_done(d: &mut Driver<'_>) -> Result<(), String> {
     d.wait_for("Camera detection finishes", |app| {
-        app.targets.faces().is_some_and(|job| job.outcome.is_some())
+        app.targets
+            .proposals()
+            .is_some_and(|job| job.outcome.is_some())
             && app
                 .camera
                 .as_ref()
@@ -53,9 +55,16 @@ fn ready(d: &mut Driver<'_>) -> Result<(), String> {
 }
 
 fn selected_face(d: &Driver<'_>, number: u64) -> Result<DetectedFace, String> {
-    match d.app().targets.faces().and_then(|job| job.outcome.as_ref()) {
-        Some(crate::project::targets::FaceOutcome::Found(faces)) => faces
-            .get(number as usize - 1)
+    match d
+        .app()
+        .targets
+        .proposals()
+        .and_then(|job| job.outcome.as_ref())
+    {
+        Some(crate::project::targets::ProposalOutcome::Found(found)) => found
+            .faces
+            .as_ref()
+            .and_then(|faces| faces.get(number as usize - 1))
             .cloned()
             .ok_or_else(|| format!("Missing admitted face {number}")),
         _ => Err("Missing admitted face proposals".into()),
@@ -111,17 +120,17 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     face_job_done(d)?;
     let empty = state(d);
     d.check(
-        "Camera reports the real detector's empty result and keeps ordinary targets usable",
+        "Camera reports the explicitly scripted empty Both result and keeps ordinary targets usable",
         d.revision() == start
             && target_count(d) == 0
             && empty["phase"] == "TargetPicker"
-            && d.app().message.as_deref()
-                == Some("No faces found in the analysed picture. No edit was made.")
+            && empty["proposals_status"] == "Scripted: No faces or salient regions found in this picture. Saved targets and fixed points remain available."
+            && empty["proposal_origin"]["type"] == "scripted"
             && empty["picker"]
                 .as_array()
                 .is_some_and(|entries| entries.len() == 5)
-            && matches!(d.app().targets.faces().and_then(|job| job.outcome.as_ref()),
-                Some(crate::project::targets::FaceOutcome::Found(faces)) if faces.is_empty()),
+            && matches!(d.app().targets.proposals().and_then(|job| job.outcome.as_ref()),
+                Some(crate::project::targets::ProposalOutcome::Found(found)) if found.faces.as_ref().is_some_and(Vec::is_empty) && found.salient_regions.as_ref().is_some_and(Vec::is_empty)),
         json!({"revision":"unchanged","targets":0,"fixed_choices":5,"faces":[]}),
         empty,
     )?;
@@ -136,12 +145,17 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         app.camera
             .as_ref()
             .is_some_and(|camera| camera.harness_state()["faces_pending"] == true)
-            && app.targets.faces().is_some_and(|job| job.outcome.is_none())
+            && app
+                .targets
+                .proposals()
+                .is_some_and(|job| job.outcome.is_none())
     })?;
     d.key(Key::Escape)?;
     d.key(Key::Escape)?;
     d.wait_for("Detection finishes after Camera was cancelled", |app| {
-        app.targets.faces().is_some_and(|job| job.outcome.is_some())
+        app.targets
+            .proposals()
+            .is_some_and(|job| job.outcome.is_some())
     })?;
     d.settled()?;
     d.check(
@@ -174,8 +188,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.check(
         "Background proposals preserve the existing digits and create no edit",
         same_fixed
-            && d.app().message.as_deref()
-                == Some("12 face proposals ready. Detection made no edit.")
+            && proposals["proposals_status"] == "Scripted: 12 face and 0 region proposals. Selecting one saves that target; Enter applies framing."
+            && proposals["proposal_origin"]["type"] == "scripted"
             && proposals["picker"]
                 .as_array()
                 .is_some_and(|entries| entries.len() == 17)

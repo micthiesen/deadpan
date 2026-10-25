@@ -645,7 +645,7 @@ fn readonly_queries_and_private_previews_work_without_package_writes() {
     assert!(update.error.is_none());
     assert_eq!(
         update.targets.unwrap().reply,
-        Some((66, Some("No matching tracking job is running.".into())))
+        Some((66, Some("No matching target job is running.".into())))
     );
     assert_package_unchanged(&workspace.path, &before);
 
@@ -654,9 +654,11 @@ fn readonly_queries_and_private_previews_work_without_package_writes() {
         Arc::new(|| {}),
         None,
         generation::Backend::Environment,
-        targets::Backend::ScriptedFaces(Arc::new(targets::FaceScript::new([
-            targets::FaceRun::Faces {
-                faces: Vec::new(),
+        targets::Backend::ScriptedProposals(Arc::new(targets::ProposalScript::new([
+            targets::ProposalRun::Proposals {
+                selection: deadpan_cli::picture_proposals::ProposalSelection::Faces,
+                faces: Some(Vec::new()),
+                salient_regions: None,
                 delay: Duration::ZERO,
             },
         ]))),
@@ -673,7 +675,8 @@ fn readonly_queries_and_private_previews_work_without_package_writes() {
         .unwrap();
     let update = command(
         &faces,
-        ProjectRequest::Target(targets::Operation::DetectFaces {
+        ProjectRequest::Target(targets::Operation::DetectPictureProposals {
+            selection: deadpan_cli::picture_proposals::ProposalSelection::Faces,
             ticket: 67,
             session: workspace.session,
             revision: workspace.document.revision_id().clone(),
@@ -686,7 +689,7 @@ fn readonly_queries_and_private_previews_work_without_package_writes() {
     let finished = if update
         .targets
         .as_ref()
-        .and_then(|targets| targets.faces.as_ref())
+        .and_then(|targets| targets.proposals.as_ref())
         .is_some_and(|faces| faces.outcome.is_some())
     {
         update
@@ -695,12 +698,119 @@ fn readonly_queries_and_private_previews_work_without_package_writes() {
             update
                 .targets
                 .as_ref()
-                .and_then(|targets| targets.faces.as_ref())
+                .and_then(|targets| targets.proposals.as_ref())
                 .is_some_and(|faces| faces.ticket == 67 && faces.outcome.is_some())
         })
     };
     assert!(
-        matches!(finished.targets.unwrap().faces.unwrap().outcome, Some(targets::FaceOutcome::Found(found)) if found.is_empty())
+        matches!(finished.targets.unwrap().proposals.unwrap().outcome, Some(targets::ProposalOutcome::Found(found))
+            if found.faces.as_ref().is_some_and(Vec::is_empty)
+                && found.salient_regions.is_none()
+                && found.origin == targets::ProposalOrigin::Scripted)
     );
     assert_package_unchanged(&workspace.path, &before);
+}
+
+#[test]
+fn readonly_both_and_salient_only_proposals_preserve_every_retained_package_byte() {
+    use deadpan_analysis::NormalizedRect;
+    use deadpan_cli::picture_proposals::{DetectedFace, DetectedSalientRegion, ProposalSelection};
+    let scratch = tempfile::tempdir().unwrap();
+    let (harness, workspace, _) = future_fixture(&scratch.path().join("Documents"));
+    command(&harness.service, ProjectRequest::Close);
+    let face = DetectedFace {
+        region: NormalizedRect::new(0.1, 0.2, 0.1, 0.2).unwrap(),
+        confidence: 0.9,
+    };
+    let region = DetectedSalientRegion {
+        region: NormalizedRect::new(0.5, 0.2, 0.2, 0.3).unwrap(),
+    };
+    let service = ProjectService::start_with_tracking(
+        Arc::new(|| {}),
+        None,
+        generation::Backend::Environment,
+        targets::Backend::ScriptedProposals(Arc::new(targets::ProposalScript::new([
+            targets::ProposalRun::Proposals {
+                selection: ProposalSelection::Both,
+                faces: Some(vec![face]),
+                salient_regions: Some(vec![region]),
+                delay: Duration::ZERO,
+            },
+            targets::ProposalRun::Proposals {
+                selection: ProposalSelection::SalientRegions,
+                faces: None,
+                salient_regions: Some(vec![region]),
+                delay: Duration::ZERO,
+            },
+        ]))),
+    )
+    .unwrap();
+    let opened = command(&service, ProjectRequest::Open(workspace.path.clone()));
+    let workspace = opened.workspace.unwrap();
+    assert!(workspace.read_only.is_some());
+    let bank = opened.registers.unwrap();
+    let before = package_bytes(&workspace.path);
+    let source = workspace
+        .sources
+        .values()
+        .find(|s| s.video_index.is_some())
+        .unwrap();
+    for (ticket, selection, expected_faces) in [
+        (71, ProposalSelection::Both, Some(vec![face])),
+        (72, ProposalSelection::SalientRegions, None),
+    ] {
+        let started = command(
+            &service,
+            ProjectRequest::Target(targets::Operation::DetectPictureProposals {
+                ticket,
+                session: workspace.session,
+                revision: workspace.document.revision_id().clone(),
+                asset: source.asset.clone(),
+                pts: source.video_index.as_ref().unwrap().frames()[0].pts,
+                selection,
+            }),
+        );
+        assert!(started.error.is_none(), "{:?}", started.error);
+        assert_eq!(
+            started.targets.as_ref().unwrap().reply,
+            Some((ticket, None))
+        );
+        let is_finished = |update: &ProjectUpdate| {
+            update
+                .targets
+                .as_ref()
+                .and_then(|t| t.proposals.as_ref())
+                .is_some_and(|p| p.ticket == ticket && p.outcome.is_some())
+        };
+        let finished = if is_finished(&started) {
+            started
+        } else {
+            wait(&service, is_finished)
+        };
+        let job = finished
+            .targets
+            .as_ref()
+            .unwrap()
+            .proposals
+            .as_ref()
+            .unwrap();
+        assert_eq!(job.selection, selection);
+        assert_eq!(&job.revision, workspace.document.revision_id());
+        assert_eq!(
+            job.outcome,
+            Some(targets::ProposalOutcome::Found(targets::ProposedTargets {
+                faces: expected_faces,
+                salient_regions: Some(vec![region]),
+                origin: targets::ProposalOrigin::Scripted,
+            }))
+        );
+        assert!(finished.committed.is_none());
+        assert_eq!(*finished.workspace.unwrap().document, *workspace.document);
+        assert_eq!(finished.registers.as_ref().unwrap().version, bank.version);
+        assert_eq!(
+            format!("{:?}", finished.registers.unwrap().entries),
+            format!("{:?}", bank.entries)
+        );
+        assert_package_unchanged(&workspace.path, &before);
+    }
 }

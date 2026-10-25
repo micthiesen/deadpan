@@ -1,0 +1,1073 @@
+[
+  {
+    "members": [
+      {
+        "bytes": 89064,
+        "path": "crates/deadpan-app/src/jobs.rs.txt",
+        "sha256": "f10db2cbc9d1402d90f050cc129fd6f8dae55530c9c780693f93d2934c62f9d0"
+      },
+      {
+        "bytes": 796314,
+        "path": "crates/deadpan-app/src/navigation/registry/baseline-routing.txt.txt",
+        "sha256": "264ac889542efa6536cf0c2ef664dd2342e95c72368342ce90f1f6c7c5643944"
+      },
+      {
+        "bytes": 138675,
+        "path": "crates/deadpan-app/src/navigation/registry/entries.rs.txt",
+        "sha256": "51c89eadaacf4ca1ac9f8cebd9fb0de58400c69f25836c9a5280021bbb14ae97"
+      },
+      {
+        "bytes": 18282,
+        "path": "crates/deadpan-app/src/navigation/zoom.rs.txt",
+        "sha256": "ab8110f710d3c635843aa6e02a182258dfe6d74fb3101c5c56aa2b07a11a7b36"
+      },
+      {
+        "bytes": 175548,
+        "path": "crates/deadpan-app/src/preview/camera.rs.txt",
+        "sha256": "35b7b7eabc94acebe59721521e6260ccf012300e6707858fe32b0d96c6de9d25"
+      },
+      {
+        "bytes": 42198,
+        "path": "crates/deadpan-app/src/preview/camera/proposal_picker.rs.txt",
+        "sha256": "2605f52e6d1fc9fb970096337abd2e8c0fe9a9edd839d48ddc88aabd28888d15"
+      },
+      {
+        "bytes": 59627,
+        "path": "crates/deadpan-app/src/preview/harness.rs.txt",
+        "sha256": "9896bbca1033a9b265f66fa0cd2d8d72ba05a290201a9efddd5e11d7d0ca1ce4"
+      },
+      {
+        "bytes": 10157,
+        "path": "crates/deadpan-app/src/preview/harness/faces.rs.txt",
+        "sha256": "1ef2f7adc1de320f7d384eaf481951c2f9dc59a5648f560daf9292f1e575ee8f"
+      },
+      {
+        "bytes": 14684,
+        "path": "crates/deadpan-app/src/preview/harness/faces/camera_picker.rs.txt",
+        "sha256": "e20f4ca13632747310f11d6bd3f655cfa80e795fb3925830bdf2f4325133e274"
+      },
+      {
+        "bytes": 36946,
+        "path": "crates/deadpan-app/src/preview/harness/regions.rs.txt",
+        "sha256": "31795d7aa20cc7dbfb9ccf4367e9e552338127adcd6ef98e7d6c3bc3f990614a"
+      },
+      {
+        "bytes": 89548,
+        "path": "crates/deadpan-app/src/preview/harness/scenarios.rs.txt",
+        "sha256": "df209dd421d17ae82640cac33c2a7897f11de8cdf5c264536f1189ecf376935c"
+      },
+      {
+        "bytes": 21396,
+        "path": "crates/deadpan-app/src/preview/targets.rs.txt",
+        "sha256": "f79d50b605617fac331a6326a4b17aeac6a77804f97e98079834b49261750e90"
+      },
+      {
+        "bytes": 11631,
+        "path": "crates/deadpan-app/src/project/service/readonly.rs.txt",
+        "sha256": "c178e1475595220386d3c6a8c4cac873ce6f8cd08e759fef88721d72e09fc0e7"
+      },
+      {
+        "bytes": 29908,
+        "path": "crates/deadpan-app/src/project/service/targets.rs.txt",
+        "sha256": "25d797bffaccbe580fab47f7b9d314bcfd20b26c4753a5b665f02f9102f5ca4f"
+      },
+      {
+        "bytes": 17146,
+        "path": "crates/deadpan-app/src/project/service/targets/picture_proposals.rs.txt",
+        "sha256": "1109d87b4e15868977cd6eb60007c79a664487ae30b8dde35ac5f9f34246daef"
+      },
+      {
+        "bytes": 12360,
+        "path": "crates/deadpan-app/src/project/targets.rs.txt",
+        "sha256": "aa81d166b0b720545838e836392d236b9f3c7bb9c1279d6cba44e366406b307a"
+      },
+      {
+        "bytes": 29136,
+        "path": "crates/deadpan-app/src/project/tests/readonly.rs.txt",
+        "sha256": "0c040755749fa49685364e54e3dda2a336cd5cdae87c88258d5691786a4ebeab"
+      },
+      {
+        "bytes": 21131,
+        "path": "crates/deadpan-app/src/project/tests/targets.rs.txt",
+        "sha256": "05a716da5578439a26431beac1e15eb991c31d96f72f31a6381d30a54bb3b89f"
+      },
+      {
+        "bytes": 10447,
+        "path": "crates/deadpan-app/src/project/tests/targets/faces.rs.txt",
+        "sha256": "85cc3272375dd454e02f48b3e2d027f6159c2e55f4e202cbb41f305d6f71af0d"
+      },
+      {
+        "bytes": 16435,
+        "path": "crates/deadpan-app/src/project/tests/targets/picture_proposals.rs.txt",
+        "sha256": "7b847950af9b95fb012bb92c92c1b7d7fd08a374f235c2eb0adab2df10b73ed4"
+      },
+      {
+        "bytes": 30871,
+        "path": "crates/deadpan-app/src/ui_harness.rs.txt",
+        "sha256": "b96f6f825098fa2ff3449197b76ba98b8e0d43ef44a1f71a373dd2561d0b02f1"
+      },
+      {
+        "bytes": 12412,
+        "path": "crates/deadpan-cli/src/faces.rs.txt",
+        "sha256": "0a8f8be0f2bed1e3961348113f3b94b7de88d023f479a984c25299d9738afbea"
+      },
+      {
+        "bytes": 60778,
+        "path": "crates/deadpan-cli/src/lib.rs.txt",
+        "sha256": "e6a67b9ffdb7794af814a5f52f8413d7ae5980b6b0532fc118383231d8d76afd"
+      },
+      {
+        "bytes": 21864,
+        "path": "crates/deadpan-cli/src/picture_proposals.rs.txt",
+        "sha256": "33cfeebbbe48ba0eec1a1fbc2435b489427bf51fe919bb00c8bcf9c1fc31e2e6"
+      },
+      {
+        "bytes": 15037,
+        "path": "crates/deadpan-cli/src/picture_proposals/tests.rs.txt",
+        "sha256": "a46cd755d48cf1c89d5417078928e314febb9fc4a0630c7a920ca56634a3d1f1"
+      },
+      {
+        "bytes": 16487,
+        "path": "crates/deadpan-cli/tests/hostile_analysis_workers.rs.txt",
+        "sha256": "c6da71d2feae105cfad7d33ff86e5c5770ac10af15f546d359e198f4ffe20a80"
+      },
+      {
+        "bytes": 5004,
+        "path": "crates/deadpan-cli/tests/hostile_workers/analysis.py.txt",
+        "sha256": "72802574bbf955928fbed1ae89101e9a5b291a9ef180a5c976f7df373de81646"
+      },
+      {
+        "bytes": 1429,
+        "path": "crates/deadpan-jobs/src/lib.rs.txt",
+        "sha256": "11d027ee9ea0ded0f28b130f461925cfb48e3cf20d4a96f984418d98c3a4d2fe"
+      },
+      {
+        "bytes": 16569,
+        "path": "crates/deadpan-jobs/src/picture_proposals.rs.txt",
+        "sha256": "73d39d10fd723648913eb29f70e3f88613de295c9f76b7e884ed338f300e350a"
+      },
+      {
+        "bytes": 15222,
+        "path": "crates/deadpan-jobs/src/picture_proposals/tests.rs.txt",
+        "sha256": "6dae4d354786cfd73ad7a4b282e16c661a843dda1c65c66433be72fab524fd44"
+      },
+      {
+        "bytes": 333,
+        "path": "fuzz/fuzz_targets/jobs-faces-protocol.rs.txt",
+        "sha256": "1f9aead147339cb82f4c97bb051f32b35d3316d027112ee662fd03762c7aa63a"
+      },
+      {
+        "bytes": 2187,
+        "path": "native/deadpan-track/Cargo.toml.txt",
+        "sha256": "8ff4beca8a81da13520b785c1066e833ae30baab40bc0f017a34f1f16e46307c"
+      },
+      {
+        "bytes": 21316,
+        "path": "native/deadpan-track/src/main.rs.txt",
+        "sha256": "8d7b111c05753b3c0d555d103079541cc69baafdf3e7f1cca65ed76ad2bbfa13"
+      },
+      {
+        "bytes": 17175,
+        "path": "native/deadpan-track/src/picture_proposals.rs.txt",
+        "sha256": "8048a161df2fb8400a07886ca7a0faad76c405b229b66bd9c4a8b37406104468"
+      },
+      {
+        "bytes": 31898,
+        "path": "native/deadpan-track/src/vision.rs.txt",
+        "sha256": "0d6f866b6680ee9ff927e803b9bfce82f98a1b46c28797099a7aa0de2b844c4c"
+      },
+      {
+        "bytes": 10877,
+        "path": "native/deadpan-track/tests/faces.rs.txt",
+        "sha256": "2ac43c88cf23b1577d4cf519ed69c1e9c38e0ce9b2f8a88cc041cbf5b44ac18b"
+      },
+      {
+        "bytes": 3511,
+        "path": "native/deadpan-track/tests/fixtures/SALIENT_REGIONS.md.txt",
+        "sha256": "f7f1620c93ace7806a3ab55b485ed77adbdc3bba72ee2c3731acc8bdf7ab9cbd"
+      },
+      {
+        "bytes": 768812,
+        "path": "native/deadpan-track/tests/fixtures/salient-audio.wav.txt",
+        "sha256": "8f2ede07d4e8aa6743b6f441f5fb3cc6c6347a333f7b4ede15c52315f7195089"
+      },
+      {
+        "bytes": 4876,
+        "path": "native/deadpan-track/tests/fixtures/salient-blank.png.txt",
+        "sha256": "95f59820f0abfb2f26c04ec6718960c6548e4687b5a15c5dc27f8b5900f1cd84"
+      },
+      {
+        "bytes": 11790,
+        "path": "native/deadpan-track/tests/fixtures/salient-mug-aperture.mp4.txt",
+        "sha256": "163f1d080615c1232d2c467e1d1fd4d1eef3ade865824130ac30b7a1baa036cb"
+      },
+      {
+        "bytes": 11750,
+        "path": "native/deadpan-track/tests/fixtures/salient-mug-rotated-90.mp4.txt",
+        "sha256": "b8d58a886c71674e2189175862f963dfe5f4deaeb4b464fd95bddc3605df2f69"
+      },
+      {
+        "bytes": 9379,
+        "path": "native/deadpan-track/tests/fixtures/salient-mug.png.txt",
+        "sha256": "5df85d511659a008b734a5e843cc5b13b9ea8e989c4b00423e036feb8667f1e8"
+      },
+      {
+        "bytes": 24591,
+        "path": "native/deadpan-track/tests/fixtures/salient-regions-fixtures.json.txt",
+        "sha256": "6733b54cc32601861146d2f4f78f6bded82da5ccd5c9eea1171699275720f03c"
+      },
+      {
+        "bytes": 635050,
+        "path": "native/deadpan-track/tests/fixtures/salient-regions-sar.mkv.txt",
+        "sha256": "86f4b5e08e0c4851811bc5a8412bd43eb7c94e8cf9d74b8cf775142d23e078f3"
+      },
+      {
+        "bytes": 635038,
+        "path": "native/deadpan-track/tests/fixtures/salient-regions.mkv.txt",
+        "sha256": "cc181467a19d92c3b08edf72ff34d4eaac6d4887e8e05311305ed51db7576f66"
+      },
+      {
+        "bytes": 40434,
+        "path": "native/deadpan-track/tests/fixtures/salient-two.png.txt",
+        "sha256": "f34a618eb462bb3afe5a024671cf5459cbf9f97d05b2bbb54b3f0eef4218389d"
+      },
+      {
+        "bytes": 8816,
+        "path": "native/deadpan-track/tests/generate_salient_fixtures.py.txt",
+        "sha256": "d6b356c189d493e7931b8e372c29ce18ff71ee79e56d47769fbf0406d7141861"
+      },
+      {
+        "bytes": 5068,
+        "path": "native/deadpan-track/tests/generate_salient_images.swift.txt",
+        "sha256": "2fccff2450ebd066cdeeb06ea327f8ff1d0aaca6a4106efed8ac6ba76dc708af"
+      },
+      {
+        "bytes": 19191,
+        "path": "native/deadpan-track/tests/geometry.rs.txt",
+        "sha256": "9e6b9de52e47de9eaaf3e0b7f87928f2a495598a96aa1a15088d295057d441a6"
+      },
+      {
+        "bytes": 13029,
+        "path": "native/deadpan-track/tests/picture_proposals.rs.txt",
+        "sha256": "f0ebc4554f173f8e7fbb3cb7012455c16ef50a971d09bfceca2a4b17eba66b66"
+      },
+      {
+        "bytes": 21513,
+        "path": "native/deadpan-track/tests/worker.rs.txt",
+        "sha256": "5a63c78dd03ac6744f109119db8dca537850a2d456055f5abd9358a3cc1e4675"
+      }
+    ],
+    "omitted_sidecars": {},
+    "path": "archives/source-first.tar.gz",
+    "root": "/private/tmp/deadpan-camera-regions-2026-10-25/source-first",
+    "source_bytes": 4132940,
+    "source_files": 51
+  },
+  {
+    "members": [
+      {
+        "bytes": 89064,
+        "path": "crates/deadpan-app/src/jobs.rs.txt",
+        "sha256": "f10db2cbc9d1402d90f050cc129fd6f8dae55530c9c780693f93d2934c62f9d0"
+      },
+      {
+        "bytes": 796314,
+        "path": "crates/deadpan-app/src/navigation/registry/baseline-routing.txt.txt",
+        "sha256": "264ac889542efa6536cf0c2ef664dd2342e95c72368342ce90f1f6c7c5643944"
+      },
+      {
+        "bytes": 138675,
+        "path": "crates/deadpan-app/src/navigation/registry/entries.rs.txt",
+        "sha256": "51c89eadaacf4ca1ac9f8cebd9fb0de58400c69f25836c9a5280021bbb14ae97"
+      },
+      {
+        "bytes": 18282,
+        "path": "crates/deadpan-app/src/navigation/zoom.rs.txt",
+        "sha256": "ab8110f710d3c635843aa6e02a182258dfe6d74fb3101c5c56aa2b07a11a7b36"
+      },
+      {
+        "bytes": 175548,
+        "path": "crates/deadpan-app/src/preview/camera.rs.txt",
+        "sha256": "35b7b7eabc94acebe59721521e6260ccf012300e6707858fe32b0d96c6de9d25"
+      },
+      {
+        "bytes": 42198,
+        "path": "crates/deadpan-app/src/preview/camera/proposal_picker.rs.txt",
+        "sha256": "2605f52e6d1fc9fb970096337abd2e8c0fe9a9edd839d48ddc88aabd28888d15"
+      },
+      {
+        "bytes": 59627,
+        "path": "crates/deadpan-app/src/preview/harness.rs.txt",
+        "sha256": "9896bbca1033a9b265f66fa0cd2d8d72ba05a290201a9efddd5e11d7d0ca1ce4"
+      },
+      {
+        "bytes": 10157,
+        "path": "crates/deadpan-app/src/preview/harness/faces.rs.txt",
+        "sha256": "1ef2f7adc1de320f7d384eaf481951c2f9dc59a5648f560daf9292f1e575ee8f"
+      },
+      {
+        "bytes": 14684,
+        "path": "crates/deadpan-app/src/preview/harness/faces/camera_picker.rs.txt",
+        "sha256": "e20f4ca13632747310f11d6bd3f655cfa80e795fb3925830bdf2f4325133e274"
+      },
+      {
+        "bytes": 37266,
+        "path": "crates/deadpan-app/src/preview/harness/regions.rs.txt",
+        "sha256": "6129139704ff677defefd37b07181ec36348b4ef1efe23514f2f7147b83173dc"
+      },
+      {
+        "bytes": 89548,
+        "path": "crates/deadpan-app/src/preview/harness/scenarios.rs.txt",
+        "sha256": "df209dd421d17ae82640cac33c2a7897f11de8cdf5c264536f1189ecf376935c"
+      },
+      {
+        "bytes": 21396,
+        "path": "crates/deadpan-app/src/preview/targets.rs.txt",
+        "sha256": "f79d50b605617fac331a6326a4b17aeac6a77804f97e98079834b49261750e90"
+      },
+      {
+        "bytes": 11631,
+        "path": "crates/deadpan-app/src/project/service/readonly.rs.txt",
+        "sha256": "c178e1475595220386d3c6a8c4cac873ce6f8cd08e759fef88721d72e09fc0e7"
+      },
+      {
+        "bytes": 29908,
+        "path": "crates/deadpan-app/src/project/service/targets.rs.txt",
+        "sha256": "25d797bffaccbe580fab47f7b9d314bcfd20b26c4753a5b665f02f9102f5ca4f"
+      },
+      {
+        "bytes": 17146,
+        "path": "crates/deadpan-app/src/project/service/targets/picture_proposals.rs.txt",
+        "sha256": "1109d87b4e15868977cd6eb60007c79a664487ae30b8dde35ac5f9f34246daef"
+      },
+      {
+        "bytes": 12360,
+        "path": "crates/deadpan-app/src/project/targets.rs.txt",
+        "sha256": "aa81d166b0b720545838e836392d236b9f3c7bb9c1279d6cba44e366406b307a"
+      },
+      {
+        "bytes": 29136,
+        "path": "crates/deadpan-app/src/project/tests/readonly.rs.txt",
+        "sha256": "0c040755749fa49685364e54e3dda2a336cd5cdae87c88258d5691786a4ebeab"
+      },
+      {
+        "bytes": 21131,
+        "path": "crates/deadpan-app/src/project/tests/targets.rs.txt",
+        "sha256": "05a716da5578439a26431beac1e15eb991c31d96f72f31a6381d30a54bb3b89f"
+      },
+      {
+        "bytes": 10447,
+        "path": "crates/deadpan-app/src/project/tests/targets/faces.rs.txt",
+        "sha256": "85cc3272375dd454e02f48b3e2d027f6159c2e55f4e202cbb41f305d6f71af0d"
+      },
+      {
+        "bytes": 16435,
+        "path": "crates/deadpan-app/src/project/tests/targets/picture_proposals.rs.txt",
+        "sha256": "7b847950af9b95fb012bb92c92c1b7d7fd08a374f235c2eb0adab2df10b73ed4"
+      },
+      {
+        "bytes": 30871,
+        "path": "crates/deadpan-app/src/ui_harness.rs.txt",
+        "sha256": "ba3d3b985bd9ac62be69a6399725c20a81ea4d89935b94beeca0e1a741086a00"
+      },
+      {
+        "bytes": 12412,
+        "path": "crates/deadpan-cli/src/faces.rs.txt",
+        "sha256": "0a8f8be0f2bed1e3961348113f3b94b7de88d023f479a984c25299d9738afbea"
+      },
+      {
+        "bytes": 60778,
+        "path": "crates/deadpan-cli/src/lib.rs.txt",
+        "sha256": "e6a67b9ffdb7794af814a5f52f8413d7ae5980b6b0532fc118383231d8d76afd"
+      },
+      {
+        "bytes": 21864,
+        "path": "crates/deadpan-cli/src/picture_proposals.rs.txt",
+        "sha256": "33cfeebbbe48ba0eec1a1fbc2435b489427bf51fe919bb00c8bcf9c1fc31e2e6"
+      },
+      {
+        "bytes": 15037,
+        "path": "crates/deadpan-cli/src/picture_proposals/tests.rs.txt",
+        "sha256": "a46cd755d48cf1c89d5417078928e314febb9fc4a0630c7a920ca56634a3d1f1"
+      },
+      {
+        "bytes": 16487,
+        "path": "crates/deadpan-cli/tests/hostile_analysis_workers.rs.txt",
+        "sha256": "c6da71d2feae105cfad7d33ff86e5c5770ac10af15f546d359e198f4ffe20a80"
+      },
+      {
+        "bytes": 5004,
+        "path": "crates/deadpan-cli/tests/hostile_workers/analysis.py.txt",
+        "sha256": "72802574bbf955928fbed1ae89101e9a5b291a9ef180a5c976f7df373de81646"
+      },
+      {
+        "bytes": 1429,
+        "path": "crates/deadpan-jobs/src/lib.rs.txt",
+        "sha256": "11d027ee9ea0ded0f28b130f461925cfb48e3cf20d4a96f984418d98c3a4d2fe"
+      },
+      {
+        "bytes": 16569,
+        "path": "crates/deadpan-jobs/src/picture_proposals.rs.txt",
+        "sha256": "73d39d10fd723648913eb29f70e3f88613de295c9f76b7e884ed338f300e350a"
+      },
+      {
+        "bytes": 15222,
+        "path": "crates/deadpan-jobs/src/picture_proposals/tests.rs.txt",
+        "sha256": "6dae4d354786cfd73ad7a4b282e16c661a843dda1c65c66433be72fab524fd44"
+      },
+      {
+        "bytes": 333,
+        "path": "fuzz/fuzz_targets/jobs-faces-protocol.rs.txt",
+        "sha256": "1f9aead147339cb82f4c97bb051f32b35d3316d027112ee662fd03762c7aa63a"
+      },
+      {
+        "bytes": 2187,
+        "path": "native/deadpan-track/Cargo.toml.txt",
+        "sha256": "8ff4beca8a81da13520b785c1066e833ae30baab40bc0f017a34f1f16e46307c"
+      },
+      {
+        "bytes": 21316,
+        "path": "native/deadpan-track/src/main.rs.txt",
+        "sha256": "8d7b111c05753b3c0d555d103079541cc69baafdf3e7f1cca65ed76ad2bbfa13"
+      },
+      {
+        "bytes": 17175,
+        "path": "native/deadpan-track/src/picture_proposals.rs.txt",
+        "sha256": "8048a161df2fb8400a07886ca7a0faad76c405b229b66bd9c4a8b37406104468"
+      },
+      {
+        "bytes": 31898,
+        "path": "native/deadpan-track/src/vision.rs.txt",
+        "sha256": "0d6f866b6680ee9ff927e803b9bfce82f98a1b46c28797099a7aa0de2b844c4c"
+      },
+      {
+        "bytes": 10877,
+        "path": "native/deadpan-track/tests/faces.rs.txt",
+        "sha256": "2ac43c88cf23b1577d4cf519ed69c1e9c38e0ce9b2f8a88cc041cbf5b44ac18b"
+      },
+      {
+        "bytes": 4302,
+        "path": "native/deadpan-track/tests/fixtures/SALIENT_REGIONS.md.txt",
+        "sha256": "6a053e7a2a666cd1e8d6e31f59cf17b630fddfd78003a4576d519e99ea8a804c"
+      },
+      {
+        "bytes": 768812,
+        "path": "native/deadpan-track/tests/fixtures/salient-audio.wav.txt",
+        "sha256": "8f2ede07d4e8aa6743b6f441f5fb3cc6c6347a333f7b4ede15c52315f7195089"
+      },
+      {
+        "bytes": 4876,
+        "path": "native/deadpan-track/tests/fixtures/salient-blank.png.txt",
+        "sha256": "95f59820f0abfb2f26c04ec6718960c6548e4687b5a15c5dc27f8b5900f1cd84"
+      },
+      {
+        "bytes": 11790,
+        "path": "native/deadpan-track/tests/fixtures/salient-mug-aperture.mp4.txt",
+        "sha256": "163f1d080615c1232d2c467e1d1fd4d1eef3ade865824130ac30b7a1baa036cb"
+      },
+      {
+        "bytes": 11750,
+        "path": "native/deadpan-track/tests/fixtures/salient-mug-rotated-90.mp4.txt",
+        "sha256": "b8d58a886c71674e2189175862f963dfe5f4deaeb4b464fd95bddc3605df2f69"
+      },
+      {
+        "bytes": 9379,
+        "path": "native/deadpan-track/tests/fixtures/salient-mug.png.txt",
+        "sha256": "5df85d511659a008b734a5e843cc5b13b9ea8e989c4b00423e036feb8667f1e8"
+      },
+      {
+        "bytes": 33954,
+        "path": "native/deadpan-track/tests/fixtures/salient-regions-fixtures.json.txt",
+        "sha256": "bcb45f5c135229159236a64376bdb0f5a35cf04b0007f1becd6db50abf4a51cf"
+      },
+      {
+        "bytes": 635050,
+        "path": "native/deadpan-track/tests/fixtures/salient-regions-sar.mkv.txt",
+        "sha256": "86f4b5e08e0c4851811bc5a8412bd43eb7c94e8cf9d74b8cf775142d23e078f3"
+      },
+      {
+        "bytes": 635038,
+        "path": "native/deadpan-track/tests/fixtures/salient-regions.mkv.txt",
+        "sha256": "cc181467a19d92c3b08edf72ff34d4eaac6d4887e8e05311305ed51db7576f66"
+      },
+      {
+        "bytes": 585089,
+        "path": "native/deadpan-track/tests/fixtures/salient-regions.mp4.txt",
+        "sha256": "aaffac5cc021297348101e3ce500a3febac48fc45021a511468cb3fd76784e93"
+      },
+      {
+        "bytes": 40434,
+        "path": "native/deadpan-track/tests/fixtures/salient-two.png.txt",
+        "sha256": "f34a618eb462bb3afe5a024671cf5459cbf9f97d05b2bbb54b3f0eef4218389d"
+      },
+      {
+        "bytes": 10035,
+        "path": "native/deadpan-track/tests/generate_salient_fixtures.py.txt",
+        "sha256": "dfd8534697a01dc23081227d1de74ce30cb24424bb1d216d0d3e4d7bea992705"
+      },
+      {
+        "bytes": 5068,
+        "path": "native/deadpan-track/tests/generate_salient_images.swift.txt",
+        "sha256": "2fccff2450ebd066cdeeb06ea327f8ff1d0aaca6a4106efed8ac6ba76dc708af"
+      },
+      {
+        "bytes": 19191,
+        "path": "native/deadpan-track/tests/geometry.rs.txt",
+        "sha256": "9e6b9de52e47de9eaaf3e0b7f87928f2a495598a96aa1a15088d295057d441a6"
+      },
+      {
+        "bytes": 15623,
+        "path": "native/deadpan-track/tests/picture_proposals.rs.txt",
+        "sha256": "4a23bcb515bf9fb02b43f4f868695090aed9f1a501d11e9be71e4505569fb1c1"
+      },
+      {
+        "bytes": 21513,
+        "path": "native/deadpan-track/tests/worker.rs.txt",
+        "sha256": "5a63c78dd03ac6744f109119db8dca537850a2d456055f5abd9358a3cc1e4675"
+      }
+    ],
+    "omitted_sidecars": {},
+    "path": "archives/source-second.tar.gz",
+    "root": "/private/tmp/deadpan-camera-regions-2026-10-25/source-second",
+    "source_bytes": 4732316,
+    "source_files": 52
+  },
+  {
+    "members": [
+      {
+        "bytes": 89064,
+        "path": "crates/deadpan-app/src/jobs.rs.txt",
+        "sha256": "f10db2cbc9d1402d90f050cc129fd6f8dae55530c9c780693f93d2934c62f9d0"
+      },
+      {
+        "bytes": 796314,
+        "path": "crates/deadpan-app/src/navigation/registry/baseline-routing.txt.txt",
+        "sha256": "264ac889542efa6536cf0c2ef664dd2342e95c72368342ce90f1f6c7c5643944"
+      },
+      {
+        "bytes": 138675,
+        "path": "crates/deadpan-app/src/navigation/registry/entries.rs.txt",
+        "sha256": "51c89eadaacf4ca1ac9f8cebd9fb0de58400c69f25836c9a5280021bbb14ae97"
+      },
+      {
+        "bytes": 18282,
+        "path": "crates/deadpan-app/src/navigation/zoom.rs.txt",
+        "sha256": "ab8110f710d3c635843aa6e02a182258dfe6d74fb3101c5c56aa2b07a11a7b36"
+      },
+      {
+        "bytes": 175548,
+        "path": "crates/deadpan-app/src/preview/camera.rs.txt",
+        "sha256": "35b7b7eabc94acebe59721521e6260ccf012300e6707858fe32b0d96c6de9d25"
+      },
+      {
+        "bytes": 42198,
+        "path": "crates/deadpan-app/src/preview/camera/proposal_picker.rs.txt",
+        "sha256": "2605f52e6d1fc9fb970096337abd2e8c0fe9a9edd839d48ddc88aabd28888d15"
+      },
+      {
+        "bytes": 59627,
+        "path": "crates/deadpan-app/src/preview/harness.rs.txt",
+        "sha256": "9896bbca1033a9b265f66fa0cd2d8d72ba05a290201a9efddd5e11d7d0ca1ce4"
+      },
+      {
+        "bytes": 10157,
+        "path": "crates/deadpan-app/src/preview/harness/faces.rs.txt",
+        "sha256": "1ef2f7adc1de320f7d384eaf481951c2f9dc59a5648f560daf9292f1e575ee8f"
+      },
+      {
+        "bytes": 14684,
+        "path": "crates/deadpan-app/src/preview/harness/faces/camera_picker.rs.txt",
+        "sha256": "e20f4ca13632747310f11d6bd3f655cfa80e795fb3925830bdf2f4325133e274"
+      },
+      {
+        "bytes": 37492,
+        "path": "crates/deadpan-app/src/preview/harness/regions.rs.txt",
+        "sha256": "1f4d9100164ca87b76d4823053ea234a4dcaae9d15d4539a49ff676cd4ee62a3"
+      },
+      {
+        "bytes": 89548,
+        "path": "crates/deadpan-app/src/preview/harness/scenarios.rs.txt",
+        "sha256": "df209dd421d17ae82640cac33c2a7897f11de8cdf5c264536f1189ecf376935c"
+      },
+      {
+        "bytes": 21396,
+        "path": "crates/deadpan-app/src/preview/targets.rs.txt",
+        "sha256": "f79d50b605617fac331a6326a4b17aeac6a77804f97e98079834b49261750e90"
+      },
+      {
+        "bytes": 11631,
+        "path": "crates/deadpan-app/src/project/service/readonly.rs.txt",
+        "sha256": "c178e1475595220386d3c6a8c4cac873ce6f8cd08e759fef88721d72e09fc0e7"
+      },
+      {
+        "bytes": 29908,
+        "path": "crates/deadpan-app/src/project/service/targets.rs.txt",
+        "sha256": "25d797bffaccbe580fab47f7b9d314bcfd20b26c4753a5b665f02f9102f5ca4f"
+      },
+      {
+        "bytes": 17146,
+        "path": "crates/deadpan-app/src/project/service/targets/picture_proposals.rs.txt",
+        "sha256": "1109d87b4e15868977cd6eb60007c79a664487ae30b8dde35ac5f9f34246daef"
+      },
+      {
+        "bytes": 12360,
+        "path": "crates/deadpan-app/src/project/targets.rs.txt",
+        "sha256": "aa81d166b0b720545838e836392d236b9f3c7bb9c1279d6cba44e366406b307a"
+      },
+      {
+        "bytes": 29136,
+        "path": "crates/deadpan-app/src/project/tests/readonly.rs.txt",
+        "sha256": "0c040755749fa49685364e54e3dda2a336cd5cdae87c88258d5691786a4ebeab"
+      },
+      {
+        "bytes": 21131,
+        "path": "crates/deadpan-app/src/project/tests/targets.rs.txt",
+        "sha256": "05a716da5578439a26431beac1e15eb991c31d96f72f31a6381d30a54bb3b89f"
+      },
+      {
+        "bytes": 10447,
+        "path": "crates/deadpan-app/src/project/tests/targets/faces.rs.txt",
+        "sha256": "85cc3272375dd454e02f48b3e2d027f6159c2e55f4e202cbb41f305d6f71af0d"
+      },
+      {
+        "bytes": 16435,
+        "path": "crates/deadpan-app/src/project/tests/targets/picture_proposals.rs.txt",
+        "sha256": "7b847950af9b95fb012bb92c92c1b7d7fd08a374f235c2eb0adab2df10b73ed4"
+      },
+      {
+        "bytes": 30871,
+        "path": "crates/deadpan-app/src/ui_harness.rs.txt",
+        "sha256": "ba3d3b985bd9ac62be69a6399725c20a81ea4d89935b94beeca0e1a741086a00"
+      },
+      {
+        "bytes": 12412,
+        "path": "crates/deadpan-cli/src/faces.rs.txt",
+        "sha256": "0a8f8be0f2bed1e3961348113f3b94b7de88d023f479a984c25299d9738afbea"
+      },
+      {
+        "bytes": 60778,
+        "path": "crates/deadpan-cli/src/lib.rs.txt",
+        "sha256": "e6a67b9ffdb7794af814a5f52f8413d7ae5980b6b0532fc118383231d8d76afd"
+      },
+      {
+        "bytes": 21864,
+        "path": "crates/deadpan-cli/src/picture_proposals.rs.txt",
+        "sha256": "33cfeebbbe48ba0eec1a1fbc2435b489427bf51fe919bb00c8bcf9c1fc31e2e6"
+      },
+      {
+        "bytes": 15037,
+        "path": "crates/deadpan-cli/src/picture_proposals/tests.rs.txt",
+        "sha256": "a46cd755d48cf1c89d5417078928e314febb9fc4a0630c7a920ca56634a3d1f1"
+      },
+      {
+        "bytes": 16487,
+        "path": "crates/deadpan-cli/tests/hostile_analysis_workers.rs.txt",
+        "sha256": "c6da71d2feae105cfad7d33ff86e5c5770ac10af15f546d359e198f4ffe20a80"
+      },
+      {
+        "bytes": 5004,
+        "path": "crates/deadpan-cli/tests/hostile_workers/analysis.py.txt",
+        "sha256": "72802574bbf955928fbed1ae89101e9a5b291a9ef180a5c976f7df373de81646"
+      },
+      {
+        "bytes": 1429,
+        "path": "crates/deadpan-jobs/src/lib.rs.txt",
+        "sha256": "11d027ee9ea0ded0f28b130f461925cfb48e3cf20d4a96f984418d98c3a4d2fe"
+      },
+      {
+        "bytes": 16569,
+        "path": "crates/deadpan-jobs/src/picture_proposals.rs.txt",
+        "sha256": "73d39d10fd723648913eb29f70e3f88613de295c9f76b7e884ed338f300e350a"
+      },
+      {
+        "bytes": 15222,
+        "path": "crates/deadpan-jobs/src/picture_proposals/tests.rs.txt",
+        "sha256": "6dae4d354786cfd73ad7a4b282e16c661a843dda1c65c66433be72fab524fd44"
+      },
+      {
+        "bytes": 333,
+        "path": "fuzz/fuzz_targets/jobs-faces-protocol.rs.txt",
+        "sha256": "1f9aead147339cb82f4c97bb051f32b35d3316d027112ee662fd03762c7aa63a"
+      },
+      {
+        "bytes": 2187,
+        "path": "native/deadpan-track/Cargo.toml.txt",
+        "sha256": "8ff4beca8a81da13520b785c1066e833ae30baab40bc0f017a34f1f16e46307c"
+      },
+      {
+        "bytes": 21316,
+        "path": "native/deadpan-track/src/main.rs.txt",
+        "sha256": "8d7b111c05753b3c0d555d103079541cc69baafdf3e7f1cca65ed76ad2bbfa13"
+      },
+      {
+        "bytes": 17175,
+        "path": "native/deadpan-track/src/picture_proposals.rs.txt",
+        "sha256": "8048a161df2fb8400a07886ca7a0faad76c405b229b66bd9c4a8b37406104468"
+      },
+      {
+        "bytes": 31898,
+        "path": "native/deadpan-track/src/vision.rs.txt",
+        "sha256": "0d6f866b6680ee9ff927e803b9bfce82f98a1b46c28797099a7aa0de2b844c4c"
+      },
+      {
+        "bytes": 10877,
+        "path": "native/deadpan-track/tests/faces.rs.txt",
+        "sha256": "2ac43c88cf23b1577d4cf519ed69c1e9c38e0ce9b2f8a88cc041cbf5b44ac18b"
+      },
+      {
+        "bytes": 4302,
+        "path": "native/deadpan-track/tests/fixtures/SALIENT_REGIONS.md.txt",
+        "sha256": "6a053e7a2a666cd1e8d6e31f59cf17b630fddfd78003a4576d519e99ea8a804c"
+      },
+      {
+        "bytes": 768812,
+        "path": "native/deadpan-track/tests/fixtures/salient-audio.wav.txt",
+        "sha256": "8f2ede07d4e8aa6743b6f441f5fb3cc6c6347a333f7b4ede15c52315f7195089"
+      },
+      {
+        "bytes": 4876,
+        "path": "native/deadpan-track/tests/fixtures/salient-blank.png.txt",
+        "sha256": "95f59820f0abfb2f26c04ec6718960c6548e4687b5a15c5dc27f8b5900f1cd84"
+      },
+      {
+        "bytes": 11790,
+        "path": "native/deadpan-track/tests/fixtures/salient-mug-aperture.mp4.txt",
+        "sha256": "163f1d080615c1232d2c467e1d1fd4d1eef3ade865824130ac30b7a1baa036cb"
+      },
+      {
+        "bytes": 11750,
+        "path": "native/deadpan-track/tests/fixtures/salient-mug-rotated-90.mp4.txt",
+        "sha256": "b8d58a886c71674e2189175862f963dfe5f4deaeb4b464fd95bddc3605df2f69"
+      },
+      {
+        "bytes": 9379,
+        "path": "native/deadpan-track/tests/fixtures/salient-mug.png.txt",
+        "sha256": "5df85d511659a008b734a5e843cc5b13b9ea8e989c4b00423e036feb8667f1e8"
+      },
+      {
+        "bytes": 33954,
+        "path": "native/deadpan-track/tests/fixtures/salient-regions-fixtures.json.txt",
+        "sha256": "bcb45f5c135229159236a64376bdb0f5a35cf04b0007f1becd6db50abf4a51cf"
+      },
+      {
+        "bytes": 635050,
+        "path": "native/deadpan-track/tests/fixtures/salient-regions-sar.mkv.txt",
+        "sha256": "86f4b5e08e0c4851811bc5a8412bd43eb7c94e8cf9d74b8cf775142d23e078f3"
+      },
+      {
+        "bytes": 635038,
+        "path": "native/deadpan-track/tests/fixtures/salient-regions.mkv.txt",
+        "sha256": "cc181467a19d92c3b08edf72ff34d4eaac6d4887e8e05311305ed51db7576f66"
+      },
+      {
+        "bytes": 585089,
+        "path": "native/deadpan-track/tests/fixtures/salient-regions.mp4.txt",
+        "sha256": "aaffac5cc021297348101e3ce500a3febac48fc45021a511468cb3fd76784e93"
+      },
+      {
+        "bytes": 40434,
+        "path": "native/deadpan-track/tests/fixtures/salient-two.png.txt",
+        "sha256": "f34a618eb462bb3afe5a024671cf5459cbf9f97d05b2bbb54b3f0eef4218389d"
+      },
+      {
+        "bytes": 10035,
+        "path": "native/deadpan-track/tests/generate_salient_fixtures.py.txt",
+        "sha256": "dfd8534697a01dc23081227d1de74ce30cb24424bb1d216d0d3e4d7bea992705"
+      },
+      {
+        "bytes": 5068,
+        "path": "native/deadpan-track/tests/generate_salient_images.swift.txt",
+        "sha256": "2fccff2450ebd066cdeeb06ea327f8ff1d0aaca6a4106efed8ac6ba76dc708af"
+      },
+      {
+        "bytes": 19191,
+        "path": "native/deadpan-track/tests/geometry.rs.txt",
+        "sha256": "9e6b9de52e47de9eaaf3e0b7f87928f2a495598a96aa1a15088d295057d441a6"
+      },
+      {
+        "bytes": 15623,
+        "path": "native/deadpan-track/tests/picture_proposals.rs.txt",
+        "sha256": "4a23bcb515bf9fb02b43f4f868695090aed9f1a501d11e9be71e4505569fb1c1"
+      },
+      {
+        "bytes": 21513,
+        "path": "native/deadpan-track/tests/worker.rs.txt",
+        "sha256": "5a63c78dd03ac6744f109119db8dca537850a2d456055f5abd9358a3cc1e4675"
+      }
+    ],
+    "omitted_sidecars": {},
+    "path": "archives/source-debug-first.tar.gz",
+    "root": "/private/tmp/deadpan-camera-regions-2026-10-25/source-debug-first",
+    "source_bytes": 4732542,
+    "source_files": 52
+  },
+  {
+    "members": [
+      {
+        "bytes": 89064,
+        "path": "crates/deadpan-app/src/jobs.rs.txt",
+        "sha256": "f10db2cbc9d1402d90f050cc129fd6f8dae55530c9c780693f93d2934c62f9d0"
+      },
+      {
+        "bytes": 796314,
+        "path": "crates/deadpan-app/src/navigation/registry/baseline-routing.txt.txt",
+        "sha256": "264ac889542efa6536cf0c2ef664dd2342e95c72368342ce90f1f6c7c5643944"
+      },
+      {
+        "bytes": 138675,
+        "path": "crates/deadpan-app/src/navigation/registry/entries.rs.txt",
+        "sha256": "51c89eadaacf4ca1ac9f8cebd9fb0de58400c69f25836c9a5280021bbb14ae97"
+      },
+      {
+        "bytes": 18282,
+        "path": "crates/deadpan-app/src/navigation/zoom.rs.txt",
+        "sha256": "ab8110f710d3c635843aa6e02a182258dfe6d74fb3101c5c56aa2b07a11a7b36"
+      },
+      {
+        "bytes": 175548,
+        "path": "crates/deadpan-app/src/preview/camera.rs.txt",
+        "sha256": "35b7b7eabc94acebe59721521e6260ccf012300e6707858fe32b0d96c6de9d25"
+      },
+      {
+        "bytes": 42198,
+        "path": "crates/deadpan-app/src/preview/camera/proposal_picker.rs.txt",
+        "sha256": "2605f52e6d1fc9fb970096337abd2e8c0fe9a9edd839d48ddc88aabd28888d15"
+      },
+      {
+        "bytes": 59627,
+        "path": "crates/deadpan-app/src/preview/harness.rs.txt",
+        "sha256": "9896bbca1033a9b265f66fa0cd2d8d72ba05a290201a9efddd5e11d7d0ca1ce4"
+      },
+      {
+        "bytes": 10157,
+        "path": "crates/deadpan-app/src/preview/harness/faces.rs.txt",
+        "sha256": "1ef2f7adc1de320f7d384eaf481951c2f9dc59a5648f560daf9292f1e575ee8f"
+      },
+      {
+        "bytes": 14684,
+        "path": "crates/deadpan-app/src/preview/harness/faces/camera_picker.rs.txt",
+        "sha256": "e20f4ca13632747310f11d6bd3f655cfa80e795fb3925830bdf2f4325133e274"
+      },
+      {
+        "bytes": 38538,
+        "path": "crates/deadpan-app/src/preview/harness/regions.rs.txt",
+        "sha256": "947cc336b3100438ce89fccb23af7b0b5b1f942e468bc34adc5da363eb0cac92"
+      },
+      {
+        "bytes": 89548,
+        "path": "crates/deadpan-app/src/preview/harness/scenarios.rs.txt",
+        "sha256": "df209dd421d17ae82640cac33c2a7897f11de8cdf5c264536f1189ecf376935c"
+      },
+      {
+        "bytes": 21396,
+        "path": "crates/deadpan-app/src/preview/targets.rs.txt",
+        "sha256": "f79d50b605617fac331a6326a4b17aeac6a77804f97e98079834b49261750e90"
+      },
+      {
+        "bytes": 11631,
+        "path": "crates/deadpan-app/src/project/service/readonly.rs.txt",
+        "sha256": "c178e1475595220386d3c6a8c4cac873ce6f8cd08e759fef88721d72e09fc0e7"
+      },
+      {
+        "bytes": 29908,
+        "path": "crates/deadpan-app/src/project/service/targets.rs.txt",
+        "sha256": "25d797bffaccbe580fab47f7b9d314bcfd20b26c4753a5b665f02f9102f5ca4f"
+      },
+      {
+        "bytes": 17146,
+        "path": "crates/deadpan-app/src/project/service/targets/picture_proposals.rs.txt",
+        "sha256": "1109d87b4e15868977cd6eb60007c79a664487ae30b8dde35ac5f9f34246daef"
+      },
+      {
+        "bytes": 12360,
+        "path": "crates/deadpan-app/src/project/targets.rs.txt",
+        "sha256": "aa81d166b0b720545838e836392d236b9f3c7bb9c1279d6cba44e366406b307a"
+      },
+      {
+        "bytes": 29136,
+        "path": "crates/deadpan-app/src/project/tests/readonly.rs.txt",
+        "sha256": "0c040755749fa49685364e54e3dda2a336cd5cdae87c88258d5691786a4ebeab"
+      },
+      {
+        "bytes": 21131,
+        "path": "crates/deadpan-app/src/project/tests/targets.rs.txt",
+        "sha256": "05a716da5578439a26431beac1e15eb991c31d96f72f31a6381d30a54bb3b89f"
+      },
+      {
+        "bytes": 10447,
+        "path": "crates/deadpan-app/src/project/tests/targets/faces.rs.txt",
+        "sha256": "85cc3272375dd454e02f48b3e2d027f6159c2e55f4e202cbb41f305d6f71af0d"
+      },
+      {
+        "bytes": 16435,
+        "path": "crates/deadpan-app/src/project/tests/targets/picture_proposals.rs.txt",
+        "sha256": "7b847950af9b95fb012bb92c92c1b7d7fd08a374f235c2eb0adab2df10b73ed4"
+      },
+      {
+        "bytes": 30871,
+        "path": "crates/deadpan-app/src/ui_harness.rs.txt",
+        "sha256": "ba3d3b985bd9ac62be69a6399725c20a81ea4d89935b94beeca0e1a741086a00"
+      },
+      {
+        "bytes": 12412,
+        "path": "crates/deadpan-cli/src/faces.rs.txt",
+        "sha256": "0a8f8be0f2bed1e3961348113f3b94b7de88d023f479a984c25299d9738afbea"
+      },
+      {
+        "bytes": 60778,
+        "path": "crates/deadpan-cli/src/lib.rs.txt",
+        "sha256": "e6a67b9ffdb7794af814a5f52f8413d7ae5980b6b0532fc118383231d8d76afd"
+      },
+      {
+        "bytes": 21864,
+        "path": "crates/deadpan-cli/src/picture_proposals.rs.txt",
+        "sha256": "33cfeebbbe48ba0eec1a1fbc2435b489427bf51fe919bb00c8bcf9c1fc31e2e6"
+      },
+      {
+        "bytes": 15037,
+        "path": "crates/deadpan-cli/src/picture_proposals/tests.rs.txt",
+        "sha256": "a46cd755d48cf1c89d5417078928e314febb9fc4a0630c7a920ca56634a3d1f1"
+      },
+      {
+        "bytes": 16487,
+        "path": "crates/deadpan-cli/tests/hostile_analysis_workers.rs.txt",
+        "sha256": "c6da71d2feae105cfad7d33ff86e5c5770ac10af15f546d359e198f4ffe20a80"
+      },
+      {
+        "bytes": 5004,
+        "path": "crates/deadpan-cli/tests/hostile_workers/analysis.py.txt",
+        "sha256": "72802574bbf955928fbed1ae89101e9a5b291a9ef180a5c976f7df373de81646"
+      },
+      {
+        "bytes": 1429,
+        "path": "crates/deadpan-jobs/src/lib.rs.txt",
+        "sha256": "11d027ee9ea0ded0f28b130f461925cfb48e3cf20d4a96f984418d98c3a4d2fe"
+      },
+      {
+        "bytes": 16569,
+        "path": "crates/deadpan-jobs/src/picture_proposals.rs.txt",
+        "sha256": "73d39d10fd723648913eb29f70e3f88613de295c9f76b7e884ed338f300e350a"
+      },
+      {
+        "bytes": 15222,
+        "path": "crates/deadpan-jobs/src/picture_proposals/tests.rs.txt",
+        "sha256": "6dae4d354786cfd73ad7a4b282e16c661a843dda1c65c66433be72fab524fd44"
+      },
+      {
+        "bytes": 333,
+        "path": "fuzz/fuzz_targets/jobs-faces-protocol.rs.txt",
+        "sha256": "1f9aead147339cb82f4c97bb051f32b35d3316d027112ee662fd03762c7aa63a"
+      },
+      {
+        "bytes": 2187,
+        "path": "native/deadpan-track/Cargo.toml.txt",
+        "sha256": "8ff4beca8a81da13520b785c1066e833ae30baab40bc0f017a34f1f16e46307c"
+      },
+      {
+        "bytes": 21316,
+        "path": "native/deadpan-track/src/main.rs.txt",
+        "sha256": "8d7b111c05753b3c0d555d103079541cc69baafdf3e7f1cca65ed76ad2bbfa13"
+      },
+      {
+        "bytes": 17175,
+        "path": "native/deadpan-track/src/picture_proposals.rs.txt",
+        "sha256": "8048a161df2fb8400a07886ca7a0faad76c405b229b66bd9c4a8b37406104468"
+      },
+      {
+        "bytes": 31898,
+        "path": "native/deadpan-track/src/vision.rs.txt",
+        "sha256": "0d6f866b6680ee9ff927e803b9bfce82f98a1b46c28797099a7aa0de2b844c4c"
+      },
+      {
+        "bytes": 10877,
+        "path": "native/deadpan-track/tests/faces.rs.txt",
+        "sha256": "2ac43c88cf23b1577d4cf519ed69c1e9c38e0ce9b2f8a88cc041cbf5b44ac18b"
+      },
+      {
+        "bytes": 4302,
+        "path": "native/deadpan-track/tests/fixtures/SALIENT_REGIONS.md.txt",
+        "sha256": "6a053e7a2a666cd1e8d6e31f59cf17b630fddfd78003a4576d519e99ea8a804c"
+      },
+      {
+        "bytes": 768812,
+        "path": "native/deadpan-track/tests/fixtures/salient-audio.wav.txt",
+        "sha256": "8f2ede07d4e8aa6743b6f441f5fb3cc6c6347a333f7b4ede15c52315f7195089"
+      },
+      {
+        "bytes": 4876,
+        "path": "native/deadpan-track/tests/fixtures/salient-blank.png.txt",
+        "sha256": "95f59820f0abfb2f26c04ec6718960c6548e4687b5a15c5dc27f8b5900f1cd84"
+      },
+      {
+        "bytes": 11790,
+        "path": "native/deadpan-track/tests/fixtures/salient-mug-aperture.mp4.txt",
+        "sha256": "163f1d080615c1232d2c467e1d1fd4d1eef3ade865824130ac30b7a1baa036cb"
+      },
+      {
+        "bytes": 11750,
+        "path": "native/deadpan-track/tests/fixtures/salient-mug-rotated-90.mp4.txt",
+        "sha256": "b8d58a886c71674e2189175862f963dfe5f4deaeb4b464fd95bddc3605df2f69"
+      },
+      {
+        "bytes": 9379,
+        "path": "native/deadpan-track/tests/fixtures/salient-mug.png.txt",
+        "sha256": "5df85d511659a008b734a5e843cc5b13b9ea8e989c4b00423e036feb8667f1e8"
+      },
+      {
+        "bytes": 33954,
+        "path": "native/deadpan-track/tests/fixtures/salient-regions-fixtures.json.txt",
+        "sha256": "bcb45f5c135229159236a64376bdb0f5a35cf04b0007f1becd6db50abf4a51cf"
+      },
+      {
+        "bytes": 635050,
+        "path": "native/deadpan-track/tests/fixtures/salient-regions-sar.mkv.txt",
+        "sha256": "86f4b5e08e0c4851811bc5a8412bd43eb7c94e8cf9d74b8cf775142d23e078f3"
+      },
+      {
+        "bytes": 635038,
+        "path": "native/deadpan-track/tests/fixtures/salient-regions.mkv.txt",
+        "sha256": "cc181467a19d92c3b08edf72ff34d4eaac6d4887e8e05311305ed51db7576f66"
+      },
+      {
+        "bytes": 585089,
+        "path": "native/deadpan-track/tests/fixtures/salient-regions.mp4.txt",
+        "sha256": "aaffac5cc021297348101e3ce500a3febac48fc45021a511468cb3fd76784e93"
+      },
+      {
+        "bytes": 40434,
+        "path": "native/deadpan-track/tests/fixtures/salient-two.png.txt",
+        "sha256": "f34a618eb462bb3afe5a024671cf5459cbf9f97d05b2bbb54b3f0eef4218389d"
+      },
+      {
+        "bytes": 10035,
+        "path": "native/deadpan-track/tests/generate_salient_fixtures.py.txt",
+        "sha256": "dfd8534697a01dc23081227d1de74ce30cb24424bb1d216d0d3e4d7bea992705"
+      },
+      {
+        "bytes": 5068,
+        "path": "native/deadpan-track/tests/generate_salient_images.swift.txt",
+        "sha256": "2fccff2450ebd066cdeeb06ea327f8ff1d0aaca6a4106efed8ac6ba76dc708af"
+      },
+      {
+        "bytes": 19191,
+        "path": "native/deadpan-track/tests/geometry.rs.txt",
+        "sha256": "9e6b9de52e47de9eaaf3e0b7f87928f2a495598a96aa1a15088d295057d441a6"
+      },
+      {
+        "bytes": 15623,
+        "path": "native/deadpan-track/tests/picture_proposals.rs.txt",
+        "sha256": "4a23bcb515bf9fb02b43f4f868695090aed9f1a501d11e9be71e4505569fb1c1"
+      },
+      {
+        "bytes": 21513,
+        "path": "native/deadpan-track/tests/worker.rs.txt",
+        "sha256": "5a63c78dd03ac6744f109119db8dca537850a2d456055f5abd9358a3cc1e4675"
+      }
+    ],
+    "omitted_sidecars": {},
+    "path": "archives/source-debug-second.tar.gz",
+    "root": "/private/tmp/deadpan-camera-regions-2026-10-25/source-debug-second",
+    "source_bytes": 4733588,
+    "source_files": 52
+  }
+]

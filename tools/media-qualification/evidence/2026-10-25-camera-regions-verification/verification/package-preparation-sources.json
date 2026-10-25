@@ -1,0 +1,18 @@
+{
+  "docs/PACKAGING.md": {
+    "sha256": "e9b77f6e49eafe1ccd719d509c443d4e10e7e4b80bb6adcc05eafe78dbe045e3",
+    "bytes": 44141
+  },
+  "crates/xtask/src/bundle.rs": {
+    "sha256": "184731dff9d8179cf6da16fdad88f7a21d04142018e17b9c79422060e1863ef0",
+    "bytes": 53054
+  },
+  "crates/xtask/src/bundle/verify.rs": {
+    "sha256": "10d67ae3156df1c43f6ef436a52e43e68d41c5c6027b17f4aac741eada586566",
+    "bytes": 20069
+  },
+  "crates/deadpan-cli/src/picture_proposals.rs": {
+    "sha256": "33cfeebbbe48ba0eec1a1fbc2435b489427bf51fe919bb00c8bcf9c1fc31e2e6",
+    "bytes": 21864
+  }
+}

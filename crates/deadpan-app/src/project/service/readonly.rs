@@ -30,7 +30,9 @@ impl Service {
                     operation: project::marks::Operation::Jump { .. },
                     ..
                 })
-                | ProjectRequest::Target(Target::DetectFaces { .. } | Target::Cancel { .. })
+                | ProjectRequest::Target(
+                    Target::DetectPictureProposals { .. } | Target::Cancel { .. }
+                )
                 | ProjectRequest::PrepareRoomTone { .. }
                 | ProjectRequest::PrepareGain(_)
                 | ProjectRequest::PrepareSlip(_)
@@ -238,7 +240,9 @@ impl Service {
                 project::backups::Request::LoadSettings { .. }
                 | project::backups::Request::SaveSettings { .. },
             )
-            | ProjectRequest::Target(Target::DetectFaces { .. } | Target::Cancel { .. })
+            | ProjectRequest::Target(
+                Target::DetectPictureProposals { .. } | Target::Cancel { .. },
+            )
             | ProjectRequest::PrepareRoomTone { .. }
             | ProjectRequest::PrepareGain(_)
             | ProjectRequest::PrepareSlip(_)

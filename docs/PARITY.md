@@ -145,6 +145,7 @@ and write nothing. Headless requests carry an explicit `parent`, `cursor`,
 | Camera Enter (apply) | `command` `set_framing` (or `edit_scoped`) with an explicit pose or envelope | R, D | Equivalent |
 | `,z`, `,c`, `:zoom`, `:creep` | `set_framing` for completed presets; `zoom` intent for ordinary ranges and explicit one-play invocations, with exact `scoped` authoring and presentation context | R, D | Equivalent |
 | `:zoom … target=face:N` | `detect-faces <p> --at <pts>`, `command` `set_target` with the chosen face, then the `set_framing` instruction naming it: the same detection, target and framing writes the app makes in sequence | R, D | Equivalent |
+| `:zoom … target=region:N`, `:creep … target=region:N` | `detect-regions <p> --at <pts>`, then one `command` Compound with `set_target` and `set_framing` for the chosen region | R, D | Equivalent |
 | `:framing-save a`, `@a` | `macro` `save` of a `set_framing` program, `macro` `run` | R, D | Equivalent |
 | `:track`, Camera `T` | `track <p> … [--save <id>]` | R (head at start) | Equivalent |
 | Camera `c` (correct region) | `track-correct <p> --target <id> --at <pts> --region <r>` | R (head at start) | Equivalent |

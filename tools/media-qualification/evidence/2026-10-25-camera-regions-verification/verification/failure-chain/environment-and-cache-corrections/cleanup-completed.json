@@ -1,0 +1,51 @@
+{
+  "observed_at": "2026-10-25T09:37:05.013783+00:00",
+  "available_bytes": 50103123968,
+  "cleanup_runs": {
+    "cargo-sweep-dry": {
+      "exit_code": 0,
+      "seconds": 11.642693917267025,
+      "sources_unchanged": true,
+      "environment": {
+        "DEADPAN_FFMPEG_PREFIX": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix",
+        "CARGO_TARGET_DIR": "/tmp/deadpan-follow-creep-2026-10-24/target",
+        "DEADPAN_REQUIRE_PHYSICAL_MAC": "1",
+        "CARGO_PROFILE_DEV_OPT_LEVEL": "2"
+      }
+    },
+    "cargo-sweep-apply": {
+      "exit_code": 0,
+      "seconds": 70.08276262506843,
+      "sources_unchanged": true,
+      "environment": {
+        "DEADPAN_FFMPEG_PREFIX": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix",
+        "CARGO_TARGET_DIR": "/tmp/deadpan-follow-creep-2026-10-24/target",
+        "DEADPAN_REQUIRE_PHYSICAL_MAC": "1",
+        "CARGO_PROFILE_DEV_OPT_LEVEL": "2"
+      }
+    },
+    "cargo-repo-sweep-dry": {
+      "exit_code": 0,
+      "seconds": 348.3760279165581,
+      "sources_unchanged": true,
+      "environment": {
+        "DEADPAN_FFMPEG_PREFIX": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix",
+        "CARGO_TARGET_DIR": "/Users/michael/Code/deadpan/target",
+        "DEADPAN_REQUIRE_PHYSICAL_MAC": "1",
+        "CARGO_PROFILE_DEV_OPT_LEVEL": "2"
+      }
+    },
+    "cargo-repo-sweep-apply": {
+      "exit_code": 0,
+      "seconds": 477.30327533278614,
+      "sources_unchanged": true,
+      "environment": {
+        "DEADPAN_FFMPEG_PREFIX": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix",
+        "CARGO_TARGET_DIR": "/Users/michael/Code/deadpan/target",
+        "DEADPAN_REQUIRE_PHYSICAL_MAC": "1",
+        "CARGO_PROFILE_DEV_OPT_LEVEL": "2"
+      }
+    }
+  },
+  "scope": "Only rebuildable Cargo artifacts in the two explicit target directories were swept; source, fixtures and retained evidence were preserved."
+}

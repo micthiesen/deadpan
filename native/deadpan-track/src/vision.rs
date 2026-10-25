@@ -1,5 +1,5 @@
 //! The narrow Apple Vision adapter: one `VNTrackObjectRequest` driven by one
-//! `VNSequenceRequestHandler`, or one `VNDetectFaceRectanglesRequest` on one
+//! `VNSequenceRequestHandler`, or selected face/objectness requests on one
 //! `VNImageRequestHandler`, over owned BGRA `CVPixelBuffer`s.
 //!
 //! Every `unsafe` block here calls an Objective-C or CoreVideo API whose
@@ -31,13 +31,12 @@ use objc2_core_video::{
 use objc2_foundation::{NSArray, NSDictionary};
 use objc2_vision::{
     VNDetectFaceLandmarksRequest, VNDetectFaceRectanglesRequest, VNDetectedObjectObservation,
-    VNFaceLandmarkRegion2D, VNImageOption, VNImageRequestHandler, VNRequest,
-    VNRequestFaceLandmarksConstellation, VNRequestTrackingLevel, VNSequenceRequestHandler,
-    VNTrackObjectRequest,
+    VNFaceLandmarkRegion2D, VNGenerateObjectnessBasedSaliencyImageRequest, VNImageOption,
+    VNImageRequestHandler, VNRequest, VNRequestFaceLandmarksConstellation, VNRequestTrackingLevel,
+    VNSequenceRequestHandler, VNTrackObjectRequest,
 };
 
 pub const ENGINE: &str = "Apple Vision VNTrackObjectRequest";
-pub const FACE_ENGINE: &str = "Apple Vision VNDetectFaceRectanglesRequest";
 pub const TRACKING_LEVEL: &str = "accurate";
 
 /// A box in Vision's convention: normalized to the coded picture, origin at
@@ -217,61 +216,179 @@ pub struct Faces {
     pub revision: u64,
 }
 
-/// Detect face rectangles in one picture with a fresh
-/// `VNDetectFaceRectanglesRequest` on a fresh `VNImageRequestHandler`.
-/// `limit` bounds how many observations are read; more is an error.
-pub fn detect_faces(picture: &Picture<'_>, limit: usize) -> Result<Faces, String> {
+/// Salient-object bounds copied from one saliency observation, without scores.
+pub struct SalientRegions {
+    pub regions: Vec<VisionRect>,
+    pub revision: u64,
+}
+
+/// Exact requested detector presence. A selected detector failure returns no
+/// partial batch, including when both requests were performed successfully.
+pub struct PictureProposals {
+    pub faces: Option<Faces>,
+    pub salient_regions: Option<SalientRegions>,
+}
+
+/// Perform the selected requests together over one owned BGRA buffer and one
+/// handler. Face construction/default revision policy is unchanged. Only the
+/// new objectness request is pinned. Lazy salient bounds stay inside this pool.
+pub fn detect_picture_proposals(
+    picture: &Picture<'_>,
+    selection: deadpan_jobs::picture_proposals::ProposalSelection,
+    face_limit: usize,
+    salient_limit: usize,
+) -> Result<PictureProposals, String> {
+    use deadpan_jobs::picture_proposals::{ProposalSelection, SALIENCY_REQUEST_REVISION};
     let buffer = pixel_buffer(picture)?;
     autoreleasepool(|_| {
-        // SAFETY: plain constructors. The handler retains the pixel buffer,
-        // which nothing modifies afterwards, and the empty options dictionary
-        // has the declared key and value types.
-        let (handler, request) = unsafe {
+        let wants_faces = matches!(
+            selection,
+            ProposalSelection::Faces | ProposalSelection::Both
+        );
+        let wants_saliency = matches!(
+            selection,
+            ProposalSelection::SalientRegions | ProposalSelection::Both
+        );
+        // SAFETY: constructors on retained objects. The handler retains the
+        // immutable pixel buffer. Options have the declared key/value types.
+        let (handler, face_request, saliency_request) = unsafe {
             let options = NSDictionary::<VNImageOption, AnyObject>::new();
             let handler = VNImageRequestHandler::initWithCVPixelBuffer_options(
                 VNImageRequestHandler::alloc(),
                 &buffer,
                 &options,
             );
-            (handler, VNDetectFaceRectanglesRequest::new())
+            let face = wants_faces.then(|| VNDetectFaceRectanglesRequest::new());
+            let saliency = if wants_saliency {
+                // The inherited capability query must target this concrete
+                // class, not VNRequest's generated associated function.
+                let supported: Retained<objc2_foundation::NSIndexSet> = objc2::msg_send![
+                    VNGenerateObjectnessBasedSaliencyImageRequest::class(),
+                    supportedRevisions
+                ];
+                let revision = SALIENCY_REQUEST_REVISION as usize;
+                if !supported.containsIndex(revision) {
+                    return Err("Vision does not support objectness saliency revision 2".into());
+                }
+                let request = VNGenerateObjectnessBasedSaliencyImageRequest::new();
+                request.setRevision(revision);
+                Some(request)
+            } else {
+                None
+            };
+            (handler, face, saliency)
         };
-        let base: &VNRequest = &request;
-        let requests = NSArray::from_slice(&[base]);
-        // The handler performs the request synchronously before returning.
-        handler
-            .performRequests_error(&requests)
-            .map_err(|error| error.localizedDescription().to_string())?;
-        // SAFETY: property reads on a performed request.
-        let (revision, results) = unsafe { (request.revision() as u64, request.results()) };
-        let Some(results) = results else {
-            return Ok(Faces {
-                faces: Vec::new(),
-                revision,
-            });
-        };
-        if results.count() > limit {
-            return Err(format!(
-                "Vision found {} faces; at most {limit} are accepted",
-                results.count()
-            ));
+        let mut selected: Vec<&VNRequest> = Vec::with_capacity(2);
+        if let Some(request) = &face_request {
+            selected.push(request);
         }
-        let faces = results
-            .iter()
-            .map(|face| {
-                // SAFETY: property reads on a live observation.
-                let (rect, confidence) = unsafe { (face.boundingBox(), face.confidence()) };
-                (
-                    VisionRect {
-                        x: rect.origin.x,
-                        y: rect.origin.y,
-                        width: rect.size.width,
-                        height: rect.size.height,
-                    },
-                    confidence,
-                )
-            })
-            .collect();
-        Ok(Faces { faces, revision })
+        if let Some(request) = &saliency_request {
+            selected.push(request);
+        }
+        let requests = NSArray::from_slice(&selected);
+        // The synchronous call borrows only live retained requests/handler.
+        // Both is atomic: any framework error prevents a complete batch.
+        handler.performRequests_error(&requests).map_err(|error| {
+            format!(
+                "Vision picture proposals {selection:?}: {}",
+                error.localizedDescription()
+            )
+        })?;
+        let faces = if let Some(request) = face_request {
+            // SAFETY: property reads on a live performed request and its
+            // typed observation array. Count is bounded before iteration.
+            let (revision, results) = unsafe { (request.revision() as u64, request.results()) };
+            if revision == 0 {
+                return Err("Vision reported an invalid face request revision".into());
+            }
+            let mut faces = Vec::new();
+            if let Some(results) = results {
+                if results.count() > face_limit {
+                    return Err(format!(
+                        "Vision found {} faces; at most {face_limit} are accepted",
+                        results.count()
+                    ));
+                }
+                for face in results.iter() {
+                    // SAFETY: retained observation property reads, unchanged
+                    // from the existing face-only adapter.
+                    let (rect, confidence) = unsafe { (face.boundingBox(), face.confidence()) };
+                    faces.push((
+                        VisionRect {
+                            x: rect.origin.x,
+                            y: rect.origin.y,
+                            width: rect.size.width,
+                            height: rect.size.height,
+                        },
+                        confidence,
+                    ));
+                }
+            }
+            Some(Faces { faces, revision })
+        } else {
+            None
+        };
+        let salient_regions = if let Some(request) = saliency_request {
+            // SAFETY: property reads after synchronous completion. The exact
+            // configured revision is required, even for an empty result.
+            let (revision, results) = unsafe { (request.revision() as u64, request.results()) };
+            if revision != SALIENCY_REQUEST_REVISION {
+                return Err(format!(
+                    "Vision changed objectness saliency revision to {revision}; expected {SALIENCY_REQUEST_REVISION}"
+                ));
+            }
+            let mut regions = Vec::new();
+            if let Some(results) = results {
+                if results.count() > 1 {
+                    return Err(format!(
+                        "Vision returned {} saliency image observations; at most one is accepted",
+                        results.count()
+                    ));
+                }
+                if let Some(observation) = results.firstObject() {
+                    // SAFETY: lazy computation/property read while its
+                    // observation, request and pixel buffer are still alive.
+                    let objects = unsafe { observation.salientObjects() };
+                    if let Some(objects) = objects {
+                        if objects.count() > salient_limit {
+                            return Err(format!(
+                                "Vision found {} salient regions; at most {salient_limit} are accepted",
+                                objects.count()
+                            ));
+                        }
+                        for object in objects.iter() {
+                            // SAFETY: retained rectangle property read. No
+                            // heatmap pixels or confidence are read or copied.
+                            let rect = unsafe { object.boundingBox() };
+                            let value = VisionRect {
+                                x: rect.origin.x,
+                                y: rect.origin.y,
+                                width: rect.size.width,
+                                height: rect.size.height,
+                            };
+                            if [value.x, value.y, value.width, value.height]
+                                .iter()
+                                .any(|v| !v.is_finite())
+                                || value.width <= 0.0
+                                || value.height <= 0.0
+                            {
+                                return Err(
+                                    "Vision returned invalid salient-region geometry".into()
+                                );
+                            }
+                            regions.push(value);
+                        }
+                    }
+                }
+            }
+            Some(SalientRegions { regions, revision })
+        } else {
+            None
+        };
+        Ok(PictureProposals {
+            faces,
+            salient_regions,
+        })
     })
 }
 

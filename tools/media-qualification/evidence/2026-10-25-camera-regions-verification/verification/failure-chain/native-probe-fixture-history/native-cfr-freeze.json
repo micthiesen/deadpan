@@ -1,0 +1,40 @@
+{
+  "at": "2026-10-25T10:09:27.432209+00:00",
+  "owned_files": {
+    "native/deadpan-track/tests/generate_salient_fixtures.py": {
+      "bytes": 10035,
+      "sha256": "dfd8534697a01dc23081227d1de74ce30cb24424bb1d216d0d3e4d7bea992705"
+    },
+    "native/deadpan-track/tests/picture_proposals.rs": {
+      "bytes": 15623,
+      "sha256": "4a23bcb515bf9fb02b43f4f868695090aed9f1a501d11e9be71e4505569fb1c1"
+    },
+    "native/deadpan-track/tests/fixtures/salient-regions-fixtures.json": {
+      "bytes": 33954,
+      "sha256": "bcb45f5c135229159236a64376bdb0f5a35cf04b0007f1becd6db50abf4a51cf"
+    },
+    "native/deadpan-track/tests/fixtures/SALIENT_REGIONS.md": {
+      "bytes": 4302,
+      "sha256": "6a053e7a2a666cd1e8d6e31f59cf17b630fddfd78003a4576d519e99ea8a804c"
+    },
+    "native/deadpan-track/tests/fixtures/salient-regions.mp4": {
+      "bytes": 585089,
+      "sha256": "aaffac5cc021297348101e3ce500a3febac48fc45021a511468cb3fd76784e93"
+    }
+  },
+  "old_fixture_bytes_unchanged": {
+    "native/deadpan-track/tests/fixtures/salient-regions-sar.mkv": true,
+    "native/deadpan-track/tests/fixtures/salient-mug-aperture.mp4": true,
+    "native/deadpan-track/tests/fixtures/salient-mug.png": true,
+    "native/deadpan-track/tests/fixtures/salient-audio.wav": true,
+    "native/deadpan-track/tests/fixtures/salient-two.png": true,
+    "native/deadpan-track/tests/fixtures/salient-mug-rotated-90.mp4": true,
+    "native/deadpan-track/tests/fixtures/salient-blank.png": true,
+    "native/deadpan-track/tests/fixtures/salient-regions.mkv": true
+  },
+  "producer_generation": "fixture-cfr-generation-1 exit0",
+  "producer_byte_reproduction": "fixture-cfr-reproduction-1 exit0",
+  "native_tests": "Not run. Root owns optimized official nextest package lane. Expected total37 from previous36 plus1 new test.",
+  "new_test": "exact_cfr_fixture_admits_default_original_and_real_proposals",
+  "existing_test_extended": "qualified_decoder_preserves_generated_picture_and_pcm_clocks now includes120 MP4 pictures"
+}

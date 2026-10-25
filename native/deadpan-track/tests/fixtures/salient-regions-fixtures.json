@@ -1,0 +1,1682 @@
+{
+  "audio_fixture": {
+    "bytes": 768812,
+    "channels": 2,
+    "encoding": "PCM16LE",
+    "name": "salient-audio.wav",
+    "rate": 48000,
+    "samples": 192192,
+    "sha256": "8f2ede07d4e8aa6743b6f441f5fb3cc6c6347a333f7b4ede15c52315f7195089"
+  },
+  "ffprobe": "ffprobe version 9.0.2 Copyright (c) 2007-2026 the FFmpeg developers\nbuilt with Apple clang version 21.0.0 (clang-2100.3.34.2)\nconfiguration: --prefix=/opt/homebrew/Cellar/ffmpeg/9.0.2_1 --enable-shared --enable-pthreads --enable-version3 --cc=clang --host-cflags= --host-ldflags= --enable-ffplay --enable-gpl --enable-libsvtav1 --enable-libopus --enable-libx264 --enable-libmp3lame --enable-libdav1d --enable-libvmaf --enable-libvpx --enable-libx265 --enable-openssl --enable-videotoolbox --enable-audiotoolbox --enable-neon\nlibavutil      61.  1.102 / 61.  1.102\nlibavcodec     63.  1.102 / 63.  1.102\nlibavformat    63.  1.102 / 63.  1.102\nlibavdevice    63.  1.102 / 63.  1.102\nlibavfilter    12.  1.102 / 12.  1.102\nlibswscale     10.  1.102 / 10.  1.102\nlibswresample   7.  1.102 /  7.  1.102\n",
+  "fixtures": {
+    "salient-mug-aperture.mp4": {
+      "bytes": 11790,
+      "format_duration": "0.133467",
+      "frames": [
+        {
+          "duration": 1001,
+          "pts": 0
+        },
+        {
+          "duration": 1001,
+          "pts": 1001
+        },
+        {
+          "duration": 1001,
+          "pts": 2002
+        },
+        {
+          "duration": 1001,
+          "pts": 3003
+        }
+      ],
+      "sha256": "163f1d080615c1232d2c467e1d1fd4d1eef3ade865824130ac30b7a1baa036cb",
+      "video": {
+        "avg_frame_rate": "30000/1001",
+        "codec_name": "h264",
+        "color_primaries": "bt709",
+        "color_range": "tv",
+        "color_space": "bt709",
+        "color_transfer": "bt709",
+        "duration_ts": 4004,
+        "height": 360,
+        "pix_fmt": "yuv420p",
+        "profile": "High 4:4:4 Intra",
+        "r_frame_rate": "30000/1001",
+        "sample_aspect_ratio": null,
+        "side_data_list": [
+          {
+            "crop_bottom": 21,
+            "crop_left": 160,
+            "crop_right": 1,
+            "crop_top": 20,
+            "side_data_type": "Frame Cropping"
+          }
+        ],
+        "time_base": "1/30000",
+        "width": 640
+      }
+    },
+    "salient-mug-rotated-90.mp4": {
+      "bytes": 11750,
+      "format_duration": "0.133467",
+      "frames": [
+        {
+          "duration": 1001,
+          "pts": 0
+        },
+        {
+          "duration": 1001,
+          "pts": 1001
+        },
+        {
+          "duration": 1001,
+          "pts": 2002
+        },
+        {
+          "duration": 1001,
+          "pts": 3003
+        }
+      ],
+      "sha256": "b8d58a886c71674e2189175862f963dfe5f4deaeb4b464fd95bddc3605df2f69",
+      "video": {
+        "avg_frame_rate": "30000/1001",
+        "codec_name": "h264",
+        "color_primaries": "bt709",
+        "color_range": "tv",
+        "color_space": "bt709",
+        "color_transfer": "bt709",
+        "duration_ts": 4004,
+        "height": 360,
+        "pix_fmt": "yuv420p",
+        "profile": "High 4:4:4 Intra",
+        "r_frame_rate": "30000/1001",
+        "sample_aspect_ratio": null,
+        "side_data_list": [
+          {
+            "displaymatrix": "\n00000000:            0       65536           0\n00000001:       -65536           0           0\n00000002:            0           0  1073741824\n",
+            "rotation": -90,
+            "side_data_type": "Display Matrix"
+          }
+        ],
+        "time_base": "1/30000",
+        "width": 640
+      }
+    },
+    "salient-regions-sar.mkv": {
+      "bytes": 635050,
+      "format_duration": "4.004000",
+      "frames": [
+        {
+          "duration": 33,
+          "pts": 0
+        },
+        {
+          "duration": 33,
+          "pts": 33
+        },
+        {
+          "duration": 33,
+          "pts": 67
+        },
+        {
+          "duration": 33,
+          "pts": 100
+        },
+        {
+          "duration": 33,
+          "pts": 133
+        },
+        {
+          "duration": 33,
+          "pts": 167
+        },
+        {
+          "duration": 33,
+          "pts": 200
+        },
+        {
+          "duration": 33,
+          "pts": 234
+        },
+        {
+          "duration": 33,
+          "pts": 267
+        },
+        {
+          "duration": 33,
+          "pts": 300
+        },
+        {
+          "duration": 33,
+          "pts": 334
+        },
+        {
+          "duration": 33,
+          "pts": 367
+        },
+        {
+          "duration": 33,
+          "pts": 400
+        },
+        {
+          "duration": 33,
+          "pts": 434
+        },
+        {
+          "duration": 33,
+          "pts": 467
+        },
+        {
+          "duration": 33,
+          "pts": 501
+        },
+        {
+          "duration": 33,
+          "pts": 534
+        },
+        {
+          "duration": 33,
+          "pts": 567
+        },
+        {
+          "duration": 33,
+          "pts": 601
+        },
+        {
+          "duration": 33,
+          "pts": 634
+        },
+        {
+          "duration": 33,
+          "pts": 667
+        },
+        {
+          "duration": 33,
+          "pts": 701
+        },
+        {
+          "duration": 33,
+          "pts": 734
+        },
+        {
+          "duration": 33,
+          "pts": 767
+        },
+        {
+          "duration": 33,
+          "pts": 801
+        },
+        {
+          "duration": 33,
+          "pts": 834
+        },
+        {
+          "duration": 33,
+          "pts": 868
+        },
+        {
+          "duration": 33,
+          "pts": 901
+        },
+        {
+          "duration": 33,
+          "pts": 934
+        },
+        {
+          "duration": 33,
+          "pts": 968
+        },
+        {
+          "duration": 33,
+          "pts": 1001
+        },
+        {
+          "duration": 33,
+          "pts": 1034
+        },
+        {
+          "duration": 33,
+          "pts": 1068
+        },
+        {
+          "duration": 33,
+          "pts": 1101
+        },
+        {
+          "duration": 33,
+          "pts": 1134
+        },
+        {
+          "duration": 33,
+          "pts": 1168
+        },
+        {
+          "duration": 33,
+          "pts": 1201
+        },
+        {
+          "duration": 33,
+          "pts": 1235
+        },
+        {
+          "duration": 33,
+          "pts": 1268
+        },
+        {
+          "duration": 33,
+          "pts": 1301
+        },
+        {
+          "duration": 33,
+          "pts": 1335
+        },
+        {
+          "duration": 33,
+          "pts": 1368
+        },
+        {
+          "duration": 33,
+          "pts": 1401
+        },
+        {
+          "duration": 33,
+          "pts": 1435
+        },
+        {
+          "duration": 33,
+          "pts": 1468
+        },
+        {
+          "duration": 33,
+          "pts": 1502
+        },
+        {
+          "duration": 33,
+          "pts": 1535
+        },
+        {
+          "duration": 33,
+          "pts": 1568
+        },
+        {
+          "duration": 33,
+          "pts": 1602
+        },
+        {
+          "duration": 33,
+          "pts": 1635
+        },
+        {
+          "duration": 33,
+          "pts": 1668
+        },
+        {
+          "duration": 33,
+          "pts": 1702
+        },
+        {
+          "duration": 33,
+          "pts": 1735
+        },
+        {
+          "duration": 33,
+          "pts": 1768
+        },
+        {
+          "duration": 33,
+          "pts": 1802
+        },
+        {
+          "duration": 33,
+          "pts": 1835
+        },
+        {
+          "duration": 33,
+          "pts": 1869
+        },
+        {
+          "duration": 33,
+          "pts": 1902
+        },
+        {
+          "duration": 33,
+          "pts": 1935
+        },
+        {
+          "duration": 33,
+          "pts": 1969
+        },
+        {
+          "duration": 33,
+          "pts": 2002
+        },
+        {
+          "duration": 33,
+          "pts": 2035
+        },
+        {
+          "duration": 33,
+          "pts": 2069
+        },
+        {
+          "duration": 33,
+          "pts": 2102
+        },
+        {
+          "duration": 33,
+          "pts": 2135
+        },
+        {
+          "duration": 33,
+          "pts": 2169
+        },
+        {
+          "duration": 33,
+          "pts": 2202
+        },
+        {
+          "duration": 33,
+          "pts": 2236
+        },
+        {
+          "duration": 33,
+          "pts": 2269
+        },
+        {
+          "duration": 33,
+          "pts": 2302
+        },
+        {
+          "duration": 33,
+          "pts": 2336
+        },
+        {
+          "duration": 33,
+          "pts": 2369
+        },
+        {
+          "duration": 33,
+          "pts": 2402
+        },
+        {
+          "duration": 33,
+          "pts": 2436
+        },
+        {
+          "duration": 33,
+          "pts": 2469
+        },
+        {
+          "duration": 33,
+          "pts": 2503
+        },
+        {
+          "duration": 33,
+          "pts": 2536
+        },
+        {
+          "duration": 33,
+          "pts": 2569
+        },
+        {
+          "duration": 33,
+          "pts": 2603
+        },
+        {
+          "duration": 33,
+          "pts": 2636
+        },
+        {
+          "duration": 33,
+          "pts": 2669
+        },
+        {
+          "duration": 33,
+          "pts": 2703
+        },
+        {
+          "duration": 33,
+          "pts": 2736
+        },
+        {
+          "duration": 33,
+          "pts": 2769
+        },
+        {
+          "duration": 33,
+          "pts": 2803
+        },
+        {
+          "duration": 33,
+          "pts": 2836
+        },
+        {
+          "duration": 33,
+          "pts": 2870
+        },
+        {
+          "duration": 33,
+          "pts": 2903
+        },
+        {
+          "duration": 33,
+          "pts": 2936
+        },
+        {
+          "duration": 33,
+          "pts": 2970
+        },
+        {
+          "duration": 33,
+          "pts": 3003
+        },
+        {
+          "duration": 33,
+          "pts": 3036
+        },
+        {
+          "duration": 33,
+          "pts": 3070
+        },
+        {
+          "duration": 33,
+          "pts": 3103
+        },
+        {
+          "duration": 33,
+          "pts": 3136
+        },
+        {
+          "duration": 33,
+          "pts": 3170
+        },
+        {
+          "duration": 33,
+          "pts": 3203
+        },
+        {
+          "duration": 33,
+          "pts": 3237
+        },
+        {
+          "duration": 33,
+          "pts": 3270
+        },
+        {
+          "duration": 33,
+          "pts": 3303
+        },
+        {
+          "duration": 33,
+          "pts": 3337
+        },
+        {
+          "duration": 33,
+          "pts": 3370
+        },
+        {
+          "duration": 33,
+          "pts": 3403
+        },
+        {
+          "duration": 33,
+          "pts": 3437
+        },
+        {
+          "duration": 33,
+          "pts": 3470
+        },
+        {
+          "duration": 33,
+          "pts": 3504
+        },
+        {
+          "duration": 33,
+          "pts": 3537
+        },
+        {
+          "duration": 33,
+          "pts": 3570
+        },
+        {
+          "duration": 33,
+          "pts": 3604
+        },
+        {
+          "duration": 33,
+          "pts": 3637
+        },
+        {
+          "duration": 33,
+          "pts": 3670
+        },
+        {
+          "duration": 33,
+          "pts": 3704
+        },
+        {
+          "duration": 33,
+          "pts": 3737
+        },
+        {
+          "duration": 33,
+          "pts": 3770
+        },
+        {
+          "duration": 33,
+          "pts": 3804
+        },
+        {
+          "duration": 33,
+          "pts": 3837
+        },
+        {
+          "duration": 33,
+          "pts": 3871
+        },
+        {
+          "duration": 33,
+          "pts": 3904
+        },
+        {
+          "duration": 33,
+          "pts": 3937
+        },
+        {
+          "duration": 33,
+          "pts": 3971
+        }
+      ],
+      "sha256": "86f4b5e08e0c4851811bc5a8412bd43eb7c94e8cf9d74b8cf775142d23e078f3",
+      "video": {
+        "avg_frame_rate": "30000/1001",
+        "codec_name": "ffv1",
+        "color_primaries": "bt709",
+        "color_range": "tv",
+        "color_space": "bt709",
+        "color_transfer": "bt709",
+        "duration_ts": null,
+        "height": 360,
+        "pix_fmt": "yuv420p",
+        "profile": null,
+        "r_frame_rate": "30000/1001",
+        "sample_aspect_ratio": "4:3",
+        "side_data_list": null,
+        "time_base": "1/1000",
+        "width": 640
+      }
+    },
+    "salient-regions.mkv": {
+      "bytes": 635038,
+      "format_duration": "4.004000",
+      "frames": [
+        {
+          "duration": 33,
+          "pts": 0
+        },
+        {
+          "duration": 33,
+          "pts": 33
+        },
+        {
+          "duration": 33,
+          "pts": 67
+        },
+        {
+          "duration": 33,
+          "pts": 100
+        },
+        {
+          "duration": 33,
+          "pts": 133
+        },
+        {
+          "duration": 33,
+          "pts": 167
+        },
+        {
+          "duration": 33,
+          "pts": 200
+        },
+        {
+          "duration": 33,
+          "pts": 234
+        },
+        {
+          "duration": 33,
+          "pts": 267
+        },
+        {
+          "duration": 33,
+          "pts": 300
+        },
+        {
+          "duration": 33,
+          "pts": 334
+        },
+        {
+          "duration": 33,
+          "pts": 367
+        },
+        {
+          "duration": 33,
+          "pts": 400
+        },
+        {
+          "duration": 33,
+          "pts": 434
+        },
+        {
+          "duration": 33,
+          "pts": 467
+        },
+        {
+          "duration": 33,
+          "pts": 501
+        },
+        {
+          "duration": 33,
+          "pts": 534
+        },
+        {
+          "duration": 33,
+          "pts": 567
+        },
+        {
+          "duration": 33,
+          "pts": 601
+        },
+        {
+          "duration": 33,
+          "pts": 634
+        },
+        {
+          "duration": 33,
+          "pts": 667
+        },
+        {
+          "duration": 33,
+          "pts": 701
+        },
+        {
+          "duration": 33,
+          "pts": 734
+        },
+        {
+          "duration": 33,
+          "pts": 767
+        },
+        {
+          "duration": 33,
+          "pts": 801
+        },
+        {
+          "duration": 33,
+          "pts": 834
+        },
+        {
+          "duration": 33,
+          "pts": 868
+        },
+        {
+          "duration": 33,
+          "pts": 901
+        },
+        {
+          "duration": 33,
+          "pts": 934
+        },
+        {
+          "duration": 33,
+          "pts": 968
+        },
+        {
+          "duration": 33,
+          "pts": 1001
+        },
+        {
+          "duration": 33,
+          "pts": 1034
+        },
+        {
+          "duration": 33,
+          "pts": 1068
+        },
+        {
+          "duration": 33,
+          "pts": 1101
+        },
+        {
+          "duration": 33,
+          "pts": 1134
+        },
+        {
+          "duration": 33,
+          "pts": 1168
+        },
+        {
+          "duration": 33,
+          "pts": 1201
+        },
+        {
+          "duration": 33,
+          "pts": 1235
+        },
+        {
+          "duration": 33,
+          "pts": 1268
+        },
+        {
+          "duration": 33,
+          "pts": 1301
+        },
+        {
+          "duration": 33,
+          "pts": 1335
+        },
+        {
+          "duration": 33,
+          "pts": 1368
+        },
+        {
+          "duration": 33,
+          "pts": 1401
+        },
+        {
+          "duration": 33,
+          "pts": 1435
+        },
+        {
+          "duration": 33,
+          "pts": 1468
+        },
+        {
+          "duration": 33,
+          "pts": 1502
+        },
+        {
+          "duration": 33,
+          "pts": 1535
+        },
+        {
+          "duration": 33,
+          "pts": 1568
+        },
+        {
+          "duration": 33,
+          "pts": 1602
+        },
+        {
+          "duration": 33,
+          "pts": 1635
+        },
+        {
+          "duration": 33,
+          "pts": 1668
+        },
+        {
+          "duration": 33,
+          "pts": 1702
+        },
+        {
+          "duration": 33,
+          "pts": 1735
+        },
+        {
+          "duration": 33,
+          "pts": 1768
+        },
+        {
+          "duration": 33,
+          "pts": 1802
+        },
+        {
+          "duration": 33,
+          "pts": 1835
+        },
+        {
+          "duration": 33,
+          "pts": 1869
+        },
+        {
+          "duration": 33,
+          "pts": 1902
+        },
+        {
+          "duration": 33,
+          "pts": 1935
+        },
+        {
+          "duration": 33,
+          "pts": 1969
+        },
+        {
+          "duration": 33,
+          "pts": 2002
+        },
+        {
+          "duration": 33,
+          "pts": 2035
+        },
+        {
+          "duration": 33,
+          "pts": 2069
+        },
+        {
+          "duration": 33,
+          "pts": 2102
+        },
+        {
+          "duration": 33,
+          "pts": 2135
+        },
+        {
+          "duration": 33,
+          "pts": 2169
+        },
+        {
+          "duration": 33,
+          "pts": 2202
+        },
+        {
+          "duration": 33,
+          "pts": 2236
+        },
+        {
+          "duration": 33,
+          "pts": 2269
+        },
+        {
+          "duration": 33,
+          "pts": 2302
+        },
+        {
+          "duration": 33,
+          "pts": 2336
+        },
+        {
+          "duration": 33,
+          "pts": 2369
+        },
+        {
+          "duration": 33,
+          "pts": 2402
+        },
+        {
+          "duration": 33,
+          "pts": 2436
+        },
+        {
+          "duration": 33,
+          "pts": 2469
+        },
+        {
+          "duration": 33,
+          "pts": 2503
+        },
+        {
+          "duration": 33,
+          "pts": 2536
+        },
+        {
+          "duration": 33,
+          "pts": 2569
+        },
+        {
+          "duration": 33,
+          "pts": 2603
+        },
+        {
+          "duration": 33,
+          "pts": 2636
+        },
+        {
+          "duration": 33,
+          "pts": 2669
+        },
+        {
+          "duration": 33,
+          "pts": 2703
+        },
+        {
+          "duration": 33,
+          "pts": 2736
+        },
+        {
+          "duration": 33,
+          "pts": 2769
+        },
+        {
+          "duration": 33,
+          "pts": 2803
+        },
+        {
+          "duration": 33,
+          "pts": 2836
+        },
+        {
+          "duration": 33,
+          "pts": 2870
+        },
+        {
+          "duration": 33,
+          "pts": 2903
+        },
+        {
+          "duration": 33,
+          "pts": 2936
+        },
+        {
+          "duration": 33,
+          "pts": 2970
+        },
+        {
+          "duration": 33,
+          "pts": 3003
+        },
+        {
+          "duration": 33,
+          "pts": 3036
+        },
+        {
+          "duration": 33,
+          "pts": 3070
+        },
+        {
+          "duration": 33,
+          "pts": 3103
+        },
+        {
+          "duration": 33,
+          "pts": 3136
+        },
+        {
+          "duration": 33,
+          "pts": 3170
+        },
+        {
+          "duration": 33,
+          "pts": 3203
+        },
+        {
+          "duration": 33,
+          "pts": 3237
+        },
+        {
+          "duration": 33,
+          "pts": 3270
+        },
+        {
+          "duration": 33,
+          "pts": 3303
+        },
+        {
+          "duration": 33,
+          "pts": 3337
+        },
+        {
+          "duration": 33,
+          "pts": 3370
+        },
+        {
+          "duration": 33,
+          "pts": 3403
+        },
+        {
+          "duration": 33,
+          "pts": 3437
+        },
+        {
+          "duration": 33,
+          "pts": 3470
+        },
+        {
+          "duration": 33,
+          "pts": 3504
+        },
+        {
+          "duration": 33,
+          "pts": 3537
+        },
+        {
+          "duration": 33,
+          "pts": 3570
+        },
+        {
+          "duration": 33,
+          "pts": 3604
+        },
+        {
+          "duration": 33,
+          "pts": 3637
+        },
+        {
+          "duration": 33,
+          "pts": 3670
+        },
+        {
+          "duration": 33,
+          "pts": 3704
+        },
+        {
+          "duration": 33,
+          "pts": 3737
+        },
+        {
+          "duration": 33,
+          "pts": 3770
+        },
+        {
+          "duration": 33,
+          "pts": 3804
+        },
+        {
+          "duration": 33,
+          "pts": 3837
+        },
+        {
+          "duration": 33,
+          "pts": 3871
+        },
+        {
+          "duration": 33,
+          "pts": 3904
+        },
+        {
+          "duration": 33,
+          "pts": 3937
+        },
+        {
+          "duration": 33,
+          "pts": 3971
+        }
+      ],
+      "sha256": "cc181467a19d92c3b08edf72ff34d4eaac6d4887e8e05311305ed51db7576f66",
+      "video": {
+        "avg_frame_rate": "30000/1001",
+        "codec_name": "ffv1",
+        "color_primaries": "bt709",
+        "color_range": "tv",
+        "color_space": "bt709",
+        "color_transfer": "bt709",
+        "duration_ts": null,
+        "height": 360,
+        "pix_fmt": "yuv420p",
+        "profile": null,
+        "r_frame_rate": "30000/1001",
+        "sample_aspect_ratio": "1:1",
+        "side_data_list": null,
+        "time_base": "1/1000",
+        "width": 640
+      }
+    },
+    "salient-regions.mp4": {
+      "bytes": 585089,
+      "format_duration": "4.004000",
+      "frames": [
+        {
+          "duration": 1001,
+          "pts": 0
+        },
+        {
+          "duration": 1001,
+          "pts": 1001
+        },
+        {
+          "duration": 1001,
+          "pts": 2002
+        },
+        {
+          "duration": 1001,
+          "pts": 3003
+        },
+        {
+          "duration": 1001,
+          "pts": 4004
+        },
+        {
+          "duration": 1001,
+          "pts": 5005
+        },
+        {
+          "duration": 1001,
+          "pts": 6006
+        },
+        {
+          "duration": 1001,
+          "pts": 7007
+        },
+        {
+          "duration": 1001,
+          "pts": 8008
+        },
+        {
+          "duration": 1001,
+          "pts": 9009
+        },
+        {
+          "duration": 1001,
+          "pts": 10010
+        },
+        {
+          "duration": 1001,
+          "pts": 11011
+        },
+        {
+          "duration": 1001,
+          "pts": 12012
+        },
+        {
+          "duration": 1001,
+          "pts": 13013
+        },
+        {
+          "duration": 1001,
+          "pts": 14014
+        },
+        {
+          "duration": 1001,
+          "pts": 15015
+        },
+        {
+          "duration": 1001,
+          "pts": 16016
+        },
+        {
+          "duration": 1001,
+          "pts": 17017
+        },
+        {
+          "duration": 1001,
+          "pts": 18018
+        },
+        {
+          "duration": 1001,
+          "pts": 19019
+        },
+        {
+          "duration": 1001,
+          "pts": 20020
+        },
+        {
+          "duration": 1001,
+          "pts": 21021
+        },
+        {
+          "duration": 1001,
+          "pts": 22022
+        },
+        {
+          "duration": 1001,
+          "pts": 23023
+        },
+        {
+          "duration": 1001,
+          "pts": 24024
+        },
+        {
+          "duration": 1001,
+          "pts": 25025
+        },
+        {
+          "duration": 1001,
+          "pts": 26026
+        },
+        {
+          "duration": 1001,
+          "pts": 27027
+        },
+        {
+          "duration": 1001,
+          "pts": 28028
+        },
+        {
+          "duration": 1001,
+          "pts": 29029
+        },
+        {
+          "duration": 1001,
+          "pts": 30030
+        },
+        {
+          "duration": 1001,
+          "pts": 31031
+        },
+        {
+          "duration": 1001,
+          "pts": 32032
+        },
+        {
+          "duration": 1001,
+          "pts": 33033
+        },
+        {
+          "duration": 1001,
+          "pts": 34034
+        },
+        {
+          "duration": 1001,
+          "pts": 35035
+        },
+        {
+          "duration": 1001,
+          "pts": 36036
+        },
+        {
+          "duration": 1001,
+          "pts": 37037
+        },
+        {
+          "duration": 1001,
+          "pts": 38038
+        },
+        {
+          "duration": 1001,
+          "pts": 39039
+        },
+        {
+          "duration": 1001,
+          "pts": 40040
+        },
+        {
+          "duration": 1001,
+          "pts": 41041
+        },
+        {
+          "duration": 1001,
+          "pts": 42042
+        },
+        {
+          "duration": 1001,
+          "pts": 43043
+        },
+        {
+          "duration": 1001,
+          "pts": 44044
+        },
+        {
+          "duration": 1001,
+          "pts": 45045
+        },
+        {
+          "duration": 1001,
+          "pts": 46046
+        },
+        {
+          "duration": 1001,
+          "pts": 47047
+        },
+        {
+          "duration": 1001,
+          "pts": 48048
+        },
+        {
+          "duration": 1001,
+          "pts": 49049
+        },
+        {
+          "duration": 1001,
+          "pts": 50050
+        },
+        {
+          "duration": 1001,
+          "pts": 51051
+        },
+        {
+          "duration": 1001,
+          "pts": 52052
+        },
+        {
+          "duration": 1001,
+          "pts": 53053
+        },
+        {
+          "duration": 1001,
+          "pts": 54054
+        },
+        {
+          "duration": 1001,
+          "pts": 55055
+        },
+        {
+          "duration": 1001,
+          "pts": 56056
+        },
+        {
+          "duration": 1001,
+          "pts": 57057
+        },
+        {
+          "duration": 1001,
+          "pts": 58058
+        },
+        {
+          "duration": 1001,
+          "pts": 59059
+        },
+        {
+          "duration": 1001,
+          "pts": 60060
+        },
+        {
+          "duration": 1001,
+          "pts": 61061
+        },
+        {
+          "duration": 1001,
+          "pts": 62062
+        },
+        {
+          "duration": 1001,
+          "pts": 63063
+        },
+        {
+          "duration": 1001,
+          "pts": 64064
+        },
+        {
+          "duration": 1001,
+          "pts": 65065
+        },
+        {
+          "duration": 1001,
+          "pts": 66066
+        },
+        {
+          "duration": 1001,
+          "pts": 67067
+        },
+        {
+          "duration": 1001,
+          "pts": 68068
+        },
+        {
+          "duration": 1001,
+          "pts": 69069
+        },
+        {
+          "duration": 1001,
+          "pts": 70070
+        },
+        {
+          "duration": 1001,
+          "pts": 71071
+        },
+        {
+          "duration": 1001,
+          "pts": 72072
+        },
+        {
+          "duration": 1001,
+          "pts": 73073
+        },
+        {
+          "duration": 1001,
+          "pts": 74074
+        },
+        {
+          "duration": 1001,
+          "pts": 75075
+        },
+        {
+          "duration": 1001,
+          "pts": 76076
+        },
+        {
+          "duration": 1001,
+          "pts": 77077
+        },
+        {
+          "duration": 1001,
+          "pts": 78078
+        },
+        {
+          "duration": 1001,
+          "pts": 79079
+        },
+        {
+          "duration": 1001,
+          "pts": 80080
+        },
+        {
+          "duration": 1001,
+          "pts": 81081
+        },
+        {
+          "duration": 1001,
+          "pts": 82082
+        },
+        {
+          "duration": 1001,
+          "pts": 83083
+        },
+        {
+          "duration": 1001,
+          "pts": 84084
+        },
+        {
+          "duration": 1001,
+          "pts": 85085
+        },
+        {
+          "duration": 1001,
+          "pts": 86086
+        },
+        {
+          "duration": 1001,
+          "pts": 87087
+        },
+        {
+          "duration": 1001,
+          "pts": 88088
+        },
+        {
+          "duration": 1001,
+          "pts": 89089
+        },
+        {
+          "duration": 1001,
+          "pts": 90090
+        },
+        {
+          "duration": 1001,
+          "pts": 91091
+        },
+        {
+          "duration": 1001,
+          "pts": 92092
+        },
+        {
+          "duration": 1001,
+          "pts": 93093
+        },
+        {
+          "duration": 1001,
+          "pts": 94094
+        },
+        {
+          "duration": 1001,
+          "pts": 95095
+        },
+        {
+          "duration": 1001,
+          "pts": 96096
+        },
+        {
+          "duration": 1001,
+          "pts": 97097
+        },
+        {
+          "duration": 1001,
+          "pts": 98098
+        },
+        {
+          "duration": 1001,
+          "pts": 99099
+        },
+        {
+          "duration": 1001,
+          "pts": 100100
+        },
+        {
+          "duration": 1001,
+          "pts": 101101
+        },
+        {
+          "duration": 1001,
+          "pts": 102102
+        },
+        {
+          "duration": 1001,
+          "pts": 103103
+        },
+        {
+          "duration": 1001,
+          "pts": 104104
+        },
+        {
+          "duration": 1001,
+          "pts": 105105
+        },
+        {
+          "duration": 1001,
+          "pts": 106106
+        },
+        {
+          "duration": 1001,
+          "pts": 107107
+        },
+        {
+          "duration": 1001,
+          "pts": 108108
+        },
+        {
+          "duration": 1001,
+          "pts": 109109
+        },
+        {
+          "duration": 1001,
+          "pts": 110110
+        },
+        {
+          "duration": 1001,
+          "pts": 111111
+        },
+        {
+          "duration": 1001,
+          "pts": 112112
+        },
+        {
+          "duration": 1001,
+          "pts": 113113
+        },
+        {
+          "duration": 1001,
+          "pts": 114114
+        },
+        {
+          "duration": 1001,
+          "pts": 115115
+        },
+        {
+          "duration": 1001,
+          "pts": 116116
+        },
+        {
+          "duration": 1001,
+          "pts": 117117
+        },
+        {
+          "duration": 1001,
+          "pts": 118118
+        },
+        {
+          "duration": 1001,
+          "pts": 119119
+        }
+      ],
+      "sha256": "aaffac5cc021297348101e3ce500a3febac48fc45021a511468cb3fd76784e93",
+      "video": {
+        "avg_frame_rate": "30000/1001",
+        "codec_name": "h264",
+        "color_primaries": "bt709",
+        "color_range": "tv",
+        "color_space": "bt709",
+        "color_transfer": "bt709",
+        "duration_ts": 120120,
+        "height": 360,
+        "pix_fmt": "yuv420p",
+        "profile": "High 4:4:4 Intra",
+        "r_frame_rate": "30000/1001",
+        "sample_aspect_ratio": null,
+        "side_data_list": null,
+        "time_base": "1/30000",
+        "width": 640
+      }
+    }
+  },
+  "fractional_aperture": {
+    "clap_words": [
+      959,
+      2,
+      639,
+      2,
+      80,
+      1,
+      0,
+      1
+    ],
+    "height": "639/2",
+    "left": "641/4",
+    "top": "81/4",
+    "width": "959/2"
+  },
+  "limits": "Producer metadata only; qualified product decoder and Vision tests remain required",
+  "original_artwork": "CoreGraphics generator, MIT; no external or person footage",
+  "producer": "ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers\nbuilt with Apple clang version 21.0.0 (clang-2100.3.34.2)\nconfiguration: --prefix=/opt/homebrew/Cellar/ffmpeg/9.0.2_1 --enable-shared --enable-pthreads --enable-version3 --cc=clang --host-cflags= --host-ldflags= --enable-ffplay --enable-gpl --enable-libsvtav1 --enable-libopus --enable-libx264 --enable-libmp3lame --enable-libdav1d --enable-libvmaf --enable-libvpx --enable-libx265 --enable-openssl --enable-videotoolbox --enable-audiotoolbox --enable-neon\nlibavutil      61.  1.102 / 61.  1.102\nlibavcodec     63.  1.102 / 63.  1.102\nlibavformat    63.  1.102 / 63.  1.102\nlibavdevice    63.  1.102 / 63.  1.102\nlibavfilter    12.  1.102 / 12.  1.102\nlibswscale     10.  1.102 / 10.  1.102\nlibswresample   7.  1.102 /  7.  1.102\n\nExiting with exit code 0\n",
+  "producer_license": "ffmpeg is free software; you can redistribute it and/or modify\nit under the terms of the GNU General Public License as published by\nthe Free Software Foundation; either version 3 of the License, or\n(at your option) any later version.\n\nffmpeg is distributed in the hope that it will be useful,\nbut WITHOUT ANY WARRANTY; without even the implied warranty of\nMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\nGNU General Public License for more details.\n\nYou should have received a copy of the GNU General Public License\nalong with ffmpeg.  If not, see <http://www.gnu.org/licenses/>.\n",
+  "raw_bgra_sha256": "d0a3283e9a8a1f81b3e97bf612ab4781226ed69a503ec8f74a99259ec55202b0",
+  "raw_pcm_s16le_sha256": "76d5ac51af40207c6c9d1528aeeb95a48fe2333f7340b007ea4c7c6bf50e7053",
+  "sections": [
+    {
+      "end": 40,
+      "image": "blank",
+      "start": 0
+    },
+    {
+      "end": 80,
+      "image": "mug",
+      "start": 40
+    },
+    {
+      "end": 120,
+      "image": "mug_and_orange",
+      "start": 80
+    }
+  ],
+  "source_images": [
+    {
+      "bgra_sha256": "b0d6ad6f0b78fc48d26d10ee82bcb045885106b2dbbec8795461523cf01fa9d8",
+      "height": 360,
+      "name": "salient-blank",
+      "png_sha256": "95f59820f0abfb2f26c04ec6718960c6548e4687b5a15c5dc27f8b5900f1cd84",
+      "width": 640
+    },
+    {
+      "bgra_sha256": "3d25eeef97d37494ec42f8d4acf7393290c8aea12801eb9e78cd73e6aaf6bd27",
+      "height": 360,
+      "name": "salient-mug",
+      "png_sha256": "5df85d511659a008b734a5e843cc5b13b9ea8e989c4b00423e036feb8667f1e8",
+      "width": 640
+    },
+    {
+      "bgra_sha256": "f7a480e56dc4cd7726c808679be67cf56bbe58a553e7b934c23a7aca073d0b23",
+      "height": 360,
+      "name": "salient-two",
+      "png_sha256": "f34a618eb462bb3afe5a024671cf5459cbf9f97d05b2bbb54b3f0eef4218389d",
+      "width": 640
+    }
+  ]
+}

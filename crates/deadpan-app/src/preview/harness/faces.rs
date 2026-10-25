@@ -2,8 +2,8 @@
 //! detected regions, through the production command line, project service,
 //! face-detection job and shared picture plan.
 //!
-//! `faces` uses the face seam (`project::targets::Backend::ScriptedFaces`):
-//! the first detection runs the real installed `deadpan-track detect-faces`
+//! `faces` uses the explicit proposal seam (`Backend::ScriptedProposals`):
+//! the first detection runs the real installed `deadpan-track picture-proposals (Faces)`
 //! worker with Apple Vision on the replay fixture, which shows no face; later
 //! detections replace only the worker's reported faces. Picture resolution
 //! against the qualified index, the verified Original copy, the host's face
@@ -18,7 +18,8 @@ use deadpan_core::{ExactRatio, Framing, FramingValue, TargetId};
 use egui::Key;
 
 use super::*;
-use crate::project::targets::{Backend, FaceRun, FaceScript};
+use crate::project::targets::{Backend, ProposalRun, ProposalScript};
+use deadpan_cli::picture_proposals::ProposalSelection;
 
 mod camera_picker;
 
@@ -37,28 +38,27 @@ fn proposed() -> Vec<DetectedFace> {
 }
 
 pub(super) fn backend() -> Backend {
-    let scripted = |delay| FaceRun::Faces {
-        faces: proposed(),
+    let scripted = |delay| ProposalRun::Proposals {
+        selection: ProposalSelection::Faces,
+        faces: Some(proposed()),
+        salient_regions: None,
         delay: Duration::from_millis(delay),
     };
-    Backend::ScriptedFaces(Arc::new(FaceScript::new([
-        FaceRun::Worker,
+    let camera = |faces, delay| ProposalRun::Proposals {
+        selection: ProposalSelection::Both,
+        faces: Some(faces),
+        salient_regions: Some(Vec::new()),
+        delay: Duration::from_millis(delay),
+    };
+    Backend::ScriptedProposals(Arc::new(ProposalScript::new([
+        ProposalRun::Worker,
         scripted(400),
         scripted(600),
         scripted(0),
-        FaceRun::Worker,
-        FaceRun::Faces {
-            faces: camera_picker::proposed(),
-            delay: Duration::from_millis(600),
-        },
-        FaceRun::Faces {
-            faces: camera_picker::proposed(),
-            delay: Duration::from_millis(400),
-        },
-        FaceRun::Faces {
-            faces: camera_picker::proposed(),
-            delay: Duration::ZERO,
-        },
+        camera(Vec::new(), 0),
+        camera(camera_picker::proposed(), 600),
+        camera(camera_picker::proposed(), 400),
+        camera(camera_picker::proposed(), 0),
     ])))
 }
 
@@ -78,8 +78,11 @@ fn target_count(d: &Driver<'_>) -> usize {
 
 /// The command's detection has concluded and been consumed.
 fn concluded(app: &DeadpanApp) -> bool {
-    app.targets.face_zoom.is_none()
-        && app.targets.faces().is_some_and(|job| job.outcome.is_some())
+    app.targets.proposal_zoom.is_none()
+        && app
+            .targets
+            .proposals()
+            .is_some_and(|job| job.outcome.is_some())
         && !app.service.is_busy()
 }
 
@@ -98,7 +101,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.command("zoom 1.35 target=face:2 curve=step")?;
     d.wait_for("Real face detection concluded", concluded)?;
     d.settled()?;
-    let faces = d.app().targets.faces().cloned();
+    let faces = d.app().targets.proposals().cloned();
     d.check(
         "The real detector finds no face in the fixture and :zoom target=face:2 refuses without an edit",
         d.revision() == start
@@ -106,7 +109,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
             && framing(d).is_none()
             && matches!(
                 faces.as_ref().and_then(|job| job.outcome.as_ref()),
-                Some(crate::project::targets::FaceOutcome::Found(found)) if found.is_empty()
+                Some(crate::project::targets::ProposalOutcome::Found(found)) if found.faces.as_ref().is_some_and(Vec::is_empty) && found.salient_regions.is_none()
             )
             && d.app().error.as_deref().is_some_and(|error| {
                 error.starts_with("No faces were found in this picture.")
@@ -119,15 +122,18 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
 
     // Two proposals arrive in the background; the editor keeps running.
     d.command("zoom 1.35 target=face:2 curve=step")?;
-    d.wait_for("Detection running", |app| app.targets.face_zoom.is_some())?;
+    d.wait_for("Detection running", |app| {
+        app.targets.proposal_zoom.is_some()
+    })?;
     let waiting = d.app().message.clone();
     d.check(
         "Detection runs in the background and says nothing changes until the face is found",
         d.revision() == start
             && waiting
                 .as_deref()
-                .is_some_and(|message| message.starts_with("Finding faces in the displayed picture for face:2")),
-        json!({"revision":"unchanged","message":"Finding faces in the displayed picture for face:2…"}),
+                .is_some_and(|message| message == "Finding Face 2 in the displayed picture… Nothing changes unless that proposal is found.")
+            && target_count(d) == 0 && framing(d).is_none(),
+        json!({"revision":"unchanged","targets":0,"framing":null,"message":"Finding Face 2 in the displayed picture… Nothing changes unless that proposal is found."}),
         json!({"revision_changed":d.revision() != start,"message":waiting}),
     )?;
     d.capture("Finding faces")?;
@@ -160,9 +166,9 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     let widgets = d.widgets().to_string();
     d.check(
         "The inspector lists the face target and names the follow",
-        widgets.contains("Face 2 · 1.35×") && widgets.contains("Drawn · not tracked"),
-        json!(["Face 2 · 1.35×", "Drawn · not tracked"]),
-        json!({"follow":widgets.contains("Face 2 · 1.35×"),"summary":widgets.contains("Drawn · not tracked")}),
+        widgets.contains("Face 2 · 1.35×") && widgets.contains("Region · not tracked"),
+        json!(["Face 2 · 1.35×", "Region · not tracked"]),
+        json!({"follow":widgets.contains("Face 2 · 1.35×"),"summary":widgets.contains("Region · not tracked")}),
     )?;
     d.capture("Following Face 2")?;
     let framed = d.revision();
@@ -175,25 +181,61 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"targets":target_count(d),"framing":format!("{:?}", framing(d))}),
     )?;
 
-    // A cursor move while faces are being found makes the completion stale.
+    // Navigation actively cancels this command's exact proposal job. It does
+    // not wait for a stale completion to produce an error.
     let before = d.revision();
+    let document = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("No face cancellation workspace")?
+        .document
+        .clone();
     let cursor = d.app().sequence_cursor;
+    let source_cursor = d.app().source_cursor;
+    let scope = d.app().sequence_scope.clone();
+    let selected = d.app().selected_beat.clone();
     d.command("zoom 1.35 target=face:1")?;
-    d.wait_for("Detection running", |app| app.targets.face_zoom.is_some())?;
+    d.wait_for(
+        "Face command has an active detection before navigation",
+        |app| {
+            app.targets.proposal_zoom.is_some()
+                && app
+                    .targets
+                    .proposals()
+                    .is_some_and(|job| job.outcome.is_none())
+        },
+    )?;
+    let pending = d
+        .app()
+        .targets
+        .proposals()
+        .ok_or("No active face proposal job")?
+        .clone();
     d.key(Key::L)?;
-    d.wait_for("Stale detection concluded", concluded)?;
+    d.wait_for("Actively cancelled face detection concludes", concluded)?;
     d.settled()?;
+    let cancelled = d.app().targets.proposals().cloned();
+    let unchanged = d
+        .app()
+        .workspace
+        .as_ref()
+        .is_some_and(|workspace| workspace.document == document);
     d.check(
-        "A detection that finishes after the cursor moved applies nothing",
-        d.revision() == before
-            && target_count(d) == 0
-            && d.app().sequence_cursor == cursor + 1
-            && d.app().error.as_deref().is_some_and(|error| {
-                error.contains("changed while faces were being found")
-                    && error.contains("No edit was made")
-            }),
-        json!({"revision":"unchanged","targets":0,"error":"…changed while faces were being found… No edit was made."}),
-        json!({"revision_changed":d.revision() != before,"targets":target_count(d),"cursor":d.app().sequence_cursor,"error":d.app().error}),
+        "Navigation actively cancels the exact face request without an error or authored edit",
+        d.revision() == before && unchanged
+            && target_count(d) == 0 && framing(d).is_none()
+            && d.app().sequence_cursor == cursor + 1 && d.app().source_cursor == source_cursor
+            && d.app().sequence_scope == scope && d.app().selected_beat == selected
+            && d.app().targets.proposal_zoom.is_none() && d.app().camera.is_none()
+            && d.app().camera_pending.is_none() && d.app().error.is_none()
+            && cancelled.as_ref().is_some_and(|job|
+                job.ticket == pending.ticket && job.session == pending.session
+                    && job.revision == pending.revision && job.asset == pending.asset
+                    && job.pts == pending.pts && job.selection == ProposalSelection::Faces
+                    && matches!(job.outcome, Some(crate::project::targets::ProposalOutcome::Cancelled))),
+        json!({"document":"unchanged","framing":null,"targets":0,"Edit":cursor+1,"Original":source_cursor,"outcome":"Cancelled","pending":false,"error":null}),
+        json!({"revision_changed":d.revision() != before,"document_unchanged":unchanged,"targets":target_count(d),"framing":framing(d),"cursor":d.app().sequence_cursor,"source_cursor":d.app().source_cursor,"job":format!("{cancelled:?}"),"error":d.app().error}),
     )?;
     d.key(Key::H)?;
     d.settled()?;
@@ -219,7 +261,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.check(
         "target=face:0 is refused by the command line",
         d.revision() == before
-            && d.app().targets.face_zoom.is_none()
+            && d.app().targets.proposal_zoom.is_none()
             && d.app()
                 .error
                 .as_deref()

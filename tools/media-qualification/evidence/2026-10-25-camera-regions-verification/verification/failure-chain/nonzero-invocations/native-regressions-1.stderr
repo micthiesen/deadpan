@@ -1,0 +1,65 @@
+   Compiling deadpan-track v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-track)
+error[E0615]: attempted to take value of method `center` on type `TargetGeometry`
+   --> native/deadpan-track/tests/geometry.rs:280:33
+    |
+280 |             let center = region.center.map(|v| f64::from(v) / 1_000_000.0);
+    |                                 ^^^^^^ method, not a field
+    |
+help: use parentheses to call the method
+    |
+280 |             let center = region.center().map(|v| f64::from(v) / 1_000_000.0);
+    |                                       ++
+
+error[E0615]: attempted to take value of method `center` on type `TargetGeometry`
+   --> native/deadpan-track/tests/worker.rs:502:28
+    |
+502 |             assert!(region.center[axis].abs_diff(expected.center[axis]) <= tolerance + 1);
+    |                            ^^^^^^ method, not a field
+    |
+help: use parentheses to call the method
+    |
+502 |             assert!(region.center()[axis].abs_diff(expected.center[axis]) <= tolerance + 1);
+    |                                  ++
+
+error[E0609]: no field `size` on type `TargetGeometry`
+   --> native/deadpan-track/tests/worker.rs:503:28
+    |
+503 |             assert!(region.size[axis].abs_diff(expected.size[axis]) <= tolerance + 1);
+    |                            ^^^^ unknown field
+
+error[E0063]: missing field `scale_transition` in initializer of `FramingValue`
+   --> native/deadpan-track/tests/worker.rs:516:16
+    |
+516 |         value: FramingValue::Follow {
+    |                ^^^^^^^^^^^^^^^^^^^^ missing `scale_transition`
+
+For more information about this error, try `rustc --explain E0615`.
+error: could not compile `deadpan-track` (test "geometry") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error[E0308]: mismatched types
+   --> native/deadpan-track/tests/faces.rs:227:9
+    |
+227 |         deadpan_analysis::target_region(&right.region)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+    |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+    |
+227 |         deadpan_core::TargetGeometry::Region(deadpan_analysis::target_region(&right.region))
+    |         +++++++++++++++++++++++++++++++++++++                                              +
+
+error[E0308]: mismatched types
+   --> native/deadpan-track/tests/worker.rs:567:49
+    |
+567 |     assert_eq!(corrected.corrections[0].region, target_region(&region));
+    |                                                 ^^^^^^^^^^^^^^^^^^^^^^ expected `TargetGeometry`, found `TargetRegion`
+    |
+help: try wrapping the expression in `deadpan_core::TargetGeometry::Region`
+    |
+567 |     assert_eq!(corrected.corrections[0].region, deadpan_core::TargetGeometry::Region(target_region(&region)));
+    |                                                 +++++++++++++++++++++++++++++++++++++                      +
+
+For more information about this error, try `rustc --explain E0308`.
+Some errors have detailed explanations: E0063, E0308, E0609, E0615.
+For more information about an error, try `rustc --explain E0063`.
+error: could not compile `deadpan-track` (test "faces") due to 1 previous error
+error: could not compile `deadpan-track` (test "worker") due to 4 previous errors

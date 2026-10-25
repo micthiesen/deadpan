@@ -1,0 +1,25 @@
+   Compiling deadpan-track v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-track)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.78s
+     Running tests/picture_proposals.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/picture_proposals-3822c1ad00cea505)
+[NULL @ 0xa1ac6c380] Error parsing Opus packet header.
+
+thread 'qualified_decoder_preserves_generated_picture_and_pcm_clocks' (184860899) panicked at native/deadpan-track/tests/picture_proposals.rs:320:5:
+assertion `left == right` failed
+  left: 192960
+ right: 192192
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[NULL @ 0xa1ac6d880] Error parsing Opus packet header.
+{"error":{"code":"SourceQualificationInvalid","current_revision":null,"message":"invalid source qualification metadata: complete admitted stream inventory","recovery_backup":null},"schema_version":1}
+
+thread 'real_non_face_modes_blank_mug_and_two_objects_are_typed_and_atomic' (184860908) panicked at native/deadpan-track/tests/picture_proposals.rs:40:5:
+assertion `left == right` failed: ["project", "register-source", "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpOXKCDt/proposals.deadpan", "--request-json", "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpOXKCDt/register.json"]
+  left: ExitCode(unix_exit_status(1))
+ right: ExitCode(unix_exit_status(0))
+[NULL @ 0xa1ac6d880] Error parsing Opus packet header.
+{"error":{"code":"SourceQualificationInvalid","current_revision":null,"message":"invalid source qualification metadata: complete admitted stream inventory","recovery_backup":null},"schema_version":1}
+
+thread 'real_saliency_applies_sar_rotation_and_fractional_clean_aperture' (184860912) panicked at native/deadpan-track/tests/picture_proposals.rs:40:5:
+assertion `left == right` failed: ["project", "register-source", "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpL9Kgq1/proposals.deadpan", "--request-json", "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpL9Kgq1/register.json"]
+  left: ExitCode(unix_exit_status(1))
+ right: ExitCode(unix_exit_status(0))
+error: test failed, to rerun pass `-p deadpan-track --test picture_proposals`

@@ -2,7 +2,7 @@
 //! replaces evaluated operations on its already decoded picture.
 //!
 //! Camera also owns attention targets at the stopped picture: the numbered
-//! picker lists saved targets, center and corners, then detected face proposals
+//! picker lists saved targets, center and corners, then detected face and region proposals
 //! in pages of nine; `t` follows the selected target; `n` draws a new
 //! target rectangle and `c` corrects the selected one with the keyboard; `T`
 //! tracks it in the background. A target save continues the same Camera on
@@ -22,7 +22,9 @@ use deadpan_render::FramingLayer;
 
 use super::*;
 
-mod face_picker;
+mod proposal_picker;
+
+use deadpan_cli::picture_proposals::{DetectorKind, ProposalSelection};
 
 const PREPARING_PICTURE: &str = "Preparing the stopped picture for framing…";
 
@@ -177,12 +179,13 @@ pub(super) struct ZoomNote {
     pub(super) text: String,
 }
 
-/// `:zoom … target=face:N` waiting for face proposals in its stopped picture.
+/// A numbered detected target waiting for proposals in its stopped picture.
 /// It applies only when detection finishes for the same session, revision,
 /// beat, cursor, scope and range it was entered with.
-pub(super) struct FaceZoom {
-    /// The `DetectFaces` command's ticket.
+pub(super) struct ProposalZoom {
+    /// The captured picture-proposal command's ticket.
     pub(super) ticket: u64,
+    kind: DetectorKind,
     number: u8,
     input: crate::navigation::zoom::ZoomInput,
     range: Option<(u64, u64)>,
@@ -192,10 +195,10 @@ pub(super) struct FaceZoom {
     span: SourceSpan,
 }
 
-/// A fresh `face-K` id and a `Face N` label for face `number`; the label
-/// names the id too when another target already uses it.
-fn fresh_face_target(
+/// A fresh detected-target id and label, naming the id too on label collision.
+fn fresh_proposal_target(
     document: &deadpan_core::ProjectDocument,
+    kind: DetectorKind,
     number: u8,
 ) -> Result<(TargetId, String), String> {
     let taken = |label: &str| {
@@ -205,13 +208,17 @@ fn fresh_face_target(
             .any(|target| target.label.eq_ignore_ascii_case(label))
     };
     for index in 1..=deadpan_core::MAX_DOCUMENT_TARGETS + 1 {
-        let id = TargetId::new(format!("face-{index}")).map_err(|error| error.to_string())?;
+        let prefix = match kind {
+            DetectorKind::Faces => "face",
+            DetectorKind::SalientRegions => "region",
+        };
+        let id = TargetId::new(format!("{prefix}-{index}")).map_err(|error| error.to_string())?;
         if document.targets().contains_key(&id) {
             continue;
         }
-        let label = format!("Face {number}");
+        let label = format!("{} {number}", proposal_kind_label(kind));
         let label = if taken(&label) {
-            format!("Face {number} ({})", id.as_str())
+            format!("{} {number} ({})", proposal_kind_label(kind), id.as_str())
         } else {
             label
         };
@@ -221,6 +228,20 @@ fn fresh_face_target(
         "This project already has {} targets, the most it can hold.",
         deadpan_core::MAX_DOCUMENT_TARGETS
     ))
+}
+
+fn proposal_kind_label(kind: DetectorKind) -> &'static str {
+    match kind {
+        DetectorKind::Faces => "Face",
+        DetectorKind::SalientRegions => "Region",
+    }
+}
+
+fn proposal_selection(kind: DetectorKind) -> ProposalSelection {
+    match kind {
+        DetectorKind::Faces => ProposalSelection::Faces,
+        DetectorKind::SalientRegions => ProposalSelection::SalientRegions,
+    }
 }
 
 pub(super) struct CameraPending {
@@ -245,7 +266,7 @@ fn semantic_zoom_center(
         TargetChoice::Keep => Ok(SemanticZoomCenter::Keep),
         TargetChoice::Center => Ok(SemanticZoomCenter::OriginalCenter),
         TargetChoice::Selected if !follows_target && !saved_targets => Ok(SemanticZoomCenter::Keep),
-        _ => Err("A framing macro cannot sample a selected, named or face target. Use target=center, or save or cancel recording first.".into()),
+        _ => Err("A framing macro cannot sample a selected, named or detected target. Use target=center, or save or cancel recording first.".into()),
     }
 }
 
@@ -268,6 +289,7 @@ mod semantic_zoom_tests {
             TargetChoice::Current,
             TargetChoice::Named("person".into()),
             TargetChoice::Face(1),
+            TargetChoice::Region(1),
         ] {
             assert!(
                 semantic_zoom_center(&choice, false, false)
@@ -286,7 +308,7 @@ mod semantic_zoom_tests {
     }
 }
 
-/// A saved target, fixed source point or unsaved detected face proposal.
+/// A saved target, fixed source point or unsaved detected proposal.
 pub(super) struct PickerTarget {
     number: Option<u8>,
     label: String,
@@ -296,7 +318,7 @@ pub(super) struct PickerTarget {
     /// Upright source point projected into the selected operation's input.
     /// None where a descendant operation clipped it.
     center: Option<[ExactRatio; 2]>,
-    face: Option<face_picker::Proposal>,
+    proposal: Option<proposal_picker::Proposal>,
 }
 
 /// A temporary follow of a saved target. Scale changes keep the target's
@@ -338,8 +360,8 @@ pub(super) struct CameraSession {
     steps: CameraPanSteps,
     picker: Vec<PickerTarget>,
     picker_page: usize,
-    faces: face_picker::Faces,
-    face_acceptance: Option<face_picker::Acceptance>,
+    proposals: proposal_picker::Proposals,
+    proposal_acceptance: Option<proposal_picker::Acceptance>,
     committing: bool,
     fields: super::camera_fields::CameraFields,
     field_keys: Vec<CameraKey>,
@@ -723,7 +745,7 @@ impl CameraSession {
                 saved: Some((shown.id, shown.region, shown.source)),
                 point: None,
                 center: project(center).ok().flatten(),
-                face: None,
+                proposal: None,
             });
         }
         for (label, point) in [
@@ -739,7 +761,7 @@ impl CameraSession {
                 saved: None,
                 point: Some(point),
                 center: project(point)?,
-                face: None,
+                proposal: None,
             });
         }
         for (position, entry) in picker.iter_mut().enumerate().take(9) {
@@ -819,8 +841,8 @@ impl CameraSession {
             },
             picker,
             picker_page: 0,
-            faces: face_picker::Faces::default(),
-            face_acceptance: None,
+            proposals: proposal_picker::Proposals::default(),
+            proposal_acceptance: None,
             committing: false,
             fields: super::camera_fields::CameraFields::new(draft_pose),
             field_keys: Vec::new(),
@@ -923,6 +945,13 @@ impl CameraSession {
     /// Replay evidence: the target-related draft state.
     #[cfg(feature = "ui-harness")]
     pub(crate) fn harness_state(&self) -> serde_json::Value {
+        let proposal_origin = self.proposals.origin.as_ref().map(|origin| {
+            match origin {
+                crate::project::targets::ProposalOrigin::Worker { faces, salient_regions } =>
+                    serde_json::json!({"type":"worker", "faces":faces, "salient_regions":salient_regions}),
+                crate::project::targets::ProposalOrigin::Scripted => serde_json::json!({"type":"scripted"}),
+            }
+        });
         serde_json::json!({
             "revision": self.revision.as_str(),
             "phase": format!("{:?}", self.draft.phase()),
@@ -940,12 +969,15 @@ impl CameraSession {
             "picker": self
                 .picker
                 .iter()
-                .map(|entry| serde_json::json!({"number": entry.number, "label": entry.label, "available": entry.center.is_some(), "face": entry.face.map(|face| face.number), "saved": entry.saved.as_ref().map(|(id, ..)| id.as_str())}))
+                .map(|entry| serde_json::json!({"number": entry.number, "label": entry.label, "available": entry.center.is_some(), "face": entry.proposal.filter(|p|p.kind==DetectorKind::Faces).map(|p|p.number), "region":entry.proposal.filter(|p|p.kind==DetectorKind::SalientRegions).map(|p|p.number), "proposal_kind":entry.proposal.map(|p|p.kind), "saved": entry.saved.as_ref().map(|(id, ..)| id.as_str())}))
                 .collect::<Vec<_>>(),
             "picker_page": self.picker_page + 1,
             "picker_pages": self.picker.len().div_ceil(9),
-            "faces_status": self.faces.status,
-            "faces_pending": self.faces.pending.is_some(),
+            "faces_status": self.proposals.status,
+            "faces_pending": self.proposals.pending.is_some(),
+            "proposals_status": self.proposals.status,
+            "proposals_pending": self.proposals.pending.is_some(),
+            "proposal_origin": proposal_origin,
         })
     }
 
@@ -1298,7 +1330,11 @@ impl DeadpanApp {
         }
         let center_intent = center_intent.and_then(Result::ok);
         if let crate::navigation::zoom::TargetChoice::Face(number) = input.target {
-            self.start_face_zoom(session, input, range, number);
+            self.start_proposal_zoom(session, input, range, DetectorKind::Faces, number);
+            return;
+        }
+        if let crate::navigation::zoom::TargetChoice::Region(number) = input.target {
+            self.start_proposal_zoom(session, input, range, DetectorKind::SalientRegions, number);
             return;
         }
         match self.zoom_framing(&session, &input, range, scoped_follow, None) {
@@ -1371,7 +1407,7 @@ impl DeadpanApp {
 
     /// Resolve the target, sample its center where needed and build the
     /// framing. The note explains a fallback or a sampled fixed center.
-    /// `proposal` is a face target not saved yet, which `target=face:N`
+    /// `proposal` is a detected target not saved yet, which a numbered command
     /// resolves to; it is saved together with the framing.
     fn zoom_framing(
         &self,
@@ -1400,7 +1436,9 @@ impl DeadpanApp {
             })
             .collect();
         let (resolved, mut note) = match (&input.target, proposal) {
-            (TargetChoice::Face(_), Some((id, _))) => (Resolved::Target(id.clone()), None),
+            (TargetChoice::Face(_) | TargetChoice::Region(_), Some((id, _))) => {
+                (Resolved::Target(id.clone()), None)
+            }
             _ => zoom::resolve(&input.target, followed, &shown, |text| {
                 self.resolve_target(text)
             })?,
@@ -1463,49 +1501,53 @@ impl DeadpanApp {
         Ok((framing, note))
     }
 
-    /// `target=face:N`: propose faces in the stopped picture in the
+    /// Propose the requested detector's targets in the stopped picture in the
     /// background. Nothing is saved unless detection finishes for exactly
-    /// this context ([`Self::finish_face_zoom`]).
-    fn start_face_zoom(
+    /// this context ([`Self::finish_proposal_zoom`]).
+    fn start_proposal_zoom(
         &mut self,
         session: CameraSession,
         input: crate::navigation::zoom::ZoomInput,
         range: Option<(u64, u64)>,
+        kind: DetectorKind,
         number: u8,
     ) {
         let result = (|| -> Result<(), String> {
             if self.macros.recording() {
-                return Err("A face proposal cannot be recorded yet; save the face first, then record :zoom with its target name. Save or cancel recording first.".into());
+                return Err("A detected proposal cannot be recorded; save that target first, then record :zoom with its name. Save or cancel recording first.".into());
             }
             if session.scoped.is_some() {
-                return Err("target=face:N frames an ordinary beat; a single Repeat play cannot use a face proposal yet. No edit was made.".into());
+                return Err("A numbered detected target frames an ordinary beat; a single Repeat play cannot use that command yet. No edit was made.".into());
             }
-            if self.targets.face_zoom.is_some() {
+            if self.targets.proposal_zoom.is_some() {
                 return Err(
-                    "Faces are already being found for another :zoom; wait for it to finish."
+                    "Targets are already being found for another :zoom; wait for it to finish."
                         .into(),
                 );
             }
             let (asset, pts) = session
                 .picture
                 .clone()
-                .ok_or("This picture shows no Original moment, so it has no faces to propose.")?;
+                .ok_or("This picture shows no Original moment for target proposals.")?;
             let span = self.target_span(&asset, pts)?;
             let context = self.capture_zoom();
             let ticket = self
-                .submit_target(Operation::DetectFaces {
+                .submit_target(Operation::DetectPictureProposals {
                     ticket: 0,
                     session: session.session,
                     revision: session.revision.clone(),
                     asset: asset.clone(),
                     pts,
+                    selection: proposal_selection(kind),
                 })
                 .ok_or_else(|| self.error.clone().unwrap_or_default())?;
             self.message = Some(format!(
-                "Finding faces in the displayed picture for face:{number}… Nothing changes unless that face is found."
+                "Finding {} {number} in the displayed picture… Nothing changes unless that proposal is found.",
+                proposal_kind_label(kind)
             ));
-            self.targets.face_zoom = Some(FaceZoom {
+            self.targets.proposal_zoom = Some(ProposalZoom {
                 ticket,
+                kind,
                 number,
                 input,
                 range,
@@ -1523,12 +1565,12 @@ impl DeadpanApp {
         }
     }
 
-    /// Use the chosen face once its detection has finished: refuse when the
-    /// context changed, no face was found or `face:N` is out of range;
+    /// Use the chosen proposal once detection finishes: refuse when the
+    /// context changed, no region was found or the number is out of range;
     /// otherwise save it as a target together with the framing toward it,
     /// as one undoable edit.
-    pub(super) fn finish_face_zoom(&mut self) {
-        let Some(pending) = &self.targets.face_zoom else {
+    pub(super) fn finish_proposal_zoom(&mut self) {
+        let Some(pending) = &self.targets.proposal_zoom else {
             return;
         };
         let ticket = pending.ticket;
@@ -1538,16 +1580,17 @@ impl DeadpanApp {
             .is_some_and(|(answered, refusal)| *answered == ticket && refusal.is_some())
         {
             // The service refused to start; its reason is already shown.
-            self.targets.face_zoom = None;
+            self.targets.proposal_zoom = None;
             return;
         }
         let Some(outcome) = self
             .targets
-            .faces()
+            .proposals()
             .filter(|job| {
                 job.ticket == ticket
                     && job.session == pending.camera.session
                     && job.revision == pending.camera.revision
+                    && job.selection == proposal_selection(pending.kind)
                     && pending.camera.picture.as_ref() == Some(&(job.asset.clone(), job.pts))
             })
             .and_then(|job| job.outcome.clone())
@@ -1555,36 +1598,58 @@ impl DeadpanApp {
             if self.workspace.as_ref().map(|workspace| workspace.session)
                 != Some(pending.camera.session)
             {
-                self.targets.face_zoom = None;
+                self.targets.proposal_zoom = None;
             }
             return;
         };
-        let pending = self.targets.face_zoom.take().expect("checked above");
+        let pending = self.targets.proposal_zoom.take().expect("checked above");
         let result = (|| -> Result<(), String> {
-            use crate::project::targets::FaceOutcome;
-            let faces = match outcome {
-                FaceOutcome::Found(faces) => faces,
-                FaceOutcome::Unavailable(reason) => {
+            use crate::project::targets::ProposalOutcome;
+            let proposals = match outcome {
+                ProposalOutcome::Found(proposals) => proposals,
+                ProposalOutcome::Unavailable(reason) => {
                     return Err(format!(
-                        "Faces cannot be found here: {reason} No edit was made."
+                        "Targets cannot be found here: {reason} No edit was made."
                     ));
                 }
-                FaceOutcome::Failed(reason) => {
-                    return Err(format!("Finding faces failed: {reason} No edit was made."));
+                ProposalOutcome::Failed(reason) => {
+                    return Err(format!(
+                        "Finding targets failed: {reason} No edit was made."
+                    ));
                 }
-                FaceOutcome::Cancelled => {
-                    return Err("Finding faces was cancelled; no edit was made.".into());
+                ProposalOutcome::Cancelled => {
+                    return Err("Finding targets was cancelled; no edit was made.".into());
                 }
             };
             admit_zoom_context(Some(&pending.context), &self.capture_zoom()).map_err(|_| {
-                "The beat, range, cursor or revision changed while faces were being found; enter the command again. No edit was made.".to_owned()
+                "The beat, range, cursor or revision changed while targets were being found; enter the command again. No edit was made.".to_owned()
             })?;
-            let face = deadpan_cli::faces::choose_face(&faces, usize::from(pending.number))
-                .map_err(|refusal| format!("{refusal} No edit was made."))?;
+            let region = match pending.kind {
+                DetectorKind::Faces => deadpan_cli::faces::choose_face(
+                    proposals
+                        .faces
+                        .as_deref()
+                        .ok_or("The face collection is missing; no edit was made.")?,
+                    usize::from(pending.number),
+                )
+                .map(|face| &face.region),
+                DetectorKind::SalientRegions => {
+                    deadpan_cli::picture_proposals::choose_salient_region(
+                        proposals
+                            .salient_regions
+                            .as_deref()
+                            .ok_or("The region collection is missing; no edit was made.")?,
+                        usize::from(pending.number),
+                    )
+                    .map(|region| &region.region)
+                }
+            }
+            .map_err(|refusal| format!("{refusal} No edit was made."))?;
             let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
-            let (id, label) = fresh_face_target(&workspace.document, pending.number)?;
-            let target = deadpan_cli::faces::face_target(
-                face,
+            let (id, label) =
+                fresh_proposal_target(&workspace.document, pending.kind, pending.number)?;
+            let target = deadpan_cli::picture_proposals::region_target(
+                region,
                 label,
                 pending.asset.clone(),
                 pending.span.start().time_base,
@@ -1800,19 +1865,19 @@ impl DeadpanApp {
             session.draft.set_pose(pose);
         }
         session.fields.sync(session.draft.pose());
-        if let Some(acceptance) = old.face_acceptance
+        if let Some(acceptance) = old.proposal_acceptance
             && self
                 .targets
                 .saved()
                 .is_some_and(|saved| saved.id == acceptance.id)
             && targets.contains_key(&acceptance.id)
         {
-            if let Err(error) = session.accept_saved_face(acceptance) {
+            if let Err(error) = session.accept_saved_proposal(acceptance) {
                 self.error = Some(format!(
-                    "The face target was saved; its framing could not be selected: {error}"
+                    "The detected target was saved; its framing could not be selected: {error}"
                 ));
             } else {
-                self.message = Some("Face target saved and selected. Enter applies framing; Escape keeps the target and restores entry framing.".into());
+                self.message = Some("Detected target saved and selected. Enter applies framing; Escape keeps the target and restores entry framing.".into());
             }
         }
         let poses = self.workspace.as_ref().and_then(|workspace| {
@@ -1867,6 +1932,10 @@ impl DeadpanApp {
 
     pub(super) fn cancel_camera(&mut self) {
         let _ = self.take_camera_pending();
+        self.cancel_camera_proposals();
+        if let Some(pending) = self.targets.proposal_zoom.take() {
+            self.cancel_proposal_request(pending.camera.session, pending.ticket);
+        }
         if let Some(camera) = self.camera.take()
             && !camera.committing
             && camera.rebase.is_none()
@@ -1877,6 +1946,37 @@ impl DeadpanApp {
                 .set_framing_poses(camera.ticket, &camera.entry_layers);
         }
         self.bindings.clear();
+    }
+
+    fn cancel_proposal_request(&mut self, session: u64, job: u64) {
+        if self
+            .workspace
+            .as_ref()
+            .is_some_and(|workspace| workspace.session == session)
+            && !self
+                .targets
+                .proposals()
+                .is_some_and(|latest| latest.ticket > job)
+        {
+            let _ = self.submit_target(Operation::Cancel {
+                ticket: 0,
+                session,
+                job,
+            });
+        }
+    }
+
+    fn cancel_camera_proposals(&mut self) {
+        let pending = self.camera.as_mut().and_then(|camera| {
+            camera
+                .proposals
+                .pending
+                .take()
+                .map(|job| (camera.session, job))
+        });
+        if let Some((session, job)) = pending {
+            self.cancel_proposal_request(session, job);
+        }
     }
 
     fn take_camera_pending(&mut self) -> Option<CameraPending> {
@@ -1926,7 +2026,7 @@ impl DeadpanApp {
     pub(super) fn reconcile_camera(&mut self) {
         // A completed proposal may have arrived while this same picture's
         // temporary framing was waiting for GPU submission.
-        self.finish_camera_faces();
+        self.finish_camera_proposals();
         let Some(camera) = &self.camera else {
             return;
         };
@@ -1966,7 +2066,7 @@ impl DeadpanApp {
 
     /// A refused target command lets Camera continue editing.
     pub(super) fn camera_target_reply(&mut self, ticket: u64, refusal: Option<&str>) {
-        self.camera_face_reply(ticket, refusal);
+        self.camera_proposal_reply(ticket, refusal);
         // A later command's reply also answers the save. Its success needs no
         // flag: the saved receipt alone continues Camera on its revision.
         if let Some(camera) = &mut self.camera
@@ -2042,10 +2142,19 @@ impl DeadpanApp {
             camera.fields.sync(camera.draft.pose());
             camera.field_error = None;
         }
+        let mut cancelled_proposal = None;
         if let CameraEffect::Reset(_) = effect {
             // Reset replaces the operation with a static pose; it stops a follow.
             camera.follow = None;
-            camera.close_faces();
+            cancelled_proposal = camera
+                .proposals
+                .pending
+                .take()
+                .map(|job| (camera.session, job));
+            camera.close_proposals();
+        }
+        if let Some((session, job)) = cancelled_proposal {
+            self.cancel_proposal_request(session, job);
         }
         self.camera_effect(effect, context);
     }
@@ -2080,10 +2189,11 @@ impl DeadpanApp {
     fn camera_effect(&mut self, effect: CameraEffect, context: &egui::Context) {
         match effect {
             CameraEffect::None => {}
-            CameraEffect::RefreshTargets => self.start_camera_faces(),
+            CameraEffect::RefreshTargets => self.start_camera_proposals(),
             CameraEffect::TargetsClosed => {
+                self.cancel_camera_proposals();
                 if let Some(camera) = &mut self.camera {
-                    camera.close_faces();
+                    camera.close_proposals();
                 }
             }
             CameraEffect::TargetPage { reverse } => {
@@ -2199,9 +2309,9 @@ impl DeadpanApp {
             camera
                 .picker
                 .iter()
-                .any(|entry| entry.number == Some(number) && entry.face.is_some())
+                .any(|entry| entry.number == Some(number) && entry.proposal.is_some())
         }) {
-            self.save_camera_face(number);
+            self.save_camera_proposal(number);
             return;
         }
         let Some(camera) = &mut self.camera else {
@@ -2249,8 +2359,14 @@ impl DeadpanApp {
             return;
         }
         let effect = camera.draft.choose_target(number, pose);
+        let mut cancelled_proposal = None;
         if matches!(effect, CameraEffect::PoseChanged(_)) {
-            camera.close_faces();
+            cancelled_proposal = camera
+                .proposals
+                .pending
+                .take()
+                .map(|job| (camera.session, job));
+            camera.close_proposals();
             camera.fields.sync(camera.draft.pose());
             camera.field_error = None;
             if let Some(follow) = &mut camera.follow {
@@ -2267,6 +2383,9 @@ impl DeadpanApp {
         }
         let following = camera.follow.is_some();
         let unchanged = effect == CameraEffect::None;
+        if let Some((session, job)) = cancelled_proposal {
+            self.cancel_proposal_request(session, job);
+        }
         self.camera_effect(effect, context);
         if following && unchanged {
             // Same pose, new subject: the follow's target still changed.
@@ -2887,7 +3006,7 @@ impl DeadpanApp {
         }
         if picking {
             for entry in &camera.picker {
-                if let (Some(number), Some(face)) = (entry.number, entry.face)
+                if let (Some(number), Some(face)) = (entry.number, entry.proposal)
                     && let Some(rect) = source_rect(&face.region)
                 {
                     painter.rect_stroke(
@@ -3181,6 +3300,29 @@ impl DeadpanApp {
                     style::side_scroll(ui, egui::ScrollArea::vertical().id_salt("camera-inspector"), |ui| {
                         ui.label(format!("Scope: {}", self.beat_scope_label()));
                         ui.add_space(8.0);
+                        if camera.draft.phase() == CameraPhase::TargetPicker {
+                            if ui.add(style::row_action(ui, "Close targets", "f")).clicked() { requested = Some(CameraKey::RefreshTargets); }
+                            if ui.add(style::row_action(ui, "Cancel", "Esc")).clicked() { requested = Some(CameraKey::Cancel); }
+                            ui.horizontal(|ui| {
+                                if ui.add_enabled(camera.picker.len() > 9, style::action("Back", "Shift+Tab")).on_hover_text("Previous page").clicked() { requested = Some(CameraKey::Tab { reverse: true }); }
+                                if ui.add_enabled(camera.picker.len() > 9, style::action("Next", "Tab")).on_hover_text("Next page").clicked() { requested = Some(CameraKey::Tab { reverse: false }); }
+                            });
+                            ui.label(format!("Page {} / {} · choose 1–9", camera.picker_page + 1, camera.picker.len().div_ceil(9)));
+                            if camera.proposals.pending.is_some() { crate::preview::accessibility::busy(ui); }
+                            ui.label(&camera.proposals.status);
+                            for entry in camera.picker.iter().filter(|entry| entry.number.is_some()) {
+                                let text = match (entry.number, &entry.saved) {
+                                    (Some(number), Some((_, _, source))) => format!("{number}  {} · {}", entry.label, super::targets::source_label(*source)),
+                                    (Some(number), None) => format!("{number}  {}", entry.label),
+                                    (None, _) => format!("    {}", entry.label),
+                                };
+                                let response = ui.add_enabled(entry.center.is_some() && entry.number.is_some(), egui::Button::new(text).min_size(egui::vec2(ui.available_width(), 28.0)));
+                                if response.clicked() { target = entry.number; }
+                                if entry.center.is_none() { response.on_hover_text("This point was clipped by a descendant operation."); }
+                            }
+                            ui.weak("Choosing a proposal saves its target. Apply framing separately with Enter. Close and reopen f to refresh.");
+                            return;
+                        }
                         if let Some(region) = camera.draft.region() {
                             let title = match &camera.region_purpose {
                                 Some(RegionPurpose::Correct { id, .. }) => format!("CORRECT {}", self.target_label(id).to_uppercase()),
@@ -3256,7 +3398,7 @@ impl DeadpanApp {
                         }
                         ui.add_space(8.0);
                         ui.weak(match camera.draft.phase() {
-                            CameraPhase::TargetPicker => "Choose this page's number. Tab / Shift+Tab changes pages; f returns to adjustment. A face selection saves its target before framing changes.",
+                            CameraPhase::TargetPicker => "Choose this page's number. Tab / Shift+Tab changes pages; f returns to adjustment. Selecting a proposal saves that target before framing changes.",
                             CameraPhase::Region => "Finish the target, or press Escape to return to framing.",
                             _ if camera.follow.is_some() => "The followed target supplies the center. Scale changes keep following it.",
                             _ => "Tab moves through fields. Up/Down changes 1%. Enter finishes a field; Enter in the viewer applies the edit.",
@@ -3295,25 +3437,7 @@ impl DeadpanApp {
                             ui.label("Captured view retained");
                             ui.weak("Camera changes this view. Reset keeps its captured crop.");
                         }
-                        if ui.add(style::action(if camera.draft.phase() == CameraPhase::TargetPicker { "Close targets" } else { "Choose target" }, "f")).clicked() { requested = Some(CameraKey::RefreshTargets); }
-                        if camera.draft.phase() == CameraPhase::TargetPicker {
-                            if ui.add_enabled(camera.picker.len() > 9, style::action("Previous page", "Shift+Tab").min_size(egui::vec2(ui.available_width(), 28.0))).clicked() { requested = Some(CameraKey::Tab { reverse: true }); }
-                            if ui.add_enabled(camera.picker.len() > 9, style::action("Next page", "Tab").min_size(egui::vec2(ui.available_width(), 28.0))).clicked() { requested = Some(CameraKey::Tab { reverse: false }); }
-                            ui.label(format!("Page {} / {}", camera.picker_page + 1, camera.picker.len().div_ceil(9)));
-                            if camera.faces.pending.is_some() { crate::preview::accessibility::busy(ui); }
-                            ui.label(&camera.faces.status);
-                            for entry in camera.picker.iter().filter(|entry| entry.number.is_some()) {
-                                let text = match (entry.number, &entry.saved) {
-                                    (Some(number), Some((_, _, source))) => format!("{number}  {} · {}", entry.label, super::targets::source_label(*source)),
-                                    (Some(number), None) => format!("{number}  {}", entry.label),
-                                    (None, _) => format!("    {}", entry.label),
-                                };
-                                let response = ui.add_enabled(entry.center.is_some() && entry.number.is_some(), egui::Button::new(text).min_size(egui::vec2(ui.available_width(), 28.0)));
-                                if response.clicked() { target = entry.number; }
-                                if entry.center.is_none() { response.on_hover_text("This point was clipped by a descendant operation."); }
-                            }
-                            ui.weak("Saved targets, center and corners, then detected faces. Each page uses digits 1–9. Close and reopen f to refresh faces.");
-                        }
+                        if ui.add(style::action("Choose target", "f")).clicked() { requested = Some(CameraKey::RefreshTargets); }
                         ui.add_space(8.0);
                         ui.label(style::section_title("TARGETS", false));
                         if all_targets.is_empty() {

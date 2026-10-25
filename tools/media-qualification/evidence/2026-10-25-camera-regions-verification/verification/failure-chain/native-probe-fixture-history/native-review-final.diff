@@ -1,0 +1,143 @@
+--- before/native/deadpan-track/src/vision.rs
++++ after/native/deadpan-track/src/vision.rs
+@@ -37,8 +37,6 @@
+ };
+ 
+ pub const ENGINE: &str = "Apple Vision VNTrackObjectRequest";
+-pub const FACE_ENGINE: &str = "Apple Vision VNDetectFaceRectanglesRequest";
+-pub const SALIENCY_ENGINE: &str = "Apple Vision VNGenerateObjectnessBasedSaliencyImageRequest";
+ pub const TRACKING_LEVEL: &str = "accurate";
+ 
+ /// A box in Vision's convention: normalized to the coded picture, origin at
+--- before/native/deadpan-track/src/picture_proposals.rs
++++ after/native/deadpan-track/src/picture_proposals.rs
+@@ -9,8 +9,9 @@
+ use deadpan_analysis::NormalizedRect;
+ use deadpan_jobs::picture_proposals::{
+     DetectedFace, DetectedSalientRegion, DetectorKind, DetectorRuntime, ExpectedStream,
+-    FaceProposals, HostMessage, MAX_FACES, MAX_SALIENT_REGIONS, PictureProposals,
+-    ProposalSelection, SalientRegionProposals, VERSION, WorkerMessage, read_host, write_worker,
++    FACE_ENGINE, FaceProposals, HostMessage, MAX_FACES, MAX_SALIENT_REGIONS, PictureProposals,
++    ProposalSelection, SALIENCY_ENGINE, SalientRegionProposals, VERSION, WorkerMessage, read_host,
++    write_worker,
+ };
+ use deadpan_jobs::protocol::{
+     AttemptId, CancellationToken, Diagnostic, RequestId, WorkspaceArtifact,
+@@ -273,7 +274,7 @@
+         ),
+         runtime: DetectorRuntime {
+             detector: DetectorKind::Faces,
+-            engine: super::vision::FACE_ENGINE.into(),
++            engine: FACE_ENGINE.into(),
+             request_revision: found.revision,
+         },
+     });
+@@ -290,7 +291,7 @@
+                 )?,
+                 runtime: DetectorRuntime {
+                     detector: DetectorKind::SalientRegions,
+-                    engine: super::vision::SALIENCY_ENGINE.into(),
++                    engine: SALIENCY_ENGINE.into(),
+                     request_revision: found.revision,
+                 },
+             })
+@@ -385,6 +386,64 @@
+     }
+ 
+     #[test]
++    fn salient_native_overflow_clips_before_rotation_without_repairing_invalid_geometry() {
++        // VNRectangleObservation explicitly permits coordinates outside the
++        // image. Retain its visible intersection; wholly outside is empty.
++        for (native, expected) in [
++            ((-0.1, 0.2, 0.3, 0.4), [0.0, 0.4, 0.2, 0.4]),
++            ((0.8, 0.2, 0.3, 0.4), [0.8, 0.4, 0.2, 0.4]),
++            ((0.2, -0.1, 0.4, 0.3), [0.2, 0.8, 0.4, 0.2]),
++            ((0.2, 0.8, 0.4, 0.3), [0.2, 0.0, 0.4, 0.2]),
++        ] {
++            let found = displayed_salient_regions([native], 0).unwrap()[0].region;
++            for (actual, expected) in [found.x(), found.y(), found.width(), found.height()]
++                .into_iter()
++                .zip(expected)
++            {
++                assert!((actual - expected).abs() < 1e-9, "{native:?}");
++            }
++        }
++        for (turns, expected) in [
++            (0, [0.0, 0.0]),
++            (1, [0.75, 0.0]),
++            (2, [0.75, 0.75]),
++            (3, [0.0, 0.75]),
++        ] {
++            let found =
++                displayed_salient_regions([(-0.25, 0.75, 0.5, 0.5)], turns).unwrap()[0].region;
++            assert_eq!([found.x(), found.y()], expected);
++            assert_eq!([found.width(), found.height()], [0.25, 0.25]);
++            let edge = displayed_salient_regions([(0.0, 0.0, 1.0, 1.0)], turns).unwrap()[0].region;
++            assert_eq!(
++                [edge.x(), edge.y(), edge.width(), edge.height()],
++                [0.0, 0.0, 1.0, 1.0]
++            );
++            for outside in [
++                (-0.5, 0.1, 0.2, 0.2),
++                (1.1, 0.1, 0.2, 0.2),
++                (0.1, -0.5, 0.2, 0.2),
++                (0.1, 1.1, 0.2, 0.2),
++            ] {
++                assert!(
++                    displayed_salient_regions([outside], turns)
++                        .unwrap()
++                        .is_empty()
++                );
++            }
++        }
++        for invalid in [
++            (f64::NAN, 0.1, 0.2, 0.2),
++            (0.1, f64::INFINITY, 0.2, 0.2),
++            (0.1, 0.1, f64::NEG_INFINITY, 0.2),
++            (0.1, 0.1, 0.2, f64::NAN),
++            (0.1, 0.1, 0.0, 0.2),
++            (0.1, 0.1, 0.2, -0.2),
++        ] {
++            assert!(displayed_salient_regions([invalid], 0).is_err());
++        }
++    }
++
++    #[test]
+     fn vision_boxes_become_ordered_clipped_displayed_rectangles() {
+         // Vision: lower-left origin. A face at the top-right, one at the
+         // bottom-left, one partly outside the right edge, one wholly outside.
+--- before/native/deadpan-track/tests/picture_proposals.rs
++++ after/native/deadpan-track/tests/picture_proposals.rs
+@@ -14,6 +14,7 @@
+ };
+ use deadpan_cli::tracking::TrackingRuntime;
+ use deadpan_core::{AssetId, ExactRatio};
++use deadpan_jobs::picture_proposals::{FACE_ENGINE, SALIENCY_ENGINE};
+ use deadpan_media::audio_session::{AudioSession, AudioSessionLimits, SourceAudioSample};
+ use deadpan_media::source_index::SourceContentIdentity;
+ use deadpan_source::{DecodeControl, DecodeLimits, SourceDecoder};
+@@ -118,22 +119,12 @@
+     if let Some(faces) = &result.proposals.faces {
+         assert_eq!(faces.runtime.detector, DetectorKind::Faces);
+         assert!(faces.runtime.request_revision > 0);
+-        assert!(
+-            faces
+-                .runtime
+-                .engine
+-                .contains("VNDetectFaceRectanglesRequest")
+-        );
++        assert_eq!(faces.runtime.engine, FACE_ENGINE);
+     }
+     if let Some(regions) = &result.proposals.salient_regions {
+         assert_eq!(regions.runtime.detector, DetectorKind::SalientRegions);
+         assert_eq!(regions.runtime.request_revision, SALIENCY_REQUEST_REVISION);
+-        assert!(
+-            regions
+-                .runtime
+-                .engine
+-                .contains("VNGenerateObjectnessBasedSaliencyImageRequest")
+-        );
++        assert_eq!(regions.runtime.engine, SALIENCY_ENGINE);
+     }
+     eprintln!(
+         "actual-proposals: {}",

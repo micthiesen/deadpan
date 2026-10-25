@@ -1,0 +1,181 @@
+{
+  "recorded_at": "2026-10-25T08:00:35.973686+00:00",
+  "owned_paths": {
+    "native/deadpan-track/src/faces.rs": {
+      "exists": false
+    },
+    "native/deadpan-track/src/picture_proposals.rs": {
+      "exists": true,
+      "bytes": 14862,
+      "sha256": "93aeea56456916c001129e401acbc0d54a1d85cd2f70a3e1b17b70d63c394a6f"
+    },
+    "native/deadpan-track/src/main.rs": {
+      "exists": true,
+      "bytes": 21316,
+      "sha256": "8d7b111c05753b3c0d555d103079541cc69baafdf3e7f1cca65ed76ad2bbfa13"
+    },
+    "native/deadpan-track/src/vision.rs": {
+      "exists": true,
+      "bytes": 32070,
+      "sha256": "724480221abff12ae560a942fe3908d39ae831e48ac4a65fc384aa739f70ba9c"
+    },
+    "native/deadpan-track/Cargo.toml": {
+      "exists": true,
+      "bytes": 2187,
+      "sha256": "8ff4beca8a81da13520b785c1066e833ae30baab40bc0f017a34f1f16e46307c"
+    },
+    "native/deadpan-track/tests/faces.rs": {
+      "exists": true,
+      "bytes": 10877,
+      "sha256": "2ac43c88cf23b1577d4cf519ed69c1e9c38e0ce9b2f8a88cc041cbf5b44ac18b"
+    },
+    "native/deadpan-track/tests/picture_proposals.rs": {
+      "exists": true,
+      "bytes": 13170,
+      "sha256": "1864912b650f6722895976a8551f544bc16db7b95e8d1f9fc1c0753e5953c7dc"
+    },
+    "native/deadpan-track/tests/worker.rs": {
+      "exists": true,
+      "bytes": 21513,
+      "sha256": "5a63c78dd03ac6744f109119db8dca537850a2d456055f5abd9358a3cc1e4675"
+    },
+    "native/deadpan-track/tests/geometry.rs": {
+      "exists": true,
+      "bytes": 19191,
+      "sha256": "9e6b9de52e47de9eaaf3e0b7f87928f2a495598a96aa1a15088d295057d441a6"
+    },
+    "native/deadpan-track/tests/generate_salient_images.swift": {
+      "exists": true,
+      "bytes": 5068,
+      "sha256": "2fccff2450ebd066cdeeb06ea327f8ff1d0aaca6a4106efed8ac6ba76dc708af"
+    },
+    "native/deadpan-track/tests/generate_salient_fixtures.py": {
+      "exists": true,
+      "bytes": 8816,
+      "sha256": "d6b356c189d493e7931b8e372c29ce18ff71ee79e56d47769fbf0406d7141861"
+    },
+    "native/deadpan-track/tests/fixtures/SALIENT_REGIONS.md": {
+      "exists": true,
+      "bytes": 3511,
+      "sha256": "f7f1620c93ace7806a3ab55b485ed77adbdc3bba72ee2c3731acc8bdf7ab9cbd"
+    },
+    "native/deadpan-track/tests/fixtures/salient-regions-sar.mkv": {
+      "exists": true,
+      "bytes": 635050,
+      "sha256": "86f4b5e08e0c4851811bc5a8412bd43eb7c94e8cf9d74b8cf775142d23e078f3"
+    },
+    "native/deadpan-track/tests/fixtures/salient-mug-aperture.mp4": {
+      "exists": true,
+      "bytes": 11790,
+      "sha256": "163f1d080615c1232d2c467e1d1fd4d1eef3ade865824130ac30b7a1baa036cb"
+    },
+    "native/deadpan-track/tests/fixtures/salient-mug.png": {
+      "exists": true,
+      "bytes": 9379,
+      "sha256": "5df85d511659a008b734a5e843cc5b13b9ea8e989c4b00423e036feb8667f1e8"
+    },
+    "native/deadpan-track/tests/fixtures/salient-audio.wav": {
+      "exists": true,
+      "bytes": 768812,
+      "sha256": "8f2ede07d4e8aa6743b6f441f5fb3cc6c6347a333f7b4ede15c52315f7195089"
+    },
+    "native/deadpan-track/tests/fixtures/salient-two.png": {
+      "exists": true,
+      "bytes": 40434,
+      "sha256": "f34a618eb462bb3afe5a024671cf5459cbf9f97d05b2bbb54b3f0eef4218389d"
+    },
+    "native/deadpan-track/tests/fixtures/salient-mug-rotated-90.mp4": {
+      "exists": true,
+      "bytes": 11750,
+      "sha256": "b8d58a886c71674e2189175862f963dfe5f4deaeb4b464fd95bddc3605df2f69"
+    },
+    "native/deadpan-track/tests/fixtures/salient-regions-fixtures.json": {
+      "exists": true,
+      "bytes": 24591,
+      "sha256": "6733b54cc32601861146d2f4f78f6bded82da5ccd5c9eea1171699275720f03c"
+    },
+    "native/deadpan-track/tests/fixtures/salient-blank.png": {
+      "exists": true,
+      "bytes": 4876,
+      "sha256": "95f59820f0abfb2f26c04ec6718960c6548e4687b5a15c5dc27f8b5900f1cd84"
+    },
+    "native/deadpan-track/tests/fixtures/salient-regions.mkv": {
+      "exists": true,
+      "bytes": 635038,
+      "sha256": "cc181467a19d92c3b08edf72ff34d4eaac6d4887e8e05311305ed51db7576f66"
+    }
+  },
+  "source_note": "Current native worker + generated fixtures only. Root owns App/final integration; no Git/Cargo.lock writes. faces.rs removed in rename.",
+  "checks": {
+    "native-unit-1": {
+      "exit_code": 0,
+      "seconds": 15.110499958507717,
+      "receipt_sha256": "7208cb2751eef106b635ed1c077976fdaefb333d5c4f7963797ca047a8e9e35f",
+      "own_unchanged": true,
+      "basis_unchanged": true
+    },
+    "native-real-1": {
+      "exit_code": 101,
+      "seconds": 0.9386729588732123,
+      "receipt_sha256": "66e603b515c63a1fa19296c383059ccd5d9014cd7a4fcd2ffc7e6b1477478193",
+      "own_unchanged": true,
+      "basis_unchanged": true
+    },
+    "native-real-2": {
+      "exit_code": 101,
+      "seconds": 1.2390105407685041,
+      "receipt_sha256": "b9c4527543b9ada65cbc6f540525c60f02d59a14bcb348e3a70e1759553f74a4",
+      "own_unchanged": true,
+      "basis_unchanged": true
+    },
+    "native-real-3": {
+      "exit_code": 101,
+      "seconds": 1.7507853331044316,
+      "receipt_sha256": "58bb7444fc7aa1086f01e086ccf3380eb81b8b0c4b4bcc0084b49f83514ef42e",
+      "own_unchanged": true,
+      "basis_unchanged": true
+    },
+    "native-real-4": {
+      "exit_code": 0,
+      "seconds": 3.0540241673588753,
+      "receipt_sha256": "05172ee9dc833a846d76c3ae3e128a7488bff430b39e24aa8c5208eb3582402e",
+      "own_unchanged": true,
+      "basis_unchanged": true
+    },
+    "native-face-proposals-1": {
+      "exit_code": 0,
+      "seconds": 5.264525707811117,
+      "receipt_sha256": "a203eaf97706a4785ddc0acc87b79176369919b0bc505f832d2802cb630b0f01",
+      "own_unchanged": true,
+      "basis_unchanged": true
+    },
+    "native-regressions-1": {
+      "exit_code": 101,
+      "seconds": 1.3514603339135647,
+      "receipt_sha256": "1c9b6a2d1037d523228e521f73b5f35254cee961ba3e04416d070d4c307d1ee6",
+      "own_unchanged": true,
+      "basis_unchanged": true
+    },
+    "native-regressions-2": {
+      "exit_code": 0,
+      "seconds": 10.941735999658704,
+      "receipt_sha256": "5be4d91701524d49f4c6e4a577d357106088148c2453a473a8a201a69f30f568",
+      "own_unchanged": true,
+      "basis_unchanged": true
+    },
+    "native-clippy-1": {
+      "exit_code": 0,
+      "seconds": 19.376630375161767,
+      "receipt_sha256": "ae67378b55e9f87559479790059314d056110cf6a924631267448abc185c3992",
+      "own_unchanged": true,
+      "basis_unchanged": true
+    },
+    "native-final-proposals-1": {
+      "exit_code": 0,
+      "seconds": 4.542802915908396,
+      "receipt_sha256": "50b51d87a003a2f353eb896e04376296c63bb09c84f6333a8cab672105fe2dea",
+      "own_unchanged": true,
+      "basis_unchanged": true
+    }
+  }
+}

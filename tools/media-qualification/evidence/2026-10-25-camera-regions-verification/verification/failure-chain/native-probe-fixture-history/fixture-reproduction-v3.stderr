@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/Users/michael/Code/deadpan/native/deadpan-track/tests/generate_salient_fixtures.py", line 162, in <module>
+    main()
+    ~~~~^^
+  File "/Users/michael/Code/deadpan/native/deadpan-track/tests/generate_salient_fixtures.py", line 155, in main
+    generate(args.work_dir, args.check)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/michael/Code/deadpan/native/deadpan-track/tests/generate_salient_fixtures.py", line 141, in generate
+    assert target.read_bytes() == data, f"fixture differs: {name}"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: fixture differs: salient-regions-sar.mkv

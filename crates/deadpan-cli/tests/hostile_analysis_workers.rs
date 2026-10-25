@@ -458,6 +458,12 @@ fn face_detection_refuses_hostile_frames_stalls_and_descendants() {
         support::assert_generic_cause(name, &error.to_string());
         if name == "wrong_attempt" {
             assert_claim_refused(&error.to_string(), name);
+            assert!(
+                error
+                    .to_string()
+                    .contains("detection response belongs to another attempt"),
+                "{name}: the host must reject the identity, not accept an ordinary failure: {error}"
+            );
         }
         record.assert_group_gone();
     }

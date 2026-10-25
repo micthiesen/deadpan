@@ -1,0 +1,108 @@
+{
+  "scope": "Read-only independent hashing and selection audit. No collector, product, Cargo or publication invocation.",
+  "findings": [],
+  "collector": {
+    "bytes": 12790,
+    "sha256": "251e2eb49e2f75dedb81926c32a748652d32041ba87d880ff5ff09230f4b418d"
+  },
+  "helper": {
+    "bytes": 21989,
+    "sha256": "2758fa2c837e63d41b33f38b34f728017feda8b0c05aa21499eeb40f4764df13"
+  },
+  "plans": [
+    {
+      "name": "collection-primary.json",
+      "bytes": 12074,
+      "sha256": "0829fbd9755857ec940e64bc50bcd674bdbcd4471ab2ab94e7764abc1636d861",
+      "files": 30,
+      "archives": [
+        {
+          "name": "latest-project-package",
+          "members": 16,
+          "bytes": 3539035
+        }
+      ],
+      "raw_bytes_recomputed": 162174614,
+      "with_1MiB_reserve": 163223190,
+      "forbidden_payloads": []
+    },
+    {
+      "name": "collection-regressions.json",
+      "bytes": 66942,
+      "sha256": "20ab370622290944431aecace6852f9d00c8c47a622975642cd81830371009f4",
+      "files": 86,
+      "archives": [
+        {
+          "name": "source-first",
+          "members": 51,
+          "bytes": 4132940
+        },
+        {
+          "name": "source-second",
+          "members": 52,
+          "bytes": 4732316
+        },
+        {
+          "name": "source-debug-first",
+          "members": 52,
+          "bytes": 4732542
+        },
+        {
+          "name": "source-debug-second",
+          "members": 52,
+          "bytes": 4733588
+        }
+      ],
+      "raw_bytes_recomputed": 250600443,
+      "with_1MiB_reserve": 251649019,
+      "forbidden_payloads": []
+    },
+    {
+      "name": "collection-verification.json",
+      "bytes": 133467,
+      "sha256": "3dd2222c5267012df5930232492920008d77c5d1d852b9b592ab1073f924edca",
+      "files": 237,
+      "archives": [
+        {
+          "name": "media-verification",
+          "members": 52,
+          "bytes": 40902564
+        },
+        {
+          "name": "package-build-metadata",
+          "members": 93,
+          "bytes": 6479779
+        },
+        {
+          "name": "package-relocation-metadata",
+          "members": 203,
+          "bytes": 5700276
+        },
+        {
+          "name": "actual-package-baselines",
+          "members": 14,
+          "bytes": 9555
+        }
+      ],
+      "raw_bytes_recomputed": 63430725,
+      "with_1MiB_reserve": 64479301,
+      "forbidden_payloads": []
+    }
+  ],
+  "failure_chain": {
+    "manifest": {
+      "bytes": 99435,
+      "sha256": "91a23d3f0f7d3ed489224e40cd2d3b2258885966ea071ffc5a79b14b9d9734fb"
+    },
+    "selected_entries": 214,
+    "actual_top_level_nonzero_command_or_argv_receipts": 25,
+    "all_match": true,
+    "correction": "25 is the verified count. Earlier prose count26 was an enumeration error; no26th command/argv receipt was found.",
+    "historical_collector_bytes": "13425 and14c unavailable and unexecuted; manifest explicitly says hashes only."
+  },
+  "sources_and_binaries": {
+    "sources": 59,
+    "binaries": 5,
+    "all_match": true
+  }
+}

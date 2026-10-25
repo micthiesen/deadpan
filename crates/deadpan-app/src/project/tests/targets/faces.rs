@@ -8,7 +8,10 @@ use deadpan_cli::faces::DetectedFace;
 use deadpan_core::{ExactRatio, Framing, FramingClock, FramingPose, FramingValue};
 
 use super::*;
-use crate::project::targets::{FaceJob, FaceOutcome, FaceRun, FaceScript};
+use crate::project::targets::{
+    ProposalJob, ProposalOrigin, ProposalOutcome, ProposalRun, ProposalScript, ProposedTargets,
+};
+use deadpan_cli::picture_proposals::ProposalSelection;
 
 fn face(x: f64, y: f64) -> DetectedFace {
     DetectedFace {
@@ -17,13 +20,17 @@ fn face(x: f64, y: f64) -> DetectedFace {
     }
 }
 
-fn scripted(runs: Vec<FaceRun>) -> Fixture {
-    project_with(Backend::ScriptedFaces(Arc::new(FaceScript::new(runs))))
+fn scripted(runs: Vec<ProposalRun>) -> Fixture {
+    project_with(Backend::ScriptedProposals(Arc::new(ProposalScript::new(
+        runs,
+    ))))
 }
 
-fn found(faces: Vec<DetectedFace>) -> FaceRun {
-    FaceRun::Faces {
-        faces,
+fn found(faces: Vec<DetectedFace>) -> ProposalRun {
+    ProposalRun::Proposals {
+        selection: ProposalSelection::Faces,
+        salient_regions: None,
+        faces: Some(faces),
         delay: Duration::ZERO,
     }
 }
@@ -31,7 +38,8 @@ fn found(faces: Vec<DetectedFace>) -> FaceRun {
 fn detect(fixture: &Fixture, workspace: &Workspace, ticket: u64, pts: i64) -> ProjectUpdate {
     targets(
         &fixture.service,
-        Operation::DetectFaces {
+        Operation::DetectPictureProposals {
+            selection: ProposalSelection::Faces,
             ticket,
             session: workspace.session,
             revision: workspace.document.revision_id().clone(),
@@ -41,16 +49,25 @@ fn detect(fixture: &Fixture, workspace: &Workspace, ticket: u64, pts: i64) -> Pr
     )
 }
 
-fn faces_done(service: &ProjectService, ticket: u64) -> (FaceJob, ProjectUpdate) {
-    let update = wait(service, |update| {
+fn faces_done(
+    service: &ProjectService,
+    ticket: u64,
+    first: ProjectUpdate,
+) -> (ProposalJob, ProjectUpdate) {
+    let finished = |update: &ProjectUpdate| {
         update
             .targets
             .as_ref()
-            .and_then(|targets| targets.faces.as_ref())
+            .and_then(|targets| targets.proposals.as_ref())
             .is_some_and(|job| job.ticket == ticket && job.outcome.is_some())
             && !service.is_busy()
-    });
-    let job = update.targets.as_ref().unwrap().faces.clone().unwrap();
+    };
+    let update = if finished(&first) {
+        first
+    } else {
+        wait(service, finished)
+    };
+    let job = update.targets.as_ref().unwrap().proposals.clone().unwrap();
     (job, update)
 }
 
@@ -103,19 +120,24 @@ fn proposals_never_edit_and_a_chosen_face_saves_its_target_and_framing_as_one_un
     let fixture = scripted(vec![found(vec![face(0.1, 0.2), face(0.6, 0.1)])]);
     let before = fixture.workspace.clone();
     let pts = fixture.pictures[2];
-    assert_eq!(refusal(&detect(&fixture, &before, 1, pts)), None);
-    let (job, update) = faces_done(&fixture.service, 1);
+    let started = detect(&fixture, &before, 1, pts);
+    assert_eq!(refusal(&started), None);
+    let (job, update) = faces_done(&fixture.service, 1, started);
     assert_eq!(
         (job.pts, &job.revision),
         (pts, before.document.revision_id())
     );
-    let Some(FaceOutcome::Found(faces)) = job.outcome else {
+    assert_eq!(job.selection, ProposalSelection::Faces);
+    let Some(ProposalOutcome::Found(found)) = job.outcome else {
         panic!("expected faces, got {:?}", job.outcome)
     };
+    assert_eq!(found.origin, ProposalOrigin::Scripted);
+    assert!(found.salient_regions.is_none());
+    let faces = found.faces.expect("requested faces");
     assert_eq!(faces.len(), 2);
     assert_eq!(
         update.message.as_deref(),
-        Some("2 face proposals ready. Detection made no edit.")
+        Some("2 face and 0 region proposals ready. Detection made no edit.")
     );
     // Detection is a proposal: no revision, no target, no selection.
     let head = update.workspace.unwrap_or_else(|| before.clone());
@@ -178,8 +200,10 @@ fn proposals_never_edit_and_a_chosen_face_saves_its_target_and_framing_as_one_un
 
 #[test]
 fn a_face_completion_does_not_replace_a_later_save_notice() {
-    let fixture = scripted(vec![FaceRun::Faces {
-        faces: vec![face(0.1, 0.2)],
+    let fixture = scripted(vec![ProposalRun::Proposals {
+        selection: ProposalSelection::Faces,
+        salient_regions: None,
+        faces: Some(vec![face(0.1, 0.2)]),
         delay: Duration::from_secs(1),
     }]);
     let before = fixture.workspace.clone();
@@ -203,15 +227,15 @@ fn a_face_completion_does_not_replace_a_later_save_notice() {
             .targets
             .as_ref()
             .unwrap()
-            .faces
+            .proposals
             .as_ref()
             .unwrap()
             .outcome
             .is_none()
     );
     let notice = saved.message.clone().expect("the target save has a notice");
-    assert!(!notice.contains("Finding faces"));
-    let (_, completed) = faces_done(&fixture.service, 1);
+    assert!(!notice.contains("Finding targets"));
+    let (_, completed) = faces_done(&fixture.service, 1, saved.clone());
     assert_eq!(completed.message.as_deref(), Some(notice.as_str()));
     assert_eq!(
         completed.workspace.unwrap().document.revision_id(),
@@ -227,34 +251,35 @@ fn stale_unindexed_and_unordered_detections_propose_nothing() {
     ]);
     let before = fixture.workspace.clone();
     // Unordered worker output is refused by the host's admission.
-    assert_eq!(
-        refusal(&detect(&fixture, &before, 1, fixture.pictures[1])),
-        None
-    );
-    let (job, _) = faces_done(&fixture.service, 1);
+    let started = detect(&fixture, &before, 1, fixture.pictures[1]);
+    assert_eq!(refusal(&started), None);
+    let (job, _) = faces_done(&fixture.service, 1, started);
     assert!(
-        matches!(&job.outcome, Some(FaceOutcome::Failed(reason)) if reason.contains("ordered")),
+        matches!(&job.outcome, Some(ProposalOutcome::Failed(reason)) if reason.contains("ordered")),
         "{:?}",
         job.outcome
     );
     // A PTS between pictures is not the displayed picture's indexed PTS.
-    assert_eq!(
-        refusal(&detect(&fixture, &before, 2, fixture.pictures[1] + 1)),
-        None
-    );
-    let (job, _) = faces_done(&fixture.service, 2);
+    let started = detect(&fixture, &before, 2, fixture.pictures[1] + 1);
+    assert_eq!(refusal(&started), None);
+    let (job, _) = faces_done(&fixture.service, 2, started);
     assert!(
-        matches!(&job.outcome, Some(FaceOutcome::Failed(reason)) if reason.contains("indexed")),
+        matches!(&job.outcome, Some(ProposalOutcome::Failed(reason)) if reason.contains("indexed")),
         "{:?}",
         job.outcome
     );
     // No faces is a result, not a failure.
+    let started = detect(&fixture, &before, 3, fixture.pictures[0]);
+    assert_eq!(refusal(&started), None);
+    let (job, _) = faces_done(&fixture.service, 3, started);
     assert_eq!(
-        refusal(&detect(&fixture, &before, 3, fixture.pictures[0])),
-        None
+        job.outcome,
+        Some(ProposalOutcome::Found(ProposedTargets {
+            faces: Some(Vec::new()),
+            salient_regions: None,
+            origin: ProposalOrigin::Scripted,
+        }))
     );
-    let (job, _) = faces_done(&fixture.service, 3);
-    assert_eq!(job.outcome, Some(FaceOutcome::Found(Vec::new())));
 
     // A detection entered against an older head is refused before it starts.
     let saved = save(&fixture, &before, "target-1", drawn(&fixture, 2));
@@ -264,8 +289,10 @@ fn stale_unindexed_and_unordered_detections_propose_nothing() {
 
 #[test]
 fn closing_cancels_a_running_detection_and_drains_it() {
-    let fixture = scripted(vec![FaceRun::Faces {
-        faces: vec![face(0.1, 0.2)],
+    let fixture = scripted(vec![ProposalRun::Proposals {
+        selection: ProposalSelection::Faces,
+        salient_regions: None,
+        faces: Some(vec![face(0.1, 0.2)]),
         delay: Duration::from_secs(30),
     }]);
     let before = fixture.workspace.clone();

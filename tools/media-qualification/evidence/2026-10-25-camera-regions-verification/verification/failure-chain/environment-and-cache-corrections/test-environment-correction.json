@@ -1,0 +1,14 @@
+{
+  "observed_at": "2026-10-25T09:04:30.339982+00:00",
+  "instruction": "AGENTS.md1613..1661: deadline-dependent media tests require CARGO_PROFILE_DEV_OPT_LEVEL=2; official check/gate force physical-Mac assertions.",
+  "original_runner": {
+    "path": "/tmp/deadpan-camera-regions-2026-10-25/run-before-optimized-environment.py.txt",
+    "sha256": "618132ead98cba4c00dfa2a0211b417ac3ed68108006c18d3dc60bdbdcf25b5f"
+  },
+  "corrected_runner": {
+    "path": "/tmp/deadpan-camera-regions-2026-10-25/run.py",
+    "sha256": "3325deffeac92a90c669729467381cbf48dada16e127f2b310287f82bfa4a979"
+  },
+  "correction": "Future runner invocations default CARGO_PROFILE_DEV_OPT_LEVEL=2 and DEADPAN_REQUIRE_PHYSICAL_MAC=1 and record both. The already-running proposal-packages-final process retains its actual original environment and inputs; it is not restarted or relabeled as an optimized run. Earlier results remain retained observations, not canonical deadline qualification.",
+  "required_later": "Official cargo xtask check with appropriate affected-scope filter; focused strengthened hostile identity assertion after current pipeline; full107 UI replays and quiet release regions performance before delivery."
+}

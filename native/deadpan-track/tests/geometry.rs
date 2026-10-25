@@ -277,7 +277,7 @@ fn rotated_and_anamorphic_originals_track_and_follow_in_upright_coordinates() {
                 time_base,
             };
             let (region, _) = target.region_at(point).unwrap();
-            let center = region.center.map(|v| f64::from(v) / 1_000_000.0);
+            let center = region.center().map(|v| f64::from(v) / 1_000_000.0);
             let error = error_px(fixture, (center[0], center[1]), expected[ordinal].0);
             saved_worst = saved_worst.max(error);
             assert!(

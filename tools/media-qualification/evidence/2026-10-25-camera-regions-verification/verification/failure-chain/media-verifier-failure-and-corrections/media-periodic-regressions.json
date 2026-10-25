@@ -1,0 +1,101 @@
+{
+  "scope": "pure scratch assertion regressions on retained JSON; no product invocation",
+  "driver_sha256": "739c2522410f287623f4823e9e032df0f2d573fe0e0cbce1fccd3d0272b7f38e",
+  "verification_sha256": "63974d9b6d75fc0a56ff23068468a33e4556e2073bf48cff6f3029daaa17a832",
+  "actual_retained_report_assertions_pass": true,
+  "actual_audio_evidence": {
+    "identifiable_zero_segment_starts": [
+      45056
+    ],
+    "periodic_segments_unobservable_individually": [
+      {
+        "start": 20480,
+        "peak_lag": 0
+      },
+      {
+        "start": 61440,
+        "peak_lag": 1200
+      },
+      {
+        "start": 65536,
+        "peak_lag": 1200
+      },
+      {
+        "start": 106496,
+        "peak_lag": 0
+      },
+      {
+        "start": 110592,
+        "peak_lag": -1200
+      },
+      {
+        "start": 151552,
+        "peak_lag": 1091
+      },
+      {
+        "start": 155648,
+        "peak_lag": -1200
+      }
+    ],
+    "unshifted_blocks_compared": 401,
+    "unshifted_blocks_silent": 0
+  },
+  "negative_mutations": [
+    {
+      "case": "aggregate offset cannot be compensated",
+      "rejected": true
+    },
+    {
+      "case": "uncovered output fails",
+      "rejected": true
+    },
+    {
+      "case": "partial PCM window fails",
+      "rejected": true
+    },
+    {
+      "case": "content SNR failure fails",
+      "rejected": true
+    },
+    {
+      "case": "level difference failure fails",
+      "rejected": true
+    },
+    {
+      "case": "sound in silence fails",
+      "rejected": true
+    },
+    {
+      "case": "missing block fails",
+      "rejected": true
+    },
+    {
+      "case": "weakened thresholds fail",
+      "rejected": true
+    },
+    {
+      "case": "nonzero identifiable segment fails",
+      "rejected": true
+    },
+    {
+      "case": "offset segment is never periodic evidence",
+      "rejected": true
+    },
+    {
+      "case": "uncorrelated segment fails",
+      "rejected": true
+    },
+    {
+      "case": "periodic peak without zero-lag equivalence fails",
+      "rejected": true
+    },
+    {
+      "case": "periodic lobe without separated maximum fails",
+      "rejected": true
+    },
+    {
+      "case": "periodic report cannot replace identifiable witness",
+      "rejected": true
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "native/deadpan-track/tests/generate_salient_fixtures.py": {
+    "bytes": 8816,
+    "sha256": "d6b356c189d493e7931b8e372c29ce18ff71ee79e56d47769fbf0406d7141861"
+  },
+  "native/deadpan-track/tests/picture_proposals.rs": {
+    "bytes": 13029,
+    "sha256": "f0ebc4554f173f8e7fbb3cb7012455c16ef50a971d09bfceca2a4b17eba66b66"
+  },
+  "native/deadpan-track/tests/fixtures/salient-regions-fixtures.json": {
+    "bytes": 24591,
+    "sha256": "6733b54cc32601861146d2f4f78f6bded82da5ccd5c9eea1171699275720f03c"
+  },
+  "native/deadpan-track/tests/fixtures/SALIENT_REGIONS.md": {
+    "bytes": 3511,
+    "sha256": "f7f1620c93ace7806a3ab55b485ed77adbdc3bba72ee2c3731acc8bdf7ab9cbd"
+  },
+  "native/deadpan-track/tests/fixtures/salient-regions-sar.mkv": {
+    "bytes": 635050,
+    "sha256": "86f4b5e08e0c4851811bc5a8412bd43eb7c94e8cf9d74b8cf775142d23e078f3"
+  },
+  "native/deadpan-track/tests/fixtures/salient-mug-aperture.mp4": {
+    "bytes": 11790,
+    "sha256": "163f1d080615c1232d2c467e1d1fd4d1eef3ade865824130ac30b7a1baa036cb"
+  },
+  "native/deadpan-track/tests/fixtures/salient-mug.png": {
+    "bytes": 9379,
+    "sha256": "5df85d511659a008b734a5e843cc5b13b9ea8e989c4b00423e036feb8667f1e8"
+  },
+  "native/deadpan-track/tests/fixtures/salient-audio.wav": {
+    "bytes": 768812,
+    "sha256": "8f2ede07d4e8aa6743b6f441f5fb3cc6c6347a333f7b4ede15c52315f7195089"
+  },
+  "native/deadpan-track/tests/fixtures/salient-two.png": {
+    "bytes": 40434,
+    "sha256": "f34a618eb462bb3afe5a024671cf5459cbf9f97d05b2bbb54b3f0eef4218389d"
+  },
+  "native/deadpan-track/tests/fixtures/salient-mug-rotated-90.mp4": {
+    "bytes": 11750,
+    "sha256": "b8d58a886c71674e2189175862f963dfe5f4deaeb4b464fd95bddc3605df2f69"
+  },
+  "native/deadpan-track/tests/fixtures/salient-blank.png": {
+    "bytes": 4876,
+    "sha256": "95f59820f0abfb2f26c04ec6718960c6548e4687b5a15c5dc27f8b5900f1cd84"
+  },
+  "native/deadpan-track/tests/fixtures/salient-regions.mkv": {
+    "bytes": 635038,
+    "sha256": "cc181467a19d92c3b08edf72ff34d4eaac6d4887e8e05311305ed51db7576f66"
+  },
+  "/tmp/deadpan-camera-regions-2026-10-25/package-checks.py": {
+    "bytes": 30716,
+    "sha256": "1c028843f7849a466443a2904a7581134c902c0fc89052cbe16f94190b89d830"
+  }
+}

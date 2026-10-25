@@ -1,0 +1,52 @@
+{
+  "scope": "Root full-size inspection of final release functional checkpoints against the established workspace design and actual semantic/paint checks. No physical display or OS input claim.",
+  "source_manifest": {
+    "path": "/private/tmp/deadpan-camera-regions-2026-10-25/verified-identities.json",
+    "bytes": 11332,
+    "sha256": "eda59edea13827c5115bc87f284176c961ff3021308f4bf64f94eab739712d2b"
+  },
+  "images": [
+    {
+      "input": {
+        "path": "/private/tmp/deadpan-camera-regions-2026-10-25/native-regions-verified/regions-070.png",
+        "bytes": 307644,
+        "sha256": "b8c3dbb3505175709338e7d271d93b7e4138afb841c64f5be3bf05b4119ce7cb"
+      },
+      "observation": "Real non-face proposal and digit6 are fully visible in inspector; overlay encloses the mug. No automatic acceptance."
+    },
+    {
+      "input": {
+        "path": "/private/tmp/deadpan-camera-regions-2026-10-25/native-regions-verified/regions-122.png",
+        "bytes": 319182,
+        "sha256": "5e29e66a7a21eabaed562db6cd8f8af5a5c7986366321babab0225c79dac7f0c"
+      },
+      "observation": "Saved/fixed choices retain digits and the first mixed proposal remains visible with kind; page and close/cancel controls are visible. Lower explanatory text can scroll."
+    },
+    {
+      "input": {
+        "path": "/private/tmp/deadpan-camera-regions-2026-10-25/native-regions-verified/regions-123.png",
+        "bytes": 361295,
+        "sha256": "1b5fd71e33acb5fe1ff7d50dff99076364f4452f8f49635af8e6504b7aa3345e"
+      },
+      "observation": "Explicit atomic region command saves target and1.20x Follow, with unchanged Original/edit duration, sound event and cursor."
+    },
+    {
+      "input": {
+        "path": "/private/tmp/deadpan-camera-regions-2026-10-25/native-faces-verified/faces-121.png",
+        "bytes": 353103,
+        "sha256": "80a1e1757fab4fc2a49364fccc5963efee66a3178d65ae0268343da81be0568b"
+      },
+      "observation": "Face choice retains existing Follow scale animation and preserved source/edit duration."
+    }
+  ],
+  "regions_report": {
+    "path": "/private/tmp/deadpan-camera-regions-2026-10-25/native-regions-verified/report.json",
+    "bytes": 37635143,
+    "sha256": "808d802e7a3f021afd278800bc7034506200708861b4f180269db1637ebd939b"
+  },
+  "faces_report": {
+    "path": "/private/tmp/deadpan-camera-regions-2026-10-25/native-faces-verified/report.json",
+    "bytes": 20632723,
+    "sha256": "0c6cc6596bc7592aedbb437464036b4db5d88fb29f86dfefd52ff6d437786a79"
+  }
+}

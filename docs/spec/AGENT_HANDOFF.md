@@ -2,7 +2,144 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current continuation, 2026-10-24
+## Current continuation, 2026-10-25
+
+[Camera salient-region proposals](../qualification/camera-regions-2026-10-25.md)
+are implemented and verified on the current release through native regions/
+faces, inspected visuals, quiet performance, actual media/portable history and
+scoped copied-bundle worker relocation. Independent final raw audit passes10/10
+groups with no findings within scope. Three immutable evidence collections and
+their independent post-publication audit pass. The feature commit/push and
+milestone149 remain pending; no requirement/gate or coverage increase is claimed.
+
+Base889a06f0738a7347faf1bda53463cd7e35ae07b1; scratch
+/tmp/deadpan-camera-regions-2026-10-25. verified-identities.json pins release59
+source/fixture inputs, five removed paths and five executables. App is78,672,480B,
+SHA1a420525e53ba5671d10531f26ab6bae0c37b2968873e312d680d07d5cfc4a2b;
+other four equal the prior frozen release. Bundle build binds59+three config
+inputs. Earlier48/49/50/51/52/53/54/58 identities retain their real scope;
+working-tree runtime guards never substitute for an old binary's build identity.
+
+Canonical picture_proposals owns protocol2, one verified attempt copy, exact
+picture decode/BGRA buffer/handler for Faces/SalientRegions/Both. Saliency2 is
+pinned within unchanged macOS15 minimum; face default remains positive actual
+revision3 here. Separate typed collections/actual runtime and exact canonical
+FACE_ENGINE/SALIENCY_ENGINE refuse wrong mode/kind/identity/PTS/provenance.
+64-per-kind/one saliency-image limits admit empty success but no missing/partial
+Both. Saliency has no score/rank. SDK-permitted native clipping remains; strict
+wire normalized geometry is not repaired. Core58/SQLite87/target storage unchanged.
+
+Camera f presents stable mixed9-key pages, explicit one-target acceptance and
+separate Enter framing; region:N atomically saves one target+framing while face:N
+stays Faces-only. Current layout prioritizes visible proposal choices. Matching
+stale completion clears only its own pending ticket; typed cancellation and
+actual f retry retain exact draft/Follow/clock/selection. Real blank/mug and
+atomic requests use Vision; later guard/fault/race cases stay explicitly scripted.
+
+Final59 strict --no-test0/33.584s, debug build0/18.491s, release0/159.100s.
+Regions110 and faces69 plus separate Kestrel pass0/15.403s and14.367s.
+Root inspects regions070/122/123 and faces121; all nine final proposal paint
+checks pass. Quiet regions109+Kestrel0/14.694s:3491 frame samples p991.001542ms/
+max6.431958;120 input-state p991.761042/max1.775917;22 request-picture p999.274667.
+Intentional600ms guards produce commit789.970ms/picture792.958ms end-to-end
+maxima; no overall sub-ten-ms or physical latency claim. Screenshots/readback
+are outside timing samples; cache/power/thermal limits remain explicit.
+
+Original official full107 exits1/584.788s:94PASS/sevenFAIL/six fixtureSKIP.
+After only task incremental-cache cleanup, model-packs27 passes on exact original
+executables; observed available15,280,164,864→77,745,332,224B is not du-freed bytes.
+Five source58/debug-fourth passes are faces69/keymap-error17/scoped-plays1319/
+storage-failure14/backups59, each with Kestrel. Source58 delete-range retains
+236pass/one failure; new source59 frames setup passes314+Kestrel0/17.236s.
+Repairs are harness setup/assertions: Cmd+N bootstrap, captured typed Split/
+storage fault, valid unity Partition negative, matching owner reply/publication
+wake and native cancellation semantics. Independent late/boundary reviews have
+no findings. Root checks the latest frames.rs follow-up against the reviewed
+pattern and strict/native checks pass; no dedicated fresh independent frame
+follow-up review is claimed.
+Root inspects six corrected functional captures, with58/59 scopes pinned.
+
+audit/camera-regions-final-audit-verified.json SHA3456e7f11bb9060b20980eec5d075feea2ce24b467d422cade59b9ea1eec7c2b
+establishes101 runnable latest passes across explicit mixed identities, not one
+all-green107 invocation on final59. Six SKIPs remain: large-first-pause,
+ai-pause-ready, generated-picture, generated-playback, generated-loop and
+ai-playback-interference, all requiring explicit project fixtures. Full101 raw
+reports total about1.45GiB and stay pinned/indexed; bounded packages retain the
+index/selected evidence, not all full reports.
+
+Final media15 operations0/7.433s binds actual new retained native project.
+All120 picture fidelity checks, authored rational-provider oracle/metadata pass;
+only4 adjacent index comparisons are observable,234 unobservable in repeated
+sections. Full192192 stereo48k PCM/401 unshifted blocks pass aggregate offset0:
+one unique4096-sample witness at45056, seven individually periodic/unobservable.
+No shifting/trimming/event alignment/tolerance change. Native/portable selected
+eight tables exact:18revisions/11history/3steps; initial1/edit11/undo4/redo2.
+Revision74571e16-7692-44b7-9213-8e732d93c705; moviec2ef81c7…/153334B,
+verification4dbcdde2…, history66c6275e…. Existing AAC delay/padding edits retained.
+Earlier media-wrapper uniqueness failure, documented-policy repair,14 negative
+JSON regressions and independent no-finding helper review remain preserved.
+
+Six fresh readonly section-START baselines0/.787s preserve state/bytes and differ
+from media midpoint queries. package-verified-run0/246.396s includes normal
+--without-ai-runtime build233s and copied scrubbed relocation passed at11:40:26.954Z.
+Actual ad-hoc signatures/audit/doctor/helpers and six copied proposal cases
+match baselines; CLI reconstructed durable doc/SQLite/project/bundle/source/
+reference bytes remain unchanged. Official full bundle-verify is intentionally
+skipped_incompatible for unconditional AI checks, with exact skipped receipt.
+This is narrow worker relocation on this Mac, not full-AI/clean-Mac packaging.
+
+All earlier compile/oracle/container/reproduction/disk/setup/native/harness/
+routing/periodic-driver failures and old sources remain distinct in the
+qualification. Historical Native two/App three leaky warnings remain; serial
+App3 recheck is clean0.143s execution/87.488s total at source58,1277 skipped.
+Focused/selected test counts overlap and zero actual doctests are not coverage.
+
+Raw audit hashes: MD2cba2fefb64fccfe29c4f3d5693a674329fe6d1760311f881c0126aefd1a6c02;
+JSONa0b85390d7e84097c0b017bb32aa3ad2743a0cbe030230eeb335638b465ddc48.
+Auditor rehashes59 source/five release/62 package/eleven refs,41 package
+commands/thirteen Mach-O signature records and six semantics. Media eight
+AUTHORED tables/full Core doc equal portable; no export operational-row
+conservation claim. Package read-only all46 SQL tables/fourteen persistent
+files exact. Production bundle executables have separate distinct pins from
+UI-harness release. No full-AI/clean-Mac/whole-goal claim.
+
+Published inventories are
+[Primary](../../tools/media-qualification/evidence/2026-10-25-camera-regions/files.json)
+SHA4214e4791e630692c03be40990fd678411981ba3315650579eaf49c772b0392d,
+[Regressions](../../tools/media-qualification/evidence/2026-10-25-camera-regions-regressions/files.json)
+SHA8aa48961430500cb2cbbee11d6d55299f67e556011ac282857eb73497dbbb781,
+and [Verification](../../tools/media-qualification/evidence/2026-10-25-camera-regions-verification/files.json)
+SHA5cb1ee835c32a371a70957f829ba1b6e4b2b136c71e4dd40a6f9f33e329b4cf2.
+Totals576 payloads/579 files/38,682,216 stored bytes; each collection including
+metadata stays below256MiB. Nine TARs retain583 regular members. Two explicitly
+omitted nonauthored portable SQLite sidecars total32,768 bytes, including the
+empty WAL; no authored omission. Verification acyclically binds the first two
+inventories/metadata and preserves all five earlier doc snapshots. The25 actual
+nonzero attempts retain75 receipt/stdout/stderr files. Full raw replay reports
+stay indexed/pinned rather than all copied; SDK excerpt/identity metadata do
+not imply full SDK/header or executable-byte retention. Historical collector
+13425/14c sources were unavailable and never executed, with hash-only records.
+
+The [post-publication byte audit](../../tools/media-qualification/evidence/2026-10-25-camera-regions-audit.json)
+passes0/.75555s, no findings, source59/five identities stable; result
+SHAb07bfe825f80f703928fcc87e9486c1c2030d1ecc77b308517140673ec8cf9b0,
+verifierd38d3068acba4310905282481fa97327c1398664d5b6e58799b469cfd5453172,
+run receipt16303d3cdcbf289137566491928f0fc30d6e8cfac7dde5a7965fcad09ee176d5.
+Its six standalone files total45,339 bytes; Root separately re-reads all three
+inventory hashes. This read-only publication audit runs no product commands.
+Root's staged whitespace check exits2 only for four immutable raw stdout
+blank-at-EOF warnings (changed-doctests, commands-write, native-real-2/3), all
+matching inventory bytes; authored source/document-scoped whitespace is clean.
+
+Root owns the pending feature commit and milestone149, Git/progress/artifact and
+FRAMING/TARGETS/SEMANTIC_MACROS/COMMANDS/PARITY/DEPENDENCIES/packaging text.
+Latest focus-only b94de365 is pushed; artifact14 refresh at12:06 UTC passes the
+full1323-line/field comparison and phone review. These focus-only updates
+retain milestone148/89%, eight Complete/sixteen Partial, effects five of thirteen.
+The full normative goal and remaining ranged following/framing scope stay open.
+Preserve foreign fuzz/Cargo.lock/.claude and every earlier immutable checkpoint.
+
+## Earlier scoped whole-owner continuation, 2026-10-24
 
 [Scoped whole-owner following creep](../qualification/scoped-follow-creep-2026-10-24.md)
 is implemented and locally verified through broad/native/media and independent

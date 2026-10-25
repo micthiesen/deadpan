@@ -1,0 +1,26 @@
+{
+  "review_only_not_driver_execution": true,
+  "debug_report_sha256": "bebc30812373ce9eb880ce57419a4c1f7a492b3c6ee0e9862725e5000aa86220",
+  "debug_release_guard_retained": true,
+  "required_checks_present": 22,
+  "exclusions_exact": true,
+  "head_and_prior_committed_checkpoint_elision_observed": [
+    [
+      "edit",
+      11
+    ],
+    [
+      "redo",
+      2
+    ],
+    [
+      "undo",
+      4
+    ]
+  ],
+  "native_final_and_prior_full_documents_match_active_patch": true,
+  "all8authority_tables_present": true,
+  "source_and_separate_sound_shapes_match": true,
+  "measured_video_and_sample_clocks_match": true,
+  "no_product_invocations": true
+}

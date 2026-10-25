@@ -286,10 +286,52 @@ pub(super) fn storage_failure(d: &mut Driver<'_>) -> Result<(), String> {
     super::transcript::focus_your_edit(d)?;
     d.chord(&[Key::G, Key::G, Key::Num1, Key::Num0, Key::L])?;
     let before = d.revision();
+    // The existing failure seam addresses typed Edit requests. Native :split
+    // now uses a semantic instruction, so submit the captured direct form to
+    // that seam; the successful recovery below still uses the real command.
+    let (request, session) = {
+        let app = d.app();
+        let workspace = app
+            .workspace
+            .as_ref()
+            .ok_or("No storage replay workspace")?;
+        let node = app.selected_beat.clone().ok_or("No selected split beat")?;
+        let at = selection::split_boundary(&app.beat_rows, &node, app.sequence_cursor)
+            .ok_or("Storage replay split is not at an interior boundary")?;
+        (
+            ProjectRequest::Edit {
+                expected_session: workspace.session,
+                expected_revision: workspace.document.revision_id().clone(),
+                scope: app.sequence_scope.clone(),
+                cursor: ProjectFrame(
+                    i64::try_from(app.sequence_cursor).map_err(|error| error.to_string())?,
+                ),
+                edit: ProjectEdit::Split { node, at },
+            },
+            workspace.session,
+        )
+    };
     d.app().service.inject_storage_failure_for_check();
-    d.command("split")?;
+    if !d.app_mut().submit(request) {
+        return Err(format!(
+            "Storage replay Edit was not admitted: {}",
+            d.snapshot()
+        ));
+    }
     d.wait_for("Refusal delivered", |app| {
-        app.project_error.is_some() && !app.service.is_busy()
+        !app.service.is_busy()
+            && app
+                .project_error
+                .as_deref()
+                .is_some_and(|error| crate::recovery::storage_code(error) == Some("DiskFull"))
+            && app
+                .recovery
+                .storage
+                .as_ref()
+                .is_some_and(|alert| alert.code == "DiskFull")
+            && app.workspace.as_ref().is_some_and(|workspace| {
+                workspace.session == session && workspace.document.revision_id().as_str() == before
+            })
     })?;
     d.step("Alert painted", true)?;
     let error = d.app().project_error.clone().unwrap_or_default();

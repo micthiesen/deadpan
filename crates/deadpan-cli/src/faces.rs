@@ -1,27 +1,21 @@
-//! Host side of face proposals.
-//!
-//! The host resolves one indexed picture of the Original (the picture
-//! displayed at a source PTS), copies the verified retained bytes into a fresh
-//! attempt workspace and runs the trusted `deadpan-track` executable in its
-//! `detect-faces` mode through the shared process supervisor. It admits the
-//! reported faces only after clean teardown and a strict check: the exact
-//! picture, at most [`MAX_FACES`] valid rectangles, confidences in `[0, 1]`
-//! and a strict left-to-right, then top-to-bottom order. Faces are proposals:
-//! detection never edits a project. [`face_target`] turns one into an
-//! ordinary static attention target that a caller may save explicitly.
+//! Face-only compatibility facade over the shared exact-picture proposal host.
+//! Public face numbering, reports, explicit acceptance and error codes remain.
 
+use crate::picture_proposals::{self, PictureProposalRequest, ProposalError, ProposalSelection};
+use crate::tracking::{TrackingError, TrackingRuntime};
+use deadpan_core::{AssetId, AttentionTarget, SourceTimeBase};
+pub use deadpan_jobs::picture_proposals::{DetectedFace, MAX_FACES, validate_faces};
 use std::path::Path;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::AtomicBool;
 use std::time::{Duration, Instant};
 
-use deadpan_analysis::target_region;
-use deadpan_core::{AssetId, AttentionTarget, SourceSpan, SourceTimeBase, SourceTimestamp};
-use deadpan_jobs::faces::{self, ExpectedStream, FaceProtocol, HostMessage, WorkerMessage};
-pub use deadpan_jobs::faces::{DetectedFace, MAX_FACES, RuntimeReport, validate_faces};
-use deadpan_jobs::process::{ProcessEvent, ProcessLimits, ProcessSpec, SupervisedProcess};
-use deadpan_jobs::{AttemptId, CancellationToken, RequestId, WorkspaceArtifact};
-
-use crate::tracking::{TrackingError, TrackingRuntime};
+/// Preserve the face report's existing runtime shape.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RuntimeReport {
+    pub engine: String,
+    pub request_revision: u64,
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum FaceError {
@@ -58,8 +52,19 @@ impl From<TrackingError> for FaceError {
     }
 }
 
-fn protocol_error(error: impl std::fmt::Display) -> FaceError {
-    FaceError::Protocol(error.to_string())
+impl From<ProposalError> for FaceError {
+    fn from(error: ProposalError) -> Self {
+        match error {
+            ProposalError::Unavailable(reason) => Self::Unavailable(reason),
+            ProposalError::Request(reason) => Self::Request(reason),
+            ProposalError::Cancelled => Self::Cancelled,
+            ProposalError::Deadline => Self::Deadline,
+            ProposalError::Worker(reason) => Self::Worker(reason),
+            ProposalError::Protocol(reason) => Self::Protocol(reason),
+            ProposalError::Supervisor(error) => Self::Supervisor(error),
+            ProposalError::Io(error) => Self::Io(error),
+        }
+    }
 }
 
 /// Which picture to analyse.
@@ -71,34 +76,7 @@ pub struct FaceRequest {
     pub at_pts: i64,
 }
 
-/// A verified copy of the Original and the exact picture to analyse,
-/// prepared from a store that may be closed afterwards.
-pub struct PreparedFaces {
-    workspace: tempfile::TempDir,
-    source: WorkspaceArtifact,
-    stream: ExpectedStream,
-    /// The analysed asset, its video's time base, and the picture's exact
-    /// indexed PTS and ordinal.
-    pub asset: AssetId,
-    pub time_base: SourceTimeBase,
-    pub pts: i64,
-    pub ordinal: usize,
-    /// The end of the asset's measured video span.
-    pub video_end: i64,
-    /// The analysed picture's exact upright aspect, which a face target
-    /// records (`crate::tracking::exact_display_aspect`).
-    pub display_aspect: Option<deadpan_core::ExactRatio>,
-    /// The head document the picture was resolved against.
-    pub head: deadpan_core::ProjectDocument,
-    /// The Original's content identity.
-    pub content: String,
-}
-
-impl PreparedFaces {
-    pub fn stream(&self) -> &ExpectedStream {
-        &self.stream
-    }
-}
+pub type PreparedFaces = picture_proposals::PreparedPictureProposals;
 
 /// Faces found in one picture and what the worker reported about it.
 #[derive(Debug, Clone)]
@@ -112,120 +90,39 @@ pub struct FaceDetection {
     pub worker_elapsed: Duration,
 }
 
-/// Resolve the picture against the qualified index and the asset's measured
-/// video span, and copy the verified Original into a new attempt workspace.
 pub fn prepare_faces(
     store: &deadpan_store::ProjectStore,
     request: &FaceRequest,
     cancelled: &AtomicBool,
     deadline: Instant,
 ) -> Result<PreparedFaces, FaceError> {
-    let unavailable = |error: &dyn std::fmt::Display| FaceError::Unavailable(error.to_string());
-    let receipt = crate::shots::shot_receipt(store, request.asset.as_ref())
-        .map_err(|error| unavailable(&error))?;
-    let asset = match &request.asset {
-        Some(asset) => asset.clone(),
-        None => match store.single_source_state().map_err(|e| unavailable(&e))? {
-            Some(deadpan_store::single_source::SingleSourceState::Ready { asset, .. }) => asset,
-            _ => {
-                return Err(FaceError::Unavailable(
-                    "project has no ready Original; choose a registered source asset".into(),
-                ));
-            }
-        },
-    };
-    let document = store.snapshot().map_err(|e| unavailable(&e))?;
-    let record = document
-        .assets()
-        .get(&asset)
-        .ok_or_else(|| FaceError::Unavailable("the asset is not registered".into()))?;
-    let video_span = record
-        .video
-        .ok_or_else(|| FaceError::Unavailable("the asset has no video span".into()))?;
-    if record.source_qualification.as_ref() != Some(receipt.id()) {
-        return Err(FaceError::Unavailable(
-            "the asset's qualification receipt differs from the project head".into(),
-        ));
-    }
-    let time_base = video_span.start().time_base;
-    let video = receipt
-        .snapshot()
-        .video()
-        .ok_or_else(|| FaceError::Unavailable("the source has no qualified picture".into()))?;
-    let index = video.index().index();
-    let frames = index.frames();
-    let interpretation = video.interpretation();
-    let after = frames.partition_point(|frame| frame.pts <= request.at_pts);
-    let ordinal = after.checked_sub(1).ok_or_else(|| {
-        FaceError::Request("no picture is displayed before the first indexed picture".into())
-    })?;
-    let pts = frames[ordinal].pts;
-    if pts < video_span.start().ticks || pts >= video_span.end().ticks {
-        return Err(FaceError::Request(
-            "the picture lies outside the asset's measured video span".into(),
-        ));
-    }
-    let stream = ExpectedStream {
-        interpretation: document.source_interpretations().get(&asset).copied(),
-        stream_index: video.index().stream_index(),
-        width: interpretation.width,
-        height: interpretation.height,
-        clean_aperture: interpretation.clean_aperture,
-        time_base_num: interpretation.time_base_num,
-        time_base_den: interpretation.time_base_den,
-        rotation_quarter_turns: interpretation.rotation_quarter_turns,
-    };
-    let base = index.time_base();
-    if u64::from(base.numerator()) * u64::from(stream.time_base_den)
-        != u64::from(base.denominator()) * u64::from(stream.time_base_num)
-        || base != time_base
-    {
-        return Err(FaceError::Unavailable(
-            "the picture index and its interpretation disagree on the time base".into(),
-        ));
-    }
-    let content = receipt.original().content().to_string();
-    let (workspace, source) = crate::tracking::copy_verified_original(
+    picture_proposals::prepare_picture_proposals(
         store,
-        &receipt,
-        video.index().content(),
-        "deadpan-faces-",
+        &PictureProposalRequest {
+            asset: request.asset.clone(),
+            at_pts: request.at_pts,
+            selection: ProposalSelection::Faces,
+        },
         cancelled,
         deadline,
-    )?;
-    Ok(PreparedFaces {
-        workspace,
-        source,
-        stream,
-        asset,
-        time_base,
-        pts,
-        ordinal,
-        video_end: video_span.end().ticks,
-        display_aspect: crate::tracking::exact_display_aspect(interpretation),
-        head: document,
-        content,
-    })
+    )
+    .map_err(Into::into)
 }
 
-/// Admit faces reported for `pts`: the prepared picture exactly, and a
-/// bounded, valid, strictly ordered list. Every path that supplies faces,
-/// including test seams, goes through this check.
 pub fn admit_faces(
     prepared: &PreparedFaces,
     pts: i64,
     faces: Vec<DetectedFace>,
 ) -> Result<Vec<DetectedFace>, FaceError> {
-    if pts != prepared.pts {
+    if prepared.selection() != ProposalSelection::Faces || pts != prepared.pts {
         return Err(FaceError::Protocol(
-            "faces were reported for a different picture".into(),
+            "faces were reported for a different picture or detector selection".into(),
         ));
     }
     validate_faces(&faces).map_err(FaceError::Protocol)?;
     Ok(faces)
 }
 
-/// Run one supervised detection attempt on the prepared picture.
 pub fn detect_faces(
     runtime: &TrackingRuntime,
     prepared: &PreparedFaces,
@@ -233,140 +130,28 @@ pub fn detect_faces(
     cancelled: &AtomicBool,
     deadline: Instant,
 ) -> Result<FaceDetection, FaceError> {
-    crate::tracking::check(cancelled, deadline)?;
-    if attempt.contains('/') || attempt.starts_with('.') {
+    if prepared.selection() != ProposalSelection::Faces {
         return Err(FaceError::Request(
-            "an attempt name is one plain path component".into(),
+            "face detection needs a face-only prepared request".into(),
         ));
     }
-    let request_id = RequestId::new(format!("faces-{attempt}")).map_err(protocol_error)?;
-    let attempt_id = AttemptId::new(attempt).map_err(protocol_error)?;
-    let token = CancellationToken::new(format!("cancel-{attempt}")).map_err(protocol_error)?;
-    let remaining = deadline
-        .saturating_duration_since(Instant::now())
-        .min(Duration::from_secs(60 * 60));
-    let timeout_millis = u64::try_from(remaining.as_millis()).unwrap_or(u64::MAX);
-    if timeout_millis == 0 {
-        return Err(FaceError::Deadline);
-    }
-    let request = HostMessage::DetectFaces {
-        protocol: faces::VERSION,
-        request: request_id,
-        attempt: attempt_id,
-        cancellation_token: token,
-        source: prepared.source.clone(),
-        stream: Box::new(prepared.stream),
-        pts: prepared.pts,
-        timeout_millis,
-    };
-    let mut process = SupervisedProcess::<FaceProtocol>::spawn(
-        ProcessSpec {
-            executable: runtime.executable.clone(),
-            arguments: vec![faces::WORKER_ARGUMENT.into()],
-            environment: runtime.environment.clone(),
-            workspace: prepared.workspace.path().to_path_buf(),
-            limits: ProcessLimits {
-                maximum_duration: remaining,
-                cancellation_grace: Duration::from_secs(2).min(remaining),
-                exit_grace: Duration::from_secs(5).min(remaining),
-            },
-        },
-        request,
+    let found = picture_proposals::detect_picture_proposals(
+        runtime, prepared, attempt, cancelled, deadline,
     )?;
-    let mut completion = None;
-    let mut failure = None;
-    let mut was_cancelled = false;
-    while !process.is_finished() {
-        let now = Instant::now();
-        if cancelled.load(Ordering::Acquire) && !was_cancelled {
-            was_cancelled = true;
-            process.request_cancel(now)?;
-        }
-        if now >= deadline {
-            process.request_cancel(now)?;
-            // Drain to a stopped receipt (bounded) before the workspace goes.
-            if let Err(cleanup) = process.finish_owned_work(Instant::now() + Duration::from_secs(5))
-            {
-                return Err(FaceError::Worker(format!(
-                    "face detection stopped at its deadline; worker cleanup is unconfirmed: {cleanup}"
-                )));
-            }
-            return Err(if was_cancelled {
-                FaceError::Cancelled
-            } else {
-                FaceError::Deadline
-            });
-        }
-        for event in process.poll(now)? {
-            match event {
-                ProcessEvent::Message(message) => match *message {
-                    // The protocol adapter has checked identity, picture and faces.
-                    WorkerMessage::Completed {
-                        pts,
-                        faces,
-                        runtime,
-                        decode_millis,
-                        vision_millis,
-                        elapsed_millis,
-                        ..
-                    } => {
-                        completion = Some((
-                            pts,
-                            faces,
-                            runtime,
-                            [decode_millis, vision_millis, elapsed_millis],
-                        ));
-                    }
-                    WorkerMessage::Failed { diagnostic, .. } => {
-                        failure.get_or_insert_with(|| {
-                            FaceError::Worker(diagnostic.as_str().to_owned())
-                        });
-                    }
-                    WorkerMessage::Cancelled { .. } if was_cancelled => {}
-                    WorkerMessage::Cancelled { .. } => {
-                        failure.get_or_insert_with(|| {
-                            FaceError::Protocol("unrequested cancellation".into())
-                        });
-                    }
-                },
-                ProcessEvent::Fault(reason) => {
-                    failure.get_or_insert(FaceError::Worker(reason));
-                }
-                ProcessEvent::Exited {
-                    status,
-                    cancellation_escalated,
-                } => {
-                    if (!status.success() || cancellation_escalated)
-                        && !was_cancelled
-                        && failure.is_none()
-                    {
-                        failure = Some(FaceError::Worker(format!(
-                            "face detection worker exited {status}"
-                        )));
-                    }
-                }
-            }
-        }
-        if !process.is_finished() {
-            std::thread::park_timeout(Duration::from_millis(5));
-        }
-    }
-    if let Some(error) = failure {
-        return Err(error);
-    }
-    if was_cancelled {
-        return Err(FaceError::Cancelled);
-    }
-    let (pts, faces, runtime, [decode, vision, elapsed]) =
-        completion.ok_or_else(|| FaceError::Protocol("no clean completion".into()))?;
-    let faces = admit_faces(prepared, pts, faces)?;
+    let faces = found
+        .proposals
+        .faces
+        .expect("admitted face-only collection");
     Ok(FaceDetection {
-        pts,
-        faces,
-        runtime,
-        decode_elapsed: Duration::from_millis(decode),
-        vision_elapsed: Duration::from_millis(vision),
-        worker_elapsed: Duration::from_millis(elapsed),
+        pts: found.pts,
+        faces: faces.faces,
+        runtime: RuntimeReport {
+            engine: faces.runtime.engine,
+            request_revision: faces.runtime.request_revision,
+        },
+        decode_elapsed: found.decode_elapsed,
+        vision_elapsed: found.vision_elapsed,
+        worker_elapsed: found.worker_elapsed,
     })
 }
 
@@ -407,27 +192,16 @@ pub fn face_target(
     pts: i64,
     end: i64,
 ) -> Result<AttentionTarget, FaceError> {
-    let span = SourceSpan::new(
-        SourceTimestamp {
-            ticks: pts,
-            time_base,
-        },
-        SourceTimestamp {
-            ticks: end,
-            time_base,
-        },
-    )
-    .map_err(|error| FaceError::Request(error.to_string()))?;
-    Ok(AttentionTarget {
+    crate::picture_proposals::region_target(
+        &face.region,
         label,
         asset,
-        span,
-        region: target_region(&face.region).into(),
-        samples: Vec::new(),
-        corrections: Vec::new(),
-        provenance: None,
+        time_base,
         display_aspect,
-    })
+        pts,
+        end,
+    )
+    .map_err(Into::into)
 }
 
 /// Prepare and run one detection read-only and describe it as JSON.
@@ -448,14 +222,14 @@ pub fn detect_project(
     let detection = detect_faces(runtime, &prepared, &attempt, cancelled, deadline)?;
     let millis = crate::tracking::millis;
     Ok(serde_json::json!({
-        "protocol": faces::VERSION,
+        "protocol": deadpan_jobs::picture_proposals::VERSION,
         "content": prepared.content,
         "asset": prepared.asset.as_str(),
         "revision": prepared.head.revision_id(),
         "stream": {
-            "stream_index": prepared.stream.stream_index,
-            "time_base": [prepared.stream.time_base_num, prepared.stream.time_base_den],
-            "rotation_quarter_turns": prepared.stream.rotation_quarter_turns,
+            "stream_index": prepared.stream().stream_index,
+            "time_base": [prepared.stream().time_base_num, prepared.stream().time_base_den],
+            "rotation_quarter_turns": prepared.stream().rotation_quarter_turns,
         },
         "pts": detection.pts,
         "picture": prepared.ordinal,

@@ -93,11 +93,32 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d.snapshot(),
     )?;
 
-    // Withhold a real edit reply until command entry captures Original absence.
+    // Withhold a real typed service edit reply until command entry captures
+    // Original absence. A pending routed semantic Split deliberately blocks
+    // command entry; this witness needs only a late service continuation.
     d.key(Key::Escape)?;
     d.chord(&[Key::G, Key::G, Key::Num2, Key::Num0, Key::L])?;
+    let workspace = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("No delayed deletion split workspace")?;
+    let request = ProjectRequest::Edit {
+        expected_session: workspace.session,
+        expected_revision: workspace.document.revision_id().clone(),
+        cursor: ProjectFrame(20),
+        scope: d.app().sequence_scope.clone(),
+        edit: ProjectEdit::Split {
+            node: d
+                .app()
+                .selected_beat
+                .clone()
+                .ok_or("No delayed deletion split target")?,
+            at: deadpan_core::FrameDuration::new(20).map_err(|error| error.to_string())?,
+        },
+    };
     d.app_mut().feedback.hold_project_updates = true;
-    d.key(Key::S)?;
+    d.app().service.submit(request)?;
     d.wait_for("Split commits while completion is withheld", |app| {
         !app.service.is_busy()
     })?;
@@ -106,6 +127,18 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.events(
         "Type delete with no command-entry Edit target",
         vec![egui::Event::Text("delete".into())],
+    )?;
+    d.check(
+        "The delayed typed Split leaves command entry with captured Original absence",
+        d.app().view == View::Source
+            && d.app().command_open
+            && d.app().command == "delete"
+            && !d.app().macros.is_pending()
+            && d.app()
+                .delete_hint()
+                .is_some_and(|hint| hint.contains("Return to Your edit")),
+        json!({"context":"Original","command":"delete","pending_macro":false,"target":"captured absence"}),
+        d.snapshot(),
     )?;
     paint_hint(
         d,

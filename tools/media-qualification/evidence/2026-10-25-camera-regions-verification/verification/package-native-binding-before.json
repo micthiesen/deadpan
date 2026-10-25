@@ -1,0 +1,30 @@
+{
+  "package-checks.py": {
+    "sha256": "4c4fa4a2901a8d3f5c574c47806a057756f6f3b30c605dfc057c4847e79d6dad",
+    "bytes": 33098
+  },
+  "package-checks-config.example.json": {
+    "sha256": "8f16e5fc356e0f326613817b8f50c96ec1292a729a075a37e58f0be952ab0c3c",
+    "bytes": 2431
+  },
+  "package-cfr-preparation.json": {
+    "sha256": "690a1f8af519d20e139402b64d15c1b7390136e6a8607a7033471adf303cdbee",
+    "bytes": 911
+  },
+  "package-driver-preparation.json": {
+    "sha256": "3f3940e8e879635c5aae76d268e8b491e4956b08be9161a848a7f608b5c1e147",
+    "bytes": 870
+  },
+  "package-driver-handoff.md": {
+    "sha256": "0714be10d48809a8b51043dc9a96d609eebbe502a83b64e9d9520a8c4eb5446d",
+    "bytes": 5250
+  },
+  "package-plan.md": {
+    "sha256": "f00d86e857c0969b8c41aa5570101e4edc16529b814fdbf86f6dd1130fc8df27",
+    "bytes": 8148
+  },
+  "native-cfr-handoff.md": {
+    "sha256": "b2f3ae3f21af1286eefe1ab9f5443c0985e8d32fe2977f93df12d2f1201a63c8",
+    "bytes": 4368
+  }
+}

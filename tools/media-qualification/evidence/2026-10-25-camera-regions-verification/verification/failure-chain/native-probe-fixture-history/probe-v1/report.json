@@ -1,0 +1,243 @@
+{
+  "confidence_policy" : "native property recorded without interpreting it as rank or probability",
+  "coordinates" : "raw lower-left and converted upright top-left; no rotation",
+  "face_request_revision_requested" : 3,
+  "face_supported_revisions" : [
+    1,
+    2,
+    3
+  ],
+  "height" : 360,
+  "inputs" : [
+    {
+      "face_boxes" : [
+
+      ],
+      "face_count" : 0,
+      "face_revision_actual" : 3,
+      "name" : "blank-control",
+      "png_sha256" : "95f59820f0abfb2f26c04ec6718960c6548e4687b5a15c5dc27f8b5900f1cd84",
+      "positive_non_face_candidate" : false,
+      "raw_sha256" : "b0d6ad6f0b78fc48d26d10ee82bcb045885106b2dbbec8795461523cf01fa9d8",
+      "row_stride" : 2560,
+      "saliency_observation_count" : 1,
+      "saliency_revision_actual" : 2,
+      "salient_box_count" : 0,
+      "salient_boxes" : [
+
+      ],
+      "salient_objects_nil" : false,
+      "total_seconds" : 0.355332916,
+      "vision_seconds" : 0.347447167
+    },
+    {
+      "face_boxes" : [
+
+      ],
+      "face_count" : 0,
+      "face_revision_actual" : 3,
+      "name" : "red-square",
+      "png_sha256" : "42aa6ea9494589fba6293968e1791199f1684918f5fdc48b9932ab300a7d1553",
+      "positive_non_face_candidate" : true,
+      "raw_sha256" : "14e4b8a26255a857aaea4eefbf5b25b9e331ee582c011e3ed2ca794f2c82c175",
+      "row_stride" : 2560,
+      "saliency_observation_count" : 1,
+      "saliency_revision_actual" : 2,
+      "salient_box_count" : 1,
+      "salient_boxes" : [
+        {
+          "native_confidence_property" : 0.49462890625,
+          "observation_request_revision" : 2,
+          "raw_lower_left" : {
+            "height" : 0.42626953125,
+            "width" : 0.24072265625,
+            "x" : 0.5537109375,
+            "y" : 0.2451171875
+          },
+          "upright_top_left" : {
+            "height" : 0.42626953125,
+            "width" : 0.24072265625,
+            "x" : 0.5537109375,
+            "y" : 0.32861328125
+          }
+        }
+      ],
+      "salient_objects_nil" : false,
+      "total_seconds" : 0.0095142500000000001,
+      "vision_seconds" : 0.006313791
+    },
+    {
+      "face_boxes" : [
+
+      ],
+      "face_count" : 0,
+      "face_revision_actual" : 3,
+      "name" : "shaded-orange",
+      "png_sha256" : "4335410e3f0b5d339d067f3b225942718cf35beced9817ea184c29e6acaad22b",
+      "positive_non_face_candidate" : true,
+      "raw_sha256" : "348a9735795f96179fb431ade05ab20541a1357bda6a7eb1478e77a446341af7",
+      "row_stride" : 2560,
+      "saliency_observation_count" : 1,
+      "saliency_revision_actual" : 2,
+      "salient_box_count" : 1,
+      "salient_boxes" : [
+        {
+          "native_confidence_property" : 0.5224609375,
+          "observation_request_revision" : 2,
+          "raw_lower_left" : {
+            "height" : 0.47021484375,
+            "width" : 0.267578125,
+            "x" : 0.5224609375,
+            "y" : 0.23974609375
+          },
+          "upright_top_left" : {
+            "height" : 0.47021484375,
+            "width" : 0.267578125,
+            "x" : 0.5224609375,
+            "y" : 0.2900390625
+          }
+        }
+      ],
+      "salient_objects_nil" : false,
+      "total_seconds" : 0.0093806250000000001,
+      "vision_seconds" : 0.0053825419999999997
+    },
+    {
+      "face_boxes" : [
+
+      ],
+      "face_count" : 0,
+      "face_revision_actual" : 3,
+      "name" : "ceramic-mug",
+      "png_sha256" : "5df85d511659a008b734a5e843cc5b13b9ea8e989c4b00423e036feb8667f1e8",
+      "positive_non_face_candidate" : true,
+      "raw_sha256" : "3d25eeef97d37494ec42f8d4acf7393290c8aea12801eb9e78cd73e6aaf6bd27",
+      "row_stride" : 2560,
+      "saliency_observation_count" : 1,
+      "saliency_revision_actual" : 2,
+      "salient_box_count" : 1,
+      "salient_boxes" : [
+        {
+          "native_confidence_property" : 0.51904296875,
+          "observation_request_revision" : 2,
+          "raw_lower_left" : {
+            "height" : 0.437744140625,
+            "width" : 0.2998046875,
+            "x" : 0.53955078125,
+            "y" : 0.23388671875
+          },
+          "upright_top_left" : {
+            "height" : 0.437744140625,
+            "width" : 0.2998046875,
+            "x" : 0.53955078125,
+            "y" : 0.328369140625
+          }
+        }
+      ],
+      "salient_objects_nil" : false,
+      "total_seconds" : 0.0083581249999999992,
+      "vision_seconds" : 0.0054969169999999996
+    },
+    {
+      "face_boxes" : [
+
+      ],
+      "face_count" : 0,
+      "face_revision_actual" : 3,
+      "name" : "toy-house",
+      "png_sha256" : "7e4e8c9058e56145bfd24d968877d9595e770c0fbe831373b953fb7308dd8cda",
+      "positive_non_face_candidate" : true,
+      "raw_sha256" : "274899066f77cf7932dd5b5b5051ef634d4fcb1c5483c80b9cacc2ad867c118e",
+      "row_stride" : 2560,
+      "saliency_observation_count" : 1,
+      "saliency_revision_actual" : 2,
+      "salient_box_count" : 1,
+      "salient_boxes" : [
+        {
+          "native_confidence_property" : 0.58154296875,
+          "observation_request_revision" : 2,
+          "raw_lower_left" : {
+            "height" : 0.5792236328125,
+            "width" : 0.32958984375,
+            "x" : 0.505859375,
+            "y" : 0.21533203125
+          },
+          "upright_top_left" : {
+            "height" : 0.5792236328125,
+            "width" : 0.32958984375,
+            "x" : 0.505859375,
+            "y" : 0.2054443359375
+          }
+        }
+      ],
+      "salient_objects_nil" : false,
+      "total_seconds" : 0.0084172080000000007,
+      "vision_seconds" : 0.0054259579999999998
+    },
+    {
+      "face_boxes" : [
+
+      ],
+      "face_count" : 0,
+      "face_revision_actual" : 3,
+      "name" : "two-objects",
+      "png_sha256" : "f34a618eb462bb3afe5a024671cf5459cbf9f97d05b2bbb54b3f0eef4218389d",
+      "positive_non_face_candidate" : true,
+      "raw_sha256" : "f7a480e56dc4cd7726c808679be67cf56bbe58a553e7b934c23a7aca073d0b23",
+      "row_stride" : 2560,
+      "saliency_observation_count" : 1,
+      "saliency_revision_actual" : 2,
+      "salient_box_count" : 2,
+      "salient_boxes" : [
+        {
+          "native_confidence_property" : 0.5478515625,
+          "observation_request_revision" : 2,
+          "raw_lower_left" : {
+            "height" : 0.451416015625,
+            "width" : 0.28369140625,
+            "x" : 0.1572265625,
+            "y" : 0.224609375
+          },
+          "upright_top_left" : {
+            "height" : 0.451416015625,
+            "width" : 0.28369140625,
+            "x" : 0.1572265625,
+            "y" : 0.323974609375
+          }
+        },
+        {
+          "native_confidence_property" : 0.4755859375,
+          "observation_request_revision" : 2,
+          "raw_lower_left" : {
+            "height" : 0.47314453125,
+            "width" : 0.263671875,
+            "x" : 0.51953125,
+            "y" : 0.2421875
+          },
+          "upright_top_left" : {
+            "height" : 0.47314453125,
+            "width" : 0.263671875,
+            "x" : 0.51953125,
+            "y" : 0.28466796875
+          }
+        }
+      ],
+      "salient_objects_nil" : false,
+      "total_seconds" : 0.0091040840000000001,
+      "vision_seconds" : 0.0054357499999999996
+    }
+  ],
+  "kind" : "read-only prototype, not production qualification",
+  "maximum_faces_accepted" : 64,
+  "maximum_objects_accepted" : 3,
+  "objectness_supported_revisions" : [
+    1,
+    2
+  ],
+  "one_perform_call_per_input" : true,
+  "orientation" : "up\/coded",
+  "os" : "Version 26.5.2 (Build 25F84)",
+  "pixel_format" : "32BGRA",
+  "saliency_request_revision_requested" : 2,
+  "width" : 640
+}

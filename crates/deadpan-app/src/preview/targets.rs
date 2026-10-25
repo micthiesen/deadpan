@@ -20,8 +20,8 @@ pub(super) struct State {
     awaiting: Option<u64>,
     /// Context captured when command entry opened.
     pub command: Option<Result<Capture, String>>,
-    /// `:zoom … target=face:N` waiting for its face proposals.
-    pub face_zoom: Option<super::camera::FaceZoom>,
+    /// A numbered detected target waiting for its captured picture analysis.
+    pub proposal_zoom: Option<super::camera::ProposalZoom>,
 }
 
 /// The session, revision and followed target a `:track` command was entered
@@ -56,9 +56,9 @@ impl State {
         self.update.as_ref()?.saved.as_ref()
     }
 
-    /// The latest face detection of this session.
-    pub(super) fn faces(&self) -> Option<&crate::project::targets::FaceJob> {
-        self.update.as_ref()?.faces.as_ref()
+    /// The latest picture proposals of this session.
+    pub(super) fn proposals(&self) -> Option<&crate::project::targets::ProposalJob> {
+        self.update.as_ref()?.proposals.as_ref()
     }
 
     /// The latest independent reply: its ticket and refusal.
@@ -79,7 +79,7 @@ pub(super) struct Shown {
 /// How a target got its region at a picture, in a few words.
 pub(super) fn source_label(source: TargetSource) -> &'static str {
     match source {
-        TargetSource::Initial => "drawn",
+        TargetSource::Initial => "untracked",
         TargetSource::Manual => "corrected",
         TargetSource::Tracked(TrackState::Tracked) => "tracked",
         TargetSource::Tracked(TrackState::Interpolated) => "interpolated",
@@ -107,9 +107,9 @@ pub(super) fn summary(target: &AttentionTarget) -> String {
             };
         }
         if target.corrections.is_empty() {
-            "Drawn · not tracked".into()
+            "Region · not tracked".into()
         } else {
-            format!("Drawn · {}", corrections(target.corrections.len()))
+            format!("Region · {}", corrections(target.corrections.len()))
         }
     } else {
         let lost = target
@@ -245,18 +245,20 @@ impl DeadpanApp {
                 session,
                 job,
             },
-            Operation::DetectFaces {
+            Operation::DetectPictureProposals {
                 session,
                 revision,
                 asset,
                 pts,
+                selection,
                 ..
-            } => Operation::DetectFaces {
+            } => Operation::DetectPictureProposals {
                 ticket,
                 session,
                 revision,
                 asset,
                 pts,
+                selection,
             },
             Operation::SaveFramed {
                 session,
@@ -298,8 +300,8 @@ impl DeadpanApp {
         let session = self.workspace.as_ref().map(|workspace| workspace.session);
         self.targets.update = update.filter(|update| Some(update.session) == session);
         let Some((answered, refusal)) = self.targets.reply().cloned() else {
-            self.finish_camera_faces();
-            self.finish_face_zoom();
+            self.finish_camera_proposals();
+            self.finish_proposal_zoom();
             return;
         };
         // One service mailbox serializes commands: a later reply answers
@@ -317,8 +319,8 @@ impl DeadpanApp {
             self.targets.awaiting = None;
             self.camera_target_reply(answered, refusal.as_deref());
         }
-        self.finish_camera_faces();
-        self.finish_face_zoom();
+        self.finish_camera_proposals();
+        self.finish_proposal_zoom();
     }
 
     /// The context `:track` acts on, captured at command entry.

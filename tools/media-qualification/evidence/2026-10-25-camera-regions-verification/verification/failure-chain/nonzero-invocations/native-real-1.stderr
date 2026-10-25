@@ -1,0 +1,68 @@
+   Compiling deadpan-track v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-track)
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>>: LowerHex` is not satisfied
+   --> native/deadpan-track/tests/picture_proposals.rs:278:29
+    |
+278 |             format!("{:x}", Sha256::digest(bytes)),
+    |                      ----   ^^^^^^^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>, ...>>`
+    |                      |
+    |                      required by this formatting parameter
+    |
+    = help: the following other types implement trait `LowerHex`:
+              &T
+              &mut T
+              Saturating<T>
+              Wrapping<T>
+              bytes::bytes::Bytes
+              bytes::bytes_mut::BytesMut
+              compiler_builtins::math::libm_math::support::big::i256
+              compiler_builtins::math::libm_math::support::big::u256
+            and 235 others
+    = note: the full name for the type has been written to '/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/picture_proposals-3822c1ad00cea505.long-type-4885051579870688370.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0308]: mismatched types
+   --> native/deadpan-track/tests/picture_proposals.rs:309:9
+    |
+307 |     let mut session = AudioSession::open_verified(
+    |                       --------------------------- arguments to this function are incorrect
+308 |         &mut input,
+309 |         identity,
+    |         ^^^^^^^^ expected `SourceContentIdentity`, found `Result<SourceContentIdentity, ...>`
+    |
+    = note: expected struct `SourceContentIdentity`
+                 found enum `Result<SourceContentIdentity, SourceIndexError>`
+note: associated function defined here
+   --> crates/deadpan-media/src/audio_session.rs:85:12
+    |
+ 85 |     pub fn open_verified(
+    |            ^^^^^^^^^^^^^
+help: consider using `Result::expect` to unwrap the `Result<SourceContentIdentity, SourceIndexError>` value, panicking if the value is a `Result::Err`
+    |
+309 |         identity.expect("REASON"),
+    |                 +++++++++++++++++
+
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>>: LowerHex` is not satisfied
+   --> native/deadpan-track/tests/picture_proposals.rs:340:25
+    |
+340 |         format!("{:x}", hash.finalize()),
+    |                  ----   ^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>, ...>>`
+    |                  |
+    |                  required by this formatting parameter
+    |
+    = help: the following other types implement trait `LowerHex`:
+              &T
+              &mut T
+              Saturating<T>
+              Wrapping<T>
+              bytes::bytes::Bytes
+              bytes::bytes_mut::BytesMut
+              compiler_builtins::math::libm_math::support::big::i256
+              compiler_builtins::math::libm_math::support::big::u256
+            and 235 others
+    = note: the full name for the type has been written to '/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/picture_proposals-3822c1ad00cea505.long-type-4885051579870688370.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+Some errors have detailed explanations: E0277, E0308.
+For more information about an error, try `rustc --explain E0277`.
+error: could not compile `deadpan-track` (test "picture_proposals") due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...

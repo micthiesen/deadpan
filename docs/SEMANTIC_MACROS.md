@@ -288,7 +288,7 @@ uses the existing whole-owner behavior.
 No target keeps the retained framing center. Explicit `target=center` projects
 the Original picture's center through the framing entering the selected owner;
 it refuses if that point is clipped. Recording a ranged command that would
-sample a selected, current, named or face target refuses with an explanation.
+sample a selected, current, named, face or salient-region target refuses with an explanation.
 An implicit selected-target choice is treated as Keep only when no saved target
 or target follow is involved. Ordinary interactive target sampling remains
 available. Existing ordinary whole-beat presets keep their `SetFraming` behavior.

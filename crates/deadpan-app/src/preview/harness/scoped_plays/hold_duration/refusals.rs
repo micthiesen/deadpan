@@ -160,22 +160,28 @@ fn exercise(d: &mut Driver<'_>, path: &Path) -> Result<(), String> {
     d.key(Key::Enter)?;
     let retimed = target(d)?;
     d.check(
-        "This-play duration fixture selects a Hold under a real Retime clock",
+        "This-play refusal fixture selects a valid Hold under a unity Partition",
         retimed.target.repeats.len() == 1
             && retimed.has_single_play_authority()
             && retimed.target.node.as_str() == "retimed-hold"
             && matches!(
                 document(d)?.nodes()[&NodeId::new("speed").map_err(|e| e.to_string())?].kind,
-                NodeKind::Retime { .. }
+                NodeKind::Retime {
+                    duration,
+                    mapping,
+                    purpose: RetimePurpose::Partition,
+                    ..
+                } if duration == mapping.duration() && duration.frames() == 4
             )
+            && document(d)?.validate().is_ok()
             && matches!(
                 document(d)?.nodes()[&retimed.root].kind,
                 NodeKind::Repeat { .. }
             ),
-        json!("This play with Retime ancestor"),
+        json!("This play with a valid unity Partition ancestor"),
         d.snapshot(),
     )?;
-    refuse(d, "This-play retimed Hold duration")?;
+    refuse(d, "This-play partition Hold duration")?;
     Ok(())
 }
 
@@ -224,10 +230,12 @@ fn fixture(path: &Path) -> Result<(), String> {
     let mut speed = BeatNode::sequence("Retime", Vec::new());
     speed.kind = NodeKind::Retime {
         child: node("retimed-hold")?,
-        duration: duration(8)?,
+        // Partition is a supported document primitive but is not a fixed
+        // Edit-Retime duration authority. Unity timing keeps the fixture valid.
+        duration: duration(4)?,
         mapping: FrameRange::new(ProjectFrame(0), ProjectFrame(4)).map_err(|e| e.to_string())?,
         pitch: PitchPolicy::Preserve,
-        purpose: RetimePurpose::Edit,
+        purpose: RetimePurpose::Partition,
     };
     let initial = ProjectDocument::new_automatic(
         ProjectId::new(PROJECT).map_err(|e| e.to_string())?,

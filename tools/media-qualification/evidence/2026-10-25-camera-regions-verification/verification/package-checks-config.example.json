@@ -1,0 +1,69 @@
+{
+  "_example_only": "Actual successful raw regions native report required; no wrapper/pointer. Replace every placeholder with Root-supplied pinned input. Not an execution receipt.",
+  "source_manifest": {
+    "path": "/absolute/path/to/final-source-manifest.json",
+    "sha256": "<actual SHA256>"
+  },
+  "source_manifest_key": "files",
+  "target_directory": "/Users/michael/Code/deadpan/target",
+  "ffmpeg_prefix": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix",
+  "project": "/absolute/path/to/retained-native.deadpan",
+  "native_report": {
+    "path": "/absolute/path/to/native-report.json",
+    "sha256": "<actual SHA256>"
+  },
+  "identities": {
+    "content": "<exact Original content identity from actual baseline report>",
+    "asset": "<actual Original asset>",
+    "revision": "<actual unchanged replay project revision>",
+    "stream_index": 0,
+    "face_request_revision": 3,
+    "rotation_quarter_turns": 0
+  },
+  "asset_argument": false,
+  "baseline_provenance": {
+    "source_manifest_sha256": "<same actual final source manifest SHA256>",
+    "cli": {
+      "path": "/absolute/path/to/retained/deadpan-cli",
+      "sha256": "<actual SHA256>"
+    },
+    "worker": {
+      "path": "/absolute/path/to/retained/deadpan-track",
+      "sha256": "<actual SHA256>"
+    }
+  },
+  "baseline_reports": {
+    "blank-regions": {
+      "path": "/absolute/path/to/blank-regions.json",
+      "sha256": "<actual SHA256>"
+    },
+    "blank-both": {
+      "path": "/absolute/path/to/blank-both.json",
+      "sha256": "<actual SHA256>"
+    },
+    "mug-regions": {
+      "path": "/absolute/path/to/mug-regions.json",
+      "sha256": "<actual SHA256>"
+    },
+    "mug-both": {
+      "path": "/absolute/path/to/mug-both.json",
+      "sha256": "<actual SHA256>"
+    },
+    "two-regions": {
+      "path": "/absolute/path/to/two-regions.json",
+      "sha256": "<actual SHA256>"
+    },
+    "two-both": {
+      "path": "/absolute/path/to/two-both.json",
+      "sha256": "<actual SHA256>"
+    }
+  },
+  "fixture": {
+    "path": "/Users/michael/Code/deadpan/native/deadpan-track/tests/fixtures/salient-regions.mp4",
+    "sha256": "aaffac5cc021297348101e3ce500a3febac48fc45021a511468cb3fd76784e93"
+  },
+  "fixture_manifest": {
+    "path": "/Users/michael/Code/deadpan/native/deadpan-track/tests/fixtures/salient-regions-fixtures.json",
+    "sha256": "bcb45f5c135229159236a64376bdb0f5a35cf04b0007f1becd6db50abf4a51cf"
+  }
+}

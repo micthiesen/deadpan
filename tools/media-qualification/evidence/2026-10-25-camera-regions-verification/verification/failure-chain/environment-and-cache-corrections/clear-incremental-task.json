@@ -1,0 +1,14 @@
+{
+  "started_at": "2026-10-25T11:12:26.995855+00:00",
+  "cache": "/private/tmp/deadpan-follow-creep-2026-10-24/target/debug/incremental",
+  "available_before": 15280164864,
+  "allocated_reference_du": "65524884\t/private/tmp/deadpan-follow-creep-2026-10-24/target/debug/incremental\n",
+  "scope": "Only rebuildable debug/incremental. No sources, top-level executables, deps, bundles, fixtures, evidence or other target directories.",
+  "allocation_note": "APFS shared or cloned allocation makes du unsuitable as a physical reclamation claim.",
+  "state": "complete",
+  "seconds": 18.83779887482524,
+  "available_after": 77745332224,
+  "cache_absent": true,
+  "frozen_executables_unchanged": true,
+  "finished_at": "2026-10-25T11:12:45.834212+00:00"
+}

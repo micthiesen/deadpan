@@ -1,0 +1,17 @@
+import datetime,hashlib,json,pathlib,subprocess,time
+r=pathlib.Path('/tmp/deadpan-camera-regions-2026-10-25');repo=pathlib.Path('/Users/michael/Code/deadpan')
+ids=json.loads((r/'verified-identities.json').read_text())
+paths=[repo/n for n in ids['sources']]+[pathlib.Path(x['executed']) for x in ids['binaries'].values()]
+def pin(p):
+ b=p.read_bytes();return {'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()}
+def snapshot():return {str(p):pin(p) for p in paths}
+argv=['python3',str(r/'verify-published-regions.py'),'--repo',str(repo),'--third-inventory-sha256','5cb1ee835c32a371a70957f829ba1b6e4b2b136c71e4dd40a6f9f33e329b4cf2','--output',str(r/'published-packages-audit.json')]
+receipt={'argv':argv,'cwd':str(repo),'started_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'verifier':pin(r/'verify-published-regions.py'),'source_before':snapshot()}
+start=time.monotonic()
+with (r/'published-packages-audit.stdout').open('wb') as stdout,(r/'published-packages-audit.stderr').open('wb') as stderr:
+ result=subprocess.run(argv,cwd=repo,stdout=stdout,stderr=stderr)
+receipt.update({'exit_code':result.returncode,'elapsed_seconds':time.monotonic()-start,'finished_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'source_after':snapshot(),'stdout':pin(r/'published-packages-audit.stdout'),'stderr':pin(r/'published-packages-audit.stderr')})
+receipt['sources_and_binaries_stable']=receipt['source_before']==receipt['source_after']
+if (r/'published-packages-audit.json').exists():receipt['result']=pin(r/'published-packages-audit.json')
+(r/'published-packages-audit-run.json').write_text(json.dumps(receipt,indent=2)+'\n')
+print(json.dumps({k:v for k,v in receipt.items() if k not in ['source_before','source_after']},indent=2))

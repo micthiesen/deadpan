@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/tmp/deadpan-camera-regions-2026-10-25/media.py", line 451, in <module>
+    main(arguments)
+    ~~~~^^^^^^^^^^^
+  File "/tmp/deadpan-camera-regions-2026-10-25/media.py", line 407, in main
+    assert audio['segments'] and all(row['status'] == 'verified_zero' and row['peak_lag'] == 0 for row in audio['segments'])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

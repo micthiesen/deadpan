@@ -498,6 +498,7 @@ fn a_saved_target_reloads_follows_in_the_plan_and_corrects_only_its_range() {
             })
             .unwrap();
         let expected = target_region(&sample.region);
+        let region = region.as_region().expect("tracked region geometry");
         for axis in 0..2 {
             assert!(region.center[axis].abs_diff(expected.center[axis]) <= tolerance + 1);
             assert!(region.size[axis].abs_diff(expected.size[axis]) <= tolerance + 1);
@@ -516,6 +517,7 @@ fn a_saved_target_reloads_follows_in_the_plan_and_corrects_only_its_range() {
         value: FramingValue::Follow {
             target: id.clone(),
             scale: ExactRatio::integer(2),
+            scale_transition: None,
             fallback: FramingPose::identity(),
         },
     })
@@ -564,7 +566,10 @@ fn a_saved_target_reloads_follows_in_the_plan_and_corrects_only_its_range() {
     for sample in saved.samples.iter().filter(|sample| sample.at < 1_000) {
         assert!(corrected.samples.contains(sample));
     }
-    assert_eq!(corrected.corrections[0].region, target_region(&region));
+    assert_eq!(
+        corrected.corrections[0].region,
+        deadpan_core::TargetGeometry::Region(target_region(&region))
+    );
     let (cx, cy) = center_pixels(&target_rect_at(&corrected, 1_000).unwrap());
     assert!((cx - (x + SQUARE / 2.0)).abs() < 0.01 && (cy - (y + SQUARE / 2.0)).abs() < 0.01);
 }

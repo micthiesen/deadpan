@@ -1,0 +1,88 @@
+--- before/media.py
++++ after/media.py
+@@ -42,6 +42,7 @@
+     'Real region:N requests only saliency and atomically saves one region plus sampled framing',
+     'One Undo removes both atomic region:N changes and restores the preceding animation',
+     'One Redo durably restores the atomic region:N target and framing',
++    'Save cancellation retains the committed region in SQLite',
+     'The atomic region:N Redo and its history replay validate in SQLite',
+     'All region acceptance, framing, cancellation and Undo/Redo preserve the complete placed sound and audio support',
+ ]
+@@ -74,7 +75,9 @@
+             values[table] = sorted(rows, key=repr)
+         head, cursor, workflow = db.execute(
+             'SELECT head_revision,cursor,workflow FROM state WHERE singleton=1').fetchone()
+-        document = json.loads(db.execute(
++        # Ordinary edit/Undo/Redo checkpoints may be the literal JSON null.
++        # Preserve those bytes above; normal CLI dump reconstructs the head.
++        stored_checkpoint = json.loads(db.execute(
+             'SELECT document FROM revisions WHERE id=?', (head,)).fetchone()[0])
+         kind_counts = dict(db.execute('SELECT kind,count(*) FROM revisions GROUP BY kind'))
+         history = [dict(zip(['id', 'parent', 'revision', 'request', 'edit'], row))
+@@ -84,7 +87,7 @@
+     return {'sha256': hashlib.sha256(canonical(values).encode()).hexdigest(),
+             'counts': {key: len(rows) for key, rows in values.items()},
+             'head': head, 'cursor': cursor, 'workflow': workflow,
+-            'kind_counts': kind_counts}, document, history
++            'kind_counts': kind_counts}, stored_checkpoint, history
+ 
+ 
+ def database_bytes(package):
+@@ -227,9 +230,10 @@
+         result.check_returncode()
+         return (args.output / f'{name}.stdout').read_text()
+ 
+-    before, sqlite_document, history = authority(project)
++    before, stored_checkpoint, history = authority(project)
+     document = json.loads(run('dump', 'project', 'dump', project, '--json'))
+-    assert document == sqlite_document
++    if stored_checkpoint is not None:
++        assert document == stored_checkpoint
+     assert document == check('The atomic region:N Redo and its history replay validate in SQLite')
+     revision = document['revision_id']
+     assert revision == before['head']
+@@ -271,22 +275,33 @@
+     prior_owner['framing'] = framing
+     assert prior_owner == nodes[owner] and set(patch['nodes']) == {owner}
+     assert edit['duration_delta'] == 0
+-    with sqlite3.connect((project / 'project.sqlite').as_uri() + '?mode=ro', uri=True) as db:
+-        prior = json.loads(db.execute('SELECT document FROM revisions WHERE id=?',
+-                                     (patch['from_revision'],)).fetchone()[0])
+-        committed = json.loads(db.execute('SELECT document FROM revisions WHERE id=?',
+-                                         (patch['to_revision'],)).fetchone()[0])
++    # Full native durable snapshots bind both sides even when the corresponding
++    # SQLite revision checkpoints are elided. The CLI above uses Store's normal
++    # reconstruction; this driver does not implement another history replayer.
++    prior = check('Save cancellation retains the committed region in SQLite')
++    assert prior['revision_id'] == patch['from_revision']
++    assert active['revision'] == patch['to_revision']
+     assert accepted_id not in prior['targets']
+-    assert committed['targets'] == {**prior['targets'], accepted_id: accepted_target}
+-    assert committed['nodes'] == {**prior['nodes'], owner: nodes[owner]}
++    assert changed_owner['before'] == prior['nodes'][owner]
++    assert document['targets'] == {**prior['targets'], accepted_id: accepted_target}
++    assert document['nodes'] == {**prior['nodes'], owner: nodes[owner]}
+     # Redo uses a fresh revision header; all authored content is exact.
+     def content(value):
+         return {key: item for key, item in value.items() if key != 'revision_id'}
+-    assert content(committed) == content(document)
+     expected = dict(prior)
+-    expected['targets'] = committed['targets']
+-    expected['nodes'] = committed['nodes']
+-    assert content(expected) == content(committed)
++    expected['targets'] = document['targets']
++    expected['nodes'] = document['nodes']
++    assert content(expected) == content(document)
++    # If Store retained either checkpoint, additionally bind it. Null is
++    # legitimate and remains part of the exact eight-table conservation hash.
++    with sqlite3.connect((project / 'project.sqlite').as_uri() + '?mode=ro', uri=True) as db:
++        for header, observed in [(patch['from_revision'], prior),
++                                 (patch['to_revision'], document)]:
++            checkpoint = json.loads(db.execute(
++                'SELECT document FROM revisions WHERE id=?', (header,)).fetchone()[0])
++            if checkpoint is not None:
++                assert checkpoint['revision_id'] == header
++                assert content(checkpoint) == content(observed)
+     (args.output / 'history-before.json').write_text(json.dumps(before, indent=2) + '\n')
+     sound = check('All region acceptance, framing, cancellation and Undo/Redo preserve the complete placed sound and audio support')
+     assert sound['picture_frames'] == frames and sound['audio_end'] == samples

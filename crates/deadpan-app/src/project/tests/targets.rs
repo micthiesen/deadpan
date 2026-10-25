@@ -571,6 +571,7 @@ fn a_worker_failure_reports_its_reason_and_saves_nothing() {
 }
 
 mod faces;
+mod picture_proposals;
 
 #[test]
 fn a_target_in_use_refuses_deletion_and_an_unused_one_deletes_in_one_undo() {

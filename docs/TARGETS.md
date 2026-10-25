@@ -119,7 +119,7 @@ scale and the fallback; the target supplies the center.
 Camera picks, draws, follows and corrects targets ([framing](FRAMING.md#native-interaction)):
 
 - `f` lists saved targets covering the stopped picture, center and corners,
-  then detected face proposals. Each page has digits 1–9; Tab and Shift+Tab
+  then detected faces and salient regions. Each page has digits 1–9; Tab and Shift+Tab
   reach the other pages. The viewer draws saved targets at `region_at` of the
   picture's exact source time with its state (`drawn`, `corrected`, `tracked`,
   `interpolated`, `lost · holding`).
@@ -149,6 +149,10 @@ Camera picks, draws, follows and corrects targets ([framing](FRAMING.md#native-i
   faces or a changed context ([face proposals](FRAMING.md#face-proposals)).
   Such a target can then be tracked with `T` or `:track face-K` like any drawn
   one.
+- `target=region:N` on the same zoom and creep commands requests objectness
+  saliency only and saves `region-K` / `Region N` through the same atomic path.
+  Regions are geometrically ordered suggestions without scores or semantic
+  names; they can be tracked after explicit acceptance.
 - `:target-rename TARGET New label` relabels a target named by id or label as
   one undoable `SetTarget`; labels stay unique (case-insensitive), so a target
   can always be named by its label. `:target-delete TARGET` deletes it as one
@@ -181,9 +185,10 @@ and centers the wrong point; re-saving it (draw, track or `track --save
 --replace`) records the aspect. Targets are
 created and corrected headlessly (`track --save`, `track-correct`; see
 [tracking](TRACKING.md)) and in Camera, and saved from a face proposal by
-`target=face:N`. `detect-faces` lists proposals headlessly without editing.
-Camera's numbered face proposals use the same service. Selecting one saves
-only that face as a target, keeps Camera open and centers its draft; Enter
+`target=face:N` or `target=region:N`. `detect-faces` and `detect-regions` list
+proposals headlessly without editing. Camera requests both kinds through the
+shared picture-proposal service. Selecting one saves
+only that proposal as a target, keeps Camera open and centers its draft; Enter
 commits framing separately. Escape retains the explicitly accepted target
 while restoring entry framing. Detection alone never edits.
 

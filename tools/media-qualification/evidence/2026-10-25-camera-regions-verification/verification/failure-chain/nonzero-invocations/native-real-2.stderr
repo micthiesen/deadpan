@@ -1,0 +1,31 @@
+   Compiling deadpan-track v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-track)
+warning: variable does not need to be mutable
+   --> native/deadpan-track/tests/picture_proposals.rs:312:9
+    |
+312 |     let mut session = AudioSession::open_verified(
+    |         ----^^^^^^^
+    |         |
+    |         help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: `deadpan-track` (test "picture_proposals") generated 1 warning (run `cargo fix --test "picture_proposals" -p deadpan-track` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.83s
+     Running tests/picture_proposals.rs (/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/picture_proposals-3822c1ad00cea505)
+
+thread 'qualified_decoder_preserves_generated_picture_and_pcm_clocks' (184857316) panicked at native/deadpan-track/tests/picture_proposals.rs:294:10:
+called `Result::unwrap()` on an `Err` value: Native { code: "invalid_input", message: "unqualified Matroska track: expected video or Opus audio" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+{"error":{"code":"SourceVideoDecodeFailed","current_revision":null,"message":"source decode invalid_input: unqualified Matroska track: expected video or Opus audio","recovery_backup":null},"schema_version":1}
+
+thread 'real_non_face_modes_blank_mug_and_two_objects_are_typed_and_atomic' (184857317) panicked at native/deadpan-track/tests/picture_proposals.rs:40:5:
+assertion `left == right` failed: ["project", "register-source", "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpjX85ry/proposals.deadpan", "--request-json", "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpjX85ry/register.json"]
+  left: ExitCode(unix_exit_status(1))
+ right: ExitCode(unix_exit_status(0))
+{"error":{"code":"SourceVideoDecodeFailed","current_revision":null,"message":"source decode invalid_input: unqualified Matroska track: expected video or Opus audio","recovery_backup":null},"schema_version":1}
+
+thread 'real_saliency_applies_sar_rotation_and_fractional_clean_aperture' (184857324) panicked at native/deadpan-track/tests/picture_proposals.rs:40:5:
+assertion `left == right` failed: ["project", "register-source", "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpnSuZlB/proposals.deadpan", "--request-json", "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpnSuZlB/register.json"]
+  left: ExitCode(unix_exit_status(1))
+ right: ExitCode(unix_exit_status(0))
+error: test failed, to rerun pass `-p deadpan-track --test picture_proposals`

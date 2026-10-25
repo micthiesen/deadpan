@@ -1,0 +1,68 @@
+{
+  "source_manifest": {
+    "path": "/private/tmp/deadpan-camera-regions-2026-10-25/package-verified-source-manifest.json",
+    "sha256": "e3c6f3940fd237c0b0791fff771bf236092757a3b3d909a6ada0a54e6738c70b"
+  },
+  "source_manifest_key": "files",
+  "target_directory": "/Users/michael/Code/deadpan/target",
+  "ffmpeg_prefix": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix",
+  "project": "/private/tmp/deadpan-camera-regions-2026-10-25/native-regions-verified/projects/regions/Documents/Deadpan/salient-regions.deadpan",
+  "native_report": {
+    "path": "/private/tmp/deadpan-camera-regions-2026-10-25/native-regions-verified/report.json",
+    "sha256": "808d802e7a3f021afd278800bc7034506200708861b4f180269db1637ebd939b"
+  },
+  "identities": {
+    "content": "blake3:1f051e4e2698b32942daa9abc420fdb3fbe86cd093fb40de13058e296425d2d6",
+    "asset": "44f7c44b-6144-4ed0-a156-d65992b9852a",
+    "revision": "74571e16-7692-44b7-9213-8e732d93c705",
+    "stream_index": 0,
+    "rotation_quarter_turns": 0,
+    "face_request_revision": 3
+  },
+  "asset_argument": true,
+  "baseline_provenance": {
+    "source_manifest_sha256": "e3c6f3940fd237c0b0791fff771bf236092757a3b3d909a6ada0a54e6738c70b",
+    "cli": {
+      "path": "/private/tmp/deadpan-camera-regions-2026-10-25/bin-verified/deadpan-cli",
+      "sha256": "aa035d74848d2e4cda6ba127de591e5648f59ab67082a45744eca056b01d77f8"
+    },
+    "worker": {
+      "path": "/private/tmp/deadpan-camera-regions-2026-10-25/bin-verified/deadpan-track",
+      "sha256": "849e5315687a3fbd36f8399367c99188e64be4c0c2fb169cd617d2bfce40274c"
+    }
+  },
+  "baseline_reports": {
+    "blank-regions": {
+      "path": "/private/tmp/deadpan-camera-regions-2026-10-25/package-baselines-verified/blank-regions.stdout",
+      "sha256": "54fd063db3608f1e91fe8b0d3acc98ed9062fb290055337a5bb4c965b52c0b41"
+    },
+    "blank-both": {
+      "path": "/private/tmp/deadpan-camera-regions-2026-10-25/package-baselines-verified/blank-both.stdout",
+      "sha256": "61b29e3717ee8dc39ac832c6cd1ff9da61cf49549ff38602ec49db26361b35c3"
+    },
+    "mug-regions": {
+      "path": "/private/tmp/deadpan-camera-regions-2026-10-25/package-baselines-verified/mug-regions.stdout",
+      "sha256": "3652eacfae54437304086ce8b5b87aebcc6edca394076688bba099cf05d4d74b"
+    },
+    "mug-both": {
+      "path": "/private/tmp/deadpan-camera-regions-2026-10-25/package-baselines-verified/mug-both.stdout",
+      "sha256": "a8f057f162925f9e2ebf33d9ba331ca0fe10dacdf1cba54b85cff3e219437b17"
+    },
+    "two-regions": {
+      "path": "/private/tmp/deadpan-camera-regions-2026-10-25/package-baselines-verified/two-regions.stdout",
+      "sha256": "6b97706c66d4cce4e600406a906f97f10b6ddc4f1a4b840e1b9e08a0407e4258"
+    },
+    "two-both": {
+      "path": "/private/tmp/deadpan-camera-regions-2026-10-25/package-baselines-verified/two-both.stdout",
+      "sha256": "75fa3ee1073ccb692d17cca1ef2c18f6b531cfb7f06cdac9c4df7ba6f7e07925"
+    }
+  },
+  "fixture": {
+    "path": "/Users/michael/Code/deadpan/native/deadpan-track/tests/fixtures/salient-regions.mp4",
+    "sha256": "aaffac5cc021297348101e3ce500a3febac48fc45021a511468cb3fd76784e93"
+  },
+  "fixture_manifest": {
+    "path": "/Users/michael/Code/deadpan/native/deadpan-track/tests/fixtures/salient-regions-fixtures.json",
+    "sha256": "bcb45f5c135229159236a64376bdb0f5a35cf04b0007f1becd6db50abf4a51cf"
+  }
+}

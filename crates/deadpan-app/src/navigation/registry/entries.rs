@@ -1001,7 +1001,7 @@ pub static SPECS: &[Spec] = &[
             "set_framing / zoom instruction; scoped invocation context for one play",
             CAM,
         ),
-        help: "{punch_in} is one undoable 1.35× punch-in on the selected target (the one this beat follows, or the only saved target in the picture; otherwise the current center). :zoom S steps to scale S, following target=current, an id or label, or target=center; target=face:N finds faces in the background and saves face N as a target with the framing. curve=linear|smoothstep eases instead. With an Edit range inside the beat, only that range changes. A camera path is replaced only with an explicit target=; :zoom off returns to the full picture. Keep-center and target=center intent support macros and dot over ordinary ranges or a whole selected play. Choose This play at every enclosing Repeat; sampled-target recording refuses.",
+        help: "{punch_in} is one undoable 1.35× punch-in on the selected target (the one this beat follows, or the only saved target in the picture; otherwise the current center). :zoom S steps to scale S, following target=current, an id or label, or target=center; target=face:N or region:N finds that numbered face or salient region in the background and saves it as a target with framing. curve=linear|smoothstep eases instead. With an Edit range inside the beat, only that range changes. A camera path is replaced only with an explicit target=; :zoom off returns to the full picture. Keep-center and target=center intent support macros and dot over ordinary ranges or a whole selected play. Choose This play at every enclosing Repeat; sampled-target recording refuses.",
     },
     Spec {
         id: "creep",
@@ -1883,7 +1883,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::CAMERA,
         replay: Replay::Ignored,
         headless: gui("none needed", CAM),
-        help: "Toggle the numbered picker: saved targets, center and corners, then detected faces. Digits 1–9 choose from the current page; Tab and Shift+Tab change pages. Selecting a face saves its target; Enter separately applies framing. Digits are counts outside the picker.",
+        help: "Toggle the numbered picker: saved targets, center and corners, then faces and salient regions found in the displayed Original. Digits 1–9 choose from the current page; Tab and Shift+Tab change pages. Selecting a proposal saves only that target; Enter separately applies framing. Regions suggest visually prominent areas. Digits are counts outside the picker.",
     },
     Spec {
         id: "camera.follow",

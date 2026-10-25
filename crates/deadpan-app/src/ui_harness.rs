@@ -17,6 +17,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "targets",
     "points",
     "faces",
+    "regions",
     "menus",
     "palette",
     "delayed-preview",
@@ -332,12 +333,27 @@ pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
         .project
         .clone()
         .unwrap_or_else(|| {
-            Path::new(env!("CARGO_MANIFEST_DIR"))
-                .join("../../native/deadpan-source/tests/fixtures/cfr-bframes.mp4")
+            Path::new(env!("CARGO_MANIFEST_DIR")).join(
+                if options.scenario.as_deref() == Some("regions") {
+                    "../../native/deadpan-track/tests/fixtures/salient-regions.mp4"
+                } else {
+                    "../../native/deadpan-source/tests/fixtures/cfr-bframes.mp4"
+                },
+            )
         })
         .canonicalize()
         .map_err(|error| format!("Resolve replay fixture: {error}"))?;
     let large_first_pause = options.scenario.as_deref() == Some("large-first-pause");
+    let regions_fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../native/deadpan-track/tests/fixtures/salient-regions.mp4");
+    let regions_fixture_hash = std::fs::read(&regions_fixture)
+        .ok()
+        .map(|bytes| sha256(&bytes));
+    let regions_audio_fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../native/deadpan-track/tests/fixtures/salient-audio.wav");
+    let regions_audio_fixture_hash = std::fs::read(&regions_audio_fixture)
+        .ok()
+        .map(|bytes| sha256(&bytes));
     let ready_fixture = matches!(
         options.scenario.as_deref(),
         Some(
@@ -396,9 +412,13 @@ pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
             "hardware": command_output("sysctl", &["-n", "machdep.cpu.brand_string"]),
             "os": command_output("sw_vers", &["-productVersion"]),
             "rust": command_output("rustc", &["--version"]),
-            "fixture": if large_first_pause { "pristine perf make-large --beats 10000 Background/Silence Holds (private portable copy; no source media)" } else if interference { "full-source Original project (replayed from a private portable copy)" } else if ready_fixture { "project with real accepted AI pictures (replayed from a private copy)" } else if options.project.is_some() { "accepted Generated compatibility project" } else { "cfr-bframes.mp4" },
+            "fixture": if large_first_pause { "pristine perf make-large --beats 10000 Background/Silence Holds (private portable copy; no source media)" } else if interference { "full-source Original project (replayed from a private portable copy)" } else if ready_fixture { "project with real accepted AI pictures (replayed from a private copy)" } else if options.project.is_some() { "accepted Generated compatibility project" } else if options.scenario.as_deref() == Some("regions") { "generated salient-regions.mp4 (blank/mug/two-object sections)" } else { "cfr-bframes.mp4" },
             "fixture_identity_file": fixture_identity,
             "fixture_sha256": fixture_hash,
+            "region_scenario_fixture": regions_fixture,
+            "region_scenario_fixture_sha256": regions_fixture_hash,
+            "region_scenario_audio_fixture": regions_audio_fixture,
+            "region_scenario_audio_fixture_sha256": regions_audio_fixture_hash,
             "replay_hz": options.hz, "viewport_points": [1280,820],
             "physical_display_measured": false, "gpu_readback_in_timing_run": false,
             "wait_strategy": "egui_repaint_callback_v1",

@@ -249,11 +249,11 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.check(
         "Nearby secondary point markers do not overpaint the active target label",
-        scenarios::text_paint_visibility(d, "Target 1 · drawn · point").is_empty()
-            && !scenarios::text_paint_visibility(d, "Target 2 · drawn · following · point").is_empty(),
+        scenarios::text_paint_visibility(d, "Target 1 · untracked · point").is_empty()
+            && !scenarios::text_paint_visibility(d, "Target 2 · untracked · following · point").is_empty(),
         json!({"secondary":"marker only","active":"full label"}),
-        json!({"secondary_labels":scenarios::text_paint_visibility(d,"Target 1 · drawn · point"),
-            "active_labels":scenarios::text_paint_visibility(d,"Target 2 · drawn · following · point")}),
+        json!({"secondary_labels":scenarios::text_paint_visibility(d,"Target 1 · untracked · point"),
+            "active_labels":scenarios::text_paint_visibility(d,"Target 2 · untracked · following · point")}),
     )?;
     d.key(Key::F)?;
     d.step("Compact saved-target picker", true)?;
@@ -265,7 +265,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
             && picker["picker"][0]["label"] == "Target 1"
             && picker["picker"][1]["number"] == 2
             && picker["picker"][1]["label"] == "Target 2"
-            && scenarios::text_paint_visibility(d, "1 Target 1 · drawn · point").is_empty()
+            && scenarios::text_paint_visibility(d, "1 Target 1 · untracked · point").is_empty()
             && widgets.contains("Target 1")
             && widgets.contains("Target 2"),
         json!({"digits":[1,2],"names":["Target 1","Target 2"]}),

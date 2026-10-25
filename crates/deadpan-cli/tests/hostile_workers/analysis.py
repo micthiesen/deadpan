@@ -80,9 +80,9 @@ elif request.get("op") == "transcribe":
               runtime={"engine": "hostile-fixture", "backend": "cpu",
                        "model_sha256": request["model"]["sha256"]},
               elapsed_millis=1))
-elif request.get("op") == "detect_faces":
+elif request.get("op") == "detect_picture_proposals":
     if name == "wrong_attempt":
-        emit({"event": "failed", "protocol": 1, "request": request["request"],
+        emit({"event": "failed", "protocol": 2, "request": request["request"],
               "attempt": "another-attempt", "diagnostic": "not this attempt"})
 elif request.get("operation") == "generate_bridge":
     if name == "wrong_attempt":

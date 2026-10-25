@@ -1,0 +1,43 @@
+{
+  "driver": {
+    "sha256": "82ea0022ccee613672b911e6bafa402e274807946d9a0a1de485396e5eb225d7",
+    "bytes": 39432
+  },
+  "review_basis": {
+    "crates/deadpan-store/src/revision_storage.rs": {
+      "sha256": "f54c3488e35c9cb8e22fe550c1d41d325a69d7d5255f19ad1214a6317300afa3",
+      "bytes": 15120
+    },
+    "crates/deadpan-store/src/validation.rs": {
+      "sha256": "25ae4fc4e930bc6dde2f47adb745dc99237819762ab06025cdb397dbbfe7b269",
+      "bytes": 37199
+    },
+    "crates/deadpan-store/src/lib.rs": {
+      "sha256": "6cac4fccb2112473fd9143f3ac0b50bb5d97dc2eeb2b6988d8336d45071fd010",
+      "bytes": 79195
+    },
+    "crates/deadpan-cli/src/lib.rs": {
+      "sha256": "e6a67b9ffdb7794af814a5f52f8413d7ae5980b6b0532fc118383231d8d76afd",
+      "bytes": 60778
+    },
+    "crates/deadpan-core/src/document.rs": {
+      "sha256": "2763bb86bbaba1afe9f11ade4e0077c154ffc12c9452bc2836fc9b0105865d10",
+      "bytes": 101989
+    },
+    "crates/deadpan-app/src/preview/harness/regions.rs": {
+      "sha256": "dd0578a516a63b9a56f0cfa5702c0b575e78a1191c866de1f936c2aa21c985b8",
+      "bytes": 40949
+    },
+    "crates/deadpan-app/src/preview/harness.rs": {
+      "sha256": "9896bbca1033a9b265f66fa0cd2d8d72ba05a290201a9efddd5e11d7d0ca1ce4",
+      "bytes": 59627
+    },
+    "crates/deadpan-app/src/ui_harness.rs": {
+      "sha256": "ba3d3b985bd9ac62be69a6399725c20a81ea4d89935b94beeca0e1a741086a00",
+      "bytes": 30871
+    }
+  },
+  "helper_scope": "Fabricated minimal SQLite helper storage only; no NativeReport wrapper, real retained project, Cargo or product invocation.",
+  "helper_exit": 0,
+  "runtime_status": "Not executed; actual successful regions report and Root authorization still required."
+}

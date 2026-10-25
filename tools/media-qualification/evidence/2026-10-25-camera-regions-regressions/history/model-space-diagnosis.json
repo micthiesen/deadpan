@@ -1,0 +1,76 @@
+{
+  "observed_at": "2026-10-25T11:11:58.741126+00:00",
+  "report_sha256": "2d90b5e992c5f330fbd461a1947f87ba368e79e733e842fb1d60e8f5567f3c95",
+  "report_failed_check": "Accepting both licenses enables Install without starting anything",
+  "actual_report_free_space_and_refusal": [
+    "Stored in /var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-ui-mmhDJ8/Documents/Models \u00b7 16.36 GB free",
+    "Not enough free space: the download needs 36.42 GB (36.15 GB plus 268 MB working space) and 16.36 GB is free. Free space on the models volume, or install from a folder on another disk.",
+    "Not enough free space: the download needs 36.42 GB (36.15 GB plus 268 MB working space) and "
+  ],
+  "required_bytes": 36421298369,
+  "model_download_bytes": 36152862913,
+  "margin_bytes": 268435456,
+  "current_available_bytes": 15280525312,
+  "preferred_free_space_target_bytes": 40000000000,
+  "cleanup_candidates_in_order": [
+    {
+      "path": "/tmp/deadpan-follow-creep-2026-10-24/target/debug/incremental",
+      "allocated_referenced_bytes": 67097481216,
+      "apparent_logical_bytes": 66703811584,
+      "allocated_referenced_GiB": 62.48939895629883,
+      "apparent_logical_GiB": 62.12276554107666,
+      "exclusive_reclaimable_bytes": "unknown; APFS sharing/clones/open files/snapshots not measurable from du",
+      "scope": "rebuildable incremental cache only; no deps/top binaries/bundle/foreign subtarget/assets/evidence",
+      "execute": "not authorized; inventory only, coordinate Cargo idle and preserve bin-final/source pins first"
+    },
+    {
+      "path": "/Users/michael/Code/deadpan/target/debug/incremental",
+      "allocated_referenced_bytes": 166673272832,
+      "apparent_logical_bytes": 166201104384,
+      "allocated_referenced_GiB": 155.22658157348633,
+      "apparent_logical_GiB": 154.78684043884277,
+      "exclusive_reclaimable_bytes": "unknown; APFS sharing/clones/open files/snapshots not measurable from du",
+      "scope": "rebuildable incremental cache only; no deps/top binaries/bundle/foreign subtarget/assets/evidence",
+      "execute": "not authorized; inventory only, coordinate Cargo idle and preserve bin-final/source pins first"
+    }
+  ],
+  "recommendation": "After Cargo ownership is idle and Root approves cleanup, remove only task-target debug/incremental first, then remeasure real statvfs. Use Root debug/incremental only if needed. Do not sweep whole Root target recursively or touch its22foreign subtargets.",
+  "prior_cleanup": {
+    "actual_after_available_bytes": 50103123968,
+    "tool_report_task_GiB_cleaned": 62.62,
+    "tool_report_repo_GiB_cleaned": 319.03,
+    "warning": "tool/logical or referenced allocation removal did not imply equal actual free-space growth"
+  },
+  "protected": [
+    "bin-final five pinned release binaries",
+    "current task target/debug and release top executables",
+    "source54 manifest/snapshots",
+    "all actual reports/fixtures/projects/media evidence",
+    "Root bundle cache",
+    "foreign22target subdirectories",
+    "user model assets"
+  ],
+  "actions_performed": "read-only inventory/source/report inspection only; no deletion/Cargo/replay/product",
+  "sources": {
+    "crates/deadpan-app/src/preview/model_packs.rs": {
+      "sha256": "baa2cacb18b0b96874ce2468be6808e60c10638029eaf985a89a6eccefff3a70",
+      "bytes": 38083
+    },
+    "crates/deadpan-app/src/model_packs.rs": {
+      "sha256": "8d90172b1509de9c0aa6b1da6ed9beca1d5febbf4cf215c871eda2aa52ef28b5",
+      "bytes": 60403
+    },
+    "crates/deadpan-app/src/preview/harness/model_packs.rs": {
+      "sha256": "458a82aae52754cf0cf1598c7f78463ebd498a5f6ea9f1a9e9595b56434d03b1",
+      "bytes": 19940
+    },
+    "crates/deadpan-models/src/packs.rs": {
+      "sha256": "a2a714288bf3131eb44a6c3777a90d8cdb6458a332905fffccc0bbe31c7094fc",
+      "bytes": 55005
+    },
+    "models/packs/ltx-2.3-q4-bridge-1.json": {
+      "sha256": "5fbdde4e3a82e1fb8a875c272537f302e658add759f06fe0aec49d8718355e4e",
+      "bytes": 15657
+    }
+  }
+}

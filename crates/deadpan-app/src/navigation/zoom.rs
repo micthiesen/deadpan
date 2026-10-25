@@ -11,11 +11,13 @@ pub use deadpan_core::framing_zoom::{
 };
 use deadpan_core::{ExactRatio, Framing, FramingPose, FramingValue, TargetId};
 
-pub const ZOOM_USAGE: &str = "Use :zoom 1.35 [target=current|center|face:N|ID or label] [curve=step|linear|smoothstep], or :zoom off to return to the full picture.";
-pub const CREEP_USAGE: &str = "Use :creep [from=1] [to=1.35] [target=current|center|face:N|ID or label] [curve=smoothstep|linear].";
+pub const ZOOM_USAGE: &str = "Use :zoom 1.35 [target=current|center|face:N|region:N|ID or label] [curve=step|linear|smoothstep], or :zoom off to return to the full picture.";
+pub const CREEP_USAGE: &str = "Use :creep [from=1] [to=1.35] [target=current|center|face:N|region:N|ID or label] [curve=smoothstep|linear].";
 
 /// The most faces a `face:N` proposal can name (the detector's bound).
 pub const MAX_FACE_NUMBER: u8 = 64;
+/// The bounded proposal number, independent of Vision's unspecified ordering.
+pub const MAX_REGION_NUMBER: u8 = 64;
 
 /// Which point the new framing centers on.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -34,6 +36,9 @@ pub enum TargetChoice {
     /// detection proposes in the displayed picture. Detection runs in the
     /// background; only this explicit command saves the face as a target.
     Face(u8),
+    /// `target=region:N`: the `N`th salient region, numbered geometrically.
+    /// Only the explicit command accepts this proposed, untracked rectangle.
+    Region(u8),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -113,7 +118,7 @@ fn scale(value: &str) -> Result<ExactRatio, String> {
 fn target(value: &str) -> Result<TargetChoice, String> {
     Ok(match value {
         "" => {
-            return Err("target= needs current, center, face:N, or a target id or label.".into());
+            return Err("target= needs current, center, face:N, region:N, or a target id or label.".into());
         }
         "current" => TargetChoice::Current,
         "center" => TargetChoice::Center,
@@ -127,7 +132,18 @@ fn target(value: &str) -> Result<TargetChoice, String> {
                         "face:N numbers the faces in the picture from 1 to {MAX_FACE_NUMBER}, left to right."
                     ))?,
             ),
-            None => TargetChoice::Named(other.to_owned()),
+            None => match other.strip_prefix("region:") {
+                Some(number) => TargetChoice::Region(
+                    number
+                        .parse::<u8>()
+                        .ok()
+                        .filter(|number| (1..=MAX_REGION_NUMBER).contains(number))
+                        .ok_or(format!(
+                            "region:N numbers salient regions from 1 to {MAX_REGION_NUMBER}, left to right."
+                        ))?,
+                ),
+                None => TargetChoice::Named(other.to_owned()),
+            },
         },
     })
 }
@@ -246,6 +262,11 @@ pub fn resolve(
                 "face:{number} names a detected face, which needs face detection first."
             ));
         }
+        TargetChoice::Region(number) => {
+            return Err(format!(
+                "region:{number} names a proposed region, which needs region detection first."
+            ));
+        }
         TargetChoice::Current | TargetChoice::Selected => {
             if let Some(id) = followed {
                 return Ok((Resolved::Target(id.clone()), None));
@@ -353,6 +374,44 @@ mod tests {
 
     fn ratio(n: i128, d: i128) -> ExactRatio {
         ExactRatio::new(n, d).unwrap()
+    }
+
+    #[test]
+    fn salient_region_commands_require_bounded_explicit_proposal_numbers() {
+        assert_eq!(usize::from(MAX_FACE_NUMBER), deadpan_cli::faces::MAX_FACES);
+        assert_eq!(
+            usize::from(MAX_REGION_NUMBER),
+            deadpan_cli::picture_proposals::MAX_SALIENT_REGIONS
+        );
+        assert_eq!(
+            parse_zoom("2 target=region:64").unwrap().target,
+            TargetChoice::Region(64)
+        );
+        assert_eq!(
+            parse_creep("to=1.5 target=region:1").unwrap().target,
+            TargetChoice::Region(1)
+        );
+        for value in [
+            "region:0",
+            "region:65",
+            "region:-1",
+            "region:1.0",
+            "region:256",
+            "region:",
+        ] {
+            assert!(parse_zoom(&format!("2 target={value}")).is_err(), "{value}");
+        }
+        assert_eq!(
+            parse_zoom("2 target=\"Region 1\"").unwrap().target,
+            TargetChoice::Named("Region 1".into())
+        );
+        assert!(
+            resolve(&TargetChoice::Region(1), None, &[], |_| panic!(
+                "proposal is not a saved name"
+            ))
+            .unwrap_err()
+            .contains("needs region detection")
+        );
     }
 
     #[test]
