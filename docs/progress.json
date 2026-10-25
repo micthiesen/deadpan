@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-25T17:32:18Z",
+  "updated_at": "2026-10-25T18:30:13Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Automatic local word-boundary refinement: qualifying short-window Whisper DTW against an independent synthetic corpus before integrating proposals and explicit correction acceptance. Scoped Repeat-play framing ranges are committed and verified. Coverage 83%; 8/24 requirements complete; 0/7 gates closed.",
+  "focus": "Exact Original analysis windows are committed and verified. Integrating the real local word-refinement proposal workflow: frozen phoneme backend, explicit approximation and acceptance, pinned corrections, native inference and model/runtime packaging. Prior model precision/coverage experiment failures remain explicit. Coverage 83%; 8/24 requirements complete; 0/7 gates closed.",
   "features": [
     {
       "id": "editing",
@@ -53,7 +53,7 @@
       "requirements": [
         "DP-10"
       ],
-      "note": "Local transcription, corrections, pause/shot proposals and corrected transcript-search selectors work. Automatic tighter word-boundary refinement, cursor-priority incremental scheduling and broader local analysis qualification remain."
+      "note": "Local transcription, corrections, pause/shot proposals and corrected transcript-search selectors work. Exact Original analysis windows now preserve full resampling phase and reuse a retained reader, with real 44.1/48 kHz and positive/negative-origin verification. Initial cache opening still decodes the whole source. Automatic word-refinement proposals are being integrated after model experiments; stricter experimental precision/coverage gates remain failed and are not relabeled as passes. Cursor-priority incremental scheduling and broader local analysis qualification remain."
     },
     {
       "id": "ai",
@@ -1360,6 +1360,15 @@
       "revision": "f52d05142f7735990edeaf79e2295aaa328de284",
       "retrospective": false,
       "summary": "Milestone 152: exactly contained framing ranges now work in explicit nested Repeat Plays, retaining live Follow and fresh semantic replay. Final 2,088 Core/Plan tests, strict checks, formatting, release scoped replays (296 checks plus Kestrel at 60/120 Hz) and ordinary moment regression (nineteen plus Kestrel) pass. Actual media verifies 240 pictures, 384,384 canonical stereo samples/limiter bits, zero-offset encoded audio and exact portable history. The 607-file collection and separate publication proofs pass independent byte/source/release/media audit. Original product, fixture and audit failures remain explicit. DP-08.3 stays partial because parameter editing remains; assessed coverage stays 83%."
+    },
+    {
+      "date": "2026-10-25",
+      "percent": 83,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 8,
+      "revision": "883c9970d70dd0abeea4b1fd05508f2865e31af0",
+      "retrospective": false,
+      "summary": "Verified Original analysis-window preparation retains full source origin, exact global sample offset and canonical resampling phase. Four real CLI tests cover 44.1/48 kHz, zero/positive/negative origins, fractional/terminal crops, preflight refusal and cache reuse. The debug-adoption interruption regression, strict CLI/Media/Store all-target checks and formatting pass. Original fixture/lint failures and exact evidence remain retained. This is preparation for refinement, not implemented word proposals: DP-10.3 remains open and assessed coverage stays 83%."
     }
   ],
   "assessment": {
