@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-25T21:29:43Z",
+  "updated_at": "2026-10-25T22:15:57Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Qualifying real local word-refinement packaging after passing CLI and native review/playback workflows. A source audit reopens the older native-worker launch-trust work in DP-22. Coverage about 83%; 7/24 requirements complete; 0/7 gates closed.",
+  "focus": "Word-timing proposals are locally qualified and committed. Next: bind older native helpers and their libraries to compiled identity and signer checks before launch. Coverage about 83%; 7/24 requirements complete; 0/7 gates closed.",
   "features": [
     {
       "id": "editing",
@@ -53,7 +53,7 @@
       "requirements": [
         "DP-10"
       ],
-      "note": "Local transcription, corrections, pause/shot proposals and corrected transcript-search selectors work. Exact Original analysis windows now preserve full resampling phase and reuse a retained reader, with real 44.1/48 kHz and positive/negative-origin verification. Initial cache opening still decodes the whole source. Automatic word-refinement proposals are being integrated after model experiments; stricter experimental precision/coverage gates remain failed and are not relabeled as passes. Cursor-priority incremental scheduling and broader local analysis qualification remain."
+      "note": "Local transcription, corrections, pause/shot proposals and corrected transcript-search selectors work. Exact Original windows preserve global resampling phase; initial cache opening still decodes the full stream. English word refinement now runs the real isolated native CPU model, shows approximate support/waveform, preserves pins and cuts, auditions through actual device delivery, and accepts only explicitly with one correction Undo. Native/CLI and relocated signed-package import, proposal, acceptance/Undo and integrity refusals are verified. The stricter model quality experiments remain failed. Cursor-priority incremental scheduling and broader local analysis qualification remain."
     },
     {
       "id": "ai",
@@ -1378,6 +1378,15 @@
       "revision": "32b0620c",
       "retrospective": false,
       "summary": "Source audit corrects over-credit: DP-22.3 falls from 1 to 0.5 because the three older native workers lack launch-time compiled identity and signer checks. DP-22 reopens; 7/24 strictly complete. Same 162 criteria; 82.7307% rounds to 83%. Word-refinement integration is not credited yet."
+    },
+    {
+      "date": "2026-10-25",
+      "percent": 83,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 7,
+      "revision": "b5bdf7a1",
+      "retrospective": false,
+      "summary": "DP-10.3 now has verified English word-timing proposals: native model, explicit waveform review and correction Undo, real device audition, and relocated packaged import/inference/acceptance plus tamper refusals. Its experimental quality targets remain failed. Together with the DP-22.3 trust correction, the same 162-criterion ledger is 83.3259%, rounded to 83%; 7/24 requirements and 0/7 gates complete."
     }
   ],
   "assessment": {
@@ -2249,12 +2258,16 @@
           {
             "id": "DP-10.3",
             "deliverable": "Automatic tighter local word-boundary refinement proposes timing without changing pinned edits",
-            "score": 0,
+            "score": 1,
             "evidence": [
-              "docs/TRANSCRIPTION.md Timing/Remaining",
-              "docs/ANALYSIS_CORRECTIONS.md Remaining"
+              "docs/WORD_REFINEMENT.md",
+              "docs/qualification/word-refinement-2026-10-25.md",
+              "crates/deadpan-cli/tests/refinement.rs",
+              "crates/deadpan-cli/tests/refinement_acceptance.rs",
+              "crates/deadpan-app/src/preview/harness/word_refinement.rs",
+              "tools/model-qualification/evidence/2026-10-25-word-refinement/inventory.json"
             ],
-            "remaining": "An automatic refinement/alignment pass is explicitly still required; manual energy snapping is not that implementation.",
+            "remaining": "Human phonetic/listening judgment is an owner check under 29.1; stricter experimental retention/foreign-energy targets remain failed. No automatic precision or conversational accuracy is claimed. Broader DP-10 scheduling, sentence/pause/shot scope remains separately scored.",
             "normative": "11.2; DP-10 timing refinement"
           },
           {
