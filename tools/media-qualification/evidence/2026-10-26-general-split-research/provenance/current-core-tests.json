@@ -1,0 +1,7 @@
+{
+  "source": "/tmp/deadpan-general-split-sounds-2026-10-25/target/debug/deps/deadpan_core-150f646e0b1907ff",
+  "executed_copy": "/tmp/deadpan-general-split-sounds-2026-10-25/current-core-tests",
+  "sha256": "36cceef899db9596d41e28a04c41fe9310a7c113d5845ee4a1548ca77a6c0d3d",
+  "build_receipt": "core-development-third.json",
+  "profile": "dev opt0"
+}

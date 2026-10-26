@@ -1,0 +1,21 @@
+diff --git a/crates/deadpan-audio/src/stages.rs b/crates/deadpan-audio/src/stages.rs
+index 8022b4d2..c2d2ad0d 100644
+--- a/crates/deadpan-audio/src/stages.rs
++++ b/crates/deadpan-audio/src/stages.rs
+@@ -525,10 +525,13 @@ impl WorkControl<'_> {
+         } else {
+             &mut work.plan_work
+         };
+-        *spent = spent
++        let next = spent
+             .checked_add(amount)
+-            .filter(|total| *total <= MAX_PLAN_WORK_PER_READ)
+-            .ok_or(StageAudioError::Limit(if cache {
++            .filter(|total| *total <= MAX_PLAN_WORK_PER_READ);
++        if next.is_none() {
++            eprintln!("PLAN WORK EXHAUSTED: spent={spent}, next={amount}, cache={cache}\n{}", std::backtrace::Backtrace::force_capture());
++        }
++        *spent = next.ok_or(StageAudioError::Limit(if cache {
+                 CACHE_KEY_WORK_LIMIT
+             } else {
+                 "plan work per read"

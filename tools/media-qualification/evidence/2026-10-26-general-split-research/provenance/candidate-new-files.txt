@@ -1,0 +1,9 @@
+crates/deadpan-audio/tests/stages/general_split_sound.rs
+crates/deadpan-core/src/audio_reference/isolation_correspondence.rs
+crates/deadpan-core/src/occurrence_edit/sound_isolation.rs
+crates/deadpan-core/src/occurrence_edit/split.rs
+crates/deadpan-core/src/occurrence_edit/split/tests.rs
+crates/deadpan-core/src/sound_clock/introduced_isolations_tests.rs
+crates/deadpan-core/src/sound_clock/tests/edits/split_sound_composites.rs
+crates/deadpan-plan/src/sound_clock_cache.rs
+crates/deadpan-plan/src/sound_clock_cache/tests.rs

@@ -24,24 +24,27 @@ statements below describe their historical reporting state.
 
 ## General Split sound transport in progress, 2026-10-26
 
-The working-tree candidate extends complete-context Split sound proofs to
-composite owners and non-Sequence parents, and routes explicit one-play Split
-through isolation before sound capture. A recorded stable-play isolation relation
-retains a shared ancestor processor and its earlier sound clocks; malformed
-Repeat, play and root relations reject at ingress. The current candidate passes
-all **786 Core library tests**, including the existing unpaired-group rejection.
-An earlier admission regression and fixture qualification/admission failures were
-found and corrected during development.
+The [research checkpoint](qualification/general-split-sound-research-2026-10-26.md)
+retains the uncommitted candidate, 32 terminal runs and exact filter input. It
+extends complete-context Split sound proofs, explicit stable-play isolation and
+immutable plan-owned proof caching while retaining shared ancestor processors.
+The broad Core/Plan run passes **2,119 tests**; the later cache passes all **505
+Plan tests**, overlapping the earlier run, and strict Core/Plan/Audio lint passes.
 
-Qualification remains open. All five new real-WAV PCM cases currently fail the
-unchanged **16,777,216 plan-work-per-read** bound, including a pristine processed
-baseline before Split. Selected and nested-play cases now pass structural
-isolation and reach audio preparation. This is an unresolved rendering-work
-failure, not a PCM equivalence pass. Raw runs and source/binary pins are retained
-in `/tmp/deadpan-general-split-sounds-2026-10-25`; the production candidate remains
-uncommitted. Native scoped Split stays blocked. Broad Plan/Store/app checks,
-emitted-media proof, performance measurements and final review remain owed.
-No requirement, criterion or gate receives completion credit from this work block.
+Qualification remains open. The seven real-WAV PCM cases have **two passes and
+five failures**: pristine audible-processing/limiter and read-partition controls
+pass, three cases still exhaust preparation work, and two tests expose an exact
+PCM defect. The first Source/Sequence difference is one float step at sample
+5,977, but exact f64 capture proves a missing right-fragment sound contribution
+from seam 8,008 onward in the root filter's halo. This is not an acceptable
+rounding tolerance. Narrow Source journals correctly carry no external Split
+forest; delivered continuity needs a separate checked proof without widening
+processing-history authority. The work limit remains **16,777,216**.
+
+Native scoped Split stays blocked. Delivery continuity, remaining preparation
+work, Store/history, native receipts/macros, emitted media and performance remain
+owed. The production candidate remains uncommitted; this work block awards no
+requirement, criterion or gate completion credit.
 
 ## Scoped target framing qualified, 2026-10-25
 

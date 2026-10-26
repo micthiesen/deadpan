@@ -1,0 +1,7 @@
+{
+  "path": "/tmp/deadpan-general-split-sounds-2026-10-25/stages-trace-inputs-sixteenth",
+  "sha256": "6607f6a01e98c38706c39273f41c83f24b557de72688e0b527ac18bb8e5b254c",
+  "cargo_test_executable": "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/stages-2549f4a70ff08614",
+  "run": "audio-trace-inputs-sixteenth",
+  "note": "Retained immediately after terminal Cargo test, before later Cargo writes."
+}

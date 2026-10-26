@@ -6,14 +6,22 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 The uncommitted Core/Plan/Audio candidate and its exact open failures are recorded
 in [Requirements](../REQUIREMENTS.md#general-split-sound-transport-in-progress-2026-10-26).
-All 786 Core library tests pass after adding explicit stable-play sound-clock
-isolation and retaining shared processing scopes. The five new real-WAV PCM cases
-still exhaust the existing plan-work-per-read bound, including the pristine
-processed baseline. Investigate the actual budget spender; do not raise the bound,
-remove wet processing or treat structural acceptance as audio qualification.
+The broad Core/Plan candidate passes 2,119 tests; the later immutable proof cache
+passes all 505 Plan tests (overlapping that run), and strict Core/Plan/Audio lint
+passes. The current seven-case real-WAV PCM matrix has two passes and five
+failures. Three preparation-work failures remain. Exact f64 filter input proves
+that root temporal processing excludes the matching right-fragment sound from
+Split sample 8,008 onward, producing the first float difference at 5,977.
+The individual Source journals deliberately retain no exterior Split forest.
+Implement separate delivered-continuity authority; do not widen processing scope,
+remove the root context guard blindly, infer aliases from labels/lineage, raise
+the work limit or loosen PCM equality. See the
+[retained research](../qualification/general-split-sound-research-2026-10-26.md)
+for exact runs, candidate source snapshot and the needed lifecycle coverage.
 Native scoped Split remains blocked until its complete command/receipt/semantic
 and rendering path is qualified. Preserve the foreign fuzz/Cargo.lock and .claude/
-changes. Raw development runs are in the linked scratch directory. Coverage
+changes. Raw development runs remain in the linked scratch directory and the
+new frozen research collection. All temporary tracing is removed. Coverage
 stays 85%, strict closure 10/24 and gates 0/7.
 
 ## Current continuation, 2026-10-25

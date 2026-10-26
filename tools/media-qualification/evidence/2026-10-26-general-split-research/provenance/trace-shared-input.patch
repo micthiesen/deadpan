@@ -1,0 +1,36 @@
+diff --git a/crates/deadpan-audio/src/shared_eq.rs b/crates/deadpan-audio/src/shared_eq.rs
+index 7a2f5502..219e35d3 100644
+--- a/crates/deadpan-audio/src/shared_eq.rs
++++ b/crates/deadpan-audio/src/shared_eq.rs
+@@ -915,6 +915,31 @@ impl StageAudio {
+                     relative_depth = relative_depth.max(block.relative_depth + 1);
+                     at += i64::from(count);
+                 }
++                if matches!(kind, Temporal::Equalizer(_))
++                    && graph.nodes[id].boundary.owner().instance().node == graph.plan.metadata().root
++                    && key.0 <= 5977 && key.0 + output as i64 > 5977
++                    && let Some(directory) = std::env::var_os("DEADPAN_TRACE_SHARED_INPUT")
++                {
++                    static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
++                    let serial = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
++                    let directory = std::path::PathBuf::from(directory);
++                    let voices: Vec<_> = graph.voices.iter().map(|(voice, number)| {
++                        let label = match voice {
++                            Voice::Original => "Original".to_owned(),
++                            Voice::Root(sound) => format!("Root {sound:?}"),
++                            Voice::Beat(owner, sound, instance) => format!("Beat {owner:?}/{sound:?}/{instance:?}"),
++                        };
++                        format!("{number}: {label}; permitted={}", key.1.contains(*number))
++                    }).collect();
++                    let header = format!("revision={:?}\ntile={}\nbegin={begin}\ninput={input}\noutput_voice={:?}\n{}\n", graph.plan.metadata().revision_id, key.0, key.2, voices.join("\n"));
++                    std::fs::write(directory.join(format!("{serial}.txt")), header)?;
++                    let mut bytes = Vec::with_capacity(input * 16);
++                    for (left, right) in left.iter().zip(&right) {
++                        bytes.extend_from_slice(&left.to_le_bytes());
++                        bytes.extend_from_slice(&right.to_le_bytes());
++                    }
++                    std::fs::write(directory.join(format!("{serial}.f64")), bytes)?;
++                }
+                 let mut out_left = vec![0.0; output];
+                 let mut out_right = vec![0.0; output];
+                 if let Some(filter) = &mut filter {

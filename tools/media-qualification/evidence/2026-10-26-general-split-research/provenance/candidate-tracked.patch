@@ -1,0 +1,2047 @@
+diff --git a/crates/deadpan-audio/src/authored_gain.rs b/crates/deadpan-audio/src/authored_gain.rs
+index 87ef9b32..83ba89f7 100644
+--- a/crates/deadpan-audio/src/authored_gain.rs
++++ b/crates/deadpan-audio/src/authored_gain.rs
+@@ -100,11 +100,23 @@ impl GainSum {
+         if treatment.is_empty() {
+             return Ok(());
+         }
+-        control.spend_plan_work(treatment.record_count())?;
+         let order = treatment
+             .order()
+             .get(stages)
+             .ok_or(PlanError::InvalidPlan("audio treatment slice out of range"))?;
++        // Charge the records this memoryless slice actually traverses. EQ and
++        // wet kernels have their own preparation budgets; a gain-only prefix
++        // does not evaluate those recipes again at every sample.
++        let records = order
++            .iter()
++            .map(|stage| match stage {
++                deadpan_core::AudioTreatmentStage::ClipGain => treatment
++                    .clip_gain()
++                    .map_or(0, deadpan_core::ClipGain::record_count),
++                _ => 1,
++            })
++            .sum();
++        control.spend_plan_work(records)?;
+         for stage in order {
+             match stage {
+                 deadpan_core::AudioTreatmentStage::ClipGain => {
+@@ -215,6 +227,16 @@ impl GainSum {
+             self.escalation(owner)?;
+         }
+         if let Some(recipe) = owner.treatments() {
++            if stages.is_empty() {
++                // Components use 0..0 to apply only Repeat escalation. No
++                // treatment is evaluated, so do not repeatedly resolve the
++                // local sample clock or charge the complete recipe for it.
++                recipe
++                    .order()
++                    .get(stages)
++                    .ok_or(PlanError::InvalidPlan("audio treatment slice out of range"))?;
++                return Ok(());
++            }
+             self.treatment(recipe, owner.sampling().local_at(at)?, control, stages)?;
+         }
+         Ok(())
+diff --git a/crates/deadpan-audio/tests/stages.rs b/crates/deadpan-audio/tests/stages.rs
+index e22bdfb2..6fd99c24 100644
+--- a/crates/deadpan-audio/tests/stages.rs
++++ b/crates/deadpan-audio/tests/stages.rs
+@@ -65,6 +65,9 @@ mod disk_cache;
+ #[path = "stages/progress.rs"]
+ mod progress;
+ 
++#[path = "stages/general_split_sound.rs"]
++mod general_split_sound;
++
+ fn id(value: &str) -> NodeId {
+     NodeId::new(value).unwrap()
+ }
+diff --git a/crates/deadpan-core/src/audio_binding.rs b/crates/deadpan-core/src/audio_binding.rs
+index 85465049..60ebe71a 100644
+--- a/crates/deadpan-core/src/audio_binding.rs
++++ b/crates/deadpan-core/src/audio_binding.rs
+@@ -1335,6 +1335,7 @@ impl AudioBindingState {
+                 for reference in journal.clocks() {
+                     work.spend(reference.introduced_groups().len())?;
+                     work.spend(reference.split_work_count())?;
++                    work.spend(reference.isolation_work_count())?;
+                     let timing = reference.timing();
+                     if !self.timings.contains_key(timing) {
+                         return Err(invalid("sound clock timing identity is missing"));
+@@ -1495,6 +1496,7 @@ impl AudioBindingState {
+                         // shared correspondence avoids another tree traversal.
+                         work.spend(reference.introduced_groups().len())?;
+                         work.spend(reference.split_work_count())?;
++                        work.spend(reference.isolation_work_count())?;
+                         let key = (
+                             timing.clone(),
+                             reference.scope().clone(),
+@@ -1502,6 +1504,7 @@ impl AudioBindingState {
+                             reference.repeats().clone(),
+                             reference.introduced_groups().clone(),
+                             reference.introduced_splits().to_vec(),
++                            reference.introduced_isolations().to_vec(),
+                             (reference.introduced_groups().contains(journal.scope())
+                                 || self.timings[timing].sound_uses_output_owner_proof(
+                                     &live,
+@@ -1517,7 +1520,7 @@ impl AudioBindingState {
+                                     (reference.scope(), journal.scope()),
+                                     (reference.owner(), owner),
+                                     reference.repeats(),
+-                                    (reference.introduced_groups(), reference.introduced_splits()),
++                                    reference.relations(),
+                                     work.remaining()?,
+                                 )?;
+                             work.spend(proof.work())?;
+diff --git a/crates/deadpan-core/src/audio_reference.rs b/crates/deadpan-core/src/audio_reference.rs
+index 548e0bce..6d31a221 100644
+--- a/crates/deadpan-core/src/audio_reference.rs
++++ b/crates/deadpan-core/src/audio_reference.rs
+@@ -2,6 +2,7 @@
+ //! to a later live document; no media, marks or previous bindings are retained.
+ 
+ mod exact_clock;
++mod isolation_correspondence;
+ mod preflight;
+ mod scale_projection;
+ pub use exact_clock::FrozenRetimeClock;
+@@ -354,6 +355,12 @@ pub struct SoundClockCorrespondence {
+     inner: Arc<SoundClockCorrespondenceInner>,
+ }
+ 
++enum SoundClockProofOwners<'a> {
++    None,
++    Pair(&'a NodeId, &'a NodeId),
++    RootSplit,
++}
++
+ #[derive(Debug)]
+ struct SoundClockCorrespondenceInner {
+     live_to_historical: BTreeMap<NodeId, NodeId>,
+@@ -1187,15 +1194,16 @@ impl FrozenAudioLayout {
+             current,
+             (historical_scope, live_scope),
+             repeats,
+-            None,
+-            (&BTreeSet::new(), &[]),
++            SoundClockProofOwners::None,
++            (&BTreeSet::new(), &[], &[]),
+             maximum_work,
+         )
+     }
+ 
+-    // Cache the exact partial-proof mode by owner. Every complete proof keeps
+-    // scope-level sharing, including a Sequence owner paired with its children.
+-    pub(crate) fn sound_uses_output_owner_proof(
++    /// Whether this explicit owner pair permits the narrower output-only proof.
++    /// Correspondence caches must include that owner pair in their key; full
++    /// subtree proofs may share an exact scope-and-relation key across owners.
++    pub fn sound_uses_output_owner_proof(
+         &self,
+         current: &Self,
+         scopes: (&NodeId, &NodeId),
+@@ -1264,7 +1272,7 @@ impl FrozenAudioLayout {
+             scopes,
+             owners,
+             repeats,
+-            (introduced_groups, &[]),
++            (introduced_groups, &[], &[]),
+             maximum_work,
+         )
+     }
+@@ -1279,34 +1287,72 @@ impl FrozenAudioLayout {
+         scopes: (&NodeId, &NodeId),
+         owners: (&NodeId, &NodeId),
+         repeats: &crate::SoundClockRepeatMap,
+-        introduced: (&BTreeSet<NodeId>, &[crate::SoundClockSplit]),
++        introduced: (
++            &BTreeSet<NodeId>,
++            &[crate::SoundClockSplit],
++            &[crate::SoundClockIsolation],
++        ),
+         maximum_work: usize,
+     ) -> Result<SoundClockCorrespondence, DocumentError> {
+         self.sound_clock_correspondence_inner(
+             current,
+             scopes,
+             repeats,
+-            Some(owners),
++            SoundClockProofOwners::Pair(owners.0, owners.1),
+             introduced,
+             maximum_work,
+         )
+     }
+ 
++    /// A duration-preserving child Split leaves a root attachment at the same
++    /// output stage. Prove its complete input without creating a root journal.
++    /// Root clock references remain unsupported by the public journal API.
++    pub(crate) fn sound_split_root_correspondence(
++        &self,
++        current: &Self,
++        groups: &BTreeSet<NodeId>,
++        splits: &[crate::SoundClockSplit],
++        maximum_work: usize,
++    ) -> Result<SoundClockCorrespondence, DocumentError> {
++        self.sound_clock_correspondence_inner(
++            current,
++            (&self.root, &current.root),
++            &crate::SoundClockRepeatMap::default(),
++            SoundClockProofOwners::RootSplit,
++            (groups, splits, &[]),
++            maximum_work,
++        )
++    }
++
+     fn sound_clock_correspondence_inner(
+         &self,
+         current: &Self,
+         scopes: (&NodeId, &NodeId),
+         repeats: &crate::SoundClockRepeatMap,
+-        owners: Option<(&NodeId, &NodeId)>,
+-        introduced: (&BTreeSet<NodeId>, &[crate::SoundClockSplit]),
++        owner_proof: SoundClockProofOwners<'_>,
++        introduced: (
++            &BTreeSet<NodeId>,
++            &[crate::SoundClockSplit],
++            &[crate::SoundClockIsolation],
++        ),
+         maximum_work: usize,
+     ) -> Result<SoundClockCorrespondence, DocumentError> {
+         let (historical_scope, live_scope) = scopes;
+-        let (introduced_groups, introduced_splits) = introduced;
++        let (introduced_groups, introduced_splits, introduced_isolations) = introduced;
++        let root_split = matches!(owner_proof, SoundClockProofOwners::RootSplit);
++        let owners = match owner_proof {
++            SoundClockProofOwners::Pair(historical, live) => Some((historical, live)),
++            _ => None,
++        };
+         if maximum_work == 0 || maximum_work > MAX_DOCUMENT_NODES {
+             return Err(limit("invalid sound clock comparison budget"));
+         }
+-        if historical_scope == &self.root || live_scope == &current.root {
++        if (historical_scope == &self.root || live_scope == &current.root)
++            && !(root_split
++                && historical_scope == &self.root
++                && live_scope == &current.root
++                && !introduced_splits.is_empty())
++        {
+             return Err(invalid("root-owned sound clocks are not supported"));
+         }
+         if self.rate != current.rate {
+@@ -1319,6 +1365,11 @@ impl FrozenAudioLayout {
+         let mut work = 0usize;
+         let mut split_state =
+             split_correspondence::SplitProofState::new(introduced_splits, &mut work, maximum_work)?;
++        let mut isolation_state = isolation_correspondence::IsolationProofState::new(
++            introduced_isolations,
++            &mut work,
++            maximum_work,
++        )?;
+         // Charge the complete relation before looking up its entries or
+         // allocating the visited set. Unused and exterior entries are rejected
+         // after the subtree walk, rather than searching unrelated branches.
+@@ -1501,6 +1552,7 @@ impl FrozenAudioLayout {
+                 .is_some()
+                 || !historical_seen.insert(historical_id.clone())
+                     && split_state.aliases.get(&live_id) != Some(&historical_id)
++                    && isolation_state.aliases.get(&live_id) != Some(&historical_id)
+             {
+                 return Err(invalid(
+                     "sound clock subtree correspondence is not one-to-one",
+@@ -1532,6 +1584,26 @@ impl FrozenAudioLayout {
+             {
+                 return Err(invalid("sound clock processing subtree changed"));
+             }
++            if (split_state.aliases.get(&live_id) == Some(&historical_id)
++                || isolation_state.aliases.get(&live_id) == Some(&historical_id))
++                && (historical_node.edges != live_node.edges
++                    || historical_node.editorial_edges != live_node.editorial_edges
++                    || match (&historical_node.kind, &live_node.kind) {
++                        (FrozenAudioKind::Source { .. }, FrozenAudioKind::Source { .. })
++                        | (FrozenAudioKind::Hold { .. }, FrozenAudioKind::Hold { .. }) => {
++                            historical_node.kind != live_node.kind
++                        }
++                        (
++                            FrozenAudioKind::Repeat { gap_audio: old, .. },
++                            FrozenAudioKind::Repeat {
++                                gap_audio: live, ..
++                            },
++                        ) => old != live,
++                        _ => false,
++                    })
++            {
++                return Err(invalid("sound clock Split changed its complete context"));
++            }
+ 
+             // Only the explicitly paired event owner can terminate this
+             // dependency walk. placement_path above already forbids omitting
+@@ -1539,6 +1611,8 @@ impl FrozenAudioLayout {
+             // clock and stage controls were checked before reaching here.
+             let output_owner = historical_id == *historical_scope
+                 && live_id == *live_scope
++                && introduced_splits.is_empty()
++                && introduced_isolations.is_empty()
+                 && owners.is_some_and(|owners| {
+                     self.sound_uses_output_owner_proof(
+                         current,
+@@ -1573,16 +1647,56 @@ impl FrozenAudioLayout {
+                     None,
+                 )?
+             } else {
+-                paired_sound_clock_children(self, current, &historical_id, &live_id)?
+-                    .into_iter()
+-                    .map(|(historical, live)| SoundClockChildPair {
+-                        historical,
+-                        live,
+-                        live_parent: live_id.clone(),
+-                        historical_parent: None,
+-                        live_depth: live_depth + 1,
+-                    })
+-                    .collect()
++                let mut children = Vec::new();
++                for (historical, live) in isolation_state.children(
++                    self,
++                    current,
++                    &historical_id,
++                    &live_id,
++                    &mut work,
++                    maximum_work,
++                )? {
++                    if introduced_groups.contains(&live) {
++                        if !split_state.wrapped_forest(
++                            &historical,
++                            &live,
++                            current,
++                            introduced_groups,
++                            &mut work,
++                            maximum_work,
++                        )? {
++                            return Err(invalid("sound clock processing subtree changed"));
++                        }
++                        children.extend(
++                            split_correspondence::SequenceRelations {
++                                historical: self,
++                                current,
++                                groups: introduced_groups,
++                                visited_groups: &mut visited_groups,
++                                live_parents: &mut live_parents,
++                                historical_parents: &mut historical_parents,
++                                splits: &mut split_state,
++                                work: &mut work,
++                                maximum: maximum_work,
++                            }
++                            .pair(
++                                Some(&historical_id),
++                                std::slice::from_ref(&historical),
++                                (&live_id, std::slice::from_ref(&live), live_depth),
++                                None,
++                            )?,
++                        );
++                    } else {
++                        children.push(SoundClockChildPair {
++                            historical,
++                            live,
++                            live_parent: live_id.clone(),
++                            historical_parent: None,
++                            live_depth: live_depth + 1,
++                        });
++                    }
++                }
++                children
+             };
+             if let FrozenAudioKind::Repeat { iterations, .. } = &live_node.kind {
+                 let historical_repeat = scoped_repeat(self, &historical_id)?;
+@@ -1594,14 +1708,41 @@ impl FrozenAudioLayout {
+                 live_repeats.insert(live_id.clone(), live_repeat);
+                 historical_repeats.insert(historical_id.clone(), historical_repeat);
+             }
++            let mut next = Vec::with_capacity(children.len());
++            // Register the literal branch before its certified copies, then
++            // preserve that same traversal order on the work stack.
+             for child in children {
++                if isolation_state.aliases.get(&live_id) == Some(&historical_id) {
++                    spend(&mut work, 1, maximum_work)?;
++                    if isolation_state
++                        .aliases
++                        .insert(child.live.clone(), child.historical.clone())
++                        .is_some_and(|previous| previous != child.historical)
++                    {
++                        return Err(invalid("sound clock isolation descendant alias changed"));
++                    }
++                }
++                // A certified full context includes every descendant, including
++                // sparse Repeat branches. Only this recursive route permits
++                // several fresh copies to share one historical subtree.
++                if split_state.aliases.get(&live_id) == Some(&historical_id) {
++                    spend(&mut work, 1, maximum_work)?;
++                    if split_state
++                        .aliases
++                        .insert(child.live.clone(), child.historical.clone())
++                        .is_some_and(|previous| previous != child.historical)
++                    {
++                        return Err(invalid("sound clock Split descendant alias changed"));
++                    }
++                }
+                 let historical_parent = child
+                     .historical_parent
+                     .unwrap_or_else(|| historical_id.clone());
+                 let previous_parent =
+                     historical_parents.insert(child.historical.clone(), historical_parent.clone());
+                 if previous_parent.is_some_and(|previous| {
+-                    split_state.aliases.get(&child.live) != Some(&child.historical)
++                    (split_state.aliases.get(&child.live) != Some(&child.historical)
++                        && isolation_state.aliases.get(&child.live) != Some(&child.historical))
+                         || previous != historical_parent
+                 }) || live_parents
+                     .insert(child.live.clone(), child.live_parent)
+@@ -1609,8 +1750,9 @@ impl FrozenAudioLayout {
+                 {
+                     return Err(invalid("sound clock subtree contains a shared child"));
+                 }
+-                pending.push((child.historical, child.live, child.live_depth));
++                next.push((child.historical, child.live, child.live_depth));
+             }
++            pending.extend(next.into_iter().rev());
+         }
+         if visited_groups.len() != introduced_groups.len() {
+             return Err(invalid(
+@@ -1622,6 +1764,11 @@ impl FrozenAudioLayout {
+                 "sound clock Split relation is outside the paired subtree",
+             ));
+         }
++        if !isolation_state.complete() {
++            return Err(invalid(
++                "sound clock isolation is outside the paired subtree",
++            ));
++        }
+ 
+         Ok(SoundClockCorrespondence {
+             inner: Arc::new(SoundClockCorrespondenceInner {
+@@ -1670,6 +1817,10 @@ impl FrozenAudioLayout {
+         Ok((scope, work))
+     }
+ 
++    pub(crate) fn sound_parent(&self, node: &NodeId) -> Option<&NodeId> {
++        self.index.parents.get(node).map(|(parent, _)| parent)
++    }
++
+     pub(crate) fn sound_placement_repeats(
+         &self,
+         scope: &NodeId,
+diff --git a/crates/deadpan-core/src/audio_reference/split_correspondence.rs b/crates/deadpan-core/src/audio_reference/split_correspondence.rs
+index 41c6e70d..bf354353 100644
+--- a/crates/deadpan-core/src/audio_reference/split_correspondence.rs
++++ b/crates/deadpan-core/src/audio_reference/split_correspondence.rs
+@@ -1,4 +1,4 @@
+-//! Exact, explicitly certified replacement of one clock leaf by Split pieces.
++//! Exact, explicitly certified replacement of one complete clock by Split pieces.
+ 
+ use super::*;
+ 
+@@ -17,11 +17,10 @@ impl<'a> SplitProofState<'a> {
+     ) -> Result<Self, DocumentError> {
+         spend(work, splits.len(), maximum)?;
+         let mut by_first = BTreeMap::new();
+-        let mut historical = BTreeSet::new();
+         let mut live = BTreeSet::new();
+         for split in splits {
+             spend(work, split.pieces.len(), maximum)?;
+-            if split.pieces.len() < 2 || !historical.insert(split.historical_node.clone()) {
++            if split.pieces.len() < 2 {
+                 return Err(invalid("invalid sound clock Split relation"));
+             }
+             for piece in &split.pieces {
+@@ -51,6 +50,42 @@ impl<'a> SplitProofState<'a> {
+                 &split.historical_node == historical && split.pieces.len() == children.len()
+             })
+     }
++
++    /// A wrapper below a non-Sequence processor is admitted only as the
++    /// container of this exact Split forest. An unrelated recorded Split must
++    /// not make arbitrary new groups transparent beneath Repeat or Retime.
++    pub fn wrapped_forest(
++        &self,
++        historical: &NodeId,
++        live: &NodeId,
++        current: &FrozenAudioLayout,
++        groups: &BTreeSet<NodeId>,
++        work: &mut usize,
++        maximum: usize,
++    ) -> Result<bool, DocumentError> {
++        let mut wrapper = live;
++        for _ in 0..MAX_DOCUMENT_DEPTH {
++            spend(work, 1, maximum)?;
++            if !groups.contains(wrapper) {
++                return Ok(false);
++            }
++            let Some(FrozenAudioNode {
++                kind: FrozenAudioKind::Sequence { children },
++                ..
++            }) = current.nodes.get(wrapper)
++            else {
++                return Ok(false);
++            };
++            if self.root_forest(historical, children) {
++                return Ok(true);
++            }
++            let [child] = children.as_slice() else {
++                return Ok(false);
++            };
++            wrapper = child;
++        }
++        Err(limit("sound clock Split wrapper depth exceeds limit"))
++    }
+ }
+ 
+ pub(super) struct SequenceRelations<'a, 's> {
+@@ -173,13 +208,6 @@ impl SequenceRelations<'_, '_> {
+                 }
+                 let old = &self.historical.nodes[historical_child];
+                 let (full, range) = match &old.kind {
+-                    FrozenAudioKind::Source { .. } | FrozenAudioKind::Hold { .. } => (
+-                        historical_child,
+-                        FrameRange::new(
+-                            crate::ProjectFrame(0),
+-                            crate::ProjectFrame(old.duration.frames()),
+-                        )?,
+-                    ),
+                     FrozenAudioKind::Retime {
+                         child,
+                         mapping,
+@@ -190,19 +218,17 @@ impl SequenceRelations<'_, '_> {
+                         && !self
+                             .historical
+                             .derived_clocks
+-                            .contains_key(historical_child)
+-                        && matches!(
+-                            self.historical.nodes[child].kind,
+-                            FrozenAudioKind::Source { .. } | FrozenAudioKind::Hold { .. }
+-                        ) =>
++                            .contains_key(historical_child) =>
+                     {
+                         (child, *mapping)
+                     }
+-                    _ => {
+-                        return Err(invalid(
+-                            "sound clock Split target is not a complete leaf or transparent Partition",
+-                        ));
+-                    }
++                    _ => (
++                        historical_child,
++                        FrameRange::new(
++                            crate::ProjectFrame(0),
++                            crate::ProjectFrame(old.duration.frames()),
++                        )?,
++                    ),
+                 };
+                 if self.historical.derived_clocks.contains_key(full) {
+                     return Err(invalid("sound clock Split full owner has a derived clock"));
+@@ -250,7 +276,6 @@ impl SequenceRelations<'_, '_> {
+                         || pitch.processes(true)
+                         || self.current.derived_clocks.contains_key(&piece.partition)
+                         || self.current.derived_clocks.contains_key(child)
+-                        || self.current.nodes.get(child) != self.historical.nodes.get(full)
+                         || self
+                             .current
+                             .index
+@@ -288,7 +313,12 @@ impl SequenceRelations<'_, '_> {
+                         live_depth: piece_depth + 1,
+                     });
+                 }
+-                if next != range.end() || !self.splits.visited.insert(historical_child.clone()) {
++                if next != range.end()
++                    || !self
++                        .splits
++                        .visited
++                        .insert(split.pieces[0].partition.clone())
++                {
+                     return Err(invalid(
+                         "sound clock Split does not cover its historical interval",
+                     ));
+diff --git a/crates/deadpan-core/src/audio_reference/split_correspondence_tests.rs b/crates/deadpan-core/src/audio_reference/split_correspondence_tests.rs
+index 49a7d381..056e9edc 100644
+--- a/crates/deadpan-core/src/audio_reference/split_correspondence_tests.rs
++++ b/crates/deadpan-core/src/audio_reference/split_correspondence_tests.rs
+@@ -106,6 +106,7 @@ fn prove(
+                 BTreeSet::new()
+             },
+             splits,
++            &[],
+         ),
+         budget,
+     )
+@@ -195,6 +196,7 @@ fn transparent_partition_refinement_retains_full_leaf_and_old_partition_path() {
+             (
+                 &BTreeSet::new(),
+                 &[witness("left", &[("left", "owner"), ("middle", "third")])],
++                &[],
+             ),
+             MAX_DOCUMENT_NODES,
+         )
+@@ -232,7 +234,8 @@ fn introduced_split_scope_rejects_missing_owner_pairs_without_panicking() {
+                     &crate::SoundClockRepeatMap::default(),
+                     (
+                         &BTreeSet::from([id("g")]),
+-                        &[witness("owner", &[("left", "owner"), ("right", "copy")])]
++                        &[witness("owner", &[("left", "owner"), ("right", "copy")])],
++                        &[],
+                     ),
+                     MAX_DOCUMENT_NODES,
+                 )
+@@ -281,7 +284,7 @@ fn malformed_forests_wrong_aliases_and_exterior_relations_refuse() {
+             (&id("owner"), &id("owner")),
+             (&id("owner"), &id("owner")),
+             &crate::SoundClockRepeatMap::default(),
+-            (&BTreeSet::new(), &[valid]),
++            (&BTreeSet::new(), &[valid], &[]),
+             MAX_DOCUMENT_NODES
+         )
+         .is_err()
+diff --git a/crates/deadpan-core/src/command.rs b/crates/deadpan-core/src/command.rs
+index f1b8cfd0..a72c6d4a 100644
+--- a/crates/deadpan-core/src/command.rs
++++ b/crates/deadpan-core/src/command.rs
+@@ -1353,6 +1353,24 @@ fn apply_with_durations_captured(
+         )?;
+         return Ok((transaction, result, validation));
+     }
++    if let Some(prepared) = crate::occurrence_edit::split::prepare(document, request)? {
++        if let Some(steps) = isolation.as_deref_mut() {
++            steps.extend(prepared.isolation);
++        }
++        let resolved = CommandRequest {
++            command: prepared.command,
++            ..request.clone()
++        };
++        let (_, result, _) =
++            apply_with_durations_captured(&prepared.document, &resolved, None, isolation)?;
++        let (transaction, validation) = net_transaction_with_durations(
++            document,
++            &result,
++            description(&request.command),
++            previous,
++        )?;
++        return Ok((transaction, result, validation));
++    }
+     if let Some(prepared) = crate::insert_time::occurrence::prepare(document, request)? {
+         if let Some(steps) = isolation.as_deref_mut() {
+             steps.extend(prepared.isolation);
+diff --git a/crates/deadpan-core/src/edit_slice/rename.rs b/crates/deadpan-core/src/edit_slice/rename.rs
+index ced3b13f..b5b18f66 100644
+--- a/crates/deadpan-core/src/edit_slice/rename.rs
++++ b/crates/deadpan-core/src/edit_slice/rename.rs
+@@ -91,6 +91,7 @@ impl Inventory {
+                     for reference in journal.clocks() {
+                         result.charge(reference.introduced_groups().len())?;
+                         result.charge(reference.split_work_count())?;
++                        result.charge(reference.isolation_work_count())?;
+                         for step in reference.repeats().steps() {
+                             if let crate::SoundClockRepeatStep::Introduced { live_repeat, plays } =
+                                 step
+@@ -110,6 +111,7 @@ impl Inventory {
+                             reference.repeats().clone(),
+                             reference.introduced_groups().clone(),
+                             reference.introduced_splits().to_vec(),
++                            reference.introduced_isolations().to_vec(),
+                             (reference.introduced_groups().contains(journal.scope())
+                                 || historical.sound_uses_output_owner_proof(
+                                     &live,
+@@ -129,7 +131,7 @@ impl Inventory {
+                                     (reference.scope(), journal.scope()),
+                                     (reference.owner(), owner),
+                                     reference.repeats(),
+-                                    (reference.introduced_groups(), reference.introduced_splits()),
++                                    reference.relations(),
+                                     remaining.min(MAX_DOCUMENT_NODES),
+                                 )?;
+                             result.charge(proof.work())?;
+@@ -962,6 +964,26 @@ pub(super) fn prepare(
+                                         )?)
+                                     })
+                                     .collect::<Result<Vec<_>, EditError>>()?,
++                            )?
++                            .with_introduced_isolations(
++                                reference
++                                    .introduced_isolations()
++                                    .iter()
++                                    .map(|relation| {
++                                        Ok(crate::SoundClockIsolation {
++                                            live_repeat: rename.live(&relation.live_repeat)?,
++                                            historical_repeat: rename.historical(
++                                                reference.timing(),
++                                                &relation.historical_repeat,
++                                            )?,
++                                            iteration: rename.play(
++                                                RepeatKey::Live(relation.live_repeat.clone()),
++                                                &relation.iteration,
++                                            )?,
++                                            live_root: rename.live(&relation.live_root)?,
++                                        })
++                                    })
++                                    .collect::<Result<Vec<_>, EditError>>()?,
+                             )?)
+                         })
+                         .collect::<Result<_, EditError>>()?;
+diff --git a/crates/deadpan-core/src/edit_slice/sound_clocks.rs b/crates/deadpan-core/src/edit_slice/sound_clocks.rs
+index aeeb87f3..66f0fb10 100644
+--- a/crates/deadpan-core/src/edit_slice/sound_clocks.rs
++++ b/crates/deadpan-core/src/edit_slice/sound_clocks.rs
+@@ -45,6 +45,7 @@ pub(super) fn capture(
+             if let Some(previous) = previous {
+                 for reference in previous.clocks() {
+                     charge(&mut work, reference.split_work_count())?;
++                    charge(&mut work, reference.isolation_work_count())?;
+                 }
+                 if scope == root
+                     && matches!(document.nodes().get(&root).map(|node| &node.kind),
+@@ -72,6 +73,7 @@ pub(super) fn capture(
+                     // the proof key or the narrowed reference.
+                     charge(&mut work, reference.introduced_groups().len())?;
+                     charge(&mut work, reference.split_work_count())?;
++                    charge(&mut work, reference.isolation_work_count())?;
+                     let historical = &document.audio_bindings.timings[reference.timing()];
+                     let key = (
+                         reference.timing().clone(),
+@@ -80,6 +82,7 @@ pub(super) fn capture(
+                         reference.repeats().clone(),
+                         reference.introduced_groups().clone(),
+                         reference.introduced_splits().to_vec(),
++                        reference.introduced_isolations().to_vec(),
+                         (reference.introduced_groups().contains(previous.scope())
+                             || historical.sound_uses_output_owner_proof(
+                                 &live,
+@@ -94,7 +97,7 @@ pub(super) fn capture(
+                             (reference.scope(), previous.scope()),
+                             (reference.owner(), &owner),
+                             reference.repeats(),
+-                            (reference.introduced_groups(), reference.introduced_splits()),
++                            reference.relations(),
+                             budget(work)?,
+                         )?;
+                         work = work
+@@ -129,6 +132,7 @@ pub(super) fn capture(
+                     // Retain only complete witnesses inside the selected scope;
+                     // the narrower scope is independently proved below.
+                     charge(&mut work, reference.split_work_count())?;
++                    charge(&mut work, reference.isolation_work_count())?;
+                     let splits = reference
+                         .introduced_splits()
+                         .iter()
+@@ -140,6 +144,15 @@ pub(super) fn capture(
+                         })
+                         .cloned()
+                         .collect::<Vec<_>>();
++                    let isolations = reference
++                        .introduced_isolations()
++                        .iter()
++                        .filter(|relation| {
++                            subtrees[&scope].contains(&relation.live_repeat)
++                                && subtrees[&scope].contains(&relation.live_root)
++                        })
++                        .cloned()
++                        .collect::<Vec<_>>();
+                     // The first proof covers the original journal. A narrower
+                     // selected scope must independently satisfy the same proof,
+                     // including the constrained unpaired-root case.
+@@ -151,6 +164,7 @@ pub(super) fn capture(
+                             reference.repeats().clone(),
+                             groups.clone(),
+                             splits.clone(),
++                            isolations.clone(),
+                             (groups.contains(&scope)
+                                 || historical.sound_uses_output_owner_proof(
+                                     &live,
+@@ -166,7 +180,7 @@ pub(super) fn capture(
+                                     (&historical_scope, &scope),
+                                     (reference.owner(), &owner),
+                                     reference.repeats(),
+-                                    (&groups, &splits),
++                                    (&groups, &splits, &isolations),
+                                     budget(work)?,
+                                 )?;
+                             charge(&mut work, narrowed.work())?;
+@@ -187,7 +201,8 @@ pub(super) fn capture(
+                         )
+                         .with_repeats(reference.repeats().clone())
+                         .with_introduced_groups(groups)?
+-                        .with_introduced_splits(splits)?,
++                        .with_introduced_splits(splits)?
++                        .with_introduced_isolations(isolations)?,
+                     );
+                     if installed.insert(reference.timing().clone()) {
+                         install(state, reference.timing(), historical)?;
+diff --git a/crates/deadpan-core/src/lib.rs b/crates/deadpan-core/src/lib.rs
+index 0a2d0f00..747a9d74 100644
+--- a/crates/deadpan-core/src/lib.rs
++++ b/crates/deadpan-core/src/lib.rs
+@@ -154,8 +154,9 @@ pub use scoped_edit::{
+ pub use semantic::*;
+ pub use sound_allowance::*;
+ pub use sound_clock::{
+-    MAX_SOUND_CLOCK_BYTES, MAX_SOUND_CLOCKS, SoundClockJournal, SoundClockReference,
+-    SoundClockRepeatMap, SoundClockRepeatStep, SoundClockSplit, SoundClockSplitPiece,
++    MAX_SOUND_CLOCK_BYTES, MAX_SOUND_CLOCKS, SoundClockIsolation, SoundClockJournal,
++    SoundClockReference, SoundClockRepeatMap, SoundClockRepeatStep, SoundClockSplit,
++    SoundClockSplitPiece,
+ };
+ pub use sound_events::*;
+ pub use sound_route::*;
+diff --git a/crates/deadpan-core/src/occurrence_edit.rs b/crates/deadpan-core/src/occurrence_edit.rs
+index 93ab8891..8a0396e5 100644
+--- a/crates/deadpan-core/src/occurrence_edit.rs
++++ b/crates/deadpan-core/src/occurrence_edit.rs
+@@ -9,11 +9,13 @@ use crate::{
+     AssetId, AssetRecord, AudioSample, Command, DocumentError, DocumentErrorCode, EditError,
+     EditErrorCode, FrameDuration, GeneratedArtifact, HoldAudio, HoldRecipe, HoldVideo,
+     InstancePath, IterationId, MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, MarkId, NodeId, NodeKind,
+-    PlayOverride, PlayOverrides, ProjectDocument, RevisionId, SourceAudioMapping,
++    PlayOverride, PlayOverrides, ProjectDocument, RepeatInstance, RevisionId, SourceAudioMapping,
+     SourceVideoMapping, Subtree, WrapAnchorPolicy,
+ };
+ 
+ mod hold_duration;
++mod sound_isolation;
++pub(crate) mod split;
+ 
+ /// A bounded pool supplied by the host. Unused identities do not enter the document.
+ /// Nodes are consumed in structural preorder, marks in their current ID order.
+@@ -401,7 +403,7 @@ pub(crate) fn apply_captured(
+         // owned/occurrence marks before the actual operation changes any time.
+         let marks =
+             crate::marks::clone_occurrence_marks(&result, &step, &mapping, || identities.mark())?;
+-        clone_nodes(&mut result, &mapping, allocation)?;
++        clone_nodes_for_play(&mut result, &mapping, allocation, &step)?;
+         if let Some(allowances) = context.allowances.as_deref_mut() {
+             allowances.isolate(&target.repeats[..=index], &mapping)?;
+         }
+@@ -480,6 +482,25 @@ pub(crate) fn clone_nodes(
+     document: &mut ProjectDocument,
+     mapping: &BTreeMap<NodeId, NodeId>,
+     allocation: &RevisionId,
++) -> Result<(), EditError> {
++    clone_nodes_inner(document, mapping, allocation, false)
++}
++
++pub(crate) fn clone_nodes_for_play(
++    document: &mut ProjectDocument,
++    mapping: &BTreeMap<NodeId, NodeId>,
++    allocation: &RevisionId,
++    selected: &RepeatInstance,
++) -> Result<(), EditError> {
++    sound_isolation::prepare(document, mapping, selected)?;
++    clone_nodes_inner(document, mapping, allocation, true)
++}
++
++fn clone_nodes_inner(
++    document: &mut ProjectDocument,
++    mapping: &BTreeMap<NodeId, NodeId>,
++    allocation: &RevisionId,
++    shared_sound_scope: bool,
+ ) -> Result<(), EditError> {
+     let mut sound_clocks = Vec::new();
+     let mut sound_group_work = 0usize;
+@@ -487,6 +508,13 @@ pub(crate) fn clone_nodes(
+         if let Some(events) = document.audio_bindings.sound_clocks.get(owner) {
+             let mut cloned = BTreeMap::new();
+             for (sound, journal) in events {
++                if !mapping.contains_key(journal.scope()) && shared_sound_scope {
++                    // The preparation above records the exact owned branch in
++                    // every reference sharing this ancestor processor. Keep
++                    // that whole processor shared, with no per-copy DSP stage.
++                    cloned.insert(sound.clone(), journal.clone());
++                    continue;
++                }
+                 let scope = mapping.get(journal.scope()).ok_or_else(|| {
+                     invalid("sound clock isolation requires its complete processing scope")
+                 })?;
+@@ -583,7 +611,25 @@ pub(crate) fn clone_nodes(
+                             .clone()
+                             .with_repeats(repeats)
+                             .with_introduced_groups(groups)?
+-                            .with_introduced_splits(splits)?)
++                            .with_introduced_splits(splits)?
++                            .with_introduced_isolations(
++                                reference
++                                    .introduced_isolations()
++                                    .iter()
++                                    .map(|relation| {
++                                        let mut copy = relation.clone();
++                                        copy.live_repeat = mapping
++                                            .get(&copy.live_repeat)
++                                            .unwrap_or(&copy.live_repeat)
++                                            .clone();
++                                        copy.live_root = mapping
++                                            .get(&copy.live_root)
++                                            .unwrap_or(&copy.live_root)
++                                            .clone();
++                                        copy
++                                    })
++                                    .collect(),
++                            )?)
+                     })
+                     .collect::<Result<Vec<_>, EditError>>()?;
+                 cloned.insert(
+diff --git a/crates/deadpan-core/src/scoped_edit/isolation.rs b/crates/deadpan-core/src/scoped_edit/isolation.rs
+index 680411ed..b29f92c7 100644
+--- a/crates/deadpan-core/src/scoped_edit/isolation.rs
++++ b/crates/deadpan-core/src/scoped_edit/isolation.rs
+@@ -553,7 +553,12 @@ fn apply_isolation(
+                 })
+             },
+         )?;
+-        crate::occurrence_edit::clone_nodes(&mut result, &mapping.nodes, context.allocation)?;
++        crate::occurrence_edit::clone_nodes_for_play(
++            &mut result,
++            &mapping.nodes,
++            context.allocation,
++            &mapping.selected,
++        )?;
+         if let Some(allowances) = context.allowances.as_deref_mut() {
+             allowances.isolate_scoped(&mapping.prefix, &mapping.nodes)?;
+         }
+diff --git a/crates/deadpan-core/src/sound_clock.rs b/crates/deadpan-core/src/sound_clock.rs
+index 53c59b16..89012afd 100644
+--- a/crates/deadpan-core/src/sound_clock.rs
++++ b/crates/deadpan-core/src/sound_clock.rs
+@@ -10,7 +10,10 @@ use std::fmt;
+ use serde::de::{self, MapAccess, SeqAccess, Visitor};
+ use serde::{Deserialize, Deserializer, Serialize};
+ 
+-use crate::{AudioTimingId, DocumentError, DocumentErrorCode, MAX_DOCUMENT_DEPTH, NodeId, SoundId};
++use crate::{
++    AudioTimingId, DocumentError, DocumentErrorCode, IterationId, MAX_DOCUMENT_DEPTH, NodeId,
++    SoundId,
++};
+ 
+ pub(crate) mod edit;
+ pub(crate) mod grouping;
+@@ -207,14 +210,16 @@ fn validate_splits(splits: &[SoundClockSplit]) -> Result<usize, DocumentError> {
+     if splits.len() > crate::MAX_DOCUMENT_NODES {
+         return Err(limit("sound clock Split relation limit"));
+     }
+-    let mut historical = BTreeSet::new();
++    let mut live = BTreeSet::new();
+     let mut pieces = 0usize;
+     for split in splits {
+         // Public identity fields are convenient for explicit lifecycle remaps;
+         // recheck them at every reference admission.
+         SoundClockSplit::validate_pieces(&split.pieces)?;
+-        if !historical.insert(&split.historical_node) {
+-            return Err(invalid("duplicate historical sound clock Split"));
++        for piece in &split.pieces {
++            if !live.insert(&piece.partition) || !live.insert(&piece.full_owner) {
++                return Err(invalid("duplicate live sound clock Split identity"));
++            }
+         }
+         pieces = pieces
+             .checked_add(split.pieces.len())
+@@ -238,14 +243,20 @@ fn introduced_splits<'de, D: Deserializer<'de>>(
+         }
+         fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+             let mut splits = Vec::new();
+-            let mut historical = BTreeSet::new();
++            let mut live = BTreeSet::new();
+             let mut pieces = 0usize;
+             while let Some(split) = seq.next_element::<SoundClockSplit>()? {
+                 if splits.len() == crate::MAX_DOCUMENT_NODES {
+                     return Err(de::Error::custom("sound clock Split relation limit"));
+                 }
+-                if !historical.insert(split.historical_node.clone()) {
+-                    return Err(de::Error::custom("duplicate historical sound clock Split"));
++                for piece in &split.pieces {
++                    if !live.insert(piece.partition.clone())
++                        || !live.insert(piece.full_owner.clone())
++                    {
++                        return Err(de::Error::custom(
++                            "duplicate live sound clock Split identity",
++                        ));
++                    }
+                 }
+                 pieces = pieces
+                     .checked_add(split.pieces.len())
+@@ -259,6 +270,80 @@ fn introduced_splits<'de, D: Deserializer<'de>>(
+     decoder.deserialize_seq(Splits)
+ }
+ 
++/// Explicit provenance for one historical effective Repeat play cloned into a
++/// live owned branch. Admission checks identity shape only; complete recursive
++/// layout correspondence must separately prove the branch's semantic safety.
++#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
++#[serde(deny_unknown_fields)]
++pub struct SoundClockIsolation {
++    pub live_repeat: NodeId,
++    pub historical_repeat: NodeId,
++    pub iteration: IterationId,
++    pub live_root: NodeId,
++}
++
++#[derive(Default)]
++struct IsolationIdentities {
++    plays: BTreeSet<(NodeId, IterationId)>,
++    roots: BTreeSet<NodeId>,
++}
++
++impl IsolationIdentities {
++    fn insert(&mut self, isolation: &SoundClockIsolation) -> Result<(), DocumentError> {
++        if isolation.live_repeat == isolation.live_root {
++            return Err(invalid("sound clock isolation has a self edge"));
++        }
++        if !self
++            .plays
++            .insert((isolation.live_repeat.clone(), isolation.iteration.clone()))
++        {
++            return Err(invalid("duplicate sound clock isolation play"));
++        }
++        if !self.roots.insert(isolation.live_root.clone()) {
++            return Err(invalid("duplicate sound clock isolation root"));
++        }
++        Ok(())
++    }
++}
++
++fn validate_isolations(isolations: &[SoundClockIsolation]) -> Result<(), DocumentError> {
++    if isolations.len() > crate::MAX_DOCUMENT_NODES {
++        return Err(limit("sound clock isolation relation limit"));
++    }
++    let mut identities = IsolationIdentities::default();
++    for isolation in isolations {
++        identities.insert(isolation)?;
++    }
++    Ok(())
++}
++
++fn introduced_isolations<'de, D: Deserializer<'de>>(
++    decoder: D,
++) -> Result<Vec<SoundClockIsolation>, D::Error> {
++    struct Isolations;
++    impl<'de> Visitor<'de> for Isolations {
++        type Value = Vec<SoundClockIsolation>;
++
++        fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++            f.write_str("bounded unique sound clock Repeat isolations")
++        }
++
++        fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
++            let mut isolations = Vec::new();
++            let mut identities = IsolationIdentities::default();
++            while let Some(isolation) = seq.next_element::<SoundClockIsolation>()? {
++                if isolations.len() == crate::MAX_DOCUMENT_NODES {
++                    return Err(de::Error::custom("sound clock isolation relation limit"));
++                }
++                identities.insert(&isolation).map_err(de::Error::custom)?;
++                isolations.push(isolation);
++            }
++            Ok(isolations)
++        }
++    }
++    decoder.deserialize_seq(Isolations)
++}
++
+ /// One historical owner's clock in a frozen processing scope.
+ #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+ #[serde(deny_unknown_fields)]
+@@ -282,6 +367,12 @@ pub struct SoundClockReference {
+         deserialize_with = "introduced_splits"
+     )]
+     introduced_splits: Vec<SoundClockSplit>,
++    #[serde(
++        default,
++        skip_serializing_if = "Vec::is_empty",
++        deserialize_with = "introduced_isolations"
++    )]
++    introduced_isolations: Vec<SoundClockIsolation>,
+ }
+ 
+ impl SoundClockReference {
+@@ -293,6 +384,7 @@ impl SoundClockReference {
+             repeats: SoundClockRepeatMap::default(),
+             introduced_groups: BTreeSet::new(),
+             introduced_splits: Vec::new(),
++            introduced_isolations: Vec::new(),
+         }
+     }
+ 
+@@ -350,6 +442,37 @@ impl SoundClockReference {
+             work.saturating_add(split.work_count())
+         })
+     }
++
++    pub fn with_introduced_isolations(
++        mut self,
++        isolations: Vec<SoundClockIsolation>,
++    ) -> Result<Self, DocumentError> {
++        validate_isolations(&isolations)?;
++        self.introduced_isolations = isolations;
++        Ok(self)
++    }
++
++    pub fn introduced_isolations(&self) -> &[SoundClockIsolation] {
++        &self.introduced_isolations
++    }
++
++    pub fn isolation_work_count(&self) -> usize {
++        self.introduced_isolations.len()
++    }
++
++    pub fn relations(
++        &self,
++    ) -> (
++        &BTreeSet<NodeId>,
++        &[SoundClockSplit],
++        &[SoundClockIsolation],
++    ) {
++        (
++            &self.introduced_groups,
++            &self.introduced_splits,
++            &self.introduced_isolations,
++        )
++    }
+ }
+ 
+ fn introduced_group_ids<'de, D: Deserializer<'de>>(
+@@ -595,3 +718,6 @@ mod introduced_groups_tests;
+ 
+ #[cfg(test)]
+ mod introduced_splits_tests;
++
++#[cfg(test)]
++mod introduced_isolations_tests;
+diff --git a/crates/deadpan-core/src/sound_clock/edit.rs b/crates/deadpan-core/src/sound_clock/edit.rs
+index 38b6fc49..3d0a0788 100644
+--- a/crates/deadpan-core/src/sound_clock/edit.rs
++++ b/crates/deadpan-core/src/sound_clock/edit.rs
+@@ -48,6 +48,9 @@ pub(crate) fn timing(command: &Command) -> Option<&AudioTimingId> {
+ /// sound clocks (an owner scope that changes still refuses at restore).
+ pub(crate) fn transports(command: &Command) -> bool {
+     timing(command).is_some()
++        // This wrapper is prepared into isolation followed by an ordinary
++        // Split before capture; it must pass the outer admission too.
++        || matches!(command, Command::EditOccurrence { edit: crate::OccurrenceEdit::Split { .. }, .. })
+         || matches!(
+             command,
+             Command::Split { .. }
+@@ -86,12 +89,16 @@ pub(crate) struct SoundClockEditCapture {
+     introduced: Option<NodeId>,
+     /// Exact Split provenance, independent of labels or equal-shaped nodes.
+     owners: BTreeMap<NodeId, NodeId>,
++    node_aliases: BTreeMap<NodeId, NodeId>,
++    copied_nodes: BTreeMap<NodeId, NodeId>,
+     /// External Repeat placements also acquire aliases when their full input
+     /// is cloned behind a Split delivery Partition.
+     repeat_aliases: BTreeMap<NodeId, NodeId>,
+     split_owners: BTreeSet<NodeId>,
+     plain_split: bool,
+     clock_splits: Vec<CapturedSoundSplit>,
++    clock_groups: BTreeSet<NodeId>,
++    split_roots: BTreeMap<NodeId, NodeId>,
+     // Only the containing processor's output can ignore this changed input.
+     // Outside Hold moves retain their existing full-scope capture semantics.
+     resized_hold: Option<NodeId>,
+@@ -135,7 +142,9 @@ impl SoundClockEditCapture {
+             return Err(invalid("sound clock capture identity already exists"));
+         }
+         let before = FrozenAudioLayout::capture(document)?;
+-        if document.beat_sounds.contains_key(document.root()) {
++        if document.beat_sounds.contains_key(document.root())
++            && !matches!(command, Command::Split { node, .. } if node != document.root())
++        {
+             return Err(invalid("root-owned beat sounds cannot yet be transported"));
+         }
+         let journals = document.audio_bindings.sound_clocks.clone();
+@@ -174,6 +183,12 @@ impl SoundClockEditCapture {
+                 .keys()
+                 .map(|id| (id.clone(), id.clone()))
+                 .collect(),
++            node_aliases: document
++                .nodes
++                .keys()
++                .map(|id| (id.clone(), id.clone()))
++                .collect(),
++            copied_nodes: BTreeMap::new(),
+             repeat_aliases: document
+                 .nodes
+                 .iter()
+@@ -183,6 +198,8 @@ impl SoundClockEditCapture {
+             split_owners: BTreeSet::new(),
+             plain_split: matches!(command, Command::Split { .. }),
+             clock_splits: Vec::new(),
++            clock_groups: BTreeSet::new(),
++            split_roots: BTreeMap::new(),
+             resized_hold: match command {
+                 Command::SetHoldDuration { node, duration }
+                     if document.nodes.get(node).is_some_and(|node| {
+@@ -206,20 +223,14 @@ impl SoundClockEditCapture {
+         target: &NodeId,
+         partitions: (&NodeId, &NodeId),
+         full_owner: &NodeId,
++        wrapper: Option<&NodeId>,
+     ) -> Result<(), EditError> {
+         // Only an explicit Split preserves this complete delivery forest.
+         // Helper Splits retain their existing owner aliases, but their outer
+         // edit may remove, separate or wrap pieces before restore.
+         let eligible = self.plain_split
+-            && matches!(
+-                document.nodes[full_owner].kind,
+-                NodeKind::Source { .. } | NodeKind::Hold { .. }
+-            )
+-            && document.parent_of(target).is_some_and(|parent| {
+-                matches!(document.nodes[&parent].kind, NodeKind::Sequence { .. })
+-            })
++            && target != document.root()
+             && match &document.nodes[target].kind {
+-                NodeKind::Source { .. } | NodeKind::Hold { .. } => target == full_owner,
+                 NodeKind::Retime {
+                     child,
+                     duration,
+@@ -229,7 +240,7 @@ impl SoundClockEditCapture {
+                 } => {
+                     child == full_owner && *duration == mapping.duration() && !pitch.processes(true)
+                 }
+-                _ => false,
++                _ => target == full_owner,
+             };
+         if eligible {
+             let right_owner = mapping
+@@ -251,6 +262,10 @@ impl SoundClockEditCapture {
+                     },
+                 ],
+             });
++            if let Some(wrapper) = wrapper {
++                self.clock_groups.insert(wrapper.clone());
++                self.split_roots.insert(target.clone(), wrapper.clone());
++            }
+         }
+         let repeat_copies: Vec<_> = mapping
+             .iter()
+@@ -260,6 +275,21 @@ impl SoundClockEditCapture {
+                     .map(|original| (new.clone(), original.clone()))
+             })
+             .collect();
++        if self.plain_split {
++            for (old, new) in mapping {
++                let original = self
++                    .node_aliases
++                    .get(old)
++                    .ok_or_else(|| invalid("split context has no historical alias"))?
++                    .clone();
++                if self.node_aliases.insert(new.clone(), original).is_some() {
++                    return Err(invalid("split context alias already exists"));
++                }
++                if self.copied_nodes.insert(old.clone(), new.clone()).is_some() {
++                    return Err(invalid("split context has more than one direct copy"));
++                }
++            }
++        }
+         if self
+             .repeat_aliases
+             .len()
+@@ -322,6 +352,28 @@ impl SoundClockEditCapture {
+         let mut moved = BTreeMap::new();
+         let mut historical = BTreeMap::new();
+         let mut work = 0usize;
++        if self.events.contains_key(self.before.root()) {
++            if self.journals.contains_key(self.before.root()) {
++                return Err(invalid(
++                    "root-owned sound journals cannot yet be transported",
++                ));
++            }
++            let splits = transported_splits(
++                &[],
++                &self.clock_splits,
++                |target| Some(target.clone()),
++                &current,
++                current.root(),
++                &mut work,
++            )?;
++            let proof = self.before.sound_split_root_correspondence(
++                &current,
++                &self.clock_groups,
++                &splits,
++                budget(work)?,
++            )?;
++            charge(&mut work, proof.work())?;
++        }
+         let output_owner = if let Some(hold) = &self.resized_hold {
+             let (scope, used) = self.before.sound_processing_scope(hold, budget(work)?)?;
+             work = work.checked_add(used).ok_or_else(exhausted)?;
+@@ -330,7 +382,8 @@ impl SoundClockEditCapture {
+             None
+         };
+         for (owner, original) in self.owners {
+-            let split = self.split_owners.contains(&owner);
++            let owner_split = self.split_owners.contains(&owner);
++            let split = owner_split || self.plain_split;
+             let output_owner_edit = output_owner.as_ref() == Some(&original);
+             let events = &self.events[&original];
+             if !document.nodes.contains_key(&owner) {
+@@ -341,6 +394,10 @@ impl SoundClockEditCapture {
+                     "sound owner disappeared without whole-owner deletion",
+                 ));
+             }
++            if &original == self.before.root() {
++                document.beat_sounds.insert(owner, events.clone());
++                continue;
++            }
+             let (top, used) =
+                 self.before
+                     .branch_below(self.before.root(), &original, budget(work)?)?;
+@@ -404,25 +461,26 @@ impl SoundClockEditCapture {
+                 };
+                 let broad_split_scope = if split && !self.clock_splits.is_empty() {
+                     let scope = previous.map_or(&top, SoundClockJournal::scope);
+-                    if matches!(
+-                        self.before.nodes()[scope].kind,
+-                        crate::FrozenAudioKind::Sequence { .. }
+-                    ) && current.nodes().contains_key(scope)
+-                    {
+-                        let (ordinary, used) =
+-                            self.before.ordinary_sound_ancestry(scope, budget(work)?)?;
+-                        charge(&mut work, used)?;
+-                        ordinary.then(|| scope.clone())
+-                    } else {
+-                        None
++                    let mut candidate = &owner;
++                    loop {
++                        charge(&mut work, 1)?;
++                        if self.node_aliases.get(candidate) == Some(scope) {
++                            break Some((scope.clone(), candidate.clone()));
++                        }
++                        if candidate == current.root() {
++                            break None;
++                        }
++                        candidate = current
++                            .sound_parent(candidate)
++                            .ok_or_else(|| invalid("split owner is outside its root"))?;
+                     }
+                 } else {
+                     None
+                 };
+                 let (old_scope, live_scope) = if let Some(scopes) = output_scopes {
+                     scopes
+-                } else if let Some(scope) = broad_split_scope {
+-                    (scope.clone(), scope)
++                } else if let Some(scopes) = broad_split_scope {
++                    scopes
+                 } else if split {
+                     let (old, used) = self
+                         .before
+@@ -473,7 +531,8 @@ impl SoundClockEditCapture {
+                     }
+                 };
+                 if previous.is_some_and(|previous| {
+-                    (&old_scope != previous.scope() || &live_scope != previous.scope())
++                    (&old_scope != previous.scope()
++                        || self.node_aliases.get(&live_scope) != Some(previous.scope()))
+                         && previous
+                             .clocks()
+                             .iter()
+@@ -526,10 +585,19 @@ impl SoundClockEditCapture {
+                     &live_scope,
+                     &mut work,
+                 )?;
++                let mut before_groups = BTreeSet::new();
++                for group in &self.clock_groups {
++                    let (inside, used) =
++                        current.sound_scope_contains(&live_scope, group, budget(work)?)?;
++                    charge(&mut work, used)?;
++                    if inside {
++                        before_groups.insert(group.clone());
++                    }
++                }
+                 let key = (
+                     old_scope.clone(),
+                     live_scope.clone(),
+-                    split,
++                    owner_split,
+                     (output_owner_edit
+                         && !split
+                         && self.before.sound_uses_output_owner_proof(
+@@ -563,7 +631,7 @@ impl SoundClockEditCapture {
+                                 (&old_scope, &live_scope),
+                                 (&original, &owner),
+                                 &before_map,
+-                                (&BTreeSet::new(), &before_splits),
++                                (&before_groups, &before_splits, &[]),
+                                 budget(work)?,
+                             )?
+                     } else if output_owner_edit && !split {
+@@ -585,7 +653,7 @@ impl SoundClockEditCapture {
+                         )?
+                     };
+                     work = work.checked_add(proof.work()).ok_or_else(exhausted)?;
+-                    let changed = if split {
++                    let changed = if owner_split {
+                         // Even an unmoved left fragment introduces a delivery
+                         // crop. Retain the old allocation for processing input.
+                         true
+@@ -621,6 +689,7 @@ impl SoundClockEditCapture {
+                         // size before cloning it even on a cache hit.
+                         charge(&mut work, reference.introduced_groups().len())?;
+                         charge(&mut work, reference.split_work_count())?;
++                        charge(&mut work, reference.isolation_work_count())?;
+                         let key = (
+                             reference.timing().clone(),
+                             reference.scope().clone(),
+@@ -628,6 +697,7 @@ impl SoundClockEditCapture {
+                             reference.repeats().clone(),
+                             reference.introduced_groups().clone(),
+                             reference.introduced_splits().to_vec(),
++                            reference.introduced_isolations().to_vec(),
+                             (reference.introduced_groups().contains(previous.scope())
+                                 || layout.sound_uses_output_owner_proof(
+                                     &self.before,
+@@ -643,7 +713,7 @@ impl SoundClockEditCapture {
+                                     (reference.scope(), previous.scope()),
+                                     (reference.owner(), &original),
+                                     reference.repeats(),
+-                                    (reference.introduced_groups(), reference.introduced_splits()),
++                                    reference.relations(),
+                                     budget(work)?,
+                                 )?;
+                             work = work
+@@ -651,6 +721,7 @@ impl SoundClockEditCapture {
+                                 .ok_or_else(exhausted)?;
+                             charge(&mut work, reference.introduced_groups().len())?;
+                             charge(&mut work, reference.split_work_count())?;
++                            charge(&mut work, reference.isolation_work_count())?;
+                             historical.insert(key.clone(), historical_proof);
+                         }
+                         let historical_proof = historical
+@@ -676,7 +747,7 @@ impl SoundClockEditCapture {
+                                 "sound clock cannot narrow outside its captured scope",
+                             ));
+                         };
+-                        let mut introduced_groups = BTreeSet::new();
++                        let mut introduced_groups = before_groups.clone();
+                         if !reference.introduced_groups().is_empty() {
+                             for (live_node, before_node) in proof.node_pairs() {
+                                 charge(&mut work, 1)?;
+@@ -685,8 +756,17 @@ impl SoundClockEditCapture {
+                                 }
+                             }
+                         }
++                        let prior_splits = if old_scope != live_scope {
++                            remapped_splits(reference.introduced_splits(), &proof, &mut work)?
++                        } else {
++                            copied_splits(
++                                reference.introduced_splits(),
++                                &self.copied_nodes,
++                                &mut work,
++                            )?
++                        };
+                         let introduced_splits = transported_splits(
+-                            reference.introduced_splits(),
++                            &prior_splits,
+                             &self.clock_splits,
+                             |target| historical_proof.historical_node(target).cloned(),
+                             &current,
+@@ -730,7 +810,16 @@ impl SoundClockEditCapture {
+                         )
+                         .with_repeats(repeats)
+                         .with_introduced_groups(introduced_groups)?
+-                        .with_introduced_splits(introduced_splits)?;
++                        .with_introduced_splits(introduced_splits)?
++                        .with_introduced_isolations(
++                            transported_isolations(
++                                reference.introduced_isolations(),
++                                &self.copied_nodes,
++                                &self.split_roots,
++                                old_scope != live_scope,
++                                &mut work,
++                            )?,
++                        )?;
+                         // A narrowing through an unpaired group must establish
+                         // its real unary path. The prior complete-scope proof
+                         // alone cannot grant that new root relation.
+@@ -742,10 +831,7 @@ impl SoundClockEditCapture {
+                                 (transported.scope(), &live_scope),
+                                 (transported.owner(), &owner),
+                                 transported.repeats(),
+-                                (
+-                                    transported.introduced_groups(),
+-                                    transported.introduced_splits(),
+-                                ),
++                                transported.relations(),
+                                 budget(work)?,
+                             )?;
+                             charge(&mut work, narrowed.work())?;
+@@ -761,6 +847,7 @@ impl SoundClockEditCapture {
+                             original.clone(),
+                         )
+                         .with_repeats(before_map)
++                        .with_introduced_groups(before_groups)?
+                         .with_introduced_splits(before_splits)?,
+                     );
+                 }
+@@ -797,6 +884,135 @@ fn introduced_plays<'a>(
+     iterations
+ }
+ 
++fn transported_isolations(
++    previous: &[crate::SoundClockIsolation],
++    copies: &BTreeMap<NodeId, NodeId>,
++    roots: &BTreeMap<NodeId, NodeId>,
++    renamed_scope: bool,
++    work: &mut usize,
++) -> Result<Vec<crate::SoundClockIsolation>, EditError> {
++    let mut result = Vec::new();
++    for relation in previous {
++        charge(work, 1)?;
++        let mut original = relation.clone();
++        if let Some(root) = roots.get(&original.live_root) {
++            original.live_root = root.clone();
++        }
++        if !renamed_scope {
++            result.push(original);
++        }
++        if let Some(repeat) = copies.get(&relation.live_repeat) {
++            let root = copies
++                .get(&relation.live_root)
++                .ok_or_else(|| invalid("Split copies an incomplete sound isolation"))?;
++            let mut copied = relation.clone();
++            copied.live_repeat = repeat.clone();
++            copied.live_root = roots.get(root).unwrap_or(root).clone();
++            result.push(copied);
++        } else if renamed_scope {
++            return Err(invalid("Split loses a retained sound isolation"));
++        }
++    }
++    Ok(result)
++}
++
++/// A complete copied scope gets its own physical forest. Obtain every new name
++/// from the proven subtree pairing, never from labels or matching recipes.
++fn remapped_splits(
++    previous: &[crate::SoundClockSplit],
++    proof: &crate::SoundClockCorrespondence,
++    work: &mut usize,
++) -> Result<Vec<crate::SoundClockSplit>, EditError> {
++    if previous.is_empty() {
++        return Ok(Vec::new());
++    }
++    let mut aliases = BTreeMap::new();
++    for (live, old) in proof.node_pairs() {
++        charge(work, 1)?;
++        if aliases.insert(old.clone(), live.clone()).is_some() {
++            return Err(invalid(
++                "sound clock forest copy is not one complete context",
++            ));
++        }
++    }
++    previous
++        .iter()
++        .map(|split| {
++            charge(work, split.work_count())?;
++            let pieces = split
++                .pieces
++                .iter()
++                .map(|piece| {
++                    Ok(crate::SoundClockSplitPiece {
++                        partition: aliases
++                            .get(&piece.partition)
++                            .ok_or_else(|| invalid("copied sound clock forest lost a Partition"))?
++                            .clone(),
++                        full_owner: aliases
++                            .get(&piece.full_owner)
++                            .ok_or_else(|| {
++                                invalid("copied sound clock forest lost a complete owner")
++                            })?
++                            .clone(),
++                    })
++                })
++                .collect::<Result<Vec<_>, EditError>>()?;
++            Ok(crate::SoundClockSplit::new(
++                split.historical_node.clone(),
++                pieces,
++            )?)
++        })
++        .collect()
++}
++
++/// A Split inside a retained wider processing scope copies its complete nested
++/// forests as well. The historical name may repeat; every live forest remains
++/// distinct and must be reached by the enclosing complete-context proof.
++fn copied_splits(
++    previous: &[crate::SoundClockSplit],
++    copies: &BTreeMap<NodeId, NodeId>,
++    work: &mut usize,
++) -> Result<Vec<crate::SoundClockSplit>, EditError> {
++    let mut result = previous.to_vec();
++    for split in previous {
++        charge(work, split.work_count())?;
++        let copied = split
++            .pieces
++            .iter()
++            .filter(|piece| copies.contains_key(&piece.partition))
++            .count();
++        if copied == 0 {
++            continue;
++        }
++        if copied != split.pieces.len() {
++            return Err(invalid(
++                "Split copies an incomplete retained sound clock forest",
++            ));
++        }
++        if result.len() >= MAX_DOCUMENT_NODES {
++            return Err(exhausted());
++        }
++        let pieces = split
++            .pieces
++            .iter()
++            .map(|piece| {
++                Ok(crate::SoundClockSplitPiece {
++                    partition: copies[&piece.partition].clone(),
++                    full_owner: copies
++                        .get(&piece.full_owner)
++                        .ok_or_else(|| invalid("copied sound clock forest lost a complete owner"))?
++                        .clone(),
++                })
++            })
++            .collect::<Result<Vec<_>, EditError>>()?;
++        result.push(crate::SoundClockSplit::new(
++            split.historical_node.clone(),
++            pieces,
++        )?);
++    }
++    Ok(result)
++}
++
+ /// Compose only the native Split's exact Partition IDs. A relation outside a
+ /// genuinely narrowed scope is discarded; a partially retained forest refuses.
+ fn transported_splits(
+diff --git a/crates/deadpan-core/src/sound_clock/grouping.rs b/crates/deadpan-core/src/sound_clock/grouping.rs
+index cf69b553..d99075df 100644
+--- a/crates/deadpan-core/src/sound_clock/grouping.rs
++++ b/crates/deadpan-core/src/sound_clock/grouping.rs
+@@ -144,6 +144,7 @@ pub(crate) fn prepare(
+         for reference in journal.clocks() {
+             charge(&mut work, reference.introduced_groups().len())?;
+             charge(&mut work, reference.split_work_count())?;
++            charge(&mut work, reference.isolation_work_count())?;
+             charge(&mut work, reference.repeats().steps().len())?;
+         }
+     }
+@@ -206,6 +207,7 @@ pub(crate) fn prepare(
+                 // owner pair; ordinary broad scopes share their complete proof.
+                 charge(&mut work, reference.introduced_groups().len())?;
+                 charge(&mut work, reference.split_work_count())?;
++                charge(&mut work, reference.isolation_work_count())?;
+                 let key = (
+                     reference.timing().clone(),
+                     reference.scope().clone(),
+@@ -220,6 +222,7 @@ pub(crate) fn prepare(
+                     reference.repeats().clone(),
+                     reference.introduced_groups().clone(),
+                     reference.introduced_splits().to_vec(),
++                    reference.introduced_isolations().to_vec(),
+                 );
+                 if !proofs.contains_key(&key) {
+                     let old = layout.sound_owner_clock_correspondence_with_relations(
+@@ -227,7 +230,7 @@ pub(crate) fn prepare(
+                         (reference.scope(), journal.scope()),
+                         (reference.owner(), owner),
+                         reference.repeats(),
+-                        (reference.introduced_groups(), reference.introduced_splits()),
++                        reference.relations(),
+                         remaining(work)?,
+                     )?;
+                     charge(&mut work, old.work())?;
+@@ -236,7 +239,11 @@ pub(crate) fn prepare(
+                         (reference.scope(), journal.scope()),
+                         (reference.owner(), owner),
+                         reference.repeats(),
+-                        (&groups, reference.introduced_splits()),
++                        (
++                            &groups,
++                            reference.introduced_splits(),
++                            reference.introduced_isolations(),
++                        ),
+                         remaining(work)?,
+                     )?;
+                     charge(&mut work, new.work())?;
+@@ -257,6 +264,7 @@ pub(crate) fn prepare(
+                     drop(new_pairs);
+                     charge(&mut work, reference.introduced_groups().len())?;
+                     charge(&mut work, reference.split_work_count())?;
++                    charge(&mut work, reference.isolation_work_count())?;
+                     proofs.insert(key.clone(), (old, new));
+                 }
+                 let (old, new) = &proofs[&key];
+@@ -275,7 +283,8 @@ pub(crate) fn prepare(
+                     )
+                     .with_repeats(reference.repeats().clone())
+                     .with_introduced_groups(groups)?
+-                    .with_introduced_splits(reference.introduced_splits().to_vec())?,
++                    .with_introduced_splits(reference.introduced_splits().to_vec())?
++                    .with_introduced_isolations(reference.introduced_isolations().to_vec())?,
+                 );
+             }
+             *journal = SoundClockJournal::new(journal.scope().clone(), references)?;
+diff --git a/crates/deadpan-core/src/sound_clock/grouping/ungroup.rs b/crates/deadpan-core/src/sound_clock/grouping/ungroup.rs
+index 70d54574..d76c677b 100644
+--- a/crates/deadpan-core/src/sound_clock/grouping/ungroup.rs
++++ b/crates/deadpan-core/src/sound_clock/grouping/ungroup.rs
+@@ -67,6 +67,7 @@ pub(super) fn prepare(
+         for reference in journal.clocks() {
+             charge(&mut work, reference.introduced_groups().len())?;
+             charge(&mut work, reference.split_work_count())?;
++            charge(&mut work, reference.isolation_work_count())?;
+             charge(&mut work, reference.repeats().steps().len())?;
+             if containing.contains(journal.scope())
+                 && (journal.scope() == removed || !reference.introduced_groups().contains(removed))
+@@ -134,6 +135,7 @@ pub(super) fn prepare(
+                 }
+                 charge(&mut work, reference.introduced_groups().len())?;
+                 charge(&mut work, reference.split_work_count())?;
++                charge(&mut work, reference.isolation_work_count())?;
+                 let key = (
+                     reference.timing().clone(),
+                     reference.scope().clone(),
+@@ -148,6 +150,7 @@ pub(super) fn prepare(
+                     reference.repeats().clone(),
+                     reference.introduced_groups().clone(),
+                     reference.introduced_splits().to_vec(),
++                    reference.introduced_isolations().to_vec(),
+                 );
+                 if !proofs.contains_key(&key) {
+                     let old = layout.sound_owner_clock_correspondence_with_relations(
+@@ -155,7 +158,7 @@ pub(super) fn prepare(
+                         (reference.scope(), journal.scope()),
+                         (reference.owner(), owner),
+                         reference.repeats(),
+-                        (reference.introduced_groups(), reference.introduced_splits()),
++                        reference.relations(),
+                         remaining(work)?,
+                     )?;
+                     charge(&mut work, old.work())?;
+@@ -164,7 +167,11 @@ pub(super) fn prepare(
+                         (reference.scope(), journal.scope()),
+                         (reference.owner(), owner),
+                         reference.repeats(),
+-                        (&groups, reference.introduced_splits()),
++                        (
++                            &groups,
++                            reference.introduced_splits(),
++                            reference.introduced_isolations(),
++                        ),
+                         remaining(work)?,
+                     )?;
+                     charge(&mut work, new.work())?;
+@@ -191,6 +198,7 @@ pub(super) fn prepare(
+                     drop(new_pairs);
+                     charge(&mut work, reference.introduced_groups().len())?;
+                     charge(&mut work, reference.split_work_count())?;
++                    charge(&mut work, reference.isolation_work_count())?;
+                     proofs.insert(key.clone(), (old, new));
+                 }
+                 let (old, new) = &proofs[&key];
+@@ -207,7 +215,8 @@ pub(super) fn prepare(
+                     )
+                     .with_repeats(reference.repeats().clone())
+                     .with_introduced_groups(groups)?
+-                    .with_introduced_splits(reference.introduced_splits().to_vec())?,
++                    .with_introduced_splits(reference.introduced_splits().to_vec())?
++                    .with_introduced_isolations(reference.introduced_isolations().to_vec())?,
+                 );
+             }
+             *journal = SoundClockJournal::new(journal.scope().clone(), references)?;
+diff --git a/crates/deadpan-core/src/sound_clock/introduced_splits_tests.rs b/crates/deadpan-core/src/sound_clock/introduced_splits_tests.rs
+index af34466e..4ca99565 100644
+--- a/crates/deadpan-core/src/sound_clock/introduced_splits_tests.rs
++++ b/crates/deadpan-core/src/sound_clock/introduced_splits_tests.rs
+@@ -76,7 +76,7 @@ fn split_admission_rejects_partial_or_duplicate_piece_identities() {
+ }
+ 
+ #[test]
+-fn split_reference_rejects_duplicate_historical_records() {
++fn split_reference_rejects_duplicate_live_records() {
+     let splits = vec![split(), split()];
+     assert!(reference().with_introduced_splits(splits.clone()).is_err());
+     let mut wire = serde_json::to_value(reference()).unwrap();
+@@ -85,7 +85,25 @@ fn split_reference_rejects_duplicate_historical_records() {
+     assert!(
+         error
+             .to_string()
+-            .contains("duplicate historical sound clock Split")
++            .contains("duplicate live sound clock Split identity")
++    );
++}
++
++#[test]
++fn split_reference_retains_distinct_live_copies_of_one_historical_forest() {
++    let original = split();
++    let mut copied = original.clone();
++    for (index, piece) in copied.pieces.iter_mut().enumerate() {
++        piece.partition = id(&format!("copy-partition-{index}"));
++        piece.full_owner = id(&format!("copy-owner-{index}"));
++    }
++    let reference = reference()
++        .with_introduced_splits(vec![original, copied])
++        .unwrap();
++    assert_eq!(
++        serde_json::from_value::<SoundClockReference>(serde_json::to_value(&reference).unwrap())
++            .unwrap(),
++        reference
+     );
+ }
+ 
+diff --git a/crates/deadpan-core/src/sound_clock/tests/edits.rs b/crates/deadpan-core/src/sound_clock/tests/edits.rs
+index b9af3c8d..7d7f793a 100644
+--- a/crates/deadpan-core/src/sound_clock/tests/edits.rs
++++ b/crates/deadpan-core/src/sound_clock/tests/edits.rs
+@@ -4,6 +4,7 @@ mod grouping;
+ mod neutral_ungroup;
+ mod repeats;
+ mod split_forests;
++mod split_sound_composites;
+ 
+ fn timing(name: &str) -> AudioTimingId {
+     AudioTimingId {
+diff --git a/crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs b/crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs
+index cc4297f3..b80b4f9b 100644
+--- a/crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs
++++ b/crates/deadpan-core/src/sound_clock/tests/edits/neutral_ungroup.rs
+@@ -302,7 +302,7 @@ fn neutral_ungroup_refuses_a_genuine_later_group_pair_and_captured_copy() {
+                 (reference.scope(), copied.scope()),
+                 (reference.owner(), copied_owner),
+                 reference.repeats(),
+-                (reference.introduced_groups(), reference.introduced_splits()),
++                reference.relations(),
+                 MAX_DOCUMENT_NODES,
+             )
+             .unwrap();
+diff --git a/crates/deadpan-core/src/sound_events.rs b/crates/deadpan-core/src/sound_events.rs
+index c715d878..d88a27e6 100644
+--- a/crates/deadpan-core/src/sound_events.rs
++++ b/crates/deadpan-core/src/sound_events.rs
+@@ -360,6 +360,8 @@ pub(crate) fn validate_command_with_grouping(
+                 | Command::Delete { .. }
+         )
+         || matches!(command, Command::Split { node, .. } if node != document.root())
++        || matches!(command, Command::EditOccurrence { instance, edit: OccurrenceEdit::Split { .. }, .. }
++            if &instance.node != document.root())
+     {
+         return Ok(());
+     }
+diff --git a/crates/deadpan-core/src/split.rs b/crates/deadpan-core/src/split.rs
+index 79da9bd6..0c91039d 100644
+--- a/crates/deadpan-core/src/split.rs
++++ b/crates/deadpan-core/src/split.rs
+@@ -141,6 +141,12 @@ pub(crate) fn apply_validated(
+     for old in order {
+         copied.insert(old, supplied.next().expect("preflighted subtree").clone());
+     }
++    let wrapper = container.then(|| {
++        supplied
++            .next()
++            .expect("preflighted parent container")
++            .clone()
++    });
+     let mut right_bindings = copied.clone();
+     if refinement.is_some() {
+         right_bindings.insert(target.clone(), right.clone());
+@@ -164,7 +170,14 @@ pub(crate) fn apply_validated(
+         allowances.split(&copied)?;
+     }
+     if let Some(sounds) = edit_context.sound_clocks {
+-        sounds.split(&copied, document, target, (&left, &right), context)?;
++        sounds.split(
++            &copied,
++            document,
++            target,
++            (&left, &right),
++            context,
++            wrapper.as_ref(),
++        )?;
+     }
+     if root {
+         result.nodes.insert(left_context.clone(), original.clone());
+@@ -200,10 +213,7 @@ pub(crate) fn apply_validated(
+             BeatNode::sequence(&original.label, vec![left, right]),
+         );
+     } else if container {
+-        let wrapper = supplied
+-            .next()
+-            .expect("preflighted parent container")
+-            .clone();
++        let wrapper = wrapper.expect("preflighted parent container");
+         result.nodes.insert(
+             wrapper.clone(),
+             BeatNode::sequence(&original.label, vec![left, right]),
+diff --git a/crates/deadpan-plan/src/audio_context.rs b/crates/deadpan-plan/src/audio_context.rs
+index 6ba18e82..25b8bc0f 100644
+--- a/crates/deadpan-plan/src/audio_context.rs
++++ b/crates/deadpan-plan/src/audio_context.rs
+@@ -264,6 +264,7 @@ impl RenderPlan {
+             has_audio_editorial_edges: false,
+             audio_bindings: Default::default(),
+             sound_clock_layout: Some(std::sync::Arc::new(layout.clone())),
++            sound_clock_correspondences: BTreeMap::new(),
+             parents,
+             definition_index: None,
+         })
+@@ -477,6 +478,7 @@ impl RenderPlan {
+                 .any(|node| !node.editorial_edges.is_empty()),
+             audio_bindings: Default::default(),
+             sound_clock_layout: Some(std::sync::Arc::new(layout.clone())),
++            sound_clock_correspondences: BTreeMap::new(),
+             // Context schema 1 cannot carry bindings. Definition exclusions
+             // are therefore immaterial in these retained legacy operands.
+             parents: vec![None; layout.nodes().len()],
+diff --git a/crates/deadpan-plan/src/plan.rs b/crates/deadpan-plan/src/plan.rs
+index 7ba88c75..dbbbef0b 100644
+--- a/crates/deadpan-plan/src/plan.rs
++++ b/crates/deadpan-plan/src/plan.rs
+@@ -63,6 +63,8 @@ mod audio_bound;
+ mod audio_context;
+ #[path = "audio_preserve_input.rs"]
+ mod audio_preserve_input;
++#[path = "sound_clock_cache.rs"]
++mod sound_clock_cache;
+ pub use audio_bound::{AudioBound, AudioBoundDomain};
+ #[path = "audio_policy.rs"]
+ mod audio_policy;
+@@ -145,7 +147,9 @@ pub struct PlanInspection {
+ }
+ 
+ /// A validated, owned snapshot. There are no mutation methods or media handles.
+-/// Storage is O(authored nodes + child edges + compact iteration runs + catalog assets).
++/// Structural indexes scale with authored nodes, child edges, compact iteration
++/// runs and catalog assets. Retained clocks and their shared correspondence
++/// proofs have separate aggregate admission bounds and never expand plays.
+ #[derive(Debug, Clone)]
+ pub struct RenderPlan {
+     metadata: PlanMetadata,
+@@ -173,6 +177,7 @@ pub struct RenderPlan {
+     // A checked structural snapshot used as the live side of sound-clock
+     // correspondence proofs. Historical clocks live in `audio_bindings`.
+     sound_clock_layout: Option<Arc<deadpan_core::FrozenAudioLayout>>,
++    sound_clock_correspondences: sound_clock_cache::Correspondences,
+     parents: Vec<Option<usize>>,
+     definition_index: Option<Arc<DefinitionIndex>>,
+ }
+@@ -191,7 +196,8 @@ pub struct AudioSoundClockScope<'plan> {
+     historical_owner: &'plan NodeId,
+     historical_layout: &'plan deadpan_core::FrozenAudioLayout,
+     introduced_splits: &'plan [deadpan_core::SoundClockSplit],
+-    correspondence: deadpan_core::SoundClockCorrespondence,
++    correspondence: Arc<deadpan_core::SoundClockCorrespondence>,
++    query_work: usize,
+     recipe: crate::AudioSourceVoiceRecipe,
+ }
+ 
+@@ -239,7 +245,16 @@ impl<'plan> AudioSoundClockScope<'plan> {
+         self.historical_owner
+     }
+ 
++    /// Work to retrieve and construct this scope from its already compiled
++    /// immutable proof. Callers charge this on each query and occurrence
++    /// remapping separately; proof construction was charged at compilation.
+     pub fn proof_work(&self) -> usize {
++        self.query_work
++    }
++
++    /// Structural work already charged when this immutable plan compiled its
++    /// shared proof. Reusing the proof does not repeat that traversal.
++    pub fn proof_construction_work(&self) -> usize {
+         self.correspondence.work()
+     }
+ 
+@@ -993,6 +1008,7 @@ impl RenderPlan {
+                     document,
+                 )?))
+             },
++            sound_clock_correspondences: BTreeMap::new(),
+             audio_assets: document.assets().clone(),
+             sounds: document.sounds().clone(),
+             beat_sounds: document.beat_sounds().clone(),
+@@ -1042,6 +1058,7 @@ impl RenderPlan {
+                 .values()
+                 .any(|node| !node.audio_editorial_edges.is_empty()),
+         };
++        plan.sound_clock_correspondences = sound_clock_cache::compile(&plan)?;
+         plan.compiled_sounds = plan.compile_root_sounds()?;
+         Ok(plan)
+     }
+@@ -1121,8 +1138,9 @@ impl RenderPlan {
+     }
+ 
+     /// Validated historical processing-scope aliases for one live BeatSound.
+-    /// Proof construction is bounded by `maximum_work`; concrete instance
+-    /// remapping is separately charged by the caller for each occurrence.
++    /// Correspondences were proved during compilation of this exact immutable
++    /// plan. `maximum_work` bounds retrieval and owned scope construction;
++    /// concrete instance remapping is separately charged for each occurrence.
+     pub fn beat_sound_clock_scopes<'a>(
+         &'a self,
+         owner: &NodeId,
+@@ -1137,12 +1155,21 @@ impl RenderPlan {
+         else {
+             return Ok(Vec::new());
+         };
+-        let current_layout = self
+-            .sound_clock_layout
+-            .as_deref()
++        let correspondences = self
++            .sound_clock_correspondences
++            .get(owner)
++            .and_then(|sounds| sounds.get(sound))
+             .ok_or(PlanError::InvalidPlan(
+-                "beat sound clock has no live frozen layout",
++                "beat sound clock has no compiled correspondences",
+             ))?;
++        if correspondences.len() != journal.clocks().len() {
++            return Err(PlanError::InvalidPlan(
++                "compiled sound clock correspondence count changed",
++            ));
++        }
++        if maximum_work == 0 || maximum_work > deadpan_core::MAX_DOCUMENT_NODES {
++            return Err(PlanError::AudioQueryLimit("sound clock scope work"));
++        }
+         let mut scopes = Vec::with_capacity(journal.clocks().len());
+         let event = self
+             .beat_sounds
+@@ -1158,6 +1185,13 @@ impl RenderPlan {
+         };
+         let mut remaining_work = maximum_work;
+         for (journal_ordinal, reference) in journal.clocks().iter().enumerate() {
++            // Count the inventory lookups once, then the per-reference layout
++            // and alias lookups, owned IDs/recipe and shared proof clone. No
++            // historical tree is traversed or copied during retrieval.
++            let query_work = 8 + usize::from(journal_ordinal == 0) * 4;
++            remaining_work = remaining_work
++                .checked_sub(query_work)
++                .ok_or(PlanError::AudioQueryLimit("sound clock scope work"))?;
+             let historical_layout = self
+                 .audio_bindings
+                 .timings()
+@@ -1165,18 +1199,7 @@ impl RenderPlan {
+                 .ok_or(PlanError::InvalidPlan(
+                     "beat sound clock refers to a missing frozen layout",
+                 ))?;
+-            let correspondence = historical_layout
+-                .sound_owner_clock_correspondence_with_relations(
+-                    current_layout,
+-                    (reference.scope(), journal.scope()),
+-                    (reference.owner(), owner),
+-                    reference.repeats(),
+-                    (reference.introduced_groups(), reference.introduced_splits()),
+-                    remaining_work,
+-                )?;
+-            remaining_work = remaining_work.checked_sub(correspondence.work()).ok_or(
+-                PlanError::AudioQueryLimit("sound clock correspondence work"),
+-            )?;
++            let correspondence = Arc::clone(&correspondences[journal_ordinal]);
+             if correspondence.historical_node(owner) != Some(reference.owner()) {
+                 return Err(PlanError::InvalidPlan(
+                     "beat sound clock owner is outside its proven scope",
+@@ -1193,6 +1216,7 @@ impl RenderPlan {
+                 historical_layout,
+                 introduced_splits: reference.introduced_splits(),
+                 correspondence,
++                query_work,
+                 recipe: recipe.clone(),
+             });
+         }

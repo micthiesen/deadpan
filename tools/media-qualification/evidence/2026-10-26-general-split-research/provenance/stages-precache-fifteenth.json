@@ -1,0 +1,7 @@
+{
+  "source_binary": "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deps/stages-2549f4a70ff08614",
+  "retained_binary": "/tmp/deadpan-general-split-sounds-2026-10-25/stages-precache-fifteenth",
+  "sha256": "72fadb9c608aaf197d655c9a3fc447497f45074fcae0e5c69444a3724f16e7dc",
+  "build_receipt": "audio-pristine-partitions-fifteenth.json",
+  "note": "Built before immutable sound-clock proof cache work; use only for pre-cache PCM isolation."
+}

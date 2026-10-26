@@ -1,0 +1,221 @@
+{
+  "trace_run": "audio-trace-inputs-sixteenth",
+  "root_eq_tile_start": 5120,
+  "input_start": 3072,
+  "input_frames": 5120,
+  "split_root_sample": 8008,
+  "original_only_inputs_equal": true,
+  "comparisons": [
+    {
+      "voice": 0,
+      "before": "5.txt",
+      "after": "14.txt",
+      "different_frames": 184,
+      "first_differences": [
+        [
+          8008,
+          [
+            0.28879026180337425,
+            0.10982582887005611
+          ],
+          [
+            0.24806525043047717,
+            0.10992019136880568
+          ]
+        ],
+        [
+          8009,
+          [
+            0.21596518386211228,
+            -0.21129149364614117
+          ],
+          [
+            0.2034794195928917,
+            -0.21062823619277
+          ]
+        ],
+        [
+          8010,
+          [
+            0.15353174380512138,
+            0.03397242227656275
+          ],
+          [
+            0.1311192404967223,
+            0.034448979118720545
+          ]
+        ],
+        [
+          8011,
+          [
+            0.15958496958076276,
+            -0.1233471335525814
+          ],
+          [
+            0.12852354568976718,
+            -0.12238415623874456
+          ]
+        ]
+      ],
+      "last_differences": [
+        [
+          8190,
+          [
+            0.11415702319446809,
+            0.018933715598490816
+          ],
+          [
+            0.12552224448179722,
+            0.019397582700397195
+          ]
+        ],
+        [
+          8191,
+          [
+            0.1621567324165335,
+            -0.10906492588008765
+          ],
+          [
+            0.17182079358739136,
+            -0.10890371003602246
+          ]
+        ]
+      ]
+    },
+    {
+      "voice": 1,
+      "before": "4.txt",
+      "after": "15.txt",
+      "different_frames": 184,
+      "first_differences": [
+        [
+          8008,
+          [
+            -0.7586161885213039,
+            -0.004353851270083234
+          ],
+          [
+            0.0,
+            0.0
+          ]
+        ],
+        [
+          8009,
+          [
+            -0.709997368030399,
+            0.0017519358430888746
+          ],
+          [
+            0.0,
+            0.0
+          ]
+        ],
+        [
+          8010,
+          [
+            -0.757446560672613,
+            -0.13816952685266345
+          ],
+          [
+            0.0,
+            0.0
+          ]
+        ],
+        [
+          8011,
+          [
+            -0.7433729606702814,
+            0.09955371801465793
+          ],
+          [
+            0.0,
+            0.0
+          ]
+        ]
+      ],
+      "last_differences": [
+        [
+          8190,
+          [
+            0.3136526789507916,
+            -0.04624779239412439
+          ],
+          [
+            0.0,
+            0.0
+          ]
+        ],
+        [
+          8191,
+          [
+            0.2887560999799741,
+            0.05495838698582833
+          ],
+          [
+            0.0,
+            0.0
+          ]
+        ]
+      ]
+    }
+  ],
+  "payloads": {
+    "0.f64": "b1f20fc665030e5545de30f60cc0bd7578a853079e491606afe04e48824d6379",
+    "0.txt": "3ae74ca52aef14fb1d693ac6bcfa745cd757b0577f6fac6530738f8f6ced92d8",
+    "1.f64": "f4cab06a1ecc87db4b94854a1e2494ee726c8dfad9b99fe4b28643bb1a515464",
+    "1.txt": "dc8ae9cd08788fc5e487328aa90d636e60f493971959adc1e1e634a25852f63c",
+    "10.f64": "084728ea9e286517563b56076a4e2d9289114b0fcc34a5d2b9a3710d1e0fc0dc",
+    "10.txt": "7d6688a7a335e69b6c3cd7101da1928a73bcd233bec03782c1e08f65e49a6b14",
+    "11.f64": "12fd5cc7100ba44b43ca7fc1340fb432a10daa3617d03a74b58be736cdbfa78c",
+    "11.txt": "5bdb96744c6954bce6c48587d35d4ee4df65d4e4a2c65be5096fa421679bd11e",
+    "12.f64": "084728ea9e286517563b56076a4e2d9289114b0fcc34a5d2b9a3710d1e0fc0dc",
+    "12.txt": "7d6688a7a335e69b6c3cd7101da1928a73bcd233bec03782c1e08f65e49a6b14",
+    "13.f64": "12fd5cc7100ba44b43ca7fc1340fb432a10daa3617d03a74b58be736cdbfa78c",
+    "13.txt": "5bdb96744c6954bce6c48587d35d4ee4df65d4e4a2c65be5096fa421679bd11e",
+    "14.f64": "084728ea9e286517563b56076a4e2d9289114b0fcc34a5d2b9a3710d1e0fc0dc",
+    "14.txt": "7d6688a7a335e69b6c3cd7101da1928a73bcd233bec03782c1e08f65e49a6b14",
+    "15.f64": "12fd5cc7100ba44b43ca7fc1340fb432a10daa3617d03a74b58be736cdbfa78c",
+    "15.txt": "5bdb96744c6954bce6c48587d35d4ee4df65d4e4a2c65be5096fa421679bd11e",
+    "16.f64": "084728ea9e286517563b56076a4e2d9289114b0fcc34a5d2b9a3710d1e0fc0dc",
+    "16.txt": "7d6688a7a335e69b6c3cd7101da1928a73bcd233bec03782c1e08f65e49a6b14",
+    "17.f64": "12fd5cc7100ba44b43ca7fc1340fb432a10daa3617d03a74b58be736cdbfa78c",
+    "17.txt": "5bdb96744c6954bce6c48587d35d4ee4df65d4e4a2c65be5096fa421679bd11e",
+    "18.f64": "084728ea9e286517563b56076a4e2d9289114b0fcc34a5d2b9a3710d1e0fc0dc",
+    "18.txt": "7d6688a7a335e69b6c3cd7101da1928a73bcd233bec03782c1e08f65e49a6b14",
+    "19.f64": "12fd5cc7100ba44b43ca7fc1340fb432a10daa3617d03a74b58be736cdbfa78c",
+    "19.txt": "5bdb96744c6954bce6c48587d35d4ee4df65d4e4a2c65be5096fa421679bd11e",
+    "2.f64": "596b00fb3f664934a446122f68066cd9b9b3ca778724f82a514887b17022a66c",
+    "2.txt": "7b1c71d3fae1ce94794a85f6e8f3e0c3c75d0cd58df5647bcd7e4f6b4eb34fcd",
+    "20.f64": "084728ea9e286517563b56076a4e2d9289114b0fcc34a5d2b9a3710d1e0fc0dc",
+    "20.txt": "7d6688a7a335e69b6c3cd7101da1928a73bcd233bec03782c1e08f65e49a6b14",
+    "21.f64": "12fd5cc7100ba44b43ca7fc1340fb432a10daa3617d03a74b58be736cdbfa78c",
+    "21.txt": "5bdb96744c6954bce6c48587d35d4ee4df65d4e4a2c65be5096fa421679bd11e",
+    "22.f64": "b1f20fc665030e5545de30f60cc0bd7578a853079e491606afe04e48824d6379",
+    "22.txt": "b94c37f69156a18b8c5220c559f79529a821b4e690a91ec613b7e69268b61629",
+    "23.f64": "b1f20fc665030e5545de30f60cc0bd7578a853079e491606afe04e48824d6379",
+    "23.txt": "a68145d081208bb55f0c0ffd583c0c3d3d60d105bfca876f5523079d489a72e9",
+    "24.f64": "b1f20fc665030e5545de30f60cc0bd7578a853079e491606afe04e48824d6379",
+    "24.txt": "a68145d081208bb55f0c0ffd583c0c3d3d60d105bfca876f5523079d489a72e9",
+    "25.f64": "b1f20fc665030e5545de30f60cc0bd7578a853079e491606afe04e48824d6379",
+    "25.txt": "a68145d081208bb55f0c0ffd583c0c3d3d60d105bfca876f5523079d489a72e9",
+    "26.f64": "b1f20fc665030e5545de30f60cc0bd7578a853079e491606afe04e48824d6379",
+    "26.txt": "a68145d081208bb55f0c0ffd583c0c3d3d60d105bfca876f5523079d489a72e9",
+    "27.f64": "b1f20fc665030e5545de30f60cc0bd7578a853079e491606afe04e48824d6379",
+    "27.txt": "b94c37f69156a18b8c5220c559f79529a821b4e690a91ec613b7e69268b61629",
+    "3.f64": "f4cab06a1ecc87db4b94854a1e2494ee726c8dfad9b99fe4b28643bb1a515464",
+    "3.txt": "dc8ae9cd08788fc5e487328aa90d636e60f493971959adc1e1e634a25852f63c",
+    "4.f64": "596b00fb3f664934a446122f68066cd9b9b3ca778724f82a514887b17022a66c",
+    "4.txt": "7b1c71d3fae1ce94794a85f6e8f3e0c3c75d0cd58df5647bcd7e4f6b4eb34fcd",
+    "5.f64": "f4cab06a1ecc87db4b94854a1e2494ee726c8dfad9b99fe4b28643bb1a515464",
+    "5.txt": "dc8ae9cd08788fc5e487328aa90d636e60f493971959adc1e1e634a25852f63c",
+    "6.f64": "596b00fb3f664934a446122f68066cd9b9b3ca778724f82a514887b17022a66c",
+    "6.txt": "7b1c71d3fae1ce94794a85f6e8f3e0c3c75d0cd58df5647bcd7e4f6b4eb34fcd",
+    "7.f64": "b1f20fc665030e5545de30f60cc0bd7578a853079e491606afe04e48824d6379",
+    "7.txt": "3ae74ca52aef14fb1d693ac6bcfa745cd757b0577f6fac6530738f8f6ced92d8",
+    "8.f64": "b1f20fc665030e5545de30f60cc0bd7578a853079e491606afe04e48824d6379",
+    "8.txt": "3ae74ca52aef14fb1d693ac6bcfa745cd757b0577f6fac6530738f8f6ced92d8",
+    "9.f64": "b1f20fc665030e5545de30f60cc0bd7578a853079e491606afe04e48824d6379",
+    "9.txt": "b94c37f69156a18b8c5220c559f79529a821b4e690a91ec613b7e69268b61629"
+  },
+  "source_change_during_run": "Only sound_clock_cache.rs test-module path annotation changed; normal dependency library excludes cfg(test). See raw receipt before/after pins."
+}
