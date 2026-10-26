@@ -22,6 +22,27 @@ shows the scored requirement ledger and gates. Future percentages are computed
 from criterion evidence rather than manually carried forward. Earlier 89%
 statements below describe their historical reporting state.
 
+## General Split sound transport in progress, 2026-10-26
+
+The working-tree candidate extends complete-context Split sound proofs to
+composite owners and non-Sequence parents, and routes explicit one-play Split
+through isolation before sound capture. A recorded stable-play isolation relation
+retains a shared ancestor processor and its earlier sound clocks; malformed
+Repeat, play and root relations reject at ingress. The current candidate passes
+all **786 Core library tests**, including the existing unpaired-group rejection.
+An earlier admission regression and fixture qualification/admission failures were
+found and corrected during development.
+
+Qualification remains open. All five new real-WAV PCM cases currently fail the
+unchanged **16,777,216 plan-work-per-read** bound, including a pristine processed
+baseline before Split. Selected and nested-play cases now pass structural
+isolation and reach audio preparation. This is an unresolved rendering-work
+failure, not a PCM equivalence pass. Raw runs and source/binary pins are retained
+in `/tmp/deadpan-general-split-sounds-2026-10-25`; the production candidate remains
+uncommitted. Native scoped Split stays blocked. Broad Plan/Store/app checks,
+emitted-media proof, performance measurements and final review remain owed.
+No requirement, criterion or gate receives completion credit from this work block.
+
 ## Scoped target framing qualified, 2026-10-25
 
 [Scoped saved-target ranges](qualification/scoped-target-sampling-2026-10-25.md)

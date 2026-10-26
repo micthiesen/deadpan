@@ -2,6 +2,20 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Active Split work, 2026-10-26
+
+The uncommitted Core/Plan/Audio candidate and its exact open failures are recorded
+in [Requirements](../REQUIREMENTS.md#general-split-sound-transport-in-progress-2026-10-26).
+All 786 Core library tests pass after adding explicit stable-play sound-clock
+isolation and retaining shared processing scopes. The five new real-WAV PCM cases
+still exhaust the existing plan-work-per-read bound, including the pristine
+processed baseline. Investigate the actual budget spender; do not raise the bound,
+remove wet processing or treat structural acceptance as audio qualification.
+Native scoped Split remains blocked until its complete command/receipt/semantic
+and rendering path is qualified. Preserve the foreign fuzz/Cargo.lock and .claude/
+changes. Raw development runs are in the linked scratch directory. Coverage
+stays 85%, strict closure 10/24 and gates 0/7.
+
 ## Current continuation, 2026-10-25
 
 The [progress reassessment](../PROGRESS_ASSESSMENT.md) supersedes the inherited

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-26T06:23:32Z",
+  "updated_at": "2026-10-26T21:04:24Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Complete general occurrence-local structural and sound-bearing transformations, sample-resolution and variable-rate audio, shared effects/mastering, cursor-priority incremental analysis/rendering, native workflows and measured performance. Scoped saved-target framing is qualified and DP-08 is Complete. About 85% coarse acceptance coverage; 10/24 requirements Complete; 0/7 gates closed. This is not time remaining or release readiness.",
+  "focus": "Qualify general occurrence-local structural and sound-bearing edits. The Split candidate passes 786 Core tests; real-WAV PCM currently fails the plan-work bound, including a pristine baseline. Diagnose actual rendering work without raising limits or removing effects, then finish Plan/Store/native/media verification. Coverage 85%; 10/24 requirements Complete; 0/7 gates closed.",
   "features": [
     {
       "id": "editing",
@@ -1441,6 +1441,15 @@
       "revision": "f4965321",
       "retrospective": false,
       "summary": "Contained explicit This-play ranges now sample saved targets at root Edit In for Smash and Out minus one frame for Creep, with exact provider/inner geometry and fixed full-owner samples. Native exclusive Out, Camera proposal/save composition, atomic nested isolation and stale/recording refusals are qualified. Strict checks, 111 normal passes, retained 240 UI passes plus the corrected two-test continuation, final 530/529-check release replays with live Kestrel, two full 240-picture exports with complete 384384-sample PCM/history equality and both 30-picture negative controls pass. Independent review and 269-payload byte/decompression/source/binary/output/history audit pass; original failures and reconstructed driver provenance remain. DP-08 becomes Complete, raising strict closure to 10/24 without changing the already-full eight coarse criteria. The fixed 162-criterion ledger stays 84.5238%, rounded to 85%; all seven gates remain open."
+    },
+    {
+      "date": "2026-10-26",
+      "percent": 85,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 10,
+      "revision": "6c444d40",
+      "retrospective": false,
+      "summary": "General Split sound transport is in progress in the uncommitted candidate. Complete-context composite and non-Sequence Split proofs and explicit stable-play isolation now pass all 786 Core library tests, preserving shared ancestor processors and earlier sound clocks. Real-WAV PCM qualification remains failing: five new cases exhaust the unchanged 16777216 plan-work-per-read bound, including a pristine processed baseline. Native scoped Split stays blocked; no completion credit is granted. Revision names the last committed qualified baseline, not the candidate."
     }
   ],
   "assessment": {
