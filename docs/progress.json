@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-26T05:02:47Z",
+  "updated_at": "2026-10-26T06:23:32Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Enable interactive named/current target sampling over contained Time ranges in explicit This play while preserving exact root-frame projection, atomic isolation, recording refusals and stale-context rejection. Then continue composable sound/timing edits, sample-resolution and variable-rate audio, full effects/mastering, cursor-priority incremental analysis, native workflows and measured performance. About 85% coarse acceptance coverage; 9/24 requirements Complete; 0/7 gates closed. This is not time remaining or release readiness.",
+  "focus": "Complete general occurrence-local structural and sound-bearing transformations, sample-resolution and variable-rate audio, shared effects/mastering, cursor-priority incremental analysis/rendering, native workflows and measured performance. Scoped saved-target framing is qualified and DP-08 is Complete. About 85% coarse acceptance coverage; 10/24 requirements Complete; 0/7 gates closed. This is not time remaining or release readiness.",
   "features": [
     {
       "id": "editing",
@@ -35,7 +35,7 @@
         "DP-08",
         "DP-11"
       ],
-      "note": "Point/rectangle targets, manual corrections, tracking and paged face/region proposals work through explicit saves. All five owner kinds retain exact live Follow and creep clocks, including ordinary ranges and explicit Repeat plays; hidden targets keep their fallback. Camera edits arrival/curve without replacing paths, and chosen-boundary return preserves the prefix and ancestors. Targeted escalating Repeats now explode into ordinary independently editable plays with live targets, canvas containment, gains and gaps preserved. Complete emitted picture/PCM/history checks and final 60/120 Hz native replays pass. Newly sampling a named/current target over a contained This-play Time range remains unavailable, keeping strict DP-08 Partial."
+      "note": "DP-08 framing is Complete under the primary-Mac scope. Point/rectangle targets, explicit face/region acceptance, live Follow and parameter edits, chosen-boundary return, targeted Repeat Explode and scoped saved-target Time ranges are qualified through native workflows and actual exports. Smash samples root In and Creep Out minus one frame through exact provider/inner geometry, retaining a fixed center even for full-owner ranges. Native exclusive Out, atomic isolation, complete PCM and durable/portable history pass; sampled-target recording and direct scoped face:N/region:N still refuse, with explicit Camera-save composition verified. Broader tracking/incremental-analysis behavior remains under DP-11/18/24 and delivery gates."
     },
     {
       "id": "audio",
@@ -1432,6 +1432,15 @@
       "revision": "1dca2852",
       "retrospective": false,
       "summary": "Targeted escalating Repeats now Explode into ordinary live Follow plays with explicit canvas containment, unchanged gains/gaps/overrides and durable history. Child Camera reprojection and scale/target/Arrival/Curve editing preserve the policy; native qualification fixes clipped help at 960x640. Strict checks, retained 323 normal passes plus the corrected IME continuation, 44 UI tests, two complete 105-picture/168168-sample export/PCM/history cases and final visual60/quiet120 runs with 580 zoom checks plus Kestrel each pass. Independent review and 319-payload byte/source/binary/output/history audit pass; original failures remain retained. DP-08.4 moves from 0.5 to 1, adding 0.2604 points to 84.5238%, rounded to 85%. The 162 criteria stay fixed; strict completion remains 9/24 and 0/7 gates because scoped sampled-target composition and broader work remain open."
+    },
+    {
+      "date": "2026-10-26",
+      "percent": 85,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 10,
+      "revision": "f4965321",
+      "retrospective": false,
+      "summary": "Contained explicit This-play ranges now sample saved targets at root Edit In for Smash and Out minus one frame for Creep, with exact provider/inner geometry and fixed full-owner samples. Native exclusive Out, Camera proposal/save composition, atomic nested isolation and stale/recording refusals are qualified. Strict checks, 111 normal passes, retained 240 UI passes plus the corrected two-test continuation, final 530/529-check release replays with live Kestrel, two full 240-picture exports with complete 384384-sample PCM/history equality and both 30-picture negative controls pass. Independent review and 269-payload byte/decompression/source/binary/output/history audit pass; original failures and reconstructed driver provenance remain. DP-08 becomes Complete, raising strict closure to 10/24 without changing the already-full eight coarse criteria. The fixed 162-criterion ledger stays 84.5238%, rounded to 85%; all seven gates remain open."
     }
   ],
   "assessment": {
@@ -1773,9 +1782,10 @@
             "evidence": [
               "docs/SCOPED_EDITING.md",
               "docs/STRUCTURAL_SELECTIONS.md",
-              "docs/qualification/targeted-explode-2026-10-25.md strict scope reconciliation"
+              "docs/qualification/targeted-explode-2026-10-25.md strict scope reconciliation",
+              "docs/qualification/scoped-target-sampling-2026-10-25.md"
             ],
-            "remaining": "General cuts/copy/paste and timing edits across or inside selected plays remain restricted; scoped152 framing is a narrow admission. A contained Time range in This play cannot newly sample a named/current target, and native scoped Split cannot provide a fragment workaround.",
+            "remaining": "General cuts/copy/paste and timing edits across or inside selected plays remain restricted, including native scoped Split. Qualified sampled-target framing does not complete these structural scopes.",
             "normative": "5.2,6.3"
           }
         ]
@@ -1818,9 +1828,10 @@
               "docs/STRUCTURAL_SELECTIONS.md",
               "docs/TRANSCRIPTION.md Remaining",
               "docs/SHOT_DETECTION.md",
-              "docs/qualification/targeted-explode-2026-10-25.md strict scope reconciliation"
+              "docs/qualification/targeted-explode-2026-10-25.md strict scope reconciliation",
+              "docs/qualification/scoped-target-sampling-2026-10-25.md"
             ],
-            "remaining": "Original operator word motions and shot transition handles remain incomplete; scope/role restrictions prevent full object composition. Contained This-play ranges cannot newly sample named/current targets for interactive Zoom/Creep.",
+            "remaining": "Original operator word motions and shot transition handles remain incomplete; scope/role restrictions prevent full object composition. Contained This-play sampled-target framing is now qualified.",
             "normative": "6.2,7.3"
           },
           {
@@ -1831,9 +1842,10 @@
               "docs/ROLE_EDITS.md",
               "docs/STRUCTURAL_SELECTIONS.md",
               "docs/SCOPED_EDITING.md",
-              "docs/qualification/targeted-explode-2026-10-25.md strict scope reconciliation"
+              "docs/qualification/targeted-explode-2026-10-25.md strict scope reconciliation",
+              "docs/qualification/scoped-target-sampling-2026-10-25.md"
             ],
-            "remaining": "Role selectors and sound-bearing Repeat transforms, general occurrence temporal operations and cross-structure ranges remain partial. Native Split remains unavailable inside explicit This play, including as a scoped target-framing workaround.",
+            "remaining": "Role selectors and sound-bearing Repeat transforms, general occurrence temporal operations and cross-structure ranges remain partial. Native Split remains unavailable inside explicit This play.",
             "normative": "6.3,6.5,7.4"
           },
           {
@@ -2077,7 +2089,7 @@
       {
         "id": "DP-08",
         "name": "Framing and picture creative operations",
-        "notes": "The coarse operation checklist does not close strict DP-08. A contained Time range in This play cannot newly sample named/current targets through interactive Zoom/Creep, and native scoped Split cannot provide a fragment workaround. Whole-owner scoped targets and ranged retained Follow work. This composition is explicit in partial DP-04.7/05.3/05.4; fixed criterion identities and weights remain unchanged. Framed-child Ungroup is DP-03.3, full effects DP-16, and unavailable physical/quality checks stay owner-only.",
+        "notes": "Complete under the primary-Mac scope after exact contained This-play saved-target Zoom/Creep, full-owner fixed samples, native exclusive Out and explicit Camera proposal/save composition are qualified. The eight coarse criteria already scored 1, so strict closure adds no coverage percentage. General scoped Split/structural operations remain DP-04/05, framed-child Ungroup DP-03.3 and full effects DP-16. Physical/quality checks stay owner-only.",
         "criteria": [
           {
             "id": "DP-08.1",
@@ -2086,7 +2098,8 @@
             "evidence": [
               "docs/TARGETS.md",
               "docs/qualification/point-targets-2026-10-24.md",
-              "docs/qualification/camera-regions-2026-10-25.md"
+              "docs/qualification/camera-regions-2026-10-25.md",
+              "docs/qualification/scoped-target-sampling-2026-10-25.md"
             ],
             "remaining": "Real-person quality judgement is owner-only; synthetic positives do not establish detector general accuracy.",
             "normative": "7.6,8.2"
@@ -2098,7 +2111,8 @@
             "evidence": [
               "docs/FRAMING.md",
               "docs/SECTION8_COVERAGE.md Abrupt return",
-              "docs/qualification/abrupt-return-2026-10-25.md"
+              "docs/qualification/abrupt-return-2026-10-25.md",
+              "docs/qualification/scoped-target-sampling-2026-10-25.md"
             ],
             "remaining": "",
             "normative": "8.2"
@@ -2112,7 +2126,8 @@
               "docs/qualification/ranged-follow-creep-2026-10-25.md",
               "crates/deadpan-core/src/framing_zoom.rs build_at",
               "crates/deadpan-app/src/preview/camera_fields.rs Component",
-              "docs/qualification/follow-retune-2026-10-25.md"
+              "docs/qualification/follow-retune-2026-10-25.md",
+              "docs/qualification/scoped-target-sampling-2026-10-25.md"
             ],
             "remaining": "",
             "normative": "8 preamble,8.2"
@@ -3694,7 +3709,6 @@
       "Composability matrix: structural timing transforms must preserve sample-phase history, owned sounds, nested Repeat overrides and fixed/pitch Retime clocks. Latest narrow admissions do not complete general scopes.",
       "DP-09 is broad audio workflow work: sample-resolution range authoring, variable rate, custom silence/tail policy and sound-bearing transforms remain, beyond polishing existing commands.",
       "DP-10 reviewed English word refinement is qualified, but cursor-priority incremental analysis/tracking still needs architecture and real integration.",
-      "DP-08 targeted Explode, child Camera projection, existing Follow parameters and chosen-boundary return are qualified. Newly sampled named/current targets over contained This-play Time ranges remain unavailable; strict DP-08 stays Partial.",
       "Full shared picture/audio effects and mastering, incremental RenderPlan fragments and filtered cache lifecycle remain implementation work.",
       "Native workflow integration, HDR/output quality and hostile real-worker stress remain local acceptance work.",
       "Large-project visible edit/pause latency still misses its target; diagnostic median improvements are not a target or p95 pass.",
