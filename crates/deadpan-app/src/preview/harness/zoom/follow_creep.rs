@@ -34,6 +34,346 @@ fn camera(d: &mut Driver<'_>) -> Result<(), String> {
     d.settled()
 }
 
+fn arrival_text(d: &mut Driver<'_>, text: &str) -> Result<(), String> {
+    d.key_modified(Key::A, egui::Modifiers::COMMAND)?;
+    d.events(
+        "Edit the focused Follow arrival scale",
+        vec![egui::Event::Text(text.into())],
+    )
+}
+
+fn disabled_apply(d: &mut Driver<'_>, reason: &str) -> Result<egui::Rect, String> {
+    let buttons = d
+        .harness
+        .root()
+        .children_recursive()
+        .filter_map(|node| {
+            let access = node.accesskit_node();
+            (access.role() == egui::accesskit::Role::Button
+                && access.label().as_deref() == Some("Apply  Enter"))
+            .then(|| (node.rect(), access.is_disabled()))
+        })
+        .collect::<Vec<_>>();
+    let [(rect, disabled)] = buttons.as_slice() else {
+        return Err(format!(
+            "Expected one Apply button for {reason}, found {buttons:?}"
+        ));
+    };
+    let rect = *rect;
+    let paint = super::super::scenarios::text_paint_visibility(d, "Apply  Enter");
+    d.check(
+        &format!("Apply is visibly disabled during {reason}"),
+        *disabled
+            && !paint.is_empty()
+            && paint
+                .iter()
+                .all(|part| part["fully_visible"] == true && part["elided"] == false),
+        json!({"disabled":true,"fully_visible":true}),
+        json!({"buttons":buttons.iter().map(|(rect, disabled)|
+            json!({"bounds":[rect.min.x,rect.min.y,rect.max.x,rect.max.y],"disabled":disabled}))
+            .collect::<Vec<_>>(),"paint":paint}),
+    )?;
+    Ok(rect)
+}
+
+fn resize_camera(d: &mut Driver<'_>, width: f32, height: f32) -> Result<(), String> {
+    let rect = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(width, height));
+    let input = d.harness.input_mut();
+    input.screen_rect = Some(rect);
+    input
+        .viewports
+        .get_mut(&egui::ViewportId::ROOT)
+        .ok_or("Missing Camera root viewport")?
+        .inner_rect = Some(rect);
+    d.step("Resize Camera with editable Follow arrival controls", true)?;
+    d.settled()
+}
+
+fn retune_layouts(d: &mut Driver<'_>) -> Result<(), String> {
+    for (width, height) in [(1280.0, 820.0), (960.0, 640.0)] {
+        resize_camera(d, width, height)?;
+        let labels = [
+            "Arrival scale (%)",
+            "Arrival curve",
+            "Smoothstep",
+            "Apply  Enter",
+            "Cancel  Esc",
+        ];
+        let paint = labels
+            .into_iter()
+            .map(|label| {
+                (
+                    label,
+                    super::super::scenarios::text_paint_visibility(d, label),
+                )
+            })
+            .collect::<Vec<_>>();
+        let apply = d.rect("Apply  Enter")?;
+        let cancel = d.rect("Cancel  Esc")?;
+        let viewport = d.harness.ctx.content_rect();
+        // Retain the actual frame even if the visibility assertion fails.
+        d.capture(&format!("Follow arrival controls at {width}x{height}"))?;
+        d.check(&format!("Follow arrival fields and Apply/Cancel remain fully visible at {width}x{height}"),
+            paint.iter().all(|(_, parts)| !parts.is_empty() && parts.iter().all(|part| part["fully_visible"] == true && part["elided"] == false))
+                && viewport.contains_rect(apply) && viewport.contains_rect(cancel),
+            json!({"fully_visible":labels,"buttons_inside_viewport":true}),
+            json!({"paint":paint,"apply":format!("{apply:?}"),"cancel":format!("{cancel:?}"),"viewport":format!("{viewport:?}")}))?;
+    }
+    resize_camera(d, 1280.0, 820.0)
+}
+
+fn curve_focus(
+    d: &mut Driver<'_>,
+    label: &str,
+    curve: ZoomCurve,
+    action: &str,
+) -> Result<(), String> {
+    // Deferred arrows apply after the native widget paints. Observe the next
+    // ordinary frame's updated label, with no intervening input.
+    d.step("Paint the deferred Follow curve label", false)?;
+    d.settled()?;
+    let focused = d.harness.root().children_recursive().any(|node| {
+        let access = node.accesskit_node();
+        access.role() == egui::accesskit::Role::Button
+            && access.label().as_deref() == Some(label)
+            && access.is_focused()
+            && !access.is_disabled()
+    });
+    let state = d
+        .app()
+        .camera
+        .as_ref()
+        .ok_or("Camera closed during curve adjustment")?
+        .harness_state();
+    d.check(
+        &format!("{action} keeps the curve control focused and changes its actual Follow recipe"),
+        focused
+            && d.app().error.is_none()
+            && state["framing"]["value"]["scale_transition"]["curve"] == json!(curve),
+        json!({"focused":label,"curve":curve,"error":null}),
+        json!({"focused":focused,"camera":state,"error":d.app().error}),
+    )
+}
+
+fn retune_controls(d: &mut Driver<'_>, animated: &Option<Framing>) -> Result<(), String> {
+    let revision = d.revision();
+    let expected = deadpan_core::framing_zoom::retune_follow(
+        animated.as_ref().ok_or("Missing animated Follow")?,
+        None,
+        ExactRatio::new(25, 8).unwrap(),
+        ZoomCurve::Smoothstep,
+    )?;
+    camera(d)?;
+    // Follow's disabled centers leave Scale, Arrival and Curve in the native
+    // field order. Reach arrival by real Tab routing from the viewer.
+    d.chord(&[Key::Tab, Key::Tab])?;
+    arrival_text(d, "312.5")?;
+    d.key(Key::Tab)?;
+    curve_focus(d, "Linear", ZoomCurve::Linear, "Tab from the arrival field")?;
+    d.key(Key::ArrowDown)?;
+    curve_focus(
+        d,
+        "Smoothstep",
+        ZoomCurve::Smoothstep,
+        "Keyboard-only ArrowDown",
+    )?;
+    d.key(Key::Space)?;
+    curve_focus(d, "Linear", ZoomCurve::Linear, "Keyboard-only Space")?;
+    d.click("Linear")?;
+    curve_focus(
+        d,
+        "Smoothstep",
+        ZoomCurve::Smoothstep,
+        "Pointer curve activation",
+    )?;
+    d.key(Key::ArrowDown)?;
+    curve_focus(
+        d,
+        "Linear",
+        ZoomCurve::Linear,
+        "ArrowDown after pointer activation",
+    )?;
+    d.key(Key::Space)?;
+    curve_focus(
+        d,
+        "Smoothstep",
+        ZoomCurve::Smoothstep,
+        "Space after pointer activation",
+    )?;
+    d.settled()?;
+    let state = d
+        .app()
+        .camera
+        .as_ref()
+        .ok_or("Camera closed while editing fields")?
+        .harness_state();
+    d.check(
+        "Native arrival text and keyboard curve edits preview without flattening Follow or saving",
+        d.revision() == revision
+            && framing(d) == *animated
+            && state["framing"] == json!(expected)
+            && state["fields_valid"] == true,
+        json!({"revision":revision,"draft":expected}),
+        state,
+    )?;
+    d.capture("Follow arrival scale and curve are independently editable")?;
+    retune_layouts(d)?;
+    d.key(Key::Escape)?;
+    idle(d)?;
+    d.check(
+        "Escape restores the exact animated Follow after arrival and curve preview",
+        d.app().camera.is_none() && d.revision() == revision && framing(d) == *animated,
+        json!(animated),
+        json!(framing(d)),
+    )?;
+
+    camera(d)?;
+    d.chord(&[Key::Tab, Key::Tab])?;
+    arrival_text(d, "NaN")?;
+    let apply = disabled_apply(d, "invalid Follow arrival text")?;
+    d.click_at("Disabled Apply with invalid arrival", apply.center())?;
+    d.check(
+        "Invalid arrival text blocks Apply without replacing the accepted preview",
+        d.revision() == revision
+            && framing(d) == *animated
+            && d.app()
+                .camera
+                .as_ref()
+                .is_some_and(|camera| camera.harness_state()["fields_valid"] == false),
+        json!({"revision":revision,"valid":false}),
+        d.snapshot(),
+    )?;
+    d.key(Key::Escape)?;
+    idle(d)?;
+
+    camera(d)?;
+    d.chord(&[Key::Tab, Key::Tab])?;
+    d.key_modified(Key::A, egui::Modifiers::COMMAND)?;
+    d.events(
+        "Compose an uncommitted Follow arrival",
+        vec![
+            egui::Event::Ime(egui::ImeEvent::Preedit {
+                text: "312.5".into(),
+                active_range_chars: None,
+            }),
+            key_event(Key::Enter, egui::Modifiers::NONE, true),
+            key_event(Key::Enter, egui::Modifiers::NONE, false),
+        ],
+    )?;
+    let apply = disabled_apply(d, "Follow arrival IME composition")?;
+    d.click_at("Disabled Apply during arrival composition", apply.center())?;
+    d.check(
+        "Arrival IME preedit and Enter cannot save or close Camera",
+        d.revision() == revision
+            && framing(d) == *animated
+            && d.app()
+                .camera
+                .as_ref()
+                .is_some_and(|camera| camera.harness_state()["fields_valid"] == false),
+        json!({"revision":revision,"valid":false}),
+        d.snapshot(),
+    )?;
+    d.events(
+        "Cancel Follow arrival composition",
+        vec![egui::Event::Ime(egui::ImeEvent::Preedit {
+            text: String::new(),
+            active_range_chars: None,
+        })],
+    )?;
+    d.click("Cancel  Esc")?;
+    idle(d)?;
+
+    camera(d)?;
+    d.chord(&[Key::Tab, Key::Tab])?;
+    arrival_text(d, "312.5")?;
+    d.click("Linear")?;
+    let label = d
+        .app()
+        .presentation
+        .displayed_label()
+        .ok_or("Camera has no displayed picture")?;
+    d.click(&label)?;
+    d.key(Key::Enter)?;
+    d.changed(&revision)?;
+    idle(d)?;
+    d.check(
+        "One viewer Enter saves the validated arrival and curve as one Follow edit",
+        framing(d) == Some(expected.clone()) && d.app().camera.is_none(),
+        json!(expected),
+        json!(framing(d)),
+    )?;
+    undo_to(d, animated)
+}
+
+fn retune_command(d: &mut Driver<'_>, animated: &Option<Framing>) -> Result<(), String> {
+    let expected = deadpan_core::framing_zoom::retune_follow(
+        animated.as_ref().ok_or("Missing animated Follow")?,
+        None,
+        ExactRatio::new(25, 8).unwrap(),
+        ZoomCurve::Smoothstep,
+    )?;
+    d.chord(&[Key::Q, Key::Z])?;
+    let revision = d.revision();
+    d.command("creep to=3.125 curve=smoothstep")?;
+    d.changed(&revision)?;
+    idle(d)?;
+    d.key(Key::Q)?;
+    d.wait_for("Follow retune macro saves", |app| {
+        !app.service.is_busy() && !app.macros.recording() && !app.macros.is_pending()
+    })?;
+    let program = d
+        .app()
+        .copied
+        .entries()
+        .find_map(|(name, content)| match content {
+            Content::Macro(program) if name == 'z' => Some(program.instructions().to_vec()),
+            _ => None,
+        });
+    d.check(
+        "Retuning existing Follow records Zoom Keep intent without concrete target or window",
+        framing(d) == Some(expected.clone())
+            && program
+                == Some(vec![I::Zoom {
+                    kind: ZoomKind::Creep {
+                        from: None,
+                        to: ExactRatio::new(25, 8).unwrap(),
+                        curve: ZoomCurve::Smoothstep,
+                    },
+                    center: SemanticZoomCenter::Keep,
+                }]),
+        json!(expected),
+        json!({"framing":framing(d),"program":program}),
+    )?;
+    undo_to(d, animated)?;
+    let revision = d.revision();
+    super::super::macros::execute(d, 'z', None)?;
+    d.changed(&revision)?;
+    idle(d)?;
+    d.check(
+        "Saved Follow retune re-resolves the invocation's existing animation",
+        framing(d) == Some(expected.clone()),
+        json!(expected),
+        json!(framing(d)),
+    )?;
+    undo_to(d, animated)?;
+    let revision = d.revision();
+    d.command("creep to=3.125 curve=smoothstep")?;
+    d.changed(&revision)?;
+    idle(d)?;
+    undo_to(d, animated)?;
+    let revision = d.revision();
+    d.key(Key::Period)?;
+    d.changed(&revision)?;
+    idle(d)?;
+    d.check(
+        "Dot retunes arrival and curve while preserving this invocation's Follow window",
+        framing(d) == Some(expected.clone()),
+        json!(expected),
+        json!(framing(d)),
+    )?;
+    undo_to(d, animated)
+}
+
 fn scale_adjustment(d: &mut Driver<'_>, animated: &Option<Framing>) -> Result<(), String> {
     let before = shown_pose(d).ok_or("Follow has no installed pose")?;
     let revision = d.revision();
@@ -211,6 +551,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
 
     scale_adjustment(d, &animated)?;
+    retune_controls(d, &animated)?;
+    retune_command(d, &animated)?;
     switch_target(d, &animated)?;
 
     // Enter with no adjustments must preserve the complete authored animation.
@@ -549,6 +891,8 @@ fn ranged(d: &mut Driver<'_>, original: &Option<Framing>) -> Result<(), String> 
         json!(framing(d)),
     )?;
     scale_adjustment(d, &animated)?;
+    retune_controls(d, &animated)?;
+    retune_command(d, &animated)?;
     undo_to(d, &fixed)?;
     select(d, 35, 25)?;
     let revision = d.revision();

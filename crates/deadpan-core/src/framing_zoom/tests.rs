@@ -754,7 +754,7 @@ fn follow_creep_keeps_both_bases_and_requires_a_whole_admitted_owner() {
             )
             .is_err()
         );
-        assert!(
+        assert_eq!(
             build(
                 kind,
                 &Center::Keep,
@@ -763,7 +763,8 @@ fn follow_creep_keeps_both_bases_and_requires_a_whole_admitted_owner() {
                     ..admitted
                 }
             )
-            .is_err()
+            .unwrap(),
+            Some(result.clone())
         );
         assert!(
             build(
@@ -886,4 +887,386 @@ fn ranged_follow_creep_preserves_prefix_and_separate_bases_with_an_explicit_from
         )
         .is_err()
     );
+}
+
+fn animated_follow(range: Option<crate::FollowScaleRange>) -> Framing {
+    Framing {
+        clock: FramingClock::RetainedOutput {
+            offset: ratio(-2, 1),
+            duration: ratio(8, 1),
+        },
+        value: FramingValue::Follow {
+            target: TargetId::new("moving-speaker").unwrap(),
+            scale: ratio(2, 1),
+            fallback: FramingPose::new(ratio(1, 3), ratio(2, 7), ratio(1, 2)).unwrap(),
+            scale_transition: Some(crate::FollowScaleTransition {
+                factor: ratio(2, 1),
+                curve: ZoomCurve::Linear,
+                range,
+            }),
+        },
+    }
+}
+
+#[test]
+fn follow_retune_changes_arrival_and_curve_on_the_existing_clock_for_each_owner() {
+    for clock in [
+        FramingClock::OwnerOutput,
+        FramingClock::RetainedOutput {
+            offset: ratio(-2, 1),
+            duration: ratio(8, 1),
+        },
+    ] {
+        let entry = Framing {
+            clock,
+            ..animated_follow(None)
+        };
+        for owner in [
+            WholeFollowOwner::Source,
+            WholeFollowOwner::Hold,
+            WholeFollowOwner::Sequence,
+            WholeFollowOwner::Repeat,
+            WholeFollowOwner::Retime,
+        ] {
+            let edited = build(
+                ZoomKind::Creep {
+                    from: None,
+                    to: ratio(6, 1),
+                    curve: ZoomCurve::Smoothstep,
+                },
+                &Center::Keep,
+                &Shot {
+                    whole_owner: Some(owner),
+                    entry: Some(&entry),
+                    // Retuning must never use a sampled pose as either base.
+                    current: FramingPose::new(ratio(3, 4), ratio(1, 4), ratio(9, 1)).unwrap(),
+                    ..shot(None)
+                },
+            )
+            .unwrap()
+            .unwrap();
+            let mut expected = entry.clone();
+            let FramingValue::Follow {
+                scale_transition: Some(transition),
+                ..
+            } = &mut expected.value
+            else {
+                unreachable!()
+            };
+            transition.factor = ratio(3, 1);
+            transition.curve = ZoomCurve::Smoothstep;
+            assert_eq!(edited, expected);
+            let (quarter, end) = match clock {
+                FramingClock::OwnerOutput => (ratio(4, 1), ratio(16, 1)),
+                FramingClock::RetainedOutput { .. } => (ratio(4, 1), ratio(10, 1)),
+            };
+            for (local, live, fallback) in [
+                (ExactRatio::ZERO, ratio(2, 1), ratio(1, 2)),
+                (quarter, ratio(21, 8), ratio(21, 32)),
+                (end, ratio(6, 1), ratio(3, 2)),
+            ] {
+                let evaluated = edited
+                    .evaluate_with_follow_exact(local, ratio(16, 1))
+                    .unwrap();
+                assert_eq!(evaluated.follow.unwrap().0.as_str(), "moving-speaker");
+                assert_eq!(evaluated.follow.unwrap().1, live);
+                assert_eq!(evaluated.pose.scale, fallback);
+                assert_eq!(evaluated.pose.center_x, ratio(1, 3));
+                assert_eq!(evaluated.pose.center_y, ratio(2, 7));
+            }
+            assert_eq!(
+                serde_json::from_value::<Framing>(serde_json::to_value(&edited).unwrap()).unwrap(),
+                edited
+            );
+        }
+    }
+}
+
+#[test]
+fn follow_retune_explicit_whole_start_rescales_both_bases_without_retiming() {
+    let entry = animated_follow(None);
+    let edited = build(
+        ZoomKind::Creep {
+            from: Some(ratio(3, 1)),
+            to: ratio(6, 1),
+            curve: ZoomCurve::Linear,
+        },
+        &Center::Keep,
+        &Shot {
+            whole_owner: Some(WholeFollowOwner::Hold),
+            entry: Some(&entry),
+            ..shot(None)
+        },
+    )
+    .unwrap()
+    .unwrap();
+    assert_eq!(edited.clock, entry.clock);
+    for (local, live, fallback) in [
+        (0, ratio(3, 1), ratio(3, 4)),
+        (4, ratio(15, 4), ratio(15, 16)),
+        (6, ratio(9, 2), ratio(9, 8)),
+        (10, ratio(6, 1), ratio(3, 2)),
+        (16, ratio(6, 1), ratio(3, 2)),
+    ] {
+        let state = edited
+            .evaluate_with_follow_exact(ratio(local, 1), ratio(16, 1))
+            .unwrap();
+        assert_eq!(state.follow.unwrap().1, live);
+        assert_eq!(state.pose.scale, fallback);
+        assert_eq!(state.pose.center_x, ratio(1, 3));
+        assert_eq!(state.pose.center_y, ratio(2, 7));
+    }
+}
+
+#[test]
+fn follow_retune_ranged_start_keeps_the_prefix_window_and_fallback_ratio() {
+    let entry = animated_follow(Some(crate::FollowScaleRange {
+        start: ratio(1, 4),
+        end: ratio(3, 4),
+        from_factor: ratio(3, 2),
+    }));
+    for from in [None, Some(ratio(4, 1))] {
+        let edited = build(
+            ZoomKind::Creep {
+                from,
+                to: ratio(6, 1),
+                curve: ZoomCurve::Smoothstep,
+            },
+            &Center::Keep,
+            &Shot {
+                whole_owner: Some(WholeFollowOwner::Retime),
+                entry: Some(&entry),
+                ..shot(None)
+            },
+        )
+        .unwrap()
+        .unwrap();
+        let mut expected = entry.clone();
+        let FramingValue::Follow {
+            scale_transition: Some(transition),
+            ..
+        } = &mut expected.value
+        else {
+            unreachable!()
+        };
+        transition.factor = ratio(3, 1);
+        transition.curve = ZoomCurve::Smoothstep;
+        if from.is_some() {
+            transition.range.as_mut().unwrap().from_factor = ratio(2, 1);
+        }
+        assert_eq!(edited, expected);
+        let start = from.unwrap_or(ratio(3, 1));
+        for (local, live) in [
+            (0, ratio(2, 1)),
+            (3, ratio(2, 1)),
+            (4, start),
+            (
+                6,
+                start
+                    .checked_add(ratio(6, 1))
+                    .unwrap()
+                    .checked_div(ratio(2, 1))
+                    .unwrap(),
+            ),
+            (8, ratio(6, 1)),
+            (16, ratio(6, 1)),
+        ] {
+            let state = edited
+                .evaluate_with_follow_exact(ratio(local, 1), ratio(16, 1))
+                .unwrap();
+            assert_eq!(state.follow.unwrap().1, live);
+            assert_eq!(state.pose.scale, live.checked_div(ratio(4, 1)).unwrap());
+            assert_eq!(state.pose.center_x, ratio(1, 3));
+            assert_eq!(state.pose.center_y, ratio(2, 7));
+        }
+    }
+}
+
+#[test]
+fn follow_retune_preserves_admission_and_refuses_any_new_selected_window() {
+    let entry = animated_follow(None);
+    let kind = ZoomKind::Creep {
+        from: None,
+        to: ratio(3, 1),
+        curve: ZoomCurve::Linear,
+    };
+    let admitted = Shot {
+        whole_owner: Some(WholeFollowOwner::Sequence),
+        entry: Some(&entry),
+        ..shot(None)
+    };
+    assert_eq!(
+        build(
+            kind,
+            &Center::Keep,
+            &Shot {
+                whole_owner: None,
+                ..admitted
+            }
+        )
+        .unwrap_err(),
+        FOLLOW_CREEP_REFUSAL
+    );
+    for range in [(0, 10), (1, 9)] {
+        assert_eq!(
+            build(
+                kind,
+                &Center::Keep,
+                &Shot {
+                    range: Some(range),
+                    ..admitted
+                }
+            )
+            .unwrap_err(),
+            FOLLOW_RETUNE_RANGE_REFUSAL
+        );
+    }
+    for selected in [
+        (ExactRatio::ZERO, ExactRatio::ONE),
+        (ratio(1, 3), ratio(2, 3)),
+    ] {
+        assert_eq!(
+            build_normalized_range(kind, &Center::Keep, &admitted, selected).unwrap_err(),
+            FOLLOW_RETUNE_RANGE_REFUSAL
+        );
+    }
+    assert_eq!(
+        build(ZoomKind::Off, &Center::Keep, &admitted).unwrap(),
+        None
+    );
+    assert_eq!(
+        build(
+            ZoomKind::Smash { scale: ratio(3, 1) },
+            &Center::Keep,
+            &admitted
+        )
+        .unwrap_err(),
+        PATH_REFUSAL
+    );
+    let center = Center::Point([ratio(1, 2), ratio(1, 2)]);
+    assert_eq!(build(kind, &center, &admitted).unwrap_err(), PATH_REFUSAL);
+    assert!(matches!(
+        build(
+            kind,
+            &center,
+            &Shot {
+                explicit: true,
+                ..admitted
+            }
+        )
+        .unwrap()
+        .unwrap()
+        .value,
+        FramingValue::Envelope { .. }
+    ));
+}
+
+#[test]
+fn follow_retune_validates_live_and_fallback_start_and_terminal_scales() {
+    for range in [
+        None,
+        Some(crate::FollowScaleRange {
+            start: ratio(1, 4),
+            end: ratio(3, 4),
+            from_factor: ExactRatio::ONE,
+        }),
+    ] {
+        let mut entry = animated_follow(range);
+        let FramingValue::Follow {
+            scale,
+            fallback,
+            scale_transition: Some(transition),
+            ..
+        } = &mut entry.value
+        else {
+            unreachable!()
+        };
+        *scale = ExactRatio::ONE;
+        fallback.scale = ratio(40, 1);
+        transition.factor = ExactRatio::ONE;
+        assert!(entry.validate().is_ok());
+        let admitted = Shot {
+            whole_owner: Some(WholeFollowOwner::Source),
+            entry: Some(&entry),
+            ..shot(None)
+        };
+        for kind in [
+            ZoomKind::Creep {
+                from: None,
+                to: ratio(2, 1),
+                curve: ZoomCurve::Linear,
+            },
+            ZoomKind::Creep {
+                from: Some(ratio(2, 1)),
+                to: ExactRatio::ONE,
+                curve: ZoomCurve::Smoothstep,
+            },
+            ZoomKind::Creep {
+                from: None,
+                to: ratio(65, 1),
+                curve: ZoomCurve::Linear,
+            },
+            ZoomKind::Creep {
+                from: Some(ExactRatio::ZERO),
+                to: ExactRatio::ONE,
+                curve: ZoomCurve::Linear,
+            },
+            ZoomKind::Creep {
+                from: None,
+                to: ExactRatio::ONE,
+                curve: ZoomCurve::Step,
+            },
+        ] {
+            assert!(build(kind, &Center::Keep, &admitted).is_err(), "{kind:?}");
+        }
+        assert!(
+            entry.validate().is_ok(),
+            "failed edits must not change the entry"
+        );
+    }
+}
+
+#[test]
+fn follow_retune_helper_requires_an_animation_and_retains_explicit_step_semantics() {
+    let entry = animated_follow(Some(crate::FollowScaleRange {
+        start: ratio(1, 4),
+        end: ratio(3, 4),
+        from_factor: ratio(3, 2),
+    }));
+    let changed = retune_follow(&entry, None, ratio(6, 1), ZoomCurve::Step).unwrap();
+    assert_eq!(changed.clock, entry.clock);
+    // A Step holds the original ramp start through the retained terminal seam.
+    for (local, live) in [
+        (3, ratio(2, 1)),
+        (4, ratio(3, 1)),
+        (7, ratio(3, 1)),
+        (8, ratio(6, 1)),
+    ] {
+        let evaluated = changed
+            .evaluate_with_follow_exact(ratio(local, 1), ratio(16, 1))
+            .unwrap();
+        assert_eq!(evaluated.follow.unwrap().1, live);
+        assert_eq!(evaluated.pose.scale, live.checked_div(ratio(4, 1)).unwrap());
+    }
+    for scale in [ExactRatio::ZERO, ratio(-1, 1), ratio(1, 65), ratio(65, 1)] {
+        assert!(retune_follow(&entry, None, scale, ZoomCurve::Linear).is_err());
+        assert!(retune_follow(&entry, Some(scale), ratio(4, 1), ZoomCurve::Linear).is_err());
+    }
+    let mut fixed = entry.clone();
+    if let FramingValue::Follow {
+        scale_transition, ..
+    } = &mut fixed.value
+    {
+        *scale_transition = None;
+    }
+    let static_pose = Framing::static_pose(FramingPose::identity()).unwrap();
+    let path = Framing::creep(
+        FramingPose::identity(),
+        FramingPose::identity(),
+        FramingCurve::Linear,
+    )
+    .unwrap();
+    for other in [fixed, static_pose, path] {
+        assert!(retune_follow(&other, None, ratio(4, 1), ZoomCurve::Linear).is_err());
+    }
 }

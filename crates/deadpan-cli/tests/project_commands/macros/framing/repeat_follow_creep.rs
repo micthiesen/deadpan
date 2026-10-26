@@ -527,7 +527,7 @@ fn whole_repeat_follow_creep_preserves_plays_gaps_escalation_and_invocation_rela
         let redone = writer.snapshot()?;
         writer.validate()?;
         drop(writer);
-        let error = reject(
+        assert_unchanged_follow_retune_preview(
             &package,
             &input,
             &invocation(
@@ -537,15 +537,10 @@ fn whole_repeat_follow_creep_preserves_plays_gaps_escalation_and_invocation_rela
                 "repeat",
                 2,
                 None,
-                "path-refused",
+                "animated-retune-preview",
             ),
+            "repeat",
         )?;
-        assert!(
-            error["error"]["message"]
-                .as_str()
-                .unwrap()
-                .ends_with(deadpan_core::framing_zoom::PATH_REFUSAL)
-        );
         let reset = command(
             &package,
             &input,

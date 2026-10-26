@@ -569,6 +569,24 @@ fn followed_framing(follow: &FollowDraft, pose: FramingPose) -> Result<Framing, 
     Ok(framing)
 }
 
+fn animation_parameters(
+    framing: Option<&Framing>,
+) -> Result<Option<(ExactRatio, deadpan_core::framing_zoom::ZoomCurve)>, String> {
+    match framing.map(|framing| &framing.value) {
+        Some(FramingValue::Follow {
+            scale,
+            scale_transition: Some(transition),
+            ..
+        }) => Ok(Some((
+            scale
+                .checked_mul(transition.factor)
+                .map_err(|error| error.to_string())?,
+            transition.curve,
+        ))),
+        _ => Ok(None),
+    }
+}
+
 /// Every operation of `picture` from `layer` outward whose pose depends on
 /// `framing` at `layer`: the operation itself, then each outer follow, which
 /// sees the subject where inner operations put it. Resolution matches the
@@ -835,6 +853,8 @@ impl CameraSession {
                 .find(|frame| frame.identity == picture.id)?;
             Some((asset.clone(), frame.pts))
         });
+        let mut fields = super::camera_fields::CameraFields::new(draft_pose);
+        fields.sync_animation(animation_parameters(entry.as_ref())?);
         Ok(Self {
             session: pending.session,
             revision: pending.revision,
@@ -863,7 +883,7 @@ impl CameraSession {
             proposals: proposal_picker::Proposals::default(),
             proposal_acceptance: None,
             committing: false,
-            fields: super::camera_fields::CameraFields::new(draft_pose),
+            fields,
             field_keys: Vec::new(),
             field_error: None,
             local_position: layer.local_position,
@@ -890,6 +910,96 @@ impl CameraSession {
             pose,
             reset,
         )
+    }
+
+    fn sync_fields(&mut self) -> Result<(), String> {
+        let animation = self
+            .framing(self.draft.pose(), self.draft.reset_requested())
+            .and_then(|framing| animation_parameters(framing.as_ref()))?;
+        self.fields.sync(self.draft.pose());
+        self.fields.sync_animation(animation);
+        Ok(())
+    }
+
+    fn framing_from_fields(&self, pose: FramingPose) -> Result<Option<Framing>, String> {
+        let framing = self.framing(pose, self.draft.reset_requested())?;
+        let Some((arrival, curve)) = self.fields.animation_edit() else {
+            return Ok(framing);
+        };
+        let entry = framing
+            .as_ref()
+            .ok_or("This Camera draft no longer follows a target.")?;
+        let current_arrival = animation_parameters(Some(entry))?
+            .ok_or("This Camera draft no longer has a Follow animation.")?
+            .0;
+        deadpan_core::framing_zoom::retune_follow(
+            entry,
+            None,
+            arrival.unwrap_or(current_arrival),
+            curve,
+        )
+        .map(Some)
+    }
+
+    /// Adopt validated fields together. Rebase the scale handle to the new
+    /// animation at this exact owner position, so a later +/- key keeps its
+    /// ordinary proportional meaning even after changing the arrival curve.
+    fn apply_fields(
+        &mut self,
+        pose: FramingPose,
+        duration: ExactRatio,
+        context: &egui::Context,
+    ) -> Result<CameraEffect, String> {
+        let before = self.framing(self.draft.pose(), self.draft.reset_requested())?;
+        let framing = self.framing_from_fields(pose)?;
+        let mut candidate = self.draft.clone();
+        let (pose, follow) =
+            if let (Some(previous), Some(framing)) = (&self.follow, framing.as_ref()) {
+                let FramingValue::Follow {
+                    target,
+                    scale,
+                    fallback,
+                    scale_transition,
+                } = &framing.value
+                else {
+                    return Err("This Camera draft no longer follows a target.".into());
+                };
+                let live = framing
+                    .evaluate_with_follow_exact(self.local_position, duration)
+                    .map_err(|error| error.to_string())?
+                    .follow
+                    .ok_or("Follow has no evaluated scale.")?
+                    .1;
+                (
+                    FramingPose {
+                        scale: live,
+                        ..pose
+                    },
+                    Some(FollowDraft {
+                        target: target.clone(),
+                        center: previous.center,
+                        base_scale: live,
+                        base_live: *scale,
+                        base_fallback: *fallback,
+                        clock: framing.clock,
+                        scale_transition: *scale_transition,
+                    }),
+                )
+            } else {
+                (pose, self.follow.clone())
+            };
+        if let CameraEffect::Rejected(error) = candidate.set_pose(pose) {
+            return Err(error.to_string());
+        }
+        self.draft = candidate;
+        self.follow = follow;
+        self.fields
+            .adopt(pose, animation_parameters(framing.as_ref())?, context);
+        Ok(if before == framing {
+            CameraEffect::None
+        } else {
+            CameraEffect::PoseChanged(pose)
+        })
     }
 
     fn whole_follow_owner(
@@ -983,6 +1093,8 @@ impl CameraSession {
             }),
             "field": self.draft.region().map(|region| region.field().label()),
             "follow": self.follow.as_ref().map(|follow| follow.target.as_str().to_owned()),
+            "framing": self.framing(self.draft.pose(), self.draft.reset_requested()).ok(),
+            "fields_valid": self.fields.is_valid() && self.field_error.is_none(),
             "selected": self.selected_target.as_ref().map(|id| id.as_str().to_owned()),
             "saving": self.saving.is_some(),
             "rebasing": self.rebase.is_some(),
@@ -1347,10 +1459,7 @@ impl DeadpanApp {
             )
             && matches!(
                 session.entry.as_ref().map(|entry| &entry.value),
-                Some(FramingValue::Follow {
-                    scale_transition: None,
-                    ..
-                })
+                Some(FramingValue::Follow { .. })
             );
         let intent_scope = follow_creep
             || (range.is_some() && session.scoped.is_none())
@@ -2250,7 +2359,11 @@ impl DeadpanApp {
             effect,
             CameraEffect::PoseChanged(_) | CameraEffect::Reset(_)
         ) {
-            camera.fields.sync(camera.draft.pose());
+            if let Err(error) = camera.sync_fields() {
+                camera.draft = previous;
+                self.error = Some(error);
+                return;
+            }
             camera.field_error = None;
         }
         let mut cancelled_proposal = None;
@@ -2478,11 +2591,14 @@ impl DeadpanApp {
                 .take()
                 .map(|job| (camera.session, job));
             camera.close_proposals();
-            camera.fields.sync(camera.draft.pose());
-            camera.field_error = None;
             if let Some(follow) = &mut camera.follow {
                 follow.center = [camera.draft.pose().center_x, camera.draft.pose().center_y];
             }
+            if let Err(error) = camera.sync_fields() {
+                self.error = Some(error);
+                return;
+            }
+            camera.field_error = None;
         }
         if saved.is_some() {
             camera.selected_target = saved;
@@ -2533,7 +2649,7 @@ impl DeadpanApp {
                 // Release at the pose on screen, so nothing jumps.
                 let pose = shown.unwrap_or_else(|| camera.draft.pose());
                 camera.draft.set_pose(pose);
-                camera.fields.sync(camera.draft.pose());
+                camera.sync_fields()?;
                 camera.field_error = None;
                 let label = workspace
                     .document
@@ -2615,7 +2731,7 @@ impl DeadpanApp {
             }
             camera.follow.as_mut().expect("follow just created").center =
                 [shown.center_x, shown.center_y];
-            camera.fields.sync(camera.draft.pose());
+            camera.sync_fields()?;
             camera.field_error = None;
             let mut message = format!(
                 "Following {} at {:.2}×. +/- change the scale; Enter saves; t stops following.",
@@ -3500,7 +3616,7 @@ impl DeadpanApp {
                         // including pointer focus changes in this same native batch.
                         if let Some(result) = &proposed {
                             camera.field_error = match result {
-                                Ok(pose) => camera.framing(*pose, camera.draft.reset_requested()).err(),
+                                Ok(pose) => camera.framing_from_fields(*pose).err(),
                                 Err(error) => Some(error.clone()),
                             };
                         }
@@ -3511,6 +3627,7 @@ impl DeadpanApp {
                         ui.weak(match camera.draft.phase() {
                             CameraPhase::TargetPicker => "Choose this page's number. Tab / Shift+Tab changes pages; f returns to adjustment. Selecting a proposal saves that target before framing changes.",
                             CameraPhase::Region => "Finish the target, or press Escape to return to framing.",
+                            _ if camera.follow.as_ref().is_some_and(|follow| follow.scale_transition.is_some()) => "Scale changes the whole animation. Arrival and curve keep its timing.",
                             _ if camera.follow.is_some() => "The followed target supplies the center. Scale changes keep following it.",
                             _ => "Tab moves through fields. Up/Down changes 1%. Enter finishes a field; Enter in the viewer applies the edit.",
                         });
@@ -3527,7 +3644,7 @@ impl DeadpanApp {
                             if let Ok(Some(framing)) = camera.framing(camera.draft.pose(), false)
                                 && let FramingValue::Follow { scale, scale_transition: Some(transition), .. } = framing.value
                             {
-                                ui.label(format!("Scale animation retained · {}",
+                                ui.label(format!("Scale animation · {}",
                                     navigation::zoom::follow_scale_label(scale, Some(transition))));
                                 ui.weak("t stops following and removes the scale animation.");
                             }
@@ -3587,9 +3704,25 @@ impl DeadpanApp {
                     });
                 });
             });
+        let effective_duration = self
+            .presentation
+            .picture()
+            .and_then(|picture| picture.framing.get(camera.layer))
+            .map(|layer| layer.effective_duration);
         let effect = proposed.and_then(|result| {
             if camera.field_error.is_none() {
-                result.ok().map(|pose| camera.draft.set_pose(pose))
+                result.ok().and_then(|pose| {
+                    let duration = effective_duration
+                        .ok_or_else(|| "The Camera picture is no longer available.".to_owned())
+                        .and_then(|duration| camera.apply_fields(pose, duration, ui.ctx()));
+                    match duration {
+                        Ok(effect) => Some(effect),
+                        Err(error) => {
+                            camera.field_error = Some(error);
+                            None
+                        }
+                    }
+                })
             } else {
                 None
             }
@@ -3616,6 +3749,179 @@ pub(super) fn render_layers(picture: &crate::worker::Picture) -> Result<Vec<Fram
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn arrival_edit_rebases_exact_follow_handle_and_keeps_later_uniform_scale_proportional() {
+        use deadpan_core::framing_zoom::ZoomCurve;
+        let r = |n, d| ExactRatio::new(n, d).unwrap();
+        let center = [r(1, 3), r(2, 7)];
+        let local = r(3, 2);
+        let duration = r(8, 1);
+        let entry = Framing {
+            clock: FramingClock::RetainedOutput {
+                offset: r(1, 1),
+                duration: r(4, 1),
+            },
+            value: FramingValue::Follow {
+                target: TargetId::new("speaker").unwrap(),
+                scale: r(2, 1),
+                fallback: FramingPose::new(r(3, 7), r(2, 9), r(1, 2)).unwrap(),
+                scale_transition: Some(deadpan_core::FollowScaleTransition {
+                    factor: r(2, 1),
+                    curve: ZoomCurve::Linear,
+                    range: Some(deadpan_core::FollowScaleRange {
+                        start: r(1, 4),
+                        end: r(3, 4),
+                        from_factor: r(3, 2),
+                    }),
+                }),
+            },
+        };
+        let live = entry
+            .evaluate_with_follow_exact(local, duration)
+            .unwrap()
+            .follow
+            .unwrap()
+            .1;
+        let pose = FramingPose::new(center[0], center[1], live).unwrap();
+        let FramingValue::Follow {
+            target,
+            scale,
+            fallback,
+            scale_transition,
+        } = &entry.value
+        else {
+            unreachable!()
+        };
+        let mut fields = super::super::camera_fields::CameraFields::new(pose);
+        fields.sync_animation(animation_parameters(Some(&entry)).unwrap());
+        let mut session = CameraSession {
+            session: 1,
+            revision: RevisionId::new("r1").unwrap(),
+            scope: InstancePath {
+                node: NodeId::new("source").unwrap(),
+                repeats: Vec::new(),
+            },
+            navigation_scope: SequenceScope::default(),
+            scoped: None,
+            ticket: Ticket {
+                transport: None,
+                source: 1,
+                request: 1,
+            },
+            cursor: 0,
+            entry: Some(entry.clone()),
+            entry_pose: Some(pose),
+            entry_layers: Vec::new(),
+            draft: CameraDraft::new(pose).unwrap(),
+            steps: CameraPanSteps {
+                horizontal: [r(1, 100), ExactRatio::ZERO],
+                vertical: [ExactRatio::ZERO, r(1, 100)],
+            },
+            picker: Vec::new(),
+            picker_page: 0,
+            proposals: proposal_picker::Proposals::default(),
+            proposal_acceptance: None,
+            committing: false,
+            fields,
+            field_keys: Vec::new(),
+            field_error: None,
+            local_position: local,
+            duration: deadpan_core::FrameDuration::new(8).unwrap(),
+            layer: 0,
+            picture: None,
+            display_aspect: None,
+            follow: Some(FollowDraft {
+                target: target.clone(),
+                center,
+                base_scale: live,
+                base_live: *scale,
+                base_fallback: *fallback,
+                clock: entry.clock,
+                scale_transition: *scale_transition,
+            }),
+            selected_target: Some(target.clone()),
+            region_purpose: None,
+            pointer: region_pointer_ui::State::default(),
+            saving: None,
+            rebase: None,
+        };
+        let context = egui::Context::default();
+        let mut output = context.run_ui(egui::RawInput::default(), |ui| {
+            session.fields.show(ui);
+        });
+        output.textures_delta.clear();
+        context.memory_mut(|memory| memory.request_focus(session.fields.ids()[3]));
+        let edited = session
+            .fields
+            .adjust_focused(&context, navigation::camera::Direction::Up, 1)
+            .unwrap()
+            .unwrap();
+        let (arrival, curve) = session.fields.animation_edit().unwrap();
+        let expected =
+            deadpan_core::framing_zoom::retune_follow(&entry, None, arrival.unwrap(), curve)
+                .unwrap();
+        assert!(matches!(
+            session.apply_fields(edited, duration, &context),
+            Ok(CameraEffect::PoseChanged(_))
+        ));
+        assert_eq!(
+            session.framing(session.draft.pose(), false).unwrap(),
+            Some(expected.clone())
+        );
+        assert_eq!(
+            [session.draft.pose().center_x, session.draft.pose().center_y],
+            center
+        );
+        assert_eq!(
+            session.draft.pose().scale,
+            expected
+                .evaluate_with_follow_exact(local, duration)
+                .unwrap()
+                .follow
+                .unwrap()
+                .1
+        );
+        session.draft.input(
+            CameraKey::Scale(navigation::camera::ScaleDirection::In),
+            None,
+        );
+        retain_follow_scale_effect(&mut session.draft, center);
+        let uniform = session
+            .framing(session.draft.pose(), false)
+            .unwrap()
+            .unwrap();
+        let FramingValue::Follow {
+            scale: before_scale,
+            fallback: before_fallback,
+            scale_transition: before_transition,
+            ..
+        } = expected.value
+        else {
+            unreachable!()
+        };
+        let FramingValue::Follow {
+            scale,
+            fallback,
+            scale_transition,
+            ..
+        } = uniform.value
+        else {
+            unreachable!()
+        };
+        assert_eq!(scale_transition, before_transition);
+        assert_eq!(
+            fallback.scale,
+            before_fallback
+                .scale
+                .checked_mul(scale.checked_div(before_scale).unwrap())
+                .unwrap()
+        );
+        assert_eq!(
+            [fallback.center_x, fallback.center_y],
+            [before_fallback.center_x, before_fallback.center_y]
+        );
+    }
 
     #[test]
     fn camera_path_preview_uses_the_exact_sampled_owner_extent() {

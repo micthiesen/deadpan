@@ -1,0 +1,15 @@
+{
+  "collected_at_utc": "2026-10-26T02:14:56Z",
+  "collector_script": "/tmp/deadpan-follow-retune-2026-10-25/collect_follow_retune.py",
+  "collector_script_bytes": 8016,
+  "collector_script_sha256": "b8f5b8c44ae8a082cc50db4f6ad587746269b01cb0cb8053dc072b3794552a4b",
+  "destination": "/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-25-follow-retune",
+  "generated_fixture_roots": [
+    "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov",
+    "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE"
+  ],
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+  "policy": "Read-only evidence copy; no source/build/Cargo changes. JSON/log/HTML gzip mtime=0.",
+  "python": "3.15.0 (main, Oct  9 2026, 11:16:41) [Clang 21.0.0 (clang-2100.3.34.2)]",
+  "source_root": "/tmp/deadpan-follow-retune-2026-10-25"
+}

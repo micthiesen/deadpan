@@ -388,7 +388,7 @@ fn whole_retime_follow_creep_keeps_nonzero_map_fractional_target_clock_and_histo
     writer.validate()?;
     let redone = writer.snapshot()?;
     drop(writer);
-    let error = reject(
+    assert_unchanged_follow_retune_preview(
         &package,
         &input,
         &invocation(
@@ -398,15 +398,10 @@ fn whole_retime_follow_creep_keeps_nonzero_map_fractional_target_clock_and_histo
             "retime",
             2,
             None,
-            "path-refused",
+            "animated-retune-preview",
         ),
+        "retime",
     )?;
-    assert!(
-        error["error"]["message"]
-            .as_str()
-            .unwrap()
-            .ends_with(deadpan_core::framing_zoom::PATH_REFUSAL)
-    );
     let reset = command(
         &package,
         &input,

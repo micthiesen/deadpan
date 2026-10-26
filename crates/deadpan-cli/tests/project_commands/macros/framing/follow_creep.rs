@@ -198,9 +198,10 @@ fn keep_creep_rebinds_follow_bases_and_target_with_atomic_refusal_and_durable_hi
     copied.validate()?;
     drop(copied);
 
-    // Repeating over an existing animation is a refusal with no history or
-    // register writes. Replacing its target explicitly installs a fixed Follow.
-    reject(
+    // An existing animation now accepts Keep creep retuning. Reusing identical
+    // parameters predicts the same authored recipe without writes in dry-run.
+    let frozen = state(&package)?;
+    invoke(
         &package,
         &input,
         &invocation(
@@ -210,9 +211,11 @@ fn keep_creep_rebinds_follow_bases_and_target_with_atomic_refusal_and_durable_hi
             "camera-source",
             60,
             None,
-            "path-refused",
+            "unchanged-retune-preview",
         ),
+        true,
     )?;
+    assert_eq!(state(&package)?, frozen);
     let rebound = command(
         &package,
         &input,

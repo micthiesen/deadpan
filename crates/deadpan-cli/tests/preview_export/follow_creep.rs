@@ -25,14 +25,20 @@ fn quantized(value: ExactRatio) -> Result<ExactRatio> {
     ratio(grid(value)?, GRID)
 }
 
-fn scale(base: ExactRatio, frame: i64, ranged: bool) -> Result<ExactRatio> {
+fn scale(base: ExactRatio, frame: i64, ranged: bool, retuned: bool) -> Result<ExactRatio> {
     // The picture is sampled at owner position frame+1/2. Quantize progress
     // and actual endpoint scales separately, then round the weighted sum.
     // Multiplying by a rounded scale factor would give a different answer.
     if ranged && frame < 20 {
         return Ok(base);
     }
-    let end_factor = if ranged { ratio(8, 5)? } else { ratio(4, 3)? };
+    let end_factor = if retuned {
+        ratio(2, 1)?
+    } else if ranged {
+        ratio(8, 5)?
+    } else {
+        ratio(4, 3)?
+    };
     let end = base.checked_mul(end_factor)?;
     if ranged && frame >= 80 {
         return Ok(end);
@@ -42,6 +48,11 @@ fn scale(base: ExactRatio, frame: i64, ranged: bool) -> Result<ExactRatio> {
     } else {
         ratio(i128::from(2 * frame + 1), i128::from(2 * FRAMES))?
     })?;
+    let t = if retuned {
+        ratio(t * t * (3 * GRID - 2 * t), GRID * GRID)?.round_even()?
+    } else {
+        t
+    };
     let start = grid(if ranged {
         base.checked_mul(ratio(6, 5)?)?
     } else {
@@ -54,14 +65,14 @@ fn scale(base: ExactRatio, frame: i64, ranged: bool) -> Result<ExactRatio> {
     )
 }
 
-fn expected_pose(frame: i64, ranged: bool) -> Result<FramingPose> {
+fn expected_pose(frame: i64, ranged: bool, retuned: bool) -> Result<FramingPose> {
     if !(10..110).contains(&frame) {
         // No target region outside its half-open span. Fallback centers are
         // authored exact values, including 1/3, and must not be quantized.
         return Ok(FramingPose::new(
             ratio(1, 3)?,
             ratio(2, 5)?,
-            scale(ratio(5, 4)?, frame, ranged)?,
+            scale(ratio(5, 4)?, frame, ranged, retuned)?,
         )?);
     }
     let x = match frame {
@@ -76,11 +87,16 @@ fn expected_pose(frame: i64, ranged: bool) -> Result<FramingPose> {
     Ok(FramingPose::new(
         quantized(ratio(i128::from(x), 1_000_000)?)?,
         quantized(ratio(2, 5)?)?,
-        quantized(scale(ratio(3, 2)?, frame, ranged)?)?,
+        quantized(scale(ratio(3, 2)?, frame, ranged, retuned)?)?,
     )?)
 }
 
-fn check_poses(document: &ProjectDocument, owner: &NodeId, ranged: bool) -> Result<Value> {
+fn check_poses(
+    document: &ProjectDocument,
+    owner: &NodeId,
+    ranged: bool,
+    retuned: bool,
+) -> Result<Value> {
     let plan = deadpan_plan::RenderPlan::compile(document)?;
     assert_eq!(document.duration()?.frames(), FRAMES);
     let mut evidence = Vec::new();
@@ -94,7 +110,7 @@ fn check_poses(document: &ProjectDocument, owner: &NodeId, ranged: bool) -> Resu
         assert!(layer.instance.repeats.is_empty());
         assert_eq!(layer.local_position, ratio(i128::from(2 * frame + 1), 2)?);
         assert_eq!(layer.effective_duration, ExactRatio::integer(FRAMES));
-        let expected = expected_pose(frame, ranged)?;
+        let expected = expected_pose(frame, ranged, retuned)?;
         assert_eq!(layer.pose, Some(expected), "follow creep frame {frame}");
         evidence.push(json!({
             "frame":frame,"owner_position":layer.local_position,
@@ -194,14 +210,18 @@ fn same_authored(actual: &ProjectDocument, expected: &ProjectDocument) -> Result
 }
 
 pub fn build(directory: &Path) -> Result<Fixture> {
-    build_with_range(directory, false)
+    build_with_range(directory, false, false)
 }
 
 pub fn build_ranged(directory: &Path) -> Result<Fixture> {
-    build_with_range(directory, true)
+    build_with_range(directory, true, false)
 }
 
-fn build_with_range(directory: &Path, ranged: bool) -> Result<Fixture> {
+pub fn build_retuned(directory: &Path, ranged: bool) -> Result<Fixture> {
+    build_with_range(directory, ranged, true)
+}
+
+fn build_with_range(directory: &Path, ranged: bool, retuned: bool) -> Result<Fixture> {
     let mut project = Project::create(
         directory,
         if ranged {
@@ -332,9 +352,9 @@ fn build_with_range(directory: &Path, ranged: bool) -> Result<Fixture> {
         "{}",
         String::from_utf8_lossy(&output.stderr)
     );
-    let after = project.document()?;
+    let created = project.document()?;
     assert_eq!(
-        after.nodes()[&owner].framing,
+        created.nodes()[&owner].framing,
         Some(Framing {
             clock: FramingClock::OwnerOutput,
             value: FramingValue::Follow {
@@ -357,7 +377,60 @@ fn build_with_range(directory: &Path, ranged: bool) -> Result<Fixture> {
             },
         })
     );
-    let poses = check_poses(&after, &owner, ranged)?;
+    let before = if retuned {
+        // Retune through the same public semantic writer used by :creep,
+        // with no new Visual range. The original ramp window is retained.
+        let instruction = SemanticInstruction::Zoom {
+            kind: ZoomKind::Creep {
+                from: None,
+                to: ExactRatio::integer(3),
+                curve: ZoomCurve::Smoothstep,
+            },
+            center: SemanticZoomCenter::Keep,
+        };
+        let output = project.macro_operation(
+            json!({
+                "type":"apply","program":{"instructions":[instruction]},
+                "parent":created.root(),"cursor":40,"selected_child":owner,
+                "visual_selection":Value::Null,
+            }),
+            false,
+        )?;
+        fs::write(
+            directory.join("follow-retune-apply.stdout.json"),
+            &output.stdout,
+        )?;
+        fs::write(
+            directory.join("follow-retune-apply.stderr.txt"),
+            &output.stderr,
+        )?;
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        created.clone()
+    } else {
+        before
+    };
+    let after = project.document()?;
+    if retuned {
+        let mut expected = created.nodes()[&owner]
+            .framing
+            .clone()
+            .ok_or("Follow framing")?;
+        let FramingValue::Follow {
+            scale_transition: Some(transition),
+            ..
+        } = &mut expected.value
+        else {
+            return Err("Expected animated Follow".into());
+        };
+        transition.factor = ExactRatio::integer(2);
+        transition.curve = ZoomCurve::Smoothstep;
+        assert_eq!(after.nodes()[&owner].framing, Some(expected));
+    }
+    let poses = check_poses(&after, &owner, ranged, retuned)?;
     let actual = pcm(&project.package, &[37, 251, 173])?;
     fs::write(
         directory.join("follow-creep-after-pcm.json"),
@@ -382,18 +455,19 @@ fn build_with_range(directory: &Path, ranged: bool) -> Result<Fixture> {
     ])?;
     let restored = project.document()?;
     same_authored(&restored, &after)?;
-    assert_eq!(check_poses(&restored, &owner, ranged)?, poses);
+    assert_eq!(check_poses(&restored, &owner, ranged, retuned)?, poses);
     let store = ProjectStore::open(&project.package, AccessMode::ReadOnly)?;
     let history = store.validate_report(true)?;
     drop(store);
     fs::write(
         directory.join("follow-creep-authored-evidence.json"),
         serde_json::to_vec_pretty(&json!({
-            "before":before,"after":after,"undone":undone,"restored":restored,
+            "before":before,"created":created,"after":after,"undone":undone,"restored":restored,
             "history":history,"poses":poses,
             "independent_pose_oracle":true,"independent_DSP_claim":false,
             "tracking_accuracy_claim":false,"listening_claim":false,
             "range":if ranged { json!([20,80]) } else { Value::Null },
+            "retuned_existing_transition":retuned,
         }))?,
     )?;
     let mut fixture = project.finish(
@@ -401,6 +475,9 @@ fn build_with_range(directory: &Path, ranged: bool) -> Result<Fixture> {
         (0..u64::try_from(FRAMES)?).map(|frame| (frame, original(frame))).collect(),
         vec![format!("Qualified 120-picture A/V CFR Original; manually authored deterministic target regions move, hold through Lost, receive a correction, and fall back outside their span. Keep-center creep is authored through the shared semantic CLI; {}. Every picture is checked against independent Q32 pose arithmetic; all 192192 stereo authored/limited samples and limiter gain bits equal the pre-creep baseline. The source picture is the existing counter fixture, not a generated moving subject; this does not qualify tracking accuracy, listening or independent DSP.", if ranged { "range [20,80) keeps live 1.5/fallback1.25 before it, jumps to live1.8/fallback1.5 at its start, ramps to live2.4/fallback2, then holds terminal scale while centers keep following" } else { "live 1.5->2 and fallback 1.25->5/3 use one owner clock" })],
     )?;
+    if retuned {
+        fixture.notes = vec!["Qualified 120-picture A/V CFR Original with deterministic target regions, including Lost, correction and fallback. Existing linear Follow creep retuned in one shared semantic transaction to live arrival 3x / fallback arrival 2.5x with smoothstep. Both bases, fallback center, target, clock and original whole/ranged ramp window are preserved; Undo restores the previous linear animation exactly except revision. Every picture is checked with independent Q32 arithmetic and all 192192 stereo authored/limited samples and limiter gain bits equal the baseline. This does not qualify tracking accuracy, listening or independent DSP.".into()];
+    }
     let portable = directory.join("follow-creep-portable.deadpan");
     let copied = success(&[
         "project",
@@ -412,7 +489,10 @@ fn build_with_range(directory: &Path, ranged: bool) -> Result<Fixture> {
     assert_eq!(copied["portable_copy"]["originals"][0]["from"], "managed");
     let store = ProjectStore::open(&portable, AccessMode::ReadOnly)?;
     same_authored(&store.snapshot()?, &restored)?;
-    assert_eq!(check_poses(&store.snapshot()?, &owner, ranged)?, poses);
+    assert_eq!(
+        check_poses(&store.snapshot()?, &owner, ranged, retuned)?,
+        poses
+    );
     store.validate_report(true)?;
     drop(store);
     same_pcm(&pcm(&portable, &[173, 37, 251])?, &oracle, "portable PCM");

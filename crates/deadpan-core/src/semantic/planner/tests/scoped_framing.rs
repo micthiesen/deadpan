@@ -955,17 +955,60 @@ fn scoped_follow_creep_all_owner_kinds_use_validated_nested_plays_and_exact_isol
             ProjectDocument::from_json(&plan.document.to_json().unwrap()).unwrap(),
             plan.document
         );
-        assert!(
-            resolve(
-                &plan.document,
-                &plan.context,
-                vec![instruction.clone()],
-                &BTreeMap::new(),
-                |_| panic!("animated path allocated")
-            )
-            .unwrap_err()
-            .message
-            .contains("camera path")
+        let unchanged = resolve(
+            &plan.document,
+            &plan.context,
+            vec![instruction.clone()],
+            &BTreeMap::new(),
+            |_| panic!("identical Follow retune allocated"),
+        )
+        .unwrap();
+        assert_eq!(unchanged.document, plan.document);
+        assert!(unchanged.request.is_none());
+        let retuned = resolve(
+            &plan.document,
+            &plan.context,
+            vec![SemanticInstruction::Zoom {
+                kind: ZoomKind::Creep {
+                    from: None,
+                    to: ExactRatio::integer(3),
+                    curve: ZoomCurve::Smoothstep,
+                },
+                center: SemanticZoomCenter::Keep,
+            }],
+            &BTreeMap::new(),
+            |request| allocator("retuned-follow", request),
+        )
+        .unwrap();
+        let mut expected = framing.clone();
+        let crate::FramingValue::Follow {
+            scale_transition: Some(transition),
+            ..
+        } = &mut expected.value
+        else {
+            panic!("animated Follow");
+        };
+        transition.factor = ExactRatio::new(3, 2).unwrap();
+        transition.curve = ZoomCurve::Smoothstep;
+        assert_eq!(
+            retuned.document.nodes()[&mapped.target.node].framing,
+            Some(expected)
+        );
+        for (id, old) in plan.document.nodes() {
+            if id != &mapped.target.node {
+                assert_eq!(&retuned.document.nodes()[id], old);
+            }
+        }
+        let replay = crate::replay_compound::<EditError>(
+            &plan.document,
+            retuned.request.as_ref().unwrap(),
+            |_| Ok(()),
+        )
+        .unwrap();
+        assert_eq!(replay.document, retuned.document);
+        assert_eq!(
+            replay.edit.inverse.apply(&retuned.document).unwrap(),
+            plan.document
         );
         for variant in 0..7 {
             let mut context = entry();

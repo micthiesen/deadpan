@@ -149,15 +149,20 @@ pub const PATH_REFUSAL: &str = "This beat has a camera path, and this would repl
 pub const FOLLOW_CREEP_REFUSAL: &str = "Following creep requires one admitted owner. Choose a contained Edit range and This play at every enclosing Repeat, or clear the range.";
 pub const RANGED_FOLLOW_REFUSAL: &str = "This beat follows a target; a range would stop following it outside the range. Apply to the whole beat (clear the Visual range) or :zoom off first.";
 pub const RANGED_PATH_REFUSAL: &str = "This beat has a camera path; a range would replace it outside the range. Apply to the whole beat (clear the Visual range) or :zoom off first.";
+pub const FOLLOW_RETUNE_RANGE_REFUSAL: &str = "Clear the Edit range to retune this Follow's existing scale animation; its authored clock and range are retained.";
 
 /// Build the framing `kind` describes, or `None` for the full picture.
 ///
 /// Nothing here flattens an existing path implicitly. On the whole beat, a
 /// follow keeps following when only its scale changes, and a camera path is
 /// replaced only by an explicit `target=` or `:zoom off`. A ranged edit keeps
-/// the beat's framing outside the range. Keep creep can retain a fixed Follow,
-/// including its prefix scale and fallback. Other ranged forms require no
-/// framing or one static pose (on any clock, since a static pose is constant).
+/// the beat's framing outside the range. Keep creep retunes an animated Follow
+/// on its existing clock and window when no range is selected. An omitted
+/// `from` retains both bases and the ranged start; an explicit `from` changes
+/// the animation's start, preserving a ranged animation's prefix. Keep creep
+/// can also retain a fixed Follow, including its prefix scale and fallback.
+/// Other ranged forms require no framing or one static pose (on any clock,
+/// since a static pose is constant).
 pub fn build(kind: ZoomKind, center: &Center, shot: &Shot<'_>) -> Result<Option<Framing>, String> {
     kind.validate()?;
     if let Some((start, end)) = shot.range
@@ -197,6 +202,68 @@ pub fn build_normalized_range(
     build_at(kind, center, shot, Some(selected))
 }
 
+/// Retune an existing Follow scale animation without changing its target,
+/// normalization clock or window. `to` is the live branch's absolute arrival
+/// scale. An omitted `from` preserves both bases and the ranged start; an
+/// explicit `from` changes the start of the ramp while keeping a ranged
+/// animation's prefix. The fallback retains its center and relative scale.
+///
+/// This data transformation grants no owner or occurrence authority. Callers
+/// must capture and validate their edit scope before applying it. An explicit
+/// Step animation is valid here; [`build`] separately requires an eased creep.
+pub fn retune_follow(
+    entry: &Framing,
+    from: Option<ExactRatio>,
+    to: ExactRatio,
+    curve: ZoomCurve,
+) -> Result<Framing, String> {
+    let FramingValue::Follow {
+        target,
+        scale,
+        fallback,
+        scale_transition: Some(transition),
+    } = &entry.value
+    else {
+        return Err("The selected framing has no Follow scale animation to retune.".into());
+    };
+    let (scale, fallback, range) = if let Some(mut range) = transition.range {
+        if let Some(from) = from {
+            range.from_factor = from
+                .checked_div(*scale)
+                .map_err(|error| error.to_string())?;
+        }
+        (*scale, *fallback, Some(range))
+    } else {
+        let from = from.unwrap_or(*scale);
+        let fallback = FramingPose {
+            scale: fallback
+                .scale
+                .checked_mul(
+                    from.checked_div(*scale)
+                        .map_err(|error| error.to_string())?,
+                )
+                .map_err(|error| error.to_string())?,
+            ..*fallback
+        };
+        (from, fallback, None)
+    };
+    let framing = Framing {
+        clock: entry.clock,
+        value: FramingValue::Follow {
+            target: target.clone(),
+            scale,
+            fallback,
+            scale_transition: Some(crate::FollowScaleTransition {
+                factor: to.checked_div(scale).map_err(|error| error.to_string())?,
+                curve,
+                range,
+            }),
+        },
+    };
+    framing.validate().map_err(|error| error.to_string())?;
+    Ok(framing)
+}
+
 fn build_at(
     kind: ZoomKind,
     center: &Center,
@@ -217,6 +284,24 @@ fn build_at(
     let current = [shot.current.center_x, shot.current.center_y];
     let entry = shot.entry.map(|framing| &framing.value);
     let keep = *center == Center::Keep;
+    if keep
+        && let ZoomKind::Creep { from, to, curve } = kind
+        && matches!(
+            entry,
+            Some(FramingValue::Follow {
+                scale_transition: Some(_),
+                ..
+            })
+        )
+    {
+        if selected.is_some() {
+            return Err(FOLLOW_RETUNE_RANGE_REFUSAL.into());
+        }
+        if shot.whole_owner.is_none() {
+            return Err(FOLLOW_CREEP_REFUSAL.into());
+        }
+        return retune_follow(shot.entry.expect("Follow entry checked"), from, to, curve).map(Some);
+    }
     if keep
         && let ZoomKind::Creep { from, to, curve } = kind
         && let Some((start, end)) = selected

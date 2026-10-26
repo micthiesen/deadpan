@@ -578,15 +578,66 @@ fn ordinary_follow_creep_resolves_whole_and_ranged_owners_with_atomic_refusals()
         .unwrap();
         assert_ranged_follow_plan(&document, &ranged, anchor.min(head), anchor.max(head));
     }
-    assert!(
-        resolve(
-            &plan.document,
-            &selected(3, None),
-            vec![instruction.clone()],
-            &BTreeMap::new(),
-            resolver
-        )
-        .is_err()
+    // Retuning is one reversible semantic edit, retaining the followed center
+    // and independent fallback base rather than replacing them with a snapshot.
+    let retuned = plan_semantic_with_framing(
+        &plan.document,
+        &selected(3, None),
+        &program(vec![zoom(
+            ZoomKind::Creep {
+                from: None,
+                to: ExactRatio::integer(3),
+                curve: ZoomCurve::Smoothstep,
+            },
+            SemanticZoomCenter::Keep,
+        )]),
+        SemanticRegisterBank {
+            entries: &BTreeMap::new(),
+            version: 7,
+        },
+        revision("retuned-follow-outer"),
+        |request| match request {
+            SemanticAllocationRequest::ParameterEdit { step_index } => {
+                Ok(SemanticAllocation::ParameterEdit {
+                    new_revision: revision(&format!("retuned-follow-leaf-{step_index}")),
+                })
+            }
+            other => allocate(other),
+        },
+        no_original,
+        |_| Err(speech_unavailable()),
+        |_, _| Err(pause_unavailable()),
+        None,
+        resolver,
+    )
+    .unwrap();
+    let mut expected = plan.document.nodes()[&node("held")].clone();
+    if let Some(Framing {
+        value: FramingValue::Follow {
+            scale_transition, ..
+        },
+        ..
+    }) = &mut expected.framing
+    {
+        *scale_transition = Some(crate::FollowScaleTransition {
+            factor: ExactRatio::new(3, 2).unwrap(),
+            curve: ZoomCurve::Smoothstep,
+            range: None,
+        });
+    } else {
+        panic!("expected animated Follow");
+    }
+    assert_eq!(retuned.document.nodes()[&node("held")], expected);
+    let replay = crate::replay_compound::<EditError>(
+        &plan.document,
+        retuned.request.as_ref().unwrap(),
+        |_| Ok(()),
+    )
+    .unwrap();
+    assert_eq!(replay.document, retuned.document);
+    assert_eq!(
+        replay.edit.inverse.apply(&retuned.document).unwrap(),
+        plan.document
     );
     // The actual selected Sequence owns one continuous output clock across its
     // unequal children. Child structure/framing and the full inverse survive.

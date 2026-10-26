@@ -44,7 +44,7 @@ fn retained_render(fixture: &Fixture, root: &Path) -> Result<PathBuf> {
     ignore = "slow in debug builds; run with --release (see docs/PREVIEW_EXPORT_VERIFICATION.md)"
 )]
 fn follow_creep_preserves_live_motion_lost_correction_fallback_and_verified_av() -> Result {
-    run(false)
+    run(false, false)
 }
 
 #[test]
@@ -53,13 +53,33 @@ fn follow_creep_preserves_live_motion_lost_correction_fallback_and_verified_av()
     ignore = "slow in debug builds; run with --release (see docs/PREVIEW_EXPORT_VERIFICATION.md)"
 )]
 fn ranged_follow_creep_preserves_prefix_live_motion_and_verified_complete_av() -> Result {
-    run(true)
+    run(true, false)
 }
 
-fn run(ranged: bool) -> Result {
+#[test]
+#[cfg_attr(
+    debug_assertions,
+    ignore = "slow in debug builds; run with --release (see docs/PREVIEW_EXPORT_VERIFICATION.md)"
+)]
+fn retuned_follow_creep_preserves_live_motion_and_verified_av() -> Result {
+    run(false, true)
+}
+
+#[test]
+#[cfg_attr(
+    debug_assertions,
+    ignore = "slow in debug builds; run with --release (see docs/PREVIEW_EXPORT_VERIFICATION.md)"
+)]
+fn retuned_ranged_follow_creep_preserves_window_and_verified_av() -> Result {
+    run(true, true)
+}
+
+fn run(ranged: bool, retuned: bool) -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     eprintln!("follow creep Render evidence: {}", root.display());
-    let fixture = if ranged {
+    let fixture = if retuned {
+        recipes::follow_creep::build_retuned(&root.join("fixture"), ranged)?
+    } else if ranged {
         recipes::follow_creep::build_ranged(&root.join("fixture"))?
     } else {
         recipes::follow_creep::build(&root.join("fixture"))?

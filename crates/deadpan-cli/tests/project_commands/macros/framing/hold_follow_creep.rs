@@ -294,7 +294,7 @@ fn whole_hold_keep_follow_creep_replays_live_and_captured_fallback_with_durable_
     same_document(&writer.snapshot()?, &live)?;
     let redone = writer.snapshot()?;
     drop(writer);
-    reject(
+    assert_unchanged_follow_retune_preview(
         &package,
         &input,
         &invocation(
@@ -304,8 +304,9 @@ fn whole_hold_keep_follow_creep_replays_live_and_captured_fallback_with_durable_
             "live",
             123,
             None,
-            "existing-transition",
+            "existing-transition-preview",
         ),
+        "live",
     )?;
 
     // The same saved program resolves the invoked Hold's current target/base.

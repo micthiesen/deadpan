@@ -344,7 +344,7 @@ fn whole_sequence_follow_creep_crosses_source_cuts_and_replays_staged_keep_with_
     writer.validate()?;
     let redone = writer.snapshot()?;
     drop(writer);
-    let error = reject(
+    assert_unchanged_follow_retune_preview(
         &package,
         &input,
         &invocation(
@@ -354,15 +354,10 @@ fn whole_sequence_follow_creep_crosses_source_cuts_and_replays_staged_keep_with_
             "group",
             5,
             None,
-            "animated-refused",
+            "animated-retune-preview",
         ),
+        "group",
     )?;
-    assert!(
-        error["error"]["message"]
-            .as_str()
-            .unwrap()
-            .ends_with(deadpan_core::framing_zoom::PATH_REFUSAL)
-    );
 
     // A staged scale edit and nested call must resolve the group's current
     // Follow again, retaining Keep rather than a previously sampled subject.

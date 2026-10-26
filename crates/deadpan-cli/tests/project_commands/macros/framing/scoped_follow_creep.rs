@@ -485,13 +485,16 @@ fn scoped_follow_creep_all_five_owners_keep_nested_play_clocks_isolation_and_dur
                 assert_eq!(shown.scale, scale(k, ratio(2, 1), ratio(4, 1)));
             }
         }
-        let failed = request(&after, bank.version, "c", &mapped, 30, "animated-refused");
-        assert!(
-            reject(&package, &input, &failed)?["error"]["message"]
-                .as_str()
-                .unwrap()
-                .contains("camera path")
+        let retune = request(&after, bank.version, "c", &mapped, 30, "animated-preview");
+        let predicted = plan(&package, &retune)?;
+        let predicted_scope = predicted.context.scoped.as_ref().unwrap();
+        assert_eq!(
+            predicted.document.nodes()[&predicted_scope.target.node].framing,
+            after.nodes()[&mapped.target.node].framing,
         );
+        let frozen = state(&package)?;
+        invoke(&package, &input, &retune, true)?;
+        assert_eq!(state(&package)?, frozen);
         let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
         writer.undo(after.revision_id(), RevisionId::new("undo")?)?;
         same_document(&writer.snapshot()?, &before)?;

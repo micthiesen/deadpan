@@ -2,7 +2,7 @@
 
 **Initial reassessment: requirement coverage is about 83%. Strict completion was 8/24. All seven delivery gates remain open; picture effect families are 5/13 complete.**
 
-**Current after the qualifications below: about 84% coverage, 8/24 strictly
+**Current after the qualifications and reconciliation below: about 84% coverage, 9/24 strictly
 Complete, 0/7 gates closed and 5/13 picture effect families complete.**
 
 ## Packaged helper trust amendment
@@ -77,6 +77,29 @@ DP-22.3 changes from 0.5 to 1 and DP-22 returns to Complete. The unchanged
 changed. Composability, audio/effects, incremental analysis, native workflows
 and measured performance remain substantial work.
 
+## DP-12 strict completion reconciliation
+
+The [AI Hold closure audit](qualification/ai-hold-reconciliation-2026-10-25.md)
+checks existing source and retained real inference, acceptance, native and
+offline-export evidence against §12 and the owner's §29.1 verification scope.
+DP-12 is Complete. Strict completion rises to 9/24; its eight fixed criteria
+already scored 1, so the 83.7426% acceptance score does not increase. This is a
+reporting reconciliation, not new implementation or a new quality experiment.
+Resident model/text caching, candidate comparisons and measured performance
+stay open under DP-24 and Gates A/E/G. Owner-only quality and physical trials
+remain listed. The two latest interior-candidate quality failures stay failed.
+
+## Subsequent Follow parameter qualification
+
+[Existing Follow retuning](qualification/follow-retune-2026-10-25.md) now has
+shared command/native controls, exact clock/window preservation, semantic replay,
+strict targeted checks, independent review, final 60/120 Hz painted workflows
+and two complete emitted-media/history cases. DP-08.3 increases from 0.5 to 1.
+The fixed denominator adds 0.2604 percentage points: **84.0030%, still displayed
+as about 84%**. Strict completion stays nine and all seven gates remain open.
+The earlier source-confirmed parameter gap is resolved; arbitrary path return,
+escalation transforms and other picture/effect scope remain.
+
 ## Why 89% stopped moving
 
 The first 89% observation was October 8, at four Complete requirements. It was carried through 137 observations over 17 days, ending October 25 at eight Complete requirements. There was no fixed scored denominator: a subjective engineering estimate kept being inherited. Some observations recorded research, prototypes or verification checkpoints rather than newly delivered behavior. Counting those observations as completed features would also overstate progress.
@@ -91,11 +114,11 @@ The full criterion ledger, citations and remaining work are in [progress.json](p
 
 - Each of the 24 normative requirements receives equal weight.
 - Each has 3–8 major acceptance criteria, 162 total. Score 1 for implemented and locally verified, 0.5 for meaningful confirmed partial implementation or incomplete local verification, and 0 for absent.
-- Average within each requirement, then average the 24 scores. The initial baseline was 83.1473%; the amendments above bring it to 83.7426%, displayed as about 84%. Criteria are not weighted by expected engineering hours.
+- Average within each requirement, then average the 24 scores. The initial baseline was 83.1473%; the amendments above bring it to 84.0030%, displayed as about 84%. Criteria are not weighted by expected engineering hours.
 - Keep criterion identities and scope fixed. Record a versioned reassessment if the denominator needs correction; never split completed work or merge missing work to move the score.
 - Gates and effects remain visible separately. They overlap requirements and are not counted again in the numeric denominator.
 - Owner-only checks under §29.1 remain on the owner list and do not block local completion. No product scope has been removed.
-- A fully scored coarse requirement does not automatically change strict tracker status. DP-12 behavior scores 100%; its Partial status needs a separate closure reconciliation. Runtime optimization, candidate comparisons and performance remain owed under DP-24 and gates.
+- A fully scored coarse requirement does not automatically change strict tracker status. DP-12's separate closure audit above reconciles its status with the existing evidence. Runtime optimization, candidate comparisons and performance remain owed under DP-24 and gates.
 
 **84% measures covered acceptance scope. It does not mean 16% of the engineering time remains or imply a near release.** Rounding and criterion judgment limit precision. Historical estimates remain unchanged and labeled legacy; they cannot be compared to this baseline as a delivery rate.
 
@@ -133,13 +156,13 @@ The full criterion ledger, citations and remaining work are in [progress.json](p
 - Composability matrix: structural timing transforms must preserve sample-phase history, owned sounds, nested Repeat overrides and fixed/pitch Retime clocks. Latest narrow admissions do not complete general scopes.
 - DP-09 is broad audio workflow work: sample-resolution range authoring, variable rate, custom silence/tail policy and sound-bearing transforms remain, beyond polishing existing commands.
 - DP-10 now includes reviewed English word-boundary proposals. Cursor-priority incremental analysis/tracking still needs architecture and real integration.
-- DP-08 post-insertion parameter edit gap is directly confirmed in source: Keep refuses an existing animated Follow; Camera exposes no independent factor/curve controls.
+- DP-08 still needs arbitrary stepped path return and complete escalation transformation/export scope. Existing Follow arrival-scale/curve editing is now qualified.
 - Full shared picture/audio effects and mastering, incremental RenderPlan fragments and filtered cache lifecycle remain implementation work.
 - Native workflow integration, HDR/output quality and hostile real-worker stress remain local acceptance work.
 - Large-project visible edit/pause latency still misses its target; diagnostic median improvements are not a target or p95 pass.
 - Model warm reuse, embedding cache and reference-Mac candidate bakeoff/performance remain under DP-24 and Gates A/E/G despite DP-12 behavior scoring fully covered.
 
-Cursor-priority incremental analysis is missing. Variable-rate DSP and sample-resolution audio editing remain incomplete. Existing Follow creep cannot independently retune its arrival scale/curve. Full effects/mastering and native placement/inspector workflows remain open. The latest measured large-project offscreen first-pause median is 183.389625 ms, so the 100 ms Hold target remains unfulfilled. See [Performance](PERFORMANCE.md) and per-criterion evidence.
+Cursor-priority incremental analysis is missing. Variable-rate DSP and sample-resolution audio editing remain incomplete. Full effects/mastering and native placement/inspector workflows remain open. The latest measured large-project offscreen first-pause median is 183.389625 ms, so the 100 ms Hold target remains unfulfilled. See [Performance](PERFORMANCE.md) and per-criterion evidence.
 
 ## Delivery gates
 

@@ -1,0 +1,1571 @@
+{
+  "counts": {
+    "files": 146,
+    "omissions": 14,
+    "source_bytes": 212673031,
+    "stored_bytes": 16156011
+  },
+  "files": [
+    {
+      "compression": "gzip",
+      "path": "media/executed-binaries.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/media/executed-binaries.json",
+      "source_bytes": 549,
+      "source_sha256": "17f7b33e61cc2fdb912caf0ab65ad5bbaf02ba7b6f2d367d3358d96846e5a55d",
+      "stored_bytes": 298,
+      "stored_sha256": "3a87cc54aa7e21ad276f97b61e5f100be9d20faa08970f8ebd2fd522bc4d5ac3",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/export-first.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/media/export-first.json",
+      "source_bytes": 675727,
+      "source_sha256": "5e75fefd8981faf8b539a8f6727585b373672902e022dde052bb8ab82dd6ab9e",
+      "stored_bytes": 178804,
+      "stored_sha256": "f2bca7a68c700f5c6caec9cbb0f7a31752ca372c1a68cc9f89be6a5f44bd0322",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/export-first.stderr.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/media/export-first.stderr",
+      "source_bytes": 11117,
+      "source_sha256": "bc728fcb9d58245ef46819ef06f2be67bc9c5d6db93a67ec937077c3baa92a8b",
+      "stored_bytes": 2936,
+      "stored_sha256": "5060ce31764895b0aa79d173199a674a42ce74a21ba41a26fa14146836166b68",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/export-first.stdout.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/media/export-first.stdout",
+      "source_bytes": 301,
+      "source_sha256": "9837e98fdd3385332d1bc609652ff5ef52c23deb1bebe298c1f7a7a76d78b24e",
+      "stored_bytes": 178,
+      "stored_sha256": "e2853814cb9c958958226405510352c7339595e3fbf981c2286c0ff76d31637a",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/ranged/exports/deadpan-render-622447a2-dc05-4c5d-9ecf-1f03c4814109.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/exports/deadpan-render-622447a2-dc05-4c5d-9ecf-1f03c4814109.json",
+      "source_bytes": 32968,
+      "source_sha256": "8eb044f60a203e03b1d1ead708689ada93b3bc1ccba9bfe4cb71e3bb94ec9fa0",
+      "stored_bytes": 4677,
+      "stored_sha256": "2cd85eac878e7bd2a6da0eb678506efa34d453247b64d3e2b3143fe13dcf15c8",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "media/ranged/exports/follow-creep.mp4",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/exports/follow-creep.mp4",
+      "source_bytes": 108474,
+      "source_sha256": "3a4123d17672336581ac73553c6d5dabc3892085f532d31103f3b54f34eccb77",
+      "stored_bytes": 108474,
+      "stored_sha256": "3a4123d17672336581ac73553c6d5dabc3892085f532d31103f3b54f34eccb77",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/ranged/fixture/follow-creep-after-pcm.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/follow-creep-after-pcm.json",
+      "source_bytes": 6246627,
+      "source_sha256": "10cb6b31edd1cac052eb4956440321b723175be9efe4bda16107e4d138d7dadd",
+      "stored_bytes": 77492,
+      "stored_sha256": "c9c98bfd5a80a3c3ac11af89bd2de023f5109f1fb8a16a23e66d422d7c2e476e",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/ranged/fixture/follow-creep-apply.stderr.txt.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/follow-creep-apply.stderr.txt",
+      "source_bytes": 0,
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/ranged/fixture/follow-creep-apply.stdout.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/follow-creep-apply.stdout.json",
+      "source_bytes": 2651,
+      "source_sha256": "fa9ba36874dd763bed4b4cabcd7d265482ffcc154154be0a340fdeee23e98e6a",
+      "stored_bytes": 754,
+      "stored_sha256": "c0f9af988dbd2ca97a0123df9b1b914ea6481fa41340e64af90009bc1534cdfa",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/ranged/fixture/follow-creep-authored-evidence.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/follow-creep-authored-evidence.json",
+      "source_bytes": 138197,
+      "source_sha256": "021229400d5bd265df080977031f4e8c595c2366447a239702aa0f09eac727b4",
+      "stored_bytes": 5645,
+      "stored_sha256": "c24e0398db67ea5874145407128e3c7b9d0432efabc4e417e56106a12a91d481",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/ranged/fixture/follow-creep-before-pcm.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/follow-creep-before-pcm.json",
+      "source_bytes": 6246730,
+      "source_sha256": "2ae6bc9a5a406c7839f9250045c0f04a4c2767eba681f7d1bb73002d27c9acd8",
+      "stored_bytes": 77605,
+      "stored_sha256": "b4a55667821f1b6d19c832952242714a37b30ff27d32fb9474f73b33f48ac9d2",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/ranged/fixture/follow-creep-portable-copy.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/follow-creep-portable-copy.json",
+      "source_bytes": 901,
+      "source_sha256": "b658d1290aa549eec756a943cde42c87e809809a96439685468028bc5822aab4",
+      "stored_bytes": 480,
+      "stored_sha256": "8c52a2f350db52c77feb5d74366c189304e668e1931eeddfcfcc2c66963e5e8c",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "media/ranged/fixture/follow-creep-portable.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/follow-creep-portable.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "source_bytes": 39157,
+      "source_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "stored_bytes": 39157,
+      "stored_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "media/ranged/fixture/follow-creep-portable.deadpan/Media/RenderCandidates/blake3-5de382d2deb8a610b3d3f499fdec1123b37f253dbdde260b0e873c95717d7805",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/follow-creep-portable.deadpan/Media/RenderCandidates/blake3-5de382d2deb8a610b3d3f499fdec1123b37f253dbdde260b0e873c95717d7805",
+      "source_bytes": 108474,
+      "source_sha256": "3a4123d17672336581ac73553c6d5dabc3892085f532d31103f3b54f34eccb77",
+      "stored_bytes": 108474,
+      "stored_sha256": "3a4123d17672336581ac73553c6d5dabc3892085f532d31103f3b54f34eccb77",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "media/ranged/fixture/follow-creep-portable.deadpan/Media/RenderCandidates/blake3-f8fe564899e584a3280847a6075c233ef21c497b7d88de032c8bf92e13bccb72",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/follow-creep-portable.deadpan/Media/RenderCandidates/blake3-f8fe564899e584a3280847a6075c233ef21c497b7d88de032c8bf92e13bccb72",
+      "source_bytes": 15117,
+      "source_sha256": "8640681a58a9e6f77d88b940ae8a3d4202f9254f8893c83537625383d6c0ae35",
+      "stored_bytes": 15117,
+      "stored_sha256": "8640681a58a9e6f77d88b940ae8a3d4202f9254f8893c83537625383d6c0ae35",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/ranged/fixture/follow-creep-portable.deadpan/manifest.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/follow-creep-portable.deadpan/manifest.json",
+      "source_bytes": 82,
+      "source_sha256": "e7b8472cc5d9fc549d099593ecf561f258c970efb7acba98c7fcb3af0f880334",
+      "stored_bytes": 96,
+      "stored_sha256": "d8ec880b09efc8b00e48c609a15630591433964b93fab065d0cc4b82643c5876",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "media/ranged/fixture/follow-creep-portable.deadpan/project.sqlite",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/follow-creep-portable.deadpan/project.sqlite",
+      "source_bytes": 598016,
+      "source_sha256": "440a3480ff8838b99b02d12c913f10791ae3b262179edf43a40198e8f337dc37",
+      "stored_bytes": 598016,
+      "stored_sha256": "440a3480ff8838b99b02d12c913f10791ae3b262179edf43a40198e8f337dc37",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/ranged/fixture/follow-retune-apply.stderr.txt.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/follow-retune-apply.stderr.txt",
+      "source_bytes": 0,
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/ranged/fixture/follow-retune-apply.stdout.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/follow-retune-apply.stdout.json",
+      "source_bytes": 2326,
+      "source_sha256": "e9cb4068caffe930d837d07264aaa97cf178c613fa800177e00832325b55ba33",
+      "stored_bytes": 716,
+      "stored_sha256": "f1a99487e3a1de15bbbcc7acc00f305713baebc5a29db996eaea75ed637ce181",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/ranged/fixture/macro-request.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/macro-request.json",
+      "source_bytes": 495,
+      "source_sha256": "0d59b09c9ffb27ee5aa86d37cd28fda7e33d265b97643c03276ab5327e3cbb3c",
+      "stored_bytes": 335,
+      "stored_sha256": "e85a38a64a25570b2c43bc30c44697d815bb24743e8ed1cf734f80c331bfccca",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "media/ranged/fixture/original.mp4",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/original.mp4",
+      "source_bytes": 39157,
+      "source_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "stored_bytes": 39157,
+      "stored_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "media/ranged/fixture/ranged-follow-creep.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/ranged-follow-creep.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "source_bytes": 39157,
+      "source_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "stored_bytes": 39157,
+      "stored_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/ranged/fixture/ranged-follow-creep.deadpan/manifest.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/ranged-follow-creep.deadpan/manifest.json",
+      "source_bytes": 82,
+      "source_sha256": "e7b8472cc5d9fc549d099593ecf561f258c970efb7acba98c7fcb3af0f880334",
+      "stored_bytes": 96,
+      "stored_sha256": "d8ec880b09efc8b00e48c609a15630591433964b93fab065d0cc4b82643c5876",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "media/ranged/fixture/ranged-follow-creep.deadpan/project.sqlite",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/ranged-follow-creep.deadpan/project.sqlite",
+      "source_bytes": 573440,
+      "source_sha256": "1240508b81586533cd97265ebd9c95f1d76e002306cdbf14ffbdfafe4ebc0425",
+      "stored_bytes": 573440,
+      "stored_sha256": "1240508b81586533cd97265ebd9c95f1d76e002306cdbf14ffbdfafe4ebc0425",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/ranged/fixture/request-ranged-follow-creep-r01.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/request-ranged-follow-creep-r01.json",
+      "source_bytes": 1110,
+      "source_sha256": "4eadd90c5289191db577f20ff5e5f9c73c37bda6b647f187d5caa5171a0c8d0d",
+      "stored_bytes": 438,
+      "stored_sha256": "9549f95db33028513fc83915cb265dea6a634bbcd4ee469a1ada7ade345dd927",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/ranged/fixture/request-ranged-follow-creep-r02.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/request-ranged-follow-creep-r02.json",
+      "source_bytes": 493,
+      "source_sha256": "89432113f950c8b10973a17175f3e4e9f382ded42325a1fba8ed0d17f566c0bb",
+      "stored_bytes": 266,
+      "stored_sha256": "18a243dc3f6b9bc98d1f0c58b37b68f0b1210fe51f0dc94b56add3e8fb8f7052",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/ranged/follow-creep-render.stderr.txt.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/follow-creep-render.stderr.txt",
+      "source_bytes": 0,
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/ranged/follow-creep-render.stdout.jsonl.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/follow-creep-render.stdout.jsonl",
+      "source_bytes": 16126,
+      "source_sha256": "16fa840060e721d1a4914f5032f1b155371450699bccdee3ca684c128f50291b",
+      "stored_bytes": 1131,
+      "stored_sha256": "39f63871cd3bdd880e04a1ef8697d69af8ee4994cb57cc5be858f63b2160f5e0",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/ranged/follow-creep-summary.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/follow-creep-summary.json",
+      "source_bytes": 2356,
+      "source_sha256": "5d4afe0e0150dfc46e01d28bcf2bf468e232b0602e71080b2d3445779ef6b391",
+      "stored_bytes": 1040,
+      "stored_sha256": "b2e67362d92bb069d6ba1e77ede2ea94a4796c52d44e49420010b791e2d9f180",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/ranged/follow-creep-verification.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/follow-creep-verification.json",
+      "source_bytes": 161136,
+      "source_sha256": "f00b85043a16b9237e10c659cefd6e5cc438383ca139395a56820a53cb212e73",
+      "stored_bytes": 16164,
+      "stored_sha256": "b64ef6614f8a3b495a48450b58c34935c84c9b50d0915bb7ee7c0b939c138405",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/ranged/follow-creep-verification.stderr.txt.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/follow-creep-verification.stderr.txt",
+      "source_bytes": 0,
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/ranged/follow-creep-verification.stdout.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/follow-creep-verification.stdout.json",
+      "source_bytes": 161137,
+      "source_sha256": "5a4f790c1e21e193cb99bd01ad3251f046d14a6f83d7f688b8f78f3e079b5b97",
+      "stored_bytes": 16189,
+      "stored_sha256": "63ccc09c20adeb6db6cb61a840d22739144ba744caa140a42f6f1aac270155ad",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/removed-files.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/media/removed-files.json",
+      "source_bytes": 3,
+      "source_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stored_bytes": 23,
+      "stored_sha256": "abc129be8d26e8d4afe9ce45f9d5a73c8ed9aa62810ca24ee789fe4581dc4a80",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "media/run.py",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/media/run.py",
+      "source_bytes": 3803,
+      "source_sha256": "fe8e4140d97df5ab4693ebe2078bd3e2e38fb8024058d6838615af769a37d9d9",
+      "stored_bytes": 3803,
+      "stored_sha256": "fe8e4140d97df5ab4693ebe2078bd3e2e38fb8024058d6838615af769a37d9d9",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/source-files.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/media/source-files.json",
+      "source_bytes": 92625,
+      "source_sha256": "7a92e1bc5dfdf01181f32df6a4d96db94d9e371f3f73556ecd0f73df459575c0",
+      "stored_bytes": 9829,
+      "stored_sha256": "9dfbc41010bcfd4be4441a34d9115ec8980345c6e7f864e5eb7a873fefedd084",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/whole/exports/deadpan-render-3ce70b78-6e95-438e-8417-730f34213189.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/exports/deadpan-render-3ce70b78-6e95-438e-8417-730f34213189.json",
+      "source_bytes": 32968,
+      "source_sha256": "fcb5bd134bd14d0e9953d2cd15f19ed4a2769e86871241703c37682218575ed2",
+      "stored_bytes": 4676,
+      "stored_sha256": "3263fac448d4490b98b0ab8122fc2bb3d703a92701486c075408dd6e52314d9d",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "media/whole/exports/follow-creep.mp4",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/exports/follow-creep.mp4",
+      "source_bytes": 163925,
+      "source_sha256": "b7a7f1152eb619c6a31be59ed1a34dd54e132944643a011a04edaf1d3a62b149",
+      "stored_bytes": 163925,
+      "stored_sha256": "b7a7f1152eb619c6a31be59ed1a34dd54e132944643a011a04edaf1d3a62b149",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/whole/fixture/follow-creep-after-pcm.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep-after-pcm.json",
+      "source_bytes": 6246627,
+      "source_sha256": "10cb6b31edd1cac052eb4956440321b723175be9efe4bda16107e4d138d7dadd",
+      "stored_bytes": 77492,
+      "stored_sha256": "c9c98bfd5a80a3c3ac11af89bd2de023f5109f1fb8a16a23e66d422d7c2e476e",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/whole/fixture/follow-creep-apply.stderr.txt.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep-apply.stderr.txt",
+      "source_bytes": 0,
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/whole/fixture/follow-creep-apply.stdout.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep-apply.stdout.json",
+      "source_bytes": 2282,
+      "source_sha256": "a153860a986710e8f1009308efad41ba86923b520569c38d9f7c45c1416c6e41",
+      "stored_bytes": 698,
+      "stored_sha256": "882aa27a2f8d00cd913bdc78b42fdbebf3938c662601da54c428dc28c5169cdb",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/whole/fixture/follow-creep-authored-evidence.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep-authored-evidence.json",
+      "source_bytes": 138181,
+      "source_sha256": "03c4f972b165ae26e748dc5449e2c4c9196a3049d76f8308ebdc40cb22e22c07",
+      "stored_bytes": 6135,
+      "stored_sha256": "448649eb64abadba54c271a75535387a9e7aa688fc0130bee0050495f2cfc92e",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/whole/fixture/follow-creep-before-pcm.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep-before-pcm.json",
+      "source_bytes": 6246730,
+      "source_sha256": "2ae6bc9a5a406c7839f9250045c0f04a4c2767eba681f7d1bb73002d27c9acd8",
+      "stored_bytes": 77605,
+      "stored_sha256": "b4a55667821f1b6d19c832952242714a37b30ff27d32fb9474f73b33f48ac9d2",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/whole/fixture/follow-creep-portable-copy.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep-portable-copy.json",
+      "source_bytes": 894,
+      "source_sha256": "d943af3507e919610acd9a33ae1b79114b37bfd6e9b3ea7c0d46aca6418ac659",
+      "stored_bytes": 472,
+      "stored_sha256": "f6424cf077ce5fd70a0d505caa76b5b18fee5602a6d63f3755a121069d1b09ef",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "media/whole/fixture/follow-creep-portable.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep-portable.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "source_bytes": 39157,
+      "source_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "stored_bytes": 39157,
+      "stored_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "media/whole/fixture/follow-creep-portable.deadpan/Media/RenderCandidates/blake3-18121dc3c306d0c779bff17662d546c1cd8fc3e688c6ca6a69716f6dd019d5a9",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep-portable.deadpan/Media/RenderCandidates/blake3-18121dc3c306d0c779bff17662d546c1cd8fc3e688c6ca6a69716f6dd019d5a9",
+      "source_bytes": 163925,
+      "source_sha256": "b7a7f1152eb619c6a31be59ed1a34dd54e132944643a011a04edaf1d3a62b149",
+      "stored_bytes": 163925,
+      "stored_sha256": "b7a7f1152eb619c6a31be59ed1a34dd54e132944643a011a04edaf1d3a62b149",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "media/whole/fixture/follow-creep-portable.deadpan/Media/RenderCandidates/blake3-65974bd59f423c364a3138f870af75d9edc5bd94765c88bbb6ee3158d8fa03a7",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep-portable.deadpan/Media/RenderCandidates/blake3-65974bd59f423c364a3138f870af75d9edc5bd94765c88bbb6ee3158d8fa03a7",
+      "source_bytes": 15117,
+      "source_sha256": "a060a2c72d6e4d5223de650eb74b6e291a99e0e788cc499bf4825424e92766aa",
+      "stored_bytes": 15117,
+      "stored_sha256": "a060a2c72d6e4d5223de650eb74b6e291a99e0e788cc499bf4825424e92766aa",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/whole/fixture/follow-creep-portable.deadpan/manifest.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep-portable.deadpan/manifest.json",
+      "source_bytes": 82,
+      "source_sha256": "478f62ac9a48007cfa4e63ef3f7dfe6c6a61f3748aec332554a8e73fe0ad92d3",
+      "stored_bytes": 97,
+      "stored_sha256": "c9b4495972e7441eaea131777e0957fe7ea8c2a28e6df0d1c5ac4c9dd49eeacd",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "media/whole/fixture/follow-creep-portable.deadpan/project.sqlite",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep-portable.deadpan/project.sqlite",
+      "source_bytes": 593920,
+      "source_sha256": "ad79e99b23ee447de917de99b0cde5c4c828f9a89c92585d67ff29095529652a",
+      "stored_bytes": 593920,
+      "stored_sha256": "ad79e99b23ee447de917de99b0cde5c4c828f9a89c92585d67ff29095529652a",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "media/whole/fixture/follow-creep.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "source_bytes": 39157,
+      "source_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "stored_bytes": 39157,
+      "stored_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/whole/fixture/follow-creep.deadpan/manifest.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep.deadpan/manifest.json",
+      "source_bytes": 82,
+      "source_sha256": "478f62ac9a48007cfa4e63ef3f7dfe6c6a61f3748aec332554a8e73fe0ad92d3",
+      "stored_bytes": 97,
+      "stored_sha256": "c9b4495972e7441eaea131777e0957fe7ea8c2a28e6df0d1c5ac4c9dd49eeacd",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "media/whole/fixture/follow-creep.deadpan/project.sqlite",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep.deadpan/project.sqlite",
+      "source_bytes": 569344,
+      "source_sha256": "f754ecd2a607610645761f909b47b892fbbb53cf0a914b561015b525dd66be17",
+      "stored_bytes": 569344,
+      "stored_sha256": "f754ecd2a607610645761f909b47b892fbbb53cf0a914b561015b525dd66be17",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/whole/fixture/follow-retune-apply.stderr.txt.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-retune-apply.stderr.txt",
+      "source_bytes": 0,
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/whole/fixture/follow-retune-apply.stdout.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-retune-apply.stdout.json",
+      "source_bytes": 2326,
+      "source_sha256": "f537bf5d1a39f346dacffaa86efc9f162234dcb97045acd351e8721303f1aba5",
+      "stored_bytes": 715,
+      "stored_sha256": "e7701d1aab3403b1272e41ad5dc452cda51894f8b3da6c44e6e683c0a7b5f73c",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/whole/fixture/macro-request.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/macro-request.json",
+      "source_bytes": 495,
+      "source_sha256": "ec490789300c767bc71fdc1c2c5987d0b0011b72651840d4865d5e229d1f21e7",
+      "stored_bytes": 335,
+      "stored_sha256": "8c1f2ebba5d48324eea0a456a92a9888b4c76934fddcc428952116b5d0c43f5e",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "media/whole/fixture/original.mp4",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/original.mp4",
+      "source_bytes": 39157,
+      "source_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "stored_bytes": 39157,
+      "stored_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/whole/fixture/request-follow-creep-r01.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/request-follow-creep-r01.json",
+      "source_bytes": 1103,
+      "source_sha256": "9c1487cc74af02f28c4e44aa59a0574c481b5c6c976583c8809c046235fbdbab",
+      "stored_bytes": 435,
+      "stored_sha256": "7bec49b03e5eeebf930145e3809133a4ed44162685d4e5a81f832682893a0cc2",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/whole/fixture/request-follow-creep-r02.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/request-follow-creep-r02.json",
+      "source_bytes": 479,
+      "source_sha256": "a9738439657a68a6c2fddaf5fa2cad1a82d4496ddcdc2eb6dfda6e489004de74",
+      "stored_bytes": 260,
+      "stored_sha256": "5285eed862263d9fb0a6c3c5c402244726806081586253b97811d21069d4a2d5",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/whole/follow-creep-render.stderr.txt.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/follow-creep-render.stderr.txt",
+      "source_bytes": 0,
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/whole/follow-creep-render.stdout.jsonl.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/follow-creep-render.stdout.jsonl",
+      "source_bytes": 16125,
+      "source_sha256": "070c80a3bd2f762df1330b5e8d1ac752386fb7fec289338cf68158e6999a1bab",
+      "stored_bytes": 1131,
+      "stored_sha256": "cc10faca08814b938485a911f569462ce96f0872363fd5ac816ec2b0079a5724",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/whole/follow-creep-summary.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/follow-creep-summary.json",
+      "source_bytes": 2364,
+      "source_sha256": "b83ef7cfda41b16d401b1d9ecf4b2730c571c64f0877588d8df1b8ace68a244a",
+      "stored_bytes": 1050,
+      "stored_sha256": "58a1092211e662bda4b57b1257769da7d1bf277a72bf3ee14e4bd949ab3fa9e7",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/whole/follow-creep-verification.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/follow-creep-verification.json",
+      "source_bytes": 161895,
+      "source_sha256": "1429c7c13abe710774e4d5e38eb784de38c04f8eb03549127aeadde4ea44dd34",
+      "stored_bytes": 16943,
+      "stored_sha256": "934eeb81c7febce819f097f800d4e45f99e7449830cc8702fca620ed6dd59a47",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/whole/follow-creep-verification.stderr.txt.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/follow-creep-verification.stderr.txt",
+      "source_bytes": 0,
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "media/whole/follow-creep-verification.stdout.json.gz",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/follow-creep-verification.stdout.json",
+      "source_bytes": 161896,
+      "source_sha256": "301ea7764138f13d573af3d4c1478cf3807fd0e141885a3f3de6b1431762f595",
+      "stored_bytes": 16920,
+      "stored_sha256": "9d1cf3f7759cb78227bc5df9a444853dd5f446ce48dbebc91f6d42a9f2eec35e",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "replay/replay-fifth/screenshots/zoom-077.png",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-fifth/zoom/zoom-077.png",
+      "source_bytes": 337923,
+      "source_sha256": "645b19e80d3279328eff5e41eec52df34cb8a032e974371228669b5664dc2c36",
+      "stored_bytes": 337923,
+      "stored_sha256": "645b19e80d3279328eff5e41eec52df34cb8a032e974371228669b5664dc2c36",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "replay/replay-fifth/screenshots/zoom-079.png",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-fifth/zoom/zoom-079.png",
+      "source_bytes": 254119,
+      "source_sha256": "f6a75903e9c681d3b1e8773d0d776462ad2be2a9a012d192c8ebede41da1cda8",
+      "stored_bytes": 254119,
+      "stored_sha256": "f6a75903e9c681d3b1e8773d0d776462ad2be2a9a012d192c8ebede41da1cda8",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "replay/replay-fifth/screenshots/zoom-124.png",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-fifth/zoom/zoom-124.png",
+      "source_bytes": 317090,
+      "source_sha256": "fe84ec1428646d8967437404581c04295aeff8c09294a3e8695318e147619ea6",
+      "stored_bytes": 317090,
+      "stored_sha256": "fe84ec1428646d8967437404581c04295aeff8c09294a3e8695318e147619ea6",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "replay/replay-fifth/screenshots/zoom-125.png",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-fifth/zoom/zoom-125.png",
+      "source_bytes": 243522,
+      "source_sha256": "f8c05c2346930cdb957faa7c7e4251ed5e9a5e046c7e1be92f948b2527a96646",
+      "stored_bytes": 243522,
+      "stored_sha256": "f8c05c2346930cdb957faa7c7e4251ed5e9a5e046c7e1be92f948b2527a96646",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-fifth/summary.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-fifth/summary.json",
+      "source_bytes": 1701,
+      "source_sha256": "07bed7c1231e46fff39c2df3883db9f2dda550fc3a62df98ba5e4d018c7d50ac",
+      "stored_bytes": 642,
+      "stored_sha256": "c8b08020494cba2b6596cafe14f02fe4511f6637a82dc88e472808b16ed15a25",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-fifth/zoom.log.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-fifth/zoom.log",
+      "source_bytes": 92,
+      "source_sha256": "76bd0074768afb1f88bb00f95fd1ade601c95b4cd9dab61e7396ff49157141c3",
+      "stored_bytes": 109,
+      "stored_sha256": "5a422425f967b6dc536ccc7a764347e1e3a6b935c8221285a96b7eb90b98890f",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-fifth/zoom/report.html.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-fifth/zoom/report.html",
+      "source_bytes": 23943548,
+      "source_sha256": "1abc92b9ae05a21c29d16cb86833b2d5a23ec3029f7b317a985cf33e02955e56",
+      "stored_bytes": 1010335,
+      "stored_sha256": "582ae431bbb068cff70dadda3c7a8b0586c78f65c4486b569f9d30cc5cc7f3ee",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-fifth/zoom/report.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-fifth/zoom/report.json",
+      "source_bytes": 26151730,
+      "source_sha256": "18b1ae8e7bbe108b8bab245bd6c950f0a90f54cee6741840ba75c357c7528e56",
+      "stored_bytes": 1047230,
+      "stored_sha256": "a788dcfc626440ca73dbf2e4a0579af0072868606324a968e1a09d6d9bca56fb",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-final120/report.html.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-final120/report.html",
+      "source_bytes": 23881710,
+      "source_sha256": "288274abf1a09206fbafe88c139aea9f53517e898484921d6c5382c39037e294",
+      "stored_bytes": 1009814,
+      "stored_sha256": "259f904618b24344eedd0aa8d2c1815a67bdd7a67622293faeb0253de52f1e70",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-final120/report.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-final120/report.json",
+      "source_bytes": 26083467,
+      "source_sha256": "c7a01915d442d677e2154c00bf4cf4926679069375d3eb838c0b99066a3c6c6c",
+      "stored_bytes": 1046757,
+      "stored_sha256": "5ef561006256f1312b9359b5f07c1e83ec5aabfda0142256cc569ed8272ec911",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "replay/replay-final120/screenshots/zoom-077.png",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-final120/zoom-077.png",
+      "source_bytes": 337923,
+      "source_sha256": "645b19e80d3279328eff5e41eec52df34cb8a032e974371228669b5664dc2c36",
+      "stored_bytes": 337923,
+      "stored_sha256": "645b19e80d3279328eff5e41eec52df34cb8a032e974371228669b5664dc2c36",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "replay/replay-final120/screenshots/zoom-079.png",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-final120/zoom-079.png",
+      "source_bytes": 254119,
+      "source_sha256": "f6a75903e9c681d3b1e8773d0d776462ad2be2a9a012d192c8ebede41da1cda8",
+      "stored_bytes": 254119,
+      "stored_sha256": "f6a75903e9c681d3b1e8773d0d776462ad2be2a9a012d192c8ebede41da1cda8",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "replay/replay-final120/screenshots/zoom-124.png",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-final120/zoom-124.png",
+      "source_bytes": 317090,
+      "source_sha256": "fe84ec1428646d8967437404581c04295aeff8c09294a3e8695318e147619ea6",
+      "stored_bytes": 317090,
+      "stored_sha256": "fe84ec1428646d8967437404581c04295aeff8c09294a3e8695318e147619ea6",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "replay/replay-final120/screenshots/zoom-125.png",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-final120/zoom-125.png",
+      "source_bytes": 243522,
+      "source_sha256": "f8c05c2346930cdb957faa7c7e4251ed5e9a5e046c7e1be92f948b2527a96646",
+      "stored_bytes": 243522,
+      "stored_sha256": "f8c05c2346930cdb957faa7c7e4251ed5e9a5e046c7e1be92f948b2527a96646",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-first/summary.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-first/summary.json",
+      "source_bytes": 42922,
+      "source_sha256": "ae08be89ef33025df0005ad7b6ed08194fa3d19bed4fa360da76d238e48eb1a4",
+      "stored_bytes": 4553,
+      "stored_sha256": "9475f822399066f4268b3cfdd603d1ad22687a34c32cef80efec49b588915a88",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-first/zoom.log.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-first/zoom.log",
+      "source_bytes": 164,
+      "source_sha256": "09629b691180a2c9a12e4b6b61a52dc0d587a8b8c6ebca93fc071184dea8d747",
+      "stored_bytes": 150,
+      "stored_sha256": "d798a641a01621db632921e3bc5ca14b87bec670953815622bcaec7ee99664a7",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-first/zoom/report.html.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-first/zoom/report.html",
+      "source_bytes": 9062778,
+      "source_sha256": "bf3f298a7c08a9877eedd87ba7d865b6adfba43c495ce9c0fc68e39ec1eeb59e",
+      "stored_bytes": 496909,
+      "stored_sha256": "9a29a8034af93426155a057a3f7ed23d0d3545398efbbf7cccbbedb38bff42f4",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-first/zoom/report.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-first/zoom/report.json",
+      "source_bytes": 10027934,
+      "source_sha256": "8f3de30b6d5ad503e0d2919b80f8ed14a7acc8b32e61b7d99688c6a5905e3fcb",
+      "stored_bytes": 504056,
+      "stored_sha256": "d39f42a375a5ed9bc9c0efa348ea3e6e471951d2dce8e9505bbf6bed3958e901",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-fourth/summary.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-fourth/summary.json",
+      "source_bytes": 42657,
+      "source_sha256": "5ac9dcf6944351758c871852419e85c68949de6efb1d1833a40ac3241cd21ff2",
+      "stored_bytes": 4552,
+      "stored_sha256": "4af9530917497fe22a6393ca7ec7e943c2a05096b70cb4c7e26572a669fc55fe",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-fourth/zoom.log.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-fourth/zoom.log",
+      "source_bytes": 165,
+      "source_sha256": "d3ae7ff382815fdc880f8928d824960122b4a055c46e2bac5a6b21c687b7ce9e",
+      "stored_bytes": 151,
+      "stored_sha256": "457216e5652137b4728ab5297bdabc2116a2e2468d1a9a2924d9f7e4d74144ea",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-fourth/zoom/report.html.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-fourth/zoom/report.html",
+      "source_bytes": 8956388,
+      "source_sha256": "5971f7594ff0407729e95049a208259a2f351cb1175ad76b0eb6e5fbd7e80652",
+      "stored_bytes": 489988,
+      "stored_sha256": "69d556dd6f6cfbb46c1a8ff137af86c7000ebf78450f7bb6136f968a19e9d5ea",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-fourth/zoom/report.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-fourth/zoom/report.json",
+      "source_bytes": 9902174,
+      "source_sha256": "d39b825305a3510540ea10d7c8c7cbd6d92765fa282580bbda3bce7fe1c24352",
+      "stored_bytes": 496765,
+      "stored_sha256": "4daf1f861e3dffdddabfd9c05f1f06a4a137b598ffdb87fac12053abc6471ee7",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-second/summary.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-second/summary.json",
+      "source_bytes": 1934,
+      "source_sha256": "f65b60ffe7814de805d2ea1a718b40d469b2b5a09565e49c036a69cbe6f9c2e7",
+      "stored_bytes": 713,
+      "stored_sha256": "b8f626ffdf1d2cf9c85a57d7a19b1ac16d00b0930bd16a78f25425f6cd77d0d4",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-second/zoom.log.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-second/zoom.log",
+      "source_bytes": 165,
+      "source_sha256": "fa284bf710f6a5a20589ed47fd36164b28203568eb981c7e1f0da7e6d8453e3d",
+      "stored_bytes": 150,
+      "stored_sha256": "451bb07798351c433c5d1cef15fa048ecc61a082b39698c86330d90fb0713fa9",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-second/zoom/report.html.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-second/zoom/report.html",
+      "source_bytes": 7972861,
+      "source_sha256": "30b1ee223d8bef792ab7ce6462185b38e3be57439a755d7bea0bd36174b41f68",
+      "stored_bytes": 433751,
+      "stored_sha256": "e3723a6c14e9dd22ea138858b91f68f56faadab2a26fe1bf5158e85912227f9b",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-second/zoom/report.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-second/zoom/report.json",
+      "source_bytes": 8844248,
+      "source_sha256": "4f19d0a4d4d50723fc8a21c6b7623790a749f15b8028077462009c551118be17",
+      "stored_bytes": 439931,
+      "stored_sha256": "405975959f95b60cf4069527f68b0a77fe0a41b0536bf858ee052dc9a185466d",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-third/summary.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-third/summary.json",
+      "source_bytes": 1931,
+      "source_sha256": "3376a26767be314e7dcb6e99386b50715c698677d29beb222ddebfa2ed770c27",
+      "stored_bytes": 716,
+      "stored_sha256": "f066641cdee5ac34a9249f1dbcdb835afdfb182c3fb843cd3c5cb1adce2b3a34",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-third/zoom.log.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-third/zoom.log",
+      "source_bytes": 164,
+      "source_sha256": "c853791dfebe30161af3e6fc84156d3353d1ab60fcd498dc950022dcd318a16a",
+      "stored_bytes": 150,
+      "stored_sha256": "e61524b8521935df30726e4bbcf929afbbeef3028d8fbc7d721d15b0c293fb77",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-third/zoom/report.html.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-third/zoom/report.html",
+      "source_bytes": 7967426,
+      "source_sha256": "8f2470d40978e0affcc68f0d42210885549383bf0d15bdc5b8daf0f34e07060b",
+      "stored_bytes": 433826,
+      "stored_sha256": "fb11b2e9b96e2a6e19fddd29692709b23bf8c3e6a9c97f86b13d181bbd949e20",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "replay/replay-third/zoom/report.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-third/zoom/report.json",
+      "source_bytes": 8837618,
+      "source_sha256": "4ad5c9a7b82172446b3ac9878355f92880ec968a4bf33c03468b2d141cb899b6",
+      "stored_bytes": 439922,
+      "stored_sha256": "a1441e7183e395e124c8664935cd8b70bad9880138ba7ba6f71ae87bcf3608cc",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/cache-prune.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/cache-prune.json",
+      "source_bytes": 6076,
+      "source_sha256": "4619d0adb3a65b111d245ce4d7fa66233f7c1b43fbe0cdb10d8fad93dfd164be",
+      "stored_bytes": 2464,
+      "stored_sha256": "d516ac7d220ebe1b9e7aa976feee8332620f156d342590c5d372fc383aefcf2c",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/core-cache-inventory.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/core-cache-inventory.json",
+      "source_bytes": 1427,
+      "source_sha256": "c4cd585bd2b429b957c3377f68f1da039e6cf668b45868caf7d4eec134fcc6fe",
+      "stored_bytes": 353,
+      "stored_sha256": "65f850992bcd7395326c2c5407b4fd7e6950b22beb2490eb870e955407636d02",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/core-first.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/core-first.json",
+      "source_bytes": 533836,
+      "source_sha256": "a010e361d9b543b89ede2f19dab397172ee38d63cdeb1bb06c3298e49cf5823e",
+      "stored_bytes": 138991,
+      "stored_sha256": "5310b07d773e579308faa004c129e7692685dfbff622243c6a72c5975e1a8f57",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/core-first.stderr.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/core-first.stderr",
+      "source_bytes": 276,
+      "source_sha256": "48eb7b4f1e4dd1438ec52e37fe7db0c37ab68b2f7ef473a3eee86c11e687182c",
+      "stored_bytes": 218,
+      "stored_sha256": "1e38e57e5e5e4498d323db3e1522bc48aa6e929941195745e7e4c3c0d593926a",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/core-first.stdout.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/core-first.stdout",
+      "source_bytes": 749,
+      "source_sha256": "ef28bdd576ed81d4ad7d1217cce9b1eedba5749e41fbf1a0c6aa30aa8e04c435",
+      "stored_bytes": 338,
+      "stored_sha256": "ffcc216dcf29de864e2ecef4068435269ddb6f09a7ac2172030a4f4359efd94b",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/integrated-first.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/integrated-first.json",
+      "source_bytes": 533973,
+      "source_sha256": "a6292b4fbfc5f2b812307d114fde5212632ac56dd2c5f18b6230f3cb2a85ef4c",
+      "stored_bytes": 139071,
+      "stored_sha256": "4956c0dab99cd4fdc7f031bc2d7f94b4685f72321e0a7e20ec7331eb3f4e5710",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/integrated-first.stderr.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/integrated-first.stderr",
+      "source_bytes": 3437,
+      "source_sha256": "71c34bbb68875ceec76ebb7e687ccb46951c10abfc3ef95e0ca2494366e7c096",
+      "stored_bytes": 1105,
+      "stored_sha256": "21b77512d9e6ad72765fcdbc6411838f99befac241bdd99b0529e37d9e202c04",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/integrated-first.stdout.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/integrated-first.stdout",
+      "source_bytes": 79,
+      "source_sha256": "157a0237206123dfcfa823c62129f015dd4caf6383845f274c824725858980c2",
+      "stored_bytes": 82,
+      "stored_sha256": "e7f2b7b3dd7bc90654e2e23e496fbb77eaf598f2d2cb8cd05c32b27fbb9e3c67",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/integrated-second.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/integrated-second.json",
+      "source_bytes": 533977,
+      "source_sha256": "36148362ffae69d4da23fcf73406185d8d0c2799c6f5a4c5dd61c437f0a4b119",
+      "stored_bytes": 139071,
+      "stored_sha256": "827ac8d06f6aee9ab252e859a800758ac014dd7d734c5113754d0fab6d68316e",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/integrated-second.stderr.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/integrated-second.stderr",
+      "source_bytes": 266115,
+      "source_sha256": "e6518759f270470d7606087e60d24295232e75ec4bc810644d4cd54aa2b15cc1",
+      "stored_bytes": 53622,
+      "stored_sha256": "20f9ed957e45b57510629b0f01a9685494c1bd4b289d08d1fbe2b52940860edc",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/integrated-second.stdout.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/integrated-second.stdout",
+      "source_bytes": 79,
+      "source_sha256": "157a0237206123dfcfa823c62129f015dd4caf6383845f274c824725858980c2",
+      "stored_bytes": 82,
+      "stored_sha256": "e7f2b7b3dd7bc90654e2e23e496fbb77eaf598f2d2cb8cd05c32b27fbb9e3c67",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/integrated-third.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/integrated-third.json",
+      "source_bytes": 533971,
+      "source_sha256": "dff3e790bfb3ac884ea6f25da9a1e1fa593e88e5e1fc250e3970b324a18fe8e8",
+      "stored_bytes": 139070,
+      "stored_sha256": "38263fef2e40e1850c323c9b8a5219e888f27faaae4683a0a3513d1eff11c303",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/integrated-third.stderr.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/integrated-third.stderr",
+      "source_bytes": 2845,
+      "source_sha256": "53dd9f08ada13f44b9d95cf462890d80c9ba03acfe1710a9c604cc359184991c",
+      "stored_bytes": 762,
+      "stored_sha256": "6b40ce6e0566d74040faccefd78d7e5416236c15da36ac285c610d405114945f",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/integrated-third.stdout.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/integrated-third.stdout",
+      "source_bytes": 79,
+      "source_sha256": "157a0237206123dfcfa823c62129f015dd4caf6383845f274c824725858980c2",
+      "stored_bytes": 82,
+      "stored_sha256": "e7f2b7b3dd7bc90654e2e23e496fbb77eaf598f2d2cb8cd05c32b27fbb9e3c67",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/native-compact.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/native-compact.json",
+      "source_bytes": 533845,
+      "source_sha256": "8c8caeecf1735fb3be298939b90107ae56dbcd70b3cafd1427260e87e3d5eacb",
+      "stored_bytes": 138996,
+      "stored_sha256": "8596d14e8076406ac479fc0852c15484cedcb5a63186d1221a02d9574f898983",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/native-compact.stderr.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/native-compact.stderr",
+      "source_bytes": 13554,
+      "source_sha256": "c32994e0d09a650605f622c42b7f34a5e468f4cc6055cdea24e75814cdc3b16c",
+      "stored_bytes": 3219,
+      "stored_sha256": "be2b9938f6926fc27040263a2363ab1cd1455bfc7495f6dda980a47dd6fa71be",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/native-compact.stdout.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/native-compact.stdout",
+      "source_bytes": 79,
+      "source_sha256": "157a0237206123dfcfa823c62129f015dd4caf6383845f274c824725858980c2",
+      "stored_bytes": 82,
+      "stored_sha256": "e7f2b7b3dd7bc90654e2e23e496fbb77eaf598f2d2cb8cd05c32b27fbb9e3c67",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/native-focus-fix.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/native-focus-fix.json",
+      "source_bytes": 533848,
+      "source_sha256": "65c2ac80ee2fdedab689b63ef6d7a09235f6e1e297bbbdd38e65bd00293412b5",
+      "stored_bytes": 138994,
+      "stored_sha256": "68c41a98f21d9cf22a8a82929887baddb6a72e9e5f226ef0d21b8e7bebf1569b",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/native-focus-fix.stderr.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/native-focus-fix.stderr",
+      "source_bytes": 2659,
+      "source_sha256": "cd3514c7fdafc85c2465dee99bca1d877a76bdbc62db1684a6780e846e79ce93",
+      "stored_bytes": 1110,
+      "stored_sha256": "4fb2fb208b427f863c83f9744b5940289550772b041943030d2fa0c56f5f93ef",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/native-focus-fix.stdout.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/native-focus-fix.stdout",
+      "source_bytes": 79,
+      "source_sha256": "157a0237206123dfcfa823c62129f015dd4caf6383845f274c824725858980c2",
+      "stored_bytes": 82,
+      "stored_sha256": "e7f2b7b3dd7bc90654e2e23e496fbb77eaf598f2d2cb8cd05c32b27fbb9e3c67",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/native-focus-second.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/native-focus-second.json",
+      "source_bytes": 533855,
+      "source_sha256": "6494a10f23bde00a85243ca486ffff9d49c3ec3514fca25673984247e1365e14",
+      "stored_bytes": 139000,
+      "stored_sha256": "64b9ec87c288aa26c6df6295b4d31d43b407d209a23d6b8bcf10f78bf44ab8c1",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/native-focus-second.stderr.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/native-focus-second.stderr",
+      "source_bytes": 13303,
+      "source_sha256": "343d47845a47be645fc19668767efbb8fadb4a1eb70929946abf81d50ff45319",
+      "stored_bytes": 3159,
+      "stored_sha256": "2efbc5098dd0c0e30915a00728f5b4dcd961ec01dd5a98d281ac0e2741f4b497",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/native-focus-second.stdout.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/native-focus-second.stdout",
+      "source_bytes": 79,
+      "source_sha256": "157a0237206123dfcfa823c62129f015dd4caf6383845f274c824725858980c2",
+      "stored_bytes": 82,
+      "stored_sha256": "e7f2b7b3dd7bc90654e2e23e496fbb77eaf598f2d2cb8cd05c32b27fbb9e3c67",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/native-focus-third.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/native-focus-third.json",
+      "source_bytes": 533854,
+      "source_sha256": "494e8325ccff2dac3f2c49b342d7077d626da96085a4538a024783dd14df661c",
+      "stored_bytes": 139002,
+      "stored_sha256": "580ae34bae166ed1aa507eaf0b80ea3d9494b9e45786662bcdbe72d420f9f343",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/native-focus-third.stderr.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/native-focus-third.stderr",
+      "source_bytes": 13384,
+      "source_sha256": "cddbb06196ce02f103baaa40cac651f8a1698c4d43dc0ddf599ef2c33db98e41",
+      "stored_bytes": 3168,
+      "stored_sha256": "7d1aec67ce2d7d72ad36e3fe4c99b72972315248cbd0bf609fbfc663b5a4de19",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/native-focus-third.stdout.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/native-focus-third.stdout",
+      "source_bytes": 79,
+      "source_sha256": "157a0237206123dfcfa823c62129f015dd4caf6383845f274c824725858980c2",
+      "stored_bytes": 82,
+      "stored_sha256": "e7f2b7b3dd7bc90654e2e23e496fbb77eaf598f2d2cb8cd05c32b27fbb9e3c67",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/removed-files.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/removed-files.json",
+      "source_bytes": 3,
+      "source_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stored_bytes": 23,
+      "stored_sha256": "abc129be8d26e8d4afe9ce45f9d5a73c8ed9aa62810ca24ee789fe4581dc4a80",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-fifth.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-fifth.json",
+      "source_bytes": 533879,
+      "source_sha256": "f0ac11924a217421f3c7172560342576045f69a01d4e88e1d96f9b718a490f8c",
+      "stored_bytes": 139008,
+      "stored_sha256": "ed49e430615406837002d59298f59fb05ea749418c9f30eaab7b427dbd7b34b2",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-fifth.stderr.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-fifth.stderr",
+      "source_bytes": 601,
+      "source_sha256": "d5255e5b62b3c34ec7e188d0c179ebff73778beb17bd005fb3bed5aecb5ad849",
+      "stored_bytes": 337,
+      "stored_sha256": "d5516209bf489d60055bafa7323b9549baf9b2a82a84fc5ba419800deb76a085",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-fifth.stdout.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-fifth.stdout",
+      "source_bytes": 433,
+      "source_sha256": "ae11fcc98a7df390120658015855d7db68c66fa6eb005ad2bb26f0702bd4db37",
+      "stored_bytes": 283,
+      "stored_sha256": "8b9d71c6caae8b3fc14f575a0312a98ad78954fa95a48c7380fd2dbb46af3208",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-final120-second.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-final120-second.json",
+      "source_bytes": 534186,
+      "source_sha256": "49a5f8d0c6c0eb145cfb0277da21fb5315368a19b24f6766094ce95111c41313",
+      "stored_bytes": 139106,
+      "stored_sha256": "2d2e3a2344f255d7ddbe27f1068fbba5dd0da80963071030ee689f818ecdd8d7",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-final120-second.stderr.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-final120-second.stderr",
+      "source_bytes": 86,
+      "source_sha256": "cd9dde2e8854bed7f272debb9488362ad4726b56a3d57454ecd32d889e5b394e",
+      "stored_bytes": 96,
+      "stored_sha256": "c341d7666931943dba5b591f89e52469b944c79a02e89bcdc3ddae1886dd7bbd",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-final120-second.stdout.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-final120-second.stdout",
+      "source_bytes": 0,
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-final120-third.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-final120-third.json",
+      "source_bytes": 534176,
+      "source_sha256": "80736af5a280bd81ac938f9ab389e8a33f13a5de88ca9559b508a5c96ef82e7d",
+      "stored_bytes": 139104,
+      "stored_sha256": "483526a5aaec45503cd14798697f4f2ec23fe477f36666ec7997635a5e4f32c9",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-final120-third.stderr.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-final120-third.stderr",
+      "source_bytes": 0,
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-final120-third.stdout.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-final120-third.stdout",
+      "source_bytes": 90,
+      "source_sha256": "9c766459c584c60606f9407ff90184bac0f45857b1beb4f38096f412e32b2e88",
+      "stored_bytes": 107,
+      "stored_sha256": "9123aed3a5af60caac654b6ec9877713e4adf2e08b9be8da4a77d73a5ef669d9",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-final120.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-final120.json",
+      "source_bytes": 267035,
+      "source_sha256": "df1d2062e97d56037c1940a16c5eafbcfccf0587ba27defd441b7f2b641daa08",
+      "stored_bytes": 69706,
+      "stored_sha256": "06e3f0a73f74f0a2a33494aacc62cc94081bfdabf3c59f867c4a83c3b65c5d47",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-final120.stderr.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-final120.stderr",
+      "source_bytes": 0,
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-final120.stdout.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-final120.stdout",
+      "source_bytes": 0,
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-first.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-first.json",
+      "source_bytes": 533881,
+      "source_sha256": "04d5d4d23390f7d7b04720127b2caf6a597cd662cedfad848fbc7f88eea0912e",
+      "stored_bytes": 139011,
+      "stored_sha256": "b7014eae49584fd200bb4e2d181cbff3dadc6c749b853dee3efba6aef3c3d311",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-first.stderr.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-first.stderr",
+      "source_bytes": 2064,
+      "source_sha256": "1c6230e940ee34198b487e0298c8583dddc0cd0ba23fa03d2d0685e398e6f4da",
+      "stored_bytes": 538,
+      "stored_sha256": "f0737c5f155ff5bc1c01f751b84e107f681e7285b1e29c5928b600151c2aa703",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-first.stdout.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-first.stdout",
+      "source_bytes": 769,
+      "source_sha256": "9564ee7c739f93d59d7319b3998c2aaff6a2332c7fc31cb0b652e779ab90dc78",
+      "stored_bytes": 434,
+      "stored_sha256": "542cfe7d0dae9fcf951329931ff0c1a718692b7ed308e45f2ed5ee7632cf20dc",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-fourth.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-fourth.json",
+      "source_bytes": 533882,
+      "source_sha256": "0beeb692666e1087dd65790dbff58b301444006cb74c783804b7bf0626e38546",
+      "stored_bytes": 139009,
+      "stored_sha256": "007d02a789bc5fbc03c2691c667cbb8d822e8be9f69b3eb83878d3b43f533b26",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-fourth.stderr.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-fourth.stderr",
+      "source_bytes": 638,
+      "source_sha256": "23535687849eab1a258c3fcaa3f3570bb27e15e7ad274b6674806241cbfd0f55",
+      "stored_bytes": 355,
+      "stored_sha256": "9364458655926e9fd2a0938bbe5cb3d0a5be4cc6d7d9dcd836302b47c418e264",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-fourth.stdout.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-fourth.stdout",
+      "source_bytes": 770,
+      "source_sha256": "288c440aaa6a747a5c6074eeaecfa0158b18c013876c20d2ba16ca15a5c0ff23",
+      "stored_bytes": 433,
+      "stored_sha256": "b6ccabe5dafb4a9dd75a331510fb0c29f1a946af3ee4cdf5a4a290893fcc00a5",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-second.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-second.json",
+      "source_bytes": 533882,
+      "source_sha256": "5a71d6f8757bad1c6d90b4faef643fbb809b26f81ea29f6618a89cfba0c3c435",
+      "stored_bytes": 139007,
+      "stored_sha256": "d28ca008f74323c7a53941c18bc0c1da19967e061a6bfc43b983e20437654030",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-second.stderr.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-second.stderr",
+      "source_bytes": 638,
+      "source_sha256": "0f11f5f11fa556bbde1763901f948c5bd452f3a95117fbab0abe111e97b6901c",
+      "stored_bytes": 354,
+      "stored_sha256": "1feb6e607945df40cc673e3231516bd11b53b7f1b3bd55cf389556005f6b8e4e",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-second.stdout.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-second.stdout",
+      "source_bytes": 735,
+      "source_sha256": "375cf74b9095b64737c13f7c2c621df78b420253282d53573451298f2de1a4dc",
+      "stored_bytes": 378,
+      "stored_sha256": "a5ccc72fbde4d98bc05cd47f1a32eb8148755802f43928df9b78943a7eb05932",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-third.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-third.json",
+      "source_bytes": 533880,
+      "source_sha256": "1881ee2bab22b4c56eb96e63b0860ac03dbeae86e8af16cddaafd4cd5082cf34",
+      "stored_bytes": 139014,
+      "stored_sha256": "3e29fc9d3457e96f399764654eb3b6e798cb7e245e7b5640f64d7e07a13e18c6",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-third.stderr.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-third.stderr",
+      "source_bytes": 636,
+      "source_sha256": "40c961c3e2bc5fb914b091570e72d5e74f17493e2d0601788f7ffa374b2e0c83",
+      "stored_bytes": 355,
+      "stored_sha256": "ab7e9be15e80791661fe4ee2858f6d79edf52c9db2248a06f436b33708aae4e0",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/replay-third.stdout.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/replay-third.stdout",
+      "source_bytes": 733,
+      "source_sha256": "653bfbda7beaad5d7536a8f39b0bccbbe5a411f15feb1822f7d492ccc970fff8",
+      "stored_bytes": 379,
+      "stored_sha256": "81a3cc15607c56ba68e92361648b04368ffdba82f36e4cdcde92e7397a7afdc7",
+      "validated": true
+    },
+    {
+      "compression": "none",
+      "path": "runs/run.py",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/run.py",
+      "source_bytes": 3803,
+      "source_sha256": "fe8e4140d97df5ab4693ebe2078bd3e2e38fb8024058d6838615af769a37d9d9",
+      "stored_bytes": 3803,
+      "stored_sha256": "fe8e4140d97df5ab4693ebe2078bd3e2e38fb8024058d6838615af769a37d9d9",
+      "validated": true
+    },
+    {
+      "compression": "gzip",
+      "path": "runs/source-files.json.gz",
+      "source": "/tmp/deadpan-follow-retune-2026-10-25/source-files.json",
+      "source_bytes": 74844,
+      "source_sha256": "e36cab105e1ae720d326be91cbbdce4ec408d20653f5d51721ac9e60154e6b0e",
+      "stored_bytes": 7416,
+      "stored_sha256": "fb34611bad0152182de2c48807f77f81f14f3013a8f5407239bfa1d94a282836",
+      "validated": true
+    }
+  ],
+  "format": "deadpan-follow-retune-evidence-inventory-v1",
+  "metadata_files": {
+    "README.md": {
+      "bytes": 1543,
+      "sha256": "e22b9a1077ddb699b4b414cbb7d0edf57346bf809dafc796867ebdb7c0043d76"
+    },
+    "collector.json": {
+      "bytes": 842,
+      "sha256": "d22d34608820d509bd35f2f40165e7627090d5e6a3ab6f1df8bee65d247f8b02"
+    },
+    "omissions.json": {
+      "bytes": 4004,
+      "sha256": "4981bc0365cf412aeef477ea283d418c30d71400ed7c2907e5e21fb2be5ea13f"
+    }
+  },
+  "omitted_sidecars_and_outputs": [
+    {
+      "bytes": 0,
+      "reason": "lock_or_sqlite_sidecar_omitted",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep-portable.deadpan/.render-candidates.lock"
+    },
+    {
+      "bytes": 0,
+      "reason": "lock_or_sqlite_sidecar_omitted",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep-portable.deadpan/.writer.lock"
+    },
+    {
+      "bytes": 32768,
+      "reason": "lock_or_sqlite_sidecar_omitted",
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep-portable.deadpan/project.sqlite-shm"
+    },
+    {
+      "bytes": 0,
+      "reason": "lock_or_sqlite_sidecar_omitted",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep-portable.deadpan/project.sqlite-wal"
+    },
+    {
+      "bytes": 0,
+      "reason": "lock_or_sqlite_sidecar_omitted",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep.deadpan/.writer.lock"
+    },
+    {
+      "bytes": 32768,
+      "reason": "lock_or_sqlite_sidecar_omitted",
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep.deadpan/project.sqlite-shm"
+    },
+    {
+      "bytes": 0,
+      "reason": "lock_or_sqlite_sidecar_omitted",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep.deadpan/project.sqlite-wal"
+    },
+    {
+      "bytes": 0,
+      "reason": "lock_or_sqlite_sidecar_omitted",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/follow-creep-portable.deadpan/.render-candidates.lock"
+    },
+    {
+      "bytes": 0,
+      "reason": "lock_or_sqlite_sidecar_omitted",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/follow-creep-portable.deadpan/.writer.lock"
+    },
+    {
+      "bytes": 32768,
+      "reason": "lock_or_sqlite_sidecar_omitted",
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/follow-creep-portable.deadpan/project.sqlite-shm"
+    },
+    {
+      "bytes": 0,
+      "reason": "lock_or_sqlite_sidecar_omitted",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/follow-creep-portable.deadpan/project.sqlite-wal"
+    },
+    {
+      "bytes": 0,
+      "reason": "lock_or_sqlite_sidecar_omitted",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/ranged-follow-creep.deadpan/.writer.lock"
+    },
+    {
+      "bytes": 32768,
+      "reason": "lock_or_sqlite_sidecar_omitted",
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/ranged-follow-creep.deadpan/project.sqlite-shm"
+    },
+    {
+      "bytes": 0,
+      "reason": "lock_or_sqlite_sidecar_omitted",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/ranged-follow-creep.deadpan/project.sqlite-wal"
+    }
+  ]
+}

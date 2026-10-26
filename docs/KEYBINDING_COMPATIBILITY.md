@@ -9,6 +9,14 @@ The comma prefix remains usable while browsing the Original so `,i` can copy it
 into Your edit. Other edit operators keep the Original non-destructive. Native
 text editing retains its own selection, clipboard, undo, and redo behavior.
 
+The [existing Follow parameter qualification](qualification/follow-retune-2026-10-25.md)
+adds Camera Arrival/Curve controls through existing native text, Tab, Enter,
+Space and arrow routes. Curve retains focus after a pointer click and consumed
+vertical arrows. Final 60/120 Hz visual zoom replays pass 415 behavior checks
+each. The final production-router audit passes 21,885,504 cases against all 62
+Kestrel reservations, with the supplied local `Shortcuts.swift` digest matching
+the pinned fixture. No global shortcut assignment changed.
+
 Camera's target picker uses existing Tab/Shift+Tab routes for next/previous
 pages; ordinary Camera fields retain their native editing routes. The final
 2026-10-24 faces, targets and zoom release replays each pass 21,885,504 routing

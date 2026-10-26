@@ -20,6 +20,9 @@ mod scoped_duration;
 #[path = "framing/follow_creep.rs"]
 mod follow_creep;
 
+#[path = "framing/follow_retune.rs"]
+mod follow_retune;
+
 #[path = "framing/follow_creep_admission.rs"]
 mod follow_creep_admission;
 
@@ -451,6 +454,36 @@ fn preview_framing(
         document.nodes()[&node(owner)].framing.clone(),
         document.duration()?.frames(),
     ))
+}
+
+/// Reusing an installed Follow's exact creep parameters is a valid preview,
+/// preserving the complete recipe without history or register writes.
+fn assert_unchanged_follow_retune_preview(
+    package: &Path,
+    input: &Path,
+    request: &Value,
+    owner: &str,
+) -> Result {
+    let before = ProjectStore::open(package, AccessMode::ReadOnly)?.snapshot()?;
+    let framing = before.nodes()[&node(owner)].framing.clone();
+    assert!(matches!(
+        &framing,
+        Some(deadpan_core::Framing {
+            value: FramingValue::Follow {
+                scale_transition: Some(_),
+                ..
+            },
+            ..
+        })
+    ));
+    assert_eq!(
+        preview_framing(package, request, owner)?,
+        (framing, before.duration()?.frames())
+    );
+    let frozen = state(package)?;
+    invoke(package, input, request, true)?;
+    assert_eq!(state(package)?, frozen);
+    Ok(())
 }
 
 fn assert_ranged_follow_preview(

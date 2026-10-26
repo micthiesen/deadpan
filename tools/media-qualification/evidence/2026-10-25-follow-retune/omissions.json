@@ -1,0 +1,86 @@
+[
+  {
+    "bytes": 0,
+    "reason": "lock_or_sqlite_sidecar_omitted",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep-portable.deadpan/.render-candidates.lock"
+  },
+  {
+    "bytes": 0,
+    "reason": "lock_or_sqlite_sidecar_omitted",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep-portable.deadpan/.writer.lock"
+  },
+  {
+    "bytes": 32768,
+    "reason": "lock_or_sqlite_sidecar_omitted",
+    "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep-portable.deadpan/project.sqlite-shm"
+  },
+  {
+    "bytes": 0,
+    "reason": "lock_or_sqlite_sidecar_omitted",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep-portable.deadpan/project.sqlite-wal"
+  },
+  {
+    "bytes": 0,
+    "reason": "lock_or_sqlite_sidecar_omitted",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep.deadpan/.writer.lock"
+  },
+  {
+    "bytes": 32768,
+    "reason": "lock_or_sqlite_sidecar_omitted",
+    "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep.deadpan/project.sqlite-shm"
+  },
+  {
+    "bytes": 0,
+    "reason": "lock_or_sqlite_sidecar_omitted",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpRZq4Ov/fixture/follow-creep.deadpan/project.sqlite-wal"
+  },
+  {
+    "bytes": 0,
+    "reason": "lock_or_sqlite_sidecar_omitted",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/follow-creep-portable.deadpan/.render-candidates.lock"
+  },
+  {
+    "bytes": 0,
+    "reason": "lock_or_sqlite_sidecar_omitted",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/follow-creep-portable.deadpan/.writer.lock"
+  },
+  {
+    "bytes": 32768,
+    "reason": "lock_or_sqlite_sidecar_omitted",
+    "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/follow-creep-portable.deadpan/project.sqlite-shm"
+  },
+  {
+    "bytes": 0,
+    "reason": "lock_or_sqlite_sidecar_omitted",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/follow-creep-portable.deadpan/project.sqlite-wal"
+  },
+  {
+    "bytes": 0,
+    "reason": "lock_or_sqlite_sidecar_omitted",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/ranged-follow-creep.deadpan/.writer.lock"
+  },
+  {
+    "bytes": 32768,
+    "reason": "lock_or_sqlite_sidecar_omitted",
+    "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/ranged-follow-creep.deadpan/project.sqlite-shm"
+  },
+  {
+    "bytes": 0,
+    "reason": "lock_or_sqlite_sidecar_omitted",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLiUHrE/fixture/ranged-follow-creep.deadpan/project.sqlite-wal"
+  }
+]

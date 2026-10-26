@@ -143,12 +143,22 @@ for `t`, `c` and `T`.
 scale and the current pose as fallback. Camera also opens on an existing follow:
 the target supplies the center and `+`/`-` (or the Scale field) change the follow
 scale; the fallback keeps its exact center and scales by the same factor.
-Center nudges (`h/j/k/l`, center fields, a fixed picker point) are refused with
-a message while following; the center fields are disabled. `t` stops following
+Center nudges (`h/j/k/l`, a fixed picker point) are refused with
+a message while following; the target-owned center is shown as plain read-only
+canvas percentages. `t` stops following
 and keeps the pose on screen, which Enter saves as a static pose. Picking another
 saved target while following switches the follow's target, an explicit target
 change rather than a hidden crop coordinate. Following an enveloped beat replaces
 its curve only on this explicit request, and the inspector says so.
+
+An animated Follow also exposes Arrival scale (%) and Arrival curve. Tab reaches
+Scale, Arrival, then Curve; Enter or Space on Curve switches Linear/Smoothstep,
+and Up/Down adjusts the focused numeric field or switches the curve. Arrival
+changes only the endpoint, while Scale still adjusts the whole animation.
+Untouched exact values, its timing window and fallback center remain intact.
+Valid typing previews immediately without rewriting an unfinished decimal;
+invalid text or active IME composition blocks Apply. Enter finishes a text field,
+then Enter in the viewer or Apply commits one edit. Escape restores the entry.
 
 The preview resolves the follow exactly as the committed plan does
 (`deadpan_plan::follow_pose`: the target's center at the picture's source time,
@@ -275,7 +285,16 @@ Nothing flattens an existing path implicitly. On the whole beat:
   the other plays' pictures, gap recipes and audio. Default, mixed, missing or
   mismatched Play scopes refuse. The selected owner's local output clock
   controls scale even when enclosing Retimes map it to a different project clock;
-- a camera path (envelope or animated Follow) refuses `,z`, `,c`, `:zoom` and `:creep` unless the
+- an animated Follow accepts `:creep to=S curve=linear|smoothstep` without
+  `target=` after clearing the Edit range. This retunes its arrival scale and
+  curve while retaining the target, fallback center, authored clock and existing
+  ramp window. Omitting `from=` preserves the starting scales. For a ranged
+  animation, an explicit `from=` changes its ramp start while retaining the
+  prefix; for a whole animation it rebases both live and fallback scales
+  proportionally. A new Visual range refuses instead of moving the old window.
+  Camera's Arrival scale and Curve controls edit these independently in its
+  temporary preview; Enter saves once and Escape restores the complete entry;
+- a camera path (envelope, or an animated Follow outside that retuning case) refuses `,z`, `,c`, `:zoom` and `:creep` unless the
   command names `target=` explicitly, which replaces the path on request;
   `:zoom off` always removes framing.
 

@@ -6,15 +6,29 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 The [progress reassessment](../PROGRESS_ASSESSMENT.md) supersedes the inherited
 89% estimate with about **84% acceptance coverage** after the qualifications
-below (83.7426%). Use the fixed 162-criterion
+below (84.0030%). Use the fixed 162-criterion
 ledger in progress.json; tools/progress/update.py computes the score. Preserve
 legacy history and never infer a progress rate across the calibration change.
-Eight requirements are Complete, sixteen Partial after closing the native and
-private-AI launch trust gaps; all seven gates stay open
-and picture effects remain five of thirteen. DP-12 behavior scores fully covered
-but strict closure needs reconciliation; runtime optimizations, bakeoff and
-performance remain owed under DP-24 and Gates A/E/G. This reporting correction
-is distinct from the implementations below.
+Nine requirements are Complete, fifteen Partial after closing the native and
+private-AI launch trust gaps and reconciling DP-12's existing behavior evidence;
+all seven gates stay open and picture effects remain five of thirteen.
+The [AI Hold closure audit](../qualification/ai-hold-reconciliation-2026-10-25.md)
+grants no additional coverage: all eight DP-12 criteria already scored 1.
+Runtime/model reuse, text caching, candidate bakeoff and performance remain
+owed under DP-24 and Gates A/E/G. The two latest rejected interior candidates
+remain failures. This reporting correction is distinct from new implementation.
+
+[Existing Follow parameters](../qualification/follow-retune-2026-10-25.md)
+are now editable through semantic Keep creep and Camera Arrival/Curve controls,
+preserving exact clocks, prefix/ramp windows, live targets and fallback. Native
+text/IME, focus and minimum-size visibility regressions pass. The integrated
+lane retains 1,742 passes/four fixture/reference failures and its corrected
+four-test continuation; final focused native 80 and strict lint pass. Final
+60/120 Hz visual zoom replays pass 415 checks plus Kestrel each. Two real release
+exports verify 240 pictures, complete PCM/limiter equality, zero-offset audio
+and eight-revision portable histories. Source/binary identities and original
+failed runs remain in the compact media evidence collection. DP-08.3 now scores
+1, adding 0.2604 points, with DP-08 still Partial and every gate open.
 
 [Original analysis windows](../qualification/analysis-windows-2026-10-25.md)
 are implemented and verified. The CLI's new retained session/window API keeps
