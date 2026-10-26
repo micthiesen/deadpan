@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-26T22:03:54Z",
+  "updated_at": "2026-10-26T22:45:15Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Complete general Split sound delivery continuity without widening processing-history authority. The candidate passes Core/Plan and strict lint, but the root filter loses the matching right-fragment sound after a Split seam; three preparation-work failures also remain. Native scoped Split is still blocked. About 85% acceptance coverage; 10/24 requirements Complete; 0/7 delivery gates closed.",
+  "focus": "Finish bounded preparation of general Split sounds. Current-delivery proofs pass exact Source/Sequence PCM at six processing depths; the full WAV matrix still has four limiter work-limit failures. Prepare constant gain programs once per route while preserving dynamic automation and all effects. Native scoped Split remains blocked. Coverage 85%; 10/24 requirements Complete; 0/7 gates closed.",
   "features": [
     {
       "id": "editing",
@@ -1459,6 +1459,15 @@
       "revision": "c99d0404",
       "retrospective": false,
       "summary": "The uncommitted general Split candidate passes 2119 Core/Plan tests. Immutable proof caching then passes all 505 Plan tests, overlapping the broad run, and strict Core/Plan/Audio lint passes. The seven-case real-WAV PCM matrix has two passes and five failures: three work-limit failures and two exact-PCM regression tests. Exact f64 capture identifies a missing right-fragment sound in the root temporal halo from seam sample 8008, exposing the first float difference at 5977. Processing scopes remain narrow; separate checked delivery continuity is still needed. A retained research checkpoint includes candidate source, 32 runs and the input vectors. No scope or completion credit changes; revision names the prior committed checkpoint, not a qualified production candidate."
+    },
+    {
+      "date": "2026-10-26",
+      "percent": 85,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 10,
+      "revision": "f7edb5fd",
+      "retrospective": false,
+      "summary": "The uncommitted Split candidate now passes 2127 Core/Plan tests. A separate current-delivery forest proof fixes exact Source/Sequence root-filter input: six processing-depth variants pass authored/faded PCM. Ten focused tests cover independent forests, concrete Repeat plays, narrow history authority, failed-proof work and one shared 100000-unit compile allowance. The full seven-test WAV matrix remains three passes and four limiter preparation-work failures. Empty occurrence scope lookups were removed; constant gain program preparation is in progress. Native scoped Split stays blocked and no completion credit is granted. Revision names the prior committed research checkpoint, not a qualified production candidate."
     }
   ],
   "assessment": {

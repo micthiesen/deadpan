@@ -24,27 +24,29 @@ statements below describe their historical reporting state.
 
 ## General Split sound transport in progress, 2026-10-26
 
-The [research checkpoint](qualification/general-split-sound-research-2026-10-26.md)
-retains the uncommitted candidate, 32 terminal runs and exact filter input. It
-extends complete-context Split sound proofs, explicit stable-play isolation and
-immutable plan-owned proof caching while retaining shared ancestor processors.
-The broad Core/Plan run passes **2,119 tests**; the later cache passes all **505
-Plan tests**, overlapping the earlier run, and strict Core/Plan/Audio lint passes.
+The [frozen research checkpoint](qualification/general-split-sound-research-2026-10-26.md)
+retains the earlier candidate, 32 terminal runs and exact filter input. The
+[delivery continuation](qualification/general-split-sound-delivery-2026-10-26.md)
+records the subsequent uncommitted fix: a separate, bounded current-delivery
+forest proof joins already prepared sound fragments without widening their
+processing clocks, support, source admission or silence allowances. Full context
+correspondence, exact adjacency, copy provenance and concrete Repeat paths are
+checked; lineage alone supplies no authority.
 
-Qualification remains open. The seven real-WAV PCM cases have **two passes and
-five failures**: pristine audible-processing/limiter and read-partition controls
-pass, three cases still exhaust preparation work, and two tests expose an exact
-PCM defect. The first Source/Sequence difference is one float step at sample
-5,977, but exact f64 capture proves a missing right-fragment sound contribution
-from seam 8,008 onward in the root filter's halo. This is not an acceptable
-rounding tolerance. Narrow Source journals correctly carry no external Split
-forest; delivered continuity needs a separate checked proof without widening
-processing-history authority. The work limit remains **16,777,216**.
+The broad Core/Plan candidate passes **2,127 tests**, 98 suites, zero ignored.
+The six processing-depth variants now pass exact real-WAV authored/faded PCM,
+including root EQ and wet returns. The current seven-test real-WAV matrix has
+**three passes and four failures**, all four at preparation work limits; it does
+not establish all-owner or limiter preservation. Avoiding scope retrieval for
+empty occurrence batches removes measured redundant work but does not resolve
+those failures. Further work is preparing constant gain programs once per route
+while retaining dynamic automation. The per-read limit remains **16,777,216**;
+clock and delivery proof compilation share the existing **100,000** work ceiling.
 
-Native scoped Split stays blocked. Delivery continuity, remaining preparation
-work, Store/history, native receipts/macros, emitted media and performance remain
-owed. The production candidate remains uncommitted; this work block awards no
-requirement, criterion or gate completion credit.
+Native scoped Split stays blocked. Remaining preparation work, complete delivery
+coverage, Store/history, native receipts/macros, emitted media and performance
+remain owed. The production candidate remains uncommitted. This work block
+awards no requirement, criterion or gate completion credit.
 
 ## Scoped target framing qualified, 2026-10-25
 

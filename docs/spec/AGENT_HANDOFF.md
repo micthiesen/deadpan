@@ -6,18 +6,27 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 The uncommitted Core/Plan/Audio candidate and its exact open failures are recorded
 in [Requirements](../REQUIREMENTS.md#general-split-sound-transport-in-progress-2026-10-26).
-The broad Core/Plan candidate passes 2,119 tests; the later immutable proof cache
-passes all 505 Plan tests (overlapping that run), and strict Core/Plan/Audio lint
-passes. The current seven-case real-WAV PCM matrix has two passes and five
-failures. Three preparation-work failures remain. Exact f64 filter input proves
-that root temporal processing excludes the matching right-fragment sound from
-Split sample 8,008 onward, producing the first float difference at 5,977.
-The individual Source journals deliberately retain no exterior Split forest.
-Implement separate delivered-continuity authority; do not widen processing scope,
-remove the root context guard blindly, infer aliases from labels/lineage, raise
-the work limit or loosen PCM equality. See the
-[retained research](../qualification/general-split-sound-research-2026-10-26.md)
-for exact runs, candidate source snapshot and the needed lifecycle coverage.
+The broad Core/Plan candidate passes 2,127 tests. Separate current-delivery
+forest proofs fix the Source/Sequence root filter input without widening
+processing scope: all six real-WAV processing-depth variants pass exact authored
+and faded PCM. Ten cache/delivery authority tests cover current geometry, full
+historical context, independent forests, concrete Repeat plays, failed-proof
+work accounting and the shared 100,000-unit compilation allowance. The later
+Plan suite passes after sharing that allowance. These runs overlap.
+
+The seven-test real-WAV matrix remains **three pass, four fail**, all four at
+limiter preparation work limits. The all-owner/refinement case does not finish,
+so do not claim broader delivery or limiter preservation. Both preparation passes
+skip scope construction for empty occurrence batches; the measured saving is
+insufficient. Constant ClipGain program preparation in Components routes is the
+next implementation; keep envelopes and mute ranges dynamic, exact Q32 ordering,
+individual support/gates and all effects. Do not raise the 16,777,216 work limit,
+relax PCM equality or infer families from lineage alone. The delivery token must
+never bind historical plans or expose hidden input. See the
+[continuation](../qualification/general-split-sound-delivery-2026-10-26.md) and
+[frozen research](../qualification/general-split-sound-research-2026-10-26.md).
+Final strict lint is owed after the current gain work; the last attempt caught
+only a now-fixed needless struct update in a new test.
 Native scoped Split remains blocked until its complete command/receipt/semantic
 and rendering path is qualified. Preserve the foreign fuzz/Cargo.lock and .claude/
 changes. Raw development runs remain in the linked scratch directory and the
