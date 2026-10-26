@@ -169,6 +169,7 @@ fn fixture(
     let follow = Framing {
         clock,
         value: FramingValue::Follow {
+            centering: Default::default(),
             target: TargetId::new("subject").unwrap(),
             scale: r(3, 2),
             fallback: FramingPose::new(r(1, 8), r(7, 8), r(3, 4)).unwrap(),

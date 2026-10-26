@@ -388,6 +388,7 @@ fn follow_fixture(service: &ProjectService, mut opened: ProjectUpdate) -> (Proje
             framing: Some(Framing {
                 clock: FramingClock::OwnerOutput,
                 value: FramingValue::Follow {
+                    centering: Default::default(),
                     target,
                     scale: ratio(11, 10),
                     fallback: FramingPose::new(ratio(3, 5), ratio(1, 2), ratio(9, 10)).unwrap(),

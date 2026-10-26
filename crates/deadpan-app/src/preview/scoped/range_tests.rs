@@ -97,6 +97,7 @@ fn scoped_saved_follow_summary_reports_recipe_scale_window_and_clock() {
     let mut framing = Framing {
         clock: FramingClock::OwnerOutput,
         value: FramingValue::Follow {
+            centering: Default::default(),
             target: TargetId::new("saved-target").unwrap(),
             scale: ratio(11, 10),
             fallback: FramingPose::new(ratio(1, 1), ratio(1, 2), ratio(1, 2)).unwrap(),

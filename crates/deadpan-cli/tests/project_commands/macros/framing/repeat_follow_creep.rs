@@ -561,7 +561,7 @@ fn whole_repeat_follow_creep_preserves_plays_gaps_escalation_and_invocation_rela
         );
         let staged = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
         assert!(matches!(&staged.nodes()[&node("repeat")].framing,
-            Some(Framing { clock: FramingClock::OwnerOutput, value: FramingValue::Follow { target, scale, fallback,
+            Some(Framing { clock: FramingClock::OwnerOutput, value: FramingValue::Follow { target, scale, fallback, centering: deadpan_core::FollowCentering::Unconstrained,
                 scale_transition: Some(FollowScaleTransition { factor, curve: ZoomCurve::Linear, range: None }) } })
             if target.as_str() == "other" && *scale == ratio(2, 1) && fallback.scale == ratio(2, 1) && *factor == ratio(2, 1)));
         for frame in 0..17 {

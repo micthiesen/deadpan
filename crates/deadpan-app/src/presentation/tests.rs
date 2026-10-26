@@ -1200,11 +1200,17 @@ fn camera_sets_several_operations_atomically_or_not_at_all() {
     };
     let mut layer = value.framing[0].clone();
     layer.instance = outer.clone();
+    value.framing.push(layer.clone());
+    layer.escalation = true;
     value.framing.push(layer);
     accept(&mut state, ticket(1, 1), value);
     state.presented();
     let pose = deadpan_core::FramingPose {
         scale: deadpan_core::ExactRatio::integer(2),
+        ..Default::default()
+    };
+    let escalation_pose = deadpan_core::FramingPose {
+        scale: deadpan_core::ExactRatio::integer(3),
         ..Default::default()
     };
     let missing = deadpan_core::InstancePath {
@@ -1216,7 +1222,10 @@ fn camera_sets_several_operations_atomically_or_not_at_all() {
         state
             .set_framing_poses(
                 ticket(1, 1),
-                &[(inner.clone(), Some(pose)), (missing, Some(pose))]
+                &[
+                    (inner.clone(), false, Some(pose)),
+                    (missing, false, Some(pose))
+                ]
             )
             .is_err()
     );
@@ -1225,12 +1234,36 @@ fn camera_sets_several_operations_atomically_or_not_at_all() {
     state
         .set_framing_poses(
             ticket(1, 1),
-            &[(inner.clone(), Some(pose)), (outer.clone(), Some(pose))],
+            &[
+                (inner.clone(), false, Some(pose)),
+                (outer.clone(), false, Some(pose)),
+                (outer.clone(), true, Some(escalation_pose)),
+            ],
         )
         .unwrap();
     assert!(state.needs_render());
     let framing = &state.picture().unwrap().framing;
     assert_eq!((framing[0].pose, framing[1].pose), (Some(pose), Some(pose)));
+    assert_eq!(framing[2].pose, Some(escalation_pose));
+    // Escape restores both operations even though their instance is shared.
+    state
+        .set_framing_poses(
+            ticket(1, 1),
+            &[
+                (inner, false, None),
+                (outer.clone(), false, None),
+                (outer, true, None),
+            ],
+        )
+        .unwrap();
+    assert!(
+        state
+            .picture()
+            .unwrap()
+            .framing
+            .iter()
+            .all(|layer| layer.pose.is_none())
+    );
 }
 
 #[test]

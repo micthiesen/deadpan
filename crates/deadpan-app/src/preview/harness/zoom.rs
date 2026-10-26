@@ -10,6 +10,7 @@ use super::*;
 mod abrupt_return;
 mod follow_creep;
 mod macros;
+mod targeted_explode_native;
 
 fn framing(d: &Driver<'_>) -> Option<Framing> {
     let node = d.app().selected_beat.clone()?;
@@ -386,5 +387,6 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!(format!("{named:?}")),
     )?;
     macros::run(d)?;
-    abrupt_return::run(d)
+    abrupt_return::run(d)?;
+    targeted_explode_native::run(d)
 }

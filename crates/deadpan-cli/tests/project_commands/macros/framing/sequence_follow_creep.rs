@@ -390,7 +390,7 @@ fn whole_sequence_follow_creep_crosses_source_cuts_and_replays_staged_keep_with_
     let staged = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
     assert!(matches!(&staged.nodes()[&node("group")].framing,
         Some(Framing { clock: FramingClock::OwnerOutput, value: FramingValue::Follow {
-            target, scale, fallback, scale_transition: Some(FollowScaleTransition { factor, curve: ZoomCurve::Linear, range: None }) } })
+            target, scale, fallback, centering: deadpan_core::FollowCentering::Unconstrained, scale_transition: Some(FollowScaleTransition { factor, curve: ZoomCurve::Linear, range: None }) } })
         if target.as_str() == "other" && *scale == ratio(2, 1) && fallback.scale == ratio(2, 1) && *factor == ratio(3, 2)));
     only_group_framing(&reset, &staged)?;
     for frame in 0..8 {

@@ -4,11 +4,11 @@ use std::{
 };
 
 use deadpan_core::{
-    AssetId, CapturedFraming, EndpointPolicy, ExactRatio, FrameDuration, FrameRange, HoldAudio,
-    HoldRecipe, HoldVideo, InsertionBias, InstancePath, NodeId, NodeKind, PitchPolicy,
-    PresentationBasis, ProjectDocument, ProjectFrame, ProjectId, RepeatInstance, RepeatLayout,
-    RetimePurpose, RevisionId, SourceAudio, SourceFrameId, SourcePoint, SourceSpan, SourceTimeBase,
-    SourceVideo, TimeError,
+    AssetId, CapturedFraming, EndpointPolicy, ExactRatio, FollowCentering, FrameDuration,
+    FrameRange, HoldAudio, HoldRecipe, HoldVideo, InsertionBias, InstancePath, NodeId, NodeKind,
+    PitchPolicy, PresentationBasis, ProjectDocument, ProjectFrame, ProjectId, RepeatInstance,
+    RepeatLayout, RetimePurpose, RevisionId, SourceAudio, SourceFrameId, SourcePoint, SourceSpan,
+    SourceTimeBase, SourceVideo, TimeError,
 };
 use serde::Serialize;
 
@@ -1306,7 +1306,7 @@ impl RenderPlan {
     fn resolve_follows(
         &self,
         framing: &mut [PictureFraming],
-        follows: &[(usize, &deadpan_core::TargetId, ExactRatio, bool)],
+        follows: &[(usize, &deadpan_core::TargetId, ExactRatio, FollowCentering)],
         picture: &Picture,
         context: Option<&CapturedFraming>,
     ) {
@@ -1315,49 +1315,19 @@ impl RenderPlan {
         };
         let basis = &self.metadata.presentation_basis;
         let canvas = [basis.width, basis.height];
-        for &(index, target, scale, fill) in follows.iter().rev() {
+        for &(index, target, scale, centering) in follows.iter().rev() {
             let Some(found) = self.targets.get(target) else {
                 continue;
             };
             let inner = framing[index + 1..].iter().rev().map(|layer| layer.pose);
-            let Some(mut pose) =
+            let Some(pose) =
                 follow_pose_in_context(found, asset, point, canvas, context, inner, scale)
             else {
                 continue;
             };
-            // An escalating zoom moves toward its target but keeps the view
-            // inside its layer's canvas (bars included for a letterboxed
-            // picture): at scale `s` each center stays within
-            // `[1/(2s), 1 - 1/(2s)]`.
-            if fill && scale.compare_integer(1).is_gt() {
-                let Ok(margin) = ExactRatio::ONE
-                    .checked_div(scale)
-                    .and_then(|width| width.checked_div(ExactRatio::integer(2)))
-                else {
-                    continue;
-                };
-                let Ok(upper) = ExactRatio::ONE.checked_sub(margin) else {
-                    continue;
-                };
-                let clamp = |value: ExactRatio| {
-                    if value.compare(margin).is_lt() {
-                        margin
-                    } else if value.compare(upper).is_gt() {
-                        upper
-                    } else {
-                        value
-                    }
-                };
-                let Ok(clamped) = deadpan_core::FramingPose::new(
-                    clamp(pose.center_x),
-                    clamp(pose.center_y),
-                    pose.scale,
-                )
-                .and_then(|pose| pose.quantized()) else {
-                    continue;
-                };
-                pose = clamped;
-            }
+            let Ok(pose) = centering.apply(pose) else {
+                continue;
+            };
             framing[index].pose = Some(pose);
         }
     }
@@ -1483,8 +1453,8 @@ impl RenderPlan {
                 .as_ref()
                 .map(|framing| framing.evaluate_with_follow_exact(local, node.extent))
                 .transpose()?;
-            if let Some((target, scale)) = evaluated.as_ref().and_then(|value| value.follow) {
-                follows.push((framing.len(), target, scale, false));
+            if let Some(follow) = evaluated.as_ref().and_then(|value| value.follow) {
+                follows.push((framing.len(), follow.target, follow.scale, follow.centering));
             }
             framing.push(PictureFraming {
                 instance: InstancePath {
@@ -1698,7 +1668,12 @@ impl RenderPlan {
                             .and_then(|escalation| escalation.zoom.as_ref())
                             .and_then(|zoom| zoom.target.as_ref())
                         {
-                            follows.push((framing.len(), target, pose.scale, true));
+                            follows.push((
+                                framing.len(),
+                                target,
+                                pose.scale,
+                                FollowCentering::CanvasClamped,
+                            ));
                         }
                         framing.push(PictureFraming {
                             instance: InstancePath {

@@ -33,9 +33,17 @@ current play order:
   is removed the same way. Marks owned there follow their loss policy.
 - `RepeatEscalation` becomes explicit: each play whose escalation is not the
   identity is wrapped with its following gap in a new Sequence carrying the
-  play's static centered pose and a constant clip-gain trim. A play and its
+  play's fixed scale and a constant clip-gain trim. An untargeted zoom uses a
+  static centered pose. A targeted zoom uses a live Follow with that play's
+  exact scale, centered fallback and `CanvasClamped` centering. Its target
+  continues to use each picture's Original time, including freeze gaps and
+  captured geometry. It is never sampled into one static center. A play and its
   gap shared that escalation, and the wrapper is applied in the same position
   of the framing stack and gain owner chain (inside the Repeat's own effects).
+
+Each materialized Follow can then be edited independently in Camera or through
+the semantic framing commands. Scale, creep parameters and target replacement
+retain canvas clamping. Releasing Follow or resetting framing is explicit.
 
 Captions count plays of their innermost enclosing Repeat. A caption whose
 innermost Repeat was the exploded one is kept without a reveal in plays at or

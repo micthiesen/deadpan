@@ -397,16 +397,16 @@ fn assert_ranged_follow_plan(before: &ProjectDocument, plan: &SemanticPlan, star
     let at = |local| framing.evaluate_with_follow_exact(local, duration).unwrap();
     if start > 0 {
         let prefix = at(ExactRatio::integer(start - 1));
-        assert_eq!(prefix.follow.unwrap().1, ExactRatio::integer(2));
+        assert_eq!(prefix.follow.unwrap().scale, ExactRatio::integer(2));
         assert_eq!(prefix.pose.scale, ExactRatio::new(1, 2).unwrap());
     }
     let middle = at(ExactRatio::new(i128::from(start + end), 2).unwrap());
-    assert_eq!(middle.follow.unwrap().1, ExactRatio::integer(3));
+    assert_eq!(middle.follow.unwrap().scale, ExactRatio::integer(3));
     assert_eq!(middle.pose.scale, ExactRatio::new(3, 4).unwrap());
     let terminal = at(ExactRatio::integer(end));
-    assert_eq!(terminal.follow.unwrap().1, ExactRatio::integer(4));
+    assert_eq!(terminal.follow.unwrap().scale, ExactRatio::integer(4));
     assert_eq!(terminal.pose.scale, ExactRatio::ONE);
-    assert_eq!(terminal.follow.unwrap().0.as_str(), "subject");
+    assert_eq!(terminal.follow.unwrap().target.as_str(), "subject");
     assert_eq!(terminal.pose.center_x, ExactRatio::new(1, 3).unwrap());
     let mut expected = before.clone();
     expected.revision_id = plan.document.revision_id().clone();
@@ -476,6 +476,7 @@ fn ordinary_follow_creep_resolves_whole_and_ranged_owners_with_atomic_refusals()
                 ExactRatio::new(1, 2).unwrap(),
             )
             .unwrap(),
+            centering: Default::default(),
             scale_transition: None,
         },
     };
@@ -522,7 +523,7 @@ fn ordinary_follow_creep_resolves_whole_and_ranged_owners_with_atomic_refusals()
             .evaluate_with_follow_exact(ExactRatio::integer(frame), ExactRatio::integer(8))
             .unwrap();
         let expected = ExactRatio::new(n, d).unwrap();
-        assert_eq!(state.follow.unwrap().1, expected);
+        assert_eq!(state.follow.unwrap().scale, expected);
         assert_eq!(
             state.pose.scale,
             expected.checked_div(ExactRatio::integer(4)).unwrap()
@@ -560,7 +561,7 @@ fn ordinary_follow_creep_resolves_whole_and_ranged_owners_with_atomic_refusals()
         .unwrap()
         .evaluate_with_follow_exact(ExactRatio::integer(2), ExactRatio::integer(8))
         .unwrap();
-    assert_eq!(value.follow.unwrap().1, ExactRatio::new(5, 2).unwrap());
+    assert_eq!(value.follow.unwrap().scale, ExactRatio::new(5, 2).unwrap());
     assert_eq!(value.pose.scale, ExactRatio::new(5, 8).unwrap());
     let replay =
         crate::replay_compound::<EditError>(&document, plan.request.as_ref().unwrap(), |_| Ok(()))
@@ -669,7 +670,7 @@ fn ordinary_follow_creep_resolves_whole_and_ranged_owners_with_atomic_refusals()
             )
             .unwrap();
         assert_eq!(
-            value.follow.unwrap().1,
+            value.follow.unwrap().scale,
             ExactRatio::new(17 + 2 * frame, 8).unwrap()
         );
         assert_eq!(
@@ -748,7 +749,7 @@ fn ordinary_follow_creep_resolves_whole_and_ranged_owners_with_atomic_refusals()
         .unwrap()
         .evaluate_with_follow_exact(ExactRatio::integer(14), ExactRatio::integer(28))
         .unwrap();
-    assert_eq!(value.follow.unwrap().1, ExactRatio::integer(3));
+    assert_eq!(value.follow.unwrap().scale, ExactRatio::integer(3));
     assert_eq!(value.pose.scale, ExactRatio::new(3, 4).unwrap());
     let replay =
         crate::replay_compound::<EditError>(&repeat, planned.request.as_ref().unwrap(), |_| Ok(()))
@@ -832,7 +833,7 @@ fn ordinary_follow_creep_resolves_whole_and_ranged_owners_with_atomic_refusals()
         .unwrap()
         .evaluate_with_follow_exact(ExactRatio::new(9, 2).unwrap(), ExactRatio::integer(9))
         .unwrap();
-    assert_eq!(value.follow.unwrap().1, ExactRatio::integer(3));
+    assert_eq!(value.follow.unwrap().scale, ExactRatio::integer(3));
     assert_eq!(value.pose.scale, ExactRatio::new(3, 4).unwrap());
     let replay =
         crate::replay_compound::<EditError>(&retime, planned.request.as_ref().unwrap(), |_| Ok(()))

@@ -14,14 +14,16 @@ use crate::navigation::camera::{
 };
 use crate::project::targets::{Operation, TrackMode};
 use deadpan_core::{
-    AttentionTarget, ExactRatio, Framing, FramingClock, FramingCurve, FramingPose, FramingValue,
-    InstancePath, SourceSpan, SourceTimestamp, TARGET_UNITS, TargetCorrection, TargetGeometry,
-    TargetId, TargetRegion, TargetSource,
+    AttentionTarget, ExactRatio, FollowCentering, Framing, FramingClock, FramingCurve, FramingPose,
+    FramingValue, InstancePath, SourceSpan, SourceTimestamp, TARGET_UNITS, TargetCorrection,
+    TargetGeometry, TargetId, TargetRegion, TargetSource,
 };
 use deadpan_render::FramingLayer;
 
 use super::*;
 
+#[cfg(test)]
+mod follow_centering_tests;
 mod proposal_picker;
 mod region_pointer;
 mod region_pointer_ui;
@@ -351,6 +353,7 @@ pub(super) struct FollowDraft {
     /// Authored base, distinct from the scale handle evaluated at this picture.
     base_live: ExactRatio,
     base_fallback: FramingPose,
+    centering: FollowCentering,
     clock: FramingClock,
     scale_transition: Option<deadpan_core::FollowScaleTransition>,
 }
@@ -373,7 +376,7 @@ pub(super) struct CameraSession {
     entry_pose: Option<FramingPose>,
     /// Every operation's entry pose, restored on Escape: Camera may also
     /// re-resolve outer follows that see this operation.
-    entry_layers: Vec<(InstancePath, Option<FramingPose>)>,
+    entry_layers: Vec<(InstancePath, bool, Option<FramingPose>)>,
     draft: CameraDraft,
     steps: CameraPanSteps,
     picker: Vec<PickerTarget>,
@@ -562,6 +565,7 @@ fn followed_framing(follow: &FollowDraft, pose: FramingPose) -> Result<Framing, 
             target: follow.target.clone(),
             scale,
             fallback,
+            centering: follow.centering,
             scale_transition: follow.scale_transition,
         },
     };
@@ -597,7 +601,7 @@ fn layer_poses(
     layer: usize,
     framing: Option<&Framing>,
     local_position: ExactRatio,
-) -> Result<Vec<(InstancePath, Option<FramingPose>)>, String> {
+) -> Result<Vec<(InstancePath, bool, Option<FramingPose>)>, String> {
     let mut poses: Vec<Option<FramingPose>> =
         picture.framing.iter().map(|layer| layer.pose).collect();
     if layer >= poses.len() {
@@ -607,6 +611,7 @@ fn layer_poses(
     let canvas = [basis.width, basis.height];
     let resolve = |target: &TargetId,
                    scale: ExactRatio,
+                   centering: FollowCentering,
                    fallback: FramingPose,
                    inner: &[Option<FramingPose>]| {
         picture
@@ -623,6 +628,7 @@ fn layer_poses(
                     scale,
                 )
             })
+            .and_then(|pose| centering.apply(pose).ok())
             .unwrap_or(fallback)
     };
     let evaluate = |framing: &Framing, local, duration, inner: &[Option<FramingPose>]| {
@@ -630,7 +636,13 @@ fn layer_poses(
             .evaluate_with_follow_exact(local, duration)
             .map_err(|error| error.to_string())?;
         Ok::<_, String>(match evaluated.follow {
-            Some((target, scale)) => resolve(target, scale, evaluated.pose, inner),
+            Some(follow) => resolve(
+                follow.target,
+                follow.scale,
+                follow.centering,
+                evaluated.pose,
+                inner,
+            ),
             None => evaluated.pose,
         })
     };
@@ -644,10 +656,48 @@ fn layer_poses(
             )
         })
         .transpose()?;
-    let mut changed = vec![(picture.framing[layer].instance.clone(), poses[layer])];
+    let mut changed = vec![(picture.framing[layer].instance.clone(), false, poses[layer])];
     for index in layer + 1..poses.len() {
         let outer = &picture.framing[index];
         if outer.escalation {
+            if let Some(deadpan_core::NodeKind::Repeat {
+                iterations,
+                escalation: Some(escalation),
+                ..
+            }) = document
+                .nodes()
+                .get(&outer.instance.node)
+                .map(|node| &node.kind)
+                && let Some(target) = escalation
+                    .zoom
+                    .as_ref()
+                    .and_then(|zoom| zoom.target.as_ref())
+            {
+                // This operation's own instance excludes the Repeat being
+                // escalated. The inner Camera owner retains its exact play
+                // identity, including nested Repeats and independent gaps.
+                let step = picture.framing[layer]
+                    .instance
+                    .repeats
+                    .get(outer.instance.repeats.len())
+                    .filter(|step| step.node == outer.instance.node)
+                    .ok_or("The Camera picture lost its outer Repeat play.")?;
+                let play = iterations
+                    .position(&step.iteration)
+                    .ok_or("The Camera picture's outer Repeat play no longer exists.")?;
+                let fallback = escalation
+                    .pose(play)
+                    .map_err(|error| error.to_string())?
+                    .ok_or("The Camera picture's escalation no longer has a pose.")?;
+                poses[index] = Some(resolve(
+                    target,
+                    fallback.scale,
+                    FollowCentering::CanvasClamped,
+                    fallback,
+                    &poses[..index],
+                ));
+                changed.push((outer.instance.clone(), true, poses[index]));
+            }
             continue;
         }
         if let Some(framing) = document
@@ -662,7 +712,7 @@ fn layer_poses(
                 outer.effective_duration,
                 &poses[..index],
             )?);
-            changed.push((outer.instance.clone(), poses[index]));
+            changed.push((outer.instance.clone(), false, poses[index]));
         }
     }
     Ok(changed)
@@ -814,6 +864,7 @@ impl CameraSession {
                         target,
                         scale,
                         fallback,
+                        centering,
                         scale_transition,
                     },
             }) => {
@@ -823,7 +874,7 @@ impl CameraSession {
                     .evaluate_with_follow_exact(layer.local_position, layer.effective_duration)
                     .map_err(|error| error.to_string())?;
                 // The handle follows live scale even on a fallback picture.
-                let live = evaluated.follow.expect("Follow evaluated").1;
+                let live = evaluated.follow.expect("Follow evaluated").scale;
                 let shown = entry_pose.unwrap_or(evaluated.pose);
                 Some(FollowDraft {
                     target: target.clone(),
@@ -831,6 +882,7 @@ impl CameraSession {
                     base_scale: live,
                     base_live: *scale,
                     base_fallback: *fallback,
+                    centering: *centering,
                     clock: *clock,
                     scale_transition: *scale_transition,
                 })
@@ -870,8 +922,7 @@ impl CameraSession {
             entry_layers: picture
                 .framing
                 .iter()
-                .filter(|layer| !layer.escalation)
-                .map(|layer| (layer.instance.clone(), layer.pose))
+                .map(|layer| (layer.instance.clone(), layer.escalation, layer.pose))
                 .collect(),
             draft: CameraDraft::new(draft_pose).map_err(|error| error.to_string())?,
             steps: CameraPanSteps {
@@ -959,6 +1010,7 @@ impl CameraSession {
                     target,
                     scale,
                     fallback,
+                    centering,
                     scale_transition,
                 } = &framing.value
                 else {
@@ -969,7 +1021,7 @@ impl CameraSession {
                     .map_err(|error| error.to_string())?
                     .follow
                     .ok_or("Follow has no evaluated scale.")?
-                    .1;
+                    .scale;
                 (
                     FramingPose {
                         scale: live,
@@ -981,6 +1033,7 @@ impl CameraSession {
                         base_scale: live,
                         base_live: *scale,
                         base_fallback: *fallback,
+                        centering: *centering,
                         clock: framing.clock,
                         scale_transition: *scale_transition,
                     }),
@@ -2115,7 +2168,7 @@ impl DeadpanApp {
         if let Some(poses) = poses {
             // A follow's center comes from the (possibly re-tracked) target.
             if let Some(follow) = &mut session.follow
-                && let Some((_, Some(shown))) = poses.first()
+                && let Some((_, _, Some(shown))) = poses.first()
             {
                 follow.center = [shown.center_x, shown.center_y];
                 let pose = FramingPose {
@@ -2399,7 +2452,37 @@ impl DeadpanApp {
             framing.as_ref(),
             camera.local_position,
         )?;
-        self.presentation.set_framing_poses(camera.ticket, &poses)
+        let centered = if camera.follow.is_some()
+            && let Some((_, _, Some(shown))) = poses.first()
+            && [shown.center_x, shown.center_y]
+                != [camera.draft.pose().center_x, camera.draft.pose().center_y]
+        {
+            // Canvas clamping depends on scale. Keep the locked center fields
+            // on the resolved view without changing either authored branch.
+            let mut draft = camera.draft.clone();
+            if let CameraEffect::Rejected(error) = draft.set_pose(FramingPose {
+                center_x: shown.center_x,
+                center_y: shown.center_y,
+                ..camera.draft.pose()
+            }) {
+                return Err(error.to_string());
+            }
+            Some((draft, [shown.center_x, shown.center_y]))
+        } else {
+            None
+        };
+        self.presentation.set_framing_poses(camera.ticket, &poses)?;
+        if let Some((draft, center)) = centered {
+            let camera = self.camera.as_mut().expect("Camera retained for preview");
+            camera.draft = draft;
+            camera
+                .follow
+                .as_mut()
+                .expect("Follow retained for preview")
+                .center = center;
+            camera.fields.sync_follow_center(center);
+        }
+        Ok(())
     }
 
     fn restore_camera_entry(&mut self) {
@@ -2686,6 +2769,7 @@ impl DeadpanApp {
                 base_scale: pose.scale,
                 base_live: pose.scale,
                 base_fallback: pose,
+                centering: FollowCentering::Unconstrained,
                 clock: FramingClock::OwnerOutput,
                 scale_transition: None,
             });
@@ -2710,7 +2794,7 @@ impl DeadpanApp {
                     camera.local_position,
                 )?
                 .first()
-                .and_then(|(_, pose)| *pose)
+                .and_then(|(_, _, pose)| *pose)
                 .ok_or_else(|| "The followed target has no Camera pose.".into())
             })();
             let shown = match resolved {
@@ -3621,6 +3705,8 @@ impl DeadpanApp {
                         ui.weak(match camera.draft.phase() {
                             CameraPhase::TargetPicker => "Choose this page's number. Tab / Shift+Tab changes pages; f returns to adjustment. Selecting a proposal saves that target before framing changes.",
                             CameraPhase::Region => "Finish the target, or press Escape to return to framing.",
+                            _ if camera.follow.as_ref().is_some_and(|follow| follow.centering == FollowCentering::CanvasClamped && follow.scale_transition.is_some()) => "Inside canvas above 100%. Scale: whole animation. Arrival/curve: same timing.",
+                            _ if camera.follow.as_ref().is_some_and(|follow| follow.centering == FollowCentering::CanvasClamped) => "Keeps target view inside canvas above 100%",
                             _ if camera.follow.as_ref().is_some_and(|follow| follow.scale_transition.is_some()) => "Scale changes the whole animation. Arrival and curve keep its timing.",
                             _ if camera.follow.is_some() => "The followed target supplies the center. Scale changes keep following it.",
                             _ => "Tab moves through fields. Up/Down changes 1%. Enter finishes a field; Enter in the viewer applies the edit.",
@@ -3894,6 +3980,7 @@ mod tests {
                 target: TargetId::new("speaker").unwrap(),
                 scale: r(2, 1),
                 fallback: FramingPose::new(r(3, 7), r(2, 9), r(1, 2)).unwrap(),
+                centering: FollowCentering::CanvasClamped,
                 scale_transition: Some(deadpan_core::FollowScaleTransition {
                     factor: r(2, 1),
                     curve: ZoomCurve::Linear,
@@ -3910,12 +3997,13 @@ mod tests {
             .unwrap()
             .follow
             .unwrap()
-            .1;
+            .scale;
         let pose = FramingPose::new(center[0], center[1], live).unwrap();
         let FramingValue::Follow {
             target,
             scale,
             fallback,
+            centering,
             scale_transition,
         } = &entry.value
         else {
@@ -3965,6 +4053,7 @@ mod tests {
                 base_scale: live,
                 base_live: *scale,
                 base_fallback: *fallback,
+                centering: *centering,
                 clock: entry.clock,
                 scale_transition: *scale_transition,
             }),
@@ -4008,7 +4097,7 @@ mod tests {
                 .unwrap()
                 .follow
                 .unwrap()
-                .1
+                .scale
         );
         session.draft.input(
             CameraKey::Scale(navigation::camera::ScaleDirection::In),
@@ -4111,6 +4200,7 @@ mod tests {
             poses,
             vec![(
                 scope,
+                false,
                 Some(FramingPose {
                     scale: extent,
                     ..FramingPose::identity()
@@ -4471,6 +4561,7 @@ mod tests {
                 base_scale: ExactRatio::ONE,
                 base_live: ExactRatio::ONE,
                 base_fallback: FramingPose::new(r(1, 3), r(2, 7), r(1, 2)).unwrap(),
+                centering: FollowCentering::Unconstrained,
                 clock: FramingClock::OwnerOutput,
                 scale_transition: Some(deadpan_core::FollowScaleTransition {
                     factor: r(2, 1),
@@ -4536,6 +4627,7 @@ mod tests {
             base_scale: r(5, 2),
             base_live: r(2, 1),
             base_fallback: fallback,
+            centering: FollowCentering::CanvasClamped,
             clock: FramingClock::RetainedOutput {
                 offset: r(1, 1),
                 duration: r(4, 1),
@@ -4548,6 +4640,7 @@ mod tests {
                 target: follow.target.clone(),
                 scale: follow.base_live,
                 fallback,
+                centering: follow.centering,
                 scale_transition: Some(transition),
             },
         };
@@ -4622,6 +4715,7 @@ mod tests {
                 base_scale: ExactRatio::ONE,
                 base_live: live,
                 base_fallback: FramingPose::new(r(1, 3), r(2, 7), fallback).unwrap(),
+                centering: FollowCentering::Unconstrained,
                 clock: FramingClock::OwnerOutput,
                 scale_transition: Some(deadpan_core::FollowScaleTransition {
                     factor: ExactRatio::ONE,
@@ -4662,6 +4756,7 @@ mod tests {
             base_scale: ExactRatio::integer(2),
             base_live: ExactRatio::integer(2),
             base_fallback: fallback,
+            centering: FollowCentering::CanvasClamped,
             clock: FramingClock::OwnerOutput,
             scale_transition: None,
         };
@@ -4675,6 +4770,7 @@ mod tests {
                 scale: ExactRatio::integer(3),
                 // The fallback keeps its center and scales by the same 3/2.
                 fallback: pose(30, 225),
+                centering: follow.centering,
                 scale_transition: None,
             }
         );

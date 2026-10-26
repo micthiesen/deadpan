@@ -10,6 +10,8 @@ mod group_endpoints_export;
 mod physical_mac;
 #[path = "preview_export/recipes.rs"]
 mod recipes;
+#[path = "preview_export/targeted_explode_export.rs"]
+mod targeted_explode_export;
 #[path = "preview_export/transcript_search_export.rs"]
 mod transcript_search_export;
 

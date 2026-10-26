@@ -422,7 +422,7 @@ fn whole_retime_follow_creep_keeps_nonzero_map_fractional_target_clock_and_histo
     );
     let staged = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
     assert!(matches!(&staged.nodes()[&node("retime")].framing,
-        Some(Framing {clock:FramingClock::OwnerOutput,value:FramingValue::Follow {target,scale,fallback,scale_transition:Some(FollowScaleTransition {factor,curve:ZoomCurve::Linear, range: None })}})
+        Some(Framing {clock:FramingClock::OwnerOutput,value:FramingValue::Follow {target,scale,fallback,centering:deadpan_core::FollowCentering::Unconstrained,scale_transition:Some(FollowScaleTransition {factor,curve:ZoomCurve::Linear, range: None })}})
         if target.as_str()=="other"&&*scale==ratio(2,1)&&fallback.scale==ratio(2,1)&&*factor==ratio(2,1)));
     retained(&reset, &staged)?;
     for frame in 0..12 {

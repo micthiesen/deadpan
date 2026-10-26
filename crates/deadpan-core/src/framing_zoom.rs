@@ -221,6 +221,7 @@ pub fn retune_follow(
         target,
         scale,
         fallback,
+        centering,
         scale_transition: Some(transition),
     } = &entry.value
     else {
@@ -253,6 +254,7 @@ pub fn retune_follow(
             target: target.clone(),
             scale,
             fallback,
+            centering: *centering,
             scale_transition: Some(crate::FollowScaleTransition {
                 factor: to.checked_div(scale).map_err(|error| error.to_string())?,
                 curve,
@@ -309,6 +311,7 @@ fn build_at(
             target,
             scale,
             fallback,
+            centering,
             scale_transition: None,
         }) = entry
     {
@@ -321,6 +324,7 @@ fn build_at(
                 target: target.clone(),
                 scale: *scale,
                 fallback: *fallback,
+                centering: *centering,
                 scale_transition: Some(crate::FollowScaleTransition {
                     factor: to.checked_div(*scale).map_err(|error| error.to_string())?,
                     curve,
@@ -357,6 +361,10 @@ fn build_at(
         return match kind {
             ZoomKind::Off => Ok(None),
             ZoomKind::Smash { scale } => {
+                let centering = match entry {
+                    Some(FramingValue::Follow { centering, .. }) => *centering,
+                    _ => Default::default(),
+                };
                 let (target, fallback, clock) = match (center, shot.entry) {
                     (Center::Target { id, .. }, _) => {
                         (id.clone(), pose(current, scale)?, FramingClock::OwnerOutput)
@@ -388,6 +396,7 @@ fn build_at(
                         target,
                         scale,
                         fallback,
+                        centering,
                         scale_transition: None,
                     },
                 };
@@ -400,6 +409,7 @@ fn build_at(
                         target,
                         scale,
                         fallback,
+                        centering,
                         ..
                     }) = entry
                 {
@@ -412,6 +422,7 @@ fn build_at(
                         value: FramingValue::Follow {
                             target: target.clone(),
                             scale: from,
+                            centering: *centering,
                             fallback: FramingPose {
                                 scale: fallback
                                     .scale

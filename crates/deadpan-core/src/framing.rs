@@ -4,6 +4,8 @@
 //! declared Q32 round-even numeric grid; it never changes the sampled time.
 
 #[cfg(test)]
+mod centering_tests;
+#[cfg(test)]
 mod follow_range_tests;
 
 mod numeric;
@@ -218,9 +220,50 @@ pub enum FramingValue {
         target: crate::TargetId,
         scale: ExactRatio,
         fallback: FramingPose,
+        #[serde(default, skip_serializing_if = "FollowCentering::is_unconstrained")]
+        centering: FollowCentering,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         scale_transition: Option<FollowScaleTransition>,
     },
+}
+
+/// Policy applied after the live target is projected through inner canvases.
+/// It never alters an unavailable target's authored fallback pose.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FollowCentering {
+    #[default]
+    Unconstrained,
+    /// Keep a zoomed-in view inside its canvas, including any letterbox bars.
+    /// At scale one or below, retain the projected target center unchanged.
+    CanvasClamped,
+}
+
+impl FollowCentering {
+    fn is_unconstrained(&self) -> bool {
+        *self == Self::Unconstrained
+    }
+
+    pub fn apply(self, pose: FramingPose) -> Result<FramingPose, FramingError> {
+        pose.validate()?;
+        if self == Self::Unconstrained || !pose.scale.compare_integer(1).is_gt() {
+            return Ok(pose);
+        }
+        let margin = ExactRatio::ONE
+            .checked_div(pose.scale)?
+            .checked_div(ExactRatio::integer(2))?;
+        let upper = ExactRatio::ONE.checked_sub(margin)?;
+        let clamp = |value: ExactRatio| {
+            if value.compare(margin).is_lt() {
+                margin
+            } else if value.compare(upper).is_gt() {
+                upper
+            } else {
+                value
+            }
+        };
+        FramingPose::new(clamp(pose.center_x), clamp(pose.center_y), pose.scale)?.quantized()
+    }
 }
 
 /// One scale change across the owner's declared clock. Both the live and
@@ -250,7 +293,14 @@ pub struct FollowScaleRange {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct EvaluatedFraming<'a> {
     pub pose: FramingPose,
-    pub follow: Option<(&'a crate::TargetId, ExactRatio)>,
+    pub follow: Option<EvaluatedFollow<'a>>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EvaluatedFollow<'a> {
+    pub target: &'a crate::TargetId,
+    pub scale: ExactRatio,
+    pub centering: FollowCentering,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -490,6 +540,7 @@ impl Framing {
                 target,
                 scale,
                 fallback,
+                centering,
                 scale_transition,
             } => {
                 let evaluated = |base| match scale_transition {
@@ -501,7 +552,11 @@ impl Framing {
                         scale: evaluated(fallback.scale)?,
                         ..*fallback
                     },
-                    follow: Some((target, evaluated(*scale)?)),
+                    follow: Some(EvaluatedFollow {
+                        target,
+                        scale: evaluated(*scale)?,
+                        centering: *centering,
+                    }),
                 });
             }
             FramingValue::Envelope { envelope } => envelope,
@@ -752,6 +807,7 @@ mod follow_transition_tests {
                 target: crate::TargetId::new("speaker").unwrap(),
                 scale: ratio(2, 1),
                 fallback: FramingPose::new(ratio(1, 3), ratio(2, 7), ratio(1, 2)).unwrap(),
+                centering: FollowCentering::Unconstrained,
                 scale_transition: Some(FollowScaleTransition {
                     factor: ratio(2, 1),
                     curve,
@@ -772,7 +828,7 @@ mod follow_transition_tests {
             let value = recipe
                 .evaluate_with_follow_exact(ratio(1, 1), ratio(4, 1))
                 .unwrap();
-            assert_eq!(value.follow.unwrap().1, live);
+            assert_eq!(value.follow.unwrap().scale, live);
             assert_eq!(value.pose.scale, fallback);
             assert_eq!(value.pose.center_x, ratio(1, 3));
             assert_eq!(value.pose.center_y, ratio(2, 7));
@@ -786,7 +842,7 @@ mod follow_transition_tests {
                     .unwrap()
                     .follow
                     .unwrap()
-                    .1,
+                    .scale,
                 ratio(4, 1)
             );
         }
@@ -803,7 +859,7 @@ mod follow_transition_tests {
                 .evaluate_with_follow_exact(local, ExactRatio::ONE)
                 .unwrap();
             assert_eq!(
-                value.follow.unwrap().1,
+                value.follow.unwrap().scale,
                 if local == ExactRatio::ZERO {
                     ratio(3, 5)
                 } else {
@@ -846,7 +902,7 @@ mod follow_transition_tests {
         let value = recipe
             .evaluate_with_follow_exact(ratio(3, 1), ratio(7, 1))
             .unwrap();
-        assert_eq!(value.follow.unwrap().1, expected(3, 5));
+        assert_eq!(value.follow.unwrap().scale, expected(3, 5));
         assert_eq!(value.pose.scale, expected(5, 7));
         assert_eq!(value.pose.center_x, ratio(1, 3));
         for curve in [ZoomCurve::Step, ZoomCurve::Linear, ZoomCurve::Smoothstep] {

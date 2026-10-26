@@ -774,6 +774,7 @@ fn scoped_follow_creep_all_owner_kinds_use_validated_nested_plays_and_exact_isol
                     ExactRatio::new(1, 2).unwrap(),
                 )
                 .unwrap(),
+                centering: Default::default(),
                 scale_transition: None,
             },
         };
@@ -839,7 +840,11 @@ fn scoped_follow_creep_all_owner_kinds_use_validated_nested_plays_and_exact_isol
                 let value = framing
                     .evaluate_with_follow_exact(ExactRatio::integer(local), ExactRatio::integer(4))
                     .unwrap();
-                assert_eq!(value.follow.unwrap().1, live, "{kind}/{clock:?}/{local}");
+                assert_eq!(
+                    value.follow.unwrap().scale,
+                    live,
+                    "{kind}/{clock:?}/{local}"
+                );
                 assert_eq!(value.pose.scale, fallback);
             }
             assert_eq!(
@@ -914,7 +919,7 @@ fn scoped_follow_creep_all_owner_kinds_use_validated_nested_plays_and_exact_isol
             let value = framing
                 .evaluate_with_follow_exact(local, ExactRatio::integer(4))
                 .unwrap();
-            assert_eq!(value.follow.unwrap().1, live);
+            assert_eq!(value.follow.unwrap().scale, live);
             assert_eq!(value.pose.scale, fallback);
         }
         let request = plan.request.as_ref().unwrap();

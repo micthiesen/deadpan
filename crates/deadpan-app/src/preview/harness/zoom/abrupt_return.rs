@@ -132,6 +132,7 @@ fn fixture(d: &mut Driver<'_>, owner: &NodeId, follow: bool) -> Result<usize, St
         Framing {
             clock: retained_clock(),
             value: FramingValue::Follow {
+                centering: Default::default(),
                 target: target_id.clone(),
                 scale: ExactRatio::new(3, 2).unwrap(),
                 fallback: FramingPose::new(

@@ -380,6 +380,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
                         scale,
                         fallback,
                         scale_transition,
+                        ..
                     },
             }),
         ) => {

@@ -11,6 +11,7 @@ fn follow() -> Framing {
             target: TargetId::new("speaker").unwrap(),
             scale: ratio(2, 1),
             fallback: FramingPose::new(ratio(1, 3), ratio(2, 7), ratio(1, 2)).unwrap(),
+            centering: Default::default(),
             scale_transition: Some(FollowScaleTransition {
                 factor: ratio(2, 1),
                 curve: framing_zoom::ZoomCurve::Linear,

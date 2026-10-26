@@ -5,8 +5,8 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 ## Current continuation, 2026-10-25
 
 The [progress reassessment](../PROGRESS_ASSESSMENT.md) supersedes the inherited
-89% estimate with about **84% acceptance coverage** after the qualifications
-below (84.2634%). Use the fixed 162-criterion
+89% estimate with about **85% acceptance coverage** after the qualifications
+below (84.5238%). Use the fixed 162-criterion
 ledger in progress.json; tools/progress/update.py computes the score. Preserve
 legacy history and never infer a progress rate across the calibration change.
 Nine requirements are Complete, fifteen Partial after closing the native and
@@ -41,13 +41,27 @@ ink-aware single-line elision and bounded fractional positioning. The original
 media witness revision-ID failure and native panic/backtrace remain explicit.
 Coverage gains 0.2604 points; strict completion remains 9/24, all gates open.
 
-The next concrete DP-08.4 gap is targeted escalation Explode. Preserve its live
-target and existing post-projection canvas clamp in ordinary per-play wrappers,
-including each following gap. A typed Follow centering policy can reuse the
-shared Plan/Camera resolver; no such policy is implemented yet. A one-play
-Repeat loses the original escalation index and is not a substitute. Camera's
-current outer-escalation preview skip also needs a direct regression before
-claiming original/exploded preview equivalence.
+[Targeted escalation Explode](../qualification/targeted-explode-2026-10-25.md)
+now retains live targets and explicit canvas containment in ordinary per-play
+wrappers, including following gaps. Child Camera previews reproject outer
+escalations; target, Scale and Arrival/Curve edits preserve the policy. Complete
+media/PCM/history cases, independent review and final 60/120 Hz native replays
+pass 580 zoom checks plus Kestrel each. Final compact Camera help and controls
+fit at 960×640. Original fixture, IME, disk-space and layout failures remain
+retained. DP-08.4 gains 0.2604 points; strict completion stays 9/24, all gates open.
+
+The next concrete native gap is interactive sampled-target framing over a
+contained Time range in explicit This play. Direct Zoom/Creep refuses, and
+native scoped Split cannot supply a fragment workaround. Keep the recording
+refusal from §7.4. The App can reuse submit_framing → Scoped SetFraming without
+a schema or semantic-program extension. Sample the actual root Edit In for
+Smash and Out−1 for Creep through exact owner projection; the existing scoped
+zoom_absolute helper returns the cursor and cannot be reused unchanged. Use
+Center::Point even for a full-owner normalized range so it does not become a
+live Follow accidentally. Preserve outside-path refusals and Creep's existing
+held-arrival suffix contract. Face/Region asynchronous proposals stay outside
+this bounded slice. Record the limitation in existing partial DP-04.7/05.3/05.4;
+strict DP-08 remains Partial despite its full coarse operation checklist.
 
 [Original analysis windows](../qualification/analysis-windows-2026-10-25.md)
 are implemented and verified. The CLI's new retained session/window API keeps

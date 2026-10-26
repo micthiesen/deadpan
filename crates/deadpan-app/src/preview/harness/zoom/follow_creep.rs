@@ -411,6 +411,7 @@ fn scale_adjustment(d: &mut Driver<'_>, animated: &Option<Framing>) -> Result<()
                         scale: old_scale,
                         fallback: old_fallback,
                         scale_transition: old_transition,
+                        ..
                     },
             }),
             Some(Framing {
@@ -421,6 +422,7 @@ fn scale_adjustment(d: &mut Driver<'_>, animated: &Option<Framing>) -> Result<()
                         scale,
                         fallback,
                         scale_transition,
+                        ..
                     },
             }),
         ) => {
@@ -609,7 +611,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.check(
         "Releasing, adjusting and re-following creates a deliberate fixed Follow",
         matches!(&refollowed, Some(Framing { value: FramingValue::Follow {
-            target, scale, fallback, scale_transition: None }, .. })
+            target, scale, fallback, scale_transition: None, .. }, .. })
             if target.as_str() == "target-1" && scale.compare(installed.scale).is_gt()
                 && *scale == fallback.scale),
         json!({"target":"target-1","animation":"removed","scale":"adjusted"}),

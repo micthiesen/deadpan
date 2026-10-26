@@ -588,6 +588,7 @@ fn a_target_in_use_refuses_deletion_and_an_unused_one_deletes_in_one_undo() {
     let follow = deadpan_core::Framing {
         clock: deadpan_core::FramingClock::OwnerOutput,
         value: deadpan_core::FramingValue::Follow {
+            centering: Default::default(),
             target: id.clone(),
             scale: deadpan_core::ExactRatio::integer(2),
             fallback: deadpan_core::FramingPose::identity(),

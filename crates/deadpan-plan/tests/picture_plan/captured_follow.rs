@@ -251,6 +251,7 @@ fn captured_hold_follow_uses_frozen_source_point_and_complete_output_clock() {
     let follow = |scale_transition| Framing {
         clock: FramingClock::OwnerOutput,
         value: FramingValue::Follow {
+            centering: Default::default(),
             target: TargetId::new("point").unwrap(),
             scale: ExactRatio::ONE,
             fallback: pose(q(1, 3), q(2, 3), q(1, 2)),

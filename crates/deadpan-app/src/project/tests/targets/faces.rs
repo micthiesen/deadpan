@@ -104,6 +104,7 @@ fn follow() -> Framing {
     Framing {
         clock: FramingClock::OwnerOutput,
         value: FramingValue::Follow {
+            centering: Default::default(),
             target: TargetId::new("face-1").unwrap(),
             scale: ExactRatio::new(27, 20).unwrap(),
             fallback: FramingPose {

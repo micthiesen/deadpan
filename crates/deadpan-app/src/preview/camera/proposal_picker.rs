@@ -706,6 +706,7 @@ mod tests {
             base_scale: camera.draft.pose().scale,
             base_live: ExactRatio::ONE,
             base_fallback: FramingPose::identity(),
+            centering: FollowCentering::Unconstrained,
             clock: FramingClock::OwnerOutput,
             scale_transition: None,
         });
@@ -784,6 +785,7 @@ mod tests {
             base_scale: ratio(3, 2),
             base_live: ratio(1, 1),
             base_fallback: FramingPose::identity(),
+            centering: FollowCentering::CanvasClamped,
             clock: FramingClock::RetainedOutput {
                 offset: ratio(1, 3),
                 duration: ratio(17, 2),

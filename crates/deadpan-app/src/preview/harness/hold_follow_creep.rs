@@ -338,7 +338,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         .collect::<std::collections::BTreeMap<_, _>>();
     d.check("Whole-Hold creep records Keep intent and preserves timing, media and every other node",
         matches!(&animated,Some(Framing {clock:FramingClock::OwnerOutput,value:FramingValue::Follow {
-            target,scale,fallback,scale_transition:Some(FollowScaleTransition {factor,curve:ZoomCurve::Linear,range:None})}})
+            target,scale,fallback,centering:deadpan_core::FollowCentering::Unconstrained,scale_transition:Some(FollowScaleTransition {factor,curve:ZoomCurve::Linear,range:None})}})
             if target.as_str()=="target-2" && *scale==ratio(11,10) && fallback.scale==ratio(11,10) && *factor==ExactRatio::integer(2))
             && recipe(d,&hold)==Some(held.clone()) && others==unchanged_others
             && d.app().sequence_length()==132 && d.app().source_cursor==original_cursor && d.app().sequence_cursor==edit_cursor

@@ -12,6 +12,7 @@ fn recipe(curve: ZoomCurve) -> Framing {
             target: crate::TargetId::new("moving-subject").unwrap(),
             scale: ratio(2, 1),
             fallback: FramingPose::new(ratio(1, 3), ratio(2, 7), ratio(1, 2)).unwrap(),
+            centering: Default::default(),
             scale_transition: Some(FollowScaleTransition {
                 factor: ratio(3, 1),
                 curve,
@@ -37,14 +38,19 @@ fn ranged_follow_keeps_prefix_and_target_then_jumps_ramps_and_holds_both_bases()
             let state = value
                 .evaluate_with_follow_exact(ratio(n, d), ratio(8, 1))
                 .unwrap();
-            assert_eq!(state.follow.unwrap().0.as_str(), "moving-subject");
+            assert_eq!(state.follow.unwrap().target.as_str(), "moving-subject");
             assert_eq!(state.pose.center_x, ratio(1, 3));
             assert_eq!(state.pose.center_y, ratio(2, 7));
             assert_eq!(
                 state.pose.scale,
-                state.follow.unwrap().1.checked_div(ratio(4, 1)).unwrap()
+                state
+                    .follow
+                    .unwrap()
+                    .scale
+                    .checked_div(ratio(4, 1))
+                    .unwrap()
             );
-            state.follow.unwrap().1
+            state.follow.unwrap().scale
         };
         assert_eq!(at(0, 1), ratio(2, 1));
         assert_eq!(at(3, 2), ratio(2, 1));
@@ -137,7 +143,7 @@ fn ranged_follow_uses_wide_progress_and_independent_round_even_scale_oracle() {
     };
     let q = i128::from(FRAMING_NUMERIC_SCALE);
     let oracle = |n, d| ratio(round(round(n * q, d) + round(2 * n * q, d), 2), q);
-    assert_eq!(state.follow.unwrap().1, oracle(3, 5));
+    assert_eq!(state.follow.unwrap().scale, oracle(3, 5));
     assert_eq!(state.pose.scale, oracle(5, 7));
 }
 

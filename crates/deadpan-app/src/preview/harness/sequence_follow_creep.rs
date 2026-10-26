@@ -308,7 +308,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     expected_group.framing = animated.clone();
     d.check("One Keep creep changes only the group framing and records invocation-relative intent",
         matches!(&animated, Some(Framing {clock:FramingClock::OwnerOutput,value:FramingValue::Follow {
-            target,scale,fallback,scale_transition:Some(FollowScaleTransition {factor,curve:ZoomCurve::Linear,range:None})}})
+            target,scale,fallback,centering:deadpan_core::FollowCentering::Unconstrained,scale_transition:Some(FollowScaleTransition {factor,curve:ZoomCurve::Linear,range:None})}})
             if target.as_str()=="target-1" && *scale==ratio(11,10) && fallback.scale==ratio(11,10) && *factor==ExactRatio::integer(2))
             && other_nodes_unchanged && current.document.nodes().get(&group)==Some(&expected_group)
             && baseline.document.nodes().len()==current.document.nodes().len()
@@ -528,7 +528,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     expected_wrapper.framing = retime_creep.clone();
     d.check("The ordinary Retime wrapper accepts Keep creep while preserving the complete group, maps and audio",
         matches!(&retime_creep,Some(Framing {clock:FramingClock::OwnerOutput,value:FramingValue::Follow {
-            target,scale,fallback,scale_transition:Some(FollowScaleTransition {factor,curve:ZoomCurve::Linear,range:None})}})
+            target,scale,fallback,centering:deadpan_core::FollowCentering::Unconstrained,scale_transition:Some(FollowScaleTransition {factor,curve:ZoomCurve::Linear,range:None})}})
             if target.as_str()=="target-1"&&*scale==ratio(11,10)&&fallback.scale==ratio(11,10)&&*factor==ExactRatio::integer(2))
             && changed.document.nodes().get(&retime)==Some(&expected_wrapper)
             && wrapped.document.nodes().iter().filter(|(id,_)|*id!=&retime).all(|(id,node)|changed.document.nodes().get(id)==Some(node))

@@ -326,7 +326,7 @@ fn whole_hold_keep_follow_creep_replays_live_and_captured_fallback_with_durable_
     )?;
     let other = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
     assert!(matches!(&other.nodes()[&node("other")].framing,
-        Some(Framing{clock:FramingClock::OwnerOutput,value:FramingValue::Follow{target,scale,fallback,
+        Some(Framing{clock:FramingClock::OwnerOutput,value:FramingValue::Follow{target,scale,fallback,centering:deadpan_core::FollowCentering::Unconstrained,
             scale_transition:Some(FollowScaleTransition {factor,curve:ZoomCurve::Linear, range: None })}})
         if target.as_str()=="right" && *scale==ratio(2,1) && fallback.scale==ratio(1,2) && *factor==ratio(3,2)));
     assert_recipe_and_picture(&redone, &other, "other", 131)?;

@@ -210,7 +210,9 @@ fn assert_scoped_follow_commit(
                 // same-target centering can shift one unit after Q32 rounding.
                 let value = framing
                     .evaluate_with_follow_exact(actual.local_position, actual.effective_duration)?;
-                let (target, live_scale) = value.follow.unwrap();
+                let followed = value.follow.unwrap();
+                let target = followed.target;
+                let live_scale = followed.scale;
                 let mut pose = value.pose;
                 if let Some((asset, point)) = b.picture.follow_point()
                     && &after.targets()[target].asset == asset

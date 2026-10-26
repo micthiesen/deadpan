@@ -247,6 +247,7 @@ fn assert_copy_target(copied: AttentionTarget) {
             target: TargetId::new("speaker").unwrap(),
             scale: ExactRatio::integer(2),
             fallback: crate::FramingPose::identity(),
+            centering: Default::default(),
             scale_transition: None,
         },
     });

@@ -206,6 +206,28 @@ impl CameraFields {
             .map_err(|error| error.to_string());
     }
 
+    /// Refresh target-owned centers after projection without resetting the
+    /// editable scale/arrival buffers, IME composition or pending curve edit.
+    pub fn sync_follow_center(&mut self, center: [ExactRatio; 2]) {
+        self.pose.center_x = center[0];
+        self.pose.center_y = center[1];
+        for field in &mut self.fields {
+            if matches!(field.component, Component::CenterX | Component::CenterY) {
+                field.text = format_percent(field.component.value(self.pose));
+                field.dirty = false;
+                field.composing = false;
+                field.composition_base = None;
+            }
+        }
+        if self.validation.is_ok() {
+            self.validation = if self.fields.iter().any(|field| field.composing) {
+                Err("Finish text composition before applying framing.".into())
+            } else {
+                self.build_pose()
+            };
+        }
+    }
+
     /// Accept a valid local preview without rewriting a field still being
     /// typed. In particular, `150.` must retain its decimal separator for the
     /// next native text event. Other fields may show a rebased live scale.
@@ -306,7 +328,7 @@ impl CameraFields {
                 focus_after[index] = response.has_focus();
             }
             if let Some((_, curve)) = &mut self.animation {
-                ui.label("Arrival curve · Enter / Space");
+                ui.label("Arrival curve · Enter");
                 let name = match curve {
                     ZoomCurve::Step => "Step",
                     ZoomCurve::Linear => "Linear",
@@ -605,6 +627,77 @@ fn format_percent(value: ExactRatio) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn follow_center_sync_preserves_unfinished_scale_and_arrival_composition() {
+        let mut fields = CameraFields::new(exact_pose());
+        fields.set_centers_locked(true);
+        fields.sync_animation(Some((ExactRatio::integer(3), ZoomCurve::Linear)));
+        fields.fields[2].text = "200.".into();
+        fields.fields[2].dirty = true;
+        fields.validation = fields.build_pose();
+        fields.sync_follow_center([ExactRatio::new(1, 3).unwrap(), ExactRatio::ONE]);
+        assert_eq!(fields.fields[2].text, "200.");
+        assert!(fields.fields[2].dirty);
+        assert_eq!(
+            fields.validation.as_ref().unwrap().scale,
+            ExactRatio::integer(2)
+        );
+        fields.fields[3].text = "300.".into();
+        fields.fields[3].dirty = true;
+        fields.fields[3].composing = true;
+        fields.fields[3].composition_base = Some(("300".into(), false));
+        fields.curve_changed = true;
+        let buffers = fields.fields[2..]
+            .iter()
+            .map(|field| {
+                (
+                    field.text.clone(),
+                    field.dirty,
+                    field.composing,
+                    field.composition_base.clone(),
+                )
+            })
+            .collect::<Vec<_>>();
+        let center = [
+            ExactRatio::new(1, 4).unwrap(),
+            ExactRatio::new(3, 4).unwrap(),
+        ];
+        fields.sync_follow_center(center);
+        assert_eq!(
+            fields.fields[2..]
+                .iter()
+                .map(|field| (
+                    field.text.clone(),
+                    field.dirty,
+                    field.composing,
+                    field.composition_base.clone()
+                ))
+                .collect::<Vec<_>>(),
+            buffers
+        );
+        assert!(fields.curve_changed);
+        assert_eq!(
+            fields.animation,
+            Some((ExactRatio::integer(3), ZoomCurve::Linear))
+        );
+        assert_eq!(fields.pose.center_x, center[0]);
+        assert_eq!(fields.pose.center_y, center[1]);
+        assert!(
+            !fields.is_valid(),
+            "Active arrival composition still blocks Apply"
+        );
+        assert_eq!(
+            fields.error_message(),
+            Some("Finish text composition before applying framing.")
+        );
+        fields.validation = Err("Keep the pending field error".into());
+        fields.sync_follow_center([center[1], center[0]]);
+        assert_eq!(
+            fields.validation,
+            Err("Keep the pending field error".into())
+        );
+    }
 
     fn run_ui(context: &egui::Context, input: egui::RawInput, draw: impl FnMut(&mut egui::Ui)) {
         context.enable_accesskit();

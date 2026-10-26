@@ -170,6 +170,7 @@ fn fixture() -> Result<Fixture> {
                     duration: ExactRatio::integer(12),
                 },
                 value: FramingValue::Follow {
+                    centering: Default::default(),
                     target: TargetId::new("moving")?,
                     scale: q(3, 2),
                     fallback: FramingPose::new(q(9, 10), q(4, 5), q(5, 4))?,
@@ -378,6 +379,7 @@ fn semantic_scoped_range_follow_maps_exact_bounds_and_commits_one_durable_edit()
         scale,
         fallback,
         scale_transition,
+        ..
     } = &framing.value
     else {
         panic!("range Keep must preserve live Follow");
@@ -394,7 +396,7 @@ fn semantic_scoped_range_follow_maps_exact_bounds_and_commits_one_durable_edit()
         (90, q(12, 5), q(2, 1)),
     ] {
         let evaluated = framing.evaluate_with_follow_exact(q(local, 1), q(120, 1))?;
-        assert_eq!(evaluated.follow.unwrap().1, live);
+        assert_eq!(evaluated.follow.unwrap().scale, live);
         assert_eq!(evaluated.pose.scale, fallback_scale);
     }
     let before = RenderPlan::compile(&document)?;

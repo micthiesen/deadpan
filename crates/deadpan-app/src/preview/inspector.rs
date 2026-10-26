@@ -350,6 +350,15 @@ impl Inspector {
                 }
             };
             fields.push(("Framing", description));
+            if matches!(
+                framing.value,
+                deadpan_core::FramingValue::Follow {
+                    centering: deadpan_core::FollowCentering::CanvasClamped,
+                    ..
+                }
+            ) {
+                fields.push(("Follow view", "Inside canvas above 100%".into()));
+            }
         }
         {
             use deadpan_core::{AudioBoundaryKind as Kind, AudioEdgePolicy};

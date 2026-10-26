@@ -170,6 +170,7 @@ fn semantic_scoped_zoom_keep_preserves_live_follow_and_retained_clock_after_isol
             framing: Some(Framing {
                 clock,
                 value: FramingValue::Follow {
+                    centering: Default::default(),
                     target: target.clone(),
                     scale: ExactRatio::integer(2),
                     fallback,
@@ -275,6 +276,7 @@ fn semantic_scoped_zoom_keep_preserves_live_follow_and_retained_clock_after_isol
     assert_eq!(
         framing.value,
         FramingValue::Follow {
+            centering: Default::default(),
             target,
             scale: ExactRatio::integer(3),
             fallback: FramingPose {

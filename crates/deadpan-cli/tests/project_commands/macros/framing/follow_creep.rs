@@ -9,6 +9,7 @@ pub(super) fn follow(target: &str, scale: ExactRatio, fallback_scale: ExactRatio
     Framing {
         clock: FramingClock::OwnerOutput,
         value: FramingValue::Follow {
+            centering: Default::default(),
             target: TargetId::new(target).unwrap(),
             scale,
             fallback: FramingPose::new(ratio(1, 3), ratio(2, 3), fallback_scale).unwrap(),
@@ -153,6 +154,7 @@ fn keep_creep_rebinds_follow_bases_and_target_with_atomic_refusal_and_durable_hi
     let expected = Framing {
         clock: FramingClock::OwnerOutput,
         value: FramingValue::Follow {
+            centering: Default::default(),
             target: TargetId::new("left")?,
             scale: ratio(3, 2),
             fallback: FramingPose::new(ratio(1, 3), ratio(2, 3), ratio(3, 5))?,
@@ -238,7 +240,7 @@ fn keep_creep_rebinds_follow_bases_and_target_with_atomic_refusal_and_durable_hi
     let store = ProjectStore::open(&package, AccessMode::ReadOnly)?;
     let after = store.snapshot()?;
     assert!(matches!(&after.nodes()[&node("camera-source")].framing,
-        Some(Framing { value: FramingValue::Follow { target, scale, fallback,
+        Some(Framing { value: FramingValue::Follow { target, scale, fallback, centering: deadpan_core::FollowCentering::Unconstrained,
             scale_transition: Some(FollowScaleTransition { factor, curve: ZoomCurve::Linear, range: None }) }, .. })
         if target.as_str() == "right" && *scale == ratio(2, 1)
             && fallback.scale == ratio(1, 2) && *factor == ratio(3, 2)));

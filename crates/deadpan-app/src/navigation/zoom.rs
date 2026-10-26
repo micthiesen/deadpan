@@ -382,13 +382,19 @@ pub fn describe(framing: Option<&Framing>, label: &dyn Fn(&TargetId) -> String) 
         Some(FramingValue::Follow {
             target,
             scale,
+            centering,
             scale_transition,
             ..
         }) => {
             format!(
-                "{} following {}",
+                "{} following {}{}",
                 follow_scale_label(*scale, *scale_transition),
-                label(target)
+                label(target),
+                if *centering == deadpan_core::FollowCentering::CanvasClamped {
+                    " · keeps target view inside canvas above 100%"
+                } else {
+                    ""
+                }
             )
         }
         Some(FramingValue::Envelope { envelope }) => {

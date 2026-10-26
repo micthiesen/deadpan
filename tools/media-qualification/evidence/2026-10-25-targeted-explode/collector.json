@@ -1,0 +1,35 @@
+{
+  "collector_bytes": 15101,
+  "collector_script": "/tmp/deadpan-targeted-explode-2026-10-25/task/collect.py",
+  "collector_sha256": "ff1314c2ad3fa422aedd45e724dd7f532eb02e0aef014a08a5d2a4adf3a81db2",
+  "destination": "/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-25-targeted-explode",
+  "freeze_requested": true,
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+  "python": "3.15.0 (main, Oct  9 2026, 11:16:41) [Clang 21.0.0 (clang-2100.3.34.2)]",
+  "scratch_root": "/tmp/deadpan-targeted-explode-2026-10-25",
+  "sixth_receipt_included": true,
+  "status": "frozen; all owner-confirmed final runs passed and complete",
+  "terminal_files": [
+    "history/explode-request.json=/tmp/deadpan-targeted-explode-2026-10-25/native-history-request.json",
+    "runs/extract_history.py=/tmp/deadpan-targeted-explode-2026-10-25/task/extract_history.py",
+    "runs/source-map-delta-media-second-to-release-seventh.json=/tmp/deadpan-targeted-explode-2026-10-25/source-map-delta-media-second-to-release-seventh.json",
+    "runs/audit_source_maps.py=/tmp/deadpan-targeted-explode-2026-10-25/task/audit_source_maps.py"
+  ],
+  "terminal_trees": [
+    "center-preserved=/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpTL93zZ",
+    "outer-follow-cancellation=/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpFjfkjq",
+    "corrected-add=/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpDxN6cg",
+    "corrected-multiply=/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpvMxmet",
+    "native-first=/tmp/deadpan-targeted-explode-2026-10-25/native-first",
+    "native-second=/tmp/deadpan-targeted-explode-2026-10-25/native-second",
+    "native-second-retained=/tmp/deadpan-targeted-explode-2026-10-25/native-second-retained",
+    "native-third=/tmp/deadpan-targeted-explode-2026-10-25/native-third",
+    "native-fourth=/tmp/deadpan-targeted-explode-2026-10-25/native-fourth",
+    "native-fifth=/tmp/deadpan-targeted-explode-2026-10-25/native-fifth",
+    "native-final=/tmp/deadpan-targeted-explode-2026-10-25/native-final",
+    "native-final-v2=/tmp/deadpan-targeted-explode-2026-10-25/native-final-v2",
+    "native-final-quiet=/tmp/deadpan-targeted-explode-2026-10-25/native-final-quiet"
+  ],
+  "unselected_png_bytes_omitted": true,
+  "updated_at_utc": "2026-10-26T05:01:04Z"
+}

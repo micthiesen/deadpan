@@ -357,6 +357,7 @@ fn semantic_framing_uses_live_follow_pose_at_retimed_source_clock_instead_of_fal
             framing: Some(Framing {
                 clock: FramingClock::OwnerOutput,
                 value: FramingValue::Follow {
+                    centering: Default::default(),
                     target,
                     scale: ExactRatio::integer(2),
                     fallback,

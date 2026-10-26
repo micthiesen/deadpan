@@ -527,7 +527,7 @@ fn scoped_follow_creep_all_five_owners_keep_nested_play_clocks_isolation_and_dur
         let (staged, mapped, frames) = assert_scoped_follow_commit(&package, &fresh, &result)?;
         assert_eq!(frames, (0..9).collect::<Vec<_>>());
         assert!(
-            matches!(&staged.nodes()[&mapped.target.node].framing, Some(Framing { clock: FramingClock::OwnerOutput, value: FramingValue::Follow { target, scale, fallback, scale_transition: Some(_) } }) if target.as_str() == "other" && *scale == ratio(2, 1) && fallback.scale == ratio(2, 1))
+            matches!(&staged.nodes()[&mapped.target.node].framing, Some(Framing { clock: FramingClock::OwnerOutput, value: FramingValue::Follow { target, scale, fallback, centering: deadpan_core::FollowCentering::Unconstrained, scale_transition: Some(_) } }) if target.as_str() == "other" && *scale == ratio(2, 1) && fallback.scale == ratio(2, 1))
         );
         let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
         writer.undo(staged.revision_id(), RevisionId::new("staged-undo")?)?;

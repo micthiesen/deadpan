@@ -151,6 +151,14 @@ saved target while following switches the follow's target, an explicit target
 change rather than a hidden crop coordinate. Following an enveloped beat replaces
 its curve only on this explicit request, and the inspector says so.
 
+Follow normally centers freely on the projected target. An exploded targeted
+Repeat carries an explicit `CanvasClamped` policy instead: above 1×, the center
+is bounded so the view stays inside its layer's canvas, including letterbox
+bars. At 1× or below it remains free. Camera and the inspector explain this
+policy; scale/arrival/curve changes and target replacement retain it. An absent
+or hidden target keeps its authored fallback without applying a live-target
+clamp. The default unconstrained policy is omitted from serialized framing.
+
 An animated Follow also exposes Arrival scale (%) and Arrival curve. Tab reaches
 Scale, Arrival, then Curve; Enter or Space on Curve switches Linear/Smoothstep,
 and Up/Down adjusts the focused numeric field or switches the curve. Arrival
@@ -159,6 +167,10 @@ Untouched exact values, its timing window and fallback center remain intact.
 Valid typing previews immediately without rewriting an unfinished decimal;
 invalid text or active IME composition blocks Apply. Enter finishes a text field,
 then Enter in the viewer or Apply commits one edit. Escape restores the entry.
+
+Editing a child in Camera also reprojects outer Follow and targeted escalation
+layers through the temporary crop. Apply uses those same committed-plan rules;
+Escape restores both the authored framing and escalation views captured on entry.
 
 The preview resolves the follow exactly as the committed plan does
 (`deadpan_plan::follow_pose`: the target's center at the picture's source time,

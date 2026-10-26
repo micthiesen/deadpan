@@ -127,6 +127,7 @@ fn normalized_ranges_preserve_integral_builder_results_and_explicit_full_follow_
             target: TargetId::new("moving").unwrap(),
             scale: ratio(3, 2),
             fallback,
+            centering: Default::default(),
             scale_transition: None,
         },
     };
@@ -184,6 +185,7 @@ fn normalized_follow_range_uses_fractional_owner_extent_without_recipe_frame_rou
             duration: ratio(7, 1),
         },
         value: FramingValue::Follow {
+            centering: Default::default(),
             target: TargetId::new("moving").unwrap(),
             scale: ratio(2, 1),
             fallback,
@@ -219,8 +221,8 @@ fn normalized_follow_range_uses_fractional_owner_extent_without_recipe_frame_rou
         let actual = result
             .evaluate_with_follow_exact(local, ratio(7, 2))
             .unwrap();
-        assert_eq!(actual.follow.unwrap().0.as_str(), "moving");
-        assert_eq!(actual.follow.unwrap().1, live);
+        assert_eq!(actual.follow.unwrap().target.as_str(), "moving");
+        assert_eq!(actual.follow.unwrap().scale, live);
         assert_eq!(actual.pose.scale, silent);
         assert_eq!(
             [actual.pose.center_x, actual.pose.center_y],
@@ -325,6 +327,7 @@ fn whole_beat_smash_follows_a_target_and_otherwise_keeps_a_static_pose() {
     assert_eq!(
         followed.value,
         FramingValue::Follow {
+            centering: Default::default(),
             target: id,
             scale: ratio(27, 20),
             fallback: FramingPose {
@@ -487,6 +490,7 @@ fn whole_beat_keep_retains_a_follow_and_refuses_to_flatten_a_path() {
             duration: ExactRatio::integer(12),
         },
         value: FramingValue::Follow {
+            centering: Default::default(),
             target: id.clone(),
             scale: ratio(11, 10),
             fallback,
@@ -511,6 +515,7 @@ fn whole_beat_keep_retains_a_follow_and_refuses_to_flatten_a_path() {
     assert_eq!(
         smash.value,
         FramingValue::Follow {
+            centering: Default::default(),
             target: id,
             scale: ratio(2, 1),
             fallback: FramingPose {
@@ -615,6 +620,7 @@ fn retained_clock_static_poses_are_ranged_like_any_static_pose() {
     let follow = Framing {
         clock: FramingClock::OwnerOutput,
         value: FramingValue::Follow {
+            centering: Default::default(),
             target: TargetId::new("target-1").unwrap(),
             scale: ratio(3, 2),
             fallback: zoomed,
@@ -680,6 +686,7 @@ fn follow_creep_keeps_both_bases_and_requires_a_whole_admitted_owner() {
             duration: ratio(7, 1),
         },
         value: FramingValue::Follow {
+            centering: Default::default(),
             target: TargetId::new("speaker").unwrap(),
             scale: ratio(2, 1),
             fallback,
@@ -708,7 +715,7 @@ fn follow_creep_keeps_both_bases_and_requires_a_whole_admitted_owner() {
         let value = result
             .evaluate_with_follow_exact(ratio(1, 1), ratio(4, 1))
             .unwrap();
-        assert_eq!(value.follow.unwrap().1, ratio(5, 2));
+        assert_eq!(value.follow.unwrap().scale, ratio(5, 2));
         assert_eq!(value.pose.scale, ratio(5, 8));
         assert_eq!(
             [value.pose.center_x, value.pose.center_y],
@@ -728,7 +735,7 @@ fn follow_creep_keeps_both_bases_and_requires_a_whole_admitted_owner() {
         let initial = explicit
             .evaluate_with_follow_exact(ExactRatio::ZERO, ratio(4, 1))
             .unwrap();
-        assert_eq!(initial.follow.unwrap().1, ratio(3, 1));
+        assert_eq!(initial.follow.unwrap().scale, ratio(3, 1));
         assert_eq!(initial.pose.scale, ratio(3, 4));
         for range in [Some((0, 10)), Some((1, 9))] {
             let ranged = build(kind, &Center::Keep, &Shot { range, ..admitted })
@@ -804,6 +811,7 @@ fn ranged_follow_creep_preserves_prefix_and_separate_bases_with_an_explicit_from
             duration: ratio(50, 1),
         },
         value: FramingValue::Follow {
+            centering: Default::default(),
             target: TargetId::new("moving").unwrap(),
             scale: ratio(2, 1),
             fallback: FramingPose::new(ratio(1, 3), ratio(2, 7), ratio(1, 2)).unwrap(),
@@ -838,8 +846,8 @@ fn ranged_follow_creep_preserves_prefix_and_separate_bases_with_an_explicit_from
         (8, ratio(4, 1)),
     ] {
         let state = at(frame);
-        assert_eq!(state.follow.unwrap().0.as_str(), "moving");
-        assert_eq!(state.follow.unwrap().1, live);
+        assert_eq!(state.follow.unwrap().target.as_str(), "moving");
+        assert_eq!(state.follow.unwrap().scale, live);
         assert_eq!(state.pose.scale, live.checked_div(ratio(4, 1)).unwrap());
         assert_eq!(state.pose.center_x, ratio(1, 3));
         assert_eq!(state.pose.center_y, ratio(2, 7));
@@ -896,6 +904,7 @@ fn animated_follow(range: Option<crate::FollowScaleRange>) -> Framing {
             duration: ratio(8, 1),
         },
         value: FramingValue::Follow {
+            centering: Default::default(),
             target: TargetId::new("moving-speaker").unwrap(),
             scale: ratio(2, 1),
             fallback: FramingPose::new(ratio(1, 3), ratio(2, 7), ratio(1, 2)).unwrap(),
@@ -968,8 +977,8 @@ fn follow_retune_changes_arrival_and_curve_on_the_existing_clock_for_each_owner(
                 let evaluated = edited
                     .evaluate_with_follow_exact(local, ratio(16, 1))
                     .unwrap();
-                assert_eq!(evaluated.follow.unwrap().0.as_str(), "moving-speaker");
-                assert_eq!(evaluated.follow.unwrap().1, live);
+                assert_eq!(evaluated.follow.unwrap().target.as_str(), "moving-speaker");
+                assert_eq!(evaluated.follow.unwrap().scale, live);
                 assert_eq!(evaluated.pose.scale, fallback);
                 assert_eq!(evaluated.pose.center_x, ratio(1, 3));
                 assert_eq!(evaluated.pose.center_y, ratio(2, 7));
@@ -1011,7 +1020,7 @@ fn follow_retune_explicit_whole_start_rescales_both_bases_without_retiming() {
         let state = edited
             .evaluate_with_follow_exact(ratio(local, 1), ratio(16, 1))
             .unwrap();
-        assert_eq!(state.follow.unwrap().1, live);
+        assert_eq!(state.follow.unwrap().scale, live);
         assert_eq!(state.pose.scale, fallback);
         assert_eq!(state.pose.center_x, ratio(1, 3));
         assert_eq!(state.pose.center_y, ratio(2, 7));
@@ -1074,7 +1083,7 @@ fn follow_retune_ranged_start_keeps_the_prefix_window_and_fallback_ratio() {
             let state = edited
                 .evaluate_with_follow_exact(ratio(local, 1), ratio(16, 1))
                 .unwrap();
-            assert_eq!(state.follow.unwrap().1, live);
+            assert_eq!(state.follow.unwrap().scale, live);
             assert_eq!(state.pose.scale, live.checked_div(ratio(4, 1)).unwrap());
             assert_eq!(state.pose.center_x, ratio(1, 3));
             assert_eq!(state.pose.center_y, ratio(2, 7));
@@ -1245,7 +1254,7 @@ fn follow_retune_helper_requires_an_animation_and_retains_explicit_step_semantic
         let evaluated = changed
             .evaluate_with_follow_exact(ratio(local, 1), ratio(16, 1))
             .unwrap();
-        assert_eq!(evaluated.follow.unwrap().1, live);
+        assert_eq!(evaluated.follow.unwrap().scale, live);
         assert_eq!(evaluated.pose.scale, live.checked_div(ratio(4, 1)).unwrap());
     }
     for scale in [ExactRatio::ZERO, ratio(-1, 1), ratio(1, 65), ratio(65, 1)] {

@@ -26,6 +26,7 @@ fn follow(scale: i64) -> Framing {
     Framing {
         clock: FramingClock::OwnerOutput,
         value: FramingValue::Follow {
+            centering: Default::default(),
             target: TargetId::new("speaker").unwrap(),
             scale: ExactRatio::integer(scale),
             fallback: FramingPose::identity(),

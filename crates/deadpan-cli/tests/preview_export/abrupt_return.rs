@@ -25,6 +25,7 @@ fn path(follow: bool, target: &TargetId) -> Result<Framing> {
         },
         value: if follow {
             FramingValue::Follow {
+                centering: Default::default(),
                 target: target.clone(),
                 scale: ratio(3, 2)?,
                 fallback: FramingPose::new(ratio(1, 3)?, ratio(2, 5)?, ratio(5, 4)?)?,

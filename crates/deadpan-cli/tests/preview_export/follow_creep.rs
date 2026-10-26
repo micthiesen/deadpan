@@ -132,10 +132,15 @@ pub(super) struct Pcm {
 }
 
 pub(super) fn pcm(package: &Path, partitions: &[u32]) -> Result<Pcm> {
+    pcm_samples(package, partitions, SAMPLES)
+}
+
+pub(super) fn pcm_samples(package: &Path, partitions: &[u32], samples: i64) -> Result<Pcm> {
+    assert!(samples > 0);
     assert!(!partitions.is_empty());
     assert!(partitions.iter().all(|count| (1..=256).contains(count)));
     let mut session = ProjectAudioSession::open(package)?;
-    assert_eq!(session.plan().audio_duration()?.0, SAMPLES);
+    assert_eq!(session.plan().audio_duration()?.0, samples);
     let cancelled = AtomicBool::new(false);
     let mut output = Pcm {
         authored: Vec::new(),
@@ -144,8 +149,8 @@ pub(super) fn pcm(package: &Path, partitions: &[u32]) -> Result<Pcm> {
     };
     let mut at = 0;
     let mut partition = 0;
-    while at < SAMPLES {
-        let count = u32::try_from((SAMPLES - at).min(i64::from(partitions[partition])))?;
+    while at < samples {
+        let count = u32::try_from((samples - at).min(i64::from(partitions[partition])))?;
         let authored = session.read_authored_bus(AudioSample(at), count, &cancelled)?;
         let limited = session.read_limited(AudioSample(at), count, &cancelled)?;
         assert_eq!(authored.start, AudioSample(at));
@@ -175,9 +180,9 @@ pub(super) fn pcm(package: &Path, partitions: &[u32]) -> Result<Pcm> {
         at += i64::from(count);
         partition = (partition + 1) % partitions.len();
     }
-    assert_eq!(output.authored.len(), usize::try_from(SAMPLES)?);
-    assert_eq!(output.limited.len(), usize::try_from(SAMPLES)?);
-    assert_eq!(output.limiter_gain.len(), usize::try_from(SAMPLES)?);
+    assert_eq!(output.authored.len(), usize::try_from(samples)?);
+    assert_eq!(output.limited.len(), usize::try_from(samples)?);
+    assert_eq!(output.limiter_gain.len(), usize::try_from(samples)?);
     Ok(output)
 }
 
@@ -295,6 +300,7 @@ fn build_with_range(directory: &Path, ranged: bool, retuned: bool) -> Result<Fix
             framing: Some(Framing {
                 clock: FramingClock::OwnerOutput,
                 value: FramingValue::Follow {
+                    centering: Default::default(),
                     target: target.clone(),
                     scale: ratio(3, 2)?,
                     fallback: FramingPose::new(ratio(1, 3)?, ratio(2, 5)?, ratio(5, 4)?)?,
@@ -360,6 +366,7 @@ fn build_with_range(directory: &Path, ranged: bool, retuned: bool) -> Result<Fix
             value: FramingValue::Follow {
                 target,
                 scale: ratio(3, 2)?,
+                centering: Default::default(),
                 fallback: FramingPose::new(ratio(1, 3)?, ratio(2, 5)?, ratio(5, 4)?)?,
                 scale_transition: Some(FollowScaleTransition {
                     factor: if ranged { ratio(8, 5)? } else { ratio(4, 3)? },

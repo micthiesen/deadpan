@@ -94,6 +94,9 @@ pub mod follow_creep;
 #[path = "abrupt_return.rs"]
 pub mod abrupt_return;
 
+#[path = "targeted_explode.rs"]
+pub mod targeted_explode;
+
 #[path = "inner_repeat_speed.rs"]
 pub mod inner_repeat_speed;
 
@@ -1213,6 +1216,7 @@ pub fn framing(dir: &Path) -> Result<Fixture> {
             framing: Some(Framing {
                 clock: FramingClock::OwnerOutput,
                 value: FramingValue::Follow {
+                    centering: Default::default(),
                     target: target.clone(),
                     scale: zoom,
                     fallback: zoomed,
@@ -1294,6 +1298,7 @@ pub fn letterbox_follow(dir: &Path) -> Result<Fixture> {
             framing: Some(Framing {
                 clock: FramingClock::OwnerOutput,
                 value: FramingValue::Follow {
+                    centering: Default::default(),
                     target: target.clone(),
                     scale: zoom,
                     fallback: FramingPose::new(half, half, zoom)?,

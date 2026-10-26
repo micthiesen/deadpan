@@ -436,17 +436,20 @@ impl Presentation {
         scope: &deadpan_core::InstancePath,
         pose: Option<deadpan_core::FramingPose>,
     ) -> Result<(), String> {
-        self.set_framing_poses(ticket, &[(scope.clone(), pose)])
+        self.set_framing_poses(ticket, &[(scope.clone(), false, pose)])
     }
 
     /// Replace several evaluated operations of the retained picture at once,
     /// such as a Camera layer and the outer follows that see it. Every scope
     /// and pose is checked before any changes, so a failure changes nothing.
+    /// The boolean distinguishes escalation from the same Repeat's authored
+    /// framing, which shares its instance identity.
     pub fn set_framing_poses(
         &mut self,
         ticket: Ticket,
         poses: &[(
             deadpan_core::InstancePath,
+            bool,
             Option<deadpan_core::FramingPose>,
         )],
     ) -> Result<(), String> {
@@ -457,7 +460,7 @@ impl Presentation {
         {
             return Err("The Camera picture changed before the adjustment.".into());
         }
-        for (_, pose) in poses {
+        for (_, _, pose) in poses {
             if let Some(pose) = pose {
                 pose.validate().map_err(|error| error.to_string())?;
             }
@@ -468,20 +471,20 @@ impl Presentation {
             .filter(|decoded| decoded.request.ticket == ticket)
             .ok_or("The Camera picture is no longer available.")?;
         let mut indices = Vec::with_capacity(poses.len());
-        for (scope, _) in poses {
+        for (scope, escalation, _) in poses {
             indices.push(
                 decoded
                     .picture
                     .framing
                     .iter()
-                    .position(|layer| !layer.escalation && &layer.instance == scope)
+                    .position(|layer| layer.escalation == *escalation && &layer.instance == scope)
                     .ok_or("The Camera scope is absent from this picture.")?,
             );
         }
         if indices
             .iter()
             .zip(poses)
-            .all(|(index, (_, pose))| decoded.picture.framing[*index].pose == *pose)
+            .all(|(index, (_, _, pose))| decoded.picture.framing[*index].pose == *pose)
         {
             return Ok(());
         }
@@ -489,7 +492,7 @@ impl Presentation {
             .geometry_revision
             .checked_add(1)
             .ok_or("Camera preview identities are exhausted. Reopen the project.")?;
-        for (index, (_, pose)) in indices.into_iter().zip(poses) {
+        for (index, (_, _, pose)) in indices.into_iter().zip(poses) {
             decoded.picture.framing[index].pose = *pose;
         }
         decoded.geometry_revision = next;

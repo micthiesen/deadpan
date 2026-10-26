@@ -66,16 +66,6 @@ impl Plan {
                 "explode requires a Repeat",
             ));
         };
-        if escalation
-            .as_ref()
-            .and_then(|escalation| escalation.zoom.as_ref())
-            .is_some_and(|zoom| zoom.target.is_some())
-        {
-            // Per-play static framing cannot keep a target-centered zoom.
-            return Err(invalid(
-                "explode cannot yet keep a target-centered escalating zoom; clear its target first",
-            ));
-        }
         let count = usize::try_from(iterations.len()).unwrap_or(usize::MAX);
         if count > MAX_DOCUMENT_NODES {
             return Err(limit("explode would exceed the document node limit"));
@@ -130,10 +120,7 @@ impl Plan {
                 .is_none_or(|entries| entries.get(&self.plays[index]).is_none())
     }
 
-    fn escalated(
-        &self,
-        index: usize,
-    ) -> Result<Option<(i32, Option<crate::FramingPose>)>, EditError> {
+    fn escalated(&self, index: usize) -> Result<Option<(i32, Option<crate::Framing>)>, EditError> {
         let Some(escalation) = &self.escalation else {
             return Ok(None);
         };
@@ -143,7 +130,24 @@ impl Plan {
         let pose = escalation
             .pose(play)
             .map_err(|error| invalid(&error.to_string()))?;
-        Ok((gain != 0 || pose.is_some()).then_some((gain, pose)))
+        let framing = pose.map(|pose| crate::Framing {
+            clock: Default::default(),
+            value: match escalation
+                .zoom
+                .as_ref()
+                .and_then(|zoom| zoom.target.as_ref())
+            {
+                Some(target) => crate::FramingValue::Follow {
+                    target: target.clone(),
+                    scale: pose.scale,
+                    fallback: pose,
+                    centering: crate::FollowCentering::CanvasClamped,
+                    scale_transition: None,
+                },
+                None => crate::FramingValue::Static { pose },
+            },
+        });
+        Ok((gain != 0 || framing.is_some()).then_some((gain, framing)))
     }
 
     fn requirements(
@@ -428,14 +432,9 @@ pub(crate) fn apply(
     for (_, root, gap, wrapper) in plays {
         let members: Vec<_> = std::iter::once(root).chain(gap).collect();
         match wrapper {
-            Some((id, (gain, pose))) => {
+            Some((id, (gain, framing))) => {
                 let mut group = BeatNode::sequence("Escalated play", members);
-                if let Some(pose) = pose {
-                    group.framing = Some(crate::Framing {
-                        clock: Default::default(),
-                        value: crate::FramingValue::Static { pose },
-                    });
-                }
+                group.framing = framing;
                 if gain != 0 {
                     let gain =
                         crate::GainDb::new(gain).map_err(|error| invalid(&error.to_string()))?;

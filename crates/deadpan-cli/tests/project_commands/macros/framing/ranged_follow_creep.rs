@@ -103,6 +103,7 @@ fn ranged_follow_creep_rebinds_each_invocation_and_keeps_durable_undo_and_regist
         let expected = Framing {
             clock: FramingClock::OwnerOutput,
             value: FramingValue::Follow {
+                centering: Default::default(),
                 target: TargetId::new(name)?,
                 scale: base,
                 fallback: FramingPose::new(ratio(1, 3), ratio(2, 3), fallback)?,

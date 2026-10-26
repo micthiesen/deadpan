@@ -41,17 +41,21 @@ Repeat keeps it in its frozen view.
 
 With `zoom.target`, each later play's layer centers on where that target is at
 the picture's source time, seen through the contents' framing, exactly as a
-Follow does. Unlike a Follow it keeps the view inside its layer's canvas: at
-scale `s` both centers are clamped to `[1/(2s), 1 - 1/(2s)]` before the one
-quantization to the framing grid, so a subject near the edge pulls the zoom
+Follow does. It keeps the view inside its layer's canvas: at scale `s` both
+projected centers are clamped to `[1/(2s), 1 - 1/(2s)]` and the resulting pose
+is quantized to the framing grid, so a subject near the edge pulls the zoom
 toward it without moving past the canvas edge. For an Original letterboxed or
 pillarboxed on the canvas, that canvas includes the bars, so a zoom toward a
 subject at the picture's edge can still show part of a bar. Where the picture is not the target's asset, outside the
 target's span, or below a pause's captured geometry, the layer stays centered.
 A scale below 1 is not clamped. Document validation refuses a target the
 project does not have, so deleting a target needs the escalation changed first.
-Explode refuses an escalation with a target, because per-play static framing
-cannot express a moving subject and a Follow does not clamp.
+Explode materializes each affected play and its following gap as an ordinary
+Sequence carrying the play's fixed scale and a live Follow with
+`CanvasClamped` centering. This policy uses the same post-projection clamp as
+the Repeat. The target stays live, with the same centered fallback, through
+later Camera scale/creep edits and target replacement. First-play identity is
+unchanged. Untargeted escalations retain static centered framing.
 
 Audio owner spans record the Repeat's play
 ([`AudioOwnerClock::escalation_millidecibels`](../crates/deadpan-plan/src/audio_owners.rs)),
@@ -102,7 +106,7 @@ are one Undo, macros record it and dot-repeat reapplies it.
 
 ## Remaining
 
-Per-play speed progression, exploding a target escalation, and choosing among
+Per-play speed progression and choosing among
 several targets on one picture by name from `:repeat` (use Camera's picker to
 make one target current). Gap progression, macro recording and setting count,
 gaps and steps in one undoable command are implemented through `SetRepeat`.

@@ -229,7 +229,7 @@ fn effect(
             normalized(json!(node), &aliases) == json!(expected)
         });
     let recipe = matches!(&authored,Some(Framing {clock:FramingClock::OwnerOutput,value:FramingValue::Follow {
-        target,scale,fallback,scale_transition:Some(FollowScaleTransition {factor,curve:ZoomCurve::Linear,
+        target,scale,fallback,centering:deadpan_core::FollowCentering::Unconstrained,scale_transition:Some(FollowScaleTransition {factor,curve:ZoomCurve::Linear,
             range:Some(FollowScaleRange {start:a,end:b,from_factor})})}})
         if target.as_str()=="target-1"&&*scale==ratio(11,10)&&fallback.scale==ratio(11,10)
             && *factor==ExactRatio::integer(2)&&*a==ratio(i128::from(start),36)
