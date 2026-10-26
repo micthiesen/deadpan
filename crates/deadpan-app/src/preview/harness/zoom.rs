@@ -7,6 +7,7 @@ use egui::Key;
 
 use super::*;
 
+mod abrupt_return;
 mod follow_creep;
 mod macros;
 
@@ -384,5 +385,6 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!("Follow target-2"),
         json!(format!("{named:?}")),
     )?;
-    macros::run(d)
+    macros::run(d)?;
+    abrupt_return::run(d)
 }

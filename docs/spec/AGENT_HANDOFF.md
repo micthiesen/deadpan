@@ -6,7 +6,7 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 The [progress reassessment](../PROGRESS_ASSESSMENT.md) supersedes the inherited
 89% estimate with about **84% acceptance coverage** after the qualifications
-below (84.0030%). Use the fixed 162-criterion
+below (84.2634%). Use the fixed 162-criterion
 ledger in progress.json; tools/progress/update.py computes the score. Preserve
 legacy history and never infer a progress rate across the calibration change.
 Nine requirements are Complete, fifteen Partial after closing the native and
@@ -29,6 +29,25 @@ exports verify 240 pictures, complete PCM/limiter equality, zero-offset audio
 and eight-revision portable histories. Source/binary identities and original
 failed runs remain in the compact media evidence collection. DP-08.3 now scores
 1, adding 0.2604 points, with DP-08 still Partial and every gate open.
+
+[Chosen-boundary return](../qualification/abrupt-return-2026-10-25.md) qualifies
+DP-08.2 through existing Split → enter right Partition → Camera Reset on its
+copied inner owner. The prefix retains its complete path clock; ancestor
+framing, sound, marks and full history remain. Two actual exports verify 240
+pictures, complete canonical PCM and zero-offset encoded audio; old-path
+negatives fail exactly frames 80–119. Native evidence includes a live target at
+the seam. Its long label exposed an actual Camera clamp panic, fixed with
+ink-aware single-line elision and bounded fractional positioning. The original
+media witness revision-ID failure and native panic/backtrace remain explicit.
+Coverage gains 0.2604 points; strict completion remains 9/24, all gates open.
+
+The next concrete DP-08.4 gap is targeted escalation Explode. Preserve its live
+target and existing post-projection canvas clamp in ordinary per-play wrappers,
+including each following gap. A typed Follow centering policy can reuse the
+shared Plan/Camera resolver; no such policy is implemented yet. A one-play
+Repeat loses the original escalation index and is not a substitute. Camera's
+current outer-escalation preview skip also needs a direct regression before
+claiming original/exploded preview equivalence.
 
 [Original analysis windows](../qualification/analysis-windows-2026-10-25.md)
 are implemented and verified. The CLI's new retained session/window API keeps

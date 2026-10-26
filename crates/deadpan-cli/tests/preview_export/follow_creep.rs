@@ -125,13 +125,13 @@ fn check_poses(
 }
 
 #[derive(Debug, PartialEq, serde::Serialize)]
-struct Pcm {
+pub(super) struct Pcm {
     authored: Vec<[u32; 2]>,
     limited: Vec<[u32; 2]>,
     limiter_gain: Vec<u64>,
 }
 
-fn pcm(package: &Path, partitions: &[u32]) -> Result<Pcm> {
+pub(super) fn pcm(package: &Path, partitions: &[u32]) -> Result<Pcm> {
     assert!(!partitions.is_empty());
     assert!(partitions.iter().all(|count| (1..=256).contains(count)));
     let mut session = ProjectAudioSession::open(package)?;
@@ -181,7 +181,7 @@ fn pcm(package: &Path, partitions: &[u32]) -> Result<Pcm> {
     Ok(output)
 }
 
-fn same_pcm(actual: &Pcm, expected: &Pcm, context: &str) {
+pub(super) fn same_pcm(actual: &Pcm, expected: &Pcm, context: &str) {
     for (kind, actual, expected) in [
         ("authored", &actual.authored, &expected.authored),
         ("limited", &actual.limited, &expected.limited),
@@ -202,7 +202,7 @@ fn same_pcm(actual: &Pcm, expected: &Pcm, context: &str) {
     }
 }
 
-fn same_authored(actual: &ProjectDocument, expected: &ProjectDocument) -> Result {
+pub(super) fn same_authored(actual: &ProjectDocument, expected: &ProjectDocument) -> Result {
     let mut expected = serde_json::to_value(expected)?;
     expected["revision_id"] = json!(actual.revision_id());
     assert_eq!(serde_json::to_value(actual)?, expected);

@@ -346,6 +346,17 @@ static pose is constant), except that implicit Keep-center creep also accepts
 one fixed Follow as described above. Ranged step/off and explicitly sampled
 target edits on a Follow, or any ranged edit on an existing camera path, refuse
 with their own reason.
+
+For an abrupt return from an existing path at a chosen boundary, move there and
+press `s`. Enter the selected right fragment to reach its copied original
+framing owner, then use Camera `,f`, `r`, Enter. Reset is temporary until Apply;
+Escape keeps the path. Backspace returns to the fragment. One Undo restores
+the framing; the next restores the unsplit owner. The earlier side keeps its
+exact animation and clock. Ancestor framing stays live, so this returns to the
+view entering that owner. Clearing the unframed outer Partition itself cannot
+remove a child's path. The [native and emitted-file qualification](qualification/abrupt-return-2026-10-25.md)
+covers retained Envelope and animated Follow paths, complete audio and history.
+
 A range outside the selected owner refuses. Inside a Repeat, choose This play
 at every enclosing Repeat, then finish `v` / frame motion / `v` before entering
 the framing command. Endpoints stay on the root Edit clock. The plan maps the

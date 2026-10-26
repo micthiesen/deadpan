@@ -1,0 +1,15 @@
+{
+  "collector_bytes": 8038,
+  "collector_script": "/tmp/deadpan-abrupt-return-2026-10-25/finalize_abrupt_return.py",
+  "collector_sha256": "21a26131e6da5ae62a7837ad8cc6f9127788b7cdff60ae5e725696c3c420b35d",
+  "destination": "/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-25-abrupt-return",
+  "media_roots": [
+    "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpEU7RzK",
+    "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpIq3xYE"
+  ],
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+  "python": "3.15.0 (main, Oct  9 2026, 11:16:41) [Clang 21.0.0 (clang-2100.3.34.2)]",
+  "source_root": "/tmp/deadpan-abrupt-return-2026-10-25",
+  "status": "final evidence frozen after independent audit",
+  "updated_at_utc": "2026-10-26T03:18:30Z"
+}

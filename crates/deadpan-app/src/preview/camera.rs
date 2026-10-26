@@ -3134,13 +3134,7 @@ impl DeadpanApp {
             );
         };
         let badge = |at: egui::Pos2, text: &str, fill: egui::Color32| {
-            let font = egui::FontId::monospace(11.0);
-            let galley = painter.layout_no_wrap(text.to_owned(), font, style::CANVAS);
-            let size = galley.size() + egui::vec2(8.0, 4.0);
-            let min = at.clamp(canvas.min, canvas.max - size);
-            let rect = egui::Rect::from_min_size(min, size);
-            painter.rect_filled(rect, 3.0, fill);
-            painter.galley(rect.min + egui::vec2(4.0, 2.0), galley, style::CANVAS);
+            paint_camera_badge(&painter, canvas, at, text, fill);
         };
         painter.line_segment(
             [center - egui::vec2(7.0, 0.0), center + egui::vec2(7.0, 0.0)],
@@ -3741,6 +3735,57 @@ impl DeadpanApp {
     }
 }
 
+/// Camera only paints overlays on canvases at least 24 points on each side.
+/// Bound the one-line label before positioning it: clamping an unbounded
+/// target name can invert the permitted position range on a compact viewer.
+fn paint_camera_badge(
+    painter: &egui::Painter,
+    canvas: egui::Rect,
+    at: egui::Pos2,
+    text: &str,
+    fill: egui::Color32,
+) -> egui::Rect {
+    let padding = egui::vec2(4.0, 2.0);
+    let mut job = egui::text::LayoutJob::simple_singleline(
+        text.to_owned(),
+        egui::FontId::monospace(11.0),
+        style::CANVAS,
+    );
+    let text_width = canvas.width() - 2.0 * padding.x;
+    let pixel = painter.ctx().pixels_per_point().recip();
+    job.wrap = egui::text::TextWrapping::truncate_at_width(text_width);
+    let galley = painter.ctx().fonts_mut(|fonts| {
+        let galley = fonts.layout_job(job.clone());
+        let overflow = (galley.rect.union(galley.mesh_bounds).width() - text_width).max(0.0);
+        if overflow > 0.0 {
+            // Font ink can overhang logical advances. Re-elide with that
+            // measured overhang and one physical pixel of rounding room.
+            job.wrap.max_width = (text_width - overflow - pixel).max(0.0);
+            fonts.layout_job(job)
+        } else {
+            galley
+        }
+    });
+    // Account for actual glyph ink as well as the line's logical geometry.
+    let text_bounds = galley.rect.union(galley.mesh_bounds);
+    let rect = camera_badge_rect(canvas, at, text_bounds.size() + 2.0 * padding);
+    painter.rect_filled(rect, 3.0, fill);
+    painter.galley(
+        rect.min + padding - text_bounds.min.to_vec2(),
+        galley,
+        style::CANVAS,
+    );
+    rect
+}
+
+fn camera_badge_rect(canvas: egui::Rect, at: egui::Pos2, size: egui::Vec2) -> egui::Rect {
+    let size = size.min(canvas.size());
+    // Subtracting a full canvas width can round below its nonintegral minimum.
+    let max = (canvas.max - size).max(canvas.min);
+    let min = at.clamp(canvas.min, max);
+    egui::Rect::from_min_size(min, size)
+}
+
 pub(super) fn render_layers(picture: &crate::worker::Picture) -> Result<Vec<FramingLayer>, String> {
     deadpan_cli::picture::render_layers(&picture.framing, picture.framing_gap)
         .map_err(|error| error.to_string())
@@ -3749,6 +3794,89 @@ pub(super) fn render_layers(picture: &crate::worker::Picture) -> Result<Vec<Fram
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn camera_badge_clamp_handles_inverted_fractional_bounds_after_size_cap() {
+        // Exact finite binary32 witness: even a size capped to canvas.width()
+        // leaves max-size below min by one rounding step without the floor.
+        let canvas = egui::Rect::from_min_max(
+            egui::pos2(f32::from_bits(0x41e7_fee6), 29.0),
+            egui::pos2(f32::from_bits(0x43df_6282), 389.0),
+        );
+        assert!((canvas.max - canvas.size()).x < canvas.min.x);
+        for at in [egui::pos2(-100.0, -100.0), egui::pos2(2000.0, 2000.0)] {
+            let rect = camera_badge_rect(canvas, at, canvas.size() * 2.0);
+            assert_eq!(rect, canvas);
+        }
+    }
+
+    #[test]
+    fn camera_badges_fit_compact_canvases_and_elide_long_target_names() {
+        let long = "Abrupt return moving point · following target";
+        for scale in [1.0, 1.25, 2.0] {
+            for size in [
+                egui::vec2(24.0, 24.0),
+                egui::vec2(96.0, 24.0),
+                egui::vec2(220.0, 32.0),
+                egui::vec2(640.0, 360.0),
+            ] {
+                for label in ["1", long] {
+                    for anchor in [egui::pos2(-100.0, -100.0), egui::pos2(2000.0, 2000.0)] {
+                        let context = egui::Context::default();
+                        super::super::fonts::install(&context);
+                        let canvas = egui::Rect::from_min_size(egui::pos2(35.0, 29.0), size);
+                        let viewport =
+                            egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(900.0, 600.0));
+                        let mut input = egui::RawInput {
+                            screen_rect: Some(viewport),
+                            ..Default::default()
+                        };
+                        let native = input.viewports.get_mut(&egui::ViewportId::ROOT).unwrap();
+                        native.native_pixels_per_point = Some(scale);
+                        native.inner_rect = Some(viewport);
+                        let mut badge = egui::Rect::NOTHING;
+                        let mut output = context.run_ui(input, |ui| {
+                            badge = paint_camera_badge(
+                                &ui.painter().with_clip_rect(canvas),
+                                canvas,
+                                anchor,
+                                label,
+                                style::LAVENDER,
+                            );
+                        });
+                        output.textures_delta.clear();
+                        let paints = output
+                            .shapes
+                            .iter()
+                            .filter_map(|shape| {
+                                if let egui::Shape::Text(text) = &shape.shape {
+                                    Some((text, shape.clip_rect))
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect::<Vec<_>>();
+                        assert_eq!(paints.len(), 1, "Badge label must remain painted");
+                        let (text, clip) = paints[0];
+                        let ink = text.visual_bounding_rect();
+                        assert!(canvas.contains_rect(badge), "{size:?}, {scale}: {badge:?}");
+                        assert!(
+                            badge.contains_rect(ink) && clip.contains_rect(ink),
+                            "{label:?}, {size:?}, {scale}: ink {ink:?}, badge {badge:?}, clip {clip:?}"
+                        );
+                        assert_eq!(
+                            text.galley.text(),
+                            label,
+                            "Keep full label in layout metadata"
+                        );
+                        assert_eq!(text.galley.rows.len(), 1);
+                        assert_eq!(text.galley.job.wrap.max_rows, 1);
+                        assert_eq!(text.galley.elided, label == long && size.x < 640.0);
+                    }
+                }
+            }
+        }
+    }
 
     #[test]
     fn arrival_edit_rebases_exact_follow_handle_and_keeps_later_uniform_scale_proportional() {

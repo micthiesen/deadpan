@@ -91,6 +91,9 @@ pub mod clocked_speed_update;
 #[path = "follow_creep.rs"]
 pub mod follow_creep;
 
+#[path = "abrupt_return.rs"]
+pub mod abrupt_return;
+
 #[path = "inner_repeat_speed.rs"]
 pub mod inner_repeat_speed;
 

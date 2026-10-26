@@ -9,6 +9,12 @@ The comma prefix remains usable while browsing the Original so `,i` can copy it
 into Your edit. Other edit operators keep the Original non-destructive. Native
 text editing retains its own selection, clipboard, undo, and redo behavior.
 
+The [existing-path abrupt return qualification](qualification/abrupt-return-2026-10-25.md)
+uses existing Split, Enter, Camera Reset/Apply, Backspace and Undo/Redo keys.
+Final release visual/quiet zoom runs each pass 489 behavior checks plus the
+21,885,504-case production-router audit against all 62 live Kestrel reservations.
+The supplied source digest matches the pinned fixture. No shortcut changes.
+
 The [existing Follow parameter qualification](qualification/follow-retune-2026-10-25.md)
 adds Camera Arrival/Curve controls through existing native text, Tab, Enter,
 Space and arrow routes. Curve retains focus after a pointer click and consumed

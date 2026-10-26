@@ -100,6 +100,21 @@ as about 84%**. Strict completion stays nine and all seven gates remain open.
 The earlier source-confirmed parameter gap is resolved; arbitrary path return,
 escalation transforms and other picture/effect scope remain.
 
+## Subsequent chosen-boundary return qualification
+
+[Existing-path abrupt return](qualification/abrupt-return-2026-10-25.md) verifies
+the existing structural composition against §8.2: Split, enter the right
+fragment and reset its copied original owner. It fixes an actual Camera label
+crash found in the native witness and verifies complete retained-path, audio,
+history and emitted-file behavior. Arbitrary ranged path replacement remains
+an explicit permitted refusal under §7.4; it was too broad a reason to withhold
+the chosen-boundary operation's credit.
+
+DP-08.2 increases from 0.5 to 1: another 0.2604 percentage points, bringing
+coverage to **84.2634%, still rounded to about 84%**. Strict completion stays
+nine and all delivery gates remain open. This is qualified behavior plus a
+native defect fix, not a new mask format or a reduction of product scope.
+
 ## Why 89% stopped moving
 
 The first 89% observation was October 8, at four Complete requirements. It was carried through 137 observations over 17 days, ending October 25 at eight Complete requirements. There was no fixed scored denominator: a subjective engineering estimate kept being inherited. Some observations recorded research, prototypes or verification checkpoints rather than newly delivered behavior. Counting those observations as completed features would also overstate progress.
@@ -114,7 +129,7 @@ The full criterion ledger, citations and remaining work are in [progress.json](p
 
 - Each of the 24 normative requirements receives equal weight.
 - Each has 3–8 major acceptance criteria, 162 total. Score 1 for implemented and locally verified, 0.5 for meaningful confirmed partial implementation or incomplete local verification, and 0 for absent.
-- Average within each requirement, then average the 24 scores. The initial baseline was 83.1473%; the amendments above bring it to 84.0030%, displayed as about 84%. Criteria are not weighted by expected engineering hours.
+- Average within each requirement, then average the 24 scores. The initial baseline was 83.1473%; the amendments above bring it to 84.2634%, displayed as about 84%. Criteria are not weighted by expected engineering hours.
 - Keep criterion identities and scope fixed. Record a versioned reassessment if the denominator needs correction; never split completed work or merge missing work to move the score.
 - Gates and effects remain visible separately. They overlap requirements and are not counted again in the numeric denominator.
 - Owner-only checks under §29.1 remain on the owner list and do not block local completion. No product scope has been removed.
@@ -156,7 +171,7 @@ The full criterion ledger, citations and remaining work are in [progress.json](p
 - Composability matrix: structural timing transforms must preserve sample-phase history, owned sounds, nested Repeat overrides and fixed/pitch Retime clocks. Latest narrow admissions do not complete general scopes.
 - DP-09 is broad audio workflow work: sample-resolution range authoring, variable rate, custom silence/tail policy and sound-bearing transforms remain, beyond polishing existing commands.
 - DP-10 now includes reviewed English word-boundary proposals. Cursor-priority incremental analysis/tracking still needs architecture and real integration.
-- DP-08 still needs arbitrary stepped path return and complete escalation transformation/export scope. Existing Follow arrival-scale/curve editing is now qualified.
+- DP-08 still needs targeted escalation transformation/export scope. Existing Follow parameter editing and chosen-boundary return are now qualified.
 - Full shared picture/audio effects and mastering, incremental RenderPlan fragments and filtered cache lifecycle remain implementation work.
 - Native workflow integration, HDR/output quality and hostile real-worker stress remain local acceptance work.
 - Large-project visible edit/pause latency still misses its target; diagnostic median improvements are not a target or p95 pass.
