@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-26T02:18:28Z",
+  "updated_at": "2026-10-26T03:19:27Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Complete stepped path return and escalation transformation, composable sound/timing edits, sample-resolution and variable-rate audio, full effects/mastering, cursor-priority incremental analysis, native workflows and measured performance. Existing Follow arrival/curve editing is qualified. About 84% acceptance coverage; 9/24 requirements Complete; 0/7 gates closed. This is not time remaining or release readiness.",
+  "focus": "Implement targeted Repeat escalation Explode while preserving live targets and canvas clamping through materialized plays, gaps and child Camera previews. Then continue composable sound/timing edits, sample-resolution and variable-rate audio, full effects/mastering, cursor-priority incremental analysis, native workflows and measured performance. About 84% acceptance coverage; 9/24 requirements Complete; 0/7 gates closed. This is not time remaining or release readiness.",
   "features": [
     {
       "id": "editing",
@@ -35,7 +35,7 @@
         "DP-08",
         "DP-11"
       ],
-      "note": "Source, Hold, Sequence, Repeat and Retime owners keep live targets while creep scales their local output clocks, in ordinary selection and explicit Repeat Play scopes. Targets use exact mapped Original time. Follow respects captured and live crops, with fallback for hidden targets. Camera paths, tracking, the paged face picker and editable point targets work. Nested-play native replay, complete export and exact portable history are verified. Camera now offers paged face and salient-region proposals from one verified exact picture; choosing a proposal saves one ordinary target, and region:N atomically saves target and framing. Native workflows, full export PCM/picture fidelity, portable history and scoped copied-worker relocation are verified. Ordinary ranged creep now keeps live Follow on all five owner kinds, preserving prefix scales, applying explicit from= only at In and holding terminal scales after Out. Fresh macro/dot ranges, Camera preservation, readable native inspector rows, complete Source export PCM/picture fidelity and exact portable history are verified. Pointer drawing, body/corner editing and point correction now share the keyboard draft and explicit save. Final release replays, the small-target regression, durable history and the evidence byte audit pass. Contained Time ranges now work inside explicit nested Repeat Plays through the shared exact owner map, with final release replays, full 240-picture/384,384-sample media and portable history verified. Existing animated Follow now has independent arrival-scale/curve controls in Camera and semantic Keep creep, retaining its exact target, fallback, clock/window, fresh macro intent and history. Final painted 60/120 Hz workflows, complete emitted media/PCM and portable histories pass. Broader picture controls remain."
+      "note": "Source, Hold, Sequence, Repeat and Retime owners keep live targets while creep scales their local output clocks, in ordinary selection and explicit Repeat Play scopes. Targets use exact mapped Original time. Follow respects captured and live crops, with fallback for hidden targets. Camera paths, tracking, the paged face picker and editable point targets work. Nested-play native replay, complete export and exact portable history are verified. Camera now offers paged face and salient-region proposals from one verified exact picture; choosing a proposal saves one ordinary target, and region:N atomically saves target and framing. Native workflows, full export PCM/picture fidelity, portable history and scoped copied-worker relocation are verified. Ordinary ranged creep now keeps live Follow on all five owner kinds, preserving prefix scales, applying explicit from= only at In and holding terminal scales after Out. Fresh macro/dot ranges, Camera preservation, readable native inspector rows, complete Source export PCM/picture fidelity and exact portable history are verified. Pointer drawing, body/corner editing and point correction now share the keyboard draft and explicit save. Final release replays, the small-target regression, durable history and the evidence byte audit pass. Contained Time ranges now work inside explicit nested Repeat Plays through the shared exact owner map, with final release replays, full 240-picture/384,384-sample media and portable history verified. Existing animated Follow now has independent arrival-scale/curve controls in Camera and semantic Keep creep, retaining its exact target, fallback, clock/window, fresh macro intent and history. Final painted 60/120 Hz workflows, complete emitted media/PCM and portable histories pass. Broader picture controls remain. Chosen-boundary return from existing paths is now qualified through Split and the copied inner owner Camera Reset, retaining the prefix clock, ancestor framing, complete sound and history. The witness found and fixed long-label Camera crashes; native/release and emitted-file proofs are retained. Targeted escalation Explode and broader picture scope remain."
     },
     {
       "id": "audio",
@@ -1414,6 +1414,15 @@
       "revision": "08382305",
       "retrospective": false,
       "summary": "Existing Follow arrival-scale and curve editing is verified through shared semantic commands and native temporary Camera controls. Strict selected checks retain 1,742 passes/four fixture/reference failures with a passing four-test continuation; final focused native 80, independent reviews, 415-check painted zoom workflows at 60/120 Hz plus live Kestrel, two complete release exports with 240 pictures/full 384,384-sample PCM equality and portable histories, and a 150-file evidence audit pass. DP-08.3 moves from 0.5 to 1, adding 0.2604 points: 84.0030%, rounded to 84%. A separate DP-12 source/evidence reconciliation changes strict completion to 9/24 without extra coverage; runtime caching, model comparisons and performance stay open. All seven gates remain open."
+    },
+    {
+      "date": "2026-10-26",
+      "percent": 84,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 9,
+      "revision": "9d8955ab",
+      "retrospective": false,
+      "summary": "DP-08.2 chosen-boundary return is qualified through existing Split, right-fragment scope and Camera Reset, preserving retained paths, ancestor framing, complete audio, marks and history. Native proof found and fixed a compact-viewer long-label crash, including exact fractional clamp regression. Final strict focused checks pass 83 tests; release visual/quiet replays pass 490 checks each with live Kestrel audit; both actual exports pass all 240 pictures and zero-offset audio, complete PCM/history comparisons, and old-path negatives fail exactly frames 80-119. Independent review and 122-payload byte/source/binary/output audit pass; original failures remain retained. The fixed 162-criterion ledger adds 0.2604 points to 84.2634%, rounded to 84%; 9/24 requirements Complete, 0/7 gates closed."
     }
   ],
   "assessment": {
@@ -2072,12 +2081,13 @@
           {
             "id": "DP-08.2",
             "deliverable": "Smash zoom and abrupt return at selected boundaries preserve existing framing intent",
-            "score": 0.5,
+            "score": 1,
             "evidence": [
               "docs/FRAMING.md",
-              "docs/SECTION8_COVERAGE.md Abrupt return"
+              "docs/SECTION8_COVERAGE.md Abrupt return",
+              "docs/qualification/abrupt-return-2026-10-25.md"
             ],
-            "remaining": "Existing paths cannot step out over every arbitrary selected range; current command explicitly refuses.",
+            "remaining": "",
             "normative": "8.2"
           },
           {
@@ -3668,7 +3678,7 @@
       "Composability matrix: structural timing transforms must preserve sample-phase history, owned sounds, nested Repeat overrides and fixed/pitch Retime clocks. Latest narrow admissions do not complete general scopes.",
       "DP-09 is broad audio workflow work: sample-resolution range authoring, variable rate, custom silence/tail policy and sound-bearing transforms remain, beyond polishing existing commands.",
       "DP-10 reviewed English word refinement is qualified, but cursor-priority incremental analysis/tracking still needs architecture and real integration.",
-      "DP-08 still needs arbitrary stepped path return and complete escalation transformation/export scope. Existing Follow arrival-scale/curve editing is now qualified.",
+      "DP-08 still needs targeted escalation transformation/export scope, including exact live target/clamp preservation through Explode and child Camera previews. Existing Follow parameters and chosen-boundary return are qualified.",
       "Full shared picture/audio effects and mastering, incremental RenderPlan fragments and filtered cache lifecycle remain implementation work.",
       "Native workflow integration, HDR/output quality and hostile real-worker stress remain local acceptance work.",
       "Large-project visible edit/pause latency still misses its target; diagnostic median improvements are not a target or p95 pass.",
