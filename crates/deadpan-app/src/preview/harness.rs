@@ -376,6 +376,8 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                                 targets::backend()
                             } else if name == "faces" {
                                 faces::backend()
+                            } else if name == "scoped-follow-creep" {
+                                scoped_follow_creep::backend()
                             } else if name == "regions" {
                                 regions::backend()
                             } else {

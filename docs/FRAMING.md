@@ -382,9 +382,17 @@ until Escape clears it; read-only audition and independent sound controls remain
 available. The first Escape clears the range before leaving the inspector.
 Slice placement and replacement require the parent even after the range is
 cleared; their pointer controls follow the same scope rule as their keys.
-New scoped ranged target sampling refuses; Keep and OriginalCenter remain
-available when the static baseline permits them, while a fixed Follow admits
-only implicit Keep creep. Existing whole-owner paths keep their previous behavior.
+Scoped ranged commands can sample a newly chosen saved target on a supported
+static baseline: Smash uses root Edit In and Creep uses Out minus one frame,
+through the actual provider, captured geometry and inner framing. The center
+stays fixed even when the Time range covers the whole owner. Missing, clipped
+and out-of-span targets refuse. Save detected faces or regions explicitly in
+Camera before constructing the range; direct scoped `face:N`/`region:N` commands
+still refuse. Keep and OriginalCenter remain available when the static baseline
+permits them, while a fixed Follow admits only implicit Keep creep. Existing
+whole-owner paths keep their previous behavior. Frame motions and End now admit
+the exclusive scoped Out; finish selection and step back inside if the picture
+to its right no longer shows the owner. The finished range stays fixed.
 Envelope progress is exact (`frame / beat frames`, reduced, at most one million).
 
 `:zoom` and `:creep` capture the session, revision, view, selected beat, Repeat

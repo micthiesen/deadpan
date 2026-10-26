@@ -6,7 +6,7 @@ use deadpan_core::{FollowScaleRange, SemanticVisualSelection};
 
 const CREEP: &str = "creep from=1.5 to=2.2 curve=linear";
 
-fn select(
+pub(super) fn select(
     d: &mut Driver<'_>,
     outer: u32,
     inner: u32,
@@ -432,18 +432,35 @@ pub(super) fn run(d: &mut Driver<'_>, baseline: &crate::project::Workspace) -> R
     undo(d, baseline)?;
     let original = d.app().source_cursor;
     let captured = select(d, 2, 2, 6, 24)?;
-    for command in [
-        "gain -3dB",
-        "hold 6f",
-        "retime 2 pitch=tape",
-        "splice",
-        "creep from=1.5 to=2.2 target=current",
-    ] {
+    for command in ["gain -3dB", "hold 6f", "retime 2 pitch=tape", "splice"] {
         refuse(d, command)?;
     }
     // A macro may consume an already finished range, but cannot record range
     // construction as portable scoped instructions.
     d.chord(&[Key::Q, Key::Z])?;
+    let recorded_document = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("No recording baseline")?
+        .document
+        .clone();
+    refuse(d, "creep from=1.5 to=2.2 target=current")?;
+    d.check(
+        "Scoped sampled-target recording refuses without a document change or recorded instruction",
+        d.app().macros.recording_name() == Some('z')
+            && d.app().macros.instruction_count() == 0
+            && d.app()
+                .workspace
+                .as_ref()
+                .is_some_and(|w| w.document == recorded_document)
+            && d.app()
+                .error
+                .as_deref()
+                .is_some_and(|error| error.contains("cannot sample")),
+        json!({"recording":"z","instructions":0,"document":"unchanged"}),
+        d.snapshot(),
+    )?;
     let selection = d.app().edit_range.semantic()?;
     let revision = d.revision();
     d.key(Key::V)?;

@@ -2,7 +2,7 @@
 
 **Initial reassessment: requirement coverage is about 83%. Strict completion was 8/24. All seven delivery gates remain open; picture effect families are 5/13 complete.**
 
-**Current after the qualifications and reconciliation below: about 85% coverage, 9/24 strictly
+**Current after the qualifications and reconciliation below: about 85% coverage, 10/24 strictly
 Complete, 0/7 gates closed and 5/13 picture effect families complete.**
 
 ## Packaged helper trust amendment
@@ -138,6 +138,24 @@ work. This missing composition is explicit in already-partial DP-04.7,
 DP-05.3 and DP-05.4; strict DP-08 stays Partial despite its fully scored coarse
 operation checklist. No denominator, criterion or product scope changed.
 
+## Subsequent scoped target composition qualification
+
+[Scoped saved-target ranges](qualification/scoped-target-sampling-2026-10-25.md)
+resolve the remaining native DP-08 composition. Smash samples root Edit In;
+Creep samples Out minus one frame through the actual provider and inner/captured
+geometry. Full-owner Time ranges retain fixed samples. Explicit Camera proposal
+acceptance composes with saved-target range recreation. Native exclusive Out
+navigation, atomic nested isolation, stale/refusal behavior, full emitted-media,
+PCM and portable-history comparisons are qualified, with failures retained.
+
+DP-08 is now Complete under the primary-Mac scope, raising strict completion to
+**10/24**. Its eight coarse operation criteria already scored 1, so coverage
+stays **84.5238%, rounded to about 85%**. The fixed 162 criteria, all seven open
+delivery gates and five-of-thirteen effects count are unchanged. General scoped
+Split/structural operations, framed-child Ungroup, full effects and performance
+remain in their existing partial requirements. This records meaningful closure
+without manufacturing a percentage increase.
+
 ## Why 89% stopped moving
 
 The first 89% observation was October 8, at four Complete requirements. It was carried through 137 observations over 17 days, ending October 25 at eight Complete requirements. There was no fixed scored denominator: a subjective engineering estimate kept being inherited. Some observations recorded research, prototypes or verification checkpoints rather than newly delivered behavior. Counting those observations as completed features would also overstate progress.
@@ -156,7 +174,7 @@ The full criterion ledger, citations and remaining work are in [progress.json](p
 - Keep criterion identities and scope fixed. Record a versioned reassessment if the denominator needs correction; never split completed work or merge missing work to move the score.
 - Gates and effects remain visible separately. They overlap requirements and are not counted again in the numeric denominator.
 - Owner-only checks under §29.1 remain on the owner list and do not block local completion. No product scope has been removed.
-- A fully scored coarse requirement does not automatically change strict tracker status. DP-12's separate closure audit above reconciles its status with the existing evidence. Runtime optimization, candidate comparisons and performance remain owed under DP-24 and gates.
+- A fully scored coarse requirement does not automatically change strict tracker status. DP-12's evidence reconciliation and DP-08's subsequent scoped-target qualification above establish their strict closure separately. Runtime optimization, candidate comparisons and performance remain owed under DP-24 and gates.
 
 **85% measures covered acceptance scope. It does not mean 15% of the engineering time remains or imply a near release.** Rounding and criterion judgment limit precision. Historical estimates remain unchanged and labeled legacy; they cannot be compared to this baseline as a delivery rate.
 
@@ -194,7 +212,7 @@ The full criterion ledger, citations and remaining work are in [progress.json](p
 - Composability matrix: structural timing transforms must preserve sample-phase history, owned sounds, nested Repeat overrides and fixed/pitch Retime clocks. Latest narrow admissions do not complete general scopes.
 - DP-09 is broad audio workflow work: sample-resolution range authoring, variable rate, custom silence/tail policy and sound-bearing transforms remain, beyond polishing existing commands.
 - DP-10 now includes reviewed English word-boundary proposals. Cursor-priority incremental analysis/tracking still needs architecture and real integration.
-- DP-08 targeted escalation transformation/export, existing Follow parameter editing and chosen-boundary return are qualified. Newly sampled targets over contained This-play Time ranges remain unavailable, keeping strict DP-08 Partial.
+- DP-08 framing is locally complete after scoped sampled-target qualification. General occurrence structural/audio operations and framed-child Ungroup remain under DP-03/04/05.
 - Full shared picture/audio effects and mastering, incremental RenderPlan fragments and filtered cache lifecycle remain implementation work.
 - Native workflow integration, HDR/output quality and hostile real-worker stress remain local acceptance work.
 - Large-project visible edit/pause latency still misses its target; diagnostic median improvements are not a target or p95 pass.

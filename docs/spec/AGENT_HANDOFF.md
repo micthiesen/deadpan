@@ -9,8 +9,8 @@ The [progress reassessment](../PROGRESS_ASSESSMENT.md) supersedes the inherited
 below (84.5238%). Use the fixed 162-criterion
 ledger in progress.json; tools/progress/update.py computes the score. Preserve
 legacy history and never infer a progress rate across the calibration change.
-Nine requirements are Complete, fifteen Partial after closing the native and
-private-AI launch trust gaps and reconciling DP-12's existing behavior evidence;
+Ten requirements are Complete, fourteen Partial after closing native/private-AI
+launch trust, reconciling DP-12 and qualifying scoped target framing for DP-08;
 all seven gates stay open and picture effects remain five of thirteen.
 The [AI Hold closure audit](../qualification/ai-hold-reconciliation-2026-10-25.md)
 grants no additional coverage: all eight DP-12 criteria already scored 1.
@@ -50,18 +50,24 @@ pass 580 zoom checks plus Kestrel each. Final compact Camera help and controls
 fit at 960×640. Original fixture, IME, disk-space and layout failures remain
 retained. DP-08.4 gains 0.2604 points; strict completion stays 9/24, all gates open.
 
-The next concrete native gap is interactive sampled-target framing over a
-contained Time range in explicit This play. Direct Zoom/Creep refuses, and
-native scoped Split cannot supply a fragment workaround. Keep the recording
-refusal from §7.4. The App can reuse submit_framing → Scoped SetFraming without
-a schema or semantic-program extension. Sample the actual root Edit In for
-Smash and Out−1 for Creep through exact owner projection; the existing scoped
-zoom_absolute helper returns the cursor and cannot be reused unchanged. Use
-Center::Point even for a full-owner normalized range so it does not become a
-live Follow accidentally. Preserve outside-path refusals and Creep's existing
-held-arrival suffix contract. Face/Region asynchronous proposals stay outside
-this bounded slice. Record the limitation in existing partial DP-04.7/05.3/05.4;
-strict DP-08 remains Partial despite its full coarse operation checklist.
+[Scoped sampled targets](../qualification/scoped-target-sampling-2026-10-25.md)
+now work over contained Time ranges in explicit nested This play. Smash uses
+root Edit In and Creep Out minus one frame through actual provider/inner/captured
+geometry, independently of the cursor. A full-owner range remains a fixed sample.
+Keep the §7.4 recording refusal, outside-path checks and held-arrival suffix.
+Detected targets compose through explicit Camera acceptance/save, Escape and a
+new range using the saved id; direct scoped face:N/region:N still refuse. Native
+motions admit exclusive Out, with the ordinary right-hand picture; finish the
+range and step inside before framing if needed. Strict checks, final release
+visual/quiet runs, complete 240-picture/384,384-sample exports and portable history
+pass. Original compile/oracle/endpoint/reference/media-driver failures stay in
+the independently audited collection. DP-08 is Complete, making 10/24 strict
+sections; its eight coarse criteria already scored 1, so coverage stays 85%.
+Continue the remaining structural/audio composability, sample-resolution and
+variable-rate audio, incremental analysis/rendering and native performance work.
+General scoped Split and broader occurrence transforms remain DP-04/05; framed
+Ungroup is DP-03.3 and full effects are DP-16. Do not reclassify them as new scope
+or mark a delivery gate complete from this framing increment.
 
 [Original analysis windows](../qualification/analysis-windows-2026-10-25.md)
 are implemented and verified. The CLI's new retained session/window API keeps

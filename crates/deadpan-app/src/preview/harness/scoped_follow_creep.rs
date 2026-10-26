@@ -11,6 +11,11 @@ use deadpan_core::{
 use egui::Key;
 
 mod ranges;
+mod sampled_ranges;
+
+pub(super) fn backend() -> crate::project::targets::Backend {
+    sampled_ranges::backend()
+}
 
 fn ratio(n: i128, d: i128) -> ExactRatio {
     ExactRatio::new(n, d).unwrap()
@@ -1141,5 +1146,6 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d.snapshot(),
     )?;
     d.capture("Scoped Follow creep committed on one nested concrete Retime")?;
-    ranges::run(d, &baseline)
+    ranges::run(d, &baseline)?;
+    sampled_ranges::run(d, &baseline)
 }

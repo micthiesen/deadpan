@@ -27,6 +27,8 @@ mod follow_centering_tests;
 mod proposal_picker;
 mod region_pointer;
 mod region_pointer_ui;
+#[cfg(test)]
+mod scoped_sampling_tests;
 
 use deadpan_cli::picture_proposals::{DetectorKind, ProposalSelection};
 
@@ -1217,6 +1219,67 @@ fn same_scoped(
     }
 }
 
+/// The selected root Edit picture, independent of the stopped cursor and of
+/// fractional owner-output positions under enclosing Retimes.
+fn scoped_sample_frame(
+    kind: deadpan_core::framing_zoom::ZoomKind,
+    range: deadpan_core::FrameRange,
+) -> Option<ProjectFrame> {
+    use deadpan_core::framing_zoom::ZoomKind;
+    match kind {
+        ZoomKind::Off => None,
+        ZoomKind::Smash { .. } => Some(range.start()),
+        ZoomKind::Creep { .. } => Some(ProjectFrame(range.end().0 - 1)),
+    }
+}
+
+/// Project the actual plan provider into this exact owner's input. Captured
+/// Hold geometry and inner live framing are applied before sampling the point;
+/// the owner's own framing and its ancestors must not be applied a second time.
+fn target_center_at_root(
+    document: &deadpan_core::ProjectDocument,
+    plan: &deadpan_plan::RenderPlan,
+    scope: &InstancePath,
+    id: &TargetId,
+    frame: ProjectFrame,
+    proposal: Option<(&TargetId, &AttentionTarget)>,
+) -> Result<[ExactRatio; 2], String> {
+    let proposed = proposal
+        .filter(|(proposed, _)| *proposed == id)
+        .map(|(_, target)| target);
+    let target = proposed.or_else(|| document.targets().get(id));
+    let label = target.map_or_else(|| id.as_str().to_owned(), |target| target.label.clone());
+    let sample = plan.picture(frame).map_err(|error| error.to_string())?;
+    let layer = sample
+        .framing
+        .iter()
+        .position(|layer| !layer.escalation && &layer.instance == scope)
+        .ok_or("The framed beat is not shown at the frame this framing samples.")?;
+    let target = target.ok_or_else(|| format!("There is no saved target {label}."))?;
+    let basis = document.presentation_basis();
+    let pose = sample
+        .picture
+        .follow_point()
+        .and_then(|(asset, point)| {
+            deadpan_plan::follow_pose_in_context(
+                target,
+                asset,
+                point,
+                [basis.width, basis.height],
+                sample.picture_context.as_deref(),
+                sample.framing[..layer].iter().map(|layer| layer.pose),
+                ExactRatio::ONE,
+            )
+        })
+        .ok_or_else(|| {
+            format!(
+                "{label} is not visible at frame {}, where this framing places its center.",
+                frame.0
+            )
+        })?;
+    Ok([pose.center_x, pose.center_y])
+}
+
 impl DeadpanApp {
     pub(super) fn camera_render_edit(&self) -> Result<Option<super::render::PreviewEdit>, String> {
         let camera = self
@@ -1531,7 +1594,7 @@ impl DeadpanApp {
                 session.picker.iter().any(|entry| entry.saved.is_some()),
             )
         });
-        if (self.macros.recording() || scoped_range)
+        if self.macros.recording()
             && let Some(Err(error)) = &center_intent
         {
             self.error = Some(error.clone());
@@ -1689,9 +1752,6 @@ impl DeadpanApp {
                 self.resolve_target(text)
             })?,
         };
-        if normalized_range.is_some() && matches!(resolved, Resolved::Target(_)) {
-            return Err("A single-play range keeps its current center or uses target=center; sampled targets require a whole owner.".into());
-        }
         let label = |id: &TargetId| match proposal {
             Some((proposed, target)) if proposed == id => target.label.clone(),
             _ => self.target_label(id),
@@ -1708,21 +1768,49 @@ impl DeadpanApp {
                     .and_then(|entry| entry.center)
                     .ok_or("The picture's center is clipped by inner framing here.")?,
             ),
-            Resolved::Target(id) => match zoom::sample_frame(input.kind, range, frames) {
-                None => Center::Target { id, fixed: None },
-                Some(local) => {
-                    let (frame, fixed) = self.target_center_at(session, &id, local, proposal)?;
-                    note = Some(format!(
-                        "Centered on {} where it is at frame {}; this framing does not follow it.",
-                        label(&id),
-                        frame.0
-                    ));
-                    Center::Target {
-                        id,
-                        fixed: Some(fixed),
+            Resolved::Target(id) => {
+                let sampled = match root_range {
+                    Some(range) => scoped_sample_frame(input.kind, range)
+                        .map(|frame| {
+                            let workspace =
+                                self.workspace.as_ref().ok_or("Open a project first.")?;
+                            target_center_at_root(
+                                &workspace.document,
+                                &workspace.plan,
+                                &session.scope,
+                                &id,
+                                frame,
+                                proposal,
+                            )
+                            .map(|center| (frame, center))
+                        })
+                        .transpose()?,
+                    None => zoom::sample_frame(input.kind, range, frames)
+                        .map(|local| self.target_center_at(session, &id, local, proposal))
+                        .transpose()?,
+                };
+                match sampled {
+                    None => Center::Target { id, fixed: None },
+                    Some((frame, fixed)) => {
+                        note = Some(format!(
+                            "Centered on {} where it is at frame {}; this framing does not follow it.",
+                            label(&id),
+                            frame.0
+                        ));
+                        if root_range.is_some() {
+                            // Core normalizes a full-owner range to a whole
+                            // shot. A Point prevents turning this sample into
+                            // a live target Follow in that case.
+                            Center::Point(fixed)
+                        } else {
+                            Center::Target {
+                                id,
+                                fixed: Some(fixed),
+                            }
+                        }
                     }
                 }
-            },
+            }
         };
         let shot = zoom::Shot {
             whole_owner: self.workspace.as_ref().and_then(|workspace| {
@@ -1744,10 +1832,14 @@ impl DeadpanApp {
             (root_range, normalized_range, input.kind)
             && end.compare(ExactRatio::ONE).is_lt()
         {
-            note = Some(format!(
+            let held = format!(
                 "The creep reaches Edit boundary {}; its end scale or pose is held through the remaining owner output.",
                 range.end().0
-            ));
+            );
+            note = Some(match note {
+                Some(note) => format!("{note} {held}"),
+                None => held,
+            });
         }
         if let (Some((_, end)), zoom::ZoomKind::Creep { .. }) = (range, input.kind)
             && end < frames
@@ -1994,44 +2086,15 @@ impl DeadpanApp {
     ) -> Result<(ProjectFrame, [ExactRatio; 2]), String> {
         let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
         let frame = self.zoom_absolute(session, local);
-        let proposed = proposal
-            .filter(|(proposed, _)| *proposed == id)
-            .map(|(_, target)| target);
-        let label = proposed.map_or_else(|| self.target_label(id), |target| target.label.clone());
-        let sample = workspace
-            .plan
-            .picture(frame)
-            .map_err(|error| error.to_string())?;
-        let layer = sample
-            .framing
-            .iter()
-            .position(|layer| !layer.escalation && layer.instance == session.scope)
-            .ok_or("The framed beat is not shown at the frame this framing samples.")?;
-        let target = proposed
-            .or_else(|| workspace.document.targets().get(id))
-            .ok_or_else(|| format!("There is no saved target {label}."))?;
-        let basis = workspace.document.presentation_basis();
-        let pose = sample
-            .picture
-            .follow_point()
-            .and_then(|(asset, point)| {
-                deadpan_plan::follow_pose_in_context(
-                    target,
-                    asset,
-                    point,
-                    [basis.width, basis.height],
-                    sample.picture_context.as_deref(),
-                    sample.framing[..layer].iter().map(|layer| layer.pose),
-                    ExactRatio::ONE,
-                )
-            })
-            .ok_or_else(|| {
-                format!(
-                    "{label} is not visible at frame {}, where this framing places its center.",
-                    frame.0
-                )
-            })?;
-        Ok((frame, [pose.center_x, pose.center_y]))
+        target_center_at_root(
+            &workspace.document,
+            &workspace.plan,
+            &session.scope,
+            id,
+            frame,
+            proposal,
+        )
+        .map(|center| (frame, center))
     }
 
     /// Continue Camera on the revision its own target save created, once that

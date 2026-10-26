@@ -60,7 +60,10 @@ Stepping is read-only, like `:scope`, and Macros do not record it.
 
 Choose This play at every enclosing Repeat, select a visible child, then use
 `v`, frame motions and `v` to retain a half-open Time selection on the root Edit
-clock. Moving its head keeps the selection in the same owner and concrete play.
+clock. Frame motions and End admit the exclusive Out boundary, including the
+whole play. At an internal seam the viewer shows the picture to its right.
+Finish with `v`, then `h` to return inside before framing; the finished range
+stays fixed. Moving its active head keeps the same owner and concrete play.
 Changing owner, play, scope or authored revision clears it; the first Escape
 clears the range before another Escape leaves the inspector.
 
@@ -76,9 +79,16 @@ empty ranges and ranges crossing an occurrence boundary refuse atomically.
 Keep-center and explicit `target=center` work when the existing static baseline
 permits the ranged edit. On a fixed Follow, only implicit Keep-center creep is
 available: it retains the live target and both scale bases, and uses the selected
-owner's exact output clock. A new ranged scoped edit cannot sample a current,
-selected, named, face or region target. Existing whole-owner framing behavior is
-unchanged.
+owner's exact output clock. On a supported static baseline, a newly chosen saved
+target is sampled at root Edit In for Smash, or Out minus one frame for Creep.
+The fixed center uses that actual provider picture, captured geometry and inner
+framing, independently of the stopped cursor. Even a full-owner Time range stays
+a fixed sample, rather than becoming Follow. Creep holds its arrival pose after
+Out. A missing, clipped or out-of-span target refuses without changing anything.
+To use a detected face or region, clear the range, save it explicitly in Camera,
+leave Camera and select the range again with the saved target's id or label.
+Direct `face:N`/`region:N` scoped range commands still refuse. Sampled-target
+recording remains unavailable; existing whole-owner framing behavior is unchanged.
 
 The retained scoped Time selection is for framing and read-only audition. Other
 owner parameters, including gain, Hold duration, pause insertion and Camera,

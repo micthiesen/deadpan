@@ -476,20 +476,36 @@ impl DeadpanApp {
             return true;
         }
         match action {
-            Action::EnterGroup => { self.open_inspector_parameter(context); }
+            Action::EnterGroup => {
+                self.open_inspector_parameter(context);
+            }
             Action::Play { forward, count } => self.scoped_play(forward, count, context),
             Action::LeaveGroup => self.scoped_leave(context),
             Action::Beat { forward, count } => {
-                let result = self.workspace.as_ref().ok_or_else(|| "Open a project first.".to_owned())
-                    .and_then(|workspace| self.scoped.as_mut().expect("scope checked").step(workspace, forward, count));
-                match result { Ok(()) => self.scoped_changed(context), Err(error) => self.error = Some(error) }
+                let result = self
+                    .workspace
+                    .as_ref()
+                    .ok_or_else(|| "Open a project first.".to_owned())
+                    .and_then(|workspace| {
+                        self.scoped
+                            .as_mut()
+                            .expect("scope checked")
+                            .step(workspace, forward, count)
+                    });
+                match result {
+                    Ok(()) => self.scoped_changed(context),
+                    Err(error) => self.error = Some(error),
+                }
             }
             Action::Step { .. } | Action::First | Action::Last => {
                 match self.scoped_presentation() {
                     Ok(Some(presentation)) => {
                         self.revoke_scoped_continuation();
                         self.cancel_camera(); self.stop_playback(); self.bindings.clear();
-                        let end = presentation.frames.end.saturating_sub(1);
+                        // Cursor coordinates are boundaries, including the
+                        // exclusive Out. Camera still requires a displayed
+                        // picture of this owner before it can edit framing.
+                        let end = presentation.frames.end;
                         self.sequence_cursor = match action {
                             Action::First => presentation.frames.start,
                             Action::Last => end,

@@ -96,9 +96,14 @@ selected owner's exact output clock. A new transition normalizes its window to
 that current duration, even when the fixed Follow had a retained clock.
 Partially visible fractional boundaries and a cursor that does not show the
 owner refuse. Default, mixed, incomplete or several-Play
-choices and non-Time selections cannot supply this range authority. A new scoped
-range cannot sample a current, selected, named, face or region target; only
-implicit Keep creep is admitted on a fixed Follow. Finish selection before `q`;
+choices and non-Time selections cannot supply this range authority. On a supported
+static baseline, a new scoped range samples a saved current or named target at
+root Edit In for Smash or Out minus one frame for Creep. Actual provider and inner
+geometry determine the fixed center, including full-owner ranges. Missing,
+clipped and out-of-span targets refuse. For detected faces or regions, save the
+target explicitly in Camera, then leave Camera and recreate the range using its
+saved id or label. Direct scoped `face:N`/`region:N` commands still refuse. Only
+implicit Keep creep is admitted on an existing fixed Follow. Finish selection before `q`;
 named and dot replay need a fresh range and explicit play choices. The scoped
 inspector shows saved Follows, Scale before, Creep, Window and Framing clock
 separately. See the [scoped range qualification record](qualification/scoped-framing-ranges-2026-10-25.md).
