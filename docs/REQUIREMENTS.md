@@ -42,7 +42,12 @@ empty occurrence batches removes measured redundant work but does not resolve
 those failures. Constant gains are now prepared once per route, with four focused
 tests passing and dynamic automation retained; the matrix still has the same
 four failures. Final Plan checks pass **511 tests** and strict Core/Plan/Audio
-lint passes. Further measured preparation work remains. The per-read limit stays **16,777,216**;
+lint passes. Later traces place selected/nested failures before Split. The
+candidate now reuses exact Original inputs within a shared processing request,
+with source re-admission and eviction under the existing memory/entry ceilings.
+Six focused tests and independent review pass; the selected-play full-WAV rerun
+still exhausts work before Split. This optimization receives no completion
+credit. Further measured preparation work remains. The per-read limit stays **16,777,216**;
 clock and delivery proof compilation share the existing **100,000** work ceiling.
 
 Native scoped Split stays blocked. Remaining preparation work, complete delivery

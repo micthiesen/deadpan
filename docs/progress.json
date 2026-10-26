@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-26T22:54:28Z",
+  "updated_at": "2026-10-26T23:38:50Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Qualify bounded general Split sound preparation. Current-delivery proofs fix exact Source/Sequence PCM at six processing depths, and constant gains are prepared once per route. The full WAV matrix still has four limiter work-limit failures; diagnose remaining actual work without raising limits. Native scoped Split is blocked. Coverage 85%; 10/24 requirements Complete; 0/7 gates closed.",
+  "focus": "Resolve the remaining general Split preparation work. Exact Original input reuse passes six source/identity/pressure tests, review and strict lint; 378 regression checks pass. The full WAV matrix remains three passes and four work-limit failures under unchanged limits. Native scoped Split stays blocked. Coverage 85%; 10/24 Complete; 0/7 gates closed.",
   "features": [
     {
       "id": "editing",
@@ -1477,6 +1477,15 @@
       "revision": "1853d8af",
       "retrospective": false,
       "summary": "The uncommitted Split candidate now prepares constant ClipGain once per route with exact Q32 addition, unchanged stage order, dynamic automation fallback and residency accounting. Four focused gain tests pass; final Plan passes 511 tests and strict Core/Plan/Audio lint passes, with unchanged source guards. The real-WAV matrix still has three passes and the same four limiter preparation-work failures, so further actual work diagnosis is needed. No completion credit is granted; native scoped Split remains blocked. Revision names the prior committed documentation checkpoint, not a qualified production candidate."
+    },
+    {
+      "date": "2026-10-26",
+      "percent": 85,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 10,
+      "revision": "c90342af",
+      "retrospective": false,
+      "summary": "The uncommitted general Split candidate now memoizes exact Original input within each shared processing request. Source re-admission, controller/context/range/depth identity and pressure eviction retain existing ceilings. Six focused real-source tests and independent review pass; strict Core/Plan/Audio lint passes. The regression run passes 378 library/existing-stage tests, explicitly filtering seven new Split tests. The separate hash-pinned full WAV matrix remains three passes and four preparation-work failures; selected/nested cases fail before Split in prefix-two at limited 0+4096. The preceding graph-local cache was replaced because required allocations could not evict it. Source guards pass, no completion credit is granted, and native scoped Split stays blocked. Revision names the prior documentation checkpoint, not a qualified production candidate."
     }
   ],
   "assessment": {

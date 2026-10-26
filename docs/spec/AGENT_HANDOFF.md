@@ -22,6 +22,21 @@ insufficient. Constant ClipGain programs in Components routes now pass four
 focused tests, preserving dynamic envelopes and mute ranges, exact Q32 ordering,
 stage positions and residency. The latest full matrix still has the same four
 work failures, so diagnose the remaining actual work before more optimization.
+Later traces place selected/nested failures in the unchanged `prefix-two`
+baseline before Split; processed root-sound still fails after refinement.
+The latest candidate memoizes exact Original inputs within a shared request,
+with exact context/range/depth identities, source re-admission and controller
+pressure eviction. Six focused tests and independent review pass; strict
+Core/Plan/Audio lint passes. The selected-play real-WAV rerun still exhausts work
+before Split. Do not treat the memo as full-matrix qualification or increase
+coverage for it. Retained allocation identity remains code-reviewed without
+a separate new fixture. Its preceding graph-local prototype was replaced
+because generic required allocations could not evict its PCM under pressure.
+The final reruns pass 378 existing/new-cache library and stage checks, filtering
+the seven Split tests; the separate full Split matrix again has three passes
+and four work-limit failures. The full-matrix executable is hash-pinned and
+unchanged during the run. Source guards pass throughout. The serial regression
+and parallel matrix durations are not performance comparisons.
 Keep individual support/gates and all effects. Do not raise the 16,777,216 work limit,
 relax PCM equality or infer families from lineage alone. The delivery token must
 never bind historical plans or expose hidden input. See the
