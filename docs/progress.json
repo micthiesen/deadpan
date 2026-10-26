@@ -2,7 +2,7 @@
   "schema_version": 1,
   "updated_at": "2026-10-26T00:51:21Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Private AI launch trust is qualified and committed. Next: retune an existing Follow's arrival scale and curve through shared commands and native controls. Full composability, audio/effects, incremental analysis, native workflow and performance work remain. Coverage about 84%; 8/24 requirements complete; 0/7 gates closed.",
+  "focus": "Implementing existing Follow arrival-scale and curve editing. Shared retuning and CLI history tests are written; native controls and verification are in progress. No new acceptance credit yet. Full composability, audio/effects, incremental analysis, native workflow and performance work remain. Coverage about 84%; 8/24 requirements complete; 0/7 gates closed.",
   "features": [
     {
       "id": "editing",
