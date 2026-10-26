@@ -28,7 +28,9 @@ never bind historical plans or expose hidden input. See the
 [continuation](../qualification/general-split-sound-delivery-2026-10-26.md) and
 [frozen research](../qualification/general-split-sound-research-2026-10-26.md).
 Final Plan checks pass 511 tests and strict Core/Plan/Audio all-target lint passes;
-all source guards and formatting checks pass. The earlier lint refusal caught
+372 existing Audio library/stage tests pass. The seven new Split tests ran
+separately with the retained three-pass/four-fail result. All source guards and
+formatting checks pass. The earlier lint refusal caught
 only a now-fixed needless struct update in a new test. The production candidate
 remains uncommitted. Do not mistake the published research checkpoint for it.
 Native scoped Split remains blocked until its complete command/receipt/semantic

@@ -85,6 +85,11 @@ the earlier frozen candidate's source to these runs.
   ignored, unchanged source guard, 10.37 seconds. This overlaps the broad run.
 - `strict-prepared-gain-twentythird`: strict Core/Plan/Audio all-target lint
   passes, unchanged source guard, 25.37 seconds. Formatting and diff checks pass.
+- `audio-existing-regression-twentyfourth`: **372 pass**, zero ignored,
+  unchanged source guard, 32.02 seconds: 171 library tests and 201 existing
+  stage tests. The seven new Split tests are explicitly filtered from this
+  regression run because their separate three-pass/four-fail result is retained
+  above. This does not make the full Audio suite green.
 
 Full real-WAV PCM/limiter, remaining context combinations, Store/history,
 headless/native commands and receipts, macros, emitted media and performance
