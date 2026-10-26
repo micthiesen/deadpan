@@ -33,14 +33,16 @@ processing clocks, support, source admission or silence allowances. Full context
 correspondence, exact adjacency, copy provenance and concrete Repeat paths are
 checked; lineage alone supplies no authority.
 
-The broad Core/Plan candidate passes **2,127 tests**, 98 suites, zero ignored.
+The broad Core/Plan candidate passes **2,127 tests**, 98 nonempty suites, zero ignored.
 The six processing-depth variants now pass exact real-WAV authored/faded PCM,
 including root EQ and wet returns. The current seven-test real-WAV matrix has
 **three passes and four failures**, all four at preparation work limits; it does
 not establish all-owner or limiter preservation. Avoiding scope retrieval for
 empty occurrence batches removes measured redundant work but does not resolve
-those failures. Further work is preparing constant gain programs once per route
-while retaining dynamic automation. The per-read limit remains **16,777,216**;
+those failures. Constant gains are now prepared once per route, with four focused
+tests passing and dynamic automation retained; the matrix still has the same
+four failures. Final Plan checks pass **511 tests** and strict Core/Plan/Audio
+lint passes. Further measured preparation work remains. The per-read limit stays **16,777,216**;
 clock and delivery proof compilation share the existing **100,000** work ceiling.
 
 Native scoped Split stays blocked. Remaining preparation work, complete delivery

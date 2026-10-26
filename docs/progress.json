@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-26T22:45:15Z",
+  "updated_at": "2026-10-26T22:54:28Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Finish bounded preparation of general Split sounds. Current-delivery proofs pass exact Source/Sequence PCM at six processing depths; the full WAV matrix still has four limiter work-limit failures. Prepare constant gain programs once per route while preserving dynamic automation and all effects. Native scoped Split remains blocked. Coverage 85%; 10/24 requirements Complete; 0/7 gates closed.",
+  "focus": "Qualify bounded general Split sound preparation. Current-delivery proofs fix exact Source/Sequence PCM at six processing depths, and constant gains are prepared once per route. The full WAV matrix still has four limiter work-limit failures; diagnose remaining actual work without raising limits. Native scoped Split is blocked. Coverage 85%; 10/24 requirements Complete; 0/7 gates closed.",
   "features": [
     {
       "id": "editing",
@@ -1468,6 +1468,15 @@
       "revision": "f7edb5fd",
       "retrospective": false,
       "summary": "The uncommitted Split candidate now passes 2127 Core/Plan tests. A separate current-delivery forest proof fixes exact Source/Sequence root-filter input: six processing-depth variants pass authored/faded PCM. Ten focused tests cover independent forests, concrete Repeat plays, narrow history authority, failed-proof work and one shared 100000-unit compile allowance. The full seven-test WAV matrix remains three passes and four limiter preparation-work failures. Empty occurrence scope lookups were removed; constant gain program preparation is in progress. Native scoped Split stays blocked and no completion credit is granted. Revision names the prior committed research checkpoint, not a qualified production candidate."
+    },
+    {
+      "date": "2026-10-26",
+      "percent": 85,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 10,
+      "revision": "1853d8af",
+      "retrospective": false,
+      "summary": "The uncommitted Split candidate now prepares constant ClipGain once per route with exact Q32 addition, unchanged stage order, dynamic automation fallback and residency accounting. Four focused gain tests pass; final Plan passes 511 tests and strict Core/Plan/Audio lint passes, with unchanged source guards. The real-WAV matrix still has three passes and the same four limiter preparation-work failures, so further actual work diagnosis is needed. No completion credit is granted; native scoped Split remains blocked. Revision names the prior committed documentation checkpoint, not a qualified production candidate."
     }
   ],
   "assessment": {

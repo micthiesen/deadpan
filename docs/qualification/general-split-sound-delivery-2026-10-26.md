@@ -39,10 +39,15 @@ an 80-clock regression whose empty query succeeds within its measured allowance
 while an audible query still refuses. All temporary instrumentation is removed
 and byte-verified against its entry backup.
 
-This correction is insufficient. The next measured hot path evaluates constant
-ClipGain slices millions of times. Preparing an exact Q32 program once per route
-is in progress. Envelopes, including flat-valued envelopes, and mute ranges must
-retain their dynamic, half-open behavior.
+This correction is insufficient. Constant ClipGain slices are now prepared once
+per route as an exact Q32 delta and mute flag, applied at their original stage
+positions with checked addition. Dynamic envelopes, including flat-valued
+envelopes, and mute ranges retain their half-open clocked behavior. New cache
+capacity and headers count toward residency; preparation and applications retain
+their work checks. Four focused tests cover exact cancellation around saturation,
+mute, dynamic range boundaries, budgets and overflow. Review found no additional
+issue. This optimization also does not resolve the full matrix's work failures;
+the remaining actual preparation work needs another measured diagnosis.
 
 ## Results and retained development receipts
 
@@ -51,7 +56,7 @@ retained locally in `/tmp/deadpan-general-split-sounds-2026-10-25`. These later
 iterations are not yet frozen with a published source overlay. Do not attribute
 the earlier frozen candidate's source to these runs.
 
-- `core-plan-delivery-twentyfirst`: **2,127 pass**, 98 suites, zero ignored,
+- `core-plan-delivery-twentyfirst`: **2,127 pass**, 98 nonempty suites, zero ignored,
   source guard unchanged, 322.03 seconds.
 - `audio-delivery-depth-twentieth`: the single test's **six processing-depth
   variants pass exact authored/faded PCM**, including root-only, EQ and wet
@@ -69,8 +74,17 @@ the earlier frozen candidate's source to these runs.
   reporting and shared compiler allowance. The final two tests follow the broad
   run and do not add independent product coverage.
 - `strict-delivery-twentysecond` rejected a needless default struct update in
-  a new test. It is fixed; final integrated lint remains to be rerun after the
-  pending constant-gain work.
+  a new test. It is fixed.
+- `audio-worker-constant-gain-focused`: **four pass**, with unchanged source and
+  copied-binary guards. The retained unit binary hash is
+  `a55d5bcd8773d28bdc1cd05ae24eb3df8f5d085d78b0bba8d062aeeccbc7c2c2`.
+- `audio-prepared-gain-twentythird`: **three pass, four fail**, zero ignored,
+  unchanged source guard, 160.42 seconds. The same four limiter work-limit cases
+  remain failing after constant-gain preparation; no preservation claim expands.
+- `plan-delivery-final-twentythird`: **511 pass**, 27 nonempty suites, zero
+  ignored, unchanged source guard, 10.37 seconds. This overlaps the broad run.
+- `strict-prepared-gain-twentythird`: strict Core/Plan/Audio all-target lint
+  passes, unchanged source guard, 25.37 seconds. Formatting and diff checks pass.
 
 Full real-WAV PCM/limiter, remaining context combinations, Store/history,
 headless/native commands and receipts, macros, emitted media and performance

@@ -18,15 +18,19 @@ The seven-test real-WAV matrix remains **three pass, four fail**, all four at
 limiter preparation work limits. The all-owner/refinement case does not finish,
 so do not claim broader delivery or limiter preservation. Both preparation passes
 skip scope construction for empty occurrence batches; the measured saving is
-insufficient. Constant ClipGain program preparation in Components routes is the
-next implementation; keep envelopes and mute ranges dynamic, exact Q32 ordering,
-individual support/gates and all effects. Do not raise the 16,777,216 work limit,
+insufficient. Constant ClipGain programs in Components routes now pass four
+focused tests, preserving dynamic envelopes and mute ranges, exact Q32 ordering,
+stage positions and residency. The latest full matrix still has the same four
+work failures, so diagnose the remaining actual work before more optimization.
+Keep individual support/gates and all effects. Do not raise the 16,777,216 work limit,
 relax PCM equality or infer families from lineage alone. The delivery token must
 never bind historical plans or expose hidden input. See the
 [continuation](../qualification/general-split-sound-delivery-2026-10-26.md) and
 [frozen research](../qualification/general-split-sound-research-2026-10-26.md).
-Final strict lint is owed after the current gain work; the last attempt caught
-only a now-fixed needless struct update in a new test.
+Final Plan checks pass 511 tests and strict Core/Plan/Audio all-target lint passes;
+all source guards and formatting checks pass. The earlier lint refusal caught
+only a now-fixed needless struct update in a new test. The production candidate
+remains uncommitted. Do not mistake the published research checkpoint for it.
 Native scoped Split remains blocked until its complete command/receipt/semantic
 and rendering path is qualified. Preserve the foreign fuzz/Cargo.lock and .claude/
 changes. Raw development runs remain in the linked scratch directory and the
