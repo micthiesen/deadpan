@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-25T23:39:22Z",
+  "updated_at": "2026-10-26T00:51:21Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Native-worker launch trust is qualified and committed. Next: bind the complete private AI runtime to a compiled inventory and verify it before Check/Inference executes. Coverage about 83%; 7/24 requirements complete; 0/7 gates closed.",
+  "focus": "Private AI launch trust is qualified and committed. Next: retune an existing Follow's arrival scale and curve through shared commands and native controls. Full composability, audio/effects, incremental analysis, native workflow and performance work remain. Coverage about 84%; 8/24 requirements complete; 0/7 gates closed.",
   "features": [
     {
       "id": "editing",
@@ -125,12 +125,12 @@
     {
       "id": "release",
       "name": "App packaging, privacy and security",
-      "status": "mostly",
+      "status": "done",
       "requirements": [
         "DP-22",
         "DP-23"
       ],
-      "note": "Self-contained app, relocation, release audit and offline installation verified here. Native transcription, tracking and media workers now verify compiled executable/library pins and the expected signer before launch. DP-22 remains Partial because private AI Python and its imported-code tree still need a compiled inventory and app-seal admission before execution."
+      "note": "Self-contained personal app, relocation, offline installation and complete native/private-AI launch trust are locally qualified. Compiled pins, a closed AI inventory and expected signer/app seal run before execution. Real Check, generation, explicit acceptance, model-free offline export and Undo pass; candidate-quality failures remain recorded. Delivery gates remain separate and open."
     }
   ],
   "history": [
@@ -1396,6 +1396,15 @@
       "revision": "9d639426",
       "retrospective": false,
       "summary": "Packaged native-worker trust is implemented and qualified: three workers plus six FFmpeg libraries use compiled content pins and expected-signer checks before launch. Strict targeted checks, local/ad hoc bundles, real transcription/Vision work, 169 operations with 34 expected refusals and general relocation/render verification pass. DP-22.3 remains partial because private AI Python and its imported-code tree still need prelaunch inventory/seal admission. The unchanged 162-criterion ledger remains 83.3259%, rounded to 83%; 7/24 requirements and 0/7 gates complete."
+    },
+    {
+      "date": "2026-10-26",
+      "percent": 84,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 8,
+      "revision": "897c3d52",
+      "retrospective": false,
+      "summary": "DP-22.3 is locally qualified: a host-compiled closed private-AI inventory and signer/app seal now precede Check and Inference. Local/ad hoc/no-AI bundles, stale-host refusal, 150 tamper operations with 61 expected denials, real Check in both hosts, and established-fixture generation/acceptance/model-free offline export/Undo/history pass. Earlier quality, test and driver failures remain retained. DP-22 returns to Complete; the unchanged 162-criterion ledger computes 83.7426%, rounded to 84%, with 8/24 requirements complete and 0/7 gates closed."
     }
   ],
   "assessment": {
@@ -3305,13 +3314,18 @@
           {
             "id": "DP-22.3",
             "deliverable": "Actual hardened inside-out personal signing, immutable baseline and compiled helper trust pins",
-            "score": 0.5,
+            "score": 1,
             "evidence": [
               "docs/PACKAGING.md:120-157",
               "docs/PACKAGING.md:275-299",
               "docs/RELEASE_AUDIT.md",
               "docs/PROGRESS_ASSESSMENT.md#packaged-helper-trust-amendment",
               "docs/qualification/native-launch-trust-2026-10-25.md",
+              "docs/qualification/private-ai-launch-trust-2026-10-25.md",
+              "crates/deadpan-cli/src/bundle/ai.rs",
+              "crates/deadpan-cli/src/bundle/ai_inventory.rs",
+              "crates/xtask/src/bundle/ai_runtime/prepared.rs",
+              "tools/model-qualification/evidence/2026-10-25-ai-launch-trust/inventory.json",
               "crates/deadpan-cli/src/bundle/native.rs",
               "crates/deadpan-cli/src/bundle/image.rs",
               "crates/xtask/src/bundle/native.rs",
@@ -3321,7 +3335,7 @@
               "crates/deadpan-cli/src/proxy.rs",
               "crates/deadpan-cli/src/generation/runtime.rs"
             ],
-            "remaining": "Native-worker launch trust is now locally qualified. Private AI Python, worker scripts, imported code/bytecode, extensions and Metal/data files still need a closed compiled inventory and expected-signer/app-seal admission before Check or Inference executes. Build-time hashes and post-execution self-reports do not establish that authority.",
+            "remaining": "",
             "confidence": "high"
           },
           {
