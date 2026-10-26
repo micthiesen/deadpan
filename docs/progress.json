@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-26T00:51:21Z",
+  "updated_at": "2026-10-26T02:18:28Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Implementing existing Follow arrival-scale and curve editing. Shared retuning and CLI history tests are written; native controls and verification are in progress. No new acceptance credit yet. Full composability, audio/effects, incremental analysis, native workflow and performance work remain. Coverage about 84%; 8/24 requirements complete; 0/7 gates closed.",
+  "focus": "Complete stepped path return and escalation transformation, composable sound/timing edits, sample-resolution and variable-rate audio, full effects/mastering, cursor-priority incremental analysis, native workflows and measured performance. Existing Follow arrival/curve editing is qualified. About 84% acceptance coverage; 9/24 requirements Complete; 0/7 gates closed. This is not time remaining or release readiness.",
   "features": [
     {
       "id": "editing",
@@ -35,7 +35,7 @@
         "DP-08",
         "DP-11"
       ],
-      "note": "Source, Hold, Sequence, Repeat and Retime owners keep live targets while creep scales their local output clocks, in ordinary selection and explicit Repeat Play scopes. Targets use exact mapped Original time. Follow respects captured and live crops, with fallback for hidden targets. Camera paths, tracking, the paged face picker and editable point targets work. Nested-play native replay, complete export and exact portable history are verified. Camera now offers paged face and salient-region proposals from one verified exact picture; choosing a proposal saves one ordinary target, and region:N atomically saves target and framing. Native workflows, full export PCM/picture fidelity, portable history and scoped copied-worker relocation are verified. Ordinary ranged creep now keeps live Follow on all five owner kinds, preserving prefix scales, applying explicit from= only at In and holding terminal scales after Out. Fresh macro/dot ranges, Camera preservation, readable native inspector rows, complete Source export PCM/picture fidelity and exact portable history are verified. Pointer drawing, body/corner editing and point correction now share the keyboard draft and explicit save. Final release replays, the small-target regression, durable history and the evidence byte audit pass. Contained Time ranges now work inside explicit nested Repeat Plays through the shared exact owner map, with final release replays, full 240-picture/384,384-sample media and portable history verified. Existing creep arrival/curve adjustment and broader picture controls remain."
+      "note": "Source, Hold, Sequence, Repeat and Retime owners keep live targets while creep scales their local output clocks, in ordinary selection and explicit Repeat Play scopes. Targets use exact mapped Original time. Follow respects captured and live crops, with fallback for hidden targets. Camera paths, tracking, the paged face picker and editable point targets work. Nested-play native replay, complete export and exact portable history are verified. Camera now offers paged face and salient-region proposals from one verified exact picture; choosing a proposal saves one ordinary target, and region:N atomically saves target and framing. Native workflows, full export PCM/picture fidelity, portable history and scoped copied-worker relocation are verified. Ordinary ranged creep now keeps live Follow on all five owner kinds, preserving prefix scales, applying explicit from= only at In and holding terminal scales after Out. Fresh macro/dot ranges, Camera preservation, readable native inspector rows, complete Source export PCM/picture fidelity and exact portable history are verified. Pointer drawing, body/corner editing and point correction now share the keyboard draft and explicit save. Final release replays, the small-target regression, durable history and the evidence byte audit pass. Contained Time ranges now work inside explicit nested Repeat Plays through the shared exact owner map, with final release replays, full 240-picture/384,384-sample media and portable history verified. Existing animated Follow now has independent arrival-scale/curve controls in Camera and semantic Keep creep, retaining its exact target, fallback, clock/window, fresh macro intent and history. Final painted 60/120 Hz workflows, complete emitted media/PCM and portable histories pass. Broader picture controls remain."
     },
     {
       "id": "audio",
@@ -58,11 +58,11 @@
     {
       "id": "ai",
       "name": "AI pause pictures",
-      "status": "mostly",
+      "status": "done",
       "requirements": [
         "DP-12"
       ],
-      "note": "AI pauses, replacements and extensions work through normal app controls. Real generation, acceptance and offline export pass; keeping models loaded and performance comparisons remain."
+      "note": "DP-12 behavior is Complete under the primary-Mac scope after an independent source/evidence reconciliation. Real generation, explicit acceptance, rejection/fallback, native comparison, history and model-free offline export are verified. Its criteria already had full credit; this adds no percentage. Runtime/text caching, candidate comparisons and performance remain under DP-24 and Gates A/E/G. Failed interior candidates stay failed."
     },
     {
       "id": "import",
@@ -1405,6 +1405,15 @@
       "revision": "897c3d52",
       "retrospective": false,
       "summary": "DP-22.3 is locally qualified: a host-compiled closed private-AI inventory and signer/app seal now precede Check and Inference. Local/ad hoc/no-AI bundles, stale-host refusal, 150 tamper operations with 61 expected denials, real Check in both hosts, and established-fixture generation/acceptance/model-free offline export/Undo/history pass. Earlier quality, test and driver failures remain retained. DP-22 returns to Complete; the unchanged 162-criterion ledger computes 83.7426%, rounded to 84%, with 8/24 requirements complete and 0/7 gates closed."
+    },
+    {
+      "date": "2026-10-26",
+      "percent": 84,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 9,
+      "revision": "08382305",
+      "retrospective": false,
+      "summary": "Existing Follow arrival-scale and curve editing is verified through shared semantic commands and native temporary Camera controls. Strict selected checks retain 1,742 passes/four fixture/reference failures with a passing four-test continuation; final focused native 80, independent reviews, 415-check painted zoom workflows at 60/120 Hz plus live Kestrel, two complete release exports with 240 pictures/full 384,384-sample PCM equality and portable histories, and a 150-file evidence audit pass. DP-08.3 moves from 0.5 to 1, adding 0.2604 points: 84.0030%, rounded to 84%. A separate DP-12 source/evidence reconciliation changes strict completion to 9/24 without extra coverage; runtime caching, model comparisons and performance stay open. All seven gates remain open."
     }
   ],
   "assessment": {
@@ -1814,7 +1823,7 @@
               "docs/COMBINED_TRIM.md",
               "docs/qualification/native-trim-2026-10-01.md"
             ],
-            "remaining": "Existing creep parameter editing is separately incomplete in DP-08.",
+            "remaining": "Existing Follow arrival-scale/curve editing is qualified in DP-08.3.",
             "normative": "7.6-7.7"
           },
           {
@@ -2074,14 +2083,15 @@
           {
             "id": "DP-08.3",
             "deliverable": "Slow creep on beat/Hold/repeated group supports exact ownership, live targets and later parameter adjustment",
-            "score": 0.5,
+            "score": 1,
             "evidence": [
               "docs/qualification/scoped-framing-ranges-2026-10-25.md",
               "docs/qualification/ranged-follow-creep-2026-10-25.md",
               "crates/deadpan-core/src/framing_zoom.rs build_at",
-              "crates/deadpan-app/src/preview/camera_fields.rs Component"
+              "crates/deadpan-app/src/preview/camera_fields.rs Component",
+              "docs/qualification/follow-retune-2026-10-25.md"
             ],
-            "remaining": "Contained explicit-Play Time ranges are implemented and release/media/history verified. Existing animated Follow cannot independently change arrival factor/curve through Keep creep; Camera has only center/scale fields. Remaining normative scope/parameter controls still need completion.",
+            "remaining": "",
             "normative": "8 preamble,8.2"
           },
           {
@@ -2414,7 +2424,7 @@
       {
         "id": "DP-12",
         "name": "Local AI Hold behavior",
-        "notes": "Current Partial status is not supported by DP-12 behavior gaps in its own row. Resident reuse/text-embedding cache,2B precision bakeoff and cold/warm measurements belong §13/DP-13/DP-24 or gates. Full rights-cleared-person corpus/perceptual seams are owner-only. Recommend Complete after parent confirms allocation; do not silently drop those obligations elsewhere.",
+        "notes": "Complete after the independent source/evidence reconciliation in docs/qualification/ai-hold-reconciliation-2026-10-25.md. All eight criteria already scored 1, so strict closure adds no coverage. Resident runtime/text caching, candidate comparisons and performance remain under DP-24 and Gates A/E/G; owner-only quality trials retain exact procedures.",
         "criteria": [
           {
             "id": "DP-12.1",
@@ -2422,7 +2432,8 @@
             "score": 1,
             "evidence": [
               "docs/qualification/ai-insertion-2026-10-07.md",
-              "docs/GENERATED_HOLDS.md"
+              "docs/GENERATED_HOLDS.md",
+              "docs/qualification/ai-hold-reconciliation-2026-10-25.md"
             ],
             "remaining": "",
             "normative": "12.1-12.2"
@@ -2434,7 +2445,8 @@
             "evidence": [
               "docs/AI_HOLDS.md",
               "docs/qualification/bridge-scopes-2026-10-07.md",
-              "docs/qualification/ai-runtime-2026-10-05.md"
+              "docs/qualification/ai-runtime-2026-10-05.md",
+              "docs/qualification/ai-hold-reconciliation-2026-10-25.md"
             ],
             "remaining": "",
             "normative": "12.2"
@@ -2446,7 +2458,8 @@
             "evidence": [
               "docs/qualification/extension-native-2026-10-08.md",
               "docs/qualification/extension-bundles-2026-10-08.md",
-              "docs/qualification/extension-saved-2026-10-08.md"
+              "docs/qualification/extension-saved-2026-10-08.md",
+              "docs/qualification/ai-hold-reconciliation-2026-10-25.md"
             ],
             "remaining": "",
             "normative": "12.2"
@@ -2458,7 +2471,8 @@
             "evidence": [
               "docs/qualification/extension-bundles-2026-10-08.md",
               "docs/qualification/conditioning-color-2026-10-07.md",
-              "docs/AI_HOLDS.md Source and colour context"
+              "docs/AI_HOLDS.md Source and colour context",
+              "docs/qualification/ai-hold-reconciliation-2026-10-25.md"
             ],
             "remaining": "",
             "normative": "12.3-12.4"
@@ -2472,7 +2486,8 @@
               "docs/qualification/bridge-quality-2026-10-07.md",
               "docs/qualification/bridge-endpoints-2026-10-07.md",
               "docs/qualification/bridge-landmarks-2026-10-07.md",
-              "docs/qualification/bridge-region-2026-10-07.md"
+              "docs/qualification/bridge-region-2026-10-07.md",
+              "docs/qualification/ai-hold-reconciliation-2026-10-25.md"
             ],
             "remaining": "Threshold calibration and rights-cleared real-person/perceptual corpus are owner-only under29.1, not absent implementation.",
             "normative": "12.5"
@@ -2484,7 +2499,8 @@
             "evidence": [
               "docs/AI_HOLDS.md Native app workflow/Comparing variants",
               "docs/GENERATION_ACCEPTANCE.md",
-              "docs/qualification/ai-boundaries-2026-10-07.md"
+              "docs/qualification/ai-boundaries-2026-10-07.md",
+              "docs/qualification/ai-hold-reconciliation-2026-10-25.md"
             ],
             "remaining": "",
             "normative": "12.6"
@@ -2496,7 +2512,8 @@
             "evidence": [
               "docs/qualification/ai-replacements-2026-10-07.md",
               "docs/qualification/ai-boundaries-2026-10-07.md",
-              "docs/GENERATED_HOLDS.md"
+              "docs/GENERATED_HOLDS.md",
+              "docs/qualification/ai-hold-reconciliation-2026-10-25.md"
             ],
             "remaining": "",
             "normative": "12.7"
@@ -2508,7 +2525,8 @@
             "evidence": [
               "docs/qualification/extension-saved-2026-10-08.md",
               "docs/qualification/extension-native-2026-10-08.md",
-              "docs/qualification/ai-runtime-2026-10-05.md"
+              "docs/qualification/ai-runtime-2026-10-05.md",
+              "docs/qualification/ai-hold-reconciliation-2026-10-25.md"
             ],
             "remaining": "",
             "normative": "12.7"
@@ -3649,8 +3667,8 @@
     "risks": [
       "Composability matrix: structural timing transforms must preserve sample-phase history, owned sounds, nested Repeat overrides and fixed/pitch Retime clocks. Latest narrow admissions do not complete general scopes.",
       "DP-09 is broad audio workflow work: sample-resolution range authoring, variable rate, custom silence/tail policy and sound-bearing transforms remain, beyond polishing existing commands.",
-      "DP-10 automatic local alignment is absent; cursor-priority incremental analysis/tracking needs architecture and real integration, not another synthetic success case.",
-      "DP-08 post-insertion parameter edit gap is directly confirmed in source: Keep refuses an existing animated Follow; Camera exposes no independent factor/curve controls.",
+      "DP-10 reviewed English word refinement is qualified, but cursor-priority incremental analysis/tracking still needs architecture and real integration.",
+      "DP-08 still needs arbitrary stepped path return and complete escalation transformation/export scope. Existing Follow arrival-scale/curve editing is now qualified.",
       "Full shared picture/audio effects and mastering, incremental RenderPlan fragments and filtered cache lifecycle remain implementation work.",
       "Native workflow integration, HDR/output quality and hostile real-worker stress remain local acceptance work.",
       "Large-project visible edit/pause latency still misses its target; diagnostic median improvements are not a target or p95 pass.",
