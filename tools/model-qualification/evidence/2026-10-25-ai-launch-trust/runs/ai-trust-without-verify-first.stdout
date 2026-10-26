@@ -1,0 +1,78 @@
+verify: copied to /private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/Deadpan.app
+verify: ok   codesign --verify --deep --strict Ok(())
+audit: Contents/Frameworks/libavcodec.62.dylib - 8 dependencies; bundled: Contents/Frameworks/libavutil.60.dylib
+audit: Contents/Frameworks/libavfilter.11.dylib - 12 dependencies; bundled: Contents/Frameworks/libavcodec.62.dylib, Contents/Frameworks/libavformat.62.dylib, Contents/Frameworks/libavutil.60.dylib, Contents/Frameworks/libswresample.6.dylib, Contents/Frameworks/libswscale.9.dylib
+audit: Contents/Frameworks/libavformat.62.dylib - 9 dependencies; bundled: Contents/Frameworks/libavcodec.62.dylib, Contents/Frameworks/libavutil.60.dylib
+audit: Contents/Frameworks/libavutil.60.dylib - 6 dependencies; bundled: none
+audit: Contents/Frameworks/libonnxruntime.1.dylib - 12 dependencies; bundled: none
+audit: Contents/Frameworks/libswresample.6.dylib - 7 dependencies; bundled: Contents/Frameworks/libavutil.60.dylib
+audit: Contents/Frameworks/libswscale.9.dylib - 7 dependencies; bundled: Contents/Frameworks/libavutil.60.dylib
+audit: Contents/MacOS/deadpan-align - 4 dependencies; bundled: Contents/Frameworks/libonnxruntime.1.dylib
+audit: Contents/MacOS/deadpan-app - 24 dependencies; bundled: Contents/Frameworks/libavcodec.62.dylib, Contents/Frameworks/libavfilter.11.dylib, Contents/Frameworks/libavformat.62.dylib, Contents/Frameworks/libavutil.60.dylib, Contents/Frameworks/libswscale.9.dylib
+audit: Contents/MacOS/deadpan-cli - 16 dependencies; bundled: Contents/Frameworks/libavcodec.62.dylib, Contents/Frameworks/libavfilter.11.dylib, Contents/Frameworks/libavformat.62.dylib, Contents/Frameworks/libavutil.60.dylib, Contents/Frameworks/libswscale.9.dylib
+audit: Contents/MacOS/deadpan-media-worker - 7 dependencies; bundled: Contents/Frameworks/libavcodec.62.dylib, Contents/Frameworks/libavfilter.11.dylib, Contents/Frameworks/libavformat.62.dylib, Contents/Frameworks/libavutil.60.dylib, Contents/Frameworks/libswscale.9.dylib
+audit: Contents/MacOS/deadpan-track - 12 dependencies; bundled: Contents/Frameworks/libavcodec.62.dylib, Contents/Frameworks/libavfilter.11.dylib, Contents/Frameworks/libavformat.62.dylib, Contents/Frameworks/libavutil.60.dylib, Contents/Frameworks/libswscale.9.dylib
+audit: Contents/MacOS/deadpan-transcribe - 9 dependencies; bundled: none
+audit: Contents/Resources/helpers/deno/2.9.7/deno - 3 dependencies; bundled: none
+audit: Contents/Resources/helpers/yt-dlp/2026.08.19/yt-dlp_macos - 2 dependencies; bundled: none
+audit: info: Contents/Frameworks/libavcodec.62.dylib embeds 1 non-load string(s) containing /Users/michael
+audit: info: Contents/Frameworks/libavcodec.62.dylib embeds 1 non-load string(s) containing /Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+audit: info: Contents/Frameworks/libavfilter.11.dylib embeds 1 non-load string(s) containing /Users/michael
+audit: info: Contents/Frameworks/libavfilter.11.dylib embeds 1 non-load string(s) containing /Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+audit: info: Contents/Frameworks/libavformat.62.dylib embeds 1 non-load string(s) containing /Users/michael
+audit: info: Contents/Frameworks/libavformat.62.dylib embeds 1 non-load string(s) containing /Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+audit: info: Contents/Frameworks/libavutil.60.dylib embeds 1 non-load string(s) containing /Users/michael
+audit: info: Contents/Frameworks/libavutil.60.dylib embeds 1 non-load string(s) containing /Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+audit: info: Contents/Frameworks/libswresample.6.dylib embeds 1 non-load string(s) containing /Users/michael
+audit: info: Contents/Frameworks/libswresample.6.dylib embeds 1 non-load string(s) containing /Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+audit: info: Contents/Frameworks/libswscale.9.dylib embeds 1 non-load string(s) containing /Users/michael
+audit: info: Contents/Frameworks/libswscale.9.dylib embeds 1 non-load string(s) containing /Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+audit: info: Contents/MacOS/deadpan-app embeds 1 non-load string(s) containing /Users/michael
+audit: info: Contents/MacOS/deadpan-app embeds 2 non-load string(s) containing /opt/homebrew
+audit: info: Contents/MacOS/deadpan-cli embeds 1 non-load string(s) containing /Users/michael
+audit: info: Contents/MacOS/deadpan-cli embeds 2 non-load string(s) containing /opt/homebrew
+audit: 15 Mach-O files, 0 problems
+verify: ok   otool audit: only system or in-bundle libraries
+verify: ok   Deno/V8 notices match the vendored notice set []
+verify: ok   deadpan-app --smoke-test 
+verify: ok   deadpan-cli doctor: executable inside the bundle
+verify: ok   deadpan-cli doctor: "deadpan-media-worker" at "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/Deadpan.app/Contents/MacOS/deadpan-media-worker"
+verify: ok   deadpan-cli doctor: "deadpan-transcribe" at "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/Deadpan.app/Contents/MacOS/deadpan-transcribe"
+verify: ok   deadpan-cli doctor: "deadpan-track" at "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/Deadpan.app/Contents/MacOS/deadpan-track"
+verify: ok   deadpan-cli doctor: libavcodec loaded from "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/Deadpan.app/Contents/Frameworks/libavcodec.62.dylib"
+verify: ok   deadpan-cli doctor: libavformat loaded from "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/Deadpan.app/Contents/Frameworks/libavformat.62.dylib"
+verify: ok   deadpan-cli doctor: libavutil loaded from "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/Deadpan.app/Contents/Frameworks/libavutil.60.dylib"
+verify: ok   deadpan-cli doctor: libswscale loaded from "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/Deadpan.app/Contents/Frameworks/libswscale.9.dylib"
+verify: ok   deadpan-cli doctor: libavfilter loaded from "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/Deadpan.app/Contents/Frameworks/libavfilter.11.dylib"
+verify: ok   deadpan-cli doctor: downloader source "bundled"
+verify: ok   deadpan-cli doctor: "yt-dlp" "2026.08.19" at "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/Deadpan.app/Contents/Resources/helpers/yt-dlp/2026.08.19/yt-dlp_macos"
+verify: ok   deadpan-cli doctor: "deno" "2.9.7" at "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/Deadpan.app/Contents/Resources/helpers/deno/2.9.7/deno"
+verify: ok   deadpan-app --headless doctor: executable inside the bundle
+verify: ok   deadpan-app --headless doctor: "deadpan-media-worker" at "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/Deadpan.app/Contents/MacOS/deadpan-media-worker"
+verify: ok   deadpan-app --headless doctor: "deadpan-transcribe" at "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/Deadpan.app/Contents/MacOS/deadpan-transcribe"
+verify: ok   deadpan-app --headless doctor: "deadpan-track" at "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/Deadpan.app/Contents/MacOS/deadpan-track"
+verify: ok   deadpan-app --headless doctor: libavcodec loaded from "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/Deadpan.app/Contents/Frameworks/libavcodec.62.dylib"
+verify: ok   deadpan-app --headless doctor: libavformat loaded from "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/Deadpan.app/Contents/Frameworks/libavformat.62.dylib"
+verify: ok   deadpan-app --headless doctor: libavutil loaded from "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/Deadpan.app/Contents/Frameworks/libavutil.60.dylib"
+verify: ok   deadpan-app --headless doctor: libswscale loaded from "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/Deadpan.app/Contents/Frameworks/libswscale.9.dylib"
+verify: ok   deadpan-app --headless doctor: libavfilter loaded from "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/Deadpan.app/Contents/Frameworks/libavfilter.11.dylib"
+verify: ok   deadpan-app --headless doctor: downloader source "bundled"
+verify: ok   deadpan-app --headless doctor: "yt-dlp" "2026.08.19" at "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/Deadpan.app/Contents/Resources/helpers/yt-dlp/2026.08.19/yt-dlp_macos"
+verify: ok   deadpan-app --headless doctor: "deno" "2.9.7" at "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/Deadpan.app/Contents/Resources/helpers/deno/2.9.7/deno"
+verify: ok   downloader status: bundled baseline
+verify: ok   downloader status: "yt-dlp" verified
+verify: ok   downloader status: "deno" verified
+verify: ok   downloader probe under hardened runtime: yt-dlp "stable@2026.08.19 from yt-dlp/yt-dlp [594bd50c2] (darwin_exe)" ejs "0.8.0" deno "deno 2.9.7 (stable, release, aarch64-apple-darwin)"
+verify: ok   project create-original from /private/tmp/deadpan-word-refinement-2026-10-25/workflow/Original-qualified.mp4
+verify: ok   render -> /private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000/work/Exports/verify.mp4 (79273 bytes) {"event":"finished","schema_version":1,"request_id":"0d25fd53-5c4a-4b0c-af62-c40541ffbf4e","status":{"context":{"project_id":"01d084f9-2da2-4207-82dd-3c723454f4cf","revision_id":"5852c5d0-d083-4d06-829a-51316602cf7e"},"target":{"job_id":"b7f5e69d-ad25-411c-b00b-550df61c6dfd","attempt_id":"c46a115d-4 
+verify: ok   both packaged hosts explicitly admit no AI runtime; doctor reports AI unavailable
+verify: all positive checks passed
+verify: ok   tampered yt-dlp: downloader status refuses the bundled baseline
+verify: ok   tampered yt-dlp: probe fails with DownloaderHelperInvalid
+verify: ok   tampered yt-dlp: doctor reports the bundled problem
+verify: ok   deleted helpers directory: downloader status refuses the bundled baseline
+verify: ok   deleted helpers directory: probe fails with DownloaderHelperInvalid
+verify: ok   deleted helpers directory: doctor reports the bundled problem
+verify: ok   deleted Deno notices: the notice audit refuses the bundle (["deno/THIRD_PARTY_NOTICES.txt is missing: No such file or directory (os error 2)"])
+verify: all negative checks passed
+verify: kept /private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-bundle-verify-4938-1792974673855576000

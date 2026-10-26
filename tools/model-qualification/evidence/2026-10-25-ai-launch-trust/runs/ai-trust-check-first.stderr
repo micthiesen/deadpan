@@ -1,0 +1,15 @@
+   Compiling libc v0.2.189
+   Compiling serde_core v1.0.229
+   Compiling serde v1.0.229
+   Compiling errno v0.3.14
+   Compiling cpufeatures v0.3.1
+   Compiling sha2 v0.11.0
+   Compiling rustix v1.1.5
+   Compiling serde_json v1.0.151
+   Compiling xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 6.77s
+     Running `/tmp/deadpan-follow-creep-2026-10-24/target/debug/xtask check --since 8ad64f85`
+Error writing files: failed to resolve mod `tests`: /Users/michael/Code/deadpan/crates/xtask/src/bundle/ai_runtime/../../../../deadpan-cli/src/bundle/tests.rs does not exist
+Error writing files: failed to resolve mod `tests`: /Users/michael/Code/deadpan/crates/xtask/src/bundle/ai_runtime/../../../../deadpan-cli/src/bundle/tests.rs does not exist
+Error writing files: failed to resolve mod `tests`: /Users/michael/Code/deadpan/crates/xtask/src/bundle/ai_runtime/../../../../deadpan-cli/src/bundle/tests.rs does not exist
+xtask: rustfmt --check failed on changed files

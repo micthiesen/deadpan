@@ -1,0 +1,2897 @@
+{
+  "source_bundle": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/bundle-local-first/Deadpan.app",
+  "app": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app",
+  "script_sha256": "25f51cdfd786eb2a76e15be439f89fd6f9db705195d60f9397a7157eac7739aa",
+  "setup": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/setup.json",
+  "input_fingerprints": {
+    "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/bundle-local-first/Deadpan.app/Contents/MacOS/deadpan-cli": {
+      "bytes": 50334096,
+      "sha256": "a936b7878a96481d63a1ca786cf17a06eb33cc0f8a8731249d8a73b97ec8ab17"
+    },
+    "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/bundle-local-first/Deadpan.app/Contents/MacOS/deadpan-app": {
+      "bytes": 69059648,
+      "sha256": "f20761cc59219fbdc7f7184032e7ec880cc4b21f2942a7a076268894c57384d4"
+    },
+    "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/bundle-local-first/Deadpan.app/Contents/Resources/ai-runtime-inventory.json": {
+      "bytes": 2314724,
+      "sha256": "08ed482a9f5009c1941d4d7aa2651a0fc643529fa087c50f25aeedfc0e04e9c0"
+    },
+    "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/cfr-bframes.mp4": {
+      "bytes": 39157,
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-cli/src/bundle.rs": {
+      "bytes": 7743,
+      "sha256": "e8f5563d075ae95e3dd07c02459470ed2cfe17d1d7ef3338729491193ad30d2a"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-cli/src/bundle/ai.rs": {
+      "bytes": 6639,
+      "sha256": "82e44b0c516f26a881a835a886243e21a879348922a6745ec2e8e327ea9f0a27"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-cli/src/bundle/ai_inventory.rs": {
+      "bytes": 16388,
+      "sha256": "220b32d1b88f5d558906a491d5610213885e1ac74954c96a3137a6250414c0ff"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-cli/src/generation/runtime/launch.rs": {
+      "bytes": 11361,
+      "sha256": "21d587e9ba1855bf1e0a9cc6092b2d5ba77505ad9e2695b403f1576ec735dc1c"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-cli/src/generation/attempt.rs": {
+      "bytes": 59414,
+      "sha256": "f394c6432a6f7f6284adecd18babc205af2ef100a18b86b74995cf8d92a92647"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-cli/src/models.rs": {
+      "bytes": 24950,
+      "sha256": "e27063880b73adb0f1a67e987ea033320616371581c4fa22488ecdf6096e4834"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-cli/src/lib.rs": {
+      "bytes": 65646,
+      "sha256": "1148893d296773b78004374d23fbf06d0844976e5b2e73ef759f891f5c2d48b4"
+    }
+  },
+  "records": [
+    {
+      "name": "positive-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 0,
+      "seconds": 3.710162540897727,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "positive-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 0,
+      "seconds": 3.6248759161680937,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "script-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.14367704186588526,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "script-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7578629171475768,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "script-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.3823497500270605,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "script-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.35560883302241564,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "script-check-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 12.348933542147279,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "script-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.4216720834374428,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "script-check-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 12.327706875279546,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "script-inference-document-before",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "project",
+        "dump",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/cases-second with spaces/Workflow.deadpan",
+        "--json"
+      ],
+      "exit_code": 0,
+      "seconds": 0.040562959387898445,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "script-actual-inference-refused",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "generate-hold",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/cases-second with spaces/Workflow.deadpan",
+        "--hold",
+        "ai-trust-hold",
+        "--seed",
+        "10",
+        "--mode",
+        "extend-left",
+        "--motion",
+        "moderate"
+      ],
+      "exit_code": 1,
+      "seconds": 0.602788083255291,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "script-inference-document-after",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "project",
+        "dump",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/cases-second with spaces/Workflow.deadpan",
+        "--json"
+      ],
+      "exit_code": 0,
+      "seconds": 0.011338917538523674,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "script-restore-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.13430537469685078,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "script-restore-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7701896652579308,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "script-restore-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.39187175035476685,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "bytecode-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.12745045963674784,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "bytecode-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7390635004267097,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "bytecode-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.39243612438440323,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "bytecode-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.36979125067591667,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "bytecode-check-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 12.54100862517953,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "bytecode-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.4257259164005518,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "bytecode-check-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 11.795040500350296,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "bytecode-restore-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.13639945909380913,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "bytecode-restore-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.711190290749073,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "bytecode-restore-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.39320591650903225,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "pth-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.1402072925120592,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "pth-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7086430825293064,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "pth-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.39284779224544764,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "pth-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.35177295841276646,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "pth-check-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 11.756737624295056,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "pth-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.3731303755193949,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "pth-check-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 11.778397916816175,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "pth-restore-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.13952970784157515,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "pth-restore-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7187354164198041,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "pth-restore-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.39341537468135357,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "metal-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.134527750313282,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "metal-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7113881250843406,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "metal-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.3899274589493871,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "metal-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.35322795808315277,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "metal-check-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 11.75320608355105,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "metal-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.3724004998803139,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "metal-check-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 11.786909833550453,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "metal-restore-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.13865887466818094,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "metal-restore-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7175634996965528,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "metal-restore-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.3931218748912215,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "inventory-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.13390195835381746,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "inventory-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7118373345583677,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "inventory-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.4063728339970112,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "inventory-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.04702450055629015,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "inventory-check-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 11.52180549968034,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "inventory-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.013002792373299599,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "inventory-check-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 11.652049291878939,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "inventory-restore-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.13765879161655903,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "inventory-restore-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7729378324002028,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "inventory-restore-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.4071934577077627,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "missing-worker-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.14086708333343267,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "missing-worker-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7534250002354383,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "missing-worker-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.39213716611266136,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "missing-worker-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.38822333235293627,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "missing-worker-check-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 11.492287000641227,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "missing-worker-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.37948837503790855,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "missing-worker-check-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 11.439373749308288,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "missing-worker-restore-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.13720854185521603,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "missing-worker-restore-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.735982708632946,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "missing-worker-restore-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.38934774976223707,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "mode-worker-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.13478491641581059,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "mode-worker-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7135047921910882,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "mode-worker-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.3908274155110121,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "mode-worker-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.34570749942213297,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "mode-worker-check-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 11.780809249728918,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "mode-worker-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.36771720740944147,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "mode-worker-check-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 11.893838833086193,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "mode-worker-restore-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.135859708301723,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "mode-worker-restore-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7084943344816566,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "mode-worker-restore-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.4031129591166973,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "alias-escape-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.3455860000103712,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "alias-escape-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.34885312523692846,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "alias-cycle-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.3452296666800976,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "alias-cycle-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.3530045421794057,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "directory-alias-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.34967679157853127,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "directory-alias-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.35141945723444223,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "special-fifo-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.019180666655302048,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "special-fifo-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.018961166962981224,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "identity-fifo-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.019113250076770782,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "identity-fifo-check-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 11.429894332773983,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "identity-fifo-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.020123790949583054,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "identity-fifo-check-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 11.412509916350245,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "identity-restored-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 0,
+      "seconds": 2.0425273329019547,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "identity-restored-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 0,
+      "seconds": 2.506441750563681,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "added-hook-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.13297449983656406,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "added-hook-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7250491250306368,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "added-hook-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.37829187512397766,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "added-hook-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.3526799585670233,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "added-hook-check-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 11.817049332894385,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "added-hook-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.37716416642069817,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "added-hook-check-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 11.767602000385523,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "added-hook-restore-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.13785729091614485,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "added-hook-restore-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7197873750701547,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "added-hook-restore-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.38040612544864416,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-python-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.13670837506651878,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-python-remove-signature",
+      "command": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/Resources/ai-runtime/python/bin/python3.12"
+      ],
+      "exit_code": 0,
+      "seconds": 0.008721540682017803,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-python-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/Resources/ai-runtime/python/bin/python3.12"
+      ],
+      "exit_code": 0,
+      "seconds": 0.03363116551190615,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-python-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.13375066593289375,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-python-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7169797495007515,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-python-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.39346024952828884,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-python-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.3520602500066161,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-python-check-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 12.251570541411638,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-python-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.39435558300465345,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-python-check-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 13.539968334138393,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-python-restore-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.16004674974828959,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-python-restore-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.939471666701138,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-python-restore-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.409644833765924,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-library-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.15287258382886648,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-library-remove-signature",
+      "command": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/Resources/ai-runtime/python/lib/python3.12/site-packages/mlx/lib/libmlx.dylib"
+      ],
+      "exit_code": 0,
+      "seconds": 0.021056042052805424,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-library-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/Resources/ai-runtime/python/lib/python3.12/site-packages/mlx/lib/libmlx.dylib"
+      ],
+      "exit_code": 0,
+      "seconds": 0.058738624677062035,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-library-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.15418987441807985,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-library-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7788575831800699,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-library-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.3979574590921402,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-library-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.39496054127812386,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-library-check-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 13.005496541969478,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-library-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.4104342497885227,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-library-check-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 12.91700724978,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-library-restore-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.16182508319616318,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-library-restore-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8865801673382521,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-library-restore-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.4621242908760905,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-ffmpeg-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.1659157918766141,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-ffmpeg-remove-signature",
+      "command": [
+        "/usr/bin/codesign",
+        "--remove-signature",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/Resources/ai-runtime/bin/ffmpeg"
+      ],
+      "exit_code": 0,
+      "seconds": 0.018771416507661343,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-ffmpeg-sign",
+      "command": [
+        "/usr/bin/codesign",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/Resources/ai-runtime/bin/ffmpeg"
+      ],
+      "exit_code": 0,
+      "seconds": 0.05268016643822193,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-ffmpeg-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.1619699578732252,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-ffmpeg-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.8650530409067869,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-ffmpeg-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.4721915004774928,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-ffmpeg-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.4260053336620331,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-ffmpeg-check-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 13.306998792104423,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-ffmpeg-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.4739095838740468,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-ffmpeg-check-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 13.412401749752462,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-ffmpeg-restore-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.15622945874929428,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-ffmpeg-restore-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.9249645415693521,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "resigned-ffmpeg-restore-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.5094361249357462,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "removed-marker-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.167368583381176,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "removed-marker-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.9486927082762122,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "removed-marker-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.5113660832867026,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "removed-marker-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.009431417100131512,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "removed-marker-check-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 13.220440625213087,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "removed-marker-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 1,
+      "seconds": 0.014654832892119884,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "removed-marker-check-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "models",
+        "check",
+        "ltx-2.3-q4-extension"
+      ],
+      "exit_code": 1,
+      "seconds": 13.054307541809976,
+      "expected_success": false,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "removed-marker-restore-identity",
+      "command": [
+        "/opt/homebrew/opt/python@3.15/bin/python3.15",
+        "/Users/michael/.dotfiles/scripts/macos-sign.py",
+        "dev.deadpan.signer-probe",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/signing-probe"
+      ],
+      "exit_code": 0,
+      "seconds": 0.15725858323276043,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "removed-marker-restore-seal",
+      "command": [
+        "/usr/bin/codesign",
+        "--force",
+        "--sign",
+        "7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E",
+        "--keychain",
+        "/Users/michael/Library/Keychains/dotfiles-signing.keychain-db",
+        "--timestamp=none",
+        "--options",
+        "runtime",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.894526083022356,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "removed-marker-restore-strict",
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app"
+      ],
+      "exit_code": 0,
+      "seconds": 0.4739552913233638,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/Users/michael",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "restored-positive-deadpan-cli",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 0,
+      "seconds": 2.8179554166272283,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "restored-positive-deadpan-app",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-app",
+        "--headless",
+        "ai-runtime-qualify"
+      ],
+      "exit_code": 0,
+      "seconds": 3.5244326665997505,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    }
+  ],
+  "offline_scope": "AI Check/Inference use production deny-network sandbox; outer IP denial only for non-AI commands because macOS rejects nested sandbox-exec."
+}

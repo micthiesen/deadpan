@@ -1,0 +1,66 @@
+{
+  "ai_runtime": {
+    "cache_key": "1575cc961aa327a5bf6c",
+    "ffmpeg_configuration": "--prefix=<build> --enable-static --disable-shared --enable-gpl --enable-libx264 --disable-nonfree --disable-version3 --disable-autodetect --enable-zlib --disable-network --disable-doc --disable-debug --disable-ffplay --arch=aarch64 --target-os=darwin --sysroot=<build> --pkg-config-flags=--static --extra-cflags='-mmacosx-version-min=26.0' --extra-ldflags='-mmacosx-version-min=26.0'",
+    "gpl_distribution_approved": false,
+    "gpl_programs": [
+      "Contents/Resources/ai-runtime/bin/ffmpeg",
+      "Contents/Resources/ai-runtime/bin/ffprobe"
+    ],
+    "ltx_commit": "3392d75934120b7e69eefbe55893f7ef82be92a4",
+    "python": "3.12.13",
+    "runtime_id": "ltx-mlx",
+    "runtime_version": "0.15.8+deadpan6",
+    "wheels": 36
+  },
+  "ai_runtime_inventory_sha256": "08ed482a9f5009c1941d4d7aa2651a0fc643529fa087c50f25aeedfc0e04e9c0",
+  "built_at": "2026-10-26T00:16:10Z",
+  "deployment_target": "15.0",
+  "ffmpeg_configuration": "--prefix=<build prefix> --enable-shared --disable-static --enable-pic --disable-gpl --disable-nonfree --disable-version3 --disable-autodetect --disable-network --disable-doc --disable-debug --enable-libopus --disable-decoder=opus --disable-encoder=libopus --enable-libdav1d --disable-decoder=av1 --disable-ffmpeg --disable-ffplay --arch=aarch64 --cpu=generic --target-os=darwin --sysroot=<macOS SDK> --enable-videotoolbox --enable-audiotoolbox --extra-cflags='-arch arm64 -mmacosx-version-min=15.0' --extra-ldflags='-arch arm64 -mmacosx-version-min=15.0'",
+  "git_changes": true,
+  "git_commit": "8ad64f8554bb209f8fcf24721c69fbaed0ae4e01",
+  "limitations": [
+    "Not notarized unless Deadpan.release.json beside the bundle says so.",
+    "Model weights are not bundled; they install as verified model packs. The AI runtime's ffmpeg/ffprobe are GPL-2.0-or-later (libx264).",
+    "Application updates use complete verified bundles with the previous build retained for rollback. Helpers and model packs use independent signed manifests and rollback."
+  ],
+  "macos_sdk": "26.5",
+  "native_host_content_pins": {
+    "authority": "independently embedded into the final App and CLI; this provenance is informational",
+    "images": {
+      "Frameworks/libavcodec.62.dylib": "527c1aa5cf89433fa0e7254e69fafebbb8514634ec6aab5e71f00f3f62ed6ad9",
+      "Frameworks/libavfilter.11.dylib": "583563dbeb9c6ebdb37d9cbc46f22f24355afb3dc538bb95f575c167b8f39c07",
+      "Frameworks/libavformat.62.dylib": "b719fb2d56e64df5f290b2a9d4aa64a939cf9ae35ac171152dfbb3813408231e",
+      "Frameworks/libavutil.60.dylib": "92810aa4437bd1e79165a18eeef7f5479e0e5e085fafe885a4344ddaa740df92",
+      "Frameworks/libswresample.6.dylib": "6063f4b1c96ae65e64d54f8184479eb39f392a416ef5e7c9fc1de00107550d09",
+      "Frameworks/libswscale.9.dylib": "5b00482b5b36859f7aa52d3952dad66e4fc6fee4189d6f41883120012ae9a16d",
+      "MacOS/deadpan-media-worker": "de83ac6877b4eabf218ebff3635d3cece8e12f9b8faabdd8b0ef34cc08a80867",
+      "MacOS/deadpan-track": "fa5bbc7c31b677dfe9aef2e558ce736c04a0ed4ce6da48f1e4e9a73df1513eaf",
+      "MacOS/deadpan-transcribe": "f0c5bfee975af42aa00707285bd2702fee28bc9ca79537d31d651f68ffeafaac"
+    }
+  },
+  "notarization": "none",
+  "onnxruntime": {
+    "load_policy": "direct link from deadpan-align; qualified source and system-only transitive dependencies",
+    "shipped_library": "Contents/Frameworks/libonnxruntime.1.dylib",
+    "shipped_sha256": "9f18a61164575cff3047c3df17309bf95312891fea9e40d2c0340309ce68a888",
+    "source_bytes": 33037336,
+    "source_sha256": "9d2945b4de2ca594608f33b99498c8a81e6696e75da7ae9c67bc9ad3cc36c0d6",
+    "version": "1.31.0",
+    "wheel_sha256": "0ba02a44acb6203040354d9a1f160e3f37a43feac7bb05caa3e0ea545efed505",
+    "wheel_url": "https://files.pythonhosted.org/packages/e0/2b/117f94d73a3bac4276c285c47e384e1b3ea67b191aa4c7592df9d3f4a136/onnxruntime-1.31.0-cp313-cp313-macosx_14_0_arm64.whl"
+  },
+  "path_remapping": null,
+  "profile": "release",
+  "refinement_host_content_pins": {
+    "authority": "independently embedded into the final App and CLI; this provenance is informational",
+    "ort": "2717b286f83f0d44b9551b8b246763e43ce224cc0163a74a40e25fcaaee67d54",
+    "worker": "bf8712ab37524ba15315d5e292b17de64ab76e3a4f60b82964b5570124f82f4b"
+  },
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6",
+  "schema": 2,
+  "signature": "ad-hoc",
+  "source_date_epoch": null,
+  "version": "0.1.0",
+  "xcode": "Xcode 26.6\nBuild version 17F113"
+}

@@ -1,0 +1,1 @@
+{"error":{"code":"IoFailure","current_revision":null,"message":"inventory symlink is dangling or aliases a directory","recovery_backup":null},"schema_version":1}

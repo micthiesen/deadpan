@@ -1,0 +1,255 @@
+{
+  "attempt_id": "462b7560bdcc42aeb93f1811e61ee378",
+  "attempt_ordinal": 1,
+  "conditioning_ms": 34,
+  "context_sha256": "4f64f53f893c5e11188352c7854fa89297f44469b79ceef247b5593b802de3d8",
+  "failure": null,
+  "hold_id": "ai-trust-hold",
+  "options": {
+    "mode": "extend_from_left",
+    "motion": "still",
+    "region_target": {
+      "selection": "none"
+    }
+  },
+  "plan": {
+    "operation": "extension",
+    "plan": {
+      "native_dimensions": {
+        "height": 320,
+        "width": 768
+      },
+      "operation": "extension",
+      "sampling": {
+        "context_frame_count": 9,
+        "direction": "from_left",
+        "generated_frame_count": 8,
+        "interpolation": "encoded_srgb_rgb8_linear_half_up",
+        "native_rate": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "output_frame_count": 12,
+        "policy": "frame_centers_clamped",
+        "project_rate": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "schema_version": 1
+      },
+      "schema_version": 1
+    }
+  },
+  "protocol": 1,
+  "ready": {
+    "admission": {
+      "native_span": {
+        "end": {
+          "ticks": 708,
+          "time_base": {
+            "denominator": 1000,
+            "numerator": 1
+          }
+        },
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "denominator": 1000,
+            "numerator": 1
+          }
+        }
+      },
+      "sampled_span": {
+        "end": {
+          "ticks": 499,
+          "time_base": {
+            "denominator": 1000,
+            "numerator": 1
+          }
+        },
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "denominator": 1000,
+            "numerator": 1
+          }
+        }
+      }
+    },
+    "joins": {
+      "advisory": true,
+      "entry": {
+        "measure": {
+          "class": "noticeable",
+          "max_abs_diff": 235,
+          "mean_abs_diff": 7.227053493923611
+        },
+        "status": "conditioned"
+      },
+      "exit": {
+        "status": "absent"
+      },
+      "region": [
+        768,
+        320
+      ]
+    },
+    "native": {
+      "byte_length": 2760051,
+      "content": {
+        "algorithm": "blake3",
+        "digest": "5d5cd9d88da19e087f3fed448c361bd8e1c06c03ddcf38081f7df9bb1ab88dc7"
+      }
+    },
+    "provenance": {
+      "byte_length": 98656,
+      "content": {
+        "algorithm": "blake3",
+        "digest": "d719eef6c61a0b33090d9e95a9fbe22a59107b462014881c490d8f171a2b8f9c"
+      }
+    },
+    "sampled": {
+      "byte_length": 1938188,
+      "content": {
+        "algorithm": "blake3",
+        "digest": "f8aaf5fef177827ee4927b3ce64a7727039beaec3c7a173c2e06bcfb0d62d9de"
+      }
+    }
+  },
+  "record_error": null,
+  "request_id": "ai-hold-28d9e54935064098ae91ea9409fad26e",
+  "request_version": 1,
+  "seed": 42107,
+  "state": "Ready",
+  "timings_ms": {
+    "publication": 202,
+    "qualification": 4608,
+    "worker": 165140,
+    "workspace": 3444
+  },
+  "variants": [
+    {
+      "attempt_id": "462b7560bdcc42aeb93f1811e61ee378",
+      "attempt_ordinal": 1,
+      "context_sha256": "4f64f53f893c5e11188352c7854fa89297f44469b79ceef247b5593b802de3d8",
+      "failure": null,
+      "hold_id": "ai-trust-hold",
+      "plan": {
+        "operation": "extension",
+        "plan": {
+          "native_dimensions": {
+            "height": 320,
+            "width": 768
+          },
+          "operation": "extension",
+          "sampling": {
+            "context_frame_count": 9,
+            "direction": "from_left",
+            "generated_frame_count": 8,
+            "interpolation": "encoded_srgb_rgb8_linear_half_up",
+            "native_rate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "output_frame_count": 12,
+            "policy": "frame_centers_clamped",
+            "project_rate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "schema_version": 1
+          },
+          "schema_version": 1
+        }
+      },
+      "ready": {
+        "admission": {
+          "native_span": {
+            "end": {
+              "ticks": 708,
+              "time_base": {
+                "denominator": 1000,
+                "numerator": 1
+              }
+            },
+            "start": {
+              "ticks": 0,
+              "time_base": {
+                "denominator": 1000,
+                "numerator": 1
+              }
+            }
+          },
+          "sampled_span": {
+            "end": {
+              "ticks": 499,
+              "time_base": {
+                "denominator": 1000,
+                "numerator": 1
+              }
+            },
+            "start": {
+              "ticks": 0,
+              "time_base": {
+                "denominator": 1000,
+                "numerator": 1
+              }
+            }
+          }
+        },
+        "joins": {
+          "advisory": true,
+          "entry": {
+            "measure": {
+              "class": "noticeable",
+              "max_abs_diff": 235,
+              "mean_abs_diff": 7.227053493923611
+            },
+            "status": "conditioned"
+          },
+          "exit": {
+            "status": "absent"
+          },
+          "region": [
+            768,
+            320
+          ]
+        },
+        "native": {
+          "byte_length": 2760051,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "5d5cd9d88da19e087f3fed448c361bd8e1c06c03ddcf38081f7df9bb1ab88dc7"
+          }
+        },
+        "provenance": {
+          "byte_length": 98656,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "d719eef6c61a0b33090d9e95a9fbe22a59107b462014881c490d8f171a2b8f9c"
+          }
+        },
+        "sampled": {
+          "byte_length": 1938188,
+          "content": {
+            "algorithm": "blake3",
+            "digest": "f8aaf5fef177827ee4927b3ce64a7727039beaec3c7a173c2e06bcfb0d62d9de"
+          }
+        }
+      },
+      "record_error": null,
+      "request_id": "ai-hold-28d9e54935064098ae91ea9409fad26e",
+      "request_version": 1,
+      "seed": 42107,
+      "state": "Ready",
+      "timings_ms": {
+        "publication": 202,
+        "qualification": 4608,
+        "worker": 165140,
+        "workspace": 3444
+      },
+      "worker_log_tail": null
+    }
+  ],
+  "worker_log_tail": null
+}

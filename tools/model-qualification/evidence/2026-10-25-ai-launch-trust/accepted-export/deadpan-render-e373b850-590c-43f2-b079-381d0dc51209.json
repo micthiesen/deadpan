@@ -1,0 +1,1077 @@
+{
+  "schema_version": 1,
+  "application_version": "0.1.0",
+  "publication_id": "e373b850-590c-43f2-b079-381d0dc51209",
+  "movie_filename": "accepted.mp4",
+  "report_filename": "deadpan-render-e373b850-590c-43f2-b079-381d0dc51209.json",
+  "scope": "verified_candidate_prepared_for_atomic_publication",
+  "destination_readback": {
+    "bytes": 55047,
+    "sha256": "a7d6d2d826776aee53579b933b97a53281f13978604f5eab374f169370d76bd4"
+  },
+  "provenance": {
+    "schema_version": 2,
+    "project_id": "a422ea37-f24e-4230-bccf-83d409420ee4",
+    "revision_id": "e7639b85-08d3-4a8d-b542-c77a13bdc667",
+    "document_sha256": "5340019bc407003ab955f3e74659a4a5c3ac37c8eaf9df34fa4c87d934244b58",
+    "range": {
+      "start": 0,
+      "end": 21
+    },
+    "catalog_scope": "committed_catalog_superset",
+    "catalog": [
+      {
+        "asset": "ai-hold-e7639b85-08d3-4a8d-b542-c77a13bdc667-native",
+        "qualification": {
+          "status": "unqualified"
+        }
+      },
+      {
+        "asset": "ai-hold-e7639b85-08d3-4a8d-b542-c77a13bdc667-sampled",
+        "qualification": {
+          "status": "unqualified"
+        }
+      },
+      {
+        "asset": "d5e5011b-7e07-4e6c-afcc-813c17f558ac",
+        "qualification": {
+          "status": "qualified",
+          "receipt": "ff0e87b36747548763db737e9c6ef0ca3057639680dcba803099e6c844cdb742",
+          "original": {
+            "content": {
+              "algorithm": "blake3",
+              "digest": "bd9962a5638f6804f6817a3ffd4352b4c76cb7c4c06f73befd8e937755f1e7e8"
+            },
+            "byte_length": 38193
+          },
+          "source_sha256": "56b3e7c2372c5ae0975d20d68bbf937ef0474a455168780d1cc5542db507ea5f"
+        }
+      }
+    ],
+    "generated_dependency_scope": "effective_picture_masters_and_transitive_provenance",
+    "generated_artifacts": [
+      {
+        "sampled_asset": "ai-hold-e7639b85-08d3-4a8d-b542-c77a13bdc667-sampled",
+        "sampled_object": {
+          "content": {
+            "algorithm": "blake3",
+            "digest": "f8aaf5fef177827ee4927b3ce64a7727039beaec3c7a173c2e06bcfb0d62d9de"
+          },
+          "byte_length": 1938188
+        },
+        "native_asset": "ai-hold-e7639b85-08d3-4a8d-b542-c77a13bdc667-native",
+        "native_object": {
+          "content": {
+            "algorithm": "blake3",
+            "digest": "5d5cd9d88da19e087f3fed448c361bd8e1c06c03ddcf38081f7df9bb1ab88dc7"
+          },
+          "byte_length": 2760051
+        },
+        "provenance": {
+          "content": {
+            "algorithm": "blake3",
+            "digest": "d719eef6c61a0b33090d9e95a9fbe22a59107b462014881c490d8f171a2b8f9c"
+          },
+          "byte_length": 98656
+        },
+        "sampling": {
+          "operation": "extension",
+          "sampling": {
+            "schema_version": 1,
+            "direction": "from_left",
+            "project_rate": {
+              "numerator": 24,
+              "denominator": 1
+            },
+            "native_rate": {
+              "numerator": 24,
+              "denominator": 1
+            },
+            "context_frame_count": 9,
+            "generated_frame_count": 8,
+            "output_frame_count": 12,
+            "interpolation": "encoded_srgb_rgb8_linear_half_up",
+            "policy": "frame_centers_clamped"
+          }
+        },
+        "content_aspect": [
+          768,
+          320
+        ]
+      }
+    ],
+    "generated_intervals": [
+      {
+        "artifact_index": 0,
+        "project_range": {
+          "start": 9,
+          "end": 21
+        },
+        "output_range": [
+          9,
+          21
+        ]
+      }
+    ],
+    "encoder_selection": "automatic_sdr_v1",
+    "render_intent": {
+      "schema_version": 2,
+      "job_id": "e70c533d-4c2d-4afa-839f-97ef81b5d089",
+      "project_id": "a422ea37-f24e-4230-bccf-83d409420ee4",
+      "revision_id": "e7639b85-08d3-4a8d-b542-c77a13bdc667",
+      "document_sha256": "5340019bc407003ab955f3e74659a4a5c3ac37c8eaf9df34fa4c87d934244b58",
+      "range": {
+        "start": 0,
+        "end": 21
+      },
+      "policy": {
+        "schema_version": 1,
+        "selection": "automatic",
+        "algorithm": "automatic_sdr_v1"
+      }
+    },
+    "encoding_decision": {
+      "schema_version": 1,
+      "job_id": "e70c533d-4c2d-4afa-839f-97ef81b5d089",
+      "encoding_attempt_id": "72527664-07a4-408e-bca4-dc670ad693c6",
+      "algorithm": "automatic_sdr_v1",
+      "document_sha256": "5340019bc407003ab955f3e74659a4a5c3ac37c8eaf9df34fa4c87d934244b58",
+      "output": {
+        "project_id": "a422ea37-f24e-4230-bccf-83d409420ee4",
+        "revision_id": "e7639b85-08d3-4a8d-b542-c77a13bdc667",
+        "range": {
+          "start": 0,
+          "end": 21
+        },
+        "canvas": [
+          768,
+          320
+        ],
+        "raster": [
+          768,
+          320
+        ],
+        "frame_rate": {
+          "numerator": 24,
+          "denominator": 1
+        },
+        "color_policy": "sdr_rec709",
+        "time_base": {
+          "numerator": 1,
+          "denominator": 24
+        },
+        "frame_count": 21,
+        "terminal_pts": 21,
+        "project_audio_start": 0,
+        "project_audio_end": 42000,
+        "relative_aspect_error": {
+          "numerator": "0",
+          "denominator": "1"
+        }
+      },
+      "runtime": {
+        "helper_sha256": "a936b7878a96481d63a1ca786cf17a06eb33cc0f8a8731249d8a73b97ec8ab17",
+        "helper_bytes": 50334096,
+        "system": "Darwin",
+        "kernel_release": "25.5.0",
+        "kernel_build": "Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:34 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6050",
+        "machine": "arm64"
+      },
+      "probes": [
+        {
+          "ordinal": 0,
+          "identity": {
+            "request_id": "e70c533d-4c2d-4afa-839f-97ef81b5d089",
+            "attempt_id": "36293e84-5d01-43d8-b9ff-a4796cf8010d"
+          },
+          "spec": {
+            "raster": [
+              768,
+              320
+            ],
+            "frame_rate": [
+              24,
+              1
+            ],
+            "choice": {
+              "mode": "hardware",
+              "b_frames": "target_two"
+            }
+          },
+          "result": {
+            "outcome": "rejected",
+            "failure": {
+              "kind": {
+                "stage": "encoder",
+                "kind": "video_timestamp_order"
+              },
+              "diagnostic": "native encoder video_timestamp_order: H264 packet PTS (1) precedes DTS (2)"
+            },
+            "runtime": {
+              "schema_version": 1,
+              "platform": {
+                "os_build": "25F84",
+                "hardware_model": "Mac17,7",
+                "cpu_family": 4151073562
+              },
+              "system": "Darwin",
+              "kernel_release": "25.5.0",
+              "kernel_build": "Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:34 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6050",
+              "machine": "arm64",
+              "images": [
+                {
+                  "mapped": {
+                    "kind": "helper",
+                    "device": 16777233,
+                    "inode": 156495872,
+                    "uuid": [
+                      180,
+                      50,
+                      36,
+                      165,
+                      218,
+                      137,
+                      48,
+                      251,
+                      129,
+                      1,
+                      254,
+                      231,
+                      195,
+                      223,
+                      10,
+                      83
+                    ],
+                    "file_size": 50334096,
+                    "modification_time": {
+                      "seconds": 1792973331,
+                      "nanoseconds": 727461055
+                    },
+                    "change_time": {
+                      "seconds": 1792975047,
+                      "nanoseconds": 884152889
+                    },
+                    "birth_time": {
+                      "seconds": 1792973327,
+                      "nanoseconds": 754323140
+                    },
+                    "generation": 0
+                  },
+                  "sha256": "a936b7878a96481d63a1ca786cf17a06eb33cc0f8a8731249d8a73b97ec8ab17"
+                },
+                {
+                  "mapped": {
+                    "kind": "avcodec",
+                    "device": 16777233,
+                    "inode": 156508297,
+                    "uuid": [
+                      196,
+                      122,
+                      243,
+                      50,
+                      88,
+                      184,
+                      48,
+                      167,
+                      177,
+                      236,
+                      200,
+                      178,
+                      234,
+                      170,
+                      109,
+                      99
+                    ],
+                    "file_size": 13625024,
+                    "modification_time": {
+                      "seconds": 1792973331,
+                      "nanoseconds": 291361464
+                    },
+                    "change_time": {
+                      "seconds": 1792975048,
+                      "nanoseconds": 653279086
+                    },
+                    "birth_time": {
+                      "seconds": 1792973331,
+                      "nanoseconds": 245965918
+                    },
+                    "generation": 0
+                  },
+                  "sha256": "336d6d993ab11c01f4a6f5a66e2516a61ba298fd0aacd79fcaf11416caaddfed"
+                },
+                {
+                  "mapped": {
+                    "kind": "avformat",
+                    "device": 16777233,
+                    "inode": 156508294,
+                    "uuid": [
+                      121,
+                      231,
+                      94,
+                      140,
+                      54,
+                      81,
+                      51,
+                      30,
+                      156,
+                      103,
+                      217,
+                      178,
+                      230,
+                      151,
+                      243,
+                      49
+                    ],
+                    "file_size": 2249264,
+                    "modification_time": {
+                      "seconds": 1792973331,
+                      "nanoseconds": 385337104
+                    },
+                    "change_time": {
+                      "seconds": 1792975048,
+                      "nanoseconds": 653155669
+                    },
+                    "birth_time": {
+                      "seconds": 1792973331,
+                      "nanoseconds": 347506114
+                    },
+                    "generation": 0
+                  },
+                  "sha256": "3974873bc0f77a5d8c8825a251eaa0a374f3eb70a5a6b27dcd04e786c9e5e10d"
+                },
+                {
+                  "mapped": {
+                    "kind": "avutil",
+                    "device": 16777233,
+                    "inode": 156508300,
+                    "uuid": [
+                      51,
+                      23,
+                      139,
+                      171,
+                      238,
+                      238,
+                      59,
+                      64,
+                      129,
+                      137,
+                      184,
+                      94,
+                      174,
+                      204,
+                      153,
+                      133
+                    ],
+                    "file_size": 739632,
+                    "modification_time": {
+                      "seconds": 1792973331,
+                      "nanoseconds": 430073732
+                    },
+                    "change_time": {
+                      "seconds": 1792975048,
+                      "nanoseconds": 653410711
+                    },
+                    "birth_time": {
+                      "seconds": 1792973331,
+                      "nanoseconds": 391918033
+                    },
+                    "generation": 0
+                  },
+                  "sha256": "4f5a14873669aa4dd7c46e878b96ed30bb01e4a079463917a26f5e59d1f5961a"
+                },
+                {
+                  "mapped": {
+                    "kind": "swscale",
+                    "device": 16777233,
+                    "inode": 156508298,
+                    "uuid": [
+                      130,
+                      222,
+                      60,
+                      196,
+                      191,
+                      80,
+                      60,
+                      41,
+                      156,
+                      93,
+                      79,
+                      197,
+                      213,
+                      66,
+                      27,
+                      67
+                    ],
+                    "file_size": 962128,
+                    "modification_time": {
+                      "seconds": 1792973331,
+                      "nanoseconds": 618403595
+                    },
+                    "change_time": {
+                      "seconds": 1792975048,
+                      "nanoseconds": 653325794
+                    },
+                    "birth_time": {
+                      "seconds": 1792973331,
+                      "nanoseconds": 582063025
+                    },
+                    "generation": 0
+                  },
+                  "sha256": "cbc0d56cdbb9874240c2ba834a36966b4309d2c23a70139792ab7cf2b7c9a8dd"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "ordinal": 1,
+          "identity": {
+            "request_id": "e70c533d-4c2d-4afa-839f-97ef81b5d089",
+            "attempt_id": "407395b1-2a9a-4d5a-9c69-2e06342133da"
+          },
+          "spec": {
+            "raster": [
+              768,
+              320
+            ],
+            "frame_rate": [
+              24,
+              1
+            ],
+            "choice": {
+              "mode": "hardware",
+              "b_frames": "none"
+            }
+          },
+          "result": {
+            "outcome": "succeeded",
+            "report": {
+              "schema_version": 2,
+              "spec": {
+                "raster": [
+                  768,
+                  320
+                ],
+                "frame_rate": [
+                  24,
+                  1
+                ],
+                "choice": {
+                  "mode": "hardware",
+                  "b_frames": "none"
+                }
+              },
+              "manifest": {
+                "contract": {
+                  "picture": {
+                    "project_id": "encoder-admission-probe-v1",
+                    "revision_id": "deterministic-probe-v1",
+                    "range": {
+                      "start": 0,
+                      "end": 37
+                    },
+                    "canvas": [
+                      768,
+                      320
+                    ],
+                    "raster": [
+                      768,
+                      320
+                    ],
+                    "frame_rate": {
+                      "numerator": 24,
+                      "denominator": 1
+                    },
+                    "color_policy": "sdr_rec709",
+                    "time_base": {
+                      "numerator": 1,
+                      "denominator": 24
+                    },
+                    "frame_count": 37,
+                    "terminal_pts": 37,
+                    "project_audio_start": 0,
+                    "project_audio_end": 74000,
+                    "relative_aspect_error": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    }
+                  },
+                  "choice": {
+                    "mode": "hardware",
+                    "b_frames": "none"
+                  }
+                },
+                "document_sha256": "be51eaa2866d180ece84df0ee1898632665672ba5d3b533394957b232e4c373b",
+                "movie": {
+                  "reference": "output/movie.mp4",
+                  "sha256": "ce9077db98e47c54ddb6974d8ef3bdf8d135d0227d2e1ba4a2e62d3c55271f4d",
+                  "byte_length": 18780
+                },
+                "report": {
+                  "info": {
+                    "abi_version": 4,
+                    "avcodec_version": 4066151,
+                    "avformat_version": 4064103,
+                    "avutil_version": 3934311,
+                    "movie_timescale": 48000,
+                    "video_time_base_num": 1,
+                    "video_time_base_den": 24,
+                    "audio_time_base_num": 1,
+                    "audio_time_base_den": 48000,
+                    "audio_frame_size": 1024,
+                    "video_profile": 100,
+                    "video_has_b_frames": 0,
+                    "video_max_b_frames": 0,
+                    "video_gop_size": 12,
+                    "audio_profile": 1,
+                    "audio_initial_padding": 1024,
+                    "audio_trailing_padding": 0,
+                    "requested_mode": "hardware",
+                    "video_bitrate": 1628571,
+                    "audio_bitrate": 384000,
+                    "maximum_moov_bytes": 1179648,
+                    "video_rate_control": {
+                      "max_frame_qp": 24,
+                      "max_bitrate": 4885713
+                    }
+                  },
+                  "video_frames": 37,
+                  "audio_samples": 74000,
+                  "video_packets": 37,
+                  "audio_packets": 75,
+                  "output_bytes": 18780,
+                  "packet_bytes": 16610,
+                  "video_duration_from_contract_packets": 37,
+                  "faststart_read_opens": 1,
+                  "faststart_read_closes": 1,
+                  "video_eof": true,
+                  "audio_eof": true
+                }
+              },
+              "verification": {
+                "policy_version": 2,
+                "contract": {
+                  "picture": {
+                    "project_id": "encoder-admission-probe-v1",
+                    "revision_id": "deterministic-probe-v1",
+                    "range": {
+                      "start": 0,
+                      "end": 37
+                    },
+                    "canvas": [
+                      768,
+                      320
+                    ],
+                    "raster": [
+                      768,
+                      320
+                    ],
+                    "frame_rate": {
+                      "numerator": 24,
+                      "denominator": 1
+                    },
+                    "color_policy": "sdr_rec709",
+                    "time_base": {
+                      "numerator": 1,
+                      "denominator": 24
+                    },
+                    "frame_count": 37,
+                    "terminal_pts": 37,
+                    "project_audio_start": 0,
+                    "project_audio_end": 74000,
+                    "relative_aspect_error": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    }
+                  },
+                  "choice": {
+                    "mode": "hardware",
+                    "b_frames": "none"
+                  }
+                },
+                "document_sha256": "be51eaa2866d180ece84df0ee1898632665672ba5d3b533394957b232e4c373b",
+                "movie_sha256": "ce9077db98e47c54ddb6974d8ef3bdf8d135d0227d2e1ba4a2e62d3c55271f4d",
+                "movie_bytes": 18780,
+                "video_frames": 37,
+                "audio_samples": 74000,
+                "video_packets": 37,
+                "audio_packets": 75,
+                "gops": 4,
+                "fresh_gop_frames": 37,
+                "maximum_b_run": 0,
+                "runtime_versions": [
+                  4066151,
+                  4064103,
+                  3934311
+                ],
+                "movie_timescale": 48000,
+                "video_edit_media_time": 0,
+                "audio_edit_media_time": 2048,
+                "manual_first_sample": -2048,
+                "manual_physical_samples": 76800,
+                "ordinary_first_sample": 0,
+                "ordinary_physical_samples": 74752
+              },
+              "content": {
+                "schema_version": 1,
+                "video_frames": 37,
+                "plane_samples": [
+                  9093120,
+                  2273280,
+                  2273280
+                ],
+                "maximum_plane_error": [
+                  8,
+                  6,
+                  7
+                ],
+                "absolute_plane_error": [
+                  722001,
+                  16300,
+                  25813
+                ],
+                "squared_plane_error": [
+                  732873,
+                  18042,
+                  31439
+                ],
+                "worst_frame_mean_absolute_error_milli": [
+                  212,
+                  24,
+                  30
+                ],
+                "worst_frame_mean_squared_error_milli": [
+                  234,
+                  39,
+                  57
+                ],
+                "audio_samples": 74000,
+                "markers": [
+                  {
+                    "expected_samples": [
+                      100,
+                      137
+                    ],
+                    "observed_samples": [
+                      100,
+                      137
+                    ],
+                    "observed_peaks": [
+                      0.74950767,
+                      -0.62448245
+                    ]
+                  },
+                  {
+                    "expected_samples": [
+                      37000,
+                      37037
+                    ],
+                    "observed_samples": [
+                      37000,
+                      37037
+                    ],
+                    "observed_peaks": [
+                      0.6221221,
+                      -0.74735516
+                    ]
+                  },
+                  {
+                    "expected_samples": [
+                      73800,
+                      73837
+                    ],
+                    "observed_samples": [
+                      73800,
+                      73837
+                    ],
+                    "observed_peaks": [
+                      0.6837989,
+                      -0.55994207
+                    ]
+                  }
+                ],
+                "unexpected_audio_peak": 0.0033979206
+              },
+              "runtime": {
+                "schema_version": 1,
+                "platform": {
+                  "os_build": "25F84",
+                  "hardware_model": "Mac17,7",
+                  "cpu_family": 4151073562
+                },
+                "system": "Darwin",
+                "kernel_release": "25.5.0",
+                "kernel_build": "Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:34 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6050",
+                "machine": "arm64",
+                "images": [
+                  {
+                    "mapped": {
+                      "kind": "helper",
+                      "device": 16777233,
+                      "inode": 156495872,
+                      "uuid": [
+                        180,
+                        50,
+                        36,
+                        165,
+                        218,
+                        137,
+                        48,
+                        251,
+                        129,
+                        1,
+                        254,
+                        231,
+                        195,
+                        223,
+                        10,
+                        83
+                      ],
+                      "file_size": 50334096,
+                      "modification_time": {
+                        "seconds": 1792973331,
+                        "nanoseconds": 727461055
+                      },
+                      "change_time": {
+                        "seconds": 1792975047,
+                        "nanoseconds": 884152889
+                      },
+                      "birth_time": {
+                        "seconds": 1792973327,
+                        "nanoseconds": 754323140
+                      },
+                      "generation": 0
+                    },
+                    "sha256": "a936b7878a96481d63a1ca786cf17a06eb33cc0f8a8731249d8a73b97ec8ab17"
+                  },
+                  {
+                    "mapped": {
+                      "kind": "avcodec",
+                      "device": 16777233,
+                      "inode": 156508297,
+                      "uuid": [
+                        196,
+                        122,
+                        243,
+                        50,
+                        88,
+                        184,
+                        48,
+                        167,
+                        177,
+                        236,
+                        200,
+                        178,
+                        234,
+                        170,
+                        109,
+                        99
+                      ],
+                      "file_size": 13625024,
+                      "modification_time": {
+                        "seconds": 1792973331,
+                        "nanoseconds": 291361464
+                      },
+                      "change_time": {
+                        "seconds": 1792975048,
+                        "nanoseconds": 653279086
+                      },
+                      "birth_time": {
+                        "seconds": 1792973331,
+                        "nanoseconds": 245965918
+                      },
+                      "generation": 0
+                    },
+                    "sha256": "336d6d993ab11c01f4a6f5a66e2516a61ba298fd0aacd79fcaf11416caaddfed"
+                  },
+                  {
+                    "mapped": {
+                      "kind": "avformat",
+                      "device": 16777233,
+                      "inode": 156508294,
+                      "uuid": [
+                        121,
+                        231,
+                        94,
+                        140,
+                        54,
+                        81,
+                        51,
+                        30,
+                        156,
+                        103,
+                        217,
+                        178,
+                        230,
+                        151,
+                        243,
+                        49
+                      ],
+                      "file_size": 2249264,
+                      "modification_time": {
+                        "seconds": 1792973331,
+                        "nanoseconds": 385337104
+                      },
+                      "change_time": {
+                        "seconds": 1792975048,
+                        "nanoseconds": 653155669
+                      },
+                      "birth_time": {
+                        "seconds": 1792973331,
+                        "nanoseconds": 347506114
+                      },
+                      "generation": 0
+                    },
+                    "sha256": "3974873bc0f77a5d8c8825a251eaa0a374f3eb70a5a6b27dcd04e786c9e5e10d"
+                  },
+                  {
+                    "mapped": {
+                      "kind": "avutil",
+                      "device": 16777233,
+                      "inode": 156508300,
+                      "uuid": [
+                        51,
+                        23,
+                        139,
+                        171,
+                        238,
+                        238,
+                        59,
+                        64,
+                        129,
+                        137,
+                        184,
+                        94,
+                        174,
+                        204,
+                        153,
+                        133
+                      ],
+                      "file_size": 739632,
+                      "modification_time": {
+                        "seconds": 1792973331,
+                        "nanoseconds": 430073732
+                      },
+                      "change_time": {
+                        "seconds": 1792975048,
+                        "nanoseconds": 653410711
+                      },
+                      "birth_time": {
+                        "seconds": 1792973331,
+                        "nanoseconds": 391918033
+                      },
+                      "generation": 0
+                    },
+                    "sha256": "4f5a14873669aa4dd7c46e878b96ed30bb01e4a079463917a26f5e59d1f5961a"
+                  },
+                  {
+                    "mapped": {
+                      "kind": "swscale",
+                      "device": 16777233,
+                      "inode": 156508298,
+                      "uuid": [
+                        130,
+                        222,
+                        60,
+                        196,
+                        191,
+                        80,
+                        60,
+                        41,
+                        156,
+                        93,
+                        79,
+                        197,
+                        213,
+                        66,
+                        27,
+                        67
+                      ],
+                      "file_size": 962128,
+                      "modification_time": {
+                        "seconds": 1792973331,
+                        "nanoseconds": 618403595
+                      },
+                      "change_time": {
+                        "seconds": 1792975048,
+                        "nanoseconds": 653325794
+                      },
+                      "birth_time": {
+                        "seconds": 1792973331,
+                        "nanoseconds": 582063025
+                      },
+                      "generation": 0
+                    },
+                    "sha256": "cbc0d56cdbb9874240c2ba834a36966b4309d2c23a70139792ab7cf2b7c9a8dd"
+                  }
+                ]
+              },
+              "settings": {
+                "video_bitrate": 1628571,
+                "audio_bitrate": 384000,
+                "gop_frames": 12,
+                "b_frames": 0,
+                "movie_timescale": 48000
+              }
+            }
+          }
+        }
+      ],
+      "outcome": {
+        "outcome": "selected",
+        "probe_ordinal": 1
+      }
+    },
+    "encoded_manifest": {
+      "contract": {
+        "picture": {
+          "project_id": "a422ea37-f24e-4230-bccf-83d409420ee4",
+          "revision_id": "e7639b85-08d3-4a8d-b542-c77a13bdc667",
+          "range": {
+            "start": 0,
+            "end": 21
+          },
+          "canvas": [
+            768,
+            320
+          ],
+          "raster": [
+            768,
+            320
+          ],
+          "frame_rate": {
+            "numerator": 24,
+            "denominator": 1
+          },
+          "color_policy": "sdr_rec709",
+          "time_base": {
+            "numerator": 1,
+            "denominator": 24
+          },
+          "frame_count": 21,
+          "terminal_pts": 21,
+          "project_audio_start": 0,
+          "project_audio_end": 42000,
+          "relative_aspect_error": {
+            "numerator": "0",
+            "denominator": "1"
+          }
+        },
+        "choice": {
+          "mode": "hardware",
+          "b_frames": "none"
+        }
+      },
+      "document_sha256": "5340019bc407003ab955f3e74659a4a5c3ac37c8eaf9df34fa4c87d934244b58",
+      "movie": {
+        "reference": "output/movie.mp4",
+        "sha256": "a7d6d2d826776aee53579b933b97a53281f13978604f5eab374f169370d76bd4",
+        "byte_length": 55047
+      },
+      "report": {
+        "info": {
+          "abi_version": 4,
+          "avcodec_version": 4066151,
+          "avformat_version": 4064103,
+          "avutil_version": 3934311,
+          "movie_timescale": 48000,
+          "video_time_base_num": 1,
+          "video_time_base_den": 24,
+          "audio_time_base_num": 1,
+          "audio_time_base_den": 48000,
+          "audio_frame_size": 1024,
+          "video_profile": 100,
+          "video_has_b_frames": 0,
+          "video_max_b_frames": 0,
+          "video_gop_size": 12,
+          "audio_profile": 1,
+          "audio_initial_padding": 1024,
+          "audio_trailing_padding": 0,
+          "requested_mode": "hardware",
+          "video_bitrate": 1628571,
+          "audio_bitrate": 384000,
+          "maximum_moov_bytes": 257048576,
+          "video_rate_control": {
+            "max_frame_qp": 24,
+            "max_bitrate": 4885713
+          }
+        },
+        "video_frames": 21,
+        "audio_samples": 42000,
+        "video_packets": 21,
+        "audio_packets": 44,
+        "output_bytes": 55047,
+        "packet_bytes": 53225,
+        "video_duration_from_contract_packets": 21,
+        "faststart_read_opens": 1,
+        "faststart_read_closes": 1,
+        "video_eof": true,
+        "audio_eof": true
+      }
+    },
+    "verification": {
+      "policy_version": 2,
+      "contract": {
+        "picture": {
+          "project_id": "a422ea37-f24e-4230-bccf-83d409420ee4",
+          "revision_id": "e7639b85-08d3-4a8d-b542-c77a13bdc667",
+          "range": {
+            "start": 0,
+            "end": 21
+          },
+          "canvas": [
+            768,
+            320
+          ],
+          "raster": [
+            768,
+            320
+          ],
+          "frame_rate": {
+            "numerator": 24,
+            "denominator": 1
+          },
+          "color_policy": "sdr_rec709",
+          "time_base": {
+            "numerator": 1,
+            "denominator": 24
+          },
+          "frame_count": 21,
+          "terminal_pts": 21,
+          "project_audio_start": 0,
+          "project_audio_end": 42000,
+          "relative_aspect_error": {
+            "numerator": "0",
+            "denominator": "1"
+          }
+        },
+        "choice": {
+          "mode": "hardware",
+          "b_frames": "none"
+        }
+      },
+      "document_sha256": "5340019bc407003ab955f3e74659a4a5c3ac37c8eaf9df34fa4c87d934244b58",
+      "movie_sha256": "a7d6d2d826776aee53579b933b97a53281f13978604f5eab374f169370d76bd4",
+      "movie_bytes": 55047,
+      "video_frames": 21,
+      "audio_samples": 42000,
+      "video_packets": 21,
+      "audio_packets": 44,
+      "gops": 2,
+      "fresh_gop_frames": 21,
+      "maximum_b_run": 0,
+      "runtime_versions": [
+        4066151,
+        4064103,
+        3934311
+      ],
+      "movie_timescale": 48000,
+      "video_edit_media_time": 0,
+      "audio_edit_media_time": 2048,
+      "manual_first_sample": -2048,
+      "manual_physical_samples": 45056,
+      "ordinary_first_sample": 0,
+      "ordinary_physical_samples": 43008
+    }
+  }
+}

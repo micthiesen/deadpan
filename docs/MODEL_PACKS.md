@@ -335,6 +335,7 @@ signature and admission against a replay key) and rolls it back to version 2
 | --- | --- |
 | `models list` | JSON: root, free bytes and every approved pack with size, files, operations, licenses (with bytes each covers), memory estimate, installed directory, staged and remaining bytes |
 | `models license <pack>` | Every license's title, summary, attribution, access, link and full compiled text |
+| `models check <pack>` | Rehash every installed file and rerun its real runtime smoke test under the version lock; no download, activation or replacement |
 | `models install <pack> [--accept-license]` | Download, verify, smoke-test, activate |
 | `models import <pack> <folder-or-archive.tar> [--accept-license]` | The same from an offline source |
 | `models export <pack> <archive.tar>` | Write an installed pack as an offline archive |
@@ -342,7 +343,7 @@ signature and admission against a replay key) and rolls it back to version 2
 | `models update <signed.json\|https-url> [--from <folder-or-archive.tar>] [--accept-license] [--allow-downgrade]` | Verify a signed pack update, install its version beside the current one, smoke-test, then select it |
 | `models rollback <pack>` | Select the previous version again |
 
-`license`, `install`, `import`, `export` and `remove` act on the selected
+`license`, `check`, `install`, `import`, `export` and `remove` act on the selected
 version, or on `--version <v>` from the catalog (compiled packs and verified
 retained updates). `models list` lists that catalog with `origin`
 (`compiled` or `signed_update`), `selected` and `previous`. All take an optional `--root` (default `~/Library/Application Support/Deadpan/Models` on

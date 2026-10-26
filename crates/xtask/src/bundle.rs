@@ -545,13 +545,19 @@ fn remaps(workspace: &Path) -> Vec<(PathBuf, &'static str)> {
     remaps
 }
 
+struct HostPins<'a> {
+    refinement: &'a refinement::Pins,
+    native: &'a native::Pins,
+    ai: Option<&'a ai_runtime::Prepared>,
+}
+
 /// Release-build the shipped binaries into `target` with path remapping and
 /// return each executable as Cargo reports it.
 fn build(
     workspace: &Path,
     target: &Path,
     packages: &[&str],
-    pins: Option<(&refinement::Pins, &native::Pins)>,
+    pins: Option<&HostPins<'_>>,
 ) -> Result<BTreeMap<String, PathBuf>> {
     let remaps = remaps(workspace);
     let rust: Vec<String> = remaps
@@ -591,8 +597,9 @@ fn build(
         .env("CFLAGS", with_existing("CFLAGS"))
         .env("CXXFLAGS", with_existing("CXXFLAGS"))
         .stderr(std::process::Stdio::inherit());
-    refinement::build_environment(&mut command, pins.map(|(refinement, _)| refinement));
-    native::build_environment(&mut command, pins.map(|(_, native)| native))?;
+    refinement::build_environment(&mut command, pins.map(|pins| pins.refinement));
+    native::build_environment(&mut command, pins.map(|pins| pins.native))?;
+    ai_runtime::build_environment(&mut command, pins.and_then(|pins| pins.ai));
     let result = command.output().map_err(|e| e.to_string())?;
     if !result.status.success() {
         return Err(format!("release build failed ({})", result.status));
@@ -716,19 +723,6 @@ pub fn run(arguments: &[String]) -> Result<()> {
             identity: options.identity.as_deref(),
         },
     )?;
-    if options.build {
-        executables.extend(build(
-            &workspace,
-            &target,
-            &refinement::HOSTS,
-            Some((&refinement_pins, &native_pins)),
-        )?);
-    }
-    if sha256_file(&executables["deadpan-align"])? != refinement_pins.source_worker_sha256 {
-        return Err("host pin rebuild changed the independently prepared alignment worker".into());
-    }
-    native::verify_sources(&executables, &native_pins)?;
-
     let ai = if options.ai_runtime {
         let cache = match &options.ai_runtime_cache {
             Some(cache) => cache.clone(),
@@ -743,10 +737,35 @@ pub fn run(arguments: &[String]) -> Result<()> {
             built.report["bytes"].as_f64().unwrap_or(0.0) / 1_048_576.0,
             started.elapsed().as_secs_f64()
         );
-        Some(built)
+        Some(ai_runtime::prepare(
+            built,
+            &output_directory,
+            &Signer {
+                identity: options.identity.as_deref(),
+            },
+        )?)
     } else {
         None
     };
+    if options.build {
+        executables.extend(build(
+            &workspace,
+            &target,
+            &refinement::HOSTS,
+            Some(&HostPins {
+                refinement: &refinement_pins,
+                native: &native_pins,
+                ai: ai.as_ref(),
+            }),
+        )?);
+    }
+    if sha256_file(&executables["deadpan-align"])? != refinement_pins.source_worker_sha256 {
+        return Err("host pin rebuild changed the independently prepared alignment worker".into());
+    }
+    native::verify_sources(&executables, &native_pins)?;
+    if let Some(prepared) = &ai {
+        prepared.verify_frozen()?;
+    }
 
     let staging = output_directory.join(format!(".{APP_NAME}.staging-{}", std::process::id()));
     if staging.exists() {
@@ -875,8 +894,9 @@ fn assemble(
     built: &BTreeMap<String, PathBuf>,
     staging: &Path,
     source: &SourceState,
-    ai: Option<&ai_runtime::Built>,
+    ai: Option<&ai_runtime::Prepared>,
 ) -> Result<String> {
+    let ai_built = ai.map(|prepared| &prepared.built);
     let app = staging.join(APP_NAME);
     let contents = app.join("Contents");
     let macos = contents.join("MacOS");
@@ -933,9 +953,10 @@ fn assemble(
             return Err(format!("copied {} does not match its pin", helper.name));
         }
     }
-    // The private AI runtime, assembled from pinned inputs.
+    // Frozen and signed before the final hosts were compiled. This copy is
+    // never re-signed or read from the mutable build cache again.
     let ai_directory = match ai {
-        Some(built) => Some(ai_runtime::install(built, &contents)?),
+        Some(prepared) => Some(prepared.install(&contents)?),
         None => None,
     };
     // Copies carry no quarantine, provenance or Finder metadata.
@@ -1029,13 +1050,9 @@ fn assemble(
     for library in &libraries {
         refinement::sign_image(&signer, library, None)?;
     }
-    let ai_code = match &ai_directory {
-        Some(directory) => {
-            // No entitlements: measured unnecessary for MLX/Metal and Python
-            // under the hardened runtime (docs/PACKAGING.md).
-            let signed = ai_runtime::sign(directory, &|path, identifier| {
-                signer.sign(path, identifier, None)
-            })?;
+    let ai_code = match ai {
+        Some(prepared) => {
+            let signed = prepared.signed;
             println!(
                 "bundle: AI runtime signed ({} libraries, {} executables)",
                 signed.0, signed.1
@@ -1118,8 +1135,12 @@ fn assemble(
         &ffmpeg,
         &shipped_helpers,
     )?;
-    if let Some(built) = ai {
+    if let Some(built) = ai_built {
         ai_runtime::write_notices(built, workspace, &notices_directory)?;
+    }
+    if let Some(prepared) = ai {
+        prepared.verify_installed_notices(&notices_directory.join("ai-runtime"))?;
+        prepared.verify_frozen()?;
     }
     // Aggregated notices for everything statically linked into Deno.
     let identifiers = notices::spdx_identifiers(workspace)?;
@@ -1183,7 +1204,7 @@ fn assemble(
             { "name": "deadpan:notice", "value": "dav1d/COPYING" }
         ]
     }));
-    if let (Some(built), Some(directory)) = (ai, &ai_directory) {
+    if let (Some(built), Some(directory)) = (ai_built, &ai_directory) {
         native.extend(ai_runtime::sbom_components(built, directory)?);
     }
     let mut sbom = notices::sbom(
@@ -1237,7 +1258,8 @@ fn assemble(
         },
         "signature": signer.kind(),
         "notarization": if options.notary_profile.is_some() { "requested" } else { "none" },
-        "ai_runtime": ai.map(|built| json!({
+        "ai_runtime_inventory_sha256": ai.map(|prepared| &prepared.inventory_sha256),
+        "ai_runtime": ai_built.map(|built| json!({
             "runtime_id": built.report["runtime_id"],
             "runtime_version": built.report["runtime_version"],
             "cache_key": built.report["cache_key"],
@@ -1298,9 +1320,16 @@ fn assemble(
     check_staged_helpers(&app, staging)?;
     refinement::check_hosts(&app, refinement_pins)?;
     native::check_hosts(&app, native_pins)?;
+    ai_runtime::check_hosts(&app, ai)?;
     let ai_check = match &ai_directory {
         Some(directory) => {
             let checked = ai_runtime::check_staged(directory, staging)?;
+            // Recheck the closed tree, raw frozen bytes, resource seal and
+            // signers after direct execution as well as before it.
+            ai_runtime::check_hosts(&app, ai)?;
+            if let Some(prepared) = ai {
+                prepared.verify_installed_notices(&notices_directory.join("ai-runtime"))?;
+            }
             println!("bundle: staged AI runtime runs: {checked}");
             format!(
                 ", AI runtime {} libraries and {} executables",

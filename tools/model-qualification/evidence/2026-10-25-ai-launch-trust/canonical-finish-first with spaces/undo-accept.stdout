@@ -1,0 +1,179 @@
+{
+  "committed": true,
+  "outcome": {
+    "edit": {
+      "changed_ids": [
+        "ai-trust-hold"
+      ],
+      "description": "Undo Accept generated hold",
+      "duration_delta": 0,
+      "forward": {
+        "assets": {
+          "ai-hold-e7639b85-08d3-4a8d-b542-c77a13bdc667-native": {
+            "after": null,
+            "before": {
+              "audio": null,
+              "content_hash": "blake3:5d5cd9d88da19e087f3fed448c361bd8e1c06c03ddcf38081f7df9bb1ab88dc7",
+              "frame_count": 17,
+              "label": "Generated 5d5cd9d88da19e087f3fed448c361bd8e1c06c03ddcf38081f7df9bb1ab88dc7",
+              "still_image": false,
+              "video": {
+                "end": {
+                  "ticks": 708,
+                  "time_base": {
+                    "denominator": 1000,
+                    "numerator": 1
+                  }
+                },
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "denominator": 1000,
+                    "numerator": 1
+                  }
+                }
+              }
+            }
+          },
+          "ai-hold-e7639b85-08d3-4a8d-b542-c77a13bdc667-sampled": {
+            "after": null,
+            "before": {
+              "audio": null,
+              "content_hash": "blake3:f8aaf5fef177827ee4927b3ce64a7727039beaec3c7a173c2e06bcfb0d62d9de",
+              "frame_count": 12,
+              "label": "Generated f8aaf5fef177827ee4927b3ce64a7727039beaec3c7a173c2e06bcfb0d62d9de",
+              "still_image": false,
+              "video": {
+                "end": {
+                  "ticks": 499,
+                  "time_base": {
+                    "denominator": 1000,
+                    "numerator": 1
+                  }
+                },
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "denominator": 1000,
+                    "numerator": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "from_revision": "e7639b85-08d3-4a8d-b542-c77a13bdc667",
+        "marks": {},
+        "nodes": {
+          "ai-trust-hold": {
+            "after": {
+              "kind": {
+                "recipe": {
+                  "audio": {
+                    "type": "silence"
+                  },
+                  "duration": 12,
+                  "video": {
+                    "asset": "d5e5011b-7e07-4e6c-afcc-813c17f558ac",
+                    "timestamp": {
+                      "ticks": 8,
+                      "time_base": {
+                        "denominator": 24,
+                        "numerator": 1
+                      }
+                    },
+                    "type": "freeze"
+                  }
+                },
+                "type": "hold"
+              },
+              "label": "AI runtime trust regression"
+            },
+            "before": {
+              "kind": {
+                "recipe": {
+                  "audio": {
+                    "type": "silence"
+                  },
+                  "duration": 12,
+                  "video": {
+                    "accepted": {
+                      "artifact": {
+                        "content_aspect": [
+                          768,
+                          320
+                        ],
+                        "native_asset": "ai-hold-e7639b85-08d3-4a8d-b542-c77a13bdc667-native",
+                        "native_object": {
+                          "byte_length": 2760051,
+                          "content": {
+                            "algorithm": "blake3",
+                            "digest": "5d5cd9d88da19e087f3fed448c361bd8e1c06c03ddcf38081f7df9bb1ab88dc7"
+                          }
+                        },
+                        "provenance": {
+                          "byte_length": 98656,
+                          "content": {
+                            "algorithm": "blake3",
+                            "digest": "d719eef6c61a0b33090d9e95a9fbe22a59107b462014881c490d8f171a2b8f9c"
+                          }
+                        },
+                        "sampled_asset": "ai-hold-e7639b85-08d3-4a8d-b542-c77a13bdc667-sampled",
+                        "sampled_object": {
+                          "byte_length": 1938188,
+                          "content": {
+                            "algorithm": "blake3",
+                            "digest": "f8aaf5fef177827ee4927b3ce64a7727039beaec3c7a173c2e06bcfb0d62d9de"
+                          }
+                        },
+                        "sampling": {
+                          "operation": "extension",
+                          "sampling": {
+                            "context_frame_count": 9,
+                            "direction": "from_left",
+                            "generated_frame_count": 8,
+                            "interpolation": "encoded_srgb_rgb8_linear_half_up",
+                            "native_rate": {
+                              "denominator": 1,
+                              "numerator": 24
+                            },
+                            "output_frame_count": 12,
+                            "policy": "frame_centers_clamped",
+                            "project_rate": {
+                              "denominator": 1,
+                              "numerator": 24
+                            },
+                            "schema_version": 1
+                          }
+                        }
+                      },
+                      "fallback": {
+                        "asset": "d5e5011b-7e07-4e6c-afcc-813c17f558ac",
+                        "timestamp": {
+                          "ticks": 8,
+                          "time_base": {
+                            "denominator": 24,
+                            "numerator": 1
+                          }
+                        },
+                        "type": "freeze"
+                      }
+                    },
+                    "type": "generated"
+                  }
+                },
+                "type": "hold"
+              },
+              "label": "AI runtime trust regression"
+            }
+          }
+        },
+        "overrides": {},
+        "project_id": "a422ea37-f24e-4230-bccf-83d409420ee4",
+        "to_revision": "9a45eb37-36af-4e1d-ad2d-b5dfefa5ac97"
+      }
+    },
+    "revision_id": "9a45eb37-36af-4e1d-ad2d-b5dfefa5ac97"
+  },
+  "protocol": 1
+}

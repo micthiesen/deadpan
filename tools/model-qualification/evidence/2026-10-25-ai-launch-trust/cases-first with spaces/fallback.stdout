@@ -1,0 +1,396 @@
+{
+  "schema_version": 58,
+  "project_id": "36dda4d2-1b86-468c-8b88-a963a9d03a3c",
+  "revision_id": "b51c9c83-3460-48c6-9fec-e69fb9f74f53",
+  "presentation_basis": {
+    "width": 320,
+    "height": 180,
+    "frame_rate": {
+      "numerator": 30000,
+      "denominator": 1001
+    },
+    "color_policy": "sdr_rec709"
+  },
+  "basis_state": {
+    "rate_origin": "primary_source",
+    "geometry_origin": "primary_source",
+    "primary": {
+      "asset": "87aee815-d643-4128-9b15-b593c85c2a19",
+      "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+    }
+  },
+  "root": "ba09f6d2-bfd8-421f-9128-b70c0281fa2a",
+  "nodes": {
+    "0d2dba31-0c5b-45d0-8c4f-f798fe77be84": {
+      "label": "cfr-bframes",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 120,
+          "edit_window": {
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "end": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "video": {
+            "type": "stream",
+            "asset": "87aee815-d643-4128-9b15-b593c85c2a19",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "87aee815-d643-4128-9b15-b593c85c2a19",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      }
+    },
+    "ai-trust-hold": {
+      "label": "Pause",
+      "kind": {
+        "type": "hold",
+        "recipe": {
+          "duration": 30,
+          "video": {
+            "type": "background"
+          },
+          "audio": {
+            "type": "silence"
+          }
+        }
+      }
+    },
+    "ai-trust-split-0": {
+      "label": "cfr-bframes",
+      "kind": {
+        "type": "retime",
+        "child": "0d2dba31-0c5b-45d0-8c4f-f798fe77be84",
+        "duration": 60,
+        "mapping": {
+          "start": 0,
+          "end": 60
+        },
+        "pitch": "preserve",
+        "purpose": "partition"
+      }
+    },
+    "ai-trust-split-1": {
+      "label": "cfr-bframes",
+      "kind": {
+        "type": "retime",
+        "child": "ai-trust-split-2",
+        "duration": 60,
+        "mapping": {
+          "start": 60,
+          "end": 120
+        },
+        "pitch": "preserve",
+        "purpose": "partition"
+      }
+    },
+    "ai-trust-split-2": {
+      "label": "cfr-bframes",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 120,
+          "edit_window": {
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "end": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "video": {
+            "type": "stream",
+            "asset": "87aee815-d643-4128-9b15-b593c85c2a19",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "87aee815-d643-4128-9b15-b593c85c2a19",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      }
+    },
+    "ba09f6d2-bfd8-421f-9128-b70c0281fa2a": {
+      "label": "Sequence",
+      "kind": {
+        "type": "sequence",
+        "children": [
+          "ai-trust-split-0",
+          "ai-trust-hold",
+          "ai-trust-split-1"
+        ]
+      }
+    }
+  },
+  "assets": {
+    "87aee815-d643-4128-9b15-b593c85c2a19": {
+      "label": "cfr-bframes",
+      "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "video": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        },
+        "end": {
+          "ticks": 120120,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        }
+      },
+      "audio": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        },
+        "end": {
+          "ticks": 192192,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        }
+      },
+      "still_image": false,
+      "frame_count": 120,
+      "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+    }
+  },
+  "marks": {},
+  "overrides": {},
+  "audio_lineage": {
+    "0d2dba31-0c5b-45d0-8c4f-f798fe77be84": {
+      "allocation": "b51c9c83-3460-48c6-9fec-e69fb9f74f53",
+      "origin": "0d2dba31-0c5b-45d0-8c4f-f798fe77be84"
+    },
+    "ai-trust-split-2": {
+      "allocation": "b51c9c83-3460-48c6-9fec-e69fb9f74f53",
+      "origin": "0d2dba31-0c5b-45d0-8c4f-f798fe77be84"
+    }
+  },
+  "audio_bindings": {
+    "timings": [
+      {
+        "id": {
+          "allocation": "b51c9c83-3460-48c6-9fec-e69fb9f74f53",
+          "ordinal": 0
+        },
+        "layout": {
+          "root": "ba09f6d2-bfd8-421f-9128-b70c0281fa2a",
+          "rate": {
+            "numerator": 30000,
+            "denominator": 1001
+          },
+          "nodes": {
+            "0d2dba31-0c5b-45d0-8c4f-f798fe77be84": {
+              "duration": 120,
+              "kind": {
+                "type": "source",
+                "placement": {
+                  "start": {
+                    "numerator": "0",
+                    "denominator": "1"
+                  },
+                  "end": {
+                    "numerator": "120",
+                    "denominator": "1"
+                  }
+                }
+              }
+            },
+            "ba09f6d2-bfd8-421f-9128-b70c0281fa2a": {
+              "duration": 120,
+              "kind": {
+                "type": "sequence",
+                "children": [
+                  "0d2dba31-0c5b-45d0-8c4f-f798fe77be84"
+                ]
+              }
+            }
+          },
+          "overrides": {}
+        }
+      }
+    ],
+    "bindings": {
+      "0d2dba31-0c5b-45d0-8c4f-f798fe77be84": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "b51c9c83-3460-48c6-9fec-e69fb9f74f53",
+              "ordinal": 0
+            },
+            "physical": "0d2dba31-0c5b-45d0-8c4f-f798fe77be84"
+          }
+        }
+      },
+      "ai-trust-split-2": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "b51c9c83-3460-48c6-9fec-e69fb9f74f53",
+              "ordinal": 0
+            },
+            "physical": "0d2dba31-0c5b-45d0-8c4f-f798fe77be84"
+          }
+        },
+        "resume": {
+          "local_boundary": {
+            "numerator": "60",
+            "denominator": "1"
+          },
+          "phase": {
+            "terms": [
+              {
+                "placement": {
+                  "reference": {
+                    "timing": {
+                      "allocation": "b51c9c83-3460-48c6-9fec-e69fb9f74f53",
+                      "ordinal": 0
+                    },
+                    "physical": "0d2dba31-0c5b-45d0-8c4f-f798fe77be84"
+                  }
+                },
+                "from_local": {
+                  "numerator": "0",
+                  "denominator": "1"
+                },
+                "to_local": {
+                  "numerator": "60",
+                  "denominator": "1"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

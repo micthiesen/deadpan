@@ -1,0 +1,1 @@
+{"error":{"code":"InvalidInput","current_revision":null,"message":"AI pauses are not ready: pin-built host is outside its packaged application or lost its DeadpanPackaging marker","recovery_backup":null},"schema_version":1}

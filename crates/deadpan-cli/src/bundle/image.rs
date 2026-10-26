@@ -52,11 +52,12 @@ pub(super) const fn any_compiled_runtime_pins() -> bool {
         option_env!("DEADPAN_NATIVE_CONTENT_PINS"),
         option_env!("DEADPAN_ALIGN_WORKER_CONTENT_SHA256"),
         option_env!("DEADPAN_ALIGN_ORT_CONTENT_SHA256"),
+        option_env!("DEADPAN_AI_RUNTIME_INVENTORY_SHA256"),
     ])
 }
 
-const fn any_runtime_pins(pins: [Option<&str>; 3]) -> bool {
-    pins[0].is_some() || pins[1].is_some() || pins[2].is_some()
+const fn any_runtime_pins(pins: [Option<&str>; 4]) -> bool {
+    pins[0].is_some() || pins[1].is_some() || pins[2].is_some() || pins[3].is_some()
 }
 
 pub(super) fn invalid(message: impl ToString) -> io::Error {
@@ -109,7 +110,12 @@ fn content_interruptible(path: &Path, control: Control<'_>) -> io::Result<String
     if bytes.len() as u64 != metadata.len() {
         return Err(invalid("native image changed while reading"));
     }
-    let result = macho_content::content_sha256_interruptible(&bytes, || control.check().is_ok());
+    content_bytes(&bytes, control)
+}
+
+pub(super) fn content_bytes(bytes: &[u8], control: Control<'_>) -> io::Result<String> {
+    control.check()?;
+    let result = macho_content::content_sha256_interruptible(bytes, || control.check().is_ok());
     control.check()?;
     result.map_err(invalid)
 }

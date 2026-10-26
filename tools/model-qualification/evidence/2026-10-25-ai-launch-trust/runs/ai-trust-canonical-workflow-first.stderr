@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/tmp/deadpan-ai-runtime-trust-2026-10-25/workflow_only.py", line 246, in <module>
+    cli('render-accepted-offline', ['render', project, '--output', out/'Exports',
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        '--name', 'accepted.mp4'], offline=True, timeout=600)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/deadpan-ai-runtime-trust-2026-10-25/workflow_only.py", line 122, in cli
+    return run(name, command+list(args), success, **options)
+  File "/tmp/deadpan-ai-runtime-trust-2026-10-25/workflow_only.py", line 115, in run
+    assert result.returncode == (0 if success else 1), (name, result.returncode, result.stderr[-3000:])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('render-accepted-offline', 1, b'{"error":{"code":"RenderIoFailure","current_revision":null,"message":"No such file or directory (os error 2)"},"schema_version":1}\n')

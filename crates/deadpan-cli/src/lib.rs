@@ -152,6 +152,7 @@ const HELP: &str = "Deadpan headless commands:
   downloader status [--root <dir>] [--probe]
   models list [--root <dir>]
   models license <pack>
+  models check <pack> [--version <v>] [--root <dir>]
   models install <pack> [--accept-license] [--root <dir>]
   models import <pack> <folder-or-archive.tar> [--accept-license] [--root <dir>]
   models export <pack> <archive.tar> [--root <dir>]
@@ -669,6 +670,43 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
                 "worker_content_sha256": worker_pin,
                 "ort_content_sha256": ort_pin,
             }))
+        }
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["ai-runtime-qualify"] => {
+            let pin = bundle::ai_runtime_inventory_pin();
+            let contents = bundle::checked_packaged_contents()?;
+            let cancelled = std::sync::atomic::AtomicBool::new(false);
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(60);
+            if let Some(contents) = contents {
+                let runtime = contents.join(generation::runtime::BUNDLED_RUNTIME);
+                if pin.is_some() {
+                    bundle::qualify_ai_runtime(
+                        bundle::AiRuntimePaths {
+                            python: &runtime.join(generation::runtime::BUNDLED_PYTHON),
+                            worker_script: &runtime.join(generation::runtime::BUNDLED_WORKER),
+                            runtime_source: &runtime.join(generation::runtime::BUNDLED_SOURCE),
+                            ffmpeg: &runtime.join(generation::runtime::BUNDLED_FFMPEG),
+                            ffprobe: &runtime.join(generation::runtime::BUNDLED_FFPROBE),
+                        },
+                        &cancelled,
+                        deadline,
+                    )?;
+                } else {
+                    if runtime.try_exists()?
+                        || contents.join(bundle::AI_RUNTIME_INVENTORY).try_exists()?
+                    {
+                        return Err(CliError::Usage(
+                            "The packaged AI runtime has no compiled inventory pin".into(),
+                        ));
+                    }
+                    bundle::qualify_ai_host(&cancelled, deadline)?;
+                }
+            } else if pin.is_some() {
+                return Err(CliError::Usage(
+                    "The pin-built AI host is outside its package".into(),
+                ));
+            }
+            write_json(&serde_json::json!({ "inventory_sha256": pin }))
         }
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["native-runtime-qualify"] => {

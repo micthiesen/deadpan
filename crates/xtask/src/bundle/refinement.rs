@@ -4,7 +4,7 @@ use super::*;
 
 // Use the same strict parser as the runtime, not a second hash definition.
 #[path = "../../../deadpan-cli/src/youtube/macho_content.rs"]
-mod macho_content;
+pub(super) mod macho_content;
 
 pub(super) const WORKER_ENV: &str = "DEADPAN_ALIGN_WORKER_CONTENT_SHA256";
 pub(super) const ORT_ENV: &str = "DEADPAN_ALIGN_ORT_CONTENT_SHA256";

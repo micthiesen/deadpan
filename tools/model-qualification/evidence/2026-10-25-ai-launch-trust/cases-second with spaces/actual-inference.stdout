@@ -1,0 +1,107 @@
+{
+  "attempt_id": "047bd061d276434fb272eacbb06ef161",
+  "attempt_ordinal": 1,
+  "conditioning_ms": 72,
+  "context_sha256": "abef86b2c9e75f72cf3e2893816dfdc49c0963a520679b26766700200eff2bdd",
+  "failure": "OutputValidationFailed: generation candidate quality check failed: deadpan-extension-endpoints-1 Unconditioned exit: abrupt lighting at sampled frame 29: luma shift 37.185, agreement 0.636; limits 32.000/0.500",
+  "hold_id": "ai-trust-hold",
+  "options": {
+    "mode": "extend_from_left",
+    "motion": "moderate",
+    "region_target": {
+      "selection": "none"
+    }
+  },
+  "plan": {
+    "operation": "extension",
+    "plan": {
+      "native_dimensions": {
+        "height": 320,
+        "width": 768
+      },
+      "operation": "extension",
+      "sampling": {
+        "context_frame_count": 9,
+        "direction": "from_left",
+        "generated_frame_count": 24,
+        "interpolation": "encoded_srgb_rgb8_linear_half_up",
+        "native_rate": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "output_frame_count": 30,
+        "policy": "frame_centers_clamped",
+        "project_rate": {
+          "denominator": 1001,
+          "numerator": 30000
+        },
+        "schema_version": 1
+      },
+      "schema_version": 1
+    }
+  },
+  "protocol": 1,
+  "ready": null,
+  "record_error": null,
+  "request_id": "ai-hold-cd3eec5fd3304953b8b5c741bfde405c",
+  "request_version": 1,
+  "seed": 9,
+  "state": "Failed",
+  "timings_ms": {
+    "publication": 7,
+    "qualification": 6012,
+    "worker": 342741,
+    "workspace": 2558
+  },
+  "variants": [
+    {
+      "attempt_id": "047bd061d276434fb272eacbb06ef161",
+      "attempt_ordinal": 1,
+      "context_sha256": "abef86b2c9e75f72cf3e2893816dfdc49c0963a520679b26766700200eff2bdd",
+      "failure": "OutputValidationFailed: generation candidate quality check failed: deadpan-extension-endpoints-1 Unconditioned exit: abrupt lighting at sampled frame 29: luma shift 37.185, agreement 0.636; limits 32.000/0.500",
+      "hold_id": "ai-trust-hold",
+      "plan": {
+        "operation": "extension",
+        "plan": {
+          "native_dimensions": {
+            "height": 320,
+            "width": 768
+          },
+          "operation": "extension",
+          "sampling": {
+            "context_frame_count": 9,
+            "direction": "from_left",
+            "generated_frame_count": 24,
+            "interpolation": "encoded_srgb_rgb8_linear_half_up",
+            "native_rate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "output_frame_count": 30,
+            "policy": "frame_centers_clamped",
+            "project_rate": {
+              "denominator": 1001,
+              "numerator": 30000
+            },
+            "schema_version": 1
+          },
+          "schema_version": 1
+        }
+      },
+      "ready": null,
+      "record_error": null,
+      "request_id": "ai-hold-cd3eec5fd3304953b8b5c741bfde405c",
+      "request_version": 1,
+      "seed": 9,
+      "state": "Failed",
+      "timings_ms": {
+        "publication": 7,
+        "qualification": 6012,
+        "worker": 342741,
+        "workspace": 2558
+      },
+      "worker_log_tail": "\rDenoising (guided):  37%|███▋      | 11/30 [01:19<02:22,  7.51s/it]extension denoise prior_steps=11 total=30\n\rDenoising (guided):  40%|████      | 12/30 [01:26<02:16,  7.56s/it]extension denoise prior_steps=12 total=30\n\rDenoising (guided):  43%|████▎     | 13/30 [01:34<02:10,  7.67s/it]extension denoise prior_steps=13 total=30\n\rDenoising (guided):  47%|████▋     | 14/30 [01:44<02:14,  8.43s/it]extension denoise prior_steps=14 total=30\n\rDenoising (guided):  50%|█████     | 15/30 [01:54<02:11,  8.79s/it]extension denoise prior_steps=15 total=30\n\rDenoising (guided):  53%|█████▎    | 16/30 [02:03<02:04,  8.87s/it]extension denoise prior_steps=16 total=30\n\rDenoising (guided):  57%|█████▋    | 17/30 [02:12<01:57,  9.03s/it]extension denoise prior_steps=17 total=30\n\rDenoising (guided):  60%|██████    | 18/30 [02:22<01:51,  9.32s/it]extension denoise prior_steps=18 total=30\n\rDenoising (guided):  63%|██████▎   | 19/30 [02:34<01:49,  9.97s/it]extension denoise prior_steps=19 total=30\n\rDenoising (guided):  67%|██████▋   | 20/30 [02:48<01:50, 11.08s/it]extension denoise prior_steps=20 total=30\n\rDenoising (guided):  70%|███████   | 21/30 [03:04<01:54, 12.68s/it]extension denoise prior_steps=21 total=30\n\rDenoising (guided):  73%|███████▎  | 22/30 [03:22<01:53, 14.25s/it]extension denoise prior_steps=22 total=30\n\rDenoising (guided):  77%|███████▋  | 23/30 [03:39<01:45, 15.12s/it]extension denoise prior_steps=23 total=30\n\rDenoising (guided):  80%|████████  | 24/30 [03:55<01:32, 15.38s/it]extension denoise prior_steps=24 total=30\n\rDenoising (guided):  83%|████████▎ | 25/30 [04:10<01:15, 15.15s/it]extension denoise prior_steps=25 total=30\n\rDenoising (guided):  87%|████████▋ | 26/30 [04:24<00:59, 14.93s/it]extension denoise prior_steps=26 total=30\n\rDenoising (guided):  90%|█████████ | 27/30 [04:38<00:44, 14.69s/it]extension denoise prior_steps=27 total=30\n\rDenoising (guided):  93%|█████████▎| 28/30 [04:52<00:28, 14.46s/it]extension denoise prior_steps=28 total=30\n\rDenoising (guided):  97%|█████████▋| 29/30 [05:06<00:14, 14.20s/it]extension denoise prior_steps=29 total=30\n\rDenoising (guided): 100%|██████████| 30/30 [05:19<00:00, 14.03s/it]\rDenoising (guided): 100%|██████████| 30/30 [05:19<00:00, 10.66s/it]"
+    }
+  ],
+  "worker_log_tail": "\rDenoising (guided):  37%|███▋      | 11/30 [01:19<02:22,  7.51s/it]extension denoise prior_steps=11 total=30\n\rDenoising (guided):  40%|████      | 12/30 [01:26<02:16,  7.56s/it]extension denoise prior_steps=12 total=30\n\rDenoising (guided):  43%|████▎     | 13/30 [01:34<02:10,  7.67s/it]extension denoise prior_steps=13 total=30\n\rDenoising (guided):  47%|████▋     | 14/30 [01:44<02:14,  8.43s/it]extension denoise prior_steps=14 total=30\n\rDenoising (guided):  50%|█████     | 15/30 [01:54<02:11,  8.79s/it]extension denoise prior_steps=15 total=30\n\rDenoising (guided):  53%|█████▎    | 16/30 [02:03<02:04,  8.87s/it]extension denoise prior_steps=16 total=30\n\rDenoising (guided):  57%|█████▋    | 17/30 [02:12<01:57,  9.03s/it]extension denoise prior_steps=17 total=30\n\rDenoising (guided):  60%|██████    | 18/30 [02:22<01:51,  9.32s/it]extension denoise prior_steps=18 total=30\n\rDenoising (guided):  63%|██████▎   | 19/30 [02:34<01:49,  9.97s/it]extension denoise prior_steps=19 total=30\n\rDenoising (guided):  67%|██████▋   | 20/30 [02:48<01:50, 11.08s/it]extension denoise prior_steps=20 total=30\n\rDenoising (guided):  70%|███████   | 21/30 [03:04<01:54, 12.68s/it]extension denoise prior_steps=21 total=30\n\rDenoising (guided):  73%|███████▎  | 22/30 [03:22<01:53, 14.25s/it]extension denoise prior_steps=22 total=30\n\rDenoising (guided):  77%|███████▋  | 23/30 [03:39<01:45, 15.12s/it]extension denoise prior_steps=23 total=30\n\rDenoising (guided):  80%|████████  | 24/30 [03:55<01:32, 15.38s/it]extension denoise prior_steps=24 total=30\n\rDenoising (guided):  83%|████████▎ | 25/30 [04:10<01:15, 15.15s/it]extension denoise prior_steps=25 total=30\n\rDenoising (guided):  87%|████████▋ | 26/30 [04:24<00:59, 14.93s/it]extension denoise prior_steps=26 total=30\n\rDenoising (guided):  90%|█████████ | 27/30 [04:38<00:44, 14.69s/it]extension denoise prior_steps=27 total=30\n\rDenoising (guided):  93%|█████████▎| 28/30 [04:52<00:28, 14.46s/it]extension denoise prior_steps=28 total=30\n\rDenoising (guided):  97%|█████████▋| 29/30 [05:06<00:14, 14.20s/it]extension denoise prior_steps=29 total=30\n\rDenoising (guided): 100%|██████████| 30/30 [05:19<00:00, 14.03s/it]\rDenoising (guided): 100%|██████████| 30/30 [05:19<00:00, 10.66s/it]"
+}

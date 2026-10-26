@@ -5,10 +5,10 @@ const GOOD: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
 #[test]
 fn even_one_empty_or_partial_pin_variable_requires_a_package() {
-    assert!(!any_runtime_pins([None, None, None]));
-    for index in 0..3 {
+    assert!(!any_runtime_pins([None, None, None, None]));
+    for index in 0..4 {
         for value in ["", GOOD] {
-            let mut pins = [None, None, None];
+            let mut pins = [None, None, None, None];
             pins[index] = Some(value);
             assert!(any_runtime_pins(pins));
         }

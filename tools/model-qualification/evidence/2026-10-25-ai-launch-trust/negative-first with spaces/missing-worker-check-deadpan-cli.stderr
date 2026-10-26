@@ -1,0 +1,1 @@
+{"error":{"code":"InvalidInput","current_revision":null,"message":"AI pauses are not ready: the bundled worker is missing at /private/tmp/deadpan-ai-runtime-trust-2026-10-25/negative-first with spaces/Relocated app with spaces/Deadpan.app/Contents/Resources/ai-runtime/worker/worker.py (reinstall Deadpan)","recovery_backup":null},"schema_version":1}

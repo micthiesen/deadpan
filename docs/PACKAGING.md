@@ -1,7 +1,8 @@
 # Packaging
 
 `cargo xtask bundle` builds a self-contained, relocatable `Deadpan.app` for
-Apple Silicon macOS 15 or later. It is groundwork for DP-22 and Gate F: the
+Apple Silicon macOS 15 or later. DP-22 is locally complete; Gate F's remaining
+output/effect/HDR qualification stays open. The
 bundle runs from any location without Cargo, the FFmpeg developer prefix,
 Homebrew or a separately installed downloader. Deadpan is a personal app with
 no Apple developer account (owner decision 2026-10-05): the bundle is ad hoc
@@ -23,10 +24,10 @@ cargo xtask bundle-verify /tmp/deadpan-bundle/Deadpan.app
 | --- | --- |
 | `--output DIR` | Required. Writes `DIR/Deadpan.app`, `DIR/Deadpan.app.SHA256SUMS` and `DIR/Deadpan.sbom.cdx.json`. An existing `Deadpan.app` is never replaced. |
 | `--helpers-from ROOT` | Managed helper root to copy yt-dlp and Deno from. Defaults to `~/Library/Application Support/Deadpan/helpers`. Run `deadpan-cli downloader install --root ROOT` first; the build refuses anything but the verified pinned files. |
-| `--identity NAME` | Sign with this keychain identity, with secure timestamps, instead of ad hoc. |
+| `--identity NAME` | Sign with this keychain identity instead of ad hoc. Local identities use no timestamp server; Developer ID identities request a secure timestamp. |
 | `--notary-profile PROFILE` | After Developer ID signing, notarize, staple and assess the staged bundle before publishing it. Requires `--identity`. |
 | `--allow-dirty` | Permit `--identity` builds from a working tree with uncommitted or untracked changes. They are refused otherwise; ad hoc builds warn. Either way `build-provenance.json` records the state. |
-| `--no-build` | Reuse the executables in `<cargo target>/bundle/release`. |
+| `--no-build` | Reuse the executables in `<cargo target>/bundle/release`; actual host probes still reject missing or stale compiled runtime pins. |
 | `--without-ai-runtime` | Leave out the private AI runtime; AI pauses are then unavailable. |
 | `--ai-runtime-cache DIR` | Build-input cache for the AI runtime (default `~/Library/Caches/Deadpan/build-inputs`). |
 | `--ltx-checkout DIR` | Copy the pinned LTX source from this checkout (each file is still verified) instead of fetching the commit from GitHub. |
@@ -45,6 +46,8 @@ and publishes it by rename only after these steps pass:
 - the load-reference audit;
 - the staged bundle's own `deadpan-cli downloader status`, run as a packaged
   app;
+- both hosts' alignment, native-worker and AI runtime admission probes, with
+  AI admission repeated after the direct Python/Metal smoke check;
 - notarization, when requested.
 
 A failure leaves nothing published. Icon compilation reuses
@@ -75,6 +78,7 @@ build-time tool only.
 | `Contents/Frameworks/libonnxruntime.1.dylib` | Qualified ONNX Runtime 1.31.0 for the native word-refinement worker, with system-only dependencies. |
 | `Contents/Resources/helpers/{yt-dlp,deno}/<version>/` and `manifest.json` | Read-only downloader baseline. |
 | `Contents/Resources/ai-runtime/` | Private AI runtime: `python/` (CPython 3.12.13 with the locked wheels), `ltx-2-mlx/` (139 pinned source files), `worker/`, `bin/{ffmpeg,ffprobe}` (GPL) and `runtime.json`. See [AI runtime](#ai-runtime). |
+| `Contents/Resources/ai-runtime-inventory.json` | Canonical closed inventory of the private AI runtime, outside the inventoried tree; its SHA-256 is compiled independently into both hosts. Absent with `--without-ai-runtime`. |
 | `Contents/Resources/Notices/` | `THIRD_PARTY_NOTICES.txt`, FFmpeg, Opus, dav1d, ONNX Runtime, yt-dlp, yt-dlp-ejs and Deno upstream notices, the aggregated Deno/V8 notices (`deno/THIRD_PARTY_NOTICES.txt`, `deno/notices-manifest.json`), SPDX texts, `sbom.cdx.json`. |
 | `Contents/Resources/build-provenance.json` | Commit, tracked-change flag, rustc, Xcode, SDK, FFmpeg configuration, ONNX Runtime source/shipped identities, signature kind and limitations. |
 | `Contents/Resources/Assets.car`, `Deadpan.icns` | Layered icon and ICNS fallback. |
@@ -157,9 +161,10 @@ installs through Models; its unspecified separate checkpoint terms remain
 visible. The worker assembles its fixed graph in memory from verified original
 bytes and needs no Python, Torch or pickle evaluation.
 
-This packaging implementation does not establish a successful packaged
-refinement workflow. A rebuilt bundle, scrubbed copy, installed-pack worker
-smoke, native load audit and signature checks remain required local evidence.
+The [2026-10-25 word-refinement qualification](qualification/word-refinement-2026-10-25.md)
+records the rebuilt bundle, scrubbed copy, installed-pack worker smoke, actual
+inference/acceptance/Undo, native load audit and signature checks. This is local
+workflow evidence; the experiment's stricter quality failures remain recorded.
 
 ## Native helper launch admission
 
@@ -192,11 +197,10 @@ verification. The failed setup attempts and original test failures remain in
 the evidence. Local certificates report `local` and need no timestamp server;
 only an explicitly selected Developer ID identity requests a timestamp.
 
-DP-22 remains Partial: the private AI Python/worker/imported-code tree still
-needs a compiled inventory and signature/resource-seal admission before Python
-executes. Build-time input verification and worker self-reported hashes do not
-provide that prelaunch authority. This native-worker qualification does not
-close that separate runtime gap.
+The separate private AI runtime gap found at this checkpoint is now closed by
+the [private AI launch qualification](qualification/private-ai-launch-trust-2026-10-25.md)
+and the inventory admission described below. Together these locally complete
+DP-22; they do not close the broader delivery gates.
 
 ## FFmpeg relocation
 
@@ -272,13 +276,15 @@ from `tools/build-app.py` therefore keep development behavior.
   `DEADPAN_BRIDGE_*` variables are used. Development builds and developer
   wrappers keep the variables and defaults. `doctor` reports the lookup, the
   bundled runtime's identity and whether AI pauses are ready.
+
 ## AI runtime
 
 The standard download carries the private model runtime (specification
 §14.1): `cargo xtask bundle` runs
 [`tools/ai-runtime/build.py`](../tools/ai-runtime/build.py), which assembles it
 from the pins in [`pins.json`](../tools/ai-runtime/pins.json) into the
-build-input cache and prints its location; the bundle copies it with `ditto` to
+build-input cache and prints its location. The bundle freezes a private copy
+before rebuilding the final hosts, then installs that frozen copy at
 `Contents/Resources/ai-runtime`. Every input is verified before use: the
 python-build-standalone archive and each wheel by SHA-256 (wheel hashes from the
 qualified checkout's `uv.lock`), the 139 LTX source files against
@@ -306,7 +312,8 @@ than the macOS 15 builds on the reference Mac, so AI pauses require macOS 26
 while the app keeps its macOS 15 floor
 ([decision](DEPENDENCIES.md#private-ai-runtime)).
 
-**Signing.** Inside out with the hardened runtime, after the FFmpeg libraries:
+**Signing.** The private frozen tree is stripped of extended attributes and
+clean-signed inside out with the hardened runtime before host pinning:
 59 libraries and extension modules (`.so`, `.dylib`, including Pillow's and
 MLX's bundled libraries) without an identifier, then the three executables
 `python3.12`, `ffmpeg` and `ffprobe` as `dev.deadpan.Deadpan.ai.<name>`. No
@@ -320,10 +327,53 @@ this has not run. The audit treats any `MH_EXECUTE` image as its own process
 root (`@executable_path` is its folder), so Python's
 `@executable_path/../lib` search path is checked like the app's.
 
-**Checks before publication.** The staged bundle's Python, run with a cleared
-environment, must resolve its own `sys.prefix`, import MLX, NumPy, Pillow,
-`mlx_lm`, safetensors and the LTX pipeline, and compute on the GPU; the staged
-`ffmpeg` must list `libx264rgb`.
+**Independent launch authority.** A canonical closed inventory records every
+relative path, directory/file mode, exact ordinary-file bytes, confined alias
+target and signature-independent Mach-O content hash. Its SHA-256 is compiled
+into both App and CLI as `DEADPAN_AI_RUNTIME_INVENTORY_SHA256`; inherited values
+are cleared from all build stages. `Resources/ai-runtime-inventory.json` is
+outside the runtime tree. Neither that resource nor `build-provenance.json`
+can authorize changed code without the compiled pin.
+
+The builder retains the report in memory and freezes runtime and notices before
+the final host rebuild. Exact source/copy checks guard that rebuild and final
+assembly; the frozen AI images are copied without another signing pass. The
+shared Check and Inference launch boundary verifies the closed tree, host seal,
+independent content and expected signer before Python executes, with bounded
+interruptible work off the UI/writer threads. Runtime identity metadata uses a
+64 KiB bounded, nonblocking, no-follow read. Explicit developer opt-in requires
+all five external runtime paths and still checks the packaged host's seal first.
+Model data remains governed by the existing verified model packs.
+
+**Checks before publication.** Both actual staged hosts run
+`ai-runtime-qualify` and report their compiled inventory SHA-256 before direct
+Python execution. The staged Python, run with a cleared environment, must
+resolve its own `sys.prefix`, import MLX, NumPy, Pillow, `mlx_lm`, safetensors
+and the LTX pipeline, and compute on the GPU; staged `ffmpeg` must list
+`libx264rgb`. Both host admissions and the exact frozen runtime/notices checks
+run again afterward. `--no-build` refuses missing or stale host pins before
+Python. `--without-ai-runtime` requires the pin, tree and inventory to be absent
+and reports AI unavailable without Python execution. `bundle-verify` likewise
+admits both hosts before its direct runtime checks and rechecks afterward.
+
+The [2026-10-25 qualification](qualification/private-ai-launch-trust-2026-10-25.md)
+records local-certificate, ad hoc `--no-build` and no-AI bundles. The first two
+share the 2,314,724-byte canonical inventory SHA-256
+`08ed482a9f5009c1941d4d7aa2651a0fc643529fa087c50f25aeedfc0e04e9c0`,
+covering 10,660 ordinary files, 62 Mach-O images, 1,536 directories and six
+aliases. General relocated verification passes for local and no-AI bundles;
+150 adversarial operations include 61 expected denials and zero timeouts.
+Real Check calls through both hosts and tampered Inference attempts refuse
+before execution or authored changes, including re-signed substitutions,
+Python/import hooks, Metal data, inventory, aliases and FIFO inputs.
+
+A real definition-edge Hold reaches Ready, explicit acceptance, offline export
+and exact fallback Undo with full history verification. Two new interior
+candidates retain motion/luma quality failures. These results qualify launch
+trust and one complete workflow on the primary M5 Max, macOS 26.5.2 and Rust
+1.97.1; they do not establish a quality corpus, latency calibration or clean-Mac
+result. Evidence is under
+`tools/model-qualification/evidence/2026-10-25-ai-launch-trust`.
 
 **GPL programs.** `ffmpeg` and `ffprobe` in `ai-runtime/bin` are a separate
 GPL-2.0-or-later build (FFmpeg 8.0.3 with static x264 r3222) that the worker
@@ -871,5 +921,7 @@ before creating the new one, both while freezing pins and during final assembly.
 Forced re-signing alone left stale nonzero reserved signature bytes in the
 measured images. The strict content parser remains unchanged. Cargo executables
 and the qualified original input library are never modified by this cleanup.
-See [qualification](qualification/word-refinement-2026-10-25.md). The existing
-transcribe/track/media worker launch-trust gap is still open under DP-22.
+See [qualification](qualification/word-refinement-2026-10-25.md),
+[native worker admission](qualification/native-launch-trust-2026-10-25.md) and
+[private AI admission](qualification/private-ai-launch-trust-2026-10-25.md) for
+the locally qualified DP-22 launch boundaries.

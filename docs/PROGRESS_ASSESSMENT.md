@@ -2,12 +2,15 @@
 
 **Initial reassessment: requirement coverage is about 83%. Strict completion was 8/24. All seven delivery gates remain open; picture effect families are 5/13 complete.**
 
+**Current after the qualifications below: about 84% coverage, 8/24 strictly
+Complete, 0/7 gates closed and 5/13 picture effect families complete.**
+
 ## Packaged helper trust amendment
 
 A later source audit found an over-credited part of DP-22.3. The existing
-transcription, tracking and media-worker selectors choose sibling executables,
-and the shared supervisor checks only an absolute existing file. Inside-out
-signing and verification during bundling do not bind those later launches to
+transcription, tracking and media-worker selectors chose sibling executables,
+and the shared supervisor checked only an absolute existing file. Inside-out
+signing and verification during bundling did not bind those later launches to
 independent compiled image pins and the expected signer.
 
 DP-22.3 therefore changes from 1 to 0.5, and DP-22 reopens from Complete to
@@ -30,8 +33,8 @@ now receives DP-10.3 credit after real native/CLI/device and relocated packaged
 verification. Its experimental quality failures remain explicit; §11.2 calls
 for a reviewed approximate proposal, not an invented accuracy threshold.
 This adds 0.5952 percentage points to the corrected ledger: 83.3259%, still
-about 83% after rounding. Strict completion remains seven; DP-10's other work
-and DP-22's remaining runtime trust are open. The unchanged headline is rounding
+about 83% after rounding. At that checkpoint strict completion remained seven;
+DP-10's other work and DP-22's runtime trust remained open. The unchanged headline was rounding
 over one completed criterion and one audit correction, not inherited 89%.
 
 ## Subsequent native-worker qualification
@@ -43,12 +46,36 @@ fallback. Local/ad hoc bundle builds, real packaged transcription/Vision work,
 169 recorded operations and general relocation verification pass.
 
 A further source audit confirmed that private AI Python, scripts, imported code
-and extensions still execute without a compiled tree inventory or prior app-seal
-admission. This is part of the same DP-22.3 acceptance scope. Its score therefore
-stays 0.5; DP-22 stays Partial. Current coverage remains 83.3259%, about 83%,
-seven strictly complete requirements and no closed gate. The milestone records
+and extensions still executed without a compiled tree inventory or prior app-seal
+admission. This is part of the same DP-22.3 acceptance scope. At that checkpoint
+its score stayed 0.5 and DP-22 stayed Partial: 83.3259%, about 83%,
+seven strictly complete requirements and no closed gate. That milestone records
 delivered native behavior and the concrete remaining gap without changing the
 criterion identities or denominator.
+
+## Subsequent private-AI qualification
+
+[Private AI launch admission](qualification/private-ai-launch-trust-2026-10-25.md)
+now binds the complete runtime inventory to both compiled hosts and checks the
+host seal and expected signer before either Check or Inference executes Python.
+Local, ad hoc `--no-build` and no-AI bundles pass their actual host probes;
+missing/stale pins refuse before Python. General relocated verification passes
+for local and no-AI bundles. The adversarial driver records 150 operations,
+61 expected denials and zero timeouts, including real Check calls through both
+hosts and tampered Inference with unchanged authored state.
+
+A real definition-edge Hold reaches Ready, explicit acceptance, offline export,
+exact fallback Undo and full history verification. The two new interior
+candidates fail their motion/luma quality gates, and the original formatter,
+API, stale privacy assertion and fixture-driver failures remain recorded beside
+their corrected continuations. This is primary-Mac evidence, not a new quality
+corpus, latency calibration or clean-Mac result.
+
+DP-22.3 changes from 0.5 to 1 and DP-22 returns to Complete. The unchanged
+162-criterion ledger now scores **83.7426%, displayed as about 84%**, with
+**8/24 strictly Complete and 0/7 gates closed**. No criterion or product scope
+changed. Composability, audio/effects, incremental analysis, native workflows
+and measured performance remain substantial work.
 
 ## Why 89% stopped moving
 
@@ -64,13 +91,13 @@ The full criterion ledger, citations and remaining work are in [progress.json](p
 
 - Each of the 24 normative requirements receives equal weight.
 - Each has 3–8 major acceptance criteria, 162 total. Score 1 for implemented and locally verified, 0.5 for meaningful confirmed partial implementation or incomplete local verification, and 0 for absent.
-- Average within each requirement, then average the 24 scores. The initial baseline was 83.1473%; the amendments above bring it to 83.3259%, displayed as about 83%. Criteria are not weighted by expected engineering hours.
+- Average within each requirement, then average the 24 scores. The initial baseline was 83.1473%; the amendments above bring it to 83.7426%, displayed as about 84%. Criteria are not weighted by expected engineering hours.
 - Keep criterion identities and scope fixed. Record a versioned reassessment if the denominator needs correction; never split completed work or merge missing work to move the score.
 - Gates and effects remain visible separately. They overlap requirements and are not counted again in the numeric denominator.
 - Owner-only checks under §29.1 remain on the owner list and do not block local completion. No product scope has been removed.
 - A fully scored coarse requirement does not automatically change strict tracker status. DP-12 behavior scores 100%; its Partial status needs a separate closure reconciliation. Runtime optimization, candidate comparisons and performance remain owed under DP-24 and gates.
 
-**83% measures covered acceptance scope. It does not mean 17% of the engineering time remains or imply a near release.** Rounding and criterion judgment limit precision. Historical estimates remain unchanged and labeled legacy; they cannot be compared to this baseline as a delivery rate.
+**84% measures covered acceptance scope. It does not mean 16% of the engineering time remains or imply a near release.** Rounding and criterion judgment limit precision. Historical estimates remain unchanged and labeled legacy; they cannot be compared to this baseline as a delivery rate.
 
 ## Requirement scores at initial reassessment
 

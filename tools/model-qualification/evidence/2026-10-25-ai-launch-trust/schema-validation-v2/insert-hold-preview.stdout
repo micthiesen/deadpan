@@ -1,0 +1,309 @@
+{
+  "committed": false,
+  "edit": {
+    "changed_ids": [
+      "740f0864-e9dd-4c57-b2cb-4242e0c5311f",
+      "ai-trust-hold",
+      "ai-trust-split-0",
+      "ai-trust-split-1",
+      "ai-trust-split-2",
+      "c53b0117-66e4-45a2-95e9-6d26a7fa5131"
+    ],
+    "description": "Insert pause",
+    "duration_delta": 30,
+    "forward": {
+      "assets": {},
+      "audio_bindings": {
+        "bindings": {
+          "740f0864-e9dd-4c57-b2cb-4242e0c5311f": {
+            "after": {
+              "lattice": {
+                "reference": {
+                  "physical": "740f0864-e9dd-4c57-b2cb-4242e0c5311f",
+                  "timing": {
+                    "allocation": "5062688d-762c-4da6-a74b-684311b5d6f2",
+                    "ordinal": 0
+                  }
+                }
+              }
+            },
+            "before": null
+          },
+          "ai-trust-split-2": {
+            "after": {
+              "lattice": {
+                "reference": {
+                  "physical": "740f0864-e9dd-4c57-b2cb-4242e0c5311f",
+                  "timing": {
+                    "allocation": "5062688d-762c-4da6-a74b-684311b5d6f2",
+                    "ordinal": 0
+                  }
+                }
+              },
+              "resume": {
+                "local_boundary": {
+                  "denominator": "1",
+                  "numerator": "60"
+                },
+                "phase": {
+                  "terms": [
+                    {
+                      "from_local": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      },
+                      "placement": {
+                        "reference": {
+                          "physical": "740f0864-e9dd-4c57-b2cb-4242e0c5311f",
+                          "timing": {
+                            "allocation": "5062688d-762c-4da6-a74b-684311b5d6f2",
+                            "ordinal": 0
+                          }
+                        }
+                      },
+                      "to_local": {
+                        "denominator": "1",
+                        "numerator": "60"
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "before": null
+          }
+        },
+        "timings": [
+          {
+            "after": {
+              "nodes": {
+                "740f0864-e9dd-4c57-b2cb-4242e0c5311f": {
+                  "duration": 120,
+                  "kind": {
+                    "placement": {
+                      "end": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      }
+                    },
+                    "type": "source"
+                  }
+                },
+                "c53b0117-66e4-45a2-95e9-6d26a7fa5131": {
+                  "duration": 120,
+                  "kind": {
+                    "children": [
+                      "740f0864-e9dd-4c57-b2cb-4242e0c5311f"
+                    ],
+                    "type": "sequence"
+                  }
+                }
+              },
+              "overrides": {},
+              "rate": {
+                "denominator": 1001,
+                "numerator": 30000
+              },
+              "root": "c53b0117-66e4-45a2-95e9-6d26a7fa5131"
+            },
+            "before": null,
+            "id": {
+              "allocation": "5062688d-762c-4da6-a74b-684311b5d6f2",
+              "ordinal": 0
+            }
+          }
+        ]
+      },
+      "audio_lineage": {
+        "740f0864-e9dd-4c57-b2cb-4242e0c5311f": {
+          "after": {
+            "allocation": "5062688d-762c-4da6-a74b-684311b5d6f2",
+            "origin": "740f0864-e9dd-4c57-b2cb-4242e0c5311f"
+          },
+          "before": null
+        },
+        "ai-trust-split-2": {
+          "after": {
+            "allocation": "5062688d-762c-4da6-a74b-684311b5d6f2",
+            "origin": "740f0864-e9dd-4c57-b2cb-4242e0c5311f"
+          },
+          "before": null
+        }
+      },
+      "from_revision": "8a6c9c98-f4aa-452b-a156-481b9cc459c8",
+      "marks": {},
+      "nodes": {
+        "ai-trust-hold": {
+          "after": {
+            "kind": {
+              "recipe": {
+                "audio": {
+                  "type": "silence"
+                },
+                "duration": 30,
+                "video": {
+                  "type": "background"
+                }
+              },
+              "type": "hold"
+            },
+            "label": "Pause"
+          },
+          "before": null
+        },
+        "ai-trust-split-0": {
+          "after": {
+            "kind": {
+              "child": "740f0864-e9dd-4c57-b2cb-4242e0c5311f",
+              "duration": 60,
+              "mapping": {
+                "end": 60,
+                "start": 0
+              },
+              "pitch": "preserve",
+              "purpose": "partition",
+              "type": "retime"
+            },
+            "label": "cfr-bframes"
+          },
+          "before": null
+        },
+        "ai-trust-split-1": {
+          "after": {
+            "kind": {
+              "child": "ai-trust-split-2",
+              "duration": 60,
+              "mapping": {
+                "end": 120,
+                "start": 60
+              },
+              "pitch": "preserve",
+              "purpose": "partition",
+              "type": "retime"
+            },
+            "label": "cfr-bframes"
+          },
+          "before": null
+        },
+        "ai-trust-split-2": {
+          "after": {
+            "kind": {
+              "source": {
+                "audio": {
+                  "asset": "0c401031-b78c-4d17-9aac-785cdcb14264",
+                  "span": {
+                    "end": {
+                      "ticks": 192192,
+                      "time_base": {
+                        "denominator": 48000,
+                        "numerator": 1
+                      }
+                    },
+                    "start": {
+                      "ticks": 0,
+                      "time_base": {
+                        "denominator": 48000,
+                        "numerator": 1
+                      }
+                    }
+                  }
+                },
+                "audio_mapping": {
+                  "frames": {
+                    "denominator": "1",
+                    "numerator": "120"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "type": "placement"
+                },
+                "audio_offset": 0,
+                "duration": 120,
+                "edit_window": {
+                  "end": {
+                    "denominator": "1",
+                    "numerator": "120"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  }
+                },
+                "link": "linked",
+                "video": {
+                  "asset": "0c401031-b78c-4d17-9aac-785cdcb14264",
+                  "span": {
+                    "end": {
+                      "ticks": 120120,
+                      "time_base": {
+                        "denominator": 30000,
+                        "numerator": 1
+                      }
+                    },
+                    "start": {
+                      "ticks": 0,
+                      "time_base": {
+                        "denominator": 30000,
+                        "numerator": 1
+                      }
+                    }
+                  },
+                  "type": "stream"
+                },
+                "video_mapping": {
+                  "endpoints": "hold_adjacent",
+                  "frames": {
+                    "denominator": "1",
+                    "numerator": "120"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "type": "placement"
+                }
+              },
+              "type": "source"
+            },
+            "label": "cfr-bframes"
+          },
+          "before": null
+        },
+        "c53b0117-66e4-45a2-95e9-6d26a7fa5131": {
+          "after": {
+            "kind": {
+              "children": [
+                "ai-trust-split-0",
+                "ai-trust-hold",
+                "ai-trust-split-1"
+              ],
+              "type": "sequence"
+            },
+            "label": "Sequence"
+          },
+          "before": {
+            "kind": {
+              "children": [
+                "740f0864-e9dd-4c57-b2cb-4242e0c5311f"
+              ],
+              "type": "sequence"
+            },
+            "label": "Sequence"
+          }
+        }
+      },
+      "overrides": {},
+      "project_id": "d6e13781-5ac3-48b8-97bd-47601d6a4e48",
+      "to_revision": "5062688d-762c-4da6-a74b-684311b5d6f2"
+    }
+  },
+  "protocol": 1,
+  "required_jobs": [],
+  "warnings": []
+}

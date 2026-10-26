@@ -1,0 +1,20 @@
+   Compiling libc v0.2.189
+   Compiling serde_core v1.0.229
+   Compiling rustix v1.1.5
+   Compiling serde v1.0.229
+   Compiling bitflags v2.13.2
+   Compiling serde_derive v1.0.229
+   Compiling errno v0.3.14
+   Compiling cpufeatures v0.3.1
+   Compiling sha2 v0.11.0
+   Compiling serde_json v1.0.151
+   Compiling xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 4.51s
+     Running `target/debug/xtask bundle --output /tmp/deadpan-ai-runtime-trust-2026-10-25/bundle-local-first --identity 7D8CA64BD99CD51A4C1A9BFC0CB8D8BCA76A057E --allow-dirty`
+    Finished `release` profile [optimized] target(s) in 0.13s
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `release` profile [optimized] target(s) in 3m 41s

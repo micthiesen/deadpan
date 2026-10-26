@@ -1,0 +1,44 @@
+{
+  "protocol": 1,
+  "project_id": "d6e13781-5ac3-48b8-97bd-47601d6a4e48",
+  "expected_revision": "8a6c9c98-f4aa-452b-a156-481b9cc459c8",
+  "new_revision": "5062688d-762c-4da6-a74b-684311b5d6f2",
+  "command": {
+    "command": "insert_time",
+    "at": 60,
+    "hold": {
+      "duration": 30,
+      "video": {
+        "type": "background"
+      },
+      "audio": {
+        "type": "silence"
+      }
+    },
+    "id": "ai-trust-hold",
+    "identities": {
+      "nodes": [
+        "ai-trust-split-0",
+        "ai-trust-split-1",
+        "ai-trust-split-2",
+        "ai-trust-split-3",
+        "ai-trust-split-4",
+        "ai-trust-split-5",
+        "ai-trust-split-6",
+        "ai-trust-split-7",
+        "ai-trust-split-8",
+        "ai-trust-split-9",
+        "ai-trust-split-10",
+        "ai-trust-split-11",
+        "ai-trust-split-12",
+        "ai-trust-split-13",
+        "ai-trust-split-14",
+        "ai-trust-split-15"
+      ]
+    },
+    "timing": {
+      "allocation": "5062688d-762c-4da6-a74b-684311b5d6f2",
+      "ordinal": 0
+    }
+  }
+}

@@ -1,0 +1,151 @@
+{
+  "source_bundle": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/bundle-local-first/Deadpan.app",
+  "app": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/canonical-setup with spaces/Relocated app with spaces/Deadpan.app",
+  "script_sha256": "5016297803139aad0421c9a55ffd76bf3602fe7b9dca6f5ccdd766eb85cc420e",
+  "setup": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/setup.json",
+  "input_fingerprints": {
+    "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/bundle-local-first/Deadpan.app/Contents/MacOS/deadpan-cli": {
+      "bytes": 50334096,
+      "sha256": "a936b7878a96481d63a1ca786cf17a06eb33cc0f8a8731249d8a73b97ec8ab17"
+    },
+    "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/bundle-local-first/Deadpan.app/Contents/MacOS/deadpan-app": {
+      "bytes": 69059648,
+      "sha256": "f20761cc59219fbdc7f7184032e7ec880cc4b21f2942a7a076268894c57384d4"
+    },
+    "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/bundle-local-first/Deadpan.app/Contents/Resources/ai-runtime-inventory.json": {
+      "bytes": 2314724,
+      "sha256": "08ed482a9f5009c1941d4d7aa2651a0fc643529fa087c50f25aeedfc0e04e9c0"
+    },
+    "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/edge-from-left.mp4": {
+      "bytes": 38193,
+      "sha256": "56b3e7c2372c5ae0975d20d68bbf937ef0474a455168780d1cc5542db507ea5f"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-cli/src/bundle.rs": {
+      "bytes": 7743,
+      "sha256": "e8f5563d075ae95e3dd07c02459470ed2cfe17d1d7ef3338729491193ad30d2a"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-cli/src/bundle/ai.rs": {
+      "bytes": 6639,
+      "sha256": "82e44b0c516f26a881a835a886243e21a879348922a6745ec2e8e327ea9f0a27"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-cli/src/bundle/ai_inventory.rs": {
+      "bytes": 16388,
+      "sha256": "220b32d1b88f5d558906a491d5610213885e1ac74954c96a3137a6250414c0ff"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-cli/src/generation/runtime/launch.rs": {
+      "bytes": 11361,
+      "sha256": "21d587e9ba1855bf1e0a9cc6092b2d5ba77505ad9e2695b403f1576ec735dc1c"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-cli/src/generation/attempt.rs": {
+      "bytes": 59414,
+      "sha256": "f394c6432a6f7f6284adecd18babc205af2ef100a18b86b74995cf8d92a92647"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-cli/src/models.rs": {
+      "bytes": 24950,
+      "sha256": "e27063880b73adb0f1a67e987ea033320616371581c4fa22488ecdf6096e4834"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-cli/src/lib.rs": {
+      "bytes": 65646,
+      "sha256": "1148893d296773b78004374d23fbf06d0844976e5b2e73ef759f891f5c2d48b4"
+    }
+  },
+  "records": [
+    {
+      "name": "create-original",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/canonical-setup with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "project",
+        "create-original",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/canonical-setup with spaces/Workflow.deadpan",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/edge-from-left.mp4"
+      ],
+      "exit_code": 0,
+      "seconds": 0.15257437527179718,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "original",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/canonical-setup with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "project",
+        "dump",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/canonical-setup with spaces/Workflow.deadpan",
+        "--json"
+      ],
+      "exit_code": 0,
+      "seconds": 0.011470749974250793,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "insert-hold-preview",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/canonical-setup with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "command",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/canonical-setup with spaces/Workflow.deadpan",
+        "--json",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/canonical-setup with spaces/insert-hold.json",
+        "--dry-run"
+      ],
+      "exit_code": 0,
+      "seconds": 0.015225875191390514,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "insert-hold",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/canonical-setup with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "command",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/canonical-setup with spaces/Workflow.deadpan",
+        "--json",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/canonical-setup with spaces/insert-hold.json"
+      ],
+      "exit_code": 0,
+      "seconds": 0.03293404262512922,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    },
+    {
+      "name": "fallback",
+      "command": [
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/canonical-setup with spaces/Relocated app with spaces/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "project",
+        "dump",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/canonical-setup with spaces/Workflow.deadpan",
+        "--json"
+      ],
+      "exit_code": 0,
+      "seconds": 0.011106166988611221,
+      "expected_success": true,
+      "timed_out": false,
+      "environment": {
+        "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": "/tmp"
+      }
+    }
+  ],
+  "offline_scope": "AI Check/Inference use production deny-network sandbox; outer IP denial only for non-AI commands because macOS rejects nested sandbox-exec."
+}

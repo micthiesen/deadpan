@@ -1,0 +1,143 @@
+{
+  "schema_version": 58,
+  "project_id": "77cd980c-5bd7-4750-963d-7f47c1cec57f",
+  "revision_id": "e5664166-f483-4bc2-a56f-7167b0a6987f",
+  "presentation_basis": {
+    "width": 768,
+    "height": 320,
+    "frame_rate": {
+      "numerator": 24,
+      "denominator": 1
+    },
+    "color_policy": "sdr_rec709"
+  },
+  "basis_state": {
+    "rate_origin": "primary_source",
+    "geometry_origin": "primary_source",
+    "primary": {
+      "asset": "b0584597-0f1d-404f-ad68-39524830c7e1",
+      "qualification": "ff0e87b36747548763db737e9c6ef0ca3057639680dcba803099e6c844cdb742"
+    }
+  },
+  "root": "5e4a09e0-b55c-472e-85d9-84745eddfabe",
+  "nodes": {
+    "5e4a09e0-b55c-472e-85d9-84745eddfabe": {
+      "label": "Sequence",
+      "kind": {
+        "type": "sequence",
+        "children": [
+          "8dc53cb8-bd8f-4c5f-8deb-86f13f3a4afb",
+          "ai-trust-hold"
+        ]
+      }
+    },
+    "8dc53cb8-bd8f-4c5f-8deb-86f13f3a4afb": {
+      "label": "edge-from-left",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 9,
+          "edit_window": {
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "end": {
+              "numerator": "9",
+              "denominator": "1"
+            }
+          },
+          "video": {
+            "type": "stream",
+            "asset": "b0584597-0f1d-404f-ad68-39524830c7e1",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 24
+                }
+              },
+              "end": {
+                "ticks": 9,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 24
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "9",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": null,
+          "audio_mapping": {
+            "type": "fit_beat"
+          },
+          "link": "independent",
+          "audio_offset": 0
+        }
+      }
+    },
+    "ai-trust-hold": {
+      "label": "AI runtime trust regression",
+      "kind": {
+        "type": "hold",
+        "recipe": {
+          "duration": 12,
+          "video": {
+            "type": "freeze",
+            "asset": "b0584597-0f1d-404f-ad68-39524830c7e1",
+            "timestamp": {
+              "ticks": 8,
+              "time_base": {
+                "numerator": 1,
+                "denominator": 24
+              }
+            }
+          },
+          "audio": {
+            "type": "silence"
+          }
+        }
+      }
+    }
+  },
+  "assets": {
+    "b0584597-0f1d-404f-ad68-39524830c7e1": {
+      "label": "edge-from-left",
+      "content_hash": "blake3:bd9962a5638f6804f6817a3ffd4352b4c76cb7c4c06f73befd8e937755f1e7e8",
+      "video": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 24
+          }
+        },
+        "end": {
+          "ticks": 9,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 24
+          }
+        }
+      },
+      "audio": null,
+      "still_image": false,
+      "frame_count": 9,
+      "source_qualification": "ff0e87b36747548763db737e9c6ef0ca3057639680dcba803099e6c844cdb742"
+    }
+  },
+  "marks": {},
+  "overrides": {}
+}

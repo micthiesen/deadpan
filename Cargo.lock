@@ -5389,6 +5389,8 @@ checksum = "e450f9b2ed1dff33c94c12589a87338689467b9c4f5d8a5710bd09a847d2c8a7"
 name = "xtask"
 version = "0.1.0"
 dependencies = [
+ "rustix 1.1.5",
+ "serde",
  "serde_json",
  "sha2",
  "thiserror 2.0.20",

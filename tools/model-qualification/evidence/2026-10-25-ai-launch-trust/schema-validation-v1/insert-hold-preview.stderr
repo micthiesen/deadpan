@@ -1,0 +1,1 @@
+{"error":{"code":"InvalidInput","current_revision":null,"message":"missing field `command` at line 44 column 1","recovery_backup":null},"schema_version":1}

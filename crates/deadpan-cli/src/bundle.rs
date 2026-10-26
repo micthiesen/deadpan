@@ -12,10 +12,16 @@
 
 use std::path::{Path, PathBuf};
 
+mod ai;
+mod ai_inventory;
 mod image;
 mod native;
 mod packaging_marker;
 mod refinement;
+pub use ai::{
+    AI_RUNTIME_DIRECTORY, AI_RUNTIME_INVENTORY, AiRuntimePaths, ai_runtime_inventory_pin,
+    qualify_ai_host, qualify_ai_runtime,
+};
 pub use native::{
     NativeWorker, native_content_pins, qualify_native_worker, qualify_native_worker_interruptible,
 };

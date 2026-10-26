@@ -611,8 +611,13 @@ fn local_engines_stay_offline_by_construction() {
     let launch =
         fs::read_to_string(root.join("crates/deadpan-cli/src/generation/runtime/launch.rs"))
             .expect("launch.rs");
-    assert!(attempt.contains("runtime.worker_launch(&runtime_config, WorkerMode::Inference)"));
-    assert!(runtime.contains(".worker_launch(&configuration, WorkerMode::Check)"));
+    let compact = |text: &str| text.split_whitespace().collect::<String>();
+    assert!(compact(&attempt).contains(
+        "runtime.worker_launch_interruptible(&runtime_config,WorkerMode::Inference,cancelled,deadline"
+    ));
+    assert!(compact(&runtime).contains(
+        ".worker_launch_interruptible(&configuration,WorkerMode::Check,cancelled,deadline"
+    ));
     assert!(launch.contains("\"/usr/bin/sandbox-exec\""));
     assert!(launch.contains("\"(version 1)(allow default)(deny network*)\""));
     assert!(!attempt.contains("executable: runtime.python"));

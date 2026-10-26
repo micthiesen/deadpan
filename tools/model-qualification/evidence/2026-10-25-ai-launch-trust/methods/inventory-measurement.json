@@ -1,0 +1,26 @@
+[
+  {
+    "bundle": "bundle-local-first",
+    "inventory_bytes": 2314724,
+    "inventory_sha256": "08ed482a9f5009c1941d4d7aa2651a0fc643529fa087c50f25aeedfc0e04e9c0",
+    "kinds": {
+      "directory": 1536,
+      "macho": 62,
+      "file": 10660,
+      "symlink": 6
+    },
+    "regular_bytes": 493629228
+  },
+  {
+    "bundle": "bundle-adhoc-first",
+    "inventory_bytes": 2314724,
+    "inventory_sha256": "08ed482a9f5009c1941d4d7aa2651a0fc643529fa087c50f25aeedfc0e04e9c0",
+    "kinds": {
+      "directory": 1536,
+      "macho": 62,
+      "file": 10660,
+      "symlink": 6
+    },
+    "regular_bytes": 493623996
+  }
+]

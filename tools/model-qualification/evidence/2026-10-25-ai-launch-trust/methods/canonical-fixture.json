@@ -1,0 +1,6 @@
+{
+  "source": "/Users/michael/Code/deadpan/tools/model-qualification/evidence/2026-10-08-extension-one-second/fixtures/from_left.mp4",
+  "sha256": "56b3e7c2372c5ae0975d20d68bbf937ef0474a455168780d1cc5542db507ea5f",
+  "reference": "docs/qualification/extension-native-2026-10-08.md; 12f-from_left, seed42107, Still, K9/E8, 24fps",
+  "changes": "Use established definition-edge Freeze insertion rather than invented interior 30f insertion. Separate negative trust suite from candidate acceptance."
+}

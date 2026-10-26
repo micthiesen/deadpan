@@ -1,0 +1,107 @@
+{
+  "attempt_id": "3dffab7d5e7c4c5c9ea7fe6f9825e9cf",
+  "attempt_ordinal": 1,
+  "conditioning_ms": 88,
+  "context_sha256": "abef86b2c9e75f72cf3e2893816dfdc49c0963a520679b26766700200eff2bdd",
+  "failure": "Io: could not admit the AI worker: the AI runtime could not be admitted: AI runtime differs from its compiled inventory at worker/worker.py",
+  "hold_id": "ai-trust-hold",
+  "options": {
+    "mode": "extend_from_left",
+    "motion": "moderate",
+    "region_target": {
+      "selection": "none"
+    }
+  },
+  "plan": {
+    "operation": "extension",
+    "plan": {
+      "native_dimensions": {
+        "height": 320,
+        "width": 768
+      },
+      "operation": "extension",
+      "sampling": {
+        "context_frame_count": 9,
+        "direction": "from_left",
+        "generated_frame_count": 24,
+        "interpolation": "encoded_srgb_rgb8_linear_half_up",
+        "native_rate": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "output_frame_count": 30,
+        "policy": "frame_centers_clamped",
+        "project_rate": {
+          "denominator": 1001,
+          "numerator": 30000
+        },
+        "schema_version": 1
+      },
+      "schema_version": 1
+    }
+  },
+  "protocol": 1,
+  "ready": null,
+  "record_error": null,
+  "request_id": "ai-hold-2da97ae673504fc5bff26f081dc5b79f",
+  "request_version": 2,
+  "seed": 10,
+  "state": "Failed",
+  "timings_ms": {
+    "publication": 5,
+    "qualification": 0,
+    "worker": 0,
+    "workspace": 442
+  },
+  "variants": [
+    {
+      "attempt_id": "3dffab7d5e7c4c5c9ea7fe6f9825e9cf",
+      "attempt_ordinal": 1,
+      "context_sha256": "abef86b2c9e75f72cf3e2893816dfdc49c0963a520679b26766700200eff2bdd",
+      "failure": "Io: could not admit the AI worker: the AI runtime could not be admitted: AI runtime differs from its compiled inventory at worker/worker.py",
+      "hold_id": "ai-trust-hold",
+      "plan": {
+        "operation": "extension",
+        "plan": {
+          "native_dimensions": {
+            "height": 320,
+            "width": 768
+          },
+          "operation": "extension",
+          "sampling": {
+            "context_frame_count": 9,
+            "direction": "from_left",
+            "generated_frame_count": 24,
+            "interpolation": "encoded_srgb_rgb8_linear_half_up",
+            "native_rate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "output_frame_count": 30,
+            "policy": "frame_centers_clamped",
+            "project_rate": {
+              "denominator": 1001,
+              "numerator": 30000
+            },
+            "schema_version": 1
+          },
+          "schema_version": 1
+        }
+      },
+      "ready": null,
+      "record_error": null,
+      "request_id": "ai-hold-2da97ae673504fc5bff26f081dc5b79f",
+      "request_version": 2,
+      "seed": 10,
+      "state": "Failed",
+      "timings_ms": {
+        "publication": 5,
+        "qualification": 0,
+        "worker": 0,
+        "workspace": 442
+      },
+      "worker_log_tail": ""
+    }
+  ],
+  "worker_log_tail": ""
+}

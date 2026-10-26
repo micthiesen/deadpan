@@ -1,0 +1,41 @@
+{
+  "protocol": 1,
+  "project_id": "a422ea37-f24e-4230-bccf-83d409420ee4",
+  "expected_revision": "5c565ad7-6645-4180-a61b-111b172c42eb",
+  "new_revision": "1038fb4d-824f-4902-9978-f94a99c9b8b5",
+  "command": {
+    "command": "insert",
+    "parent": "031a50a4-c5b6-47a0-b96e-426cc763cbff",
+    "index": 1,
+    "subtree": {
+      "root": "ai-trust-hold",
+      "nodes": {
+        "ai-trust-hold": {
+          "label": "AI runtime trust regression",
+          "kind": {
+            "type": "hold",
+            "recipe": {
+              "duration": 12,
+              "video": {
+                "type": "freeze",
+                "asset": "d5e5011b-7e07-4e6c-afcc-813c17f558ac",
+                "timestamp": {
+                  "ticks": 8,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 24
+                  }
+                }
+              },
+              "audio": {
+                "type": "silence"
+              }
+            }
+          }
+        }
+      },
+      "overrides": {},
+      "gap_overrides": {}
+    }
+  }
+}

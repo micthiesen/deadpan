@@ -1,0 +1,16 @@
+   Compiling xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.56s
+     Running `/tmp/deadpan-follow-creep-2026-10-24/target/debug/xtask check --since 8ad64f85`
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking xtask v0.1.0 (/Users/michael/Code/deadpan/crates/xtask)
+error[E0425]: cannot find function `mkfifoat` in module `rustix::fs`
+   --> crates/xtask/src/bundle/ai_runtime/../../../../deadpan-cli/src/bundle/ai_inventory/tests.rs:163:17
+    |
+163 |     rustix::fs::mkfifoat(rustix::fs::CWD, &file, Mode::RUSR | Mode::WUSR).unwrap();
+    |                 ^^^^^^^^ not found in `rustix::fs`
+
+For more information about this error, try `rustc --explain E0425`.
+error: could not compile `xtask` (bin "xtask" test) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+xtask: cargo clippy -p deadpan-cli -p xtask --all-targets --locked --features deadpan-cli/synthetic-worker -- -D warnings exited with exit status: 101

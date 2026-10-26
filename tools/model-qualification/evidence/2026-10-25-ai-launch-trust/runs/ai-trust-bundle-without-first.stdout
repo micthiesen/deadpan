@@ -1,0 +1,7 @@
+bundle: warning: the working tree has uncommitted or untracked changes; build-provenance.json records this
+bundle: cargo build --release --locked --bins --message-format=json-render-diagnostics --target-dir /Users/michael/Code/deadpan/target/bundle -p deadpan-media-worker -p deadpan-transcribe -p deadpan-track -p deadpan-align
+bundle: cargo build --release --locked --bins --message-format=json-render-diagnostics --target-dir /Users/michael/Code/deadpan/target/bundle -p deadpan-app -p deadpan-cli
+bundle: 7 FFmpeg/ONNX Runtime libraries -> Contents/Frameworks
+bundle: 15 Mach-O files audited, 286 crates in notices (40 without a license file), signature ad-hoc, no AI runtime
+bundle: /private/tmp/deadpan-ai-runtime-trust-2026-10-25/bundle-without-first/Deadpan.app (291.3 MiB on disk)
+bundle: not notarized. Deadpan is a personal app and needs no notarization; sign with --identity (e.g. the dotfiles local signing certificate) when a stable signature is needed. See docs/PACKAGING.md

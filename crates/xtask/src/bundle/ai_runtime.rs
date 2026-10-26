@@ -14,6 +14,9 @@ use serde_json::{Value, json};
 
 use super::{Result, macho, notices, run_tool, sha256_file, spdx};
 
+mod prepared;
+pub(super) use prepared::{INVENTORY, Prepared, build_environment, check_hosts, prepare};
+
 /// Below `Contents`.
 pub const DIRECTORY: &str = "Resources/ai-runtime";
 const IDENTIFIER_PREFIX: &str = "dev.deadpan.Deadpan.ai";
@@ -36,7 +39,8 @@ pub fn build(workspace: &Path, cache: &Path, ltx_checkout: Option<&Path>) -> Res
         .arg(cache)
         // The runtime's FFmpeg is a separate, pinned GPL build; the LGPL
         // developer prefix must not leak into it.
-        .env_remove("DEADPAN_FFMPEG_PREFIX");
+        .env_remove("DEADPAN_FFMPEG_PREFIX")
+        .env_remove(prepared::PIN_ENV);
     if let Some(checkout) = ltx_checkout {
         command.arg("--ltx-checkout").arg(checkout);
     }

@@ -1,0 +1,6 @@
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.06s
+     Running `target/debug/xtask bundle --output /tmp/deadpan-ai-runtime-trust-2026-10-25/bundle-without-first --without-ai-runtime`
+    Finished `release` profile [optimized] target(s) in 0.12s
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `release` profile [optimized] target(s) in 6m 37s

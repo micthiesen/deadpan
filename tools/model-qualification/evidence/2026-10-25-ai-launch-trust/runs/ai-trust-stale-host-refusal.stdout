@@ -1,0 +1,4 @@
+bundle: warning: the working tree has uncommitted or untracked changes; build-provenance.json records this
+bundle: AI runtime /Users/michael/Library/Caches/Deadpan/build-inputs/ai-runtime-1575cc961aa327a5bf6c/runtime (471 MiB) ready in 2.0 s
+bundle: 7 FFmpeg/ONNX Runtime libraries -> Contents/Frameworks
+bundle: AI runtime signed (59 libraries, 3 executables)

@@ -1,0 +1,72 @@
+{
+  "committed": true,
+  "outcome": {
+    "edit": {
+      "changed_ids": [
+        "5e4a09e0-b55c-472e-85d9-84745eddfabe",
+        "ai-trust-hold"
+      ],
+      "description": "Insert beats",
+      "duration_delta": 12,
+      "forward": {
+        "assets": {},
+        "from_revision": "119f84b1-f98e-472c-aef0-a0242ce948d9",
+        "marks": {},
+        "nodes": {
+          "5e4a09e0-b55c-472e-85d9-84745eddfabe": {
+            "after": {
+              "kind": {
+                "children": [
+                  "8dc53cb8-bd8f-4c5f-8deb-86f13f3a4afb",
+                  "ai-trust-hold"
+                ],
+                "type": "sequence"
+              },
+              "label": "Sequence"
+            },
+            "before": {
+              "kind": {
+                "children": [
+                  "8dc53cb8-bd8f-4c5f-8deb-86f13f3a4afb"
+                ],
+                "type": "sequence"
+              },
+              "label": "Sequence"
+            }
+          },
+          "ai-trust-hold": {
+            "after": {
+              "kind": {
+                "recipe": {
+                  "audio": {
+                    "type": "silence"
+                  },
+                  "duration": 12,
+                  "video": {
+                    "asset": "b0584597-0f1d-404f-ad68-39524830c7e1",
+                    "timestamp": {
+                      "ticks": 8,
+                      "time_base": {
+                        "denominator": 24,
+                        "numerator": 1
+                      }
+                    },
+                    "type": "freeze"
+                  }
+                },
+                "type": "hold"
+              },
+              "label": "AI runtime trust regression"
+            },
+            "before": null
+          }
+        },
+        "overrides": {},
+        "project_id": "77cd980c-5bd7-4750-963d-7f47c1cec57f",
+        "to_revision": "e5664166-f483-4bc2-a56f-7167b0a6987f"
+      }
+    },
+    "revision_id": "e5664166-f483-4bc2-a56f-7167b0a6987f"
+  },
+  "protocol": 1
+}

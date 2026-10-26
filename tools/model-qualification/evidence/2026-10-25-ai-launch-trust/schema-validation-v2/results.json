@@ -1,0 +1,97 @@
+{
+  "cli": "/tmp/deadpan-native-trust-2026-10-25/bundle-local-second/Deadpan.app/Contents/MacOS/deadpan-cli",
+  "cli_sha256": "7d7157767fe99773bf6d626b51cfc3c53732625fc8ae1d3bb4fd47c4d891ec48",
+  "environment": {
+    "HOME": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home",
+    "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+    "TMPDIR": "/tmp"
+  },
+  "records": [
+    {
+      "name": "create-original",
+      "command": [
+        "/tmp/deadpan-native-trust-2026-10-25/bundle-local-second/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "project",
+        "create-original",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/schema-validation-v2/Fixture.deadpan",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/cfr-bframes.mp4"
+      ],
+      "exit_code": 0,
+      "seconds": 0.09950212482362986
+    },
+    {
+      "name": "original",
+      "command": [
+        "/tmp/deadpan-native-trust-2026-10-25/bundle-local-second/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "project",
+        "dump",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/schema-validation-v2/Fixture.deadpan",
+        "--json"
+      ],
+      "exit_code": 0,
+      "seconds": 0.011152165941894054
+    },
+    {
+      "name": "insert-hold-preview",
+      "command": [
+        "/tmp/deadpan-native-trust-2026-10-25/bundle-local-second/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "command",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/schema-validation-v2/Fixture.deadpan",
+        "--json",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/schema-validation-v2/insert-hold.json",
+        "--dry-run"
+      ],
+      "exit_code": 0,
+      "seconds": 0.012916957959532738
+    },
+    {
+      "name": "after-preview",
+      "command": [
+        "/tmp/deadpan-native-trust-2026-10-25/bundle-local-second/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "project",
+        "dump",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/schema-validation-v2/Fixture.deadpan",
+        "--json"
+      ],
+      "exit_code": 0,
+      "seconds": 0.01116424985229969
+    },
+    {
+      "name": "insert-hold",
+      "command": [
+        "/tmp/deadpan-native-trust-2026-10-25/bundle-local-second/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "command",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/schema-validation-v2/Fixture.deadpan",
+        "--json",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/schema-validation-v2/insert-hold.json"
+      ],
+      "exit_code": 0,
+      "seconds": 0.03603520803153515
+    },
+    {
+      "name": "fallback",
+      "command": [
+        "/tmp/deadpan-native-trust-2026-10-25/bundle-local-second/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "project",
+        "dump",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/schema-validation-v2/Fixture.deadpan",
+        "--json"
+      ],
+      "exit_code": 0,
+      "seconds": 0.01085674948990345
+    },
+    {
+      "name": "validate",
+      "command": [
+        "/tmp/deadpan-native-trust-2026-10-25/bundle-local-second/Deadpan.app/Contents/MacOS/deadpan-cli",
+        "project",
+        "validate",
+        "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/schema-validation-v2/Fixture.deadpan",
+        "--quick"
+      ],
+      "exit_code": 0,
+      "seconds": 0.01109945960342884
+    }
+  ],
+  "inference_or_ai_commands_run": false
+}

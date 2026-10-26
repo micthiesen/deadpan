@@ -5,10 +5,12 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 ## Current continuation, 2026-10-25
 
 The [progress reassessment](../PROGRESS_ASSESSMENT.md) supersedes the inherited
-89% estimate with about **83% acceptance coverage**. Use the fixed 162-criterion
+89% estimate with about **84% acceptance coverage** after the qualifications
+below (83.7426%). Use the fixed 162-criterion
 ledger in progress.json; tools/progress/update.py computes the score. Preserve
 legacy history and never infer a progress rate across the calibration change.
-Seven requirements are Complete, seventeen Partial after the older native-helper trust audit; all seven gates stay open
+Eight requirements are Complete, sixteen Partial after closing the native and
+private-AI launch trust gaps; all seven gates stay open
 and picture effects remain five of thirteen. DP-12 behavior scores fully covered
 but strict closure needs reconciliation; runtime optimizations, bakeoff and
 performance remain owed under DP-24 and Gates A/E/G. This reporting correction
@@ -69,21 +71,57 @@ startup/import/render/runtime and negative helper checks pass. Earlier fixture,
 identity lookup and signing-timeout attempts remain in evidence. Fixture signing
 uses the canonical owner identity; tested hosts keep isolated homes.
 
-DP-22.3 remains 0.5 and DP-22 Partial because the private AI runtime still lacks
-compiled inventory/app-seal admission BEFORE Python exec. Worker self-reports
-and build-time hashes cannot provide that authority. Next implementation:
-freeze the private runtime and notices before final host rebuild; clean-sign its
-62 Mach-O images; produce a closed relative-path inventory covering all scripts,
-pyc, .pth, Metal/data files and aliases; compile the inventory SHA-256 into hosts.
-Verify it at shared interruptible Check/Inference worker_launch, off UI/writer
-threads. The current tree has 10,722 files, 1,536 directories, six confined
-leaf links and 493,623,996 bytes. Keep model weights in their existing pack
-verification and preserve the explicit developer-runtime opt-in with a valid
-host. Reject added import hooks, altered inventory, path/link escapes, missing
-files, re-signed substitutions and stale/no-build host pins. Both published
-hosts must actually probe admission before Python/Metal smoke checks.
-No new crate or generic plugin framework. Standing ad hoc/local signing is
-authorized; no Developer ID/notarization gate.
+[Private AI launch admission](../qualification/private-ai-launch-trust-2026-10-25.md)
+now closes the remaining DP-22.3 gap. Runtime and notices are frozen before the
+final host rebuild; 62 Mach-O images are clean-signed before canonical inventory
+generation. Both hosts compile `DEADPAN_AI_RUNTIME_INVENTORY_SHA256` and admit
+the complete tree, expected signer and host seal at shared interruptible
+Check/Inference `worker_launch`, off UI/writer threads and before Python exec.
+The final frozen copy is not re-signed. Identity metadata reads are bounded to
+64 KiB, nonblocking and no-follow. All five external runtime paths remain
+explicit under developer opt-in, after host-seal admission. Model weights keep
+their existing pack verification. `models check` reuses the read-only Check
+path without requiring a new installation.
+
+The 2,314,724-byte canonical inventory covers 10,660 ordinary files, 62 Mach-O
+images, 1,536 directories and six confined aliases. Its SHA-256 is
+`08ed482a9f5009c1941d4d7aa2651a0fc643529fa087c50f25aeedfc0e04e9c0`
+for both local-certificate and ad hoc bundles. Local, ad hoc `--no-build` and
+no-AI bundles pass both actual host probes before and after Python/Metal checks
+(no-AI reports absence without Python). A stale `--no-build` host refuses the
+missing AI pin before Python. General relocated verification passes for local
+and no-AI bundles. Preserve all three bundle receipts and the 150-operation
+adversarial suite: 61 expected denials, zero timeouts, real Check through both
+hosts, validly re-signed UUID mutants of Python/libmlx/ffmpeg, altered py/pyc/pth,
+Metal/inventory/import hooks, missing/mode/alias/FIFO/identity-FIFO/marker cases,
+and tampered Inference with no authored changes.
+
+Real canonical K9/E8 uses the existing October 8 definition-edge fixture:
+12 authored frames at 24 fps, seed 42107, Still reaches Ready and explicit
+acceptance. Offline export with empty HOME and no network emits 55,047 bytes,
+21 pictures and 42,000 samples. Undo restores the exact fallback except revision;
+full history passes default `project validate` without `--full`. The new interior
+30-frame seed-9 Still candidate fails entry motion at 1.253 > 0.5, and Moderate
+fails unconditioned exit luma at 37.185 > 32. Retain both failures. Fixture-driver
+failures from the missing Exports directory and invalid `--full` syntax remain
+beside the continued export/Undo/history pass; no regeneration was used.
+
+Keep the first formatter/module-path and mkfifo API errors, and the broad run's
+1,009 passes/one stale privacy-assertion failure plus one leak warning. The
+corrected strict check and 192 selected tests pass with two leak warnings;
+the serial thirteen relevant tests pass without leaks. General, security and
+lifecycle reviews completed; the bounded-metadata correction passed security
+re-review with no findings. Evidence is under
+`tools/model-qualification/evidence/2026-10-25-ai-launch-trust`. All verification
+used the primary M5 Max, macOS 26.5.2 and Rust 1.97.1. Do not claim a clean Mac,
+new quality corpus or calibrated latency from these runs.
+
+DP-22.3 now scores 1 and DP-22 is Complete. The fixed 162-criterion ledger rounds
+to 84%; no scope or denominator changed. Continue the full goal, with existing
+Follow post-insertion arrival factor/curve retuning in the shared and native
+paths a concrete next increment. Composability, audio/effects, incremental
+analysis, native workflows and performance remain open. No Developer ID or
+notarization gate applies to this personal app.
 
 ## Earlier scoped framing ranges, 2026-10-25
 
@@ -110,12 +148,10 @@ separate thirteen-file proof sidecar pass their independent audit and Root
 hash/JSON check. Prior audit-accounting failures remain explicit. Do not claim a fresh all-green full App/CLI
 run, physical display/IME/listening accuracy or full-product release acceptance.
 
-Next work is being selected from the fixed acceptance ledger, including the
-absent automatic local word-boundary refinement in DP-10. An independent
-exploration is checking the actual Whisper adapter, correction pinning and
-available real-media corpus before choosing the implementation. Keep existing
-creep parameter adjustment, remaining picture/audio effects, native workflows
-and performance targets open. Preserve foreign fuzz/Cargo.lock and .claude/.
+At this earlier checkpoint the next investigation was automatic local
+word-boundary refinement in DP-10, now qualified above. Existing creep parameter
+adjustment, remaining picture/audio effects, native workflows and performance
+targets remain open. Preserve foreign fuzz/Cargo.lock and .claude/.
 
 ## Earlier Camera pointer targets, 2026-10-25
 

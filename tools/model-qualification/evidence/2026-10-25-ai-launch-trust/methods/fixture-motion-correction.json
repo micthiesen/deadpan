@@ -1,0 +1,7 @@
+{
+  "failed_run": "ai-trust-bundle-cases-first",
+  "failure": "OutputValidationFailed: measured conditioned-entry motion 1.253080/s exceeds Still 0.500000/s",
+  "correction": "Author Moderate motion for the moving synthetic CFR pattern; fresh generation keeps seed 9.",
+  "contract": "Still/Subtle/Moderate thresholds remain 0.5/1.0/2.0 per second. No production source or validation threshold changes.",
+  "driver_sha256": "b08b6feeee3d46db3e9f5d0dca3ce0413747ee658572ae3dbce56eeaf0ac67ed"
+}

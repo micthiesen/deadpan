@@ -1,0 +1,3 @@
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.06s
+     Running `target/debug/xtask bundle --output /tmp/deadpan-ai-runtime-trust-2026-10-25/bundle-stale-host --no-build`
+xtask: deadpan-app refused its packaged AI runtime (exit status: 1): {"error":{"code":"InvalidInput","current_revision":null,"message":"The packaged AI runtime has no compiled inventory pin","recovery_backup":null},"schema_version":1}

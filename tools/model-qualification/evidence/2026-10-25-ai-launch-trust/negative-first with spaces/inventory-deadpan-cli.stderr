@@ -1,0 +1,1 @@
+{"error":{"code":"IoFailure","current_revision":null,"message":"AI runtime inventory differs from the host's compiled pin","recovery_backup":null},"schema_version":1}

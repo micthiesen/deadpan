@@ -45,7 +45,7 @@ pub fn default_root() -> Result<PathBuf, CliError> {
     Ok(data.join("deadpan/models"))
 }
 
-const USAGE: &str = "usage: models list | models license <pack> | models install <pack> [--accept-license] | models import <pack> <folder-or-archive.tar> [--accept-license] | models export <pack> <archive.tar> | models remove <pack> [--partial] | models update <signed-manifest|https-url> [--from <folder-or-archive.tar>] [--accept-license] [--allow-downgrade] | models rollback <pack>; install, import, export, license and remove take [--version <v>]; every command takes [--root <dir>]";
+const USAGE: &str = "usage: models list | models license <pack> | models check <pack> | models install <pack> [--accept-license] | models import <pack> <folder-or-archive.tar> [--accept-license] | models export <pack> <archive.tar> | models remove <pack> [--partial] | models update <signed-manifest|https-url> [--from <folder-or-archive.tar>] [--accept-license] [--allow-downgrade] | models rollback <pack>; check, install, import, export, license and remove take [--version <v>]; every command takes [--root <dir>]";
 
 fn usage() -> CliError {
     CliError::Usage(USAGE.into())
@@ -134,6 +134,7 @@ pub fn run(arguments: &[&str]) -> Result<(), CliError> {
     match parsed.positional.as_slice() {
         ["list"] => list(&store),
         ["license", id] => license(&pack(&store, id, parsed.version)?),
+        ["check", id] => check_installed(&store, &pack(&store, id, parsed.version)?),
         ["install", id] => install(
             &store,
             &pack(&store, id, parsed.version)?,
@@ -393,6 +394,27 @@ fn install(
     crate::write_json(&serde_json::json!({ "protocol": 1, "installed": installed.directory }))
 }
 
+/// Rehash and smoke-test an installed pack without downloading, replacing or
+/// activating anything. The version lock survives through the runtime check.
+fn check_installed(store: &PackStore, manifest: &PackManifest) -> Result<(), CliError> {
+    let verified = revalidate_installed_pack(
+        store,
+        manifest,
+        &AtomicBool::new(false),
+        progress_lines(),
+        || {
+            let _ = emit(&serde_json::json!({ "event": "smoke_test" }));
+        },
+    )?
+    .ok_or_else(|| CliError::Usage(format!("model pack {} is not installed", manifest.pack_id)))?;
+    crate::write_json(&serde_json::json!({
+        "protocol": 1,
+        "verified": manifest.pack_id,
+        "version": manifest.pack_version,
+        "installed": verified.installed().directory,
+    }))
+}
+
 /// Download (or import offline), verify, smoke-test and activate one
 /// approved pack. `accepted_licenses` must name every license that requires
 /// acceptance; the user has seen them. A failed smoke test leaves installed
@@ -595,6 +617,22 @@ fn installed_model(
 #[cfg(test)]
 mod generation_smoke_tests {
     use super::*;
+
+    #[test]
+    fn installed_check_refuses_an_absent_pack_without_staging_or_downloads() {
+        let scratch = tempfile::tempdir().unwrap();
+        let store = PackStore::new(scratch.path().to_owned());
+        let manifest = deadpan_models::packs::approved_pack("ltx-2.3-q4-extension").unwrap();
+        let error = check_installed(&store, &manifest).unwrap_err();
+        assert!(error.to_string().contains("is not installed"));
+        assert!(
+            !scratch
+                .path()
+                .join(".staging")
+                .join(format!("{}-{}", manifest.pack_id, manifest.pack_version))
+                .exists()
+        );
+    }
 
     #[test]
     fn both_generation_operations_require_their_staged_pack_smoke_to_pass() {

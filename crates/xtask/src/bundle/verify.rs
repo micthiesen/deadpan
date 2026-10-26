@@ -350,8 +350,25 @@ fn ai_runtime_checks(
     failures: &mut Vec<String>,
 ) -> Result<()> {
     let runtime = app.join("Contents").join(super::ai_runtime::DIRECTORY);
+    // Exercise the shipping admission code before this verifier directly
+    // starts Python, MLX or either codec program from the copied bundle.
+    let pin = ai_runtime_admission(scrubbed, app, cli)?;
     let doctor = scrubbed.json(cli, &["doctor"])?;
     let ai = &doctor["runtime"]["ai_runtime"];
+    if pin.is_none() {
+        check(
+            doctor["runtime"]["packaged"] == true && ai["ready"] == false,
+            "both packaged hosts explicitly admit no AI runtime; doctor reports AI unavailable",
+            failures,
+        );
+        if models_from.is_some() {
+            return Err(
+                "--ai-models-from cannot be exercised by a bundle built without its AI runtime"
+                    .into(),
+            );
+        }
+        return Ok(());
+    }
     let inside = |value: &Value| {
         value
             .as_str()
@@ -424,7 +441,56 @@ fn ai_runtime_checks(
             failures,
         );
     }
+    if ai_runtime_admission(scrubbed, app, cli)? != pin {
+        return Err("AI runtime identity changed during the relocated workflow".into());
+    }
     Ok(())
+}
+
+/// Both host executables must run the complete independently pinned-tree and
+/// signer admission. The resource bytes below are compared only after that
+/// succeeds; their own declaration is never executable authority.
+fn ai_runtime_admission(scrubbed: &Scrubbed, app: &Path, cli: &Path) -> Result<Option<String>> {
+    let cli_probe = scrubbed.json(cli, &["ai-runtime-qualify"])?;
+    let app_probe = scrubbed.json(
+        &app.join("Contents/MacOS/deadpan-app"),
+        &["--headless", "ai-runtime-qualify"],
+    )?;
+    let pin = |probe: &Value| -> Result<Option<String>> {
+        match probe.get("inventory_sha256") {
+            Some(Value::Null) => Ok(None),
+            Some(Value::String(pin))
+                if pin.len() == 64
+                    && pin
+                        .bytes()
+                        .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte)) =>
+            {
+                Ok(Some(pin.clone()))
+            }
+            _ => Err("the packaged AI qualifier returned no valid inventory identity".into()),
+        }
+    };
+    let cli_pin = pin(&cli_probe)?;
+    if pin(&app_probe)? != cli_pin {
+        return Err("the packaged App and CLI carry different AI inventory pins".into());
+    }
+    let contents = app.join("Contents");
+    let manifest = contents.join(super::ai_runtime::INVENTORY);
+    if let Some(expected) = &cli_pin {
+        if super::sha256_file(&manifest)? != *expected {
+            return Err("the admitted AI inventory differs from the final resource bytes".into());
+        }
+        println!("verify: ok   both packaged hosts admit AI inventory {expected}");
+    } else {
+        for path in [manifest, contents.join(super::ai_runtime::DIRECTORY)] {
+            match fs::symlink_metadata(&path) {
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                Err(error) => return Err(format!("{}: {error}", path.display())),
+                Ok(_) => return Err(format!("unpinned AI resource exists: {}", path.display())),
+            }
+        }
+    }
+    Ok(cli_pin)
 }
 
 fn deno_notice_problems(app: &Path) -> Result<Vec<String>> {

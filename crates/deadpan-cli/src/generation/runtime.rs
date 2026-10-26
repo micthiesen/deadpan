@@ -26,12 +26,14 @@
 //! current executable.
 //! The worker verifies the runtime source tree, checks the selected manifest
 //! against its pinned component/configuration contract and verifies every
-//! model file on each attempt; this module checks only component presence.
+//! model file on each attempt. Discovery checks only component presence; the
+//! shared launch boundary verifies the compiled private-runtime inventory and
+//! package/signing identity before Python executes.
 
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use deadpan_jobs::{ConditioningMode, GenerationPlan};
 use deadpan_models::packs::{InstalledPack, PackManifest, PackStore, approved_pack};
@@ -151,10 +153,31 @@ pub fn current_macos() -> Option<(u32, u32)> {
 /// `minimum_macos`); on an older system AI pauses are unavailable rather than
 /// failing inside the worker.
 pub fn os_requirement(runtime: &Path, current: Option<(u32, u32)>) -> Option<String> {
-    let minimum = std::fs::read(runtime.join("runtime.json"))
-        .ok()
-        .and_then(|bytes| serde_json::from_slice::<serde_json::Value>(&bytes).ok())
-        .and_then(|identity| identity["minimum_macos"].as_str().map(str::to_owned));
+    // Discovery also runs on the writer/UI. A damaged package must not block
+    // it on a FIFO or allocate an unbounded resource before launch admission.
+    let minimum = (|| {
+        use rustix::fs::{Mode, OFlags, open};
+        use std::io::Read as _;
+        const LIMIT: u64 = 64 * 1024;
+        let descriptor = open(
+            runtime.join("runtime.json"),
+            OFlags::RDONLY | OFlags::NONBLOCK | OFlags::NOFOLLOW | OFlags::CLOEXEC,
+            Mode::empty(),
+        )
+        .ok()?;
+        let file = std::fs::File::from(descriptor);
+        let metadata = file.metadata().ok()?;
+        if !metadata.is_file() || metadata.len() > LIMIT {
+            return None;
+        }
+        let mut bytes = Vec::new();
+        file.take(LIMIT + 1).read_to_end(&mut bytes).ok()?;
+        if bytes.len() as u64 != metadata.len() || bytes.len() as u64 > LIMIT {
+            return None;
+        }
+        let identity: serde_json::Value = serde_json::from_slice(&bytes).ok()?;
+        identity["minimum_macos"].as_str().map(str::to_owned)
+    })();
     // A bundled runtime without a readable requirement is damaged.
     let Some((minimum, required)) =
         minimum.and_then(|minimum| major_minor(&minimum).map(|required| (minimum, required)))
@@ -639,13 +662,21 @@ impl BridgeRuntime {
     /// pack's smoke test before activation; it runs no inference.
     pub fn check(&self, cancelled: &AtomicBool) -> Result<serde_json::Value, String> {
         use crate::youtube::runner::{HelperCommand, Workspace, run_helper};
+        let deadline = Instant::now() + CHECK_DEADLINE;
         let workspace = Workspace::new().map_err(|error| error.to_string())?;
         let configuration = workspace.path().join("runtime.json");
         std::fs::write(&configuration, self.worker_configuration())
             .map_err(|error| error.to_string())?;
         let launch = self
-            .worker_launch(&configuration, WorkerMode::Check)
+            .worker_launch_interruptible(&configuration, WorkerMode::Check, cancelled, deadline)
             .map_err(|error| error.to_string())?;
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if cancelled.load(std::sync::atomic::Ordering::Acquire) {
+            return Err("the AI runtime check was cancelled before launch".into());
+        }
+        if remaining.is_zero() {
+            return Err("the AI runtime check deadline elapsed before launch".into());
+        }
         let run = run_helper(
             HelperCommand {
                 executable: &launch.executable,
@@ -657,7 +688,7 @@ impl BridgeRuntime {
                     "ModelPackFailed",
                     "the AI runtime check printed too much",
                 ),
-                timeout: CHECK_DEADLINE,
+                timeout: remaining,
             },
             cancelled,
             || Ok(()),
@@ -1059,6 +1090,24 @@ mod tests {
         assert_eq!(major_minor("26.5.2"), Some((26, 5)));
         assert_eq!(major_minor("15"), Some((15, 0)));
         assert!(current_macos().is_some_and(|(major, _)| major >= 15));
+    }
+
+    #[test]
+    fn runtime_discovery_refuses_oversized_identity_and_aliases_before_admission() {
+        let root = tempfile::tempdir().unwrap();
+        let identity = root.path().join("runtime.json");
+        let valid = r#"{"minimum_macos":"26.0"}"#;
+        std::fs::write(&identity, valid).unwrap();
+        assert_eq!(os_requirement(root.path(), Some((26, 5))), None);
+        let mut oversized = valid.to_owned();
+        oversized.push_str(&" ".repeat(64 * 1024));
+        std::fs::write(&identity, oversized).unwrap();
+        assert!(os_requirement(root.path(), Some((26, 5))).is_some());
+        std::fs::remove_file(&identity).unwrap();
+        let target = root.path().join("external.json");
+        std::fs::write(&target, valid).unwrap();
+        std::os::unix::fs::symlink(&target, &identity).unwrap();
+        assert!(os_requirement(root.path(), Some((26, 5))).is_some());
     }
 
     #[test]

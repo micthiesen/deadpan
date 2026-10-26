@@ -875,6 +875,7 @@ pub fn run_worker_scheduled(
 ) -> WorkerRun {
     let mut timings = RunTimings::default();
     let started = Instant::now();
+    let deadline = started + WORKER_DEADLINE;
     let identity = &allocated.identity;
     let token = &allocated.cancellation_token;
     let mut lifecycle = JobLifecycle::new_with_protocol(
@@ -948,21 +949,50 @@ pub fn run_worker_scheduled(
     .into_iter()
     .map(|(key, value)| (key.into(), value.into()))
     .collect::<BTreeMap<_, _>>();
-    let launch = match runtime.worker_launch(&runtime_config, WorkerMode::Inference) {
+    let admission = runtime.worker_launch_interruptible(
+        &runtime_config,
+        WorkerMode::Inference,
+        cancelled,
+        deadline,
+    );
+    timings.preparation = started.elapsed();
+    let launch = match admission {
         Ok(launch) => launch,
         Err(error) => {
-            let mut run = WorkerRun::early(
+            let result = if cancelled.load(Ordering::Acquire) {
+                cancel_early(&mut records)
+            } else {
+                let code = match error.io_kind() {
+                    Some(std::io::ErrorKind::Interrupted) => HostFailureCode::Interrupted,
+                    Some(std::io::ErrorKind::TimedOut) => HostFailureCode::DeadlineExceeded,
+                    Some(_) => HostFailureCode::Io,
+                    None => HostFailureCode::SpawnFailed,
+                };
                 RunResult::Failed(JobFailure::Host(host_failure(
-                    HostFailureCode::SpawnFailed,
-                    &format!("could not isolate the AI worker: {error}"),
-                ))),
-                timings,
-            );
+                    code,
+                    &format!("could not admit the AI worker: {error}"),
+                )))
+            };
+            let mut run = WorkerRun::early(result, timings);
             run._directory = Some(directory);
             return run;
         }
     };
     let launched = Instant::now();
+    let remaining = deadline.saturating_duration_since(launched);
+    if remaining.is_zero() || cancelled.load(Ordering::Acquire) {
+        let result = if cancelled.load(Ordering::Acquire) {
+            cancel_early(&mut records)
+        } else {
+            RunResult::Failed(JobFailure::Host(host_failure(
+                HostFailureCode::DeadlineExceeded,
+                "the AI attempt deadline elapsed before worker launch",
+            )))
+        };
+        let mut run = WorkerRun::early(result, timings);
+        run._directory = Some(directory);
+        return run;
+    }
     let mut process = match WorkerProcess::spawn(
         ProcessSpec {
             executable: launch.executable,
@@ -970,7 +1000,7 @@ pub fn run_worker_scheduled(
             environment,
             workspace: worker,
             limits: ProcessLimits {
-                maximum_duration: WORKER_DEADLINE,
+                maximum_duration: remaining,
                 cancellation_grace: CANCELLATION_GRACE,
                 exit_grace: EXIT_GRACE,
             },

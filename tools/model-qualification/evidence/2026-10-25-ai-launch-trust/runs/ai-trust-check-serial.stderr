@@ -1,0 +1,26 @@
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.45
+   Compiling rustls-webpki v0.103.16
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [optimized + debuginfo] target(s) in 19.97s
+────────────
+ Nextest run ID f3290938-0451-449d-91be-6267d33051e3 with nextest profile: default
+    Starting 13 tests across 45 binaries (935 tests skipped)
+        PASS [   0.013s] ( 1/13) deadpan-cli bundle::ai::tests::cancellation_and_deadline_precede_any_development_or_packaged_access
+        PASS [   0.042s] ( 2/13) deadpan-cli bundle::ai::tests::closed_runtime_admission_covers_import_data_and_every_native_image
+        PASS [   0.012s] ( 3/13) deadpan-cli bundle::ai::tests::compiled_pin_and_package_marker_are_required_before_any_verifier_runs
+        PASS [   0.021s] ( 4/13) deadpan-cli bundle::ai::tests::edited_manifest_extra_file_missing_file_and_changed_alias_cannot_supply_authority
+        PASS [   0.012s] ( 5/13) deadpan-cli bundle::ai::tests::expected_signer_failure_is_propagated_after_inventory_qualification
+        PASS [   0.016s] ( 6/13) deadpan-cli bundle::ai::tests::fixed_paths_reject_external_substitution_sibling_swap_and_alias_spelling
+        PASS [   0.012s] ( 7/13) deadpan-cli bundle::ai_inventory::tests::aliases_cannot_escape_cycle_dangle_or_replace_directory_parents
+        PASS [   0.010s] ( 8/13) deadpan-cli bundle::ai_inventory::tests::generic_snapshot_pins_data_modes_tree_and_confined_leaf_aliases
+        PASS [   0.009s] ( 9/13) deadpan-cli bundle::ai_inventory::tests::parser_rejects_ambiguous_unknown_noncanonical_and_unbounded_records
+        PASS [   0.010s] (10/13) deadpan-cli bundle::ai_inventory::tests::real_chunk_reads_and_manifest_validation_observe_interruption
+        PASS [   0.009s] (11/13) deadpan-cli bundle::ai_inventory::tests::shared_writes_special_files_and_root_aliases_fail_without_following
+        PASS [   0.009s] (12/13) deadpan-cli bundle::ai_inventory::tests::unsupported_macho_layout_cannot_become_an_ordinary_file
+        PASS [   0.030s] (13/13) deadpan-cli encoded_render::protocol::tests::adversarial_encoded_render_frames
+────────────
+     Summary [   0.206s] 13 tests run: 13 passed, 935 skipped

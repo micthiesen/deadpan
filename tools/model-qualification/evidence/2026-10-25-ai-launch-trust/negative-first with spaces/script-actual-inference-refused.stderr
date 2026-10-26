@@ -1,0 +1,2 @@
+{"progress":"preparing"}
+{"error":{"code":"GenerationFailed","current_revision":null,"message":"The AI pause could not be generated: Io: could not admit the AI worker: the AI runtime could not be admitted: AI runtime differs from its compiled inventory at worker/worker.py","recovery_backup":null},"schema_version":1}

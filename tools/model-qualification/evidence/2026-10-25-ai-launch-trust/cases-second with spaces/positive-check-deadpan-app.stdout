@@ -1,0 +1,28 @@
+{"completed_bytes":1851364839,"event":"progress","total_bytes":36152862913}
+{"completed_bytes":3663304167,"event":"progress","total_bytes":36152862913}
+{"completed_bytes":5475243495,"event":"progress","total_bytes":36152862913}
+{"completed_bytes":7323452353,"event":"progress","total_bytes":36152862913}
+{"completed_bytes":9135391681,"event":"progress","total_bytes":36152862913}
+{"completed_bytes":10947331009,"event":"progress","total_bytes":36152862913}
+{"completed_bytes":12759270337,"event":"progress","total_bytes":36152862913}
+{"completed_bytes":14593415663,"event":"progress","total_bytes":36152862913}
+{"completed_bytes":16461578339,"event":"progress","total_bytes":36152862913}
+{"completed_bytes":18273517667,"event":"progress","total_bytes":36152862913}
+{"completed_bytes":20085456995,"event":"progress","total_bytes":36152862913}
+{"completed_bytes":21897396323,"event":"progress","total_bytes":36152862913}
+{"completed_bytes":23709335651,"event":"progress","total_bytes":36152862913}
+{"completed_bytes":25521274979,"event":"progress","total_bytes":36152862913}
+{"completed_bytes":27389970603,"event":"progress","total_bytes":36152862913}
+{"completed_bytes":29225697797,"event":"progress","total_bytes":36152862913}
+{"completed_bytes":31037637125,"event":"progress","total_bytes":36152862913}
+{"completed_bytes":32849576453,"event":"progress","total_bytes":36152862913}
+{"completed_bytes":34660261974,"event":"progress","total_bytes":36152862913}
+{"completed_bytes":36152862913,"event":"progress","total_bytes":36152862913}
+{"event":"smoke_test"}
+{"event":"smoke_test_passed","report":{"adapter_sources_sha256":{"ltx-source-manifest.json":"abc7e873e28097d1f9307b030dd4b1f415f6b5091c841ac1babd421c8d74f092","mlx_backend.py":"2ce15538657efd07ab1de9ab45e257b7fe760ef106d46857b5e1de7fce2eee5b","runtime_source.py":"83dddd9cd6e84d1c2d01d27e6d28098325624afc3572f17ba7037ecd4acbbbad","worker.py":"05fcebf641530929f4d2f89bfac949ad1eb4dcf2e9b5458e8684b6aa0df077b3","worker_extension_context.py":"48e72a3bc4507aa572aee05e0608e7b887ba7e50991299b99e2fd3911700df4a","worker_media.py":"75608e052a744deaabe864521a6d3da2e20645171e1173191815619cfed104d1","worker_protocol.py":"b6927a03b37bf1d7e0ca20b7eb2884e578b69a249751e533b576b8f3cce0d85d"},"device":"Device(gpu, 0)","loaded_ltx_sources":100,"mlx":"0.32.2","model_manifest_sha256":"fb5ad65515dd4f5b1d3c2fe56b963931f96d517ff1ec57af03490fb487462151","operation":"extension_hold","pack_id":"ltx-2.3-q4-extension","pack_version":"1","python":"3.12.13","runtime_commit":"3392d75934120b7e69eefbe55893f7ef82be92a4","runtime_id":"ltx-mlx","runtime_version":"0.15.8+deadpan-extension1","safetensors_tensors":14347,"schema_version":2,"seconds":0.115,"verified_assets":31}}
+{
+  "installed": "/private/tmp/deadpan-ai-runtime-trust-2026-10-25/home/Library/Application Support/Deadpan/Models/ltx-2.3-q4-extension/1",
+  "protocol": 1,
+  "verified": "ltx-2.3-q4-extension",
+  "version": "1"
+}
