@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-27T03:54:06Z",
+  "updated_at": "2026-10-27T04:03:32Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Product goal resumed. Current sound candidate: 514 Plan and 391 Audio regression passes; full real-WAV Split matrix remains three pass/four preparation-work failures. Removing repeated evaluation under unchanged limits; complete sound-bearing lifecycle and native/media qualification remain.",
+  "focus": "Product goal paused for the Blaze tooling follow-up, which is complete. Prefer Blaze for repeated pure Core library body edits; Cargo remains required for Plan, integration tests, native/media and acceptance. The uncommitted sound candidate and its four preparation-work failures remain.",
   "features": [
     {
       "id": "editing",
@@ -1522,6 +1522,15 @@
       "revision": "275daa38",
       "retrospective": false,
       "summary": "Resumed sound preparation: compiled asset inventory and current transfer candidate verified in focused/broad checks; pinned full matrix remains three pass/four work-limit failures. No acceptance credit added."
+    },
+    {
+      "date": "2026-10-27",
+      "percent": 85,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 10,
+      "revision": "415d0cc3",
+      "retrospective": false,
+      "summary": "Blaze recommendation sweep is complete in six active guides, with independent final audit. Installed Core accelerator, Cargo correctness/native/CI paths, isolated cache, daemon lifecycle and compiler scheduling remain explicit. No product completion credit."
     }
   ],
   "assessment": {

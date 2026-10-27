@@ -2,10 +2,20 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Product goal resumed, 2026-10-26
+## Current state: tooling follow-up complete, product goal paused
+
+The current owner request is the Blaze recommendation sweep. It is complete
+in 415d0cc3; the follow-up audit found no missed active guidance or required
+alias/script changes. Retain the exact commands and limits in
+[Fast local Rust feedback](../BUILD_FEEDBACK.md). The product goal is paused
+for this follow-up. The earlier resumed work below is preserved as history,
+not an instruction to resume. Product WIP and its four preparation failures
+remain unchanged; the tooling sweep adds no product completion credit.
+
+## Earlier product resumption, 2026-10-26
 
 The owner explicitly resumed the full product goal after the tooling diversion.
-The historical pause below no longer stops product work. The
+That resumption superseded the earlier tooling pause at the time. The
 [sound preparation resume](../qualification/sound-preparation-resume-2026-10-26.md)
 retains the exact current candidate overlay and new immutable per-clock asset
 inventory. Do not rely on older traces to measure the newer constant-transfer
