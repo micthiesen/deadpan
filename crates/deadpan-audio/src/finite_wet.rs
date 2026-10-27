@@ -107,14 +107,22 @@ impl FiniteWetEffect {
 
     /// Bound on native storage plus the temporary stereo kernel used during
     /// construction. Caller-owned input/output buffers and any graph caches
-    /// require separate admission. No kernel is retained after construction.
+    /// require separate admission. The Rust time-domain kernels and their
+    /// generation network are dropped before `new` returns; native spectra
+    /// and processing workspaces remain owned by the filter.
     pub fn preparation_bytes_bound(effect: TailEffect) -> usize {
         let taps = wet_effect_descriptor(effect).history_frames + 1;
-        // Both declared recipes are within the native adapter's fixed bound.
         // 1 MiB also covers the temporary network's delay lines and metadata.
+        Self::retained_bytes_bound(effect) + taps * 2 * size_of::<f64>() + 1_048_576
+    }
+
+    /// Conservative storage retained after successful construction. Keep the
+    /// complete native bound, including its FFT, kernel spectra and processing
+    /// arrays. Only the separate Rust kernel/network construction allowance is
+    /// released; callers must still admit `preparation_bytes_bound` during `new`.
+    pub fn retained_bytes_bound(effect: TailEffect) -> usize {
+        let taps = wet_effect_descriptor(effect).history_frames + 1;
         CausalStereoFilter::native_bytes_bound(taps).expect("bounded wet effect recipe")
-            + taps * 2 * size_of::<f64>()
-            + 1_048_576
     }
 
     pub fn process_tile(
@@ -316,6 +324,29 @@ mod tests {
             let bound = FiniteWetEffect::preparation_bytes_bound(effect);
             assert!(bound > native + (descriptor.history_frames + 1) * 16);
             assert!(bound < 73 * 1024 * 1024);
+        }
+    }
+
+    #[test]
+    fn retained_admission_releases_only_dropped_rust_construction_storage() {
+        for (effect, preparation, retained) in [
+            (TailEffect::Reverb, 38_723_600, 34_603_008),
+            (TailEffect::Delay, 75_350_032, 68_157_440),
+        ] {
+            let taps = wet_effect_descriptor(effect).history_frames + 1;
+            assert_eq!(
+                FiniteWetEffect::preparation_bytes_bound(effect),
+                preparation
+            );
+            assert_eq!(FiniteWetEffect::retained_bytes_bound(effect), retained);
+            assert_eq!(
+                retained,
+                CausalStereoFilter::native_bytes_bound(taps).unwrap()
+            );
+            assert_eq!(
+                preparation - retained,
+                taps * 2 * size_of::<f64>() + 1_048_576
+            );
         }
     }
 }

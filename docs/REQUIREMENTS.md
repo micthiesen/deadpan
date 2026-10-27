@@ -156,6 +156,15 @@ Runtime graph reads still request one output; recursive batching needs a cold
 resource proof. The full Split matrix remains four pass/three work-limit failures,
 at the same revisions/windows. No requirement or gate closes.
 
+The [wet processor lifetime correction](qualification/wet-residency-2026-10-27.md)
+keeps full constructor admission and the whole native bound, releasing only
+dropped Rust constructor storage from the retained ledger. Main Audio/definition
+pass 213/171 tests, all 203 prior real-WAV stages pass, and the isolated three-file
+patch passes 196 Audio and eight historical PCM tests. Strict lint and independent
+review pass. The test-only late-cleanup assertion failure and retired earlier
+binary run are retained. Split remains four pass/three work failures at the same
+revisions/windows. Runtime batching stays disabled; no acceptance credit changes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

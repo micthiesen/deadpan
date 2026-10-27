@@ -5,6 +5,10 @@ use super::*;
 use deadpan_core::{AudioEdgePolicy, AudioTreatmentStage, AudioTreatments, TailEffect};
 use deadpan_plan::{AudioRoutedRootInput, AudioSoundRoute};
 
+#[cfg(test)]
+#[path = "event_returns/tests.rs"]
+mod tests;
+
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum EventStage {
     Reverb,
@@ -592,21 +596,44 @@ impl StageAudio {
             TailEffect::Reverb => 0,
             TailEffect::Delay => 1,
         };
-        if graph.wet_filters[slot].is_none() {
-            let resident =
-                (crate::FiniteWetEffect::preparation_bytes_bound(effect) as u64).div_ceil(8);
-            control.spend_plan_work(crate::wet_effect_descriptor(effect).history_frames + 1)?;
-            self.make_room(resident, false, control)?;
-            let processor = crate::FiniteWetEffect::new(effect, control.cancelled)?;
-            control.check()?;
-            self.active_frames += resident;
-            graph.resident += resident;
-            graph.wet_filters[slot] = Some(processor);
-        }
+        self.prepare_shared_wet(
+            effect,
+            &mut graph.wet_filters[slot],
+            &mut graph.resident,
+            control,
+        )?;
         graph.wet_filters[slot]
             .as_mut()
             .ok_or(PlanError::InvalidPlan("wet processor absent"))?
             .process_tile(input.0, input.1, output.0, output.1, control.cancelled)?;
+        Ok(())
+    }
+
+    /// Admit construction before publishing the processor and its retained
+    /// storage into the owning graph's slot and residency ledger.
+    fn prepare_shared_wet(
+        &mut self,
+        effect: TailEffect,
+        filter: &mut Option<crate::FiniteWetEffect>,
+        resident: &mut u64,
+        control: WorkControl<'_>,
+    ) -> Result<(), StageAudioError> {
+        if filter.is_none() {
+            let preparation =
+                (crate::FiniteWetEffect::preparation_bytes_bound(effect) as u64).div_ceil(8);
+            control.spend_plan_work(crate::wet_effect_descriptor(effect).history_frames + 1)?;
+            self.make_room(preparation, false, control)?;
+            let processor = crate::FiniteWetEffect::new(effect, control.cancelled)?;
+            control.check()?;
+            // `new` has dropped its Rust kernels and generation network. Keep
+            // the full native bound, while construction still requires the
+            // larger synchronous admission above.
+            let retained =
+                (crate::FiniteWetEffect::retained_bytes_bound(effect) as u64).div_ceil(8);
+            self.active_frames += retained;
+            *resident += retained;
+            *filter = Some(processor);
+        }
         Ok(())
     }
 }

@@ -2,7 +2,52 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: shared Components outputs, product goal active
+## Current state: wet storage lifetimes, product goal active
+
+`e384bce4` commits/pushes the Components outputs milestone below. The
+[wet processor storage correction](../qualification/wet-residency-2026-10-27.md)
+keeps full constructor admission, then retains the entire existing native bound
+after Rust coefficient/network storage drops. Charges fall by 4,120,592 bytes
+per Reverb and 7,192,592 per Delay. No native bound, work charge, source authority,
+PCM operation or limit changes. This does not prove batching fits.
+
+Final main Audio/definition pass 213/171 tests. The complete stages target passes
+all 203 prior real-WAV cases and four of seven unfinished Split cases (207 pass,
+three fail). All-owner remains Source/Sequence `cut-three`, limited `0+511`,
+`plan work per read`. Nested selected without root sound and one selected play
+remain `prefix-two`, limited `0+4096`, now `frozen projection work exhausted`.
+Processed root refinement stays passing. The isolated exact three-file patch
+passes 196 Audio and eight historical PCM tests; strict four-crate all-target
+lint and independent review pass. All verification is terminal, no Cargo/test
+process remains. An initial test-only counter assertion failed (212/one), then
+was corrected and all 213 pass. Earlier integration binaries changed because
+the embedded source identity includes tests; their running stage invocation was
+explicitly retired, then the final pinned executable completed the full suite.
+
+Next share Components' structural permission, clock and demanded-member decisions
+between constant and dynamic execution before adding a policy-only demand
+visitor. Preserve their different callback orders. A separate copied mixer or
+fake/zero PCM execution cannot certify cold resource demand. The retained
+`cold-demand-research.md` and `main-demand-notes.md` give exact factoring and
+resource-fold obligations. A scratch-only candidate may be under
+`/tmp/deadpan-component-policy-2026-10-27`; it has not changed the repository or
+been qualified. Review its actual status before applying anything.
+
+Before simultaneous histories allocate, a cold fold must account for exact
+instantiated clocks, masks, future required tiles/outputs, constructor states
+and recursive scratch. A first eligibility domain may leave intrinsic
+stretch/projected preparation scalar, but inspect live AND historical compiled
+operands and bound/routed inputs; unity Preserve Partitions are transparent.
+Do not use authored effect counts, warm peaks, cache-key work waivers, retained
+query graphs or failed-batch retry. All planner work stays billed. Runtime graph
+reads still request one output; batching and general sound-bearing Split remain
+disabled until their full evidence exists.
+
+The index/general Split and foreign fuzz/Cargo.lock/.claude work remain
+uncommitted. Product coverage stays about 85%, ten Complete requirements and all
+seven gates open. The full goal remains active.
+
+## Shared Components outputs
 
 The [Components output milestone](../qualification/component-outputs-2026-10-27.md)
 adds direct execution into multiple borrowed destinations with independent voice/
@@ -20,11 +65,10 @@ and eight historical birth/processing PCM tests. Strict four-crate all-target
 lint and independent review pass. All receipts are terminal; no Cargo/test process
 remains. Evidence includes the exact independent patch and input/binary pins.
 
-Next, preserve full wet-constructor preparation admission but stop retaining
-charges for Rust coefficient/network arrays after they drop. The read-only
-`wet-residency-research.md` in the milestone evidence proves only that lifetime
-release: keep the entire existing native filter bound. Then design a cold scalar
-structural demand/resource summary before simultaneous runtime histories allocate.
+The wet storage milestone above implements the lifetime correction identified
+by `wet-residency-research.md` in this milestone's evidence, keeping the entire
+existing native filter bound. The remaining work is a cold scalar structural
+demand/resource summary before simultaneous runtime histories allocate.
 Do not use authored effect counts, warm peaks, failed-batch retry, fake PCM or
 provider execution to discover resource needs. The companion resource audit
 records the unresolved recursive ownership and permission obligations. Runtime

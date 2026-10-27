@@ -60,6 +60,14 @@ kernels and the impulse network. Caller-owned context, outputs and graph caches
 need separate admission. This is a per-processor bound, not aggregate application
 memory admission or a realtime guarantee.
 
+After successful construction, `FiniteWetEffect::retained_bytes_bound` keeps the
+complete existing native bound. The Rust coefficient vectors and impulse network
+have dropped; their separate constructor allowance no longer occupies the graph
+ledger. Reverb admits 38,723,600 bytes while constructing and retains a bound of
+34,603,008 bytes; Delay admits 75,350,032 and retains 68,157,440. Never substitute
+the retained bound for constructor admission or release native FFT/kernel/work
+arrays, which stay alive. These are owned-storage bounds, not an RSS limit.
+
 On one qualified build and machine, identical fixed-grid context produces
 bit-identical output after linear playback, shuffled reads or fresh construction.
 The processor does not define arbitrary output partitioning: consumers read the
@@ -86,7 +94,8 @@ Original history cannot enter an allowed sound's wet return through saturation.
 The graph caches absolute fixed-grid tiles within one preparation request and
 shares one native workspace per effect across nested owners. Workspace creation
 follows recursive input preparation. It admits the complete preparation bound
-against the shared PCM-equivalent residency budget; temporary history/output
+against the shared PCM-equivalent residency budget, then charges the retained
+native bound until graph cleanup; temporary history/output
 arrays and cached tiles have separate reservations. Deadline, cancellation,
 prepared-frame, node-count, depth and plan-work limits remain active. A refusal
 does not publish partial PCM. This establishes bounded preparation, not live
