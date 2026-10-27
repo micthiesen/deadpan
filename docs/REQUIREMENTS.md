@@ -52,6 +52,26 @@ linked from the mandatory handoff, for continuation after compaction.
 
 ## General Split sound transport in progress, 2026-10-26
 
+The [current constant-block execution](qualification/constant-sound-blocks-2026-10-26.md)
+removes complete unity-transfer
+passes and retrieves constant gain checkpoints once per block. It keeps exact
+per-sample contribution sums, EQ clocks/permissions, nonlinear and wet/send
+boundaries, finite checks, dynamic fallback and all existing limits. Six focused
+block tests and all 193 current Audio library tests pass; source-only independent
+review finds no issue. The same six-file optimization on a clean copy of HEAD
+passes all 179 independent Audio library and 201 existing stage tests. Final
+formatting and strict Core/Plan/Audio/Store all-target lint pass.
+
+The copied, hash-pinned full real-WAV Split matrix now has **four passes and
+three work-limit failures**. Processed root-sound refinement newly passes
+complete authored, faded and limited PCM. All-owner refinement still fails at
+`cut-three`, limited `0+511`; selected and nested selected plays still fail at
+`prefix-two`, limited `0+4096`. These remain incomplete comparisons. No
+requirement, criterion or delivery gate closes from this optimization.
+
+The following paragraphs retain the earlier preparation checkpoints and their
+original three-pass/four-fail results.
+
 The owner resumed the product goal after the build-tooling diversion. The
 [fresh preparation checkpoint](qualification/sound-preparation-resume-2026-10-26.md)
 retests the newer constant-transfer/family-interning candidate and adds a bounded

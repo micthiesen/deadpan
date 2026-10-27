@@ -47,6 +47,15 @@ Keep the Blaze target separate from authoritative Cargo outputs. Do not enable
 global Cargo interception with `blaze enable`. Use ordinary `cargo check` and
 strict Clippy before accepting a change: Blaze's compiler and borrow checking
 are not the correctness authority. Its `check` command is not a substitute.
+
+When validating an isolated source copy, finish its checks and pin its executable
+before switching source roots. If reusing a Cargo target, invalidate the copied
+workspace's path-crate artifacts before rebuilding the checkout: older original
+source mtimes can otherwise leave stale dependency artifacts marked fresh.
+The [constant-block continuation](qualification/constant-sound-blocks-2026-10-26.md)
+retains one such failed diagnostic build and its fresh-build correction. Do not
+change correct source to match stale artifacts.
+
 Deadline-sensitive audio/media tests still require the optimized Cargo profile
 described in [Development](DEVELOPMENT.md), and physical-Mac qualification stays
 local as well as CI. Release builds, bundle checks and measurements use Cargo.

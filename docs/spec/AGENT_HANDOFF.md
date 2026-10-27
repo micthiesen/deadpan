@@ -2,15 +2,30 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: tooling follow-up complete, product goal paused
+## Current state: product goal resumed, constant sound blocks
 
-The current owner request is the Blaze recommendation sweep. It is complete
-in 415d0cc3; the follow-up audit found no missed active guidance or required
-alias/script changes. Retain the exact commands and limits in
-[Fast local Rust feedback](../BUILD_FEEDBACK.md). The product goal is paused
-for this follow-up. The earlier resumed work below is preserved as history,
-not an instruction to resume. Product WIP and its four preparation failures
-remain unchanged; the tooling sweep adds no product completion credit.
+The owner resumed the full product goal after the completed Blaze sweep. That
+current instruction supersedes the historical tooling pause below. Keep the
+tested build workflow in [Fast local Rust feedback](../BUILD_FEEDBACK.md).
+
+The current constant-block optimization removes actual repeated checkpoint
+dispatch and whole unity-transfer passes while preserving the scalar path for
+dynamic automation. The full real-WAV Split matrix now has **four passes and
+three work-limit failures**, rather than three passes and four failures. The
+processed root-sound refinement passes full authored/faded/limited PCM. All-owner
+refinement and selected/nested plays remain unqualified; do not enable native
+scoped Split on this evidence. The [qualification record](../qualification/constant-sound-blocks-2026-10-26.md)
+retains six focused passes, 193 current library passes, the isolated six-file
+overlay's 179 library/201 stage passes, strict four-crate lint, independent
+review, source/binary identities and remaining work. Its last selected-play
+trace reaches 16 million units with 4,102,179 transfer applications and
+1,409,368 source-occurrence construction units. Tracing is restored exactly.
+Do not retain all historical queries without proving ownership and metadata
+residency, or reduce charges without removing their work.
+
+The general Core/Plan/Audio/Store Split candidate is still uncommitted. Preserve
+it and the foreign fuzz/Cargo.lock and .claude/ entries. Coverage remains about
+85%, strict completion 10/24 and gates 0/7. The goal is active.
 
 ## Earlier product resumption, 2026-10-26
 

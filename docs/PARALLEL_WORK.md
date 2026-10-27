@@ -179,3 +179,21 @@ with one owner; parallelize separate analysis services or independent reviews.
 If coordination becomes the bottleneck, reduce or re-slice the wave. Do not
 keep agents busy merely to fill slots. Update this file and its handoff link
 when ownership, evidence, live state or the next join changes.
+
+## Constant-block continuation, 2026-10-26
+
+The resumed product wave used one read-only ownership explorer, one bounded
+Audio production worker and one independent reviewer. The primary owned tests,
+all Cargo scheduling, isolated six-file validation, the full inherited Split
+matrix, diagnostics, source/binary pins, documentation and scoped Git delivery.
+No additional implementation lane was needed for this tightly coupled work.
+
+The [constant-block record](qualification/constant-sound-blocks-2026-10-26.md)
+retains 193 current library passes, an independent overlay's 179 library/201
+stage passes and strict four-crate all-target lint. The complete real-WAV Split
+matrix improves to four pass/three work-limit failures; no full lifecycle or
+performance claim follows. Source-only independent review covered the complete
+six-file optimization. The main session fixed two range-loop lint findings
+without changing arithmetic order. Other Core/Plan/Audio/Store work and foreign
+files remain uncommitted. Use the smaller wave while the remaining work shares
+sound-query ownership and preparation budgets.

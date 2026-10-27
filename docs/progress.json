@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-27T04:03:32Z",
+  "updated_at": "2026-10-27T04:33:29Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Product goal paused for the Blaze tooling follow-up, which is complete. Prefer Blaze for repeated pure Core library body edits; Cargo remains required for Plan, integration tests, native/media and acceptance. The uncommitted sound candidate and its four preparation-work failures remain.",
+  "focus": "Full product goal active. Finish the three sound preparation-work failures, then complete sound transport, native/media joins and release acceptance.",
   "features": [
     {
       "id": "editing",
@@ -44,7 +44,7 @@
       "requirements": [
         "DP-09"
       ],
-      "note": "Playback, gain, sounds, native EQ, Tail sends, continuous returns and independent sound treatments work. Fixed Retime output sounds retain exact phase and history through ordinary interior Hold edits. Fractional owner support and the nonzero nonlinear master are verified. Partial sound copy, move, deletion, Repeat and endpoint grouping work outside retained processing scopes. Aligned single-Source/Hold grouping now works inside an ordinary retained sound scope, preserving shared EQ/saturation through explicit Split forests, whole-group copy, relocation and durable history. Neutral unary Ungroup inside the retained scope now preserves later labels and audio edits while every reference still marks its wrapper introduced and unpaired; genuine later captures stay protected. Broader processing-scope edits, root-owned BeatSound transport, wider loop/tail qualification and persistent filtered caching remain."
+      "note": "Playback, gain, sounds, native EQ, Tail sends, continuous returns and independent sound treatments work. Fixed Retime output sounds retain exact phase and history through ordinary interior Hold edits. Fractional owner support and the nonzero nonlinear master are verified. Partial sound copy, move, deletion, Repeat and endpoint grouping work outside retained processing scopes. Aligned single-Source/Hold grouping now works inside an ordinary retained sound scope, preserving shared EQ/saturation through explicit Split forests, whole-group copy, relocation and durable history. Neutral unary Ungroup inside the retained scope now preserves later labels and audio edits while every reference still marks its wrapper introduced and unpaired; genuine later captures stay protected. Broader processing-scope edits, root-owned BeatSound transport, wider loop/tail qualification and persistent filtered caching remain. Constant block execution now passes shared-processed root-sound Split/refinement with complete authored, faded and limited PCM under unchanged work/memory ceilings. The general real-WAV Split matrix remains four passes and three work-limit failures; broader sound transport is unqualified."
     },
     {
       "id": "analysis",
@@ -1531,6 +1531,15 @@
       "revision": "415d0cc3",
       "retrospective": false,
       "summary": "Blaze recommendation sweep is complete in six active guides, with independent final audit. Installed Core accelerator, Cargo correctness/native/CI paths, isolated cache, daemon lifecycle and compiler scheduling remain explicit. No product completion credit."
+    },
+    {
+      "date": "2026-10-27",
+      "percent": 85,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 10,
+      "revision": "a735863e",
+      "retrospective": false,
+      "summary": "Constant sound block execution qualifies processed root-sound Split/refinement; full general matrix improves to four passes and three work-limit failures, with no acceptance credit added"
     }
   ],
   "assessment": {
