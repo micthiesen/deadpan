@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-27T02:21:33Z",
+  "updated_at": "2026-10-27T03:54:06Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Native analysis range milestone committed and verified; parallel workflow retained. Four Audio preparation limits and the complete sound-bearing Retime lifecycle remain open. Tracking/refinement scheduling, competing inference, quality, long-media and package qualification remain.",
+  "focus": "Product goal resumed. Current sound candidate: 514 Plan and 391 Audio regression passes; full real-WAV Split matrix remains three pass/four preparation-work failures. Removing repeated evaluation under unchanged limits; complete sound-bearing lifecycle and native/media qualification remain.",
   "features": [
     {
       "id": "editing",
@@ -1513,6 +1513,15 @@
       "revision": "cf7e2340",
       "retrospective": false,
       "summary": "Commit native transcript/VAD/shot range scheduling and BLAKE3 cache reuse after actual-worker, codec and 71-check native replay qualification; retain independent review and failures. Preserve parallel ownership/build/integration workflow through compaction. Coverage unchanged against the fixed ledger."
+    },
+    {
+      "date": "2026-10-27",
+      "percent": 85,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 10,
+      "revision": "275daa38",
+      "retrospective": false,
+      "summary": "Resumed sound preparation: compiled asset inventory and current transfer candidate verified in focused/broad checks; pinned full matrix remains three pass/four work-limit failures. No acceptance credit added."
     }
   ],
   "assessment": {
