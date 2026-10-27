@@ -232,11 +232,7 @@ impl Program {
 }
 
 fn flushes(kind: AudioTreatmentStage, recipe: &deadpan_core::AudioTreatments) -> bool {
-    kind == AudioTreatmentStage::Saturation
-        || (kind == AudioTreatmentStage::Equalizer
-            && recipe
-                .equalizer()
-                .is_some_and(|equalizer| !equalizer.is_unity()))
+    kind == AudioTreatmentStage::Saturation || policy::is_equalizer(kind, Some(recipe))
 }
 
 #[cfg(test)]

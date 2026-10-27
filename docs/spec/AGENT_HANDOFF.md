@@ -2,7 +2,46 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: wet storage lifetimes, product goal active
+## Current state: shared structural decisions, product goal active
+
+`053d31c2` commits/pushes the wet storage milestone below. The
+[Components policy extraction](../qualification/component-policy-2026-10-27.md)
+shares real permission, first-clock, stable owner-order, EQ and Original Tail
+decisions between both numerical engines and checkpoint classification. Their
+different traversal orders, numeric loops, work/check calls and allocations stay
+in place. No policy carrier/visitor, resource proof or batching is implemented.
+
+Main Audio/definition pass 217/171 tests, plus ten real-WAV wet-owner and 19 gain
+stages. The isolated exact five-file patch passes 200 Audio and eight historical
+PCM tests. Strict four-crate all-target lint and independent review pass. All
+receipts are terminal, no Cargo/test process remains. Four new tests include 256
+metadata/callback bridges and literal mask/clock/Tail/limit expectations. The
+bridge shares helpers and is not an independent correctness oracle. Full stages
+and the unfinished Split matrix are NOT rerun; their previous 203-pass and
+four-pass/three-work-failure results below are historical evidence only.
+
+Next provide a bounded, admitted metadata permission carrier/visitor from exact
+Original, sound and routed suppression/exhaustion facts, preserving callback
+orders and inactive-route semantics. Then fold cold future retained resources
+and recursive scratch before simultaneous histories allocate. No fake PCM,
+copied numerical mixer, warm-peak assumption, work waiver or failed-batch retry.
+
+A scratch-only Plan eligibility query may be under
+`/tmp/deadpan-intrinsic-capability-2026-10-27`. It has not changed the repository
+or been qualified. Its source audit found existing
+`FrozenAudioLayout::retime_processes`, which checks integral and derived clocks,
+avoiding historical compilation. It must inspect live compiled nodes and all
+relevant retained/timing layouts; transparent unity Preserve Partitions stay
+eligible. If the optional proof budget runs out, conservatively report unknown
+with actual spent work so scalar fallback cannot waive already-performed visits.
+Review the candidate's actual state before applying anything.
+
+Runtime graph reads remain scalar, general sound-bearing Split stays disabled,
+and coverage remains about 85%, ten Complete requirements and all seven gates
+open. The full goal remains active. Preserve unrelated general-Split/index and
+foreign fuzz/Cargo.lock/.claude work.
+
+## Wet storage lifetimes
 
 `e384bce4` commits/pushes the Components outputs milestone below. The
 [wet processor storage correction](../qualification/wet-residency-2026-10-27.md)
@@ -24,14 +63,10 @@ was corrected and all 213 pass. Earlier integration binaries changed because
 the embedded source identity includes tests; their running stage invocation was
 explicitly retired, then the final pinned executable completed the full suite.
 
-Next share Components' structural permission, clock and demanded-member decisions
-between constant and dynamic execution before adding a policy-only demand
-visitor. Preserve their different callback orders. A separate copied mixer or
-fake/zero PCM execution cannot certify cold resource demand. The retained
-`cold-demand-research.md` and `main-demand-notes.md` give exact factoring and
-resource-fold obligations. A scratch-only candidate may be under
-`/tmp/deadpan-component-policy-2026-10-27`; it has not changed the repository or
-been qualified. Review its actual status before applying anything.
+The structural extraction above shares the decisions identified here; the
+production policy-only demand visitor remains owed. A copied mixer or fake/zero
+PCM cannot certify cold resource demand. Retained `cold-demand-research.md` and
+`main-demand-notes.md` give exact factoring and resource-fold obligations.
 
 Before simultaneous histories allocate, a cold fold must account for exact
 instantiated clocks, masks, future required tiles/outputs, constructor states

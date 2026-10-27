@@ -62,22 +62,6 @@ impl Route<'_> {
     }
 }
 
-fn permissions(
-    routes: &[Route<'_>],
-    owner: &Owner<'_>,
-    at: usize,
-    wet: bool,
-) -> Result<Permissions, StageAudioError> {
-    let mut permissions = Permissions::default();
-    for &(id, layer) in &owner.members {
-        let route = &routes[id];
-        if route.pcm[at].permitted && (!wet || route.wet_allowed(layer)) {
-            permissions.insert(route.voice)?;
-        }
-    }
-    Ok(permissions)
-}
-
 impl<'plan> Components<'plan> {
     pub(super) fn finish_constant_into(
         mut self,
@@ -91,8 +75,7 @@ impl<'plan> Components<'plan> {
             Option<usize>,
         ) -> Result<[f64; 2], StageAudioError>,
     ) -> Result<(), StageAudioError> {
-        let mut owners: Vec<_> = self.owners.values().collect();
-        owners.sort_by_key(|owner| std::cmp::Reverse(owner.depth));
+        let owners = policy::ordered_owners(&self.owners);
         // A common send uses the first borrowed output as its workspace, as
         // the old single-output path did. Capture each sent frame before
         // overwriting any target; no extra output PCM allocation is needed.
@@ -116,10 +99,7 @@ impl<'plan> Components<'plan> {
                     .and_then(|recipe| recipe.order().get(stage))
                     .copied()
                     .ok_or(PlanError::InvalidPlan("contribution stage absent"))?;
-                let eq = kind == AudioTreatmentStage::Equalizer
-                    && recipe
-                        .and_then(|recipe| recipe.equalizer())
-                        .is_some_and(|recipe| !recipe.is_unity());
+                let eq = policy::is_equalizer(kind, recipe);
                 if kind != AudioTreatmentStage::Saturation && !eq {
                     continue;
                 }
@@ -128,7 +108,12 @@ impl<'plan> Components<'plan> {
                 }
                 for at in 0..self.frames {
                     control.check()?;
-                    let permissions = permissions(&self.routes, owner, at, false)?;
+                    let permissions = policy::permissions(
+                        &self.routes,
+                        owner,
+                        |id| self.routes[id].pcm[at].permitted,
+                        false,
+                    )?;
                     if permissions.is_empty() {
                         continue;
                     }
@@ -161,11 +146,12 @@ impl<'plan> Components<'plan> {
                         [1.0; 2]
                     };
                     let eq_clock = if eq {
-                        owner.members.iter().find_map(|&(id, layer)| {
-                            self.routes[id].pcm[at]
-                                .permitted
-                                .then(|| self.routes[id].layers[layer].0.clone())
-                        })
+                        policy::first_clock(
+                            &self.routes,
+                            owner,
+                            |id| self.routes[id].pcm[at].permitted,
+                            false,
+                        )
                     } else {
                         None
                     };
@@ -246,12 +232,18 @@ impl<'plan> Components<'plan> {
                         if !self.routes[id].pcm[at].permitted {
                             continue;
                         }
-                        let wet_permissions = permissions(&self.routes, owner, at, true)?;
-                        let clock = owner.members.iter().find_map(|&(member, layer)| {
-                            let route = &self.routes[member];
-                            (route.pcm[at].permitted && route.wet_allowed(layer))
-                                .then(|| route.layers[layer].0.clone())
-                        });
+                        let wet_permissions = policy::permissions(
+                            &self.routes,
+                            owner,
+                            |member| self.routes[member].pcm[at].permitted,
+                            true,
+                        )?;
+                        let clock = policy::first_clock(
+                            &self.routes,
+                            owner,
+                            |member| self.routes[member].pcm[at].permitted,
+                            true,
+                        );
                         let mut transfer = transfers.iter();
                         for effect in [
                             deadpan_core::TailEffect::Reverb,

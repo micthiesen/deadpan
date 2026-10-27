@@ -165,6 +165,15 @@ review pass. The test-only late-cleanup assertion failure and retired earlier
 binary run are retained. Split remains four pass/three work failures at the same
 revisions/windows. Runtime batching stays disabled; no acceptance credit changes.
 
+The [Components structural helper extraction](qualification/component-policy-2026-10-27.md)
+shares permission, clock, ordering and Tail decisions while retaining both
+numerical traversal orders. Four new bridge/literal tests, 217 Audio library,
+171 definition, 29 real-WAV wet/gain, strict lint and independent review pass;
+the isolated patch passes 200 Audio and eight historical PCM tests. Full stages
+and the Split matrix are not rerun for this extraction. A production policy
+visitor, cold resource fold and runtime batching remain unimplemented. No credit
+changes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

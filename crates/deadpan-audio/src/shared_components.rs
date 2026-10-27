@@ -15,6 +15,9 @@ use program::Program;
 #[path = "shared_components/block.rs"]
 mod block;
 
+#[path = "shared_components/policy.rs"]
+mod policy;
+
 #[path = "shared_components/outputs.rs"]
 mod outputs;
 pub(super) use outputs::{Output, OutputSamples, OutputSelection};
@@ -78,13 +81,6 @@ impl Route<'_> {
         } else {
             gain.send_sample(value, level)
         }
-    }
-
-    fn wet_allowed(&self, layer: usize) -> bool {
-        !self.original
-            || !self.layers[layer + 1..]
-                .iter()
-                .any(|(clock, _)| clock.is_explicit_tail_provider())
     }
 }
 
@@ -338,8 +334,7 @@ impl<'plan> Components<'plan> {
         {
             return self.finish_constant_into(outputs, control, equalize);
         }
-        let mut owners: Vec<_> = self.owners.values().collect();
-        owners.sort_by_key(|owner| std::cmp::Reverse(owner.depth));
+        let owners = policy::ordered_owners(&self.owners);
         let mut gains = vec![authored_gain::GainSum::default(); self.routes.len()];
         for at in 0..self.frames {
             control.check()?;
@@ -370,12 +365,7 @@ impl<'plan> Components<'plan> {
             }
             for owner in &owners {
                 let active = |id: usize| self.routes[id].pcm[at].permitted;
-                let mut permissions = Permissions::default();
-                for &(id, _) in &owner.members {
-                    if active(id) {
-                        permissions.insert(self.routes[id].voice)?;
-                    }
-                }
+                let permissions = policy::permissions(&self.routes, owner, active, false)?;
                 if permissions.is_empty() {
                     continue;
                 }
@@ -396,10 +386,7 @@ impl<'plan> Components<'plan> {
                         .and_then(|r| r.order().get(stage))
                         .copied()
                         .ok_or(PlanError::InvalidPlan("contribution stage absent"))?;
-                    let eq = kind == AudioTreatmentStage::Equalizer
-                        && recipe
-                            .and_then(|r| r.equalizer())
-                            .is_some_and(|r| !r.is_unity());
+                    let eq = policy::is_equalizer(kind, recipe);
                     if kind == AudioTreatmentStage::Saturation || eq {
                         let mut sum = [0.0; 2];
                         let mut count = 0;
@@ -440,11 +427,12 @@ impl<'plan> Components<'plan> {
                         // clock when present, then an admitted sound's clock.
                         // Per-contribution gain clocks remain independent.
                         let eq_clock = if eq {
-                            owner.members.iter().find_map(|&(id, layer)| {
-                                self.routes[id].pcm[at]
-                                    .permitted
-                                    .then(|| self.routes[id].layers[layer].0.clone())
-                            })
+                            policy::first_clock(
+                                &self.routes,
+                                owner,
+                                |id| self.routes[id].pcm[at].permitted,
+                                false,
+                            )
                         } else {
                             None
                         };
@@ -520,15 +508,12 @@ impl<'plan> Components<'plan> {
                     // A selected Tail provider blocks other incoming Original
                     // returns. Keep allowed sounds independent, including the
                     // voices driving nonlinear stages in their wet history.
-                    let mut wet_permissions = Permissions::default();
-                    let mut clock = None;
-                    for &(id, layer) in &owner.members {
-                        let route = &self.routes[id];
-                        if route.pcm[at].permitted && route.wet_allowed(layer) {
-                            wet_permissions.insert(route.voice)?;
-                            clock.get_or_insert_with(|| route.layers[layer].0.clone());
-                        }
-                    }
+                    let policy::WetContext {
+                        permissions: wet_permissions,
+                        clock,
+                    } = policy::wet_context(&self.routes, owner, |id| {
+                        self.routes[id].pcm[at].permitted
+                    })?;
                     for &(id, layer) in &owner.members {
                         let route = &mut self.routes[id];
                         if !route.pcm[at].permitted || !route.wet_allowed(layer) {
