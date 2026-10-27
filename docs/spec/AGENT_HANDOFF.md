@@ -2,7 +2,28 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: borrowed-query groundwork, product goal active
+## Current state: exact occurrence support, product goal active
+
+The [support-discovery optimization](../qualification/occurrence-support-discovery-2026-10-27.md)
+removes ordinary provider/gain/tape construction from the clock-selection pass.
+It shares exact scalar support with the full constructor and uses that full
+constructor for Preserve cases, reusing its resolved path and budget. No cache,
+permission or limit changes. Current Plan/Audio pass 526/195 tests. The independent
+11-file patch passes 513 Plan, 181 Audio library and all 201 existing real-WAV
+stages; final strict lint and six scoped oracle tests pass. The full Split matrix
+remains four passes/three work-limit failures at the same read points. Coverage
+stays about 85%, strict completion 10/24 and gates 0/7. The goal remains active.
+
+Next bounded patch: `prepare_beat_sounds` already validates a historical binding,
+but `complete_processing_history_after_birth` binds the same first applicable
+scope again. Reuse the supplied binding after exact live-plan/owner/sound/ordinal,
+historical-plan pointer and recipe checks. Preserve all complete-journal, context,
+route and placement validation. Binding currently rebuilds a frozen-layout index
+and counts its graph on every call; pointer-fast layout equality does not remove
+those traversals. Add equivalent fresh-scope acceptance, wrong-ordinal and foreign
+historical-plan rejection tests. No checkout changes for this follow-up yet.
+
+## Borrowed-query groundwork and rejected memo
 
 The [query groundwork](../qualification/audio-query-groundwork-2026-10-26.md)
 adds borrowed routed readers and field-aware retained-heap visitors, with no
@@ -21,12 +42,8 @@ All 1,387 preceding source inputs are restored exactly; restored strict passes.
 Do not revive this memo without resolving that controller-scope hole and proving
 an actual benefit.
 
-Current investigation: factor exact scalar occurrence support out of the full
-Plan constructor, shared by normal construction and planning-only clock discovery.
-Reuse stable path traversal, source-recipe validation, context clipping, Preserve
-selected-input overlap/full-output reset and final RoundEven allocation. Keep
-normal second-pass graph validation and source admission before PCM. Geometric
-owner visibility and audible source selection are insufficient. There is already
+The scalar support replacement is now implemented and qualified above. Geometric
+owner visibility and audible source selection remain insufficient. There is already
 only one prepared `beats` vector; no second `prepare_beat_sounds` call exists.
 
 ## Rejected prefix PCM prototype

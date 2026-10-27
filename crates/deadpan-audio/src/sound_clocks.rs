@@ -56,7 +56,7 @@ impl StageAudio {
                 if scopes.is_empty() {
                     continue;
                 }
-                let batch = current_occurrences(
+                let batch = current_occurrence_supports(
                     plan,
                     context,
                     owner,
@@ -65,7 +65,7 @@ impl StageAudio {
                     scopes.len(),
                     control,
                 )?;
-                for voice in batch.voices() {
+                for voice in batch.supports() {
                     for scope in &scopes {
                         let (instance, work) = scope.try_remap_instance_with_work(
                             voice.instance(),
@@ -333,26 +333,72 @@ pub(super) fn current_occurrences<'plan>(
         mapping: event.mapping,
         offset: event.offset,
     };
+    let samples = occurrence_search_samples(plan, context, samples, clocks)?;
     let batch = match context {
         Some(context) => {
-            if !context.belongs_to(plan) {
-                return Err(StageAudioError::ForeignDomain);
-            }
-            // Each translated rounded boundary differs from its nominal affine
-            // displacement by less than one sample. Search that bounded halo;
-            // the retained route, not this conservative search, admits input.
-            let margin = i64::try_from(clocks).map_err(|_| StageAudioError::Range)?;
-            let support = context.samples();
-            let start = AudioSample(samples.start.0.saturating_sub(margin))
-                .max(support.start)
-                .min(support.end);
-            let end = AudioSample(samples.end.0.saturating_add(margin))
-                .min(support.end)
-                .max(start);
-            context.source_voice_occurrences(owner, recipe, start..end, control.query_limits()?)?
+            context.source_voice_occurrences(owner, recipe, samples, control.query_limits()?)?
         }
         None => plan.source_voice_occurrences(owner, recipe, samples, control.query_limits()?)?,
     };
     control.spend_plan_work(batch.construction_work())?;
     Ok(batch)
+}
+
+/// Clock selection needs exact current paths and processed support, not a
+/// retained PCM graph. Normal beat preparation still validates each full graph
+/// before media access. Unsupported lightweight cases use Plan's full builder.
+fn current_occurrence_supports(
+    plan: &RenderPlan,
+    context: Option<&deadpan_plan::AudioSoundOwnerContext<'_>>,
+    owner: &deadpan_core::NodeId,
+    event: &deadpan_core::BeatSound,
+    samples: Range<AudioSample>,
+    clocks: usize,
+    control: WorkControl<'_>,
+) -> Result<deadpan_plan::AudioSourceOccurrenceSupports, StageAudioError> {
+    let recipe = AudioSourceVoiceRecipe {
+        source: event.source.clone(),
+        mapping: event.mapping,
+        offset: event.offset,
+    };
+    let samples = occurrence_search_samples(plan, context, samples, clocks)?;
+    let batch = match context {
+        Some(context) => context.source_voice_occurrence_supports(
+            owner,
+            recipe,
+            samples,
+            control.query_limits()?,
+        )?,
+        None => {
+            plan.source_voice_occurrence_supports(owner, recipe, samples, control.query_limits()?)?
+        }
+    };
+    control.spend_plan_work(batch.construction_work())?;
+    Ok(batch)
+}
+
+fn occurrence_search_samples(
+    plan: &RenderPlan,
+    context: Option<&deadpan_plan::AudioSoundOwnerContext<'_>>,
+    samples: Range<AudioSample>,
+    clocks: usize,
+) -> Result<Range<AudioSample>, StageAudioError> {
+    let Some(context) = context else {
+        return Ok(samples);
+    };
+    if !context.belongs_to(plan) {
+        return Err(StageAudioError::ForeignDomain);
+    }
+    // Each translated rounded boundary differs from its nominal affine
+    // displacement by less than one sample. Search that bounded halo;
+    // the retained route, not this conservative search, admits input.
+    let margin = i64::try_from(clocks).map_err(|_| StageAudioError::Range)?;
+    let support = context.samples();
+    let start = AudioSample(samples.start.0.saturating_sub(margin))
+        .max(support.start)
+        .min(support.end);
+    let end = AudioSample(samples.end.0.saturating_add(margin))
+        .min(support.end)
+        .max(start);
+    Ok(start..end)
 }

@@ -36,3 +36,11 @@ Projected-domain queries currently discard some policy metadata during
 construction, so they need a separate replay design before caching.
 
 See [the groundwork qualification](qualification/audio-query-groundwork-2026-10-26.md).
+
+Clock discovery uses `source_voice_occurrence_supports` for ordered paths and
+exact processed sample bounds. These planning-only results do not retain ordinary
+provider, gain-owner or tape graphs and cannot authorize PCM access. Full voice
+construction remains mandatory before media. Preserve candidates retain the full
+constructor's validation with the same path and budget; ordinary candidates share
+its scalar support and checked remap arithmetic. This is not a retained-query
+cache. See [support discovery](qualification/occurrence-support-discovery-2026-10-27.md).

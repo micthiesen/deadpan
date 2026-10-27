@@ -66,7 +66,7 @@ impl RenderPlan {
             maximum_runs: limits.maximum_spans,
             runs: 0,
         };
-        let (edges, _) = resolve_edges(self, node, instance, &mut budget)?;
+        let (edges, _, _) = resolve_edges(self, node, instance, &mut budget)?;
         let mut map = Placement::IDENTITY;
         let mut processing = None;
         for edge in &edges {

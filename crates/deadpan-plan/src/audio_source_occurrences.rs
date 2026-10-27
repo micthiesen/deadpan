@@ -17,6 +17,38 @@ pub struct AudioSourceOccurrences<'plan> {
     work: usize,
 }
 
+/// Planning-only paths and exact processing allocations. These do not grant
+/// source access or replace the full voice constructor before PCM preparation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AudioSourceOccurrenceSupport {
+    instance: InstancePath,
+    samples: Range<AudioSample>,
+}
+
+impl AudioSourceOccurrenceSupport {
+    pub fn instance(&self) -> &InstancePath {
+        &self.instance
+    }
+    pub fn samples(&self) -> Range<AudioSample> {
+        self.samples.clone()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct AudioSourceOccurrenceSupports {
+    supports: Vec<AudioSourceOccurrenceSupport>,
+    work: usize,
+}
+
+impl AudioSourceOccurrenceSupports {
+    pub fn supports(&self) -> &[AudioSourceOccurrenceSupport] {
+        &self.supports
+    }
+    pub fn construction_work(&self) -> usize {
+        self.work
+    }
+}
+
 impl crate::audio_allocated::OwnedHeap for AudioSourceOccurrences<'_> {
     fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
         let Self {
@@ -34,6 +66,19 @@ impl crate::audio_allocated::OwnedHeap for AudioSourceOccurrences<'_> {
 }
 
 impl RenderPlan {
+    /// Discover exact current paths without allocating ordinary voices. Cases
+    /// with enclosing Preserve processing retain full constructor validation.
+    /// Full voice preparation remains mandatory before reading any media.
+    pub fn source_voice_occurrence_supports(
+        &self,
+        owner: &NodeId,
+        recipe: AudioSourceVoiceRecipe,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+    ) -> Result<AudioSourceOccurrenceSupports, PlanError> {
+        collect_supports(self, owner, recipe, samples, limits, None)
+    }
+
     /// Collect only current occurrences whose processing allocation overlaps
     /// `samples`. Preserve history may make this larger than visible placement.
     /// Work and aggregate retained runs are bounded across the entire batch;
@@ -51,6 +96,17 @@ impl RenderPlan {
 }
 
 impl<'plan> AudioSoundOwnerContext<'plan> {
+    /// Exact planning-only discovery within this checked processing context.
+    pub fn source_voice_occurrence_supports(
+        &self,
+        owner: &NodeId,
+        recipe: AudioSourceVoiceRecipe,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+    ) -> Result<AudioSourceOccurrenceSupports, PlanError> {
+        collect_supports(self.plan, owner, recipe, samples, limits, Some(self))
+    }
+
     /// One checked occurrence within this owner, without enumerating its
     /// siblings. Used when a saved sound clock has already proved its alias.
     pub fn source_voice_occurrence(
@@ -75,6 +131,57 @@ impl<'plan> AudioSoundOwnerContext<'plan> {
     ) -> Result<AudioSourceOccurrences<'plan>, PlanError> {
         collect(self.plan, owner, recipe, samples, limits, Some(self))
     }
+}
+
+fn collect_supports(
+    plan: &RenderPlan,
+    owner: &NodeId,
+    recipe: AudioSourceVoiceRecipe,
+    samples: Range<AudioSample>,
+    limits: AudioQueryLimits,
+    context: Option<&AudioSoundOwnerContext<'_>>,
+) -> Result<AudioSourceOccurrenceSupports, PlanError> {
+    limits.validate()?;
+    source_occurrence::checked_owner_recipe(plan, owner, &recipe)?;
+    let query = plan.audio_owner_occurrences_in_context(owner, samples.clone(), limits, context)?;
+    let mut work = query.work();
+    let mut runs = query.occurrences().len();
+    let mut supports = Vec::with_capacity(runs);
+    for occurrence in query.occurrences() {
+        let maximum_work = limits
+            .maximum_work
+            .checked_sub(work)
+            .filter(|remaining| *remaining > 0)
+            .ok_or(PlanError::AudioQueryLimit("source occurrence batch work"))?;
+        let maximum_spans = limits
+            .maximum_spans
+            .checked_sub(runs)
+            .filter(|remaining| *remaining > 0)
+            .ok_or(PlanError::AudioQueryLimit("source occurrence batch runs"))?;
+        let found = source_occurrence::support::discover(
+            plan,
+            occurrence.instance(),
+            &recipe,
+            AudioQueryLimits {
+                maximum_work,
+                maximum_spans,
+            },
+            context,
+        )?;
+        work = work
+            .checked_add(found.work)
+            .ok_or(PlanError::AudioQueryLimit("source occurrence batch work"))?;
+        runs = runs
+            .checked_add(found.runs)
+            .ok_or(PlanError::AudioQueryLimit("source occurrence batch runs"))?;
+        if found.samples.start < samples.end && samples.start < found.samples.end {
+            supports.push(AudioSourceOccurrenceSupport {
+                instance: occurrence.instance().clone(),
+                samples: found.samples,
+            });
+        }
+    }
+    Ok(AudioSourceOccurrenceSupports { supports, work })
 }
 
 fn collect<'plan>(

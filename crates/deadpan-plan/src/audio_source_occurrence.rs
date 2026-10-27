@@ -20,6 +20,9 @@ pub use processing_history::AudioSoundProcessingHistory;
 mod permission_family;
 pub use permission_family::AudioSoundPermissionFamily;
 
+#[path = "audio_source_occurrence_support.rs"]
+pub(super) mod support;
+
 /// A borrowed preparation recipe for one concrete current occurrence.
 ///
 /// The constructor resolves structure and stable plays, never a cursor or a
@@ -191,46 +194,29 @@ impl RenderPlan {
         context: Option<&AudioSoundOwnerContext<'plan>>,
     ) -> Result<AudioSourceOccurrence<'plan>, PlanError> {
         limits.validate()?;
-        if instance.repeats.len() > MAX_DOCUMENT_DEPTH {
-            return Err(PlanError::AudioQueryLimit("source occurrence depth"));
-        }
         let mut budget = BuildBudget {
             maximum: limits.maximum_work,
             remaining: limits.maximum_work,
             maximum_runs: limits.maximum_spans,
             runs: 0,
         };
-        let host =
-            *self
-                .by_id
-                .get(&instance.node)
-                .ok_or(PlanError::InvalidAudioSourceOccurrence(
-                    "source occurrence owner is absent",
-                ))?;
-        if self.nodes[host].preserve_input.is_some() {
-            return Err(PlanError::InvalidAudioSourceOccurrence(
-                "owned Preserve occurrence requires its retained output placement",
-            ));
-        }
-        let (edges, depth) = resolve_edges(self, host, &instance, &mut budget)?;
-        let unclipped_before = match context {
-            Some(context) => {
-                // Scope membership and the processing boundary each compare
-                // stable Repeat prefixes. Charge both walks before cloning.
-                budget.spend(1 + instance.repeats.len())?;
-                for edge in &edges {
-                    budget.spend(2 * (1 + edge.repeats))?;
-                }
-                context.clip_boundary(self, host, &instance, &edges)?
-            }
-            None => 0,
-        };
-        let host_support = node_support(self, host);
-        if !positive_range(&host_support)? {
-            return Err(PlanError::InvalidAudioSourceOccurrence(
-                "source occurrence owner is empty",
-            ));
-        }
+        let path = support::path(self, &instance, context, &mut budget)?;
+        self.source_voice_occurrence_with_path(instance, recipe, context, path, budget)
+    }
+
+    fn source_voice_occurrence_with_path<'plan>(
+        &'plan self,
+        instance: InstancePath,
+        recipe: AudioSourceVoiceRecipe,
+        context: Option<&AudioSoundOwnerContext<'plan>>,
+        path: support::Path,
+        mut budget: BuildBudget,
+    ) -> Result<AudioSourceOccurrence<'plan>, PlanError> {
+        let host = path.host;
+        let edges = &path.edges;
+        let depth = path.depth;
+        let unclipped_before = path.unclipped_before;
+        let host_support = path.support.clone();
         // Visibility follows the preparation chain below. After Preserve, its
         // complete processed output can survive an outer crop even when that
         // crop hides this owner's original geometric allocation.
@@ -296,18 +282,14 @@ impl RenderPlan {
         budget.spend(1 + instance.repeats.len())?;
         let owner = scoped_signal(self, host, instance.repeats.clone(), host_support.clone());
         let selected = voice_selection(&recipe, rate)?;
-        let mut audible = selected.start..selected.end;
         let voice = checked_voice(owner, recipe)?;
         let mut provider = Provider::Source(Box::new(voice.input_signal()));
-        let mut support = host_support.clone();
-        let mut delivery_support = host_support;
-        let mut placement = Placement::IDENTITY;
-        let mut stages = 0usize;
-        for (index, edge) in edges.iter().enumerate().rev() {
-            let parent = &self.nodes[edge.parent];
-            if matches!(parent.kind, CompiledKind::Retime { pitch, scale, .. } if pitch.processes(scale == ExactRatio::ONE))
-            {
-                stages += 1;
+        let geometry = support::resolve(
+            self,
+            &path,
+            selected.start..selected.end,
+            &mut budget,
+            |edge, stages, placement, support, budget| {
                 // Each projection checks all retained nested scopes. Bound the
                 // cumulative comparisons and ancestor walks before construction.
                 budget.spend(
@@ -322,11 +304,11 @@ impl RenderPlan {
                     None,
                     None,
                 )?;
-                let input =
-                    projected_input(self, &stage, &provider, placement, support, &mut budget)?;
+                let input = projected_input(self, &stage, &provider, placement, support, budget)?;
                 // No output gate enters the next voice processor. Current Hold
                 // policy is separately evaluated on the final consuming grid.
-                let policy = neutral_policy(self, &stage, &mut budget)?;
+                let policy = neutral_policy(self, &stage, budget)?;
+                let parent = &self.nodes[edge.parent];
                 let duration = parent.inspection.duration;
                 budget.spend(1 + instance.repeats.len())?;
                 let key = crate::AudioSourceProjectionKey {
@@ -338,37 +320,15 @@ impl RenderPlan {
                 provider = Provider::Projected(AudioStageProjection::new_source_occurrence(
                     stage, input, policy, duration, key,
                 )?);
-                placement = Placement::IDENTITY;
-                support = node_support(self, edge.parent);
-                delivery_support = support.clone();
-                // A processor may retain output throughout its full allocation,
-                // including decay outside the raw selected input interval.
-                audible = support.clone();
-            } else {
-                budget.spend(1)?;
-                placement = edge.map.compose(placement)?;
-                let allowed = node_support(self, edge.parent);
-                delivery_support = intersect(
-                    delivery_support,
-                    placement.local(allowed.start)?..placement.local(allowed.end)?,
-                )?;
-                if index >= unclipped_before {
-                    let allowed = node_support(self, edge.parent);
-                    support = intersect(
-                        support,
-                        placement.local(allowed.start)?..placement.local(allowed.end)?,
-                    )?;
-                }
-                if !positive_range(&support)? {
-                    return Err(PlanError::InvalidAudioSourceOccurrence(
-                        "source occurrence output is not visible",
-                    ));
-                }
-            }
-        }
-        let extent = placement.range(support.clone())?;
-        let routing_origin = placement.range(delivery_support)?.start;
-        let audible_extent = placement.range(intersect(audible, support.clone())?)?;
+                Ok(())
+            },
+        )?;
+        let support::Geometry {
+            support,
+            extent,
+            routing_origin,
+            audible_extent,
+        } = geometry;
         let inherited_hard_edges = (
             owner_edges.iter().any(|(range, policy)| {
                 range.start == audible_extent.start
@@ -385,11 +345,7 @@ impl RenderPlan {
             extent.clone(),
             vec![provider.run(extent.clone(), support)],
         )?;
-        let grid = AudioSampleGrid::<AudioSample>::new(
-            ExactRatio::ZERO,
-            step,
-            AudioBoundaryRule::RoundEven,
-        )?;
+        let grid = support::grid(self)?;
         let samples = grid.boundary(extent.start)?..grid.boundary(extent.end)?;
         let input = input.remap_policy_window(
             extent.clone(),
@@ -445,8 +401,17 @@ fn checked_voice(
     owner: AudioSignal<'_>,
     recipe: AudioSourceVoiceRecipe,
 ) -> Result<AudioSourceVoice<'_>, PlanError> {
-    let duration = owner.plan.nodes[owner.root].extent;
-    let selected = voice_selection(&recipe, owner.plan.metadata.presentation_basis.frame_rate)?;
+    validate_owner_selection(owner.plan, owner.root, &recipe)?;
+    owner.source_voice(recipe)
+}
+
+fn validate_owner_selection(
+    plan: &RenderPlan,
+    host: usize,
+    recipe: &AudioSourceVoiceRecipe,
+) -> Result<(), PlanError> {
+    let duration = plan.nodes[host].extent;
+    let selected = voice_selection(recipe, plan.metadata.presentation_basis.frame_rate)?;
     if selected.start.compare_integer(0).is_lt()
         || !selected
             .end
@@ -459,7 +424,24 @@ fn checked_voice(
             "source occurrence selection exceeds its owner",
         ));
     }
-    owner.source_voice(recipe)
+    Ok(())
+}
+
+/// Complete recipe admission even when discovery finds no current occurrence.
+pub(super) fn checked_owner_recipe(
+    plan: &RenderPlan,
+    owner: &NodeId,
+    recipe: &AudioSourceVoiceRecipe,
+) -> Result<(), PlanError> {
+    let host = *plan
+        .by_id
+        .get(owner)
+        .ok_or(PlanError::InvalidAudioSourceOccurrence(
+            "source occurrence owner is absent",
+        ))?;
+    validate_owner_selection(plan, host, recipe)?;
+    super::source_voice::checked_recipe(plan, recipe)?;
+    Ok(())
 }
 
 fn voice_selection(
@@ -485,7 +467,7 @@ fn resolve_edges(
     host: usize,
     instance: &InstancePath,
     budget: &mut BuildBudget,
-) -> Result<(Vec<Edge>, usize), PlanError> {
+) -> Result<(Vec<Edge>, usize, bool), PlanError> {
     let mut chain = vec![host];
     let mut node = host;
     while node != plan.root {
@@ -501,6 +483,7 @@ fn resolve_edges(
     chain.reverse();
     let mut edges = Vec::with_capacity(chain.len().saturating_sub(1));
     let mut repeats = 0usize;
+    let mut has_processing = false;
     for pair in chain.windows(2) {
         budget.spend(1)?;
         let parent = pair[0];
@@ -552,8 +535,10 @@ fn resolve_edges(
                 child: expected,
                 start,
                 scale,
+                pitch,
                 ..
             } if *expected == child => {
+                has_processing |= pitch.processes(*scale == ExactRatio::ONE);
                 let reciprocal = ExactRatio::ONE.checked_div(*scale)?;
                 Placement {
                     origin: ExactRatio::ZERO.checked_sub(start.checked_mul(reciprocal)?)?,
@@ -579,7 +564,7 @@ fn resolve_edges(
             "source occurrence has extra Repeat identities",
         ));
     }
-    Ok((edges, chain.len()))
+    Ok((edges, chain.len(), has_processing))
 }
 
 fn node_support(plan: &RenderPlan, node: usize) -> Range<ExactRatio> {
@@ -599,12 +584,19 @@ fn gain_owner<'plan>(
             node: plan.nodes[owner].inspection.id.clone(),
             repeats: repeats.to_vec(),
         },
-        AudioSampleMap::new(
-            AudioSample(0),
-            map.local(ExactRatio::ZERO)?,
-            step.checked_div(map.scale)?,
-        )?,
+        owner_sampling(map, step)?,
     ))
+}
+
+fn owner_sampling(
+    map: Placement,
+    step: ExactRatio,
+) -> Result<AudioSampleMap<AudioSample>, PlanError> {
+    AudioSampleMap::new(
+        AudioSample(0),
+        map.local(ExactRatio::ZERO)?,
+        step.checked_div(map.scale)?,
+    )
 }
 
 fn scoped_signal<'plan>(

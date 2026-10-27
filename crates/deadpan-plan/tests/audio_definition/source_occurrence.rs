@@ -5,6 +5,9 @@ use std::sync::Arc;
 #[path = "sound_owner_context.rs"]
 mod sound_owner_context;
 
+#[path = "support_discovery.rs"]
+mod support_discovery;
+
 fn q(n: i128, d: i128) -> ExactRatio {
     ExactRatio::new(n, d).unwrap()
 }

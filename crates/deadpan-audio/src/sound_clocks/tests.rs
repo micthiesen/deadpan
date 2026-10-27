@@ -353,3 +353,72 @@ fn distinct_first_clocks_keep_each_sound_asset_contract_separate() {
         );
     }
 }
+
+#[test]
+fn clock_discovery_keeps_exact_full_batch_paths_and_scoped_halos() {
+    let document = document(&["asset-a"], 3);
+    let plan = RenderPlan::compile(&document).unwrap();
+    let event = &plan.beat_sounds()[&id("owner")][&SoundId::new("sound-0").unwrap()];
+    let cancelled = AtomicBool::new(false);
+    let work = RefCell::new(ReadWork::default());
+    let context = plan
+        .audio_sound_instance_context(
+            &deadpan_core::InstancePath {
+                node: id("owner"),
+                repeats: Vec::new(),
+            },
+            control(&cancelled, &work).query_limits().unwrap(),
+        )
+        .unwrap();
+    for context in [None, Some(&context)] {
+        for (start, end) in [(0, 1), (1, 1601), (1601, 1602), (160_157, 160_160)] {
+            let full_work = RefCell::new(ReadWork::default());
+            let full = current_occurrences(
+                &plan,
+                context,
+                &id("owner"),
+                event,
+                AudioSample(start)..AudioSample(end),
+                3,
+                control(&cancelled, &full_work),
+            )
+            .unwrap();
+            let support_work = RefCell::new(ReadWork::default());
+            let supports = current_occurrence_supports(
+                &plan,
+                context,
+                &id("owner"),
+                event,
+                AudioSample(start)..AudioSample(end),
+                3,
+                control(&cancelled, &support_work),
+            )
+            .unwrap();
+            assert_eq!(
+                supports
+                    .supports()
+                    .iter()
+                    .map(|voice| (voice.instance(), voice.samples()))
+                    .collect::<Vec<_>>(),
+                full.voices()
+                    .iter()
+                    .map(|voice| (voice.instance(), voice.samples()))
+                    .collect::<Vec<_>>(),
+            );
+            assert!(support_work.borrow().plan_work < full_work.borrow().plan_work);
+        }
+    }
+    let foreign = RenderPlan::compile(&document).unwrap();
+    assert!(matches!(
+        current_occurrence_supports(
+            &foreign,
+            Some(&context),
+            &id("owner"),
+            event,
+            AudioSample(0)..AudioSample(1),
+            3,
+            control(&cancelled, &work),
+        ),
+        Err(StageAudioError::ForeignDomain)
+    ));
+}

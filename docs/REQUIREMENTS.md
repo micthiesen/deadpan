@@ -90,6 +90,14 @@ nested Tail Sends read can re-enable reuse during its residency retry. All 1,387
 preceding source inputs are restored exactly and restored strict passes. No
 acceptance credit changes.
 
+The [exact occurrence-support query](qualification/occurrence-support-discovery-2026-10-27.md)
+removes ordinary voice graphs from clock discovery, sharing the full constructor's
+scalar bounds and retaining full Preserve fallback. Current Plan/Audio pass
+526/195 tests; the independent 11-file patch passes 513 Plan, 181 Audio library
+and all 201 existing stages. Final strict lint and six scoped oracle tests pass.
+The full Split matrix remains four pass/three work-limit failures at the same
+points. No acceptance credit changes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

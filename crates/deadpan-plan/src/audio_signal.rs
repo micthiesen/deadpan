@@ -33,7 +33,9 @@ pub use source_occurrence::{
 
 #[path = "audio_source_occurrences.rs"]
 mod source_occurrences;
-pub use source_occurrences::AudioSourceOccurrences;
+pub use source_occurrences::{
+    AudioSourceOccurrenceSupport, AudioSourceOccurrenceSupports, AudioSourceOccurrences,
+};
 
 #[derive(Debug, Clone)]
 enum SignalProvider<'plan> {

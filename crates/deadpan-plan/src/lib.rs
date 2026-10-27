@@ -72,8 +72,8 @@ pub use plan::{
 };
 pub use plan::{
     AudioSoundOwnerContext, AudioSoundPermissionFamily, AudioSoundProcessingHistory,
-    AudioSourceOccurrence, AudioSourceOccurrences, AudioSourceVoice, AudioSourceVoiceIdentity,
-    AudioSourceVoiceRecipe,
+    AudioSourceOccurrence, AudioSourceOccurrenceSupport, AudioSourceOccurrenceSupports,
+    AudioSourceOccurrences, AudioSourceVoice, AudioSourceVoiceIdentity, AudioSourceVoiceRecipe,
 };
 pub use plan::{
     DefinitionPictureCoverage, DefinitionPictureSample, DefinitionPictureSpan,

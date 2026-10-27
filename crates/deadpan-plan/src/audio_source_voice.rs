@@ -165,60 +165,8 @@ impl<'plan> AudioSignal<'plan> {
                 "a source voice requires a structural owner",
             ));
         }
-        let asset =
-            self.plan
-                .audio_assets
-                .get(&recipe.source.asset)
-                .ok_or(PlanError::InvalidPlan(
-                    "source voice asset is absent from the plan catalog",
-                ))?;
-        if asset.source_qualification.is_none() {
-            return Err(PlanError::InvalidPlan(
-                "source voice asset has no source qualification",
-            ));
-        }
-        if !asset
-            .audio
-            .is_some_and(|span| span.contains_span(recipe.source.span))
-        {
-            return Err(PlanError::InvalidPlan(
-                "source voice selection exceeds the catalog audio bounds or clock",
-            ));
-        }
-        if recipe.mapping == SourceAudioMapping::FitBeat {
-            return Err(PlanError::InvalidPlan(
-                "source voice requires an explicit natural-rate mapping",
-            ));
-        }
-        let rate = self.plan.metadata.presentation_basis.frame_rate;
-        // FitBeat is excluded, so the duration sentinel cannot affect mapping.
-        let duration = recipe.mapping.duration_frames(FrameDuration::ZERO)?;
-        if duration
-            != SourceAudioMapping::natural_rate(recipe.source.span, rate)?
-                .duration_frames(FrameDuration::ZERO)?
-        {
-            return Err(PlanError::InvalidPlan(
-                "source voice mapping must preserve the original audio rate",
-            ));
-        }
-        let retained_recipe = recipe.clone();
-        let audio = CompiledSourceAudio {
-            start: recipe
-                .mapping
-                .start_frames_with_offset(recipe.offset, rate)?,
-            duration,
-            selection: recipe.mapping.selection_frames_with_offset(
-                FrameDuration::ZERO,
-                recipe.offset,
-                rate,
-            )?,
-            selected: matches!(recipe.mapping, SourceAudioMapping::SelectedPlacement { .. }),
-            source: recipe.source,
-        };
-        let provider = Arc::new(SourceVoiceProvider {
-            audio,
-            recipe: retained_recipe,
-        });
+        let audio = checked_recipe(self.plan, &recipe)?;
+        let provider = Arc::new(SourceVoiceProvider { audio, recipe });
         let mut signal = self.clone();
         signal.provider = SignalProvider::Source {
             recipe: Arc::clone(&provider),
@@ -334,4 +282,59 @@ impl<'plan> AudioSignal<'plan> {
             content: AudioSignalContent::Leaf(content),
         })
     }
+}
+
+/// Validate a recipe without allocating its provider or signal graph.
+pub(super) fn checked_recipe(
+    plan: &RenderPlan,
+    recipe: &AudioSourceVoiceRecipe,
+) -> Result<CompiledSourceAudio, PlanError> {
+    let asset = plan
+        .audio_assets
+        .get(&recipe.source.asset)
+        .ok_or(PlanError::InvalidPlan(
+            "source voice asset is absent from the plan catalog",
+        ))?;
+    if asset.source_qualification.is_none() {
+        return Err(PlanError::InvalidPlan(
+            "source voice asset has no source qualification",
+        ));
+    }
+    if !asset
+        .audio
+        .is_some_and(|span| span.contains_span(recipe.source.span))
+    {
+        return Err(PlanError::InvalidPlan(
+            "source voice selection exceeds the catalog audio bounds or clock",
+        ));
+    }
+    if recipe.mapping == SourceAudioMapping::FitBeat {
+        return Err(PlanError::InvalidPlan(
+            "source voice requires an explicit natural-rate mapping",
+        ));
+    }
+    let rate = plan.metadata.presentation_basis.frame_rate;
+    // FitBeat is excluded, so the duration sentinel cannot affect mapping.
+    let duration = recipe.mapping.duration_frames(FrameDuration::ZERO)?;
+    if duration
+        != SourceAudioMapping::natural_rate(recipe.source.span, rate)?
+            .duration_frames(FrameDuration::ZERO)?
+    {
+        return Err(PlanError::InvalidPlan(
+            "source voice mapping must preserve the original audio rate",
+        ));
+    }
+    Ok(CompiledSourceAudio {
+        start: recipe
+            .mapping
+            .start_frames_with_offset(recipe.offset, rate)?,
+        duration,
+        selection: recipe.mapping.selection_frames_with_offset(
+            FrameDuration::ZERO,
+            recipe.offset,
+            rate,
+        )?,
+        selected: matches!(recipe.mapping, SourceAudioMapping::SelectedPlacement { .. }),
+        source: recipe.source.clone(),
+    })
 }
