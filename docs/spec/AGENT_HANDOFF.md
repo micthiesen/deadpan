@@ -31,6 +31,20 @@ enough. Do not widen source-support selection, processing authority, caches or
 work ceilings to make the matrix pass. Existing uncommitted Core/Plan/Audio/Store
 work and foreign fuzz/Cargo.lock/.claude entries remain preserved.
 
+Read-only follow-up found two unimplemented ownership directions. The first
+preparation pass uses only occurrence identities, but a lightweight replacement
+must reproduce the exact source-sample overlap filter; conservative extra owners
+can change budget failures. Alternatively, self_cell 1.3.0 is already locked
+transitively through epaint and offers safe owned/dependent query callbacks.
+It is not an Audio dependency or qualified solution yet. A bounded per-event
+historical-query cell could retain final queries while live occurrence metadata
+keeps its current plan lifetime; queries must be consumed inside the dependent
+callback, with covariance and metadata accounting proved. Do not add one
+unaccounted allocation per occurrence or retain all event batches. A shared-EQ
+all-output tile cache would require a broader bounded streaming design: selected
+contributions cannot be replaced by EQ of the total bus, and 4,096 voice tiles
+already consume 64 MiB before other residency. No such redesign was implemented.
+
 ## Build tooling diversion, 2026-10-26 (historical pause)
 
 The owner paused the product goal and authorized only build-loop repairs,
