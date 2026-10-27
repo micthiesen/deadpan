@@ -22,6 +22,8 @@ use deadpan_store::ShotAnalysisKey;
 use deadpan_store::original_media::OriginalMediaLimits;
 use deadpan_store::source_registration::SourceQualificationReceipt;
 
+pub mod incremental;
+
 #[derive(Debug, thiserror::Error)]
 pub enum ShotScanError {
     #[error("shot detection is unavailable: {0}")]

@@ -15,11 +15,15 @@ loading them never edits the project.
 | --- | --- |
 | [`deadpan_analysis::shots`](../crates/deadpan-analysis/src/shots.rs) | Pure `PictureSignature` (32 × 18 cell means of integer Rec.601 YCbCr plus a 32-bin luma histogram), the 23-byte `PictureMeasure` (`deadpan-picture-signature-2`), the streaming `ShotMeasurer` with resumable `ShotProgress`, validated `ShotAnalysis`, hard cuts and the `deadpan-shots-2` rule with [gradual transitions](../crates/deadpan-analysis/src/shots/gradual.rs). |
 | [`deadpan_media::picture_scan`](../crates/deadpan-media/src/picture_scan.rs) | Decodes every picture of a verified snapshot in order, from the first picture or from any indexed picture through an exact seek, and checks each against its qualified index ordinal. |
-| [`deadpan_cli::shots`](../crates/deadpan-cli/src/shots.rs) | `prepare_shot_input`, `stored_shot_progress`, pipelined resumable `scan_shots`, `stored_shots`, the `detect-shots` and `shots` commands. |
+| [`deadpan_cli::shots`](../crates/deadpan-cli/src/shots.rs) | `prepare_shot_input`, pipelined resumable `scan_shots`, `stored_shots`, and the `detect-shots` and `shots` commands; the native app uses the separate cursor-priority range scanner in [`shots/incremental.rs`](../crates/deadpan-cli/src/shots/incremental.rs). |
 | [`deadpan-store`](../crates/deadpan-store/src/shot_analysis.rs) | `shot_analysis` and the operational `shot_scan_progress` table (database schema 77). |
-| [`preview::shots`](../crates/deadpan-app/src/preview/shots.rs) | Automatic background job, its checkpoints and the rail status. |
+| [`preview::shots`](../crates/deadpan-app/src/preview/shots.rs) | Automatic background range job, coverage progress, private-cache reuse and the rail status. |
 
 ## Scan
+
+The CLI `detect-shots` path below remains a sequential resumable scan. The
+native app uses the cursor-priority range path described under
+[In the app](#in-the-app).
 
 `prepare_shot_input` resolves the ready Original's qualification receipt (or a
 registered `--asset`), snapshots its retained bytes through the store and
@@ -231,19 +235,22 @@ is loaded when a project opens and carried unchanged across edits. A new
 project session cancels the previous scan; quitting cancels and joins scans
 for up to 3 s, like transcription.
 
-The scan reads the package's checkpoint before it starts and resumes it. Its
-checkpoint tails reach the UI as events; the waiting tail is submitted as
-`ProjectRequest::SaveShotProgress` on the annotation lane when the lane and the
-user-command slot are free (a newer tail merges into a waiting one with
-`ShotProgressTail::merge`). The service appends it only for the session's
-ready Original, stream, signature and picture count, and ignores failures:
-progress is rebuildable. After a failed append the scan's later tails no
-longer join and are refused too; the finished analysis is unaffected, and a
-later scan resumes from the last saved progress. At most about
-10 s of scanning is lost by quitting.
+The native scan covers disjoint ranges of up to 2,048 source pictures (widened
+when needed to keep range bookkeeping bounded), with the same 50-picture
+comparison context on both sides (twice the 25-picture maximum half-span). It
+prioritizes the latest visible Original picture ordinal, including when the
+picture is reached through the edit plan.
+After each range is validated, its owned measures alone count toward progress;
+the overlapping context is never double-counted. Completed ranges are kept in
+the private, rebuildable `AnalysisRanges` cache, keyed by the exact source
+analysis key, implementation and rule, picture count, owned range and context.
+Cache read/write failures do not discard measured work. Cancellation therefore
+retains verified range results, while the complete `ShotAnalysis` is assembled
+and submitted for storage only after every picture has exactly one owned
+measure. A later run can reuse the completed cached ranges.
 
-The Original card's detail line carries the status without adding rail
-height: `595 frames · shots 42%` while scanning, then `595 frames · 6 shots`.
+The Original card's detail line carries completed range coverage without adding
+rail height: `595 frames · shots 42%` while scanning, then `595 frames · 6 shots`.
 A failure restores `595 decoded video frames` and adds the message and Try
 again below the REUSE heading.
 

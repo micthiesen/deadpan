@@ -11,6 +11,8 @@ use deadpan_analysis::{
 use egui::Key;
 use egui_kittest::kittest::Queryable as _;
 
+mod incremental;
+
 pub(super) fn model_offer_visible(d: &mut Driver<'_>) -> Result<(), String> {
     d.wait_for("Transcript status checked", |app| {
         app.transcription.status_name() != "unchecked"
@@ -179,6 +181,7 @@ fn interrupted_activity_retry(d: &mut Driver<'_>) -> Result<(), String> {
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     model_offer_visible(d)?;
+    incremental::run(d)?;
     interrupted_retry(d)?;
     let revision = d.revision();
     let (key, transcript, index) = synthetic(d)?;

@@ -522,11 +522,6 @@ impl Service {
                 key,
                 analysis,
             } => self.save_shot_analysis_command(expected_session, attempt, key, analysis),
-            ProjectRequest::SaveShotProgress {
-                expected_session,
-                key,
-                progress,
-            } => self.save_shot_progress_command(expected_session, key, progress),
             _ => unreachable!("only analysis saves use the annotation lane"),
         }
     }
@@ -581,14 +576,6 @@ impl Service {
                 analysis,
             } => {
                 self.save_shot_analysis_command(expected_session, attempt, key, analysis);
-                return Ok(());
-            }
-            ProjectRequest::SaveShotProgress {
-                expected_session,
-                key,
-                progress,
-            } => {
-                self.save_shot_progress_command(expected_session, key, progress);
                 return Ok(());
             }
             ProjectRequest::ChangeCorrections(request) => {
@@ -702,7 +689,6 @@ impl Service {
             ProjectRequest::SaveTranscript { .. }
             | ProjectRequest::SaveSpeechActivity { .. }
             | ProjectRequest::SaveShotAnalysis { .. }
-            | ProjectRequest::SaveShotProgress { .. }
             | ProjectRequest::ChangeCorrections(_)
             | ProjectRequest::AcceptRefinement(_) => {
                 unreachable!("analysis annotations use independent feedback")

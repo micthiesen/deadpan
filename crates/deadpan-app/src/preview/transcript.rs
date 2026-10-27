@@ -12,7 +12,6 @@ use std::ops::Range;
 use std::sync::mpsc;
 
 use deadpan_analysis::{Transcript, picture_at, picture_seconds};
-use deadpan_cli::transcription::transcribe;
 use deadpan_core::ProjectFrame;
 use deadpan_jobs::transcription::Language;
 use deadpan_models::packs::{Operation, PackManifest, approved_packs};
@@ -40,6 +39,7 @@ enum Event {
 }
 
 mod activity;
+mod incremental;
 mod lifecycle;
 use lifecycle::{RunCapture, Stop};
 mod recognition;
@@ -103,6 +103,8 @@ pub(super) struct Transcription {
     recognition: Option<Recognition>,
     /// A flagged passage being recognized again by itself.
     again: Option<recognition::Again>,
+    /// Latest cursor and explicitly incomplete source-range proposals.
+    ranges: incremental::RangeFeed,
 }
 
 /// A recognition check and the published analyses it was derived from.
@@ -138,6 +140,7 @@ impl Default for Transcription {
             activity: activity::ActivityJob::default(),
             recognition: None,
             again: None,
+            ranges: incremental::RangeFeed::default(),
         }
     }
 }
@@ -304,6 +307,29 @@ impl Transcription {
         self.activity.replay_queued(lifecycle);
     }
 
+    /// Inject only range-delivery UI state. Model execution has a separate
+    /// actual-worker witness; the replay exercises production paint and input.
+    #[cfg(feature = "ui-harness")]
+    pub(super) fn replay_partial_recognition(
+        &mut self,
+        progress: Option<deadpan_cli::transcription::incremental::RangeProgress>,
+    ) {
+        assert!(self.events.is_none() && self.unsaved.is_none());
+        self.run = None;
+        if let Some(progress) = progress {
+            self.status = Status::Transcribing(47);
+            self.ranges.sender.publish(progress);
+        } else {
+            self.ranges = incremental::RangeFeed::default();
+            self.status = Status::Unchecked;
+        }
+    }
+
+    #[cfg(feature = "ui-harness")]
+    pub(super) fn replay_analysis_priority(&self) -> u64 {
+        self.ranges.sender.cursor.load(Ordering::Acquire)
+    }
+
     #[cfg(feature = "ui-harness")]
     pub(super) fn activity_status_name(&self) -> &'static str {
         self.activity.status_name()
@@ -347,7 +373,25 @@ impl DeadpanApp {
         if self.transcription.session != session {
             self.transcription.reset(session);
         }
+        if matches!(
+            self.transcription.status,
+            Status::Preparing | Status::Transcribing(_)
+        ) || self.transcription.activity.detecting()
+        {
+            self.prioritize_analysis_cursor();
+        }
         self.transcription.observe_interruption();
+        if self
+            .transcription
+            .run
+            .as_ref()
+            .and_then(RunCapture::stop)
+            .is_none()
+        {
+            self.transcription.ranges.receive();
+        } else {
+            self.transcription.ranges.shown = None;
+        }
         while let Some(event) = self
             .transcription
             .events
@@ -412,6 +456,10 @@ impl DeadpanApp {
             return;
         };
         if workspace.transcript.is_some() {
+            self.transcription.ranges.shown = None;
+            if let Ok(mut pending) = self.transcription.ranges.sender.pending.try_lock() {
+                *pending = None;
+            }
             // Projects transcribed before pause detection get it on its own.
             self.reconcile_activity(context);
             self.transcription.status = Status::Ready;
@@ -548,12 +596,18 @@ impl DeadpanApp {
             self.transcription.activity.start(run.clone());
         }
         let repaint = context.clone();
+        // Starts can follow Ready/NeedsModel in this same reconciliation.
+        // Initialize before a worker observes the shared priority slot.
+        self.prioritize_analysis_cursor();
+        self.transcription.ranges.restart();
+        let ranges = self.transcription.ranges.sender.clone();
         let handle = self.service.jobs().register(
             crate::jobs::JobSpec::new(
                 crate::jobs::JobKind::Transcription,
                 self.transcription.session,
             )
-            // Reading the sound and detecting pauses need no model slot.
+            // Source preparation precedes admission; each VAD/Whisper range
+            // pair claims the inference slot and releases it on completion.
             .estimated_memory_bytes(pack.memory_bytes)
             .deferred()
             .detail("the Original")
@@ -577,6 +631,7 @@ impl DeadpanApp {
                         &cancel,
                         &handle,
                         detected,
+                        &ranges,
                         |percent| {
                             let _ = sender.send(Event::Progress(percent));
                             repaint.request_repaint();
@@ -885,11 +940,22 @@ impl DeadpanApp {
                 }
             }
             Status::Transcribing(percent) => {
-                ui.add(
-                    egui::ProgressBar::new(f32::from(percent) / 100.0)
-                        .desired_height(6.0)
-                        .text(format!("Transcribing · {percent}%")),
-                );
+                // Earlier rail controls can enlarge the layout beyond its
+                // scroll clip. Wrap current analysis text to the visible width.
+                let width = ui
+                    .available_width()
+                    .min((ui.clip_rect().right() - ui.next_widget_position().x - 4.0).max(1.0));
+                ui.scope(|ui| {
+                    ui.set_max_width(width);
+                    ui.add(egui::Label::new(format!("Transcribing · {percent}%")).wrap());
+                    // Text inside a six-pixel bar is vertically clipped.
+                    ui.add(
+                        egui::ProgressBar::new(f32::from(percent) / 100.0)
+                            .desired_width(width)
+                            .desired_height(6.0),
+                    );
+                    self.partial_transcript_words(ui);
+                });
             }
             Status::Saving(_) => {
                 ui.weak("Saving transcript…");
@@ -994,6 +1060,9 @@ impl DeadpanApp {
             .id_salt("transcript-words")
             .max_height(200.0)
             .show(ui, |ui| {
+                // Glyph ink can extend above nominal metrics at fractional
+                // scroll origins. Keep the first/last line inside the clip.
+                ui.add_space(2.0);
                 let mut index = start;
                 while index < end {
                     let segment = words[index].segment;
@@ -1016,6 +1085,7 @@ impl DeadpanApp {
                     }
                     index = line_end;
                 }
+                ui.add_space(2.0);
             });
         let approximate = words[start..end]
             .iter()
@@ -1102,6 +1172,7 @@ impl DeadpanApp {
             .id_salt("transcript-edit-words")
             .max_height(200.0)
             .show(ui, |ui| {
+                ui.add_space(2.0);
                 for sentence in &sentences[shown] {
                     let entries: Vec<Entry<'_>> = sentence
                         .clone()
@@ -1122,6 +1193,7 @@ impl DeadpanApp {
                         clicked = Some(sentence.start + offset);
                     }
                 }
+                ui.add_space(2.0);
             });
         let kept: std::collections::BTreeSet<u32> = runs.iter().map(|run| run.word).collect();
         ui.label(
@@ -1144,11 +1216,10 @@ impl DeadpanApp {
     }
 }
 
-/// Prepare analysis PCM from a read-only view of the project and run the
-/// worker installed beside the application.
-/// Prepare the Original's analysis PCM once, detect speech in it when a
-/// detector model is given (reported through `detected` exactly once), then
-/// transcribe it.
+/// Analyze bounded source ranges, choosing the next range at the latest
+/// visible cursor. Partial words are display proposals with explicit coverage;
+/// only complete transcript/activity results enter the existing save lane.
+#[allow(clippy::too_many_arguments)]
 fn run_transcription(
     package: &std::path::Path,
     model: &deadpan_jobs::transcription::ModelInput,
@@ -1156,58 +1227,72 @@ fn run_transcription(
     cancel: &AtomicBool,
     handle: &crate::jobs::JobHandle,
     detected: impl FnOnce(activity::Detection),
+    ranges: &incremental::RangeSender,
     mut progress: impl FnMut(u8),
 ) -> Result<(TranscriptKey, Transcript), String> {
     let deadline = std::time::Instant::now() + Duration::from_secs(6 * 60 * 60);
     handle.set_progress("Reading the Original's sound", None);
-    let prepared = activity::prepare(package, cancel, deadline);
-    let (analysis, runtime) = match prepared {
-        Ok(prepared) => prepared,
+    let result = (|| {
+        let store = deadpan_store::ProjectStore::open(package, deadpan_store::AccessMode::ReadOnly)
+            .map_err(|error| error.to_string())?;
+        let runtime = deadpan_cli::transcription::TranscriptionRuntime::beside_current_executable()
+            .map_err(|error| error.to_string())?;
+        let cache = deadpan_cli::storage::UserStorage::current()
+            .map(|storage| storage.caches.join("AnalysisRanges"));
+        deadpan_cli::transcription::incremental::transcribe_original_ranges(
+            &store,
+            &runtime,
+            model,
+            vad,
+            Language::Code("en".into()),
+            cache.as_deref(),
+            &ranges.cursor,
+            cancel,
+            deadline,
+            || {
+                handle.acquire(Some(cancel)).map_err(|stopped| {
+                    deadpan_cli::transcription::TranscriptionError::Worker(format!(
+                        "transcription was {stopped} while waiting for the AI model"
+                    ))
+                })?;
+                handle.checkpoint(Some(cancel)).map_err(|stopped| {
+                    deadpan_cli::transcription::TranscriptionError::Worker(format!(
+                        "transcription was {stopped}"
+                    ))
+                })?;
+                handle.set_progress("Transcribing source range", None);
+                Ok(())
+            },
+            |update| {
+                // The worker has exited. Let queued selected-word refinement
+                // claim inference before this background job's next range.
+                handle.release();
+                let percent = (update.completed_samples * 100 / update.total_samples.max(1)) as u8;
+                handle.set_progress(
+                    "Transcribing source ranges",
+                    Some(f32::from(percent) / 100.0),
+                );
+                ranges.publish(update);
+                progress(percent);
+                Ok(())
+            },
+        )
+        .map_err(|error| error.to_string())
+    })();
+    match result {
+        Ok(result) => {
+            if let Some(activity) = result.activity {
+                detected(Ok(activity));
+            }
+            Ok((result.transcript_key, result.transcript))
+        }
         Err(error) => {
             if vad.is_some() {
                 detected(Err(error.clone()));
             }
-            return Err(error);
+            Err(error)
         }
-    };
-    if let Some(vad) = vad {
-        handle.set_progress("Detecting speech", None);
-        detected(activity::detect(&runtime, vad, &analysis, cancel, deadline));
     }
-    // Only whisper itself needs the AI model slot; reading the sound and
-    // detecting pauses (CPU) run while another model holds it.
-    handle
-        .acquire(Some(cancel))
-        .map_err(|stopped| format!("transcription was {stopped} while waiting for the AI model"))?;
-    handle.set_progress("Transcribing", None);
-    let progress = |percent: u8| {
-        handle.set_progress("Transcribing", Some(f32::from(percent.min(100)) / 100.0));
-        progress(percent);
-    };
-    let language = Language::Code("en".into());
-    let label: String = language.clone().into();
-    let attempt = uuid::Uuid::new_v4().simple().to_string();
-    let result = transcribe(
-        &runtime,
-        model,
-        &analysis.input,
-        language,
-        &attempt,
-        cancel,
-        deadline,
-        progress,
-    )
-    .map_err(|e| e.to_string())?;
-    Ok((
-        TranscriptKey {
-            content: analysis.content,
-            audio_stream: analysis.audio_stream,
-            model_sha256: model.sha256.as_str().to_owned(),
-            language: label,
-            engine: result.runtime.engine,
-        },
-        result.transcript,
-    ))
 }
 
 /// One word shown in the rail.

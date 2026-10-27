@@ -7,7 +7,27 @@ it does not establish that parallel execution is faster before verification.
 
 Read /Users/michael/.agents/skills/parallel/SKILL.md when continuing the wave.
 
-## Current wave
+## Retained operating pattern
+
+Use up to three disjoint workers plus the primary, only while independent work
+exists. The primary owns architecture, shared interfaces, Cargo scheduling,
+integration, evidence, commits and progress. Pair independent implementation
+with review across lanes. Do not replace failed acceptance checks with review
+judgment, or keep workers busy merely to fill slots.
+
+After compaction, read this file and the newest qualification record, inspect
+the actual diff, and reconcile agent/process status before dispatching work.
+Quote the owner's authorization and give each worker exact files, invariants,
+acceptance checks, scratch path and explicit external-action limits. A compacted
+agent list, PATCH READY message or historical freeze is not current execution.
+
+The later wave split native transcript/VAD and shot integration, exact Audio
+input indexing, and Core Retime boundary proofs. The primary kept native focus,
+layout and replay changes, Store joins and evidence. Reviews crossed those
+owners. Native word identity and whole-analysis shot limits both needed fixes
+after the implementation looked ready. Keep these acceptance joins.
+
+## First-wave ownership (historical)
 
 There are four harness execution slots. Use three independent workers and keep
 the primary session on integration, cross-cutting decisions and additional
@@ -35,17 +55,21 @@ changes. Format only owned files. Main owns commits and full-tree checks.
    acceptance checks, scratch location and external-action limits.
 2. Agree interface changes before editing another owner's file. A worker may
    implement private modules directly within assigned ownership.
-3. On PATCH READY, freeze that lane's sources for its integrated build and
-   verification. Release the freeze explicitly for a fix or next milestone.
+3. On PATCH READY, freeze that lane's sources for its integrated build. Release
+   the freeze explicitly for a fix or next milestone. For executable checks,
+   copy the successful binary before another Cargo build can replace it. Pin
+   that copy, its source-guarded build receipt and actual runtime resources.
+   Then unrelated source may advance during execution. Do not attribute later
+   source edits to an older executable.
 4. Main schedules Cargo against the shared target. Workers do not start
    competing builds. Do not create extra full target trees merely for parallelism.
 5. Freeze only dependencies a check reads. Store depends on Analysis but not
    Audio or the CLI/app: pause Analysis briefly for Store checks while that
    worker continues independent CLI/app implementation.
 6. Capture source guards for the stable lane and transitive dependencies.
-   Concurrent unrelated writes are excluded explicitly. Final combined
-   qualification requires the complete relevant source set stable and records
-   the executed binary identity.
+   Concurrent unrelated writes are excluded explicitly. Final compilation and
+   lint require the complete relevant source set stable; runtime checks retain
+   the immutable executable identity and its exact build-source attribution.
 7. Review the integrated patch independently, fix findings, then run checks
    spanning the join. Audio includes exact WAV PCM, all-owner and selected/nested
    plays, unchanged work/memory limits and strict lint. Lane-local passes are
@@ -111,19 +135,25 @@ to obtain a green result. Browser interactions still require the browser role.
   and /tmp/deadpan-parallel-integration-2026-10-26. Synthetic speech proves the
   scheduler/cache behavior only; native interaction and accuracy remain open.
 
-## Compaction continuation
+## Current continuation
 
-The current integration checks are terminal. Recheck agents and tool handles
-after compaction; recorded freezes are not live holds. Keep runtime source
-stable while the primary retains evidence and commits the independent audio
-analysis milestone. Actual native interaction/coexistence, quality, long-media
-and packaging qualification remain. An unwired CLI shot scheduler draft exists
-under shots/incremental; exclude it from the audio milestone. Agree Media/app
-range interfaces and exact sequential-picture equivalence before linking it.
-The Store primitive matrix requires sound-bearing WrapRetime lifecycle work
-before its Retime fixture can reach Split; the established refusal must not be
-bypassed. Four Audio work-limit failures remain. Main retains every full-spec
-requirement and final acceptance decision.
+The [later range integration record](qualification/incremental-ranges-2026-10-26.md)
+supersedes the first wave's unwired-shot and pending-native state. Native shot
+ranges now use exact Media range scans and private caching; the sequential CLI
+scanner remains. The real BLAKE3-addressed Whisper/Silero witness passes with
+zero inference admissions on four cached ranges. Initial full audio decoding
+remains and no latency or quality target is established.
+
+Current ownership is frozen implementation plus primary verification; recheck
+the actual latest receipts before treating final checks as complete. The next
+sound join still requires the complete sound-bearing WrapRetime/SetRetime
+processing lifecycle. Core boundary proofs do not authorize command admission.
+Four Audio work-limit failures remain despite the exact input index. Preserve
+all limits, timing, source authority, individual support, effects and PCM
+comparisons. Plan-owned immutable clock asset inventories are a proposed next
+optimization, not implemented evidence. Keep tightly coupled Retime processing
+program decisions with one owner, and use other lanes for independent services
+or review. Main retains every full-spec requirement and final acceptance.
 
 ## Retention decision
 

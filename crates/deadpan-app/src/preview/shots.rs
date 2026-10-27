@@ -5,22 +5,23 @@
 //! exists. A job thread opens a read-only store, copies the verified
 //! Original snapshot, decodes and measures every picture, and hands the
 //! validated analysis to the project service, which saves it outside history
-//! and publishes it with the workspace. Every ten seconds the scan offers a
-//! checkpoint, which the service saves outside history too, so a scan
-//! interrupted by quitting or closing the project continues from it later. The Original card shows progress or
+//! and publishes it with the workspace. Bounded source ranges follow the
+//! latest visible Original picture; each completed range is privately cached
+//! so cancellation retains useful work without claiming complete coverage.
+//! The Original card shows progress or
 //! the shot count, and a failure appears with Try again below the REUSE
 //! heading.
 
+use std::sync::atomic::AtomicU64;
 use std::sync::mpsc;
 
-use deadpan_analysis::{ShotAnalysis, ShotProgressTail};
+use deadpan_analysis::ShotAnalysis;
 use deadpan_store::{AccessMode, ProjectStore, ShotAnalysisKey};
 
 use super::*;
 
 enum Event {
-    Progress(u8),
-    Checkpoint(ShotAnalysisKey, ShotProgressTail),
+    Progress { percent: u8, cache_failed: bool },
     Done(Result<(ShotAnalysisKey, ShotAnalysis), String>),
 }
 
@@ -43,13 +44,14 @@ pub(super) struct ShotJob {
     status: Status,
     events: Option<mpsc::Receiver<Event>>,
     cancel: Arc<AtomicBool>,
+    /// Latest visible Original ordinal, never a project-frame estimate.
+    cursor: Arc<AtomicU64>,
     /// The running scan, and cancelled scans of earlier sessions that may
     /// still be finishing; all are joined briefly at exit.
     threads: Vec<std::thread::JoinHandle<()>>,
     /// A finished analysis not yet admitted by a busy project service.
     unsaved: Option<(ShotAnalysisKey, Arc<ShotAnalysis>)>,
-    /// Checkpoint measures not yet submitted; a newer tail merges into it.
-    checkpoint: Option<(ShotAnalysisKey, ShotProgressTail)>,
+    cache_failed: bool,
     attempts: u64,
     /// Shot count of the published analysis, keyed by its allocation, so the
     /// rule runs once per analysis rather than every frame.
@@ -125,12 +127,13 @@ impl ShotJob {
 }
 
 /// Scan the Original of the project at `package` from a read-only store.
-/// Continues from the package's saved checkpoint when it has one.
+/// Completed ranges resume from the private versioned cache.
 fn scan(
     package: &std::path::Path,
     interpretation: Option<deadpan_core::SourceInterpretation>,
     cancel: &AtomicBool,
     handle: &crate::jobs::JobHandle,
+    cursor: &AtomicU64,
     send: impl Fn(Event),
 ) -> Result<(ShotAnalysisKey, ShotAnalysis), String> {
     handle
@@ -144,35 +147,39 @@ fn scan(
     if input.key.interpretation != interpretation {
         return Err("The Original interpretation changed before scanning started".into());
     }
-    let resume = deadpan_cli::shots::stored_shot_progress(&store, &input);
     drop(store);
-    let mut reported = 0;
-    let options = deadpan_cli::shots::ShotScanOptions {
-        resume,
-        ..deadpan_cli::shots::ShotScanOptions::default()
+    let mut reported = (0, false);
+    let options = deadpan_cli::shots::incremental::ShotRangeOptions {
+        cache_directory: deadpan_cli::storage::UserStorage::current()
+            .map(|storage| storage.caches.join("AnalysisRanges")),
+        ..Default::default()
     };
-    let scan = deadpan_cli::shots::scan_shots(
+    handle.set_progress("Finding shot ranges", None);
+    let scan = deadpan_cli::shots::incremental::scan_shot_ranges(
         &input,
         cancel,
         deadline,
         options,
-        |done, total| {
-            // A safe boundary between pictures: wait while the edit plays,
-            // a render runs or tracking runs. A stop here is the scan's own
-            // cancellation, which the scanner observes next.
-            let _ = handle.checkpoint(Some(cancel));
-            handle.set_progress("Finding shots", Some(done as f32 / total.max(1) as f32));
-            let percent = (done * 100 / total.max(1)) as u8;
-            if percent != reported {
-                reported = percent;
-                send(Event::Progress(percent));
-            }
+        cursor,
+        || {
+            handle.checkpoint(Some(cancel)).map_err(|stopped| {
+                deadpan_cli::shots::ShotScanError::Failed(format!("shot detection was {stopped}"))
+            })
         },
-        // Only the measures changed since the previous checkpoint cross to
-        // the UI thread; the service appends them to the saved progress.
-        |tail| {
-            send(Event::Checkpoint(input.key.clone(), tail));
-            true
+        |update| {
+            // Only completed, disjoint source coverage contributes progress.
+            let done = update.completed_pictures;
+            let total = update.total_pictures.max(1);
+            handle.set_progress("Finding shot ranges", Some(done as f32 / total as f32));
+            let state = ((done * 100 / total) as u8, update.cache_failures > 0);
+            // At most 102 tiny events, independent of source range count.
+            if state != reported {
+                reported = state;
+                send(Event::Progress {
+                    percent: state.0,
+                    cache_failed: state.1,
+                });
+            }
         },
     )
     .map_err(|e| e.to_string())?;
@@ -180,6 +187,33 @@ fn scan(
 }
 
 impl DeadpanApp {
+    /// Resolve the actual visible Original picture, including freezes,
+    /// repeated plays, retimes and cutaways. Generated/blank pictures supply
+    /// no invented source coordinate and retain the last meaningful priority.
+    fn visible_shot_cursor(&self) -> Option<u64> {
+        let workspace = self.workspace.as_ref()?;
+        let asset = original_asset(workspace)?;
+        let index = workspace.sources.get(asset)?.video_index.as_deref()?;
+        match self.view {
+            View::Source
+                if self.raw_source.is_none() && self.selected_source.as_ref() == Some(asset) =>
+            {
+                Some(
+                    self.source_cursor
+                        .min(index.frames().len().saturating_sub(1) as u64),
+                )
+            }
+            View::Sequence => {
+                let cursor = self
+                    .sequence_cursor
+                    .min(self.sequence_length().saturating_sub(1));
+                let sample = workspace.plan.picture(ProjectFrame(cursor as i64)).ok()?;
+                shot_picture_ordinal(index, &sample.picture)
+            }
+            _ => None,
+        }
+    }
+
     /// Advance shot detection once per outer frame.
     pub(super) fn reconcile_shots(&mut self, context: &egui::Context) {
         let session = self.workspace.as_ref().map(|workspace| workspace.session);
@@ -197,6 +231,11 @@ impl DeadpanApp {
         if self.shots.session != session || self.shots.interpretation != interpretation {
             self.shots.reset(session, interpretation);
         }
+        if (self.shots.events.is_some() || self.shots.status == Status::Unchecked)
+            && let Some(cursor) = self.visible_shot_cursor()
+        {
+            self.shots.cursor.store(cursor, Ordering::Release);
+        }
         while let Some(event) = self
             .shots
             .events
@@ -204,17 +243,12 @@ impl DeadpanApp {
             .and_then(|events| events.try_recv().ok())
         {
             match event {
-                Event::Progress(percent) => self.shots.status = Status::Scanning(percent),
-                Event::Checkpoint(key, tail) => {
-                    // A waiting tail and a newer one join; the newer one
-                    // alone would leave out the waiting measures.
-                    let tail = match self.shots.checkpoint.take() {
-                        Some((waiting, older)) if waiting == key => {
-                            older.merge(tail.clone()).unwrap_or(tail)
-                        }
-                        _ => tail,
-                    };
-                    self.shots.checkpoint = Some((key, tail));
+                Event::Progress {
+                    percent,
+                    cache_failed,
+                } => {
+                    self.shots.status = Status::Scanning(percent);
+                    self.shots.cache_failed = cache_failed;
                 }
                 Event::Done(result) => {
                     self.shots.events = None;
@@ -274,6 +308,7 @@ impl DeadpanApp {
         self.shots.events = Some(receiver);
         self.shots.status = Status::Scanning(0);
         let repaint = context.clone();
+        let cursor = self.shots.cursor.clone();
         let handle = self.service.jobs().register(
             crate::jobs::JobSpec::new(crate::jobs::JobKind::Shots, session)
                 .detail("the Original")
@@ -282,10 +317,17 @@ impl DeadpanApp {
         let spawned = std::thread::Builder::new()
             .name("deadpan-shots".into())
             .spawn(move || {
-                let result = scan(&package, interpretation, &cancel, &handle, |event| {
-                    let _ = sender.send(event);
-                    repaint.request_repaint();
-                });
+                let result = scan(
+                    &package,
+                    interpretation,
+                    &cancel,
+                    &handle,
+                    &cursor,
+                    |event| {
+                        let _ = sender.send(event);
+                        repaint.request_repaint();
+                    },
+                );
                 let _ = sender.send(Event::Done(result));
                 repaint.request_repaint();
             });
@@ -303,11 +345,9 @@ impl DeadpanApp {
     fn save_shots(&mut self, session: Option<u64>, context: &egui::Context) {
         let Some(session) = session else {
             self.shots.unsaved = None;
-            self.shots.checkpoint = None;
             return;
         };
         let Some((key, analysis)) = self.shots.unsaved.as_ref() else {
-            self.save_shot_checkpoint(session);
             return;
         };
         // Saves use their own lane and never occupy the user-command slot,
@@ -337,30 +377,6 @@ impl DeadpanApp {
                 self.shots.status = Status::Failed(format!("the shots were not saved: {error}"));
             }
         }
-    }
-
-    /// Submit the waiting checkpoint when the annotation lane is free. A
-    /// checkpoint is best effort: while the service is busy it waits and
-    /// newer tails merge into it, and a finished analysis makes it moot.
-    fn save_shot_checkpoint(&mut self, session: u64) {
-        if self.shots.unsaved.is_some() || self.shots.events.is_none() {
-            self.shots.checkpoint = None;
-            return;
-        }
-        if self.shots.checkpoint.is_none()
-            || self.service.is_busy()
-            || self.service.annotation_busy()
-        {
-            return;
-        }
-        let Some((key, tail)) = self.shots.checkpoint.take() else {
-            return;
-        };
-        let _ = self.service.submit(ProjectRequest::SaveShotProgress {
-            expected_session: session,
-            key,
-            progress: Arc::new(tail),
-        });
     }
 
     /// The REUSE heading, with the shot status on its right so progress and
@@ -402,6 +418,9 @@ impl DeadpanApp {
     /// The REUSE heading, followed by a shot detection failure with Try again.
     pub(super) fn reuse_heading(&mut self, ui: &mut egui::Ui) {
         ui.label(style::section_title("REUSE", false));
+        if self.shots.cache_failed && matches!(self.shots.status, Status::Scanning(_)) {
+            ui.weak("Some private shot ranges could not be reused or saved; scanning continues.");
+        }
         if let Status::Failed(error) = self.shots.status.clone() {
             ui.colored_label(
                 ui.visuals().error_fg_color,
@@ -432,5 +451,74 @@ impl DeadpanApp {
         let count = analysis.boundaries().len() + usize::from(analysis.pictures() > 0);
         self.shots.count = Some((identity, count));
         Some(count)
+    }
+}
+
+fn shot_picture_ordinal(
+    index: &deadpan_core::SourceFrameIndex,
+    picture: &deadpan_plan::Picture,
+) -> Option<u64> {
+    picture
+        .select_source_frame(index)
+        .ok()
+        .map(|picture| picture.identity.0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn visible_priority_uses_exact_pts_on_the_original_index_and_rejects_other_assets() {
+        use deadpan_core::{
+            AssetId, ExactRatio, IndexedSourceFrame, SourceFrameId, SourceFrameIndex, SourcePoint,
+            SourceTimeBase, TerminalProvenance,
+        };
+        let asset = AssetId::new("original").unwrap();
+        let time_base = SourceTimeBase::new(1, 1_000).unwrap();
+        let frames = [10, 22, 59]
+            .into_iter()
+            .enumerate()
+            .map(|(number, pts)| IndexedSourceFrame {
+                identity: SourceFrameId(number as u64),
+                pts,
+                reported_duration: None,
+                keyframe: number == 0,
+                seek_from: Some(SourceFrameId(0)),
+                decode_timestamp: None,
+            })
+            .collect();
+        let index = SourceFrameIndex::new(
+            asset.clone(),
+            time_base,
+            frames,
+            75,
+            TerminalProvenance::Explicit,
+        )
+        .unwrap();
+        let picture = |asset, ticks| deadpan_plan::Picture::Freeze {
+            asset,
+            point: SourcePoint {
+                ticks: ExactRatio::integer(ticks),
+                time_base,
+            },
+        };
+        assert_eq!(
+            shot_picture_ordinal(&index, &picture(asset.clone(), 22)),
+            Some(1)
+        );
+        assert_eq!(
+            shot_picture_ordinal(&index, &picture(asset.clone(), 74)),
+            Some(2)
+        );
+        assert_eq!(shot_picture_ordinal(&index, &picture(asset, 75)), None);
+        assert_eq!(
+            shot_picture_ordinal(&index, &picture(AssetId::new("generated").unwrap(), 22)),
+            None
+        );
+        assert_eq!(
+            shot_picture_ordinal(&index, &deadpan_plan::Picture::Blank),
+            None
+        );
     }
 }

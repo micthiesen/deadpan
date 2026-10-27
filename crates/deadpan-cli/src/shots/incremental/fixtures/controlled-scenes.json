@@ -1,0 +1,79 @@
+{
+  "kind": "procedural owned test media",
+  "license": "CC0-1.0",
+  "pictures": 260,
+  "width": 64,
+  "height": 36,
+  "rate": "24/1",
+  "construction": {
+    "warm_static": [
+      0,
+      64
+    ],
+    "linear_warm_to_blue": [
+      64,
+      89
+    ],
+    "blue_static": [
+      89,
+      128
+    ],
+    "green_static": [
+      128,
+      260
+    ],
+    "one_picture_white_flash": 191,
+    "hard_cut": 128
+  },
+  "raw_rgb24_sha256": "a0e9c45a854d16c66ef0a0a014cfa2dd00d0970e5e3aab416705e21870d6963b",
+  "encoded_sha256": "1b959be2cb9f0b23e334a21997f6b9b6a77fd9cd0d104a920f3b615ecf9ffad6",
+  "encoded_bytes": 10445,
+  "generation_argv": [
+    "ffmpeg",
+    "-v",
+    "error",
+    "-f",
+    "rawvideo",
+    "-pix_fmt",
+    "rgb24",
+    "-s",
+    "64x36",
+    "-r",
+    "24",
+    "-i",
+    "pipe:0",
+    "-an",
+    "-vf",
+    "format=yuv420p,setparams=range=limited:color_primaries=bt709:color_trc=bt709:colorspace=bt709",
+    "-c:v",
+    "libx264",
+    "-preset",
+    "veryslow",
+    "-crf",
+    "18",
+    "-pix_fmt",
+    "yuv420p",
+    "-g",
+    "64",
+    "-bf",
+    "2",
+    "-threads",
+    "2",
+    "-color_range",
+    "tv",
+    "-colorspace",
+    "bt709",
+    "-color_primaries",
+    "bt709",
+    "-color_trc",
+    "bt709",
+    "-bsf:v",
+    "h264_metadata=colour_primaries=1:transfer_characteristics=1:matrix_coefficients=1:video_full_range_flag=0",
+    "-movflags",
+    "+faststart+write_colr",
+    "controlled-scenes.mp4"
+  ],
+  "generator_sha256": "c1c9d13e7665b748499a2d1f85ce4ecc1b5657a4044ab7da3056ae92dd3d8607",
+  "ffmpeg_version": "ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers",
+  "qualification": "Encoded bytes are pinned; do not assume another encoder build regenerates identical bytes. No quality or throughput claim."
+}

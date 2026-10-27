@@ -1061,7 +1061,6 @@ impl ProjectRequest {
             Self::SaveTranscript { .. }
                 | Self::SaveSpeechActivity { .. }
                 | Self::SaveShotAnalysis { .. }
-                | Self::SaveShotProgress { .. }
         )
     }
 }
@@ -1093,13 +1092,6 @@ pub enum ProjectRequest {
         attempt: u64,
         key: deadpan_store::ShotAnalysisKey,
         analysis: Arc<deadpan_analysis::ShotAnalysis>,
-    },
-    /// Append a shot scan checkpoint's changed measures to the Original's
-    /// saved progress, best effort; never an edit and no receipt.
-    SaveShotProgress {
-        expected_session: u64,
-        key: deadpan_store::ShotAnalysisKey,
-        progress: Arc<deadpan_analysis::ShotProgressTail>,
     },
     /// Apply, undo or redo a correction of the Original's transcript or
     /// pauses. Corrections live outside document history.

@@ -27,6 +27,7 @@ use sha2::Digest;
 const INPUT: &str = "input/analysis.f32";
 const OUTPUT_SCOPE: &str = "output";
 
+pub mod incremental;
 mod window;
 pub use window::{
     MAX_ANALYSIS_WINDOW_FRAMES, OriginalAnalysisSession, OriginalAnalysisWindow,

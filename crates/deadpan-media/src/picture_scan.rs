@@ -9,6 +9,7 @@
 //! Pictures are not retained: the caller keeps whatever it reduces them to.
 //! Call this on a media worker thread, never a UI or audio callback.
 
+use std::ops::Range;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
@@ -92,8 +93,52 @@ pub fn scan_pictures_from<E: std::fmt::Display>(
     deadline: Instant,
     cancelled: &AtomicBool,
     start: usize,
+    visit: impl FnMut(usize, DecodedRgbaFrame) -> Result<(), E>,
+) -> Result<usize, PictureScanError> {
+    scan_range(
+        input,
+        video,
+        options,
+        deadline,
+        cancelled,
+        start..video.index().index().frames().len(),
+        visit,
+    )
+}
+
+/// Decode exactly the requested half-open range of qualified picture ordinals.
+/// A nonzero start uses the same checked keyframe seek and metadata preroll as
+/// [`scan_pictures_from`]. A nonterminal range stops without decoding the next
+/// picture. A terminal range also verifies EOF, preserving the whole scanner's
+/// rejection of extra decoded pictures. Empty and outside ranges are refused
+/// before opening a decoder; source PTS and durations remain authoritative.
+pub fn scan_pictures_range<E: std::fmt::Display>(
+    input: &VerifiedSourceInput,
+    video: &QualifiedVideoSnapshot,
+    options: PictureScanOptions,
+    deadline: Instant,
+    cancelled: &AtomicBool,
+    range: Range<usize>,
+    visit: impl FnMut(usize, DecodedRgbaFrame) -> Result<(), E>,
+) -> Result<usize, PictureScanError> {
+    if range.start >= range.end || range.end > video.index().index().frames().len() {
+        return Err(PictureScanError::Mismatch(
+            "picture scan range is empty or outside the qualified index".into(),
+        ));
+    }
+    scan_range(input, video, options, deadline, cancelled, range, visit)
+}
+
+fn scan_range<E: std::fmt::Display>(
+    input: &VerifiedSourceInput,
+    video: &QualifiedVideoSnapshot,
+    options: PictureScanOptions,
+    deadline: Instant,
+    cancelled: &AtomicBool,
+    range: Range<usize>,
     mut visit: impl FnMut(usize, DecodedRgbaFrame) -> Result<(), E>,
 ) -> Result<usize, PictureScanError> {
+    let start = range.start;
     let control = || -> Result<DecodeControl<'_>, PictureScanError> {
         if cancelled.load(Ordering::Acquire) {
             return Err(PictureScanError::Cancelled);
@@ -215,7 +260,10 @@ pub fn scan_pictures_from<E: std::fmt::Display>(
         visit(start, picture).map_err(|error| PictureScanError::Visit(error.to_string()))?;
         ordinal += 1;
     }
-    while let Some(picture) = decoder.next_rgba(control()?).map_err(native)? {
+    while ordinal < range.end {
+        let Some(picture) = decoder.next_rgba(control()?).map_err(native)? else {
+            break;
+        };
         let Some(indexed) = frames.get(ordinal) else {
             return Err(PictureScanError::Mismatch(format!(
                 "picture {ordinal} decoded beyond the {} indexed pictures",
@@ -236,9 +284,15 @@ pub fn scan_pictures_from<E: std::fmt::Display>(
         visit(ordinal, picture).map_err(|error| PictureScanError::Visit(error.to_string()))?;
         ordinal += 1;
     }
-    if ordinal != frames.len() {
+    if ordinal != range.end {
         return Err(PictureScanError::Mismatch(format!(
             "decoding ended after {ordinal} of {} indexed pictures",
+            frames.len()
+        )));
+    }
+    if range.end == frames.len() && decoder.next_rgba(control()?).map_err(native)?.is_some() {
+        return Err(PictureScanError::Mismatch(format!(
+            "picture {ordinal} decoded beyond the {} indexed pictures",
             frames.len()
         )));
     }

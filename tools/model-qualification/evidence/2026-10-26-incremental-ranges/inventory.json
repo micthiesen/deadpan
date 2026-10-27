@@ -1,0 +1,1021 @@
+{
+  "schema_version": 1,
+  "files": [
+    {
+      "path": "native-runs/app-transcript-ranges-second.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/app-transcript-ranges-second.json",
+      "expanded_bytes": 893429,
+      "expanded_sha256": "8642961f742e1758f8b6475207c6b291fb34a1fef8d2bd70453bd64f656e2a83",
+      "bytes": 239843,
+      "sha256": "ef0a64773f6741c0be38d4f81c420ebe765176c26ffdc364771cfb07675a751f"
+    },
+    {
+      "path": "native-runs/app-transcript-ranges-second.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/app-transcript-ranges-second.stdout",
+      "expanded_bytes": 579,
+      "expanded_sha256": "755d71366c646722eba2ec4da1dd608096b909c929bfbba08b7ade04df2fa7d8",
+      "bytes": 297,
+      "sha256": "6d1dbe1f94472da6269ffa3bbb96fe89a556998fbe781ba1391d41b6f738f9dc"
+    },
+    {
+      "path": "native-runs/app-transcript-ranges-second.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/app-transcript-ranges-second.stderr",
+      "expanded_bytes": 274,
+      "expanded_sha256": "83f2b37055d4ffb444a589f5ab4e2365500096f88b7046d41f0138d8e8cb84d1",
+      "bytes": 220,
+      "sha256": "a3d9d8a1bbe3271a7fd8418cdb95726bc012d9bc384bb34328f6181111b0040c"
+    },
+    {
+      "path": "native-runs/cli-shot-ranges-second.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/cli-shot-ranges-second.json",
+      "expanded_bytes": 893347,
+      "expanded_sha256": "fde215473d4c087d27d45bf37acb0ae9711caf5101ca8cf4fbfd5eec26892750",
+      "bytes": 239817,
+      "sha256": "30db90b7206d7c7ea6c48ee85c315055a11d7c84e4f809f84c4c86cb167f3db4"
+    },
+    {
+      "path": "native-runs/cli-shot-ranges-second.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/cli-shot-ranges-second.stdout",
+      "expanded_bytes": 980,
+      "expanded_sha256": "11fb502d8ee2ac871cac0780de288678d50770242067e8f9c807fcde1e4a0859",
+      "bytes": 420,
+      "sha256": "7912faff06b5a36540684661432856e0c010c78d684481e9fdb462a5170257e4"
+    },
+    {
+      "path": "native-runs/cli-shot-ranges-second.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/cli-shot-ranges-second.stderr",
+      "expanded_bytes": 1307,
+      "expanded_sha256": "27499bee1d0f2da78ff632f8cb3ba8b82820aea09c2f9a03673e9173da46fa4b",
+      "bytes": 338,
+      "sha256": "f5be4327c525d79a647f9a8fb507128533a669ac606d8bb3ebc63bf2419dbd48"
+    },
+    {
+      "path": "native-runs/joined-strict-fifth.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/joined-strict-fifth.json",
+      "expanded_bytes": 893618,
+      "expanded_sha256": "dae8b25334d8c646c26eaf8adc056af11eb8c783643b8322328d4f0eedd11b76",
+      "bytes": 239886,
+      "sha256": "a11a84653da0a0c90611afc08db769fb3b6029db1ecd0e603045ded233b1bfe5"
+    },
+    {
+      "path": "native-runs/joined-strict-fifth.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/joined-strict-fifth.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "native-runs/joined-strict-fifth.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/joined-strict-fifth.stderr",
+      "expanded_bytes": 152,
+      "expanded_sha256": "193c149f42ec1bd4359bf80248955ee420ce2171c83ddd9b264e3466d620b6a1",
+      "bytes": 146,
+      "sha256": "b4851bd99ad7c3ce5a096301bd7f7ad21af2a69992d5682100a3b73b125ecec4"
+    },
+    {
+      "path": "native-runs/joined-strict-fourth.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/joined-strict-fourth.json",
+      "expanded_bytes": 893619,
+      "expanded_sha256": "4e6a086b452ba28c855a82e50940f32c1a910e943d2b3d25f685039f5fdc972a",
+      "bytes": 239884,
+      "sha256": "4ac91df532a038f624f6e446626c2b360cf37ab0b4df9b1eb2ec5e6175d167c2"
+    },
+    {
+      "path": "native-runs/joined-strict-fourth.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/joined-strict-fourth.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "native-runs/joined-strict-fourth.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/joined-strict-fourth.stderr",
+      "expanded_bytes": 233,
+      "expanded_sha256": "d63ef45a89a85db6bb5e64742d267178a529bbd6d849287f3f85256676c1dbef",
+      "bytes": 155,
+      "sha256": "137fd80aed1b8492ba9925c0878531e645cc3ae4362370f32e581e3c7f109a59"
+    },
+    {
+      "path": "native-runs/joined-strict-second.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/joined-strict-second.json",
+      "expanded_bytes": 893618,
+      "expanded_sha256": "c8235f2323ad90ac515b1e093ab2bb5d9e1ada2c38c1799ec4aeee485932653a",
+      "bytes": 239894,
+      "sha256": "12d1943ace685069a8d2487c42dc29fd66b3052753a3d832af769eac1f5fb7e6"
+    },
+    {
+      "path": "native-runs/joined-strict-second.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/joined-strict-second.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "native-runs/joined-strict-second.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/joined-strict-second.stderr",
+      "expanded_bytes": 1267,
+      "expanded_sha256": "be2b3432922cb4d7a4ccf5e3ea59fd64028f1e0acdf6849882fc9cf6e6ed2981",
+      "bytes": 275,
+      "sha256": "6c27a7048bc56dc5414e3377a41e9e06a5a7023b0b71c6d530116467d9f9c7c7"
+    },
+    {
+      "path": "native-runs/joined-strict-third.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/joined-strict-third.json",
+      "expanded_bytes": 893614,
+      "expanded_sha256": "486271444a8ecc16c2cee0cbed5382c4d43a4225f2354b8f1b680b89e784857b",
+      "bytes": 239877,
+      "sha256": "8f99b712238eeb82b145b0193d83a67d0058b50c7747b149f6e12cb6ea9b092e"
+    },
+    {
+      "path": "native-runs/joined-strict-third.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/joined-strict-third.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "native-runs/joined-strict-third.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/joined-strict-third.stderr",
+      "expanded_bytes": 152,
+      "expanded_sha256": "c510c3b1b802a9e27329974dfea07fa91603e15969a54e11bf8d853da45b9510",
+      "bytes": 146,
+      "sha256": "9fff6801ca31d141e8f5eaab7e777b5c6e67151c6d554ebf4c3b902f3c8c65a8"
+    },
+    {
+      "path": "native-runs/native-incremental-build-eighth.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-eighth.json",
+      "expanded_bytes": 893387,
+      "expanded_sha256": "44e1c467aad417bbfd026a0399dd830eea6c7449a4161312715275380d69355b",
+      "bytes": 239812,
+      "sha256": "616d2c5b975a80a6ae02b425b3cebc95f4db80c878492b9f4a7ebe6a2e5b6af0"
+    },
+    {
+      "path": "native-runs/native-incremental-build-eighth.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-eighth.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "native-runs/native-incremental-build-eighth.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-eighth.stderr",
+      "expanded_bytes": 1267,
+      "expanded_sha256": "e97fb17877229c27ae00eb4f5d344b0c787c09ffe58f1d4cdb59c54bcff97652",
+      "bytes": 268,
+      "sha256": "c556817f7177073a2ed2a1676421ccecf4ea1fee73f9fadd5c5693bd5832f45a"
+    },
+    {
+      "path": "native-runs/native-incremental-build-eleventh.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-eleventh.json",
+      "expanded_bytes": 893391,
+      "expanded_sha256": "031f28736cdac6b6d0fc3a033d2aed3cd1282edf6b6246eb81d8c1e0d4077535",
+      "bytes": 239819,
+      "sha256": "4728f64fa6ba648b503f2444e180766f5e4f826e6c71a25b6a9c3173df4e2983"
+    },
+    {
+      "path": "native-runs/native-incremental-build-eleventh.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-eleventh.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "native-runs/native-incremental-build-eleventh.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-eleventh.stderr",
+      "expanded_bytes": 152,
+      "expanded_sha256": "e698270bc5c30c4d14a158283ab83aa27057444e48d6f50ec8bb8c94ac4b76e0",
+      "bytes": 145,
+      "sha256": "e82f41dad3261b0c3d2372878683462551ac39e69929a9058b5130b2fab8cb71"
+    },
+    {
+      "path": "native-runs/native-incremental-build-fifth.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-fifth.json",
+      "expanded_bytes": 890128,
+      "expanded_sha256": "46d1a1677f83680c6dbc0868d50080f37160bee908cc5d72fb4434a5bdfae333",
+      "bytes": 238924,
+      "sha256": "b1ba5fe259ee9916b91d2b49d76733fb441fa1a4beaab33da977d6f59280af8e"
+    },
+    {
+      "path": "native-runs/native-incremental-build-fifth.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-fifth.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "native-runs/native-incremental-build-fifth.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-fifth.stderr",
+      "expanded_bytes": 152,
+      "expanded_sha256": "7a01fc2dc03ccfaf86b6982742a43da0335cbddd13e0c8a692199b0c9ee6fac7",
+      "bytes": 146,
+      "sha256": "ca5d954d04a0d9c79faa5d42f250b4ce8cc67dc84b33abecf765d78461635bf1"
+    },
+    {
+      "path": "native-runs/native-incremental-build-first.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-first.json",
+      "expanded_bytes": 890914,
+      "expanded_sha256": "84020f860581fac1e133beb1ac86802854e25c59bbd327a426ef0cb2f4776ab3",
+      "bytes": 239124,
+      "sha256": "e200ea2495c8f68adfcdfb8277ca70a5c02a50f248d9458e5d9b3a531598e9b6"
+    },
+    {
+      "path": "native-runs/native-incremental-build-first.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-first.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "native-runs/native-incremental-build-first.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-first.stderr",
+      "expanded_bytes": 2351,
+      "expanded_sha256": "81a54eeec202001170468d6e7c7d94e3e228051fe35666510bd78973219c57ab",
+      "bytes": 628,
+      "sha256": "73a071a72e3d34ce0d02a9ed442e07eacab654b50f5a8770a2f2e729da4508d8"
+    },
+    {
+      "path": "native-runs/native-incremental-build-fourth.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-fourth.json",
+      "expanded_bytes": 890131,
+      "expanded_sha256": "9918c22d35456bafc79e74cc29c8e4aba1c9fd03142a9730e52931ab717c54a2",
+      "bytes": 238916,
+      "sha256": "ade20ca34d55d02484a394e18c07b5bd8a33aa5ee604d8c496ba9876851759e2"
+    },
+    {
+      "path": "native-runs/native-incremental-build-fourth.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-fourth.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "native-runs/native-incremental-build-fourth.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-fourth.stderr",
+      "expanded_bytes": 559,
+      "expanded_sha256": "4059bd45dc740aa2acbf1b0d47335c84e36ea94ef417c73262311e41bf12e295",
+      "bytes": 340,
+      "sha256": "d7e52b67dd5044950a5b8efd70ec876b1b3509d0bb0d17a3eb6a36c602d6fb38"
+    },
+    {
+      "path": "native-runs/native-incremental-build-ninth.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-ninth.json",
+      "expanded_bytes": 893387,
+      "expanded_sha256": "8a7b8cd77ee5f4b4aee503e1184fc638ea18453100ab8af92daf5d879b06519a",
+      "bytes": 239816,
+      "sha256": "57b2c2ad9ee7a76e6b413ce807b9ddd373c158102053912e6cf823b4675dbeda"
+    },
+    {
+      "path": "native-runs/native-incremental-build-ninth.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-ninth.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "native-runs/native-incremental-build-ninth.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-ninth.stderr",
+      "expanded_bytes": 624,
+      "expanded_sha256": "8ea0a819463fbdcb97a9f03d2f308f397acd370439e3ff8aed680d3c305517dc",
+      "bytes": 345,
+      "sha256": "ed20c230315845b675cc66eea88027c94e40140dee95192fe88dc3eea8450a1d"
+    },
+    {
+      "path": "native-runs/native-incremental-build-second.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-second.json",
+      "expanded_bytes": 890914,
+      "expanded_sha256": "864bcf6f7a4cc15dbc14a56176f0de5cf06f678b6506f1ea6a47bf5507d46055",
+      "bytes": 239124,
+      "sha256": "03c97562ec24d5099c2d5ca9630e89a3d9bbfc6f039776055bf7a98a433b473e"
+    },
+    {
+      "path": "native-runs/native-incremental-build-second.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-second.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "native-runs/native-incremental-build-second.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-second.stderr",
+      "expanded_bytes": 152,
+      "expanded_sha256": "9240530aa230133731d679b0bfd5714ffb5eaac94b66e5ada0ce5a5a9a5fe341",
+      "bytes": 145,
+      "sha256": "8be2fe3a187f0e7409ce533d7d2adf6af55c9303d830dc00c8443290fd6a0ec3"
+    },
+    {
+      "path": "native-runs/native-incremental-build-seventh.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-seventh.json",
+      "expanded_bytes": 893388,
+      "expanded_sha256": "a392288a61437634916e3808367bffe054699cb43448df5e8bb17899ebf0387d",
+      "bytes": 239827,
+      "sha256": "7679861bb076613fb10e8a4b2517b98236237e66d8451d2183965013aa851864"
+    },
+    {
+      "path": "native-runs/native-incremental-build-seventh.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-seventh.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "native-runs/native-incremental-build-seventh.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-seventh.stderr",
+      "expanded_bytes": 152,
+      "expanded_sha256": "aca1a868612591788a194cd1c1cde3be41090efefb3841889a14b5c53974b39f",
+      "bytes": 145,
+      "sha256": "a02415e09110ab54187f635617e8b407ff57e4aa5d311f9216e8b5fa15a32aab"
+    },
+    {
+      "path": "native-runs/native-incremental-build-sixth.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-sixth.json",
+      "expanded_bytes": 893385,
+      "expanded_sha256": "b599a1accbde09d28b1da534939dda7187c458f7d7f5c4214f6f9ed89692d831",
+      "bytes": 239824,
+      "sha256": "12939cd33019b546a337e874ac0a2ffa8923222fbc4391f0eaab474a9db09a3e"
+    },
+    {
+      "path": "native-runs/native-incremental-build-sixth.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-sixth.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "native-runs/native-incremental-build-sixth.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-sixth.stderr",
+      "expanded_bytes": 1267,
+      "expanded_sha256": "3f931e51b579a79ac3066fddb664055184553788b0100080362e3cf26081c871",
+      "bytes": 268,
+      "sha256": "ef19041daca5f4921b7c23ab19d61d5b8c378207748613bfae167fefb992990d"
+    },
+    {
+      "path": "native-runs/native-incremental-build-tenth.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-tenth.json",
+      "expanded_bytes": 893386,
+      "expanded_sha256": "9600b22f4070eeb8c359c062aab7b4ea50e54d18ad5907c2b4d5437ecbc8800b",
+      "bytes": 239810,
+      "sha256": "9529be92da82d089fd457a37be161982ee3cc148e1bd620ce95f9b0c273e7c43"
+    },
+    {
+      "path": "native-runs/native-incremental-build-tenth.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-tenth.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "native-runs/native-incremental-build-tenth.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-tenth.stderr",
+      "expanded_bytes": 152,
+      "expanded_sha256": "066b6c43ec7f16d05f85ed936833356cd4495b5aba93dca5ad660bfc683141c7",
+      "bytes": 145,
+      "sha256": "ca1ff5e0f9ed621ea779de842885ea4c2f333247cc80f8c873f1a146254cc858"
+    },
+    {
+      "path": "native-runs/native-incremental-build-third.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-third.json",
+      "expanded_bytes": 890911,
+      "expanded_sha256": "95ec696340258a26d6208f6bf6d0c437bcf3eb46dea1033d86543e429fd8b99d",
+      "bytes": 239120,
+      "sha256": "a5b0e77503b49c4f3a9fff72a57e0e0073fdf43ca47192359caf11877d087741"
+    },
+    {
+      "path": "native-runs/native-incremental-build-third.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-third.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "native-runs/native-incremental-build-third.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-build-third.stderr",
+      "expanded_bytes": 152,
+      "expanded_sha256": "674d9452a446137ca5d5d2e579679325ad13b5770325d070815c1b16bf7f5792",
+      "bytes": 145,
+      "sha256": "a350f3141de920d01bddf16a21d9e973d8bd4837795747f4707cb476fa4fee42"
+    },
+    {
+      "path": "native-runs/native-incremental-replay-first.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-replay-first.json",
+      "expanded_bytes": 891485,
+      "expanded_sha256": "999d5b17654a4fb46ed7f4e134a421722a4faf6cda3136df9bc367fb3a0b0fa0",
+      "bytes": 239346,
+      "sha256": "20f9c20a296e4c6112b1919a99ec13b4a525c006e818f78519112e740ca689bc"
+    },
+    {
+      "path": "native-runs/native-incremental-replay-first.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-replay-first.stdout",
+      "expanded_bytes": 98,
+      "expanded_sha256": "da240de20dbd0d4f97a1ad128cbdb4995897d0c137c00ceb2c237487dfe431e0",
+      "bytes": 112,
+      "sha256": "5a998919d0ca9de7a0a8747d8d9337ad61e5ca2ae4dbddf80df453fc4fdf066f"
+    },
+    {
+      "path": "native-runs/native-incremental-replay-first.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-replay-first.stderr",
+      "expanded_bytes": 72,
+      "expanded_sha256": "4c5a5669ba39fbdaf1bcceb4f7c99cbac040071a62dc3c972bb498db74a7f48b",
+      "bytes": 85,
+      "sha256": "63eea230974023292c367df1646b8a31a9c015f94a6a7f40b32e460e7cc92b92"
+    },
+    {
+      "path": "native-runs/native-incremental-replay-second.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-replay-second.json",
+      "expanded_bytes": 891494,
+      "expanded_sha256": "ce6b94771e7626390c55c92892833768bff9a408c524268bab72f54dae287bad",
+      "bytes": 239367,
+      "sha256": "21da10de30a313ec975b20372f59005ca5c8fb83c4399711f5edbbac35d56a70"
+    },
+    {
+      "path": "native-runs/native-incremental-replay-second.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-replay-second.stdout",
+      "expanded_bytes": 99,
+      "expanded_sha256": "a3da29f38a4d76bd86142892b45e2b7034dcde70b806fb3a918b78a404ff9f8f",
+      "bytes": 112,
+      "sha256": "86258a837388c18bb1af39821f27651d2258895dce868720a24309f3b03e32aa"
+    },
+    {
+      "path": "native-runs/native-incremental-replay-second.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/native-incremental-replay-second.stderr",
+      "expanded_bytes": 72,
+      "expanded_sha256": "4c5a5669ba39fbdaf1bcceb4f7c99cbac040071a62dc3c972bb498db74a7f48b",
+      "bytes": 85,
+      "sha256": "63eea230974023292c367df1646b8a31a9c015f94a6a7f40b32e460e7cc92b92"
+    },
+    {
+      "path": "runtime-runs/incremental-real-blake3-first.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/incremental-real-blake3-first.json",
+      "expanded_bytes": 33674,
+      "expanded_sha256": "828b14857b0120699178d201a1346a641952f790f8066d2cda000f442545e4f8",
+      "bytes": 5763,
+      "sha256": "7ab55a887276453e7d156f06cea2d4cbf92e9ba0cc425d48d84e64b2cd062ccb"
+    },
+    {
+      "path": "runtime-runs/incremental-real-blake3-first.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/incremental-real-blake3-first.stdout",
+      "expanded_bytes": 36398,
+      "expanded_sha256": "844b127ed4b88f9339f3dc11b47c8db889a4bbf6145e9c2753675620e60005bd",
+      "bytes": 5622,
+      "sha256": "838855a7e87b88ee8f8856436a944cbb186240c1b8029cbca9055029f3647475"
+    },
+    {
+      "path": "runtime-runs/incremental-real-blake3-first.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/incremental-real-blake3-first.stderr",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-eighth.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-eighth.json",
+      "expanded_bytes": 32253,
+      "expanded_sha256": "1d81bb646050a2e9342e4f6a80fafe5e9bfbd755b6b053f304af6cf4c68108e1",
+      "bytes": 5526,
+      "sha256": "9b2305a796fcb751eeb53bb421eef4127b53e82b49f6174c9471bc7c7a11fdde"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-eighth.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-eighth.stdout",
+      "expanded_bytes": 99,
+      "expanded_sha256": "8c7abdb95d79a62b9b506880a29e505d15ea4609ce465b312e955dd8dc4a22e8",
+      "bytes": 113,
+      "sha256": "778f0b385f8f60d3a38e32a3fd5dbcdeaf11dd6892210911f38e8401ba80d5a1"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-eighth.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-eighth.stderr",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-fifth.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-fifth.json",
+      "expanded_bytes": 32245,
+      "expanded_sha256": "42513418fcacb354cfaf0cf19b1ccd6d936d1b25c969b165353b37b91371de77",
+      "bytes": 5525,
+      "sha256": "356ace9e95a0fc918d69a052ca4424b9680b3e8bb8f5d49316f4ce6425f20056"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-fifth.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-fifth.stdout",
+      "expanded_bytes": 98,
+      "expanded_sha256": "d53937ab17f4aaf4a3d2c1e2c6663443d060732f94ffdc63e5f038ccf3fc7308",
+      "bytes": 112,
+      "sha256": "20218c65d14fc48fd483e46ea0e6d20446939277302340d0b072b5ede1803156"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-fifth.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-fifth.stderr",
+      "expanded_bytes": 72,
+      "expanded_sha256": "4c5a5669ba39fbdaf1bcceb4f7c99cbac040071a62dc3c972bb498db74a7f48b",
+      "bytes": 85,
+      "sha256": "63eea230974023292c367df1646b8a31a9c015f94a6a7f40b32e460e7cc92b92"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-fourth.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-fourth.json",
+      "expanded_bytes": 32248,
+      "expanded_sha256": "02f4bcda1cfaf941ed25409554f15bfb7bb7c584c625aa156062149ef4ca2b51",
+      "bytes": 5527,
+      "sha256": "effd4bd9f00b55d5e60908abcbe2a69e4625e0de862d0d4268116d1968e6ffc0"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-fourth.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-fourth.stdout",
+      "expanded_bytes": 99,
+      "expanded_sha256": "e8573b82f0bdbfee907e16e8e5e47d9859514d0abec24f8d0c3416891f25ccfd",
+      "bytes": 113,
+      "sha256": "7acec5a9ec0d8429fd300d5851afcc2ca33cc60cf695597e3dac5c31eba9dd93"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-fourth.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-fourth.stderr",
+      "expanded_bytes": 72,
+      "expanded_sha256": "4c5a5669ba39fbdaf1bcceb4f7c99cbac040071a62dc3c972bb498db74a7f48b",
+      "bytes": 85,
+      "sha256": "63eea230974023292c367df1646b8a31a9c015f94a6a7f40b32e460e7cc92b92"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-ninth.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-ninth.json",
+      "expanded_bytes": 32246,
+      "expanded_sha256": "52a5def75003550d9d4d91ab61f069be3036540857db6d6583e8f61b14009f55",
+      "bytes": 5529,
+      "sha256": "fed3ba83a5bdfb29c698c7f1f140e367ca9c30c0e4c882df254bac17e327b740"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-ninth.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-ninth.stdout",
+      "expanded_bytes": 98,
+      "expanded_sha256": "d7a0d5cd3c8a387243ae2639ce3f552ec6f2ecada2cbf08435894b68ffbcd1e0",
+      "bytes": 111,
+      "sha256": "980cc456e66093e0885d18dbc17a5e2c128f2c0ada0ace1a06115c94b8197c79"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-ninth.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-ninth.stderr",
+      "expanded_bytes": 72,
+      "expanded_sha256": "4c5a5669ba39fbdaf1bcceb4f7c99cbac040071a62dc3c972bb498db74a7f48b",
+      "bytes": 85,
+      "sha256": "63eea230974023292c367df1646b8a31a9c015f94a6a7f40b32e460e7cc92b92"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-seventh.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-seventh.json",
+      "expanded_bytes": 32252,
+      "expanded_sha256": "0a64d849d536e233c2c4e6c0987c0140c3416f64777b2ae5d3deda64513e381a",
+      "bytes": 5526,
+      "sha256": "f864d98eb49d73b1a545cc1acc78cea31048cf0861a8b7bcec9dbf964d26b9e7"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-seventh.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-seventh.stdout",
+      "expanded_bytes": 100,
+      "expanded_sha256": "e8eb04efddb8c66e0f64742b4b52455bd5abb1cbde3fbd1bd0afce6b6648562d",
+      "bytes": 113,
+      "sha256": "a52f789be702bc55bc2a97e41dc2a5718b6527a954617bd9d46a97aa037b62d7"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-seventh.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-seventh.stderr",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-sixth.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-sixth.json",
+      "expanded_bytes": 32243,
+      "expanded_sha256": "f3fee7b3be5b7e4e0a6f27fcdab36b0f9789b3f93e83261e69d5254fecfdbc57",
+      "bytes": 5524,
+      "sha256": "2e1f02b5b798142fa1f9dce15ceadd58a3f32d2527b6849ab4e19d48d8875358"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-sixth.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-sixth.stdout",
+      "expanded_bytes": 98,
+      "expanded_sha256": "2d5468fd4c1968ff287a9e550bc191ede82f6cbebceac50fdddb35d38799194b",
+      "bytes": 112,
+      "sha256": "17ce9a3761271a1da26fbf470408cdac4db9be5e49582d316063e97e34104c45"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-sixth.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-sixth.stderr",
+      "expanded_bytes": 72,
+      "expanded_sha256": "4c5a5669ba39fbdaf1bcceb4f7c99cbac040071a62dc3c972bb498db74a7f48b",
+      "bytes": 85,
+      "sha256": "63eea230974023292c367df1646b8a31a9c015f94a6a7f40b32e460e7cc92b92"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-tenth.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-tenth.json",
+      "expanded_bytes": 32247,
+      "expanded_sha256": "3b8fb5d913defb6d232bc008dddb2cbb352895b7fd8130ca6c93a3bbb16b4ba9",
+      "bytes": 5523,
+      "sha256": "a40e632ee777f5b68d2767c1bae0dad02d066e532142c0beb767f58cb7f606a0"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-tenth.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-tenth.stdout",
+      "expanded_bytes": 98,
+      "expanded_sha256": "3578166cd71dc3430584df6e27dd4859d27f2e197b4177e34a404dda004aeb23",
+      "bytes": 111,
+      "sha256": "28866758fffd980b4e29bebc024e21814b8406d45687aff636c87c97c183eb8d"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-tenth.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-tenth.stderr",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-third.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-third.json",
+      "expanded_bytes": 32246,
+      "expanded_sha256": "ee36460b2b4c50d4cc0a7045c62780a3fbe0cd456333a2129d274cd4c5fc7d65",
+      "bytes": 5521,
+      "sha256": "59641b4665fbd7893fa071047bb2372684436e28062fafdb85845359be7b6240"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-third.stdout.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-third.stdout",
+      "expanded_bytes": 98,
+      "expanded_sha256": "482aeca527a45f1efb301629fbe70e040cdce9025003e28718ea210f1031f600",
+      "bytes": 111,
+      "sha256": "5e4b1b8e78d1d4ae91afd5b89d7536042f8f35fa3bb8310e3e5d6a4bba8945dd"
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-third.stderr.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/native-incremental-replay-third.stderr",
+      "expanded_bytes": 72,
+      "expanded_sha256": "4c5a5669ba39fbdaf1bcceb4f7c99cbac040071a62dc3c972bb498db74a7f48b",
+      "bytes": 85,
+      "sha256": "63eea230974023292c367df1646b8a31a9c015f94a6a7f40b32e460e7cc92b92"
+    },
+    {
+      "path": "range-joins/app-shot-regressions-first.json.gz",
+      "source": "/tmp/deadpan-range-joins-2026-10-26/app-shot-regressions-first.json",
+      "expanded_bytes": 893341,
+      "expanded_sha256": "425a7d0dba39a6b6d54e360e4b0b163d4f5fb067e8624897b42ae07334854427",
+      "bytes": 239825,
+      "sha256": "1398fac202ec9c2d6f7879d417fec759b0f28eecfb5580063b05fb3a378a02bd"
+    },
+    {
+      "path": "range-joins/app-shot-regressions-first.stdout.gz",
+      "source": "/tmp/deadpan-range-joins-2026-10-26/app-shot-regressions-first.stdout",
+      "expanded_bytes": 735,
+      "expanded_sha256": "0f1a95bfaee48ef705540ed5748cea62ff0e78b40f19ddecf67cca499e13e2df",
+      "bytes": 388,
+      "sha256": "f0cba47f7ca2e9f30805f9a998755992c1350ea2976d47e22946643d8d461b20"
+    },
+    {
+      "path": "range-joins/app-shot-regressions-first.stderr.gz",
+      "source": "/tmp/deadpan-range-joins-2026-10-26/app-shot-regressions-first.stderr",
+      "expanded_bytes": 1389,
+      "expanded_sha256": "4db324e66789ecbc4eb98b21e889b4b142cb86334df23b1bb4f5d758a3c1e4ad",
+      "bytes": 345,
+      "sha256": "11c630c53710e936db7d4d2bbb9b6af4e225d728a9dc7d7d4ef5d0e57922fec7"
+    },
+    {
+      "path": "range-joins/cli-legacy-shots-first.json.gz",
+      "source": "/tmp/deadpan-range-joins-2026-10-26/cli-legacy-shots-first.json",
+      "expanded_bytes": 893313,
+      "expanded_sha256": "82adc58a42691b740fcc801cca6f4a719ae61df22bd35314d7561d1e7c7e6e18",
+      "bytes": 239818,
+      "sha256": "dd7124cf1755d48ccddedfacda1fa43addc4489f4ea53ffac3808f5ee6c9bb32"
+    },
+    {
+      "path": "range-joins/cli-legacy-shots-first.stdout.gz",
+      "source": "/tmp/deadpan-range-joins-2026-10-26/cli-legacy-shots-first.stdout",
+      "expanded_bytes": 489,
+      "expanded_sha256": "53c9c3df7c657a784aef662ed7dcbed9727d142f6cbdbd011a3334b2fe893177",
+      "bytes": 285,
+      "sha256": "8721c1edb98a754abef51521c810ea7ede3fe413e5ab52f4af194bfdb7f78e96"
+    },
+    {
+      "path": "range-joins/cli-legacy-shots-first.stderr.gz",
+      "source": "/tmp/deadpan-range-joins-2026-10-26/cli-legacy-shots-first.stderr",
+      "expanded_bytes": 261,
+      "expanded_sha256": "a139385e274d849c0f8985e389753fd5850acda75b2c109cc1beb6ac27c8d7d7",
+      "bytes": 212,
+      "sha256": "efa2f59069ae6be648edb8ba22504420d206fdcfe1177e0c9ffc5d072beb123f"
+    },
+    {
+      "path": "range-joins/cli-range-cache-first.json.gz",
+      "source": "/tmp/deadpan-range-joins-2026-10-26/cli-range-cache-first.json",
+      "expanded_bytes": 893347,
+      "expanded_sha256": "a67927570297d66920afa45b1f46b993bd42f9d95462109759ac80c1608ceb38",
+      "bytes": 239834,
+      "sha256": "145211e9c4a99bb06d475ba4aaec7dd63eb2d45a6c93e21413a24c97559c118d"
+    },
+    {
+      "path": "range-joins/cli-range-cache-first.stdout.gz",
+      "source": "/tmp/deadpan-range-joins-2026-10-26/cli-range-cache-first.stdout",
+      "expanded_bytes": 562,
+      "expanded_sha256": "d9985cf330a836002103959f3b0c1435475d9ceacdc8e129db86e7ee81492d05",
+      "bytes": 276,
+      "sha256": "63ecef5a433f896e672e80ca22e5d00eed6cbe97f218919a115909f0464ae7d2"
+    },
+    {
+      "path": "range-joins/cli-range-cache-first.stderr.gz",
+      "source": "/tmp/deadpan-range-joins-2026-10-26/cli-range-cache-first.stderr",
+      "expanded_bytes": 191,
+      "expanded_sha256": "330eb468482b99e0ffca157a4f189b00486ffd3df81e493a143697b0bb7ec59f",
+      "bytes": 172,
+      "sha256": "ccdb8d616c00a6cb6d3cea66cbca48fc1f254ba9cb61467a78af8f1057381103"
+    },
+    {
+      "path": "range-joins/cli-shot-ranges-first.json.gz",
+      "source": "/tmp/deadpan-range-joins-2026-10-26/cli-shot-ranges-first.json",
+      "expanded_bytes": 893324,
+      "expanded_sha256": "204949a24b1dff2c4fa6b78d64589578a3c915fd13520ab665c88f58cdfcf5a2",
+      "bytes": 239820,
+      "sha256": "f6efbe7fbd4f3f4d5df40d14ab058831aa1cf14bf955a59534f3bc635a1a07b2"
+    },
+    {
+      "path": "range-joins/cli-shot-ranges-first.stdout.gz",
+      "source": "/tmp/deadpan-range-joins-2026-10-26/cli-shot-ranges-first.stdout",
+      "expanded_bytes": 882,
+      "expanded_sha256": "ba0a4aab7d3dc8692a7ab33209faeca43bc2da3dfc38caa35afa23dd1e4f31a1",
+      "bytes": 395,
+      "sha256": "c416b7299bac3a376ca51bd89906e270082e664d08bbff2bbd7c5b4d2ec8bc2c"
+    },
+    {
+      "path": "range-joins/cli-shot-ranges-first.stderr.gz",
+      "source": "/tmp/deadpan-range-joins-2026-10-26/cli-shot-ranges-first.stderr",
+      "expanded_bytes": 1307,
+      "expanded_sha256": "27499bee1d0f2da78ff632f8cb3ba8b82820aea09c2f9a03673e9173da46fa4b",
+      "bytes": 338,
+      "sha256": "f5be4327c525d79a647f9a8fb507128533a669ac606d8bb3ebc63bf2419dbd48"
+    },
+    {
+      "path": "range-joins/incremental-blake3-witness-build-first.json.gz",
+      "source": "/tmp/deadpan-range-joins-2026-10-26/incremental-blake3-witness-build-first.json",
+      "expanded_bytes": 893371,
+      "expanded_sha256": "8d346597bf62e3af83eb93e6a46d06c88fe6fffdcafa60b3a8dd80be3c646189",
+      "bytes": 239839,
+      "sha256": "600ba8a696eb4da6ec220e04a8ee7124dc2de8249fbf4592e19197256e0bddd1"
+    },
+    {
+      "path": "range-joins/incremental-blake3-witness-build-first.stdout.gz",
+      "source": "/tmp/deadpan-range-joins-2026-10-26/incremental-blake3-witness-build-first.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "range-joins/incremental-blake3-witness-build-first.stderr.gz",
+      "source": "/tmp/deadpan-range-joins-2026-10-26/incremental-blake3-witness-build-first.stderr",
+      "expanded_bytes": 151,
+      "expanded_sha256": "04e441503007a9963cb4001f53b9bc9ef52da8e071733073ee55b64a2cac4a85",
+      "bytes": 144,
+      "sha256": "bc8b65f10a3e70df69b32be3225763106ffa977f6ac0f13a0341738081b83eb6"
+    },
+    {
+      "path": "range-joins/shot-picture-ranges-first.json.gz",
+      "source": "/tmp/deadpan-range-joins-2026-10-26/shot-picture-ranges-first.json",
+      "expanded_bytes": 270574,
+      "expanded_sha256": "84d34a9c07da237d88b3bc875746388fb3aecef8acc1e4173510b30aaf8dde6b",
+      "bytes": 73180,
+      "sha256": "dd0364b97ef9b60e77fbca1f84782a15f7af56a304bebce020981efbef4f3510"
+    },
+    {
+      "path": "range-joins/shot-picture-ranges-first.stdout.gz",
+      "source": "/tmp/deadpan-range-joins-2026-10-26/shot-picture-ranges-first.stdout",
+      "expanded_bytes": 868,
+      "expanded_sha256": "8c785dd7f76f70f79f9df117a7fc73ad70a3707d024cc6952be02293f92cb27e",
+      "bytes": 445,
+      "sha256": "afdcc5bb699a5cbaa326376d038be79e93a5d546d4e71617f29d143f8e923e3d"
+    },
+    {
+      "path": "range-joins/shot-picture-ranges-first.stderr.gz",
+      "source": "/tmp/deadpan-range-joins-2026-10-26/shot-picture-ranges-first.stderr",
+      "expanded_bytes": 611,
+      "expanded_sha256": "bc816a0bb7fdf3d5e453775788bdc84d58a32f222992fe5f7d6855d849273e0d",
+      "bytes": 288,
+      "sha256": "3518febd23a2fa1397c6268917b5329af3627f126605c91929108b6fff4b7700"
+    },
+    {
+      "path": "range-joins/shot-picture-ranges-second.json.gz",
+      "source": "/tmp/deadpan-range-joins-2026-10-26/shot-picture-ranges-second.json",
+      "expanded_bytes": 893366,
+      "expanded_sha256": "96f154f63e4364c6e53cc8ed208c80571e36d601f3850e4a3d186283f6c054c5",
+      "bytes": 239824,
+      "sha256": "77616976790f204cd8b9741186d28a0c8abe46d499e4b31d9b7850580dc6fd32"
+    },
+    {
+      "path": "range-joins/shot-picture-ranges-second.stdout.gz",
+      "source": "/tmp/deadpan-range-joins-2026-10-26/shot-picture-ranges-second.stdout",
+      "expanded_bytes": 727,
+      "expanded_sha256": "767847fdd6a841e6efea133af6b3e8728a9382933ef0f6762577b62afcd7335a",
+      "bytes": 356,
+      "sha256": "4bfae5df32677d50392ebd29e50819cad75ecfbe0310e0b356b1cd81887fa853"
+    },
+    {
+      "path": "range-joins/shot-picture-ranges-second.stderr.gz",
+      "source": "/tmp/deadpan-range-joins-2026-10-26/shot-picture-ranges-second.stderr",
+      "expanded_bytes": 658,
+      "expanded_sha256": "8422ec0e68a97b19da0dff245c2cd834fec4d4cfb2cb1c8733b370e961a56968",
+      "bytes": 278,
+      "sha256": "0b3a26dc17c7253743da3be52edb8d64421d0a822fbaee8271845f82e48f43f6"
+    },
+    {
+      "path": "runners/run.py.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/run.py",
+      "expanded_bytes": 3824,
+      "expanded_sha256": "46ba60dd83062ee10deb8129987ba886110d1a5791b022e54abf9f5cd1592aee",
+      "bytes": 1501,
+      "sha256": "c60a0257842040e3ab08a9798ccfd078bb95e82ebf43b206a7d5020cb3106f6d"
+    },
+    {
+      "path": "runners/final_checks.py.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/final_checks.py",
+      "expanded_bytes": 923,
+      "expanded_sha256": "99e658e9b37a0995e49309660a3e12924567c8ecf2466fd3d1cd598cd76b5bc9",
+      "bytes": 418,
+      "sha256": "66a1b6f4aac1e997f9d375a5f048a95474dce08fa32ebf8c433453bd0f3b879a"
+    },
+    {
+      "path": "runners/source-files.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/source-files.json",
+      "expanded_bytes": 123928,
+      "expanded_sha256": "e26fd48dea34ef108cbb1ef4597db744cfc32451b946b2911347d22a08eecacf",
+      "bytes": 12997,
+      "sha256": "7a143226e5ef26fc85255601d685becc3144e5254942697fa03fa9b65f0d54ec"
+    },
+    {
+      "path": "runners/removed-files.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/removed-files.json",
+      "expanded_bytes": 3,
+      "expanded_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 23,
+      "sha256": "029ac1ef2bb96aa9fa0166f8f60604b79b92f7fb5cd41a374f80171306cf1b52"
+    },
+    {
+      "path": "runners/analysis-commit-paths.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/analysis-commit-paths.json",
+      "expanded_bytes": 1702,
+      "expanded_sha256": "6c20e9347cafca9474a49a468041c919342f681d32a6251d7a64c8a70234619c",
+      "bytes": 364,
+      "sha256": "2ad8be0518d2378cc282fba24a6558d7cbb7917bb90dba25ed98ef08aafd98fe"
+    },
+    {
+      "path": "runners/replay-runs/run.py.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/run.py",
+      "expanded_bytes": 3824,
+      "expanded_sha256": "46ba60dd83062ee10deb8129987ba886110d1a5791b022e54abf9f5cd1592aee",
+      "bytes": 1501,
+      "sha256": "c60a0257842040e3ab08a9798ccfd078bb95e82ebf43b206a7d5020cb3106f6d"
+    },
+    {
+      "path": "runners/replay-runs/source-files.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/source-files.json",
+      "expanded_bytes": 3520,
+      "expanded_sha256": "e15fbdff391c96c1cc489ba0b67d1fdcc54e77912c6a541599f7e286647e9454",
+      "bytes": 607,
+      "sha256": "0c75bfe151e65e47173eb751bacd028210470419fada1fdea6c5b2f035027ff0"
+    },
+    {
+      "path": "runners/replay-runs/removed-files.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/removed-files.json",
+      "expanded_bytes": 3,
+      "expanded_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 23,
+      "sha256": "029ac1ef2bb96aa9fa0166f8f60604b79b92f7fb5cd41a374f80171306cf1b52"
+    },
+    {
+      "path": "runners/replay-runs/SOURCE_BASIS.txt.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-runs/SOURCE_BASIS.txt",
+      "expanded_bytes": 275,
+      "expanded_sha256": "60fa2f2f8eb89150f69e9990953aeeebf127ccde145236b69e4a531d68eb234a",
+      "bytes": 192,
+      "sha256": "9740440cf85afe4c8dd0f0c389bc726c6137191b2e8b1b8691488b77b6f777dc"
+    },
+    {
+      "path": "native-reports/replay-eighth/report.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-eighth/report.json",
+      "expanded_bytes": 15890341,
+      "expanded_sha256": "ea68ef524bbacf73f16997cdf342a230fa481113f0721b1c441c83776e5ef9d7",
+      "bytes": 805471,
+      "sha256": "ee475ae3295ac8ba48dda3698c4211fe04f287ee287447595ae075409f1d2e95"
+    },
+    {
+      "path": "native-reports/replay-fifth/report.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-fifth/report.json",
+      "expanded_bytes": 3747270,
+      "expanded_sha256": "f4537056b460f193c1afcfa870c2288e373130b92468133a68cd16b3008969e2",
+      "bytes": 191516,
+      "sha256": "f55b119c997d5e7bd91269a7fd3467990ec1936c9bc272b281568833a41ff478"
+    },
+    {
+      "path": "native-reports/replay-first/report.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-first/report.json",
+      "expanded_bytes": 2618091,
+      "expanded_sha256": "f86c9390afa100018b17632de3a857e9864c3154d26f219b7613fa3c5fce3fc7",
+      "bytes": 133629,
+      "sha256": "0334389d9c13fe8750c3f4827ced916b3af0026c4fc6fb8fc07ecc546465bbd9"
+    },
+    {
+      "path": "native-reports/replay-fourth/report.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-fourth/report.json",
+      "expanded_bytes": 2624269,
+      "expanded_sha256": "33c3532741134ed3fdbd60145d4b2d8e3c6279651dd79bfcc93b04527f9a6c32",
+      "bytes": 137357,
+      "sha256": "be58d514baa3057cce2bfcfb566edba8b68bb8027ea2d78890ae3409549d0d12"
+    },
+    {
+      "path": "native-reports/replay-ninth/report.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-ninth/report.json",
+      "expanded_bytes": 2680896,
+      "expanded_sha256": "63e7c971796569259e0a33190c1e04f5418f5ee9eacd9acbd9e34bc7bac2b922",
+      "bytes": 141399,
+      "sha256": "d9d90f8bd7e4f4074921e926e4cff195a00f4579fec31d44ccf48c035d51095b"
+    },
+    {
+      "path": "native-reports/replay-second/report.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-second/report.json",
+      "expanded_bytes": 2507789,
+      "expanded_sha256": "75ee66d1f101db90eadbdb384970e4600cf06c97791ed827452584782fdbeee1",
+      "bytes": 129626,
+      "sha256": "ca5dff6a8429c437f029f36309c348d883ee98c6c814c39c70bacf6e0b583d80"
+    },
+    {
+      "path": "native-reports/replay-seventh/report.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-seventh/report.json",
+      "expanded_bytes": 15797424,
+      "expanded_sha256": "5008066d0e87931288cb5e653a9f57d8641d0d7fb96ae873da6217c0adf2cd36",
+      "bytes": 800029,
+      "sha256": "cd911d6c97e9e741764849516ec4fb1fd155fd5ebff12cf79dc9044d12215ba1"
+    },
+    {
+      "path": "native-reports/replay-sixth/report.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-sixth/report.json",
+      "expanded_bytes": 4083719,
+      "expanded_sha256": "5fac2c91360e09d187e48a424897ec4c701ba2c477fc564bb15d070f25b9bd6a",
+      "bytes": 217027,
+      "sha256": "ca7fdbe3d61d220bdc23f90c5e769963f91202f9b1b4cf25be1825686eebb1ec"
+    },
+    {
+      "path": "native-reports/replay-tenth/report.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-tenth/report.json",
+      "expanded_bytes": 15846389,
+      "expanded_sha256": "f4d9e4d91c4fe84accb49a1cf25eda4cc267f68427421e6703efba0deb1a769e",
+      "bytes": 803998,
+      "sha256": "2348dc134361a178669fb0c17f6aaa08900b55d0259b7c9c2df6a64e31614f30"
+    },
+    {
+      "path": "native-reports/replay-third/report.json.gz",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-third/report.json",
+      "expanded_bytes": 2508110,
+      "expanded_sha256": "033adb08ef5cd1529984fcda24bf17b0aa75b75e26eb65d776455a841bc97aa5",
+      "bytes": 129783,
+      "sha256": "3a3c91bc8f28a01b8ea2f08d9f4e12201ecd29afb9295dfb4209489751a9f062"
+    },
+    {
+      "path": "images/transcript-029.png",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-tenth/transcript-029.png",
+      "expanded_bytes": 255251,
+      "expanded_sha256": "a8eb41129d7e480b52d032f20bfe365442c34d1aadfbc23de53fd923f16bec76",
+      "bytes": 255251,
+      "sha256": "a8eb41129d7e480b52d032f20bfe365442c34d1aadfbc23de53fd923f16bec76"
+    },
+    {
+      "path": "images/transcript-030.png",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/replay-tenth/transcript-030.png",
+      "expanded_bytes": 264433,
+      "expanded_sha256": "5f834f2551b2d9e2d9fb1497210ddf9ac82a32c18e2a46a577de19f1c20da94f",
+      "bytes": 264433,
+      "sha256": "5f834f2551b2d9e2d9fb1497210ddf9ac82a32c18e2a46a577de19f1c20da94f"
+    },
+    {
+      "path": "summary.json",
+      "source": "/tmp/deadpan-native-incremental-2026-10-26/ranges-retention-summary.json",
+      "expanded_bytes": 5470,
+      "expanded_sha256": "c812c75bb80e7e5f4422876343333388686d7168a0c5857e93bb75175e9772f9",
+      "bytes": 5470,
+      "sha256": "c812c75bb80e7e5f4422876343333388686d7168a0c5857e93bb75175e9772f9"
+    }
+  ]
+}

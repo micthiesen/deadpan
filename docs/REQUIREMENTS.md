@@ -22,27 +22,33 @@ shows the scored requirement ledger and gates. Future percentages are computed
 from criterion evidence rather than manually carried forward. Earlier 89%
 statements below describe their historical reporting state.
 
-## Parallel analysis milestone in progress, 2026-10-26
+## Parallel analysis milestone, 2026-10-26
 
-The [cursor-priority audio analysis candidate](qualification/incremental-audio-analysis-2026-10-26.md)
-now runs real Whisper/Silero over bounded source ranges, prioritizes the latest
-visible picture, retains exact partial coverage, and resumes from a private
-source/model/settings/version cache. Six Analysis, four CLI and three new native
-partial-rail tests pass, alongside one existing decimal-entry regression,
-CLI/app all-target compilation and strict seven-crate all-target lint.
-The actual local-worker witness passes tail-first cancellation, retargeting,
+The [native range integration](qualification/incremental-ranges-2026-10-26.md)
+runs real Whisper/Silero over bounded cursor-priority source ranges, retains
+exact partial coverage, and resumes from a private BLAKE3-addressed cache.
+Native shots now use the same scheduler/cache boundary with exact picture
+range decoding and 50-picture halos. Only complete results enter Workspace
+analysis. The sequential CLI shot scanner and whole-input CLI transcription
+path remain available.
+
+Eight actual-codec/pure CLI range tests, four private-cache tests, six app shot
+regressions, four app partial-rail tests, Media range parity and strict
+eight-crate all-target lint pass. The final native offscreen Metal replay passes
+70 transcript assertions plus the live Kestrel audit, including keyboard jumps,
+focus across incoming words, compact paint and correction-error authority.
+The separate real-worker witness proves tail-first cancellation, retargeting,
 resume, exact transcript/activity cache equality, zero-inference warm reuse and
-unchanged authored revision. The invalid first AAC fixture and original failures
-remain in the hashed evidence collection. Initial opening still decodes all
-audio; the all-cached scan takes 9,904 ms, without a performance acceptance claim.
+unchanged authored revision. Original failures remain in hashed evidence.
+Initial opening still decodes all audio; four cached ranges take 9,100 ms,
+without a performance acceptance claim.
 
-The runtime remains uncommitted. Native keyboard/layout/model-slot coexistence,
-broader services, accuracy, long-media and package verification remain owed.
-Shots is only an unwired draft, and CLI transcribe still uses its whole-input
-path. DP-10.7 already scores 0.5; this milestone updates its evidence without
-increasing coverage or closing a requirement/gate. The useful ownership and
-verification joins are preserved in [Parallel work](PARALLEL_WORK.md), linked
-from the mandatory handoff, for continuation after compaction.
+Broader service scheduling, model-slot coexistence under competing real jobs,
+quality, long-media and package qualification remain. DP-10.7 already scores
+0.5; this milestone updates its evidence without increasing coverage or closing
+a requirement/gate. The useful ownership, build freezes, copied executable
+receipts and acceptance joins are preserved in [Parallel work](PARALLEL_WORK.md),
+linked from the mandatory handoff, for continuation after compaction.
 
 ## General Split sound transport in progress, 2026-10-26
 

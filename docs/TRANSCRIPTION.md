@@ -57,6 +57,22 @@ single-Original default. Averaging cancels opposite-polarity channels: the
 B-frame fixture measures -79.2 dB mono against -55.7/-56.9 dB per channel in
 both FFmpeg and Deadpan. Choosing a channel for such recordings remains open.
 
+## Cursor-priority native analysis
+
+Native transcription uses disjoint 24-second source ranges with 2.4 seconds
+of model context on either side, prioritizing the latest visible cursor.
+Completed ranges resume from the private `AnalysisRanges` cache shared with
+speech-activity and shot analysis. Each record is addressed by BLAKE3 of its
+exact serialized key; the key includes source, model, detector, worker,
+settings, implementation and owned/context ranges, and the record payload is
+checked with SHA-256. Partial rail words are labeled incomplete and show only
+covered intervals; they support cursor jumps, while search, corrections and
+editorial objects continue to use complete Workspace analysis. VAD and
+Whisper share admission for each uncached range and release it between
+ranges. The initial AudioSession opening still decodes the full stream. The
+CLI transcribe command keeps its existing whole-input path. See the
+[local qualification and remaining scope](qualification/incremental-ranges-2026-10-26.md).
+
 ## Worker protocol
 
 The host creates a fresh attempt workspace with `input/` and `output/`, writes

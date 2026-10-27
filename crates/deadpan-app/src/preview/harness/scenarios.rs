@@ -1822,7 +1822,9 @@ pub(super) fn reveal_original_rail(
         }
     }
     Err(format!(
-        "Original rail content {needle:?} did not become fully visible after bounded scrolling"
+        "Original rail content {needle:?} did not become fully visible after bounded scrolling: paint={}, controls={}",
+        json!(text_paint_visibility(d, needle)),
+        json!(super::sound_placement::control_hits(d, &[needle])),
     ))
 }
 

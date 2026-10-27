@@ -43,6 +43,10 @@ pub(super) struct ActivityJob {
 }
 
 impl ActivityJob {
+    pub(super) fn detecting(&self) -> bool {
+        self.status == ActivityStatus::Detecting
+    }
+
     /// Why pauses are missing, when this job knows.
     pub(super) fn not_ready(&self) -> Option<String> {
         Some(match &self.status {
@@ -200,35 +204,6 @@ pub(super) fn prepare(
     Ok((analysis, runtime))
 }
 
-/// Detect speech in prepared analysis PCM.
-pub(super) fn detect(
-    runtime: &TranscriptionRuntime,
-    vad: &ModelInput,
-    analysis: &OriginalAnalysis,
-    cancel: &AtomicBool,
-    deadline: std::time::Instant,
-) -> Detection {
-    let attempt = uuid::Uuid::new_v4().simple().to_string();
-    let result = deadpan_cli::activity::detect_speech(
-        runtime,
-        vad,
-        &analysis.input,
-        &attempt,
-        cancel,
-        deadline,
-    )
-    .map_err(|e| e.to_string())?;
-    Ok((
-        SpeechActivityKey {
-            content: analysis.content.clone(),
-            audio_stream: analysis.audio_stream,
-            model_sha256: vad.sha256.as_str().to_owned(),
-            engine: result.runtime.engine,
-        },
-        result.activity,
-    ))
-}
-
 impl DeadpanApp {
     /// Detect speech for an Original that has a transcript but no activity.
     pub(super) fn reconcile_activity(&mut self, context: &egui::Context) {
@@ -278,12 +253,14 @@ impl DeadpanApp {
         let cancel = Arc::new(AtomicBool::new(false));
         let run = RunCapture::new(self.service.jobs().lifecycle(), Arc::clone(&cancel));
         self.transcription.activity.start(run.clone());
+        self.prioritize_analysis_cursor();
         if run.stop().is_some() {
             return;
         }
         self.transcription.cancel = Arc::clone(&cancel);
         self.transcription.events = Some(receiver);
         let repaint = context.clone();
+        let cursor = self.transcription.ranges.sender.cursor.clone();
         let handle = self.service.jobs().register(
             crate::jobs::JobSpec::new(
                 crate::jobs::JobKind::SpeechActivity,
@@ -303,11 +280,34 @@ impl DeadpanApp {
                             format!("pause detection was {stopped} before it started")
                         })
                         .and_then(|()| {
-                            handle.set_progress("Detecting speech", None);
-                            prepare(&package, &cancel, deadline)
-                        })
-                        .and_then(|(analysis, runtime)| {
-                            detect(&runtime, &vad, &analysis, &cancel, deadline)
+                            let store = ProjectStore::open(&package, AccessMode::ReadOnly)
+                                .map_err(|error| error.to_string())?;
+                            let runtime = TranscriptionRuntime::beside_current_executable()
+                                .map_err(|error| error.to_string())?;
+                            let cache = deadpan_cli::storage::UserStorage::current()
+                                .map(|storage| storage.caches.join("AnalysisRanges"));
+                            deadpan_cli::transcription::incremental::detect_original_ranges(
+                                &store,
+                                &runtime,
+                                &vad,
+                                cache.as_deref(),
+                                &cursor,
+                                &cancel,
+                                deadline,
+                                |done, total| {
+                                    handle.checkpoint(Some(&cancel)).map_err(|stopped| {
+                                        deadpan_cli::transcription::TranscriptionError::Worker(
+                                            format!("pause detection was {stopped}"),
+                                        )
+                                    })?;
+                                    handle.set_progress(
+                                        "Detecting speech ranges",
+                                        Some(done as f32 / total.max(1) as f32),
+                                    );
+                                    Ok(())
+                                },
+                            )
+                            .map_err(|error| error.to_string())
                         })
                 });
                 let _ = sender.send(Event::Detected { result, last: true });

@@ -15,6 +15,7 @@ pub mod generated_extension;
 pub mod generated_geometry;
 pub mod generated_region;
 pub mod generation_quality;
+pub mod incremental;
 pub mod recognition;
 pub mod refinement;
 pub mod shots;

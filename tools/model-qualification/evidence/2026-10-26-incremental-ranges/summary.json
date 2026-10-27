@@ -1,0 +1,182 @@
+{
+  "scope": "Native transcript/VAD/shot range continuation; original failures retained. Shared Core/Plan/Audio sound WIP present during checks. No pristine-HEAD comparison. Only selected final native images retained; report image paths describe scratch captures.",
+  "final_native": "native-incremental-replay-tenth: 70 transcript +1 Kestrel assertions, offscreen production Metal, synthetic partial delivery over real source; actual inference separate.",
+  "actual_worker": "incremental-real-blake3-first: 47.633s; all4cached9100ms zero inference admissions, exact transcript/activity, authoredrevisionunchanged. Initial full audio decode remains.",
+  "receipts": [
+    {
+      "path": "native-runs/app-transcript-ranges-second.json.gz",
+      "exit_code": 0,
+      "seconds": 43.85498283337802
+    },
+    {
+      "path": "native-runs/cli-shot-ranges-second.json.gz",
+      "exit_code": 0,
+      "seconds": 96.661630124785
+    },
+    {
+      "path": "native-runs/joined-strict-fifth.json.gz",
+      "exit_code": 0,
+      "seconds": 16.041992666199803
+    },
+    {
+      "path": "native-runs/joined-strict-fourth.json.gz",
+      "exit_code": 0,
+      "seconds": 30.63496237527579
+    },
+    {
+      "path": "native-runs/joined-strict-second.json.gz",
+      "exit_code": 0,
+      "seconds": 68.80817995779216
+    },
+    {
+      "path": "native-runs/joined-strict-third.json.gz",
+      "exit_code": 0,
+      "seconds": 16.0058727087453
+    },
+    {
+      "path": "native-runs/native-incremental-build-eighth.json.gz",
+      "exit_code": 0,
+      "seconds": 104.02162579074502
+    },
+    {
+      "path": "native-runs/native-incremental-build-eleventh.json.gz",
+      "exit_code": 0,
+      "seconds": 34.89176691696048
+    },
+    {
+      "path": "native-runs/native-incremental-build-fifth.json.gz",
+      "exit_code": 0,
+      "seconds": 34.5046119177714
+    },
+    {
+      "path": "native-runs/native-incremental-build-first.json.gz",
+      "exit_code": 101,
+      "seconds": 81.06336562428623
+    },
+    {
+      "path": "native-runs/native-incremental-build-fourth.json.gz",
+      "exit_code": 0,
+      "seconds": 34.72081450000405
+    },
+    {
+      "path": "native-runs/native-incremental-build-ninth.json.gz",
+      "exit_code": 101,
+      "seconds": 55.34353991691023
+    },
+    {
+      "path": "native-runs/native-incremental-build-second.json.gz",
+      "exit_code": 0,
+      "seconds": 35.477285500615835
+    },
+    {
+      "path": "native-runs/native-incremental-build-seventh.json.gz",
+      "exit_code": 0,
+      "seconds": 33.695886875502765
+    },
+    {
+      "path": "native-runs/native-incremental-build-sixth.json.gz",
+      "exit_code": 0,
+      "seconds": 104.61767475027591
+    },
+    {
+      "path": "native-runs/native-incremental-build-tenth.json.gz",
+      "exit_code": 0,
+      "seconds": 35.276561624370515
+    },
+    {
+      "path": "native-runs/native-incremental-build-third.json.gz",
+      "exit_code": 0,
+      "seconds": 35.21614137478173
+    },
+    {
+      "path": "native-runs/native-incremental-replay-first.json.gz",
+      "exit_code": 1,
+      "seconds": 0.786257709376514
+    },
+    {
+      "path": "native-runs/native-incremental-replay-second.json.gz",
+      "exit_code": 1,
+      "seconds": 14.716327750124037
+    },
+    {
+      "path": "runtime-runs/incremental-real-blake3-first.json.gz",
+      "exit_code": 0,
+      "seconds": 47.633147708140314
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-eighth.json.gz",
+      "exit_code": 0,
+      "seconds": 15.517394167371094
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-fifth.json.gz",
+      "exit_code": 1,
+      "seconds": 14.45939466636628
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-fourth.json.gz",
+      "exit_code": 1,
+      "seconds": 14.140427958220243
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-ninth.json.gz",
+      "exit_code": 1,
+      "seconds": 19.413060249760747
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-seventh.json.gz",
+      "exit_code": 0,
+      "seconds": 16.19229945819825
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-sixth.json.gz",
+      "exit_code": 1,
+      "seconds": 15.794730415567756
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-tenth.json.gz",
+      "exit_code": 0,
+      "seconds": 15.83372212573886
+    },
+    {
+      "path": "runtime-runs/native-incremental-replay-third.json.gz",
+      "exit_code": 1,
+      "seconds": 14.195710708387196
+    },
+    {
+      "path": "range-joins/app-shot-regressions-first.json.gz",
+      "exit_code": 0,
+      "seconds": 111.12283995747566
+    },
+    {
+      "path": "range-joins/cli-legacy-shots-first.json.gz",
+      "exit_code": 0,
+      "seconds": 49.33428900036961
+    },
+    {
+      "path": "range-joins/cli-range-cache-first.json.gz",
+      "exit_code": 0,
+      "seconds": 0.14739779196679592
+    },
+    {
+      "path": "range-joins/cli-shot-ranges-first.json.gz",
+      "exit_code": 0,
+      "seconds": 96.43139958381653
+    },
+    {
+      "path": "range-joins/incremental-blake3-witness-build-first.json.gz",
+      "exit_code": 0,
+      "seconds": 1.5766492504626513
+    },
+    {
+      "path": "range-joins/shot-picture-ranges-first.json.gz",
+      "exit_code": 101,
+      "seconds": 21.12567333318293
+    },
+    {
+      "path": "range-joins/shot-picture-ranges-second.json.gz",
+      "exit_code": 0,
+      "seconds": 21.83363199979067
+    }
+  ]
+}

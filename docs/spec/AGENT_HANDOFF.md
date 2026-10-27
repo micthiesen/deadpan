@@ -8,19 +8,27 @@ The owner explicitly requested substantial parallel implementation without
 quality shortcuts and asked to preserve an effective workflow through
 compaction. [Parallel work](../PARALLEL_WORK.md) records exact lane ownership,
 dependency-scoped freezes, shared Cargo scheduling and integration/qualification
-joins. Three workers cover complete constant audio gain programs, canonical
-sound-family reuse and cursor-priority incremental analysis; the primary owns
-Store history qualification and integration. Retain this workflow: combined
-regressions, strict seven-crate all-target lint and an actual Whisper/Silero
-cancellation/resume/cache witness now pass. Independent review caught and fixed
-terminal-word and inference-admission bugs. No serial control run exists, so
-this is not a measured speedup claim. Recheck live agents/process handles;
-recorded holds are not proof of current activity. Keep final acceptance and
-progress credit with the primary. The analysis runtime is still an uncommitted
-candidate with [retained evidence](../qualification/incremental-audio-analysis-2026-10-26.md)
-and pending native qualification; shots is an unwired draft. Four Audio
-preparation limits and the sound-bearing WrapRetime
-prerequisite remain open.
+joins. Use up to three disjoint workers plus primary integration, only while
+independent work exists. Retain this workflow: the later
+[native range integration](../qualification/incremental-ranges-2026-10-26.md)
+passes actual Whisper/Silero cancellation/resume/BLAKE3-cache reuse, exact
+codec shot ranges, native offscreen Metal keyboard/focus/layout checks and
+strict eight-crate all-target lint. Independent review and strengthened replay
+caught real authority, admission and focus bugs. Initial whole-audio opening
+remains; the all-cached witness takes 9,100 ms. Quality, broader scheduling,
+competing real inference, long-media and package qualification remain.
+
+No serial control run exists, so this is not a measured speedup claim. Recheck
+live agents/process handles; recorded holds are not current execution. Freeze
+source only for its build, then copy and pin the executable, build receipt and
+runtime resources so unrelated work can continue. Keep final acceptance and
+progress credit with the primary. Analysis/CLI/Media/app changes are a separate
+milestone from the uncommitted sound WIP. Four Audio preparation-limit failures
+remain after exact input indexing (189 library and 204 stage tests pass; the
+separate Split matrix is still three pass/four fail). Core Retime boundary
+proofs do not implement or authorize the complete sound-bearing lifecycle.
+Never bypass its existing refusal or increase work/memory allowances. Coverage
+remains 85%, ten requirements Complete and no delivery gate closed.
 
 ## Active Split work, 2026-10-26
 

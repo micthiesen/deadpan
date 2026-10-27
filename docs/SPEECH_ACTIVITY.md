@@ -61,8 +61,17 @@ bounds (`origin + k · rate / 16000` as a rational) and display seconds.
 
 ## In the app
 
-The automatic transcription job prepares PCM once, detects speech, then
-transcribes. The validated activity is submitted to the project service, which
+The automatic transcription job detects speech and transcribes disjoint
+24-second ranges around the latest visible cursor, with 2.4 seconds of context.
+Detection-only jobs use the same incremental range path. Exact global VAD and
+energy hops are assembled only after complete coverage; context never invents
+silence, and partial activity is not published as a complete annotation.
+Transcription, detection-only activity and shot ranges use the private
+`AnalysisRanges` cache directory, with distinct exact keys addressed by BLAKE3
+and record payloads checked with SHA-256. The initial audio session still
+decodes the full stream. See
+[incremental range qualification](qualification/incremental-ranges-2026-10-26.md).
+The validated complete activity is submitted to the project service, which
 saves it outside history and publishes it as `Workspace::speech_activity`; it
 is loaded when a project opens and carried across edits. An Original that
 already has a transcript but no activity gets a detection-only job. Detection,

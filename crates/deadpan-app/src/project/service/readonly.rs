@@ -235,8 +235,7 @@ impl Service {
             | ProjectRequest::Redo { .. }
             | ProjectRequest::SaveTranscript { .. }
             | ProjectRequest::SaveSpeechActivity { .. }
-            | ProjectRequest::SaveShotAnalysis { .. }
-            | ProjectRequest::SaveShotProgress { .. } => {}
+            | ProjectRequest::SaveShotAnalysis { .. } => {}
             // Admitted above. Listing them also makes allowlist changes
             // reviewable alongside the terminal-response policy.
             ProjectRequest::Open(_)
