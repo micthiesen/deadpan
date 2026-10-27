@@ -184,32 +184,28 @@ impl<'plan> AudioSourceOccurrence<'plan> {
                 // A disappearing context has no continuous complete suffix.
                 return Ok((None, work));
             }
-            if certified_split {
-                let projected = historical_context
-                    .as_ref()
-                    .map(|context| {
-                        scope
-                            .historical_layout()
-                            .project(
-                                context,
-                                ExactRatio::ZERO,
-                                None,
-                                remaining(work)?.min(deadpan_core::MAX_DOCUMENT_NODES),
-                            )
-                            .map_err(PlanError::from)
-                    })
-                    .transpose()?;
-                if let Some(projected) = &projected {
-                    spend(&mut work, projected.work)?;
-                }
-                context_origins.push(projected.map(|p| (p.origin, p.frames_per_local_frame)));
-            }
-            let placement = scope.historical_layout().sound_occurrence_placement(
-                &instance,
-                historical_context.as_ref(),
-                remaining(work)?.min(deadpan_core::MAX_DOCUMENT_NODES),
-            )?;
+            let (placement, context_clock) = if certified_split {
+                scope
+                    .historical_layout()
+                    .sound_occurrence_placement_and_context(
+                        &instance,
+                        historical_context.as_ref(),
+                        remaining(work)?.min(deadpan_core::MAX_DOCUMENT_NODES),
+                    )?
+            } else {
+                (
+                    scope.historical_layout().sound_occurrence_placement(
+                        &instance,
+                        historical_context.as_ref(),
+                        remaining(work)?.min(deadpan_core::MAX_DOCUMENT_NODES),
+                    )?,
+                    None,
+                )
+            };
             spend(&mut work, placement.work)?;
+            if certified_split {
+                context_origins.push(context_clock.map(|p| (p.origin, p.frames_per_local_frame)));
+            }
             let origin = *first_origin.get_or_insert(placement.owner_origin);
             let complete_start = extent
                 .start
@@ -233,21 +229,25 @@ impl<'plan> AudioSourceOccurrence<'plan> {
         }
         let scope =
             first_applicable.ok_or(PlanError::InvalidPlan("sound birth has no occurrence"))?;
-        let placement = scope.live_layout().sound_occurrence_placement(
-            self.instance(),
-            Some(context.owner()),
-            remaining(work)?.min(deadpan_core::MAX_DOCUMENT_NODES),
-        )?;
+        let (placement, context_clock) = if certified_split {
+            scope.live_layout().sound_occurrence_placement_and_context(
+                self.instance(),
+                Some(context.owner()),
+                remaining(work)?.min(deadpan_core::MAX_DOCUMENT_NODES),
+            )?
+        } else {
+            (
+                scope.live_layout().sound_occurrence_placement(
+                    self.instance(),
+                    Some(context.owner()),
+                    remaining(work)?.min(deadpan_core::MAX_DOCUMENT_NODES),
+                )?,
+                None,
+            )
+        };
         spend(&mut work, placement.work)?;
         if certified_split {
-            let projected = scope.live_layout().project(
-                context.owner(),
-                ExactRatio::ZERO,
-                None,
-                remaining(work)?.min(deadpan_core::MAX_DOCUMENT_NODES),
-            )?;
-            spend(&mut work, projected.work)?;
-            context_origins.push(Some((projected.origin, projected.frames_per_local_frame)));
+            context_origins.push(context_clock.map(|p| (p.origin, p.frames_per_local_frame)));
         }
         let complete_start = extent
             .start

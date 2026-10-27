@@ -119,6 +119,16 @@ and 202 then-existing stage tests; these full suites were not repeated after the
 small policy correction. The final unchanged Split matrix remains four pass and
 three work-limit failures. No requirement, criterion or gate closes.
 
+The [joined placement/context query](qualification/placement-context-2026-10-27.md)
+reuses an exact checked scalar clock already computed by placement, charging
+extraction and any required fallback projection. It adds no cache or limit.
+Current Core/Plan/Audio library/definition checks pass 800/534/198/171 tests and
+all 203 existing stages pass. The isolated four-file patch passes 775 Core,
+521 Plan, 184 Audio library and eight historical processing tests. Final focused
+tests and strict lint pass after a mechanical test-only cleanup. The unchanged
+Split matrix remains four pass/three work-limit failures. No acceptance credit
+changes; the full product goal remains active.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

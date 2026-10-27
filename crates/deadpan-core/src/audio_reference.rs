@@ -7,7 +7,7 @@ mod scale_projection;
 pub use exact_clock::FrozenRetimeClock;
 mod sound_placement;
 mod split_correspondence;
-pub use sound_placement::FrozenSoundPlacement;
+pub use sound_placement::{FrozenSoundContextClock, FrozenSoundPlacement};
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::Write;

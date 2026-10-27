@@ -2,7 +2,37 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: post-treatment gates, product goal active
+## Current state: joined placement/context query, product goal active
+
+The [joined-query milestone](../qualification/placement-context-2026-10-27.md)
+removes a duplicate exact context projection from certified-Split afterbirth
+history. Placement returns the two scalar clock fields it already computed;
+unvisited contexts below an opaque provider still execute their original query.
+The old placement API retains its exact work. No cache, limit, admission shortcut
+or plan pin changes.
+
+Current Core/Plan/Audio library/definition pass 800/534/198/171 tests, with all
+203 existing real-WAV stages passing. The isolated four-file patch passes
+775 Core, 521 Plan, 184 Audio library and eight historical processing tests.
+Initial strict lint found one collapsible test-only if; the mechanical correction
+passes all five focused tests and final strict lint. Production inputs match the
+broad runs. The unchanged Split matrix remains four pass/three work-limit
+failures. Coverage stays about 85%, 10/24 Complete, gates 0/7. The goal is active.
+
+Remaining reads: Source/Sequence `cut-three`, limited `0+511`, and nested selected
+`prefix-two`, limited `0+4096`, reach `plan work per read`; selected at the same
+prefix/window reaches `frozen projection work exhausted`. Keep general Split and
+the foreign fuzz/Cargo.lock/.claude entries uncommitted.
+
+Next bounded investigation: Audio computes checked scalar placements before
+route construction, then Plan recomputes them when authenticating afterbirth
+history. Reuse requires a sealed Plan-issued proof tied to the exact occurrence,
+context and ordered scopes. Replace the existing placement vector rather than
+retaining a second one. Preserve host cancellation/deadline checks between clock
+queries, per-query caps, full journal/binding/route validation and legacy manual
+route validation. No follow-up implementation is qualified yet.
+
+## Post-treatment gates
 
 The [post-treatment gate milestone](../qualification/post-treatment-gates-2026-10-27.md)
 skips the unused second query only when the canonical event-return predicate is
@@ -27,13 +57,10 @@ selected `prefix-two`, limited `0+4096`, reach `plan work per read`; nested
 selected at the same prefix/window reaches `audio binding work exhausted`.
 Keep general Split and the foreign fuzz/Cargo.lock/.claude entries uncommitted.
 
-Next bounded investigation: Core `sound_occurrence_placement` repeatedly calls
-`project` while walking ancestors. Frozen layouts already have admitted indexes;
-`project` does not rebuild them. Identify an exact duplicate projection that can
-reuse an existing result without changing checked rational operation order,
-historical scope/crop/birth semantics or charges for actual visits. A live
-RenderPlan is not a substitute for a historical projection. No follow-up code
-is qualified yet.
+The joined query above addresses the duplicate context projection identified
+here. Frozen layouts already have admitted indexes; `project` does not rebuild
+them. Other repeated ancestor visits remain actual work. A live RenderPlan is
+not a substitute for a historical projection.
 
 ## Historical binding reuse
 
