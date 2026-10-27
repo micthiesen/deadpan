@@ -52,6 +52,19 @@ linked from the mandatory handoff, for continuation after compaction.
 
 ## General Split sound transport in progress, 2026-10-26
 
+The owner resumed the product goal after the build-tooling diversion. The
+[fresh preparation checkpoint](qualification/sound-preparation-resume-2026-10-26.md)
+retests the newer constant-transfer/family-interning candidate and adds a bounded
+immutable per-timing asset inventory. Five sound-clock regressions, 514 Plan
+tests, 190 Audio library and 201 existing stage tests pass, with strict
+Core/Plan/Audio all-target lint. The final hash-pinned real-WAV matrix still has
+**three passes and four preparation-work failures**. A current-source trace
+attributes 5,980,514 units to constant transfer applications and 1,282,906 to
+source-occurrence construction at the selected baseline's unchanged work limit.
+The inventory removes repeated asset-set construction but does not resolve the
+remaining failures. Original fixture, diagnostic setup and lint failures are
+retained; tracing is byte-restored. No progress credit is added.
+
 The [frozen research checkpoint](qualification/general-split-sound-research-2026-10-26.md)
 retains the earlier candidate, 32 terminal runs and exact filter input. The
 [delivery continuation](qualification/general-split-sound-delivery-2026-10-26.md)

@@ -2,7 +2,36 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Build tooling diversion, 2026-10-26
+## Product goal resumed, 2026-10-26
+
+The owner explicitly resumed the full product goal after the tooling diversion.
+The historical pause below no longer stops product work. The
+[sound preparation resume](../qualification/sound-preparation-resume-2026-10-26.md)
+retains the exact current candidate overlay and new immutable per-clock asset
+inventory. Do not rely on older traces to measure the newer constant-transfer
+and family-interning code. Fresh checks pass 514 Plan tests, 190 Audio library
+tests and 201 existing stage tests; the seven Split tests run separately and
+remain three pass/four work-limit failures. Strict Core/Plan/Audio all-target
+lint passes. Two fixture and two lint findings are corrected without weakening
+admission, work limits or PCM comparisons.
+
+Current selected-play tracing charges 5,980,514 units to prepared transfer
+applications and 1,282,906 to source-occurrence construction. All tracing is
+removed byte-for-byte. The clean copied stage binary is SHA-256
+1178b084e0c90ba728a2eafb5b4a0e6ee60dbe26bcc3bc113b8505886eb2205c;
+its final full matrix preserves the same three-pass/four-fail result. Sources
+and executed bytes remain stable. The new collection reconstructs all 869
+guarded changed-crate inputs against 415d0cc3. The production WIP remains
+uncommitted. Coverage stays 85%, strict completion 10/24 and gates 0/7.
+
+Remove repeated evaluation rather than dropping transfer dispatch charges.
+Same-call query reuse needs bounded metadata and sound ownership: prepared
+historical queries borrow their retained plans, so a local Arc clone is not
+enough. Do not widen source-support selection, processing authority, caches or
+work ceilings to make the matrix pass. Existing uncommitted Core/Plan/Audio/Store
+work and foreign fuzz/Cargo.lock/.claude entries remain preserved.
+
+## Build tooling diversion, 2026-10-26 (historical pause)
 
 The owner paused the product goal and authorized only build-loop repairs,
 Blaze installation/evaluation, an Omni analysis artifact and a completion
