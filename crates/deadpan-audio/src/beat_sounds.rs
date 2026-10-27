@@ -193,35 +193,38 @@ impl StageAudio {
                             if interval.start >= interval.end {
                                 continue;
                             }
-                            let gate_fades = |edges| {
+                            let gate_fades = |edges, limits| {
                                 if let Some(history) = &history {
-                                    history
-                                        .gate_fades(
-                                            edges,
-                                            interval.clone(),
-                                            control.query_limits()?,
-                                        )
-                                        .map_err(StageAudioError::from)
+                                    history.gate_fades(edges, interval.clone(), limits)
                                 } else {
-                                    voice
-                                        .routed_window_gate_fades_from(
-                                            &original,
-                                            &alias,
-                                            routed.route(),
-                                            edges,
-                                            interval.clone(),
-                                            control.query_limits()?,
-                                        )
-                                        .map_err(StageAudioError::from)
+                                    voice.routed_window_gate_fades_from(
+                                        &original,
+                                        &alias,
+                                        routed.route(),
+                                        edges,
+                                        interval.clone(),
+                                        limits,
+                                    )
                                 }
                             };
-                            let fades = gate_fades((event.start_edge, event.end_edge))?;
+                            let fades = gate_fades(
+                                (event.start_edge, event.end_edge),
+                                control.query_limits()?,
+                            )?;
                             control.spend_plan_work(fades.work)?;
-                            let post_fades = gate_fades((
-                                deadpan_core::AudioEdgePolicy::Hard,
-                                deadpan_core::AudioEdgePolicy::Hard,
-                            ))?;
-                            control.spend_plan_work(post_fades.work)?;
+                            let post_fades = shared_eq::prepare_post_gates(
+                                &event.treatments,
+                                control,
+                                |limits| {
+                                    gate_fades(
+                                        (
+                                            deadpan_core::AudioEdgePolicy::Hard,
+                                            deadpan_core::AudioEdgePolicy::Hard,
+                                        ),
+                                        limits,
+                                    )
+                                },
+                            )?;
                             let query = self.with_plan_scope(Arc::clone(first_plan), |reader| {
                                 reader.preflight_routed_root(
                                     &routed,
@@ -259,13 +262,18 @@ impl StageAudio {
                                 control.query_limits()?,
                             )?;
                             control.spend_plan_work(fades.work)?;
-                            let post_fades = voice.gate_fades(
-                                deadpan_core::AudioEdgePolicy::Hard,
-                                deadpan_core::AudioEdgePolicy::Hard,
-                                interval.clone(),
-                                control.query_limits()?,
+                            let post_fades = shared_eq::prepare_post_gates(
+                                &event.treatments,
+                                control,
+                                |limits| {
+                                    voice.gate_fades(
+                                        deadpan_core::AudioEdgePolicy::Hard,
+                                        deadpan_core::AudioEdgePolicy::Hard,
+                                        interval.clone(),
+                                        limits,
+                                    )
+                                },
                             )?;
-                            control.spend_plan_work(post_fades.work)?;
                             (
                                 PreparedBeatInput::Current(Box::new(queries)),
                                 fades,
@@ -280,7 +288,7 @@ impl StageAudio {
                         samples: interval,
                         input,
                         fades: fades.spans,
-                        post_fades: post_fades.spans,
+                        post_fades,
                         mix_route: None,
                     });
                 }

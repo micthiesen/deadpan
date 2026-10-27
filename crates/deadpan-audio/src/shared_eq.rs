@@ -964,6 +964,22 @@ impl StageAudio {
     }
 }
 
+/// Only processed event output consumes the second gate envelope. Keep this
+/// decision beside its consumer and use the same canonical event predicate.
+pub(super) fn prepare_post_gates(
+    treatments: &deadpan_core::AudioTreatments,
+    control: WorkControl<'_>,
+    build: impl FnOnce(AudioQueryLimits) -> Result<deadpan_plan::AudioSoundGateQuery, PlanError>,
+) -> Result<Vec<deadpan_plan::AudioSoundGateSpan>, StageAudioError> {
+    control.spend_plan_work(1)?;
+    if !event_returns::needs_processing(treatments) {
+        return Ok(Vec::new());
+    }
+    let query = build(control.query_limits()?)?;
+    control.spend_plan_work(query.work)?;
+    Ok(query.spans)
+}
+
 fn add_sound(
     mix: &mut SharedMix<'_>,
     route: &shared_mix::Route<'_>,

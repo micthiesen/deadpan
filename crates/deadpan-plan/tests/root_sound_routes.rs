@@ -760,3 +760,6 @@ fn extreme_destination_clips_support_before_narrowing_retained_labels() {
 
 #[path = "root_sound_routes/trim.rs"]
 mod trim;
+
+#[path = "root_sound_routes/post_treatment.rs"]
+mod post_treatment;

@@ -170,6 +170,89 @@ fn root_route_transports_processed_history_without_advancing_through_inserted_ti
 }
 
 #[test]
+fn routed_processed_root_preserves_automatic_authored_edge_gains() {
+    let mut wire = serde_json::to_value(fixture(false, Some(TailEffect::Delay), false)).unwrap();
+    wire["sounds"]["effect"]["start_edge"] = serde_json::json!("automatic");
+    wire["sounds"]["effect"]["end_edge"] = serde_json::json!("automatic");
+    let before = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let original = read(&before, 0, 48_000);
+
+    // This insertion exercises the routed-root gate path while leaving both
+    // authored event boundaries in place. Processing must keep each existing
+    // edge gain exactly once in the delivered dry signal.
+    wire["nodes"]["picture"]["kind"]["source"]["duration"] = serde_json::json!(49_000);
+    wire["sound_routes"] = serde_json::json!({"effect": RootSoundRoute {
+        recipe_extent: duration(48_000),
+        recipe_grid: RootSoundGrid::root(before.presentation_basis().frame_rate),
+        edits: vec![RootSoundEdit {
+            grid: RootSoundGrid::root(before.presentation_basis().frame_rate),
+            operation: RootSoundOperation::Insert { at: ProjectFrame(20_000), duration: duration(1000) },
+            cuts: RootSoundCutEdges { before: AudioEdgePolicy::Hard, after: AudioEdgePolicy::Hard },
+        }],
+    }});
+    let moved = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let mut expected = original.clone();
+    expected.splice(20_000..20_000, vec![[0.0; 2]; 1000]);
+
+    assert_pcm_close(&read(&moved, 0, 49_000), &expected);
+    // Check both authored fade windows as well as the routed edit boundary.
+    for (at, frames) in [(0, 160), (19_950, 1150), (43_450, 256), (44_500, 256)] {
+        assert_pcm_close(
+            &read(&moved, at, frames),
+            &expected[at as usize..at as usize + frames as usize],
+        );
+    }
+}
+
+#[test]
+fn processed_root_automatic_edge_is_unchanged_by_a_silent_hold_ending_at_onset() {
+    let mut wire = serde_json::to_value(fixture(false, Some(TailEffect::Delay), false)).unwrap();
+    wire["sounds"]["effect"]["start_edge"] = serde_json::json!("automatic");
+    wire["sounds"]["effect"]["end_edge"] = serde_json::json!("automatic");
+    // Retain a valid picture-only Source while removing all Original audio.
+    // The fixture's catalog already admits this asset as a still image.
+    wire["nodes"]["picture"]["kind"]["source"]["video"] =
+        serde_json::to_value(SourceVideo::Still {
+            asset: AssetId::new("media").unwrap(),
+        })
+        .unwrap();
+    wire["nodes"]["picture"]["kind"]["source"]["audio"] = serde_json::Value::Null;
+    wire["nodes"]["picture"]["kind"]["source"]["audio_mapping"] =
+        serde_json::to_value(SourceAudioMapping::FitBeat).unwrap();
+    wire["nodes"]["picture"]["kind"]["source"]["audio_offset"] = serde_json::json!(0);
+    let before = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    assert_eq!(
+        before.sounds()[&SoundId::new("effect").unwrap()].offset,
+        AudioSample(37)
+    );
+    let expected = read(&before, 0, 48_000);
+    assert!(expected[..37].iter().all(|sample| *sample == [0.0; 2]));
+    assert!(expected[37..133].iter().any(|sample| sample[0] != 0.0));
+
+    // This current Hold is wholly outside the event's audible support. Its
+    // automatic end coincides exactly with the already faded authored onset.
+    wire["nodes"]["lead"] = serde_json::to_value(hold(37)).unwrap();
+    wire["nodes"]["owner"]["kind"]["children"] = serde_json::json!(["lead", "picture"]);
+    wire["nodes"]["picture"]["kind"]["source"]["duration"] = serde_json::json!(47_963);
+    let after = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    assert_eq!(
+        after.nodes()[&id("lead")].audio_edges.node_end,
+        AudioEdgePolicy::Automatic
+    );
+    assert_eq!(before.sounds(), after.sounds());
+    for document in [&before, &after] {
+        assert_eq!(
+            RenderPlan::compile(document)
+                .unwrap()
+                .audio_duration()
+                .unwrap(),
+            AudioSample(48_000)
+        );
+    }
+    assert_pcm_close(&read(&after, 0, 48_000), &expected);
+}
+
+#[test]
 fn automatic_event_edges_feed_the_effect_and_fade_the_bounded_return() {
     let mut wire = serde_json::to_value(fixture(false, None, false)).unwrap();
     wire["sounds"]["effect"]["start_edge"] = serde_json::json!("automatic");

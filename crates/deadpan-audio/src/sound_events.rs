@@ -144,14 +144,15 @@ impl StageAudio {
             control.spend_plan_work(fades.work)?;
             validate_gate_envelopes(&fades.spans, start..AudioSample(end))?;
             let post_fades =
-                voice.post_treatment_gates(start..AudioSample(end), control.query_limits()?)?;
-            control.spend_plan_work(post_fades.work)?;
+                shared_eq::prepare_post_gates(&voice.event().treatments, control, |limits| {
+                    voice.post_treatment_gates(start..AudioSample(end), limits)
+                })?;
             voices.push(PreparedSoundQuery {
                 id,
                 voice,
                 input,
                 fades: fades.spans,
-                post_fades: post_fades.spans,
+                post_fades,
             });
         }
         Ok(voices)

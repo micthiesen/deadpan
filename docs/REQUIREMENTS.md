@@ -108,6 +108,17 @@ real-WAV Split matrix remains four pass/three work-limit failures; selected and
 nested selected reads reach later checks. Two inherited Split-test failures are
 corrected without widening authority. No acceptance credit changes.
 
+The [post-treatment gate milestone](qualification/post-treatment-gates-2026-10-27.md)
+removes an unused second query for ordinary events and fixes a reproduced
+processed-root double fade through retained routes. A rejected coincidence
+design is retained with its failing full-PCM invariant. Final Plan/Audio library
+checks pass 534/198 tests; eight event-return PCM tests, root/Hold waveform and
+strict lint pass. The isolated nine-file patch passes 521 Plan, 184 Audio library
+and the same eight PCM tests. The preceding candidate passes all 171 definition
+and 202 then-existing stage tests; these full suites were not repeated after the
+small policy correction. The final unchanged Split matrix remains four pass and
+three work-limit failures. No requirement, criterion or gate closes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

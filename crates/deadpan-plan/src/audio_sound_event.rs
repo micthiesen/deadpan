@@ -295,6 +295,15 @@ impl<'plan> AudioRootSound<'plan> {
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
     ) -> Result<AudioSoundGateQuery, PlanError> {
+        self.gate_fades_for(samples, limits, GatePhase::Complete)
+    }
+
+    fn gate_fades_for(
+        &self,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+        phase: GatePhase,
+    ) -> Result<AudioSoundGateQuery, PlanError> {
         if let Some(projection) = self.projection {
             limits.validate()?;
             let root_end = self.plan.audio_duration()?;
@@ -307,7 +316,7 @@ impl<'plan> AudioRootSound<'plan> {
                     work: 0,
                 });
             }
-            return self.routed_gate_fades(samples, limits, projection);
+            return self.routed_gate_fades(samples, limits, projection, phase);
         }
         CurrentEnvelope {
             plan: self.plan,
@@ -317,6 +326,7 @@ impl<'plan> AudioRootSound<'plan> {
             grid: self.grid,
             start_edge: self.start_edge,
             end_edge: self.end_edge,
+            phase,
         }
         .query(samples, limits, |span, work, maximum| {
             self.allows_hold(span, work, maximum)
@@ -330,10 +340,7 @@ impl<'plan> AudioRootSound<'plan> {
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
     ) -> Result<AudioSoundGateQuery, PlanError> {
-        let mut voice = self.clone();
-        voice.start_edge = AudioEdgePolicy::Hard;
-        voice.end_edge = AudioEdgePolicy::Hard;
-        voice.gate_fades(samples, limits)
+        self.gate_fades_for(samples, limits, GatePhase::PostTreatment)
     }
 }
 
@@ -365,6 +372,7 @@ pub(crate) fn occurrence_gate_fades<'plan>(
         grid,
         start_edge,
         end_edge,
+        phase: GatePhase::Complete,
     }
     .query(samples, limits, |_, _, _| Ok(false))
 }
@@ -503,20 +511,20 @@ fn routed_occurrence_envelope<'plan>(
     let mut start = RoutedBoundary {
         at: original_audible.start,
         label: i128::from(grid.boundary(original_audible.start)?.0),
-        policy: if inherited_hard_edges.0 {
+        policy: BoundaryPolicy::authored(if inherited_hard_edges.0 {
             AudioEdgePolicy::Hard
         } else {
             start_edge
-        },
+        }),
     };
     let mut end = RoutedBoundary {
         at: original_audible.end,
         label: i128::from(grid.boundary(original_audible.end)?.0),
-        policy: if inherited_hard_edges.1 {
+        policy: BoundaryPolicy::authored(if inherited_hard_edges.1 {
             AudioEdgePolicy::Hard
         } else {
             end_edge
-        },
+        }),
     };
     let mut support =
         grid.boundary(original_audible.start)?..grid.boundary(original_audible.end)?;
@@ -597,32 +605,36 @@ fn routed_occurrence_envelope<'plan>(
         let gate_start = RoutedBoundary {
             at: span.project_extent.start,
             label: i128::from(policy_grid.boundary(span.project_extent.start)?.0),
-            policy: if span.project_extent.start == span.envelope_extent.start
-                && span
-                    .boundaries
-                    .start
-                    .iter()
-                    .any(|origin| origin.policy == AudioEdgePolicy::Hard)
-            {
-                AudioEdgePolicy::Hard
-            } else {
-                AudioEdgePolicy::Automatic
-            },
+            policy: BoundaryPolicy::current(
+                if span.project_extent.start == span.envelope_extent.start
+                    && span
+                        .boundaries
+                        .start
+                        .iter()
+                        .any(|origin| origin.policy == AudioEdgePolicy::Hard)
+                {
+                    AudioEdgePolicy::Hard
+                } else {
+                    AudioEdgePolicy::Automatic
+                },
+            ),
         };
         let gate_end = RoutedBoundary {
             at: span.project_extent.end,
             label: i128::from(policy_grid.boundary(span.project_extent.end)?.0),
-            policy: if span.project_extent.end == span.envelope_extent.end
-                && span
-                    .boundaries
-                    .end
-                    .iter()
-                    .any(|origin| origin.policy == AudioEdgePolicy::Hard)
-            {
-                AudioEdgePolicy::Hard
-            } else {
-                AudioEdgePolicy::Automatic
-            },
+            policy: BoundaryPolicy::current(
+                if span.project_extent.end == span.envelope_extent.end
+                    && span
+                        .boundaries
+                        .end
+                        .iter()
+                        .any(|origin| origin.policy == AudioEdgePolicy::Hard)
+                {
+                    AudioEdgePolicy::Hard
+                } else {
+                    AudioEdgePolicy::Automatic
+                },
+            ),
         };
         if let Some(previous) = gates.last_mut()
             && gate_start.label <= previous.1.label
@@ -642,6 +654,7 @@ fn routed_occurrence_envelope<'plan>(
             end,
         },
         &gates,
+        GatePhase::Complete,
         limits,
         &mut work,
     )?;
@@ -668,6 +681,7 @@ struct CurrentEnvelope<'context, 'plan> {
     grid: AudioSampleGrid<AudioSample>,
     start_edge: AudioEdgePolicy,
     end_edge: AudioEdgePolicy,
+    phase: GatePhase,
 }
 
 impl CurrentEnvelope<'_, '_> {
@@ -719,22 +733,22 @@ impl CurrentEnvelope<'_, '_> {
         let context_end = self.grid.at(context.end)?;
         let mut left = Boundary {
             at: self.selection.start,
-            policy: self.start_edge,
+            policy: BoundaryPolicy::authored(self.start_edge),
         };
         let mut right = Boundary {
             at: self.selection.end,
-            policy: self.end_edge,
+            policy: BoundaryPolicy::authored(self.end_edge),
         };
         if self.audible.start < context.start {
             left = Boundary {
                 at: context_start,
-                policy: AudioEdgePolicy::Hard,
+                policy: BoundaryPolicy::current(AudioEdgePolicy::Hard),
             };
         }
         if self.audible.end > context.end {
             right = Boundary {
                 at: context_end,
-                policy: AudioEdgePolicy::Hard,
+                policy: BoundaryPolicy::current(AudioEdgePolicy::Hard),
             };
         }
         let query_limits = AudioQueryLimits {
@@ -766,31 +780,35 @@ impl CurrentEnvelope<'_, '_> {
             // current boundary. A transparent partition is not a new recipe.
             let start = Boundary {
                 at: span.project_extent.start,
-                policy: if span.project_extent.start == span.envelope_extent.start
-                    && span
-                        .boundaries
-                        .start
-                        .iter()
-                        .any(|origin| origin.policy == AudioEdgePolicy::Hard)
-                {
-                    AudioEdgePolicy::Hard
-                } else {
-                    AudioEdgePolicy::Automatic
-                },
+                policy: BoundaryPolicy::current(
+                    if span.project_extent.start == span.envelope_extent.start
+                        && span
+                            .boundaries
+                            .start
+                            .iter()
+                            .any(|origin| origin.policy == AudioEdgePolicy::Hard)
+                    {
+                        AudioEdgePolicy::Hard
+                    } else {
+                        AudioEdgePolicy::Automatic
+                    },
+                ),
             };
             let end = Boundary {
                 at: span.project_extent.end,
-                policy: if span.project_extent.end == span.envelope_extent.end
-                    && span
-                        .boundaries
-                        .end
-                        .iter()
-                        .any(|origin| origin.policy == AudioEdgePolicy::Hard)
-                {
-                    AudioEdgePolicy::Hard
-                } else {
-                    AudioEdgePolicy::Automatic
-                },
+                policy: BoundaryPolicy::current(
+                    if span.project_extent.end == span.envelope_extent.end
+                        && span
+                            .boundaries
+                            .end
+                            .iter()
+                            .any(|origin| origin.policy == AudioEdgePolicy::Hard)
+                    {
+                        AudioEdgePolicy::Hard
+                    } else {
+                        AudioEdgePolicy::Automatic
+                    },
+                ),
             };
             if let Some(previous) = gates.last_mut()
                 && self.grid.boundary(start.at)? <= self.grid.boundary(previous.end.at)?
@@ -851,6 +869,9 @@ impl CurrentEnvelope<'_, '_> {
         if cursor < samples.start {
             push_span(spans, silent(cursor..samples.start), limits, work)?;
         }
+        if matches!(self.phase, GatePhase::PostTreatment) {
+            charge(work, limits.maximum_work)?;
+        }
         push_span(
             spans,
             AudioSoundGateSpan {
@@ -858,8 +879,8 @@ impl CurrentEnvelope<'_, '_> {
                     .map_err(|_| TimeError::Overflow)?,
                 samples,
                 length: u64::try_from(last.0 - first.0).map_err(|_| TimeError::Overflow)?,
-                start_edge: start.policy,
-                end_edge: end.policy,
+                start_edge: start.policy.for_phase(self.phase),
+                end_edge: end.policy.for_phase(self.phase),
             },
             limits,
             work,
@@ -870,7 +891,7 @@ impl CurrentEnvelope<'_, '_> {
 #[derive(Clone, Copy)]
 struct Boundary {
     at: ExactRatio,
-    policy: AudioEdgePolicy,
+    policy: BoundaryPolicy,
 }
 struct Gate {
     start: Boundary,
@@ -901,11 +922,60 @@ fn later(a: Boundary, b: Boundary) -> Result<Boundary, TimeError> {
 fn coincident(a: Boundary, b: Boundary) -> Boundary {
     Boundary {
         at: a.at,
-        policy: if a.policy == AudioEdgePolicy::Hard || b.policy == AudioEdgePolicy::Hard {
-            AudioEdgePolicy::Hard
-        } else {
-            AudioEdgePolicy::Automatic
-        },
+        policy: a.policy.coincident(b.policy),
+    }
+}
+
+#[derive(Clone, Copy)]
+enum GatePhase {
+    Complete,
+    PostTreatment,
+}
+
+/// The input endpoint has already fed the event processor, so its post phase
+/// needs no additional fade. Keep both phase policies through exact boundary
+/// moves: a coincident current edge deduplicates that input fade, while a new
+/// cut at another boundary keeps its own Automatic/Hard policy.
+#[derive(Debug, Clone, Copy)]
+struct BoundaryPolicy {
+    complete: AudioEdgePolicy,
+    post: AudioEdgePolicy,
+}
+
+impl BoundaryPolicy {
+    fn authored(policy: AudioEdgePolicy) -> Self {
+        Self {
+            complete: policy,
+            post: AudioEdgePolicy::Hard,
+        }
+    }
+
+    fn current(policy: AudioEdgePolicy) -> Self {
+        Self {
+            complete: policy,
+            post: policy,
+        }
+    }
+
+    fn coincident(self, other: Self) -> Self {
+        let combine = |a, b| {
+            if a == AudioEdgePolicy::Hard || b == AudioEdgePolicy::Hard {
+                AudioEdgePolicy::Hard
+            } else {
+                AudioEdgePolicy::Automatic
+            }
+        };
+        Self {
+            complete: combine(self.complete, other.complete),
+            post: combine(self.post, other.post),
+        }
+    }
+
+    fn for_phase(self, phase: GatePhase) -> AudioEdgePolicy {
+        match phase {
+            GatePhase::Complete => self.complete,
+            GatePhase::PostTreatment => self.post,
+        }
     }
 }
 fn silent(samples: Range<AudioSample>) -> AudioSoundGateSpan {
@@ -945,7 +1015,7 @@ fn push_span(
 struct RoutedBoundary {
     at: ExactRatio,
     label: i128,
-    policy: AudioEdgePolicy,
+    policy: BoundaryPolicy,
 }
 
 #[derive(Debug, Clone)]
@@ -961,6 +1031,7 @@ impl AudioRootSound<'_> {
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
         projection: &CompiledRootSound,
+        phase: GatePhase,
     ) -> Result<AudioSoundGateQuery, PlanError> {
         let mut work = 0;
         let root_end = self.plan.audio_duration()?;
@@ -1004,32 +1075,36 @@ impl AudioRootSound<'_> {
             let start = RoutedBoundary {
                 at: span.project_extent.start,
                 label: i128::from(self.grid.boundary(span.project_extent.start)?.0),
-                policy: if span.project_extent.start == span.envelope_extent.start
-                    && span
-                        .boundaries
-                        .start
-                        .iter()
-                        .any(|origin| origin.policy == AudioEdgePolicy::Hard)
-                {
-                    AudioEdgePolicy::Hard
-                } else {
-                    AudioEdgePolicy::Automatic
-                },
+                policy: BoundaryPolicy::current(
+                    if span.project_extent.start == span.envelope_extent.start
+                        && span
+                            .boundaries
+                            .start
+                            .iter()
+                            .any(|origin| origin.policy == AudioEdgePolicy::Hard)
+                    {
+                        AudioEdgePolicy::Hard
+                    } else {
+                        AudioEdgePolicy::Automatic
+                    },
+                ),
             };
             let end = RoutedBoundary {
                 at: span.project_extent.end,
                 label: i128::from(self.grid.boundary(span.project_extent.end)?.0),
-                policy: if span.project_extent.end == span.envelope_extent.end
-                    && span
-                        .boundaries
-                        .end
-                        .iter()
-                        .any(|origin| origin.policy == AudioEdgePolicy::Hard)
-                {
-                    AudioEdgePolicy::Hard
-                } else {
-                    AudioEdgePolicy::Automatic
-                },
+                policy: BoundaryPolicy::current(
+                    if span.project_extent.end == span.envelope_extent.end
+                        && span
+                            .boundaries
+                            .end
+                            .iter()
+                            .any(|origin| origin.policy == AudioEdgePolicy::Hard)
+                    {
+                        AudioEdgePolicy::Hard
+                    } else {
+                        AudioEdgePolicy::Automatic
+                    },
+                ),
             };
             if let Some(previous) = gates.last_mut()
                 && start.label <= previous.1.label
@@ -1058,7 +1133,9 @@ impl AudioRootSound<'_> {
             if island.support.start >= samples.end {
                 break;
             }
-            append_routed_gated_envelope(&mut spans, &samples, island, &gates, limits, &mut work)?;
+            append_routed_gated_envelope(
+                &mut spans, &samples, island, &gates, phase, limits, &mut work,
+            )?;
         }
         let end = spans.last().map_or(samples.start, |span| span.samples.end);
         if end < samples.end {
@@ -1077,6 +1154,7 @@ fn append_routed_gated_envelope(
     samples: &Range<AudioSample>,
     island: &RoutedIsland,
     gates: &[(RoutedBoundary, RoutedBoundary)],
+    phase: GatePhase,
     limits: AudioQueryLimits,
     work: &mut usize,
 ) -> Result<(), PlanError> {
@@ -1094,8 +1172,8 @@ fn append_routed_gated_envelope(
             spans,
             samples,
             support,
-            cursor,
-            routed_earlier(end, gate_start)?,
+            (cursor, routed_earlier(end, gate_start)?),
+            phase,
             limits,
             work,
         )?;
@@ -1104,7 +1182,7 @@ fn append_routed_gated_envelope(
             break;
         }
     }
-    append_routed_envelope(spans, samples, support, cursor, end, limits, work)
+    append_routed_envelope(spans, samples, support, (cursor, end), phase, limits, work)
 }
 
 fn clip_current_hold_samples(
@@ -1219,11 +1297,7 @@ fn routed_coincident(a: RoutedBoundary, b: RoutedBoundary) -> RoutedBoundary {
     // The new clipping boundary owns its physical label. Only exact semantic
     // coincidence combines Hard; equal rounded labels use exact ordering.
     RoutedBoundary {
-        policy: if a.policy == AudioEdgePolicy::Hard || b.policy == AudioEdgePolicy::Hard {
-            AudioEdgePolicy::Hard
-        } else {
-            AudioEdgePolicy::Automatic
-        },
+        policy: a.policy.coincident(b.policy),
         ..b
     }
 }
@@ -1231,8 +1305,8 @@ fn append_routed_envelope(
     spans: &mut Vec<AudioSoundGateSpan>,
     requested: &Range<AudioSample>,
     support: &Range<AudioSample>,
-    start: RoutedBoundary,
-    end: RoutedBoundary,
+    (start, end): (RoutedBoundary, RoutedBoundary),
+    phase: GatePhase,
     limits: AudioQueryLimits,
     work: &mut usize,
 ) -> Result<(), PlanError> {
@@ -1258,6 +1332,9 @@ fn append_routed_envelope(
     if cursor < samples.start {
         push_span(spans, silent(cursor..samples.start), limits, work)?;
     }
+    if matches!(phase, GatePhase::PostTreatment) {
+        charge(work, limits.maximum_work)?;
+    }
     push_span(
         spans,
         AudioSoundGateSpan {
@@ -1274,8 +1351,8 @@ fn append_routed_envelope(
             )
             .map_err(|_| TimeError::Overflow)?,
             samples,
-            start_edge: start.policy,
-            end_edge: end.policy,
+            start_edge: start.policy.for_phase(phase),
+            end_edge: end.policy.for_phase(phase),
         },
         limits,
         work,
@@ -1378,12 +1455,12 @@ fn compile_islands(
         start: RoutedBoundary {
             at: selection.start,
             label: i128::from(audible.start.0),
-            policy: start_edge,
+            policy: BoundaryPolicy::authored(start_edge),
         },
         end: RoutedBoundary {
             at: selection.end,
             label: i128::from(audible.end.0),
-            policy: end_edge,
+            policy: BoundaryPolicy::authored(end_edge),
         },
     }];
     let mut extent = journal.recipe_extent.frames();
@@ -1430,7 +1507,7 @@ fn compile_islands(
                         RoutedBoundary {
                             at: ExactRatio::integer(old.start),
                             label: i128::from(old_start.0),
-                            policy,
+                            policy: BoundaryPolicy::current(policy),
                         },
                     )?;
                 }
@@ -1440,7 +1517,7 @@ fn compile_islands(
                         RoutedBoundary {
                             at: ExactRatio::integer(old.end),
                             label: i128::from(old_end.0),
-                            policy,
+                            policy: BoundaryPolicy::current(policy),
                         },
                     )?;
                 }

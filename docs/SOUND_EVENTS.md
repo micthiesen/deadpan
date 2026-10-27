@@ -33,6 +33,15 @@ them. The default order is input edges, gain, EQ, saturation and balance, then
 sends and the group bus. The serialized recipe preserves explicit reordering.
 Neutral EQ preserves ordinary delivery exactly.
 
+Processed root dry output has a separate post-treatment envelope. Authored input
+endpoints have already fed the processor, so they receive no second fade,
+including when a current Hold ends exactly at the same endpoint. New cuts and
+Holds at other boundaries keep their own policies. Direct and retained root
+routes carry the same distinction through exact frames and transported physical
+sample labels. Preparation skips the second envelope only when the canonical
+event-return predicate is false; the first gate query and source admission still
+run. See [post-treatment gate qualification](qualification/post-treatment-gates-2026-10-27.md).
+
 The sound inspector exposes `:sound-eq`, `:sound-saturate`, `:sound-balance`,
 `:sound-mute on|off` and `:sound-envelope 0f 30f -12dB 0dB smoothstep`.
 An envelope with the same exact range is replaced; other overlapping curves add

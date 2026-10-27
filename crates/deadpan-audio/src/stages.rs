@@ -53,6 +53,10 @@ mod signal_mix;
 #[path = "sound_events.rs"]
 mod sound_events;
 
+#[cfg(test)]
+#[path = "post_gate_tests.rs"]
+mod post_gate_tests;
+
 #[path = "authored_gain.rs"]
 mod authored_gain;
 

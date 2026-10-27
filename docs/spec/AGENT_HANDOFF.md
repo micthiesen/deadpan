@@ -2,7 +2,40 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: historical binding reuse, product goal active
+## Current state: post-treatment gates, product goal active
+
+The [post-treatment gate milestone](../qualification/post-treatment-gates-2026-10-27.md)
+skips the unused second query only when the canonical event-return predicate is
+false. The first gate/source preflight stays mandatory; decisions and required
+queries retain work charges. It also fixes actual processed-root double fading
+through saved routes. Paired complete/post policies preserve new cuts and Holds,
+deduplicating an already-applied input endpoint at exact coincidence.
+
+The first Option-neutral design passed its route test but failed a separate
+48,000-sample invariant: a Hold wholly before the sound must not change it.
+That design is rejected. The corrected version passes 534 Plan, 198 Audio
+library, eight event-return PCM and one root/Hold waveform test. The isolated
+nine-file patch passes 521 Plan, 184 Audio library and the same eight PCM tests.
+Strict all-target four-crate lint passes. The preceding candidate's full 171
+Audio definition/202 stage suites pass; they were not repeated after the small
+coincidence correction. Final full real-WAV Split remains four pass/three work
+failures. No acceptance credit changes: about 85%, 10/24 Complete, gates 0/7.
+The goal remains active.
+
+Remaining reads: all-owner Source/Sequence `cut-three`, limited `0+511`, and
+selected `prefix-two`, limited `0+4096`, reach `plan work per read`; nested
+selected at the same prefix/window reaches `audio binding work exhausted`.
+Keep general Split and the foreign fuzz/Cargo.lock/.claude entries uncommitted.
+
+Next bounded investigation: Core `sound_occurrence_placement` repeatedly calls
+`project` while walking ancestors. Frozen layouts already have admitted indexes;
+`project` does not rebuild them. Identify an exact duplicate projection that can
+reuse an existing result without changing checked rational operation order,
+historical scope/crop/birth semantics or charges for actual visits. A live
+RenderPlan is not a substitute for a historical projection. No follow-up code
+is qualified yet.
+
+## Historical binding reuse
 
 The [binding optimization](../qualification/sound-binding-reuse-2026-10-27.md)
 skips repeated structural validation only for the exact shared immutable layout,
@@ -22,16 +55,6 @@ silent window still admits its source, and test certified sibling root delivery
 families separately from retained-input and partial-leaf authority. Other Repeat
 plays and Split forests remain excluded. These changes are outside the independent
 binding patch; retain their final source/evidence with the general Split work.
-
-Next bounded candidate: skip the second Hard/Hard gate query only when
-`event_returns::needs_processing(event.treatments)` is false. Only processed event
-returns consume `post_fades`; ordinary owner processing and Tail Sends do not.
-Keep the first complete gate query and all source/query preflight. Prove the
-skipped query supplies no distinct geometry validation, add work and processed
-return regressions, and rerun the unchanged matrix. Read-only research is in
-`/tmp/deadpan-unused-gates-2026-10-27`. The current selected failure reaches
-`sound clock scope work`; nested selected reaches `sound gate work`; both remain
-at `prefix-two`, limited `0+4096`. All-owner remains `cut-three`, limited `0+511`.
 
 ## Exact occurrence support
 
