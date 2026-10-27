@@ -2,7 +2,36 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: joined placement/context query, product goal active
+## Current state: sealed placement history, product goal active
+
+The [placement-history milestone](../qualification/placement-history-2026-10-27.md)
+replaces Audio's scalar placement vector with a sealed Plan-issued cursor/proof.
+It performs one existing query per advance, preserving cancellation, deadlines,
+the 65,536-unit query cap and 16,777,216-unit read cap. Afterbirth reuses placements
+while retaining complete journal, binding, alias, context, remap, route and Split
+validation. Exact borrowed inputs need four identity checks; cloned occurrences
+and fresh scopes receive full semantic comparisons. No cache or plan pins.
+
+Final Plan/Audio library/definition pass 540/199/171 tests; all 203 existing
+real-WAV stages pass. The isolated ten-file patch builds and passes 527 Plan,
+185 Audio library and eight birth/processing tests. Its unchanged Core executable
+passes 775 tests. Strict all-target four-crate lint passes. Initial test-fixture
+and lint failures are retained, then corrected without weakening assertions.
+
+The final unchanged Split matrix remains four pass/three work-limit failures.
+All-owner Source/Sequence `cut-three`, limited `0+511`, and selected `prefix-two`,
+limited `0+4096`, reach `plan work per read`; nested selected at the same
+prefix/window reaches `AudioQueryLimit("sound plan binding work")`. Coverage
+stays about 85%, 10/24 Complete, gates 0/7. The full goal remains active.
+Keep general Split and the foreign fuzz/Cargo.lock/.claude entries uncommitted.
+
+Next: attribute accepted work at actual charge sites in a copied runtime tree.
+Keep canonical and optional-cache work separate; a child query can fail before
+returning a charge, so a near-limit final summary must not be called an overflow.
+Preserve limits, cancellation and deadlines. No profiling implementation or
+result is qualified yet; do not revive the removed memo/cache prototypes.
+
+## Joined placement/context query
 
 The [joined-query milestone](../qualification/placement-context-2026-10-27.md)
 removes a duplicate exact context projection from certified-Split afterbirth

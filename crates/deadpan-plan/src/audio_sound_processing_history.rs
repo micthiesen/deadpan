@@ -57,6 +57,50 @@ impl<'plan> AudioSourceOccurrence<'plan> {
         context: &AudioSoundOwnerContext<'_>,
         limits: AudioQueryLimits,
     ) -> Result<(Option<AudioSoundProcessingHistory<'plan>>, usize), PlanError> {
+        self.processing_history_after_birth_inner(
+            original, alias, binding, delivery, clocks, context, None, limits,
+        )
+    }
+
+    /// Certify the same complete journal using one-shot placements already
+    /// admitted by the host. This skips only repeated Core placement queries;
+    /// all source, journal, remap, context and delivery checks still run.
+    #[allow(clippy::too_many_arguments)]
+    pub fn complete_processing_history_after_birth_with_placements(
+        &self,
+        original: &AudioSourceOccurrence<'_>,
+        alias: &crate::AudioOccurrenceAlias<'_>,
+        binding: &crate::AudioSoundClockBinding<'_, '_>,
+        delivery: &crate::AudioSoundRoute<AudioSample>,
+        clocks: &[crate::AudioSoundClockScope<'_>],
+        context: &AudioSoundOwnerContext<'_>,
+        placements: AudioSoundPlacementHistory<'_, '_, '_>,
+        limits: AudioQueryLimits,
+    ) -> Result<(Option<AudioSoundProcessingHistory<'plan>>, usize), PlanError> {
+        self.processing_history_after_birth_inner(
+            original,
+            alias,
+            binding,
+            delivery,
+            clocks,
+            context,
+            Some(&placements),
+            limits,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn processing_history_after_birth_inner(
+        &self,
+        original: &AudioSourceOccurrence<'_>,
+        alias: &crate::AudioOccurrenceAlias<'_>,
+        binding: &crate::AudioSoundClockBinding<'_, '_>,
+        delivery: &crate::AudioSoundRoute<AudioSample>,
+        clocks: &[crate::AudioSoundClockScope<'_>],
+        context: &AudioSoundOwnerContext<'_>,
+        placements: Option<&AudioSoundPlacementHistory<'_, '_, '_>>,
+        limits: AudioQueryLimits,
+    ) -> Result<(Option<AudioSoundProcessingHistory<'plan>>, usize), PlanError> {
         limits.validate()?;
         self.validate_window_route(original, alias, delivery)?;
         if !context.belongs_to(self.plan)
@@ -111,6 +155,10 @@ impl<'plan> AudioSourceOccurrence<'plan> {
             return Err(PlanError::InvalidPlan(
                 "sound birth requires its complete ordered journal",
             ));
+        }
+        if let Some(placements) = placements {
+            let used = placements.validate(original, self, clocks, context, remaining(work)?)?;
+            spend(&mut work, used)?;
         }
         let extent = original.extent();
         let step = original.grid.frames_per_sample();
@@ -184,41 +232,87 @@ impl<'plan> AudioSourceOccurrence<'plan> {
                 // A disappearing context has no continuous complete suffix.
                 return Ok((None, work));
             }
-            let (placement, context_clock) = if certified_split {
-                scope
-                    .historical_layout()
-                    .sound_occurrence_placement_and_context(
-                        &instance,
-                        historical_context.as_ref(),
-                        remaining(work)?.min(deadpan_core::MAX_DOCUMENT_NODES),
-                    )?
-            } else {
-                (
-                    scope.historical_layout().sound_occurrence_placement(
-                        &instance,
-                        historical_context.as_ref(),
-                        remaining(work)?.min(deadpan_core::MAX_DOCUMENT_NODES),
-                    )?,
-                    None,
-                )
-            };
-            spend(&mut work, placement.work)?;
+            let (complete_start, allocation, anchor, context_clock) =
+                if let Some(placements) = placements {
+                    spend(&mut work, 2)?;
+                    let row = placements.placements().get(placement_index).ok_or(
+                        PlanError::InvalidPlan("sound placement history is incomplete"),
+                    )?;
+                    if row.expands_history() != historical_context.is_some() {
+                        return Err(PlanError::InvalidPlan(
+                            "sound placement history has another context",
+                        ));
+                    }
+                    let context_clock = if certified_split {
+                        historical_context
+                            .as_ref()
+                            .map(|context| {
+                                let projected = scope.historical_layout().project(
+                                    context,
+                                    ExactRatio::ZERO,
+                                    None,
+                                    remaining(work)?.min(deadpan_core::MAX_DOCUMENT_NODES),
+                                )?;
+                                spend(&mut work, projected.work)?;
+                                spend(&mut work, 1)?;
+                                Ok::<_, PlanError>((
+                                    projected.origin,
+                                    projected.frames_per_local_frame,
+                                ))
+                            })
+                            .transpose()?
+                    } else {
+                        None
+                    };
+                    (
+                        row.complete_start(),
+                        row.allocation(),
+                        row.anchor(),
+                        context_clock,
+                    )
+                } else {
+                    let (placement, context_clock) = if certified_split {
+                        scope
+                            .historical_layout()
+                            .sound_occurrence_placement_and_context(
+                                &instance,
+                                historical_context.as_ref(),
+                                remaining(work)?.min(deadpan_core::MAX_DOCUMENT_NODES),
+                            )?
+                    } else {
+                        (
+                            scope.historical_layout().sound_occurrence_placement(
+                                &instance,
+                                historical_context.as_ref(),
+                                remaining(work)?.min(deadpan_core::MAX_DOCUMENT_NODES),
+                            )?,
+                            None,
+                        )
+                    };
+                    spend(&mut work, placement.work)?;
+                    let origin = *first_origin.get_or_insert(placement.owner_origin);
+                    let complete_start = extent
+                        .start
+                        .checked_add(placement.owner_origin.checked_sub(origin)?)?;
+                    (
+                        complete_start,
+                        placement.allocation.clone(),
+                        placement.delivery_start.checked_sub(complete_start)?,
+                        context_clock.map(|p| (p.origin, p.frames_per_local_frame)),
+                    )
+                };
             if certified_split {
-                context_origins.push(context_clock.map(|p| (p.origin, p.frames_per_local_frame)));
+                context_origins.push(context_clock);
             }
-            let origin = *first_origin.get_or_insert(placement.owner_origin);
-            let complete_start = extent
-                .start
-                .checked_add(placement.owner_origin.checked_sub(origin)?)?;
             let grid = AudioSampleGrid::new(
                 ExactRatio::ZERO.checked_sub(complete_start)?,
                 step,
                 AudioBoundaryRule::RoundEven,
             )?;
             let window = crate::AudioOccurrenceWindow {
-                selection: placement.allocation.start.checked_sub(complete_start)?
-                    ..placement.allocation.end.checked_sub(complete_start)?,
-                anchor: placement.delivery_start.checked_sub(complete_start)?,
+                selection: allocation.start.checked_sub(complete_start)?
+                    ..allocation.end.checked_sub(complete_start)?,
+                anchor,
             };
             if !delivery.occurrence_placement_matches(placement_index, &grid, &window) {
                 return Err(PlanError::InvalidPlan(
@@ -229,42 +323,85 @@ impl<'plan> AudioSourceOccurrence<'plan> {
         }
         let scope =
             first_applicable.ok_or(PlanError::InvalidPlan("sound birth has no occurrence"))?;
-        let (placement, context_clock) = if certified_split {
-            scope.live_layout().sound_occurrence_placement_and_context(
-                self.instance(),
-                Some(context.owner()),
-                remaining(work)?.min(deadpan_core::MAX_DOCUMENT_NODES),
-            )?
-        } else {
-            (
-                scope.live_layout().sound_occurrence_placement(
-                    self.instance(),
-                    Some(context.owner()),
-                    remaining(work)?.min(deadpan_core::MAX_DOCUMENT_NODES),
-                )?,
-                None,
-            )
-        };
-        spend(&mut work, placement.work)?;
+        let (complete_start, allocation, anchor, context_clock) =
+            if let Some(placements) = placements {
+                spend(&mut work, 3)?;
+                let row =
+                    placements
+                        .placements()
+                        .get(placement_index)
+                        .ok_or(PlanError::InvalidPlan(
+                            "sound placement history has no current placement",
+                        ))?;
+                if !row.expands_history() || placements.placements().len() != placement_index + 1 {
+                    return Err(PlanError::InvalidPlan(
+                        "sound placement history has another current placement",
+                    ));
+                }
+                let context_clock = if certified_split {
+                    let projected = scope.live_layout().project(
+                        context.owner(),
+                        ExactRatio::ZERO,
+                        None,
+                        remaining(work)?.min(deadpan_core::MAX_DOCUMENT_NODES),
+                    )?;
+                    spend(&mut work, projected.work)?;
+                    spend(&mut work, 1)?;
+                    Some((projected.origin, projected.frames_per_local_frame))
+                } else {
+                    None
+                };
+                (
+                    row.complete_start(),
+                    row.allocation(),
+                    row.anchor(),
+                    context_clock,
+                )
+            } else {
+                let (placement, context_clock) = if certified_split {
+                    scope.live_layout().sound_occurrence_placement_and_context(
+                        self.instance(),
+                        Some(context.owner()),
+                        remaining(work)?.min(deadpan_core::MAX_DOCUMENT_NODES),
+                    )?
+                } else {
+                    (
+                        scope.live_layout().sound_occurrence_placement(
+                            self.instance(),
+                            Some(context.owner()),
+                            remaining(work)?.min(deadpan_core::MAX_DOCUMENT_NODES),
+                        )?,
+                        None,
+                    )
+                };
+                spend(&mut work, placement.work)?;
+                let complete_start =
+                    extent.start.checked_add(
+                        placement.owner_origin.checked_sub(first_origin.ok_or(
+                            PlanError::InvalidPlan("sound birth has no initial origin"),
+                        )?)?,
+                    )?;
+                (
+                    complete_start,
+                    placement.allocation.clone(),
+                    placement.delivery_start.checked_sub(complete_start)?,
+                    context_clock.map(|p| (p.origin, p.frames_per_local_frame)),
+                )
+            };
         if certified_split {
-            context_origins.push(context_clock.map(|p| (p.origin, p.frames_per_local_frame)));
+            context_origins.push(context_clock);
         }
-        let complete_start = extent
-            .start
-            .checked_add(placement.owner_origin.checked_sub(
-                first_origin.ok_or(PlanError::InvalidPlan("sound birth has no initial origin"))?,
-            )?)?;
         let grid = AudioSampleGrid::new(
             ExactRatio::ZERO.checked_sub(complete_start)?,
             step,
             AudioBoundaryRule::RoundEven,
         )?;
         let window = crate::AudioOccurrenceWindow {
-            selection: placement.allocation.start.checked_sub(complete_start)?
-                ..placement.allocation.end.checked_sub(complete_start)?,
-            anchor: placement.delivery_start.checked_sub(complete_start)?,
+            selection: allocation.start.checked_sub(complete_start)?
+                ..allocation.end.checked_sub(complete_start)?,
+            anchor,
         };
-        if placement.allocation != self.extent()
+        if allocation != self.extent()
             || delivery.occurrence_placement_count() != placement_index + 1
             || !delivery.occurrence_placement_matches(placement_index, &grid, &window)
         {

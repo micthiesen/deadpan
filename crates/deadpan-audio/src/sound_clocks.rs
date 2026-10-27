@@ -117,23 +117,16 @@ impl StageAudio {
 
 /// Every placement contributes one rounded allocation. Keeping the intermediate
 /// grids prevents a later move from reviving samples clipped by an earlier move.
-pub(super) struct SoundPlacement {
-    complete_start: ExactRatio,
-    allocation: Range<ExactRatio>,
-    anchor: ExactRatio,
-    pub(super) expands_history: bool,
-}
-
 pub(super) fn route_occurrence<'plan>(
     original: AudioSourceOccurrence<'plan>,
-    placements: &[SoundPlacement],
+    placements: &[deadpan_plan::AudioSoundPlacement],
     control: WorkControl<'_>,
 ) -> Result<AudioRoutedRoot<'plan>, StageAudioError> {
     let extent = original.extent();
     if placements.len() < 2
-        || placements
-            .first()
-            .is_none_or(|first| first.allocation != extent || first.complete_start != extent.start)
+        || placements.first().is_none_or(|first| {
+            first.allocation() != extent || first.complete_start() != extent.start
+        })
     {
         return Err(PlanError::InvalidPlan("sound clock placements are incomplete").into());
     }
@@ -151,20 +144,20 @@ pub(super) fn route_occurrence<'plan>(
         // retained prefix as well as the newly appended operation.
         control.spend_plan_work(index + 1)?;
         grids.push(AudioSampleGrid::new(
-            ExactRatio::ZERO.checked_sub(placement.complete_start)?,
+            ExactRatio::ZERO.checked_sub(placement.complete_start())?,
             step,
             AudioBoundaryRule::RoundEven,
         )?);
         windows.push(deadpan_plan::AudioOccurrenceWindow {
             selection: placement
-                .allocation
+                .allocation()
                 .start
-                .checked_sub(placement.complete_start)?
+                .checked_sub(placement.complete_start())?
                 ..placement
-                    .allocation
+                    .allocation()
                     .end
-                    .checked_sub(placement.complete_start)?,
-            anchor: placement.anchor,
+                    .checked_sub(placement.complete_start())?,
+            anchor: placement.anchor(),
         });
         if index != 0 {
             let keep = SoundRippleMap::new(
@@ -186,96 +179,20 @@ pub(super) fn route_occurrence<'plan>(
     Ok(AudioRoutedRoot::occurrence(original, route)?)
 }
 
-pub(super) fn placements(
-    original: &AudioSourceOccurrence<'_>,
-    current: &AudioSourceOccurrence<'_>,
-    clocks: &[deadpan_plan::AudioSoundClockScope<'_>],
-    context: Option<&deadpan_plan::AudioSoundOwnerContext<'_>>,
+pub(super) fn placements<'query, 'current, 'original>(
+    original: &'query AudioSourceOccurrence<'original>,
+    current: &'query AudioSourceOccurrence<'current>,
+    clocks: &'query [deadpan_plan::AudioSoundClockScope<'current>],
+    context: Option<&'query deadpan_plan::AudioSoundOwnerContext<'current>>,
     control: WorkControl<'_>,
-) -> Result<Vec<SoundPlacement>, StageAudioError> {
-    let extent = original.extent();
-    let mut placements = Vec::with_capacity(clocks.len() + 1);
-    let mut first_origin = None;
-    for clock in clocks {
-        let (historical_instance, remap_work) = clock.try_remap_instance_with_work(
-            current.instance(),
-            control.query_limits()?.maximum_work,
-        )?;
-        control.spend_plan_work(remap_work)?;
-        let Some(historical_instance) = historical_instance else {
-            continue;
-        };
-        let historical_context = context
-            .map(|context| {
-                let (mapped, work) = clock
-                    .try_remap_context_with_work(context, control.query_limits()?.maximum_work)?;
-                control.spend_plan_work(work)?;
-                Ok::<_, StageAudioError>(mapped)
-            })
-            .transpose()?
-            .flatten();
-        let placement = clock
-            .historical_layout()
-            .sound_occurrence_placement(
-                &historical_instance,
-                historical_context.as_ref(),
-                control
-                    .query_limits()?
-                    .maximum_work
-                    .min(deadpan_core::MAX_DOCUMENT_NODES),
-            )
-            .map_err(PlanError::from)?;
-        control.spend_plan_work(placement.work)?;
-        let first = *first_origin.get_or_insert(placement.owner_origin);
-        let shift = placement.owner_origin.checked_sub(first)?;
-        // Core's paired proof establishes that each frozen owner path has the
-        // same nested processing graph and stable Repeat labels.
-        let complete_start = extent.start.checked_add(shift)?;
-        placements.push(SoundPlacement {
-            complete_start,
-            allocation: placement.allocation,
-            anchor: placement.delivery_start.checked_sub(complete_start)?,
-            expands_history: historical_context.is_some(),
-        });
+) -> Result<deadpan_plan::AudioSoundPlacementHistory<'query, 'current, 'original>, StageAudioError>
+{
+    let mut cursor = current.placement_history_cursor(original, clocks, context)?;
+    while !cursor.is_complete() {
+        let work = cursor.advance(control.query_limits()?.maximum_work)?;
+        control.spend_plan_work(work)?;
     }
-    let clock = clocks
-        .first()
-        .ok_or(PlanError::InvalidPlan("sound clock history is empty"))?;
-    let current_placement = clock
-        .live_layout()
-        .sound_occurrence_placement(
-            current.instance(),
-            context.map(|context| context.owner()),
-            control
-                .query_limits()?
-                .maximum_work
-                .min(deadpan_core::MAX_DOCUMENT_NODES),
-        )
-        .map_err(PlanError::from)?;
-    control.spend_plan_work(current_placement.work)?;
-    if current_placement.allocation != current.extent() {
-        return Err(
-            PlanError::InvalidPlan("sound placement differs from its current occurrence").into(),
-        );
-    }
-    let complete_start = extent
-        .start
-        .checked_add(
-            current_placement
-                .owner_origin
-                .checked_sub(first_origin.ok_or(PlanError::InvalidPlan(
-                    "sound has no applicable historical clock",
-                ))?)?,
-        )?;
-    placements.push(SoundPlacement {
-        complete_start,
-        allocation: current_placement.allocation,
-        anchor: current_placement
-            .delivery_start
-            .checked_sub(complete_start)?,
-        expands_history: context.is_some(),
-    });
-    Ok(placements)
+    Ok(cursor.finish()?)
 }
 
 #[cfg(test)]

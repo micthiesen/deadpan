@@ -129,6 +129,15 @@ tests and strict lint pass after a mechanical test-only cleanup. The unchanged
 Split matrix remains four pass/three work-limit failures. No acceptance credit
 changes; the full product goal remains active.
 
+The [sealed placement-history milestone](qualification/placement-history-2026-10-27.md)
+reuses checked scalar placements while preserving per-step cancellation/work
+limits and complete journal, binding, context and route validation. Exact borrowed
+inputs skip repeated field comparisons; equivalent handles retain full checks.
+Final Plan/Audio library/definition pass 540/199/171 tests and all 203 existing
+stages pass. The isolated ten-file patch passes 527 Plan, 185 Audio library and
+eight processing tests. Strict lint passes. The unchanged Split matrix remains
+four pass/three work-limit failures. No acceptance credit changes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

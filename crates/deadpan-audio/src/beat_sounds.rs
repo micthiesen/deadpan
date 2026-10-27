@@ -155,32 +155,34 @@ impl StageAudio {
                             )?;
                             let mut routed = super::sound_clocks::route_occurrence(
                                 original.clone(),
-                                &placements,
+                                placements.placements(),
                                 control,
                             )?;
-                            let history = if placements.iter().all(|p| p.expands_history) {
-                                control.spend_plan_work(placements.len())?;
-                                voice.complete_processing_history(
-                                    &original,
-                                    &alias,
-                                    routed.route(),
-                                )?
-                            } else if let Some(context) = context {
-                                let (history, work) = voice
-                                    .complete_processing_history_after_birth(
+                            let history =
+                                if placements.placements().iter().all(|p| p.expands_history()) {
+                                    control.spend_plan_work(placements.placements().len())?;
+                                    voice.complete_processing_history(
                                         &original,
                                         &alias,
-                                        binding,
                                         routed.route(),
-                                        &scopes,
-                                        context,
-                                        control.query_limits()?,
-                                    )?;
-                                control.spend_plan_work(work)?;
-                                history
-                            } else {
-                                None
-                            };
+                                    )?
+                                } else if let Some(context) = context {
+                                    let (history, work) = voice
+                                        .complete_processing_history_after_birth_with_placements(
+                                            &original,
+                                            &alias,
+                                            binding,
+                                            routed.route(),
+                                            &scopes,
+                                            context,
+                                            placements,
+                                            control.query_limits()?,
+                                        )?;
+                                    control.spend_plan_work(work)?;
+                                    history
+                                } else {
+                                    None
+                                };
                             if let Some(history) = &history {
                                 routed = deadpan_plan::AudioRoutedRoot::occurrence(
                                     original.clone(),

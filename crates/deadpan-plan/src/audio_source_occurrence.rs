@@ -16,6 +16,12 @@ pub use owner_context::AudioSoundOwnerContext;
 mod processing_history;
 pub use processing_history::AudioSoundProcessingHistory;
 
+#[path = "audio_sound_placement_history.rs"]
+mod placement_history;
+pub use placement_history::{
+    AudioSoundPlacement, AudioSoundPlacementHistory, AudioSoundPlacementHistoryCursor,
+};
+
 #[path = "audio_sound_permission_family.rs"]
 mod permission_family;
 pub use permission_family::AudioSoundPermissionFamily;

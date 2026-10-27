@@ -71,7 +71,8 @@ pub use plan::{
     AudioSignalSpan, AudioStage, AudioStageDescriptor, SignalSample, SignalTransform,
 };
 pub use plan::{
-    AudioSoundOwnerContext, AudioSoundPermissionFamily, AudioSoundProcessingHistory,
+    AudioSoundOwnerContext, AudioSoundPermissionFamily, AudioSoundPlacement,
+    AudioSoundPlacementHistory, AudioSoundPlacementHistoryCursor, AudioSoundProcessingHistory,
     AudioSourceOccurrence, AudioSourceOccurrenceSupport, AudioSourceOccurrenceSupports,
     AudioSourceOccurrences, AudioSourceVoice, AudioSourceVoiceIdentity, AudioSourceVoiceRecipe,
 };

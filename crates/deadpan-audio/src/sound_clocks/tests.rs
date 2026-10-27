@@ -422,3 +422,69 @@ fn clock_discovery_keeps_exact_full_batch_paths_and_scoped_halos() {
         Err(StageAudioError::ForeignDomain)
     ));
 }
+
+#[test]
+fn placement_cursor_checks_cancellation_and_aggregate_work_between_steps() {
+    let document = document(&["asset-a"], 2);
+    let plan = RenderPlan::compile(&document).unwrap();
+    let scopes = plan
+        .beat_sound_clock_scopes(&id("owner"), &SoundId::new("sound-0").unwrap(), 65_536)
+        .unwrap();
+    let historical = plan
+        .compile_sound_processing_layout(
+            scopes[0].historical_layout(),
+            &BTreeSet::from([AssetId::new("asset-a").unwrap()]),
+        )
+        .unwrap();
+    let event = &document.beat_sounds()[&id("owner")][&SoundId::new("sound-0").unwrap()];
+    let recipe = AudioSourceVoiceRecipe {
+        source: event.source.clone(),
+        mapping: event.mapping,
+        offset: event.offset,
+    };
+    let instance = deadpan_core::InstancePath {
+        node: id("owner"),
+        repeats: Vec::new(),
+    };
+    let original = historical
+        .source_voice_occurrence(instance.clone(), recipe.clone(), Default::default())
+        .unwrap();
+    let current = plan
+        .source_voice_occurrence(instance, recipe, Default::default())
+        .unwrap();
+    let cancelled = AtomicBool::new(false);
+    let work = RefCell::new(ReadWork::default());
+    let control = control(&cancelled, &work);
+    let mut cursor = current
+        .placement_history_cursor(&original, &scopes, None)
+        .unwrap();
+    let used = cursor
+        .advance(control.query_limits().unwrap().maximum_work)
+        .unwrap();
+    control.spend_plan_work(used).unwrap();
+    let used = cursor
+        .advance(control.query_limits().unwrap().maximum_work)
+        .unwrap();
+    control.spend_plan_work(used).unwrap();
+    let before = work.borrow().plan_work;
+    cancelled.store(true, std::sync::atomic::Ordering::Relaxed);
+    assert!(matches!(
+        control.query_limits(),
+        Err(StageAudioError::Preparation(PreparationError::Cancelled))
+    ));
+    assert_eq!(work.borrow().plan_work, before);
+    assert!(cursor.finish().is_err());
+    cancelled.store(false, std::sync::atomic::Ordering::Relaxed);
+    work.borrow_mut().plan_work = MAX_PLAN_WORK_PER_READ - 6;
+    let mut cursor = current
+        .placement_history_cursor(&original, &scopes, None)
+        .unwrap();
+    assert_eq!(control.query_limits().unwrap().maximum_work, 6);
+    let used = cursor.advance(6).unwrap();
+    control.spend_plan_work(used).unwrap();
+    assert!(matches!(
+        control.query_limits(),
+        Err(StageAudioError::Limit("plan work per read"))
+    ));
+    assert!(cursor.finish().is_err());
+}

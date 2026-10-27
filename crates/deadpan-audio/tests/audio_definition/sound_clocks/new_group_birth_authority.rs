@@ -460,11 +460,320 @@ fn run(directory: &std::path::Path) -> Trial<serde_json::Value> {
             Default::default(),
         ),
     );
+    // Mint only from the known-good immutable inputs, then independently vary
+    // each authority consumed after route construction. No caller-made rows.
+    macro_rules! with_placements {
+        ($voice:expr, $original:expr, $alias:expr, $binding:expr,
+         $delivery:expr, $clocks:expr, $context:expr, $limits:expr) => {{
+            (|| {
+                let mut cursor =
+                    current.placement_history_cursor(&original, &scopes, Some(&context))?;
+                while !cursor.is_complete() {
+                    cursor.advance(deadpan_plan::AudioQueryLimits::default().maximum_work)?;
+                }
+                let placements = cursor.finish()?;
+                $voice.complete_processing_history_after_birth_with_placements(
+                    $original, $alias, $binding, $delivery, $clocks, $context, placements, $limits,
+                )
+            })()
+        }};
+    }
+    let (proved, proved_work) = with_placements!(
+        current,
+        &original,
+        &alias,
+        &binding,
+        &delivery,
+        &scopes,
+        &context,
+        Default::default()
+    )
+    .map_err(|e| error("placement proof positive", e))?;
+    let proved = proved.ok_or_else(|| error("placement proof positive", "missing suffix"))?;
+    require(
+        proved_work < work && proved.route().samples() == history.route().samples(),
+        "placement proof work",
+        "reused projection must remove actual work without changing support",
+    )?;
+    let support = history.route().samples();
+    for range in [
+        support.clone(),
+        support.start..AudioSample(support.start.0 + 1),
+        AudioSample(support.start.0 + 1)..AudioSample(support.start.0 + 512),
+        AudioSample(support.end.0 - 1)..support.end,
+    ] {
+        let expected = history
+            .route()
+            .query(range.clone(), Default::default())
+            .map_err(|e| error("legacy route oracle", e))?;
+        let actual = proved
+            .route()
+            .query(range, Default::default())
+            .map_err(|e| error("proved route oracle", e))?;
+        require(
+            actual == expected,
+            "placement proof route",
+            "exact route query differs",
+        )?;
+    }
+    let (exact, exact_work) = with_placements!(
+        current,
+        &original,
+        &alias,
+        &binding,
+        &delivery,
+        &scopes,
+        &context,
+        deadpan_plan::AudioQueryLimits {
+            maximum_work: proved_work,
+            ..Default::default()
+        }
+    )
+    .map_err(|e| error("exact placement proof work", e))?;
+    require(
+        exact.is_some() && exact_work == proved_work,
+        "exact placement proof work",
+        "reported work must suffice",
+    )?;
+    require(
+        with_placements!(
+            current,
+            &original,
+            &alias,
+            &binding,
+            &delivery,
+            &scopes,
+            &context,
+            deadpan_plan::AudioQueryLimits {
+                maximum_work: proved_work - 1,
+                ..Default::default()
+            }
+        )
+        .is_err(),
+        "short placement proof work",
+        "one-short budget accepted",
+    )?;
+    let cloned_current = current.clone();
+    let cloned_original = original.clone();
+    let (equivalent, _) = with_placements!(
+        cloned_current,
+        &cloned_original,
+        &alias,
+        &equivalent_binding,
+        &delivery,
+        &equivalent_scopes,
+        &context,
+        Default::default()
+    )
+    .map_err(|e| error("equivalent placement authorities", e))?;
+    require(
+        equivalent.is_some_and(|value| value.route().samples() == support),
+        "equivalent placement authorities",
+        "cloned occurrences or fresh scopes refused",
+    )?;
+
+    let mut equivalent_cursor = cloned_current
+        .placement_history_cursor(&cloned_original, &equivalent_scopes, Some(&context))
+        .map_err(|e| error("equivalent cursor construction", e))?;
+    while !equivalent_cursor.is_complete() {
+        equivalent_cursor
+            .advance(deadpan_plan::AudioQueryLimits::default().maximum_work)
+            .map_err(|e| error("equivalent cursor step", e))?;
+    }
+    let equivalent_proof = equivalent_cursor
+        .finish()
+        .map_err(|e| error("equivalent cursor finish", e))?;
+    let (equivalent_mint, _) = current
+        .complete_processing_history_after_birth_with_placements(
+            &original,
+            &alias,
+            &binding,
+            &delivery,
+            &scopes,
+            &context,
+            equivalent_proof,
+            Default::default(),
+        )
+        .map_err(|e| error("equivalent proof mint", e))?;
+    require(
+        equivalent_mint.is_some_and(|value| value.route().samples() == support),
+        "equivalent proof mint",
+        "equivalent construction changed the suffix",
+    )?;
+    let mut proof_negatives = Vec::new();
+    macro_rules! reject_proof {
+        ($label:expr, $voice:expr, $original:expr, $binding:expr,
+         $delivery:expr, $clocks:expr, $context:expr) => {{
+            let result = with_placements!($voice, $original, &alias, $binding,
+                $delivery, $clocks, $context, Default::default());
+            proof_negatives.push(serde_json::json!({"case":$label,
+                "rejected":result.is_err(),"error":result.err().map(|e|format!("{e:?}"))}));
+        }};
+    }
+    reject_proof!(
+        "other-binding-ordinal",
+        current,
+        &original,
+        &other_ordinal_binding,
+        &delivery,
+        &scopes,
+        &context
+    );
+    reject_proof!(
+        "foreign-historical-binding",
+        current,
+        &original,
+        &foreign_historical_binding,
+        &delivery,
+        &scopes,
+        &context
+    );
+    reject_proof!(
+        "truncated-prefix",
+        current,
+        &original,
+        &binding,
+        &delivery,
+        &scopes[..1],
+        &context
+    );
+    reject_proof!(
+        "truncated-suffix",
+        current,
+        &original,
+        &binding,
+        &delivery,
+        &scopes[1..],
+        &context
+    );
+    reject_proof!(
+        "reordered-journal",
+        current,
+        &original,
+        &binding,
+        &delivery,
+        &reversed,
+        &context
+    );
+    reject_proof!(
+        "foreign-plan-scopes",
+        current,
+        &original,
+        &binding,
+        &delivery,
+        &foreign_scopes,
+        &context
+    );
+    reject_proof!(
+        "fresh-context-arc",
+        current,
+        &original,
+        &binding,
+        &delivery,
+        &scopes,
+        &fresh_context
+    );
+    reject_proof!(
+        "foreign-context",
+        current,
+        &original,
+        &binding,
+        &delivery,
+        &scopes,
+        &foreign_context
+    );
+    reject_proof!(
+        "forged-grid",
+        current,
+        &original,
+        &binding,
+        &forged_grid,
+        &scopes,
+        &context
+    );
+    reject_proof!(
+        "forged-allocation",
+        current,
+        &original,
+        &binding,
+        &forged_allocation,
+        &scopes,
+        &context
+    );
+    reject_proof!(
+        "missing-placement",
+        current,
+        &original,
+        &binding,
+        &missing,
+        &scopes,
+        &context
+    );
+    reject_proof!(
+        "extra-placement",
+        current,
+        &original,
+        &binding,
+        &extra,
+        &scopes,
+        &context
+    );
+    let fresh_current = fresh_context
+        .source_voice_occurrence(
+            current.instance().clone(),
+            current.recipe().clone(),
+            Default::default(),
+        )
+        .map_err(|e| error("fresh-policy current occurrence", e))?;
+    reject_proof!(
+        "matching-voice-with-another-policy-arc",
+        fresh_current,
+        &original,
+        &binding,
+        &delivery,
+        &scopes,
+        &fresh_context
+    );
+    let mut changed_recipe = current.recipe().clone();
+    let SourceAudioMapping::SelectedPlacement { selection, .. } = &mut changed_recipe.mapping
+    else {
+        return Err(error(
+            "different recipe fixture",
+            "expected selected placement",
+        ));
+    };
+    selection.end = selection
+        .end
+        .checked_sub(ExactRatio::new(1, 100).unwrap())
+        .map_err(|e| error("different recipe selection", e))?;
+    let other_recipe_current = context
+        .source_voice_occurrence(
+            current.instance().clone(),
+            changed_recipe,
+            Default::default(),
+        )
+        .map_err(|e| error("different recipe current occurrence", e))?;
+    reject_proof!(
+        "different-voice-recipe",
+        other_recipe_current,
+        &original,
+        &binding,
+        &delivery,
+        &scopes,
+        &context
+    );
+    require(
+        proof_negatives.iter().all(|row| row["rejected"] == true),
+        "placement proof authority",
+        format!("{proof_negatives:?}"),
+    )?;
     Ok(serde_json::json!({
         "positive":{"work":work,"binding_work":binding_work,"legacy_work":legacy_work,
             "samples":[history.route().samples().start.0,history.route().samples().end.0],
             "terminal_query":format!("{terminal:?}")},
         "all_rejected":results.iter().all(|row|row["rejected"]==true),"negatives":results,
+        "placement_proof":{"work":proved_work,"legacy_afterbirth_work":work,
+            "negatives":proof_negatives},
         "implementation_claim":false,"executed_by_draft_author":false,
     }))
 }
