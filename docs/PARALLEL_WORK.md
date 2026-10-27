@@ -7,6 +7,13 @@ it does not establish that parallel execution is faster before verification.
 
 Read /Users/michael/.agents/skills/parallel/SKILL.md when continuing the wave.
 
+For compiler scheduling, use [Fast local Rust feedback](BUILD_FEEDBACK.md).
+Routine pure-logic loops keep incremental compilation enabled and avoid the
+qualification optimization override. Maintain the actual selected target;
+the earlier hardcoded `./target` hygiene missed the external 103 GiB target.
+Blaze accelerates the tested Core loop, but app/media JIT panics mean Cargo
+remains their default. Preserve distinct engine targets and source attribution.
+
 ## Retained operating pattern
 
 Use up to three disjoint workers plus the primary, only while independent work

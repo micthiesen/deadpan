@@ -2,6 +2,18 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Build tooling diversion, 2026-10-26
+
+The owner paused the product goal and authorized only build-loop repairs,
+Blaze installation/evaluation, an Omni analysis artifact and a completion
+notification. Do not interpret this tooling task as resuming product work.
+[Fast local Rust feedback](../BUILD_FEEDBACK.md) records the retained workflow:
+incremental unoptimized pure-logic checks, actual-target hygiene, experimental
+Blaze for Core, Cargo for native app/media and qualification. Three Core body
+edits measured a roughly 29-fold median rebuild reduction, and all 794 Core
+tests pass under both workflows; native media/app JIT paths panic and fall back
+to Cargo. Existing Core/Plan/Audio/Store WIP remains uncommitted and untouched.
+
 ## Parallel wave, 2026-10-26
 
 The owner explicitly requested substantial parallel implementation without

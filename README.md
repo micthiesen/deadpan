@@ -77,6 +77,10 @@ described in [Development](docs/DEVELOPMENT.md).
     cargo run --locked -p deadpan-cli -- doctor
     cargo run --locked -p deadpan-app
 
+The [fast feedback guide](docs/BUILD_FEEDBACK.md) separates routine incremental
+builds from qualification and records the experimental Blaze Core accelerator.
+The native app currently stays on Cargo because its Blaze JIT path panics.
+
 Use ⌘N to choose one local Original, or the start surface's YouTube URL field
 to inspect a video before import. ⌘O reopens a project; ⌘I adds audio to the sound
 catalog. New projects open with the complete Original on Your edit.

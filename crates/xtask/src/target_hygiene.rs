@@ -11,9 +11,10 @@
 //! leaves incremental state alone, which grew to 39 GiB in 1,555 per-crate
 //! directories in one day, so the oldest of those are pruned the same way;
 //! rustc rebuilds missing incremental state.
-//! Evidence written under `target/` by other tools is never measured or touched.
+//! Evidence outside Cargo profile directories is never measured or touched.
 
 use std::{
+    ffi::OsStr,
     path::{Path, PathBuf},
     process::Command,
 };
@@ -33,7 +34,11 @@ pub fn maintain(workspace: &Path) -> Result<()> {
         .ok()
         .and_then(|value| value.parse::<u64>().ok())
         .unwrap_or(DEFAULT_LIMIT_GIB);
-    let target = workspace.join("target");
+    let target = cargo_target_directory(
+        workspace,
+        std::env::var_os("CARGO_TARGET_DIR").as_deref(),
+        std::env::var_os("CARGO_BUILD_TARGET_DIR").as_deref(),
+    )?;
     let before = artifact_bytes(&target)?;
     if before <= limit * GIB {
         return Ok(());
@@ -43,10 +48,7 @@ pub fn maintain(workspace: &Path) -> Result<()> {
         gib(before),
         limit / 2
     );
-    let swept = Command::new("cargo")
-        .args(["sweep", "--maxsize", &format!("{}GB", limit / 2)])
-        .current_dir(workspace)
-        .status();
+    let swept = sweep_command(workspace, &target, limit / 2).status();
     let goal = limit / 2 * GIB;
     if !matches!(swept, Ok(status) if status.success()) {
         println!(
@@ -60,6 +62,64 @@ pub fn maintain(workspace: &Path) -> Result<()> {
         println!("target hygiene: still above {limit} GiB; run `cargo clean` when convenient");
     }
     Ok(())
+}
+
+/// Ask Cargo for the target directory selected by its environment and config.
+/// Cargo's target-dir environment overrides are passed explicitly so tests
+/// never need to mutate process-global environment.
+fn cargo_target_directory(
+    workspace: &Path,
+    target_dir: Option<&OsStr>,
+    build_target_dir: Option<&OsStr>,
+) -> Result<PathBuf> {
+    let mut command = Command::new("cargo");
+    command
+        .args(["metadata", "--format-version", "1", "--no-deps", "--locked"])
+        .current_dir(workspace);
+    if let Some(target_dir) = target_dir {
+        command.env("CARGO_TARGET_DIR", target_dir);
+    } else {
+        command.env_remove("CARGO_TARGET_DIR");
+    }
+    if let Some(build_target_dir) = build_target_dir {
+        command.env("CARGO_BUILD_TARGET_DIR", build_target_dir);
+    } else {
+        command.env_remove("CARGO_BUILD_TARGET_DIR");
+    }
+    let output = command
+        .output()
+        .map_err(|error| format!("failed to start cargo metadata: {error}"))?;
+    if !output.status.success() {
+        return Err(format!(
+            "cargo metadata failed: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
+    }
+    let metadata: serde_json::Value = serde_json::from_slice(&output.stdout)
+        .map_err(|error| format!("cargo metadata output: {error}"))?;
+    let target = metadata["target_directory"]
+        .as_str()
+        .map(PathBuf::from)
+        .ok_or_else(|| "cargo metadata has no target directory".to_owned())?;
+    if !target.is_absolute() {
+        return Err(format!(
+            "cargo metadata returned a non-absolute target directory: {}",
+            target.display()
+        ));
+    }
+    Ok(target)
+}
+
+/// Run cargo-sweep from the workspace while pinning its Cargo target dir.
+/// cargo-sweep's positional paths are Cargo projects, not target directories.
+fn sweep_command(workspace: &Path, target: &Path, max_gib: u64) -> Command {
+    let mut command = Command::new("cargo");
+    command
+        .args(["sweep", "--maxsize", &format!("{max_gib}GB")])
+        .current_dir(workspace)
+        .env("CARGO_TARGET_DIR", target)
+        .env("CARGO_BUILD_TARGET_DIR", target);
+    command
 }
 
 /// Remove the least recently changed per-crate incremental directories until
@@ -180,6 +240,72 @@ mod tests {
     }
 
     #[test]
+    fn cargo_target_directory_follows_env_and_cargo_config() -> std::io::Result<()> {
+        let workspace = scratch("target-directory");
+        std::fs::create_dir_all(workspace.path())?;
+        let workspace_path = workspace.path().canonicalize()?;
+        std::fs::write(
+            workspace_path.join("Cargo.toml"),
+            "[workspace]\nresolver = \"3\"\n",
+        )?;
+        std::fs::write(workspace_path.join("Cargo.lock"), "version = 4\n")?;
+
+        assert_eq!(
+            cargo_target_directory(&workspace_path, None, None).map_err(std::io::Error::other)?,
+            workspace_path.join("target")
+        );
+
+        std::fs::create_dir_all(workspace_path.join(".cargo"))?;
+        std::fs::write(
+            workspace_path.join(".cargo/config.toml"),
+            "[build]\ntarget-dir = \"configured-target\"\n",
+        )?;
+
+        assert_eq!(
+            cargo_target_directory(&workspace_path, Some(OsStr::new("shared-target")), None,)
+                .map_err(std::io::Error::other)?,
+            workspace_path.join("shared-target")
+        );
+        assert_eq!(
+            cargo_target_directory(&workspace_path, None, None).map_err(std::io::Error::other)?,
+            workspace_path.join("configured-target")
+        );
+        assert_eq!(
+            cargo_target_directory(&workspace_path, None, Some(OsStr::new("build-env-target")),)
+                .map_err(std::io::Error::other)?,
+            workspace_path.join("build-env-target")
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn sweep_uses_workspace_context_and_the_resolved_target_environment() {
+        let workspace = Path::new("/tmp/deadpan-hygiene-workspace");
+        let target = Path::new("/tmp/deadpan-hygiene-target");
+        let command = sweep_command(workspace, target, 20);
+        assert_eq!(
+            command.get_args().collect::<Vec<_>>(),
+            ["sweep", "--maxsize", "20GB"]
+        );
+        assert_eq!(command.get_current_dir(), Some(workspace));
+        assert_eq!(
+            command
+                .get_envs()
+                .find(|(name, _)| *name == OsStr::new("CARGO_TARGET_DIR")),
+            Some((OsStr::new("CARGO_TARGET_DIR"), Some(target.as_os_str())))
+        );
+        assert_eq!(
+            command
+                .get_envs()
+                .find(|(name, _)| *name == OsStr::new("CARGO_BUILD_TARGET_DIR")),
+            Some((
+                OsStr::new("CARGO_BUILD_TARGET_DIR"),
+                Some(target.as_os_str())
+            ))
+        );
+    }
+
+    #[test]
     fn the_oldest_incremental_state_is_pruned_first() -> std::io::Result<()> {
         let root = std::env::temp_dir().join(format!(
             "{}-prune-{}",
@@ -207,6 +333,16 @@ mod tests {
 
     /// Removes its directory when the test ends.
     struct Scratch(PathBuf);
+
+    fn scratch(name: &str) -> Scratch {
+        let path = std::env::temp_dir().join(format!(
+            "{}-{name}-{}",
+            env!("CARGO_PKG_NAME"),
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&path);
+        Scratch(path)
+    }
 
     impl Scratch {
         fn path(&self) -> &Path {

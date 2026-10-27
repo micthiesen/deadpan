@@ -124,6 +124,12 @@ Current crates:
 
 Use Rust 1.97.1 as pinned in `rust-toolchain.toml`, Cargo, rustfmt, Clippy, strong types, and meaningful unit/property tests. Keep platform-specific unsafe code inside qualified adapters and out of core. Avoid debug leftovers, broad suppressions, unchecked conversions, and unrelated dependency additions. Commit `Cargo.lock` and test locked dependencies.
 
+The [local feedback workflow](docs/BUILD_FEEDBACK.md) permits the separately
+pinned Blaze nightly for experimental Core iteration. Its native app/media
+JIT currently panics, so keep those paths, final compiler diagnostics,
+qualification, packaging and CI on Cargo. Never globally intercept Cargo or
+count its fallback output as a successful Blaze build.
+
 Use separate Cargo target directories for archived-source comparisons. Shared
 top-level executables can retain the other source's binary while Cargo reports
 a fresh fingerprint. Record the executed binary hash alongside source identity.
@@ -1614,6 +1620,12 @@ choose the cheapest one that covers the change:
 
 1. While editing (seconds to a few minutes): the new or changed tests by name,
    `cargo test -p <crate> --locked --lib <filter>` or `--test <file> <filter>`.
+   Pure logic feedback uses the ordinary unoptimized profile and incremental
+   compilation. Do not carry `CARGO_PROFILE_DEV_OPT_LEVEL=2` or
+   `CARGO_INCREMENTAL=0` from a qualification shell into routine Core/Plan or
+   UI iterations. Clear the former and use `CARGO_INCREMENTAL=1` explicitly
+   when the environment is inherited. Compilation speed never changes a
+   test's required runtime environment or its acceptance criteria.
    Tests with wall-clock preparation deadlines (audio stages, limiting, wet
    effects, CLI inspection and export) need the optimized test build that
    check, gate and CI use: prefix the command with
@@ -1643,6 +1655,11 @@ It first prunes the build directory when Cargo artifacts exceed 40 GiB (stale
 artifacts slowed rebuilds from 16 s to over six minutes), then runs formatting,
 workspace and `ui-harness` Clippy, and the workspace and `ui-harness` tests with
 `--no-fail-fast`. See [Development](docs/DEVELOPMENT.md).
+
+Run `cargo xtask hygiene` at the start of a long local development session and
+after substantial build growth. It resolves Cargo's actual target directory,
+including environment/config overrides; do not assume that `./target` is the
+directory being used. Never sweep a target while another compiler uses it.
 
 The workspace tests already build and exercise the normal app, CLI and media
 worker executables, including doctor. Use a separate build for packaging or

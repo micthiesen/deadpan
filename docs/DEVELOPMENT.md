@@ -67,6 +67,10 @@ beside the durable build, outside the repository.
 
 ## Validation workflow
 
+For quick local loops, build-directory maintenance and the measured limits of
+the installed Blaze trial, read [Fast local Rust feedback](BUILD_FEEDBACK.md).
+Blaze is a selective Core accelerator, not the native app/media or CI default.
+
 During implementation, select the changed crate, relevant integration targets
 and affected dependants. For example, while changing playback:
 
@@ -115,7 +119,18 @@ unoptimized Rust misses, especially on CI's three-core runner; the DSP C++ is
 already built at `-O2` in every profile. When running such tests directly,
 use the same variable, for example
 `CARGO_PROFILE_DEV_OPT_LEVEL=2 cargo test -p deadpan-audio --locked --test stages`.
-Unprefixed `cargo test` remains unoptimized for quick iteration. Cargo compiles
+Unprefixed `cargo test` remains unoptimized for quick iteration. Keep
+incremental compilation enabled for that loop. If inheriting a qualification
+environment, explicitly clear its optimization override and restore incremental
+compilation before a pure-logic check:
+
+```sh
+env -u CARGO_PROFILE_DEV_OPT_LEVEL -u CARGO_PROFILE_TEST_OPT_LEVEL \
+  CARGO_INCREMENTAL=1 cargo test -p deadpan-core --locked --lib <filter>
+```
+
+Use the optimized command above for deadline-sensitive media tests; a quick
+build does not establish performance or encoded-output qualification. Cargo compiles
 the two levels separately within `target/debug`, so switching between them
 rebuilds neither level's crates; only the top-level executables are refreshed.
 `--no-fail-fast` keeps one failing target from hiding the results of every
@@ -152,6 +167,14 @@ incremental state. Install `cargo-sweep` with `brew install cargo-sweep` (it is
 in the dotfiles Brewfile); without it only incremental state is pruned. The dev
 profile keeps line tables for workspace crates and omits dependency debug info
 to slow the growth.
+
+Run `cargo xtask hygiene` before a long local development session and after
+substantial build growth, with no compiler using that target. Hygiene resolves
+Cargo's selected target through metadata, honoring `CARGO_TARGET_DIR`,
+`CARGO_BUILD_TARGET_DIR` and `.cargo/config.toml`; the measured directory and
+cargo-sweep's target are the same. It preserves evidence outside Cargo profile
+directories. CI keeps its optimized Cargo configuration and disabled
+incremental state because each CI build starts fresh.
 
 Large artifact directories can also delay macOS main-bundle discovery during
 Foundation bookmark creation. The [Node selector qualification](qualification/explicit-node-selectors-2026-10-22.md)
