@@ -1,22 +1,16 @@
 # Fast local Rust feedback
 
-Use Blaze selectively for repeated pure Core edits. Keep Cargo for the native
-app, media tests, compiler diagnostics, qualification, packaging and CI. The
+Prefer Blaze for repeated pure `deadpan-core --lib` body edits. Keep Cargo for
+Plan, integration tests, native app/media, compiler diagnostics, qualification,
+packaging and CI. The
 2026-10-26 trial found real Core acceleration but JIT panics on both the native
 media test target and the app. A successful exit after Cargo fallback is not a
 successful Blaze compilation.
 
 ## Routine loop
 
-Pure logic feedback uses unoptimized code and incremental compilation:
-
-```sh
-env -u CARGO_PROFILE_DEV_OPT_LEVEL -u CARGO_PROFILE_TEST_OPT_LEVEL \
-  CARGO_INCREMENTAL=1 cargo test -p deadpan-core --locked --lib <filter>
-```
-
-For repeated Core body edits, the installed experimental engine can shorten
-that loop:
+Run from the workspace root. The preferred repeated Core library loop uses
+the installed experimental engine, unoptimized code and incremental compilation:
 
 ```sh
 env -u CARGO_PROFILE_DEV_OPT_LEVEL -u CARGO_PROFILE_TEST_OPT_LEVEL \
@@ -25,12 +19,29 @@ env -u CARGO_PROFILE_DEV_OPT_LEVEL -u CARGO_PROFILE_TEST_OPT_LEVEL \
 blaze status
 ```
 
+Replace `<filter>` with the changed test's name, or omit it for the full library
+suite. Use the same command on subsequent body edits so the daemon can reuse
+its loaded workspace. This command fixes the tested scope to Core library tests;
+do not extend it to other crates or integration targets without new evidence.
+
 Keep the package, profile, feature and flag selection stable between edits.
 The first build includes Cargo bootstrap and daemon loading. Manifest, build
-script and test-inventory changes can require Cargo again. Inspect the output
+script and test-inventory changes must also pass Cargo. Inspect the output
 and status: `[ra-jit]` identifies the accelerated build, while a panic or
 fallback must be reported. Use plain Cargo if the engine fails; do not change
 correct Rust code or weaken assertions to satisfy it.
+
+The explicit Core fallback is:
+
+```sh
+env -u CARGO_PROFILE_DEV_OPT_LEVEL -u CARGO_PROFILE_TEST_OPT_LEVEL \
+  CARGO_INCREMENTAL=1 cargo test -p deadpan-core --locked --lib <filter>
+```
+
+Plan and other pure-logic Cargo loops use the same environment cleanup with
+their own package and test target. The Cargo commands in the feature guides
+remain acceptance checks; the narrow Blaze loop accelerates editing between
+those checks.
 
 Keep the Blaze target separate from authoritative Cargo outputs. Do not enable
 global Cargo interception with `blaze enable`. Use ordinary `cargo check` and
@@ -39,6 +50,11 @@ are not the correctness authority. Its `check` command is not a substitute.
 Deadline-sensitive audio/media tests still require the optimized Cargo profile
 described in [Development](DEVELOPMENT.md), and physical-Mac qualification stays
 local as well as CI. Release builds, bundle checks and measurements use Cargo.
+
+The primary session schedules both engines. Workers request checks instead of
+starting competing compiler jobs. The daemon can retain about 13 GiB; reuse it
+while actively iterating, then run `blaze stop` when that work ends. Hot reload
+remains a separate probe only because the native app JIT currently fails.
 
 ## Installation tested here
 
@@ -106,6 +122,14 @@ target through metadata, including environment and config overrides. Above
 profile directories. The trial reduced the old target's debug artifacts from
 about 103 GiB to 17 GiB. Keep routine feedback out of the qualification shell's
 `CARGO_INCREMENTAL=0` and optimization overrides.
+
+The separate `target/blaze` cache is not part of the ordinary target's profile
+accounting. Maintain it separately when needed, after stopping its daemon and
+confirming no compiler is using it:
+
+```sh
+CARGO_TARGET_DIR=target/blaze CARGO_BUILD_TARGET_DIR=target/blaze cargo xtask hygiene
+```
 
 Raw commands, output, executable/source pins, worker panic logs, expected
 negative tests and the replay report are retained in

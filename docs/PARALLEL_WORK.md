@@ -11,8 +11,12 @@ For compiler scheduling, use [Fast local Rust feedback](BUILD_FEEDBACK.md).
 Routine pure-logic loops keep incremental compilation enabled and avoid the
 qualification optimization override. Maintain the actual selected target;
 the earlier hardcoded `./target` hygiene missed the external 103 GiB target.
-Blaze accelerates the tested Core loop, but app/media JIT panics mean Cargo
-remains their default. Preserve distinct engine targets and source attribution.
+Prefer Blaze for the tested repeated `deadpan-core --lib` body-edit loop.
+Plan, integration tests and app/media stay on Cargo; the native JIT paths
+panic. The primary schedules both engines, and workers request checks rather
+than starting competing compiler jobs. Preserve distinct engine targets and
+source attribution. Reuse the daemon during active Core iteration and stop it
+when that work ends; see the guide for maintaining its separate cache.
 
 ## Retained operating pattern
 

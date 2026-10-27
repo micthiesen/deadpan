@@ -6,10 +6,15 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 The owner paused the product goal and authorized only build-loop repairs,
 Blaze installation/evaluation, an Omni analysis artifact and a completion
-notification. Do not interpret this tooling task as resuming product work.
+notification, then requested a full recommendation sweep. Do not interpret
+either tooling task as resuming product work.
 [Fast local Rust feedback](../BUILD_FEEDBACK.md) records the retained workflow:
-incremental unoptimized pure-logic checks, actual-target hygiene, experimental
-Blaze for Core, Cargo for native app/media and qualification. Three Core body
+incremental unoptimized pure-logic checks, actual-target hygiene, preferred
+experimental Blaze for repeated `deadpan-core --lib` body edits, and Cargo for
+Plan, integration tests, native app/media and qualification. The primary
+schedules both engines; inspect Blaze status and use Cargo on failure. Stop
+the daemon after active iteration and maintain its separate target explicitly.
+Three Core body
 edits measured a roughly 29-fold median rebuild reduction, and all 794 Core
 tests pass under both workflows; native media/app JIT paths panic and fall back
 to Cargo. Existing Core/Plan/Audio/Store WIP remains uncommitted and untouched.

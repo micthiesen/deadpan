@@ -124,11 +124,12 @@ Current crates:
 
 Use Rust 1.97.1 as pinned in `rust-toolchain.toml`, Cargo, rustfmt, Clippy, strong types, and meaningful unit/property tests. Keep platform-specific unsafe code inside qualified adapters and out of core. Avoid debug leftovers, broad suppressions, unchecked conversions, and unrelated dependency additions. Commit `Cargo.lock` and test locked dependencies.
 
-The [local feedback workflow](docs/BUILD_FEEDBACK.md) permits the separately
-pinned Blaze nightly for experimental Core iteration. Its native app/media
-JIT currently panics, so keep those paths, final compiler diagnostics,
-qualification, packaging and CI on Cargo. Never globally intercept Cargo or
-count its fallback output as a successful Blaze build.
+The [local feedback workflow](docs/BUILD_FEEDBACK.md) prefers the separately
+pinned experimental Blaze nightly for repeated `deadpan-core --lib` body edits,
+using its isolated `target/blaze` cache. Plan, integration tests and native
+app/media stay on Cargo; those native JIT paths currently panic. Keep final
+compiler diagnostics, qualification, packaging and CI on Cargo. Never globally
+intercept Cargo or count its fallback output as a successful Blaze build.
 
 Use separate Cargo target directories for archived-source comparisons. Shared
 top-level executables can retain the other source's binary while Cargo reports
@@ -1620,10 +1621,15 @@ choose the cheapest one that covers the change:
 
 1. While editing (seconds to a few minutes): the new or changed tests by name,
    `cargo test -p <crate> --locked --lib <filter>` or `--test <file> <filter>`.
+   For repeated pure Core library body edits, prefer the measured Blaze command
+   in [Fast local Rust feedback](docs/BUILD_FEEDBACK.md#routine-loop). Inspect
+   `blaze status`; use Cargo on failure and for manifest, build-script or test
+   inventory changes. This exception does not cover Plan or integration tests.
    Pure logic feedback uses the ordinary unoptimized profile and incremental
-   compilation. Do not carry `CARGO_PROFILE_DEV_OPT_LEVEL=2` or
+   compilation. Clear inherited `CARGO_PROFILE_DEV_OPT_LEVEL` and
+   `CARGO_PROFILE_TEST_OPT_LEVEL`; do not carry qualification settings or
    `CARGO_INCREMENTAL=0` from a qualification shell into routine Core/Plan or
-   UI iterations. Clear the former and use `CARGO_INCREMENTAL=1` explicitly
+   UI iterations. Use `CARGO_INCREMENTAL=1` explicitly
    when the environment is inherited. Compilation speed never changes a
    test's required runtime environment or its acceptance criteria.
    Tests with wall-clock preparation deadlines (audio stages, limiting, wet

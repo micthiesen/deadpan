@@ -69,7 +69,8 @@ beside the durable build, outside the repository.
 
 For quick local loops, build-directory maintenance and the measured limits of
 the installed Blaze trial, read [Fast local Rust feedback](BUILD_FEEDBACK.md).
-Blaze is a selective Core accelerator, not the native app/media or CI default.
+Prefer its Blaze command for repeated pure `deadpan-core --lib` body edits.
+Plan, integration tests, native app/media and CI continue to use Cargo.
 
 During implementation, select the changed crate, relevant integration targets
 and affected dependants. For example, while changing playback:
@@ -119,14 +120,17 @@ unoptimized Rust misses, especially on CI's three-core runner; the DSP C++ is
 already built at `-O2` in every profile. When running such tests directly,
 use the same variable, for example
 `CARGO_PROFILE_DEV_OPT_LEVEL=2 cargo test -p deadpan-audio --locked --test stages`.
-Unprefixed `cargo test` remains unoptimized for quick iteration. Keep
-incremental compilation enabled for that loop. If inheriting a qualification
-environment, explicitly clear its optimization override and restore incremental
-compilation before a pure-logic check:
+Unprefixed `cargo test` remains unoptimized for quick iteration. For repeated
+pure Core library body edits, use the preferred
+[Blaze loop](BUILD_FEEDBACK.md#routine-loop); its isolated target, environment
+cleanup, status check and Cargo fallback are part of that command. Keep Plan
+and integration tests on Cargo. If inheriting a qualification environment,
+clear both optimization overrides and restore incremental compilation before
+a general pure-logic Cargo check, for example:
 
 ```sh
 env -u CARGO_PROFILE_DEV_OPT_LEVEL -u CARGO_PROFILE_TEST_OPT_LEVEL \
-  CARGO_INCREMENTAL=1 cargo test -p deadpan-core --locked --lib <filter>
+  CARGO_INCREMENTAL=1 cargo test -p deadpan-plan --locked --lib <filter>
 ```
 
 Use the optimized command above for deadline-sensitive media tests; a quick
