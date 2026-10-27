@@ -61,6 +61,9 @@ pub use audio_signal::*;
 mod audio_bound;
 #[path = "audio_context.rs"]
 mod audio_context;
+#[path = "audio_intrinsic_preparation.rs"]
+mod audio_intrinsic_preparation;
+pub use audio_intrinsic_preparation::AudioIntrinsicPreparation;
 #[path = "audio_preserve_input.rs"]
 mod audio_preserve_input;
 pub use audio_bound::{AudioBound, AudioBoundDomain};

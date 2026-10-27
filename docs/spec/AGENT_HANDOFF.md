@@ -2,7 +2,58 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: shared structural decisions, product goal active
+## Current state: bounded intrinsic-processing query, product goal active
+
+`226d6c27` commits/pushes the structural decision extraction below. The
+[Plan intrinsic-processing milestone](../qualification/intrinsic-capability-2026-10-27.md)
+adds `RenderPlan::audio_intrinsic_preparation(AudioQueryLimits)`. It scans live
+compiled nodes, owned Preserve input, its retained sound layout and ALL timing
+layouts. Current compiled and frozen integral/derived predicates are exact; no
+historical compilation, Repeat expansion, query graph or allocation. Outcomes
+are `NotRequired`, `MayBeRequired` and `WorkLimit`, each carrying actual work.
+An optional Audio caller MUST bill `work()` before scalar fallback. No Audio
+caller, policy carrier/visitor, resource proof or batching is implemented yet.
+
+Main combined Plan tests pass 552 across 29 pinned executables; isolated tests
+pass 539 across 29. These totals include library counts 102/89 and eleven new
+integration tests each; the additional derived-clock unit is in the libraries.
+All have zero failed/ignored. Strict four-crate all-target lint and independent
+review pass. All receipts are terminal, no Cargo/test process remains. Initial
+test-only arity, media-less Source and opaque-binding fixture failures are
+retained and corrected without relaxing admission/assertions. Early commentary
+and its review relay misstated a combined total as a library count; exact
+per-binary counts and the subsequent complete-suite runs correct that explicitly.
+
+Exact final patches/pins are under
+`/tmp/deadpan-intrinsic-capability-2026-10-27` and archived evidence. Use
+`final-published.patch` for the independent committed change and `final-live.patch`
+for the overlay: the Plan module list has inherited WIP surrounding the same
+three added lines. Never stage that entire dirty Plan file. The query's three
+other task files match main/isolated bytes. No Audio/media/full Split matrix or
+GUI/packaging is rerun for this unused metadata API. The last full Split result
+remains four pass/three work failures at the storage milestone, not a fresh pass.
+
+Next implement an admitted bounded metadata permission carrier/visitor using
+the existing shared decision helpers and exact Original/sound/routed
+suppression/exhaustion facts before PCM allocation. Preserve constant/dynamic
+callback orders, inactive-route semantics, output aliases and driver-only wet
+members. A test bridge is not the production visitor. Reconstruct retained raw
+contexts from exact ancestry/grid witnesses; owner ID or `matches_clock_at`
+alone cannot identify a raw context. Drop per-chunk query views after folding.
+
+Then prove cold future retained outputs/tiles, constructor states and recursive
+scratch before extra histories allocate. The new query can gate the first
+intrinsic-free domain, but it excludes arbitrary caller-created projected PCM:
+the actual Audio walker must still reject unsupported ProjectedStage/root/signal
+boundary forms before batching, even after `NotRequired`. No fake PCM, copied
+numerical mixer, warm peak, work waiver, raised cap or failed-batch retry. Every
+performed planning visit remains billed. Native graph reads stay single-output.
+
+Coverage stays about 85%, ten Complete requirements and all seven gates open;
+the full goal is active. Preserve general-Split/index and foreign
+fuzz/Cargo.lock/.claude work. No requirement credit changes.
+
+## Shared structural decisions
 
 `053d31c2` commits/pushes the wet storage milestone below. The
 [Components policy extraction](../qualification/component-policy-2026-10-27.md)
@@ -26,15 +77,11 @@ orders and inactive-route semantics. Then fold cold future retained resources
 and recursive scratch before simultaneous histories allocate. No fake PCM,
 copied numerical mixer, warm-peak assumption, work waiver or failed-batch retry.
 
-A scratch-only Plan eligibility query may be under
-`/tmp/deadpan-intrinsic-capability-2026-10-27`. It has not changed the repository
-or been qualified. Its source audit found existing
-`FrozenAudioLayout::retime_processes`, which checks integral and derived clocks,
-avoiding historical compilation. It must inspect live compiled nodes and all
-relevant retained/timing layouts; transparent unity Preserve Partitions stay
-eligible. If the optional proof budget runs out, conservatively report unknown
-with actual spent work so scalar fallback cannot waive already-performed visits.
-Review the candidate's actual state before applying anything.
+The Plan query milestone above implements the eligibility discovery researched
+here, reusing `FrozenAudioLayout::retime_processes` without historical
+compilation. Transparent unity Preserve Partitions remain eligible; incomplete
+work returns an explicit conservative result with spent visits retained. The
+Audio caller, permission carrier and resource fold remain owed.
 
 Runtime graph reads remain scalar, general sound-bearing Split stays disabled,
 and coverage remains about 85%, ten Complete requirements and all seven gates

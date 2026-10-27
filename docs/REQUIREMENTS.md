@@ -174,6 +174,16 @@ and the Split matrix are not rerun for this extraction. A production policy
 visitor, cold resource fold and runtime batching remain unimplemented. No credit
 changes.
 
+The [bounded intrinsic-processing query](qualification/intrinsic-capability-2026-10-27.md)
+scans live and all owned historical recipes without compilation/allocation.
+Complete negative, conservative positive and incomplete work-limit results all
+retain spent work for future fallback billing. Main/isolated combined Plan
+suites pass 552/539 tests across 29 pinned targets each, including library counts
+102/89 and eleven new integration tests each. Strict lint/review pass. Setup
+failures and an early combined-versus-library count correction are retained.
+Audio does not call the query yet; a policy visitor, cold resource fold and
+batching remain owed. No requirement or gate closes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 
