@@ -44,10 +44,14 @@ impl<'plan> AudioSourceOccurrence<'plan> {
     /// its retained input through subsequent complete placements. The complete
     /// ordered journal and exact context determine birth internally; a caller
     /// cannot supply an earlier boundary to revive previously clipped samples.
+    /// `binding` must certify the journal's first applicable scope and the
+    /// original occurrence's exact historical plan and recipe.
+    #[allow(clippy::too_many_arguments)] // Keep the independent checked authorities explicit.
     pub fn complete_processing_history_after_birth(
         &self,
         original: &AudioSourceOccurrence<'_>,
         alias: &crate::AudioOccurrenceAlias<'_>,
+        binding: &crate::AudioSoundClockBinding<'_, '_>,
         delivery: &crate::AudioSoundRoute<AudioSample>,
         clocks: &[crate::AudioSoundClockScope<'_>],
         context: &AudioSoundOwnerContext<'_>,
@@ -145,9 +149,26 @@ impl<'plan> AudioSourceOccurrence<'plan> {
             )?;
             spend(&mut work, used)?;
             if first_applicable.is_none() {
-                let (_, used) =
-                    scope.bind_historical_plan(alias.historical_plan, remaining(work)?)?;
-                spend(&mut work, used)?;
+                // The caller already bound this exact immutable plan and
+                // recipe before minting the occurrence alias. Verify the first
+                // applicable journal member instead of validating its whole
+                // frozen layout again. Separately retrieved scope handles from
+                // the same plan are equivalent by this complete identity.
+                // Charge the four scope-identity checks, two historical-plan
+                // checks, and one recipe comparison before inspecting them.
+                spend(&mut work, 7)?;
+                if !std::ptr::eq(binding.scope.live_plan, scope.live_plan)
+                    || binding.scope.live_owner != scope.live_owner
+                    || binding.scope.live_sound != scope.live_sound
+                    || binding.scope.journal_ordinal != scope.journal_ordinal
+                    || !std::ptr::eq(binding.historical_plan, alias.historical_plan)
+                    || !std::ptr::eq(binding.historical_plan, original.plan())
+                    || binding.recipe != alias.recipe
+                {
+                    return Err(PlanError::InvalidPlan(
+                        "sound birth has a foreign initial binding",
+                    ));
+                }
                 if instance != *original.instance()
                     || historical_context.is_some() != original.policy_domain.is_some()
                 {

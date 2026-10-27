@@ -170,6 +170,7 @@ impl StageAudio {
                                     .complete_processing_history_after_birth(
                                         &original,
                                         &alias,
+                                        binding,
                                         routed.route(),
                                         &scopes,
                                         context,

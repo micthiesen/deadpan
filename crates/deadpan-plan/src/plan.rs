@@ -306,13 +306,84 @@ impl<'plan> AudioSoundClockScope<'plan> {
     }
 
     /// Bind one compiled plan to this exact frozen layout and sound recipe.
-    /// The full layout and selected asset contract are compared once per read,
-    /// not once per concrete Repeat occurrence.
+    /// Shared layout storage reuses its immutable structural admission; a
+    /// separately allocated layout still receives the full validation and
+    /// comparison. Each binding checks the selected asset contract.
     pub fn bind_historical_plan<'scope>(
         &'scope self,
         historical_plan: &'scope RenderPlan,
         maximum_work: usize,
     ) -> Result<(AudioSoundClockBinding<'scope, 'plan>, usize), PlanError> {
+        // Keep small ordinary layouts on the cheaper full validation path.
+        // This new scalar shape guard adds one operation to that execution.
+        // A validated connected tree with at least
+        // four nodes has at least three edges, so its old full binding charge
+        // is at least sixteen operations, even before compact Repeat segments.
+        // Inspecting this scalar shape costs one operation on either path.
+        let small_layout = self.historical_layout.nodes().len() < 4;
+        let discriminator_work = if small_layout { 1 } else { 3 };
+        if maximum_work < discriminator_work {
+            return Err(PlanError::AudioQueryLimit("sound plan binding work"));
+        }
+        if !small_layout
+            && historical_plan
+                .sound_clock_layout
+                .as_deref()
+                .is_some_and(|layout| std::ptr::eq(&**layout, &**self.historical_layout))
+        {
+            // Fifteen bounded structural operations: scalar shape (1), layout
+            // tag/storage identity (2), derived-clock capability (1), frame
+            // rate (1), context tag (1), two asset lookups and presence checks
+            // (4), record equality (1), audio tag/span containment (2), recipe
+            // clone (1), and binding construction (1). Asset equality includes
+            // labels up to 1024 bytes, hashes up to 71 bytes and 64-byte receipt
+            // identities; it is not pointer-only. Ordered-map lookups retain
+            // their bounded logarithmic key search. These are structural
+            // operation charges, not a byte-comparison instruction count.
+            const SHARED_LAYOUT_WORK: usize = 15;
+            if SHARED_LAYOUT_WORK > maximum_work {
+                return Err(PlanError::AudioQueryLimit("sound plan binding work"));
+            }
+            if !self.historical_layout.derived_clocks().is_empty() {
+                return Err(PlanError::InvalidPlan(
+                    "exact historical clocks need an owned output projection",
+                ));
+            }
+            if historical_plan.metadata.presentation_basis.frame_rate
+                != self.live_plan.metadata.presentation_basis.frame_rate
+                || historical_plan.audio_context_assets().is_none()
+            {
+                return Err(PlanError::InvalidPlan(
+                    "sound processing plan does not match its frozen clock and asset",
+                ));
+            }
+            let asset = &self.recipe.source.asset;
+            let (Some(historical_asset), Some(live_asset)) = (
+                historical_plan.audio_assets.get(asset),
+                self.live_plan.audio_assets.get(asset),
+            ) else {
+                return Err(PlanError::InvalidPlan(
+                    "sound processing plan does not match its frozen clock and asset",
+                ));
+            };
+            if historical_asset != live_asset
+                || historical_asset
+                    .audio
+                    .is_none_or(|span| !span.contains_span(self.recipe.source.span))
+            {
+                return Err(PlanError::InvalidPlan(
+                    "sound processing plan does not match its frozen clock and asset",
+                ));
+            }
+            return Ok((
+                AudioSoundClockBinding {
+                    scope: self,
+                    historical_plan,
+                    recipe: self.recipe.clone(),
+                },
+                SHARED_LAYOUT_WORK,
+            ));
+        }
         let recipe = self.recipe.clone();
         let asset = recipe.source.asset.clone();
         let work = RenderPlan::sound_processing_layout_work(
@@ -320,6 +391,7 @@ impl<'plan> AudioSoundClockScope<'plan> {
             &BTreeSet::from([asset.clone()]),
         )?
         .checked_mul(2)
+        .and_then(|work| work.checked_add(discriminator_work))
         .ok_or(TimeError::Overflow)?;
         if work > maximum_work {
             return Err(PlanError::AudioQueryLimit("sound plan binding work"));

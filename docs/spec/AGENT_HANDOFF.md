@@ -2,7 +2,38 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: exact occurrence support, product goal active
+## Current state: historical binding reuse, product goal active
+
+The [binding optimization](../qualification/sound-binding-reuse-2026-10-27.md)
+skips repeated structural validation only for the exact shared immutable layout,
+retaining complete asset/capability checks. After-birth history reuses the already
+validated binding after exact scope, historical plan and recipe checks. New
+discriminator work is charged; no limits, dependencies or caches change.
+Current Plan/Audio library/definition suites pass 531/195/171 tests. The isolated
+five-file patch builds and passes 518 Plan, 181 Audio library and eight historical
+processing regressions; strict four-crate all-target lint passes. Full real-WAV
+Split remains four pass/three work-limit failures. Coverage stays about 85%,
+strict completion 10/24, gates 0/7.
+The goal remains active.
+
+The broader 171-test Audio definition run exposed two inherited Split candidate
+issues, now corrected in that pending work: keep an empty prepared event so a
+silent window still admits its source, and test certified sibling root delivery
+families separately from retained-input and partial-leaf authority. Other Repeat
+plays and Split forests remain excluded. These changes are outside the independent
+binding patch; retain their final source/evidence with the general Split work.
+
+Next bounded candidate: skip the second Hard/Hard gate query only when
+`event_returns::needs_processing(event.treatments)` is false. Only processed event
+returns consume `post_fades`; ordinary owner processing and Tail Sends do not.
+Keep the first complete gate query and all source/query preflight. Prove the
+skipped query supplies no distinct geometry validation, add work and processed
+return regressions, and rerun the unchanged matrix. Read-only research is in
+`/tmp/deadpan-unused-gates-2026-10-27`. The current selected failure reaches
+`sound clock scope work`; nested selected reaches `sound gate work`; both remain
+at `prefix-two`, limited `0+4096`. All-owner remains `cut-three`, limited `0+511`.
+
+## Exact occurrence support
 
 The [support-discovery optimization](../qualification/occurrence-support-discovery-2026-10-27.md)
 removes ordinary provider/gain/tape construction from the clock-selection pass.
@@ -13,15 +44,6 @@ permission or limit changes. Current Plan/Audio pass 526/195 tests. The independ
 stages; final strict lint and six scoped oracle tests pass. The full Split matrix
 remains four passes/three work-limit failures at the same read points. Coverage
 stays about 85%, strict completion 10/24 and gates 0/7. The goal remains active.
-
-Next bounded patch: `prepare_beat_sounds` already validates a historical binding,
-but `complete_processing_history_after_birth` binds the same first applicable
-scope again. Reuse the supplied binding after exact live-plan/owner/sound/ordinal,
-historical-plan pointer and recipe checks. Preserve all complete-journal, context,
-route and placement validation. Binding currently rebuilds a frozen-layout index
-and counts its graph on every call; pointer-fast layout equality does not remove
-those traversals. Add equivalent fresh-scope acceptance, wrong-ordinal and foreign
-historical-plan rejection tests. No checkout changes for this follow-up yet.
 
 ## Borrowed-query groundwork and rejected memo
 

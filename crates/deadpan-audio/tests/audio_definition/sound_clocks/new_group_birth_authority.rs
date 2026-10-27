@@ -1,4 +1,4 @@
-//! DRAFT ONLY, uncompiled/unexecuted. Child of new_group_birth.rs.
+//! Retained-history authority regression. Child of new_group_birth.rs.
 //! #[path = "new_group_birth_authority.rs"] mod authority;
 //! Filter: group_birth_processing_history_rejects_incomplete_foreign_and_forged_authority
 //! Public handles only; no document/journal fabrication. Literal full4f grids
@@ -151,7 +151,7 @@ fn run(directory: &std::path::Path) -> Trial<serde_json::Value> {
         "literal authority extents",
         "actual handles differ from4/9/15 four-frame fixture",
     )?;
-    let (binding, _) = scopes[0]
+    let (binding, binding_work) = scopes[0]
         .bind_historical_plan(&historical_plan, deadpan_core::MAX_DOCUMENT_NODES)
         .map_err(|e| error("authority bind", e))?;
     let (alias, _) = binding
@@ -162,6 +162,7 @@ fn run(directory: &std::path::Path) -> Trial<serde_json::Value> {
         .complete_processing_history_after_birth(
             &original,
             &alias,
+            &binding,
             &delivery,
             &scopes,
             &context,
@@ -175,6 +176,96 @@ fn run(directory: &std::path::Path) -> Trial<serde_json::Value> {
         "authority positive",
         "no retained one-label terminal beyond nominal destination",
     )?;
+    let legacy_work = work
+        .checked_add(binding_work)
+        .and_then(|used| used.checked_sub(7))
+        .ok_or_else(|| error("binding work", "counterfactual work overflow"))?;
+    require(
+        binding_work > 7 && legacy_work > work,
+        "binding work",
+        "full repeated binding must cost more than its seven identity checks",
+    )?;
+    let (bounded_history, bounded_work) = current
+        .complete_processing_history_after_birth(
+            &original,
+            &alias,
+            &binding,
+            &delivery,
+            &scopes,
+            &context,
+            deadpan_plan::AudioQueryLimits {
+                maximum_work: work,
+                ..Default::default()
+            },
+        )
+        .map_err(|e| error("exact birth work budget", e))?;
+    require(
+        bounded_history
+            .is_some_and(|bounded| bounded.route().samples() == history.route().samples())
+            && bounded_work == work,
+        "exact birth work budget",
+        "reported work must suffice without the discarded repeated binding",
+    )?;
+    require(
+        matches!(
+            current.complete_processing_history_after_birth(
+                &original,
+                &alias,
+                &binding,
+                &delivery,
+                &scopes,
+                &context,
+                deadpan_plan::AudioQueryLimits {
+                    maximum_work: work - 1,
+                    ..Default::default()
+                },
+            ),
+            Err(deadpan_plan::PlanError::AudioQueryLimit(_))
+        ),
+        "short birth work budget",
+        "one fewer work unit must retain the canonical work limit",
+    )?;
+    let equivalent_scopes = plan
+        .beat_sound_clock_scopes(
+            &owner,
+            &sound_id("effect"),
+            deadpan_core::MAX_DOCUMENT_NODES,
+        )
+        .map_err(|e| error("equivalent scopes", e))?;
+    let (equivalent_binding, _) = equivalent_scopes[0]
+        .bind_historical_plan(&historical_plan, deadpan_core::MAX_DOCUMENT_NODES)
+        .map_err(|e| error("equivalent binding", e))?;
+    let (equivalent_history, equivalent_work) = current
+        .complete_processing_history_after_birth(
+            &original,
+            &alias,
+            &equivalent_binding,
+            &delivery,
+            &scopes,
+            &context,
+            Default::default(),
+        )
+        .map_err(|e| error("equivalent binding acceptance", e))?;
+    require(
+        equivalent_history
+            .is_some_and(|equivalent| equivalent.route().samples() == history.route().samples())
+            && equivalent_work == work,
+        "equivalent binding acceptance",
+        "same immutable journal member requires a scope-handle address",
+    )?;
+    let other_historical_plan = plan
+        .compile_sound_processing_layout(
+            scopes[1].historical_layout(),
+            &BTreeSet::from([event.source.asset.clone()]),
+        )
+        .map_err(|e| error("other-ordinal historical plan", e))?;
+    let (other_ordinal_binding, _) = scopes[1]
+        .bind_historical_plan(&other_historical_plan, deadpan_core::MAX_DOCUMENT_NODES)
+        .map_err(|e| error("other-ordinal binding", e))?;
+    let foreign_historical_plan = historical_plan.clone();
+    let (foreign_historical_binding, _) = scopes[0]
+        .bind_historical_plan(&foreign_historical_plan, deadpan_core::MAX_DOCUMENT_NODES)
+        .map_err(|e| error("foreign historical binding", e))?;
     let terminal = history
         .route()
         .query(AudioSample(30430)..AudioSample(30431), Default::default())
@@ -194,10 +285,35 @@ fn run(directory: &std::path::Path) -> Trial<serde_json::Value> {
             "error":result.err().map(|e|format!("{e:?}"))}));
     };
     save(
+        "valid-binding-from-other-journal-ordinal",
+        current.complete_processing_history_after_birth(
+            &original,
+            &alias,
+            &other_ordinal_binding,
+            &delivery,
+            &scopes,
+            &context,
+            Default::default(),
+        ),
+    );
+    save(
+        "equal-contents-foreign-historical-plan-binding",
+        current.complete_processing_history_after_birth(
+            &original,
+            &alias,
+            &foreign_historical_binding,
+            &delivery,
+            &scopes,
+            &context,
+            Default::default(),
+        ),
+    );
+    save(
         "truncated-prefix",
         current.complete_processing_history_after_birth(
             &original,
             &alias,
+            &binding,
             &delivery,
             &scopes[..1],
             &context,
@@ -209,6 +325,7 @@ fn run(directory: &std::path::Path) -> Trial<serde_json::Value> {
         current.complete_processing_history_after_birth(
             &original,
             &alias,
+            &binding,
             &delivery,
             &scopes[1..],
             &context,
@@ -222,6 +339,7 @@ fn run(directory: &std::path::Path) -> Trial<serde_json::Value> {
         current.complete_processing_history_after_birth(
             &original,
             &alias,
+            &binding,
             &delivery,
             &reversed,
             &context,
@@ -241,6 +359,7 @@ fn run(directory: &std::path::Path) -> Trial<serde_json::Value> {
         current.complete_processing_history_after_birth(
             &original,
             &alias,
+            &binding,
             &delivery,
             &foreign_scopes,
             &context,
@@ -261,6 +380,7 @@ fn run(directory: &std::path::Path) -> Trial<serde_json::Value> {
         current.complete_processing_history_after_birth(
             &original,
             &alias,
+            &binding,
             &delivery,
             &scopes,
             &fresh_context,
@@ -281,6 +401,7 @@ fn run(directory: &std::path::Path) -> Trial<serde_json::Value> {
         current.complete_processing_history_after_birth(
             &original,
             &alias,
+            &binding,
             &delivery,
             &scopes,
             &foreign_context,
@@ -293,6 +414,7 @@ fn run(directory: &std::path::Path) -> Trial<serde_json::Value> {
         current.complete_processing_history_after_birth(
             &original,
             &alias,
+            &binding,
             &forged_grid,
             &scopes,
             &context,
@@ -305,6 +427,7 @@ fn run(directory: &std::path::Path) -> Trial<serde_json::Value> {
         current.complete_processing_history_after_birth(
             &original,
             &alias,
+            &binding,
             &forged_allocation,
             &scopes,
             &context,
@@ -317,6 +440,7 @@ fn run(directory: &std::path::Path) -> Trial<serde_json::Value> {
         current.complete_processing_history_after_birth(
             &original,
             &alias,
+            &binding,
             &missing,
             &scopes,
             &context,
@@ -329,6 +453,7 @@ fn run(directory: &std::path::Path) -> Trial<serde_json::Value> {
         current.complete_processing_history_after_birth(
             &original,
             &alias,
+            &binding,
             &extra,
             &scopes,
             &context,
@@ -336,7 +461,8 @@ fn run(directory: &std::path::Path) -> Trial<serde_json::Value> {
         ),
     );
     Ok(serde_json::json!({
-        "positive":{"work":work,"samples":[history.route().samples().start.0,history.route().samples().end.0],
+        "positive":{"work":work,"binding_work":binding_work,"legacy_work":legacy_work,
+            "samples":[history.route().samples().start.0,history.route().samples().end.0],
             "terminal_query":format!("{terminal:?}")},
         "all_rejected":results.iter().all(|row|row["rejected"]==true),"negatives":results,
         "implementation_claim":false,"executed_by_draft_author":false,

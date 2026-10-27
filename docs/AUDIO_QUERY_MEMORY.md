@@ -44,3 +44,12 @@ construction remains mandatory before media. Preserve candidates retain the full
 constructor's validation with the same path and budget; ordinary candidates share
 its scalar support and checked remap arithmetic. This is not a retained-query
 cache. See [support discovery](qualification/occurrence-support-discovery-2026-10-27.md).
+
+Historical sound binding can reuse structural admission when its compiled plan
+holds the exact same immutable frozen-layout allocation. Each call still checks
+processing capability, frame rate, selected asset contract and source support;
+detached-equal layouts receive full validation. After-birth history can consume
+the caller's checked binding after exact plan/scope/recipe checks and complete
+journal validation. Both paths charge work they actually perform. This retains
+no additional plan or query storage and grants no media-admission shortcut.
+See [binding reuse](qualification/sound-binding-reuse-2026-10-27.md).

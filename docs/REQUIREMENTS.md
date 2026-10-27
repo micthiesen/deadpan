@@ -98,6 +98,16 @@ and all 201 existing stages. Final strict lint and six scoped oracle tests pass.
 The full Split matrix remains four pass/three work-limit failures at the same
 points. No acceptance credit changes.
 
+The [historical binding optimization](qualification/sound-binding-reuse-2026-10-27.md)
+reuses admission for exact shared immutable layouts and an already validated
+after-birth binding, retaining asset, recipe, plan and complete-journal authority.
+It removes actual traversal and charges new identity checks. Current Plan/Audio
+library/definition suites pass 531/195/171 tests; the isolated five-file patch
+passes 518 Plan and 181 Audio library tests. Strict lint passes. The unchanged
+real-WAV Split matrix remains four pass/three work-limit failures; selected and
+nested selected reads reach later checks. Two inherited Split-test failures are
+corrected without widening authority. No acceptance credit changes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 
