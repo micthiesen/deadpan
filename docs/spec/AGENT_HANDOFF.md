@@ -10,9 +10,17 @@ compaction. [Parallel work](../PARALLEL_WORK.md) records exact lane ownership,
 dependency-scoped freezes, shared Cargo scheduling and integration/qualification
 joins. Three workers cover complete constant audio gain programs, canonical
 sound-family reuse and cursor-priority incremental analysis; the primary owns
-Store history qualification and integration. This is a trial, not a measured
-speedup claim. Recheck live agents/process handles; recorded holds are not proof
-of current activity. Keep final acceptance and progress credit with the primary.
+Store history qualification and integration. Retain this workflow: combined
+regressions, strict seven-crate all-target lint and an actual Whisper/Silero
+cancellation/resume/cache witness now pass. Independent review caught and fixed
+terminal-word and inference-admission bugs. No serial control run exists, so
+this is not a measured speedup claim. Recheck live agents/process handles;
+recorded holds are not proof of current activity. Keep final acceptance and
+progress credit with the primary. The analysis runtime is still an uncommitted
+candidate with [retained evidence](../qualification/incremental-audio-analysis-2026-10-26.md)
+and pending native qualification; shots is an unwired draft. Four Audio
+preparation limits and the sound-bearing WrapRetime
+prerequisite remain open.
 
 ## Active Split work, 2026-10-26
 

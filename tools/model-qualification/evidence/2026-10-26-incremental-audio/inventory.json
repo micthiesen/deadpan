@@ -1,0 +1,329 @@
+{
+  "schema_version": 1,
+  "files": [
+    {
+      "path": "runs/cli-app-check-first.json.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/cli-app-check-first.json",
+      "expanded_bytes": 889283,
+      "expanded_sha256": "6c01a3c9d6eb43f3c9d4b45f8375b598d457ac7e51cfe6b546c45dd40b2b6e03",
+      "bytes": 238671,
+      "sha256": "9768b86b81d48b982d20dfeec7fa8a3d577ffec5f1418420d3c72743627f57b0"
+    },
+    {
+      "path": "runs/cli-app-check-first.stdout.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/cli-app-check-first.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "runs/cli-app-check-first.stderr.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/cli-app-check-first.stderr",
+      "expanded_bytes": 12654,
+      "expanded_sha256": "969ab631f08aab648abcedd17a2f314063372a3c5489c3ed135644eeb53a0c6c",
+      "bytes": 1398,
+      "sha256": "d6c861634ca643e714645dfd41964a2a63c0c3d2e2851bbf8d1bc83000fa7050"
+    },
+    {
+      "path": "runs/cli-app-check-second.json.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/cli-app-check-second.json",
+      "expanded_bytes": 889284,
+      "expanded_sha256": "2dd894c8dd3d2ef410c336a8213b5a2a195312c7b7d086d5906358a1dca40aca",
+      "bytes": 238685,
+      "sha256": "65784d29bbca01f1d6c076e76fbee1c2e5aae9da37d36ccd12a9c4aa71f94cfc"
+    },
+    {
+      "path": "runs/cli-app-check-second.stdout.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/cli-app-check-second.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "runs/cli-app-check-second.stderr.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/cli-app-check-second.stderr",
+      "expanded_bytes": 1076,
+      "expanded_sha256": "ac479445cfa233a001b1d76dbbf6c4d035cfbe5e28e1c49c7d8c43f8e5fd7040",
+      "bytes": 467,
+      "sha256": "0163cf166fcfd20e3a53de9b22b583e3c58f0f89b97d994c0a58b14763835ae0"
+    },
+    {
+      "path": "runs/cli-app-check-third.json.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/cli-app-check-third.json",
+      "expanded_bytes": 889279,
+      "expanded_sha256": "9ebe66db9e737b0a3c2866f1c1d16634cb3d4a54e8d0cee2c71a62202a558242",
+      "bytes": 238672,
+      "sha256": "4eba2e9e9a06e8c2e09c0537cde7670210fb3f731e11fda163f9b057c178f6e4"
+    },
+    {
+      "path": "runs/cli-app-check-third.stdout.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/cli-app-check-third.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "runs/cli-app-check-third.stderr.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/cli-app-check-third.stderr",
+      "expanded_bytes": 232,
+      "expanded_sha256": "148c289e569069eb18154f94826880ef00557e848cdf1db9f33521831ca58f6b",
+      "bytes": 154,
+      "sha256": "48e367dca2732f0396e59cc4207ad737ce03aee1dabbdeaad72298be528ab0b3"
+    },
+    {
+      "path": "runs/analysis-cli-app-regressions-first.json.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/analysis-cli-app-regressions-first.json",
+      "expanded_bytes": 889387,
+      "expanded_sha256": "b7374bbcf3526d5730e66864ab5fbb3c67b24da481f0cc9fcc8f637b8f799b38",
+      "bytes": 238707,
+      "sha256": "2ca365f15217598d2a1ac27ead20a3e7750760a75e6f4ceb4c9f2d9b0ba3be26"
+    },
+    {
+      "path": "runs/analysis-cli-app-regressions-first.stdout.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/analysis-cli-app-regressions-first.stdout",
+      "expanded_bytes": 1412,
+      "expanded_sha256": "086c1d4ccb1bb5ef317c797f5eae3d2f76b5ad9df29f9e5fd82b4571bf761725",
+      "bytes": 547,
+      "sha256": "5c68a609b17be006e847b5019dc1b95c612b14feb88b264e28fae4dd7539c165"
+    },
+    {
+      "path": "runs/analysis-cli-app-regressions-first.stderr.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/analysis-cli-app-regressions-first.stderr",
+      "expanded_bytes": 1796,
+      "expanded_sha256": "1e481b931bdf7d678149d565ab24bf36a13af190fbc7ee4c4d1fd1b52f9f3e8d",
+      "bytes": 451,
+      "sha256": "66b4e3c50e736a07d625a7652cf2585b4a8545d387bc6a79a387b9c698d1b4dc"
+    },
+    {
+      "path": "runs/app-incremental-bin-regressions-first.json.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/app-incremental-bin-regressions-first.json",
+      "expanded_bytes": 889346,
+      "expanded_sha256": "ff31d35f243410620dcd3f75d330ec09ea828cbf385a193e862b0f410d08af3a",
+      "bytes": 238696,
+      "sha256": "14f0dfa537f2d39edbc59ae4835ecc59cb7edae8e65dabd3805e2db24041a294"
+    },
+    {
+      "path": "runs/app-incremental-bin-regressions-first.stdout.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/app-incremental-bin-regressions-first.stdout",
+      "expanded_bytes": 570,
+      "expanded_sha256": "973f775c56b93186585a42bdc9e18bb238eb651e2c394be1556db9b682b7b7cc",
+      "bytes": 304,
+      "sha256": "eddb6744a41684478dfe159b7d5e201eb5089640927f47e9b39af6fc8f5be215"
+    },
+    {
+      "path": "runs/app-incremental-bin-regressions-first.stderr.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/app-incremental-bin-regressions-first.stderr",
+      "expanded_bytes": 274,
+      "expanded_sha256": "c4862c387ae1642ffe5332b33514fe807d43efebf40faf7dce42b723b5a9e742",
+      "bytes": 219,
+      "sha256": "b4e6f5440c86ccefbc17e52cca3ba7d932260bbf82914a460fb528cf1d8a91c0"
+    },
+    {
+      "path": "runs/incremental-witness-build-first.json.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/incremental-witness-build-first.json",
+      "expanded_bytes": 889307,
+      "expanded_sha256": "6811c5fc4743e4fec092c29e49db4c481091bfc379fb51d334840a22f75d1a7c",
+      "bytes": 238695,
+      "sha256": "458e906acd67713a6ac57afd2e7870e95aeaa26217e0510ea87abfd1efa258c2"
+    },
+    {
+      "path": "runs/incremental-witness-build-first.stdout.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/incremental-witness-build-first.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "runs/incremental-witness-build-first.stderr.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/incremental-witness-build-first.stderr",
+      "expanded_bytes": 1568,
+      "expanded_sha256": "8f03618f9fd6e775b6464e2e37900cf77385bc1ad1267ad10152ad33c9bae1f4",
+      "bytes": 353,
+      "sha256": "de20f04e4c3637d3d5d03739b1758448117094270a370efea7cfe27f4705e969"
+    },
+    {
+      "path": "runs/incremental-real-worker-first.json.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/incremental-real-worker-first.json",
+      "expanded_bytes": 891305,
+      "expanded_sha256": "4d75619f0a30973cf5872873c83a576a8f4412f73a49dac98b11b0ada87d2079",
+      "bytes": 239510,
+      "sha256": "196f411e8617778c1fc3adf408c784d7ad1828ce3b0bfc0733e63b078ae4cb91"
+    },
+    {
+      "path": "runs/incremental-real-worker-first.stdout.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/incremental-real-worker-first.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "runs/incremental-real-worker-first.stderr.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/incremental-real-worker-first.stderr",
+      "expanded_bytes": 240,
+      "expanded_sha256": "ebf3b8bd0745942731c82ff4eef0fb8d9a29ee49aef5bc416b579528f285a3ec",
+      "bytes": 182,
+      "sha256": "dd2f9d3212c11bee0896658c4194243600713a4edea2ed3c77c4d08203c7aa6b"
+    },
+    {
+      "path": "runs/incremental-real-worker-second.json.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/incremental-real-worker-second.json",
+      "expanded_bytes": 891341,
+      "expanded_sha256": "bae5b1b8c503a0af43b6cbbce77e1deb081a6c6a44978c059e93e8355e7bdec8",
+      "bytes": 239545,
+      "sha256": "e9fa625f919d55fba2559fa0a03ca8682547a432ea96140dc37c3825cc863b13"
+    },
+    {
+      "path": "runs/incremental-real-worker-second.stdout.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/incremental-real-worker-second.stdout",
+      "expanded_bytes": 36398,
+      "expanded_sha256": "9ad2b7aa3c92795a511f8e6eb089f72989215917e99e326dc0b6d6b5571265ab",
+      "bytes": 5620,
+      "sha256": "552087e9c4257ff7f56851c13fa0db54fcd5fa549d0cb7d1ef552fe66c204f02"
+    },
+    {
+      "path": "runs/incremental-real-worker-second.stderr.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/incremental-real-worker-second.stderr",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "runs/parallel-strict-first.json.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/parallel-strict-first.json",
+      "expanded_bytes": 889479,
+      "expanded_sha256": "7ccd1609520fcc0ea3eb5f5132762ba316a243e4d18e5e6498fc33a6460d9594",
+      "bytes": 238726,
+      "sha256": "88c7655c2b42dfbbe1681eabec0c7b76d7caa6ce95a4743a7b07472e94093c13"
+    },
+    {
+      "path": "runs/parallel-strict-first.stdout.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/parallel-strict-first.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "runs/parallel-strict-first.stderr.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/parallel-strict-first.stderr",
+      "expanded_bytes": 1723,
+      "expanded_sha256": "a3bdbcbec57f9c5ad9357fa8711941fd21495156f2d3791e8fa1714f100b2dfa",
+      "bytes": 593,
+      "sha256": "2b3a1ade519e572f3ec33cd926b6144fbba5a862ad7474ceb960036481a42ff5"
+    },
+    {
+      "path": "runs/parallel-strict-second.json.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/parallel-strict-second.json",
+      "expanded_bytes": 889482,
+      "expanded_sha256": "9add72793f0a7421f61a1e7df50803d185e7e2965580424bbc3ac248b9a043d9",
+      "bytes": 238733,
+      "sha256": "e5cd18fd61272190561c59ab954e2269de7be5c7ee7c83b42330c490b14bcdae"
+    },
+    {
+      "path": "runs/parallel-strict-second.stdout.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/parallel-strict-second.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "runs/parallel-strict-second.stderr.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/parallel-strict-second.stderr",
+      "expanded_bytes": 2193,
+      "expanded_sha256": "224635befbb6e1d11a0375f83c7ee62b2a05e08d76ac772215a03ebadccc675e",
+      "bytes": 619,
+      "sha256": "c899176adeb18ac4663b24765d7d50131a614ea12c402fd97f0fa4f99d20a520"
+    },
+    {
+      "path": "runs/parallel-strict-third.json.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/parallel-strict-third.json",
+      "expanded_bytes": 889474,
+      "expanded_sha256": "28d3b6aa5674a860dc00885b1a35b0fd732b8837627c662eb62c936805ac3a42",
+      "bytes": 238742,
+      "sha256": "06959921913d0c0d3c918f4b34b310c59f6bd5f8ba708d7d1a704b7b46772635"
+    },
+    {
+      "path": "runs/parallel-strict-third.stdout.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/parallel-strict-third.stdout",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "path": "runs/parallel-strict-third.stderr.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/parallel-strict-third.stderr",
+      "expanded_bytes": 151,
+      "expanded_sha256": "0fd46ce70a8e0ff7e9bcbcc2207a4a5bacb197c419f4210d834beb2eba57dc61",
+      "bytes": 145,
+      "sha256": "0ed98624ed7efa132ec416f1096f077f50b69278383f24466980c5bfb73b3327"
+    },
+    {
+      "path": "runner/run.py.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/run.py",
+      "expanded_bytes": 3824,
+      "expanded_sha256": "46ba60dd83062ee10deb8129987ba886110d1a5791b022e54abf9f5cd1592aee",
+      "bytes": 1501,
+      "sha256": "c60a0257842040e3ab08a9798ccfd078bb95e82ebf43b206a7d5020cb3106f6d"
+    },
+    {
+      "path": "runner/source-files.json.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/source-files.json",
+      "expanded_bytes": 123331,
+      "expanded_sha256": "30a7259b3288d353fec7b6b582afad4d7b6279a91a2ffdb62e6c3e9b54dc67a8",
+      "bytes": 12923,
+      "sha256": "cf7355740341fd5c61f96c11b6ec1e2357219ab3623e72ecfbcad1ec487d11cd"
+    },
+    {
+      "path": "runner/removed-files.json.gz",
+      "source": "/tmp/deadpan-parallel-integration-2026-10-26/removed-files.json",
+      "expanded_bytes": 3,
+      "expanded_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 23,
+      "sha256": "029ac1ef2bb96aa9fa0166f8f60604b79b92f7fb5cd41a374f80171306cf1b52"
+    },
+    {
+      "path": "fixture/fixture-provenance.json.gz",
+      "source": "/tmp/deadpan-incremental-analysis-2026-10-26/fixture-provenance.json",
+      "expanded_bytes": 1473,
+      "expanded_sha256": "c896524029de69683489f6e11968f4deea5568172fe8989b6b7ded0093ce6932",
+      "bytes": 796,
+      "sha256": "9abd26d3dfaa7f1dcb6cb79982ca8f68b300fdb45e4b883e6ee6f6e5d6e07c47"
+    },
+    {
+      "path": "fixture/fixture-provenance-second.json.gz",
+      "source": "/tmp/deadpan-incremental-analysis-2026-10-26/fixture-provenance-second.json",
+      "expanded_bytes": 4099,
+      "expanded_sha256": "e06a576fded628a2f8182224f5058dcd5e9981423cd01a6a69a4a681bb642102",
+      "bytes": 1376,
+      "sha256": "4909955ba71558d9a2f5a664cc5c13a73ab5e666a93365469f4587e4a3fc2a57"
+    },
+    {
+      "path": "fixture/second-audio-frames.json.gz",
+      "source": "/tmp/deadpan-incremental-analysis-2026-10-26/second-audio-frames.json",
+      "expanded_bytes": 340375,
+      "expanded_sha256": "9ca366e42108ac2f5b3a08d98ba275999d73d57bbcca768ade70b2b13ec78233",
+      "bytes": 13094,
+      "sha256": "f32304797319d3b8a563bb540b54c025534288560620290d46ca6972d26c3c79"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 45706,
+      "sha256": "d8f1d62dd7b36e1721a50a56efa83ab18c76e2c6d1fdf4331b80833c707bc339"
+    }
+  ],
+  "excluded": [
+    "Source media",
+    "Model weights",
+    "Executables",
+    "Unwired shot scheduler draft"
+  ],
+  "qualification": "docs/qualification/incremental-audio-analysis-2026-10-26.md"
+}

@@ -1,0 +1,1864 @@
+{
+  "scope": "Uncommitted incremental transcript/VAD candidate in the current shared development tree. No native interaction, accuracy, performance or release acceptance claim.",
+  "source_basis": "Full relevant source inventories and unchanged before/after guards are in each receipt. They include concurrent Core/Plan/Audio development; no pristine HEAD comparison was run. Later test-only lint fixes and module ordering do not alter the real-worker runtime.",
+  "runs": [
+    {
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "-p",
+        "deadpan-app",
+        "--all-targets"
+      ],
+      "exit_code": 101,
+      "seconds": 17.53018991742283,
+      "sources_unchanged": true,
+      "binaries_unchanged": true,
+      "label": "cli-app-check-first"
+    },
+    {
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "-p",
+        "deadpan-app",
+        "--all-targets"
+      ],
+      "exit_code": 101,
+      "seconds": 18.00995425041765,
+      "sources_unchanged": true,
+      "binaries_unchanged": true,
+      "label": "cli-app-check-second"
+    },
+    {
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "-p",
+        "deadpan-app",
+        "--all-targets"
+      ],
+      "exit_code": 0,
+      "seconds": 8.468666832894087,
+      "sources_unchanged": true,
+      "binaries_unchanged": true,
+      "label": "cli-app-check-third"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-analysis",
+        "-p",
+        "deadpan-cli",
+        "-p",
+        "deadpan-app",
+        "--lib",
+        "incremental",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "seconds": 102.32927541714162,
+      "sources_unchanged": true,
+      "binaries_unchanged": true,
+      "label": "analysis-cli-app-regressions-first"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-app",
+        "--bin",
+        "deadpan-app",
+        "incremental",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "seconds": 37.47641562484205,
+      "sources_unchanged": true,
+      "binaries_unchanged": true,
+      "label": "app-incremental-bin-regressions-first"
+    },
+    {
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "--example",
+        "qualify_incremental_analysis"
+      ],
+      "exit_code": 0,
+      "seconds": 75.14322229195386,
+      "sources_unchanged": true,
+      "binaries_unchanged": true,
+      "label": "incremental-witness-build-first"
+    },
+    {
+      "command": [
+        "/tmp/deadpan-parallel-integration-2026-10-26/qualify-incremental-first",
+        "/tmp/deadpan-incremental-analysis-2026-10-26/repeated-synthetic-speech.mp4",
+        "/Users/michael/Library/Application Support/Deadpan/Models/whisper-base-en/1/ggml-base.en.bin",
+        "/tmp/deadpan-incremental-analysis-2026-10-26/ggml-silero-v6.2.0.bin",
+        "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deadpan-transcribe",
+        "/tmp/deadpan-incremental-analysis-2026-10-26/witness-01"
+      ],
+      "exit_code": 1,
+      "seconds": 0.13030320778489113,
+      "sources_unchanged": true,
+      "binaries_unchanged": true,
+      "label": "incremental-real-worker-first"
+    },
+    {
+      "command": [
+        "/tmp/deadpan-parallel-integration-2026-10-26/qualify-incremental-first",
+        "/tmp/deadpan-incremental-analysis-2026-10-26/repeated-synthetic-speech-continuous.mp4",
+        "/Users/michael/Library/Application Support/Deadpan/Models/whisper-base-en/1/ggml-base.en.bin",
+        "/tmp/deadpan-incremental-analysis-2026-10-26/ggml-silero-v6.2.0.bin",
+        "/tmp/deadpan-follow-creep-2026-10-24/target/debug/deadpan-transcribe",
+        "/tmp/deadpan-incremental-analysis-2026-10-26/witness-02"
+      ],
+      "exit_code": 0,
+      "seconds": 48.026804625056684,
+      "sources_unchanged": true,
+      "binaries_unchanged": true,
+      "label": "incremental-real-worker-second"
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "-p",
+        "deadpan-core",
+        "-p",
+        "deadpan-plan",
+        "-p",
+        "deadpan-audio",
+        "-p",
+        "deadpan-analysis",
+        "-p",
+        "deadpan-cli",
+        "-p",
+        "deadpan-app",
+        "-p",
+        "deadpan-store",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 101,
+      "seconds": 33.96092649921775,
+      "sources_unchanged": true,
+      "binaries_unchanged": true,
+      "label": "parallel-strict-first"
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "-p",
+        "deadpan-core",
+        "-p",
+        "deadpan-plan",
+        "-p",
+        "deadpan-audio",
+        "-p",
+        "deadpan-analysis",
+        "-p",
+        "deadpan-cli",
+        "-p",
+        "deadpan-app",
+        "-p",
+        "deadpan-store",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 101,
+      "seconds": 36.469378208741546,
+      "sources_unchanged": true,
+      "binaries_unchanged": true,
+      "label": "parallel-strict-second"
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "-p",
+        "deadpan-core",
+        "-p",
+        "deadpan-plan",
+        "-p",
+        "deadpan-audio",
+        "-p",
+        "deadpan-analysis",
+        "-p",
+        "deadpan-cli",
+        "-p",
+        "deadpan-app",
+        "-p",
+        "deadpan-store",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 9.21447404101491,
+      "sources_unchanged": true,
+      "binaries_unchanged": true,
+      "label": "parallel-strict-third"
+    }
+  ],
+  "witness": {
+    "all_cached_ranges": 4,
+    "authored_revision_unchanged": "2a0b1fae-7c39-4449-b682-8ee0a3c30e64",
+    "cache_failures": 0,
+    "cached_elapsed_ms": 9904,
+    "cached_worker_admissions": 0,
+    "cancellation_elapsed_ms": 1689,
+    "cancelled_after": [
+      {
+        "end": 1153151,
+        "start": 1152000
+      }
+    ],
+    "completion_order": [
+      {
+        "end": 1153151,
+        "start": 1152000
+      },
+      {
+        "end": 384000,
+        "start": 0
+      },
+      {
+        "end": 768000,
+        "start": 384000
+      },
+      {
+        "end": 1152000,
+        "start": 768000
+      }
+    ],
+    "executed_example_sha256": "6304aad0d4423a4dccaa43efb1188542dc61b043ba6cd5ce9193642c7c1de48c",
+    "implementation": "deadpan-audio-ranges-1",
+    "initial_decode": "retained AudioSession opening still decodes the full source audio",
+    "model_sha256": "a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002",
+    "resumed_cached_ranges": 1,
+    "resumed_elapsed_ms": 14020,
+    "source_sha256": "647b6335f0182cda896b9218ca2e2b5582d29ce46120d813d2f03021bbe2ec9c",
+    "standalone_vad": {
+      "checked": true,
+      "pauses": [
+        {
+          "end": 43200,
+          "start": 40000
+        },
+        {
+          "end": 163200,
+          "start": 160000
+        },
+        {
+          "end": 283200,
+          "start": 280480
+        },
+        {
+          "end": 403200,
+          "start": 400000
+        },
+        {
+          "end": 523200,
+          "start": 520000
+        },
+        {
+          "end": 643200,
+          "start": 640480
+        },
+        {
+          "end": 763200,
+          "start": 760000
+        },
+        {
+          "end": 883200,
+          "start": 880480
+        },
+        {
+          "end": 1003200,
+          "start": 1000160
+        },
+        {
+          "end": 1123200,
+          "start": 1120160
+        }
+      ],
+      "samples": 1153151
+    },
+    "transcript": {
+      "audio": {
+        "duration_cs": 7208,
+        "origin": 0,
+        "sample_rate": 44100
+      },
+      "words": [
+        {
+          "end_cs": 22,
+          "probability": 0.8834298849105835,
+          "segment": 1,
+          "start_cs": 1,
+          "text": "The"
+        },
+        {
+          "end_cs": 59,
+          "probability": 0.5294902920722961,
+          "segment": 1,
+          "start_cs": 22,
+          "text": "quick"
+        },
+        {
+          "end_cs": 92,
+          "probability": 0.7560203671455383,
+          "segment": 1,
+          "start_cs": 59,
+          "text": "brown"
+        },
+        {
+          "end_cs": 118,
+          "probability": 0.8846473097801208,
+          "segment": 1,
+          "start_cs": 109,
+          "text": "fox"
+        },
+        {
+          "end_cs": 155,
+          "probability": 0.9984447956085205,
+          "segment": 1,
+          "start_cs": 118,
+          "text": "jumps"
+        },
+        {
+          "end_cs": 184,
+          "probability": 0.999662458896637,
+          "segment": 1,
+          "start_cs": 155,
+          "text": "over"
+        },
+        {
+          "end_cs": 206,
+          "probability": 0.9984790682792664,
+          "segment": 1,
+          "start_cs": 184,
+          "text": "the"
+        },
+        {
+          "end_cs": 235,
+          "probability": 0.9251090288162231,
+          "segment": 1,
+          "start_cs": 206,
+          "text": "lazy"
+        },
+        {
+          "end_cs": 242,
+          "probability": 0.9875657558441162,
+          "segment": 1,
+          "start_cs": 235,
+          "text": "dog."
+        },
+        {
+          "end_cs": 322,
+          "probability": 0.7074370980262756,
+          "segment": 2,
+          "start_cs": 281,
+          "text": "Deadpan"
+        },
+        {
+          "end_cs": 359,
+          "probability": 0.9710142016410828,
+          "segment": 2,
+          "start_cs": 322,
+          "text": "checks"
+        },
+        {
+          "end_cs": 381,
+          "probability": 0.9889059066772461,
+          "segment": 2,
+          "start_cs": 359,
+          "text": "every"
+        },
+        {
+          "end_cs": 426,
+          "probability": 0.9831510186195374,
+          "segment": 2,
+          "start_cs": 389,
+          "text": "native"
+        },
+        {
+          "end_cs": 469,
+          "probability": 0.9809744358062744,
+          "segment": 2,
+          "start_cs": 426,
+          "text": "adapter"
+        },
+        {
+          "end_cs": 499,
+          "probability": 0.9768834710121155,
+          "segment": 2,
+          "start_cs": 469,
+          "text": "under"
+        },
+        {
+          "end_cs": 521,
+          "probability": 0.9081940054893494,
+          "segment": 2,
+          "start_cs": 499,
+          "text": "address"
+        },
+        {
+          "end_cs": 560,
+          "probability": 0.9923409819602966,
+          "segment": 2,
+          "start_cs": 552,
+          "text": "and"
+        },
+        {
+          "end_cs": 595,
+          "probability": 0.9343773722648621,
+          "segment": 2,
+          "start_cs": 560,
+          "text": "thread"
+        },
+        {
+          "end_cs": 657,
+          "probability": 0.9688616991043091,
+          "segment": 2,
+          "start_cs": 598,
+          "text": "sanitizers"
+        },
+        {
+          "end_cs": 694,
+          "probability": 0.9974436163902283,
+          "segment": 2,
+          "start_cs": 657,
+          "text": "before"
+        },
+        {
+          "end_cs": 744,
+          "probability": 0.9965773820877075,
+          "segment": 2,
+          "start_cs": 694,
+          "text": "release."
+        },
+        {
+          "end_cs": 774,
+          "probability": 0.9986085891723633,
+          "segment": 3,
+          "start_cs": 753,
+          "text": "The"
+        },
+        {
+          "end_cs": 810,
+          "probability": 0.9838507175445557,
+          "segment": 3,
+          "start_cs": 774,
+          "text": "quick"
+        },
+        {
+          "end_cs": 844,
+          "probability": 0.9968597292900085,
+          "segment": 3,
+          "start_cs": 810,
+          "text": "brown"
+        },
+        {
+          "end_cs": 868,
+          "probability": 0.9925586581230164,
+          "segment": 3,
+          "start_cs": 861,
+          "text": "fox"
+        },
+        {
+          "end_cs": 903,
+          "probability": 0.9993135929107666,
+          "segment": 3,
+          "start_cs": 868,
+          "text": "jumps"
+        },
+        {
+          "end_cs": 933,
+          "probability": 0.9998893737792969,
+          "segment": 3,
+          "start_cs": 906,
+          "text": "over"
+        },
+        {
+          "end_cs": 955,
+          "probability": 0.9996472001075745,
+          "segment": 3,
+          "start_cs": 933,
+          "text": "the"
+        },
+        {
+          "end_cs": 984,
+          "probability": 0.9863157868385315,
+          "segment": 3,
+          "start_cs": 955,
+          "text": "lazy"
+        },
+        {
+          "end_cs": 994,
+          "probability": 0.9986619353294373,
+          "segment": 3,
+          "start_cs": 984,
+          "text": "dog."
+        },
+        {
+          "end_cs": 1074,
+          "probability": 0.992337167263031,
+          "segment": 4,
+          "start_cs": 1033,
+          "text": "Deadpan"
+        },
+        {
+          "end_cs": 1110,
+          "probability": 0.9986162185668945,
+          "segment": 4,
+          "start_cs": 1074,
+          "text": "checks"
+        },
+        {
+          "end_cs": 1133,
+          "probability": 0.9984353184700012,
+          "segment": 4,
+          "start_cs": 1110,
+          "text": "every"
+        },
+        {
+          "end_cs": 1176,
+          "probability": 0.998877227306366,
+          "segment": 4,
+          "start_cs": 1141,
+          "text": "native"
+        },
+        {
+          "end_cs": 1218,
+          "probability": 0.9989114999771118,
+          "segment": 4,
+          "start_cs": 1176,
+          "text": "adapter"
+        },
+        {
+          "end_cs": 1248,
+          "probability": 0.9998607635498047,
+          "segment": 4,
+          "start_cs": 1218,
+          "text": "under"
+        },
+        {
+          "end_cs": 1273,
+          "probability": 0.9995232820510864,
+          "segment": 4,
+          "start_cs": 1248,
+          "text": "address"
+        },
+        {
+          "end_cs": 1308,
+          "probability": 0.9996853470802307,
+          "segment": 4,
+          "start_cs": 1304,
+          "text": "and"
+        },
+        {
+          "end_cs": 1344,
+          "probability": 0.9926514029502869,
+          "segment": 4,
+          "start_cs": 1308,
+          "text": "thread"
+        },
+        {
+          "end_cs": 1404,
+          "probability": 0.9946376085281372,
+          "segment": 4,
+          "start_cs": 1344,
+          "text": "sanitizers"
+        },
+        {
+          "end_cs": 1439,
+          "probability": 0.9991763830184937,
+          "segment": 4,
+          "start_cs": 1404,
+          "text": "before"
+        },
+        {
+          "end_cs": 1482,
+          "probability": 0.9989343881607056,
+          "segment": 4,
+          "start_cs": 1439,
+          "text": "release."
+        },
+        {
+          "end_cs": 1525,
+          "probability": 0.9989896416664124,
+          "segment": 5,
+          "start_cs": 1505,
+          "text": "The"
+        },
+        {
+          "end_cs": 1560,
+          "probability": 0.9929335713386536,
+          "segment": 5,
+          "start_cs": 1525,
+          "text": "quick"
+        },
+        {
+          "end_cs": 1595,
+          "probability": 0.9984257817268372,
+          "segment": 5,
+          "start_cs": 1560,
+          "text": "brown"
+        },
+        {
+          "end_cs": 1616,
+          "probability": 0.9949146509170532,
+          "segment": 5,
+          "start_cs": 1595,
+          "text": "fox"
+        },
+        {
+          "end_cs": 1651,
+          "probability": 0.9994851350784302,
+          "segment": 5,
+          "start_cs": 1616,
+          "text": "jumps"
+        },
+        {
+          "end_cs": 1679,
+          "probability": 0.9998722076416016,
+          "segment": 5,
+          "start_cs": 1651,
+          "text": "over"
+        },
+        {
+          "end_cs": 1699,
+          "probability": 0.9999046325683594,
+          "segment": 5,
+          "start_cs": 1679,
+          "text": "the"
+        },
+        {
+          "end_cs": 1728,
+          "probability": 0.9949696660041809,
+          "segment": 5,
+          "start_cs": 1704,
+          "text": "lazy"
+        },
+        {
+          "end_cs": 1745,
+          "probability": 0.9988314509391785,
+          "segment": 5,
+          "start_cs": 1728,
+          "text": "dog."
+        },
+        {
+          "end_cs": 1818,
+          "probability": 0.9949839115142822,
+          "segment": 6,
+          "start_cs": 1777,
+          "text": "Deadpan"
+        },
+        {
+          "end_cs": 1854,
+          "probability": 0.9988981485366821,
+          "segment": 6,
+          "start_cs": 1818,
+          "text": "checks"
+        },
+        {
+          "end_cs": 1877,
+          "probability": 0.9991992115974426,
+          "segment": 6,
+          "start_cs": 1854,
+          "text": "every"
+        },
+        {
+          "end_cs": 1920,
+          "probability": 0.999372661113739,
+          "segment": 6,
+          "start_cs": 1885,
+          "text": "native"
+        },
+        {
+          "end_cs": 1962,
+          "probability": 0.9991496801376343,
+          "segment": 6,
+          "start_cs": 1920,
+          "text": "adapter"
+        },
+        {
+          "end_cs": 1992,
+          "probability": 0.9998588562011719,
+          "segment": 6,
+          "start_cs": 1962,
+          "text": "under"
+        },
+        {
+          "end_cs": 2017,
+          "probability": 0.9996300339698792,
+          "segment": 6,
+          "start_cs": 1992,
+          "text": "address"
+        },
+        {
+          "end_cs": 2052,
+          "probability": 0.9997787475585938,
+          "segment": 6,
+          "start_cs": 2048,
+          "text": "and"
+        },
+        {
+          "end_cs": 2088,
+          "probability": 0.9906087517738342,
+          "segment": 6,
+          "start_cs": 2052,
+          "text": "thread"
+        },
+        {
+          "end_cs": 2148,
+          "probability": 0.9932801723480225,
+          "segment": 6,
+          "start_cs": 2088,
+          "text": "sanitizers"
+        },
+        {
+          "end_cs": 2183,
+          "probability": 0.9996166825294495,
+          "segment": 6,
+          "start_cs": 2148,
+          "text": "before"
+        },
+        {
+          "end_cs": 2226,
+          "probability": 0.9992201924324036,
+          "segment": 6,
+          "start_cs": 2183,
+          "text": "release."
+        },
+        {
+          "end_cs": 2273,
+          "probability": 0.9805273413658142,
+          "segment": 7,
+          "start_cs": 2253,
+          "text": "The"
+        },
+        {
+          "end_cs": 2308,
+          "probability": 0.9963712096214294,
+          "segment": 7,
+          "start_cs": 2273,
+          "text": "quick"
+        },
+        {
+          "end_cs": 2343,
+          "probability": 0.9989210367202759,
+          "segment": 7,
+          "start_cs": 2308,
+          "text": "brown"
+        },
+        {
+          "end_cs": 2364,
+          "probability": 0.9957119822502136,
+          "segment": 7,
+          "start_cs": 2343,
+          "text": "fox"
+        },
+        {
+          "end_cs": 2399,
+          "probability": 0.9994069933891296,
+          "segment": 7,
+          "start_cs": 2364,
+          "text": "jumps"
+        },
+        {
+          "end_cs": 2429,
+          "probability": 0.9984524250030518,
+          "segment": 10,
+          "start_cs": 2402,
+          "text": "over"
+        },
+        {
+          "end_cs": 2449,
+          "probability": 0.9904821515083313,
+          "segment": 10,
+          "start_cs": 2429,
+          "text": "the"
+        },
+        {
+          "end_cs": 2476,
+          "probability": 0.5182660222053528,
+          "segment": 10,
+          "start_cs": 2451,
+          "text": "lazy"
+        },
+        {
+          "end_cs": 2496,
+          "probability": 0.9806657433509827,
+          "segment": 10,
+          "start_cs": 2476,
+          "text": "dog."
+        },
+        {
+          "end_cs": 2564,
+          "probability": 0.6025396585464478,
+          "segment": 11,
+          "start_cs": 2525,
+          "text": "Deadpan"
+        },
+        {
+          "end_cs": 2592,
+          "probability": 0.9729394912719727,
+          "segment": 11,
+          "start_cs": 2564,
+          "text": "checks"
+        },
+        {
+          "end_cs": 2616,
+          "probability": 0.9539337158203125,
+          "segment": 11,
+          "start_cs": 2601,
+          "text": "every"
+        },
+        {
+          "end_cs": 2634,
+          "probability": 0.9899495244026184,
+          "segment": 11,
+          "start_cs": 2611,
+          "text": "every"
+        },
+        {
+          "end_cs": 2640,
+          "probability": 0.7943248748779297,
+          "segment": 11,
+          "start_cs": 2633,
+          "text": "name."
+        },
+        {
+          "end_cs": 2672,
+          "probability": 0.9722011685371399,
+          "segment": 11,
+          "start_cs": 2634,
+          "text": "native"
+        },
+        {
+          "end_cs": 2702,
+          "probability": 0.9791592955589294,
+          "segment": 11,
+          "start_cs": 2672,
+          "text": "adapter"
+        },
+        {
+          "end_cs": 2747,
+          "probability": 0.9739068150520325,
+          "segment": 11,
+          "start_cs": 2720,
+          "text": "under"
+        },
+        {
+          "end_cs": 2792,
+          "probability": 0.935012936592102,
+          "segment": 11,
+          "start_cs": 2748,
+          "text": "address"
+        },
+        {
+          "end_cs": 2811,
+          "probability": 0.993861973285675,
+          "segment": 11,
+          "start_cs": 2792,
+          "text": "and"
+        },
+        {
+          "end_cs": 2849,
+          "probability": 0.9218029975891113,
+          "segment": 11,
+          "start_cs": 2811,
+          "text": "thread"
+        },
+        {
+          "end_cs": 2912,
+          "probability": 0.9681652784347534,
+          "segment": 11,
+          "start_cs": 2849,
+          "text": "sanitizers"
+        },
+        {
+          "end_cs": 2946,
+          "probability": 0.9972419738769531,
+          "segment": 11,
+          "start_cs": 2912,
+          "text": "before"
+        },
+        {
+          "end_cs": 3000,
+          "probability": 0.9990734457969666,
+          "segment": 11,
+          "start_cs": 2959,
+          "text": "release."
+        },
+        {
+          "end_cs": 3017,
+          "probability": 0.9988505244255066,
+          "segment": 12,
+          "start_cs": 3009,
+          "text": "The"
+        },
+        {
+          "end_cs": 3060,
+          "probability": 0.9692997932434082,
+          "segment": 12,
+          "start_cs": 3027,
+          "text": "Quick"
+        },
+        {
+          "end_cs": 3076,
+          "probability": 0.9878813028335571,
+          "segment": 12,
+          "start_cs": 3060,
+          "text": "Brown"
+        },
+        {
+          "end_cs": 3116,
+          "probability": 0.9859941601753235,
+          "segment": 12,
+          "start_cs": 3095,
+          "text": "Fox"
+        },
+        {
+          "end_cs": 3151,
+          "probability": 0.9982962608337402,
+          "segment": 12,
+          "start_cs": 3116,
+          "text": "jumps"
+        },
+        {
+          "end_cs": 3179,
+          "probability": 0.9998321533203125,
+          "segment": 12,
+          "start_cs": 3151,
+          "text": "over"
+        },
+        {
+          "end_cs": 3195,
+          "probability": 0.999557614326477,
+          "segment": 12,
+          "start_cs": 3179,
+          "text": "the"
+        },
+        {
+          "end_cs": 3221,
+          "probability": 0.9604019522666931,
+          "segment": 12,
+          "start_cs": 3204,
+          "text": "lazy"
+        },
+        {
+          "end_cs": 3249,
+          "probability": 0.9981420636177063,
+          "segment": 12,
+          "start_cs": 3232,
+          "text": "dog."
+        },
+        {
+          "end_cs": 3314,
+          "probability": 0.9875638484954834,
+          "segment": 13,
+          "start_cs": 3277,
+          "text": "Deadpan"
+        },
+        {
+          "end_cs": 3343,
+          "probability": 0.9984238743782043,
+          "segment": 13,
+          "start_cs": 3314,
+          "text": "checks"
+        },
+        {
+          "end_cs": 3378,
+          "probability": 0.9984809756278992,
+          "segment": 13,
+          "start_cs": 3363,
+          "text": "every"
+        },
+        {
+          "end_cs": 3416,
+          "probability": 0.9965707659721375,
+          "segment": 13,
+          "start_cs": 3382,
+          "text": "native"
+        },
+        {
+          "end_cs": 3454,
+          "probability": 0.9988390803337097,
+          "segment": 13,
+          "start_cs": 3416,
+          "text": "adapter"
+        },
+        {
+          "end_cs": 3489,
+          "probability": 0.999548077583313,
+          "segment": 13,
+          "start_cs": 3463,
+          "text": "under"
+        },
+        {
+          "end_cs": 3532,
+          "probability": 0.9978355765342712,
+          "segment": 13,
+          "start_cs": 3489,
+          "text": "address"
+        },
+        {
+          "end_cs": 3550,
+          "probability": 0.999225914478302,
+          "segment": 13,
+          "start_cs": 3532,
+          "text": "and"
+        },
+        {
+          "end_cs": 3586,
+          "probability": 0.9847762584686279,
+          "segment": 13,
+          "start_cs": 3550,
+          "text": "thread"
+        },
+        {
+          "end_cs": 3646,
+          "probability": 0.9944175481796265,
+          "segment": 13,
+          "start_cs": 3586,
+          "text": "sanitizers"
+        },
+        {
+          "end_cs": 3682,
+          "probability": 0.9994451403617859,
+          "segment": 13,
+          "start_cs": 3646,
+          "text": "before"
+        },
+        {
+          "end_cs": 3725,
+          "probability": 0.9992830753326416,
+          "segment": 13,
+          "start_cs": 3682,
+          "text": "release."
+        },
+        {
+          "end_cs": 3765,
+          "probability": 0.998513400554657,
+          "segment": 14,
+          "start_cs": 3757,
+          "text": "The"
+        },
+        {
+          "end_cs": 3806,
+          "probability": 0.9837700128555298,
+          "segment": 14,
+          "start_cs": 3775,
+          "text": "Quick"
+        },
+        {
+          "end_cs": 3824,
+          "probability": 0.9882742166519165,
+          "segment": 14,
+          "start_cs": 3806,
+          "text": "Brown"
+        },
+        {
+          "end_cs": 3858,
+          "probability": 0.993769109249115,
+          "segment": 14,
+          "start_cs": 3843,
+          "text": "Fox"
+        },
+        {
+          "end_cs": 3894,
+          "probability": 0.9991534948348999,
+          "segment": 14,
+          "start_cs": 3862,
+          "text": "jumps"
+        },
+        {
+          "end_cs": 3921,
+          "probability": 0.9998931884765625,
+          "segment": 14,
+          "start_cs": 3894,
+          "text": "over"
+        },
+        {
+          "end_cs": 3941,
+          "probability": 0.9999046325683594,
+          "segment": 14,
+          "start_cs": 3921,
+          "text": "the"
+        },
+        {
+          "end_cs": 3968,
+          "probability": 0.9951575398445129,
+          "segment": 14,
+          "start_cs": 3943,
+          "text": "lazy"
+        },
+        {
+          "end_cs": 3988,
+          "probability": 0.9990448951721191,
+          "segment": 14,
+          "start_cs": 3968,
+          "text": "dog."
+        },
+        {
+          "end_cs": 4058,
+          "probability": 0.9944337010383606,
+          "segment": 15,
+          "start_cs": 4021,
+          "text": "Deadpan"
+        },
+        {
+          "end_cs": 4088,
+          "probability": 0.9990715384483337,
+          "segment": 15,
+          "start_cs": 4058,
+          "text": "checks"
+        },
+        {
+          "end_cs": 4126,
+          "probability": 0.9993345737457275,
+          "segment": 15,
+          "start_cs": 4107,
+          "text": "every"
+        },
+        {
+          "end_cs": 4163,
+          "probability": 0.9988734126091003,
+          "segment": 15,
+          "start_cs": 4126,
+          "text": "native"
+        },
+        {
+          "end_cs": 4198,
+          "probability": 0.999340295791626,
+          "segment": 15,
+          "start_cs": 4163,
+          "text": "adapter"
+        },
+        {
+          "end_cs": 4233,
+          "probability": 0.9998531341552734,
+          "segment": 15,
+          "start_cs": 4207,
+          "text": "under"
+        },
+        {
+          "end_cs": 4280,
+          "probability": 0.9994012713432312,
+          "segment": 15,
+          "start_cs": 4244,
+          "text": "address"
+        },
+        {
+          "end_cs": 4298,
+          "probability": 0.9996948838233948,
+          "segment": 15,
+          "start_cs": 4280,
+          "text": "and"
+        },
+        {
+          "end_cs": 4334,
+          "probability": 0.9893134236335754,
+          "segment": 15,
+          "start_cs": 4298,
+          "text": "thread"
+        },
+        {
+          "end_cs": 4393,
+          "probability": 0.9974949955940247,
+          "segment": 15,
+          "start_cs": 4334,
+          "text": "sanitizers"
+        },
+        {
+          "end_cs": 4432,
+          "probability": 0.9997254014015198,
+          "segment": 15,
+          "start_cs": 4403,
+          "text": "before"
+        },
+        {
+          "end_cs": 4475,
+          "probability": 0.999527096748352,
+          "segment": 15,
+          "start_cs": 4432,
+          "text": "release."
+        },
+        {
+          "end_cs": 4513,
+          "probability": 0.9835898876190186,
+          "segment": 16,
+          "start_cs": 4505,
+          "text": "The"
+        },
+        {
+          "end_cs": 4556,
+          "probability": 0.9818017482757568,
+          "segment": 16,
+          "start_cs": 4523,
+          "text": "Quick"
+        },
+        {
+          "end_cs": 4572,
+          "probability": 0.9894134402275085,
+          "segment": 16,
+          "start_cs": 4556,
+          "text": "Brown"
+        },
+        {
+          "end_cs": 4624,
+          "probability": 0.20539037883281708,
+          "segment": 18,
+          "start_cs": 4560,
+          "text": "Deadpan"
+        },
+        {
+          "end_cs": 4612,
+          "probability": 0.9935719966888428,
+          "segment": 18,
+          "start_cs": 4591,
+          "text": "Fox"
+        },
+        {
+          "end_cs": 4647,
+          "probability": 0.9991210699081421,
+          "segment": 18,
+          "start_cs": 4612,
+          "text": "jumps"
+        },
+        {
+          "end_cs": 4680,
+          "probability": 0.49496132135391235,
+          "segment": 18,
+          "start_cs": 4624,
+          "text": "checks"
+        },
+        {
+          "end_cs": 4675,
+          "probability": 0.9999160766601562,
+          "segment": 18,
+          "start_cs": 4647,
+          "text": "over"
+        },
+        {
+          "end_cs": 4691,
+          "probability": 0.9999275207519531,
+          "segment": 18,
+          "start_cs": 4675,
+          "text": "the"
+        },
+        {
+          "end_cs": 4725,
+          "probability": 0.9660016298294067,
+          "segment": 18,
+          "start_cs": 4680,
+          "text": "every"
+        },
+        {
+          "end_cs": 4717,
+          "probability": 0.9944043159484863,
+          "segment": 18,
+          "start_cs": 4700,
+          "text": "lazy"
+        },
+        {
+          "end_cs": 4782,
+          "probability": 0.9701247215270996,
+          "segment": 18,
+          "start_cs": 4725,
+          "text": "native"
+        },
+        {
+          "end_cs": 4745,
+          "probability": 0.9991267919540405,
+          "segment": 18,
+          "start_cs": 4728,
+          "text": "dog."
+        },
+        {
+          "end_cs": 4810,
+          "probability": 0.510718822479248,
+          "segment": 18,
+          "start_cs": 4773,
+          "text": "Deadpan"
+        },
+        {
+          "end_cs": 4836,
+          "probability": 0.9779573082923889,
+          "segment": 18,
+          "start_cs": 4782,
+          "text": "adapter"
+        },
+        {
+          "end_cs": 4840,
+          "probability": 0.9843734502792358,
+          "segment": 18,
+          "start_cs": 4810,
+          "text": "checks"
+        },
+        {
+          "end_cs": 4893,
+          "probability": 0.9643328189849854,
+          "segment": 18,
+          "start_cs": 4849,
+          "text": "under"
+        },
+        {
+          "end_cs": 4877,
+          "probability": 0.9893775582313538,
+          "segment": 18,
+          "start_cs": 4859,
+          "text": "every"
+        },
+        {
+          "end_cs": 4914,
+          "probability": 0.9547874331474304,
+          "segment": 18,
+          "start_cs": 4878,
+          "text": "native"
+        },
+        {
+          "end_cs": 4958,
+          "probability": 0.9040099382400513,
+          "segment": 18,
+          "start_cs": 4893,
+          "text": "address"
+        },
+        {
+          "end_cs": 4950,
+          "probability": 0.9742393493652344,
+          "segment": 18,
+          "start_cs": 4914,
+          "text": "adapter"
+        },
+        {
+          "end_cs": 4986,
+          "probability": 0.983843207359314,
+          "segment": 18,
+          "start_cs": 4958,
+          "text": "and"
+        },
+        {
+          "end_cs": 4985,
+          "probability": 0.9284844994544983,
+          "segment": 18,
+          "start_cs": 4959,
+          "text": "under"
+        },
+        {
+          "end_cs": 5042,
+          "probability": 0.9140792489051819,
+          "segment": 18,
+          "start_cs": 4986,
+          "text": "thread"
+        },
+        {
+          "end_cs": 5040,
+          "probability": 0.345855176448822,
+          "segment": 18,
+          "start_cs": 4996,
+          "text": "Addreson."
+        },
+        {
+          "end_cs": 5134,
+          "probability": 0.9809220433235168,
+          "segment": 18,
+          "start_cs": 5042,
+          "text": "sanitizers"
+        },
+        {
+          "end_cs": 5190,
+          "probability": 0.9918906092643738,
+          "segment": 18,
+          "start_cs": 5134,
+          "text": "before"
+        },
+        {
+          "end_cs": 5258,
+          "probability": 0.9943682551383972,
+          "segment": 18,
+          "start_cs": 5190,
+          "text": "release."
+        },
+        {
+          "end_cs": 5282,
+          "probability": 0.9375103116035461,
+          "segment": 19,
+          "start_cs": 5260,
+          "text": "The"
+        },
+        {
+          "end_cs": 5319,
+          "probability": 0.5132167339324951,
+          "segment": 19,
+          "start_cs": 5282,
+          "text": "quick"
+        },
+        {
+          "end_cs": 5356,
+          "probability": 0.8108300566673279,
+          "segment": 19,
+          "start_cs": 5319,
+          "text": "brown"
+        },
+        {
+          "end_cs": 5378,
+          "probability": 0.8759591579437256,
+          "segment": 19,
+          "start_cs": 5356,
+          "text": "fox"
+        },
+        {
+          "end_cs": 5411,
+          "probability": 0.9987457394599915,
+          "segment": 19,
+          "start_cs": 5378,
+          "text": "jumps"
+        },
+        {
+          "end_cs": 5441,
+          "probability": 0.9994641542434692,
+          "segment": 19,
+          "start_cs": 5415,
+          "text": "over"
+        },
+        {
+          "end_cs": 5466,
+          "probability": 0.9980354309082031,
+          "segment": 19,
+          "start_cs": 5466,
+          "text": "the"
+        },
+        {
+          "end_cs": 5487,
+          "probability": 0.8819315433502197,
+          "segment": 19,
+          "start_cs": 5472,
+          "text": "lazy"
+        },
+        {
+          "end_cs": 5520,
+          "probability": 0.9838206768035889,
+          "segment": 19,
+          "start_cs": 5497,
+          "text": "dog."
+        },
+        {
+          "end_cs": 5593,
+          "probability": 0.9869358539581299,
+          "segment": 20,
+          "start_cs": 5560,
+          "text": "Deadpan"
+        },
+        {
+          "end_cs": 5625,
+          "probability": 0.9968882203102112,
+          "segment": 20,
+          "start_cs": 5600,
+          "text": "checks"
+        },
+        {
+          "end_cs": 5650,
+          "probability": 0.998621940612793,
+          "segment": 20,
+          "start_cs": 5625,
+          "text": "every"
+        },
+        {
+          "end_cs": 5680,
+          "probability": 0.9982905983924866,
+          "segment": 20,
+          "start_cs": 5650,
+          "text": "native"
+        },
+        {
+          "end_cs": 5711,
+          "probability": 0.9987190961837769,
+          "segment": 20,
+          "start_cs": 5680,
+          "text": "adapter"
+        },
+        {
+          "end_cs": 5739,
+          "probability": 0.9995899796485901,
+          "segment": 20,
+          "start_cs": 5715,
+          "text": "under"
+        },
+        {
+          "end_cs": 5775,
+          "probability": 0.9987095594406128,
+          "segment": 20,
+          "start_cs": 5740,
+          "text": "address"
+        },
+        {
+          "end_cs": 5787,
+          "probability": 0.9988581538200378,
+          "segment": 20,
+          "start_cs": 5775,
+          "text": "and"
+        },
+        {
+          "end_cs": 5820,
+          "probability": 0.9812831878662109,
+          "segment": 20,
+          "start_cs": 5797,
+          "text": "thread"
+        },
+        {
+          "end_cs": 5870,
+          "probability": 0.9924469590187073,
+          "segment": 20,
+          "start_cs": 5820,
+          "text": "sanitizers"
+        },
+        {
+          "end_cs": 5900,
+          "probability": 0.9982715249061584,
+          "segment": 20,
+          "start_cs": 5870,
+          "text": "before"
+        },
+        {
+          "end_cs": 5935,
+          "probability": 0.9991039633750916,
+          "segment": 20,
+          "start_cs": 5900,
+          "text": "release."
+        },
+        {
+          "end_cs": 5983,
+          "probability": 0.9927934408187866,
+          "segment": 21,
+          "start_cs": 5960,
+          "text": "The"
+        },
+        {
+          "end_cs": 6022,
+          "probability": 0.9845039248466492,
+          "segment": 21,
+          "start_cs": 5983,
+          "text": "quick"
+        },
+        {
+          "end_cs": 6061,
+          "probability": 0.9956550002098083,
+          "segment": 21,
+          "start_cs": 6022,
+          "text": "brown"
+        },
+        {
+          "end_cs": 6084,
+          "probability": 0.995924711227417,
+          "segment": 21,
+          "start_cs": 6061,
+          "text": "fox"
+        },
+        {
+          "end_cs": 6123,
+          "probability": 0.9996166825294495,
+          "segment": 21,
+          "start_cs": 6084,
+          "text": "jumps"
+        },
+        {
+          "end_cs": 6141,
+          "probability": 0.9998054504394531,
+          "segment": 21,
+          "start_cs": 6123,
+          "text": "over"
+        },
+        {
+          "end_cs": 6177,
+          "probability": 0.9998111724853516,
+          "segment": 21,
+          "start_cs": 6172,
+          "text": "the"
+        },
+        {
+          "end_cs": 6208,
+          "probability": 0.990100622177124,
+          "segment": 21,
+          "start_cs": 6177,
+          "text": "lazy"
+        },
+        {
+          "end_cs": 6231,
+          "probability": 0.9982201457023621,
+          "segment": 21,
+          "start_cs": 6208,
+          "text": "dog."
+        },
+        {
+          "end_cs": 6302,
+          "probability": 0.9868859648704529,
+          "segment": 22,
+          "start_cs": 6260,
+          "text": "Deadpan"
+        },
+        {
+          "end_cs": 6342,
+          "probability": 0.9987533688545227,
+          "segment": 22,
+          "start_cs": 6310,
+          "text": "checks"
+        },
+        {
+          "end_cs": 6374,
+          "probability": 0.9991439580917358,
+          "segment": 22,
+          "start_cs": 6342,
+          "text": "every"
+        },
+        {
+          "end_cs": 6411,
+          "probability": 0.9992964267730713,
+          "segment": 22,
+          "start_cs": 6374,
+          "text": "native"
+        },
+        {
+          "end_cs": 6441,
+          "probability": 0.999195396900177,
+          "segment": 22,
+          "start_cs": 6411,
+          "text": "adapter"
+        },
+        {
+          "end_cs": 6488,
+          "probability": 0.9997692108154297,
+          "segment": 22,
+          "start_cs": 6472,
+          "text": "under"
+        },
+        {
+          "end_cs": 6532,
+          "probability": 0.999195396900177,
+          "segment": 22,
+          "start_cs": 6497,
+          "text": "address"
+        },
+        {
+          "end_cs": 6551,
+          "probability": 0.998621940612793,
+          "segment": 22,
+          "start_cs": 6532,
+          "text": "and"
+        },
+        {
+          "end_cs": 6589,
+          "probability": 0.9804843068122864,
+          "segment": 22,
+          "start_cs": 6551,
+          "text": "thread"
+        },
+        {
+          "end_cs": 6652,
+          "probability": 0.9977251887321472,
+          "segment": 22,
+          "start_cs": 6589,
+          "text": "sanitizers"
+        },
+        {
+          "end_cs": 6690,
+          "probability": 0.9988162517547607,
+          "segment": 22,
+          "start_cs": 6652,
+          "text": "before"
+        },
+        {
+          "end_cs": 6734,
+          "probability": 0.9989153146743774,
+          "segment": 22,
+          "start_cs": 6690,
+          "text": "release."
+        },
+        {
+          "end_cs": 6783,
+          "probability": 0.8878912329673767,
+          "segment": 23,
+          "start_cs": 6760,
+          "text": "The"
+        },
+        {
+          "end_cs": 6822,
+          "probability": 0.9943379163742065,
+          "segment": 23,
+          "start_cs": 6783,
+          "text": "quick"
+        },
+        {
+          "end_cs": 6861,
+          "probability": 0.9968578219413757,
+          "segment": 23,
+          "start_cs": 6822,
+          "text": "brown"
+        },
+        {
+          "end_cs": 6884,
+          "probability": 0.9966562986373901,
+          "segment": 23,
+          "start_cs": 6861,
+          "text": "fox"
+        },
+        {
+          "end_cs": 6923,
+          "probability": 0.9995156526565552,
+          "segment": 23,
+          "start_cs": 6884,
+          "text": "jumps"
+        },
+        {
+          "end_cs": 6941,
+          "probability": 0.9998207092285156,
+          "segment": 23,
+          "start_cs": 6923,
+          "text": "over"
+        },
+        {
+          "end_cs": 6980,
+          "probability": 0.3334520757198334,
+          "segment": 25,
+          "start_cs": 6960,
+          "text": "dog,"
+        },
+        {
+          "end_cs": 6977,
+          "probability": 0.9998550415039062,
+          "segment": 25,
+          "start_cs": 6972,
+          "text": "the"
+        },
+        {
+          "end_cs": 7008,
+          "probability": 0.991712749004364,
+          "segment": 25,
+          "start_cs": 6977,
+          "text": "lazy"
+        },
+        {
+          "end_cs": 7031,
+          "probability": 0.9983400702476501,
+          "segment": 25,
+          "start_cs": 7008,
+          "text": "dog."
+        },
+        {
+          "end_cs": 7038,
+          "probability": 0.6186615228652954,
+          "segment": 25,
+          "start_cs": 7019,
+          "text": "deadpan"
+        },
+        {
+          "end_cs": 7079,
+          "probability": 0.9732179045677185,
+          "segment": 25,
+          "start_cs": 7048,
+          "text": "checks"
+        },
+        {
+          "end_cs": 7068,
+          "probability": 0.5957127213478088,
+          "segment": 25,
+          "start_cs": 7060,
+          "text": "Deadpan"
+        },
+        {
+          "end_cs": 7087,
+          "probability": 0.9987190961837769,
+          "segment": 25,
+          "start_cs": 7077,
+          "text": "checks"
+        },
+        {
+          "end_cs": 7093,
+          "probability": 0.9992144703865051,
+          "segment": 25,
+          "start_cs": 7087,
+          "text": "every"
+        },
+        {
+          "end_cs": 7100,
+          "probability": 0.9989286661148071,
+          "segment": 25,
+          "start_cs": 7100,
+          "text": "native"
+        },
+        {
+          "end_cs": 7125,
+          "probability": 0.996833086013794,
+          "segment": 25,
+          "start_cs": 7110,
+          "text": "adapter"
+        },
+        {
+          "end_cs": 7152,
+          "probability": 0.9765481352806091,
+          "segment": 25,
+          "start_cs": 7112,
+          "text": "native"
+        },
+        {
+          "end_cs": 7127,
+          "probability": 0.44905900955200195,
+          "segment": 25,
+          "start_cs": 7125,
+          "text": "under"
+        },
+        {
+          "end_cs": 7150,
+          "probability": 0.3407280445098877,
+          "segment": 25,
+          "start_cs": 7138,
+          "text": "release."
+        },
+        {
+          "end_cs": 7202,
+          "probability": 0.8933236598968506,
+          "segment": 25,
+          "start_cs": 7152,
+          "text": "adapter"
+        }
+      ]
+    },
+    "vad_sha256": "2aa269b785eeb53a82983a20501ddf7c1d9c48e33ab63a41391ac6c9f7fb6987",
+    "worker_admissions": 3,
+    "worker_sha256": "bc4c6bc4ca54f8939a49de70434000811e2ef565f78ae46c22019929b6a8f4d3"
+  }
+}

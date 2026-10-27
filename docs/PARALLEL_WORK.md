@@ -91,34 +91,50 @@ to obtain a green result. Browser interactions still require the browser role.
   portable copies. The primitive-owner matrix still fails while preparing its
   Retime: WrapRetime reports "sound clock processing subtree changed". Keep
   this broader lifecycle gap open; do not claim complete all-owner durability.
-- Five initial pure analysis tests passed. Independent review then found a real
-  fractional-centisecond terminal word loss and VAD inference preceding memory
-  admission. The worker has fixed both and added regressions, plus nonblocking
-  helper-file admission and partial-rail ordering fixes. These continuations
-  still need their combined tests and actual model witness. The first CLI/app
-  check rejected incompatible SHA digest formatting; that fix is authored and
-  the second combined check is in progress.
-- Real-worker fixture and approved pinned Silero model are prepared in
-  /tmp/deadpan-incremental-analysis-2026-10-26. The fixture repeats repository
-  synthetic speech for scheduler/cache tests; it is not a quality corpus.
-  Actual cancellation/resume/cache and native behavior remain unverified.
+- Independent analysis review found fractional-centisecond terminal word loss
+  and VAD inference preceding memory admission. Both are fixed with regressions;
+  helper-file admission and partial-rail ordering fixes also passed re-review.
+  Combined checks pass six pure Analysis tests, four CLI tests and three new
+  native partial-rail tests plus one existing decimal-entry regression. CLI/app
+  all-target compilation and strict seven-crate all-target lint pass. The empty
+  app library's zero tests do not count as native verification. Original compile
+  and lint failures remain in the receipts.
+- Actual Whisper base.en and Silero v6.2.0 cancellation/resume/cache verification
+  passes in 48.03 seconds. Tail-first cancellation retains one completed range;
+  resume uses its cache and runs three remaining admissions. All four ranges
+  then load with zero inference admissions and identical transcript/activity,
+  without an authored revision change. Source, fixture, weights, helper and
+  example executable guards pass. Initial full audio decode remains; the warm
+  scan takes 9,904 ms, so no latency target or speedup is claimed. The initial
+  invalid AAC seam fixture and truthful import refusal remain recorded.
+  See [audio-analysis qualification](qualification/incremental-audio-analysis-2026-10-26.md)
+  and /tmp/deadpan-parallel-integration-2026-10-26. Synthetic speech proves the
+  scheduler/cache behavior only; native interaction and accuracy remain open.
 
 ## Compaction continuation
 
-The latest sources are frozen for parent integration checks. This is recorded
-state, not an instruction to honor an old hold without checking agents/handles.
-Check the current runner receipts and resume any live handle rather than
-restarting. Main next joins: corrected Store tests, current pure analysis tests,
-CLI/app all-target checks, new CLI/app regressions, actual-model example,
-strict lint and final media/native qualification. The analysis worker's proposed
-shots/Media range scheduling is approved in principle but has not been edited;
-finish its current audio milestone before expanding that lane. Main retains
-all remaining full-spec requirements; no criterion or gate has closed here.
+The current integration checks are terminal. Recheck agents and tool handles
+after compaction; recorded freezes are not live holds. Keep runtime source
+stable while the primary retains evidence and commits the independent audio
+analysis milestone. Actual native interaction/coexistence, quality, long-media
+and packaging qualification remain. An unwired CLI shot scheduler draft exists
+under shots/incremental; exclude it from the audio milestone. Agree Media/app
+range interfaces and exact sequential-picture equivalence before linking it.
+The Store primitive matrix requires sound-bearing WrapRetime lifecycle work
+before its Retime fixture can reach Split; the established refusal must not be
+bypassed. Four Audio work-limit failures remain. Main retains every full-spec
+requirement and final acceptance decision.
 
 ## Retention decision
 
-The trial has produced independent patches and exposed a dependency-aware join.
-No elapsed-time or quality improvement is claimed yet. After combined tests and
-required actual behavior pass, add the measured result here and retain the useful
-ownership/join pattern. If coordination becomes the bottleneck, reduce the wave
-or re-slice it. Do not keep agents busy merely to fill slots.
+Retain this pattern: three disjoint implementation owners, primary-owned shared
+builds and integration, independent review, short dependency-scoped freezes,
+and explicit acceptance joins. It has delivered independently reviewed patches,
+passing combined regressions/strict lint and a real-worker analysis witness
+while Store history qualification progressed independently. Review caught real
+bugs before acceptance. No serial control run exists, so do not claim a measured
+elapsed-time or token saving. Keep tightly coupled sound-clock/Retime decisions
+with one owner; parallelize separate analysis services or independent reviews.
+If coordination becomes the bottleneck, reduce or re-slice the wave. Do not
+keep agents busy merely to fill slots. Update this file and its handoff link
+when ownership, evidence, live state or the next join changes.

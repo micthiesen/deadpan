@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-27T00:09:30Z",
+  "updated_at": "2026-10-27T00:45:32Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Parallel implementation: constant audio programs and sound-family reuse pass 388 library/existing-stage checks; full Split still has four work-limit failures. Selected-play Split history now passes Store rollback/reopen/Undo/Redo/portable checks; Retime setup remains failing. Cursor-priority transcript/VAD and native partial results are at integrated compile/model verification. Coverage 85%; 10/24 Complete; 0/7 gates closed.",
+  "focus": "Parallel workflow retained in the repository and mandatory handoff. Real cursor-priority transcript/VAD cancellation, resume and cache reuse pass; integrated tests and strict lint pass. Runtime remains uncommitted with native interaction and broader analysis acceptance owed. Four Audio work-limit failures and sound-bearing Retime lifecycle remain open. Coverage 85%; 10/24 Complete; 0/7 gates closed.",
   "features": [
     {
       "id": "editing",
@@ -53,7 +53,7 @@
       "requirements": [
         "DP-10"
       ],
-      "note": "Local transcription, corrections, pause/shot proposals and corrected transcript-search selectors work. Exact Original windows preserve global resampling phase; initial cache opening still decodes the full stream. English word refinement now runs the real isolated native CPU model, shows approximate support/waveform, preserves pins and cuts, auditions through actual device delivery, and accepts only explicitly with one correction Undo. Native/CLI and relocated signed-package import, proposal, acceptance/Undo and integrity refusals are verified. The stricter model quality experiments remain failed. Cursor-priority incremental scheduling and broader local analysis qualification remain."
+      "note": "Local transcription, corrections, pause/shot proposals and corrected transcript-search selectors work. Exact Original windows preserve global resampling phase; initial cache opening still decodes the full stream. English word refinement now runs the real isolated native CPU model, shows approximate support/waveform, preserves pins and cuts, auditions through actual device delivery, and accepts only explicitly with one correction Undo. Native/CLI and relocated signed-package import, proposal, acceptance/Undo and integrity refusals are verified. The stricter model quality experiments remain failed. The uncommitted native transcript/VAD candidate now passes cursor-priority range cancellation/resume and exact private-cache reuse with the real Whisper/Silero helper, plus partial-rail tests and strict integrated lint. Initial opening still decodes all audio; native interaction, shot/tracking scheduling and broader analysis qualification remain."
     },
     {
       "id": "ai",
@@ -1495,6 +1495,15 @@
       "revision": "549fde07",
       "retrospective": false,
       "summary": "Owner-requested parallel trial now has disjoint implementation lanes for complete constant route gains, canonical sound families and cursor-priority incremental analysis, with the primary adding Store Split durability verification. The integrated audio code passes 187 library and 201 existing stage tests; its separate full Split matrix remains three passes and four unchanged work-limit failures. Five initial analysis scheduler tests pass; independent review found terminal-word loss and inference-admission defects, with fixes/regressions authored but combined runtime checks still owed. CLI/app compile exposed SHA-format wiring errors, now corrected; real-model range/cache witness remains pending. Corrected Store checks pass selected one/two-depth Repeat Split history, but the primitive matrix still exposes a Retime preparation lifecycle refusal. Workflow, ownership, joins and limitations are persisted in docs/PARALLEL_WORK.md and handoff. No completion credit or measured speedup is claimed. Revision names the prior documentation checkpoint, not the uncommitted candidate."
+    },
+    {
+      "date": "2026-10-27",
+      "percent": 85,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 10,
+      "revision": "6a126959",
+      "retrospective": false,
+      "summary": "Parallel workflow retained after verified joins: independent analysis review caught and fixed terminal-word and inference-admission bugs; six Analysis tests, four CLI tests, three new app partial-rail tests plus one existing regression, CLI/app all-target compilation and strict seven-crate lint pass. Actual Whisper/Silero cancellation, cursor retargeting, cache resume, zero-inference cache reuse and unchanged authored revision pass with source/binary guards. Original compile/lint failures and invalid-AAC fixture refusal are retained with the successful run in a hashed evidence collection. The source candidate remains uncommitted; native interaction/coexistence, quality, long media, packaging and other analysis services remain open. Audio still has four work-limit failures; Store Retime preparation is an established lifecycle prerequisite. docs/PARALLEL_WORK.md and the mandatory handoff preserve ownership, joins, live-state rechecks and continuation. DP-10.7 already scored partial, so no extra coverage is awarded. Revision names the prior workflow checkpoint, not the uncommitted candidate."
     }
   ],
   "assessment": {
@@ -2432,11 +2441,12 @@
             "deliverable": "Incremental range scheduling prioritizes visible cursor and caches by source/model/settings/version",
             "score": 0.5,
             "evidence": [
-              "docs/TRANSCRIPTION.md Remaining",
+              "docs/qualification/incremental-audio-analysis-2026-10-26.md",
+              "tools/model-qualification/evidence/2026-10-26-incremental-audio/inventory.json",
               "docs/SHOT_DETECTION.md",
               "docs/REQUIREMENTS.md DP-10"
             ],
-            "remaining": "Versioned caching and resumable shot scans exist, but cursor-priority range scheduling for analysis and local refinement is not implemented.",
+            "remaining": "Native transcript/VAD range scheduling, cancellation/resume and exact cache reuse now pass a real-worker witness in an uncommitted candidate. Native interaction/model-slot coexistence, shot/tracking/refinement scheduling, long-media, quality and package integration remain. Initial audio opening still decodes the whole source; no latency target is established.",
             "normative": "11.4"
           }
         ]
@@ -3762,7 +3772,7 @@
     "risks": [
       "Composability matrix: structural timing transforms must preserve sample-phase history, owned sounds, nested Repeat overrides and fixed/pitch Retime clocks. Latest narrow admissions do not complete general scopes.",
       "DP-09 is broad audio workflow work: sample-resolution range authoring, variable rate, custom silence/tail policy and sound-bearing transforms remain, beyond polishing existing commands.",
-      "DP-10 reviewed English word refinement is qualified, but cursor-priority incremental analysis/tracking still needs architecture and real integration.",
+      "DP-10 reviewed English word refinement is qualified. The uncommitted transcript/VAD range candidate passes real-worker cancellation/cache checks; native acceptance, remaining shot/tracking scheduling and quality/performance still need integration.",
       "Full shared picture/audio effects and mastering, incremental RenderPlan fragments and filtered cache lifecycle remain implementation work.",
       "Native workflow integration, HDR/output quality and hostile real-worker stress remain local acceptance work.",
       "Large-project visible edit/pause latency still misses its target; diagnostic median improvements are not a target or p95 pass.",
