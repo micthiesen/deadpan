@@ -13,14 +13,21 @@ four-crate lint passes. An isolated 23-file overlay compiles without the inherit
 Split candidate. The [memory contract](../AUDIO_QUERY_MEMORY.md) separates
 retained storage from still-unproved construction peaks and plan pins.
 
-First target the duplicate current-occurrence discovery in
-`prepare_sound_processing_plans_in_context` and `prepare_beat_sounds` within one
-shared read. There is already only one prepared `beats` vector; do not try to
-remove a nonexistent second `prepare_beat_sounds` call. A call-local optional
-discovery memo can keep the exact live plan/context/range and first batches,
-share the existing resident/key-work ceilings and fall back unchanged when it
-cannot retain them. Keep all later history, overlap, policy and media admission.
-Measure its effect against the full real-WAV matrix before retaining it.
+The [call-local discovery memo](../qualification/rejected-discovery-reuse-2026-10-27.md)
+is also rejected and removed. Eight focused tests, 202 Audio library tests and
+strict lint pass, but the full matrix remains four pass/three fail. A nested Tail
+Sends read can re-enable reuse during the nominally disabled residency retry.
+All 1,387 preceding source inputs are restored exactly; restored strict passes.
+Do not revive this memo without resolving that controller-scope hole and proving
+an actual benefit.
+
+Current investigation: factor exact scalar occurrence support out of the full
+Plan constructor, shared by normal construction and planning-only clock discovery.
+Reuse stable path traversal, source-recipe validation, context clipping, Preserve
+selected-input overlap/full-output reset and final RoundEven allocation. Keep
+normal second-pass graph validation and source admission before PCM. Geometric
+owner visibility and audible source selection are insufficient. There is already
+only one prepared `beats` vector; no second `prepare_beat_sounds` call exists.
 
 ## Rejected prefix PCM prototype
 

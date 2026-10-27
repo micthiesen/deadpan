@@ -83,6 +83,13 @@ all 201 existing stage tests pass with the seven unfinished Split tests filtered
 Strict four-crate lint passes; the scoped overlay compiles without the inherited
 Split work. This does not resolve a Split failure or change acceptance credit.
 
+The [call-local discovery memo](qualification/rejected-discovery-reuse-2026-10-27.md)
+is rejected and removed. Eight focused tests, 202 Audio library tests and strict
+lint pass, but the full matrix remains four pass/three work-limit failures. A
+nested Tail Sends read can re-enable reuse during its residency retry. All 1,387
+preceding source inputs are restored exactly and restored strict passes. No
+acceptance credit changes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 
