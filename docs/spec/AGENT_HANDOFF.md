@@ -2,7 +2,53 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: sealed placement history, product goal active
+## Current state: work attribution and index experiment, product goal active
+
+`cf796605` commits and pushes the sealed placement-history milestone below.
+The [copied-runtime work attribution](../qualification/sound-work-attribution-2026-10-27.md)
+reproduces all three failures with exact accepted-charge reconciliation and no
+overflow. Optional work is zero. All-owner spends 38.53% of its accepted work
+scanning/shifting the existing Original-input cache index; selected/nested
+cases spend 27.20%/21.04% on real nonidentity transfer applications.
+
+The [uncommitted two-file index experiment](../qualification/sound-input-index-2026-10-27.md)
+replaces that sorted index with fixed bucket heads and intrusive links,
+preserving 64 entries, full hit authority,
+source admission and LRU order. It passes 202 Audio library tests (three new),
+all 171 definition tests, strict four-crate lint and independent source review.
+All seven unchanged Split tests, once across two source-stable invocations,
+remain four pass/three work failures. All-owner still fails at `cut-three`,
+limited `0+511`, with `plan work per read`. Selected/nested remain at `prefix-two`,
+limited `0+4096`, now `sound clock scope work`/`structural work` query limits.
+Processed root refinement stays passing. It remains an experiment inside the
+inherited general Split work, not a separately qualified or committed cache
+implementation.
+
+Raw experiment records are `/tmp/deadpan-input-index-2026-10-27`; the exact
+two-file patch and before-files are there. A second copied diagnostic tree at
+`/tmp/deadpan-input-index-profile-2026-10-27` matches all 1,395 candidate runtime
+inputs, with only copied stages instrumentation added. Its fresh build passes.
+`run_next.py` completes its sequential all-owner profile and six remaining Split
+tests; all receipts are terminal. No Cargo/test process remains. The 203 prior
+existing stage tests are not rerun for this experiment. The second trace confirms
+the scans/shifts disappear but the same read remains over budget. Do not present
+different stopping points as a completed-request work or timing comparison.
+
+Next implement/review a pure Components multiple-output oracle against separate
+scalar calls, preserving per-target family masks, used final gains and ordered
+floating sums. The retained design is in the index evidence's
+`candidate/demanded-outputs-design.md.gz`. Runtime graph enablement additionally
+requires a proved recursive peak before simultaneous wet histories allocate;
+current-room admission plus failed-batch retry is insufficient. This is direct
+execution into borrowed sinks, not the rejected retained-prefix/sibling cache.
+
+The full product goal, about 85% assessed coverage, ten Complete requirements
+and all seven open gates remain unchanged. Keep general Split and foreign
+fuzz/Cargo.lock/.claude entries uncommitted. Do not revive rejected prefix or
+discovery cache prototypes. Forwarding every full occurrence batch would also
+increase construction peak; it is not a free one-pass refactor.
+
+## Sealed placement history
 
 The [placement-history milestone](../qualification/placement-history-2026-10-27.md)
 replaces Audio's scalar placement vector with a sealed Plan-issued cursor/proof.
@@ -25,11 +71,9 @@ prefix/window reaches `AudioQueryLimit("sound plan binding work")`. Coverage
 stays about 85%, 10/24 Complete, gates 0/7. The full goal remains active.
 Keep general Split and the foreign fuzz/Cargo.lock/.claude entries uncommitted.
 
-Next: attribute accepted work at actual charge sites in a copied runtime tree.
-Keep canonical and optional-cache work separate; a child query can fail before
-returning a charge, so a near-limit final summary must not be called an overflow.
-Preserve limits, cancellation and deadlines. No profiling implementation or
-result is qualified yet; do not revive the removed memo/cache prototypes.
+The copied-runtime attribution above follows this milestone. Its final near-limit
+summary distinguishes a child-query refusal from a failed spend; neither is
+product performance qualification.
 
 ## Joined placement/context query
 

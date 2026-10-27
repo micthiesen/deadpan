@@ -1,0 +1,306 @@
+{
+  "schema_version": 1,
+  "base_revision": "cf796605",
+  "scope": "Copied-runtime diagnostic attribution of three unchanged general-Split failures after checked placement-history reuse. One copied stages.rs overlay; canonical and optional charges separate, no caps or PCM semantics changed. Timings and diagnostic heap are not product acceptance.",
+  "runtime_baseline_evidence": {
+    "path": "../2026-10-27-placement-history/inventory.json",
+    "inventory_sha256": "eca10101cd2e52057a24268f725d5700877dce9ece008d1407a35131279930ac",
+    "note": "Full prior candidate reconstruction plus placement overlay and all guarded runtime pins; full tracked workspace is cf796605. Copy additionally pins 5,279 workspace/config/fixture inputs. No repeated source tree or executable archive."
+  },
+  "files": [
+    {
+      "path": "records/allowner-analysis.json.gz",
+      "bytes": 3151,
+      "sha256": "b8d30015b5c4a45b743353fe1d997c246efea1137232f37f62b9d9e603ffa4be",
+      "expanded_bytes": 26752,
+      "expanded_sha256": "a5fdf996d7f9525dd8da688af34ddb3cc174e4a9438492f3a72f71d8056dd087"
+    },
+    {
+      "path": "records/allowner.json.gz",
+      "bytes": 544548,
+      "sha256": "c610831ec1ccf85a497ab2566f35ebbe46d4aa75ff183671e746644002e346e9",
+      "expanded_bytes": 2498682,
+      "expanded_sha256": "f48c7762e7060fabbdf0fb6d3de39bf55eebed7c2ca14114b901423885f304ae"
+    },
+    {
+      "path": "records/allowner.stderr.gz",
+      "bytes": 1634,
+      "sha256": "b0b371d8317643be6463de7156b631eba7e8d575eaa282ae4e83234c67b0d592",
+      "expanded_bytes": 10507,
+      "expanded_sha256": "d9d02dc9e2e0f1c89f9b20413bc0958d883ce356a48e9e1d4203a5e33e28fbb6"
+    },
+    {
+      "path": "records/allowner.stdout.gz",
+      "bytes": 207,
+      "sha256": "2e82ab4d9d254c0f69cfaf95be0377fb234afc4d42070090ed6f7f6c7bc7f6b8",
+      "expanded_bytes": 365,
+      "expanded_sha256": "e6788fba6c6ced051e735eb6728cc57bb1291c5bb08395a77d2807151dd37a78"
+    },
+    {
+      "path": "records/analyze.py.gz",
+      "bytes": 1387,
+      "sha256": "ba1deeed06027dd327348a647d90f4b370644a5c0538183be43b2a9c1c653737",
+      "expanded_bytes": 3367,
+      "expanded_sha256": "027ac308cbcf72f605568f4751b8245de7e3acb97301cd28912cf6f84e23f3ce"
+    },
+    {
+      "path": "records/audit.json.gz",
+      "bytes": 634,
+      "sha256": "e94e2d6f23c90dbac6edc2cef37dcead2cac2313585cfe41a425556a920e9f54",
+      "expanded_bytes": 1366,
+      "expanded_sha256": "ef2536a49a83297391d1cc45c6bd76758f08557628fc911d26cfa375a6da6d6a"
+    },
+    {
+      "path": "records/audit_copy.py.gz",
+      "bytes": 1836,
+      "sha256": "b14bf3ba9ece2ba7b11457c9a6a16b46da24a23f1707da9e55065943daaa499a",
+      "expanded_bytes": 4566,
+      "expanded_sha256": "00f90cc823a0e10cb4e0ea9bc2392a626a4718c04b8521573d3d4de108c45343"
+    },
+    {
+      "path": "records/base-input-pins.json.gz",
+      "bytes": 267883,
+      "sha256": "6e14ee8cdbacdf65b986ca3460152601fd73160ffe767d86759ae41bb6916291",
+      "expanded_bytes": 904490,
+      "expanded_sha256": "ab40b81ee6e73edcd7e54c47e02a79b129f327d0db1714f06f439c44e64c31ba"
+    },
+    {
+      "path": "records/baseline-comparison.json.gz",
+      "bytes": 588,
+      "sha256": "170993fd8b0763319b7f2576513367534a61c315b2f8defe629e50b2ad15dbbe",
+      "expanded_bytes": 1038,
+      "expanded_sha256": "cb2b60e173797061bcd262800a5b23c2cc8a0943fc0a3be98fd3ec0efe82f34e"
+    },
+    {
+      "path": "records/build.json.gz",
+      "bytes": 544379,
+      "sha256": "97b021b54a148cc1d77b5429f7c1a6992ad788c3d0efd7df13d751fcb1792d40",
+      "expanded_bytes": 2498246,
+      "expanded_sha256": "e3d2fe2587827871bd7990ea191fbbadd49acafe7c32921363237f0868dce5e8"
+    },
+    {
+      "path": "records/build.stderr.gz",
+      "bytes": 743,
+      "sha256": "282bd698203476c8f8647ed3cb858d1cf148e7d51d7eca1f14e3a47f74222acf",
+      "expanded_bytes": 2519,
+      "expanded_sha256": "9e9bdf0f1c3b9b88cee1a81b7c5bf7039ce4fe2f134e2ef4c7d4abac8ad8e925"
+    },
+    {
+      "path": "records/build.stdout.gz",
+      "bytes": 5429,
+      "sha256": "0f2ed0add6690c899112ae5a3cf0a961b7aa5c74b441b0124fedc54ac0758136",
+      "expanded_bytes": 72741,
+      "expanded_sha256": "b4c11193b8832ca2095170b70c79ce38d7ebf10d5553667d938a55c67e8eb3db"
+    },
+    {
+      "path": "records/collect_evidence.py.gz",
+      "bytes": 1064,
+      "sha256": "d25d5b7793e067bd9985cc3999d6dfa94e9b53ee2e2940534d5fffc25b03cc09",
+      "expanded_bytes": 2119,
+      "expanded_sha256": "6872a1b2e98d9598c3552364771f2751773a80eac5fccc99f555080084ba25b0"
+    },
+    {
+      "path": "records/copy-first-failure.json.gz",
+      "bytes": 218,
+      "sha256": "20d2ee757fe527776532e1bbec078cabb7406edf9f523be88453e3c84720c3c9",
+      "expanded_bytes": 326,
+      "expanded_sha256": "975acc27611cdcea6f66d28f36c977abbcc1b8555ea06e136dcb0dba95b32627"
+    },
+    {
+      "path": "records/copy-receipt.json.gz",
+      "bytes": 219569,
+      "sha256": "a0e36046c7c0c3a76c76cbd5b530652f88542c340323ad72aed4cb542d5c71d8",
+      "expanded_bytes": 730171,
+      "expanded_sha256": "a8ac918b4ba7b0f893bbaa7a7c8dbc91236ab4f41d5b37a186ac7b582fc15478"
+    },
+    {
+      "path": "records/copy_runtime.py.gz",
+      "bytes": 1258,
+      "sha256": "e30b7073dfc564a42205e1fa259c919833de74f3599a40e32d32e46d7d5cb6de",
+      "expanded_bytes": 3032,
+      "expanded_sha256": "b18149280ce7c82ae9b21caa88dd9f7cfd0b0ccaf88b11962159b763f8b90903"
+    },
+    {
+      "path": "records/diagnostic-unformatted.patch.gz",
+      "bytes": 3069,
+      "sha256": "c4ddc1ea62e0c39de445b574f1fbca95f8febc9727719508745b10644bc1407a",
+      "expanded_bytes": 10566,
+      "expanded_sha256": "0a6066de5f4b3257d8c206701d1440ef843dbfafc431608dc8f6cdb6c56195b2"
+    },
+    {
+      "path": "records/diagnostic.patch.gz",
+      "bytes": 3085,
+      "sha256": "7df057dcb4950036736e80ce812aebabac9476026df0d74e3c099aeae7277231",
+      "expanded_bytes": 10891,
+      "expanded_sha256": "a468b13848c2b870fffb346005aed84f6655d1ce6d87a9f07fd6c4791121d2e1"
+    },
+    {
+      "path": "records/guarded-baseline.json.gz",
+      "bytes": 72793,
+      "sha256": "f12ff73af328b97b1ff690c799cb569e747b752970e86104a0d31366a2970250",
+      "expanded_bytes": 231677,
+      "expanded_sha256": "40ee36296f0f258e437f35cd48fd408ed890d0f6b2f7ce438915d3b70f5d1eaf"
+    },
+    {
+      "path": "records/instrument_copy.py.gz",
+      "bytes": 1086,
+      "sha256": "893d5e1670adabf5f2bc51fc8ba5d71d8df7f88b2a2f231c215d2f8c2f9ee5eb",
+      "expanded_bytes": 2921,
+      "expanded_sha256": "c593f7208a874e5aa291d71fd5f8e6c0b9e884907dbbdccf2ab40c9b32e0d4ff"
+    },
+    {
+      "path": "records/nested-analysis.json.gz",
+      "bytes": 2887,
+      "sha256": "a0d25ff66b3fd226ee52b073b25cf00b7495b937ef1c6b24782554f06afc65a7",
+      "expanded_bytes": 23261,
+      "expanded_sha256": "235e91e1c2074545c415d2c08cc2cc81b0641d250a3334be8bff44db4799f5f0"
+    },
+    {
+      "path": "records/nested.json.gz",
+      "bytes": 544544,
+      "sha256": "938e7bd064017a9793011325852d19c6ac4c06489eed5cdcb4ada1e19c9458f2",
+      "expanded_bytes": 2498673,
+      "expanded_sha256": "b8306749eef75cf96b0a0dfe99ad2858196a22e9f2f0b9e2565fd9c56282a9f6"
+    },
+    {
+      "path": "records/nested.stderr.gz",
+      "bytes": 1528,
+      "sha256": "543ba000e44e0ab1855f905de719fffe6fd952865862fdba20073455fff1e707",
+      "expanded_bytes": 9116,
+      "expanded_sha256": "d681fbc539029c99e0d8aaa539e23f4b16ed7b963c16e52954e52a8afd143f52"
+    },
+    {
+      "path": "records/nested.stdout.gz",
+      "bytes": 203,
+      "sha256": "3b439f7f377ae32b3ff89dd9849a9ada4d3baa9b5a5bbe467a1e6082c1b910aa",
+      "expanded_bytes": 357,
+      "expanded_sha256": "1dc58fc34e6d21e7c1d90ec706a24d266999c81cba2b56c4eefe2a775c47772d"
+    },
+    {
+      "path": "records/pin_stage.py.gz",
+      "bytes": 645,
+      "sha256": "3105e190fe23058c1a9e91ed64a5a0e8ef481216bded65155bf05252f228f0d1",
+      "expanded_bytes": 1293,
+      "expanded_sha256": "23d1f2bf64d9eb77de64bb99de2733334c606894c45b2f896fc2af753702bc45"
+    },
+    {
+      "path": "records/profile-input-pins.json.gz",
+      "bytes": 267884,
+      "sha256": "2fb814f3d625fec4544778691070c17cea9744543a2e54b4dfa1b0054c9f03bc",
+      "expanded_bytes": 904490,
+      "expanded_sha256": "5463e90e6d0554cc4607edb85b982fb79a8a7bb7f8958cd205ddedcba24e85a4"
+    },
+    {
+      "path": "records/profile-stage-pin.json.gz",
+      "bytes": 480,
+      "sha256": "4d63087b35db0a28fd47451225e700bf43d1f4ced30d21fe2b11da9ba905895b",
+      "expanded_bytes": 1257,
+      "expanded_sha256": "8a75ff9457fca3d718e8cf72f736f5e9f6bc7590dde8e29d925bbba14aa60509"
+    },
+    {
+      "path": "records/removed-files.json.gz",
+      "bytes": 140,
+      "sha256": "eb0789922f5cb3f69e98d7591ea51894c461d344db594f16035a12152dcbedaf",
+      "expanded_bytes": 467,
+      "expanded_sha256": "dc0979cf5a4b643393eebb88f904f75ad3a56743aff1e89fca502ac123932999"
+    },
+    {
+      "path": "records/research.md.gz",
+      "bytes": 6635,
+      "sha256": "30144d7511cddca5bd75e30dfcbc68dc31abc2ea14f4127e1b892ce268efe378",
+      "expanded_bytes": 15371,
+      "expanded_sha256": "1809a5d377905173e342466a9b215604e9fc343de0fee6f870c510591c9e1ae7"
+    },
+    {
+      "path": "records/runner.py.gz",
+      "bytes": 1669,
+      "sha256": "a2b5b836eb105a3f9f14325eba2536295cc39e9a6ff1c855f8b786ddb94927d5",
+      "expanded_bytes": 4245,
+      "expanded_sha256": "dff227c67211197a8cfdebc79a3d7870787de0de03eb3cc46a6d205a1678bd3d"
+    },
+    {
+      "path": "records/rustc-version.json.gz",
+      "bytes": 544336,
+      "sha256": "21902476f20fe03a3086e8d41f517e1db6b46273a098ef4aec596626fda7582f",
+      "expanded_bytes": 2498116,
+      "expanded_sha256": "f13cc9db13f6cce45848debc7756af00b6b113d7d8fb6d824d075cf371cc9bcf"
+    },
+    {
+      "path": "records/rustc-version.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/rustc-version.stdout.gz",
+      "bytes": 165,
+      "sha256": "6cceea48fdf04945365d45a0d9894ff9ad3f786d77c49227235665f4245657bc",
+      "expanded_bytes": 192,
+      "expanded_sha256": "e794146d99fad54562fdcbd4a7c8b22b0240d2b0312ff6d879d67939b3131850"
+    },
+    {
+      "path": "records/selected-analysis.json.gz",
+      "bytes": 2893,
+      "sha256": "3f8d39f8b1b3baaed0ff452abf778a1b8b7366309e1098b6c424e1d6f5310210",
+      "expanded_bytes": 23491,
+      "expanded_sha256": "43b4c3b5e2bcb15458839284c672d4fd12d7d6f5acc8392039fecf05bacd3b75"
+    },
+    {
+      "path": "records/selected.json.gz",
+      "bytes": 544549,
+      "sha256": "98a42839f832bcbc73966e56b92bd6e35000c17b859475cdd9226d30f90f8397",
+      "expanded_bytes": 2498685,
+      "expanded_sha256": "b6ce585dcc8cc8205349bb248bd4c5d9859270ead003b1f0ab55bd3d905a346b"
+    },
+    {
+      "path": "records/selected.stderr.gz",
+      "bytes": 1538,
+      "sha256": "3d238329adb363ff72c901e1c7959cad7bab07530d46b4da119e9ce94d949867",
+      "expanded_bytes": 9205,
+      "expanded_sha256": "2f6df5091c249e27fe263288514cfa7b06312074cc760ad402ef4088fd2b2ea7"
+    },
+    {
+      "path": "records/selected.stdout.gz",
+      "bytes": 203,
+      "sha256": "3033753f94b70c40cbbbb070267b4d871040be3c4e885c3512348af32fd9b22a",
+      "expanded_bytes": 371,
+      "expanded_sha256": "4aba330bdac22430bdd0e010044c98d48bb8dc465dc4b200168cf6e2d1641355"
+    },
+    {
+      "path": "records/setup-notes.md.gz",
+      "bytes": 3168,
+      "sha256": "a59115ad6a5fe3d1ec87873b5a71b075985564349686cc18c1f1322b2441ef68",
+      "expanded_bytes": 6596,
+      "expanded_sha256": "b3c55edaf9e03daeec9289a8adbaf3155d487f1657a8c4e8de446887d63a6130"
+    },
+    {
+      "path": "records/stages-line-map.json.gz",
+      "bytes": 139,
+      "sha256": "acad806c16b656fef90dd5f405555692f65e015067e90d9d115bdceba5095235",
+      "expanded_bytes": 468,
+      "expanded_sha256": "3691aeb1b4207b437f372501803cbeac9503846bcd284e15e92a4fd65ce84345"
+    },
+    {
+      "path": "records/stages.before.rs.gz",
+      "bytes": 29218,
+      "sha256": "0306de3b2f3085e3826f074d5698f4632c56e471012fa58b74cf70464a9e2b16",
+      "expanded_bytes": 166297,
+      "expanded_sha256": "e3ccaf9aa088df4c7c63dd053c32176efb870f1be523768ab1e195bf712bf85b"
+    },
+    {
+      "path": "records/stages.reconstructed-baseline.rs.gz",
+      "bytes": 29218,
+      "sha256": "0306de3b2f3085e3826f074d5698f4632c56e471012fa58b74cf70464a9e2b16",
+      "expanded_bytes": 166297,
+      "expanded_sha256": "e3ccaf9aa088df4c7c63dd053c32176efb870f1be523768ab1e195bf712bf85b"
+    },
+    {
+      "path": "records/trace-types.rs.gz",
+      "bytes": 2492,
+      "sha256": "4d1c8fd6325d189c224d16acec91835b60c2212f038339e63d88aecbde3b5b0b",
+      "expanded_bytes": 8457,
+      "expanded_sha256": "f4ea2536a5e76d01d6c54374fd3193614a97a9dc98e47e050c028a94c6a33dd1"
+    }
+  ]
+}

@@ -138,6 +138,15 @@ stages pass. The isolated ten-file patch passes 527 Plan, 185 Audio library and
 eight processing tests. Strict lint passes. The unchanged Split matrix remains
 four pass/three work-limit failures. No acceptance credit changes.
 
+The [copied work attribution](qualification/sound-work-attribution-2026-10-27.md)
+reproduces those failures with fully reconciled canonical charges. All-owner
+spends 38.53% scanning/shifting the existing Original-input cache's sorted
+index. The selected/nested cases spend 27.20%/21.04% on real transfer work.
+The [resulting index experiment](qualification/sound-input-index-2026-10-27.md)
+passes 202 Audio library tests, all 171 definition tests, strict lint and source
+review. It remains uncommitted. All seven unchanged Split tests still total
+four pass/three work failures; no acceptance credit changes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 
