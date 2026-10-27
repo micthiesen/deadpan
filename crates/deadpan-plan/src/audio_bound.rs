@@ -61,6 +61,29 @@ pub struct AudioBound<'plan> {
     constraints: Vec<EnvelopeConstraint>,
 }
 
+impl crate::audio_allocated::OwnedHeap for AudioBound<'_> {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self {
+            plan: _,
+            node: _,
+            definition,
+            instance,
+            gap,
+            resolved,
+            reference_at_anchor: _,
+            reference_step: _,
+            support: _,
+            envelope_scale: _,
+            constraints,
+        } = self;
+        budget.visit(definition)?;
+        budget.visit(instance)?;
+        budget.visit(gap)?;
+        budget.visit(resolved)?;
+        budget.visit(constraints)
+    }
+}
+
 impl PartialEq for AudioBound<'_> {
     fn eq(&self, other: &Self) -> bool {
         std::ptr::eq(self.plan, other.plan)

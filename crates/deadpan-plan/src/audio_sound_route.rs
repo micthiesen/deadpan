@@ -51,6 +51,41 @@ struct OccurrenceChain {
     deltas: Vec<i128>,
 }
 
+impl<S> crate::audio_allocated::OwnedHeap for AudioSoundRoute<S> {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self {
+            route,
+            grids,
+            allocations,
+            identity_anchor: _,
+            occurrence,
+            domain: _,
+        } = self;
+        budget.core_route(route)?;
+        budget.storage(grids)?;
+        budget.storage(allocations)?;
+        if let Some(OccurrenceChain { windows, deltas }) = occurrence {
+            budget.spend(1)?;
+            budget.visit(windows)?;
+            budget.storage(deltas)?;
+        }
+        Ok(())
+    }
+}
+
+impl crate::audio_allocated::OwnedHeap for AudioOccurrenceWindow {
+    fn visit_heap(
+        &self,
+        _budget: &mut crate::audio_allocated::HeapBudget,
+    ) -> Result<(), PlanError> {
+        let Self {
+            selection: _,
+            anchor: _,
+        } = self;
+        Ok(())
+    }
+}
+
 pub(crate) struct OccurrenceTransition {
     pub allocation: Range<AudioSample>,
     pub frame_shift: ExactRatio,

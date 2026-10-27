@@ -257,24 +257,36 @@ impl StageAudio {
         prepared: PreparedRoutedRootQuery<'_>,
         control: WorkControl<'_>,
     ) -> Result<ReadBlock, StageAudioError> {
+        self.read_routed_root_borrowed(provider, &prepared, control)
+    }
+
+    /// Consume a checked query without moving or cloning its retained graphs.
+    /// Source admission and processing work still run for every actual read.
+    pub(super) fn read_routed_root_borrowed(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        prepared: &PreparedRoutedRootQuery<'_>,
+        control: WorkControl<'_>,
+    ) -> Result<ReadBlock, StageAudioError> {
         // A route Gap or source exhaustion never conceals the retained input.
         let (mut dependencies, mut relative_depth) =
             self.admit_retained_sound_input(provider, prepared.domain.input(), control)?;
         let mut samples = Vec::with_capacity(prepared.frames as usize);
         let mut suppressed = Vec::new();
-        for span in prepared.spans {
+        for span in &prepared.spans {
             control.check()?;
             let count = u32::try_from(span.destination.end.0 - span.destination.start.0)
                 .map_err(|_| StageAudioError::Range)?;
-            let Some(old) = span.old else {
+            let Some(old) = &span.old else {
                 samples.resize(samples.len() + count as usize, [0.0; 2]);
-                suppressed.push(span.destination);
+                suppressed.push(span.destination.clone());
                 continue;
             };
-            let block = self.read_retained_sound_query(
+            let block = self.read_retained_sound_query_borrowed(
                 provider,
                 prepared.domain.input(),
                 span.input
+                    .as_ref()
                     .ok_or(PlanError::InvalidPlan("missing retained input query"))?,
                 control,
             )?;
@@ -313,10 +325,19 @@ impl StageAudio {
         query: AudioProcessingQuery<'_>,
         control: WorkControl<'_>,
     ) -> Result<ReadBlock, StageAudioError> {
+        self.read_root_source_query_borrowed(provider, &query, control)
+    }
+
+    pub(super) fn read_root_source_query_borrowed(
+        &self,
+        provider: &mut impl AudioSourceProvider,
+        query: &AudioProcessingQuery<'_>,
+        control: WorkControl<'_>,
+    ) -> Result<ReadBlock, StageAudioError> {
         let mut samples = Vec::new();
         let mut dependencies = Dependencies::new();
         let mut suppressed = Vec::new();
-        for span in query.spans {
+        for span in &query.spans {
             control.check()?;
             let count = u32::try_from(span.samples.end.0 - span.samples.start.0)
                 .map_err(|_| StageAudioError::Range)?;
@@ -325,7 +346,7 @@ impl StageAudio {
                     let asset = &source.asset;
                     let source = resolve_source(provider, &self.plan, asset, control.cancelled)?;
                     dependencies.insert(asset.clone(), control.observe(asset, source)?);
-                    let recipe = root_source_recipe(&span, source.index().stream().sample_rate)?;
+                    let recipe = root_source_recipe(span, source.index().stream().sample_rate)?;
                     samples.extend(prepare_source_block(
                         source,
                         recipe,
@@ -337,7 +358,7 @@ impl StageAudio {
                 }
                 AudioSignalContent::Leaf(AudioContent::Silence { .. }) => {
                     samples.resize(samples.len() + count as usize, [0.0; 2]);
-                    suppressed.push(span.samples);
+                    suppressed.push(span.samples.clone());
                 }
                 _ => {
                     return Err(
@@ -444,3 +465,7 @@ fn shift_label(label: i64, old_start: i64, new_start: i64) -> Result<i64, StageA
     i64::try_from(i128::from(label) - i128::from(old_start) + i128::from(new_start))
         .map_err(|_| TimeError::Overflow.into())
 }
+
+#[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
+#[path = "routed/tests.rs"]
+mod tests;

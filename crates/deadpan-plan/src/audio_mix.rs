@@ -78,6 +78,30 @@ pub struct AudioSignalMix<'plan> {
     voice_gates: Vec<Vec<Range<SignalSample>>>,
 }
 
+impl crate::audio_allocated::OwnedHeap for AudioSignalMix<'_> {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self {
+            plan: _,
+            support: _,
+            grid: _,
+            count: _,
+            voices,
+            gates,
+            voice_gates,
+        } = self;
+        budget.visit(voices)?;
+        budget.storage(gates)?;
+        for AudioMixGate { range: _, voices } in gates {
+            budget.storage(voices)?;
+        }
+        budget.storage(voice_gates)?;
+        for gates in voice_gates {
+            budget.storage(gates)?;
+        }
+        Ok(())
+    }
+}
+
 impl<'plan> AudioSignalMix<'plan> {
     pub fn new(
         plan: &'plan RenderPlan,

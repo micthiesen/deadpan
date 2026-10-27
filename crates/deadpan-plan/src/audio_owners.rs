@@ -61,6 +61,37 @@ pub struct AudioOwnerClock<'plan, S = AudioSample> {
     origin: AudioOwnerClockOrigin,
 }
 
+impl<S> crate::audio_allocated::OwnedHeap for AudioOwnerClock<'_, S> {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self {
+            plan: _,
+            definition,
+            instance,
+            kind: _,
+            gap_after,
+            play: _,
+            sampling: _,
+            origin,
+        } = self;
+        budget.visit(definition)?;
+        budget.visit(instance)?;
+        budget.visit(gap_after)?;
+        match origin {
+            AudioOwnerClockOrigin::Current => Ok(()),
+            AudioOwnerClockOrigin::Retained {
+                definition,
+                instance,
+                kind: _,
+                gap_after,
+            } => {
+                budget.visit(definition)?;
+                budget.visit(instance)?;
+                budget.visit(gap_after)
+            }
+        }
+    }
+}
+
 impl<'plan> AudioOwnerClock<'plan> {
     /// A position between explicitly ordered treatments on this immutable
     /// owner. Zero is after Repeat escalation and before its first treatment;

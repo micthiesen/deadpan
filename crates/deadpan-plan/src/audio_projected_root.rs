@@ -35,6 +35,26 @@ pub struct AudioProjectedRoot<'plan> {
     policy: Arc<AudioSignalTape<'plan>>,
 }
 
+impl crate::audio_allocated::OwnedHeap for AudioProjectedRoot<'_> {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self {
+            projection,
+            placement,
+            extent: _,
+            meaningful_extent: _,
+            samples: _,
+            meaningful_samples: _,
+            sampling: _,
+            reference_sample_at_anchor: _,
+            root_grid: _,
+            policy,
+        } = self;
+        budget.visit(projection)?;
+        budget.visit(placement)?;
+        budget.visit(policy)
+    }
+}
+
 impl fmt::Debug for AudioProjectedRoot<'_> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter

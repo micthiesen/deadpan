@@ -24,6 +24,22 @@ pub struct AudioRootSource<'plan> {
     input: AudioSignalTape<'plan>,
 }
 
+impl crate::audio_allocated::OwnedHeap for AudioRootSource<'_> {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self {
+            plan: _,
+            source,
+            audible: _,
+            extent: _,
+            grid: _,
+            treatment_clock: _,
+            input,
+        } = self;
+        budget.visit(source)?;
+        budget.visit(input)
+    }
+}
+
 impl<'plan> AudioRootSource<'plan> {
     pub fn new(
         plan: &'plan RenderPlan,

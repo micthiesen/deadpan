@@ -138,6 +138,88 @@ pub struct AudioDomain<'plan> {
     pub(super) placement: Option<AudioRootPlacement>,
 }
 
+impl crate::audio_allocated::OwnedHeap for DomainGap {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self { after, duration: _ } = self;
+        budget.visit(after)
+    }
+}
+
+impl crate::audio_allocated::OwnedHeap for AudioDomain<'_> {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self {
+            plan: _,
+            seed,
+            samples: _,
+            visible: _,
+            instance,
+            placement,
+        } = self;
+        let AudioWalkSeed {
+            definition,
+            bypass_binding: _,
+            node: _,
+            transform: _,
+            grid: _,
+            extent: _,
+            envelope: _,
+            constraints,
+            editorial,
+            suppress_entry_editorial: _,
+            repeats,
+            retimes,
+            gap,
+        } = seed;
+        budget.visit(definition)?;
+        budget.visit(constraints)?;
+        budget.visit(editorial)?;
+        budget.visit(repeats)?;
+        budget.visit(retimes)?;
+        budget.visit(gap)?;
+        budget.visit(instance)?;
+        budget.visit(placement)
+    }
+}
+
+impl crate::audio_allocated::OwnedHeap for AudioRootPlacement {
+    fn visit_heap(
+        &self,
+        _budget: &mut crate::audio_allocated::HeapBudget,
+    ) -> Result<(), PlanError> {
+        let Self {
+            origin: _,
+            root_frames_per_local_frame: _,
+            local_support: _,
+        } = self;
+        Ok(())
+    }
+}
+
+impl crate::audio_allocated::OwnedHeap for EnvelopeConstraint {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self {
+            placement_support: _,
+            range: _,
+            node: _,
+            repeat_count: _,
+            gap_after,
+            kinds: _,
+        } = self;
+        budget.visit(gap_after)
+    }
+}
+
+impl crate::audio_allocated::OwnedHeap for super::audio::EditorialConstraint {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self {
+            boundary,
+            edges: _,
+            incident_samples: _,
+        } = self;
+        budget.visit(boundary)
+    }
+}
+
 impl RenderPlan {
     /// Resolve one allocated root sample, stopping before nonunity Preserve
     /// processing. FollowSpeed and unity retimes remain transparent.

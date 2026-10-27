@@ -17,6 +17,22 @@ pub struct AudioSourceOccurrences<'plan> {
     work: usize,
 }
 
+impl crate::audio_allocated::OwnedHeap for AudioSourceOccurrences<'_> {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self {
+            plan: _,
+            owner,
+            source,
+            samples: _,
+            voices,
+            work: _,
+        } = self;
+        budget.visit(owner)?;
+        budget.visit(source)?;
+        budget.visit(voices)
+    }
+}
+
 impl RenderPlan {
     /// Collect only current occurrences whose processing allocation overlaps
     /// `samples`. Preserve history may make this larger than visible placement.

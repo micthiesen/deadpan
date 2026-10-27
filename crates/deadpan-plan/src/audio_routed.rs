@@ -128,6 +128,24 @@ pub enum AudioRoutedRootInput<'plan> {
     Occurrence(Box<AudioSourceOccurrence<'plan>>),
 }
 
+impl crate::audio_allocated::OwnedHeap for AudioRoutedRoot<'_> {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self { input, route } = self;
+        budget.visit(input)?;
+        budget.visit(route)
+    }
+}
+
+impl crate::audio_allocated::OwnedHeap for AudioRoutedRootInput<'_> {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        match self {
+            Self::Source(root) => budget.visit(root),
+            Self::Projected(root) => budget.visit(root),
+            Self::Occurrence(voice) => budget.visit(voice),
+        }
+    }
+}
+
 impl<'plan> AudioRoutedRoot<'plan> {
     /// Retain one complete current owner occurrence on its absolute root
     /// RoundEven grid. The route's recipe coordinate is normalized to the

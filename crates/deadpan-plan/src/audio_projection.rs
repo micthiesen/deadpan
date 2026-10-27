@@ -86,6 +86,65 @@ enum ProjectionInput<'plan> {
     Mix(AudioSignalMix<'plan>),
 }
 
+impl crate::audio_allocated::OwnedHeap for ProjectionIdentityToken {
+    fn visit_heap(
+        &self,
+        _budget: &mut crate::audio_allocated::HeapBudget,
+    ) -> Result<(), PlanError> {
+        let Self { _private: _ } = self;
+        Ok(())
+    }
+}
+
+impl crate::audio_allocated::OwnedHeap for AudioStageProjection<'_> {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self {
+            stage,
+            input,
+            output_policy,
+            duration: _,
+            identity,
+            source_key,
+            owned_key,
+        } = self;
+        budget.visit(stage)?;
+        match input {
+            ProjectionInput::Tape(tape) => budget.visit(tape)?,
+            ProjectionInput::Mix(mix) => budget.visit(mix)?,
+        }
+        budget.visit(output_policy)?;
+        let AudioProjectionIdentity(token) = identity;
+        budget.visit(token)?;
+        budget.visit(source_key)?;
+        budget.visit(owned_key)
+    }
+}
+
+impl crate::audio_allocated::OwnedHeap for AudioSourceProjectionKey {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self {
+            recipe,
+            instance,
+            unclipped_before: _,
+            stage,
+        } = self;
+        budget.visit(recipe)?;
+        budget.visit(instance)?;
+        budget.visit(stage)
+    }
+}
+
+impl crate::audio_allocated::OwnedHeap for AudioOwnedProjectionKey {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self {
+            definition,
+            instance,
+        } = self;
+        budget.visit(definition)?;
+        budget.visit(instance)
+    }
+}
+
 impl ProjectionInput<'_> {
     fn belongs_to(&self, plan: &RenderPlan) -> bool {
         match self {

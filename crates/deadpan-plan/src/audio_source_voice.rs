@@ -41,6 +41,41 @@ pub struct AudioSourceVoice<'plan> {
     identity: AudioSourceVoiceIdentity,
 }
 
+impl crate::audio_allocated::OwnedHeap for AudioSourceVoice<'_> {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self { signal, identity } = self;
+        let AudioSourceVoiceIdentity(provider) = identity;
+        budget.visit(signal)?;
+        budget.visit(provider)
+    }
+}
+
+impl crate::audio_allocated::OwnedHeap for AudioSourceVoiceRecipe {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self {
+            source,
+            mapping: _,
+            offset: _,
+        } = self;
+        budget.visit(source)
+    }
+}
+
+impl crate::audio_allocated::OwnedHeap for SourceVoiceProvider {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self { audio, recipe } = self;
+        let CompiledSourceAudio {
+            source,
+            start: _,
+            duration: _,
+            selection: _,
+            selected: _,
+        } = audio;
+        budget.visit(source)?;
+        budget.visit(recipe)
+    }
+}
+
 impl<'plan> AudioSourceVoice<'plan> {
     pub fn recipe(&self) -> &AudioSourceVoiceRecipe {
         &self.identity.0.recipe

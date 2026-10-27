@@ -558,6 +558,49 @@ pub struct AudioSignal<'plan> {
     provider: SignalProvider<'plan>,
 }
 
+impl crate::audio_allocated::OwnedHeap for AudioStage<'_> {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self {
+            plan: _,
+            child: _,
+            node: _,
+            descriptor,
+        } = self;
+        budget.visit(descriptor)
+    }
+}
+
+impl crate::audio_allocated::OwnedHeap for AudioSignal<'_> {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self {
+            plan: _,
+            root: _,
+            support: _,
+            sampling_support: _,
+            constrain_support: _,
+            repeats,
+            definition,
+            placed_transform: _,
+            bypass_binding: _,
+            gap,
+            provider,
+        } = self;
+        budget.visit(repeats)?;
+        budget.visit(definition)?;
+        budget.visit(gap)?;
+        match provider {
+            SignalProvider::Structural
+            | SignalProvider::RequiresOwnedInput
+            | SignalProvider::Silence => Ok(()),
+            SignalProvider::Projected(projection) => budget.visit(projection),
+            SignalProvider::Source {
+                recipe,
+                apply_holds: _,
+            } => budget.visit(recipe),
+        }
+    }
+}
+
 impl RenderPlan {
     /// Virtual root signal support, including samples that own no final root
     /// allocation. Its point-grid count must never set an exported duration.

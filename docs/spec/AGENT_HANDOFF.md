@@ -2,7 +2,27 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: prefix PCM prototype rejected, product goal active
+## Current state: borrowed-query groundwork, product goal active
+
+The [query groundwork](../qualification/audio-query-groundwork-2026-10-26.md)
+adds borrowed routed readers and field-aware retained-heap visitors, with no
+cache or raised limit. Current Core/Plan/Audio libraries pass 795/95/194 tests;
+all 201 existing real-WAV stage tests pass. The seven unfinished general Split
+tests are filtered from that stage run, not newly qualified. Strict all-target
+four-crate lint passes. An isolated 23-file overlay compiles without the inherited
+Split candidate. The [memory contract](../AUDIO_QUERY_MEMORY.md) separates
+retained storage from still-unproved construction peaks and plan pins.
+
+First target the duplicate current-occurrence discovery in
+`prepare_sound_processing_plans_in_context` and `prepare_beat_sounds` within one
+shared read. There is already only one prepared `beats` vector; do not try to
+remove a nonexistent second `prepare_beat_sounds` call. A call-local optional
+discovery memo can keep the exact live plan/context/range and first batches,
+share the existing resident/key-work ceilings and fall back unchanged when it
+cannot retain them. Keep all later history, overlap, policy and media admission.
+Measure its effect against the full real-WAV matrix before retaining it.
+
+## Rejected prefix PCM prototype
 
 The [owned-prefix PCM experiment](../qualification/rejected-prefix-reuse-2026-10-26.md)
 is removed. Both its initial cache policy and revised sibling-tile traversal

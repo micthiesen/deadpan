@@ -63,6 +63,34 @@ struct Placement {
     scale: ExactRatio,
 }
 
+impl crate::audio_allocated::OwnedHeap for AudioSourceOccurrence<'_> {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self {
+            plan: _,
+            instance,
+            voice,
+            extent: _,
+            routing_origin: _,
+            audible_extent: _,
+            gain_owners,
+            processing_projection,
+            inherited_hard_edges: _,
+            samples: _,
+            grid: _,
+            input,
+            construction_work: _,
+            retained_runs: _,
+            policy_domain,
+        } = self;
+        budget.visit(instance)?;
+        budget.visit(voice)?;
+        budget.visit(gain_owners)?;
+        budget.visit(processing_projection)?;
+        budget.visit(input)?;
+        budget.visit(policy_domain)
+    }
+}
+
 impl Placement {
     const IDENTITY: Self = Self {
         origin: ExactRatio::ZERO,

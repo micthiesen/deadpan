@@ -27,6 +27,24 @@ pub struct AudioPointDomain<'plan> {
     signal: AudioSignal<'plan>,
 }
 
+impl crate::audio_allocated::OwnedHeap for AudioPointDomain<'_> {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self {
+            plan: _,
+            selector,
+            root: _,
+            placement,
+            grid: _,
+            sampling: _,
+            samples: _,
+            signal,
+        } = self;
+        budget.visit(selector)?;
+        budget.visit(placement)?;
+        budget.visit(signal)
+    }
+}
+
 impl<'plan> AudioPointDomain<'plan> {
     pub(super) fn set_evaluation(
         &mut self,

@@ -113,6 +113,34 @@ pub struct AudioSignalTape<'plan> {
     runs: Vec<PlacedRun<'plan>>,
 }
 
+impl crate::audio_allocated::OwnedHeap for AudioSignalTape<'_> {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self {
+            plan: _,
+            support: _,
+            route: _,
+            grid: _,
+            runs,
+        } = self;
+        budget.visit(runs)
+    }
+}
+
+impl crate::audio_allocated::OwnedHeap for PlacedRun<'_> {
+    fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
+        let Self {
+            destination: _,
+            samples: _,
+            signal,
+            projection,
+            policy_override,
+        } = self;
+        budget.visit(signal)?;
+        budget.visit(projection)?;
+        budget.visit(policy_override)
+    }
+}
+
 impl<'plan> AudioSignalTape<'plan> {
     /// Build a complete exact partition of `full_support` from current signals.
     /// All providers are remapped to the same intrinsic PointCeil grid.

@@ -21,6 +21,71 @@ pub const MAX_SOUND_ROUTE_QUERY_SPANS: usize = 16_384;
 
 type Result<T> = std::result::Result<T, DocumentError>;
 
+/// Allocation-free accounting of arena storage, including spare Vec capacity.
+/// Arena edges are indexes, so each owned arena entry is visited once.
+struct AllocationBound {
+    remaining: usize,
+    bytes: usize,
+}
+
+impl AllocationBound {
+    fn spend(&mut self, work: usize) -> Result<()> {
+        self.remaining = self
+            .remaining
+            .checked_sub(work)
+            .ok_or_else(|| limit("sound route heap traversal work"))?;
+        Ok(())
+    }
+
+    fn storage<T>(&mut self, values: &Vec<T>) -> Result<()> {
+        self.spend(values.len())?;
+        let bytes = values
+            .capacity()
+            .checked_mul(std::mem::size_of::<T>())
+            .ok_or_else(|| limit("sound route heap byte overflow"))?;
+        self.bytes = self
+            .bytes
+            .checked_add(bytes)
+            .ok_or_else(|| limit("sound route heap byte overflow"))?;
+        Ok(())
+    }
+
+    fn ripple(&mut self, map: &SoundRippleMap) -> Result<()> {
+        let SoundRippleMap {
+            input_extent: _,
+            output_extent: _,
+            root: _,
+            nodes,
+            index,
+        } = map;
+        self.spend(1)?;
+        self.storage(nodes)?;
+        for node in nodes {
+            match node {
+                SoundRippleNode::Sequence { parts } => self.storage(parts)?,
+                SoundRippleNode::Keep { range: _ }
+                | SoundRippleNode::Gap { duration: _ }
+                | SoundRippleNode::Repeat {
+                    body: _,
+                    count: _,
+                    input_stride: _,
+                } => {}
+            }
+        }
+        self.storage(index)?;
+        for RippleIndex {
+            extent: _,
+            footprint: _,
+            ends,
+            depth: _,
+        } in index
+        {
+            self.storage(ends)?;
+        }
+        Ok(())
+    }
+}
+
 /// References must name earlier arena entries. This makes cycles and forward
 /// references invalid without recursive graph admission or recursive serde.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -430,6 +495,39 @@ struct RouteWire {
 }
 
 impl SoundRoute {
+    /// Return `(retained_heap_bytes_bound, charged_work)` with checked arithmetic.
+    /// Includes private lookup indexes, nested ripple arenas and Sequence
+    /// indexes, using actual Vec capacities. Excludes this inline handle and
+    /// allocator metadata. This measures existing storage, not construction peak.
+    pub fn allocated_bytes_bound(&self, maximum_work: usize) -> Result<(usize, usize)> {
+        let Self {
+            recipe_extent: _,
+            output_extent: _,
+            root: _,
+            nodes,
+            index,
+        } = self;
+        let mut budget = AllocationBound {
+            remaining: maximum_work,
+            bytes: 0,
+        };
+        budget.spend(1)?;
+        budget.storage(nodes)?;
+        for node in nodes {
+            match node {
+                SoundRouteNode::Recipe {}
+                | SoundRouteNode::Window {
+                    input: _,
+                    selection: _,
+                } => {}
+                SoundRouteNode::Ripple { input: _, map } => budget.ripple(map)?,
+            }
+        }
+        budget.storage(index)?;
+        for RouteIndex { extent: _ } in index {}
+        Ok((budget.bytes, maximum_work - budget.remaining))
+    }
+
     pub fn identity(recipe_extent: ExactRatio) -> Result<Self> {
         Self::new(recipe_extent, 0, vec![SoundRouteNode::Recipe {}])
     }
@@ -1082,4 +1180,60 @@ fn bounded_json(value: &impl Serialize) -> Result<String> {
         }
     })?;
     String::from_utf8(writer.0).map_err(|_| invalid("sound route JSON is not UTF-8"))
+}
+
+#[cfg(test)]
+mod allocation_bound_tests {
+    use super::*;
+    use std::mem::size_of;
+
+    #[test]
+    fn nested_repeat_sequence_storage_includes_spare_capacity_and_private_indexes() {
+        let mut parts = Vec::with_capacity(17);
+        parts.push(1);
+        let mut ripple_nodes = Vec::with_capacity(11);
+        ripple_nodes.extend([
+            SoundRippleNode::Keep {
+                range: ExactFrameRange::new(ExactRatio::ZERO, ExactRatio::ONE).unwrap(),
+            },
+            SoundRippleNode::Repeat {
+                body: 0,
+                count: 3,
+                input_stride: ExactRatio::integer(2),
+            },
+            SoundRippleNode::Sequence { parts },
+        ]);
+        let mut map = SoundRippleMap::new(ExactRatio::integer(6), 2, ripple_nodes).unwrap();
+        map.index[2].ends.reserve_exact(9);
+        let mut nodes = Vec::with_capacity(13);
+        nodes.extend([
+            SoundRouteNode::Recipe {},
+            SoundRouteNode::Ripple { input: 0, map },
+        ]);
+        let route = SoundRoute::new(ExactRatio::integer(6), 1, nodes).unwrap();
+        let SoundRouteNode::Ripple { map, .. } = &route.nodes[1] else {
+            unreachable!()
+        };
+        let SoundRippleNode::Sequence { parts } = &map.nodes[2] else {
+            unreachable!()
+        };
+        let minimum = route.nodes.capacity() * size_of::<SoundRouteNode>()
+            + route.index.capacity() * size_of::<RouteIndex>()
+            + map.nodes.capacity() * size_of::<SoundRippleNode>()
+            + map.index.capacity() * size_of::<RippleIndex>()
+            + parts.capacity() * size_of::<u32>()
+            + map
+                .index
+                .iter()
+                .map(|entry| entry.ends.capacity() * size_of::<ExactRatio>())
+                .sum::<usize>();
+        let (bytes, work) = route.allocated_bytes_bound(1000).unwrap();
+        assert_eq!(bytes, minimum);
+        assert!(bytes > route.nodes.len() * size_of::<SoundRouteNode>());
+        assert_eq!(route.allocated_bytes_bound(work).unwrap(), (bytes, work));
+        for limit in [0, work - 1] {
+            let error = route.allocated_bytes_bound(limit).unwrap_err();
+            assert_eq!(error.code, DocumentErrorCode::LimitExceeded);
+        }
+    }
 }

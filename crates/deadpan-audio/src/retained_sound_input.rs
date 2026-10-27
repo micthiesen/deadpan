@@ -28,7 +28,26 @@ pub(super) struct PreparedRetainedSoundInput<'plan> {
     raw: Option<AudioProcessingQuery<'plan>>,
 }
 
-fn occurrence_raw_queries(processing: AudioProcessingQuery<'_>) -> RootReadQueries<'_> {
+struct OccurrenceRawQueries<'query, 'plan> {
+    flattened: AudioQuery,
+    processing: &'query AudioProcessingQuery<'plan>,
+    policy: AudioPolicyQuery<AudioSample>,
+}
+
+impl<'plan> OccurrenceRawQueries<'_, 'plan> {
+    fn as_borrowed(&self) -> RootReadQueriesRef<'_, 'plan> {
+        RootReadQueriesRef {
+            flattened: &self.flattened,
+            processing: self.processing,
+            policy: &self.policy,
+            fades: None,
+        }
+    }
+}
+
+fn occurrence_raw_queries<'query, 'plan>(
+    processing: &'query AudioProcessingQuery<'plan>,
+) -> OccurrenceRawQueries<'query, 'plan> {
     let suppressed = processing
         .spans
         .iter()
@@ -40,7 +59,7 @@ fn occurrence_raw_queries(processing: AudioProcessingQuery<'_>) -> RootReadQueri
         })
         .map(|span| span.samples.clone())
         .collect();
-    RootReadQueries {
+    OccurrenceRawQueries {
         flattened: AudioQuery {
             project_id: processing.project_id.clone(),
             revision_id: processing.revision_id.clone(),
@@ -56,7 +75,6 @@ fn occurrence_raw_queries(processing: AudioProcessingQuery<'_>) -> RootReadQueri
             lookup: Default::default(),
             work: 0,
         },
-        fades: None,
     }
 }
 
@@ -173,9 +191,15 @@ impl StageAudio {
             AudioRoutedRootInput::Occurrence(voice) => {
                 let query = voice.processing(start..end, control.query_limits()?)?;
                 control.spend_plan_work(query.work)?;
-                let queries = occurrence_raw_queries(query);
-                self.preflight_root_queries(&queries, start, frames, control, 0)?;
-                Some(queries.processing)
+                let queries = occurrence_raw_queries(&query);
+                self.preflight_root_queries_borrowed(
+                    queries.as_borrowed(),
+                    start,
+                    frames,
+                    control,
+                    0,
+                )?;
+                Some(query)
             }
         };
         Ok(PreparedRetainedSoundInput { start, frames, raw })
@@ -216,11 +240,31 @@ impl StageAudio {
         query: PreparedRetainedSoundInput<'_>,
         control: WorkControl<'_>,
     ) -> Result<ReadBlock, StageAudioError> {
-        match input {
-            AudioRoutedRootInput::Source(_) => self.read_root_source_query(
+        if matches!(input, AudioRoutedRootInput::Source(_)) {
+            return self.read_root_source_query(
                 provider,
                 query
                     .raw
+                    .ok_or(PlanError::InvalidPlan("missing raw root query"))?,
+                control,
+            );
+        }
+        self.read_retained_sound_query_borrowed(provider, input, &query, control)
+    }
+
+    pub(super) fn read_retained_sound_query_borrowed(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        input: &AudioRoutedRootInput<'_>,
+        query: &PreparedRetainedSoundInput<'_>,
+        control: WorkControl<'_>,
+    ) -> Result<ReadBlock, StageAudioError> {
+        match input {
+            AudioRoutedRootInput::Source(_) => self.read_root_source_query_borrowed(
+                provider,
+                query
+                    .raw
+                    .as_ref()
                     .ok_or(PlanError::InvalidPlan("missing raw root query"))?,
                 control,
             ),
@@ -241,18 +285,22 @@ impl StageAudio {
                     exhausted: Vec::new(),
                 })
             }
-            AudioRoutedRootInput::Occurrence(_) => self.read_queries(
-                provider,
-                query.start,
-                query.frames,
-                control,
-                0,
-                occurrence_raw_queries(
+            AudioRoutedRootInput::Occurrence(_) => {
+                let queries = occurrence_raw_queries(
                     query
                         .raw
+                        .as_ref()
                         .ok_or(PlanError::InvalidPlan("missing retained occurrence query"))?,
-                ),
-            ),
+                );
+                self.read_queries_borrowed(
+                    provider,
+                    query.start,
+                    query.frames,
+                    control,
+                    0,
+                    queries.as_borrowed(),
+                )
+            }
         }
     }
 }

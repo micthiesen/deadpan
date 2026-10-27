@@ -356,6 +356,25 @@ struct RootReadQueries<'plan> {
 }
 
 #[derive(Clone, Copy)]
+struct RootReadQueriesRef<'query, 'plan> {
+    flattened: &'query AudioQuery,
+    processing: &'query AudioProcessingQuery<'plan>,
+    policy: &'query AudioPolicyQuery<AudioSample>,
+    fades: Option<&'query AudioFadeQuery>,
+}
+
+impl<'plan> RootReadQueries<'plan> {
+    fn as_borrowed(&self) -> RootReadQueriesRef<'_, 'plan> {
+        RootReadQueriesRef {
+            flattened: &self.flattened,
+            processing: &self.processing,
+            policy: &self.policy,
+            fades: self.fades.as_ref(),
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
 struct BoundRead {
     offset: i128,
     frames: u32,
@@ -1787,11 +1806,22 @@ impl StageAudio {
         control: WorkControl<'_>,
         depth: usize,
     ) -> Result<(), StageAudioError> {
+        self.preflight_root_queries_borrowed(queries.as_borrowed(), start, frames, control, depth)
+    }
+
+    fn preflight_root_queries_borrowed(
+        &self,
+        queries: RootReadQueriesRef<'_, '_>,
+        start: AudioSample,
+        frames: u32,
+        control: WorkControl<'_>,
+        depth: usize,
+    ) -> Result<(), StageAudioError> {
         control.check()?;
         if depth > self.limits.maximum_depth {
             return Err(StageAudioError::Limit("nested stage depth"));
         }
-        if let Some(fades) = &queries.fades {
+        if let Some(fades) = queries.fades {
             crate::edges::validate_creative_fades(start, frames as usize, &fades.spans)?;
         }
         for span in &queries.flattened.spans {
@@ -1823,17 +1853,36 @@ impl StageAudio {
         depth: usize,
         queries: RootReadQueries<'_>,
     ) -> Result<ReadBlock, StageAudioError> {
+        self.read_queries_borrowed(
+            provider,
+            start,
+            frames,
+            control,
+            depth,
+            queries.as_borrowed(),
+        )
+    }
+
+    fn read_queries_borrowed(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        start: AudioSample,
+        frames: u32,
+        control: WorkControl<'_>,
+        depth: usize,
+        queries: RootReadQueriesRef<'_, '_>,
+    ) -> Result<ReadBlock, StageAudioError> {
         control.check()?;
         if depth > self.limits.maximum_depth {
             return Err(StageAudioError::Limit("nested stage depth"));
         }
-        self.preflight_root_queries(&queries, start, frames, control, depth)?;
+        self.preflight_root_queries_borrowed(queries, start, frames, control, depth)?;
         let cancelled = control.cancelled;
         let plan = Arc::clone(&self.plan);
         let mut samples = Vec::with_capacity(frames as usize);
         let mut dependencies = Dependencies::new();
         let mut relative_depth = 0;
-        for span in queries.processing.spans {
+        for span in &queries.processing.spans {
             control.check()?;
             let block = match &span.content {
                 AudioSignalContent::Leaf(AudioContent::Source { source, .. }) => {
@@ -1842,7 +1891,7 @@ impl StageAudio {
                         source.asset.clone(),
                         control.observe(&source.asset, prepared)?,
                     );
-                    let recipe = root_source_recipe(&span, prepared.index().stream().sample_rate)?;
+                    let recipe = root_source_recipe(span, prepared.index().stream().sample_rate)?;
                     prepare_source_block(
                         prepared,
                         recipe,
@@ -1885,7 +1934,7 @@ impl StageAudio {
                     dependencies.extend(prepared.block.dependencies.clone());
                     relative_depth = relative_depth.max(1 + prepared.block.relative_depth);
                     let recipe = root_stage_recipe(
-                        &span,
+                        span,
                         prepared.block.samples.len(),
                         plan.metadata().presentation_basis.frame_rate,
                     )?;
@@ -1903,7 +1952,7 @@ impl StageAudio {
                     dependencies.extend(prepared.block.dependencies.clone());
                     relative_depth = relative_depth.max(1 + prepared.block.relative_depth);
                     let recipe = root_stage_recipe(
-                        &span,
+                        span,
                         prepared.block.samples.len(),
                         plan.metadata().presentation_basis.frame_rate,
                     )?;
@@ -1920,7 +1969,7 @@ impl StageAudio {
                     dependencies.extend(prepared.dependencies.clone());
                     relative_depth = relative_depth.max(1 + prepared.relative_depth);
                     let recipe = root_stage_recipe(
-                        &span,
+                        span,
                         prepared.samples.len(),
                         plan.metadata().presentation_basis.frame_rate,
                     )?;
@@ -1953,7 +2002,7 @@ impl StageAudio {
         }
         let mut suppressed = Vec::new();
         let mut exhausted = Vec::new();
-        for span in queries.flattened.spans {
+        for span in &queries.flattened.spans {
             control.check()?;
             let left = usize::try_from(span.samples.start.0 - start.0)
                 .map_err(|_| StageAudioError::Range)?;
@@ -1961,17 +2010,17 @@ impl StageAudio {
                 .map_err(|_| StageAudioError::Range)?;
             if is_silent_hold(&span.content) {
                 samples[left..right].fill([0.0; 2]);
-                suppressed.push(span.samples);
+                suppressed.push(span.samples.clone());
             } else {
-                crate::edges::apply_retained_envelope(&span, &mut samples[left..right], false)?;
-                exhausted.extend(crate::edges::exhausted_ranges(&span)?);
+                crate::edges::apply_retained_envelope(span, &mut samples[left..right], false)?;
+                exhausted.extend(crate::edges::exhausted_ranges(span)?);
             }
         }
         apply_suppression(start, &mut samples, &queries.policy.suppressed, |sample| {
             sample.0
         })?;
-        suppressed.extend(queries.policy.suppressed);
-        if let Some(fades) = &queries.fades {
+        suppressed.extend(queries.policy.suppressed.iter().cloned());
+        if let Some(fades) = queries.fades {
             crate::edges::apply_creative_fades(start, &mut samples, &fades.spans)?;
         }
         control.check()?;

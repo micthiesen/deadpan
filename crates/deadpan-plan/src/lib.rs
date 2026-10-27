@@ -6,6 +6,7 @@
 //! evaluates owner-local framing values but performs no decoding, GPU work,
 //! pixel effects, audio processing, or external I/O.
 
+mod audio_allocated;
 mod audio_envelope;
 mod audio_mix;
 mod audio_projected_root;

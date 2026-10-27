@@ -76,6 +76,13 @@ including processed root-sound refinement. Exact hash comparison restores all
 1,018 preceding qualification inputs. The four-pass/three-failure constant-block
 version above remains current; no acceptance credit changes.
 
+The [query groundwork](qualification/audio-query-groundwork-2026-10-26.md)
+adds borrowed routed readers and bounded retained-heap accounting without a
+cache or increased limit. Core/Plan/Audio libraries pass 795/95/194 tests, and
+all 201 existing stage tests pass with the seven unfinished Split tests filtered.
+Strict four-crate lint passes; the scoped overlay compiles without the inherited
+Split work. This does not resolve a Split failure or change acceptance credit.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 
