@@ -2,6 +2,18 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Parallel wave, 2026-10-26
+
+The owner explicitly requested substantial parallel implementation without
+quality shortcuts and asked to preserve an effective workflow through
+compaction. [Parallel work](../PARALLEL_WORK.md) records exact lane ownership,
+dependency-scoped freezes, shared Cargo scheduling and integration/qualification
+joins. Three workers cover complete constant audio gain programs, canonical
+sound-family reuse and cursor-priority incremental analysis; the primary owns
+Store history qualification and integration. This is a trial, not a measured
+speedup claim. Recheck live agents/process handles; recorded holds are not proof
+of current activity. Keep final acceptance and progress credit with the primary.
+
 ## Active Split work, 2026-10-26
 
 The uncommitted Core/Plan/Audio candidate and its exact open failures are recorded

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-26T23:38:50Z",
+  "updated_at": "2026-10-27T00:09:30Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Resolve the remaining general Split preparation work. Exact Original input reuse passes six source/identity/pressure tests, review and strict lint; 378 regression checks pass. The full WAV matrix remains three passes and four work-limit failures under unchanged limits. Native scoped Split stays blocked. Coverage 85%; 10/24 Complete; 0/7 gates closed.",
+  "focus": "Parallel implementation: constant audio programs and sound-family reuse pass 388 library/existing-stage checks; full Split still has four work-limit failures. Selected-play Split history now passes Store rollback/reopen/Undo/Redo/portable checks; Retime setup remains failing. Cursor-priority transcript/VAD and native partial results are at integrated compile/model verification. Coverage 85%; 10/24 Complete; 0/7 gates closed.",
   "features": [
     {
       "id": "editing",
@@ -1486,6 +1486,15 @@
       "revision": "c90342af",
       "retrospective": false,
       "summary": "The uncommitted general Split candidate now memoizes exact Original input within each shared processing request. Source re-admission, controller/context/range/depth identity and pressure eviction retain existing ceilings. Six focused real-source tests and independent review pass; strict Core/Plan/Audio lint passes. The regression run passes 378 library/existing-stage tests, explicitly filtering seven new Split tests. The separate hash-pinned full WAV matrix remains three passes and four preparation-work failures; selected/nested cases fail before Split in prefix-two at limited 0+4096. The preceding graph-local cache was replaced because required allocations could not evict it. Source guards pass, no completion credit is granted, and native scoped Split stays blocked. Revision names the prior documentation checkpoint, not a qualified production candidate."
+    },
+    {
+      "date": "2026-10-27",
+      "percent": 85,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 10,
+      "revision": "549fde07",
+      "retrospective": false,
+      "summary": "Owner-requested parallel trial now has disjoint implementation lanes for complete constant route gains, canonical sound families and cursor-priority incremental analysis, with the primary adding Store Split durability verification. The integrated audio code passes 187 library and 201 existing stage tests; its separate full Split matrix remains three passes and four unchanged work-limit failures. Five initial analysis scheduler tests pass; independent review found terminal-word loss and inference-admission defects, with fixes/regressions authored but combined runtime checks still owed. CLI/app compile exposed SHA-format wiring errors, now corrected; real-model range/cache witness remains pending. Corrected Store checks pass selected one/two-depth Repeat Split history, but the primitive matrix still exposes a Retime preparation lifecycle refusal. Workflow, ownership, joins and limitations are persisted in docs/PARALLEL_WORK.md and handoff. No completion credit or measured speedup is claimed. Revision names the prior documentation checkpoint, not the uncommitted candidate."
     }
   ],
   "assessment": {
