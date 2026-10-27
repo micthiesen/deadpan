@@ -27,7 +27,119 @@ pub(super) struct GainSum {
     stages: Vec<(i128, ChannelStage)>,
 }
 
+/// One route-local constant ClipGain, prepared before its sample loop. This
+/// retains the exact dB grid; amplitude conversion stays at the existing
+/// channel-stage boundaries after all contributing gains have been summed.
+#[derive(Clone, Copy)]
+pub(super) struct PreparedClipGain {
+    millidecibels_q32: i128,
+    muted: bool,
+}
+
+/// A complete memoryless transfer at an existing channel/temporal boundary.
+/// The exact Q32 additions have finished before these amplitudes are prepared.
+pub(super) struct PreparedTransfer {
+    muted: bool,
+    stages: Vec<(f64, ChannelStage)>,
+    final_factor: Option<f64>,
+}
+
+impl PreparedTransfer {
+    /// A block reader can remove the complete transfer pass when its admitted
+    /// input is already finite. This is not a per-sample fast path: callers
+    /// decide once before traversing their buffer.
+    pub(super) fn is_identity(&self) -> bool {
+        !self.muted && self.stages.is_empty() && self.final_factor.is_none()
+    }
+
+    pub(super) fn bytes(stages: usize) -> Option<usize> {
+        stages
+            .checked_mul(std::mem::size_of::<(f64, ChannelStage)>())?
+            .checked_add(std::mem::size_of::<Self>())
+    }
+
+    pub(super) fn apply_wide(
+        &self,
+        sample: [f64; 2],
+        control: WorkControl<'_>,
+    ) -> Result<[f64; 2], StageAudioError> {
+        // A transfer application plus each retained channel operation. This
+        // replaces actual per-owner additions and amplitude conversions.
+        control.spend_plan_work(1 + self.stages.len())?;
+        apply_transfer(
+            sample,
+            self.muted,
+            self.stages.iter().map(|(factor, stage)| (*factor, stage)),
+            || self.final_factor,
+        )
+    }
+}
+
+impl PreparedClipGain {
+    pub(super) fn prepare(
+        gain: &deadpan_core::ClipGain,
+        control: WorkControl<'_>,
+    ) -> Result<Option<Self>, StageAudioError> {
+        control.check()?;
+        // Even flat-valued envelopes have active ranges. No authored range or
+        // automation may use this clock-independent program.
+        if !gain.envelopes().is_empty() || !gain.mute_ranges().is_empty() {
+            return Ok(None);
+        }
+        control.spend_plan_work(gain.record_count())?;
+        let mut exact = GainSum::default();
+        exact.add(gain.evaluate(ExactRatio::ZERO)?)?;
+        Ok(Some(Self {
+            millidecibels_q32: exact.millidecibels_q32,
+            muted: exact.muted,
+        }))
+    }
+
+    pub(super) fn apply(
+        self,
+        gain: &mut GainSum,
+        control: WorkControl<'_>,
+    ) -> Result<(), StageAudioError> {
+        // One bounded compiled-program application. The original trim/mute
+        // records and exact numeric conversion were evaluated at preparation.
+        control.spend_plan_work(1)?;
+        Ok(gain.add_q32(self.millidecibels_q32, self.muted)?)
+    }
+}
+
 impl GainSum {
+    pub(super) fn prepare(
+        &self,
+        control: WorkControl<'_>,
+    ) -> Result<PreparedTransfer, StageAudioError> {
+        control.spend_plan_work(1 + self.stages.len())?;
+        Ok(PreparedTransfer {
+            muted: self.muted,
+            stages: if self.muted {
+                Vec::new()
+            } else {
+                self.stages
+                    .iter()
+                    .map(|(before, stage)| (Self::factor(*before), *stage))
+                    .collect()
+            },
+            final_factor: (!self.muted && self.millidecibels_q32 != 0)
+                .then(|| Self::factor(self.millidecibels_q32)),
+        })
+    }
+
+    pub(super) fn prepare_send(
+        &self,
+        level: deadpan_core::GainDb,
+        control: WorkControl<'_>,
+    ) -> Result<PreparedTransfer, StageAudioError> {
+        let mut gain = self.clone();
+        gain.add(EvaluatedGain {
+            millidecibels: ExactRatio::integer(i64::from(level.millidecibels())),
+            muted: false,
+        })?;
+        gain.prepare(control)
+    }
     /// Apply an independent wet-send level without consuming or rounding the
     /// pending dry gain program. Linear gains still add on the exact dB grid.
     pub(super) fn send_sample(
@@ -71,11 +183,15 @@ impl GainSum {
             .numerator()
             .checked_mul(scale / denominator)
             .ok_or(GainError::Overflow)?;
+        self.add_q32(value_q32, value.muted)
+    }
+
+    fn add_q32(&mut self, value_q32: i128, muted: bool) -> Result<(), GainError> {
         self.millidecibels_q32 = self
             .millidecibels_q32
             .checked_add(value_q32)
             .ok_or(GainError::Overflow)?;
-        self.muted |= value.muted;
+        self.muted |= muted;
         Ok(())
     }
 
@@ -100,11 +216,23 @@ impl GainSum {
         if treatment.is_empty() {
             return Ok(());
         }
-        control.spend_plan_work(treatment.record_count())?;
         let order = treatment
             .order()
             .get(stages)
             .ok_or(PlanError::InvalidPlan("audio treatment slice out of range"))?;
+        // Charge the records this memoryless slice actually traverses. EQ and
+        // wet kernels have their own preparation budgets; a gain-only prefix
+        // does not evaluate those recipes again at every sample.
+        let records = order
+            .iter()
+            .map(|stage| match stage {
+                deadpan_core::AudioTreatmentStage::ClipGain => treatment
+                    .clip_gain()
+                    .map_or(0, deadpan_core::ClipGain::record_count),
+                _ => 1,
+            })
+            .sum();
+        control.spend_plan_work(records)?;
         for stage in order {
             match stage {
                 deadpan_core::AudioTreatmentStage::ClipGain => {
@@ -215,6 +343,16 @@ impl GainSum {
             self.escalation(owner)?;
         }
         if let Some(recipe) = owner.treatments() {
+            if stages.is_empty() {
+                // Components use 0..0 to apply only Repeat escalation. No
+                // treatment is evaluated, so do not repeatedly resolve the
+                // local sample clock or charge the complete recipe for it.
+                recipe
+                    .order()
+                    .get(stages)
+                    .ok_or(PlanError::InvalidPlan("audio treatment slice out of range"))?;
+                return Ok(());
+            }
             self.treatment(recipe, owner.sampling().local_at(at)?, control, stages)?;
         }
         Ok(())
@@ -229,38 +367,54 @@ impl GainSum {
     }
 
     pub(super) fn apply_wide(&self, sample: [f64; 2]) -> Result<[f64; 2], StageAudioError> {
-        if sample.iter().any(|value| !value.is_finite()) {
-            return Err(PreparationError::InvalidSamples.into());
-        }
-        if self.muted {
-            return Ok([0.0; 2]);
-        }
-        let mut result = sample;
-        for (before, stage) in &self.stages {
-            let gain = Self::factor(*before);
-            result = result.map(|value| value * gain);
-            if !gain.is_finite() || result.iter().any(|value| !value.is_finite()) {
-                return Err(PreparationError::InvalidSamples.into());
-            }
-            match stage {
-                ChannelStage::Saturation(stage) => result = result.map(|value| stage.shape(value)),
-                ChannelStage::Balance(balance) => {
-                    let percent = balance.percent();
-                    let opposite = usize::from(percent < 0);
-                    result[opposite] *= f64::from(100 - percent.abs()) / 100.0;
-                }
-            }
-        }
-        if self.millidecibels_q32 == 0 {
-            return Ok(result);
-        }
-        let gain = Self::factor(self.millidecibels_q32);
-        let result = result.map(|value| value * gain);
+        apply_transfer(
+            sample,
+            self.muted,
+            self.stages
+                .iter()
+                .map(|(before, stage)| (Self::factor(*before), stage)),
+            || (self.millidecibels_q32 != 0).then(|| Self::factor(self.millidecibels_q32)),
+        )
+    }
+}
+
+/// Both live and prepared programs use this same channel evaluator. Keep the
+/// finite checks and multiplication order at the original boundaries.
+fn apply_transfer<'a>(
+    sample: [f64; 2],
+    muted: bool,
+    stages: impl Iterator<Item = (f64, &'a ChannelStage)>,
+    final_factor: impl FnOnce() -> Option<f64>,
+) -> Result<[f64; 2], StageAudioError> {
+    if sample.iter().any(|value| !value.is_finite()) {
+        return Err(PreparationError::InvalidSamples.into());
+    }
+    if muted {
+        return Ok([0.0; 2]);
+    }
+    let mut result = sample;
+    for (gain, stage) in stages {
+        result = result.map(|value| value * gain);
         if !gain.is_finite() || result.iter().any(|value| !value.is_finite()) {
             return Err(PreparationError::InvalidSamples.into());
         }
-        Ok(result)
+        match stage {
+            ChannelStage::Saturation(stage) => result = result.map(|value| stage.shape(value)),
+            ChannelStage::Balance(balance) => {
+                let percent = balance.percent();
+                let opposite = usize::from(percent < 0);
+                result[opposite] *= f64::from(100 - percent.abs()) / 100.0;
+            }
+        }
     }
+    let Some(gain) = final_factor() else {
+        return Ok(result);
+    };
+    let result = result.map(|value| value * gain);
+    if !gain.is_finite() || result.iter().any(|value| !value.is_finite()) {
+        return Err(PreparationError::InvalidSamples.into());
+    }
+    Ok(result)
 }
 
 /// One gain owner occurrence: its node instance, whether it is the whole
@@ -426,3 +580,7 @@ pub(super) fn write_finite_samples(
     }
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "authored_gain/tests.rs"]
+mod tests;

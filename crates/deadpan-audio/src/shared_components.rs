@@ -8,6 +8,13 @@ use super::*;
 use deadpan_core::AudioTreatmentStage;
 use deadpan_plan::AudioOwnerClock;
 
+#[path = "shared_components/program.rs"]
+mod program;
+use program::Program;
+
+#[path = "shared_components/block.rs"]
+mod block;
+
 #[derive(Clone, Copy, Default)]
 struct Sample {
     value: [f64; 2],
@@ -20,12 +27,40 @@ struct Route<'plan> {
     original: bool,
     sends: deadpan_core::TailSends,
     layers: Vec<(AudioOwnerClock<'plan>, usize)>,
+    program: Option<Program>,
     samples: Range<usize>,
     pcm: Vec<Sample>,
     event_gain: Option<i32>,
 }
 
 impl Route<'_> {
+    fn apply_gain(
+        &mut self,
+        gain: &mut authored_gain::GainSum,
+        value: [f64; 2],
+        control: WorkControl<'_>,
+    ) -> Result<[f64; 2], StageAudioError> {
+        if let Some(program) = &mut self.program {
+            program.apply(value, control)
+        } else {
+            std::mem::take(gain).apply_wide(value)
+        }
+    }
+
+    fn send_sample(
+        &mut self,
+        gain: &authored_gain::GainSum,
+        value: [f64; 2],
+        level: deadpan_core::GainDb,
+        control: WorkControl<'_>,
+    ) -> Result<[f64; 2], StageAudioError> {
+        if let Some(program) = &mut self.program {
+            program.apply(value, control)
+        } else {
+            gain.send_sample(value, level)
+        }
+    }
+
     fn wet_allowed(&self, layer: usize) -> bool {
         !self.original
             || !self.layers[layer + 1..]
@@ -84,6 +119,11 @@ impl<'plan> Components<'plan> {
             control.spend_plan_work(1)?;
             let skipped = self.skip.contains(&authored_gain::identity(clock));
             let until = if skipped { 0 } else { *until };
+            if let Some(recipe) = clock.treatments() {
+                recipe.order().get(..until).ok_or(PlanError::InvalidPlan(
+                    "contribution treatment slice out of range",
+                ))?;
+            }
             let key = OwnerKey::new(clock);
             let wet = !skipped
                 && stop != Some(&key)
@@ -130,6 +170,7 @@ impl<'plan> Components<'plan> {
                 Contribution::Sound(sends) => sends,
             },
             layers,
+            program: None,
             samples,
             pcm: Vec::new(),
             event_gain: None,
@@ -138,6 +179,13 @@ impl<'plan> Components<'plan> {
     }
 
     pub(super) fn resident_frames(&self) -> Result<u64, StageAudioError> {
+        // Reserve the complete future programs before PCM allocation. Their
+        // actual capacities may be smaller for inactive or unselected routes.
+        let prepared_gain_bytes = self.routes.iter().try_fold(0usize, |total, route| {
+            total
+                .checked_add(Program::resident_bytes(route, &self.owners, self.send)?)
+                .ok_or(StageAudioError::Limit("contribution gain residency"))
+        })?;
         let per_route = self
             .frames
             .checked_mul(std::mem::size_of::<Sample>())
@@ -147,6 +195,7 @@ impl<'plan> Components<'plan> {
             .routes
             .len()
             .checked_mul(per_route)
+            .and_then(|n| n.checked_add(prepared_gain_bytes))
             .and_then(|n| n.checked_add(self.frames * std::mem::size_of::<[f64; 2]>()))
             .and_then(|n| {
                 n.checked_add(if self.send.is_some() {
@@ -207,6 +256,18 @@ impl<'plan> Components<'plan> {
             Option<usize>,
         ) -> Result<[f64; 2], StageAudioError>,
     ) -> Result<MixedBlock, StageAudioError> {
+        for route in &mut self.routes {
+            let selected = output_voice.is_none_or(|voice| voice == route.voice)
+                || output_aliases.contains(route.voice);
+            route.program = Program::prepare(route, &self.owners, self.send, selected, control)?;
+        }
+        if self
+            .routes
+            .iter()
+            .all(|route| route.event_gain.is_none() || route.program.is_some())
+        {
+            return self.finish_constant(output_voice, output_aliases, control, equalize);
+        }
         let mut owners: Vec<_> = self.owners.values().collect();
         owners.sort_by_key(|owner| std::cmp::Reverse(owner.depth));
         let mut gains = vec![authored_gain::GainSum::default(); self.routes.len()];
@@ -216,19 +277,24 @@ impl<'plan> Components<'plan> {
             control.check()?;
             let sample = AudioSample(self.start.0 + at as i64);
             let mut sent = [0.0; 2];
-            for (id, route) in self.routes.iter().enumerate() {
-                gains[id] = authored_gain::beat_sound_gain(
-                    &[],
-                    sample,
-                    route.event_gain.unwrap_or(0),
-                    control,
-                    false,
-                )?;
+            for (id, route) in self.routes.iter_mut().enumerate() {
+                if let Some(program) = &mut route.program {
+                    program.restart();
+                } else {
+                    gains[id] = authored_gain::beat_sound_gain(
+                        &[],
+                        sample,
+                        route.event_gain.unwrap_or(0),
+                        control,
+                        false,
+                    )?;
+                }
                 if route.pcm[at].permitted
                     && let Some(level) = self.send.and_then(|effect| route.sends.level(effect))
                 {
                     control.spend_plan_work(1)?;
-                    let value = gains[id].send_sample(route.pcm[at].send_input, level)?;
+                    let value =
+                        route.send_sample(&gains[id], route.pcm[at].send_input, level, control)?;
                     for ch in 0..2 {
                         sent[ch] += value[ch];
                     }
@@ -246,7 +312,7 @@ impl<'plan> Components<'plan> {
                     continue;
                 }
                 for &(id, layer) in &owner.members {
-                    if active(id) && !owner.skipped {
+                    if active(id) && !owner.skipped && self.routes[id].program.is_none() {
                         gains[id].owner_slice(
                             &self.routes[id].layers[layer].0,
                             sample,
@@ -272,8 +338,13 @@ impl<'plan> Components<'plan> {
                         for &(id, _) in &owner.members {
                             if self.routes[id].pcm[at].permitted {
                                 count += 1;
-                                let frame = &mut self.routes[id].pcm[at].value;
-                                *frame = std::mem::take(&mut gains[id]).apply_wide(*frame)?;
+                                let route = &mut self.routes[id];
+                                let frame = route.apply_gain(
+                                    &mut gains[id],
+                                    route.pcm[at].value,
+                                    control,
+                                )?;
+                                route.pcm[at].value = frame;
                                 for channel in 0..2 {
                                     sum[channel] += frame[channel];
                                 }
@@ -338,7 +409,9 @@ impl<'plan> Components<'plan> {
                         }
                     } else {
                         for &(id, layer) in &owner.members {
-                            if self.routes[id].pcm[at].permitted {
+                            if self.routes[id].pcm[at].permitted
+                                && self.routes[id].program.is_none()
+                            {
                                 gains[id].owner_slice(
                                     &self.routes[id].layers[layer].0,
                                     sample,
@@ -352,7 +425,7 @@ impl<'plan> Components<'plan> {
                 }
                 if let Some(effect) = self.send {
                     for &(id, layer) in &owner.members {
-                        let route = &self.routes[id];
+                        let route = &mut self.routes[id];
                         if route.pcm[at].permitted
                             && let Some(level) = route.layers[layer]
                                 .0
@@ -360,7 +433,12 @@ impl<'plan> Components<'plan> {
                                 .and_then(|recipe| recipe.tail_sends().level(effect))
                         {
                             control.spend_plan_work(1)?;
-                            let value = gains[id].send_sample(route.pcm[at].value, level)?;
+                            let value = route.send_sample(
+                                &gains[id],
+                                route.pcm[at].value,
+                                level,
+                                control,
+                            )?;
                             for ch in 0..2 {
                                 sent[ch] += value[ch];
                             }
@@ -397,7 +475,7 @@ impl<'plan> Components<'plan> {
                             continue;
                         }
                         route.pcm[at].value =
-                            std::mem::take(&mut gains[id]).apply_wide(route.pcm[at].value)?;
+                            route.apply_gain(&mut gains[id], route.pcm[at].value, control)?;
                         for effect in [
                             deadpan_core::TailEffect::Reverb,
                             deadpan_core::TailEffect::Delay,
@@ -412,8 +490,12 @@ impl<'plan> Components<'plan> {
                                     wet_permissions,
                                     Some(route.voice),
                                 )?;
-                                let wet =
-                                    authored_gain::GainSum::default().send_sample(wet, level)?;
+                                let wet = route.send_sample(
+                                    &authored_gain::GainSum::default(),
+                                    wet,
+                                    level,
+                                    control,
+                                )?;
                                 for (out, input) in route.pcm[at].value.iter_mut().zip(wet) {
                                     *out += input;
                                 }
@@ -426,14 +508,13 @@ impl<'plan> Components<'plan> {
                 }
             }
             let mut permitted = false;
-            for (id, route) in self.routes.iter().enumerate() {
-                let gain = std::mem::take(&mut gains[id]);
+            for (id, route) in self.routes.iter_mut().enumerate() {
                 if route.pcm[at].permitted
                     && (output_voice.is_none_or(|voice| voice == route.voice)
                         || output_aliases.contains(route.voice))
                 {
                     permitted = true;
-                    let value = gain.apply_wide(route.pcm[at].value)?;
+                    let value = route.apply_gain(&mut gains[id], route.pcm[at].value, control)?;
                     for channel in 0..2 {
                         result[channel] += value[channel];
                     }
