@@ -2,7 +2,24 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: product goal resumed, constant sound blocks
+## Current state: prefix PCM prototype rejected, product goal active
+
+The [owned-prefix PCM experiment](../qualification/rejected-prefix-reuse-2026-10-26.md)
+is removed. Both its initial cache policy and revised sibling-tile traversal
+produce three passes/four work-limit failures in the full real-WAV Split matrix.
+The revised version passes 214 Audio library tests and strict four-crate lint,
+but regresses processed root-sound refinement at `root-sound-refinement`, limited
+`0+511`. All 1,018 preceding qualification inputs match their final hashes after
+removal. Preserve the inherited Split candidate and foreign files.
+
+The retained constant-block version below remains four pass/three fail. Target
+repeated historical sound-query construction next. Locked `self_cell` 1.3.0 can
+own the immutable plan and dependent routed query, but caching requires borrowed
+routed readers and full heap accounting. Current occurrences, exact overlap,
+live gates/gain/permissions and media admission must remain fresh. The goal
+remains active; no progress percentage, requirement or gate closes here.
+
+## Retained state: product goal resumed, constant sound blocks
 
 The owner resumed the full product goal after the completed Blaze sweep. That
 current instruction supersedes the historical tooling pause below. Keep the

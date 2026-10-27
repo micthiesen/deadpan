@@ -69,6 +69,13 @@ complete authored, faded and limited PCM. All-owner refinement still fails at
 `prefix-two`, limited `0+4096`. These remain incomplete comparisons. No
 requirement, criterion or delivery gate closes from this optimization.
 
+The later [owned-prefix PCM experiment](qualification/rejected-prefix-reuse-2026-10-26.md)
+is rejected and removed: 214 Audio library tests and strict lint pass, but its
+full real-WAV matrix regresses to three passes/four work-limit failures,
+including processed root-sound refinement. Exact hash comparison restores all
+1,018 preceding qualification inputs. The four-pass/three-failure constant-block
+version above remains current; no acceptance credit changes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 
