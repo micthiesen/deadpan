@@ -31,7 +31,11 @@ fn gain(value: i32, muted: bool, dynamic: bool) -> ClipGain {
     ClipGain::new(GainDb::new(value).unwrap(), muted, envelopes, vec![]).unwrap()
 }
 
-fn plan(dynamic: bool, muted: bool, gain_first: bool) -> RenderPlan {
+pub(in crate::stages::shared_components) fn plan(
+    dynamic: bool,
+    muted: bool,
+    gain_first: bool,
+) -> RenderPlan {
     let root = ProjectDocument::new(
         ProjectId::new("gain-program").unwrap(),
         RevisionId::new("revision").unwrap(),
@@ -124,7 +128,8 @@ fn plan(dynamic: bool, muted: bool, gain_first: bool) -> RenderPlan {
     RenderPlan::compile(&document).unwrap()
 }
 
-type Calls = Vec<(String, u8, usize, i64, Option<usize>, [bool; 2])>;
+pub(in crate::stages::shared_components) type Calls =
+    Vec<(String, u8, usize, i64, Option<usize>, [bool; 2])>;
 
 fn render(
     plan: &RenderPlan,
@@ -135,7 +140,7 @@ fn render(
     render_selection(plan, send, skipped, stopped, None, Permissions::default())
 }
 
-fn render_selection(
+pub(in crate::stages::shared_components) fn render_selection(
     plan: &RenderPlan,
     send: bool,
     skipped: bool,

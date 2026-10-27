@@ -241,4 +241,4 @@ fn flushes(kind: AudioTreatmentStage, recipe: &deadpan_core::AudioTreatments) ->
 
 #[cfg(test)]
 #[path = "program/tests.rs"]
-mod tests;
+pub(super) mod tests;

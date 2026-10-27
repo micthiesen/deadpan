@@ -147,6 +147,15 @@ passes 202 Audio library tests, all 171 definition tests, strict lint and source
 review. It remains uncommitted. All seven unchanged Split tests still total
 four pass/three work failures; no acceptance credit changes.
 
+The [shared Components outputs primitive](qualification/component-outputs-2026-10-27.md)
+executes one common traversal into independently selected borrowed destinations.
+Six new scalar-oracle tests, 208 Audio library tests, all 171 definition tests,
+all 203 prior real-WAV stages, strict lint and independent review pass. Its isolated
+six-file patch passes 191 Audio and eight historical processing PCM tests.
+Runtime graph reads still request one output; recursive batching needs a cold
+resource proof. The full Split matrix remains four pass/three work-limit failures,
+at the same revisions/windows. No requirement or gate closes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

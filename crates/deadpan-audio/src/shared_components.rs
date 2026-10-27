@@ -15,6 +15,25 @@ use program::Program;
 #[path = "shared_components/block.rs"]
 mod block;
 
+#[path = "shared_components/outputs.rs"]
+mod outputs;
+pub(super) use outputs::{Output, OutputSamples, OutputSelection};
+
+/// Inspect every requested selector. A single-output call keeps its previous
+/// selection work; additional comparisons are admitted before inspecting them.
+fn requested(
+    outputs: &[Output<'_>],
+    voice: usize,
+    control: WorkControl<'_>,
+) -> Result<bool, StageAudioError> {
+    if outputs.len() > 1 {
+        control.spend_plan_work(outputs.len() - 1)?;
+    }
+    Ok(outputs.iter().fold(false, |selected, output| {
+        selected | output.selection.selects(voice)
+    }))
+}
+
 #[derive(Clone, Copy, Default)]
 struct Sample {
     value: [f64; 2],
@@ -244,9 +263,48 @@ impl<'plan> Components<'plan> {
     }
 
     pub(super) fn finish(
-        mut self,
+        self,
         output_voice: Option<usize>,
         output_aliases: Permissions,
+        control: WorkControl<'_>,
+        equalize: impl FnMut(
+            &AudioOwnerClock<'plan>,
+            Temporal,
+            AudioSample,
+            Permissions,
+            Option<usize>,
+        ) -> Result<[f64; 2], StageAudioError>,
+    ) -> Result<MixedBlock, StageAudioError> {
+        let mut samples = vec![[0.0; 2]; self.frames];
+        let mut suppressed = Vec::new();
+        self.finish_into(
+            &mut [Output {
+                selection: OutputSelection {
+                    voice: output_voice,
+                    aliases: output_aliases,
+                },
+                samples: OutputSamples::Interleaved(&mut samples),
+                suppressed: Some(&mut suppressed),
+            }],
+            control,
+            equalize,
+        )?;
+        Ok(MixedBlock {
+            samples,
+            suppressed: merged_suppression(suppressed),
+        })
+    }
+
+    /// Execute the common contribution driver once, then emit each requested
+    /// target in the original route order. Buffers are borrowed, never cached.
+    /// The caller must admit its output buffers and selector headers as well
+    /// as `resident_frames()`. Shape validation is not recursive allocation
+    /// admission; the normal reader still supplies its one existing output.
+    /// A failed execution leaves scratch output unspecified; callers must
+    /// discard it and propagate the error, without rerunning or refunding work.
+    pub(super) fn finish_into(
+        mut self,
+        outputs: &mut [Output<'_>],
         control: WorkControl<'_>,
         mut equalize: impl FnMut(
             &AudioOwnerClock<'plan>,
@@ -255,10 +313,22 @@ impl<'plan> Components<'plan> {
             Permissions,
             Option<usize>,
         ) -> Result<[f64; 2], StageAudioError>,
-    ) -> Result<MixedBlock, StageAudioError> {
+    ) -> Result<(), StageAudioError> {
+        if outputs.is_empty() || outputs.len() > super::shared_mix::MAX_VOICES {
+            return Err(StageAudioError::Limit("contribution output count"));
+        }
+        self.start
+            .0
+            .checked_add(i64::try_from(self.frames).map_err(|_| StageAudioError::Range)?)
+            .ok_or(TimeError::Overflow)?;
+        if outputs.len() > 1 {
+            control.spend_plan_work(outputs.len())?;
+        }
+        for output in outputs.iter() {
+            output.validate(self.frames, outputs.len() > 1)?;
+        }
         for route in &mut self.routes {
-            let selected = output_voice.is_none_or(|voice| voice == route.voice)
-                || output_aliases.contains(route.voice);
+            let selected = requested(outputs, route.voice, control)?;
             route.program = Program::prepare(route, &self.owners, self.send, selected, control)?;
         }
         if self
@@ -266,14 +336,12 @@ impl<'plan> Components<'plan> {
             .iter()
             .all(|route| route.event_gain.is_none() || route.program.is_some())
         {
-            return self.finish_constant(output_voice, output_aliases, control, equalize);
+            return self.finish_constant_into(outputs, control, equalize);
         }
         let mut owners: Vec<_> = self.owners.values().collect();
         owners.sort_by_key(|owner| std::cmp::Reverse(owner.depth));
         let mut gains = vec![authored_gain::GainSum::default(); self.routes.len()];
-        let mut output = vec![[0.0; 2]; self.frames];
-        let mut suppressed = Vec::new();
-        for (at, result) in output.iter_mut().enumerate() {
+        for at in 0..self.frames {
             control.check()?;
             let sample = AudioSample(self.start.0 + at as i64);
             let mut sent = [0.0; 2];
@@ -507,35 +575,71 @@ impl<'plan> Components<'plan> {
                     }
                 }
             }
-            let mut permitted = false;
-            for (id, route) in self.routes.iter_mut().enumerate() {
-                if route.pcm[at].permitted
-                    && (output_voice.is_none_or(|voice| voice == route.voice)
-                        || output_aliases.contains(route.voice))
-                {
-                    permitted = true;
-                    let value = route.apply_gain(&mut gains[id], route.pcm[at].value, control)?;
-                    for channel in 0..2 {
-                        result[channel] += value[channel];
+            if outputs.len() == 1 {
+                // Preserve the single-output path's exact final operation and
+                // error order. It also provides the separate scalar oracle.
+                let output = &mut outputs[0];
+                let mut sum = [0.0; 2];
+                let mut permitted = false;
+                for (id, route) in self.routes.iter_mut().enumerate() {
+                    if route.pcm[at].permitted && output.selection.selects(route.voice) {
+                        permitted = true;
+                        let value =
+                            route.apply_gain(&mut gains[id], route.pcm[at].value, control)?;
+                        for channel in 0..2 {
+                            sum[channel] += value[channel];
+                        }
+                    }
+                }
+                if sum.iter().any(|value| !value.is_finite()) {
+                    return Err(PreparationError::InvalidSamples.into());
+                }
+                if self.send.is_some() && sent.iter().any(|value| !value.is_finite()) {
+                    return Err(PreparationError::InvalidSamples.into());
+                }
+                output
+                    .samples
+                    .set(at, if self.send.is_some() { sent } else { sum });
+                if !permitted {
+                    output.mark_suppressed(sample);
+                }
+            } else {
+                // Final gains belong only to requested routes, but a route
+                // selected by several targets consumes its final transfer once.
+                for (id, route) in self.routes.iter_mut().enumerate() {
+                    if route.pcm[at].permitted && requested(outputs, route.voice, control)? {
+                        route.pcm[at].value =
+                            route.apply_gain(&mut gains[id], route.pcm[at].value, control)?;
+                    }
+                }
+                for (index, output) in outputs.iter_mut().enumerate() {
+                    if index != 0 {
+                        control.spend_plan_work(self.routes.len())?;
+                    }
+                    let mut sum = [0.0; 2];
+                    let mut permitted = false;
+                    for route in &self.routes {
+                        if route.pcm[at].permitted && output.selection.selects(route.voice) {
+                            permitted = true;
+                            for (out, value) in sum.iter_mut().zip(route.pcm[at].value) {
+                                *out += value;
+                            }
+                        }
+                    }
+                    if sum.iter().any(|value| !value.is_finite())
+                        || (self.send.is_some() && sent.iter().any(|value| !value.is_finite()))
+                    {
+                        return Err(PreparationError::InvalidSamples.into());
+                    }
+                    output
+                        .samples
+                        .set(at, if self.send.is_some() { sent } else { sum });
+                    if !permitted {
+                        output.mark_suppressed(sample);
                     }
                 }
             }
-            if result.iter().any(|value| !value.is_finite()) {
-                return Err(PreparationError::InvalidSamples.into());
-            }
-            if self.send.is_some() {
-                if sent.iter().any(|value| !value.is_finite()) {
-                    return Err(PreparationError::InvalidSamples.into());
-                }
-                *result = sent;
-            }
-            if !permitted {
-                suppressed.push(sample..AudioSample(sample.0 + 1));
-            }
         }
-        Ok(MixedBlock {
-            samples: output,
-            suppressed: merged_suppression(suppressed),
-        })
+        Ok(())
     }
 }

@@ -2,7 +2,39 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: work attribution and index experiment, product goal active
+## Current state: shared Components outputs, product goal active
+
+The [Components output milestone](../qualification/component-outputs-2026-10-27.md)
+adds direct execution into multiple borrowed destinations with independent voice/
+alias masks and suppression, one common driver, lazy used final transfers and
+ordered per-output sums. The existing scalar wrapper remains the only runtime
+reader path. No prefix cache or recursive graph batching is enabled.
+
+Main Audio/definition pass 208/171 tests. The full real-WAV stages target passes
+all 203 prior cases plus four of seven unfinished Split cases (207 pass/three
+fail). Source/Sequence `cut-three`, limited `0+511`, nested selected without root
+sound and one selected play at `prefix-two`, limited `0+4096`, all now refuse
+with `plan work per read`. Same cases and boundaries as before; two prior errors
+were child query limits. The isolated six-file patch passes 191 Audio library
+and eight historical birth/processing PCM tests. Strict four-crate all-target
+lint and independent review pass. All receipts are terminal; no Cargo/test process
+remains. Evidence includes the exact independent patch and input/binary pins.
+
+Next, preserve full wet-constructor preparation admission but stop retaining
+charges for Rust coefficient/network arrays after they drop. The read-only
+`wet-residency-research.md` in the milestone evidence proves only that lifetime
+release: keep the entire existing native filter bound. Then design a cold scalar
+structural demand/resource summary before simultaneous runtime histories allocate.
+Do not use authored effect counts, warm peaks, failed-batch retry, fake PCM or
+provider execution to discover resource needs. The companion resource audit
+records the unresolved recursive ownership and permission obligations. Runtime
+batching remains off until those obligations have executable evidence.
+
+The index experiment and general Split remain uncommitted. Product coverage
+stays about 85%, ten Complete requirements, all seven gates open. The goal remains
+active; keep foreign fuzz/Cargo.lock/.claude entries untouched.
+
+## Work attribution and index experiment
 
 `cf796605` commits and pushes the sealed placement-history milestone below.
 The [copied-runtime work attribution](../qualification/sound-work-attribution-2026-10-27.md)
@@ -29,14 +61,14 @@ two-file patch and before-files are there. A second copied diagnostic tree at
 `/tmp/deadpan-input-index-profile-2026-10-27` matches all 1,395 candidate runtime
 inputs, with only copied stages instrumentation added. Its fresh build passes.
 `run_next.py` completes its sequential all-owner profile and six remaining Split
-tests; all receipts are terminal. No Cargo/test process remains. The 203 prior
-existing stage tests are not rerun for this experiment. The second trace confirms
+tests; all receipts are terminal. The 203 prior existing stage tests were not
+rerun for that experiment; all pass in the Components milestone above. The second trace confirms
 the scans/shifts disappear but the same read remains over budget. Do not present
 different stopping points as a completed-request work or timing comparison.
 
-Next implement/review a pure Components multiple-output oracle against separate
-scalar calls, preserving per-target family masks, used final gains and ordered
-floating sums. The retained design is in the index evidence's
+The Components milestone above implements/reviews the pure multiple-output
+oracle against separate scalar calls, preserving per-target family masks, used
+final gains and ordered floating sums. Its preceding design is in the index evidence's
 `candidate/demanded-outputs-design.md.gz`. Runtime graph enablement additionally
 requires a proved recursive peak before simultaneous wet histories allocate;
 current-room admission plus failed-batch retry is insufficient. This is direct

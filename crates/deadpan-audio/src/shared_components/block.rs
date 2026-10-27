@@ -26,7 +26,7 @@ impl Route<'_> {
 
     fn send_block(
         &mut self,
-        output: &mut [[f64; 2]],
+        output: &mut OutputSamples<'_>,
         event_input: bool,
         control: WorkControl<'_>,
     ) -> Result<(), StageAudioError> {
@@ -42,23 +42,19 @@ impl Route<'_> {
             }
         };
         if transfer.is_identity() {
-            for (frame, result) in self.pcm.iter().zip(output) {
+            for (at, frame) in self.pcm.iter().enumerate() {
                 if frame.permitted {
                     control.spend_plan_work(1)?;
                     let value = input(frame);
-                    for ch in 0..2 {
-                        result[ch] += value[ch];
-                    }
+                    output.add(at, value);
                 }
             }
         } else {
-            for (frame, result) in self.pcm.iter().zip(output) {
+            for (at, frame) in self.pcm.iter().enumerate() {
                 if frame.permitted {
                     control.spend_plan_work(1)?;
                     let value = transfer.apply_wide(input(frame), control)?;
-                    for ch in 0..2 {
-                        result[ch] += value[ch];
-                    }
+                    output.add(at, value);
                 }
             }
         }
@@ -83,10 +79,9 @@ fn permissions(
 }
 
 impl<'plan> Components<'plan> {
-    pub(super) fn finish_constant(
+    pub(super) fn finish_constant_into(
         mut self,
-        output_voice: Option<usize>,
-        output_aliases: Permissions,
+        outputs: &mut [Output<'_>],
         control: WorkControl<'_>,
         mut equalize: impl FnMut(
             &AudioOwnerClock<'plan>,
@@ -95,20 +90,22 @@ impl<'plan> Components<'plan> {
             Permissions,
             Option<usize>,
         ) -> Result<[f64; 2], StageAudioError>,
-    ) -> Result<MixedBlock, StageAudioError> {
+    ) -> Result<(), StageAudioError> {
         let mut owners: Vec<_> = self.owners.values().collect();
         owners.sort_by_key(|owner| std::cmp::Reverse(owner.depth));
-        // This is the same single output allocation as the scalar path. Send
-        // mode accumulates its returns here; final dry validation uses a local
-        // sum and never needs a second full-sized PCM buffer.
-        let mut output = vec![[0.0; 2]; self.frames];
+        // A common send uses the first borrowed output as its workspace, as
+        // the old single-output path did. Capture each sent frame before
+        // overwriting any target; no extra output PCM allocation is needed.
+        if self.send.is_some() {
+            outputs[0].samples.clear();
+        }
         for route in &mut self.routes {
             if self
                 .send
                 .and_then(|effect| route.sends.level(effect))
                 .is_some()
             {
-                route.send_block(&mut output, true, control)?;
+                route.send_block(&mut outputs[0].samples, true, control)?;
             }
         }
         for owner in owners {
@@ -209,7 +206,7 @@ impl<'plan> Components<'plan> {
                         .and_then(|recipe| recipe.tail_sends().level(effect))
                         .is_some()
                     {
-                        self.routes[id].send_block(&mut output, false, control)?;
+                        self.routes[id].send_block(&mut outputs[0].samples, false, control)?;
                     }
                 }
             }
@@ -289,46 +286,46 @@ impl<'plan> Components<'plan> {
             }
         }
         for route in &mut self.routes {
-            if output_voice.is_none_or(|voice| voice == route.voice)
-                || output_aliases.contains(route.voice)
-            {
+            if requested(outputs, route.voice, control)? {
                 route.transfer_block(control)?;
             }
         }
-        let mut suppressed = Vec::new();
-        for (at, result) in output.iter_mut().enumerate() {
+        for at in 0..self.frames {
             control.check()?;
-            let mut sum = [0.0; 2];
-            let mut permitted = false;
-            for route in &self.routes {
-                if route.pcm[at].permitted
-                    && (output_voice.is_none_or(|voice| voice == route.voice)
-                        || output_aliases.contains(route.voice))
-                {
-                    permitted = true;
-                    for (out, value) in sum.iter_mut().zip(route.pcm[at].value) {
-                        *out += value;
+            let sent = if self.send.is_some() {
+                outputs[0].samples.frame(at)
+            } else {
+                [0.0; 2]
+            };
+            for (index, output) in outputs.iter_mut().enumerate() {
+                if index != 0 {
+                    control.spend_plan_work(self.routes.len())?;
+                }
+                let mut sum = [0.0; 2];
+                let mut permitted = false;
+                for route in &self.routes {
+                    if route.pcm[at].permitted && output.selection.selects(route.voice) {
+                        permitted = true;
+                        for (out, value) in sum.iter_mut().zip(route.pcm[at].value) {
+                            *out += value;
+                        }
                     }
                 }
-            }
-            if sum
-                .iter()
-                .chain(result.iter())
-                .any(|value| !value.is_finite())
-            {
-                return Err(PreparationError::InvalidSamples.into());
-            }
-            if self.send.is_none() {
-                *result = sum;
-            }
-            if !permitted {
-                let sample = AudioSample(self.start.0 + at as i64);
-                suppressed.push(sample..AudioSample(sample.0 + 1));
+                if sum
+                    .iter()
+                    .chain(sent.iter())
+                    .any(|value| !value.is_finite())
+                {
+                    return Err(PreparationError::InvalidSamples.into());
+                }
+                output
+                    .samples
+                    .set(at, if self.send.is_some() { sent } else { sum });
+                if !permitted {
+                    output.mark_suppressed(AudioSample(self.start.0 + at as i64));
+                }
             }
         }
-        Ok(MixedBlock {
-            samples: output,
-            suppressed: merged_suppression(suppressed),
-        })
+        Ok(())
     }
 }
