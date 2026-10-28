@@ -7,6 +7,9 @@ use super::authored_eq::Context;
 use super::shared_mix::{Boundary, Contribution, OwnerKey, Permissions, SharedMix, Temporal};
 use super::*;
 
+#[path = "shared_eq/node_description.rs"]
+mod node_description;
+
 #[cfg(test)]
 #[path = "shared_eq/admission_tests.rs"]
 mod admission_tests;
@@ -843,45 +846,23 @@ impl StageAudio {
         {
             return Err(StageAudioError::Limit("temporal owner count"));
         }
-        let key = OwnerKey::new(owner);
-        let sounds = if !graph.original_only && owner.kind() == deadpan_plan::AudioOwnerKind::Node {
-            let context = graph
-                .plan
-                .audio_sound_instance_context(owner.instance(), control.query_limits()?)?;
-            control.spend_plan_work(context.construction_work())?;
-            Sounds::Owner(Arc::new(context))
-        } else {
-            Sounds::None
-        };
-        let range = program.context.original.support(
+        let node_description::Description {
+            context,
+            boundary,
+            stop,
+            kind,
+        } = node_description::describe(
             graph.plan,
-            at..AudioSample(at.0.checked_add(1).ok_or(TimeError::Overflow)?),
+            node_description::Request {
+                incoming: program.context,
+                owner,
+                at,
+                kind,
+                stage,
+                original_only: graph.original_only,
+            },
+            control,
         )?;
-        let observed = if range.start < range.end {
-            let query = program
-                .context
-                .original
-                .owners(graph.plan, range, control)?;
-            query
-                .spans()
-                .iter()
-                .flat_map(|span| span.owners())
-                .find(|clock| OwnerKey::new(clock) == key)
-                .cloned()
-        } else {
-            None
-        };
-        let original = if let Some(clock) = observed {
-            program
-                .context
-                .original
-                .owner_context(graph.plan, &clock, at, control)?
-        } else if let Sounds::Owner(context) = &sounds {
-            Context::Domain(Arc::new(context.processing_domain().clone()))
-        } else {
-            return Err(PlanError::InvalidPlan("missing shared EQ Original context").into());
-        };
-        let boundary = owner.treatment_boundary(stage)?;
         let resident = match kind {
             Temporal::Equalizer(_) => u64::try_from(crate::Equalizer::preparation_bytes_bound())
                 .map_err(|_| StageAudioError::Range)?
@@ -911,12 +892,9 @@ impl StageAudio {
         control.check()?;
         graph.nodes.push(Node {
             parent: program.parent,
-            context: Contexts { original, sounds },
+            context,
             boundary,
-            stop: Boundary {
-                owner: key,
-                before: stage,
-            },
+            stop,
             filter,
             kind,
             tiles: BTreeMap::new(),

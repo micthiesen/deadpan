@@ -1,0 +1,381 @@
+use super::*;
+use crate::stages::authored_eq::eq_admission_fixture as fixture;
+use deadpan_core::*;
+
+fn request<'request, 'plan>(
+    incoming: &'request Contexts<'plan>,
+    owner: &'request AudioOwnerClock<'plan>,
+    at: AudioSample,
+    kind: Temporal,
+    original_only: bool,
+) -> Request<'request, 'plan> {
+    Request {
+        incoming,
+        owner,
+        at,
+        kind,
+        stage: kind.boundary(owner),
+        original_only,
+    }
+}
+
+fn domain<'context, 'plan>(context: &'context Context<'plan>) -> &'context AudioDomain<'plan> {
+    let Context::Domain(domain) = context else {
+        panic!("expected a checked Domain");
+    };
+    domain
+}
+
+#[test]
+fn root_and_actual_domain_descriptions_keep_literal_context_stop_and_kind() {
+    let plan = fixture::fixture();
+    let owner = fixture::owner(&plan);
+    let stage = fixture::stage(&owner);
+    let input = plan
+        .audio_owner_input(&owner, AudioSample(128), Default::default())
+        .unwrap();
+    for original in [
+        Context::Root,
+        Context::Domain(Arc::new(input.context().clone())),
+    ] {
+        for original_only in [false, true] {
+            for kind in [Temporal::Equalizer(stage), Temporal::Wet(TailEffect::Delay)] {
+                let cancelled = AtomicBool::new(false);
+                let work = RefCell::new(ReadWork::default());
+                let control = fixture::control(&cancelled, &work);
+                // Incoming Sounds are intentionally ignored by the inherited
+                // new-node rule, which resolves current sound history anew.
+                let incoming = Contexts {
+                    original: original.clone(),
+                    sounds: Sounds::Root,
+                };
+                let description = describe(
+                    &plan,
+                    request(&incoming, &owner, AudioSample(128), kind, original_only),
+                    control,
+                )
+                .unwrap();
+                assert!(description.kind == kind);
+                assert_eq!(description.boundary.before_stage(), kind.boundary(&owner));
+                assert!(
+                    description
+                        .boundary
+                        .matches_clock_at(&owner, AudioSample(128))
+                );
+                assert_eq!(description.stop.before, kind.boundary(&owner));
+                assert!(description.stop.owner == OwnerKey::new(&owner));
+                let original = domain(&description.context.original);
+                assert!(original.belongs_to(&plan));
+                assert_eq!(original.instance().node, NodeId::new("root").unwrap());
+                assert_eq!(original.root_samples(), AudioSample(0)..AudioSample(512));
+                assert_eq!(original.visible_samples(), AudioSample(0)..AudioSample(512));
+                match (&description.context.sounds, original_only) {
+                    (Sounds::None, true) => {}
+                    (Sounds::Owner(sounds), false) => {
+                        assert!(sounds.belongs_to(&plan));
+                        assert_eq!(sounds.owner().node, NodeId::new("root").unwrap());
+                        assert_eq!(sounds.samples(), AudioSample(0)..AudioSample(512));
+                    }
+                    _ => panic!("wrong sound-history selection"),
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn empty_original_support_keeps_current_sound_fallback_and_missing_error() {
+    let plan = fixture::fixture();
+    let owner = fixture::owner(&plan);
+    let incoming = Contexts {
+        original: Context::Root,
+        sounds: Sounds::None,
+    };
+    let cancelled = AtomicBool::new(false);
+    let work = RefCell::new(ReadWork::default());
+    let control = fixture::control(&cancelled, &work);
+    let description = describe(
+        &plan,
+        request(
+            &incoming,
+            &owner,
+            AudioSample(600),
+            Temporal::Wet(TailEffect::Delay),
+            false,
+        ),
+        control,
+    )
+    .unwrap();
+    let Sounds::Owner(sound) = &description.context.sounds else {
+        panic!("fallback needs the freshly resolved current sound context");
+    };
+    let original = domain(&description.context.original);
+    assert_eq!(
+        original.root_samples(),
+        sound.processing_domain().root_samples()
+    );
+    assert_eq!(original.instance(), sound.processing_domain().instance());
+    let result = describe(
+        &plan,
+        request(
+            &incoming,
+            &owner,
+            AudioSample(600),
+            Temporal::Wet(TailEffect::Delay),
+            true,
+        ),
+        control,
+    );
+    assert!(matches!(
+        result,
+        Err(StageAudioError::Plan(PlanError::InvalidPlan(
+            "missing shared EQ Original context"
+        )))
+    ));
+}
+
+fn retained_plan() -> Arc<RenderPlan> {
+    let id = |name: &str| NodeId::new(name).unwrap();
+    let revision = |name: &str| RevisionId::new(name).unwrap();
+    let document = ProjectDocument::new(
+        ProjectId::new("node-description-retained").unwrap(),
+        revision("current"),
+        PresentationBasis {
+            width: 16,
+            height: 16,
+            frame_rate: FrameRate::new(48_000, 1).unwrap(),
+            color_policy: ColorPolicy::SdrRec709,
+        },
+        id("root"),
+    )
+    .unwrap();
+    let mut wire = serde_json::to_value(document).unwrap();
+    wire["nodes"] = serde_json::to_value(BTreeMap::from([
+        (id("root"), BeatNode::sequence("Root", vec![id("tone")])),
+        (
+            id("tone"),
+            BeatNode::hold(
+                "Tone",
+                HoldRecipe {
+                    picture_context: None,
+                    duration: FrameDuration::new(512).unwrap(),
+                    video: HoldVideo::Background,
+                    audio: HoldAudio::Tone {
+                        frequency_hz: 440,
+                        level: GainDb::new(-6000).unwrap(),
+                    },
+                },
+            ),
+        ),
+    ]))
+    .unwrap();
+    let old = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let timing = AudioTimingId {
+        allocation: revision("saved"),
+        ordinal: 0,
+    };
+    wire["audio_bindings"] = serde_json::to_value(
+        AudioBindingState::new(
+            vec![AudioTimingRecord {
+                id: timing.clone(),
+                layout: FrozenAudioLayout::capture(&old).unwrap(),
+            }],
+            BTreeMap::from([(
+                id("tone"),
+                OwnedAudioBinding {
+                    reanchors: vec![],
+                    lattice: AudioPlacementTemplate {
+                        reference_local_offset: ExactRatio::ZERO,
+                        gap_after: None,
+                        reference: AudioReferenceClock {
+                            recipe: AudioRecipeKind::Node,
+                            timing,
+                            root: AudioClockRoot::ProjectRootRoundEven,
+                            physical: id("tone"),
+                        },
+                        arguments: vec![],
+                        births: vec![],
+                    },
+                    resume: None,
+                },
+            )]),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    Arc::new(RenderPlan::compile(&ProjectDocument::from_json(&wire.to_string()).unwrap()).unwrap())
+}
+
+#[test]
+fn incoming_retained_description_clones_the_exact_input_arc() {
+    let plan = retained_plan();
+    let query = plan
+        .audio_gain_owners(AudioSample(128)..AudioSample(129), Default::default())
+        .unwrap();
+    let tone = query.spans()[0]
+        .owners()
+        .iter()
+        .find(|clock| clock.instance().node.as_str() == "tone")
+        .unwrap();
+    let input = plan
+        .audio_owner_input(tone, AudioSample(128), Default::default())
+        .unwrap();
+    let retained = Arc::new(
+        input
+            .retained_at(AudioSample(128), Default::default())
+            .unwrap()
+            .unwrap(),
+    );
+    let owners = retained
+        .owners(AudioSample(128)..AudioSample(129), Default::default())
+        .unwrap();
+    let owner = owners.spans()[0]
+        .owners()
+        .iter()
+        .find(|clock| clock.instance().node.as_str() == "tone")
+        .unwrap();
+    let incoming = Contexts {
+        original: Context::Retained(Arc::clone(&retained)),
+        sounds: Sounds::None,
+    };
+    let cancelled = AtomicBool::new(false);
+    let work = RefCell::new(ReadWork::default());
+    let control = fixture::control(&cancelled, &work);
+    let description = describe(
+        &plan,
+        request(
+            &incoming,
+            owner,
+            AudioSample(128),
+            Temporal::Wet(TailEffect::Reverb),
+            true,
+        ),
+        control,
+    )
+    .unwrap();
+    let Context::Retained(actual) = &description.context.original else {
+        panic!("incoming retained consumer must remain opaque");
+    };
+    assert!(Arc::ptr_eq(actual, &retained));
+    assert!(matches!(description.context.sounds, Sounds::None));
+    assert_eq!(description.stop.before, 0);
+    assert!(description.stop.owner == OwnerKey::new(owner));
+    // The initial incoming owner query remains; owner_context itself returns
+    // the Arc immediately without adding a root/domain query.
+    assert_eq!(work.borrow().plan_work, owners.work());
+}
+
+#[test]
+fn metadata_query_headroom_is_distinct_from_completed_billed_work() {
+    let plan = fixture::fixture();
+    let owner = fixture::owner(&plan);
+    let incoming = Contexts {
+        original: Context::Root,
+        sounds: Sounds::None,
+    };
+    let kind = Temporal::Equalizer(fixture::stage(&owner));
+    let cancelled = AtomicBool::new(false);
+    // The completed metadata queries bill 19 units. The last retained_at(None)
+    // walk additionally needs 9 units of headroom, but reports no work on None.
+    // These measured fixture literals preserve that existing API distinction.
+    for remaining in [28, 27] {
+        let work = RefCell::new(ReadWork::default());
+        let before = MAX_PLAN_WORK_PER_READ - remaining;
+        work.borrow_mut().plan_work = before;
+        let result = describe(
+            &plan,
+            request(&incoming, &owner, AudioSample(128), kind, false),
+            fixture::control(&cancelled, &work),
+        );
+        assert_eq!(work.borrow().plan_work - before, 19);
+        if remaining == 28 {
+            assert!(result.is_ok());
+            assert_eq!(MAX_PLAN_WORK_PER_READ - work.borrow().plan_work, 9);
+        } else {
+            assert!(matches!(
+                result,
+                Err(StageAudioError::Plan(PlanError::AudioQueryLimit(
+                    "structural work"
+                )))
+            ));
+            assert_eq!(MAX_PLAN_WORK_PER_READ - work.borrow().plan_work, 8);
+        }
+    }
+}
+
+#[test]
+fn overflow_cancellation_and_late_boundary_failure_keep_existing_order() {
+    let plan = fixture::fixture();
+    let owner = fixture::owner(&plan);
+    let incoming = Contexts {
+        original: Context::Root,
+        sounds: Sounds::None,
+    };
+    let kind = Temporal::Wet(TailEffect::Delay);
+    for original_only in [false, true] {
+        let cancelled = AtomicBool::new(false);
+        let work = RefCell::new(ReadWork::default());
+        let control = fixture::control(&cancelled, &work);
+        assert!(
+            describe(
+                &plan,
+                request(
+                    &incoming,
+                    &owner,
+                    AudioSample(i64::MAX),
+                    kind,
+                    original_only
+                ),
+                control,
+            )
+            .is_err()
+        );
+        assert_eq!(work.borrow().plan_work > 0, !original_only);
+    }
+    let cancelled = AtomicBool::new(true);
+    let work = RefCell::new(ReadWork::default());
+    assert!(
+        describe(
+            &plan,
+            request(&incoming, &owner, AudioSample(128), kind, false),
+            fixture::control(&cancelled, &work),
+        )
+        .is_err()
+    );
+    assert_eq!(work.borrow().plan_work, 0);
+
+    let cancelled = AtomicBool::new(false);
+    let work = RefCell::new(ReadWork::default());
+    let mut expired = fixture::control(&cancelled, &work);
+    expired.deadline = Instant::now();
+    assert!(matches!(
+        describe(
+            &plan,
+            request(&incoming, &owner, AudioSample(128), kind, false),
+            expired,
+        ),
+        Err(StageAudioError::Timeout)
+    ));
+    assert_eq!(work.borrow().plan_work, 0);
+
+    let cancelled = AtomicBool::new(false);
+    let work = RefCell::new(ReadWork::default());
+    let control = fixture::control(&cancelled, &work);
+    describe(
+        &plan,
+        request(&incoming, &owner, AudioSample(128), kind, false),
+        control,
+    )
+    .unwrap();
+    let valid_work = work.borrow().plan_work;
+    let work = RefCell::new(ReadWork::default());
+    let mut invalid = request(&incoming, &owner, AudioSample(128), kind, false);
+    invalid.stage = usize::MAX;
+    assert!(matches!(
+        describe(&plan, invalid, fixture::control(&cancelled, &work)),
+        Err(StageAudioError::Plan(PlanError::InvalidPlan(
+            "audio treatment boundary out of range"
+        )))
+    ));
+    assert_eq!(work.borrow().plan_work, valid_work);
+}

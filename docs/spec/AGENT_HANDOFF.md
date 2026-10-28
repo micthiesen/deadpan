@@ -2,7 +2,14 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: full native EQ admission, product goal active
+## Current state: numerical context construction shared, product goal active
+
+The [numerical node-description extraction](../qualification/node-description-2026-10-28.md)
+returns the actual contexts, boundary, stop and kind consumed by shared_eq_node.
+Metadata statements, cache/count guards and native admission retain their
+existing order. No new Plan observation API, cold activation or raw-context
+certificate is added. One-shot cold execution must consume the same actual
+descriptors and node continuations, with their allocations admitted.
 
 The [EQ admission fix](../qualification/eq-admission-2026-10-28.md) admits the
 complete published 2,129,928-byte bound before native construction in both
@@ -28,15 +35,16 @@ Components. Its caller admits the complete owner-order header/payload; all
 additional reached inspections are billed. It remains intentionally unconnected
 until exact recursive/native admission exists. Graph reads stay scalar.
 
-Final main Audio/definition pass 277/171. Both enabled real-WAV stage suites
+Final main Audio/definition pass 282/171. Both enabled real-WAV stage suites
 pass 203; main filters seven unfinished Split cases, isolated filters none.
-Isolated Audio passes 258 plus eight historical PCM cases. All six published
+Isolated Audio passes 263 plus eight historical PCM cases. All three published
 source files match isolated/staged bytes. Main preserves inherited overlays in
 shared_eq.rs and three corresponding Graph test fixture fields. Guards cover
-1,426/1,197 inputs. Strict all-target Core/Plan/Audio/Store
+1,428/1,199 inputs. Strict all-target Core/Plan/Audio/Store
 lint and independent review pass; all compiler/test receipts are terminal.
 
-Final-source Split coverage is four pass/three planning-work failures in one
+The preceding EQ checkpoint's Split coverage is four pass/three planning-work
+failures in one
 seven-case run. All-owner Source/Sequence cut-three limited 0+511 reports sound
 placement work exhausted; nested selected without root sound, prefix-two
 limited 0+4096, reports frozen projection work exhausted; one selected play,
@@ -52,13 +60,23 @@ inventory. Only four test-only files change after the passing main media runs;
 production and existing integration-test inputs match the final binary.
 Final libraries use rebuilt binaries. Never lower the full native estimate.
 
-Next share the actual StageAudio-independent numerical metadata constructor,
-preserving ALL existing context selection and fallback behavior. A scratch
-extraction is assigned under /tmp/deadpan-node-description-2026-10-28; do not
-claim it compiled or replace the numerical path with an exact-only subset.
-Read-only design is in /tmp/deadpan-exact-node-2026-10-28. Defer any new public
-Plan observation API until its real cold consumer has transient metadata
-admission. Carry the actual parent Program and
+The extraction is verified with five new tests and all 14 terminal receipts
+under /tmp/deadpan-node-description-2026-10-28 and its archived inventory.
+The first new headroom assertion was wrong: a bounded diagnostic establishes
+19 billed units but 28 needed, with 27 failing structural work after 19 billed.
+The final test asserts those exact literals without search/logging. This
+exposes an existing retained_at(None) accounting gap, not a new renderer change.
+Split is not rerun for the statement-preserving extraction.
+
+Next charge the actual retained probe work for both Some and None, once, in
+Context::owner_context and PreparedOwnerEqualizer. A separate uncompiled
+candidate is assigned under /tmp/deadpan-retained-probe-work-2026-10-28;
+do not claim it passed or change a cap to absorb honest new accounting.
+Read-only allocation research in /tmp/deadpan-context-heap-2026-10-28 covers
+15 pinned sources. Retained-size visitors do not prove constructor peaks;
+before-allocation accounting must cover actual overlapping Plan/Core scratch.
+Defer any new public Plan observation API until a real admitted cold consumer
+needs it. Carry the actual parent Program and
 opaque Root/Domain/Retained ancestry/grid handles. Root/Domain owner_input can
 prove exact membership; a different retained Original clock needs typed Plan
 correspondence. OwnerKey/matches_clock_at are not raw-context proof. No string

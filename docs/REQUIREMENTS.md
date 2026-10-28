@@ -237,6 +237,17 @@ Split run stays four pass/three planning-work failures, with the actual changed
 subphases retained. Cold recursive ancestry/resource admission and batching
 remain open; coverage and requirement/gate completion are unchanged.
 
+The [numerical node-description extraction](qualification/node-description-2026-10-28.md)
+now supplies the actual contexts, boundary, stop and kind to shared node
+construction, preserving metadata statements and cache/native guard order.
+Five new tests pass; main/isolated Audio pass 282/263, both stage suites pass
+203, definition passes 171 and eight historical PCM cases pass. Strict lint
+and independent review pass. A corrected test records 19 billed versus 28
+required headroom, exposing an existing missing work receipt on retained
+lookup None. Charging that probe, metadata constructor peak admission and
+recursive batching remain owed. The preceding four-pass/three-work-fail Split
+result is not rerun; coverage and requirement/gate completion are unchanged.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 
