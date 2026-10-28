@@ -65,7 +65,7 @@ pub use plan::{
 };
 pub use plan::{
     AudioOwnerInput, AudioOwnerInputScope, AudioOwnerOccurrence, AudioOwnerOccurrenceMap,
-    AudioOwnerOccurrences, AudioOwnerRetainedInput,
+    AudioOwnerOccurrences, AudioOwnerRetainedInput, AudioOwnerRetainedProbe,
 };
 pub use plan::{
     AudioProcessingQuery, AudioProcessingSpan, AudioSignal, AudioSignalContent, AudioSignalQuery,

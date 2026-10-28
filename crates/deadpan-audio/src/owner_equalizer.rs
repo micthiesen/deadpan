@@ -31,6 +31,117 @@ mod tests {
     use super::*;
 
     #[test]
+    fn constructor_counts_none_probe_and_preserves_actual_tone_pcm() {
+        use crate::stages::authored_eq::eq_admission_fixture as fixture;
+        use deadpan_core::{
+            BeatNode, ColorPolicy, HoldAudio, HoldRecipe, HoldVideo, NodeId, PresentationBasis,
+            ProjectDocument,
+        };
+
+        // PreparedOwnerEqualizer applies an explicit recipe to raw owner input.
+        // An already authored EQ in its suffix is intentionally unsupported by
+        // the memoryless gain reader. Keep the oracle's recipe on another plan.
+        let authored_plan = fixture::fixture();
+        let authored_owner = fixture::owner(&authored_plan);
+        let recipe = authored_owner.treatments().unwrap().equalizer().unwrap();
+        let id = |name: &str| NodeId::new(name).unwrap();
+        let document = ProjectDocument::new(
+            ProjectId::new("eq-admission").unwrap(),
+            RevisionId::new("revision").unwrap(),
+            PresentationBasis {
+                width: 16,
+                height: 16,
+                frame_rate: FrameRate::new(48_000, 1).unwrap(),
+                color_policy: ColorPolicy::SdrRec709,
+            },
+            id("root"),
+        )
+        .unwrap();
+        let mut wire = serde_json::to_value(document).unwrap();
+        wire["nodes"] = serde_json::to_value(BTreeMap::from([
+            (
+                id("root"),
+                BeatNode::sequence("Raw owner", vec![id("tone")]),
+            ),
+            (
+                id("tone"),
+                BeatNode::hold(
+                    "Tone",
+                    HoldRecipe {
+                        picture_context: None,
+                        duration: FrameDuration::new(512).unwrap(),
+                        video: HoldVideo::Background,
+                        audio: HoldAudio::Tone {
+                            frequency_hz: 440,
+                            level: deadpan_core::GainDb::new(-6000).unwrap(),
+                        },
+                    },
+                ),
+            ),
+        ]))
+        .unwrap();
+        let plan = Arc::new(
+            RenderPlan::compile(&ProjectDocument::from_json(&wire.to_string()).unwrap()).unwrap(),
+        );
+        let owner = fixture::owner(&plan);
+        assert!(owner.treatments().unwrap().is_empty());
+        let input = plan
+            .audio_owner_input(&owner, AudioSample(128), Default::default())
+            .unwrap();
+        let probe = input
+            .retained_probe_at(input.observed_at(), Default::default())
+            .unwrap();
+        assert!(probe.input().is_none());
+        assert!(probe.work() > 0);
+        let expected_work = input.work() + probe.work();
+        let cancelled = AtomicBool::new(false);
+        let mut equalizer = PreparedOwnerEqualizer::new(input, 0, recipe, &cancelled).unwrap();
+        assert_eq!(equalizer.work, expected_work);
+
+        let mut provider = fixture::NoSources(0);
+        let mut renderer = StageAudio::new(Arc::clone(&plan));
+        let work = RefCell::new(ReadWork::default());
+        let actual = renderer
+            .read_owner_equalized_controlled(
+                &mut provider,
+                &mut equalizer,
+                AudioSample(128),
+                32,
+                fixture::control(&cancelled, &work),
+                0,
+            )
+            .unwrap();
+        let mut oracle = StageAudio::new(Arc::clone(&authored_plan));
+        let oracle_work = RefCell::new(ReadWork::default());
+        let expected = oracle
+            .read_authored_equalizers(
+                &mut provider,
+                AudioSample(128),
+                32,
+                fixture::control(&cancelled, &oracle_work),
+                0,
+                &[],
+            )
+            .unwrap();
+        assert_eq!(
+            actual
+                .samples
+                .iter()
+                .map(|frame| frame.map(|value| (value as f32).to_bits()))
+                .collect::<Vec<_>>(),
+            expected
+                .samples
+                .iter()
+                .map(|frame| frame.map(f32::to_bits))
+                .collect::<Vec<_>>(),
+        );
+        assert_eq!(actual.suppressed, expected.suppressed);
+        assert_eq!(provider.0, 0);
+        assert_eq!(renderer.active_frames, 0);
+        assert_eq!(oracle.active_frames, 0);
+    }
+
+    #[test]
     fn controlled_eq_shares_work_deadline_depth_and_retains_all_halo_dependencies() {
         let (document, mut provider) = super::super::controlled_reads::fixture_document_at_rate(
             FrameRate::new(48_000, 1).unwrap(),
@@ -132,13 +243,14 @@ impl<'plan> PreparedOwnerEqualizer<'plan> {
         let boundary = input.owner().treatment_boundary(before_stage)?;
         let at = input.observed_at();
         let mut work = input.work();
-        let retained = input.retained_at(at, AudioQueryLimits::default())?;
-        let retained = if let Some(retained) = retained {
+        let probe = input.retained_probe_at(at, AudioQueryLimits::default())?;
+        work += probe.work();
+        let retained = if let Some(retained) = probe.into_input() {
             let query = retained.owners(
                 at..AudioSample(at.0.checked_add(1).ok_or(TimeError::Overflow)?),
                 AudioQueryLimits::default(),
             )?;
-            work += retained.work() + query.work();
+            work += query.work();
             // An ancestor of a bound child owns its complete current domain,
             // not the child's retained operand. Only adopt history containing
             // this exact checked owner and its retained provenance.

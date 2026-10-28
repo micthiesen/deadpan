@@ -2,7 +2,14 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: numerical context construction shared, product goal active
+## Current state: retained lookup work charged, product goal active
+
+The [retained-probe work fix](../qualification/retained-probe-work-2026-10-28.md)
+returns actual work with both present and absent retained inputs from one walk.
+Context::owner_context and PreparedOwnerEqualizer charge it once. The legacy
+retained_at wrapper remains; Some payloads/grids and error order are unchanged.
+Actual old-consumer tests fail 13 versus 22 and 19 versus 28 accounting checks.
+The fixed paths pass real tone PCM parity and exact/one-short budget checks.
 
 The [numerical node-description extraction](../qualification/node-description-2026-10-28.md)
 returns the actual contexts, boundary, stop and kind consumed by shared_eq_node.
@@ -35,18 +42,18 @@ Components. Its caller admits the complete owner-order header/payload; all
 additional reached inspections are billed. It remains intentionally unconnected
 until exact recursive/native admission exists. Graph reads stay scalar.
 
-Final main Audio/definition pass 282/171. Both enabled real-WAV stage suites
+Final main Audio/definition pass 284/171. Both enabled real-WAV stage suites
 pass 203; main filters seven unfinished Split cases, isolated filters none.
-Isolated Audio passes 263 plus eight historical PCM cases. All three published
-source files match isolated/staged bytes. Main preserves inherited overlays in
-shared_eq.rs and three corresponding Graph test fixture fields. Guards cover
+Isolated Audio passes 265 plus eight historical PCM cases. Full main/isolated
+Plan pass 553/540 across 29 executables each. All seven published source files
+match isolated/staged bytes. Main preserves its Plan module overlay and prior
+shared_eq/Graph fixture overlays outside the task. Guards cover
 1,428/1,199 inputs. Strict all-target Core/Plan/Audio/Store
 lint and independent review pass; all compiler/test receipts are terminal.
 
-The preceding EQ checkpoint's Split coverage is four pass/three planning-work
-failures in one
-seven-case run. All-owner Source/Sequence cut-three limited 0+511 reports sound
-placement work exhausted; nested selected without root sound, prefix-two
+The fresh Split run keeps four passes/three planning-work failures in one
+seven-case run. All-owner Source/Sequence cut-three limited 0+511 reports plan
+work per read; nested selected without root sound, prefix-two
 limited 0+4096, reports frozen projection work exhausted; one selected play,
 prefix-two limited 0+4096, reports source occurrence construction work.
 Subphases differ from the previous checkpoint; preserve those exact failures.
@@ -60,18 +67,26 @@ inventory. Only four test-only files change after the passing main media runs;
 production and existing integration-test inputs match the final binary.
 Final libraries use rebuilt binaries. Never lower the full native estimate.
 
-The extraction is verified with five new tests and all 14 terminal receipts
+The preceding extraction is verified with five new tests and 14 terminal receipts
 under /tmp/deadpan-node-description-2026-10-28 and its archived inventory.
 The first new headroom assertion was wrong: a bounded diagnostic establishes
 19 billed units but 28 needed, with 27 failing structural work after 19 billed.
-The final test asserts those exact literals without search/logging. This
-exposes an existing retained_at(None) accounting gap, not a new renderer change.
-Split is not rerun for the statement-preserving extraction.
+That checkpoint's final test asserts its exact literals without search/logging.
+The gap is now fixed: success bills all 28 units; 27 still refuses structural
+work after the same 19-unit completed prefix. Failed-query work receipts are
+unchanged. The work-fix evidence has all 19 terminal receipts under
+/tmp/deadpan-retained-probe-work-2026-10-28 and its archived inventory. It retains
+the corrected raw-input PCM fixture, exact InvalidAudioLimits test correction,
+package-qualified 32-target pinning and a 5.104342-second accidental media-suite
+overlap. No verification duration is performance acceptance.
 
-Next charge the actual retained probe work for both Some and None, once, in
-Context::owner_context and PreparedOwnerEqualizer. A separate uncompiled
-candidate is assigned under /tmp/deadpan-retained-probe-work-2026-10-28;
-do not claim it passed or change a cap to absorb honest new accounting.
+Next remove the real duplicate membership query through a sealed, one-sample
+Plan owner-input candidate capability tied to the actual Root/Domain handle.
+Read-only design is in /tmp/deadpan-owner-input-candidates-2026-10-28. Capture
+must consume an actual checked member, preserve Input.work total provenance,
+and bill already-paid query plus capture-only work once. Keep Retained and
+sound fallback behavior; no free key/clock proof or query cache. No candidate
+implementation is qualified yet.
 Read-only allocation research in /tmp/deadpan-context-heap-2026-10-28 covers
 15 pinned sources. Retained-size visitors do not prove constructor peaks;
 before-allocation accounting must cover actual overlapping Plan/Core scratch.

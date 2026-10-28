@@ -447,10 +447,34 @@ fn moved_preserve_input_keeps_its_point_ceil_reference_labels() {
             Default::default(),
         )
         .unwrap();
-    let retained = input
-        .retained_at(AudioSample(0), Default::default())
-        .unwrap()
+    let probe = input
+        .retained_probe_at(AudioSample(0), Default::default())
         .unwrap();
+    assert!(probe.work() > 0);
+    assert_eq!(probe.work(), probe.input().unwrap().work());
+    let work = probe.work();
+    let exact = input
+        .retained_probe_at(
+            AudioSample(0),
+            AudioQueryLimits {
+                maximum_work: work,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    assert_eq!(exact.work(), work);
+    assert!(exact.input().is_some());
+    assert!(matches!(
+        input.retained_probe_at(
+            AudioSample(0),
+            AudioQueryLimits {
+                maximum_work: work - 1,
+                ..Default::default()
+            },
+        ),
+        Err(PlanError::AudioQueryLimit(_))
+    ));
+    let retained = probe.into_input().unwrap();
     let crate::AudioBoundDomain::Point(domain) = retained.domain() else {
         panic!("expected PointCeil reference");
     };
@@ -478,4 +502,63 @@ fn moved_preserve_input_keeps_its_point_ceil_reference_labels() {
             .retained_at(AudioSample(3), Default::default())
             .is_err()
     );
+}
+
+#[test]
+fn retained_probe_reports_positive_none_work_and_preserves_guards() {
+    let doc = document(48_000, &["voice"], vec![("voice", hold(4))]);
+    let plan = RenderPlan::compile(&doc).unwrap();
+    let input = plan
+        .audio_owner_input(
+            &owner(&plan, "voice", 1),
+            AudioSample(1),
+            Default::default(),
+        )
+        .unwrap();
+    let probe = input
+        .retained_probe_at(AudioSample(1), Default::default())
+        .unwrap();
+    assert!(probe.input().is_none());
+    let work = probe.work();
+    assert!(work > 0, "an absent retained operand still required a walk");
+    assert!(probe.into_input().is_none());
+    let exact = AudioQueryLimits {
+        maximum_work: work,
+        ..Default::default()
+    };
+    let exact_probe = input.retained_probe_at(AudioSample(1), exact).unwrap();
+    assert_eq!(exact_probe.work(), work);
+    assert!(exact_probe.into_input().is_none());
+    assert!(input.retained_at(AudioSample(1), exact).unwrap().is_none());
+    assert!(matches!(
+        input.retained_probe_at(
+            AudioSample(1),
+            AudioQueryLimits {
+                maximum_work: work - 1,
+                ..exact
+            },
+        ),
+        Err(PlanError::AudioQueryLimit(_))
+    ));
+    for at in [AudioSample(-1), AudioSample(4)] {
+        assert!(matches!(
+            input.retained_probe_at(at, Default::default()),
+            Err(PlanError::AudioRangeOutOfRange)
+        ));
+        assert!(matches!(
+            input.retained_at(at, Default::default()),
+            Err(PlanError::AudioRangeOutOfRange)
+        ));
+        // Limit validation remains before the existing range guard.
+        assert!(matches!(
+            input.retained_probe_at(
+                at,
+                AudioQueryLimits {
+                    maximum_work: 0,
+                    ..Default::default()
+                },
+            ),
+            Err(PlanError::InvalidAudioLimits)
+        ));
+    }
 }

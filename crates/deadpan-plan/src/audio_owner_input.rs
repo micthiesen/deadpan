@@ -59,14 +59,25 @@ impl<'plan> AudioOwnerInput<'plan> {
         self.work
     }
 
-    /// The first opaque retained input at this context sample, if present.
-    /// Do not descend through an enclosing Preserve to find one: that would
-    /// move post-time/pitch effects into its input. No PCM is opened here.
+    /// Compatibility lookup for consumers that do not account preparation
+    /// work. Controlled preparation should use retained_probe_at instead.
     pub fn retained_at(
         &self,
         at: AudioSample,
         limits: AudioQueryLimits,
     ) -> Result<Option<AudioOwnerRetainedInput<'plan>>, PlanError> {
+        Ok(self.retained_probe_at(at, limits)?.into_input())
+    }
+
+    /// The first opaque retained input at this context sample and the work of
+    /// the same lookup, including a successful lookup that finds no input.
+    /// Do not descend through an enclosing Preserve to find one: that would
+    /// move post-time/pitch effects into its input. No PCM is opened here.
+    pub fn retained_probe_at(
+        &self,
+        at: AudioSample,
+        limits: AudioQueryLimits,
+    ) -> Result<AudioOwnerRetainedProbe<'plan>, PlanError> {
         limits.validate()?;
         if !self.context.root_samples().contains(&at) {
             return Err(PlanError::AudioRangeOutOfRange);
@@ -83,22 +94,48 @@ impl<'plan> AudioOwnerInput<'plan> {
             (true, true),
             &mut editorial,
         )?;
-        match walked {
+        let input = match walked {
             AudioWalkSpan::Stage(span) if matches!(span.content, AudioSignalContent::Bound(_)) => {
                 let AudioSignalContent::Bound(bound) = &span.content else {
                     unreachable!()
                 };
                 let domain = bound.raw_domain()?;
-                Ok(Some(AudioOwnerRetainedInput {
+                Some(AudioOwnerRetainedInput {
                     plan: self.context.plan,
                     processing: span,
                     editorial,
                     domain,
                     work: limits.maximum_work - budget.remaining,
-                }))
+                })
             }
-            _ => Ok(None),
-        }
+            _ => None,
+        };
+        Ok(AudioOwnerRetainedProbe {
+            input,
+            work: limits.maximum_work - budget.remaining,
+        })
+    }
+}
+
+/// Result of one checked retained-input lookup. An absent operand still has
+/// actual traversal work. Owns the same optional input without cloning it.
+#[derive(Debug)]
+pub struct AudioOwnerRetainedProbe<'plan> {
+    input: Option<AudioOwnerRetainedInput<'plan>>,
+    work: usize,
+}
+
+impl<'plan> AudioOwnerRetainedProbe<'plan> {
+    pub fn input(&self) -> Option<&AudioOwnerRetainedInput<'plan>> {
+        self.input.as_ref()
+    }
+
+    pub fn work(&self) -> usize {
+        self.work
+    }
+
+    pub fn into_input(self) -> Option<AudioOwnerRetainedInput<'plan>> {
+        self.input
     }
 }
 

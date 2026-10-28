@@ -77,8 +77,9 @@ impl<'plan> Context<'plan> {
             Self::Retained(input) => return Ok(Self::Retained(input.clone())),
         };
         control.spend_plan_work(input.work())?;
-        if let Some(retained) = input.retained_at(at, control.query_limits()?)? {
-            control.spend_plan_work(retained.work())?;
+        let probe = input.retained_probe_at(at, control.query_limits()?)?;
+        control.spend_plan_work(probe.work())?;
+        if let Some(retained) = probe.into_input() {
             let end = AudioSample(at.0.checked_add(1).ok_or(TimeError::Overflow)?);
             let owners = retained.owners(at..end, control.query_limits()?)?;
             control.spend_plan_work(owners.work())?;

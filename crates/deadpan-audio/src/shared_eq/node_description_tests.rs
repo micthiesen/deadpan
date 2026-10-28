@@ -266,7 +266,7 @@ fn incoming_retained_description_clones_the_exact_input_arc() {
 }
 
 #[test]
-fn metadata_query_headroom_is_distinct_from_completed_billed_work() {
+fn metadata_query_work_bills_the_final_nonretained_probe() {
     let plan = fixture::fixture();
     let owner = fixture::owner(&plan);
     let incoming = Contexts {
@@ -275,9 +275,9 @@ fn metadata_query_headroom_is_distinct_from_completed_billed_work() {
     };
     let kind = Temporal::Equalizer(fixture::stage(&owner));
     let cancelled = AtomicBool::new(false);
-    // The completed metadata queries bill 19 units. The last retained_at(None)
-    // walk additionally needs 9 units of headroom, but reports no work on None.
-    // These measured fixture literals preserve that existing API distinction.
+    // All successful work is now reported: the old 19 completed units plus
+    // the final 9-unit retained lookup that finds no operand. One less still
+    // fails inside that same walk, before a work-bearing result can be returned.
     for remaining in [28, 27] {
         let work = RefCell::new(ReadWork::default());
         let before = MAX_PLAN_WORK_PER_READ - remaining;
@@ -287,10 +287,10 @@ fn metadata_query_headroom_is_distinct_from_completed_billed_work() {
             request(&incoming, &owner, AudioSample(128), kind, false),
             fixture::control(&cancelled, &work),
         );
-        assert_eq!(work.borrow().plan_work - before, 19);
         if remaining == 28 {
             assert!(result.is_ok());
-            assert_eq!(MAX_PLAN_WORK_PER_READ - work.borrow().plan_work, 9);
+            assert_eq!(work.borrow().plan_work - before, 28);
+            assert_eq!(MAX_PLAN_WORK_PER_READ - work.borrow().plan_work, 0);
         } else {
             assert!(matches!(
                 result,
@@ -298,6 +298,7 @@ fn metadata_query_headroom_is_distinct_from_completed_billed_work() {
                     "structural work"
                 )))
             ));
+            assert_eq!(work.borrow().plan_work - before, 19);
             assert_eq!(MAX_PLAN_WORK_PER_READ - work.borrow().plan_work, 8);
         }
     }
@@ -378,4 +379,40 @@ fn overflow_cancellation_and_late_boundary_failure_keep_existing_order() {
         )))
     ));
     assert_eq!(work.borrow().plan_work, valid_work);
+}
+
+#[test]
+fn captured_retained_context_bills_the_probe_once_before_owner_query() {
+    let plan = retained_plan();
+    let owners = plan
+        .audio_gain_owners(AudioSample(128)..AudioSample(129), Default::default())
+        .unwrap();
+    let owner = owners.spans()[0]
+        .owners()
+        .iter()
+        .find(|clock| clock.instance().node.as_str() == "tone")
+        .unwrap();
+    let input = plan
+        .audio_owner_input(owner, AudioSample(128), Default::default())
+        .unwrap();
+    let probe = input
+        .retained_probe_at(AudioSample(128), Default::default())
+        .unwrap();
+    let retained = probe.input().unwrap();
+    let retained_owners = retained
+        .owners(AudioSample(128)..AudioSample(129), Default::default())
+        .unwrap();
+    let expected = input.work() + probe.work() + retained_owners.work();
+    let cancelled = AtomicBool::new(false);
+    let work = RefCell::new(ReadWork::default());
+    let result = Context::Root
+        .owner_context(
+            &plan,
+            owner,
+            AudioSample(128),
+            fixture::control(&cancelled, &work),
+        )
+        .unwrap();
+    assert!(matches!(result, Context::Retained(_)));
+    assert_eq!(work.borrow().plan_work, expected);
 }

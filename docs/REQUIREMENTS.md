@@ -248,6 +248,17 @@ lookup None. Charging that probe, metadata constructor peak admission and
 recursive batching remain owed. The preceding four-pass/three-work-fail Split
 result is not rerun; coverage and requirement/gate completion are unchanged.
 
+The [retained-probe work fix](qualification/retained-probe-work-2026-10-28.md)
+returns work for both present and absent inputs from the same lookup. Both real
+Audio consumers charge it once; prior bodies fail actual 13-versus-22 and
+19-versus-28 accounting assertions. Main/isolated Audio pass 284/265 and full
+Plan pass 553/540 across 29 executables each. Both stage suites pass 203;
+definition/history pass 171/eight. Strict lint and independent review pass.
+All seven staged files equal the isolated final build. The fresh Split run
+stays four pass/three work failures, with exact subphases retained. Metadata
+constructor admission and recursive batching remain open. Coverage and
+requirement/gate completion do not change.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 
