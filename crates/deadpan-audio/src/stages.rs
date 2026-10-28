@@ -74,6 +74,8 @@ mod shared_components;
 mod shared_eq;
 #[path = "shared_mix.rs"]
 mod shared_mix;
+#[path = "sound_context_admission.rs"]
+mod sound_context_admission;
 
 #[path = "owner_equalizer.rs"]
 mod owner_equalizer;
@@ -475,6 +477,8 @@ struct ReadWork {
     projected_preflight: Vec<(stage_projection::ProjectionCacheKey, usize)>,
     intrinsic_preflight: Vec<(Arc<RenderPlan>, AudioStageDescriptor, usize)>,
     projected_resident_frames: u64,
+    // Live current-sound metadata, including temporary constructor storage.
+    sound_context_frames: u64,
     projected_disk_bytes: u64,
 }
 
@@ -2473,6 +2477,7 @@ impl StageAudio {
             if resident
                 + self.active_frames
                 + control.work.borrow().projected_resident_frames
+                + control.work.borrow().sound_context_frames
                 + additional
                 <= u64::from(self.limits.maximum_resident_frames)
                 && disk <= self.limits.maximum_disk_bytes

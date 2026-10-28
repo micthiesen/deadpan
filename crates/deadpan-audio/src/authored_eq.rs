@@ -217,7 +217,9 @@ impl StageAudio {
                 relative_depth,
             })
         })();
-        self.active_frames -= reservation + graph.resident;
+        let graph_resident = graph.resident;
+        drop(graph);
+        self.active_frames -= reservation + graph_resident;
         result
     }
 

@@ -4,6 +4,10 @@
 use super::*;
 use crate::plan::audio_domain::AudioWalkSeed;
 
+#[path = "audio_sound_admission.rs"]
+pub(super) mod admission;
+pub use admission::{AdmittedSoundContext, AudioSoundContextAdmission};
+
 /// A checked current occurrence and its complete sound-processing allocation.
 /// Transparent ancestors may hide this allocation from project delivery.
 /// An enclosing Preserve remains opaque and keeps its complete selected input.
@@ -49,9 +53,23 @@ impl RenderPlan {
         instance: &InstancePath,
         limits: AudioQueryLimits,
     ) -> Result<AudioSoundOwnerContext<'_>, PlanError> {
+        let mut admission = admission::Unmetered;
+        Ok(self
+            .audio_sound_instance_context_admitted(instance, limits, &mut admission)?
+            .into_unmetered())
+    }
+
+    /// Construct the actual current sound context with allocation-site admission.
+    /// The policy controls residency and reports every admitted inspection.
+    pub fn audio_sound_instance_context_admitted<A: AudioSoundContextAdmission>(
+        &self,
+        instance: &InstancePath,
+        limits: AudioQueryLimits,
+        admission: &mut A,
+    ) -> Result<AdmittedSoundContext<'_, A::Issuer, A::Lease>, A::Error> {
         limits.validate()?;
         if instance.repeats.len() > MAX_DOCUMENT_DEPTH {
-            return Err(PlanError::AudioQueryLimit("sound context depth"));
+            return Err(PlanError::AudioQueryLimit("sound context depth").into());
         }
         let node =
             *self
@@ -60,25 +78,23 @@ impl RenderPlan {
                 .ok_or(PlanError::InvalidAudioSourceOccurrence(
                     "sound context owner is absent",
                 ))?;
-        let mut budget = BuildBudget {
-            maximum: limits.maximum_work,
-            remaining: limits.maximum_work,
-            maximum_runs: limits.maximum_spans,
-            runs: 0,
-        };
-        let (edges, _, _) = resolve_edges(self, node, instance, &mut budget)?;
+        let mut build = admission::SoundBuild::new(admission, limits.maximum_work);
+        resolve_edges_admitted(self, node, instance, &mut build)?;
         let mut map = Placement::IDENTITY;
         let mut processing = None;
-        for edge in &edges {
-            budget.spend(1)?;
+        for index in 0..build.values.edges.len() {
+            build.spend(1)?;
+            let edge = &build.values.edges[index];
             if processing.is_none()
                 && matches!(self.nodes[edge.parent].kind,
-                    CompiledKind::Retime { pitch, scale, .. } if pitch.processes(scale == ExactRatio::ONE))
+                    CompiledKind::Retime { pitch, scale, .. }
+                        if pitch.processes(scale == ExactRatio::ONE))
             {
                 processing = Some((edge.parent, map, edge.repeats));
             }
             map = map.compose(edge.map)?;
         }
+        build.drop_edges();
         let (processing_node, processing_map, repeats) =
             processing.unwrap_or((node, map, instance.repeats.len()));
         let extent = processing_map.range(node_support(self, processing_node))?;
@@ -86,19 +102,22 @@ impl RenderPlan {
         let step = ExactRatio::new(
             i128::from(rate.numerator()),
             i128::from(MIX_SAMPLE_RATE) * i128::from(rate.denominator()),
-        )?;
+        )
+        .map_err(PlanError::from)?;
         let grid = AudioSampleGrid::<AudioSample>::new(
             ExactRatio::ZERO,
             step,
             AudioBoundaryRule::RoundEven,
         )?;
-        let samples = grid.boundary(extent.start)?..grid.boundary(extent.end)?;
-        budget.spend(1 + repeats + instance.repeats.len())?;
-        let processing_instance = InstancePath {
-            node: self.nodes[processing_node].inspection.id.clone(),
-            repeats: instance.repeats[..repeats].to_vec(),
-        };
-        let policy = AudioDomain {
+        let samples = grid.boundary(extent.start).map_err(PlanError::from)?
+            ..grid.boundary(extent.end).map_err(PlanError::from)?;
+        build.spend(1 + repeats + instance.repeats.len())?;
+        build.copy_initial_paths(
+            instance,
+            &self.nodes[processing_node].inspection.id,
+            repeats,
+        )?;
+        build.values.domain = Some(AudioDomain {
             plan: self,
             seed: AudioWalkSeed {
                 definition: None,
@@ -115,24 +134,37 @@ impl RenderPlan {
                 constraints: Vec::new(),
                 editorial: Vec::new(),
                 suppress_entry_editorial: Default::default(),
-                repeats: processing_instance.repeats.clone(),
+                repeats: std::mem::take(&mut build.values.seed_repeats),
                 retimes: Vec::new(),
                 gap: None,
             },
             samples: samples.clone(),
             visible: samples,
-            instance: processing_instance.clone(),
+            instance: build
+                .values
+                .policy_instance
+                .take()
+                .expect("constructed path"),
             placement: None,
-        };
-        Ok(AudioSoundOwnerContext {
+        });
+        build.reserve_domain()?;
+        build.values.policy = Some(Arc::new(
+            build.values.domain.take().expect("constructed policy"),
+        ));
+        build.values.context = Some(AudioSoundOwnerContext {
             plan: self,
-            owner: instance.clone(),
+            owner: build.values.owner.take().expect("constructed owner"),
             owner_node: node,
-            policy: Arc::new(policy),
+            policy: build
+                .values
+                .policy
+                .take()
+                .expect("constructed shared policy"),
             processing_node,
-            processing_instance,
-            work: budget.maximum - budget.remaining,
-        })
+            processing_instance: build.values.processing.take().expect("constructed path"),
+            work: build.used(),
+        });
+        Ok(build.finish())
     }
 }
 

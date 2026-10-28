@@ -48,6 +48,13 @@ pub use picture::{Picture, PictureCaption, PictureFraming, PictureSample};
 pub use plan::AudioIntrinsicPreparation;
 pub use plan::PictureOwnerMap;
 pub use plan::{
+    AdmittedSoundContext, AudioSoundContextAdmission, AudioSoundOwnerContext,
+    AudioSoundPermissionFamily, AudioSoundPlacement, AudioSoundPlacementHistory,
+    AudioSoundPlacementHistoryCursor, AudioSoundProcessingHistory, AudioSourceOccurrence,
+    AudioSourceOccurrenceSupport, AudioSourceOccurrenceSupports, AudioSourceOccurrences,
+    AudioSourceVoice, AudioSourceVoiceIdentity, AudioSourceVoiceRecipe,
+};
+pub use plan::{
     AudioBound, AudioBoundDomain, AudioFadeEdge, AudioFadeQuery, AudioFadeSpan, AudioPolicyQuery,
 };
 pub use plan::{
@@ -73,12 +80,6 @@ pub use plan::{
     AudioSignalSpan, AudioStage, AudioStageDescriptor, SignalSample, SignalTransform,
 };
 pub use plan::{
-    AudioSoundOwnerContext, AudioSoundPermissionFamily, AudioSoundPlacement,
-    AudioSoundPlacementHistory, AudioSoundPlacementHistoryCursor, AudioSoundProcessingHistory,
-    AudioSourceOccurrence, AudioSourceOccurrenceSupport, AudioSourceOccurrenceSupports,
-    AudioSourceOccurrences, AudioSourceVoice, AudioSourceVoiceIdentity, AudioSourceVoiceRecipe,
-};
-pub use plan::{
     DefinitionPictureCoverage, DefinitionPictureSample, DefinitionPictureSpan,
     HoldContextUnavailable, MAX_DEFINITION_PICTURE_SPANS, MAX_HOLD_CONTEXT_BATCH,
     MAX_HOLD_CONTEXT_FRAMES, PictureClockSlope, ProviderClockCoverage, ProviderClockSpan,
@@ -95,6 +96,10 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum PlanError {
+    #[error("audio metadata admission issuer differs")]
+    AudioMetadataIssuerMismatch,
+    #[error("current sound processing context changed shape")]
+    AudioSoundContextShapeChanged,
     #[error("authored audio timing bindings are not yet supported by the render walker")]
     UnsupportedAudioBindings,
     #[error("a retained audio context cannot render picture")]

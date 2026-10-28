@@ -271,6 +271,19 @@ artifact is rejected and freshly rebuilt before positive qualification. The
 new Split matrix remains four pass/three work failures with changed subphases.
 Full metadata admission and batching remain open; no criterion or gate closes.
 
+The [current-sound admission](qualification/sound-context-budget-2026-10-28.md)
+reserves actual constructor buffers, Arc payloads and the closed processing
+Domain fallback through real make_room before allocation. Request-local leases
+stay live through Original selection and full native admission, then transfer
+the same charge into Graph residency. Values drop before charges; exact
+request-ledger pointer identity guards handoff. Main/isolated Audio pass
+292/273, full Plan 564/551 across 29 executables each, both stage suites 203
+and definition/history 171/eight. Strict lint and independent review pass;
+all 13 staged sources equal the isolated final source. The fresh Split matrix
+remains four pass/three work failures, with exact changed subphases recorded.
+Original query/capture/Core allocations, node containers and recursive closure
+remain uncovered. No requirement or gate closes; general sound Split stays off.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

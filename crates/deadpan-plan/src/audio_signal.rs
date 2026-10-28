@@ -27,9 +27,9 @@ pub use source_voice::{AudioSourceVoice, AudioSourceVoiceIdentity, AudioSourceVo
 #[path = "audio_source_occurrence.rs"]
 mod source_occurrence;
 pub use source_occurrence::{
-    AudioSoundOwnerContext, AudioSoundPermissionFamily, AudioSoundPlacement,
-    AudioSoundPlacementHistory, AudioSoundPlacementHistoryCursor, AudioSoundProcessingHistory,
-    AudioSourceOccurrence,
+    AdmittedSoundContext, AudioSoundContextAdmission, AudioSoundOwnerContext,
+    AudioSoundPermissionFamily, AudioSoundPlacement, AudioSoundPlacementHistory,
+    AudioSoundPlacementHistoryCursor, AudioSoundProcessingHistory, AudioSourceOccurrence,
 };
 
 #[path = "audio_source_occurrences.rs"]

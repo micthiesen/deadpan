@@ -1,0 +1,2784 @@
+{
+  "schema_version": 1,
+  "base_revision": "806e5a011ebe87ecd4fd6339daa6a2fa8dfef581",
+  "scope": "Closed current-sound metadata admission only: actual AudioSoundOwnerContext construction, its two Arc wrappers, and its closed processing-Domain fallback. No Original/Core/retained input capture, node-container, complete Graph, recursive cold-history, or whole-graph admission claim. Current sound is reserved through real make_room, held by request-local RAII, and transferred to Graph active residency after checked handoff. Exact path/edge/repeat/context allocation sites and associated work are admitted. No caps, weights, cache identity, retries, refunds, or numerical output changes.",
+  "final_correction": "AudioSampleGrid::new uses its PlanError result directly; removed only the redundant identity map_err. ExactRatio errors still convert explicitly to PlanError.",
+  "prior_owner_input_capture_inventory": {
+    "path": "../2026-10-28-owner-input-capture/inventory.json",
+    "inventory_sha256": "72edf14d01dfc710c10436f71c9b9a3dac52cd3fae8edcea563b20750fbbbcd4"
+  },
+  "files": [
+    {
+      "path": "records/task-records/archive.py.gz",
+      "bytes": 2115,
+      "sha256": "747df6e025ed2ccad28724939370b6382a052da587c8b7cf9cc22c87d1106a03",
+      "expanded_bytes": 5422,
+      "expanded_sha256": "cc8e90a59b78ee85006bbf6eaf5c28b067c92f086eb3152b308a250251de5554"
+    },
+    {
+      "path": "records/task-records/audit.md.gz",
+      "bytes": 680,
+      "sha256": "30b772558776c44fa0711db1f05cd5cf894db3b549578a067998aa48c3c2e4e6",
+      "expanded_bytes": 1172,
+      "expanded_sha256": "ab4097d85ac57b56b02764cac62a553652a877719ffa2a378f0d6c00639fc11a"
+    },
+    {
+      "path": "records/task-records/base-revision.txt.gz",
+      "bytes": 59,
+      "sha256": "2d8f38ddc893a0d2c85a6164d8712f5db900e25e8342adaa2f1638b3e675514c",
+      "expanded_bytes": 41,
+      "expanded_sha256": "a73e3a38c5542a3b13e3904473e264f3ae99913c36fb4b20fb7f86cc2e6c5fea"
+    },
+    {
+      "path": "records/task-records/before/crates/deadpan-audio/src/authored_eq.rs.gz",
+      "bytes": 5553,
+      "sha256": "8e5f209d0af324cb321ee379bd1e420f967573e14175e01d53b1baf1bc4a16ba",
+      "expanded_bytes": 24855,
+      "expanded_sha256": "daa833777fb158ff411a5671e3383b5af6755840cf2ad2ce95ef31d23dd04a99"
+    },
+    {
+      "path": "records/task-records/before/crates/deadpan-audio/src/shared_eq/node_description.rs.gz",
+      "bytes": 1686,
+      "sha256": "dbd1d8d6b91c4ad9a12c597f6489d485858647adf1e75843013b23bd099f487a",
+      "expanded_bytes": 4702,
+      "expanded_sha256": "dd6da9fd2d6329d4899c3637aeb332407bdef875b636f51a270ea1bd273cb4d8"
+    },
+    {
+      "path": "records/task-records/before/crates/deadpan-audio/src/shared_eq/node_description_tests.rs.gz",
+      "bytes": 3781,
+      "sha256": "60d0d466bc2cba7a19aac592445814c3687aab483ed0319d6ffc02e6fa3889c1",
+      "expanded_bytes": 18172,
+      "expanded_sha256": "b75a2ef4ca33c3fe8805690f6fec522e67f231078c37d6c67777fe47eb03beba"
+    },
+    {
+      "path": "records/task-records/before/crates/deadpan-audio/src/shared_eq.rs.gz",
+      "bytes": 9118,
+      "sha256": "a6621bb8909e62294f4598b9d3d7bcf4aca17acedc3989a3c3a6eb99e1063eda",
+      "expanded_bytes": 42761,
+      "expanded_sha256": "1bdf125d4efc76ba55f894abe1d8e161c543f9fbb5a3dc1069f893e4d8d009de"
+    },
+    {
+      "path": "records/task-records/before/crates/deadpan-audio/src/stages.rs.gz",
+      "bytes": 28832,
+      "sha256": "49eccef008b20247cd54ea154b19a2391af4d39fa1264ad5abb36cffa1d6bce2",
+      "expanded_bytes": 162927,
+      "expanded_sha256": "f46d5d0423bf1874165e2f0c97d5453aa2e33186982254b9cef226ea2e5e2a83"
+    },
+    {
+      "path": "records/task-records/before/crates/deadpan-plan/src/audio_signal.rs.gz",
+      "bytes": 9733,
+      "sha256": "0e047d8916bf01474a32d051c38a61983fe2e16aa14c8a8cd6d97de78a2f25d3",
+      "expanded_bytes": 51624,
+      "expanded_sha256": "54610f716b794d9c7ee00652eb3c4c83ebc46178f3055a0b9bc74e669f6cf0b8"
+    },
+    {
+      "path": "records/task-records/before/crates/deadpan-plan/src/audio_sound_owner_context.rs.gz",
+      "bytes": 2435,
+      "sha256": "42def4d42891c201d122be616ff51ad156c8ccd0bbd6b69389f06f3d8380be0c",
+      "expanded_bytes": 7573,
+      "expanded_sha256": "0a153b9e8a6fadfdc71db389cc87f26cfbbf582d171b4b5cd5d9eb544d178404"
+    },
+    {
+      "path": "records/task-records/before/crates/deadpan-plan/src/audio_source_occurrence.rs.gz",
+      "bytes": 9523,
+      "sha256": "9a89ba172c6aafff342a2de6dafef32b57850a38a6e78ff22af14db887c6218c",
+      "expanded_bytes": 41877,
+      "expanded_sha256": "64e2a16dcd8389472910530b93116ff87f1d37f9b9d8826d497f3457090694c0"
+    },
+    {
+      "path": "records/task-records/before/crates/deadpan-plan/src/lib.rs.gz",
+      "bytes": 2276,
+      "sha256": "042d72b7b7fc61a5ccbe8e9bd7065aa54ec4337b95b5a592978f65ae03d46281",
+      "expanded_bytes": 7046,
+      "expanded_sha256": "afb5b1afa84505464be1f9040d7561704c665b6e277fce33717c9a6b83219e73"
+    },
+    {
+      "path": "records/task-records/before/crates/deadpan-plan/src/plan.rs.gz",
+      "bytes": 17533,
+      "sha256": "14d9f756a8bb68a080f14ffa3267c2267e2e829236e160c342d033e2ecfd3a4f",
+      "expanded_bytes": 81402,
+      "expanded_sha256": "4df8aa548d92f3d027b89cf33d289bcaf7c31c5213248399d8be4308553812a3"
+    },
+    {
+      "path": "records/task-records/before-pins.json.gz",
+      "bytes": 739,
+      "sha256": "71bd6aa0c6e840a07a09a15a2681d454f6cc4f8cee3f3af3fc60b985a5a3035d",
+      "expanded_bytes": 1907,
+      "expanded_sha256": "9d0b1c85c36f7ffa28b409698dd3622c94be9c2b59c41c059d331caa105c71bd"
+    },
+    {
+      "path": "records/task-records/candidate/crates/deadpan-audio/src/authored_eq.rs.gz",
+      "bytes": 5574,
+      "sha256": "881ac532007fb729fa647f833c675ba1c21e93a15dd2ca98ca58843e656fdce4",
+      "expanded_bytes": 24921,
+      "expanded_sha256": "f2e4c57241a87d171cd035ddd6a8c3e51becff55e555652ae16c7fe83cd3c0a0"
+    },
+    {
+      "path": "records/task-records/candidate/crates/deadpan-audio/src/shared_eq/node_description.rs.gz",
+      "bytes": 2161,
+      "sha256": "40dc61ccdf5aa766f122627ce429ac826f09d9685539a15d415956c98df05f5f",
+      "expanded_bytes": 6321,
+      "expanded_sha256": "c19c8555d9588d75b88edab702b8dfd1f9379e7617a115e90e00400caa41840c"
+    },
+    {
+      "path": "records/task-records/candidate/crates/deadpan-audio/src/shared_eq/node_description_tests.rs.gz",
+      "bytes": 3781,
+      "sha256": "60d0d466bc2cba7a19aac592445814c3687aab483ed0319d6ffc02e6fa3889c1",
+      "expanded_bytes": 18172,
+      "expanded_sha256": "b75a2ef4ca33c3fe8805690f6fec522e67f231078c37d6c67777fe47eb03beba"
+    },
+    {
+      "path": "records/task-records/candidate/crates/deadpan-audio/src/shared_eq/sound_admission_tests.rs.gz",
+      "bytes": 1562,
+      "sha256": "753ccb4aa2659eadd8018df5f4f2b8ef74c090a6195208e18d9198b4019843b2",
+      "expanded_bytes": 5817,
+      "expanded_sha256": "57b5b8ef35c4afffe2f8db14823e41fda9a097161df004bc7c586e4f8ad5671b"
+    },
+    {
+      "path": "records/task-records/candidate/crates/deadpan-audio/src/shared_eq.rs.gz",
+      "bytes": 9513,
+      "sha256": "79cd30dab93c5ef065b9fb7b23e377e24d54cd7aea13a6e1fb3d286828406d4e",
+      "expanded_bytes": 44445,
+      "expanded_sha256": "5f6715cb664fe09991b5da2908d7990f6137f2e9c08ba387e685bdc5cb364dee"
+    },
+    {
+      "path": "records/task-records/candidate/crates/deadpan-audio/src/sound_context_admission.rs.gz",
+      "bytes": 1155,
+      "sha256": "d0da95d0b0f007e6dc79048c78983e40749d37d939a99ba624e0f47c410ed200",
+      "expanded_bytes": 3336,
+      "expanded_sha256": "afef23478b14a0be5d7cb786f9cbb1fdd1acb9fb01cbb2be1ac3eb2258c53a6d"
+    },
+    {
+      "path": "records/task-records/candidate/crates/deadpan-audio/src/sound_context_admission_tests.rs.gz",
+      "bytes": 1495,
+      "sha256": "2271ac97bfb6d9a4402ed01755d19b1b0a6f2240251b200fdc46e5dde7f5ea9e",
+      "expanded_bytes": 5395,
+      "expanded_sha256": "a0164a3d78450f918ad885420fbf9a59ea172d9d6bd8b147cd2235ed12cbdbdf"
+    },
+    {
+      "path": "records/task-records/candidate/crates/deadpan-audio/src/stages.rs.gz",
+      "bytes": 28899,
+      "sha256": "8a56500340a8a6b2c5760ea35bbfbaa6f60497f2138691eadd77c6d9d7db25fe",
+      "expanded_bytes": 163164,
+      "expanded_sha256": "7fa81e333bf6cbfb777d807f3e52f498f415169775f0db0f7d2e552482509e77"
+    },
+    {
+      "path": "records/task-records/candidate/crates/deadpan-plan/src/audio_signal.rs.gz",
+      "bytes": 9749,
+      "sha256": "514b4cc47164c0e64f7cea3fdde991fc4025ff7aba76cbaeaebb7b288bbff3ad",
+      "expanded_bytes": 51674,
+      "expanded_sha256": "6377d133f1c3cd7f094ca37a7b34e013d498b9e75f5b02d9f661170c35c88d3f"
+    },
+    {
+      "path": "records/task-records/candidate/crates/deadpan-plan/src/audio_sound_admission.rs.gz",
+      "bytes": 3843,
+      "sha256": "6308a51790e76faba0b353f8d371afd08bda2cad76815f24a38208cbf7643a49",
+      "expanded_bytes": 16882,
+      "expanded_sha256": "1a7fa1cc809eeae171b3b89fce1c2abb901cbb3f81022932b986d503cd2e1018"
+    },
+    {
+      "path": "records/task-records/candidate/crates/deadpan-plan/src/audio_sound_admission_tests.rs.gz",
+      "bytes": 3049,
+      "sha256": "e814b1ada144b9ca596c76bb9779d8ff862d7641043d8bd478eb26ba951d3756",
+      "expanded_bytes": 12094,
+      "expanded_sha256": "615035857fb79278bcf3ba1e9e31913662c70656e253997568fe13b06407715c"
+    },
+    {
+      "path": "records/task-records/candidate/crates/deadpan-plan/src/audio_sound_owner_context.rs.gz",
+      "bytes": 2764,
+      "sha256": "2735111baad4c4d7af1fe8215485db5c54af48d49ac1fa03484fd18ddb4b86db",
+      "expanded_bytes": 8938,
+      "expanded_sha256": "b4f32785a80e78789305b83b6b3b9c028f3eeb97584c1fe693091ca8ab25623f"
+    },
+    {
+      "path": "records/task-records/candidate/crates/deadpan-plan/src/audio_source_occurrence.rs.gz",
+      "bytes": 9849,
+      "sha256": "cb63dc5b01490058bce2742857722aff70ff4c0f13962bc31243a32aee271567",
+      "expanded_bytes": 43308,
+      "expanded_sha256": "efa505472571100624ba27e6be4a140a2dd574a5f51f39123ca20c96e324038f"
+    },
+    {
+      "path": "records/task-records/candidate/crates/deadpan-plan/src/lib.rs.gz",
+      "bytes": 2350,
+      "sha256": "329c4752490317c4ee0a8a47fe73731ff33b510a5096cc80357bdafd9bae2874",
+      "expanded_bytes": 7287,
+      "expanded_sha256": "200ab175893020c8bcfcfe531735c048db1f9a1f5b1ebe77fed0f13732d12e81"
+    },
+    {
+      "path": "records/task-records/candidate/crates/deadpan-plan/src/plan.rs.gz",
+      "bytes": 17533,
+      "sha256": "14d9f756a8bb68a080f14ffa3267c2267e2e829236e160c342d033e2ecfd3a4f",
+      "expanded_bytes": 81402,
+      "expanded_sha256": "4df8aa548d92f3d027b89cf33d289bcaf7c31c5213248399d8be4308553812a3"
+    },
+    {
+      "path": "records/task-records/candidate-sha256.txt.gz",
+      "bytes": 684,
+      "sha256": "c25fa40497e72196df37aa647b0635a1879f9fd276ee8cfb65a37351dc02f62f",
+      "expanded_bytes": 1475,
+      "expanded_sha256": "a6c0f83e491f15a563b1eb2941cc5719ebed097060a3f6b8055cb9931ea5bcc9"
+    },
+    {
+      "path": "records/task-records/create_plan.py.gz",
+      "bytes": 2727,
+      "sha256": "27d633f4f08a898610ce394d6f78f3d0f5660b7ce855dfc59d742b823700806d",
+      "expanded_bytes": 9067,
+      "expanded_sha256": "39345183ef98a93d4e8638c88ccbb142268200ae69a20890867a9ddfcbdf2dc9"
+    },
+    {
+      "path": "records/task-records/edit_audio.py.gz",
+      "bytes": 2450,
+      "sha256": "4c729a091ae82aab2c7912e554ae57865ad1a4070d67509b989ba65174594e05",
+      "expanded_bytes": 8094,
+      "expanded_sha256": "65fc00ec57182e1d67eeda8858b1691977333c0237da4df2d8d334d8b1097ee5"
+    },
+    {
+      "path": "records/task-records/final-audit.json.gz",
+      "bytes": 1115,
+      "sha256": "584f995f109541dcae4f9ebf61c4f18acaf271f46cdb791f288aec3f6ccc3224",
+      "expanded_bytes": 3691,
+      "expanded_sha256": "76863037b9525733a846c1bd1cd1f29c167529d78deea21620afa6ffceadad6a"
+    },
+    {
+      "path": "records/task-records/final-pins.json.gz",
+      "bytes": 1280,
+      "sha256": "4993f8de884bb2b19ba23b9f02ce4a66c0e78d0c48bd2cdc5bb68bbd2a5efcf7",
+      "expanded_bytes": 3375,
+      "expanded_sha256": "afd4646ee913278201b6bcd5d83b832e93fe59127336f452ea49256f186e2f8a"
+    },
+    {
+      "path": "records/task-records/final_audit.py.gz",
+      "bytes": 685,
+      "sha256": "2225780d23a0333505f527415111041f1bb53b6626d6f3e08576599ec1de3720",
+      "expanded_bytes": 1626,
+      "expanded_sha256": "b19248f60cf4651645c0c00986a8042acb9816c003d98e838da9bf627ad24d02"
+    },
+    {
+      "path": "records/task-records/finalize.py.gz",
+      "bytes": 1802,
+      "sha256": "53722fce405e7cf6286ca65128589055342da85dba5dd201a4e45d798387cad8",
+      "expanded_bytes": 3870,
+      "expanded_sha256": "0cdc74ede041d6e408dc45d0640469ebc02230025bfad9f72964e3240f650257"
+    },
+    {
+      "path": "records/task-records/independent-review.md.gz",
+      "bytes": 1591,
+      "sha256": "1e7f8ddc74794171a0a251333b2c9d5d9317707faf6541efb4cf9ab7fcfea54d",
+      "expanded_bytes": 3184,
+      "expanded_sha256": "3affd6533a118e0bbc61724a29d2f0940c376b7d43b13056f7471b07e04883d2"
+    },
+    {
+      "path": "records/task-records/index-source-entries.txt.gz",
+      "bytes": 525,
+      "sha256": "8bd714501cdfcc8424b5cf665c3572350c20d214359cc018c6d657702055985c",
+      "expanded_bytes": 1267,
+      "expanded_sha256": "6a16fd8cd0a9bbd03cb1fdbe06fedf5caae0ec48ac1fafc0b7197abb749d2883"
+    },
+    {
+      "path": "records/task-records/index-source-equality.json.gz",
+      "bytes": 1128,
+      "sha256": "937f6f96b0433c03f0b59f7ffb56d2cd00f194820763ca838550e3e46dcdb6ba",
+      "expanded_bytes": 3078,
+      "expanded_sha256": "d14fbb7980d6a8dc0834774516f03923e8a232017b52eaf3e707627420e41d8f"
+    },
+    {
+      "path": "records/task-records/index-source-paths.txt.gz",
+      "bytes": 160,
+      "sha256": "5c27c822ee79274717e8ba9506a979ed3d1c0e480807de7e4d79771282a9a346",
+      "expanded_bytes": 617,
+      "expanded_sha256": "9d3844d18e9db0d80219920e3b85b158bff636fe3ec590fa211877fb1f59c63f"
+    },
+    {
+      "path": "records/task-records/lint-correction/before.json.gz",
+      "bytes": 166,
+      "sha256": "a687130a6c6afd3fdf69de721e8d012659c343da4a0b7f6032bd0c6c63274822",
+      "expanded_bytes": 177,
+      "expanded_sha256": "543c4aa8ccbf853c71dbfbc5dc59e910e165bdfdf5a3df85b7c2d58224714ae8"
+    },
+    {
+      "path": "records/task-records/lint-correction/before.rs.gz",
+      "bytes": 2764,
+      "sha256": "2735111baad4c4d7af1fe8215485db5c54af48d49ac1fa03484fd18ddb4b86db",
+      "expanded_bytes": 8938,
+      "expanded_sha256": "b4f32785a80e78789305b83b6b3b9c028f3eeb97584c1fe693091ca8ab25623f"
+    },
+    {
+      "path": "records/task-records/lint-correction/correction.patch.gz",
+      "bytes": 256,
+      "sha256": "9738cf9ab141dcefc6516dbeede23a1aab4cc7b1d5170e290ffda8875b1de85f",
+      "expanded_bytes": 498,
+      "expanded_sha256": "e76bef59ca95305fa5bb9e4c69449831d01cf7ce2ea4266ef5c4df4dae530ac2"
+    },
+    {
+      "path": "records/task-records/lint-correction/final.rs.gz",
+      "bytes": 2764,
+      "sha256": "9d6ac86330f678c2146e430b032afd9c4136abb6fff274a3cf4585b373c79d28",
+      "expanded_bytes": 8904,
+      "expanded_sha256": "4e5f6ae32b4b163f1d35a2596119b63c24abd142b79743b0f4d11c0b08e2233f"
+    },
+    {
+      "path": "records/task-records/notes.md.gz",
+      "bytes": 2713,
+      "sha256": "289ccbe654a6e99061ac1894d8e1de242d61162f88553bc34d655803c4aba8c7",
+      "expanded_bytes": 5583,
+      "expanded_sha256": "71ee435760af30d5fe05821a57383644468fac776524a165aa7aee7329708582"
+    },
+    {
+      "path": "records/task-records/pin.py.gz",
+      "bytes": 689,
+      "sha256": "6367e3274daf71f1c838d4bf90615b2e141d5bad9186a8b3fb0d12d4b283b209",
+      "expanded_bytes": 1413,
+      "expanded_sha256": "8b0b2f5bdd5779be2eb4eb737284503c279704b664d058a06322b7f04852b5b3"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/audio_bindings.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/audio_bindings.stdout.gz",
+      "bytes": 200,
+      "sha256": "6788e62b744cc513d7bb8e223b674c575dc19304925a423cc6a36982bff9d284",
+      "expanded_bytes": 285,
+      "expanded_sha256": "33b4ae5e78892587a55ad4ed1d1cd5c4dc2b8a49692bc912dfcd2c69d4bca479"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/audio_context.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/audio_context.stdout.gz",
+      "bytes": 243,
+      "sha256": "538e10fa53e93b7a48e767042b86a2788d3ef87bdf890c913fd69078efe2283d",
+      "expanded_bytes": 373,
+      "expanded_sha256": "6eabb4877233072234e4e278b6aa2bc77545394b419e5823d84f40b2976aef2f"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/audio_definition.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/audio_definition.stdout.gz",
+      "bytes": 1570,
+      "sha256": "1bcb7866022540872308b2bc7e6c999a184bbb186fd9518ce8eed081f58f772f",
+      "expanded_bytes": 5126,
+      "expanded_sha256": "c003a1a7acc2ec4fb4766679a73a0e29e16603d8b6de249e70e51da4673449b3"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/audio_domain.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/audio_domain.stdout.gz",
+      "bytes": 405,
+      "sha256": "4ad888e8a7190b59e89a627f45c73c3c51b9454a43b58f08298fd03308dfd6a6",
+      "expanded_bytes": 749,
+      "expanded_sha256": "88a4a3d6d13b65ec37192adacb3edcbcdd2bb4cf9af937fdd49bd626c3131759"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/audio_fades.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/audio_fades.stdout.gz",
+      "bytes": 728,
+      "sha256": "b642e9f65cb65f90eaa26ab7b3ae28b40650c8ee032d856a8d6d390736246ce8",
+      "expanded_bytes": 1572,
+      "expanded_sha256": "ad8809ee678d99f3d865fb34b35f20d0d52cafa3fb0602480df110742f982374"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/audio_plan.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/audio_plan.stdout.gz",
+      "bytes": 839,
+      "sha256": "0276941b904dd13669f2dc2ba5053560da2494a4aa565f216ace6116f610671d",
+      "expanded_bytes": 1964,
+      "expanded_sha256": "385577ca5f3ae892988f87ff1ba0c080de09f6966cc057f5837a28815d833076"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/audio_policy.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/audio_policy.stdout.gz",
+      "bytes": 155,
+      "sha256": "7e983fc2d43a41128ba57d4990b80f867e71001c8b6d20ec188690ea6875c92e",
+      "expanded_bytes": 195,
+      "expanded_sha256": "c9764f66006c16885ef44bf898dabd88faa4f2b388a7be3f07db9c51ff8caac2"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/audio_reference.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/audio_reference.stdout.gz",
+      "bytes": 788,
+      "sha256": "946004df7e24d974dcfc7ade05cba7d563bca3f940f5c315599f497a7e9b8597",
+      "expanded_bytes": 1818,
+      "expanded_sha256": "2cff655eca7ff8cb33ef7201dfb804529c5316ddebd1b64f1e2d813d1785fb06"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/audio_signal.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/audio_signal.stdout.gz",
+      "bytes": 704,
+      "sha256": "dd823102e4f19567813f0685af9cfa02ba79b920420f87b7d854d0834a2f8590",
+      "expanded_bytes": 1537,
+      "expanded_sha256": "6b56c0d365ece00c1764ab0305099ddfb95fada8151d3dbc5651973851c3d24e"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/audio_tape.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/audio_tape.stdout.gz",
+      "bytes": 521,
+      "sha256": "bbe9e291974426144b1b3521e1d38b93b69c65c56bf198eac45c4db8b0c824ad",
+      "expanded_bytes": 1085,
+      "expanded_sha256": "f41c22ce41abef73438f2237d98aa29a7ae38c7c6d3a4b4dd8e32338985da9a1"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/deadpan_plan.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/deadpan_plan.stdout.gz",
+      "bytes": 3506,
+      "sha256": "694c9ea9ee14eb8b03e475c6556b7fa4146aac6b87e6ae541e27bb1e5509f197",
+      "expanded_bytes": 13298,
+      "expanded_sha256": "90a6a52832829692a8144c0d23237ef3add542c607c01b15b9e6eb592d3e2963"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/edited_slice.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/edited_slice.stdout.gz",
+      "bytes": 657,
+      "sha256": "233c28bdedf6b06416dcc583197f61346411c5a8c824c06fb8d11f97ef1900c0",
+      "expanded_bytes": 1525,
+      "expanded_sha256": "9a70e91277997621b5c22991ed35b8193c65d21827f6f2c8add95d5b67e5a39b"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/gap_bindings.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/gap_bindings.stdout.gz",
+      "bytes": 235,
+      "sha256": "dba961a68d786ee60ce18f94f2e21b0796f6ceb6ea245885b2e1c73692faf277",
+      "expanded_bytes": 361,
+      "expanded_sha256": "ee02ad2746528d01a9efaabd11a7d07e0c259f45cd585577263766dffb2ba5e6"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/gap_branches.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/gap_branches.stdout.gz",
+      "bytes": 257,
+      "sha256": "603fa9514e016504515be7a133c3b704e5d2612e46d7fd9672fe584f5e6f726e",
+      "expanded_bytes": 424,
+      "expanded_sha256": "a238114768bdc4d90233b42d6feb0fbd4d441725809b6c4d6b11ed0e030c17bf"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/hold_policy.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/hold_policy.stdout.gz",
+      "bytes": 456,
+      "sha256": "3755338ddb01cc93b3f96a0afd5f357c7242e2a1e0f5ed4068451e00ec7ba2ac",
+      "expanded_bytes": 902,
+      "expanded_sha256": "23c85cb058022170cab4b6363fbc23e432ca967e64a91cfeb5d5cad6461bd71c"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/intrinsic_preparation.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/intrinsic_preparation.stdout.gz",
+      "bytes": 478,
+      "sha256": "63d1a8a9920091b4e90148acec6b4013a6b5af461d2f45fcb9a82fd883fdfd49",
+      "expanded_bytes": 970,
+      "expanded_sha256": "54310e54a1f638e3dc018e704a788f60aae95c95b5f66a05c2af3d9de69ed9ad"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/occurrence_edits.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/occurrence_edits.stdout.gz",
+      "bytes": 263,
+      "sha256": "c6498df578c7e1805b029ca62c303133e4c163cbf55342173d05feee3516cd91",
+      "expanded_bytes": 471,
+      "expanded_sha256": "5e1394a9a72f285431c0683c839b3785188347d13950caa5b7b125811cef1235"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/picture_plan.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/picture_plan.stdout.gz",
+      "bytes": 4093,
+      "sha256": "d07722f12adcc283b5fca0fd046bbb47b3fc72d51de663c12c9828233c002838",
+      "expanded_bytes": 13800,
+      "expanded_sha256": "cc0a33fe9dd2d90603103f7f8e3738ab8b224c2464b1f46aefd4e33f83987d79"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/play_overrides.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/play_overrides.stdout.gz",
+      "bytes": 311,
+      "sha256": "1662d10e1fe5fb1464589a1cba111ad6b95f619ff88def08b2bbbd197b13001c",
+      "expanded_bytes": 528,
+      "expanded_sha256": "c5bbcc9b096fd9ccacb6ef186ce723c805b7ccc6bb48fbbd1139118290a6f024"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/results.json.gz",
+      "bytes": 1934,
+      "sha256": "dd8564520ff6e905d8db2e740062982f698a1fd052f967d744726f4e4afaef38",
+      "expanded_bytes": 12079,
+      "expanded_sha256": "bb9b57f30114a249d78ee0d7502d9b8d7b73f4125d6add820d162d2ba93ef577"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/root_sound_routes.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/root_sound_routes.stdout.gz",
+      "bytes": 836,
+      "sha256": "eaa85c5aa65687b462d5e1179eb961421f13d4dab62691b15d6189ab567c826d",
+      "expanded_bytes": 1912,
+      "expanded_sha256": "7f16812f3d224ffe0bd109b240deb4dd98d9137e70600db80823fef00b1853da"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/routed_voice.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/routed_voice.stdout.gz",
+      "bytes": 452,
+      "sha256": "4a434a3e0785dda47c239bda747e2b8da75e0f415d347a5597379e250e65d95d",
+      "expanded_bytes": 994,
+      "expanded_sha256": "192f33947938cfdbe3d56ae4bc044759556467504f0d7b0f0d21de56c222e7a6"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/selected_video_window.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/selected_video_window.stdout.gz",
+      "bytes": 714,
+      "sha256": "b71139504db213e7d50caa0f951ffdac9bd36e35854b6bf9d7257ec4b996b0b5",
+      "expanded_bytes": 1699,
+      "expanded_sha256": "9a5a0f61034cd8cbf02d7fa1ffaa2fc319abe9d3450ec3b905e3e2cb9dd6018e"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/sound_event_fades.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/sound_event_fades.stdout.gz",
+      "bytes": 402,
+      "sha256": "f43bb7054f3e69c0b2d6ec12f7e892170d1053bfc326a587f7a188df4a38f7d5",
+      "expanded_bytes": 776,
+      "expanded_sha256": "55bc052a3e706e39cd051bba8fae618f69eb1e3a520b28787610bec2ea8084a4"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/sound_events.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/sound_events.stdout.gz",
+      "bytes": 194,
+      "sha256": "6e9de3dc35f50fb8db65dff01696046a4549ff0ad4142b041ad8ff082376b0f0",
+      "expanded_bytes": 281,
+      "expanded_sha256": "1c5ac72467d68c8a88b83f74ca56f7836a22645d96f0eb03b369ec5e96c6e747"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/sound_plan_binding.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/sound_plan_binding.stdout.gz",
+      "bytes": 272,
+      "sha256": "701cbd2972e54ea1a8f639ce9a27b2ecfff49abb2a3d9ea84d3af3e096ef5624",
+      "expanded_bytes": 524,
+      "expanded_sha256": "bb9d8a8265bed60d80e9db3c434b6171ce38bc8bdd3434ebaca6a15e54cba28d"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/sound_processing_layout.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/sound_processing_layout.stdout.gz",
+      "bytes": 303,
+      "sha256": "c25396d5a944e322320144e7a7cbbc2113ef9d6b68d0dedcf64cb7d3c8844acd",
+      "expanded_bytes": 534,
+      "expanded_sha256": "fba579b0aa7fac152999170fbc82eb0f1c3d608263e8a89e0d47c66b51129ae8"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/sound_route_sampling.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/sound_route_sampling.stdout.gz",
+      "bytes": 707,
+      "sha256": "ce8992559400ac2ae4b2353d94d1ea8f7f5bc83fc87263d26336e80792e36d48",
+      "expanded_bytes": 1577,
+      "expanded_sha256": "e1bf26420e99536674ffb16191a8e3f7c96748a9aa7e1c51537435b2563e602d"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/source_voice.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/source_voice.stdout.gz",
+      "bytes": 275,
+      "sha256": "965f8a693dcf24562f545b3ebf0e7dd62ea85a1ac6358b488f25a859ddd4f345",
+      "expanded_bytes": 437,
+      "expanded_sha256": "dbbccde4e8bde1b63a1cc62d36b156056c2039017c73a1aa28730c8cda6b8704"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/source_voice_policy.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-build/source_voice_policy.stdout.gz",
+      "bytes": 341,
+      "sha256": "17bf2a5df029e1aa101da2682b8ce4352e60c85202fc6c10ab5eae461c85a96d",
+      "expanded_bytes": 588,
+      "expanded_sha256": "291ecfa4f76c32ca8bcda3eaed704d22ffcb94959df44ebb590161bb28b55f7b"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/audio_bindings.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/audio_bindings.stdout.gz",
+      "bytes": 200,
+      "sha256": "6788e62b744cc513d7bb8e223b674c575dc19304925a423cc6a36982bff9d284",
+      "expanded_bytes": 285,
+      "expanded_sha256": "33b4ae5e78892587a55ad4ed1d1cd5c4dc2b8a49692bc912dfcd2c69d4bca479"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/audio_context.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/audio_context.stdout.gz",
+      "bytes": 243,
+      "sha256": "538e10fa53e93b7a48e767042b86a2788d3ef87bdf890c913fd69078efe2283d",
+      "expanded_bytes": 373,
+      "expanded_sha256": "6eabb4877233072234e4e278b6aa2bc77545394b419e5823d84f40b2976aef2f"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/audio_definition.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/audio_definition.stdout.gz",
+      "bytes": 1570,
+      "sha256": "1bcb7866022540872308b2bc7e6c999a184bbb186fd9518ce8eed081f58f772f",
+      "expanded_bytes": 5126,
+      "expanded_sha256": "c003a1a7acc2ec4fb4766679a73a0e29e16603d8b6de249e70e51da4673449b3"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/audio_domain.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/audio_domain.stdout.gz",
+      "bytes": 405,
+      "sha256": "4ad888e8a7190b59e89a627f45c73c3c51b9454a43b58f08298fd03308dfd6a6",
+      "expanded_bytes": 749,
+      "expanded_sha256": "88a4a3d6d13b65ec37192adacb3edcbcdd2bb4cf9af937fdd49bd626c3131759"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/audio_fades.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/audio_fades.stdout.gz",
+      "bytes": 728,
+      "sha256": "b642e9f65cb65f90eaa26ab7b3ae28b40650c8ee032d856a8d6d390736246ce8",
+      "expanded_bytes": 1572,
+      "expanded_sha256": "ad8809ee678d99f3d865fb34b35f20d0d52cafa3fb0602480df110742f982374"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/audio_plan.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/audio_plan.stdout.gz",
+      "bytes": 839,
+      "sha256": "0276941b904dd13669f2dc2ba5053560da2494a4aa565f216ace6116f610671d",
+      "expanded_bytes": 1964,
+      "expanded_sha256": "385577ca5f3ae892988f87ff1ba0c080de09f6966cc057f5837a28815d833076"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/audio_policy.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/audio_policy.stdout.gz",
+      "bytes": 155,
+      "sha256": "7e983fc2d43a41128ba57d4990b80f867e71001c8b6d20ec188690ea6875c92e",
+      "expanded_bytes": 195,
+      "expanded_sha256": "c9764f66006c16885ef44bf898dabd88faa4f2b388a7be3f07db9c51ff8caac2"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/audio_reference.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/audio_reference.stdout.gz",
+      "bytes": 788,
+      "sha256": "946004df7e24d974dcfc7ade05cba7d563bca3f940f5c315599f497a7e9b8597",
+      "expanded_bytes": 1818,
+      "expanded_sha256": "2cff655eca7ff8cb33ef7201dfb804529c5316ddebd1b64f1e2d813d1785fb06"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/audio_signal.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/audio_signal.stdout.gz",
+      "bytes": 704,
+      "sha256": "dd823102e4f19567813f0685af9cfa02ba79b920420f87b7d854d0834a2f8590",
+      "expanded_bytes": 1537,
+      "expanded_sha256": "6b56c0d365ece00c1764ab0305099ddfb95fada8151d3dbc5651973851c3d24e"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/audio_tape.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/audio_tape.stdout.gz",
+      "bytes": 522,
+      "sha256": "c1ac025e04a61506964399007eae8e76c5b3c5fe35fbf8d15ce84b2cfec02a4a",
+      "expanded_bytes": 1085,
+      "expanded_sha256": "bc073bfd87592e4d53ec3bece9282ab453c38d4a6d5d6acf676324cca4224f56"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/deadpan_plan.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/deadpan_plan.stdout.gz",
+      "bytes": 3506,
+      "sha256": "694c9ea9ee14eb8b03e475c6556b7fa4146aac6b87e6ae541e27bb1e5509f197",
+      "expanded_bytes": 13298,
+      "expanded_sha256": "90a6a52832829692a8144c0d23237ef3add542c607c01b15b9e6eb592d3e2963"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/edited_slice.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/edited_slice.stdout.gz",
+      "bytes": 657,
+      "sha256": "233c28bdedf6b06416dcc583197f61346411c5a8c824c06fb8d11f97ef1900c0",
+      "expanded_bytes": 1525,
+      "expanded_sha256": "9a70e91277997621b5c22991ed35b8193c65d21827f6f2c8add95d5b67e5a39b"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/gap_bindings.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/gap_bindings.stdout.gz",
+      "bytes": 235,
+      "sha256": "dba961a68d786ee60ce18f94f2e21b0796f6ceb6ea245885b2e1c73692faf277",
+      "expanded_bytes": 361,
+      "expanded_sha256": "ee02ad2746528d01a9efaabd11a7d07e0c259f45cd585577263766dffb2ba5e6"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/gap_branches.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/gap_branches.stdout.gz",
+      "bytes": 257,
+      "sha256": "603fa9514e016504515be7a133c3b704e5d2612e46d7fd9672fe584f5e6f726e",
+      "expanded_bytes": 424,
+      "expanded_sha256": "a238114768bdc4d90233b42d6feb0fbd4d441725809b6c4d6b11ed0e030c17bf"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/hold_policy.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/hold_policy.stdout.gz",
+      "bytes": 456,
+      "sha256": "3755338ddb01cc93b3f96a0afd5f357c7242e2a1e0f5ed4068451e00ec7ba2ac",
+      "expanded_bytes": 902,
+      "expanded_sha256": "23c85cb058022170cab4b6363fbc23e432ca967e64a91cfeb5d5cad6461bd71c"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/intrinsic_preparation.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/intrinsic_preparation.stdout.gz",
+      "bytes": 478,
+      "sha256": "63d1a8a9920091b4e90148acec6b4013a6b5af461d2f45fcb9a82fd883fdfd49",
+      "expanded_bytes": 970,
+      "expanded_sha256": "54310e54a1f638e3dc018e704a788f60aae95c95b5f66a05c2af3d9de69ed9ad"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/occurrence_edits.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/occurrence_edits.stdout.gz",
+      "bytes": 263,
+      "sha256": "c6498df578c7e1805b029ca62c303133e4c163cbf55342173d05feee3516cd91",
+      "expanded_bytes": 471,
+      "expanded_sha256": "5e1394a9a72f285431c0683c839b3785188347d13950caa5b7b125811cef1235"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/picture_plan.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/picture_plan.stdout.gz",
+      "bytes": 4093,
+      "sha256": "7dab72459caa596d65526e570bde9fb1953361d9ab067390ce32bec9c608e809",
+      "expanded_bytes": 13800,
+      "expanded_sha256": "cf020895b24662f99844a835073ffce9d2d1fdc4503a5aa90c2af13d26679e39"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/play_overrides.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/play_overrides.stdout.gz",
+      "bytes": 311,
+      "sha256": "1662d10e1fe5fb1464589a1cba111ad6b95f619ff88def08b2bbbd197b13001c",
+      "expanded_bytes": 528,
+      "expanded_sha256": "c5bbcc9b096fd9ccacb6ef186ce723c805b7ccc6bb48fbbd1139118290a6f024"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/results.json.gz",
+      "bytes": 1951,
+      "sha256": "07e9e49d6e87712cbc1017ba0ae0c54278550fafe917afa3272bb33a1ee4b457",
+      "expanded_bytes": 12253,
+      "expanded_sha256": "2ccc4ff3b90c022236814298fbf0d2f849d34d3a9cec103ee03e8086bde4ee48"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/root_sound_routes.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/root_sound_routes.stdout.gz",
+      "bytes": 836,
+      "sha256": "eaa85c5aa65687b462d5e1179eb961421f13d4dab62691b15d6189ab567c826d",
+      "expanded_bytes": 1912,
+      "expanded_sha256": "7f16812f3d224ffe0bd109b240deb4dd98d9137e70600db80823fef00b1853da"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/routed_voice.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/routed_voice.stdout.gz",
+      "bytes": 452,
+      "sha256": "4a434a3e0785dda47c239bda747e2b8da75e0f415d347a5597379e250e65d95d",
+      "expanded_bytes": 994,
+      "expanded_sha256": "192f33947938cfdbe3d56ae4bc044759556467504f0d7b0f0d21de56c222e7a6"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/selected_video_window.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/selected_video_window.stdout.gz",
+      "bytes": 714,
+      "sha256": "b71139504db213e7d50caa0f951ffdac9bd36e35854b6bf9d7257ec4b996b0b5",
+      "expanded_bytes": 1699,
+      "expanded_sha256": "9a5a0f61034cd8cbf02d7fa1ffaa2fc319abe9d3450ec3b905e3e2cb9dd6018e"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/sound_event_fades.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/sound_event_fades.stdout.gz",
+      "bytes": 402,
+      "sha256": "f43bb7054f3e69c0b2d6ec12f7e892170d1053bfc326a587f7a188df4a38f7d5",
+      "expanded_bytes": 776,
+      "expanded_sha256": "55bc052a3e706e39cd051bba8fae618f69eb1e3a520b28787610bec2ea8084a4"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/sound_events.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/sound_events.stdout.gz",
+      "bytes": 194,
+      "sha256": "6e9de3dc35f50fb8db65dff01696046a4549ff0ad4142b041ad8ff082376b0f0",
+      "expanded_bytes": 281,
+      "expanded_sha256": "1c5ac72467d68c8a88b83f74ca56f7836a22645d96f0eb03b369ec5e96c6e747"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/sound_plan_binding.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/sound_plan_binding.stdout.gz",
+      "bytes": 272,
+      "sha256": "701cbd2972e54ea1a8f639ce9a27b2ecfff49abb2a3d9ea84d3af3e096ef5624",
+      "expanded_bytes": 524,
+      "expanded_sha256": "bb9d8a8265bed60d80e9db3c434b6171ce38bc8bdd3434ebaca6a15e54cba28d"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/sound_processing_layout.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/sound_processing_layout.stdout.gz",
+      "bytes": 303,
+      "sha256": "c25396d5a944e322320144e7a7cbbc2113ef9d6b68d0dedcf64cb7d3c8844acd",
+      "expanded_bytes": 534,
+      "expanded_sha256": "fba579b0aa7fac152999170fbc82eb0f1c3d608263e8a89e0d47c66b51129ae8"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/sound_route_sampling.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/sound_route_sampling.stdout.gz",
+      "bytes": 707,
+      "sha256": "ce8992559400ac2ae4b2353d94d1ea8f7f5bc83fc87263d26336e80792e36d48",
+      "expanded_bytes": 1577,
+      "expanded_sha256": "e1bf26420e99536674ffb16191a8e3f7c96748a9aa7e1c51537435b2563e602d"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/source_voice.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/source_voice.stdout.gz",
+      "bytes": 275,
+      "sha256": "965f8a693dcf24562f545b3ebf0e7dd62ea85a1ac6358b488f25a859ddd4f345",
+      "expanded_bytes": 437,
+      "expanded_sha256": "dbbccde4e8bde1b63a1cc62d36b156056c2039017c73a1aa28730c8cda6b8704"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/source_voice_policy.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-final-build/source_voice_policy.stdout.gz",
+      "bytes": 341,
+      "sha256": "17bf2a5df029e1aa101da2682b8ce4352e60c85202fc6c10ab5eae461c85a96d",
+      "expanded_bytes": 588,
+      "expanded_sha256": "291ecfa4f76c32ca8bcda3eaed704d22ffcb94959df44ebb590161bb28b55f7b"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/audio_bindings.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/audio_bindings.stdout.gz",
+      "bytes": 200,
+      "sha256": "6788e62b744cc513d7bb8e223b674c575dc19304925a423cc6a36982bff9d284",
+      "expanded_bytes": 285,
+      "expanded_sha256": "33b4ae5e78892587a55ad4ed1d1cd5c4dc2b8a49692bc912dfcd2c69d4bca479"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/audio_context.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/audio_context.stdout.gz",
+      "bytes": 243,
+      "sha256": "538e10fa53e93b7a48e767042b86a2788d3ef87bdf890c913fd69078efe2283d",
+      "expanded_bytes": 373,
+      "expanded_sha256": "6eabb4877233072234e4e278b6aa2bc77545394b419e5823d84f40b2976aef2f"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/audio_definition.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/audio_definition.stdout.gz",
+      "bytes": 1570,
+      "sha256": "fe8a67fd3c1ccd2aed423ac4adb65fbfecff4e16ac9ff71689c7bbab74adb68d",
+      "expanded_bytes": 5126,
+      "expanded_sha256": "e534090293d73178482972b3def36e187eaf440e95a012e03d2d665a420df998"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/audio_domain.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/audio_domain.stdout.gz",
+      "bytes": 405,
+      "sha256": "4ad888e8a7190b59e89a627f45c73c3c51b9454a43b58f08298fd03308dfd6a6",
+      "expanded_bytes": 749,
+      "expanded_sha256": "88a4a3d6d13b65ec37192adacb3edcbcdd2bb4cf9af937fdd49bd626c3131759"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/audio_fades.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/audio_fades.stdout.gz",
+      "bytes": 728,
+      "sha256": "e20a4426e093d170848a71de2658d060d030ba33df683c482adad87d1913d386",
+      "expanded_bytes": 1572,
+      "expanded_sha256": "c830caf9795bcc088d7df77d1537c6edcc6c1af80280e38ac62b1a4c74604300"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/audio_plan.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/audio_plan.stdout.gz",
+      "bytes": 839,
+      "sha256": "0276941b904dd13669f2dc2ba5053560da2494a4aa565f216ace6116f610671d",
+      "expanded_bytes": 1964,
+      "expanded_sha256": "385577ca5f3ae892988f87ff1ba0c080de09f6966cc057f5837a28815d833076"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/audio_policy.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/audio_policy.stdout.gz",
+      "bytes": 155,
+      "sha256": "7e983fc2d43a41128ba57d4990b80f867e71001c8b6d20ec188690ea6875c92e",
+      "expanded_bytes": 195,
+      "expanded_sha256": "c9764f66006c16885ef44bf898dabd88faa4f2b388a7be3f07db9c51ff8caac2"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/audio_reference.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/audio_reference.stdout.gz",
+      "bytes": 788,
+      "sha256": "946004df7e24d974dcfc7ade05cba7d563bca3f940f5c315599f497a7e9b8597",
+      "expanded_bytes": 1818,
+      "expanded_sha256": "2cff655eca7ff8cb33ef7201dfb804529c5316ddebd1b64f1e2d813d1785fb06"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/audio_signal.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/audio_signal.stdout.gz",
+      "bytes": 704,
+      "sha256": "dd823102e4f19567813f0685af9cfa02ba79b920420f87b7d854d0834a2f8590",
+      "expanded_bytes": 1537,
+      "expanded_sha256": "6b56c0d365ece00c1764ab0305099ddfb95fada8151d3dbc5651973851c3d24e"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/audio_tape.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/audio_tape.stdout.gz",
+      "bytes": 522,
+      "sha256": "c1ac025e04a61506964399007eae8e76c5b3c5fe35fbf8d15ce84b2cfec02a4a",
+      "expanded_bytes": 1085,
+      "expanded_sha256": "bc073bfd87592e4d53ec3bece9282ab453c38d4a6d5d6acf676324cca4224f56"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/deadpan_plan.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/deadpan_plan.stdout.gz",
+      "bytes": 3172,
+      "sha256": "2a971d59bd9629d39c9c5bcc797c0b972e12524b29129253bc52bd3d68cd63a7",
+      "expanded_bytes": 11888,
+      "expanded_sha256": "62a0c0954890b2ef99587b6835f76272211983ee035c2c982ac956ddaf92e66a"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/edited_slice.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/edited_slice.stdout.gz",
+      "bytes": 657,
+      "sha256": "233c28bdedf6b06416dcc583197f61346411c5a8c824c06fb8d11f97ef1900c0",
+      "expanded_bytes": 1525,
+      "expanded_sha256": "9a70e91277997621b5c22991ed35b8193c65d21827f6f2c8add95d5b67e5a39b"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/gap_bindings.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/gap_bindings.stdout.gz",
+      "bytes": 235,
+      "sha256": "dba961a68d786ee60ce18f94f2e21b0796f6ceb6ea245885b2e1c73692faf277",
+      "expanded_bytes": 361,
+      "expanded_sha256": "ee02ad2746528d01a9efaabd11a7d07e0c259f45cd585577263766dffb2ba5e6"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/gap_branches.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/gap_branches.stdout.gz",
+      "bytes": 257,
+      "sha256": "603fa9514e016504515be7a133c3b704e5d2612e46d7fd9672fe584f5e6f726e",
+      "expanded_bytes": 424,
+      "expanded_sha256": "a238114768bdc4d90233b42d6feb0fbd4d441725809b6c4d6b11ed0e030c17bf"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/hold_policy.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/hold_policy.stdout.gz",
+      "bytes": 456,
+      "sha256": "3755338ddb01cc93b3f96a0afd5f357c7242e2a1e0f5ed4068451e00ec7ba2ac",
+      "expanded_bytes": 902,
+      "expanded_sha256": "23c85cb058022170cab4b6363fbc23e432ca967e64a91cfeb5d5cad6461bd71c"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/intrinsic_preparation.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/intrinsic_preparation.stdout.gz",
+      "bytes": 478,
+      "sha256": "63d1a8a9920091b4e90148acec6b4013a6b5af461d2f45fcb9a82fd883fdfd49",
+      "expanded_bytes": 970,
+      "expanded_sha256": "54310e54a1f638e3dc018e704a788f60aae95c95b5f66a05c2af3d9de69ed9ad"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/occurrence_edits.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/occurrence_edits.stdout.gz",
+      "bytes": 263,
+      "sha256": "c6498df578c7e1805b029ca62c303133e4c163cbf55342173d05feee3516cd91",
+      "expanded_bytes": 471,
+      "expanded_sha256": "5e1394a9a72f285431c0683c839b3785188347d13950caa5b7b125811cef1235"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/picture_plan.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/picture_plan.stdout.gz",
+      "bytes": 4093,
+      "sha256": "6db5a7e34a4c9247c24277f1e930f1a936212d6be2573b21ddec264ae4c634d5",
+      "expanded_bytes": 13800,
+      "expanded_sha256": "badf30038e18131894b9ba5a81c4f3e6183a291173bbb82a5f7000626f644f50"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/play_overrides.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/play_overrides.stdout.gz",
+      "bytes": 311,
+      "sha256": "9e5eb1b8dbd9a22f70cea54207876c19afc54a3fe0bd32cfa67ac94161e271a5",
+      "expanded_bytes": 528,
+      "expanded_sha256": "f05dac0b170f6848b527837ddf1d16259ef854ca0dc4ebb65f04594f71489f75"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/results.json.gz",
+      "bytes": 1947,
+      "sha256": "3df6a4ab43dae71fd0c8f06437c7201deddda37c034ab617cf5f5377b4bb93d1",
+      "expanded_bytes": 12282,
+      "expanded_sha256": "34d0eb43faa4c13c514861a67b574c1b18f37ad0e69322f41568d3122f68ddc3"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/root_sound_routes.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/root_sound_routes.stdout.gz",
+      "bytes": 836,
+      "sha256": "c26b9315280d9a57b629665a974fae069725df813ccb509db82b686b0850167e",
+      "expanded_bytes": 1912,
+      "expanded_sha256": "ae1f4d4552c7e00d8601a15f4b1bda4c0ffd9db91b250540e97f4107e1c45bd5"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/routed_voice.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/routed_voice.stdout.gz",
+      "bytes": 452,
+      "sha256": "4a434a3e0785dda47c239bda747e2b8da75e0f415d347a5597379e250e65d95d",
+      "expanded_bytes": 994,
+      "expanded_sha256": "192f33947938cfdbe3d56ae4bc044759556467504f0d7b0f0d21de56c222e7a6"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/selected_video_window.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/selected_video_window.stdout.gz",
+      "bytes": 714,
+      "sha256": "b71139504db213e7d50caa0f951ffdac9bd36e35854b6bf9d7257ec4b996b0b5",
+      "expanded_bytes": 1699,
+      "expanded_sha256": "9a5a0f61034cd8cbf02d7fa1ffaa2fc319abe9d3450ec3b905e3e2cb9dd6018e"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/sound_event_fades.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/sound_event_fades.stdout.gz",
+      "bytes": 402,
+      "sha256": "f43bb7054f3e69c0b2d6ec12f7e892170d1053bfc326a587f7a188df4a38f7d5",
+      "expanded_bytes": 776,
+      "expanded_sha256": "55bc052a3e706e39cd051bba8fae618f69eb1e3a520b28787610bec2ea8084a4"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/sound_events.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/sound_events.stdout.gz",
+      "bytes": 194,
+      "sha256": "6e9de3dc35f50fb8db65dff01696046a4549ff0ad4142b041ad8ff082376b0f0",
+      "expanded_bytes": 281,
+      "expanded_sha256": "1c5ac72467d68c8a88b83f74ca56f7836a22645d96f0eb03b369ec5e96c6e747"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/sound_plan_binding.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/sound_plan_binding.stdout.gz",
+      "bytes": 272,
+      "sha256": "7880c347c99c78b0a783149cb88e8a928b6190e335fd04a33be78229dbf4dcbf",
+      "expanded_bytes": 524,
+      "expanded_sha256": "47d8497318ef4e37dff28e943cc62808ea3e8187155d99155f9a0fcb0d4e33c1"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/sound_processing_layout.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/sound_processing_layout.stdout.gz",
+      "bytes": 303,
+      "sha256": "c25396d5a944e322320144e7a7cbbc2113ef9d6b68d0dedcf64cb7d3c8844acd",
+      "expanded_bytes": 534,
+      "expanded_sha256": "fba579b0aa7fac152999170fbc82eb0f1c3d608263e8a89e0d47c66b51129ae8"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/sound_route_sampling.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/sound_route_sampling.stdout.gz",
+      "bytes": 708,
+      "sha256": "51146f63a38bf1e18ebab0e75d3beeb4267c283e3c4fdcb0c79bae14dee177f6",
+      "expanded_bytes": 1577,
+      "expanded_sha256": "1000a61cd9ebe53e3ff10c5de9fd603894d41c415f96febdbe53332c93cd33c6"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/source_voice.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/source_voice.stdout.gz",
+      "bytes": 275,
+      "sha256": "965f8a693dcf24562f545b3ebf0e7dd62ea85a1ac6358b488f25a859ddd4f345",
+      "expanded_bytes": 437,
+      "expanded_sha256": "dbbccde4e8bde1b63a1cc62d36b156056c2039017c73a1aa28730c8cda6b8704"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/source_voice_policy.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/plan-results/sound-scoped-build/source_voice_policy.stdout.gz",
+      "bytes": 341,
+      "sha256": "17bf2a5df029e1aa101da2682b8ce4352e60c85202fc6c10ab5eae461c85a96d",
+      "expanded_bytes": 588,
+      "expanded_sha256": "291ecfa4f76c32ca8bcda3eaed704d22ffcb94959df44ebb590161bb28b55f7b"
+    },
+    {
+      "path": "records/task-records/plan_suites.py.gz",
+      "bytes": 639,
+      "sha256": "91cde6bc1b63db5c06b2458a3122f59eb051cca973d12ba96e20c66f92c1ce70",
+      "expanded_bytes": 1252,
+      "expanded_sha256": "e18ab6b11aa673c5f03a849b37bf2f97d6bd48ca042b98faacbf7418319350ef"
+    },
+    {
+      "path": "records/task-records/production.patch.gz",
+      "bytes": 10724,
+      "sha256": "64feb689436459f9152558d5992dbf17134a866a31af06cc8d8255e8173fa10f",
+      "expanded_bytes": 47546,
+      "expanded_sha256": "a502b3560b3e3ebcdc9b73acce046a76dece73a822f7384cf3f6d65d2010237d"
+    },
+    {
+      "path": "records/task-records/published-adjustments.py.gz",
+      "bytes": 528,
+      "sha256": "02023186f7f55c47b7764c29add9c793d24534f97cf615eb35684505afa41a2b",
+      "expanded_bytes": 1140,
+      "expanded_sha256": "ac8e510edeca09ba89617803643418c24e46b7f1dc509a28115863820f4cf3d3"
+    },
+    {
+      "path": "records/task-records/published-before/crates/deadpan-audio/src/shared_eq.rs.gz",
+      "bytes": 9633,
+      "sha256": "2bd33c09298078c869f315a833e2e8a7f724df65d0af1e62743f548893328594",
+      "expanded_bytes": 45980,
+      "expanded_sha256": "6b67be8ef787537244d26e0f9d1714504c716efa8a1088186acd0cde46f10b78"
+    },
+    {
+      "path": "records/task-records/published-shared.patch.gz",
+      "bytes": 1595,
+      "sha256": "f442896a1b595deb104d8ff05716faf546ef2b2e24c1af6e35e4e525de1b0dcb",
+      "expanded_bytes": 5241,
+      "expanded_sha256": "caedee811e838dd173ec52244da41ac9f059e9a9d11457e020f6af7f6e2ad35e"
+    },
+    {
+      "path": "records/task-records/removed-files.json.gz",
+      "bytes": 140,
+      "sha256": "eb0789922f5cb3f69e98d7591ea51894c461d344db594f16035a12152dcbedaf",
+      "expanded_bytes": 467,
+      "expanded_sha256": "dc0979cf5a4b643393eebb88f904f75ad3a56743aff1e89fca502ac123932999"
+    },
+    {
+      "path": "records/task-records/review-diffs/audio_sound_owner_context.rs.gz",
+      "bytes": 1944,
+      "sha256": "db42396dcf2a7ee29b3dc91d4c763d72cb986d23e41bd5e59719c8bf5ac4b205",
+      "expanded_bytes": 6145,
+      "expanded_sha256": "0d6ea6fcd2d513f8525ef95f6151c587f33d21931a853ce0ee910df80bdec815"
+    },
+    {
+      "path": "records/task-records/review-diffs/audio_source_occurrence.rs.gz",
+      "bytes": 1919,
+      "sha256": "82c20b3a5b377bd6c00709821b13235b6ea91279ef9d5c1976570e187bcd57bd",
+      "expanded_bytes": 6548,
+      "expanded_sha256": "fe2956772592d2fa9585244a79b443632e04b1b17670374eb3fc36209049de68"
+    },
+    {
+      "path": "records/task-records/review-diffs/authored_eq.rs.gz",
+      "bytes": 192,
+      "sha256": "808d4546a56c06cd80fa66434897f6da48a813734f4709c6d510cdb0daee9bd4",
+      "expanded_bytes": 391,
+      "expanded_sha256": "9b6d75ddf349f259dadee5546a741d84e6eefca195a3bcca8ae173a0f615ecec"
+    },
+    {
+      "path": "records/task-records/review-diffs/node_description.rs.gz",
+      "bytes": 1541,
+      "sha256": "de5cff8a2f998babacec4c1f161489ab440a8da05d2af45637c8141a5cf6f861",
+      "expanded_bytes": 4478,
+      "expanded_sha256": "a85f8c4069a9217a8457d166c4ee7175d86703f42fc6c9f75f25c34b3ac6bfb0"
+    },
+    {
+      "path": "records/task-records/review-diffs/shared_eq.rs.gz",
+      "bytes": 1616,
+      "sha256": "a47d0d484ec753d1d51a1de210cdb17da14ae0f1a51ee5a40d58c3ffcc074195",
+      "expanded_bytes": 5305,
+      "expanded_sha256": "3d41ca654f0417bb6723c37480725b2819e2ffea4aa5528405f50ece71793710"
+    },
+    {
+      "path": "records/task-records/review-diffs/stages.rs.gz",
+      "bytes": 473,
+      "sha256": "b9434e279cfe1a74437f9e84622491c3171a7ac14e7bad2ab1c2546cc62819a5",
+      "expanded_bytes": 1017,
+      "expanded_sha256": "c0c9965ffe0b0601b96cf62a0a9dfcfdf607dfbaa4ecd45c6d3d53c0d7d82e65"
+    },
+    {
+      "path": "records/task-records/run.py.gz",
+      "bytes": 1643,
+      "sha256": "7f9c7d6bb0ebb3a7854a0a477b606f9a018c14847bd401ad6997d6c71c262250",
+      "expanded_bytes": 4180,
+      "expanded_sha256": "3655418bdc0559274d478cbd05300f532fc2949d457e00191b0bc32f46d2e3fd"
+    },
+    {
+      "path": "records/task-records/run_scoped.py.gz",
+      "bytes": 1647,
+      "sha256": "c5344914f51bc8b388a88236baa48be17bfeefd39f19a7725b3b26f387cddce5",
+      "expanded_bytes": 4218,
+      "expanded_sha256": "73b40e22a8fa114b47aa5b03d251ce8b6b90c257737c1fcfea9f8683342a9341"
+    },
+    {
+      "path": "records/task-records/scoped-source-files.json.gz",
+      "bytes": 7438,
+      "sha256": "ed2fc1a2bdf839bdcb02923e733bbcb66385f528a361a7f041ff068cf63bc5f6",
+      "expanded_bytes": 67443,
+      "expanded_sha256": "eeda858b45f949eaa1a24b7fac8811731f9ea71f473aae6f3e374396a54e7d2f"
+    },
+    {
+      "path": "records/task-records/sound-audio.json.gz",
+      "bytes": 152486,
+      "sha256": "885824c5a23606d2a1466c41aed98585be61ac2b79f0e57f96b3cf4623febfb1",
+      "expanded_bytes": 582515,
+      "expanded_sha256": "6db49daf0abf32db03462e722b841bfdeb69e2682af1a1ffdd290cccd4299cfd"
+    },
+    {
+      "path": "records/task-records/sound-audio.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/sound-audio.stdout.gz",
+      "bytes": 8025,
+      "sha256": "c24e9665531a9d196c4c4ebb7eb1dbd37613868c220ae8f1f743297c035de412",
+      "expanded_bytes": 32853,
+      "expanded_sha256": "0fd7198597a242a525e7ba14a8c7fcedd034a82f57fdec87dde56959cb16d09a"
+    },
+    {
+      "path": "records/task-records/sound-build-pins.json.gz",
+      "bytes": 3758,
+      "sha256": "10aa9e653ab3c3494abce2c373e04ba2c9642cc2de6c7dd878ceea7fe3d75a39",
+      "expanded_bytes": 42082,
+      "expanded_sha256": "e4952e7b95b22c5c1714b0a20b769aff33bac58aa64bc2ce779834acafc9a9ce"
+    },
+    {
+      "path": "records/task-records/sound-build.json.gz",
+      "bytes": 152347,
+      "sha256": "5af0db8a3ed47be5c7961c33ee4d71fddb44496df9fc2c27c24260d5b7d0c7e1",
+      "expanded_bytes": 582151,
+      "expanded_sha256": "85103aa988e8195e06fe1a52aa3aee75bbbacf46dba749f732703c8481abb2a0"
+    },
+    {
+      "path": "records/task-records/sound-build.stderr.gz",
+      "bytes": 159,
+      "sha256": "3239f805e6c270d57ae6222158c1c8b0a06a15d5ce6c14ae369c356012f095cf",
+      "expanded_bytes": 240,
+      "expanded_sha256": "89088a85614fc4cdfea5c3942e8460e5d96f708aac06dd946431c952b1327ec1"
+    },
+    {
+      "path": "records/task-records/sound-build.stdout.gz",
+      "bytes": 8538,
+      "sha256": "760a13c83eae79194e6ea8782dc164bb18cf2fa00806aafaf0a7d9df133439af",
+      "expanded_bytes": 124558,
+      "expanded_sha256": "5a969b22cb63b6615891c1e034375a63f76a4121ecfbb22cc801e4dfb0d86ab7"
+    },
+    {
+      "path": "records/task-records/sound-context.patch.gz",
+      "bytes": 15498,
+      "sha256": "db76f36de69e3b62a95963a280f09b2249aa817ea73ed41dbcbce4741d6123a4",
+      "expanded_bytes": 71814,
+      "expanded_sha256": "9fb90d057dee8e8c59aaab14fc3bc9f8577b03961fefb8ec3851d679a62dd70e"
+    },
+    {
+      "path": "records/task-records/sound-definition.json.gz",
+      "bytes": 152497,
+      "sha256": "f443ae14ede59b67dee4dfabf9937cb4177df84b2175d0ff0fef9595e7e6a57c",
+      "expanded_bytes": 582550,
+      "expanded_sha256": "8f8d263d5d4a82535bb5557d089c626fd479127dcf6698cc957f28aa6dab073b"
+    },
+    {
+      "path": "records/task-records/sound-definition.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/sound-definition.stdout.gz",
+      "bytes": 4171,
+      "sha256": "50c31e6987a6afe08bd01fd04641710b413c800ea3c88e5247d04b7aee2b4c9f",
+      "expanded_bytes": 19923,
+      "expanded_sha256": "787590cf2f8729f50338c84150d0ad0d09f8ca2f83ce53731c1107a571a61c82"
+    },
+    {
+      "path": "records/task-records/sound-final-audio.json.gz",
+      "bytes": 152491,
+      "sha256": "51f69142dad7dcfdf1b097ca41a6856c1c54e7f8dcf901258f6787fc5953666e",
+      "expanded_bytes": 582545,
+      "expanded_sha256": "432edf28c70c596db52d31367053d4bf943185c8d8e6b2fbc94948d192df578f"
+    },
+    {
+      "path": "records/task-records/sound-final-audio.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/sound-final-audio.stdout.gz",
+      "bytes": 8025,
+      "sha256": "86564997c73b93e834ee0def6ce8485636c7d6d9b78284915876f4b6dc6fdd77",
+      "expanded_bytes": 32853,
+      "expanded_sha256": "cf01467e85d286794c38af1f04cb5dd9a393324063dc613f5abfd57c6dffb39d"
+    },
+    {
+      "path": "records/task-records/sound-final-build-pins.json.gz",
+      "bytes": 3764,
+      "sha256": "52bbd697c90fd28516f796ee958141cf484fc17464cca37ccf052a8ff4e2ccad",
+      "expanded_bytes": 42274,
+      "expanded_sha256": "25b0aa14c4de7d6606aa9d9959fb204d665edb679da05c982396413896f52f5f"
+    },
+    {
+      "path": "records/task-records/sound-final-build.json.gz",
+      "bytes": 152350,
+      "sha256": "67fd967201b5a8b2bf498a58aefd601fb3d34542e4478d5178b4c4bb22d1413e",
+      "expanded_bytes": 582163,
+      "expanded_sha256": "7712dfd60dd7ee2030fdbbab7514e4ced69e0fd3f6ee7925e141dc6abf232bf9"
+    },
+    {
+      "path": "records/task-records/sound-final-build.stderr.gz",
+      "bytes": 158,
+      "sha256": "f2e35140c10694d2a35b04551886635e67c65434e3847abcf3a12a32ca24dfed",
+      "expanded_bytes": 240,
+      "expanded_sha256": "af90f549e2554d0e78394a7621eb63c8ca9d57ca8bd5bfb962de80132d2a7087"
+    },
+    {
+      "path": "records/task-records/sound-final-build.stdout.gz",
+      "bytes": 8538,
+      "sha256": "c0f1dad3cabd8e5baa4a928d62576992e597e3a0fdf08b55ded62563ade21aab",
+      "expanded_bytes": 124558,
+      "expanded_sha256": "60b2afb7d7c1882a5e14d4487172a5c0a16cb633a703e3be18602e51bc7c983b"
+    },
+    {
+      "path": "records/task-records/sound-final-plan.json.gz",
+      "bytes": 155764,
+      "sha256": "8f3544d0b8a605f8bbae37ded79b46f4f6724988d588bd4fa81bbc949d25dc4d",
+      "expanded_bytes": 594963,
+      "expanded_sha256": "9e4a0ab36e25235eaec5c6f1b74f879b46a10c345371a0d2295a502866bc560b"
+    },
+    {
+      "path": "records/task-records/sound-final-plan.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/sound-final-plan.stdout.gz",
+      "bytes": 1902,
+      "sha256": "ee226705d771f1fe5e0d1ae570cf2159952834c6cc41beac7409b7f83b0dc8ac",
+      "expanded_bytes": 8973,
+      "expanded_sha256": "37a6c9f367eca8955152069b7533faaeec99c3d1695281d9bbcf120250443bdb"
+    },
+    {
+      "path": "records/task-records/sound-plan.json.gz",
+      "bytes": 155771,
+      "sha256": "645b0997a7a166751e100fc20ca16cb2587c38603de186a2d93f0893921fa94e",
+      "expanded_bytes": 594598,
+      "expanded_sha256": "5ade72161120ba659cc032c4a0a161d83eb6219548f9b636d571c27657470201"
+    },
+    {
+      "path": "records/task-records/sound-plan.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/sound-plan.stdout.gz",
+      "bytes": 1891,
+      "sha256": "1882b774cf07d72b358110c103656273b18757e2444d0814bd33ed477d684b3d",
+      "expanded_bytes": 8799,
+      "expanded_sha256": "d44a78f3c7ccd6d9bb4c73964dffe5a30b60a56e2c8538902cdc267ddab8cb3f"
+    },
+    {
+      "path": "records/task-records/sound-scoped-audio.json.gz",
+      "bytes": 130436,
+      "sha256": "865a2c4c3a127bd9fb1b05a817b65c3d5b217e2d35e0a97cab59d1051b6d378b",
+      "expanded_bytes": 532099,
+      "expanded_sha256": "cc472fdd6d8d5f693035897326f162329ee87148ad8352f882f3abce80499b6f"
+    },
+    {
+      "path": "records/task-records/sound-scoped-audio.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/sound-scoped-audio.stdout.gz",
+      "bytes": 7532,
+      "sha256": "30d9a359ca15e5f3fce7f5ccdb0ce42bef3ea8aeab0fa4232981132c187842c3",
+      "expanded_bytes": 30498,
+      "expanded_sha256": "69de26d38f8bd34ed7be484975a9b9cb87264de2cb37313bc2878de53328012a"
+    },
+    {
+      "path": "records/task-records/sound-scoped-birth.json.gz",
+      "bytes": 130470,
+      "sha256": "9464b23a4babc8d7608d1a5e58723764e9fde0f2df0535e83102f608115105a1",
+      "expanded_bytes": 532153,
+      "expanded_sha256": "c417a35e8168960f29e30ca1872ddbd7ff2aefe7d41fb43b69043f29065c2701"
+    },
+    {
+      "path": "records/task-records/sound-scoped-birth.stderr.gz",
+      "bytes": 1469,
+      "sha256": "2c54e35b8b7217d97e276d973cfca5b7fa5ae0369c606c7970df2b91045991f4",
+      "expanded_bytes": 6927,
+      "expanded_sha256": "cc3fd3a6251cba0e676e7237d4ee1f64b9059418eee31e684d5e56c9aa018236"
+    },
+    {
+      "path": "records/task-records/sound-scoped-birth.stdout.gz",
+      "bytes": 445,
+      "sha256": "cdeb34730d71c2759e0add8027cef3f1e5973135d4a9bfb163892f49a04a446b",
+      "expanded_bytes": 1324,
+      "expanded_sha256": "40966b4ba76301beef670ff0c20b743bcc1f65668bd1a77086c303b94894c851"
+    },
+    {
+      "path": "records/task-records/sound-scoped-build-pins.json.gz",
+      "bytes": 3753,
+      "sha256": "50cac0ff496ca62caa99257e8ae4d0b3f6c0d542f7ab524c287a2555c01b991b",
+      "expanded_bytes": 45698,
+      "expanded_sha256": "7af9dcedea07f1138d5e102c14556cf32a089abe331e3cbbd067db8c8ba577ab"
+    },
+    {
+      "path": "records/task-records/sound-scoped-build.json.gz",
+      "bytes": 130306,
+      "sha256": "f2390eb6b6ec7d8d0df4ae05090185f38861e014f77aeab8b452085768172670",
+      "expanded_bytes": 531714,
+      "expanded_sha256": "25d13071b9c2a2dabc16196fc1edd287dd9f3ec6f2f2891d636c2a9ba6863673"
+    },
+    {
+      "path": "records/task-records/sound-scoped-build.stderr.gz",
+      "bytes": 179,
+      "sha256": "51bf8e6d0b3521441009d2a24d8ea5eb7eddcfb493f20b7a881467832d321283",
+      "expanded_bytes": 296,
+      "expanded_sha256": "b44b79797b032ce22b094f9b86604f36788111c4480a9eafce06ae6240b53477"
+    },
+    {
+      "path": "records/task-records/sound-scoped-build.stdout.gz",
+      "bytes": 8645,
+      "sha256": "6288c32cade020d7bad2d506adbe903fcdabcdf3ec5b714976c36bf575bbf445",
+      "expanded_bytes": 133457,
+      "expanded_sha256": "04cff1039ac9e3a3d7fb466f8fad3e447e1b46e535e4f650e3e28efe39bfc514"
+    },
+    {
+      "path": "records/task-records/sound-scoped-plan.json.gz",
+      "bytes": 133727,
+      "sha256": "7230e4481120668c4f11a0381c375431e0b53f5d471245694754ec36840b699d",
+      "expanded_bytes": 544573,
+      "expanded_sha256": "0c59d6115530024a5aa1c191e4ff60ff33e1e9e1d76aa9999bf008f41a20b1bb"
+    },
+    {
+      "path": "records/task-records/sound-scoped-plan.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/sound-scoped-plan.stdout.gz",
+      "bytes": 1913,
+      "sha256": "b58744139e01cc1ff0c7e6239048bfc5bc94c716b95e303283a5bbac385b22b5",
+      "expanded_bytes": 9002,
+      "expanded_sha256": "c40944ee9273b05160eede29869d09025026d6e55faba42b77996b841717c000"
+    },
+    {
+      "path": "records/task-records/sound-scoped-stages.json.gz",
+      "bytes": 130441,
+      "sha256": "182d8db3adef19953ae86e55ba3bc67d7f6e2d2d9e8362c56b02ebc31d621ef9",
+      "expanded_bytes": 532079,
+      "expanded_sha256": "46ffcf1b753bb05d8f9b9239f137cc800d039c34b8eb5be32a6ee0258ae35a22"
+    },
+    {
+      "path": "records/task-records/sound-scoped-stages.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/sound-scoped-stages.stdout.gz",
+      "bytes": 5324,
+      "sha256": "d7d19e0385128fe07b13b26b4486e2a77af48290015c2c0430cac4c6a8ecda0d",
+      "expanded_bytes": 21224,
+      "expanded_sha256": "afcd9e2f837d5a0084ab1c3e9d60d434ab3a71fdf9fd267f160597c31443e8f2"
+    },
+    {
+      "path": "records/task-records/sound-split.json.gz",
+      "bytes": 152509,
+      "sha256": "05774cdacbc85baee0c14cf6e53767e4a82286153b833637f401e87761451fb1",
+      "expanded_bytes": 582560,
+      "expanded_sha256": "d04279f2c3f081bb93475352ca3376066973088d20fbd325bbd749a087fd331c"
+    },
+    {
+      "path": "records/task-records/sound-split.stderr.gz",
+      "bytes": 455,
+      "sha256": "23b46a44df5af2829ce4008f51a948a68801013f280d75b828b65fa726f730b2",
+      "expanded_bytes": 993,
+      "expanded_sha256": "2fd5406c4d78b0dd958d0adf78dadd4d97551ee204393e51ae8465280d335480"
+    },
+    {
+      "path": "records/task-records/sound-split.stdout.gz",
+      "bytes": 428,
+      "sha256": "54e8b1a7d1cfd5bc994cb90ef759e89676632ec20347a392d55c71f0f8022eff",
+      "expanded_bytes": 1210,
+      "expanded_sha256": "d5a880e940a9ed8c3ff7c4f46a54f5ebc5476c93c9a28ae18ebfa61edb415140"
+    },
+    {
+      "path": "records/task-records/sound-stages.json.gz",
+      "bytes": 152503,
+      "sha256": "f527694b9816f78f7d8613bf74ada5d15ca1df3c2c680b4f9288e8d89ac89404",
+      "expanded_bytes": 582553,
+      "expanded_sha256": "15a1113ad1713c295c8fd39788ed268fa4a63108f9352680ceb08838997569b6"
+    },
+    {
+      "path": "records/task-records/sound-stages.stderr.gz",
+      "bytes": 20,
+      "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+      "expanded_bytes": 0,
+      "expanded_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/task-records/sound-stages.stdout.gz",
+      "bytes": 5328,
+      "sha256": "ba529f1b15dbc3623e51cda6f3d1194bf447c50ce357ded84645c9ab5519df12",
+      "expanded_bytes": 21224,
+      "expanded_sha256": "066fbf4677255fedc05de72371cfea86f0b99844afdff7e762b70ca76f4ffbb1"
+    },
+    {
+      "path": "records/task-records/sound-strict.json.gz",
+      "bytes": 152308,
+      "sha256": "366b4f10099187af525d15da1ad3d679c286d799cf9e823b2aecb94aa2076a86",
+      "expanded_bytes": 582059,
+      "expanded_sha256": "312c151f6979dc08eac892a3f1251d308fe6db7b2d8b6e078321904ee9eed731"
+    },
+    {
+      "path": "records/task-records/sound-strict.stderr.gz",
+      "bytes": 631,
+      "sha256": "ad4169264f0cc0863cef12aa938fc8019c63069365304f0c8bc577231f51bee2",
+      "expanded_bytes": 1324,
+      "expanded_sha256": "a84caeff3371fe06ce669814df71b7fa2b0f258962bf2f1ef0f829654cdcbc4d"
+    },
+    {
+      "path": "records/task-records/sound-strict.stdout.gz",
+      "bytes": 89,
+      "sha256": "b08fa715db8d4b4b889534f542707e860b89ceb69772f5a370aa31d2c36f3255",
+      "expanded_bytes": 100,
+      "expanded_sha256": "d44883eda4f91face7467a5eda08f9e5c9bb344936863f0c99dbe132c7d35bdf"
+    },
+    {
+      "path": "records/task-records/sound-strict2.json.gz",
+      "bytes": 152310,
+      "sha256": "b4b74959b7190ca628164fc65d983b89e1d92df32a076044ea5ecf3bf6183387",
+      "expanded_bytes": 582060,
+      "expanded_sha256": "bb85be4852c9f2491f713fe61eead353c3cda5b47377c9655ce814581a6ed1b9"
+    },
+    {
+      "path": "records/task-records/sound-strict2.stderr.gz",
+      "bytes": 231,
+      "sha256": "ed4e86449e7e380f2c4b26ce014f47f4ed130d95720d7bc8971924da75ff0bef",
+      "expanded_bytes": 480,
+      "expanded_sha256": "3a85b8ece6dea89730c1083cb1d16bbbbfece3808e26a09a153481c1d4aed03c"
+    },
+    {
+      "path": "records/task-records/sound-strict2.stdout.gz",
+      "bytes": 89,
+      "sha256": "b08fa715db8d4b4b889534f542707e860b89ceb69772f5a370aa31d2c36f3255",
+      "expanded_bytes": 100,
+      "expanded_sha256": "d44883eda4f91face7467a5eda08f9e5c9bb344936863f0c99dbe132c7d35bdf"
+    },
+    {
+      "path": "records/task-records/source-files.json.gz",
+      "bytes": 8629,
+      "sha256": "a13b802871e2446f141a38efa4aecc994dcb2099708a98c64bd3cd388646bdf1",
+      "expanded_bytes": 83822,
+      "expanded_sha256": "49ad6b3f3ae022ba797d5edffed80f20d7d1ee333bb62258011add62ec96d6f4"
+    },
+    {
+      "path": "records/task-records/staging-audit/README.md.gz",
+      "bytes": 1884,
+      "sha256": "639ff3cdd5f40b636b4f44909050a6ec2476493a1831d76f6678a6c1e16cd29d",
+      "expanded_bytes": 3812,
+      "expanded_sha256": "a6be0e436437983239d7c3add1b9ad20d1c880a3fc73c71aef87fb7ea26edff7"
+    },
+    {
+      "path": "records/task-records/staging-audit/head/crates/deadpan-audio/src/authored_eq.rs.gz",
+      "bytes": 5553,
+      "sha256": "8e5f209d0af324cb321ee379bd1e420f967573e14175e01d53b1baf1bc4a16ba",
+      "expanded_bytes": 24855,
+      "expanded_sha256": "daa833777fb158ff411a5671e3383b5af6755840cf2ad2ce95ef31d23dd04a99"
+    },
+    {
+      "path": "records/task-records/staging-audit/head/crates/deadpan-audio/src/shared_eq/node_description.rs.gz",
+      "bytes": 1686,
+      "sha256": "dbd1d8d6b91c4ad9a12c597f6489d485858647adf1e75843013b23bd099f487a",
+      "expanded_bytes": 4702,
+      "expanded_sha256": "dd6da9fd2d6329d4899c3637aeb332407bdef875b636f51a270ea1bd273cb4d8"
+    },
+    {
+      "path": "records/task-records/staging-audit/head/crates/deadpan-audio/src/shared_eq.rs.gz",
+      "bytes": 9633,
+      "sha256": "2bd33c09298078c869f315a833e2e8a7f724df65d0af1e62743f548893328594",
+      "expanded_bytes": 45980,
+      "expanded_sha256": "6b67be8ef787537244d26e0f9d1714504c716efa8a1088186acd0cde46f10b78"
+    },
+    {
+      "path": "records/task-records/staging-audit/head/crates/deadpan-audio/src/stages.rs.gz",
+      "bytes": 28701,
+      "sha256": "5590c65c8b842149cb419ae2aca8fc9d7a37838b8b67c59a005477e4987ce6e7",
+      "expanded_bytes": 162466,
+      "expanded_sha256": "5ec36417ead6a306562e43d54e575921df51e0f74596541105f2a94f619982c9"
+    },
+    {
+      "path": "records/task-records/staging-audit/head/crates/deadpan-plan/src/audio_signal.rs.gz",
+      "bytes": 9733,
+      "sha256": "0e047d8916bf01474a32d051c38a61983fe2e16aa14c8a8cd6d97de78a2f25d3",
+      "expanded_bytes": 51624,
+      "expanded_sha256": "54610f716b794d9c7ee00652eb3c4c83ebc46178f3055a0b9bc74e669f6cf0b8"
+    },
+    {
+      "path": "records/task-records/staging-audit/head/crates/deadpan-plan/src/audio_sound_owner_context.rs.gz",
+      "bytes": 2435,
+      "sha256": "42def4d42891c201d122be616ff51ad156c8ccd0bbd6b69389f06f3d8380be0c",
+      "expanded_bytes": 7573,
+      "expanded_sha256": "0a153b9e8a6fadfdc71db389cc87f26cfbbf582d171b4b5cd5d9eb544d178404"
+    },
+    {
+      "path": "records/task-records/staging-audit/head/crates/deadpan-plan/src/audio_source_occurrence.rs.gz",
+      "bytes": 9523,
+      "sha256": "9a89ba172c6aafff342a2de6dafef32b57850a38a6e78ff22af14db887c6218c",
+      "expanded_bytes": 41877,
+      "expanded_sha256": "64e2a16dcd8389472910530b93116ff87f1d37f9b9d8826d497f3457090694c0"
+    },
+    {
+      "path": "records/task-records/staging-audit/head/crates/deadpan-plan/src/lib.rs.gz",
+      "bytes": 2276,
+      "sha256": "042d72b7b7fc61a5ccbe8e9bd7065aa54ec4337b95b5a592978f65ae03d46281",
+      "expanded_bytes": 7046,
+      "expanded_sha256": "afb5b1afa84505464be1f9040d7561704c665b6e277fce33717c9a6b83219e73"
+    },
+    {
+      "path": "records/task-records/staging-audit/head-to-scoped-shared_eq.patch.gz",
+      "bytes": 1604,
+      "sha256": "1aa7dd190f9e21b308434dd5c562200216b314db14b1e1a923abd6b0b9df34ed",
+      "expanded_bytes": 5252,
+      "expanded_sha256": "4e8ef6e8dc6b73494946ad55e19648b74259c83792149a658db24577831cded4"
+    },
+    {
+      "path": "records/task-records/staging-audit/index-before.json.gz",
+      "bytes": 107,
+      "sha256": "063f6fc86cdc2ba47fb5a5e00660c1a3fad63482fca407cf878f60a561098c20",
+      "expanded_bytes": 103,
+      "expanded_sha256": "710c89de4fd8920b3a97e4897735ba994e1fdbd2b5168f54007e5c42d352e603"
+    },
+    {
+      "path": "records/task-records/staging-audit/index-candidate/crates/deadpan-audio/src/authored_eq.rs.gz",
+      "bytes": 5574,
+      "sha256": "881ac532007fb729fa647f833c675ba1c21e93a15dd2ca98ca58843e656fdce4",
+      "expanded_bytes": 24921,
+      "expanded_sha256": "f2e4c57241a87d171cd035ddd6a8c3e51becff55e555652ae16c7fe83cd3c0a0"
+    },
+    {
+      "path": "records/task-records/staging-audit/index-candidate/crates/deadpan-audio/src/shared_eq/node_description.rs.gz",
+      "bytes": 2161,
+      "sha256": "40dc61ccdf5aa766f122627ce429ac826f09d9685539a15d415956c98df05f5f",
+      "expanded_bytes": 6321,
+      "expanded_sha256": "c19c8555d9588d75b88edab702b8dfd1f9379e7617a115e90e00400caa41840c"
+    },
+    {
+      "path": "records/task-records/staging-audit/index-candidate/crates/deadpan-audio/src/shared_eq/sound_admission_tests.rs.gz",
+      "bytes": 1513,
+      "sha256": "9e708f736180c0e3ca40ceee72e5db2d78a28bb0b44b6e5d7592daabdb58094c",
+      "expanded_bytes": 5668,
+      "expanded_sha256": "324601f260b8a2d622495d932e2a2acc054c018691708772c9cc55bba38ee3a5"
+    },
+    {
+      "path": "records/task-records/staging-audit/index-candidate/crates/deadpan-audio/src/shared_eq.rs.gz",
+      "bytes": 10028,
+      "sha256": "a7a7f3f393d8cf33291e94cdc31bc69afbbee5ba83d5ad9ee63ba535c35c64e7",
+      "expanded_bytes": 47660,
+      "expanded_sha256": "cb4e7d5a42b1ce5f87777981304e591a46e8fcb9c269ee73a0ed018aab3994fc"
+    },
+    {
+      "path": "records/task-records/staging-audit/index-candidate/crates/deadpan-audio/src/sound_context_admission.rs.gz",
+      "bytes": 1155,
+      "sha256": "d0da95d0b0f007e6dc79048c78983e40749d37d939a99ba624e0f47c410ed200",
+      "expanded_bytes": 3336,
+      "expanded_sha256": "afef23478b14a0be5d7cb786f9cbb1fdd1acb9fb01cbb2be1ac3eb2258c53a6d"
+    },
+    {
+      "path": "records/task-records/staging-audit/index-candidate/crates/deadpan-audio/src/sound_context_admission_tests.rs.gz",
+      "bytes": 1495,
+      "sha256": "2271ac97bfb6d9a4402ed01755d19b1b0a6f2240251b200fdc46e5dde7f5ea9e",
+      "expanded_bytes": 5395,
+      "expanded_sha256": "a0164a3d78450f918ad885420fbf9a59ea172d9d6bd8b147cd2235ed12cbdbdf"
+    },
+    {
+      "path": "records/task-records/staging-audit/index-candidate/crates/deadpan-audio/src/stages.rs.gz",
+      "bytes": 28763,
+      "sha256": "84e1d1147ea421ffdd61f4a46fade053d9cc015ea95c826161e4c7f79df40a07",
+      "expanded_bytes": 162703,
+      "expanded_sha256": "3aba6aca4baf5cbd0baf8493218704a6091c6db8f8e04fec91cf908fd3b04212"
+    },
+    {
+      "path": "records/task-records/staging-audit/index-candidate/crates/deadpan-plan/src/audio_signal.rs.gz",
+      "bytes": 9749,
+      "sha256": "514b4cc47164c0e64f7cea3fdde991fc4025ff7aba76cbaeaebb7b288bbff3ad",
+      "expanded_bytes": 51674,
+      "expanded_sha256": "6377d133f1c3cd7f094ca37a7b34e013d498b9e75f5b02d9f661170c35c88d3f"
+    },
+    {
+      "path": "records/task-records/staging-audit/index-candidate/crates/deadpan-plan/src/audio_sound_admission.rs.gz",
+      "bytes": 3843,
+      "sha256": "6308a51790e76faba0b353f8d371afd08bda2cad76815f24a38208cbf7643a49",
+      "expanded_bytes": 16882,
+      "expanded_sha256": "1a7fa1cc809eeae171b3b89fce1c2abb901cbb3f81022932b986d503cd2e1018"
+    },
+    {
+      "path": "records/task-records/staging-audit/index-candidate/crates/deadpan-plan/src/audio_sound_admission_tests.rs.gz",
+      "bytes": 3049,
+      "sha256": "e814b1ada144b9ca596c76bb9779d8ff862d7641043d8bd478eb26ba951d3756",
+      "expanded_bytes": 12094,
+      "expanded_sha256": "615035857fb79278bcf3ba1e9e31913662c70656e253997568fe13b06407715c"
+    },
+    {
+      "path": "records/task-records/staging-audit/index-candidate/crates/deadpan-plan/src/audio_sound_owner_context.rs.gz",
+      "bytes": 2764,
+      "sha256": "9d6ac86330f678c2146e430b032afd9c4136abb6fff274a3cf4585b373c79d28",
+      "expanded_bytes": 8904,
+      "expanded_sha256": "4e5f6ae32b4b163f1d35a2596119b63c24abd142b79743b0f4d11c0b08e2233f"
+    },
+    {
+      "path": "records/task-records/staging-audit/index-candidate/crates/deadpan-plan/src/audio_source_occurrence.rs.gz",
+      "bytes": 9849,
+      "sha256": "cb63dc5b01490058bce2742857722aff70ff4c0f13962bc31243a32aee271567",
+      "expanded_bytes": 43308,
+      "expanded_sha256": "efa505472571100624ba27e6be4a140a2dd574a5f51f39123ca20c96e324038f"
+    },
+    {
+      "path": "records/task-records/staging-audit/index-candidate/crates/deadpan-plan/src/lib.rs.gz",
+      "bytes": 2350,
+      "sha256": "329c4752490317c4ee0a8a47fe73731ff33b510a5096cc80357bdafd9bae2874",
+      "expanded_bytes": 7287,
+      "expanded_sha256": "200ab175893020c8bcfcfe531735c048db1f9a1f5b1ebe77fed0f13732d12e81"
+    },
+    {
+      "path": "records/task-records/staging-audit/inherited-diffs/crates/deadpan-audio/src/shared_eq.rs.gz",
+      "bytes": 3068,
+      "sha256": "aca9e09fb4d80690a3c3ac743f88971381b9e8f91e6b03585c88ed517a0a4bd4",
+      "expanded_bytes": 11391,
+      "expanded_sha256": "48c42428d3394dc26ac26aa1653900e2adf649d2f362e5c473e3dcebf38b076c"
+    },
+    {
+      "path": "records/task-records/staging-audit/inherited-diffs/crates/deadpan-audio/src/stages.rs.gz",
+      "bytes": 888,
+      "sha256": "44849638063152c591b621313041f66f402774e2fc4a0680d489b4190bdfa83a",
+      "expanded_bytes": 2494,
+      "expanded_sha256": "d60a9ad4d4efa80da39281439475368a755e7fc3d21364ac86c388f7caa58153"
+    },
+    {
+      "path": "records/task-records/staging-audit/main-final/crates/deadpan-audio/src/authored_eq.rs.gz",
+      "bytes": 5574,
+      "sha256": "881ac532007fb729fa647f833c675ba1c21e93a15dd2ca98ca58843e656fdce4",
+      "expanded_bytes": 24921,
+      "expanded_sha256": "f2e4c57241a87d171cd035ddd6a8c3e51becff55e555652ae16c7fe83cd3c0a0"
+    },
+    {
+      "path": "records/task-records/staging-audit/main-final/crates/deadpan-audio/src/shared_eq/node_description.rs.gz",
+      "bytes": 2161,
+      "sha256": "40dc61ccdf5aa766f122627ce429ac826f09d9685539a15d415956c98df05f5f",
+      "expanded_bytes": 6321,
+      "expanded_sha256": "c19c8555d9588d75b88edab702b8dfd1f9379e7617a115e90e00400caa41840c"
+    },
+    {
+      "path": "records/task-records/staging-audit/main-final/crates/deadpan-audio/src/shared_eq/sound_admission_tests.rs.gz",
+      "bytes": 1562,
+      "sha256": "753ccb4aa2659eadd8018df5f4f2b8ef74c090a6195208e18d9198b4019843b2",
+      "expanded_bytes": 5817,
+      "expanded_sha256": "57b5b8ef35c4afffe2f8db14823e41fda9a097161df004bc7c586e4f8ad5671b"
+    },
+    {
+      "path": "records/task-records/staging-audit/main-final/crates/deadpan-audio/src/shared_eq.rs.gz",
+      "bytes": 9513,
+      "sha256": "79cd30dab93c5ef065b9fb7b23e377e24d54cd7aea13a6e1fb3d286828406d4e",
+      "expanded_bytes": 44445,
+      "expanded_sha256": "5f6715cb664fe09991b5da2908d7990f6137f2e9c08ba387e685bdc5cb364dee"
+    },
+    {
+      "path": "records/task-records/staging-audit/main-final/crates/deadpan-audio/src/sound_context_admission.rs.gz",
+      "bytes": 1155,
+      "sha256": "d0da95d0b0f007e6dc79048c78983e40749d37d939a99ba624e0f47c410ed200",
+      "expanded_bytes": 3336,
+      "expanded_sha256": "afef23478b14a0be5d7cb786f9cbb1fdd1acb9fb01cbb2be1ac3eb2258c53a6d"
+    },
+    {
+      "path": "records/task-records/staging-audit/main-final/crates/deadpan-audio/src/sound_context_admission_tests.rs.gz",
+      "bytes": 1495,
+      "sha256": "2271ac97bfb6d9a4402ed01755d19b1b0a6f2240251b200fdc46e5dde7f5ea9e",
+      "expanded_bytes": 5395,
+      "expanded_sha256": "a0164a3d78450f918ad885420fbf9a59ea172d9d6bd8b147cd2235ed12cbdbdf"
+    },
+    {
+      "path": "records/task-records/staging-audit/main-final/crates/deadpan-audio/src/stages.rs.gz",
+      "bytes": 28899,
+      "sha256": "8a56500340a8a6b2c5760ea35bbfbaa6f60497f2138691eadd77c6d9d7db25fe",
+      "expanded_bytes": 163164,
+      "expanded_sha256": "7fa81e333bf6cbfb777d807f3e52f498f415169775f0db0f7d2e552482509e77"
+    },
+    {
+      "path": "records/task-records/staging-audit/main-final/crates/deadpan-plan/src/audio_signal.rs.gz",
+      "bytes": 9749,
+      "sha256": "514b4cc47164c0e64f7cea3fdde991fc4025ff7aba76cbaeaebb7b288bbff3ad",
+      "expanded_bytes": 51674,
+      "expanded_sha256": "6377d133f1c3cd7f094ca37a7b34e013d498b9e75f5b02d9f661170c35c88d3f"
+    },
+    {
+      "path": "records/task-records/staging-audit/main-final/crates/deadpan-plan/src/audio_sound_admission.rs.gz",
+      "bytes": 3843,
+      "sha256": "6308a51790e76faba0b353f8d371afd08bda2cad76815f24a38208cbf7643a49",
+      "expanded_bytes": 16882,
+      "expanded_sha256": "1a7fa1cc809eeae171b3b89fce1c2abb901cbb3f81022932b986d503cd2e1018"
+    },
+    {
+      "path": "records/task-records/staging-audit/main-final/crates/deadpan-plan/src/audio_sound_admission_tests.rs.gz",
+      "bytes": 3049,
+      "sha256": "e814b1ada144b9ca596c76bb9779d8ff862d7641043d8bd478eb26ba951d3756",
+      "expanded_bytes": 12094,
+      "expanded_sha256": "615035857fb79278bcf3ba1e9e31913662c70656e253997568fe13b06407715c"
+    },
+    {
+      "path": "records/task-records/staging-audit/main-final/crates/deadpan-plan/src/audio_sound_owner_context.rs.gz",
+      "bytes": 2764,
+      "sha256": "9d6ac86330f678c2146e430b032afd9c4136abb6fff274a3cf4585b373c79d28",
+      "expanded_bytes": 8904,
+      "expanded_sha256": "4e5f6ae32b4b163f1d35a2596119b63c24abd142b79743b0f4d11c0b08e2233f"
+    },
+    {
+      "path": "records/task-records/staging-audit/main-final/crates/deadpan-plan/src/audio_source_occurrence.rs.gz",
+      "bytes": 9849,
+      "sha256": "cb63dc5b01490058bce2742857722aff70ff4c0f13962bc31243a32aee271567",
+      "expanded_bytes": 43308,
+      "expanded_sha256": "efa505472571100624ba27e6be4a140a2dd574a5f51f39123ca20c96e324038f"
+    },
+    {
+      "path": "records/task-records/staging-audit/main-final/crates/deadpan-plan/src/lib.rs.gz",
+      "bytes": 2350,
+      "sha256": "329c4752490317c4ee0a8a47fe73731ff33b510a5096cc80357bdafd9bae2874",
+      "expanded_bytes": 7287,
+      "expanded_sha256": "200ab175893020c8bcfcfe531735c048db1f9a1f5b1ebe77fed0f13732d12e81"
+    },
+    {
+      "path": "records/task-records/staging-audit/overlay-audit.json.gz",
+      "bytes": 8518,
+      "sha256": "2139e8189c7cda7f4981325356ac269296cff8c344cf2b1b034db98e5d74cc55",
+      "expanded_bytes": 51970,
+      "expanded_sha256": "dc3b3a58f6321eb3f8d662044d4da554271d0e5fbe281f3f3d4fd5482ad82e4e"
+    },
+    {
+      "path": "records/task-records/staging-audit/overlay-diffs/crates/deadpan-audio/src/shared_eq/sound_admission_tests.rs.gz",
+      "bytes": 267,
+      "sha256": "9c4f26f5ce281f83e917364f2f23552ca6d222fb71ef1f4d31c1960a0c128ec0",
+      "expanded_bytes": 533,
+      "expanded_sha256": "30a8e00b1451d597747390a8abf462514d98fd268e26ce26db8f4531bee1bf8e"
+    },
+    {
+      "path": "records/task-records/staging-audit/overlay-diffs/crates/deadpan-audio/src/shared_eq.rs.gz",
+      "bytes": 3091,
+      "sha256": "dae090874465f840b2ef423c4fad7d0c968f3f5361f2dad0bc1435b92b50cc7c",
+      "expanded_bytes": 11507,
+      "expanded_sha256": "8ff3c57eb9044f5385fa80d8af60346c034d442a0de90132b8268c5560e6eaf9"
+    },
+    {
+      "path": "records/task-records/staging-audit/overlay-diffs/crates/deadpan-audio/src/stages.rs.gz",
+      "bytes": 873,
+      "sha256": "1d6e27b03ff6261cd8231c7a32cb7ea5aa709cb8f97aa1ea7d1684833c65502f",
+      "expanded_bytes": 2484,
+      "expanded_sha256": "81c1e03c65d4d010d4f025587d8759586fbdc56c3b2af63488d1735452d7e458"
+    },
+    {
+      "path": "records/task-records/staging-audit/overlay_audit.py.gz",
+      "bytes": 1000,
+      "sha256": "b2dcb857879f2699b44447b506d08144de2cefe788cbf8beb8ff2c9a0dca1e9d",
+      "expanded_bytes": 2463,
+      "expanded_sha256": "32ee197bbfee78ec0a2a9ea08e3a11201bb6062686abe428b3e2e8895c024006"
+    },
+    {
+      "path": "records/task-records/staging-audit/prepare.py.gz",
+      "bytes": 1294,
+      "sha256": "e272aaf891cd242de5f8e27be9dc5ff3ce2fba3f46e7b85943227978f1d10fe8",
+      "expanded_bytes": 2880,
+      "expanded_sha256": "99bfba63b37fcc0c0b317585aa904afa6b16702ef676641e52988c012908be71"
+    },
+    {
+      "path": "records/task-records/staging-audit/scoped-final/crates/deadpan-audio/src/authored_eq.rs.gz",
+      "bytes": 5574,
+      "sha256": "881ac532007fb729fa647f833c675ba1c21e93a15dd2ca98ca58843e656fdce4",
+      "expanded_bytes": 24921,
+      "expanded_sha256": "f2e4c57241a87d171cd035ddd6a8c3e51becff55e555652ae16c7fe83cd3c0a0"
+    },
+    {
+      "path": "records/task-records/staging-audit/scoped-final/crates/deadpan-audio/src/shared_eq/node_description.rs.gz",
+      "bytes": 2161,
+      "sha256": "40dc61ccdf5aa766f122627ce429ac826f09d9685539a15d415956c98df05f5f",
+      "expanded_bytes": 6321,
+      "expanded_sha256": "c19c8555d9588d75b88edab702b8dfd1f9379e7617a115e90e00400caa41840c"
+    },
+    {
+      "path": "records/task-records/staging-audit/scoped-final/crates/deadpan-audio/src/shared_eq/sound_admission_tests.rs.gz",
+      "bytes": 1513,
+      "sha256": "9e708f736180c0e3ca40ceee72e5db2d78a28bb0b44b6e5d7592daabdb58094c",
+      "expanded_bytes": 5668,
+      "expanded_sha256": "324601f260b8a2d622495d932e2a2acc054c018691708772c9cc55bba38ee3a5"
+    },
+    {
+      "path": "records/task-records/staging-audit/scoped-final/crates/deadpan-audio/src/shared_eq.rs.gz",
+      "bytes": 10028,
+      "sha256": "a7a7f3f393d8cf33291e94cdc31bc69afbbee5ba83d5ad9ee63ba535c35c64e7",
+      "expanded_bytes": 47660,
+      "expanded_sha256": "cb4e7d5a42b1ce5f87777981304e591a46e8fcb9c269ee73a0ed018aab3994fc"
+    },
+    {
+      "path": "records/task-records/staging-audit/scoped-final/crates/deadpan-audio/src/sound_context_admission.rs.gz",
+      "bytes": 1155,
+      "sha256": "d0da95d0b0f007e6dc79048c78983e40749d37d939a99ba624e0f47c410ed200",
+      "expanded_bytes": 3336,
+      "expanded_sha256": "afef23478b14a0be5d7cb786f9cbb1fdd1acb9fb01cbb2be1ac3eb2258c53a6d"
+    },
+    {
+      "path": "records/task-records/staging-audit/scoped-final/crates/deadpan-audio/src/sound_context_admission_tests.rs.gz",
+      "bytes": 1495,
+      "sha256": "2271ac97bfb6d9a4402ed01755d19b1b0a6f2240251b200fdc46e5dde7f5ea9e",
+      "expanded_bytes": 5395,
+      "expanded_sha256": "a0164a3d78450f918ad885420fbf9a59ea172d9d6bd8b147cd2235ed12cbdbdf"
+    },
+    {
+      "path": "records/task-records/staging-audit/scoped-final/crates/deadpan-audio/src/stages.rs.gz",
+      "bytes": 28763,
+      "sha256": "84e1d1147ea421ffdd61f4a46fade053d9cc015ea95c826161e4c7f79df40a07",
+      "expanded_bytes": 162703,
+      "expanded_sha256": "3aba6aca4baf5cbd0baf8493218704a6091c6db8f8e04fec91cf908fd3b04212"
+    },
+    {
+      "path": "records/task-records/staging-audit/scoped-final/crates/deadpan-plan/src/audio_signal.rs.gz",
+      "bytes": 9749,
+      "sha256": "514b4cc47164c0e64f7cea3fdde991fc4025ff7aba76cbaeaebb7b288bbff3ad",
+      "expanded_bytes": 51674,
+      "expanded_sha256": "6377d133f1c3cd7f094ca37a7b34e013d498b9e75f5b02d9f661170c35c88d3f"
+    },
+    {
+      "path": "records/task-records/staging-audit/scoped-final/crates/deadpan-plan/src/audio_sound_admission.rs.gz",
+      "bytes": 3843,
+      "sha256": "6308a51790e76faba0b353f8d371afd08bda2cad76815f24a38208cbf7643a49",
+      "expanded_bytes": 16882,
+      "expanded_sha256": "1a7fa1cc809eeae171b3b89fce1c2abb901cbb3f81022932b986d503cd2e1018"
+    },
+    {
+      "path": "records/task-records/staging-audit/scoped-final/crates/deadpan-plan/src/audio_sound_admission_tests.rs.gz",
+      "bytes": 3049,
+      "sha256": "e814b1ada144b9ca596c76bb9779d8ff862d7641043d8bd478eb26ba951d3756",
+      "expanded_bytes": 12094,
+      "expanded_sha256": "615035857fb79278bcf3ba1e9e31913662c70656e253997568fe13b06407715c"
+    },
+    {
+      "path": "records/task-records/staging-audit/scoped-final/crates/deadpan-plan/src/audio_sound_owner_context.rs.gz",
+      "bytes": 2764,
+      "sha256": "9d6ac86330f678c2146e430b032afd9c4136abb6fff274a3cf4585b373c79d28",
+      "expanded_bytes": 8904,
+      "expanded_sha256": "4e5f6ae32b4b163f1d35a2596119b63c24abd142b79743b0f4d11c0b08e2233f"
+    },
+    {
+      "path": "records/task-records/staging-audit/scoped-final/crates/deadpan-plan/src/audio_source_occurrence.rs.gz",
+      "bytes": 9849,
+      "sha256": "cb63dc5b01490058bce2742857722aff70ff4c0f13962bc31243a32aee271567",
+      "expanded_bytes": 43308,
+      "expanded_sha256": "efa505472571100624ba27e6be4a140a2dd574a5f51f39123ca20c96e324038f"
+    },
+    {
+      "path": "records/task-records/staging-audit/scoped-final/crates/deadpan-plan/src/lib.rs.gz",
+      "bytes": 2350,
+      "sha256": "329c4752490317c4ee0a8a47fe73731ff33b510a5096cc80357bdafd9bae2874",
+      "expanded_bytes": 7287,
+      "expanded_sha256": "200ab175893020c8bcfcfe531735c048db1f9a1f5b1ebe77fed0f13732d12e81"
+    },
+    {
+      "path": "records/task-records/staging-audit/staging-manifest.json.gz",
+      "bytes": 525,
+      "sha256": "a189ad68f0651c574393ebd7d43a52d52b3908b960fa9d3ba6cac01883e47460",
+      "expanded_bytes": 960,
+      "expanded_sha256": "31c91d28dea093c732d11019cc88e02f00c10e36f8d4103320b4312d89b42cb7"
+    },
+    {
+      "path": "records/task-records/staging-audit/task-files.json.gz",
+      "bytes": 1355,
+      "sha256": "112b8d8d0e24e9907521bbd04c40485bd31103da4c1a1dd5206fc20014612b01",
+      "expanded_bytes": 5138,
+      "expanded_sha256": "f07c18667b288514abe8089c9d61b37dc2f52f9f3e9461906f76b7934f48d94a"
+    },
+    {
+      "path": "records/task-records/staging-audit/task-staging.patch.gz",
+      "bytes": 15418,
+      "sha256": "c6e81208befb6cf8c187e25da6f825ebc744d15975c506df980a753cc7c4d086",
+      "expanded_bytes": 71563,
+      "expanded_sha256": "67d8b8a628190a6d00893eca83f1876abd01466a93853a1cda9b1e42f25e898c"
+    },
+    {
+      "path": "records/task-records/staging-audit/validation/crates/deadpan-audio/src/authored_eq.rs.gz",
+      "bytes": 5574,
+      "sha256": "881ac532007fb729fa647f833c675ba1c21e93a15dd2ca98ca58843e656fdce4",
+      "expanded_bytes": 24921,
+      "expanded_sha256": "f2e4c57241a87d171cd035ddd6a8c3e51becff55e555652ae16c7fe83cd3c0a0"
+    },
+    {
+      "path": "records/task-records/staging-audit/validation/crates/deadpan-audio/src/shared_eq/node_description.rs.gz",
+      "bytes": 2161,
+      "sha256": "40dc61ccdf5aa766f122627ce429ac826f09d9685539a15d415956c98df05f5f",
+      "expanded_bytes": 6321,
+      "expanded_sha256": "c19c8555d9588d75b88edab702b8dfd1f9379e7617a115e90e00400caa41840c"
+    },
+    {
+      "path": "records/task-records/staging-audit/validation/crates/deadpan-audio/src/shared_eq/sound_admission_tests.rs.gz",
+      "bytes": 1513,
+      "sha256": "9e708f736180c0e3ca40ceee72e5db2d78a28bb0b44b6e5d7592daabdb58094c",
+      "expanded_bytes": 5668,
+      "expanded_sha256": "324601f260b8a2d622495d932e2a2acc054c018691708772c9cc55bba38ee3a5"
+    },
+    {
+      "path": "records/task-records/staging-audit/validation/crates/deadpan-audio/src/shared_eq.rs.gz",
+      "bytes": 10028,
+      "sha256": "a7a7f3f393d8cf33291e94cdc31bc69afbbee5ba83d5ad9ee63ba535c35c64e7",
+      "expanded_bytes": 47660,
+      "expanded_sha256": "cb4e7d5a42b1ce5f87777981304e591a46e8fcb9c269ee73a0ed018aab3994fc"
+    },
+    {
+      "path": "records/task-records/staging-audit/validation/crates/deadpan-audio/src/sound_context_admission.rs.gz",
+      "bytes": 1155,
+      "sha256": "d0da95d0b0f007e6dc79048c78983e40749d37d939a99ba624e0f47c410ed200",
+      "expanded_bytes": 3336,
+      "expanded_sha256": "afef23478b14a0be5d7cb786f9cbb1fdd1acb9fb01cbb2be1ac3eb2258c53a6d"
+    },
+    {
+      "path": "records/task-records/staging-audit/validation/crates/deadpan-audio/src/sound_context_admission_tests.rs.gz",
+      "bytes": 1495,
+      "sha256": "2271ac97bfb6d9a4402ed01755d19b1b0a6f2240251b200fdc46e5dde7f5ea9e",
+      "expanded_bytes": 5395,
+      "expanded_sha256": "a0164a3d78450f918ad885420fbf9a59ea172d9d6bd8b147cd2235ed12cbdbdf"
+    },
+    {
+      "path": "records/task-records/staging-audit/validation/crates/deadpan-audio/src/stages.rs.gz",
+      "bytes": 28763,
+      "sha256": "84e1d1147ea421ffdd61f4a46fade053d9cc015ea95c826161e4c7f79df40a07",
+      "expanded_bytes": 162703,
+      "expanded_sha256": "3aba6aca4baf5cbd0baf8493218704a6091c6db8f8e04fec91cf908fd3b04212"
+    },
+    {
+      "path": "records/task-records/staging-audit/validation/crates/deadpan-plan/src/audio_signal.rs.gz",
+      "bytes": 9749,
+      "sha256": "514b4cc47164c0e64f7cea3fdde991fc4025ff7aba76cbaeaebb7b288bbff3ad",
+      "expanded_bytes": 51674,
+      "expanded_sha256": "6377d133f1c3cd7f094ca37a7b34e013d498b9e75f5b02d9f661170c35c88d3f"
+    },
+    {
+      "path": "records/task-records/staging-audit/validation/crates/deadpan-plan/src/audio_sound_admission.rs.gz",
+      "bytes": 3843,
+      "sha256": "6308a51790e76faba0b353f8d371afd08bda2cad76815f24a38208cbf7643a49",
+      "expanded_bytes": 16882,
+      "expanded_sha256": "1a7fa1cc809eeae171b3b89fce1c2abb901cbb3f81022932b986d503cd2e1018"
+    },
+    {
+      "path": "records/task-records/staging-audit/validation/crates/deadpan-plan/src/audio_sound_admission_tests.rs.gz",
+      "bytes": 3049,
+      "sha256": "e814b1ada144b9ca596c76bb9779d8ff862d7641043d8bd478eb26ba951d3756",
+      "expanded_bytes": 12094,
+      "expanded_sha256": "615035857fb79278bcf3ba1e9e31913662c70656e253997568fe13b06407715c"
+    },
+    {
+      "path": "records/task-records/staging-audit/validation/crates/deadpan-plan/src/audio_sound_owner_context.rs.gz",
+      "bytes": 2764,
+      "sha256": "9d6ac86330f678c2146e430b032afd9c4136abb6fff274a3cf4585b373c79d28",
+      "expanded_bytes": 8904,
+      "expanded_sha256": "4e5f6ae32b4b163f1d35a2596119b63c24abd142b79743b0f4d11c0b08e2233f"
+    },
+    {
+      "path": "records/task-records/staging-audit/validation/crates/deadpan-plan/src/audio_source_occurrence.rs.gz",
+      "bytes": 9849,
+      "sha256": "cb63dc5b01490058bce2742857722aff70ff4c0f13962bc31243a32aee271567",
+      "expanded_bytes": 43308,
+      "expanded_sha256": "efa505472571100624ba27e6be4a140a2dd574a5f51f39123ca20c96e324038f"
+    },
+    {
+      "path": "records/task-records/staging-audit/validation/crates/deadpan-plan/src/lib.rs.gz",
+      "bytes": 2350,
+      "sha256": "329c4752490317c4ee0a8a47fe73731ff33b510a5096cc80357bdafd9bae2874",
+      "expanded_bytes": 7287,
+      "expanded_sha256": "200ab175893020c8bcfcfe531735c048db1f9a1f5b1ebe77fed0f13732d12e81"
+    },
+    {
+      "path": "records/task-records/start_plan.py.gz",
+      "bytes": 312,
+      "sha256": "cf02f94ec7e9a8636d5e5e15876a619c3aa4176e6ef72d9b6a06568923698591",
+      "expanded_bytes": 498,
+      "expanded_sha256": "5e654d02436285770535e064c529762287dde700edaa9082959b9d3c586aecaf"
+    },
+    {
+      "path": "records/task-records/tests.patch.gz",
+      "bytes": 5335,
+      "sha256": "d5051c831f6be2d30ac6578f6efe1b7513846e7a279da08604b65103ae58a784",
+      "expanded_bytes": 24268,
+      "expanded_sha256": "f4be5a18771465203e1e60f56c5d2e1d410ca2bd3aa273214acdc433a28facec"
+    },
+    {
+      "path": "records/current-source/crates/deadpan-audio/src/authored_eq.rs.gz",
+      "bytes": 5574,
+      "sha256": "881ac532007fb729fa647f833c675ba1c21e93a15dd2ca98ca58843e656fdce4",
+      "expanded_bytes": 24921,
+      "expanded_sha256": "f2e4c57241a87d171cd035ddd6a8c3e51becff55e555652ae16c7fe83cd3c0a0"
+    },
+    {
+      "path": "records/current-source/crates/deadpan-audio/src/shared_eq/node_description.rs.gz",
+      "bytes": 2161,
+      "sha256": "40dc61ccdf5aa766f122627ce429ac826f09d9685539a15d415956c98df05f5f",
+      "expanded_bytes": 6321,
+      "expanded_sha256": "c19c8555d9588d75b88edab702b8dfd1f9379e7617a115e90e00400caa41840c"
+    },
+    {
+      "path": "records/current-source/crates/deadpan-audio/src/shared_eq/sound_admission_tests.rs.gz",
+      "bytes": 1562,
+      "sha256": "753ccb4aa2659eadd8018df5f4f2b8ef74c090a6195208e18d9198b4019843b2",
+      "expanded_bytes": 5817,
+      "expanded_sha256": "57b5b8ef35c4afffe2f8db14823e41fda9a097161df004bc7c586e4f8ad5671b"
+    },
+    {
+      "path": "records/current-source/crates/deadpan-audio/src/shared_eq.rs.gz",
+      "bytes": 9513,
+      "sha256": "79cd30dab93c5ef065b9fb7b23e377e24d54cd7aea13a6e1fb3d286828406d4e",
+      "expanded_bytes": 44445,
+      "expanded_sha256": "5f6715cb664fe09991b5da2908d7990f6137f2e9c08ba387e685bdc5cb364dee"
+    },
+    {
+      "path": "records/current-source/crates/deadpan-audio/src/sound_context_admission.rs.gz",
+      "bytes": 1155,
+      "sha256": "d0da95d0b0f007e6dc79048c78983e40749d37d939a99ba624e0f47c410ed200",
+      "expanded_bytes": 3336,
+      "expanded_sha256": "afef23478b14a0be5d7cb786f9cbb1fdd1acb9fb01cbb2be1ac3eb2258c53a6d"
+    },
+    {
+      "path": "records/current-source/crates/deadpan-audio/src/sound_context_admission_tests.rs.gz",
+      "bytes": 1495,
+      "sha256": "2271ac97bfb6d9a4402ed01755d19b1b0a6f2240251b200fdc46e5dde7f5ea9e",
+      "expanded_bytes": 5395,
+      "expanded_sha256": "a0164a3d78450f918ad885420fbf9a59ea172d9d6bd8b147cd2235ed12cbdbdf"
+    },
+    {
+      "path": "records/current-source/crates/deadpan-audio/src/stages.rs.gz",
+      "bytes": 28899,
+      "sha256": "8a56500340a8a6b2c5760ea35bbfbaa6f60497f2138691eadd77c6d9d7db25fe",
+      "expanded_bytes": 163164,
+      "expanded_sha256": "7fa81e333bf6cbfb777d807f3e52f498f415169775f0db0f7d2e552482509e77"
+    },
+    {
+      "path": "records/current-source/crates/deadpan-plan/src/audio_signal.rs.gz",
+      "bytes": 9749,
+      "sha256": "514b4cc47164c0e64f7cea3fdde991fc4025ff7aba76cbaeaebb7b288bbff3ad",
+      "expanded_bytes": 51674,
+      "expanded_sha256": "6377d133f1c3cd7f094ca37a7b34e013d498b9e75f5b02d9f661170c35c88d3f"
+    },
+    {
+      "path": "records/current-source/crates/deadpan-plan/src/audio_sound_admission.rs.gz",
+      "bytes": 3843,
+      "sha256": "6308a51790e76faba0b353f8d371afd08bda2cad76815f24a38208cbf7643a49",
+      "expanded_bytes": 16882,
+      "expanded_sha256": "1a7fa1cc809eeae171b3b89fce1c2abb901cbb3f81022932b986d503cd2e1018"
+    },
+    {
+      "path": "records/current-source/crates/deadpan-plan/src/audio_sound_admission_tests.rs.gz",
+      "bytes": 3049,
+      "sha256": "e814b1ada144b9ca596c76bb9779d8ff862d7641043d8bd478eb26ba951d3756",
+      "expanded_bytes": 12094,
+      "expanded_sha256": "615035857fb79278bcf3ba1e9e31913662c70656e253997568fe13b06407715c"
+    },
+    {
+      "path": "records/current-source/crates/deadpan-plan/src/audio_sound_owner_context.rs.gz",
+      "bytes": 2764,
+      "sha256": "9d6ac86330f678c2146e430b032afd9c4136abb6fff274a3cf4585b373c79d28",
+      "expanded_bytes": 8904,
+      "expanded_sha256": "4e5f6ae32b4b163f1d35a2596119b63c24abd142b79743b0f4d11c0b08e2233f"
+    },
+    {
+      "path": "records/current-source/crates/deadpan-plan/src/audio_source_occurrence.rs.gz",
+      "bytes": 9849,
+      "sha256": "cb63dc5b01490058bce2742857722aff70ff4c0f13962bc31243a32aee271567",
+      "expanded_bytes": 43308,
+      "expanded_sha256": "efa505472571100624ba27e6be4a140a2dd574a5f51f39123ca20c96e324038f"
+    },
+    {
+      "path": "records/current-source/crates/deadpan-plan/src/lib.rs.gz",
+      "bytes": 2350,
+      "sha256": "329c4752490317c4ee0a8a47fe73731ff33b510a5096cc80357bdafd9bae2874",
+      "expanded_bytes": 7287,
+      "expanded_sha256": "200ab175893020c8bcfcfe531735c048db1f9a1f5b1ebe77fed0f13732d12e81"
+    },
+    {
+      "path": "records/design-and-rust-references/design-check.json.gz",
+      "bytes": 436,
+      "sha256": "ca323a1c76abd3453bdd21e2252d9ecab2ebb607aef2881589630e0e058f0304",
+      "expanded_bytes": 669,
+      "expanded_sha256": "c3cbf77843e8b91aa091f9fa116ba763c86635b9520e455cf45baad3ac3cb26c"
+    },
+    {
+      "path": "records/design-and-rust-references/independent-review.md.gz",
+      "bytes": 2861,
+      "sha256": "48f5274a81f0550f7c6ca6d748760d0fe1a937f805f269634a2cd35a1602fa50",
+      "expanded_bytes": 6270,
+      "expanded_sha256": "4873c248288c787ffd2ea6aff2070ae616e4ea4c66858f4d1ec6d156bd2eec3e"
+    },
+    {
+      "path": "records/design-and-rust-references/notes.md.gz",
+      "bytes": 11603,
+      "sha256": "f04d623cc8856f6822aaf1c1ef5be9f827482852ae046ac394a58cfaf73181f2",
+      "expanded_bytes": 29727,
+      "expanded_sha256": "684a1c0038793976e4ec4274fb07ec08c7dd12b3ec88a880a9580913e636c7b3"
+    },
+    {
+      "path": "records/design-and-rust-references/rust-1.97.1-alloc/alloc.rs.gz",
+      "bytes": 4093,
+      "sha256": "fb8030d5ba0141368986bea8df7d70ac18a9273ab63362156654b62ab2cdbcf1",
+      "expanded_bytes": 22506,
+      "expanded_sha256": "afc8eece58d63942328cab563fad1b180b50afdadc9141d40e5d98a6df90cd70"
+    },
+    {
+      "path": "records/design-and-rust-references/rust-1.97.1-alloc/raw_vec/mod.rs.gz",
+      "bytes": 8041,
+      "sha256": "daa23e45dae732c31d176470b41a7a761983f0ec127b504e42cca5527df010e9",
+      "expanded_bytes": 35354,
+      "expanded_sha256": "ed847fcc6d237a1ddf95dc54bc8a3823ae89bea125f3e45cb8bb54ae0000fff0"
+    },
+    {
+      "path": "records/design-and-rust-references/rust-1.97.1-alloc/sync.rs.gz",
+      "bytes": 37044,
+      "sha256": "198b17668cda5101dfe8f481f2e428e191f1e523225b7f3935b54ec72bd70309",
+      "expanded_bytes": 177276,
+      "expanded_sha256": "768776d4a37cfeb28c71a0c6d8b2ad33332d11ceaef7e47cb01463bd71b9048a"
+    },
+    {
+      "path": "records/design-and-rust-references/rust-1.97.1-alloc/vec/mod.rs.gz",
+      "bytes": 36756,
+      "sha256": "dc92f21c4fe9b0d1dc0001014aa34c7397f2c48769206c5ffa39d61aa2b4b1da",
+      "expanded_bytes": 167726,
+      "expanded_sha256": "93e3f8bad8de514ccd23c84d9c036405f32cf0b24c40e11f69f012b5264ad08e"
+    },
+    {
+      "path": "records/design-and-rust-references/source-sha256.json.gz",
+      "bytes": 1015,
+      "sha256": "48398d52e490a927b84cbc8b781e7decf055228ba76711976fbd59e8010a0bf6",
+      "expanded_bytes": 2791,
+      "expanded_sha256": "7148e880050ea1f0f47f37eafbd8d7fdf54265f8170e302e09bf9cddb3dee684"
+    },
+    {
+      "path": "records/design-and-rust-references/source-snapshot/crates/deadpan-audio/src/shared_eq/node_description.rs.gz",
+      "bytes": 1113,
+      "sha256": "cd35dc65efc9e152695174fa159d035d5c690dfe614b67f7f52b8eddea46b132",
+      "expanded_bytes": 2703,
+      "expanded_sha256": "adc7919f8ee9ea187f188ee8123acd59411fb796519dbfe5811c71e97d3c129b"
+    },
+    {
+      "path": "records/design-and-rust-references/source-snapshot/crates/deadpan-audio/src/shared_eq.rs.gz",
+      "bytes": 9118,
+      "sha256": "a6621bb8909e62294f4598b9d3d7bcf4aca17acedc3989a3c3a6eb99e1063eda",
+      "expanded_bytes": 42761,
+      "expanded_sha256": "1bdf125d4efc76ba55f894abe1d8e161c543f9fbb5a3dc1069f893e4d8d009de"
+    },
+    {
+      "path": "records/design-and-rust-references/source-snapshot/crates/deadpan-audio/src/stages.rs.gz",
+      "bytes": 28832,
+      "sha256": "49eccef008b20247cd54ea154b19a2391af4d39fa1264ad5abb36cffa1d6bce2",
+      "expanded_bytes": 162927,
+      "expanded_sha256": "f46d5d0423bf1874165e2f0c97d5453aa2e33186982254b9cef226ea2e5e2a83"
+    },
+    {
+      "path": "records/design-and-rust-references/source-snapshot/crates/deadpan-core/src/occurrence.rs.gz",
+      "bytes": 3845,
+      "sha256": "bf4ad0684fa93fd7de6da8e1cd900aa2dd632811321a7d1f8dcd8ee4257288e5",
+      "expanded_bytes": 14900,
+      "expanded_sha256": "8850cca1bfab8b663c179f8ef5b1054c08a6aaeb57f3d95e7d76e1c7781d8330"
+    },
+    {
+      "path": "records/design-and-rust-references/source-snapshot/crates/deadpan-plan/src/audio_allocated.rs.gz",
+      "bytes": 2673,
+      "sha256": "be76bbe24116341779c780b00731f13cbe6681fe1a5761dee4cb370a9d6f64ea",
+      "expanded_bytes": 11672,
+      "expanded_sha256": "f1d972325c9db94b2ca9ed7d847c4902130d24c3ab15e3a2624d9b1df6342d36"
+    },
+    {
+      "path": "records/design-and-rust-references/source-snapshot/crates/deadpan-plan/src/audio_domain.rs.gz",
+      "bytes": 3378,
+      "sha256": "97263ba1b8343855b4a55db2dea029e59f66974982dc33e115fe2371a26e4f3a",
+      "expanded_bytes": 13390,
+      "expanded_sha256": "de9bb6c75468270e1fa15e9f55404ef5fa8a5853396ec3b6a21d9d909bcbe7de"
+    },
+    {
+      "path": "records/design-and-rust-references/source-snapshot/crates/deadpan-plan/src/audio_sound_owner_context.rs.gz",
+      "bytes": 2435,
+      "sha256": "42def4d42891c201d122be616ff51ad156c8ccd0bbd6b69389f06f3d8380be0c",
+      "expanded_bytes": 7573,
+      "expanded_sha256": "0a153b9e8a6fadfdc71db389cc87f26cfbbf582d171b4b5cd5d9eb544d178404"
+    },
+    {
+      "path": "records/design-and-rust-references/source-snapshot/crates/deadpan-plan/src/audio_source_occurrence.rs.gz",
+      "bytes": 9523,
+      "sha256": "9a89ba172c6aafff342a2de6dafef32b57850a38a6e78ff22af14db887c6218c",
+      "expanded_bytes": 41877,
+      "expanded_sha256": "64e2a16dcd8389472910530b93116ff87f1d37f9b9d8826d497f3457090694c0"
+    }
+  ]
+}

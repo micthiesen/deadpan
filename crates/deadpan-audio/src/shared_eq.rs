@@ -13,6 +13,9 @@ mod node_description;
 #[cfg(test)]
 #[path = "shared_eq/admission_tests.rs"]
 mod admission_tests;
+#[cfg(test)]
+#[path = "shared_eq/sound_admission_tests.rs"]
+mod sound_admission_tests;
 use deadpan_core::{NodeId, SoundId};
 use deadpan_dsp::{
     FINITE_FILTER_INPUT_FRAMES as INPUT, FINITE_FILTER_OUTPUT_FRAMES as OUTPUT,
@@ -325,8 +328,14 @@ impl StageAudio {
             result.suppressed = merged_suppression(result.suppressed);
             Ok(result)
         })();
-        self.active_frames -= reservation + graph.resident;
+        self.release_shared_graph(graph, reservation);
         result
+    }
+
+    fn release_shared_graph(&mut self, graph: Graph<'_>, reservation: u64) {
+        let graph_resident = graph.resident;
+        drop(graph);
+        self.active_frames -= reservation + graph_resident;
     }
 
     fn read_shared_program<'plan>(
@@ -846,36 +855,51 @@ impl StageAudio {
         {
             return Err(StageAudioError::Limit("temporal owner count"));
         }
-        let node_description::Description {
-            context,
-            boundary,
-            stop,
-            kind,
-        } = node_description::describe(
-            graph.plan,
-            node_description::Request {
-                incoming: program.context,
-                owner,
-                at,
-                kind,
-                stage,
-                original_only: graph.original_only,
-            },
-            control,
-        )?;
+        let mut description = {
+            let mut admission = sound_context_admission::Admission::new(self, control);
+            node_description::describe_admitted(
+                graph.plan,
+                node_description::Request {
+                    incoming: program.context,
+                    owner,
+                    at,
+                    kind,
+                    stage,
+                    original_only: graph.original_only,
+                },
+                control,
+                &mut admission,
+            )?
+        };
+        let metadata_frames = description
+            .sound
+            .as_ref()
+            .and_then(|sound| sound.lease())
+            .map_or(0, sound_context_admission::Lease::frames);
+        let expected_issuer = sound_context_admission::issuer(control);
+        if description
+            .sound
+            .as_ref()
+            .is_some_and(|sound| sound.issuer() != expected_issuer)
+        {
+            return Err(PlanError::AudioMetadataIssuerMismatch.into());
+        }
         let resident = match kind {
             Temporal::Equalizer(_) => u64::try_from(crate::Equalizer::preparation_bytes_bound())
                 .map_err(|_| StageAudioError::Range)?
                 .div_ceil(std::mem::size_of::<[f32; 2]>() as u64),
             Temporal::Wet(_) => 0,
         };
+        let retained = resident
+            .checked_add(metadata_frames)
+            .ok_or(StageAudioError::Range)?;
         let next_active = self
             .active_frames
-            .checked_add(resident)
+            .checked_add(retained)
             .ok_or(StageAudioError::Range)?;
         let next_resident = graph
             .resident
-            .checked_add(resident)
+            .checked_add(retained)
             .ok_or(StageAudioError::Range)?;
         let filter = match kind {
             Temporal::Equalizer(_) => {
@@ -890,19 +914,37 @@ impl StageAudio {
             Temporal::Wet(_) => None,
         };
         control.check()?;
-        graph.nodes.push(Node {
-            parent: program.parent,
-            context,
-            boundary,
-            stop,
-            filter,
-            kind,
-            tiles: BTreeMap::new(),
-        });
-        // Keep the entire published construction bound for the filter's life,
-        // including when recursive tile reads temporarily take it from Node.
-        self.active_frames = next_active;
-        graph.resident = next_resident;
+        // Reserve the existing Node Vec growth before the infallible handoff.
+        // Its heap is outside this bounded current-sound admission slice.
+        graph.nodes.reserve(1);
+        let values = &mut description.values;
+        let publish = |charge: Option<&mut sound_context_admission::Lease<'_>>| {
+            let node_description::DescriptionValues {
+                context,
+                boundary,
+                stop,
+                kind,
+            } = values.take().expect("unpublished description");
+            graph.nodes.push(Node {
+                parent: program.parent,
+                context,
+                boundary,
+                stop,
+                filter,
+                kind,
+                tiles: BTreeMap::new(),
+            });
+            self.active_frames = next_active;
+            graph.resident = next_resident;
+            if let Some(charge) = charge {
+                charge.commit();
+            }
+        };
+        if let Some(sound) = description.sound.as_mut() {
+            sound.transfer_charge(expected_issuer, publish)?;
+        } else {
+            publish(None);
+        }
         Ok(graph.nodes.len() - 1)
     }
 

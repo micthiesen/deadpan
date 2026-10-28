@@ -13,20 +13,51 @@ pub(super) struct Request<'request, 'plan> {
     pub(super) original_only: bool,
 }
 
-pub(super) struct Description<'plan> {
+pub(super) struct DescriptionValues<'plan> {
     pub(super) context: Contexts<'plan>,
     pub(super) boundary: AudioTreatmentBoundary<'plan>,
     pub(super) stop: Boundary,
     pub(super) kind: Temporal,
 }
 
-/// No renderer, Graph mutation, provider, native processor or cache belongs
-/// here. Query, spend, clone and error order is the inherited numerical body.
+/// Owning context clones drop before the admitted carrier and its final lease.
+pub(super) struct Description<'plan, I: Copy + Eq, L> {
+    pub(super) values: Option<DescriptionValues<'plan>>,
+    pub(super) sound: Option<deadpan_plan::AdmittedSoundContext<'plan, I, L>>,
+}
+impl<'plan, I: Copy + Eq, L> std::ops::Deref for Description<'plan, I, L> {
+    type Target = DescriptionValues<'plan>;
+    fn deref(&self) -> &Self::Target {
+        self.values.as_ref().expect("unpublished description")
+    }
+}
+
+#[cfg(test)]
 pub(super) fn describe<'plan>(
     plan: &'plan RenderPlan,
     request: Request<'_, 'plan>,
     control: WorkControl<'_>,
-) -> Result<Description<'plan>, StageAudioError> {
+) -> Result<Description<'plan, (), ()>, StageAudioError> {
+    describe_admitted(
+        plan,
+        request,
+        control,
+        &mut sound_context_admission::Unmetered,
+    )
+}
+
+/// No renderer, Graph mutation, provider, native processor or cache belongs
+/// here. Root/Domain capture reuses its actual membership query; remaining
+/// context-selection phases keep their checked numerical order.
+pub(super) fn describe_admitted<'plan, A>(
+    plan: &'plan RenderPlan,
+    request: Request<'_, 'plan>,
+    control: WorkControl<'_>,
+    admission: &mut A,
+) -> Result<Description<'plan, A::Issuer, A::Lease>, StageAudioError>
+where
+    A: deadpan_plan::AudioSoundContextAdmission<Error = StageAudioError>,
+{
     let Request {
         incoming,
         owner,
@@ -36,13 +67,18 @@ pub(super) fn describe<'plan>(
         original_only,
     } = request;
     let key = OwnerKey::new(owner);
-    let sounds = if !original_only && owner.kind() == deadpan_plan::AudioOwnerKind::Node {
-        let context =
-            plan.audio_sound_instance_context(owner.instance(), control.query_limits()?)?;
-        control.spend_plan_work(context.construction_work())?;
-        Sounds::Owner(Arc::new(context))
+    let mut sound = if !original_only && owner.kind() == deadpan_plan::AudioOwnerKind::Node {
+        let context = plan.audio_sound_instance_context_admitted(
+            owner.instance(),
+            control.query_limits()?,
+            admission,
+        )?;
+        if !A::METERED {
+            control.spend_plan_work(context.context().construction_work())?;
+        }
+        Some(context.into_shared(admission)?)
     } else {
-        Sounds::None
+        None
     };
     let range = incoming.original.support(
         plan,
@@ -52,20 +88,35 @@ pub(super) fn describe<'plan>(
         original_context(plan, &incoming.original, &key, range, at, control)?
     {
         original
-    } else if let Sounds::Owner(context) = &sounds {
-        Context::Domain(Arc::new(context.processing_domain().clone()))
+    } else if let Some(context) = sound.take() {
+        sound = Some(context.with_processing_domain(admission)?);
+        Context::Domain(Arc::clone(
+            sound
+                .as_ref()
+                .expect("created fallback")
+                .processing_domain()
+                .expect("processing Domain"),
+        ))
     } else {
         return Err(PlanError::InvalidPlan("missing shared EQ Original context").into());
     };
     let boundary = owner.treatment_boundary(stage)?;
     Ok(Description {
-        context: Contexts { original, sounds },
-        boundary,
-        stop: Boundary {
-            owner: key,
-            before: stage,
-        },
-        kind,
+        values: Some(DescriptionValues {
+            context: Contexts {
+                original,
+                sounds: sound.as_ref().map_or(Sounds::None, |context| {
+                    Sounds::Owner(Arc::clone(context.shared()))
+                }),
+            },
+            boundary,
+            stop: Boundary {
+                owner: key,
+                before: stage,
+            },
+            kind,
+        }),
+        sound,
     })
 }
 

@@ -10,7 +10,8 @@ use crate::{
 
 #[path = "audio_sound_owner_context.rs"]
 mod owner_context;
-pub use owner_context::AudioSoundOwnerContext;
+use owner_context::admission::{SoundBuild, Unmetered};
+pub use owner_context::{AdmittedSoundContext, AudioSoundContextAdmission, AudioSoundOwnerContext};
 
 #[path = "audio_sound_processing_history.rs"]
 mod processing_history;
@@ -126,7 +127,7 @@ impl Placement {
     }
 }
 
-struct Edge {
+pub(in crate::plan) struct Edge {
     parent: usize,
     map: Placement,
     repeats: usize,
@@ -474,32 +475,53 @@ fn resolve_edges(
     instance: &InstancePath,
     budget: &mut BuildBudget,
 ) -> Result<(Vec<Edge>, usize, bool), PlanError> {
-    let mut chain = vec![host];
+    let mut admission = Unmetered;
+    let mut build = SoundBuild::new(&mut admission, budget.remaining);
+    let result = resolve_edges_admitted(plan, host, instance, &mut build);
+    budget.remaining = build.remaining();
+    let (length, processing) = result?;
+    Ok((std::mem::take(&mut build.values.edges), length, processing))
+}
+
+fn resolve_edges_admitted<A: AudioSoundContextAdmission>(
+    plan: &RenderPlan,
+    host: usize,
+    instance: &InstancePath,
+    build: &mut SoundBuild<'_, '_, A>,
+) -> Result<(usize, bool), A::Error> {
+    let capacity = if host == plan.root {
+        1
+    } else {
+        MAX_DOCUMENT_DEPTH + 1
+    };
+    build.reserve_chain(capacity)?;
+    build.values.chain.push(host);
     let mut node = host;
     while node != plan.root {
-        budget.spend(1)?;
-        if chain.len() > MAX_DOCUMENT_DEPTH {
-            return Err(PlanError::AudioQueryLimit("source occurrence depth"));
+        build.spend(1)?;
+        if build.values.chain.len() > MAX_DOCUMENT_DEPTH {
+            return Err(PlanError::AudioQueryLimit("source occurrence depth").into());
         }
         node = plan.parents[node].ok_or(PlanError::InvalidAudioSourceOccurrence(
             "source occurrence is detached",
         ))?;
-        chain.push(node);
+        build.values.chain.push(node);
     }
-    chain.reverse();
-    let mut edges = Vec::with_capacity(chain.len().saturating_sub(1));
+    build.values.chain.reverse();
+    let chain_len = build.values.chain.len();
+    build.reserve_edges(chain_len.saturating_sub(1))?;
     let mut repeats = 0usize;
     let mut has_processing = false;
-    for pair in chain.windows(2) {
-        budget.spend(1)?;
-        let parent = pair[0];
-        let child = pair[1];
+    for index in 0..chain_len.saturating_sub(1) {
+        build.spend(1)?;
+        let parent = build.values.chain[index];
+        let child = build.values.chain[index + 1];
         let scope = repeats;
         let mut gap = None;
         let mut position = None;
         let map = match &plan.nodes[parent].kind {
             CompiledKind::Sequence { entries } => {
-                budget.spend(entries.len())?;
+                build.spend(entries.len())?;
                 let entry = entries.iter().find(|entry| entry.child == child).ok_or(
                     PlanError::InvalidAudioSourceOccurrence(
                         "source occurrence Sequence child is absent",
@@ -511,24 +533,31 @@ fn resolve_edges(
                 }
             }
             CompiledKind::Repeat { layout, .. } => {
-                budget.spend(layout.segment_count())?;
+                build.spend(layout.segment_count())?;
                 let play = instance
                     .repeats
                     .get(repeats)
                     .filter(|play| play.node == plan.nodes[parent].inspection.id)
                     .map(|play| layout.play(&play.iteration))
-                    .transpose()?
+                    .transpose()
+                    .map_err(PlanError::from)?
                     .flatten()
                     .ok_or(PlanError::InvalidAudioSourceOccurrence(
                         "source occurrence Repeat identity is missing or invalid",
                     ))?;
                 let offset = play
-                    .branch_offset(&plan.nodes[child].inspection.id)?
+                    .branch_offset(&plan.nodes[child].inspection.id)
+                    .map_err(PlanError::from)?
                     .ok_or(PlanError::InvalidAudioSourceOccurrence(
                         "source occurrence is not the selected Repeat branch",
                     ))?;
                 if play.gap_child.as_ref() == Some(&plan.nodes[child].inspection.id) {
-                    gap = Some(offset..offset.checked_add(play.gap_after)?);
+                    gap = Some(
+                        offset
+                            ..offset
+                                .checked_add(play.gap_after)
+                                .map_err(PlanError::from)?,
+                    );
                 }
                 repeats += 1;
                 position = Some(play.index);
@@ -545,19 +574,24 @@ fn resolve_edges(
                 ..
             } if *expected == child => {
                 has_processing |= pitch.processes(*scale == ExactRatio::ONE);
-                let reciprocal = ExactRatio::ONE.checked_div(*scale)?;
+                let reciprocal = ExactRatio::ONE
+                    .checked_div(*scale)
+                    .map_err(PlanError::from)?;
                 Placement {
-                    origin: ExactRatio::ZERO.checked_sub(start.checked_mul(reciprocal)?)?,
+                    origin: ExactRatio::ZERO
+                        .checked_sub(start.checked_mul(reciprocal).map_err(PlanError::from)?)
+                        .map_err(PlanError::from)?,
                     scale: reciprocal,
                 }
             }
             _ => {
                 return Err(PlanError::InvalidAudioSourceOccurrence(
                     "source occurrence has an invalid structural parent",
-                ));
+                )
+                .into());
             }
         };
-        edges.push(Edge {
+        build.values.edges.push(Edge {
             parent,
             map,
             repeats: scope,
@@ -568,9 +602,11 @@ fn resolve_edges(
     if repeats != instance.repeats.len() {
         return Err(PlanError::InvalidAudioSourceOccurrence(
             "source occurrence has extra Repeat identities",
-        ));
+        )
+        .into());
     }
-    Ok((edges, chain.len(), has_processing))
+    build.drop_chain();
+    Ok((chain_len, has_processing))
 }
 
 fn node_support(plan: &RenderPlan, node: usize) -> Range<ExactRatio> {
