@@ -522,3 +522,6 @@ fn candidate_root_and_domain_contexts_match_legacy_and_save_only_query_work() {
 
 #[path = "original_sharing_tests.rs"]
 mod original_sharing;
+
+#[path = "legacy_query_receipts.rs"]
+mod legacy_query_receipts;

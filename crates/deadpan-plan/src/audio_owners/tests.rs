@@ -1231,3 +1231,6 @@ fn treatments_are_checked_plan_owners_and_default_gap_never_duplicates_repeat_ga
     assert!(!owner.belongs_to(&plan));
     assert_eq!(owner.treatments(), Some(&treatment));
 }
+
+#[path = "legacy_snapshot_v1.rs"]
+mod legacy_snapshot_v1;

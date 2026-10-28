@@ -296,6 +296,17 @@ sources equal the isolated final build. The Split matrix stays four pass/
 three read-work-limit failures. No cap, weight, refund, cache or cold activation
 change; product coverage and all requirement/gate statuses remain unchanged.
 
+The [pre-admission query baseline](qualification/owner-query-baseline-2026-10-28.md)
+freezes actual old ordered query/capture semantics and numerical work before
+the next kernel changes. Both variants produce identical five-family,
+14-case arrays, including a hidden Domain/root counterexample, stable Repeat
+plays, fractional PointCeil and a retained Root Split after explicit lattice
+capture. Old WorkControl totals are 22/22/60. Test-only producers are actually
+run and pinned; default ignored declarations supply no acceptance credit.
+The initial wrong plain-Split fixture is corrected and retained. Strict lint,
+existing libraries and review pass. Product kernels remain unchanged; query
+admission and all existing resource/criterion/gate gaps remain open.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

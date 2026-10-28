@@ -133,19 +133,33 @@ enum and complex return; typed strategies and OriginalResult fix both without
 new heap allocation or suppression. Final rebuilt libraries/media qualify
 the corrected source. Sequential media execution prevents suite overlap.
 
+The [pre-admission query baseline](../qualification/owner-query-baseline-2026-10-28.md)
+now freezes old semantics before any query kernel changes: five families,
+14 cases, complete ordered clocks/Domain/seed/capture fields, exact/one-short
+errors and independent WorkControl totals 22/22/60. Both variant arrays agree.
+Plan snapshot and Audio receipts are published under their crates' tests/
+fixtures/owner-query-baseline-v1 directories. No expected file may be regenerated
+from a changed resolver or two wrappers over it. Six explicit producers pass;
+their default ignored declarations are capture-tool controls, not acceptance.
+Existing libraries and strict lint pass. The plain Split fixture initially
+assumed retained history; the corrected fixture explicitly installs a captured
+lattice and verifies the actual old member. Product kernels remain unchanged.
+All 17 terminal receipts, initial/corrected manifests and immutable outputs are
+in /tmp/deadpan-owner-query-baseline-2026-10-28 and its archived inventory.
+
 Next admit the actual candidate query through its reached Plan/Core binding
-and projection kernels. The reviewed design and concrete interface are in
-/tmp/deadpan-original-query-admission-2026-10-28, including explicit metered/
-unmetered child-work receipt rules and error-precedence decisions. First
-capture an independent pre-change SnapshotV1 oracle; scratch harness work is
-assigned under /tmp/deadpan-owner-query-baseline-2026-10-28. Preserve ordered
-owner/grid/Domain/capture fields, old work/errors and the hidden seeded Domain
-versus root counterexample before changing either kernel. No new golden may
-come from two wrappers over the same changed algorithm. Core/Plan fanout waits
-for those baseline results. Query-only integration must keep its lease through
-actual capture, while explicitly excluding capture/discarded span and retained
-probe/owners until their own closure. No runtime evidence for these follow-ups
-or full cold resource closure exists yet.
+and projection kernels. The frozen interface in
+/tmp/deadpan-original-query-admission-2026-10-28/interface-contract.md has SHA
+34e027354671ae37ecf16132e0c586d47ecf94317a1d8cd510401b21a511b5a6.
+One validation loop keeps legacy BTreeSet storage when unmetered and bounded
+sorted Vec when admitted. Canonical/additional work receipts and prepaid copy
+handling preserve old C/probe totals and forward real work once. Core and Plan
+workers now own separate scratch parts under /tmp/deadpan-owner-query-budget-2026-10-28;
+parent owns barrels, Audio integration and all compilation. No live kernel
+changes or implementation qualification exist yet. Query-only integration
+must keep its lease through actual capture, while explicitly excluding capture/
+discarded span and retained probe/owners until their own closure. No full cold
+resource closure or batching activation is established.
 Read-only allocation research in /tmp/deadpan-context-heap-2026-10-28 covers
 15 pinned sources. Retained-size visitors do not prove constructor peaks;
 before-allocation accounting must cover actual overlapping Plan/Core scratch.

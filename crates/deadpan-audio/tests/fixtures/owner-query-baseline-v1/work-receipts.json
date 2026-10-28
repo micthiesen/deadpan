@@ -1,0 +1,291 @@
+{
+  "cases": [
+    {
+      "ample": {
+        "final_plan_work": 22,
+        "headroom": 16777216,
+        "initial_plan_work": 0,
+        "metadata_frames": 0,
+        "new_billed_work": 22,
+        "outcome": {
+          "kind": "Domain",
+          "result": "Some"
+        },
+        "prepared_frames": 0,
+        "source_checks": 0
+      },
+      "at": 128,
+      "case": "unbound_eq_root",
+      "exact_total_headroom": {
+        "final_plan_work": 16777216,
+        "headroom": 22,
+        "initial_plan_work": 16777194,
+        "metadata_frames": 0,
+        "new_billed_work": 22,
+        "outcome": {
+          "kind": "Domain",
+          "result": "Some"
+        },
+        "prepared_frames": 0,
+        "source_checks": 0
+      },
+      "expected_success_receipt_total": 22,
+      "legacy_c": 8,
+      "legacy_q": 5,
+      "one_short_capture_headroom": {
+        "final_plan_work": 16777209,
+        "headroom": 12,
+        "initial_plan_work": 16777204,
+        "metadata_frames": 0,
+        "new_billed_work": 5,
+        "outcome": {
+          "error": {
+            "error": {
+              "budget": "structural work",
+              "variant": "AudioQueryLimit"
+            },
+            "variant": "Plan"
+          },
+          "result": "Error"
+        },
+        "prepared_frames": 0,
+        "source_checks": 0
+      },
+      "one_short_query_headroom": {
+        "final_plan_work": 16777212,
+        "headroom": 4,
+        "initial_plan_work": 16777212,
+        "metadata_frames": 0,
+        "new_billed_work": 0,
+        "outcome": {
+          "error": {
+            "error": {
+              "budget": "structural work",
+              "variant": "AudioQueryLimit"
+            },
+            "variant": "Plan"
+          },
+          "result": "Error"
+        },
+        "prepared_frames": 0,
+        "source_checks": 0
+      },
+      "one_short_total_headroom": {
+        "final_plan_work": 16777208,
+        "headroom": 21,
+        "initial_plan_work": 16777195,
+        "metadata_frames": 0,
+        "new_billed_work": 13,
+        "outcome": {
+          "error": {
+            "error": {
+              "budget": "structural work",
+              "variant": "AudioQueryLimit"
+            },
+            "variant": "Plan"
+          },
+          "result": "Error"
+        },
+        "prepared_frames": 0,
+        "source_checks": 0
+      },
+      "retained_owner_query_work": 0,
+      "retained_probe_work": 9,
+      "retained_result": "None",
+      "selected_member_index": 0
+    },
+    {
+      "ample": {
+        "final_plan_work": 22,
+        "headroom": 16777216,
+        "initial_plan_work": 0,
+        "metadata_frames": 0,
+        "new_billed_work": 22,
+        "outcome": {
+          "kind": "Domain",
+          "result": "Some"
+        },
+        "prepared_frames": 0,
+        "source_checks": 0
+      },
+      "at": 128,
+      "case": "unbound_eq_actual_domain",
+      "exact_total_headroom": {
+        "final_plan_work": 16777216,
+        "headroom": 22,
+        "initial_plan_work": 16777194,
+        "metadata_frames": 0,
+        "new_billed_work": 22,
+        "outcome": {
+          "kind": "Domain",
+          "result": "Some"
+        },
+        "prepared_frames": 0,
+        "source_checks": 0
+      },
+      "expected_success_receipt_total": 22,
+      "legacy_c": 8,
+      "legacy_q": 5,
+      "one_short_capture_headroom": {
+        "final_plan_work": 16777209,
+        "headroom": 12,
+        "initial_plan_work": 16777204,
+        "metadata_frames": 0,
+        "new_billed_work": 5,
+        "outcome": {
+          "error": {
+            "error": {
+              "budget": "structural work",
+              "variant": "AudioQueryLimit"
+            },
+            "variant": "Plan"
+          },
+          "result": "Error"
+        },
+        "prepared_frames": 0,
+        "source_checks": 0
+      },
+      "one_short_query_headroom": {
+        "final_plan_work": 16777212,
+        "headroom": 4,
+        "initial_plan_work": 16777212,
+        "metadata_frames": 0,
+        "new_billed_work": 0,
+        "outcome": {
+          "error": {
+            "error": {
+              "budget": "structural work",
+              "variant": "AudioQueryLimit"
+            },
+            "variant": "Plan"
+          },
+          "result": "Error"
+        },
+        "prepared_frames": 0,
+        "source_checks": 0
+      },
+      "one_short_total_headroom": {
+        "final_plan_work": 16777208,
+        "headroom": 21,
+        "initial_plan_work": 16777195,
+        "metadata_frames": 0,
+        "new_billed_work": 13,
+        "outcome": {
+          "error": {
+            "error": {
+              "budget": "structural work",
+              "variant": "AudioQueryLimit"
+            },
+            "variant": "Plan"
+          },
+          "result": "Error"
+        },
+        "prepared_frames": 0,
+        "source_checks": 0
+      },
+      "retained_owner_query_work": 0,
+      "retained_probe_work": 9,
+      "retained_result": "None",
+      "selected_member_index": 0
+    },
+    {
+      "ample": {
+        "final_plan_work": 60,
+        "headroom": 16777216,
+        "initial_plan_work": 0,
+        "metadata_frames": 0,
+        "new_billed_work": 60,
+        "outcome": {
+          "kind": "Retained",
+          "result": "Some"
+        },
+        "prepared_frames": 0,
+        "source_checks": 0
+      },
+      "at": 128,
+      "case": "accepted_retained_tone",
+      "exact_total_headroom": {
+        "final_plan_work": 16777216,
+        "headroom": 60,
+        "initial_plan_work": 16777156,
+        "metadata_frames": 0,
+        "new_billed_work": 60,
+        "outcome": {
+          "kind": "Retained",
+          "result": "Some"
+        },
+        "prepared_frames": 0,
+        "source_checks": 0
+      },
+      "expected_success_receipt_total": 60,
+      "legacy_c": 20,
+      "legacy_q": 16,
+      "one_short_capture_headroom": {
+        "final_plan_work": 16777197,
+        "headroom": 35,
+        "initial_plan_work": 16777181,
+        "metadata_frames": 0,
+        "new_billed_work": 16,
+        "outcome": {
+          "error": {
+            "error": {
+              "budget": "structural work",
+              "variant": "AudioQueryLimit"
+            },
+            "variant": "Plan"
+          },
+          "result": "Error"
+        },
+        "prepared_frames": 0,
+        "source_checks": 0
+      },
+      "one_short_query_headroom": {
+        "final_plan_work": 16777201,
+        "headroom": 15,
+        "initial_plan_work": 16777201,
+        "metadata_frames": 0,
+        "new_billed_work": 0,
+        "outcome": {
+          "error": {
+            "error": {
+              "budget": "structural work",
+              "variant": "AudioQueryLimit"
+            },
+            "variant": "Plan"
+          },
+          "result": "Error"
+        },
+        "prepared_frames": 0,
+        "source_checks": 0
+      },
+      "one_short_total_headroom": {
+        "final_plan_work": 16777212,
+        "headroom": 59,
+        "initial_plan_work": 16777157,
+        "metadata_frames": 0,
+        "new_billed_work": 55,
+        "outcome": {
+          "error": {
+            "error": {
+              "budget": "structural work",
+              "variant": "AudioQueryLimit"
+            },
+            "variant": "Plan"
+          },
+          "result": "Error"
+        },
+        "prepared_frames": 0,
+        "source_checks": 0
+      },
+      "retained_owner_query_work": 5,
+      "retained_probe_work": 19,
+      "retained_result": "Some",
+      "selected_member_index": 1
+    }
+  ],
+  "numeric_helper": "original_context (actual legacy Q/C/probe/body)",
+  "producer": "legacy_pre_query_admission",
+  "runtime_source_manifest_sha256": "cbb7b097167c9f0a5f523b957d70f8cb76791b161f8f8e0bdf2cfae3fa34c153",
+  "schema": "OwnerQueryWorkControlReceiptsV1",
+  "variant": "scoped-published"
+}
