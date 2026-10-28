@@ -225,6 +225,18 @@ removing that unused operation, preserving requested cold validation/charges.
 Exact raw-context ancestry, recursive heap/native admission and batching remain
 open. Coverage and gate/requirement completion do not change.
 
+The [native EQ admission fix](qualification/eq-admission-2026-10-28.md) now
+admits and retains the complete published 2,129,928-byte filter bound in both
+numerical graph builders. Four real graph checks fail the previous builders
+and pass the fix, covering exact limits, reuse, taken filters and cleanup.
+Final main/isolated Audio pass 277/258; both stage suites pass 203, main
+definition passes 171 and eight isolated historical PCM cases pass. Strict
+lint and independent review pass. All six staged source files equal the
+isolated build; inherited main overlays remain separate. The fresh seven-case
+Split run stays four pass/three planning-work failures, with the actual changed
+subphases retained. Cold recursive ancestry/resource admission and batching
+remain open; coverage and requirement/gate completion are unchanged.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

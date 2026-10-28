@@ -14,6 +14,13 @@ use deadpan_plan::{
 
 use super::*;
 
+#[cfg(test)]
+#[path = "authored_eq/admission_tests.rs"]
+mod admission_tests;
+#[cfg(test)]
+#[path = "eq_admission/fixture.rs"]
+pub(super) mod eq_admission_fixture;
+
 #[derive(Clone)]
 pub(super) enum Context<'plan> {
     Root,
@@ -398,7 +405,7 @@ impl StageAudio {
     }
 
     fn eq_node<'plan>(
-        &self,
+        &mut self,
         graph: &mut Graph<'plan, '_>,
         program: Program<'_, 'plan>,
         owner: &AudioOwnerClock<'plan>,
@@ -423,18 +430,35 @@ impl StageAudio {
             .treatments()
             .and_then(|recipe| recipe.equalizer())
             .ok_or(PlanError::InvalidPlan("EQ recipe absent"))?;
+        let boundary = owner.treatment_boundary(stage)?;
+        let resident = u64::try_from(crate::Equalizer::preparation_bytes_bound())
+            .map_err(|_| StageAudioError::Range)?
+            .div_ceil(std::mem::size_of::<[f32; 2]>() as u64);
+        let next_active = self
+            .active_frames
+            .checked_add(resident)
+            .ok_or(StageAudioError::Range)?;
+        let next_resident = graph
+            .resident
+            .checked_add(resident)
+            .ok_or(StageAudioError::Range)?;
         // Compilation is fixed work, independent of a tile's sample count.
         // Charge it even when another preparation compiled this same owner.
         control.spend_plan_work(deadpan_dsp::FINITE_FILTER_TAPS)?;
+        self.make_room(resident, false, control)?;
         let filter = crate::Equalizer::new(recipe, control.cancelled)?;
         control.check()?;
         graph.nodes.push(Node {
             parent: program.parent,
             context,
-            boundary: owner.treatment_boundary(stage)?,
+            boundary,
             filter: Some(filter),
             tiles: BTreeMap::new(),
         });
+        // The constructor is synchronous. Admit its complete peak first, then
+        // retain that same bound while this graph owns the published filter.
+        self.active_frames = next_active;
+        graph.resident = next_resident;
         Ok(graph.nodes.len() - 1)
     }
 

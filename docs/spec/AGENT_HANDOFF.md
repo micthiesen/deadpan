@@ -2,7 +2,14 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: authenticated cold demands, product goal active
+## Current state: full native EQ admission, product goal active
+
+The [EQ admission fix](../qualification/eq-admission-2026-10-28.md) admits the
+complete published 2,129,928-byte bound before native construction in both
+authored and shared numerical builders. The full bound remains active/graph
+resident until ordinary cleanup, including while recursive tiles take the
+filter. Exact-cap refusal/reuse, tile restoration and actual read cleanup use
+real native filters; all four tests fail against the previous builders.
 
 The [shared owner-phase milestone](../qualification/cold-demand-2026-10-28.md)
 executes both numerical orders through one owner body. Typed cold dispatch emits
@@ -21,32 +28,37 @@ Components. Its caller admits the complete owner-order header/payload; all
 additional reached inspections are billed. It remains intentionally unconnected
 until exact recursive/native admission exists. Graph reads stay scalar.
 
-Final main Audio/definition pass 273/171. Both enabled real-WAV stage suites
+Final main Audio/definition pass 277/171. Both enabled real-WAV stage suites
 pass 203; main filters seven unfinished Split cases, isolated filters none.
-Isolated Audio passes 254 plus eight historical PCM cases. All 16 published source
-files match isolated/staged bytes. Only shared_eq.rs has an inherited main
-overlay. Guards cover 1,422/1,193 inputs. Strict all-target Core/Plan/Audio/Store
+Isolated Audio passes 258 plus eight historical PCM cases. All six published
+source files match isolated/staged bytes. Main preserves inherited overlays in
+shared_eq.rs and three corresponding Graph test fixture fields. Guards cover
+1,426/1,197 inputs. Strict all-target Core/Plan/Audio/Store
 lint and independent review pass; all compiler/test receipts are terminal.
 
-Final-source Split coverage is four pass/three work failures across two runs.
-All-owner Source/Sequence cut-three limited 0+511 reports plan work per read;
-nested selected without root sound, prefix-two limited 0+4096, reports structural
-work; one selected play, prefix-two limited 0+4096, reports frozen projection work
-exhausted. The first integrated processed-root check exhausted sound processing
-birth work because scalar chunks unnecessarily sealed/dropped completion.
-Requesting sealing only for actual cold consumers restores that case at
-unchanged limits. Requested validation keeps its charge; no refunds, weights,
-caps, query/discovery/prefix caches or failed-batch scalar retry change.
+Final-source Split coverage is four pass/three planning-work failures in one
+seven-case run. All-owner Source/Sequence cut-three limited 0+511 reports sound
+placement work exhausted; nested selected without root sound, prefix-two
+limited 0+4096, reports frozen projection work exhausted; one selected play,
+prefix-two limited 0+4096, reports source occurrence construction work.
+Subphases differ from the previous checkpoint; preserve those exact failures.
+Processed-root, partition-independence, each-depth and audible-witness cases
+pass. No case fails native memory admission. No cap, bound, work weight,
+query/discovery/prefix cache or failed-batch scalar retry changes.
 
-Next fix the confirmed missing full EQ-state admission in shared_eq_node and
-authored_eq::eq_node before broader resource work. Read-only lifecycle evidence
-and any uncompiled fix candidate are under /tmp/deadpan-eq-admission-2026-10-28
-and /tmp/deadpan-cold-context-2026-10-28. Keep the entire published constructor
-bound retained while a filter is temporarily taken; never lower the native
-estimate or claim scratch candidates passed.
+EQ evidence, all 18 terminal receipts, source/binary pins and retained setup/lint
+failures are under /tmp/deadpan-eq-admission-2026-10-28 and its archived
+inventory. Only four test-only files change after the passing main media runs;
+production and existing integration-test inputs match the final binary.
+Final libraries use rebuilt binaries. Never lower the full native estimate.
 
-Then share a StageAudio-independent exact metadata node description with
-numerical construction and the cold fold. Carry the actual parent Program and
+Next share the actual StageAudio-independent numerical metadata constructor,
+preserving ALL existing context selection and fallback behavior. A scratch
+extraction is assigned under /tmp/deadpan-node-description-2026-10-28; do not
+claim it compiled or replace the numerical path with an exact-only subset.
+Read-only design is in /tmp/deadpan-exact-node-2026-10-28. Defer any new public
+Plan observation API until its real cold consumer has transient metadata
+admission. Carry the actual parent Program and
 opaque Root/Domain/Retained ancestry/grid handles. Root/Domain owner_input can
 prove exact membership; a different retained Original clock needs typed Plan
 correspondence. OwnerKey/matches_clock_at are not raw-context proof. No string

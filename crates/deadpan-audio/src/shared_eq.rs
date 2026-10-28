@@ -6,6 +6,10 @@
 use super::authored_eq::Context;
 use super::shared_mix::{Boundary, Contribution, OwnerKey, Permissions, SharedMix, Temporal};
 use super::*;
+
+#[cfg(test)]
+#[path = "shared_eq/admission_tests.rs"]
+mod admission_tests;
 use deadpan_core::{NodeId, SoundId};
 use deadpan_dsp::{
     FINITE_FILTER_INPUT_FRAMES as INPUT, FINITE_FILTER_OUTPUT_FRAMES as OUTPUT,
@@ -817,7 +821,7 @@ impl StageAudio {
     }
 
     fn shared_eq_node<'plan>(
-        &self,
+        &mut self,
         graph: &mut Graph<'plan>,
         program: Program<'_, 'plan>,
         owner: &AudioOwnerClock<'plan>,
@@ -877,6 +881,21 @@ impl StageAudio {
         } else {
             return Err(PlanError::InvalidPlan("missing shared EQ Original context").into());
         };
+        let boundary = owner.treatment_boundary(stage)?;
+        let resident = match kind {
+            Temporal::Equalizer(_) => u64::try_from(crate::Equalizer::preparation_bytes_bound())
+                .map_err(|_| StageAudioError::Range)?
+                .div_ceil(std::mem::size_of::<[f32; 2]>() as u64),
+            Temporal::Wet(_) => 0,
+        };
+        let next_active = self
+            .active_frames
+            .checked_add(resident)
+            .ok_or(StageAudioError::Range)?;
+        let next_resident = graph
+            .resident
+            .checked_add(resident)
+            .ok_or(StageAudioError::Range)?;
         let filter = match kind {
             Temporal::Equalizer(_) => {
                 let recipe = owner
@@ -884,6 +903,7 @@ impl StageAudio {
                     .and_then(|r| r.equalizer())
                     .ok_or(PlanError::InvalidPlan("EQ recipe absent"))?;
                 control.spend_plan_work(deadpan_dsp::FINITE_FILTER_TAPS)?;
+                self.make_room(resident, false, control)?;
                 Some(crate::Equalizer::new(recipe, control.cancelled)?)
             }
             Temporal::Wet(_) => None,
@@ -892,7 +912,7 @@ impl StageAudio {
         graph.nodes.push(Node {
             parent: program.parent,
             context: Contexts { original, sounds },
-            boundary: owner.treatment_boundary(stage)?,
+            boundary,
             stop: Boundary {
                 owner: key,
                 before: stage,
@@ -901,6 +921,10 @@ impl StageAudio {
             kind,
             tiles: BTreeMap::new(),
         });
+        // Keep the entire published construction bound for the filter's life,
+        // including when recursive tile reads temporarily take it from Node.
+        self.active_frames = next_active;
+        graph.resident = next_resident;
         Ok(graph.nodes.len() - 1)
     }
 
