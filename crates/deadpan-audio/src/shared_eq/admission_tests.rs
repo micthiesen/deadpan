@@ -6,6 +6,10 @@ struct Shared;
 impl<'plan> Harness<'plan> for Shared {
     type Graph = Graph<'plan>;
 
+    fn metadata_units(plan: &'plan Arc<RenderPlan>) -> u64 {
+        original_metadata_units(plan)
+    }
+
     fn graph(plan: &'plan RenderPlan) -> Self::Graph {
         Graph {
             plan,
@@ -108,4 +112,35 @@ fn actual_node_requires_full_eq_native_headroom_and_retains_it_once() {
 fn numerical_read_refuses_small_native_budget_and_cleans_both_results() {
     let plan = crate::stages::authored_eq::eq_admission_fixture::fixture();
     checks::numerical_read_refuses_small_native_budget_and_cleans_both_results::<Shared>(&plan);
+}
+
+// Actual final-sharing constructor, independent of numerical Node publication.
+// It measures only newly admitted Original metadata, with the full native bound
+// independently asserted by the common Harness.
+pub(super) fn original_metadata_units(plan: &Arc<RenderPlan>) -> u64 {
+    let owner = crate::stages::authored_eq::eq_admission_fixture::owner(plan);
+    let input = plan
+        .audio_owner_input(&owner, AudioSample(128), Default::default())
+        .unwrap();
+    let cancelled = AtomicBool::new(false);
+    let work = RefCell::new(ReadWork::default());
+    let control = crate::stages::authored_eq::eq_admission_fixture::control(&cancelled, &work);
+    let mut renderer = StageAudio::new(Arc::clone(plan));
+    let carrier = {
+        let mut admission = sound_context_admission::Admission::new(&mut renderer, control);
+        Context::finish_paid_owner_input_admitted(
+            &input,
+            input.owner(),
+            AudioSample(128),
+            control,
+            &mut admission,
+        )
+        .unwrap()
+    };
+    let metadata = carrier.lease().unwrap().frames();
+    assert!(metadata > 0);
+    assert_eq!(work.borrow().sound_context_frames, metadata);
+    drop(carrier);
+    assert_eq!(work.borrow().sound_context_frames, 0);
+    metadata
 }

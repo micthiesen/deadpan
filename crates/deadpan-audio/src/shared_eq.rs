@@ -871,16 +871,28 @@ impl StageAudio {
                 &mut admission,
             )?
         };
-        let metadata_frames = description
+        let sound_frames = description
             .sound
             .as_ref()
-            .and_then(|sound| sound.lease())
+            .and_then(|value| value.lease())
             .map_or(0, sound_context_admission::Lease::frames);
+        let original_frames = description
+            .original
+            .as_ref()
+            .and_then(|value| value.lease())
+            .map_or(0, sound_context_admission::Lease::frames);
+        let metadata_frames = sound_frames
+            .checked_add(original_frames)
+            .ok_or(StageAudioError::Range)?;
         let expected_issuer = sound_context_admission::issuer(control);
         if description
             .sound
             .as_ref()
-            .is_some_and(|sound| sound.issuer() != expected_issuer)
+            .is_some_and(|value| value.issuer() != expected_issuer)
+            || description
+                .original
+                .as_ref()
+                .is_some_and(|value| value.issuer() != expected_issuer)
         {
             return Err(PlanError::AudioMetadataIssuerMismatch.into());
         }
@@ -917,34 +929,43 @@ impl StageAudio {
         // Reserve the existing Node Vec growth before the infallible handoff.
         // Its heap is outside this bounded current-sound admission slice.
         graph.nodes.reserve(1);
+        let transfer = sound_context_admission::preflight_transfer(
+            control,
+            description
+                .original
+                .as_ref()
+                .and_then(|value| value.lease()),
+            description.sound.as_ref().and_then(|value| value.lease()),
+        )?;
         let values = &mut description.values;
-        let publish = |charge: Option<&mut sound_context_admission::Lease<'_>>| {
-            let node_description::DescriptionValues {
-                context,
-                boundary,
-                stop,
-                kind,
-            } = values.take().expect("unpublished description");
-            graph.nodes.push(Node {
-                parent: program.parent,
-                context,
-                boundary,
-                stop,
-                filter,
-                kind,
-                tiles: BTreeMap::new(),
-            });
-            self.active_frames = next_active;
-            graph.resident = next_resident;
-            if let Some(charge) = charge {
-                charge.commit();
-            }
-        };
-        if let Some(sound) = description.sound.as_mut() {
-            sound.transfer_charge(expected_issuer, publish)?;
-        } else {
-            publish(None);
-        }
+        let publish =
+            |original: Option<&mut sound_context_admission::Lease<'_>>,
+             sound: Option<&mut sound_context_admission::Lease<'_>>| {
+                let node_description::DescriptionValues {
+                    context,
+                    boundary,
+                    stop,
+                    kind,
+                } = values.take().expect("unpublished description");
+                graph.nodes.push(Node {
+                    parent: program.parent,
+                    context,
+                    boundary,
+                    stop,
+                    filter,
+                    kind,
+                    tiles: BTreeMap::new(),
+                });
+                self.active_frames = next_active;
+                graph.resident = next_resident;
+                transfer.commit(original, sound);
+            };
+        deadpan_plan::transfer_context_charges(
+            expected_issuer,
+            description.original.as_mut(),
+            description.sound.as_mut(),
+            publish,
+        )?;
         Ok(graph.nodes.len() - 1)
     }
 

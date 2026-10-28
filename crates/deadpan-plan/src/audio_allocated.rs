@@ -5,6 +5,9 @@
 //! the owner pinning that plan must account for it separately. Shared Arcs are
 //! charged at every owning edge, avoiding an allocating visited-pointer set.
 
+#[path = "audio_metadata_admission.rs"]
+pub(crate) mod admission;
+
 use std::{alloc::Layout, mem::size_of, sync::Arc};
 
 use deadpan_core::{

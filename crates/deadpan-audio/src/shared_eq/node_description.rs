@@ -23,6 +23,7 @@ pub(super) struct DescriptionValues<'plan> {
 /// Owning context clones drop before the admitted carrier and its final lease.
 pub(super) struct Description<'plan, I: Copy + Eq, L> {
     pub(super) values: Option<DescriptionValues<'plan>>,
+    pub(super) original: Option<deadpan_plan::AdmittedOriginalContext<'plan, I, L>>,
     pub(super) sound: Option<deadpan_plan::AdmittedSoundContext<'plan, I, L>>,
 }
 impl<'plan, I: Copy + Eq, L> std::ops::Deref for Description<'plan, I, L> {
@@ -84,19 +85,28 @@ where
         plan,
         at..AudioSample(at.0.checked_add(1).ok_or(TimeError::Overflow)?),
     )?;
-    let original = if let Some(original) =
-        original_context(plan, &incoming.original, &key, range, at, control)?
-    {
+    let original = if let Some(original) = original_context_admitted(
+        plan,
+        &incoming.original,
+        &key,
+        range,
+        at,
+        control,
+        admission,
+    )? {
         original
     } else if let Some(context) = sound.take() {
         sound = Some(context.with_processing_domain(admission)?);
-        Context::Domain(Arc::clone(
-            sound
-                .as_ref()
-                .expect("created fallback")
-                .processing_domain()
-                .expect("processing Domain"),
-        ))
+        ResolvedOriginal {
+            context: Context::Domain(Arc::clone(
+                sound
+                    .as_ref()
+                    .expect("created fallback")
+                    .processing_domain()
+                    .expect("processing Domain"),
+            )),
+            carrier: None,
+        }
     } else {
         return Err(PlanError::InvalidPlan("missing shared EQ Original context").into());
     };
@@ -104,7 +114,7 @@ where
     Ok(Description {
         values: Some(DescriptionValues {
             context: Contexts {
-                original,
+                original: original.context,
                 sounds: sound.as_ref().map_or(Sounds::None, |context| {
                     Sounds::Owner(Arc::clone(context.shared()))
                 }),
@@ -116,12 +126,21 @@ where
             },
             kind,
         }),
+        original: original.carrier,
         sound,
     })
 }
 
 /// Reuse the first actual Root/Domain membership query for capture. The
 /// selected clock still follows the inherited first OwnerKey match.
+struct ResolvedOriginal<'plan, I, L> {
+    context: Context<'plan>,
+    carrier: Option<deadpan_plan::AdmittedOriginalContext<'plan, I, L>>,
+}
+
+type OriginalResult<'plan, I, L> = Result<Option<ResolvedOriginal<'plan, I, L>>, StageAudioError>;
+
+#[cfg(test)]
 fn original_context<'plan>(
     plan: &'plan RenderPlan,
     incoming: &Context<'plan>,
@@ -130,6 +149,30 @@ fn original_context<'plan>(
     at: AudioSample,
     control: WorkControl<'_>,
 ) -> Result<Option<Context<'plan>>, StageAudioError> {
+    Ok(original_context_admitted(
+        plan,
+        incoming,
+        key,
+        range,
+        at,
+        control,
+        &mut sound_context_admission::Unmetered,
+    )?
+    .map(|value| value.context))
+}
+
+fn original_context_admitted<'plan, A>(
+    plan: &'plan RenderPlan,
+    incoming: &Context<'plan>,
+    key: &OwnerKey,
+    range: Range<AudioSample>,
+    at: AudioSample,
+    control: WorkControl<'_>,
+    admission: &mut A,
+) -> OriginalResult<'plan, A::Issuer, A::Lease>
+where
+    A: deadpan_plan::AudioSoundContextAdmission<Error = StageAudioError>,
+{
     if range.start >= range.end {
         return Ok(None);
     }
@@ -149,7 +192,10 @@ fn original_context<'plan>(
                     .cloned()
             };
             return if let Some(clock) = observed {
-                Ok(Some(incoming.owner_context(plan, &clock, at, control)?))
+                Ok(Some(ResolvedOriginal {
+                    context: incoming.owner_context(plan, &clock, at, control)?,
+                    carrier: None,
+                }))
             } else {
                 Ok(None)
             };
@@ -171,12 +217,22 @@ fn original_context<'plan>(
         candidates.without_selection()
     };
     if let Some(input) = capture.into_input() {
-        Ok(Some(Context::finish_paid_owner_input(
+        let carrier = Context::finish_paid_owner_input_admitted(
             &input,
             input.owner(),
             at,
             control,
-        )?))
+            admission,
+        )?;
+        let context = if let Some(domain) = carrier.domain() {
+            Context::Domain(Arc::clone(domain))
+        } else {
+            Context::Retained(Arc::clone(carrier.retained().expect("shared retained")))
+        };
+        Ok(Some(ResolvedOriginal {
+            context,
+            carrier: Some(carrier),
+        }))
     } else {
         Ok(None)
     }

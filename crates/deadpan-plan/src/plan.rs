@@ -44,7 +44,9 @@ mod audio;
 pub use audio::*;
 #[path = "audio_domain.rs"]
 mod audio_domain;
-pub use audio_domain::{AudioDomain, AudioRootPlacement};
+pub use audio_domain::{
+    AdmittedOriginalContext, AudioDomain, AudioRootPlacement, transfer_context_charges,
+};
 #[path = "audio_point_domain.rs"]
 mod audio_point_domain;
 pub use audio_point_domain::AudioPointDomain;

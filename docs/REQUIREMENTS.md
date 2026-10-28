@@ -284,6 +284,18 @@ remains four pass/three work failures, with exact changed subphases recorded.
 Original query/capture/Core allocations, node containers and recursive closure
 remain uncovered. No requirement or gate closes; general sound Split stays off.
 
+The [final Original-sharing admission](qualification/original-sharing-budget-2026-10-28.md)
+reserves both actual return branches: a moved retained input's new Arc shell
+and an exhaustive finite Domain clone plus Arc. It preserves the common
+query/capture/probe/boundary decision and jointly preflights Original and sound
+leases before one infallible Graph publication. Earlier query/capture/Core
+and retained inner-graph allocations remain uncovered. Main/isolated Audio
+pass 296/277, Plan 566/553 across 29 executables, stages 203/203 and
+definition/history 171/eight. Strict lint and review pass; all 18 staged
+sources equal the isolated final build. The Split matrix stays four pass/
+three read-work-limit failures. No cap, weight, refund, cache or cold activation
+change; product coverage and all requirement/gate statuses remain unchanged.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

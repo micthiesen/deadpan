@@ -519,3 +519,6 @@ fn candidate_root_and_domain_contexts_match_legacy_and_save_only_query_work() {
         assert_eq!(domain(&actual).instance(), domain(&expected).instance());
     }
 }
+
+#[path = "original_sharing_tests.rs"]
+mod original_sharing;

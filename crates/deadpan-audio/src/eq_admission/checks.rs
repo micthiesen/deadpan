@@ -10,6 +10,10 @@ pub(in crate::stages) struct State {
 pub(in crate::stages) trait Harness<'plan> {
     type Graph;
 
+    fn metadata_units(_plan: &'plan Arc<RenderPlan>) -> u64 {
+        0
+    }
+
     fn graph(plan: &'plan RenderPlan) -> Self::Graph;
     fn node(
         renderer: &mut StageAudio,
@@ -44,7 +48,9 @@ pub(in crate::stages) fn actual_node_requires_full_eq_native_headroom_and_retain
     let cancelled = AtomicBool::new(false);
     let native = units();
     assert_eq!(native, 266_241);
-    for headroom in [native - 1, native] {
+    let metadata = H::metadata_units(plan);
+    let combined = native.checked_add(metadata).unwrap();
+    for headroom in [combined - 1, combined] {
         let mut renderer = StageAudio::with_limits(
             Arc::clone(plan),
             StageLimits {
@@ -58,7 +64,7 @@ pub(in crate::stages) fn actual_node_requires_full_eq_native_headroom_and_retain
         let work = RefCell::new(ReadWork::default());
         let control = control(&cancelled, &work);
         let result = H::node(&mut renderer, &mut graph, &owner, control);
-        if headroom < native {
+        if headroom < combined {
             assert!(matches!(
                 result,
                 Err(StageAudioError::Limit("resident PCM or stage cache"))
@@ -72,16 +78,16 @@ pub(in crate::stages) fn actual_node_requires_full_eq_native_headroom_and_retain
         let id = result.unwrap();
         assert_eq!(H::state(&graph, None).nodes, 1);
         assert!(H::state(&graph, Some(id)).filter);
-        assert_eq!(H::state(&graph, None).resident, native);
-        assert_eq!(renderer.active_frames, BASE + native);
+        assert_eq!(H::state(&graph, None).resident, combined);
+        assert_eq!(renderer.active_frames, BASE + combined);
         let spent = work.borrow().plan_work;
         assert_eq!(
             H::node(&mut renderer, &mut graph, &owner, control).unwrap(),
             id
         );
         assert_eq!(H::state(&graph, None).nodes, 1);
-        assert_eq!(H::state(&graph, None).resident, native);
-        assert_eq!(renderer.active_frames, BASE + native);
+        assert_eq!(H::state(&graph, None).resident, combined);
+        assert_eq!(renderer.active_frames, BASE + combined);
         assert_eq!(work.borrow().plan_work, spent);
 
         let filter = H::take_filter(&mut graph, id);
@@ -89,7 +95,7 @@ pub(in crate::stages) fn actual_node_requires_full_eq_native_headroom_and_retain
             renderer.make_room(1, false, control),
             Err(StageAudioError::Limit("resident PCM or stage cache"))
         ));
-        assert_eq!(renderer.active_frames, BASE + native);
+        assert_eq!(renderer.active_frames, BASE + combined);
         H::restore_filter(&mut graph, id, filter);
 
         // The actual tile entry takes the filter, then refuses its separately
@@ -101,16 +107,17 @@ pub(in crate::stages) fn actual_node_requires_full_eq_native_headroom_and_retain
         ));
         assert!(H::state(&graph, Some(id)).filter);
         assert!(H::state(&graph, Some(id)).tiles_empty);
-        assert_eq!(H::state(&graph, None).resident, native);
-        assert_eq!(renderer.active_frames, BASE + native);
+        assert_eq!(H::state(&graph, None).resident, combined);
+        assert_eq!(renderer.active_frames, BASE + combined);
         assert_eq!(
             work.borrow().prepared_frames,
             (deadpan_dsp::FINITE_FILTER_INPUT_FRAMES + deadpan_dsp::FINITE_FILTER_OUTPUT_FRAMES)
                 as u64
         );
         assert_eq!(provider.0, 0);
-        renderer.active_frames -= H::state(&graph, None).resident;
+        let retained = H::state(&graph, None).resident;
         drop(graph);
+        renderer.active_frames -= retained;
         assert_eq!(renderer.active_frames, BASE);
     }
 }

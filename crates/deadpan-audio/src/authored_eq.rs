@@ -28,6 +28,69 @@ pub(super) enum Context<'plan> {
     Retained(Arc<AudioOwnerRetainedInput<'plan>>),
 }
 
+trait FinalOriginalSharing<'plan> {
+    type Output;
+
+    fn retained(
+        self,
+        value: AudioOwnerRetainedInput<'plan>,
+    ) -> Result<Self::Output, StageAudioError>;
+    fn domain(self, value: &AudioDomain<'plan>) -> Result<Self::Output, StageAudioError>;
+}
+
+struct LegacyOriginalSharing;
+
+impl<'plan> FinalOriginalSharing<'plan> for LegacyOriginalSharing {
+    type Output = Context<'plan>;
+
+    fn retained(
+        self,
+        value: AudioOwnerRetainedInput<'plan>,
+    ) -> Result<Self::Output, StageAudioError> {
+        Ok(Context::Retained(Arc::new(value)))
+    }
+
+    fn domain(self, value: &AudioDomain<'plan>) -> Result<Self::Output, StageAudioError> {
+        Ok(Context::Domain(Arc::new(value.clone())))
+    }
+}
+
+struct AdmittedOriginalSharing<'admission, 'work, A> {
+    control: WorkControl<'work>,
+    admission: &'admission mut A,
+}
+
+impl<A> AdmittedOriginalSharing<'_, '_, A>
+where
+    A: deadpan_plan::AudioSoundContextAdmission<Error = StageAudioError>,
+{
+    fn limits(&self) -> Result<deadpan_plan::AudioQueryLimits, StageAudioError> {
+        if A::METERED {
+            self.control.query_limits()
+        } else {
+            Ok(deadpan_plan::AudioQueryLimits::default())
+        }
+    }
+}
+
+impl<'plan, A> FinalOriginalSharing<'plan> for AdmittedOriginalSharing<'_, '_, A>
+where
+    A: deadpan_plan::AudioSoundContextAdmission<Error = StageAudioError>,
+{
+    type Output = deadpan_plan::AdmittedOriginalContext<'plan, A::Issuer, A::Lease>;
+
+    fn retained(
+        self,
+        value: AudioOwnerRetainedInput<'plan>,
+    ) -> Result<Self::Output, StageAudioError> {
+        value.into_shared_admitted(self.limits()?, self.admission)
+    }
+
+    fn domain(self, value: &AudioDomain<'plan>) -> Result<Self::Output, StageAudioError> {
+        value.clone_shared_admitted(self.limits()?, self.admission)
+    }
+}
+
 impl<'plan> Context<'plan> {
     pub(super) fn support(
         &self,
@@ -96,6 +159,37 @@ impl<'plan> Context<'plan> {
         at: AudioSample,
         control: WorkControl<'_>,
     ) -> Result<Self, StageAudioError> {
+        Self::finish_paid_owner_input_with(input, owner, at, control, LegacyOriginalSharing)
+    }
+
+    pub(super) fn finish_paid_owner_input_admitted<A>(
+        input: &deadpan_plan::AudioOwnerInput<'plan>,
+        owner: &AudioOwnerClock<'plan>,
+        at: AudioSample,
+        control: WorkControl<'_>,
+        admission: &mut A,
+    ) -> Result<deadpan_plan::AdmittedOriginalContext<'plan, A::Issuer, A::Lease>, StageAudioError>
+    where
+        A: deadpan_plan::AudioSoundContextAdmission<Error = StageAudioError>,
+    {
+        Self::finish_paid_owner_input_with(
+            input,
+            owner,
+            at,
+            control,
+            AdmittedOriginalSharing { control, admission },
+        )
+    }
+
+    // The actual probe, owners query and boundary decision are shared once.
+    // Only the final sharing operation differs at its original return site.
+    fn finish_paid_owner_input_with<S: FinalOriginalSharing<'plan>>(
+        input: &deadpan_plan::AudioOwnerInput<'plan>,
+        owner: &AudioOwnerClock<'plan>,
+        at: AudioSample,
+        control: WorkControl<'_>,
+        share: S,
+    ) -> Result<S::Output, StageAudioError> {
         let probe = input.retained_probe_at(at, control.query_limits()?)?;
         control.spend_plan_work(probe.work())?;
         if let Some(retained) = probe.into_input() {
@@ -108,10 +202,10 @@ impl<'plan> Context<'plan> {
                 .iter()
                 .any(|span| span.owners().iter().any(|owner| boundary.matches(owner)))
             {
-                return Ok(Self::Retained(Arc::new(retained)));
+                return share.retained(retained);
             }
         }
-        Ok(Self::Domain(Arc::new(input.context().clone())))
+        share.domain(input.context())
     }
 }
 

@@ -1,4 +1,6 @@
-//! Request-local admission for current-sound metadata. No source/planning probes.
+//! Request-local admission for current-sound and final Original-sharing metadata.
+//! The existing private sound_context_frames lane holds BOTH charges.
+//! Earlier Original queries/capture/retained graphs remain outside this slice.
 use super::*;
 use deadpan_plan::AudioSoundContextAdmission;
 use std::alloc::Layout;
@@ -23,12 +25,50 @@ impl Lease<'_> {
     pub(super) fn frames(&self) -> u64 {
         self.frames
     }
-    /// Called only after owning values and this same charge reach Graph.
-    pub(super) fn commit(&mut self) {
-        self.ledger.borrow_mut().sound_context_frames -= self.frames;
-        self.frames = 0;
+}
+/// All identity/sum/subtraction checks precede Graph publication.
+pub(super) struct JointTransfer<'work> {
+    ledger: &'work RefCell<ReadWork>,
+    remaining: u64,
+}
+pub(super) fn preflight_transfer<'work>(
+    control: WorkControl<'work>,
+    original: Option<&Lease<'work>>,
+    sound: Option<&Lease<'work>>,
+) -> Result<JointTransfer<'work>, StageAudioError> {
+    let mut total = 0_u64;
+    for lease in [original, sound].into_iter().flatten() {
+        if !std::ptr::eq(lease.ledger, control.work) {
+            return Err(PlanError::AudioMetadataIssuerMismatch.into());
+        }
+        total = total
+            .checked_add(lease.frames)
+            .ok_or(StageAudioError::Range)?;
+    }
+    let remaining = control
+        .work
+        .borrow()
+        .sound_context_frames
+        .checked_sub(total)
+        .ok_or(StageAudioError::Range)?;
+    Ok(JointTransfer {
+        ledger: control.work,
+        remaining,
+    })
+}
+impl JointTransfer<'_> {
+    /// The no-fail publication tail: no arithmetic, reservation or callbacks.
+    pub(super) fn commit(self, original: Option<&mut Lease<'_>>, sound: Option<&mut Lease<'_>>) {
+        self.ledger.borrow_mut().sound_context_frames = self.remaining;
+        if let Some(lease) = original {
+            lease.frames = 0;
+        }
+        if let Some(lease) = sound {
+            lease.frames = 0;
+        }
     }
 }
+
 impl Drop for Lease<'_> {
     fn drop(&mut self) {
         if self.frames != 0 {

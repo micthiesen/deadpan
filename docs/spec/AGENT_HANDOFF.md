@@ -2,7 +2,18 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: current-sound construction admitted, product goal active
+## Current state: final context sharing admitted, product goal active
+
+The [final Original-sharing admission](../qualification/original-sharing-budget-2026-10-28.md)
+reserves both actual return sites: the moved retained input's new Arc shell,
+or the exhaustive finite general Domain clone and its Arc. A common decision
+helper preserves query/capture/probe/boundary order; private Legacy/Admitted
+strategies select only final sharing. Description owns values before both
+carriers. All issuers, exact ledger pointers, sums and pending subtraction
+are preflighted before one infallible node publication and joint commit.
+The existing private sound_context_frames lane now holds both charges.
+Earlier query/capture, retained inner graph/Core and node containers remain
+explicitly uncovered. No cold or batching activation is established.
 
 The [current-sound admission](../qualification/sound-context-budget-2026-10-28.md)
 reserves the actual closed constructor's chain, edge, Repeat and Arc payloads
@@ -62,20 +73,20 @@ Components. Its caller admits the complete owner-order header/payload; all
 additional reached inspections are billed. It remains intentionally unconnected
 until exact recursive/native admission exists. Graph reads stay scalar.
 
-Final main Audio/definition pass 292/171. Both enabled real-WAV stage suites
+Final main Audio/definition pass 296/171. Both enabled real-WAV stage suites
 pass 203; main filters seven unfinished Split cases, isolated filters none.
-Isolated Audio passes 273 plus eight historical PCM cases. Full main/isolated
-Plan pass 564/551 across 29 executables each. All 13 published source files
-match isolated/staged bytes; ten also match main. Main's shared_eq.rs,
-stages.rs and new Graph fixture preserve inherited WIP outside this task.
-Guards cover 1,434/1,205 inputs. Strict all-target Core/Plan/Audio/Store
+Isolated Audio passes 277 plus eight historical PCM cases. Full main/isolated
+Plan pass 566/553 across 29 executables each. All 18 published source files
+match isolated/staged bytes; 14 also match main. Main's shared_eq.rs, its
+admission/sound tests and Plan plan.rs preserve inherited WIP outside this task.
+Guards cover 1,438/1,209 inputs. Strict all-target Core/Plan/Audio/Store
 lint and independent review pass; all compiler/test receipts are terminal.
 
 The fresh Split run keeps four passes/three planning-work failures in one
-seven-case run (392.51 seconds). All-owner Source/Sequence cut-three limited
-0+511 and nested selected without root sound, prefix-two limited 0+4096,
-report Stage(Limit("plan work per read")); one selected play, prefix-two
-limited 0+4096, reports Plan(AudioQueryLimit("structural work")).
+seven-case run (363.47 seconds). All-owner Source/Sequence cut-three limited
+0+511, nested selected without root sound prefix-two limited 0+4096, and one
+selected play prefix-two limited 0+4096 all report
+Stage(Limit("plan work per read")).
 Subphases differ from the previous checkpoint; preserve those exact failures.
 Processed-root, partition-independence, each-depth and audible-witness cases
 pass. No case fails native memory admission. No cap, bound, work weight,
@@ -114,16 +125,27 @@ run rejected one redundant AudioSampleGrid conversion; strict2 and rebuilt
 final binaries pass. The separate ExactRatio conversion remains. The source
 and overlay audits keep all 13 staged files equal to the isolated source.
 
-Next admit actual final Original-context sharing: both the moved Retained Arc
-shell and the exhaustive finite general Domain clone plus Arc, preserving
-the same query/capture/probe/boundary decision. The reviewed contract is in
-/tmp/deadpan-original-admission-next-2026-10-28; scratch implementation is
-assigned under /tmp/deadpan-original-sharing-budget-2026-10-28. Jointly
-preflight Original and sound leases before one infallible Graph publication.
-This next slice still excludes the earlier query/capture/retained/Core peak.
-Read-only work toward that complete actual query pipeline is assigned under
-/tmp/deadpan-original-query-admission-2026-10-28. These follow-ups have no
-compile/runtime acceptance evidence yet. No cold closure is established.
+Original-sharing evidence is under /tmp/deadpan-original-sharing-budget-2026-10-28
+and its archived inventory, with all 17 terminal receipts. The first compiler
+run caught nonexistent fields in a new DomainAudioBlock test; exact PCM bits
+and full returned-block parity now pass. Strict lint caught a large inline
+enum and complex return; typed strategies and OriginalResult fix both without
+new heap allocation or suppression. Final rebuilt libraries/media qualify
+the corrected source. Sequential media execution prevents suite overlap.
+
+Next admit the actual candidate query through its reached Plan/Core binding
+and projection kernels. The reviewed design and concrete interface are in
+/tmp/deadpan-original-query-admission-2026-10-28, including explicit metered/
+unmetered child-work receipt rules and error-precedence decisions. First
+capture an independent pre-change SnapshotV1 oracle; scratch harness work is
+assigned under /tmp/deadpan-owner-query-baseline-2026-10-28. Preserve ordered
+owner/grid/Domain/capture fields, old work/errors and the hidden seeded Domain
+versus root counterexample before changing either kernel. No new golden may
+come from two wrappers over the same changed algorithm. Core/Plan fanout waits
+for those baseline results. Query-only integration must keep its lease through
+actual capture, while explicitly excluding capture/discarded span and retained
+probe/owners until their own closure. No runtime evidence for these follow-ups
+or full cold resource closure exists yet.
 Read-only allocation research in /tmp/deadpan-context-heap-2026-10-28 covers
 15 pinned sources. Retained-size visitors do not prove constructor peaks;
 before-allocation accounting must cover actual overlapping Plan/Core scratch.

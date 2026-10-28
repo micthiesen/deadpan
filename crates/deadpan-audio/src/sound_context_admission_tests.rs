@@ -153,3 +153,99 @@ fn equal_contents_do_not_equate_request_ledger_issuers() {
     assert!(issuer(eq::control(&cancelled, &a)) != issuer(eq::control(&cancelled, &b)));
     assert!(issuer(eq::control(&cancelled, &a)) == issuer(eq::control(&cancelled, &a)));
 }
+
+#[test]
+fn actual_cache_eviction_precedes_original_copy_and_source_grid_stays_identical() {
+    let (plan, mut provider) = wav_fixture();
+    let cancelled = AtomicBool::new(false);
+    let domain = plan
+        .audio_domain_at(AudioSample(700), Default::default())
+        .unwrap();
+    let mut renderer = StageAudio::new(Arc::clone(&plan));
+    let expected = renderer
+        .read_domain(
+            &mut provider,
+            &domain,
+            AudioSample(700),
+            8,
+            Duration::from_secs(30),
+            &cancelled,
+        )
+        .unwrap();
+    let cached = renderer.cached_resident_frames();
+    assert!(cached > 0 && !renderer.cache.is_empty());
+    renderer.limits.maximum_resident_frames = u32::try_from(cached).unwrap();
+    let work = RefCell::new(ReadWork::default());
+    let control = eq::control(&cancelled, &work);
+    let copy = {
+        let mut admission = Admission::new(&mut renderer, control);
+        domain
+            .clone_shared_admitted(control.query_limits().unwrap(), &mut admission)
+            .unwrap()
+    };
+    assert!(
+        renderer.cache.is_empty(),
+        "actual metadata reserve evicts actual PCM"
+    );
+    assert!(copy.lease().unwrap().frames() > 0);
+    drop(copy);
+    assert_eq!(work.borrow().sound_context_frames, 0);
+    renderer.limits.maximum_resident_frames = StageLimits::default().maximum_resident_frames;
+    let calls = provider.calls;
+    let actual = renderer
+        .read_domain(
+            &mut provider,
+            &domain,
+            AudioSample(700),
+            8,
+            Duration::from_secs(30),
+            &cancelled,
+        )
+        .unwrap();
+    assert_eq!(
+        expected
+            .samples
+            .iter()
+            .map(|s| s.map(f32::to_bits))
+            .collect::<Vec<_>>(),
+        actual
+            .samples
+            .iter()
+            .map(|s| s.map(f32::to_bits))
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(expected, actual);
+    assert!(provider.calls > calls);
+    assert_eq!(renderer.active_frames, 0);
+}
+
+#[test]
+fn joint_transfer_rejects_equal_content_foreign_ledger_before_any_commit() {
+    let (plan, _) = wav_fixture();
+    let domain = plan
+        .audio_domain_at(AudioSample(700), Default::default())
+        .unwrap();
+    let cancelled = AtomicBool::new(false);
+    let left = RefCell::new(ReadWork::default());
+    let right = RefCell::new(ReadWork::default());
+    let a = eq::control(&cancelled, &left);
+    let b = eq::control(&cancelled, &right);
+    let mut renderer = StageAudio::new(plan.clone());
+    let value = {
+        let mut admission = Admission::new(&mut renderer, a);
+        domain
+            .clone_shared_admitted(a.query_limits().unwrap(), &mut admission)
+            .unwrap()
+    };
+    let frames = value.lease().unwrap().frames();
+    assert!(matches!(
+        preflight_transfer(b, value.lease(), None),
+        Err(StageAudioError::Plan(
+            PlanError::AudioMetadataIssuerMismatch
+        ))
+    ));
+    assert_eq!(left.borrow().sound_context_frames, frames);
+    assert_eq!(right.borrow().sound_context_frames, 0);
+    drop(value);
+    assert_eq!(left.borrow().sound_context_frames, 0);
+}

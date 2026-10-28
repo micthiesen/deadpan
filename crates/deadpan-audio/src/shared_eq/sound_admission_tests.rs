@@ -61,10 +61,11 @@ fn nested_native_entry_sees_outstanding_metadata_and_no_work_is_refunded() {
         .into_shared(&mut admission)
         .unwrap()
     };
+    let original = super::admission_tests::original_metadata_units(&plan);
     let m = work.borrow().sound_context_frames;
     assert!(m > 1);
     renderer.limits.maximum_resident_frames =
-        u32::try_from(eq::BASE + eq::units() + m - 1).unwrap();
+        u32::try_from(eq::BASE + eq::units() + original + m - 1).unwrap();
     let before_work = work.borrow().plan_work;
     let mut graph = graph(&plan, true);
     assert!(matches!(
@@ -78,7 +79,8 @@ fn nested_native_entry_sees_outstanding_metadata_and_no_work_is_refunded() {
     drop(metadata);
     assert_eq!(work.borrow().sound_context_frames, 0);
     node(&mut renderer, &mut graph, &owner, control).unwrap();
-    assert_eq!(renderer.active_frames, eq::BASE + eq::units());
+    assert_eq!(renderer.active_frames, eq::BASE + eq::units() + original);
+    assert_eq!(graph.resident, eq::units() + original);
     renderer.release_shared_graph(graph, 0);
     assert_eq!(renderer.active_frames, eq::BASE);
 }
