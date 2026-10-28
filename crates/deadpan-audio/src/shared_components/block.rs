@@ -5,7 +5,11 @@
 use super::*;
 
 impl Route<'_> {
-    fn transfer_block(&mut self, control: WorkControl<'_>) -> Result<(), StageAudioError> {
+    fn transfer_block(
+        &mut self,
+        permitted: permissions::PermissionRow<'_>,
+        control: WorkControl<'_>,
+    ) -> Result<(), StageAudioError> {
         let Some(program) = &mut self.program else {
             // No add() means no admitted samples and no prepared checkpoints.
             return Ok(());
@@ -16,8 +20,8 @@ impl Route<'_> {
             // results. Nothing can introduce a nonfinite sample between them.
             return Ok(());
         }
-        for frame in &mut self.pcm {
-            if frame.permitted {
+        for (at, frame) in self.pcm.iter_mut().enumerate() {
+            if permitted.contains(at) {
                 frame.value = transfer.apply_wide(frame.value, control)?;
             }
         }
@@ -28,6 +32,7 @@ impl Route<'_> {
         &mut self,
         output: &mut OutputSamples<'_>,
         event_input: bool,
+        permitted: permissions::PermissionRow<'_>,
         control: WorkControl<'_>,
     ) -> Result<(), StageAudioError> {
         let Some(program) = &mut self.program else {
@@ -43,7 +48,7 @@ impl Route<'_> {
         };
         if transfer.is_identity() {
             for (at, frame) in self.pcm.iter().enumerate() {
-                if frame.permitted {
+                if permitted.contains(at) {
                     control.spend_plan_work(1)?;
                     let value = input(frame);
                     output.add(at, value);
@@ -51,7 +56,7 @@ impl Route<'_> {
             }
         } else {
             for (at, frame) in self.pcm.iter().enumerate() {
-                if frame.permitted {
+                if permitted.contains(at) {
                     control.spend_plan_work(1)?;
                     let value = transfer.apply_wide(input(frame), control)?;
                     output.add(at, value);
@@ -82,13 +87,18 @@ impl<'plan> Components<'plan> {
         if self.send.is_some() {
             outputs[0].samples.clear();
         }
-        for route in &mut self.routes {
+        for (id, route) in self.routes.iter_mut().enumerate() {
             if self
                 .send
                 .and_then(|effect| route.sends.level(effect))
                 .is_some()
             {
-                route.send_block(&mut outputs[0].samples, true, control)?;
+                route.send_block(
+                    &mut outputs[0].samples,
+                    true,
+                    self.permitted.row(id),
+                    control,
+                )?;
             }
         }
         for owner in owners {
@@ -104,14 +114,14 @@ impl<'plan> Components<'plan> {
                     continue;
                 }
                 for &(id, _) in &owner.members {
-                    self.routes[id].transfer_block(control)?;
+                    self.routes[id].transfer_block(self.permitted.row(id), control)?;
                 }
                 for at in 0..self.frames {
                     control.check()?;
                     let permissions = policy::permissions(
                         &self.routes,
                         owner,
-                        |id| self.routes[id].pcm[at].permitted,
+                        |id| self.permitted.contains(id, at),
                         false,
                     )?;
                     if permissions.is_empty() {
@@ -121,7 +131,7 @@ impl<'plan> Components<'plan> {
                     let mut count = 0;
                     for &(id, _) in &owner.members {
                         let frame = &self.routes[id].pcm[at];
-                        if frame.permitted {
+                        if self.permitted.contains(id, at) {
                             count += 1;
                             for (out, value) in sum.iter_mut().zip(frame.value) {
                                 *out += value;
@@ -149,36 +159,50 @@ impl<'plan> Components<'plan> {
                         policy::first_clock(
                             &self.routes,
                             owner,
-                            |id| self.routes[id].pcm[at].permitted,
+                            |id| self.permitted.contains(id, at),
                             false,
                         )
                     } else {
                         None
                     };
-                    for &(id, _) in &owner.members {
-                        let route = &mut self.routes[id];
-                        let frame = &mut route.pcm[at];
-                        if frame.permitted {
-                            frame.value = if eq {
-                                equalize(
-                                    eq_clock.as_ref().ok_or(PlanError::InvalidPlan(
-                                        "shared EQ has no admitted clock",
-                                    ))?,
-                                    Temporal::Equalizer(stage),
-                                    AudioSample(self.start.0 + at as i64),
-                                    permissions,
-                                    Some(route.voice),
-                                )?
-                            } else if count == 1 {
-                                let saturation = saturation.ok_or(PlanError::InvalidPlan(
-                                    "contribution saturation absent",
-                                ))?;
-                                sum.map(|value| saturation.shape(value))
-                            } else {
-                                std::array::from_fn(|ch| frame.value[ch] * factor[ch])
-                            };
-                            if frame.value.iter().any(|value| !value.is_finite()) {
-                                return Err(PreparationError::InvalidSamples.into());
+                    if eq {
+                        visitors::visit_equalizer(
+                            &mut self.routes,
+                            visitors::EqualizerPhase {
+                                owner,
+                                permitted: &self.permitted,
+                                at,
+                                sample: AudioSample(self.start.0 + at as i64),
+                                stage,
+                                permissions: &permissions,
+                                clock: eq_clock.as_ref(),
+                            },
+                            || Ok(()),
+                            |_, route, request| {
+                                let frame = &mut route.pcm[at];
+                                frame.value = request.read(&mut equalize)?;
+                                if frame.value.iter().any(|value| !value.is_finite()) {
+                                    return Err(PreparationError::InvalidSamples.into());
+                                }
+                                Ok(())
+                            },
+                        )?;
+                    } else {
+                        for &(id, _) in &owner.members {
+                            let route = &mut self.routes[id];
+                            if self.permitted.contains(id, at) {
+                                let frame = &mut route.pcm[at];
+                                frame.value = if count == 1 {
+                                    let saturation = saturation.ok_or(PlanError::InvalidPlan(
+                                        "contribution saturation absent",
+                                    ))?;
+                                    sum.map(|value| saturation.shape(value))
+                                } else {
+                                    std::array::from_fn(|ch| frame.value[ch] * factor[ch])
+                                };
+                                if frame.value.iter().any(|value| !value.is_finite()) {
+                                    return Err(PreparationError::InvalidSamples.into());
+                                }
                             }
                         }
                     }
@@ -192,7 +216,12 @@ impl<'plan> Components<'plan> {
                         .and_then(|recipe| recipe.tail_sends().level(effect))
                         .is_some()
                     {
-                        self.routes[id].send_block(&mut outputs[0].samples, false, control)?;
+                        self.routes[id].send_block(
+                            &mut outputs[0].samples,
+                            false,
+                            self.permitted.row(id),
+                            control,
+                        )?;
                     }
                 }
             }
@@ -210,7 +239,7 @@ impl<'plan> Components<'plan> {
                     if sends.is_empty() {
                         continue;
                     }
-                    route.transfer_block(control)?;
+                    route.transfer_block(self.permitted.row(id), control)?;
                     // Borrow both send checkpoints once. They are applied to
                     // freshly returned samples, whose finiteness still needs
                     // checking even when a send transfer happens to be unity.
@@ -229,57 +258,56 @@ impl<'plan> Components<'plan> {
                     let transfers = program.next_transfers(count, control)?;
                     for at in 0..self.frames {
                         control.check()?;
-                        if !self.routes[id].pcm[at].permitted {
+                        if !self.permitted.contains(id, at) {
                             continue;
                         }
                         let wet_permissions = policy::permissions(
                             &self.routes,
                             owner,
-                            |member| self.routes[member].pcm[at].permitted,
+                            |member| self.permitted.contains(member, at),
                             true,
                         )?;
                         let clock = policy::first_clock(
                             &self.routes,
                             owner,
-                            |member| self.routes[member].pcm[at].permitted,
+                            |member| self.permitted.contains(member, at),
                             true,
                         );
                         let mut transfer = transfers.iter();
-                        for effect in [
-                            deadpan_core::TailEffect::Reverb,
-                            deadpan_core::TailEffect::Delay,
-                        ] {
-                            if sends.level(effect).is_none() {
-                                continue;
-                            }
-                            let wet = equalize(
-                                clock.as_ref().ok_or(PlanError::InvalidPlan(
-                                    "wet return has no admitted clock",
-                                ))?,
-                                Temporal::Wet(effect),
-                                AudioSample(self.start.0 + at as i64),
-                                wet_permissions,
-                                Some(self.routes[id].voice),
-                            )?;
-                            let wet = transfer
-                                .next()
-                                .ok_or(PlanError::InvalidPlan("wet gain checkpoint absent"))?
-                                .apply_wide(wet, control)?;
-                            for (out, input) in self.routes[id].pcm[at].value.iter_mut().zip(wet) {
-                                *out += input;
-                            }
-                            if self.routes[id].pcm[at].value.iter().any(|x| !x.is_finite()) {
-                                return Err(PreparationError::InvalidSamples.into());
-                            }
-                        }
+                        visitors::visit_wet_effects(
+                            visitors::WetPhase {
+                                sample: AudioSample(self.start.0 + at as i64),
+                                permissions: &wet_permissions,
+                                clock: clock.as_ref(),
+                                voice: self.routes[id].voice,
+                                sends,
+                            },
+                            || Ok(()),
+                            |_, request| {
+                                let wet = request.read(&mut equalize)?;
+                                let wet = transfer
+                                    .next()
+                                    .ok_or(PlanError::InvalidPlan("wet gain checkpoint absent"))?
+                                    .apply_wide(wet, control)?;
+                                for (out, input) in
+                                    self.routes[id].pcm[at].value.iter_mut().zip(wet)
+                                {
+                                    *out += input;
+                                }
+                                if self.routes[id].pcm[at].value.iter().any(|x| !x.is_finite()) {
+                                    return Err(PreparationError::InvalidSamples.into());
+                                }
+                                Ok(())
+                            },
+                        )?;
                     }
                     self.routes[id].program = Some(program);
                 }
             }
         }
-        for route in &mut self.routes {
+        for (id, route) in self.routes.iter_mut().enumerate() {
             if requested(outputs, route.voice, control)? {
-                route.transfer_block(control)?;
+                route.transfer_block(self.permitted.row(id), control)?;
             }
         }
         for at in 0..self.frames {
@@ -295,8 +323,8 @@ impl<'plan> Components<'plan> {
                 }
                 let mut sum = [0.0; 2];
                 let mut permitted = false;
-                for route in &self.routes {
-                    if route.pcm[at].permitted && output.selection.selects(route.voice) {
+                for (id, route) in self.routes.iter().enumerate() {
+                    if self.permitted.contains(id, at) && output.selection.selects(route.voice) {
                         permitted = true;
                         for (out, value) in sum.iter_mut().zip(route.pcm[at].value) {
                             *out += value;

@@ -206,9 +206,9 @@ pub(crate) fn apply_retained_envelope(
 
 /// Endpoint audibility is retained through later interpolation independently of
 /// creative fade gains. Call after the envelope pass has validated the span.
-pub(crate) fn exhausted_ranges(
+pub(crate) fn exhausted_range_slots(
     span: &AudioSpan,
-) -> Result<Vec<Range<AudioSample>>, StageAudioError> {
+) -> Result<[Option<Range<AudioSample>>; 2], StageAudioError> {
     let count = span
         .samples
         .end
@@ -220,20 +220,25 @@ pub(crate) fn exhausted_ranges(
     let last = span
         .envelope
         .progress_at(AudioSample(span.samples.end.0 - 1))?;
-    let mut result = Vec::new();
+    let mut result = [None, None];
     if first < 0 {
         // Saturating negation is exact after the count clamp even for MIN.
         let prefix = i64::try_from(first.saturating_neg().min(i128::from(count)))
             .map_err(|_| StageAudioError::Range)?;
-        result.push(span.samples.start..AudioSample(span.samples.start.0 + prefix));
+        result[0] = Some(span.samples.start..AudioSample(span.samples.start.0 + prefix));
     }
     let length = i128::from(span.envelope.length());
     if last >= length {
         let suffix = i64::try_from((last - length + 1).min(i128::from(count)))
             .map_err(|_| StageAudioError::Range)?;
-        result.push(AudioSample(span.samples.end.0 - suffix)..span.samples.end);
+        result[1] = Some(AudioSample(span.samples.end.0 - suffix)..span.samples.end);
     }
     Ok(result)
+}
+
+#[cfg(test)]
+fn exhausted_ranges(span: &AudioSpan) -> Result<Vec<Range<AudioSample>>, StageAudioError> {
+    Ok(exhausted_range_slots(span)?.into_iter().flatten().collect())
 }
 
 pub(crate) fn edge_gain(length: u64, at: i128, start: bool, end: bool) -> f32 {

@@ -18,6 +18,11 @@ mod block;
 #[path = "shared_components/policy.rs"]
 mod policy;
 
+#[path = "shared_components/permissions.rs"]
+mod permissions;
+#[path = "shared_components/visitors.rs"]
+mod visitors;
+
 #[path = "shared_components/outputs.rs"]
 mod outputs;
 pub(super) use outputs::{Output, OutputSamples, OutputSelection};
@@ -41,7 +46,6 @@ fn requested(
 struct Sample {
     value: [f64; 2],
     send_input: [f64; 2],
-    permitted: bool,
 }
 
 struct Route<'plan> {
@@ -98,6 +102,7 @@ pub(super) struct Components<'plan> {
     start: AudioSample,
     frames: usize,
     routes: Vec<Route<'plan>>,
+    permitted: permissions::SamplePermissions,
     owners: BTreeMap<OwnerKey, Owner<'plan>>,
     send: Option<deadpan_core::TailEffect>,
     skip: Vec<authored_gain::OwnerIdentity>,
@@ -114,6 +119,7 @@ impl<'plan> Components<'plan> {
             start,
             frames: frames as usize,
             routes: Vec::new(),
+            permitted: permissions::SamplePermissions::new(frames as usize),
             owners: BTreeMap::new(),
             send,
             skip: skip.to_vec(),
@@ -201,6 +207,7 @@ impl<'plan> Components<'plan> {
                 .checked_add(Program::resident_bytes(route, &self.owners, self.send)?)
                 .ok_or(StageAudioError::Limit("contribution gain residency"))
         })?;
+        let policy_bytes = self.permitted.resident_bytes(self.routes.len())?;
         let per_route = self
             .frames
             .checked_mul(std::mem::size_of::<Sample>())
@@ -211,6 +218,7 @@ impl<'plan> Components<'plan> {
             .len()
             .checked_mul(per_route)
             .and_then(|n| n.checked_add(prepared_gain_bytes))
+            .and_then(|n| n.checked_add(policy_bytes))
             .and_then(|n| n.checked_add(self.frames * std::mem::size_of::<[f64; 2]>()))
             .and_then(|n| {
                 n.checked_add(if self.send.is_some() {
@@ -223,7 +231,14 @@ impl<'plan> Components<'plan> {
         Ok((bytes as u64).div_ceil(std::mem::size_of::<[f32; 2]>() as u64))
     }
 
+    /// Admit resident_frames before allocating policy or PCM. Policy can be
+    /// populated independently first; allocating PCM preserves those marks.
+    pub(super) fn allocate_policy(&mut self) {
+        self.permitted.allocate(self.routes.len());
+    }
+
     pub(super) fn allocate(&mut self) {
+        self.allocate_policy();
         for route in &mut self.routes {
             route.pcm = vec![Sample::default(); self.frames];
         }
@@ -237,7 +252,8 @@ impl<'plan> Components<'plan> {
         event_gain: i32,
         control: WorkControl<'_>,
     ) -> Result<(), StageAudioError> {
-        let route = &mut self.routes[route];
+        let id = route;
+        let route = &mut self.routes[id];
         if !route.samples.contains(&at) {
             return Err(PlanError::InvalidPlan("contribution outside its route").into());
         }
@@ -254,7 +270,7 @@ impl<'plan> Components<'plan> {
                 return Err(PreparationError::InvalidSamples.into());
             }
         }
-        output.permitted = true;
+        self.permitted.mark(id, at)?;
         Ok(())
     }
 
@@ -352,7 +368,7 @@ impl<'plan> Components<'plan> {
                         false,
                     )?;
                 }
-                if route.pcm[at].permitted
+                if self.permitted.contains(id, at)
                     && let Some(level) = self.send.and_then(|effect| route.sends.level(effect))
                 {
                     control.spend_plan_work(1)?;
@@ -364,7 +380,7 @@ impl<'plan> Components<'plan> {
                 }
             }
             for owner in &owners {
-                let active = |id: usize| self.routes[id].pcm[at].permitted;
+                let active = |id: usize| self.permitted.contains(id, at);
                 let permissions = policy::permissions(&self.routes, owner, active, false)?;
                 if permissions.is_empty() {
                     continue;
@@ -391,7 +407,7 @@ impl<'plan> Components<'plan> {
                         let mut sum = [0.0; 2];
                         let mut count = 0;
                         for &(id, _) in &owner.members {
-                            if self.routes[id].pcm[at].permitted {
+                            if self.permitted.contains(id, at) {
                                 count += 1;
                                 let route = &mut self.routes[id];
                                 let frame = route.apply_gain(
@@ -430,43 +446,57 @@ impl<'plan> Components<'plan> {
                             policy::first_clock(
                                 &self.routes,
                                 owner,
-                                |id| self.routes[id].pcm[at].permitted,
+                                |id| self.permitted.contains(id, at),
                                 false,
                             )
                         } else {
                             None
                         };
-                        for &(id, _) in &owner.members {
-                            let route = &mut self.routes[id];
-                            let frame = &mut route.pcm[at];
-                            if frame.permitted {
-                                frame.value = if eq {
-                                    equalize(
-                                        eq_clock.as_ref().ok_or(PlanError::InvalidPlan(
-                                            "shared EQ has no admitted clock",
-                                        ))?,
-                                        Temporal::Equalizer(stage),
-                                        sample,
-                                        permissions,
-                                        Some(route.voice),
-                                    )?
-                                } else if count == 1 {
-                                    let saturation = saturation.ok_or(PlanError::InvalidPlan(
-                                        "contribution saturation absent",
-                                    ))?;
-                                    sum.map(|value| saturation.shape(value))
-                                } else {
-                                    std::array::from_fn(|ch| frame.value[ch] * factor[ch])
-                                };
-                                if frame.value.iter().any(|value| !value.is_finite()) {
-                                    return Err(PreparationError::InvalidSamples.into());
+                        if eq {
+                            visitors::visit_equalizer(
+                                &mut self.routes,
+                                visitors::EqualizerPhase {
+                                    owner,
+                                    permitted: &self.permitted,
+                                    at,
+                                    sample,
+                                    stage,
+                                    permissions: &permissions,
+                                    clock: eq_clock.as_ref(),
+                                },
+                                || Ok(()),
+                                |_, route, request| {
+                                    let frame = &mut route.pcm[at];
+                                    frame.value = request.read(&mut equalize)?;
+                                    if frame.value.iter().any(|value| !value.is_finite()) {
+                                        return Err(PreparationError::InvalidSamples.into());
+                                    }
+                                    Ok(())
+                                },
+                            )?;
+                        } else {
+                            for &(id, _) in &owner.members {
+                                let route = &mut self.routes[id];
+                                if self.permitted.contains(id, at) {
+                                    let frame = &mut route.pcm[at];
+                                    frame.value = if count == 1 {
+                                        let saturation =
+                                            saturation.ok_or(PlanError::InvalidPlan(
+                                                "contribution saturation absent",
+                                            ))?;
+                                        sum.map(|value| saturation.shape(value))
+                                    } else {
+                                        std::array::from_fn(|ch| frame.value[ch] * factor[ch])
+                                    };
+                                    if frame.value.iter().any(|value| !value.is_finite()) {
+                                        return Err(PreparationError::InvalidSamples.into());
+                                    }
                                 }
                             }
                         }
                     } else {
                         for &(id, layer) in &owner.members {
-                            if self.routes[id].pcm[at].permitted
-                                && self.routes[id].program.is_none()
+                            if self.permitted.contains(id, at) && self.routes[id].program.is_none()
                             {
                                 gains[id].owner_slice(
                                     &self.routes[id].layers[layer].0,
@@ -482,7 +512,7 @@ impl<'plan> Components<'plan> {
                 if let Some(effect) = self.send {
                     for &(id, layer) in &owner.members {
                         let route = &mut self.routes[id];
-                        if route.pcm[at].permitted
+                        if self.permitted.contains(id, at)
                             && let Some(level) = route.layers[layer]
                                 .0
                                 .treatments()
@@ -512,11 +542,11 @@ impl<'plan> Components<'plan> {
                         permissions: wet_permissions,
                         clock,
                     } = policy::wet_context(&self.routes, owner, |id| {
-                        self.routes[id].pcm[at].permitted
+                        self.permitted.contains(id, at)
                     })?;
                     for &(id, layer) in &owner.members {
                         let route = &mut self.routes[id];
-                        if !route.pcm[at].permitted || !route.wet_allowed(layer) {
+                        if !self.permitted.contains(id, at) || !route.wet_allowed(layer) {
                             continue;
                         }
                         let sends = route.layers[layer]
@@ -529,20 +559,17 @@ impl<'plan> Components<'plan> {
                         }
                         route.pcm[at].value =
                             route.apply_gain(&mut gains[id], route.pcm[at].value, control)?;
-                        for effect in [
-                            deadpan_core::TailEffect::Reverb,
-                            deadpan_core::TailEffect::Delay,
-                        ] {
-                            if let Some(level) = sends.level(effect) {
-                                let wet = equalize(
-                                    clock.as_ref().ok_or(PlanError::InvalidPlan(
-                                        "wet return has no admitted clock",
-                                    ))?,
-                                    Temporal::Wet(effect),
-                                    sample,
-                                    wet_permissions,
-                                    Some(route.voice),
-                                )?;
+                        visitors::visit_wet_effects(
+                            visitors::WetPhase {
+                                sample,
+                                permissions: &wet_permissions,
+                                clock: clock.as_ref(),
+                                voice: route.voice,
+                                sends,
+                            },
+                            || Ok(()),
+                            |level, request| {
+                                let wet = request.read(&mut equalize)?;
                                 let wet = route.send_sample(
                                     &authored_gain::GainSum::default(),
                                     wet,
@@ -555,8 +582,9 @@ impl<'plan> Components<'plan> {
                                 if route.pcm[at].value.iter().any(|x| !x.is_finite()) {
                                     return Err(PreparationError::InvalidSamples.into());
                                 }
-                            }
-                        }
+                                Ok(())
+                            },
+                        )?;
                     }
                 }
             }
@@ -567,7 +595,7 @@ impl<'plan> Components<'plan> {
                 let mut sum = [0.0; 2];
                 let mut permitted = false;
                 for (id, route) in self.routes.iter_mut().enumerate() {
-                    if route.pcm[at].permitted && output.selection.selects(route.voice) {
+                    if self.permitted.contains(id, at) && output.selection.selects(route.voice) {
                         permitted = true;
                         let value =
                             route.apply_gain(&mut gains[id], route.pcm[at].value, control)?;
@@ -592,7 +620,8 @@ impl<'plan> Components<'plan> {
                 // Final gains belong only to requested routes, but a route
                 // selected by several targets consumes its final transfer once.
                 for (id, route) in self.routes.iter_mut().enumerate() {
-                    if route.pcm[at].permitted && requested(outputs, route.voice, control)? {
+                    if self.permitted.contains(id, at) && requested(outputs, route.voice, control)?
+                    {
                         route.pcm[at].value =
                             route.apply_gain(&mut gains[id], route.pcm[at].value, control)?;
                     }
@@ -603,8 +632,9 @@ impl<'plan> Components<'plan> {
                     }
                     let mut sum = [0.0; 2];
                     let mut permitted = false;
-                    for route in &self.routes {
-                        if route.pcm[at].permitted && output.selection.selects(route.voice) {
+                    for (id, route) in self.routes.iter().enumerate() {
+                        if self.permitted.contains(id, at) && output.selection.selects(route.voice)
+                        {
                             permitted = true;
                             for (out, value) in sum.iter_mut().zip(route.pcm[at].value) {
                                 *out += value;

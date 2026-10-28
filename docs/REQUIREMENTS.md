@@ -184,6 +184,18 @@ failures and an early combined-versus-library count correction are retained.
 Audio does not call the query yet; a policy visitor, cold resource fold and
 batching remain owed. No requirement or gate closes.
 
+The [shared audio policy visits](qualification/audio-policy-visits-2026-10-27.md)
+add an admitted permission carrier, production EQ/wet phase visitors and a
+borrowed root final-policy adapter. Fourteen new tests preserve literal masks,
+PCM bits, callback/error order, allocation and partial work. Final main
+Audio/definition pass 231/171 tests; all 203 enabled real-WAV stages pass with
+seven unfinished Split cases filtered. The isolated published runtime passes
+214 Audio and eight historical PCM tests; all ten source files match it exactly.
+Strict lint and independent review pass. A test-only lint correction and recorder
+path correction are retained. Complete cold population, whole demand traversal,
+resource admission and batching remain owed. The historical Split result of four
+passes and three work-limit failures is not rerun; no criterion or gate closes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

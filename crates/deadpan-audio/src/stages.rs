@@ -37,6 +37,9 @@ use crate::{
 mod signal_input;
 use signal_input::SignalInput;
 
+#[path = "raw_policy.rs"]
+mod raw_policy;
+
 #[path = "prepared_pcm.rs"]
 mod prepared_pcm;
 use prepared_pcm::{PcmSamples, PcmWriter, PreparedPcm};
@@ -2004,26 +2007,10 @@ impl StageAudio {
             };
             samples.extend(block);
         }
-        let mut suppressed = Vec::new();
-        let mut exhausted = Vec::new();
-        for span in &queries.flattened.spans {
-            control.check()?;
-            let left = usize::try_from(span.samples.start.0 - start.0)
-                .map_err(|_| StageAudioError::Range)?;
-            let right = usize::try_from(span.samples.end.0 - start.0)
-                .map_err(|_| StageAudioError::Range)?;
-            if is_silent_hold(&span.content) {
-                samples[left..right].fill([0.0; 2]);
-                suppressed.push(span.samples.clone());
-            } else {
-                crate::edges::apply_retained_envelope(span, &mut samples[left..right], false)?;
-                exhausted.extend(crate::edges::exhausted_ranges(span)?);
-            }
-        }
-        apply_suppression(start, &mut samples, &queries.policy.suppressed, |sample| {
-            sample.0
-        })?;
-        suppressed.extend(queries.policy.suppressed.iter().cloned());
+        let raw_policy::Applied {
+            suppressed,
+            exhausted,
+        } = raw_policy::apply(queries, start, &mut samples, control)?;
         if let Some(fades) = queries.fades {
             crate::edges::apply_creative_fades(start, &mut samples, &fades.spans)?;
         }
