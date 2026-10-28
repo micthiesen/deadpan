@@ -89,6 +89,84 @@ impl SamplePermissions {
         self.row(route).contains(at)
     }
 
+    /// Populate a separately admitted prediction a word at a time. This is
+    /// additional metadata work; the numerical add path keeps its old charges.
+    pub(super) fn assign_range(
+        &mut self,
+        route: usize,
+        range: Range<usize>,
+        allowed: bool,
+        control: WorkControl<'_>,
+    ) -> Result<(), StageAudioError> {
+        control.spend_plan_work(1)?;
+        if range.start >= range.end || range.end > self.frames {
+            return Err(StageAudioError::Range);
+        }
+        let start = route
+            .checked_mul(self.stride)
+            .ok_or(StageAudioError::Range)?;
+        let end = start
+            .checked_add(self.stride)
+            .ok_or(StageAudioError::Range)?;
+        let row = self
+            .words
+            .get_mut(start..end)
+            .ok_or(PlanError::InvalidPlan(
+                "contribution prediction not allocated",
+            ))?;
+        let first = range.start / 64;
+        let last = (range.end - 1) / 64;
+        for (word, value) in row.iter_mut().enumerate().take(last + 1).skip(first) {
+            control.spend_plan_work(1)?;
+            let low = if word == first { range.start % 64 } else { 0 };
+            let high = if word == last {
+                (range.end - 1) % 64 + 1
+            } else {
+                64
+            };
+            let mask = (u64::MAX << low)
+                & if high == 64 {
+                    u64::MAX
+                } else {
+                    (1_u64 << high) - 1
+                };
+            if allowed {
+                *value |= mask;
+            } else {
+                *value &= !mask;
+            }
+        }
+        Ok(())
+    }
+
+    pub(super) fn verify_matches(
+        &self,
+        observed: &Self,
+        control: WorkControl<'_>,
+    ) -> Result<(), StageAudioError> {
+        control.spend_plan_work(1)?;
+        if self.frames != observed.frames
+            || self.stride != observed.stride
+            || self.words.len() != observed.words.len()
+        {
+            return Err(PlanError::InvalidPlan("contribution prediction shape differs").into());
+        }
+        for (planned, actual) in self.words.iter().zip(&observed.words) {
+            control.spend_plan_work(1)?;
+            if planned != actual {
+                return Err(
+                    PlanError::InvalidPlan("contribution permission prediction differs").into(),
+                );
+            }
+        }
+        Ok(())
+    }
+
+    pub(super) fn payload_frames(&self) -> Result<u64, StageAudioError> {
+        // Each u64 word occupies exactly one f32-stereo-frame ledger unit.
+        u64::try_from(self.words.capacity()).map_err(|_| StageAudioError::Range)
+    }
+
     /// Structural policy only, never source authority or finite PCM. A new
     /// metadata producer must bill its own walk. Runtime add replaces its old
     /// bool assignment here after both channel finite checks have succeeded.

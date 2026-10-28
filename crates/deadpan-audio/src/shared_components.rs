@@ -42,6 +42,10 @@ fn requested(
     }))
 }
 
+#[cfg(test)]
+#[path = "shared_components/prediction_tests.rs"]
+mod prediction_tests;
+
 #[derive(Clone, Copy, Default)]
 struct Sample {
     value: [f64; 2],
@@ -103,6 +107,7 @@ pub(super) struct Components<'plan> {
     frames: usize,
     routes: Vec<Route<'plan>>,
     permitted: permissions::SamplePermissions,
+    predicted: Option<permissions::SamplePermissions>,
     owners: BTreeMap<OwnerKey, Owner<'plan>>,
     send: Option<deadpan_core::TailEffect>,
     skip: Vec<authored_gain::OwnerIdentity>,
@@ -120,6 +125,7 @@ impl<'plan> Components<'plan> {
             frames: frames as usize,
             routes: Vec::new(),
             permitted: permissions::SamplePermissions::new(frames as usize),
+            predicted: None,
             owners: BTreeMap::new(),
             send,
             skip: skip.to_vec(),
@@ -208,6 +214,16 @@ impl<'plan> Components<'plan> {
                 .ok_or(StageAudioError::Limit("contribution gain residency"))
         })?;
         let policy_bytes = self.permitted.resident_bytes(self.routes.len())?;
+        let prediction_header = size_of::<Option<permissions::SamplePermissions>>();
+        let prediction_bytes = if let Some(predicted) = &self.predicted {
+            predicted
+                .resident_bytes(self.routes.len())?
+                .checked_sub(size_of::<permissions::SamplePermissions>())
+                .and_then(|payload| payload.checked_add(prediction_header))
+                .ok_or(StageAudioError::Range)?
+        } else {
+            prediction_header
+        };
         let per_route = self
             .frames
             .checked_mul(std::mem::size_of::<Sample>())
@@ -219,6 +235,7 @@ impl<'plan> Components<'plan> {
             .checked_mul(per_route)
             .and_then(|n| n.checked_add(prepared_gain_bytes))
             .and_then(|n| n.checked_add(policy_bytes))
+            .and_then(|n| n.checked_add(prediction_bytes))
             .and_then(|n| n.checked_add(self.frames * std::mem::size_of::<[f64; 2]>()))
             .and_then(|n| {
                 n.checked_add(if self.send.is_some() {
@@ -235,6 +252,62 @@ impl<'plan> Components<'plan> {
     /// populated independently first; allocating PCM preserves those marks.
     pub(super) fn allocate_policy(&mut self) {
         self.permitted.allocate(self.routes.len());
+        if let Some(predicted) = &mut self.predicted {
+            predicted.allocate(self.routes.len());
+        }
+    }
+
+    /// Configure empty prediction metadata before admitting either payload.
+    /// Actual add() observations always stay in the independent carrier.
+    pub(super) fn begin_prediction(&mut self) -> Result<(), StageAudioError> {
+        if self.predicted.is_some() || self.permitted.payload_frames()? != 0 {
+            return Err(
+                PlanError::InvalidPlan("contribution prediction must precede allocation").into(),
+            );
+        }
+        self.predicted = Some(permissions::SamplePermissions::new(self.frames));
+        Ok(())
+    }
+
+    pub(super) fn predict_range(
+        &mut self,
+        route: usize,
+        range: Range<usize>,
+        allowed: bool,
+        control: WorkControl<'_>,
+    ) -> Result<(), StageAudioError> {
+        let support = &self
+            .routes
+            .get(route)
+            .ok_or(StageAudioError::Range)?
+            .samples;
+        if range.start < support.start || range.end > support.end {
+            return Err(PlanError::InvalidPlan("prediction outside contribution route").into());
+        }
+        self.predicted
+            .as_mut()
+            .ok_or(PlanError::InvalidPlan(
+                "contribution prediction not started",
+            ))?
+            .assign_range(route, range, allowed, control)
+    }
+
+    /// Verify the complete untouched prediction against independently observed
+    /// positive AND negative bits, including samples omitted by producer loops.
+    /// Return only the dropped payload's actual residency for caller cleanup.
+    pub(super) fn verify_prediction(
+        &mut self,
+        control: WorkControl<'_>,
+    ) -> Result<u64, StageAudioError> {
+        let Some(predicted) = &self.predicted else {
+            return Ok(0);
+        };
+        predicted.validate(self.routes.len())?;
+        self.permitted.validate(self.routes.len())?;
+        predicted.verify_matches(&self.permitted, control)?;
+        let released = predicted.payload_frames()?;
+        self.predicted = None;
+        Ok(released)
     }
 
     pub(super) fn allocate(&mut self) {
@@ -326,6 +399,9 @@ impl<'plan> Components<'plan> {
             Option<usize>,
         ) -> Result<[f64; 2], StageAudioError>,
     ) -> Result<(), StageAudioError> {
+        if self.predicted.is_some() {
+            return Err(PlanError::InvalidPlan("contribution prediction not verified").into());
+        }
         if outputs.is_empty() || outputs.len() > super::shared_mix::MAX_VOICES {
             return Err(StageAudioError::Limit("contribution output count"));
         }

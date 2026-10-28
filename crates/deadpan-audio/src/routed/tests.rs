@@ -365,3 +365,6 @@ fn borrowed_routed_queries_reuse_real_wav_raw_and_preserve_inputs_exactly() {
         ));
     }
 }
+
+#[path = "policy_tests.rs"]
+mod policy_tests;

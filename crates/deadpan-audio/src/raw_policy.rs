@@ -48,7 +48,7 @@ pub(super) fn visit<'query>(
     for span in &queries.flattened.spans {
         control.check()?;
         charge()?;
-        let offsets = offsets(start, frames, &span.samples, false)?;
+        let offsets = span_offsets(start, frames, &span.samples)?;
         if is_silent_hold(&span.content) {
             charge()?;
             emit(Event::SilentHold {
@@ -67,28 +67,28 @@ pub(super) fn visit<'query>(
             }
         }
     }
-    // apply_suppression validated all offsets before writing any policy zero.
-    // Two bounded borrowed walks keep that boundary without its temporary Vec.
-    for range in &queries.policy.suppressed {
-        charge()?;
-        offsets(start, frames, range, true)?;
-    }
-    for range in &queries.policy.suppressed {
-        charge()?;
-        let offsets = offsets(start, frames, range, true)?;
-        emit(Event::Suppressed {
-            range: range.clone(),
-            offsets,
-        })?;
-    }
+    // Share whole-list validation and exact typed offset conversion with the
+    // signal reader and cold input adapters, before any policy zeroing.
+    policy_ranges::visit(
+        start,
+        frames,
+        &queries.policy.suppressed,
+        |sample| sample.0,
+        &mut charge,
+        |range, offsets| {
+            emit(Event::Suppressed {
+                range: range.clone(),
+                offsets,
+            })
+        },
+    )?;
     Ok(())
 }
 
-fn offsets(
+fn span_offsets(
     start: AudioSample,
     frames: usize,
     range: &Range<AudioSample>,
-    nonempty: bool,
 ) -> Result<Range<usize>, StageAudioError> {
     let left = range
         .start
@@ -102,7 +102,7 @@ fn offsets(
         .checked_sub(start.0)
         .and_then(|offset| usize::try_from(offset).ok())
         .ok_or(StageAudioError::Range)?;
-    if left > right || (nonempty && left == right) || right > frames {
+    if left > right || right > frames {
         return Err(StageAudioError::Range);
     }
     Ok(left..right)

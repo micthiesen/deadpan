@@ -21,6 +21,52 @@ pub(super) enum PreparedSoundInput<'plan> {
     Routed(super::routed::PreparedRoutedRootQuery<'plan>),
 }
 
+impl PreparedSoundInput<'_> {
+    /// O(1) final-policy probe before reserving a prediction carrier.
+    /// Complete does not establish child processing/preparation eligibility.
+    pub(super) fn policy_support(&self) -> policy_ranges::Support {
+        match self {
+            Self::Direct { .. } => policy_ranges::Support::Complete,
+            Self::Routed(query) => query.policy_support(),
+        }
+    }
+
+    /// Final raw input suppression from the existing prepared queries.
+    /// Selection, event gates and source admission remain caller obligations.
+    pub(super) fn visit_policy(
+        &self,
+        control: WorkControl<'_>,
+        mut emit: impl FnMut(Range<AudioSample>) -> Result<(), StageAudioError>,
+    ) -> Result<policy_ranges::Support, StageAudioError> {
+        control.check()?;
+        if self.policy_support() == policy_ranges::Support::Unsupported {
+            return Ok(policy_ranges::Support::Unsupported);
+        }
+        match self {
+            Self::Direct { signal, policy } => {
+                let frames = signal
+                    .samples
+                    .end
+                    .0
+                    .checked_sub(signal.samples.start.0)
+                    .and_then(|count| usize::try_from(count).ok())
+                    .ok_or(StageAudioError::Range)?;
+                policy_ranges::visit(
+                    signal.samples.start,
+                    frames,
+                    &policy.suppressed,
+                    |at| at.0,
+                    || control.spend_plan_work(1),
+                    |range, _| emit(AudioSample(range.start.0)..AudioSample(range.end.0)),
+                )?;
+                control.check()?;
+                Ok(policy_ranges::Support::Complete)
+            }
+            Self::Routed(query) => query.visit_policy(control, emit),
+        }
+    }
+}
+
 impl StageAudio {
     pub(super) fn read_authored_bus(
         &mut self,

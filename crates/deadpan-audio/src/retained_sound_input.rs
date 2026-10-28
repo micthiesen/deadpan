@@ -28,6 +28,70 @@ pub(super) struct PreparedRetainedSoundInput<'plan> {
     raw: Option<AudioProcessingQuery<'plan>>,
 }
 
+/// This is the final raw-read silence rule, not a union of child masks.
+pub(super) fn is_raw_silence(content: &AudioSignalContent<'_>) -> bool {
+    matches!(
+        content,
+        AudioSignalContent::Leaf(AudioContent::Silence { .. })
+    )
+}
+
+/// O(1) final-policy availability, independent of processing eligibility.
+pub(super) fn policy_support(input: &AudioRoutedRootInput<'_>) -> policy_ranges::Support {
+    if matches!(input, AudioRoutedRootInput::Projected(_)) {
+        policy_ranges::Support::Unsupported
+    } else {
+        policy_ranges::Support::Complete
+    }
+}
+
+impl PreparedRetainedSoundInput<'_> {
+    /// Inspect existing input policy before PCM. Projected inputs have no
+    /// retained policy query here and are unsupported before any record visit.
+    /// No source authority or processing eligibility is implied. Every extra
+    /// validation/emission pass is billed; discard observations on failure.
+    pub(super) fn visit_policy(
+        &self,
+        input: &AudioRoutedRootInput<'_>,
+        control: WorkControl<'_>,
+        mut emit: impl FnMut(Range<AudioSample>) -> Result<(), StageAudioError>,
+    ) -> Result<policy_ranges::Support, StageAudioError> {
+        control.check()?;
+        if policy_support(input) == policy_ranges::Support::Unsupported {
+            return Ok(policy_ranges::Support::Unsupported);
+        }
+        let source_only = matches!(input, AudioRoutedRootInput::Source(_));
+        let raw = self.raw.as_ref().ok_or(PlanError::InvalidPlan(
+            "missing retained input policy query",
+        ))?;
+        // Complete policy validation before the first observation.
+        for span in &raw.spans {
+            control.spend_plan_work(1)?;
+            if source_only
+                && !matches!(
+                    &span.content,
+                    AudioSignalContent::Leaf(
+                        AudioContent::Source { .. } | AudioContent::Silence { .. }
+                    )
+                )
+            {
+                return Err(PlanError::InvalidPlan("raw root query is not a source recipe").into());
+            }
+            if is_raw_silence(&span.content) {
+                policy_ranges::offsets(self.start, self.frames as usize, &span.samples, |at| at.0)?;
+            }
+        }
+        for span in &raw.spans {
+            control.spend_plan_work(1)?;
+            if is_raw_silence(&span.content) {
+                emit(span.samples.clone())?;
+            }
+        }
+        control.check()?;
+        Ok(policy_ranges::Support::Complete)
+    }
+}
+
 struct OccurrenceRawQueries<'query, 'plan> {
     flattened: AudioQuery,
     processing: &'query AudioProcessingQuery<'plan>,
@@ -51,12 +115,7 @@ fn occurrence_raw_queries<'query, 'plan>(
     let suppressed = processing
         .spans
         .iter()
-        .filter(|span| {
-            matches!(
-                &span.content,
-                AudioSignalContent::Leaf(AudioContent::Silence { .. })
-            )
-        })
+        .filter(|span| is_raw_silence(&span.content))
         .map(|span| span.samples.clone())
         .collect();
     OccurrenceRawQueries {

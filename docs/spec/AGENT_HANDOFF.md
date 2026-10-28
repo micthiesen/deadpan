@@ -2,55 +2,60 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: shared audio policy visits, product goal active
+## Current state: pre-PCM permission population, product goal active
 
-The [shared policy milestone](../qualification/audio-policy-visits-2026-10-27.md)
-separates contribution permission from numerical PCM into an admitted contiguous
-bit carrier. Both numerical engines consume production EQ/wet phase visitors at
-their original callback boundaries. The root reader consumes a borrowed final
-policy visitor sharing silent Hold, envelope, exhaustion and suppression rules.
-There is no complete cold population path, whole demand walker, resource proof
-or batching. Actual reads still populate runtime flags; graph reads stay scalar.
+The [permission population milestone](../qualification/permission-population-2026-10-27.md)
+predicts current Components input permissions before contribution PCM allocation.
+Sealed Original Root/Domain requests supply both metadata and the actual read;
+direct/current/routed sound adapters reuse production policy transfers. A
+separate actual-observation carrier remains independent. Complete packed rows,
+including omitted/negative samples, must match before common owner callbacks
+through mix.finish. Event-return preparation already happened, so this does not
+prove cold recursive allocation. General graph reads and descendants stay scalar.
 
-Final main Audio/definition pass 231/171 tests and all 203 enabled real-WAV
-stages pass, with seven unfinished general-Split cases filtered. The isolated
-published runtime passes 214 Audio and eight historical PCM tests. All ten
-published source files match that isolated runtime byte for byte. Main/isolated
-guards cover 1,408/1,180 inputs. Strict four-crate all-target lint and independent
-review pass. One test-only Clippy expression is corrected without changing its
-assertion or production source; both final binary sets are rebuilt. Exact
-receipts retain the failure and a recorder path-normalization correction. Every
-receipt is terminal and no Cargo/test process remains.
+Final main Audio/definition pass 256/171. Both main and isolated enabled real-WAV
+stages pass all 203; main filters the seven unfinished Split cases and isolated
+has none. Isolated Audio passes 237 plus eight historical PCM cases. All nineteen
+published source files match isolated and staged bytes exactly. Main/isolated
+guards cover 1,417/1,188 inputs. Strict all-target Core/Plan/Audio/Store lint and
+independent review pass. All compiler/test receipts are terminal.
 
-The last full Split matrix remains historical four pass/three work-limit
-failures at the wet-storage checkpoint, not a fresh matrix result. Coverage
-stays about 85%, ten Complete requirements and all seven gates open. The full
-product goal remains active; no acceptance credit changes.
+The fresh final-source seven-case Split check is four pass/three work failures,
+across the targeted root case and the other six. All-owner Source/Sequence
+cut-three, limited 0+511, and nested selected without root sound, prefix-two,
+limited 0+4096, report source occurrence construction work. One selected play,
+prefix-two, limited 0+4096, reports frozen projection work exhausted.
+The first matrix regressed processed-root refinement (three pass/four fail).
+Skipping policy/query work for provably unselected rows restores that case at
+unchanged limits. Actual reads/source admission remain; no performed work is
+refunded. A test-only generic type fix and an initial unchanged-baseline isolated
+build are retained and excluded from final qualification.
 
-Next wire one current chunk's completed permissions from its already prepared
-sound queries before PCM. Factor Original Root/Domain query preparation so the
-same request supplies policy and a cache-miss read. A hit adds honest billed
-metadata work; warm output masks alone cannot prove cold policy. Share exact
-signal/routed/retained transfers and selection/gate predicates with production.
-Context::Retained and actual Projected forms need explicit unsupported-domain
-fallback until their adapters exist. No fake PCM, provider, query cache or work
-waiver. Premarked bits plus later OR marks cannot be their own oracle: compare
-actual positive/negative decisions independently, including early returns and
-omitted producer coverage, and test injected prediction errors.
+Context::Retained and actual Projected forms still fall back before prediction
+allocation/Original preparation. Final policy completeness is not native resource
+eligibility. Main's inherited Original cache adapter and two tests stay as WIP;
+the independently published runtime has no cache. Warm masks are not cold proof.
+No fake PCM/provider, query/discovery/prefix cache, weight change or failed-batch
+retry is introduced. Coverage stays about 85%, ten Complete requirements and all
+seven gates open; the full product goal remains active.
 
-Then share complete constant/dynamic demand sequencing, reconstruct exact raw
-contexts from ancestry/grid witnesses, and fold future outputs/tiles,
-constructor peaks and recursive scratch before extra histories allocate.
-Descendants stay scalar. The Plan intrinsic query below is still unused by
-Audio and does not classify arbitrary projected inputs. Preserve every actual
-planning charge, discard partial observations, and never retry a failed batch.
+Next share the complete constant/dynamic owner-phase driver with actual
+numerical barriers, preserving their distinct callback orders and lexical wet
+Program borrowing. Reuse exact Program::constant with completed planned activity;
+inactive dynamic routes must not change mode. Then reconstruct raw contexts from
+ancestry/grid witnesses and fold future outputs/tiles, constructor peaks and
+recursive scratch before extra histories allocate. The Plan intrinsic query is
+still unused by Audio and does not classify arbitrary projected inputs.
 
-Exact patches, final source/binary pins, reviews and next-wiring notes are under
-`/tmp/deadpan-policy-visitor-2026-10-27` and its archived evidence inventory.
-Use `final-published.patch` for the independent change. Preserve unrelated
-general-Split/index and foreign fuzz/Cargo.lock/.claude work; never stage the
-whole dirty stages.rs or Plan module file. Earlier checkpoint sections below
-retain their original source and verification scope.
+Exact patches, final source/binary pins, failures, review and sequencing design
+are in /tmp/deadpan-permission-population-2026-10-27 and its archived inventory.
+Use final-published.patch for the independent change and final-live.patch for
+the inherited working overlay. A separate uncompiled sequencing candidate may
+be under /tmp/deadpan-demand-driver-2026-10-27; inspect its notes and hashes
+before integration, and give it no implementation credit until built/reviewed.
+Preserve general-Split/index and foreign fuzz/Cargo.lock/.claude work. Never stage
+whole dirty beat_sounds.rs, shared_eq.rs, stages.rs or Plan module files.
+Earlier checkpoint sections retain their original source/verification scope.
 
 ## Bounded intrinsic-processing query checkpoint
 

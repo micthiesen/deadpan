@@ -405,6 +405,69 @@ impl<'plan> SharedMix<'plan> {
             .and_then(|n| n.checked_mul(2 + WORDS as u64))
             .ok_or(StageAudioError::Limit("shared mix residency"))
     }
+
+    pub(super) fn uses_components(&self) -> bool {
+        self.separate
+    }
+
+    pub(super) fn begin_prediction(&mut self) -> Result<(), StageAudioError> {
+        if !self.separate {
+            return Err(PlanError::InvalidPlan("prediction requires contribution routes").into());
+        }
+        self.components.begin_prediction()
+    }
+
+    /// The caller admits resident_frames before allocating either independent
+    /// policy payload. This allocates no numerical contribution samples.
+    pub(super) fn allocate_policy(&mut self) {
+        if self.separate {
+            self.components.allocate_policy();
+        }
+    }
+
+    pub(super) fn predict_range(
+        &mut self,
+        route: &Route<'_>,
+        samples: Range<AudioSample>,
+        allowed: bool,
+        control: WorkControl<'_>,
+    ) -> Result<(), StageAudioError> {
+        if route.ignored {
+            return Ok(());
+        }
+        let start = samples
+            .start
+            .0
+            .checked_sub(self.start.0)
+            .and_then(|value| usize::try_from(value).ok())
+            .ok_or(StageAudioError::Range)?;
+        let end = samples
+            .end
+            .0
+            .checked_sub(self.start.0)
+            .and_then(|value| usize::try_from(value).ok())
+            .ok_or(StageAudioError::Range)?;
+        self.components.predict_range(
+            route
+                .component
+                .ok_or(PlanError::InvalidPlan("missing contribution route"))?,
+            start..end,
+            allowed,
+            control,
+        )
+    }
+
+    pub(super) fn verify_prediction(
+        &mut self,
+        control: WorkControl<'_>,
+    ) -> Result<u64, StageAudioError> {
+        if self.separate {
+            self.components.verify_prediction(control)
+        } else {
+            Ok(0)
+        }
+    }
+
     pub(super) fn allocate(&mut self) {
         if self.separate {
             self.components.allocate();

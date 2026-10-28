@@ -45,6 +45,90 @@ struct PreparedRootSpan<'plan> {
     input: Option<super::retained_sound_input::PreparedRetainedSoundInput<'plan>>,
 }
 
+enum RootDelivery<'query, 'plan> {
+    Gap(&'query Range<AudioSample>),
+    Input {
+        old: &'query Range<i64>,
+        input: &'query super::retained_sound_input::PreparedRetainedSoundInput<'plan>,
+    },
+}
+
+impl<'plan> PreparedRootSpan<'plan> {
+    fn delivery(&self) -> Result<RootDelivery<'_, 'plan>, StageAudioError> {
+        let Some(old) = &self.old else {
+            return Ok(RootDelivery::Gap(&self.destination));
+        };
+        Ok(RootDelivery::Input {
+            old,
+            input: self
+                .input
+                .as_ref()
+                .ok_or(PlanError::InvalidPlan("missing retained input query"))?,
+        })
+    }
+
+    fn translate_policy(
+        &self,
+        old: &Range<i64>,
+        range: Range<AudioSample>,
+    ) -> Result<Range<AudioSample>, StageAudioError> {
+        Ok(AudioSample(shift_label(
+            range.start.0,
+            old.start,
+            self.destination.start.0,
+        )?)
+            ..AudioSample(shift_label(
+                range.end.0,
+                old.start,
+                self.destination.start.0,
+            )?))
+    }
+}
+
+impl PreparedRoutedRootQuery<'_> {
+    /// Probe before allocating cold carrier storage. This inspects only the
+    /// sealed input kind, not source content, stored spans or child processing.
+    pub(super) fn policy_support(&self) -> policy_ranges::Support {
+        super::retained_sound_input::policy_support(self.domain.input())
+    }
+
+    /// Visit the prepared delivery map without rebuilding any route/input
+    /// query or touching sources/PCM. This returns suppression only: the real
+    /// route read does not forward child exhaustion as a separate mask.
+    pub(super) fn visit_policy(
+        &self,
+        control: WorkControl<'_>,
+        mut emit: impl FnMut(Range<AudioSample>) -> Result<(), StageAudioError>,
+    ) -> Result<policy_ranges::Support, StageAudioError> {
+        control.check()?;
+        if self.policy_support() == policy_ranges::Support::Unsupported {
+            return Ok(policy_ranges::Support::Unsupported);
+        }
+        for span in &self.spans {
+            control.spend_plan_work(1)?;
+            match span.delivery()? {
+                RootDelivery::Gap(range) => {
+                    control.spend_plan_work(1)?;
+                    emit(range.clone())?;
+                }
+                RootDelivery::Input { old, input } => {
+                    let support = input.visit_policy(self.domain.input(), control, |range| {
+                        control.spend_plan_work(1)?;
+                        emit(span.translate_policy(old, range)?)
+                    })?;
+                    if support != policy_ranges::Support::Complete {
+                        return Err(
+                            PlanError::InvalidPlan("routed input policy changed kind").into()
+                        );
+                    }
+                }
+            }
+        }
+        control.check()?;
+        Ok(policy_ranges::Support::Complete)
+    }
+}
+
 impl StageAudio {
     /// Read immutable old provider samples and copy them to the route's current
     /// labels. Every route span shares one work/dependency budget and deadline.
@@ -277,35 +361,25 @@ impl StageAudio {
             control.check()?;
             let count = u32::try_from(span.destination.end.0 - span.destination.start.0)
                 .map_err(|_| StageAudioError::Range)?;
-            let Some(old) = &span.old else {
-                samples.resize(samples.len() + count as usize, [0.0; 2]);
-                suppressed.push(span.destination.clone());
-                continue;
+            let (old, input) = match span.delivery()? {
+                RootDelivery::Gap(range) => {
+                    samples.resize(samples.len() + count as usize, [0.0; 2]);
+                    suppressed.push(range.clone());
+                    continue;
+                }
+                RootDelivery::Input { old, input } => (old, input),
             };
             let block = self.read_retained_sound_query_borrowed(
                 provider,
                 prepared.domain.input(),
-                span.input
-                    .as_ref()
-                    .ok_or(PlanError::InvalidPlan("missing retained input query"))?,
+                input,
                 control,
             )?;
             samples.extend(block.samples);
             dependencies.extend(block.dependencies);
             relative_depth = relative_depth.max(block.relative_depth);
             for range in block.suppressed {
-                suppressed.push(
-                    AudioSample(shift_label(
-                        range.start.0,
-                        old.start,
-                        span.destination.start.0,
-                    )?)
-                        ..AudioSample(shift_label(
-                            range.end.0,
-                            old.start,
-                            span.destination.start.0,
-                        )?),
-                );
+                suppressed.push(span.translate_policy(old, range)?);
             }
         }
         control.check()?;
@@ -356,7 +430,7 @@ impl StageAudio {
                         control.cancelled,
                     )?);
                 }
-                AudioSignalContent::Leaf(AudioContent::Silence { .. }) => {
+                content if super::retained_sound_input::is_raw_silence(content) => {
                     samples.resize(samples.len() + count as usize, [0.0; 2]);
                     suppressed.push(span.samples.clone());
                 }

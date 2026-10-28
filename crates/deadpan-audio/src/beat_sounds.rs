@@ -29,6 +29,54 @@ pub(super) enum PreparedBeatInput<'plan, 'history> {
     },
 }
 
+impl PreparedBeatInput<'_, '_> {
+    /// O(1) final-policy probe before reserving a prediction carrier.
+    /// Complete does not establish child processing/preparation eligibility.
+    pub(super) fn policy_support(&self) -> policy_ranges::Support {
+        match self {
+            Self::Current(_) => policy_ranges::Support::Complete,
+            Self::Routed { query, .. } => query.policy_support(),
+        }
+    }
+
+    /// Final input masks only. Current occurrence queries intentionally have
+    /// no flattened Original envelope. Routed queries retain their own policy.
+    pub(super) fn visit_policy(
+        &self,
+        samples: Range<AudioSample>,
+        control: WorkControl<'_>,
+        mut emit: impl FnMut(Range<AudioSample>) -> Result<(), StageAudioError>,
+    ) -> Result<policy_ranges::Support, StageAudioError> {
+        control.check()?;
+        if self.policy_support() == policy_ranges::Support::Unsupported {
+            return Ok(policy_ranges::Support::Unsupported);
+        }
+        match self {
+            Self::Current(queries) => {
+                raw_policy::visit(
+                    queries.as_borrowed(),
+                    samples.start,
+                    count(&samples)? as usize,
+                    control,
+                    || control.spend_plan_work(1),
+                    |event| {
+                        match event {
+                            raw_policy::Event::SilentHold { range, .. }
+                            | raw_policy::Event::Exhausted(range)
+                            | raw_policy::Event::Suppressed { range, .. } => emit(range)?,
+                            raw_policy::Event::RetainedEnvelope { .. } => {}
+                        }
+                        Ok(())
+                    },
+                )?;
+                control.check()?;
+                Ok(policy_ranges::Support::Complete)
+            }
+            Self::Routed { query, .. } => query.visit_policy(control, emit),
+        }
+    }
+}
+
 impl<'plan> PreparedBeatSound<'plan, '_> {
     pub(super) fn route_mix(
         &mut self,

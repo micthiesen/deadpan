@@ -19,6 +19,9 @@ use deadpan_plan::{
 mod event_returns;
 use event_returns::{EventKey, EventRead, EventSource};
 
+#[path = "shared_eq/policy_prediction.rs"]
+mod policy_prediction;
+
 #[derive(Clone)]
 enum Sounds<'plan> {
     Root,
@@ -494,45 +497,116 @@ impl StageAudio {
             selected.insert(output)?;
             mix.include_output_aliases(split_family_aliases(&families, selected, control)?);
         }
-        let reservation = u64::from(frames)
+        let admitted = |id| {
+            program.allowed.is_none_or(|mask| mask.contains(id)) || allowed_aliases.contains(id)
+        };
+        let predict = mix.uses_components()
+            && policy_prediction::available(&program.context.original, &roots, &beats, control)?;
+        let mut prepared_original = if predict && owners.is_some() && admitted(original_id) {
+            let count = count(&original_range)?;
+            Some(match &program.context.original {
+                Context::Root => {
+                    self.prepare_original_root(plan, original_range.start, count, control, true)?
+                }
+                Context::Domain(domain) => self.prepare_original_domain(
+                    domain,
+                    original_range.start,
+                    count,
+                    control,
+                    true,
+                )?,
+                Context::Retained(_) => {
+                    return Err(StageAudioError::Unsupported(
+                        "retained Original policy prediction",
+                    ));
+                }
+            })
+        } else {
+            None
+        };
+        if predict {
+            mix.begin_prediction()?;
+        }
+        let mut reservation = u64::from(frames)
             .checked_mul(12)
             .and_then(|n| n.checked_add(mix.resident_frames().ok()?))
             .ok_or(StageAudioError::Limit("shared EQ mix PCM"))?;
         self.make_room(reservation, false, control)?;
         self.active_frames += reservation;
         let result = (|| {
+            if predict {
+                mix.allocate_policy();
+                let original = match (&owners, &prepared_original) {
+                    (Some(owners), Some(request)) => Some(policy_prediction::Original {
+                        queries: request.queries(),
+                        owners,
+                        routes: &original_routes,
+                        id: original_id,
+                    }),
+                    (None, _) => None,
+                    (Some(_), None) if !admitted(original_id) => None,
+                    _ => {
+                        return Err(
+                            PlanError::InvalidPlan("Original prediction request absent").into()
+                        );
+                    }
+                };
+                policy_prediction::populate(
+                    &mut mix,
+                    policy_prediction::Inputs {
+                        original,
+                        roots: &roots,
+                        root_range: root_range.clone(),
+                        root_ids: &root_ids,
+                        root_routes: &root_routes,
+                        beats: &beats,
+                        beat_routes: &beat_routes,
+                    },
+                    admitted,
+                    control,
+                )?;
+            }
             mix.allocate();
             let mut dependencies = Dependencies::new();
             let mut relative_depth = 0;
-            let admitted = |id| {
-                program.allowed.is_none_or(|mask| mask.contains(id)) || allowed_aliases.contains(id)
-            };
             if let Some(owners) = owners {
-                let raw = match &program.context.original {
-                    Context::Root => self.read_controlled(
-                        provider,
+                let raw = if let Some(request) = prepared_original.take() {
+                    policy_prediction::validate_original(
+                        &request,
+                        &program.context.original,
+                        plan,
                         original_range.start,
                         count(&original_range)?,
                         control,
-                        true,
-                        program.depth,
-                    )?,
-                    Context::Domain(domain) => self.read_context_controlled(
-                        provider,
-                        domain,
-                        original_range.start,
-                        count(&original_range)?,
-                        control,
-                        (program.depth, true),
-                    )?,
-                    Context::Retained(input) => self.read_retained_controlled(
-                        provider,
-                        input,
-                        original_range.start,
-                        count(&original_range)?,
-                        control,
-                        (program.depth, false),
-                    )?,
+                    )?;
+                    self.read_prepared_original(provider, request, control, program.depth)?
+                } else {
+                    match &program.context.original {
+                        Context::Root => self.read_controlled(
+                            provider,
+                            original_range.start,
+                            count(&original_range)?,
+                            control,
+                            true,
+                            program.depth,
+                        )?,
+                        Context::Domain(domain) => self.read_context_controlled(
+                            provider,
+                            domain,
+                            original_range.start,
+                            count(&original_range)?,
+                            control,
+                            (program.depth, true),
+                        )?,
+                        Context::Retained(input) => self.read_retained_controlled(
+                            provider,
+                            input,
+                            original_range.start,
+                            count(&original_range)?,
+                            control,
+                            (program.depth, false),
+                        )?,
+                    }
                 };
                 for (span, route) in owners.spans().iter().zip(original_routes) {
                     for sample in span.samples().start.0..span.samples().end.0 {
@@ -543,9 +617,11 @@ impl StageAudio {
                             ));
                         }
                         if let Some(route) = &route {
-                            let allow = admitted(original_id)
-                                && span.support() == AudioOwnerSupport::Active
-                                && permitted(&raw, AudioSample(sample));
+                            let allow = policy_prediction::original_allowed(
+                                admitted(original_id),
+                                span.support(),
+                                || permitted(&raw, AudioSample(sample)),
+                            );
                             mix.add(
                                 route,
                                 (sample - start.0) as usize,
@@ -688,6 +764,16 @@ impl StageAudio {
                 let source = resolve_source(provider, plan, asset, control.cancelled)?;
                 dependencies.insert(asset.clone(), control.observe(asset, source)?);
             }
+            let released = mix.verify_prediction(control)?;
+            let next_active = self
+                .active_frames
+                .checked_sub(released)
+                .ok_or(StageAudioError::Range)?;
+            let next_reservation = reservation
+                .checked_sub(released)
+                .ok_or(StageAudioError::Range)?;
+            self.active_frames = next_active;
+            reservation = next_reservation;
             let mixed = mix.finish(control, |owner, stage, at, permissions, voice| {
                 let id = self.shared_eq_node(graph, program, owner, at, stage, control)?;
                 let width = stage.output_frames();
@@ -1013,11 +1099,9 @@ fn add_sound(
                 span.start_edge == deadpan_core::AudioEdgePolicy::Automatic,
                 span.end_edge == deadpan_core::AudioEdgePolicy::Automatic,
             );
-            let allowed = if span.length != 0 && permitted(raw, AudioSample(at)) {
-                id
-            } else {
-                None
-            };
+            let allowed = policy_prediction::sound_allowed(id, span.length, || {
+                permitted(raw, AudioSample(at))
+            });
             let value = if let Some(processed) = returned {
                 let index = post_fades.partition_point(|span| span.samples.end.0 <= at);
                 let span = post_fades

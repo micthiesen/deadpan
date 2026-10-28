@@ -40,6 +40,9 @@ use signal_input::SignalInput;
 #[path = "raw_policy.rs"]
 mod raw_policy;
 
+#[path = "policy_ranges.rs"]
+mod policy_ranges;
+
 #[path = "prepared_pcm.rs"]
 mod prepared_pcm;
 use prepared_pcm::{PcmSamples, PcmWriter, PreparedPcm};
@@ -354,6 +357,9 @@ struct ReadBlock {
     suppressed: Vec<Range<AudioSample>>,
     exhausted: Vec<Range<AudioSample>>,
 }
+
+#[path = "original_request.rs"]
+mod original_request;
 
 struct RootReadQueries<'plan> {
     flattened: AudioQuery,
@@ -1263,38 +1269,8 @@ impl StageAudio {
         control: WorkControl<'_>,
         (depth, edge_fades): (usize, bool),
     ) -> Result<ReadBlock, StageAudioError> {
-        control.check()?;
-        if !domain.belongs_to(&self.plan) {
-            return Err(StageAudioError::ForeignDomain);
-        }
-        let end = start
-            .0
-            .checked_add(i64::from(frames))
-            .map(AudioSample)
-            .ok_or(StageAudioError::Range)?;
-        if frames == 0 || frames > MAX_OUTPUT_FRAMES {
-            return Err(StageAudioError::Range);
-        }
-        let flattened = domain.audio(start..end, control.query_limits()?)?;
-        control.spend_plan_work(flattened.work)?;
-        let processing = domain.processing(start..end, control.query_limits()?)?;
-        control.spend_plan_work(processing.work)?;
-        let policy = domain.policy(start..end, control.query_limits()?)?;
-        control.spend_plan_work(policy.work)?;
-        let fades = if edge_fades {
-            let query = domain.fades(start..end, control.query_limits()?)?;
-            control.spend_plan_work(query.work)?;
-            Some(query)
-        } else {
-            None
-        };
-        let queries = RootReadQueries {
-            flattened,
-            processing,
-            policy,
-            fades,
-        };
-        self.read_queries(provider, start, frames, control, depth, queries)
+        let request = self.prepare_original_domain(domain, start, frames, control, edge_fades)?;
+        self.read_prepared_original(provider, request, control, depth)
     }
 
     /// A retained processor's history on its consumer sample grid after its
@@ -1768,41 +1744,11 @@ impl StageAudio {
         edge_fades: bool,
         depth: usize,
     ) -> Result<ReadBlock, StageAudioError> {
-        control.check()?;
-        let end = start
-            .0
-            .checked_add(i64::from(frames))
-            .ok_or(StageAudioError::Range)?;
-        if start.0 < 0
-            || frames == 0
-            || frames > MAX_OUTPUT_FRAMES
-            || end > self.plan.audio_duration()?.0
-        {
-            return Err(StageAudioError::Range);
-        }
-        // A local Arc keeps borrowed stage handles tied to this exact plan
-        // without borrowing the mutable cache for the duration of preparation.
+        // Keep the borrowed queries independent of the mutable preparation
+        // controller, as before; the request itself retains no Arc.
         let plan = Arc::clone(&self.plan);
-        let flattened = plan.audio(start..AudioSample(end), control.query_limits()?)?;
-        control.spend_plan_work(flattened.work)?;
-        let processing = plan.audio_processing(start..AudioSample(end), control.query_limits()?)?;
-        control.spend_plan_work(processing.work)?;
-        let policy = plan.audio_policy(start..AudioSample(end), control.query_limits()?)?;
-        control.spend_plan_work(policy.work)?;
-        let fades = if edge_fades {
-            let query = plan.audio_fades(start..AudioSample(end), control.query_limits()?)?;
-            control.spend_plan_work(query.work)?;
-            Some(query)
-        } else {
-            None
-        };
-        let queries = RootReadQueries {
-            flattened,
-            processing,
-            policy,
-            fades,
-        };
-        self.read_queries(provider, start, frames, control, depth, queries)
+        let request = self.prepare_original_root(&plan, start, frames, control, edge_fades)?;
+        self.read_prepared_original(provider, request, control, depth)
     }
 
     fn preflight_root_queries(
@@ -3063,28 +3009,17 @@ fn apply_suppression<T: Copy>(
     ranges: &[Range<T>],
     index: impl Fn(T) -> i64,
 ) -> Result<(), StageAudioError> {
-    let start = index(start);
-    let offsets = ranges
-        .iter()
-        .map(|range| {
-            let left = index(range.start)
-                .checked_sub(start)
-                .and_then(|value| usize::try_from(value).ok())
-                .ok_or(StageAudioError::Range)?;
-            let right = index(range.end)
-                .checked_sub(start)
-                .and_then(|value| usize::try_from(value).ok())
-                .ok_or(StageAudioError::Range)?;
-            if left >= right || right > samples.len() {
-                return Err(StageAudioError::Range);
-            }
-            Ok(left..right)
-        })
-        .collect::<Result<Vec<_>, _>>()?;
-    for range in offsets {
-        samples[range].fill([0.0; 2]);
-    }
-    Ok(())
+    policy_ranges::visit(
+        start,
+        samples.len(),
+        ranges,
+        index,
+        || Ok(()),
+        |_, offsets| {
+            samples[offsets].fill([0.0; 2]);
+            Ok(())
+        },
+    )
 }
 
 fn root_source_recipe(

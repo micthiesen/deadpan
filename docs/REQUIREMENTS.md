@@ -196,6 +196,21 @@ path correction are retained. Complete cold population, whole demand traversal,
 resource admission and batching remain owed. The historical Split result of four
 passes and three work-limit failures is not rerun; no criterion or gate closes.
 
+The [current-chunk permission population](qualification/permission-population-2026-10-27.md)
+now runs before contribution PCM allocation, with sealed Original query reuse
+and independent complete-row comparison against successful reads. Unselected
+rows avoid unnecessary metadata work while retaining actual source admission.
+Twenty-three published tests and two inherited-cache tests cover policy parity,
+identity, partial work, omitted observations, injected mismatches and residency.
+Final main Audio/definition pass 256/171; main and isolated full enabled stages
+each pass 203. Isolated Audio passes 237 plus eight historical PCM cases.
+Strict lint and independent review pass; all nineteen published source files
+match the isolated build and staged bytes. The fresh seven-case Split check has
+four passes and three work-limit failures across two final-source invocations.
+An initial additional processed-root regression is fixed by avoiding actual
+unnecessary planning, without refunds or changed limits. Whole demand sequencing,
+cold resource admission and batching remain open. No criterion or gate closes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 
