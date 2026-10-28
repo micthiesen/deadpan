@@ -266,7 +266,7 @@ fn incoming_retained_description_clones_the_exact_input_arc() {
 }
 
 #[test]
-fn metadata_query_work_bills_the_final_nonretained_probe() {
+fn metadata_query_work_removes_one_actual_membership_query() {
     let plan = fixture::fixture();
     let owner = fixture::owner(&plan);
     let incoming = Contexts {
@@ -275,10 +275,24 @@ fn metadata_query_work_bills_the_final_nonretained_probe() {
     };
     let kind = Temporal::Equalizer(fixture::stage(&owner));
     let cancelled = AtomicBool::new(false);
-    // All successful work is now reported: the old 19 completed units plus
-    // the final 9-unit retained lookup that finds no operand. One less still
-    // fails inside that same walk, before a work-bearing result can be returned.
-    for remaining in [28, 27] {
+    // Independent legacy query oracle measures the actual removed query.
+    // Qualified predecessor total 28 and final None probe 9 remain the anchors.
+    let removed = plan
+        .audio_gain_owners(AudioSample(128)..AudioSample(129), Default::default())
+        .unwrap()
+        .work();
+    let input = plan
+        .audio_owner_input(&owner, AudioSample(128), Default::default())
+        .unwrap();
+    let probe = input
+        .retained_probe_at(AudioSample(128), Default::default())
+        .unwrap();
+    assert!(probe.input().is_none());
+    assert_eq!(probe.work(), 9);
+    assert!(removed > 0 && removed < 19);
+    let needed = 28 - removed;
+    for shortage in [0, 1] {
+        let remaining = needed - shortage;
         let work = RefCell::new(ReadWork::default());
         let before = MAX_PLAN_WORK_PER_READ - remaining;
         work.borrow_mut().plan_work = before;
@@ -287,10 +301,10 @@ fn metadata_query_work_bills_the_final_nonretained_probe() {
             request(&incoming, &owner, AudioSample(128), kind, false),
             fixture::control(&cancelled, &work),
         );
-        if remaining == 28 {
+        if shortage == 0 {
             assert!(result.is_ok());
-            assert_eq!(work.borrow().plan_work - before, 28);
-            assert_eq!(MAX_PLAN_WORK_PER_READ - work.borrow().plan_work, 0);
+            assert_eq!(work.borrow().plan_work - before + removed, 28);
+            assert_eq!(work.borrow().plan_work, MAX_PLAN_WORK_PER_READ);
         } else {
             assert!(matches!(
                 result,
@@ -298,7 +312,7 @@ fn metadata_query_work_bills_the_final_nonretained_probe() {
                     "structural work"
                 )))
             ));
-            assert_eq!(work.borrow().plan_work - before, 19);
+            assert_eq!(work.borrow().plan_work - before + removed, 19);
             assert_eq!(MAX_PLAN_WORK_PER_READ - work.borrow().plan_work, 8);
         }
     }
@@ -415,4 +429,93 @@ fn captured_retained_context_bills_the_probe_once_before_owner_query() {
         .unwrap();
     assert!(matches!(result, Context::Retained(_)));
     assert_eq!(work.borrow().plan_work, expected);
+}
+
+#[test]
+fn absent_member_keeps_query_work_without_requesting_capture_headroom() {
+    let plan = fixture::fixture();
+    let owners = plan
+        .audio_gain_owners(AudioSample(128)..AudioSample(129), Default::default())
+        .unwrap();
+    let tone = owners.spans()[0]
+        .owners()
+        .iter()
+        .find(|clock| clock.instance().node.as_str() == "tone")
+        .unwrap();
+    let input = plan
+        .audio_owner_input(tone, AudioSample(128), Default::default())
+        .unwrap();
+    let domain = input.context();
+    let q = domain
+        .gain_owners(AudioSample(128)..AudioSample(129), Default::default())
+        .unwrap()
+        .work();
+    let incoming = Context::Domain(Arc::new(domain.clone()));
+    let key = OwnerKey::new(&fixture::owner(&plan));
+    let cancelled = AtomicBool::new(false);
+    let work = RefCell::new(ReadWork::default());
+    work.borrow_mut().plan_work = MAX_PLAN_WORK_PER_READ - q;
+    let result = original_context(
+        &plan,
+        &incoming,
+        &key,
+        AudioSample(128)..AudioSample(129),
+        AudioSample(128),
+        fixture::control(&cancelled, &work),
+    )
+    .unwrap();
+    assert!(result.is_none());
+    assert_eq!(work.borrow().plan_work, MAX_PLAN_WORK_PER_READ);
+}
+
+#[test]
+fn candidate_root_and_domain_contexts_match_legacy_and_save_only_query_work() {
+    let plan = fixture::fixture();
+    let owner = fixture::owner(&plan);
+    let input = plan
+        .audio_owner_input(&owner, AudioSample(128), Default::default())
+        .unwrap();
+    for incoming in [
+        Context::Root,
+        Context::Domain(Arc::new(input.context().clone())),
+    ] {
+        let cancelled = AtomicBool::new(false);
+        let old_work = RefCell::new(ReadWork::default());
+        let old_control = fixture::control(&cancelled, &old_work);
+        let query = incoming
+            .owners(&plan, AudioSample(128)..AudioSample(129), old_control)
+            .unwrap();
+        let q = query.work();
+        let key = OwnerKey::new(&owner);
+        let selected = query
+            .spans()
+            .iter()
+            .flat_map(|span| span.owners())
+            .find(|clock| OwnerKey::new(clock) == key)
+            .unwrap();
+        let expected = incoming
+            .owner_context(&plan, selected, AudioSample(128), old_control)
+            .unwrap();
+        let new_work = RefCell::new(ReadWork::default());
+        let actual = original_context(
+            &plan,
+            &incoming,
+            &key,
+            AudioSample(128)..AudioSample(129),
+            AudioSample(128),
+            fixture::control(&cancelled, &new_work),
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(new_work.borrow().plan_work + q, old_work.borrow().plan_work);
+        assert_eq!(
+            domain(&actual).root_samples(),
+            domain(&expected).root_samples()
+        );
+        assert_eq!(
+            domain(&actual).visible_samples(),
+            domain(&expected).visible_samples()
+        );
+        assert_eq!(domain(&actual).instance(), domain(&expected).instance());
+    }
 }

@@ -225,6 +225,14 @@ never keep retrying until green. Retry a capability failure only after that
 capability changes. Keep one concise result record and use Git checkpoints
 instead of creating another full archive and gate-script copy per iteration.
 
+When restoring source in an owned isolated validation copy, write fresh file
+timestamps or touch the changed files. Preserving an older snapshot's mtime
+with copy2 can make Cargo reuse a binary from a different source variant.
+Pin package-qualified executables from Cargo JSON, compare any known-negative
+binary hash, and run the regression which distinguishes the restored variant.
+A successful no-run build with unchanged source hashes alone does not prove
+that Cargo rebuilt it.
+
 Owned runtime launches use the shared process adapter. On macOS, qualify changes
 to that boundary with `python3 tools/process-qualification/check_pipe_inheritance.py
 --output /tmp/deadpan-pipe-proof-NEW`. The [process-launch record](qualification/process-launch-2026-09-27.md)

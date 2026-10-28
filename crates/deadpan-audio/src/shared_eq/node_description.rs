@@ -48,19 +48,10 @@ pub(super) fn describe<'plan>(
         plan,
         at..AudioSample(at.0.checked_add(1).ok_or(TimeError::Overflow)?),
     )?;
-    let observed = if range.start < range.end {
-        let query = incoming.original.owners(plan, range, control)?;
-        query
-            .spans()
-            .iter()
-            .flat_map(|span| span.owners())
-            .find(|clock| OwnerKey::new(clock) == key)
-            .cloned()
-    } else {
-        None
-    };
-    let original = if let Some(clock) = observed {
-        incoming.original.owner_context(plan, &clock, at, control)?
+    let original = if let Some(original) =
+        original_context(plan, &incoming.original, &key, range, at, control)?
+    {
+        original
     } else if let Sounds::Owner(context) = &sounds {
         Context::Domain(Arc::new(context.processing_domain().clone()))
     } else {
@@ -76,6 +67,68 @@ pub(super) fn describe<'plan>(
         },
         kind,
     })
+}
+
+/// Reuse the first actual Root/Domain membership query for capture. The
+/// selected clock still follows the inherited first OwnerKey match.
+fn original_context<'plan>(
+    plan: &'plan RenderPlan,
+    incoming: &Context<'plan>,
+    key: &OwnerKey,
+    range: Range<AudioSample>,
+    at: AudioSample,
+    control: WorkControl<'_>,
+) -> Result<Option<Context<'plan>>, StageAudioError> {
+    if range.start >= range.end {
+        return Ok(None);
+    }
+    let candidates = match incoming {
+        Context::Root => plan.audio_owner_input_candidates_at(at, control.query_limits()?)?,
+        Context::Domain(domain) => domain.owner_input_candidates_at(at, control.query_limits()?)?,
+        Context::Retained(_) => {
+            // This branch already has no repeated membership query. Keep its
+            // actual retained-grid query, clock clone and immediate Arc clone.
+            let observed = {
+                let query = incoming.owners(plan, range, control)?;
+                query
+                    .spans()
+                    .iter()
+                    .flat_map(|span| span.owners())
+                    .find(|clock| OwnerKey::new(clock) == *key)
+                    .cloned()
+            };
+            return if let Some(clock) = observed {
+                Ok(Some(incoming.owner_context(plan, &clock, at, control)?))
+            } else {
+                Ok(None)
+            };
+        }
+    };
+    Context::admit_owner_query(candidates.query(), control)?;
+    let selected = candidates.query().spans().first().and_then(|span| {
+        span.owners()
+            .iter()
+            .position(|clock| OwnerKey::new(clock) == *key)
+    });
+    let capture = if let Some(index) = selected {
+        let capture = candidates.capture(index, control.query_limits()?)?;
+        control.spend_plan_work(capture.capture_work())?;
+        capture
+    } else {
+        // Absence has only the already-paid query, and must not request fresh
+        // capture limits or spend a synthetic zero-work operation.
+        candidates.without_selection()
+    };
+    if let Some(input) = capture.into_input() {
+        Ok(Some(Context::finish_paid_owner_input(
+            &input,
+            input.owner(),
+            at,
+            control,
+        )?))
+    } else {
+        Ok(None)
+    }
 }
 
 #[cfg(test)]

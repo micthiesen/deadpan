@@ -53,13 +53,21 @@ impl<'plan> Context<'plan> {
             Self::Domain(domain) => domain.gain_owners(range, control.query_limits()?)?,
             Self::Retained(input) => input.owners(range, control.query_limits()?)?,
         };
+        Self::admit_owner_query(&query, control)?;
+        Ok(query)
+    }
+
+    pub(super) fn admit_owner_query(
+        query: &AudioOwnerQuery<'plan>,
+        control: WorkControl<'_>,
+    ) -> Result<(), StageAudioError> {
         control.spend_plan_work(query.work())?;
         for span in query.spans() {
             deadpan_core::validate_audio_treatment_layers(
                 span.owners().iter().filter_map(|owner| owner.treatments()),
             )?;
         }
-        Ok(query)
+        Ok(())
     }
 
     pub(super) fn owner_context(
@@ -77,6 +85,17 @@ impl<'plan> Context<'plan> {
             Self::Retained(input) => return Ok(Self::Retained(input.clone())),
         };
         control.spend_plan_work(input.work())?;
+        Self::finish_paid_owner_input(&input, owner, at, control)
+    }
+
+    /// Input construction has already been billed, either in full by
+    /// owner_context or as query plus capture by the candidate consumer.
+    pub(super) fn finish_paid_owner_input(
+        input: &deadpan_plan::AudioOwnerInput<'plan>,
+        owner: &AudioOwnerClock<'plan>,
+        at: AudioSample,
+        control: WorkControl<'_>,
+    ) -> Result<Self, StageAudioError> {
         let probe = input.retained_probe_at(at, control.query_limits()?)?;
         control.spend_plan_work(probe.work())?;
         if let Some(retained) = probe.into_input() {

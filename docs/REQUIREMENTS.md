@@ -259,6 +259,18 @@ stays four pass/three work failures, with exact subphases retained. Metadata
 constructor admission and recursive batching remain open. Coverage and
 requirement/gate completion do not change.
 
+The [owner-input capture optimization](qualification/owner-input-capture-2026-10-28.md)
+reuses the actual one-sample Root/Domain query for checked member capture.
+Input.work keeps total provenance; numerical preparation bills query and
+capture work once, preserving the retained probe charge. The prior duplicate
+consumer fails the reduced-budget test. Main/isolated Audio pass 286/267 and
+full Plan pass 557/544 across 29 executables each. Both stage suites pass 203;
+definition/history pass 171/eight. Strict lint and review pass; all eight
+staged source files match isolated final source. A known-negative stale Cargo
+artifact is rejected and freshly rebuilt before positive qualification. The
+new Split matrix remains four pass/three work failures with changed subphases.
+Full metadata admission and batching remain open; no criterion or gate closes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

@@ -9,6 +9,10 @@ use super::{
 };
 use crate::PlanError;
 
+#[path = "audio_owner_input/candidates.rs"]
+mod candidates;
+pub use candidates::{AudioOwnerInputCandidates, AudioOwnerInputCapture};
+
 /// Whether the raw context is this owner or a processor surrounding it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AudioOwnerInputScope {
@@ -310,8 +314,22 @@ fn resolve_input<'plan>(
         remaining: limits.maximum_work - query.work(),
         lookup: LookupStats::default(),
     };
+    capture_observed(plan, observed, at, context, query.work(), &mut budget)
+}
+
+/// Capture one member of the actual checked owner query. Both the ordinary
+/// membership API and sealed one-sample candidates use this exact walk.
+fn capture_observed<'plan>(
+    plan: &'plan RenderPlan,
+    observed: &AudioOwnerClock<'plan>,
+    at: AudioSample,
+    context: Option<&super::audio_domain::AudioWalkSeed>,
+    query_work: usize,
+    budget: &mut Budget,
+) -> Result<AudioOwnerInput<'plan>, PlanError> {
+    let before = budget.remaining;
     let mut captured = None;
-    plan.audio_walk_owner_input(at, &mut budget, observed, &mut captured, context)?;
+    plan.audio_walk_owner_input(at, budget, observed, &mut captured, context)?;
     let seed = captured.ok_or(PlanError::InvalidPlan("owner input was not captured"))?;
     let kind = if seed.walk.gap.is_some() {
         AudioOwnerKind::DefaultGap
@@ -338,6 +356,6 @@ fn resolve_input<'plan>(
             placement: None,
         },
         scope,
-        work: limits.maximum_work - budget.remaining,
+        work: query_work + (before - budget.remaining),
     })
 }

@@ -296,6 +296,25 @@ fn retained_binding_is_not_reconstructed_from_its_nominal_descendant_clock() {
             )
             .is_err()
     );
+    let crate::AudioBoundDomain::Root(domain) = retained.domain() else {
+        panic!("expected the actual RootRoundEven reference domain");
+    };
+    let at = AudioSample(3);
+    let candidates = domain
+        .owner_input_candidates_at(at, Default::default())
+        .unwrap();
+    let member = selected_candidate(&candidates, "group");
+    let selected = &candidates.query().spans()[0].owners()[member];
+    let expected = domain
+        .owner_input(selected, at, Default::default())
+        .unwrap();
+    assert!(
+        plan.audio_owner_input(selected, at, Default::default())
+            .is_err(),
+        "the live retained seed must not be replaced by root lookup"
+    );
+    let capture = candidates.capture(member, Default::default()).unwrap();
+    assert_captured_input(capture.input().unwrap(), &expected);
 }
 
 #[test]
@@ -561,4 +580,299 @@ fn retained_probe_reports_positive_none_work_and_preserves_guards() {
             Err(PlanError::InvalidAudioLimits)
         ));
     }
+}
+
+fn selected_candidate(candidates: &crate::AudioOwnerInputCandidates<'_, '_>, name: &str) -> usize {
+    candidates.query().spans()[0]
+        .owners()
+        .iter()
+        .position(|clock| clock.instance().node == id(name))
+        .unwrap()
+}
+
+/// Test-only full owner-query heap count. Exhaustive destructuring catches new
+/// fields; actual capacities and the existing field-aware clock visitor count
+/// owned storage without adding a public measurement API.
+fn candidate_query_heap(query: &AudioOwnerQuery<'_>) -> usize {
+    let AudioOwnerQuery {
+        plan: _,
+        samples: _,
+        spans,
+        lookup: _,
+        work: _,
+    } = query;
+    let mut bytes = spans.capacity() * std::mem::size_of::<AudioOwnerSpan<'_>>();
+    for span in spans {
+        let AudioOwnerSpan {
+            samples: _,
+            owners,
+            support: _,
+            original_is_silent: _,
+        } = span;
+        bytes += owners.capacity() * std::mem::size_of::<AudioOwnerClock<'_>>();
+        for clock in owners {
+            bytes += crate::audio_allocated::measure(clock, 65_536).unwrap().0;
+        }
+    }
+    bytes
+}
+
+fn assert_captured_input(
+    actual: &crate::AudioOwnerInput<'_>,
+    expected: &crate::AudioOwnerInput<'_>,
+) {
+    assert_eq!(actual.observed_at(), expected.observed_at());
+    assert_eq!(actual.scope(), expected.scope());
+    assert!(
+        actual
+            .owner()
+            .same_at(expected.owner(), actual.observed_at())
+    );
+    assert_eq!(actual.work(), expected.work());
+    assert_eq!(
+        actual.context().root_samples(),
+        expected.context().root_samples()
+    );
+    assert_eq!(
+        actual.context().visible_samples(),
+        expected.context().visible_samples()
+    );
+    assert_eq!(actual.context().instance(), expected.context().instance());
+    // Compare every private captured seed value without manufacturing one.
+    // Debug is an oracle representation in this test, never runtime identity.
+    assert_eq!(
+        format!("{:?}", actual.context().seed),
+        format!("{:?}", expected.context().seed),
+    );
+    assert_eq!(
+        crate::audio_allocated::measure(actual.context(), 65_536)
+            .unwrap()
+            .0,
+        crate::audio_allocated::measure(expected.context(), 65_536)
+            .unwrap()
+            .0,
+    );
+}
+
+#[test]
+fn root_candidates_capture_the_actual_member_once_with_equal_query_heap() {
+    let doc = document(48_000, &["voice"], vec![("voice", hold(4))]);
+    let plan = RenderPlan::compile(&doc).unwrap();
+    let query = plan
+        .audio_gain_owners(AudioSample(1)..AudioSample(2), Default::default())
+        .unwrap();
+    let expected = plan
+        .audio_owner_input(
+            &owner(&plan, "voice", 1),
+            AudioSample(1),
+            Default::default(),
+        )
+        .unwrap();
+    let candidates = plan
+        .audio_owner_input_candidates_at(AudioSample(1), Default::default())
+        .unwrap();
+    assert_eq!(candidates.query().spans.capacity(), query.spans.capacity());
+    assert_eq!(
+        candidate_query_heap(candidates.query()),
+        candidate_query_heap(&query)
+    );
+    assert_eq!(candidates.work(), query.work());
+    let member = selected_candidate(&candidates, "voice");
+    let capture = candidates.capture(member, Default::default()).unwrap();
+    assert_eq!(capture.query_work(), query.work());
+    assert!(capture.capture_work() > 0);
+    assert_eq!(
+        capture.work(),
+        capture.query_work() + capture.capture_work()
+    );
+    assert_captured_input(capture.input().unwrap(), &expected);
+    assert!(capture.into_input().is_some());
+}
+
+#[test]
+fn candidates_report_absence_and_preserve_combined_and_capture_work_caps() {
+    let doc = document(48_000, &["voice"], vec![("voice", hold(4))]);
+    let plan = RenderPlan::compile(&doc).unwrap();
+    let at = AudioSample(1);
+    let candidates = plan
+        .audio_owner_input_candidates_at(at, Default::default())
+        .unwrap();
+    let q = candidates.work();
+    let member = selected_candidate(&candidates, "voice");
+    let measured = candidates.capture(member, Default::default()).unwrap();
+    let c = measured.capture_work();
+    assert!(q > 0 && c > 0);
+    for shortage in [0, 1] {
+        let limit = q + c - shortage;
+        let candidates = plan
+            .audio_owner_input_candidates_at(
+                at,
+                AudioQueryLimits {
+                    maximum_work: limit,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+        let result = candidates.capture(member, Default::default());
+        if shortage == 0 {
+            assert_eq!(result.unwrap().work(), q + c);
+        } else {
+            assert!(matches!(
+                result,
+                Err(PlanError::AudioQueryLimit("structural work"))
+            ));
+        }
+    }
+    let candidates = plan
+        .audio_owner_input_candidates_at(
+            at,
+            AudioQueryLimits {
+                maximum_work: q,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    let absent = candidates.without_selection();
+    assert!(absent.input().is_none());
+    assert_eq!(absent.query_work(), q);
+    assert_eq!(absent.capture_work(), 0);
+    assert_eq!(absent.work(), q);
+    let candidates = plan
+        .audio_owner_input_candidates_at(
+            at,
+            AudioQueryLimits {
+                maximum_work: q,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    // Internally exhausted capture is an existing walk error, not invalid
+    // caller limits. No AudioQueryLimits(maximum_work=0) is constructed.
+    assert!(matches!(
+        candidates.capture(member, Default::default()),
+        Err(PlanError::AudioQueryLimit("structural work"))
+    ));
+    let candidates = plan
+        .audio_owner_input_candidates_at(at, Default::default())
+        .unwrap();
+    assert_eq!(
+        candidates
+            .capture(
+                member,
+                AudioQueryLimits {
+                    maximum_work: c,
+                    ..Default::default()
+                },
+            )
+            .unwrap()
+            .capture_work(),
+        c
+    );
+}
+
+#[test]
+fn domain_candidates_keep_hidden_negative_support_and_actual_seed() {
+    let doc = document(
+        48_000,
+        &["prefix", "crop"],
+        vec![
+            ("prefix", hold(1)),
+            ("a", hold(4)),
+            ("b", hold(8)),
+            ("c", hold(4)),
+            ("group", sequence(&["a", "b", "c"])),
+            (
+                "crop",
+                retime(
+                    "group",
+                    8,
+                    4..12,
+                    PitchPolicy::FollowSpeed,
+                    RetimePurpose::Partition,
+                ),
+            ),
+        ],
+    );
+    let plan = RenderPlan::compile(&doc).unwrap();
+    let input = plan
+        .audio_owner_input(
+            &owner(&plan, "group", 3),
+            AudioSample(3),
+            Default::default(),
+        )
+        .unwrap();
+    let domain = input.context();
+    assert_eq!(domain.root_samples(), AudioSample(-3)..AudioSample(13));
+    let at = AudioSample(-2);
+    let candidates = domain
+        .owner_input_candidates_at(at, Default::default())
+        .unwrap();
+    let query = domain
+        .gain_owners(at..AudioSample(-1), Default::default())
+        .unwrap();
+    assert_eq!(
+        candidate_query_heap(candidates.query()),
+        candidate_query_heap(&query)
+    );
+    let member = selected_candidate(&candidates, "group");
+    let actual_clock = &candidates.query().spans()[0].owners()[member];
+    let expected = domain
+        .owner_input(actual_clock, at, Default::default())
+        .unwrap();
+    let capture = candidates.capture(member, Default::default()).unwrap();
+    assert_captured_input(capture.input().unwrap(), &expected);
+    assert!(
+        plan.audio_owner_input_candidates_at(at, Default::default())
+            .is_err()
+    );
+}
+
+#[test]
+fn candidate_capture_keeps_whole_repeat_observation_and_foreign_plan_separate() {
+    let doc = document(
+        48_000,
+        &["repeat"],
+        vec![("voice", hold(4)), ("repeat", repeat("voice", 3, 2))],
+    );
+    let plan = RenderPlan::compile(&doc).unwrap();
+    let other = RenderPlan::compile(&doc).unwrap();
+    let at = AudioSample(6);
+    let candidates = plan
+        .audio_owner_input_candidates_at(at, Default::default())
+        .unwrap();
+    let member = selected_candidate(&candidates, "repeat");
+    let expected = plan
+        .audio_owner_input(&owner(&plan, "repeat", 6), at, Default::default())
+        .unwrap();
+    let capture = candidates.capture(member, Default::default()).unwrap();
+    let input = capture.into_input().unwrap();
+    assert_captured_input(&input, &expected);
+    assert_eq!(
+        input.context().root_samples(),
+        AudioSample(0)..AudioSample(16)
+    );
+    assert!(
+        input
+            .owner()
+            .treatment_boundary(0)
+            .unwrap()
+            .matches(&owner(&plan, "repeat", 0))
+    );
+    assert!(!input.owner().same_at(&owner(&plan, "repeat", 0), at));
+    assert!(input.owner().belongs_to(&plan));
+    assert!(!input.owner().belongs_to(&other));
+    assert!(
+        other
+            .audio_owner_input(input.owner(), at, Default::default())
+            .is_err()
+    );
+    let candidates = plan
+        .audio_owner_input_candidates_at(at, Default::default())
+        .unwrap();
+    assert!(matches!(
+        candidates.capture(usize::MAX, Default::default()),
+        Err(PlanError::InvalidPlan(
+            "audio input candidate index out of range"
+        ))
+    ));
 }

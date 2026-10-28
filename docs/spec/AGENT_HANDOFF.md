@@ -2,7 +2,16 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: retained lookup work charged, product goal active
+## Current state: actual owner query reused, product goal active
+
+The [owner-input capture optimization](../qualification/owner-input-capture-2026-10-28.md)
+reuses the actual one-sample Root/Domain query for capture. Sealed candidates
+own that query and borrow the real parent; capture consumes a checked member
+index and shares the legacy capture walker. Numerical preparation bills Q
+before selection and capture-only C afterward; Input.work remains Q+C.
+Retained/fallback behavior and the successful None probe charge remain.
+The prior duplicate consumer fails the reduced-budget regression. This removes
+actual work and a clock clone, without a query cache or new ancestry claim.
 
 The [retained-probe work fix](../qualification/retained-probe-work-2026-10-28.md)
 returns actual work with both present and absent retained inputs from one walk.
@@ -42,20 +51,20 @@ Components. Its caller admits the complete owner-order header/payload; all
 additional reached inspections are billed. It remains intentionally unconnected
 until exact recursive/native admission exists. Graph reads stay scalar.
 
-Final main Audio/definition pass 284/171. Both enabled real-WAV stage suites
+Final main Audio/definition pass 286/171. Both enabled real-WAV stage suites
 pass 203; main filters seven unfinished Split cases, isolated filters none.
-Isolated Audio passes 265 plus eight historical PCM cases. Full main/isolated
-Plan pass 553/540 across 29 executables each. All seven published source files
+Isolated Audio passes 267 plus eight historical PCM cases. Full main/isolated
+Plan pass 557/544 across 29 executables each. All eight published source files
 match isolated/staged bytes. Main preserves its Plan module overlay and prior
 shared_eq/Graph fixture overlays outside the task. Guards cover
-1,428/1,199 inputs. Strict all-target Core/Plan/Audio/Store
+1,429/1,200 inputs. Strict all-target Core/Plan/Audio/Store
 lint and independent review pass; all compiler/test receipts are terminal.
 
 The fresh Split run keeps four passes/three planning-work failures in one
-seven-case run. All-owner Source/Sequence cut-three limited 0+511 reports plan
-work per read; nested selected without root sound, prefix-two
-limited 0+4096, reports frozen projection work exhausted; one selected play,
-prefix-two limited 0+4096, reports source occurrence construction work.
+seven-case run. All-owner Source/Sequence cut-three limited 0+511 reports sound
+clock scope work; nested selected without root sound, prefix-two limited
+0+4096, reports source occurrence construction work; one selected play,
+prefix-two limited 0+4096, reports audio binding work exhausted.
 Subphases differ from the previous checkpoint; preserve those exact failures.
 Processed-root, partition-independence, each-depth and audible-witness cases
 pass. No case fails native memory admission. No cap, bound, work weight,
@@ -72,7 +81,7 @@ under /tmp/deadpan-node-description-2026-10-28 and its archived inventory.
 The first new headroom assertion was wrong: a bounded diagnostic establishes
 19 billed units but 28 needed, with 27 failing structural work after 19 billed.
 That checkpoint's final test asserts its exact literals without search/logging.
-The gap is now fixed: success bills all 28 units; 27 still refuses structural
+The work-fix checkpoint bills all 28 units; 27 still refuses structural
 work after the same 19-unit completed prefix. Failed-query work receipts are
 unchanged. The work-fix evidence has all 19 terminal receipts under
 /tmp/deadpan-retained-probe-work-2026-10-28 and its archived inventory. It retains
@@ -80,13 +89,22 @@ the corrected raw-input PCM fixture, exact InvalidAudioLimits test correction,
 package-qualified 32-target pinning and a 5.104342-second accidental media-suite
 overlap. No verification duration is performance acceptance.
 
-Next remove the real duplicate membership query through a sealed, one-sample
-Plan owner-input candidate capability tied to the actual Root/Domain handle.
-Read-only design is in /tmp/deadpan-owner-input-candidates-2026-10-28. Capture
-must consume an actual checked member, preserve Input.work total provenance,
-and bill already-paid query plus capture-only work once. Keep Retained and
-sound fallback behavior; no free key/clock proof or query cache. No candidate
-implementation is qualified yet.
+The capture optimization is verified in /tmp/deadpan-owner-input-capture-2026-10-28
+and its archived inventory, with all 15 terminal receipts. Its first restored
+isolated build returned the known-negative binary because copy2 kept an older
+mtime. That artifact is rejected. Touching the restored file forces build2,
+whose different Audio hash and passing regression qualify the positive source.
+Use fresh timestamps on restored validation copies, as DEVELOPMENT.md records.
+Never mistake a successful no-run command for source/binary provenance.
+
+Next admit the closed current-sound metadata constructor, exact buffer/Arc
+allocations and processing-Domain fallback before allocation. Design and
+review response are in /tmp/deadpan-sound-context-admission-2026-10-28; an
+uncompiled implementation is assigned under /tmp/deadpan-sound-context-budget-2026-10-28.
+It must preserve this query reuse, use checked request-ledger identity and
+paired value/lease lifetimes, and drop Graph values before releasing accounting.
+Do not claim that scratch passed. No full Root/Domain/Core peak or cold closure
+is established by this closed sound slice.
 Read-only allocation research in /tmp/deadpan-context-heap-2026-10-28 covers
 15 pinned sources. Retained-size visitors do not prove constructor peaks;
 before-allocation accounting must cover actual overlapping Plan/Core scratch.
