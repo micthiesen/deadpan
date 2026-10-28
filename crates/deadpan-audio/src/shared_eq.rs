@@ -21,6 +21,11 @@ use event_returns::{EventKey, EventRead, EventSource};
 
 #[path = "shared_eq/policy_prediction.rs"]
 mod policy_prediction;
+pub(super) use policy_prediction::PopulationComplete;
+#[cfg(test)]
+pub(super) use policy_prediction::{
+    Inputs as PopulationFixtureInputs, populate_inputs_for_test, populate_roots_for_test,
+};
 
 #[derive(Clone)]
 enum Sounds<'plan> {

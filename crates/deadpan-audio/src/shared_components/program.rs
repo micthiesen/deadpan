@@ -54,16 +54,56 @@ impl Program {
         transfer.apply_wide(value, control)
     }
 
-    fn constant(route: &Route<'_>, owners: &BTreeMap<OwnerKey, Owner<'_>>) -> bool {
+    pub(super) fn constant(route: &Route<'_>, owners: &BTreeMap<OwnerKey, Owner<'_>>) -> bool {
         route.layers.iter().all(|(clock, _)| {
             let owner = &owners[&OwnerKey::new(clock)];
-            clock.treatments().is_none_or(|recipe| {
-                !recipe.order()[..owner.until].contains(&AudioTreatmentStage::ClipGain)
-                    || recipe.clip_gain().is_some_and(|gain| {
-                        gain.envelopes().is_empty() && gain.mute_ranges().is_empty()
-                    })
-            })
+            Self::constant_layer(clock, owner, &mut || Ok(()))
+                .expect("no-op constant-program inspection cannot fail")
         })
+    }
+
+    pub(super) fn constant_inspected(
+        route: &Route<'_>,
+        owners: &BTreeMap<OwnerKey, Owner<'_>>,
+        mut inspect: impl FnMut() -> Result<(), StageAudioError>,
+    ) -> Result<bool, StageAudioError> {
+        for (clock, _) in &route.layers {
+            inspect()?;
+            let mut found = None;
+            for (key, owner) in owners {
+                inspect()?;
+                if key.matches(clock) {
+                    found = Some(owner);
+                    break;
+                }
+            }
+            let owner =
+                found.ok_or(PlanError::InvalidPlan("constant contribution owner absent"))?;
+            if !Self::constant_layer(clock, owner, &mut inspect)? {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
+    fn constant_layer(
+        clock: &AudioOwnerClock<'_>,
+        owner: &Owner<'_>,
+        inspect: &mut impl FnMut() -> Result<(), StageAudioError>,
+    ) -> Result<bool, StageAudioError> {
+        let Some(recipe) = clock.treatments() else {
+            return Ok(true);
+        };
+        for stage in &recipe.order()[..owner.until] {
+            inspect()?;
+            if *stage == AudioTreatmentStage::ClipGain {
+                inspect()?;
+                return Ok(recipe.clip_gain().is_some_and(|gain| {
+                    gain.envelopes().is_empty() && gain.mute_ranges().is_empty()
+                }));
+            }
+        }
+        Ok(true)
     }
 
     /// The exact number of checkpoints and an upper bound on their retained

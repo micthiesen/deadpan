@@ -211,6 +211,20 @@ An initial additional processed-root regression is fixed by avoiding actual
 unnecessary planning, without refunds or changed limits. Whole demand sequencing,
 cold resource admission and batching remain open. No criterion or gate closes.
 
+The [shared owner-phase demand driver](qualification/cold-demand-2026-10-28.md)
+now executes both numerical orders and an authenticated cold metadata consumer
+through the same owner body. Completion is explicitly requested after real
+population; scalar reads avoid unused sealing. Seventeen new tests cover literal
+EQ/wet order, actual Root/Beat population, inactive dynamic routes, borrowed
+clocks, partial work and error prefixes. Main Audio/definition pass 273/171;
+isolated Audio passes 254, both stage suites pass 203, and eight isolated
+historical PCM cases pass. All sixteen published source files match isolated
+and staged bytes. Strict lint/review pass. The final Split check stays four
+pass/three work failures; a new scalar-sealing cost regression is fixed by
+removing that unused operation, preserving requested cold validation/charges.
+Exact raw-context ancestry, recursive heap/native admission and batching remain
+open. Coverage and gate/requirement completion do not change.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

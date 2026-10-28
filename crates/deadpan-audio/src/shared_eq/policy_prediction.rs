@@ -4,21 +4,25 @@
 use super::*;
 use deadpan_plan::AudioOwnerQuery;
 
-pub(super) struct Original<'a, 'plan> {
+/// Only this producer can create the completion capability, after its entire
+/// fallible population walk. Allocated/all-false flags alone grant nothing.
+pub(in crate::stages) struct PopulationComplete(());
+
+pub(in crate::stages) struct Original<'a, 'plan> {
     pub(super) queries: RootReadQueriesRef<'a, 'plan>,
     pub(super) owners: &'a AudioOwnerQuery<'plan>,
     pub(super) routes: &'a [Option<shared_mix::Route<'plan>>],
     pub(super) id: usize,
 }
 
-pub(super) struct Inputs<'a, 'plan, 'history> {
-    pub(super) original: Option<Original<'a, 'plan>>,
-    pub(super) roots: &'a [sound_events::PreparedSoundQuery<'plan>],
-    pub(super) root_range: Range<AudioSample>,
-    pub(super) root_ids: &'a [usize],
-    pub(super) root_routes: &'a [shared_mix::Route<'plan>],
-    pub(super) beats: &'a [beat_sounds::PreparedBeatSound<'plan, 'history>],
-    pub(super) beat_routes: &'a [(usize, shared_mix::Route<'plan>)],
+pub(in crate::stages) struct Inputs<'a, 'plan, 'history> {
+    pub(in crate::stages) original: Option<Original<'a, 'plan>>,
+    pub(in crate::stages) roots: &'a [sound_events::PreparedSoundQuery<'plan>],
+    pub(in crate::stages) root_range: Range<AudioSample>,
+    pub(in crate::stages) root_ids: &'a [usize],
+    pub(in crate::stages) root_routes: &'a [shared_mix::Route<'plan>],
+    pub(in crate::stages) beats: &'a [beat_sounds::PreparedBeatSound<'plan, 'history>],
+    pub(in crate::stages) beat_routes: &'a [(usize, shared_mix::Route<'plan>)],
 }
 
 pub(super) fn validate_original(
@@ -214,6 +218,58 @@ pub(super) fn populate(
     }
     control.check()?;
     Ok(())
+}
+
+/// Cold planning explicitly requests and pays for completion validation.
+/// Scalar numerical reads only populate their prediction and later compare
+/// independent observations; they do not need an unused completion witness.
+#[cfg_attr(
+    not(test),
+    expect(dead_code, reason = "Cold admission awaits recursive resource proof")
+)]
+pub(super) fn populate_completed<'mix, 'plan>(
+    mix: &'mix mut SharedMix<'plan>,
+    inputs: Inputs<'_, '_, '_>,
+    admitted: impl Fn(usize) -> bool,
+    control: WorkControl<'_>,
+) -> Result<shared_components::CompletedPolicy<'mix, 'plan>, StageAudioError> {
+    populate(mix, inputs, admitted, control)?;
+    mix.complete_policy(PopulationComplete(()), control)
+}
+
+#[cfg(test)]
+pub(in crate::stages) fn populate_roots_for_test<'mix, 'plan>(
+    mix: &'mix mut SharedMix<'plan>,
+    roots: &[sound_events::PreparedSoundQuery<'plan>],
+    samples: Range<AudioSample>,
+    ids: &[usize],
+    routes: &[shared_mix::Route<'plan>],
+    control: WorkControl<'_>,
+) -> Result<shared_components::CompletedPolicy<'mix, 'plan>, StageAudioError> {
+    populate_completed(
+        mix,
+        Inputs {
+            original: None,
+            roots,
+            root_range: samples,
+            root_ids: ids,
+            root_routes: routes,
+            beats: &[],
+            beat_routes: &[],
+        },
+        |_| true,
+        control,
+    )
+}
+
+#[cfg(test)]
+pub(in crate::stages) fn populate_inputs_for_test<'mix, 'plan>(
+    mix: &'mix mut SharedMix<'plan>,
+    inputs: Inputs<'_, '_, '_>,
+    admitted: impl Fn(usize) -> bool,
+    control: WorkControl<'_>,
+) -> Result<shared_components::CompletedPolicy<'mix, 'plan>, StageAudioError> {
+    populate_completed(mix, inputs, admitted, control)
 }
 
 #[cfg(test)]

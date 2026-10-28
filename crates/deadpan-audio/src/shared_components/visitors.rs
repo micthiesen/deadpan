@@ -43,39 +43,60 @@ pub(super) struct EqualizerPhase<'a, 'plan> {
     pub(super) clock: Option<&'a AudioOwnerClock<'plan>>,
 }
 
-/// Replace the existing EQ member walk, after gain/sum finite checks. The
-/// callback may mutate that member's PCM; the visitor itself uses only policy.
-/// Metadata-only consumers can leave route.pcm empty and inspect each request.
-/// The inspection hook runs before every member, including inactive members.
-/// Runtime supplies a noop; additional metadata walks bill their actual visits.
+impl<'a, 'plan> EqualizerPhase<'a, 'plan> {
+    pub(super) fn demand(
+        &self,
+        voice: usize,
+    ) -> Result<TemporalDemand<'a, 'plan>, StageAudioError> {
+        Ok(TemporalDemand {
+            clock: self
+                .clock
+                .ok_or(PlanError::InvalidPlan("shared EQ has no admitted clock"))?,
+            kind: Temporal::Equalizer(self.stage),
+            sample: self.sample,
+            permissions: *self.permissions,
+            voice: Some(voice),
+        })
+    }
+}
+
+pub(super) fn visit_equalizer_members(
+    route_count: usize,
+    phase: &EqualizerPhase<'_, '_>,
+    mut inspect: impl FnMut() -> Result<(), StageAudioError>,
+    mut visit: impl FnMut(usize) -> Result<(), StageAudioError>,
+) -> Result<(), StageAudioError> {
+    phase.permitted.validate(route_count)?;
+    for &(id, _) in &phase.owner.members {
+        inspect()?;
+        if id >= route_count {
+            return Err(PlanError::InvalidPlan("shared EQ member out of range").into());
+        }
+        if phase.permitted.contains(id, phase.at) {
+            visit(id)?;
+        }
+    }
+    Ok(())
+}
+
+/// Legacy per-phase test adapter. The production owner driver uses the same
+/// admitted-member walk and owns its numerical barriers and typed dispatch.
+#[cfg(test)]
 pub(super) fn visit_equalizer<'plan>(
     routes: &mut [Route<'plan>],
     phase: EqualizerPhase<'_, 'plan>,
-    mut inspect: impl FnMut() -> Result<(), StageAudioError>,
+    inspect: impl FnMut() -> Result<(), StageAudioError>,
     mut visit: impl FnMut(
         usize,
         &mut Route<'plan>,
         TemporalDemand<'_, 'plan>,
     ) -> Result<(), StageAudioError>,
 ) -> Result<(), StageAudioError> {
-    phase.permitted.validate(routes.len())?;
-    for &(id, _) in &phase.owner.members {
-        inspect()?;
+    visit_equalizer_members(routes.len(), &phase, inspect, |id| {
         let route = &mut routes[id];
-        if phase.permitted.contains(id, phase.at) {
-            let request = TemporalDemand {
-                clock: phase
-                    .clock
-                    .ok_or(PlanError::InvalidPlan("shared EQ has no admitted clock"))?,
-                kind: Temporal::Equalizer(phase.stage),
-                sample: phase.sample,
-                permissions: *phase.permissions,
-                voice: Some(route.voice),
-            };
-            visit(id, route, request)?;
-        }
-    }
-    Ok(())
+        let request = phase.demand(route.voice)?;
+        visit(id, route, request)
+    })
 }
 
 pub(super) struct WetPhase<'a, 'plan> {

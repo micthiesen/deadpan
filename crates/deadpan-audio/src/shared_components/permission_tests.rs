@@ -1,6 +1,56 @@
 use super::*;
 
 #[test]
+fn activity_words_stop_early_and_ignore_non_sample_padding() {
+    let cancelled = AtomicBool::new(false);
+    let work = RefCell::new(ReadWork::default());
+    let control = WorkControl {
+        cancelled: &cancelled,
+        deadline: Instant::now() + Duration::from_secs(10),
+        work: &work,
+    };
+    let mut flags = SamplePermissions::new(65);
+    flags.allocate(2);
+    flags.words[1] = 2; // Only bit zero of this last word is a real sample.
+    assert!(!flags.any_words(0, control).unwrap());
+    assert_eq!(work.borrow().plan_work, 2);
+    flags.mark(0, 64).unwrap();
+    assert!(flags.any_words(0, control).unwrap());
+    assert_eq!(work.borrow().plan_work, 4);
+    flags.mark(1, 0).unwrap();
+    assert!(flags.any_words(1, control).unwrap());
+    assert_eq!(work.borrow().plan_work, 5);
+    assert!(flags.any_words(2, control).is_err());
+    assert_eq!(work.borrow().plan_work, 5);
+}
+
+#[test]
+fn activity_word_refusal_retains_the_exact_inspected_prefix() {
+    let cancelled = AtomicBool::new(false);
+    let work = RefCell::new(ReadWork {
+        plan_work: MAX_PLAN_WORK_PER_READ - 1,
+        ..Default::default()
+    });
+    let control = WorkControl {
+        cancelled: &cancelled,
+        deadline: Instant::now() + Duration::from_secs(10),
+        work: &work,
+    };
+    let mut flags = SamplePermissions::new(65);
+    flags.allocate(1);
+    flags.mark(0, 64).unwrap();
+    assert!(matches!(
+        flags.any_words(0, control),
+        Err(StageAudioError::Limit("plan work per read"))
+    ));
+    assert_eq!(work.borrow().plan_work, MAX_PLAN_WORK_PER_READ);
+    work.borrow_mut().plan_work = 0;
+    cancelled.store(true, std::sync::atomic::Ordering::Relaxed);
+    assert!(flags.any_words(0, control).is_err());
+    assert_eq!(work.borrow().plan_work, 0);
+}
+
+#[test]
 fn permission_payload_is_deferred_exact_and_preserved_across_growth() {
     let mut flags = SamplePermissions::new(256);
     let header = size_of::<SamplePermissions>();

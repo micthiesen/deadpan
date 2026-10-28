@@ -73,6 +73,42 @@ impl SamplePermissions {
         Ok(())
     }
 
+    pub(super) fn validate_for(&self, routes: usize, frames: usize) -> Result<(), StageAudioError> {
+        if self.frames != frames {
+            return Err(PlanError::InvalidPlan("contribution permission frames differ").into());
+        }
+        self.validate(routes)
+    }
+
+    /// Caller bills/validates the route probe; inspect only reached words.
+    /// Tail padding is not a sample permission.
+    pub(super) fn any_words(
+        &self,
+        route: usize,
+        control: WorkControl<'_>,
+    ) -> Result<bool, StageAudioError> {
+        let start = route
+            .checked_mul(self.stride)
+            .ok_or(StageAudioError::Range)?;
+        let end = start
+            .checked_add(self.stride)
+            .ok_or(StageAudioError::Range)?;
+        let words = self.words.get(start..end).ok_or(StageAudioError::Range)?;
+        for (index, word) in words.iter().enumerate() {
+            control.spend_plan_work(1)?;
+            let tail = self.frames % 64;
+            let mask = if index + 1 == words.len() && tail != 0 {
+                (1_u64 << tail) - 1
+            } else {
+                u64::MAX
+            };
+            if word & mask != 0 {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+
     pub(super) fn row(&self, route: usize) -> PermissionRow<'_> {
         let words = route
             .checked_mul(self.stride)

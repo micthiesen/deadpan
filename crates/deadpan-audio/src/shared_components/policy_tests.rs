@@ -460,3 +460,6 @@ fn member_permissions_keep_the_existing_voice_limit_failure() {
             .all(|route| route.pcm.capacity() == 0)
     );
 }
+
+#[path = "policy_inspection_tests.rs"]
+mod inspection;

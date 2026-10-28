@@ -28,13 +28,52 @@ pub(super) fn is_equalizer(
 
 impl Route<'_> {
     pub(super) fn wet_allowed(&self, layer: usize) -> bool {
-        !self.original
-            || !self.layers[layer + 1..]
-                .iter()
-                .any(|(clock, _)| clock.is_explicit_tail_provider())
+        self.wet_allowed_inspected(layer, || Ok(()))
+            .expect("no-op Tail inspection cannot fail")
+    }
+
+    pub(super) fn wet_allowed_inspected(
+        &self,
+        layer: usize,
+        mut inspect: impl FnMut() -> Result<(), StageAudioError>,
+    ) -> Result<bool, StageAudioError> {
+        inspect()?;
+        if !self.original {
+            return Ok(true);
+        }
+        for (clock, _) in &self.layers[layer + 1..] {
+            inspect()?;
+            if clock.is_explicit_tail_provider() {
+                return Ok(false);
+            }
+        }
+        Ok(true)
     }
 }
 
+fn visit_members(
+    routes: &[Route<'_>],
+    owner: &Owner<'_>,
+    active: impl Fn(usize) -> bool,
+    wet: bool,
+    mut inspect: impl FnMut() -> Result<(), StageAudioError>,
+    mut visit: impl FnMut(usize, usize) -> Result<bool, StageAudioError>,
+) -> Result<(), StageAudioError> {
+    for &(id, layer) in &owner.members {
+        inspect()?;
+        if active(id)
+            && (!wet || routes[id].wet_allowed_inspected(layer, &mut inspect)?)
+            && !visit(id, layer)?
+        {
+            break;
+        }
+    }
+    Ok(())
+}
+
+// Preserve the older test bridge independently of the fallible production
+// visitation. It supplies no completion authority or allocation proof.
+#[cfg(test)]
 fn members<'a, 'plan: 'a>(
     routes: &'a [Route<'plan>],
     owner: &'a Owner<'plan>,
@@ -54,10 +93,21 @@ pub(super) fn permissions(
     active: impl Fn(usize) -> bool,
     wet: bool,
 ) -> Result<Permissions, StageAudioError> {
+    permissions_inspected(routes, owner, active, wet, || Ok(()))
+}
+
+pub(super) fn permissions_inspected(
+    routes: &[Route<'_>],
+    owner: &Owner<'_>,
+    active: impl Fn(usize) -> bool,
+    wet: bool,
+    inspect: impl FnMut() -> Result<(), StageAudioError>,
+) -> Result<Permissions, StageAudioError> {
     let mut permissions = Permissions::default();
-    for (id, _) in members(routes, owner, active, wet) {
+    visit_members(routes, owner, active, wet, inspect, |id, _| {
         permissions.insert(routes[id].voice)?;
-    }
+        Ok(true)
+    })?;
     Ok(permissions)
 }
 
@@ -67,14 +117,52 @@ pub(super) fn first_clock<'plan>(
     active: impl Fn(usize) -> bool,
     wet: bool,
 ) -> Option<AudioOwnerClock<'plan>> {
-    members(routes, owner, active, wet)
-        .next()
-        .map(|(id, layer)| routes[id].layers[layer].0.clone())
+    first_clock_ref_inspected(routes, owner, active, wet, || Ok(()))
+        .expect("no-op first-clock inspection cannot fail")
+        .cloned()
+}
+
+pub(super) fn first_clock_ref_inspected<'routes, 'plan>(
+    routes: &'routes [Route<'plan>],
+    owner: &Owner<'plan>,
+    active: impl Fn(usize) -> bool,
+    wet: bool,
+    inspect: impl FnMut() -> Result<(), StageAudioError>,
+) -> Result<Option<&'routes AudioOwnerClock<'plan>>, StageAudioError> {
+    let mut clock = None;
+    visit_members(routes, owner, active, wet, inspect, |id, layer| {
+        clock = Some(&routes[id].layers[layer].0);
+        Ok(false)
+    })?;
+    Ok(clock)
 }
 
 pub(super) struct WetContext<'plan> {
     pub(super) permissions: Permissions,
     pub(super) clock: Option<AudioOwnerClock<'plan>>,
+}
+
+pub(super) struct WetContextRef<'routes, 'plan> {
+    pub(super) permissions: Permissions,
+    pub(super) clock: Option<&'routes AudioOwnerClock<'plan>>,
+}
+
+pub(super) fn wet_context_ref_inspected<'routes, 'plan>(
+    routes: &'routes [Route<'plan>],
+    owner: &Owner<'plan>,
+    active: impl Fn(usize) -> bool,
+    inspect: impl FnMut() -> Result<(), StageAudioError>,
+) -> Result<WetContextRef<'routes, 'plan>, StageAudioError> {
+    let mut context = WetContextRef {
+        permissions: Permissions::default(),
+        clock: None,
+    };
+    visit_members(routes, owner, active, true, inspect, |id, layer| {
+        context.permissions.insert(routes[id].voice)?;
+        context.clock.get_or_insert(&routes[id].layers[layer].0);
+        Ok(true)
+    })?;
+    Ok(context)
 }
 
 /// Dynamic execution obtains these together. Constant execution keeps its
@@ -88,11 +176,19 @@ pub(super) fn wet_context<'plan>(
         permissions: Permissions::default(),
         clock: None,
     };
-    for (id, layer) in members(routes, owner, active, true) {
-        context.permissions.insert(routes[id].voice)?;
-        context
-            .clock
-            .get_or_insert_with(|| routes[id].layers[layer].0.clone());
-    }
+    visit_members(
+        routes,
+        owner,
+        active,
+        true,
+        || Ok(()),
+        |id, layer| {
+            context.permissions.insert(routes[id].voice)?;
+            context
+                .clock
+                .get_or_insert_with(|| routes[id].layers[layer].0.clone());
+            Ok(true)
+        },
+    )?;
     Ok(context)
 }

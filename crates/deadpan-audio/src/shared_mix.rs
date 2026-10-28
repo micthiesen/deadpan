@@ -82,6 +82,14 @@ impl OwnerKey {
             after: owner.gap_after().cloned(),
         }
     }
+
+    /// The exact existing owner key, without allocating a temporary clone.
+    /// This identifies a contribution group, never a retained raw context.
+    pub(super) fn matches(&self, owner: &AudioOwnerClock<'_>) -> bool {
+        self.instance == *owner.instance()
+            && self.gap == (owner.kind() == deadpan_plan::AudioOwnerKind::DefaultGap)
+            && self.after.as_ref() == owner.gap_after()
+    }
 }
 
 #[derive(Clone)]
@@ -408,6 +416,17 @@ impl<'plan> SharedMix<'plan> {
 
     pub(super) fn uses_components(&self) -> bool {
         self.separate
+    }
+
+    pub(super) fn complete_policy(
+        &self,
+        complete: shared_eq::PopulationComplete,
+        control: WorkControl<'_>,
+    ) -> Result<shared_components::CompletedPolicy<'_, 'plan>, StageAudioError> {
+        if !self.separate {
+            return Err(PlanError::InvalidPlan("completion requires contribution routes").into());
+        }
+        self.components.complete_policy(complete, control)
     }
 
     pub(super) fn begin_prediction(&mut self) -> Result<(), StageAudioError> {

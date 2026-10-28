@@ -2,60 +2,70 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: pre-PCM permission population, product goal active
+## Current state: authenticated cold demands, product goal active
 
-The [permission population milestone](../qualification/permission-population-2026-10-27.md)
-predicts current Components input permissions before contribution PCM allocation.
-Sealed Original Root/Domain requests supply both metadata and the actual read;
-direct/current/routed sound adapters reuse production policy transfers. A
-separate actual-observation carrier remains independent. Complete packed rows,
-including omitted/negative samples, must match before common owner callbacks
-through mix.finish. Event-return preparation already happened, so this does not
-prove cold recursive allocation. General graph reads and descendants stay scalar.
+The [shared owner-phase milestone](../qualification/cold-demand-2026-10-28.md)
+executes both numerical orders through one owner body. Typed cold dispatch emits
+borrowed demands from the same EQ/member and wet/member/sample/effect loops
+without PCM, gains, transfers, providers or native state. Constant/dynamic outer
+orders, numeric barriers, Tail rules and numeric clock clone scopes remain.
+Completed activity comes from actual predicted rows, ignoring padding; inactive
+dynamic routes cannot switch otherwise-constant execution.
 
-Final main Audio/definition pass 256/171. Both main and isolated enabled real-WAV
-stages pass all 203; main filters the seven unfinished Split cases and isolated
-has none. Isolated Audio passes 237 plus eight historical PCM cases. All nineteen
-published source files match isolated and staged bytes exactly. Main/isolated
-guards cover 1,417/1,188 inputs. Strict all-target Core/Plan/Audio/Store lint and
-independent review pass. All compiler/test receipts are terminal.
+Only populate_completed creates the private completion capability, after the
+same real population succeeds and shape validates. Scalar populate remains
+unit-returning and does not seal an unused witness. Actual observations still
+independently compare complete positive/negative rows before numerical finish.
+The cold entry closes owner/map/window construction over that exact immutable
+Components. Its caller admits the complete owner-order header/payload; all
+additional reached inspections are billed. It remains intentionally unconnected
+until exact recursive/native admission exists. Graph reads stay scalar.
 
-The fresh final-source seven-case Split check is four pass/three work failures,
-across the targeted root case and the other six. All-owner Source/Sequence
-cut-three, limited 0+511, and nested selected without root sound, prefix-two,
-limited 0+4096, report source occurrence construction work. One selected play,
-prefix-two, limited 0+4096, reports frozen projection work exhausted.
-The first matrix regressed processed-root refinement (three pass/four fail).
-Skipping policy/query work for provably unselected rows restores that case at
-unchanged limits. Actual reads/source admission remain; no performed work is
-refunded. A test-only generic type fix and an initial unchanged-baseline isolated
-build are retained and excluded from final qualification.
+Final main Audio/definition pass 273/171. Both enabled real-WAV stage suites
+pass 203; main filters seven unfinished Split cases, isolated filters none.
+Isolated Audio passes 254 plus eight historical PCM cases. All 16 published source
+files match isolated/staged bytes. Only shared_eq.rs has an inherited main
+overlay. Guards cover 1,422/1,193 inputs. Strict all-target Core/Plan/Audio/Store
+lint and independent review pass; all compiler/test receipts are terminal.
 
-Context::Retained and actual Projected forms still fall back before prediction
-allocation/Original preparation. Final policy completeness is not native resource
-eligibility. Main's inherited Original cache adapter and two tests stay as WIP;
-the independently published runtime has no cache. Warm masks are not cold proof.
-No fake PCM/provider, query/discovery/prefix cache, weight change or failed-batch
-retry is introduced. Coverage stays about 85%, ten Complete requirements and all
-seven gates open; the full product goal remains active.
+Final-source Split coverage is four pass/three work failures across two runs.
+All-owner Source/Sequence cut-three limited 0+511 reports plan work per read;
+nested selected without root sound, prefix-two limited 0+4096, reports structural
+work; one selected play, prefix-two limited 0+4096, reports frozen projection work
+exhausted. The first integrated processed-root check exhausted sound processing
+birth work because scalar chunks unnecessarily sealed/dropped completion.
+Requesting sealing only for actual cold consumers restores that case at
+unchanged limits. Requested validation keeps its charge; no refunds, weights,
+caps, query/discovery/prefix caches or failed-batch scalar retry change.
 
-Next share the complete constant/dynamic owner-phase driver with actual
-numerical barriers, preserving their distinct callback orders and lexical wet
-Program borrowing. Reuse exact Program::constant with completed planned activity;
-inactive dynamic routes must not change mode. Then reconstruct raw contexts from
-ancestry/grid witnesses and fold future outputs/tiles, constructor peaks and
-recursive scratch before extra histories allocate. The Plan intrinsic query is
-still unused by Audio and does not classify arbitrary projected inputs.
+Next fix the confirmed missing full EQ-state admission in shared_eq_node and
+authored_eq::eq_node before broader resource work. Read-only lifecycle evidence
+and any uncompiled fix candidate are under /tmp/deadpan-eq-admission-2026-10-28
+and /tmp/deadpan-cold-context-2026-10-28. Keep the entire published constructor
+bound retained while a filter is temporarily taken; never lower the native
+estimate or claim scratch candidates passed.
 
-Exact patches, final source/binary pins, failures, review and sequencing design
-are in /tmp/deadpan-permission-population-2026-10-27 and its archived inventory.
-Use final-published.patch for the independent change and final-live.patch for
-the inherited working overlay. A separate uncompiled sequencing candidate may
-be under /tmp/deadpan-demand-driver-2026-10-27; inspect its notes and hashes
-before integration, and give it no implementation credit until built/reviewed.
-Preserve general-Split/index and foreign fuzz/Cargo.lock/.claude work. Never stage
-whole dirty beat_sounds.rs, shared_eq.rs, stages.rs or Plan module files.
-Earlier checkpoint sections retain their original source/verification scope.
+Then share a StageAudio-independent exact metadata node description with
+numerical construction and the cold fold. Carry the actual parent Program and
+opaque Root/Domain/Retained ancestry/grid handles. Root/Domain owner_input can
+prove exact membership; a different retained Original clock needs typed Plan
+correspondence. OwnerKey/matches_clock_at are not raw-context proof. No string
+matching of membership errors, invented absence, or Root substitution. Retained
+policy recursion and arbitrary Projected inputs remain unsupported. Fold future
+outputs/tiles, context heap, full native constructor/retained bounds and recursive
+scratch before additional histories allocate. Plan's intrinsic query is still
+unused by Audio and does not classify arbitrary projected inputs.
+
+Exact patches/pins/receipts, retained failures, before/final source and reviews
+are in /tmp/deadpan-cold-demand-2026-10-28 and its archived inventory; numeric
+candidate provenance is in /tmp/deadpan-demand-driver-2026-10-27. Context notes
+are read-only research with 30 hashed source snapshots, not implementation.
+Use final-published.patch for the independent source and final-live.patch for
+the inherited overlay. Preserve Split/index, Original-cache/family and foreign
+fuzz/Cargo.lock/.claude WIP. Never stage whole dirty shared_eq.rs or Plan modules.
+
+The full goal remains active: about 85% coverage, ten Complete requirements and
+all seven gates open. Earlier checkpoint sections retain historical scope.
 
 ## Bounded intrinsic-processing query checkpoint
 
