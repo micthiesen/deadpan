@@ -332,3 +332,6 @@ fn exact_capture_work_one_short_internal_zero_and_absence_preserve_both_modes() 
     exact_work::<false>();
     exact_work::<true>();
 }
+
+#[path = "owner_probe_admission_tests.rs"]
+mod probe;

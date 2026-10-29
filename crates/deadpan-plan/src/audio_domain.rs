@@ -17,7 +17,10 @@ use crate::PlanError;
 
 #[path = "audio_context_sharing.rs"]
 mod sharing;
-pub use sharing::{AdmittedOriginalContext, transfer_context_charges};
+pub use sharing::{
+    AdmittedOriginalContext, ContextChargeTransfer, SharedAudioOwnerRetainedInput,
+    preflight_context_transfer, transfer_context_charges,
+};
 
 /// Evaluation placement of an owned physical definition in an absolute root
 /// clock. This is a sampling description, not an authored edit or media token.

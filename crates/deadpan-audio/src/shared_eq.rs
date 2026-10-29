@@ -879,8 +879,19 @@ impl StageAudio {
         let original_frames = description
             .original
             .as_ref()
-            .and_then(|value| value.lease())
-            .map_or(0, sound_context_admission::Lease::frames);
+            .map(|value| {
+                value
+                    .leases()
+                    .into_iter()
+                    .flatten()
+                    .try_fold(0_u64, |total, lease| {
+                        total
+                            .checked_add(lease.frames())
+                            .ok_or(StageAudioError::Range)
+                    })
+            })
+            .transpose()?
+            .unwrap_or(0);
         let metadata_frames = sound_frames
             .checked_add(original_frames)
             .ok_or(StageAudioError::Range)?;
@@ -927,45 +938,42 @@ impl StageAudio {
         };
         control.check()?;
         // Reserve the existing Node Vec growth before the infallible handoff.
-        // Its heap is outside this bounded current-sound admission slice.
+        // Graph containers remain outside this metadata admission.
         graph.nodes.reserve(1);
-        let transfer = sound_context_admission::preflight_transfer(
-            control,
-            description
-                .original
-                .as_ref()
-                .and_then(|value| value.lease()),
-            description.sound.as_ref().and_then(|value| value.lease()),
-        )?;
+        // The token borrows only the carriers. The temporary controller
+        // borrow ends before the final ledger snapshot and publication.
+        let context_transfer = {
+            let mut admission = sound_context_admission::Admission::new(self, control);
+            deadpan_plan::preflight_context_transfer(
+                description.original.as_mut(),
+                description.sound.as_mut(),
+                &mut admission,
+            )?
+        };
+        let [original, core, buffer, sound] = context_transfer.leases();
+        let transfer =
+            sound_context_admission::preflight_transfer(control, original, core, buffer, sound)?;
         let values = &mut description.values;
-        let publish =
-            |original: Option<&mut sound_context_admission::Lease<'_>>,
-             sound: Option<&mut sound_context_admission::Lease<'_>>| {
-                let node_description::DescriptionValues {
-                    context,
-                    boundary,
-                    stop,
-                    kind,
-                } = values.take().expect("unpublished description");
-                graph.nodes.push(Node {
-                    parent: program.parent,
-                    context,
-                    boundary,
-                    stop,
-                    filter,
-                    kind,
-                    tiles: BTreeMap::new(),
-                });
-                self.active_frames = next_active;
-                graph.resident = next_resident;
-                transfer.commit(original, sound);
-            };
-        deadpan_plan::transfer_context_charges(
-            expected_issuer,
-            description.original.as_mut(),
-            description.sound.as_mut(),
-            publish,
-        )?;
+        context_transfer.commit(|original, core, buffer, sound| {
+            let node_description::DescriptionValues {
+                context,
+                boundary,
+                stop,
+                kind,
+            } = values.take().expect("unpublished description");
+            graph.nodes.push(Node {
+                parent: program.parent,
+                context,
+                boundary,
+                stop,
+                filter,
+                kind,
+                tiles: BTreeMap::new(),
+            });
+            self.active_frames = next_active;
+            graph.resident = next_resident;
+            transfer.commit(original, core, buffer, sound);
+        });
         Ok(graph.nodes.len() - 1)
     }
 

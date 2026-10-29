@@ -11,10 +11,13 @@ use crate::PlanError;
 
 #[path = "audio_owner_input/candidates.rs"]
 mod candidates;
+#[path = "audio_owner_probe.rs"]
+mod probe;
 pub use candidates::{
     AdmittedAudioOwnerInputCandidates, AdmittedAudioOwnerInputCapture, AudioOwnerInputCandidates,
     AudioOwnerInputCapture,
 };
+pub use probe::{AdmittedAudioOwnerRetainedProbe, SharedAudioOwnerRetainedInput};
 
 /// Whether the raw context is this owner or a processor surrounding it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -9,7 +9,7 @@ use deadpan_dsp::{
 };
 use deadpan_plan::{
     AudioOwnerClock, AudioOwnerQuery, AudioOwnerRetainedInput, AudioOwnerSupport,
-    AudioTreatmentBoundary,
+    AudioTreatmentBoundary, SharedAudioOwnerRetainedInput,
 };
 
 use super::*;
@@ -25,31 +25,56 @@ pub(super) mod eq_admission_fixture;
 pub(super) enum Context<'plan> {
     Root,
     Domain(Arc<AudioDomain<'plan>>),
-    Retained(Arc<AudioOwnerRetainedInput<'plan>>),
+    Retained(SharedAudioOwnerRetainedInput<'plan>),
 }
 
 trait FinalOriginalSharing<'plan> {
     type Output;
+    type Probe;
 
-    fn retained(
-        self,
-        value: AudioOwnerRetainedInput<'plan>,
-    ) -> Result<Self::Output, StageAudioError>;
+    fn probe(
+        &mut self,
+        input: &deadpan_plan::AudioOwnerInput<'plan>,
+        at: AudioSample,
+        limits: deadpan_plan::AudioQueryLimits,
+    ) -> Result<Self::Probe, StageAudioError>;
+    fn probe_input(probe: &Self::Probe) -> Option<&AudioOwnerRetainedInput<'plan>>;
+    fn probe_work(probe: &Self::Probe) -> usize;
+    fn probe_was_forwarded(probe: &Self::Probe) -> bool;
+    fn retained(self, probe: Self::Probe) -> Result<Self::Output, StageAudioError>;
     fn domain(self, value: &AudioDomain<'plan>) -> Result<Self::Output, StageAudioError>;
 }
 
 struct LegacyOriginalSharing;
-
 impl<'plan> FinalOriginalSharing<'plan> for LegacyOriginalSharing {
     type Output = Context<'plan>;
+    type Probe = deadpan_plan::AudioOwnerRetainedProbe<'plan>;
 
-    fn retained(
-        self,
-        value: AudioOwnerRetainedInput<'plan>,
-    ) -> Result<Self::Output, StageAudioError> {
-        Ok(Context::Retained(Arc::new(value)))
+    fn probe(
+        &mut self,
+        input: &deadpan_plan::AudioOwnerInput<'plan>,
+        at: AudioSample,
+        limits: deadpan_plan::AudioQueryLimits,
+    ) -> Result<Self::Probe, StageAudioError> {
+        Ok(input.retained_probe_at(at, limits)?)
     }
-
+    fn probe_input(probe: &Self::Probe) -> Option<&AudioOwnerRetainedInput<'plan>> {
+        probe.input()
+    }
+    fn probe_work(probe: &Self::Probe) -> usize {
+        probe.work()
+    }
+    fn probe_was_forwarded(_: &Self::Probe) -> bool {
+        false
+    }
+    fn retained(self, probe: Self::Probe) -> Result<Self::Output, StageAudioError> {
+        Ok(Context::Retained(
+            probe
+                .into_input()
+                .expect("accepted retained probe")
+                .into_shared(),
+        ))
+    }
     fn domain(self, value: &AudioDomain<'plan>) -> Result<Self::Output, StageAudioError> {
         Ok(Context::Domain(Arc::new(value.clone())))
     }
@@ -59,7 +84,6 @@ struct AdmittedOriginalSharing<'admission, 'work, A> {
     control: WorkControl<'work>,
     admission: &'admission mut A,
 }
-
 impl<A> AdmittedOriginalSharing<'_, '_, A>
 where
     A: deadpan_plan::AudioSoundContextAdmission<Error = StageAudioError>,
@@ -72,20 +96,37 @@ where
         }
     }
 }
-
 impl<'plan, A> FinalOriginalSharing<'plan> for AdmittedOriginalSharing<'_, '_, A>
 where
     A: deadpan_plan::AudioSoundContextAdmission<Error = StageAudioError>,
 {
     type Output = deadpan_plan::AdmittedOriginalContext<'plan, A::Issuer, A::Lease>;
+    type Probe = deadpan_plan::AdmittedAudioOwnerRetainedProbe<'plan, A::Issuer, A::Lease>;
 
-    fn retained(
-        self,
-        value: AudioOwnerRetainedInput<'plan>,
-    ) -> Result<Self::Output, StageAudioError> {
-        value.into_shared_admitted(self.limits()?, self.admission)
+    fn probe(
+        &mut self,
+        input: &deadpan_plan::AudioOwnerInput<'plan>,
+        at: AudioSample,
+        limits: deadpan_plan::AudioQueryLimits,
+    ) -> Result<Self::Probe, StageAudioError> {
+        let probe = input.retained_probe_at_admitted(at, limits, self.admission)?;
+        if probe.was_forwarded() != A::METERED {
+            return Err(PlanError::InvalidPlan("retained probe accounting mode differs").into());
+        }
+        Ok(probe)
     }
-
+    fn probe_input(probe: &Self::Probe) -> Option<&AudioOwnerRetainedInput<'plan>> {
+        probe.input()
+    }
+    fn probe_work(probe: &Self::Probe) -> usize {
+        probe.work()
+    }
+    fn probe_was_forwarded(probe: &Self::Probe) -> bool {
+        probe.was_forwarded()
+    }
+    fn retained(self, probe: Self::Probe) -> Result<Self::Output, StageAudioError> {
+        probe.into_shared_admitted(self.limits()?, self.admission)
+    }
     fn domain(self, value: &AudioDomain<'plan>) -> Result<Self::Output, StageAudioError> {
         value.clone_shared_admitted(self.limits()?, self.admission)
     }
@@ -188,18 +229,20 @@ impl<'plan> Context<'plan> {
         )
     }
 
-    // The actual probe, owners query and boundary decision are shared once.
-    // Only the final sharing operation differs at its original return site.
+    // Both strategies use the same actual probe, owners and boundary decision.
+    // The admitted strategy keeps its real probe guarded through final sharing.
     fn finish_paid_owner_input_with<S: FinalOriginalSharing<'plan>>(
         input: &deadpan_plan::AudioOwnerInput<'plan>,
         owner: &AudioOwnerClock<'plan>,
         at: AudioSample,
         control: WorkControl<'_>,
-        share: S,
+        mut share: S,
     ) -> Result<S::Output, StageAudioError> {
-        let probe = input.retained_probe_at(at, control.query_limits()?)?;
-        control.spend_plan_work(probe.work())?;
-        if let Some(retained) = probe.into_input() {
+        let probe = share.probe(input, at, control.query_limits()?)?;
+        if !S::probe_was_forwarded(&probe) {
+            control.spend_plan_work(S::probe_work(&probe))?;
+        }
+        if let Some(retained) = S::probe_input(&probe) {
             let end = AudioSample(at.0.checked_add(1).ok_or(TimeError::Overflow)?);
             let owners = retained.owners(at..end, control.query_limits()?)?;
             control.spend_plan_work(owners.work())?;
@@ -209,9 +252,12 @@ impl<'plan> Context<'plan> {
                 .iter()
                 .any(|span| span.owners().iter().any(|owner| boundary.matches(owner)))
             {
-                return share.retained(retained);
+                return share.retained(probe);
             }
         }
+        // Rejected Some and positive-work None release their actual probe
+        // before the existing fallback Domain copy begins.
+        drop(probe);
         share.domain(input.context())
     }
 }

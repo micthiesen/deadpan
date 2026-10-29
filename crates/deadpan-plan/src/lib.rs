@@ -48,12 +48,15 @@ pub use picture::{Picture, PictureCaption, PictureFraming, PictureSample};
 pub use plan::AudioIntrinsicPreparation;
 pub use plan::PictureOwnerMap;
 pub use plan::{
-    AdmittedAudioOwnerInputCandidates, AdmittedAudioOwnerInputCapture, AudioOwnerInput,
-    AudioOwnerInputCandidates, AudioOwnerInputCapture, AudioOwnerInputScope, AudioOwnerOccurrence,
-    AudioOwnerOccurrenceMap, AudioOwnerOccurrences, AudioOwnerRetainedInput,
-    AudioOwnerRetainedProbe,
+    AdmittedAudioOwnerInputCandidates, AdmittedAudioOwnerInputCapture,
+    AdmittedAudioOwnerRetainedProbe, AudioOwnerInput, AudioOwnerInputCandidates,
+    AudioOwnerInputCapture, AudioOwnerInputScope, AudioOwnerOccurrence, AudioOwnerOccurrenceMap,
+    AudioOwnerOccurrences, AudioOwnerRetainedInput, AudioOwnerRetainedProbe,
 };
-pub use plan::{AdmittedOriginalContext, transfer_context_charges};
+pub use plan::{
+    AdmittedOriginalContext, ContextChargeTransfer, SharedAudioOwnerRetainedInput,
+    preflight_context_transfer, transfer_context_charges,
+};
 pub use plan::{
     AdmittedSoundContext, AudioSoundContextAdmission, AudioSoundOwnerContext,
     AudioSoundPermissionFamily, AudioSoundPlacement, AudioSoundPlacementHistory,

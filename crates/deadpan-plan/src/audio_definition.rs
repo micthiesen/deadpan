@@ -151,7 +151,10 @@ impl<'plan> AudioDefinition<'plan> {
         super::AudioPointDomain::new(self, placement, grid_origin)
     }
 
-    fn validate_physical_placement(&self, placement: &AudioRootPlacement) -> Result<(), PlanError> {
+    pub(in crate::plan) fn validate_physical_placement(
+        &self,
+        placement: &AudioRootPlacement,
+    ) -> Result<(), PlanError> {
         match (&self.plan.nodes[self.root].kind, &self.gap) {
             (CompiledKind::Repeat { .. }, Some(_)) => {}
             (CompiledKind::Source { .. } | CompiledKind::Hold { .. }, None) => {}

@@ -135,6 +135,10 @@ fn empty_original_support_keeps_current_sound_fallback_and_missing_error() {
 }
 
 fn retained_plan() -> Arc<RenderPlan> {
+    retained_plan_with_treatments(None)
+}
+
+fn retained_plan_with_treatments(treatments: Option<AudioTreatments>) -> Arc<RenderPlan> {
     let id = |name: &str| NodeId::new(name).unwrap();
     let revision = |name: &str| RevisionId::new(name).unwrap();
     let document = ProjectDocument::new(
@@ -169,6 +173,9 @@ fn retained_plan() -> Arc<RenderPlan> {
         ),
     ]))
     .unwrap();
+    if let Some(treatments) = treatments {
+        wire["nodes"]["tone"]["audio_treatments"] = serde_json::to_value(treatments).unwrap();
+    }
     let old = ProjectDocument::from_json(&wire.to_string()).unwrap();
     let timing = AudioTimingId {
         allocation: revision("saved"),
@@ -220,12 +227,11 @@ fn incoming_retained_description_clones_the_exact_input_arc() {
     let input = plan
         .audio_owner_input(tone, AudioSample(128), Default::default())
         .unwrap();
-    let retained = Arc::new(
-        input
-            .retained_at(AudioSample(128), Default::default())
-            .unwrap()
-            .unwrap(),
-    );
+    let retained = input
+        .retained_at(AudioSample(128), Default::default())
+        .unwrap()
+        .unwrap()
+        .into_shared();
     let owners = retained
         .owners(AudioSample(128)..AudioSample(129), Default::default())
         .unwrap();
@@ -235,7 +241,7 @@ fn incoming_retained_description_clones_the_exact_input_arc() {
         .find(|clock| clock.instance().node.as_str() == "tone")
         .unwrap();
     let incoming = Contexts {
-        original: Context::Retained(Arc::clone(&retained)),
+        original: Context::Retained(retained.clone()),
         sounds: Sounds::None,
     };
     let cancelled = AtomicBool::new(false);
@@ -256,7 +262,7 @@ fn incoming_retained_description_clones_the_exact_input_arc() {
     let Context::Retained(actual) = &description.context.original else {
         panic!("incoming retained consumer must remain opaque");
     };
-    assert!(Arc::ptr_eq(actual, &retained));
+    assert!(actual.ptr_eq(&retained));
     assert!(matches!(description.context.sounds, Sounds::None));
     assert_eq!(description.stop.before, 0);
     assert!(description.stop.owner == OwnerKey::new(owner));

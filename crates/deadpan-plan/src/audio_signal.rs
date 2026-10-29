@@ -789,24 +789,38 @@ impl<'plan> AudioSignal<'plan> {
         }
     }
 
-    pub(super) fn for_placed_definition(
+    pub(in crate::plan) fn for_placed_definition_admitted<A: crate::AudioSoundContextAdmission>(
         definition: &AudioDefinition<'plan>,
         support: Range<ExactRatio>,
         transform: SignalTransform,
-    ) -> Self {
-        Self {
-            plan: definition.plan,
-            root: definition.root,
-            support: support.clone(),
-            sampling_support: Some(support),
-            constrain_support: true,
-            repeats: Vec::new(),
-            definition: Some(definition.selector.clone()),
-            placed_transform: Some(transform),
-            bypass_binding: None,
-            gap: definition.gap.clone(),
-            provider: SignalProvider::Structural,
-        }
+        budget: &mut crate::plan::audio_owners::admission::Budget<'_, A>,
+    ) -> crate::plan::audio_owners::admission::Result<
+        crate::plan::audio_owners::admission::Owned<Self, A::Issuer, A::Lease>,
+        A,
+    > {
+        use crate::plan::audio_owners::admission::Owned;
+        let mut result = Owned {
+            value: Self {
+                plan: definition.plan,
+                root: definition.root,
+                support: support.clone(),
+                sampling_support: Some(support),
+                constrain_support: true,
+                repeats: Vec::new(),
+                definition: None,
+                placed_transform: Some(transform),
+                bypass_binding: None,
+                gap: None,
+                provider: SignalProvider::Structural,
+            },
+            memory: budget.memory(),
+        };
+        // Same owning copies, and the same order, as the placed constructor.
+        result.value.definition =
+            budget.definition_ref(&mut result.memory, Some(&definition.selector))?;
+        result.value.gap = budget.gap(&mut result.memory, &definition.gap)?;
+        budget.check_memory(&result.memory)?;
+        Ok(result)
     }
 
     /// Relative instance paths in a definition signal are scoped by this

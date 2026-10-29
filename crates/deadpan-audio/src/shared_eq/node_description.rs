@@ -248,7 +248,7 @@ where
         let context = if let Some(domain) = carrier.domain() {
             Context::Domain(Arc::clone(domain))
         } else {
-            Context::Retained(Arc::clone(carrier.retained().expect("shared retained")))
+            Context::Retained(carrier.retained().expect("shared retained").clone())
         };
         Ok(Some(ResolvedOriginal {
             context,

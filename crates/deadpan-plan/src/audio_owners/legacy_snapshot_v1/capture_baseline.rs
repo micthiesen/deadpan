@@ -323,6 +323,15 @@ pub(in crate::plan) fn probe_walk(
     captured: &EditorialCapture,
     work: (usize, usize),
 ) {
+    probe_walk_ref(plan, at, walked.as_ref(), captured, work);
+}
+pub(in crate::plan) fn probe_walk_ref(
+    plan: &RenderPlan,
+    at: AudioSample,
+    walked: Result<&AudioWalkSpan<'_>, &PlanError>,
+    captured: &EditorialCapture,
+    work: (usize, usize),
+) {
     if !active() {
         return;
     }
@@ -335,6 +344,26 @@ pub(in crate::plan) fn probe_walk(
             Err(error)=>json!({"result":"Error","error":error_json(error)}),
         },
         "attestation":"same audio_walk_editorial result before actual retained Some/None match",
+    }));
+}
+/// Borrow the actual caller-owned output on a POLICY failure, before cleanup.
+/// It is deliberately not serialized as PlanError or as successful None.
+pub(in crate::plan) fn probe_policy_refusal(
+    plan: &RenderPlan,
+    at: AudioSample,
+    captured: &EditorialCapture,
+    charged: bool,
+    work: (usize, usize),
+) {
+    if !active() {
+        return;
+    }
+    record(json!({
+        "kind":"actual_retained_probe_policy_refusal","at":at.0,
+        "editorial":editorial(plan,captured),"editorial_charged":charged,
+        "budget_before":work.0,"budget_remaining":work.1,
+        "actual_probe_work_spent":work.0-work.1,
+        "attestation":"actual caller-owned editorial output before typed policy failure cleanup",
     }));
 }
 pub(in crate::plan) fn probe_result(

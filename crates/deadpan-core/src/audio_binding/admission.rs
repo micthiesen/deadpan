@@ -95,8 +95,32 @@ pub struct AudioBindingValue<T, I, L> {
     pub(crate) buffer: Option<L>,
     work: Option<AudioBindingForwardedWork<I>>,
     metered: bool,
+    charge_transferred: bool,
 }
 pub type AdmittedAudioBinding<I, L> = AudioBindingValue<ResolvedAudioBinding, I, L>;
+/// A checked exclusive borrow for one host-owned charge publication.
+/// Dropping an unused token leaves the value and its charges retryable.
+/// The temporary admission-policy borrow does not survive preflight.
+pub struct AudioBindingChargeTransfer<'value, T, I, L> {
+    value: &'value mut AudioBindingValue<T, I, L>,
+}
+impl<T, I, L> AudioBindingChargeTransfer<'_, T, I, L> {
+    /// The same independent value and buffer charges, without taking either.
+    pub fn charges(&self) -> (Option<&L>, Option<&L>) {
+        (self.value.lease.as_ref(), self.value.buffer.as_ref())
+    }
+
+    /// One trusted infallible, non-unwinding, allocation-free publication.
+    /// All host identity, arithmetic and ledger checks must already be done.
+    /// The callback borrows both actual lease fields and may mark their charge
+    /// transferred into its retained-value ledger. Core does not remove them.
+    /// No policy callback, validation, work debit or refund occurs here.
+    pub fn commit(self, publish: impl FnOnce(Option<&mut L>, Option<&mut L>)) {
+        self.value.charge_transferred = true;
+        publish(self.value.lease.as_mut(), self.value.buffer.as_mut());
+    }
+}
+
 impl<T, I: Copy + Eq, L> AudioBindingValue<T, I, L> {
     pub fn value(&self) -> &T {
         self.value.as_ref().expect("unmoved binding value")
@@ -104,6 +128,29 @@ impl<T, I: Copy + Eq, L> AudioBindingValue<T, I, L> {
     pub fn issuer(&self) -> I {
         self.issuer
     }
+    /// Borrow the actual independent value and buffer charges for host planning.
+    /// This does not validate a policy or grant ancestry/media authority.
+    pub fn charges(&self) -> (Option<&L>, Option<&L>) {
+        (self.lease.as_ref(), self.buffer.as_ref())
+    }
+
+    /// Preflight a single committed handoff without spending or taking charges.
+    /// The returned token borrows only this value, never the admission policy.
+    /// Failed checks and an unused token leave a later valid preflight possible.
+    pub fn preflight_charge_transfer<'value, P>(
+        &'value mut self,
+        policy: &P,
+    ) -> BuildResult<AudioBindingChargeTransfer<'value, T, I, L>, P::Error>
+    where
+        P: AudioBindingAdmission<Issuer = I, Lease = L>,
+    {
+        self.validate(policy)?;
+        if self.charge_transferred {
+            return Err(invalid("binding charge transfer already committed").into());
+        }
+        Ok(AudioBindingChargeTransfer { value: self })
+    }
+
     fn validate<P: AudioBindingAdmission<Issuer = I, Lease = L>>(
         &self,
         p: &P,
@@ -137,6 +184,7 @@ impl<T, I: Copy + Eq, L> AudioBindingValue<T, I, L> {
             buffer: self.buffer.take(),
             work: self.work.take(),
             metered: self.metered,
+            charge_transferred: self.charge_transferred,
         };
         result.validate(p)?;
         Ok(result)
@@ -364,6 +412,7 @@ impl<'a, P: AudioBindingAdmission> Build<'a, P> {
                 controller_debited: P::METERED,
             }),
             metered: P::METERED,
+            charge_transferred: false,
         }
     }
     pub(crate) fn finish_buffer<T>(

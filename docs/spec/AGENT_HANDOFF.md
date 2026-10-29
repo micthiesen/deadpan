@@ -2,7 +2,33 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: probe provider oracle frozen, product goal active
+## Current state: retained probe and Graph handoff admitted, product goal active
+
+The [actual retained-probe admission](../qualification/owner-probe-budget-2026-10-29.md)
+now covers the same complete walker, editorial storage, actual Root/Point raw
+constructors and final shared shell. The guarded result stays charged through
+the existing retained-owner decision. Actual Plan, Core value, Core buffer and
+sound charges preflight together and publish through one infallible Graph
+callback. The Core issuer is checked before shell allocation; failed or unused
+preflight permits retry, while committed transfer cannot repeat.
+
+All 16 frozen cases and the actual private Structural Point provider remain
+covered in both accounting modes. Exact peak/one-byte-short, late populated
+editorial failure, issuer, drop-order, retry and actual native Graph regressions
+pass. Main Audio passes 305, main/isolated Plan 598/585 across 29 executables,
+and all 815 Core library tests pass. Strict lint and independent review pass.
+The final main real-WAV Stage suite passes 203. Final isolated media and exact
+archive details are in the qualification report.
+
+The fresh Split matrix is four pass/three fail in 420.07 seconds: Source/Sequence
+cut-three limited 0+511 exhausts structural query work; nested selected play
+without root sound prefix-two limited 0+4096 exhausts audio binding work; one
+selected play prefix-two limited 0+4096 exhausts plan work per read. General
+sound Split remains disabled. No caps, weights, refunds or cold/batch behavior
+changed. Next admit the retained-owner query, then caller keys/node containers
+and complete recursive cold-resource closure. No requirement or gate is closed.
+
+The following probe-oracle and capture entries are historical prerequisites.
 
 The [PointCeil probe supplement](../qualification/owner-probe-point-baseline-2026-10-29.md)
 now borrows the actual returned private Structural AudioSignal after evaluation.

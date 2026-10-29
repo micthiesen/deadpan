@@ -354,7 +354,22 @@ Review's path, metadata and foreign-Plan regression corrections are covered.
 All four staged sources equal both compiled variants, with production bodies
 unchanged. This closes the oracle gap for the exercised Structural constructor;
 Empty and other providers remain unexercised. Probe admission and the full
-owning handoff remain open. Split and requirement/gate statuses are unchanged.
+owning handoff remain open at that historical checkpoint. Split and
+requirement/gate statuses are unchanged there.
+
+The [actual retained-probe admission](qualification/owner-probe-budget-2026-10-29.md)
+now admits the same full probe walker, editorial storage, actual raw Root/Point
+construction and final shared shell through the retained-owner decision. One
+preflight and infallible Graph commit carry the actual Plan/Core value/Core
+buffer/sound lanes. All 16 frozen cases, exact peak/one-byte-short, late populated
+editorial failure, pre-shell issuer, drop-order, retry and actual native Graph
+regressions pass. Main Audio passes 305, main/isolated Plan 598/585 across all 29
+executables, Core 815, and strict lint and independent review pass. Final media
+and archive identities are in the report. The fresh Split matrix remains four
+pass/three work-limit failures; general sound Split stays disabled. Retained-owner
+query admission, caller/node containers and complete recursive closure remain
+open. No caps, weights, refunds, cold/batch activation or requirement/gate status
+changed.
 
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.

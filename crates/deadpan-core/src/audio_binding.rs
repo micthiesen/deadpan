@@ -20,8 +20,8 @@ use crate::{
 
 pub(crate) mod admission;
 pub use admission::{
-    AdmittedAudioBinding, AudioBindingAdmission, AudioBindingBuildError, AudioBindingForwardedWork,
-    AudioBindingValue,
+    AdmittedAudioBinding, AudioBindingAdmission, AudioBindingBuildError,
+    AudioBindingChargeTransfer, AudioBindingForwardedWork, AudioBindingValue,
 };
 use admission::{
     AdmittedResult, Build, BuildResult, ProjectedAllocation, ProjectedSupport, ScratchSet,

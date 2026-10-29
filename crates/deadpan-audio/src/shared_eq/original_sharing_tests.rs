@@ -10,7 +10,6 @@ struct Bytes<'plan> {
     calls: usize,
     inspections: usize,
     domain: Option<Weak<AudioDomain<'plan>>>,
-    retained: Option<Weak<deadpan_plan::AudioOwnerRetainedInput<'plan>>>,
 }
 struct Policy<'plan, 'work> {
     bytes: Rc<RefCell<Bytes<'plan>>>,
@@ -27,9 +26,6 @@ impl Drop for Token<'_> {
         }
         let mut b = self.bytes.borrow_mut();
         if let Some(value) = &b.domain {
-            assert!(value.upgrade().is_none());
-        }
-        if let Some(value) = &b.retained {
             assert!(value.upgrade().is_none());
         }
         b.live -= self.amount;
@@ -53,7 +49,7 @@ impl<'plan> AudioSoundContextAdmission for Policy<'plan, '_> {
         b.calls += 1;
         let next = b.live.checked_add(layout.size()).unwrap();
         if next > b.cap {
-            return Err(StageAudioError::Limit("test final-sharing bytes"));
+            return Err(StageAudioError::Limit("test Original metadata bytes"));
         }
         b.live = next;
         b.peak = b.peak.max(next);
@@ -77,7 +73,7 @@ fn policy<'plan, 'work>(cap: usize, control: WorkControl<'work>) -> Policy<'plan
     }
 }
 #[test]
-fn actual_domain_and_accepted_retained_return_sites_admit_exact_bytes_and_keep_queries_once() {
+fn actual_probe_and_return_sites_preserve_work_and_exact_peak_refusal() {
     for retained in [false, true] {
         let plan = if retained {
             retained_plan()
@@ -107,6 +103,17 @@ fn actual_domain_and_accepted_retained_return_sites_admit_exact_bytes_and_keep_q
         assert_eq!(matches!(old, Context::Retained(_)), retained);
         let work = RefCell::new(ReadWork::default());
         let control = fixture::control(&cancelled, &work);
+        // Independent legacy probe amount separates unchanged deferred owner
+        // work from the P now forwarded by the actual admitted constructor.
+        let old_probe_work = input
+            .retained_probe_at(AudioSample(128), control.query_limits().unwrap())
+            .unwrap()
+            .work();
+        let deferred_owner_work = old_work
+            .borrow()
+            .plan_work
+            .checked_sub(old_probe_work)
+            .unwrap();
         let mut a = policy(usize::MAX, control);
         let carrier = Context::finish_paid_owner_input_admitted(
             &input,
@@ -119,7 +126,7 @@ fn actual_domain_and_accepted_retained_return_sites_admit_exact_bytes_and_keep_q
         assert_eq!(carrier.retained().is_some(), retained);
         assert_eq!(
             work.borrow().plan_work,
-            old_work.borrow().plan_work + a.bytes.borrow().inspections
+            deferred_owner_work + a.bytes.borrow().inspections
         );
         if let Some(domain) = carrier.domain() {
             let Context::Domain(old) = &old else {
@@ -154,17 +161,16 @@ fn actual_domain_and_accepted_retained_return_sites_admit_exact_bytes_and_keep_q
                 expected.spans()[0].owners().len()
             );
             let layout = Layout::new::<[usize; 2]>()
-                .extend(Layout::new::<deadpan_plan::AudioOwnerRetainedInput<'_>>())
+                .extend(Layout::new::<
+                    Option<deadpan_plan::AudioOwnerRetainedInput<'_>>,
+                >())
                 .unwrap()
                 .0
                 .pad_to_align();
-            assert_eq!(
-                a.bytes.borrow().calls,
-                1,
-                "only the moved retained Arc shell"
-            );
-            assert_eq!(a.bytes.borrow().live, layout.size());
-            a.bytes.borrow_mut().retained = Some(Arc::downgrade(value));
+            assert!(a.bytes.borrow().calls > 1, "actual probe and final shell");
+            assert!(a.bytes.borrow().live >= layout.size());
+            // Private Plan backing-Arc tests observe the actual opaque value's
+            // destruction before Core/Plan leases; no public weak escape.
         }
         let peak = a.bytes.borrow().peak;
         assert!(peak > 0);
@@ -185,6 +191,76 @@ fn actual_domain_and_accepted_retained_return_sites_admit_exact_bytes_and_keep_q
             drop(result);
             assert_eq!(a.bytes.borrow().live, 0);
         }
+    }
+}
+
+#[test]
+fn actual_numerical_query_capture_probe_and_share_keep_one_exact_peak_budget() {
+    let plan = retained_plan();
+    let at = AudioSample(128);
+    let query = plan
+        .audio_gain_owners(at..AudioSample(129), Default::default())
+        .unwrap();
+    let owner = query.spans()[0]
+        .owners()
+        .iter()
+        .find(|owner| owner.instance().node.as_str() == "tone")
+        .unwrap();
+    let key = OwnerKey::new(owner);
+    let cancelled = AtomicBool::new(false);
+    let work = RefCell::new(ReadWork::default());
+    let control = fixture::control(&cancelled, &work);
+    let mut ample = policy(usize::MAX, control);
+    let result = original_context_admitted(
+        &plan,
+        &Context::Root,
+        &key,
+        at..AudioSample(129),
+        at,
+        control,
+        &mut ample,
+    )
+    .unwrap()
+    .unwrap();
+    let original = result.carrier.as_ref().unwrap();
+    assert!(original.retained().is_some());
+    assert!(original.leases()[1].is_some(), "actual admitted Core graph");
+    let peak = ample.bytes.borrow().peak;
+    let live = ample.bytes.borrow().live;
+    assert!(live > 0 && peak > live);
+    let spent = work.borrow().plan_work;
+    drop(result);
+    assert_eq!(ample.bytes.borrow().live, 0);
+    assert_eq!(work.borrow().plan_work, spent);
+
+    for cap in [peak - 1, peak] {
+        let work = RefCell::new(ReadWork::default());
+        let control = fixture::control(&cancelled, &work);
+        let mut bounded = policy(cap, control);
+        let result = original_context_admitted(
+            &plan,
+            &Context::Root,
+            &key,
+            at..AudioSample(129),
+            at,
+            control,
+            &mut bounded,
+        );
+        if cap == peak {
+            assert!(result.as_ref().unwrap().is_some());
+            assert_eq!(bounded.bytes.borrow().peak, peak);
+            assert_eq!(work.borrow().plan_work, spent);
+        } else {
+            assert!(matches!(
+                result,
+                Err(StageAudioError::Limit("test Original metadata bytes"))
+            ));
+        }
+        let accepted = work.borrow().plan_work;
+        assert!(accepted > 0 && accepted <= spent);
+        drop(result);
+        assert_eq!(bounded.bytes.borrow().live, 0);
+        assert_eq!(work.borrow().plan_work, accepted);
     }
 }
 #[test]
@@ -277,4 +353,102 @@ fn description_retains_both_charges_through_boundary_failure_cancel_and_absent_s
         assert_eq!(work.borrow().sound_context_frames, 0);
     }
     assert_eq!(renderer.active_frames, 0);
+}
+
+#[test]
+fn retained_core_and_sound_charges_survive_real_graph_reads_and_failed_admission() {
+    let treatments = AudioTreatments::default()
+        .with_equalizer(Some(
+            EqualizerRecipe::new(
+                [3000, -6000, 1500].map(|gain| GainDb::new(gain).unwrap()),
+                None,
+                None,
+            )
+            .unwrap(),
+        ))
+        .unwrap();
+    let plan = retained_plan_with_treatments(Some(treatments));
+    let query = plan
+        .audio_gain_owners(AudioSample(128)..AudioSample(129), Default::default())
+        .unwrap();
+    let owner = query.spans()[0]
+        .owners()
+        .iter()
+        .find(|owner| owner.instance().node.as_str() == "tone")
+        .unwrap();
+    let cancelled = AtomicBool::new(false);
+    let work = RefCell::new(ReadWork::default());
+    let control = fixture::control(&cancelled, &work);
+    let mut renderer = StageAudio::new(Arc::clone(&plan));
+    let incoming = Contexts {
+        original: Context::Root,
+        sounds: Sounds::None,
+    };
+    {
+        let mut admission = sound_context_admission::Admission::new(&mut renderer, control);
+        let description = describe_admitted(
+            &plan,
+            request(
+                &incoming,
+                owner,
+                AudioSample(128),
+                Temporal::Equalizer(0),
+                false,
+            ),
+            control,
+            &mut admission,
+        )
+        .unwrap();
+        let original = description.original.as_ref().unwrap();
+        assert!(original.retained().is_some());
+        let [plan_lease, core, buffer] = original.leases();
+        assert!(plan_lease.is_some() && core.is_some());
+        let sound = description.sound.as_ref().unwrap().lease();
+        assert!(sound.is_some());
+        let total = [plan_lease, core, buffer, sound]
+            .into_iter()
+            .flatten()
+            .map(sound_context_admission::Lease::frames)
+            .sum::<u64>();
+        assert_eq!(work.borrow().sound_context_frames, total);
+        drop(description);
+        assert_eq!(work.borrow().sound_context_frames, 0);
+    }
+    // This path creates a real native EQ and must run in the optimized Audio
+    // qualification profile, with its ordinary preparation deadline.
+    let mut provider = fixture::NoSources(0);
+    let observed = renderer
+        .read_shared_input(
+            &mut provider,
+            AudioSample(128),
+            32,
+            control,
+            InputSelection::default(),
+        )
+        .unwrap();
+    assert!(
+        observed
+            .samples
+            .iter()
+            .flatten()
+            .any(|sample| *sample != 0.0)
+    );
+    assert_eq!(provider.0, 0);
+    assert_eq!(renderer.active_frames, 0);
+    assert_eq!(work.borrow().sound_context_frames, 0);
+    let mut refused_renderer = StageAudio::new(Arc::clone(&plan));
+    refused_renderer.limits.maximum_resident_frames = u32::try_from(
+        crate::Equalizer::preparation_bytes_bound().div_ceil(std::mem::size_of::<[f32; 2]>()),
+    )
+    .unwrap();
+    let refused = refused_renderer.read_shared_input(
+        &mut provider,
+        AudioSample(128),
+        32,
+        control,
+        InputSelection::default(),
+    );
+    assert!(refused.is_err());
+    assert_eq!(refused_renderer.active_frames, 0);
+    assert_eq!(work.borrow().sound_context_frames, 0);
 }

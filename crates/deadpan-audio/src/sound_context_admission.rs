@@ -1,6 +1,6 @@
-//! Request-local admission for current-sound and final Original-sharing metadata.
-//! The existing private sound_context_frames lane holds BOTH charges.
-//! Earlier Original queries/capture/retained graphs remain outside this slice.
+//! Request-local admission for current-sound and actual Original metadata.
+//! Query, capture, probe and final-sharing leases use sound_context_frames.
+//! Retained-owner queries and Graph containers remain outside this slice.
 use super::*;
 use deadpan_plan::AudioSoundContextAdmission;
 use std::alloc::Layout;
@@ -34,10 +34,12 @@ pub(super) struct JointTransfer<'work> {
 pub(super) fn preflight_transfer<'work>(
     control: WorkControl<'work>,
     original: Option<&Lease<'work>>,
+    core: Option<&Lease<'work>>,
+    buffer: Option<&Lease<'work>>,
     sound: Option<&Lease<'work>>,
 ) -> Result<JointTransfer<'work>, StageAudioError> {
     let mut total = 0_u64;
-    for lease in [original, sound].into_iter().flatten() {
+    for lease in [original, core, buffer, sound].into_iter().flatten() {
         if !std::ptr::eq(lease.ledger, control.work) {
             return Err(PlanError::AudioMetadataIssuerMismatch.into());
         }
@@ -56,14 +58,17 @@ pub(super) fn preflight_transfer<'work>(
         remaining,
     })
 }
-impl JointTransfer<'_> {
+impl<'work> JointTransfer<'work> {
     /// The no-fail publication tail: no arithmetic, reservation or callbacks.
-    pub(super) fn commit(self, original: Option<&mut Lease<'_>>, sound: Option<&mut Lease<'_>>) {
+    pub(super) fn commit(
+        self,
+        original: Option<&mut Lease<'work>>,
+        core: Option<&mut Lease<'work>>,
+        buffer: Option<&mut Lease<'work>>,
+        sound: Option<&mut Lease<'work>>,
+    ) {
         self.ledger.borrow_mut().sound_context_frames = self.remaining;
-        if let Some(lease) = original {
-            lease.frames = 0;
-        }
-        if let Some(lease) = sound {
+        for lease in [original, core, buffer, sound].into_iter().flatten() {
             lease.frames = 0;
         }
     }

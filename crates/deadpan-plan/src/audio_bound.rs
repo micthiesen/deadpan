@@ -17,6 +17,8 @@ use crate::{AudioSampleGrid, PlanError};
 #[path = "audio_bound_query.rs"]
 pub(in crate::plan) mod query;
 use query::QueryBound;
+#[path = "audio_bound_probe.rs"]
+mod probe;
 
 #[derive(Debug, Clone)]
 pub enum AudioBoundDomain<'plan> {
@@ -297,34 +299,14 @@ impl<'plan> AudioBound<'plan> {
     }
 
     pub fn raw_domain(&self) -> Result<AudioBoundDomain<'plan>, PlanError> {
-        let lattice = &self.resolved.lattice;
-        let support = self.support.clone();
-        if !support
-            .end
-            .checked_sub(support.start)?
-            .compare_integer(0)
-            .is_gt()
-        {
-            return Ok(AudioBoundDomain::Empty);
-        }
-        let definition = self.definition_handle();
-        let placement =
-            AudioRootPlacement::new(lattice.origin, lattice.frames_per_local_frame, support)?;
-        Ok(match lattice.grid_rule {
-            AudioBindingGridRule::RootRoundEven => {
-                let mut domain = definition.in_root_clock(placement)?;
-                self.set_domain_evaluation(&mut domain);
-                AudioBoundDomain::Root(domain)
-            }
-            AudioBindingGridRule::PointCeil => {
-                let mut domain = definition.in_point_clock(placement, lattice.grid_origin)?;
-                domain.set_evaluation(
-                    self.definition.clone(),
-                    self.instance.repeats.clone(),
-                    Some(self.binding_target()),
-                );
-                AudioBoundDomain::Point(domain)
-            }
-        })
+        use crate::plan::audio_owners::admission::{self, Owned, Unmetered};
+        let mut local = Budget {
+            remaining: 65_536,
+            lookup: super::LookupStats::default(),
+        };
+        let mut policy = Unmetered;
+        let mut budget = admission::Budget::new(&mut local, &mut policy);
+        admission::outer::<_, Unmetered>(self.raw_domain_admitted(&mut budget))
+            .map(Owned::unmetered)
     }
 }

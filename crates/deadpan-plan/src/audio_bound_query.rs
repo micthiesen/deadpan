@@ -46,7 +46,7 @@ pub(in crate::plan) enum BoundValue<T, I, L> {
 }
 pub(in crate::plan) struct GuardedBound<T, I, L> {
     value: BoundValue<T, I, L>,
-    _memory: Memory<I, L>,
+    pub(in crate::plan) _memory: Memory<I, L>,
 }
 pub(in crate::plan) type QueryBound<'plan, I, L> = GuardedBound<AudioBound<'plan>, I, L>;
 impl<T, I: Copy + Eq, L> std::ops::Deref for GuardedBound<T, I, L> {
@@ -474,5 +474,70 @@ impl<'plan> AudioBound<'plan> {
         budget.check_memory(&cap)?;
         budget.merge_checked(&mut domain.memory, &mut cap);
         Ok(Some(domain))
+    }
+}
+
+/// Value-tied preflight. The policy borrow ends before this token is returned.
+pub(in crate::plan) struct GuardedChargeTransfer<'value, T, I, L> {
+    plan: Option<&'value mut L>,
+    core: Option<deadpan_core::AudioBindingChargeTransfer<'value, T, I, L>>,
+}
+impl<T, I: Copy + Eq, L> GuardedBound<T, I, L> {
+    pub(in crate::plan) fn merge_memory<A: AudioSoundContextAdmission<Issuer = I, Lease = L>>(
+        &mut self,
+        memory: &mut Memory<I, L>,
+        budget: &mut QueryBudget<'_, A>,
+    ) -> Result<(), A> {
+        budget.check_memory(&self._memory)?;
+        budget.check_memory(memory)?;
+        budget.merge_checked(&mut self._memory, memory);
+        Ok(())
+    }
+    pub(in crate::plan) fn charges(&self) -> [Option<&L>; 3] {
+        let (lease, buffer) = match &self.value {
+            BoundValue::Legacy(_) => (None, None),
+            BoundValue::Metered(value) => value.charges(),
+        };
+        [self._memory.lease.as_ref(), lease, buffer]
+    }
+    pub(in crate::plan) fn preflight_transfer<
+        A: AudioSoundContextAdmission<Issuer = I, Lease = L>,
+    >(
+        &mut self,
+        admission: &mut A,
+    ) -> Result<GuardedChargeTransfer<'_, T, I, L>, A> {
+        if self._memory.issuer != admission.issuer() {
+            return Err(PlanError::AudioMetadataIssuerMismatch.into());
+        }
+        let core = match &mut self.value {
+            BoundValue::Legacy(_) => None,
+            BoundValue::Metered(value) => {
+                let adapter = CoreAdmission { outer: admission };
+                Some(core::<_, A>(value.preflight_charge_transfer(&adapter))?)
+            }
+        };
+        Ok(GuardedChargeTransfer {
+            plan: self._memory.lease.as_mut(),
+            core,
+        })
+    }
+}
+impl<T, I: Copy + Eq, L> GuardedChargeTransfer<'_, T, I, L> {
+    pub(in crate::plan) fn leases(&self) -> [Option<&L>; 3] {
+        let (lease, buffer) = self
+            .core
+            .as_ref()
+            .map_or((None, None), |value| value.charges());
+        [self.plan.as_deref(), lease, buffer]
+    }
+    /// ONE trusted non-unwinding, allocation-free callback performs publication.
+    pub(in crate::plan) fn commit(
+        self,
+        publish: impl FnOnce(Option<&mut L>, Option<&mut L>, Option<&mut L>),
+    ) {
+        match self.core {
+            Some(core) => core.commit(|lease, buffer| publish(self.plan, lease, buffer)),
+            None => publish(self.plan, None, None),
+        }
     }
 }

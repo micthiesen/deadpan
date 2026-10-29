@@ -8,8 +8,8 @@ use crate::plan::audio_owners::admission::{Budget as QueryBudget, Memory, Owned,
 mod storage;
 
 pub(in crate::plan) struct WalkResult<'plan, I, L> {
-    value: GuardedBound<AudioWalkSpan<'plan>, I, L>,
-    memory: Memory<I, L>,
+    pub(in crate::plan) value: GuardedBound<AudioWalkSpan<'plan>, I, L>,
+    pub(in crate::plan) memory: Memory<I, L>,
 }
 #[cfg(test)]
 impl<'plan, I: Copy + Eq, L> WalkResult<'plan, I, L> {
@@ -70,7 +70,7 @@ fn stage_content<'plan, A: AudioSoundContextAdmission>(
 // independent Plan lifetime; this names only the existing argument tuple.
 type WalkCaptures<'slot, 'editorial, 'clock, 'clock_plan, I, L> = (
     Option<&'slot mut Owned<Option<AudioDomainSeed>, I, L>>,
-    Option<&'editorial mut EditorialCapture>,
+    Option<&'editorial mut Owned<EditorialCapture, I, L>>,
     Option<&'clock super::super::AudioOwnerClock<'clock_plan>>,
 );
 
@@ -113,8 +113,10 @@ impl RenderPlan {
         let mut extent = ExactRatio::ZERO..ExactRatio::integer(self.duration().frames());
         let mut envelope: Option<Range<ExactRatio>> = None;
         let mut memory = budget.memory();
+        let mut constraints_memory = budget.memory();
         let mut constraints_capacity = budget.memory();
         let mut constraints = Vec::new();
+        let mut editorial_memory = budget.memory();
         let mut editorial_capacity = budget.memory();
         let mut editorial = Vec::new();
         let mut current = self.root;
@@ -122,6 +124,7 @@ impl RenderPlan {
         let mut repeats = Vec::new();
         let mut retimes_capacity = budget.memory();
         let mut retimes = Vec::new();
+        let mut gap_memory = budget.memory();
         let mut seeded_gap = None;
         let definition = seed.and_then(|seed| seed.definition.as_ref());
         let bypass_binding = seed.and_then(|seed| seed.bypass_binding);
@@ -140,14 +143,14 @@ impl RenderPlan {
             envelope = seed.envelope.clone();
             constraints = storage::copy_vec(
                 &seed.constraints,
-                &mut memory,
+                &mut constraints_memory,
                 &mut constraints_capacity,
                 budget,
                 |v, m, b| b.constraint(m, v),
             )?;
             editorial = storage::copy_vec(
                 &seed.editorial,
-                &mut memory,
+                &mut editorial_memory,
                 &mut editorial_capacity,
                 budget,
                 storage::editorial,
@@ -160,7 +163,7 @@ impl RenderPlan {
                 budget,
                 storage::retime,
             )?;
-            seeded_gap = budget.gap(&mut memory, &seed.gap)?;
+            seeded_gap = budget.gap(&mut gap_memory, &seed.gap)?;
         }
         let mut inherited_envelope;
         let mut inherited_constraints;
@@ -200,7 +203,7 @@ impl RenderPlan {
                         gap_after: gap
                             .after
                             .as_ref()
-                            .map(|v| budget.iteration(&mut memory, v))
+                            .map(|v| budget.iteration(&mut constraints_memory, v))
                             .transpose()?,
                         kinds: (
                             AudioBoundaryKind::RepeatGapStart,
@@ -610,7 +613,14 @@ impl RenderPlan {
                         })?;
                     budget.canonical(location.comparisons)?;
                     budget.lookup.iteration_run_comparisons += location.comparisons;
-                    budget.own_iteration(&mut memory, &location.play.iteration)?;
+                    budget.own_iteration(
+                        if location.in_gap && location.play.gap_child.is_none() {
+                            &mut gap_memory
+                        } else {
+                            &mut memory
+                        },
+                        &location.play.iteration,
+                    )?;
                     if location.in_gap {
                         let start = location.play.start.checked_add(location.play.duration)?;
                         transform = transform.child(start, ExactRatio::integer(1))?;
@@ -626,9 +636,10 @@ impl RenderPlan {
                                     range: gap_extent,
                                     node: current,
                                     repeat_count: repeats.len(),
-                                    gap_after: Some(
-                                        budget.iteration(&mut memory, &location.play.iteration)?
-                                    ),
+                                    gap_after: Some(budget.iteration(
+                                        &mut constraints_memory,
+                                        &location.play.iteration
+                                    )?),
                                     kinds: (
                                         AudioBoundaryKind::RepeatGapStart,
                                         AudioBoundaryKind::RepeatGapEnd,
@@ -737,13 +748,27 @@ impl RenderPlan {
             *capture = next;
         }
         if let Some(capture) = editorial_capture {
-            assert!(!A::METERED, "editorial output remains legacy-only");
             budget.canonical(editorial.len() + constraints.len() + repeats.len())?;
-            *capture = EditorialCapture {
-                editorial,
-                constraints: constraints.clone(),
-                repeats: repeats.clone(),
+            let mut next = Owned {
+                value: EditorialCapture::default(),
+                memory: budget.memory(),
             };
+            // Move the exact editorial vector at the old site. The copies
+            // below retain the prepaid canonical aggregate above.
+            budget.check_memory(&editorial_memory)?;
+            budget.check_memory(&editorial_capacity)?;
+            budget.merge_checked(&mut editorial_memory, &mut editorial_capacity);
+            next.value.editorial = editorial;
+            budget.merge_checked(&mut next.memory, &mut editorial_memory);
+            next.value.constraints =
+                storage::fixed(&constraints, &mut next.memory, budget, |v, m, b| {
+                    b.constraint(m, v)
+                })?;
+            next.value.repeats =
+                storage::fixed(&repeats, &mut next.memory, budget, |v, m, b| b.repeat(m, v))?;
+            budget.check_memory(&capture.memory)?;
+            budget.check_memory(&next.memory)?;
+            *capture = next;
         }
         for constraint in constraints {
             let node = &self.nodes[constraint.node];

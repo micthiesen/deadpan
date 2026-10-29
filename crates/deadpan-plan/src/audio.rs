@@ -513,7 +513,14 @@ impl RenderPlan {
         ),
     ) -> Result<AudioWalkSpan<'plan>, PlanError> {
         use super::audio_owners::admission::{self, Memory, Owned, Unmetered};
-        let (mut capture, editorial, owner) = captures;
+        let (mut capture, mut editorial, owner) = captures;
+        let mut editorial_slot = Owned {
+            value: editorial
+                .as_deref_mut()
+                .map(std::mem::take)
+                .unwrap_or_default(),
+            memory: Memory::empty(()),
+        };
         let mut slot = Owned {
             value: capture.as_deref_mut().and_then(Option::take),
             memory: Memory::empty(()),
@@ -532,12 +539,19 @@ impl RenderPlan {
                 } else {
                     None
                 },
-                editorial,
+                if editorial.is_some() {
+                    Some(&mut editorial_slot)
+                } else {
+                    None
+                },
                 owner,
             ),
         );
         if let Some(capture) = capture {
             *capture = slot.value;
+        }
+        if let Some(editorial) = editorial {
+            *editorial = editorial_slot.value;
         }
         admission::outer::<_, Unmetered>(result.map(capture::WalkResult::unmetered))
     }

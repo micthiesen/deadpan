@@ -1,8 +1,11 @@
-//! Final Original sharing only. Source Input/query/capture/retained construction
-//! remains outside these new allocation reservations.
+//! Final Original sharing. Admitted retained values keep their actual probe
+//! Core/Plan charges; plain retained sharing admits only its final shell.
 use super::super::audio::{EditorialConstraint, EnvelopeConstraint};
 use super::*;
 use crate::audio_allocated::admission::{arc, array, identity, reserve, validate};
+use crate::plan::audio_bound::query::{GuardedBound, GuardedChargeTransfer};
+pub use crate::plan::audio_owner_input::SharedAudioOwnerRetainedInput;
+use crate::plan::audio_owners::admission::outer;
 use crate::{AdmittedSoundContext, AudioOwnerRetainedInput, AudioSoundContextAdmission};
 use deadpan_core::{NodeId, RevisionId};
 
@@ -19,12 +22,13 @@ struct Values<'plan> {
     domain: Option<AudioDomain<'plan>>,
     retained: Option<AudioOwnerRetainedInput<'plan>>,
     shared_domain: Option<std::sync::Arc<AudioDomain<'plan>>>,
-    shared_retained: Option<std::sync::Arc<AudioOwnerRetainedInput<'plan>>>,
+    shared_retained: Option<SharedAudioOwnerRetainedInput<'plan>>,
 }
 /// Owns final shared values before their charge. This is not an ancestry,
 /// source-admission or whole-construction allocation certificate.
 pub struct AdmittedOriginalContext<'plan, I, L> {
     values: Values<'plan>,
+    guarded_retained: Option<GuardedBound<SharedAudioOwnerRetainedInput<'plan>, I, L>>,
     issuer: I,
     charge: Option<L>,
 }
@@ -309,6 +313,7 @@ impl<'a, 'plan, A: AudioSoundContextAdmission> Scope<'a, 'plan, A> {
     fn finish(mut self) -> AdmittedOriginalContext<'plan, A::Issuer, A::Lease> {
         AdmittedOriginalContext {
             values: std::mem::take(&mut self.values),
+            guarded_retained: None,
             issuer: self.issuer,
             charge: self.charge.take(),
         }
@@ -365,10 +370,15 @@ impl<'plan> AudioOwnerRetainedInput<'plan> {
         let mut scope = Scope::new(admission, limits)?;
         scope.values.retained = Some(self);
         scope.step()?;
-        scope.reserve(arc::<AudioOwnerRetainedInput<'plan>>()?)?;
-        scope.values.shared_retained = Some(std::sync::Arc::new(
-            scope.values.retained.take().expect("retained input"),
-        ));
+        scope.reserve(arc::<Option<AudioOwnerRetainedInput<'plan>>>()?)?;
+        scope.values.shared_retained = Some(
+            scope
+                .values
+                .retained
+                .take()
+                .expect("retained input")
+                .into_shared(),
+        );
         Ok(scope.finish())
     }
 }
@@ -376,15 +386,95 @@ impl<'plan, I: Copy + Eq, L> AdmittedOriginalContext<'plan, I, L> {
     pub fn issuer(&self) -> I {
         self.issuer
     }
+    /// Original Plan metadata only; numerical publication uses all leases().
     pub fn lease(&self) -> Option<&L> {
-        self.charge.as_ref()
+        self.leases()[0]
+    }
+    pub fn leases(&self) -> [Option<&L>; 3] {
+        match &self.guarded_retained {
+            Some(value) => value.charges(),
+            None => [self.charge.as_ref(), None, None],
+        }
+    }
+    pub(in crate::plan) fn from_guarded(
+        value: GuardedBound<SharedAudioOwnerRetainedInput<'plan>, I, L>,
+        issuer: I,
+    ) -> Self {
+        Self {
+            values: Values::default(),
+            guarded_retained: Some(value),
+            issuer,
+            charge: None,
+        }
     }
     pub fn domain(&self) -> Option<&std::sync::Arc<AudioDomain<'plan>>> {
         self.values.shared_domain.as_ref()
     }
-    pub fn retained(&self) -> Option<&std::sync::Arc<AudioOwnerRetainedInput<'plan>>> {
-        self.values.shared_retained.as_ref()
+    pub fn retained(&self) -> Option<&SharedAudioOwnerRetainedInput<'plan>> {
+        self.guarded_retained
+            .as_deref()
+            .or(self.values.shared_retained.as_ref())
     }
+}
+/// A value-tied token. Admission/controller borrows end during preflight.
+pub struct ContextChargeTransfer<'value, 'plan, I, L> {
+    original: Option<GuardedChargeTransfer<'value, SharedAudioOwnerRetainedInput<'plan>, I, L>>,
+    plain: Option<&'value mut L>,
+    sound: Option<&'value mut L>,
+}
+impl<I: Copy + Eq, L> ContextChargeTransfer<'_, '_, I, L> {
+    pub fn leases(&self) -> [Option<&L>; 4] {
+        let [plan, lease, buffer] = self
+            .original
+            .as_ref()
+            .map_or([self.plain.as_deref(), None, None], |value| value.leases());
+        [plan, lease, buffer, self.sound.as_deref()]
+    }
+    /// Trusted consumer: one infallible, non-unwinding, allocation-free publication.
+    pub fn commit(
+        self,
+        publish: impl FnOnce(Option<&mut L>, Option<&mut L>, Option<&mut L>, Option<&mut L>),
+    ) {
+        match self.original {
+            Some(value) => {
+                value.commit(|plan, lease, buffer| publish(plan, lease, buffer, self.sound))
+            }
+            None => publish(self.plain, None, None, self.sound),
+        }
+    }
+}
+pub fn preflight_context_transfer<'value, 'plan, A: AudioSoundContextAdmission>(
+    original: Option<&'value mut AdmittedOriginalContext<'plan, A::Issuer, A::Lease>>,
+    sound: Option<&'value mut AdmittedSoundContext<'plan, A::Issuer, A::Lease>>,
+    admission: &mut A,
+) -> Result<ContextChargeTransfer<'value, 'plan, A::Issuer, A::Lease>, A::Error> {
+    let issuer = admission.issuer();
+    if original
+        .as_ref()
+        .is_some_and(|value| value.issuer() != issuer)
+        || sound.as_ref().is_some_and(|value| value.issuer() != issuer)
+    {
+        return Err(PlanError::AudioMetadataIssuerMismatch.into());
+    }
+    let mut plain = None;
+    let original = match original {
+        Some(value) => match &mut value.guarded_retained {
+            Some(value) => Some(outer::<_, A>(value.preflight_transfer(admission))?),
+            None => {
+                plain = value.charge.as_mut();
+                None
+            }
+        },
+        None => None,
+    };
+    if admission.issuer() != issuer {
+        return Err(PlanError::AudioMetadataIssuerMismatch.into());
+    }
+    Ok(ContextChargeTransfer {
+        original,
+        plain,
+        sound: sound.and_then(AdmittedSoundContext::lease_mut),
+    })
 }
 /// Validate ALL final-sharing issuers before invoking ONE infallible publication.
 /// No allocation, callback or fallible step may intervene between publication
@@ -395,6 +485,14 @@ pub fn transfer_context_charges<'plan, I: Copy + Eq, L>(
     sound: Option<&mut AdmittedSoundContext<'plan, I, L>>,
     transfer: impl FnOnce(Option<&mut L>, Option<&mut L>),
 ) -> Result<(), PlanError> {
+    if original
+        .as_ref()
+        .is_some_and(|value| value.guarded_retained.is_some())
+    {
+        return Err(PlanError::InvalidPlan(
+            "guarded retained context requires preflight transfer",
+        ));
+    }
     if original
         .as_ref()
         .is_some_and(|value| value.issuer() != issuer)

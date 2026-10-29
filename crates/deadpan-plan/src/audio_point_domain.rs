@@ -93,6 +93,32 @@ impl<'plan> AudioPointDomain<'plan> {
         placement: AudioRootPlacement,
         grid_origin: ExactRatio,
     ) -> Result<Self, PlanError> {
+        use crate::plan::audio_owners::admission::{self, Owned, Unmetered};
+        let mut local = super::audio::Budget {
+            remaining: 65_536,
+            lookup: super::LookupStats::default(),
+        };
+        let mut policy = Unmetered;
+        let mut budget = admission::Budget::new(&mut local, &mut policy);
+        admission::outer::<_, Unmetered>(Self::new_admitted(
+            definition,
+            placement,
+            grid_origin,
+            &mut budget,
+        ))
+        .map(Owned::unmetered)
+    }
+
+    pub(in crate::plan) fn new_admitted<A: crate::AudioSoundContextAdmission>(
+        definition: &AudioDefinition<'plan>,
+        placement: AudioRootPlacement,
+        grid_origin: ExactRatio,
+        budget: &mut crate::plan::audio_owners::admission::Budget<'_, A>,
+    ) -> crate::plan::audio_owners::admission::Result<
+        crate::plan::audio_owners::admission::Owned<Self, A::Issuer, A::Lease>,
+        A,
+    > {
+        use crate::plan::audio_owners::admission::Owned;
         let plan = definition.plan;
         let rate = plan.metadata.presentation_basis.frame_rate;
         let spacing = ExactRatio::new(
@@ -133,16 +159,32 @@ impl<'plan> AudioPointDomain<'plan> {
                 .checked_div(placement.root_frames_per_local_frame())?,
             spacing.checked_div(placement.root_frames_per_local_frame())?,
         )?;
-        let signal = AudioSignal::for_placed_definition(definition, support, transform);
-        Ok(Self {
+        let mut signal =
+            AudioSignal::for_placed_definition_admitted(definition, support, transform, budget)?;
+        // The Point selector is a distinct owning edge after signal creation.
+        let mut result = Owned {
+            value: None,
+            memory: budget.memory(),
+        };
+        let selector = budget
+            .definition_ref(&mut result.memory, Some(&definition.selector))?
+            .expect("Point selector");
+        result.value = Some(Self {
             plan,
-            selector: definition.selector.clone(),
+            selector,
             root: definition.root,
             placement,
             grid,
             sampling,
             samples,
-            signal,
+            signal: signal.value,
+        });
+        budget.check_memory(&result.memory)?;
+        budget.check_memory(&signal.memory)?;
+        budget.merge_checked(&mut result.memory, &mut signal.memory);
+        Ok(Owned {
+            value: result.value.expect("constructed Point"),
+            memory: result.memory,
         })
     }
 

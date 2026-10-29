@@ -45,7 +45,8 @@ pub use audio::*;
 #[path = "audio_domain.rs"]
 mod audio_domain;
 pub use audio_domain::{
-    AdmittedOriginalContext, AudioDomain, AudioRootPlacement, transfer_context_charges,
+    AdmittedOriginalContext, AudioDomain, AudioRootPlacement, ContextChargeTransfer,
+    SharedAudioOwnerRetainedInput, preflight_context_transfer, transfer_context_charges,
 };
 #[path = "audio_point_domain.rs"]
 mod audio_point_domain;
@@ -83,9 +84,9 @@ mod audio_owner_input;
 #[path = "audio_owners.rs"]
 mod audio_owners;
 pub use audio_owner_input::{
-    AdmittedAudioOwnerInputCandidates, AdmittedAudioOwnerInputCapture, AudioOwnerInput,
-    AudioOwnerInputCandidates, AudioOwnerInputCapture, AudioOwnerInputScope,
-    AudioOwnerRetainedInput, AudioOwnerRetainedProbe,
+    AdmittedAudioOwnerInputCandidates, AdmittedAudioOwnerInputCapture,
+    AdmittedAudioOwnerRetainedProbe, AudioOwnerInput, AudioOwnerInputCandidates,
+    AudioOwnerInputCapture, AudioOwnerInputScope, AudioOwnerRetainedInput, AudioOwnerRetainedProbe,
 };
 pub use audio_owners::{
     AudioOwnerClock, AudioOwnerClockOrigin, AudioOwnerKind, AudioOwnerQuery, AudioOwnerSpan,
