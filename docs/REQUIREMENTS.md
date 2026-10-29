@@ -401,6 +401,20 @@ failure. General sound Split remains disabled. Wide renderer queries, stop
 clones, other Graph containers and full recursive closure remain open. No caps,
 weights, refunds, cold activation or requirement/gate statuses changed.
 
+The [wide query checkpoint](qualification/wide-owner-query-admission-2026-10-29.md)
+admits the actual wide Root/Domain/retained queries through renderer use and
+the tile-local stop snapshot; SharedMix borrows the stop. Fourteen frozen old
+cases preserve complete query fields/canonical work in both modes. Main/isolated
+Audio pass 342/323, Plan 620/607 across 29 executables, ordinary Stage 203/203
+and definition/history 171/eight. Strict lint, three fresh reviews and
+source/index/evidence audits pass. The fresh Split matrix expands to three
+pass/four work-limit failures in 275.40 seconds: the previous three windows
+now report structural query work, and processed root-sound refinement 0+511
+newly refuses at plan work per read. General sound Split stays disabled.
+Authored Graph metadata, other containers, mix clock copies and full recursive
+closure remain open. Caps, weights, refunds, cold activation and requirement/
+gate statuses stay unchanged.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

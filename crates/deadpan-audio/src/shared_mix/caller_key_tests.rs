@@ -319,3 +319,160 @@ fn unmetered_mode_never_attempts_the_synthetic_repeat_array_reservation() {
     assert_eq!(policy.reserve_calls, 0);
     assert_eq!(policy.merges, 0);
 }
+
+fn boundary_for(owner: &AudioOwnerClock<'_>, before: usize) -> Boundary {
+    Boundary {
+        owner: OwnerKey::new(owner),
+        before,
+    }
+}
+
+fn boundary_fields(boundary: &Boundary) -> serde_json::Value {
+    serde_json::json!({
+        "owner": boundary.owner.snapshot_fields(),
+        "before": boundary.before,
+    })
+}
+
+#[test]
+fn borrowed_boundary_snapshot_preserves_exact_fields_without_unmetered_admission() {
+    let plan = repeat_plan();
+    let owner = repeat_owner(&plan);
+    let boundary = boundary_for(&owner, 17);
+    let expected = boundary_fields(&boundary);
+    let mut policy = Policy::<false>::new(0);
+    policy.fail_spend = Some(1);
+    policy.fail_reserve = true;
+
+    let snapshot = AdmittedStop::from_boundary(&boundary, &mut policy).unwrap();
+    assert_eq!(boundary_fields(&snapshot), expected);
+    assert_eq!(snapshot.issuer(), 7);
+    assert!(snapshot.lease().is_none());
+    assert_eq!(policy.spend_calls, 0);
+    assert_eq!(policy.reserve_calls, 0);
+    assert_eq!(policy.merges, 0);
+    assert_eq!(policy.ledger.live_bytes.get(), 0);
+}
+
+#[test]
+fn borrowed_boundary_snapshot_reserves_exact_repeat_bytes_before_copy() {
+    let plan = repeat_plan();
+    let owner = repeat_owner(&plan);
+    let boundary = boundary_for(&owner, 23);
+    let expected_bytes = repeat_bytes(&owner);
+    assert!(expected_bytes > 0);
+    let mut policy = Policy::<true>::new(expected_bytes);
+
+    let snapshot = AdmittedStop::from_boundary(&boundary, &mut policy).unwrap();
+    assert_eq!(boundary_fields(&snapshot), boundary_fields(&boundary));
+    assert_eq!(
+        snapshot.owner.instance.repeats,
+        boundary.owner.instance.repeats
+    );
+    assert_eq!(snapshot.before, boundary.before);
+    assert_eq!(snapshot.lease().unwrap().bytes, expected_bytes);
+    assert_eq!(
+        policy.layouts,
+        vec![Layout::array::<RepeatInstance>(boundary.owner.instance.repeats.len()).unwrap()]
+    );
+    assert_eq!(policy.spent, boundary.owner.instance.repeats.len() + 5);
+    assert_eq!(policy.merges, 0);
+    assert_eq!(policy.ledger.live_bytes.get(), expected_bytes);
+
+    drop(snapshot);
+    assert_eq!(policy.ledger.live_bytes.get(), 0);
+    assert_eq!(policy.spent, boundary.owner.instance.repeats.len() + 5);
+}
+
+#[test]
+fn borrowed_boundary_snapshot_empty_repeats_need_no_array_reservation() {
+    let plan = crate::stages::authored_eq::eq_admission_fixture::fixture();
+    let owner = empty_repeat_owner(&plan);
+    let boundary = boundary_for(&owner, 11);
+    assert!(boundary.owner.instance.repeats.is_empty());
+    let mut policy = Policy::<true>::new(0);
+
+    let snapshot = AdmittedStop::from_boundary(&boundary, &mut policy).unwrap();
+    assert_eq!(boundary_fields(&snapshot), boundary_fields(&boundary));
+    assert!(snapshot.lease().is_none());
+    assert_eq!(policy.reserve_calls, 0);
+    assert_eq!(policy.spent, 5);
+    assert_eq!(policy.ledger.live_bytes.get(), 0);
+}
+
+#[test]
+fn borrowed_boundary_snapshot_one_byte_short_refuses_without_retaining_charge() {
+    let plan = repeat_plan();
+    let owner = repeat_owner(&plan);
+    let boundary = boundary_for(&owner, 0);
+    let expected_bytes = repeat_bytes(&owner);
+    let mut policy = Policy::<true>::new(expected_bytes - 1);
+
+    assert!(matches!(
+        AdmittedStop::from_boundary(&boundary, &mut policy),
+        Err(StageAudioError::Limit("caller admission reserve sentinel"))
+    ));
+    assert_eq!(policy.layouts[0].size(), expected_bytes);
+    assert_eq!(policy.spend_calls, 3);
+    assert_eq!(policy.spent, 3);
+    assert_eq!(policy.ledger.live_bytes.get(), 0);
+}
+
+#[test]
+fn borrowed_boundary_snapshot_each_reached_work_spend_cleans_up() {
+    let plan = repeat_plan();
+    let owner = repeat_owner(&plan);
+    let boundary = boundary_for(&owner, 4);
+    let reached_spends = boundary.owner.instance.repeats.len() + 5;
+
+    for failure_at in 1..=reached_spends {
+        let mut policy = Policy::<true>::new(usize::MAX);
+        policy.fail_spend = Some(failure_at);
+        assert!(matches!(
+            AdmittedStop::from_boundary(&boundary, &mut policy),
+            Err(StageAudioError::Limit("caller admission work sentinel"))
+        ));
+        assert_eq!(policy.spend_calls, failure_at);
+        assert_eq!(policy.spent, failure_at - 1);
+        assert_eq!(policy.ledger.live_bytes.get(), 0, "spend {failure_at}");
+        assert_eq!(policy.merges, 0);
+    }
+}
+
+#[test]
+fn borrowed_boundary_snapshot_reserve_and_issuer_failures_leave_no_lease() {
+    let plan = repeat_plan();
+    let owner = repeat_owner(&plan);
+    let boundary = boundary_for(&owner, 2);
+
+    let mut reserve_failure = Policy::<true>::new(usize::MAX);
+    reserve_failure.fail_reserve = true;
+    assert!(matches!(
+        AdmittedStop::from_boundary(&boundary, &mut reserve_failure),
+        Err(StageAudioError::Limit("caller admission reserve sentinel"))
+    ));
+    assert_eq!(reserve_failure.spent, 3);
+    assert_eq!(reserve_failure.ledger.live_bytes.get(), 0);
+
+    let mut work_rotation = Policy::<true>::new(usize::MAX);
+    work_rotation.rotate_after_spend = Some(1);
+    assert!(matches!(
+        AdmittedStop::from_boundary(&boundary, &mut work_rotation),
+        Err(StageAudioError::Plan(
+            PlanError::AudioMetadataIssuerMismatch
+        ))
+    ));
+    assert_eq!(work_rotation.spent, 1);
+    assert_eq!(work_rotation.ledger.live_bytes.get(), 0);
+
+    let mut reserve_rotation = Policy::<true>::new(usize::MAX);
+    reserve_rotation.rotate_after_reserve = true;
+    assert!(matches!(
+        AdmittedStop::from_boundary(&boundary, &mut reserve_rotation),
+        Err(StageAudioError::Plan(
+            PlanError::AudioMetadataIssuerMismatch
+        ))
+    ));
+    assert_eq!(reserve_rotation.spent, 3);
+    assert_eq!(reserve_rotation.ledger.live_bytes.get(), 0);
+}

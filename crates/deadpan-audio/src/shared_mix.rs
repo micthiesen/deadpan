@@ -139,10 +139,10 @@ struct Bus<'plan> {
     permissions: Vec<Permissions>,
 }
 
-pub(super) struct SharedMix<'plan> {
+pub(super) struct SharedMix<'plan, 'stop> {
     pub(super) start: AudioSample,
     frames: usize,
-    stop: Option<Boundary>,
+    stop: Option<&'stop Boundary>,
     by_owner: BTreeMap<OwnerKey, usize>,
     buses: Vec<Bus<'plan>>,
     sum: Vec<[f64; 2]>,
@@ -195,11 +195,11 @@ fn transfer(
     Ok(result)
 }
 
-impl<'plan> SharedMix<'plan> {
+impl<'plan, 'stop> SharedMix<'plan, 'stop> {
     pub(super) fn new(
         start: AudioSample,
         frames: u32,
-        stop: Option<Boundary>,
+        stop: Option<&'stop Boundary>,
         output_voice: Option<usize>,
         separate: bool,
         sends: Option<deadpan_core::TailEffect>,
@@ -235,10 +235,7 @@ impl<'plan> SharedMix<'plan> {
             owners.iter().filter_map(|owner| owner.treatments()),
         )?;
         let first = if let Some(stop) = &self.stop {
-            let Some(index) = owners
-                .iter()
-                .position(|owner| OwnerKey::new(owner) == stop.owner)
-            else {
+            let Some(index) = owners.iter().position(|owner| stop.owner.matches(owner)) else {
                 return Ok(Route {
                     target: None,
                     layers: Vec::new(),

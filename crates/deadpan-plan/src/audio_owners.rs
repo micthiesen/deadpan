@@ -24,6 +24,8 @@ mod retained_query;
 pub use retained_query::AdmittedAudioOwnerQuery;
 #[path = "audio_treatment_boundary_admission.rs"]
 mod treatment_boundary_admission;
+#[path = "audio_wide_owner_query.rs"]
+mod wide_query;
 pub use treatment_boundary_admission::AdmittedAudioTreatmentBoundary;
 #[path = "audio_owner_query.rs"]
 pub(super) mod query_admission;
@@ -370,18 +372,20 @@ impl RenderPlan {
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
     ) -> Result<AudioOwnerQuery<'_>, PlanError> {
-        if samples.start.0 < 0 || samples.end > self.audio_duration()? {
-            return Err(PlanError::AudioRangeOutOfRange);
-        }
-        let mut seed = Walk::root(self)?;
-        seed.allow_inactive = true;
-        query(
-            self,
-            samples.start.0..samples.end.0,
-            limits,
-            seed,
-            AudioSample,
-        )
+        let mut admission = admission::Unmetered;
+        let query = wide_query::root(self, samples, limits, &mut admission)?;
+        Ok(query.unmetered())
+    }
+
+    /// Resolve gain owners while retaining their actual walk and output
+    /// allocations under one shared work and allocation admission.
+    pub fn audio_gain_owners_admitted<A: crate::AudioSoundContextAdmission>(
+        &self,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+        admission: &mut A,
+    ) -> std::result::Result<AdmittedAudioOwnerQuery<'_, A::Issuer, A::Lease>, A::Error> {
+        wide_query::root(self, samples, limits, admission)
     }
 
     /// Resolve structural owner clocks, including nominal traversal through
@@ -435,18 +439,20 @@ impl<'plan> AudioDomain<'plan> {
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
     ) -> Result<AudioOwnerQuery<'plan>, PlanError> {
-        if samples.start < self.samples.start || samples.end > self.samples.end {
-            return Err(PlanError::AudioRangeOutOfRange);
-        }
-        let mut seed = Walk::from_seed(&self.seed);
-        seed.allow_inactive = true;
-        query(
-            self.plan,
-            samples.start.0..samples.end.0,
-            limits,
-            seed,
-            AudioSample,
-        )
+        let mut admission = admission::Unmetered;
+        let query = wide_query::domain(self, samples, limits, &mut admission)?;
+        Ok(query.unmetered())
+    }
+
+    /// Resolve gain owners on this checked domain while retaining all seed,
+    /// walk and output allocations under the supplied admission.
+    pub fn gain_owners_admitted<A: crate::AudioSoundContextAdmission>(
+        &self,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+        admission: &mut A,
+    ) -> std::result::Result<AdmittedAudioOwnerQuery<'plan, A::Issuer, A::Lease>, A::Error> {
+        wide_query::domain(self, samples, limits, admission)
     }
 
     /// Only this checked physical domain's owners are returned. Captured
@@ -756,3 +762,7 @@ pub(in crate::plan) mod tests;
 #[cfg(test)]
 #[path = "audio_owners/treatment_boundary_admission_tests.rs"]
 mod treatment_boundary_admission_tests;
+
+#[cfg(test)]
+#[path = "audio_owners/wide_gain_query_admission_tests.rs"]
+mod wide_gain_query_admission_tests;

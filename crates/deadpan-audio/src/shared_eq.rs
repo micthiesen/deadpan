@@ -23,6 +23,9 @@ mod caller_graph_tests;
 #[cfg(test)]
 #[path = "shared_eq/sound_admission_tests.rs"]
 mod sound_admission_tests;
+#[cfg(test)]
+#[path = "shared_eq/wide_query_graph_tests.rs"]
+mod wide_query_graph_tests;
 use deadpan_core::{NodeId, SoundId};
 use deadpan_dsp::{
     FINITE_FILTER_INPUT_FRAMES as INPUT, FINITE_FILTER_OUTPUT_FRAMES as OUTPUT,
@@ -377,12 +380,15 @@ impl StageAudio {
         let plan = graph.plan;
         let original_range = program.context.original.support(plan, start..end)?;
         let owners = if original_range.start < original_range.end {
-            Some(
-                program
-                    .context
-                    .original
-                    .owners(plan, original_range.clone(), control)?,
-            )
+            Some({
+                let mut admission = sound_context_admission::Admission::new(self, control);
+                program.context.original.owners_admitted(
+                    plan,
+                    original_range.clone(),
+                    control,
+                    &mut admission,
+                )?
+            })
         } else {
             None
         };
@@ -427,7 +433,7 @@ impl StageAudio {
         let mut mix = SharedMix::new(
             start,
             frames,
-            program.stop.cloned(),
+            program.stop,
             program.output_voice,
             plan.has_audio_component_automation() || plan.has_audio_wet_sends(),
             program.stop.is_none().then_some(graph.sends).flatten(),
@@ -438,6 +444,7 @@ impl StageAudio {
             .as_ref()
             .map(|owners| {
                 owners
+                    .query()
                     .spans()
                     .iter()
                     .map(|span| {
@@ -462,10 +469,17 @@ impl StageAudio {
             .map(|root| graph.voice(Voice::Root(root.id.clone())))
             .collect::<Result<Vec<_>, _>>()?;
         let root_routes = if !roots.is_empty() {
-            let root_owners =
-                plan.audio_gain_owners(root_range.clone(), control.query_limits()?)?;
-            control.spend_plan_work(root_owners.work())?;
+            let root_owners = {
+                let mut admission = sound_context_admission::Admission::new(self, control);
+                Context::Root.owner_query_admitted(
+                    plan,
+                    root_range.clone(),
+                    control,
+                    &mut admission,
+                )?
+            };
             let root = root_owners
+                .query()
                 .spans()
                 .first()
                 .and_then(|span| span.owners().first())
@@ -574,7 +588,7 @@ impl StageAudio {
                 let original = match (&owners, &prepared_original) {
                     (Some(owners), Some(request)) => Some(policy_prediction::Original {
                         queries: request.queries(),
-                        owners,
+                        owners: owners.query(),
                         routes: &original_routes,
                         id: original_id,
                     }),
@@ -643,7 +657,7 @@ impl StageAudio {
                         )?,
                     }
                 };
-                for (span, route) in owners.spans().iter().zip(original_routes) {
+                for (span, route) in owners.query().spans().iter().zip(original_routes) {
                     for sample in span.samples().start.0..span.samples().end.0 {
                         let value = raw.samples[(sample - original_range.start.0) as usize];
                         if span.support() == AudioOwnerSupport::Inactive && value != [0.0; 2] {
@@ -1094,7 +1108,10 @@ impl StageAudio {
             .ok_or(TimeError::Overflow)?;
         let end = begin.checked_add(input as i64).ok_or(TimeError::Overflow)?;
         let context = graph.nodes[id].context.clone();
-        let boundary = graph.nodes[id].stop.clone();
+        let boundary = {
+            let mut admission = sound_context_admission::Admission::new(self, control);
+            AdmittedStop::from_boundary(&graph.nodes[id].stop, &mut admission)?
+        };
         let mut filter = match kind {
             Temporal::Equalizer(_) => Some(
                 graph.nodes[id]
@@ -1221,7 +1238,7 @@ pub(super) fn prepare_post_gates(
 }
 
 fn add_sound(
-    mix: &mut SharedMix<'_>,
+    mix: &mut SharedMix<'_, '_>,
     route: &shared_mix::Route<'_>,
     (raw, returned): (&ReadBlock, Option<&event_returns::EventOutput>),
     (fades, post_fades): (

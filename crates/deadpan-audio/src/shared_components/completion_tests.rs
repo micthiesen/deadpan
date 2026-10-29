@@ -200,7 +200,15 @@ fn with_fixture(
     } else {
         Vec::new()
     };
-    let mut mix = SharedMix::new(samples.start, 2, boundary, Some(2), true, None, &skipped);
+    let mut mix = SharedMix::new(
+        samples.start,
+        2,
+        boundary.as_ref(),
+        Some(2),
+        true,
+        None,
+        &skipped,
+    );
     let mut beat_routes = Vec::new();
     for beat in &beats {
         for occurrence in &beat.occurrences {

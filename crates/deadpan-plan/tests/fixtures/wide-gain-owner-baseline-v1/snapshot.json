@@ -1,0 +1,5409 @@
+{
+  "cases": [
+    {
+      "api": "RenderPlan::audio_gain_owners",
+      "fixture": "unbound_sequence_tone_and_actual_domain",
+      "name": "unbound_root_full",
+      "query": {
+        "belongs_to_expected_plan": true,
+        "lookup": {
+          "iteration_run_comparisons": 0,
+          "sequence_comparisons": 1,
+          "visited_nodes": 2
+        },
+        "spans": [
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 0,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "root",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 0,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "tone",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 512,
+              "start": 0
+            },
+            "support": "Active"
+          }
+        ],
+        "window": {
+          "end": 512,
+          "start": 0
+        },
+        "work": 5
+      },
+      "request": {
+        "limits": {
+          "maximum_spans": 4096,
+          "maximum_work": 65536
+        },
+        "window": {
+          "end": 512,
+          "start": 0
+        }
+      },
+      "seed_identity": {
+        "definition": null,
+        "project_id": "owner-clocks",
+        "revision_id": "current",
+        "root": "root",
+        "tag": "ImmutablePlanRoot"
+      }
+    },
+    {
+      "api": "AudioDomain::gain_owners",
+      "fixture": "unbound_sequence_tone_and_actual_domain",
+      "name": "unbound_actual_tone_domain_full",
+      "query": {
+        "belongs_to_expected_plan": true,
+        "lookup": {
+          "iteration_run_comparisons": 0,
+          "sequence_comparisons": 0,
+          "visited_nodes": 1
+        },
+        "spans": [
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 0,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "tone",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 512,
+              "start": 0
+            },
+            "support": "Active"
+          }
+        ],
+        "window": {
+          "end": 512,
+          "start": 0
+        },
+        "work": 2
+      },
+      "request": {
+        "limits": {
+          "maximum_spans": 4096,
+          "maximum_work": 65536
+        },
+        "window": {
+          "end": 512,
+          "start": 0
+        }
+      },
+      "seed_identity": {
+        "measured_domain": {
+          "belongs_to_expected_plan": true,
+          "instance": {
+            "node": "tone",
+            "repeats": []
+          },
+          "placement": null,
+          "root_samples": {
+            "end": 512,
+            "start": 0
+          },
+          "seed": {
+            "bypass_binding": null,
+            "constraints": [
+              {
+                "gap_after": null,
+                "kinds": [
+                  "NodeStart",
+                  "NodeEnd"
+                ],
+                "node": "root",
+                "placement_support": false,
+                "range": {
+                  "end": {
+                    "denominator": "1",
+                    "numerator": "512"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  }
+                },
+                "repeat_count": 0
+              }
+            ],
+            "definition": null,
+            "editorial": [],
+            "envelope": null,
+            "extent": {
+              "end": {
+                "denominator": "1",
+                "numerator": "512"
+              },
+              "start": {
+                "denominator": "1",
+                "numerator": "0"
+              }
+            },
+            "gap": null,
+            "grid": {
+              "frames_per_sample": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "origin": {
+                "denominator": "1",
+                "numerator": "0"
+              },
+              "rounding_parity": false,
+              "rule": "RootRoundEven"
+            },
+            "node": "tone",
+            "repeats": [],
+            "retimes": [],
+            "suppress_entry_editorial": {
+              "end": false,
+              "start": false
+            },
+            "transform": {
+              "project_frames_per_local_frame": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "project_frames_per_sample": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "project_origin": {
+                "denominator": "1",
+                "numerator": "0"
+              }
+            }
+          },
+          "visible_samples": {
+            "end": 512,
+            "start": 0
+          }
+        },
+        "setup_input": {
+          "domain": {
+            "belongs_to_expected_plan": true,
+            "instance": {
+              "node": "tone",
+              "repeats": []
+            },
+            "placement": null,
+            "root_samples": {
+              "end": 512,
+              "start": 0
+            },
+            "seed": {
+              "bypass_binding": null,
+              "constraints": [
+                {
+                  "gap_after": null,
+                  "kinds": [
+                    "NodeStart",
+                    "NodeEnd"
+                  ],
+                  "node": "root",
+                  "placement_support": false,
+                  "range": {
+                    "end": {
+                      "denominator": "1",
+                      "numerator": "512"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "0"
+                    }
+                  },
+                  "repeat_count": 0
+                }
+              ],
+              "definition": null,
+              "editorial": [],
+              "envelope": null,
+              "extent": {
+                "end": {
+                  "denominator": "1",
+                  "numerator": "512"
+                },
+                "start": {
+                  "denominator": "1",
+                  "numerator": "0"
+                }
+              },
+              "gap": null,
+              "grid": {
+                "frames_per_sample": {
+                  "denominator": "1",
+                  "numerator": "1"
+                },
+                "origin": {
+                  "denominator": "1",
+                  "numerator": "0"
+                },
+                "rounding_parity": false,
+                "rule": "RootRoundEven"
+              },
+              "node": "tone",
+              "repeats": [],
+              "retimes": [],
+              "suppress_entry_editorial": {
+                "end": false,
+                "start": false
+              },
+              "transform": {
+                "project_frames_per_local_frame": {
+                  "denominator": "1",
+                  "numerator": "1"
+                },
+                "project_frames_per_sample": {
+                  "denominator": "1",
+                  "numerator": "1"
+                },
+                "project_origin": {
+                  "denominator": "1",
+                  "numerator": "0"
+                }
+              }
+            },
+            "visible_samples": {
+              "end": 512,
+              "start": 0
+            }
+          },
+          "observed_at": 128,
+          "owner": {
+            "affine": {
+              "anchor": 128,
+              "local_at_anchor": {
+                "denominator": "1",
+                "numerator": "128"
+              },
+              "local_frames_per_sample": {
+                "denominator": "1",
+                "numerator": "1"
+              }
+            },
+            "belongs_to_expected_plan": true,
+            "definition": null,
+            "gap_after": null,
+            "instance": {
+              "node": "tone",
+              "repeats": []
+            },
+            "kind": "Node",
+            "origin": {
+              "tag": "Current"
+            },
+            "play": null
+          },
+          "scope": "Owner",
+          "total_work": 15
+        },
+        "source": "audio_owner_input.context",
+        "tag": "ActualCheckedPhysicalDomain"
+      }
+    },
+    {
+      "api": "RenderPlan::audio_gain_owners",
+      "fixture": "stable_repeat_plays_default_gap_and_overrides",
+      "name": "repeat_root_all_five_spans",
+      "query": {
+        "belongs_to_expected_plan": true,
+        "lookup": {
+          "iteration_run_comparisons": 10,
+          "sequence_comparisons": 6,
+          "visited_nodes": 16
+        },
+        "spans": [
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 0,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "root",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 0,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "repeat",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": 0
+              },
+              {
+                "affine": {
+                  "anchor": 0,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "voice",
+                  "repeats": [
+                    {
+                      "iteration": {
+                        "allocation": "plays",
+                        "ordinal": 0
+                      },
+                      "node": "repeat"
+                    }
+                  ]
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 4,
+              "start": 0
+            },
+            "support": "Active"
+          },
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 4,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "4"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "root",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 4,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "4"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "repeat",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": 0
+              },
+              {
+                "affine": {
+                  "anchor": 4,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "gap-group",
+                  "repeats": [
+                    {
+                      "iteration": {
+                        "allocation": "plays",
+                        "ordinal": 0
+                      },
+                      "node": "repeat"
+                    }
+                  ]
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 4,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "gap-voice",
+                  "repeats": [
+                    {
+                      "iteration": {
+                        "allocation": "plays",
+                        "ordinal": 0
+                      },
+                      "node": "repeat"
+                    }
+                  ]
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 5,
+              "start": 4
+            },
+            "support": "Active"
+          },
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 5,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "5"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "root",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 5,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "5"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "repeat",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": 1
+              },
+              {
+                "affine": {
+                  "anchor": 5,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "alternate",
+                  "repeats": [
+                    {
+                      "iteration": {
+                        "allocation": "plays",
+                        "ordinal": 1
+                      },
+                      "node": "repeat"
+                    }
+                  ]
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 8,
+              "start": 5
+            },
+            "support": "Active"
+          },
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 8,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "8"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "root",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 8,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "8"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "repeat",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": 1
+              },
+              {
+                "affine": {
+                  "anchor": 8,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": {
+                  "allocation": "plays",
+                  "ordinal": 1
+                },
+                "instance": {
+                  "node": "repeat",
+                  "repeats": []
+                },
+                "kind": "DefaultGap",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 10,
+              "start": 8
+            },
+            "support": "Active"
+          },
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 10,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "10"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "root",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 10,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "10"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "repeat",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": 2
+              },
+              {
+                "affine": {
+                  "anchor": 10,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "voice",
+                  "repeats": [
+                    {
+                      "iteration": {
+                        "allocation": "plays",
+                        "ordinal": 2
+                      },
+                      "node": "repeat"
+                    }
+                  ]
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 14,
+              "start": 10
+            },
+            "support": "Active"
+          }
+        ],
+        "window": {
+          "end": 14,
+          "start": 0
+        },
+        "work": 53
+      },
+      "request": {
+        "limits": {
+          "maximum_spans": 4096,
+          "maximum_work": 65536
+        },
+        "window": {
+          "end": 14,
+          "start": 0
+        }
+      },
+      "seed_identity": {
+        "definition": null,
+        "project_id": "owner-clocks",
+        "revision_id": "current",
+        "root": "root",
+        "tag": "ImmutablePlanRoot"
+      }
+    },
+    {
+      "api": "AudioDomain::gain_owners",
+      "fixture": "stable_repeat_plays_default_gap_and_overrides",
+      "name": "repeat_actual_whole_domain_full",
+      "query": {
+        "belongs_to_expected_plan": true,
+        "lookup": {
+          "iteration_run_comparisons": 10,
+          "sequence_comparisons": 1,
+          "visited_nodes": 11
+        },
+        "spans": [
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 0,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "repeat",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": 0
+              },
+              {
+                "affine": {
+                  "anchor": 0,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "voice",
+                  "repeats": [
+                    {
+                      "iteration": {
+                        "allocation": "plays",
+                        "ordinal": 0
+                      },
+                      "node": "repeat"
+                    }
+                  ]
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 4,
+              "start": 0
+            },
+            "support": "Active"
+          },
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 4,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "4"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "repeat",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": 0
+              },
+              {
+                "affine": {
+                  "anchor": 4,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "gap-group",
+                  "repeats": [
+                    {
+                      "iteration": {
+                        "allocation": "plays",
+                        "ordinal": 0
+                      },
+                      "node": "repeat"
+                    }
+                  ]
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 4,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "gap-voice",
+                  "repeats": [
+                    {
+                      "iteration": {
+                        "allocation": "plays",
+                        "ordinal": 0
+                      },
+                      "node": "repeat"
+                    }
+                  ]
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 5,
+              "start": 4
+            },
+            "support": "Active"
+          },
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 5,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "5"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "repeat",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": 1
+              },
+              {
+                "affine": {
+                  "anchor": 5,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "alternate",
+                  "repeats": [
+                    {
+                      "iteration": {
+                        "allocation": "plays",
+                        "ordinal": 1
+                      },
+                      "node": "repeat"
+                    }
+                  ]
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 8,
+              "start": 5
+            },
+            "support": "Active"
+          },
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 8,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "8"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "repeat",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": 1
+              },
+              {
+                "affine": {
+                  "anchor": 8,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": {
+                  "allocation": "plays",
+                  "ordinal": 1
+                },
+                "instance": {
+                  "node": "repeat",
+                  "repeats": []
+                },
+                "kind": "DefaultGap",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 10,
+              "start": 8
+            },
+            "support": "Active"
+          },
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 10,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "10"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "repeat",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": 2
+              },
+              {
+                "affine": {
+                  "anchor": 10,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "voice",
+                  "repeats": [
+                    {
+                      "iteration": {
+                        "allocation": "plays",
+                        "ordinal": 2
+                      },
+                      "node": "repeat"
+                    }
+                  ]
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 14,
+              "start": 10
+            },
+            "support": "Active"
+          }
+        ],
+        "window": {
+          "end": 14,
+          "start": 0
+        },
+        "work": 38
+      },
+      "request": {
+        "limits": {
+          "maximum_spans": 4096,
+          "maximum_work": 65536
+        },
+        "window": {
+          "end": 14,
+          "start": 0
+        }
+      },
+      "seed_identity": {
+        "measured_domain": {
+          "belongs_to_expected_plan": true,
+          "instance": {
+            "node": "repeat",
+            "repeats": []
+          },
+          "placement": null,
+          "root_samples": {
+            "end": 14,
+            "start": 0
+          },
+          "seed": {
+            "bypass_binding": null,
+            "constraints": [
+              {
+                "gap_after": null,
+                "kinds": [
+                  "NodeStart",
+                  "NodeEnd"
+                ],
+                "node": "root",
+                "placement_support": false,
+                "range": {
+                  "end": {
+                    "denominator": "1",
+                    "numerator": "14"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  }
+                },
+                "repeat_count": 0
+              }
+            ],
+            "definition": null,
+            "editorial": [],
+            "envelope": null,
+            "extent": {
+              "end": {
+                "denominator": "1",
+                "numerator": "14"
+              },
+              "start": {
+                "denominator": "1",
+                "numerator": "0"
+              }
+            },
+            "gap": null,
+            "grid": {
+              "frames_per_sample": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "origin": {
+                "denominator": "1",
+                "numerator": "0"
+              },
+              "rounding_parity": false,
+              "rule": "RootRoundEven"
+            },
+            "node": "repeat",
+            "repeats": [],
+            "retimes": [],
+            "suppress_entry_editorial": {
+              "end": false,
+              "start": false
+            },
+            "transform": {
+              "project_frames_per_local_frame": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "project_frames_per_sample": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "project_origin": {
+                "denominator": "1",
+                "numerator": "0"
+              }
+            }
+          },
+          "visible_samples": {
+            "end": 14,
+            "start": 0
+          }
+        },
+        "setup_input": {
+          "domain": {
+            "belongs_to_expected_plan": true,
+            "instance": {
+              "node": "repeat",
+              "repeats": []
+            },
+            "placement": null,
+            "root_samples": {
+              "end": 14,
+              "start": 0
+            },
+            "seed": {
+              "bypass_binding": null,
+              "constraints": [
+                {
+                  "gap_after": null,
+                  "kinds": [
+                    "NodeStart",
+                    "NodeEnd"
+                  ],
+                  "node": "root",
+                  "placement_support": false,
+                  "range": {
+                    "end": {
+                      "denominator": "1",
+                      "numerator": "14"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "0"
+                    }
+                  },
+                  "repeat_count": 0
+                }
+              ],
+              "definition": null,
+              "editorial": [],
+              "envelope": null,
+              "extent": {
+                "end": {
+                  "denominator": "1",
+                  "numerator": "14"
+                },
+                "start": {
+                  "denominator": "1",
+                  "numerator": "0"
+                }
+              },
+              "gap": null,
+              "grid": {
+                "frames_per_sample": {
+                  "denominator": "1",
+                  "numerator": "1"
+                },
+                "origin": {
+                  "denominator": "1",
+                  "numerator": "0"
+                },
+                "rounding_parity": false,
+                "rule": "RootRoundEven"
+              },
+              "node": "repeat",
+              "repeats": [],
+              "retimes": [],
+              "suppress_entry_editorial": {
+                "end": false,
+                "start": false
+              },
+              "transform": {
+                "project_frames_per_local_frame": {
+                  "denominator": "1",
+                  "numerator": "1"
+                },
+                "project_frames_per_sample": {
+                  "denominator": "1",
+                  "numerator": "1"
+                },
+                "project_origin": {
+                  "denominator": "1",
+                  "numerator": "0"
+                }
+              }
+            },
+            "visible_samples": {
+              "end": 14,
+              "start": 0
+            }
+          },
+          "observed_at": 0,
+          "owner": {
+            "affine": {
+              "anchor": 0,
+              "local_at_anchor": {
+                "denominator": "1",
+                "numerator": "0"
+              },
+              "local_frames_per_sample": {
+                "denominator": "1",
+                "numerator": "1"
+              }
+            },
+            "belongs_to_expected_plan": true,
+            "definition": null,
+            "gap_after": null,
+            "instance": {
+              "node": "repeat",
+              "repeats": []
+            },
+            "kind": "Node",
+            "origin": {
+              "tag": "Current"
+            },
+            "play": 0
+          },
+          "scope": "Owner",
+          "total_work": 25
+        },
+        "source": "audio_owner_input.context",
+        "tag": "ActualCheckedPhysicalDomain"
+      }
+    },
+    {
+      "api": "AudioDomain::gain_owners",
+      "fixture": "stable_repeat_plays_default_gap_and_overrides",
+      "name": "repeat_actual_default_gap_domain_full",
+      "query": {
+        "belongs_to_expected_plan": true,
+        "lookup": {
+          "iteration_run_comparisons": 0,
+          "sequence_comparisons": 0,
+          "visited_nodes": 1
+        },
+        "spans": [
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 8,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": {
+                  "allocation": "plays",
+                  "ordinal": 1
+                },
+                "instance": {
+                  "node": "repeat",
+                  "repeats": []
+                },
+                "kind": "DefaultGap",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 10,
+              "start": 8
+            },
+            "support": "Active"
+          }
+        ],
+        "window": {
+          "end": 10,
+          "start": 8
+        },
+        "work": 2
+      },
+      "request": {
+        "limits": {
+          "maximum_spans": 4096,
+          "maximum_work": 65536
+        },
+        "window": {
+          "end": 10,
+          "start": 8
+        }
+      },
+      "seed_identity": {
+        "measured_domain": {
+          "belongs_to_expected_plan": true,
+          "instance": {
+            "node": "repeat",
+            "repeats": []
+          },
+          "placement": null,
+          "root_samples": {
+            "end": 10,
+            "start": 8
+          },
+          "seed": {
+            "bypass_binding": null,
+            "constraints": [
+              {
+                "gap_after": null,
+                "kinds": [
+                  "NodeStart",
+                  "NodeEnd"
+                ],
+                "node": "root",
+                "placement_support": false,
+                "range": {
+                  "end": {
+                    "denominator": "1",
+                    "numerator": "14"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  }
+                },
+                "repeat_count": 0
+              },
+              {
+                "gap_after": null,
+                "kinds": [
+                  "NodeStart",
+                  "NodeEnd"
+                ],
+                "node": "repeat",
+                "placement_support": false,
+                "range": {
+                  "end": {
+                    "denominator": "1",
+                    "numerator": "14"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  }
+                },
+                "repeat_count": 0
+              }
+            ],
+            "definition": null,
+            "editorial": [],
+            "envelope": null,
+            "extent": {
+              "end": {
+                "denominator": "1",
+                "numerator": "10"
+              },
+              "start": {
+                "denominator": "1",
+                "numerator": "8"
+              }
+            },
+            "gap": {
+              "after": {
+                "allocation": "plays",
+                "ordinal": 1
+              },
+              "duration_frames": 2
+            },
+            "grid": {
+              "frames_per_sample": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "origin": {
+                "denominator": "1",
+                "numerator": "0"
+              },
+              "rounding_parity": false,
+              "rule": "RootRoundEven"
+            },
+            "node": "repeat",
+            "repeats": [],
+            "retimes": [],
+            "suppress_entry_editorial": {
+              "end": false,
+              "start": false
+            },
+            "transform": {
+              "project_frames_per_local_frame": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "project_frames_per_sample": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "project_origin": {
+                "denominator": "1",
+                "numerator": "8"
+              }
+            }
+          },
+          "visible_samples": {
+            "end": 10,
+            "start": 8
+          }
+        },
+        "setup_input": {
+          "domain": {
+            "belongs_to_expected_plan": true,
+            "instance": {
+              "node": "repeat",
+              "repeats": []
+            },
+            "placement": null,
+            "root_samples": {
+              "end": 10,
+              "start": 8
+            },
+            "seed": {
+              "bypass_binding": null,
+              "constraints": [
+                {
+                  "gap_after": null,
+                  "kinds": [
+                    "NodeStart",
+                    "NodeEnd"
+                  ],
+                  "node": "root",
+                  "placement_support": false,
+                  "range": {
+                    "end": {
+                      "denominator": "1",
+                      "numerator": "14"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "0"
+                    }
+                  },
+                  "repeat_count": 0
+                },
+                {
+                  "gap_after": null,
+                  "kinds": [
+                    "NodeStart",
+                    "NodeEnd"
+                  ],
+                  "node": "repeat",
+                  "placement_support": false,
+                  "range": {
+                    "end": {
+                      "denominator": "1",
+                      "numerator": "14"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "0"
+                    }
+                  },
+                  "repeat_count": 0
+                }
+              ],
+              "definition": null,
+              "editorial": [],
+              "envelope": null,
+              "extent": {
+                "end": {
+                  "denominator": "1",
+                  "numerator": "10"
+                },
+                "start": {
+                  "denominator": "1",
+                  "numerator": "8"
+                }
+              },
+              "gap": {
+                "after": {
+                  "allocation": "plays",
+                  "ordinal": 1
+                },
+                "duration_frames": 2
+              },
+              "grid": {
+                "frames_per_sample": {
+                  "denominator": "1",
+                  "numerator": "1"
+                },
+                "origin": {
+                  "denominator": "1",
+                  "numerator": "0"
+                },
+                "rounding_parity": false,
+                "rule": "RootRoundEven"
+              },
+              "node": "repeat",
+              "repeats": [],
+              "retimes": [],
+              "suppress_entry_editorial": {
+                "end": false,
+                "start": false
+              },
+              "transform": {
+                "project_frames_per_local_frame": {
+                  "denominator": "1",
+                  "numerator": "1"
+                },
+                "project_frames_per_sample": {
+                  "denominator": "1",
+                  "numerator": "1"
+                },
+                "project_origin": {
+                  "denominator": "1",
+                  "numerator": "8"
+                }
+              }
+            },
+            "visible_samples": {
+              "end": 10,
+              "start": 8
+            }
+          },
+          "observed_at": 8,
+          "owner": {
+            "affine": {
+              "anchor": 8,
+              "local_at_anchor": {
+                "denominator": "1",
+                "numerator": "0"
+              },
+              "local_frames_per_sample": {
+                "denominator": "1",
+                "numerator": "1"
+              }
+            },
+            "belongs_to_expected_plan": true,
+            "definition": null,
+            "gap_after": {
+              "allocation": "plays",
+              "ordinal": 1
+            },
+            "instance": {
+              "node": "repeat",
+              "repeats": []
+            },
+            "kind": "DefaultGap",
+            "origin": {
+              "tag": "Current"
+            },
+            "play": null
+          },
+          "scope": "Owner",
+          "total_work": 20
+        },
+        "source": "audio_owner_input.context",
+        "tag": "ActualCheckedPhysicalDomain"
+      }
+    },
+    {
+      "api": "RenderPlan::audio_gain_owners",
+      "fixture": "hidden_resumed_retained_domain_vs_live_root",
+      "name": "hidden_resumed_root_with_exhausted_tail",
+      "query": {
+        "belongs_to_expected_plan": true,
+        "lookup": {
+          "iteration_run_comparisons": 0,
+          "sequence_comparisons": 10,
+          "visited_nodes": 13
+        },
+        "spans": [
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 1,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "root",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 1,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "3"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "stage",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "stage",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 1,
+                  "local_at_anchor": {
+                    "denominator": "2",
+                    "numerator": "3"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "2",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "group",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "stage",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 1,
+                  "local_at_anchor": {
+                    "denominator": "2",
+                    "numerator": "3"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "2",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "a",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "stage",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 2,
+              "start": 1
+            },
+            "support": "Active"
+          },
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 2,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "2"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "root",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 2,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "4"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "stage",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "stage",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 2,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "2"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "2",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "group",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "stage",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 2,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "2",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "b",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "stage",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 6,
+              "start": 2
+            },
+            "support": "Active"
+          },
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 6,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "6"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "root",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 9,
+              "start": 6
+            },
+            "support": "Inactive"
+          }
+        ],
+        "window": {
+          "end": 9,
+          "start": 1
+        },
+        "work": 62
+      },
+      "request": {
+        "limits": {
+          "maximum_spans": 4096,
+          "maximum_work": 65536
+        },
+        "window": {
+          "end": 9,
+          "start": 1
+        }
+      },
+      "seed_identity": {
+        "definition": null,
+        "project_id": "owner-clocks",
+        "revision_id": "current",
+        "root": "root",
+        "tag": "ImmutablePlanRoot"
+      }
+    },
+    {
+      "api": "RenderPlan::audio_gain_owners",
+      "fixture": "hidden_resumed_retained_domain_vs_live_root",
+      "name": "hidden_resumed_root_clipped",
+      "query": {
+        "belongs_to_expected_plan": true,
+        "lookup": {
+          "iteration_run_comparisons": 0,
+          "sequence_comparisons": 6,
+          "visited_nodes": 8
+        },
+        "spans": [
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 2,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "2"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "root",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 2,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "4"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "stage",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "stage",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 2,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "2"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "2",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "group",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "stage",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 2,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "2",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "b",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "stage",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 6,
+              "start": 2
+            },
+            "support": "Active"
+          },
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 6,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "6"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "root",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 8,
+              "start": 6
+            },
+            "support": "Inactive"
+          }
+        ],
+        "window": {
+          "end": 8,
+          "start": 2
+        },
+        "work": 39
+      },
+      "request": {
+        "limits": {
+          "maximum_spans": 4096,
+          "maximum_work": 65536
+        },
+        "window": {
+          "end": 8,
+          "start": 2
+        }
+      },
+      "seed_identity": {
+        "definition": null,
+        "project_id": "owner-clocks",
+        "revision_id": "current",
+        "root": "root",
+        "tag": "ImmutablePlanRoot"
+      }
+    },
+    {
+      "api": "AudioDomain::gain_owners",
+      "fixture": "hidden_resumed_retained_domain_vs_live_root",
+      "name": "hidden_resumed_actual_capture_domain",
+      "query": {
+        "belongs_to_expected_plan": true,
+        "lookup": {
+          "iteration_run_comparisons": 0,
+          "sequence_comparisons": 4,
+          "visited_nodes": 10
+        },
+        "spans": [
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 1,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "3"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "stage",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "stage",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 1,
+                  "local_at_anchor": {
+                    "denominator": "2",
+                    "numerator": "3"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "2",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "group",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "stage",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 1,
+                  "local_at_anchor": {
+                    "denominator": "2",
+                    "numerator": "3"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "2",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "a",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "stage",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 2,
+              "start": 1
+            },
+            "support": "Active"
+          },
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 2,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "4"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "stage",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "stage",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 2,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "2"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "2",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "group",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "stage",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 2,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "2",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "b",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "stage",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 6,
+              "start": 2
+            },
+            "support": "Active"
+          },
+          {
+            "original_is_silent": false,
+            "owners": [],
+            "samples": {
+              "end": 9,
+              "start": 6
+            },
+            "support": "Inactive"
+          }
+        ],
+        "window": {
+          "end": 9,
+          "start": 1
+        },
+        "work": 50
+      },
+      "request": {
+        "limits": {
+          "maximum_spans": 4096,
+          "maximum_work": 65536
+        },
+        "window": {
+          "end": 9,
+          "start": 1
+        }
+      },
+      "seed_identity": {
+        "measured_domain": {
+          "belongs_to_expected_plan": true,
+          "instance": {
+            "node": "stage",
+            "repeats": []
+          },
+          "placement": null,
+          "root_samples": {
+            "end": 9,
+            "start": 1
+          },
+          "seed": {
+            "bypass_binding": null,
+            "constraints": [
+              {
+                "gap_after": null,
+                "kinds": [
+                  "NodeStart",
+                  "NodeEnd"
+                ],
+                "node": "root",
+                "placement_support": false,
+                "range": {
+                  "end": {
+                    "denominator": "1",
+                    "numerator": "9"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  }
+                },
+                "repeat_count": 0
+              }
+            ],
+            "definition": null,
+            "editorial": [],
+            "envelope": null,
+            "extent": {
+              "end": {
+                "denominator": "1",
+                "numerator": "9"
+              },
+              "start": {
+                "denominator": "1",
+                "numerator": "1"
+              }
+            },
+            "gap": null,
+            "grid": {
+              "frames_per_sample": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "origin": {
+                "denominator": "1",
+                "numerator": "0"
+              },
+              "rounding_parity": false,
+              "rule": "RootRoundEven"
+            },
+            "node": "stage",
+            "repeats": [],
+            "retimes": [],
+            "suppress_entry_editorial": {
+              "end": false,
+              "start": false
+            },
+            "transform": {
+              "project_frames_per_local_frame": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "project_frames_per_sample": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "project_origin": {
+                "denominator": "1",
+                "numerator": "1"
+              }
+            }
+          },
+          "visible_samples": {
+            "end": 9,
+            "start": 1
+          }
+        },
+        "setup_input": {
+          "domain": {
+            "belongs_to_expected_plan": true,
+            "instance": {
+              "node": "stage",
+              "repeats": []
+            },
+            "placement": null,
+            "root_samples": {
+              "end": 9,
+              "start": 1
+            },
+            "seed": {
+              "bypass_binding": null,
+              "constraints": [
+                {
+                  "gap_after": null,
+                  "kinds": [
+                    "NodeStart",
+                    "NodeEnd"
+                  ],
+                  "node": "root",
+                  "placement_support": false,
+                  "range": {
+                    "end": {
+                      "denominator": "1",
+                      "numerator": "9"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "0"
+                    }
+                  },
+                  "repeat_count": 0
+                }
+              ],
+              "definition": null,
+              "editorial": [],
+              "envelope": null,
+              "extent": {
+                "end": {
+                  "denominator": "1",
+                  "numerator": "9"
+                },
+                "start": {
+                  "denominator": "1",
+                  "numerator": "1"
+                }
+              },
+              "gap": null,
+              "grid": {
+                "frames_per_sample": {
+                  "denominator": "1",
+                  "numerator": "1"
+                },
+                "origin": {
+                  "denominator": "1",
+                  "numerator": "0"
+                },
+                "rounding_parity": false,
+                "rule": "RootRoundEven"
+              },
+              "node": "stage",
+              "repeats": [],
+              "retimes": [],
+              "suppress_entry_editorial": {
+                "end": false,
+                "start": false
+              },
+              "transform": {
+                "project_frames_per_local_frame": {
+                  "denominator": "1",
+                  "numerator": "1"
+                },
+                "project_frames_per_sample": {
+                  "denominator": "1",
+                  "numerator": "1"
+                },
+                "project_origin": {
+                  "denominator": "1",
+                  "numerator": "1"
+                }
+              }
+            },
+            "visible_samples": {
+              "end": 9,
+              "start": 1
+            }
+          },
+          "observed_at": 1,
+          "owner": {
+            "affine": {
+              "anchor": 1,
+              "local_at_anchor": {
+                "denominator": "2",
+                "numerator": "3"
+              },
+              "local_frames_per_sample": {
+                "denominator": "2",
+                "numerator": "1"
+              }
+            },
+            "belongs_to_expected_plan": true,
+            "definition": null,
+            "gap_after": null,
+            "instance": {
+              "node": "group",
+              "repeats": []
+            },
+            "kind": "Node",
+            "origin": {
+              "definition": null,
+              "gap_after": null,
+              "instance": {
+                "node": "stage",
+                "repeats": []
+              },
+              "kind": "Node",
+              "tag": "Retained"
+            },
+            "play": null
+          },
+          "scope": "EnclosingProcessor",
+          "total_work": 43
+        },
+        "source": "audio_owner_input.context",
+        "tag": "ActualCheckedPhysicalDomain"
+      }
+    },
+    {
+      "api": "AudioDomain::gain_owners",
+      "fixture": "hidden_resumed_retained_domain_vs_live_root",
+      "name": "hidden_actual_retained_reference_domain",
+      "query": {
+        "belongs_to_expected_plan": true,
+        "lookup": {
+          "iteration_run_comparisons": 0,
+          "sequence_comparisons": 4,
+          "visited_nodes": 6
+        },
+        "spans": [
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 0,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "stage",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 0,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "2",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "group",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 0,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "2",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "a",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 4,
+              "start": 0
+            },
+            "support": "Active"
+          },
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 4,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "4"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "stage",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 4,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "2"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "2",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "group",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 4,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "2",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "b",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 8,
+              "start": 4
+            },
+            "support": "Active"
+          }
+        ],
+        "window": {
+          "end": 8,
+          "start": 0
+        },
+        "work": 16
+      },
+      "request": {
+        "limits": {
+          "maximum_spans": 4096,
+          "maximum_work": 65536
+        },
+        "window": {
+          "end": 8,
+          "start": 0
+        }
+      },
+      "seed_identity": {
+        "measured_domain": {
+          "belongs_to_expected_plan": true,
+          "instance": {
+            "node": "stage",
+            "repeats": []
+          },
+          "placement": {
+            "local_support": {
+              "end": {
+                "denominator": "1",
+                "numerator": "8"
+              },
+              "start": {
+                "denominator": "1",
+                "numerator": "0"
+              }
+            },
+            "origin": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "root_frames_per_local_frame": {
+              "denominator": "1",
+              "numerator": "1"
+            }
+          },
+          "root_samples": {
+            "end": 8,
+            "start": 0
+          },
+          "seed": {
+            "bypass_binding": {
+              "node": "stage",
+              "tag": "Node"
+            },
+            "constraints": [
+              {
+                "gap_after": null,
+                "kinds": [
+                  "NodeStart",
+                  "NodeEnd"
+                ],
+                "node": "stage",
+                "placement_support": true,
+                "range": {
+                  "end": {
+                    "denominator": "1",
+                    "numerator": "8"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  }
+                },
+                "repeat_count": 0
+              },
+              {
+                "gap_after": null,
+                "kinds": [
+                  "NodeStart",
+                  "NodeEnd"
+                ],
+                "node": "root",
+                "placement_support": false,
+                "range": {
+                  "end": {
+                    "denominator": "1",
+                    "numerator": "8"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "-1"
+                  }
+                },
+                "repeat_count": 0
+              },
+              {
+                "gap_after": null,
+                "kinds": [
+                  "NodeStart",
+                  "NodeEnd"
+                ],
+                "node": "stage",
+                "placement_support": false,
+                "range": {
+                  "end": {
+                    "denominator": "1",
+                    "numerator": "8"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  }
+                },
+                "repeat_count": 0
+              }
+            ],
+            "definition": null,
+            "editorial": [],
+            "envelope": {
+              "end": {
+                "denominator": "1",
+                "numerator": "8"
+              },
+              "start": {
+                "denominator": "1",
+                "numerator": "0"
+              }
+            },
+            "extent": {
+              "end": {
+                "denominator": "1",
+                "numerator": "8"
+              },
+              "start": {
+                "denominator": "1",
+                "numerator": "0"
+              }
+            },
+            "gap": null,
+            "grid": {
+              "frames_per_sample": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "origin": {
+                "denominator": "1",
+                "numerator": "0"
+              },
+              "rounding_parity": false,
+              "rule": "RootRoundEven"
+            },
+            "node": "stage",
+            "repeats": [],
+            "retimes": [],
+            "suppress_entry_editorial": {
+              "end": false,
+              "start": false
+            },
+            "transform": {
+              "project_frames_per_local_frame": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "project_frames_per_sample": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "project_origin": {
+                "denominator": "1",
+                "numerator": "0"
+              }
+            }
+          },
+          "visible_samples": {
+            "end": 8,
+            "start": 0
+          }
+        },
+        "setup_input": {
+          "domain": {
+            "belongs_to_expected_plan": true,
+            "instance": {
+              "node": "stage",
+              "repeats": []
+            },
+            "placement": null,
+            "root_samples": {
+              "end": 9,
+              "start": 1
+            },
+            "seed": {
+              "bypass_binding": null,
+              "constraints": [
+                {
+                  "gap_after": null,
+                  "kinds": [
+                    "NodeStart",
+                    "NodeEnd"
+                  ],
+                  "node": "root",
+                  "placement_support": false,
+                  "range": {
+                    "end": {
+                      "denominator": "1",
+                      "numerator": "9"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "0"
+                    }
+                  },
+                  "repeat_count": 0
+                }
+              ],
+              "definition": null,
+              "editorial": [],
+              "envelope": null,
+              "extent": {
+                "end": {
+                  "denominator": "1",
+                  "numerator": "9"
+                },
+                "start": {
+                  "denominator": "1",
+                  "numerator": "1"
+                }
+              },
+              "gap": null,
+              "grid": {
+                "frames_per_sample": {
+                  "denominator": "1",
+                  "numerator": "1"
+                },
+                "origin": {
+                  "denominator": "1",
+                  "numerator": "0"
+                },
+                "rounding_parity": false,
+                "rule": "RootRoundEven"
+              },
+              "node": "stage",
+              "repeats": [],
+              "retimes": [],
+              "suppress_entry_editorial": {
+                "end": false,
+                "start": false
+              },
+              "transform": {
+                "project_frames_per_local_frame": {
+                  "denominator": "1",
+                  "numerator": "1"
+                },
+                "project_frames_per_sample": {
+                  "denominator": "1",
+                  "numerator": "1"
+                },
+                "project_origin": {
+                  "denominator": "1",
+                  "numerator": "1"
+                }
+              }
+            },
+            "visible_samples": {
+              "end": 9,
+              "start": 1
+            }
+          },
+          "observed_at": 1,
+          "owner": {
+            "affine": {
+              "anchor": 1,
+              "local_at_anchor": {
+                "denominator": "2",
+                "numerator": "3"
+              },
+              "local_frames_per_sample": {
+                "denominator": "2",
+                "numerator": "1"
+              }
+            },
+            "belongs_to_expected_plan": true,
+            "definition": null,
+            "gap_after": null,
+            "instance": {
+              "node": "group",
+              "repeats": []
+            },
+            "kind": "Node",
+            "origin": {
+              "definition": null,
+              "gap_after": null,
+              "instance": {
+                "node": "stage",
+                "repeats": []
+              },
+              "kind": "Node",
+              "tag": "Retained"
+            },
+            "play": null
+          },
+          "scope": "EnclosingProcessor",
+          "total_work": 43
+        },
+        "source": "audio_owner_input.retained_at.domain.Root",
+        "tag": "ActualCheckedPhysicalDomain"
+      }
+    },
+    {
+      "api": "RenderPlan::audio_gain_owners",
+      "fixture": "nonunity_shift_fractional_point_ceil_source44100",
+      "name": "fractional_point_bound_root_full",
+      "query": {
+        "belongs_to_expected_plan": true,
+        "lookup": {
+          "iteration_run_comparisons": 0,
+          "sequence_comparisons": 1,
+          "visited_nodes": 3
+        },
+        "spans": [
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 0,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "3",
+                    "numerator": "2"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "root",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 0,
+                  "local_at_anchor": {
+                    "denominator": "3",
+                    "numerator": "1"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "3",
+                    "numerator": "2"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "voice",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "voice",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 3,
+              "start": 0
+            },
+            "support": "Active"
+          }
+        ],
+        "window": {
+          "end": 3,
+          "start": 0
+        },
+        "work": 16
+      },
+      "request": {
+        "limits": {
+          "maximum_spans": 4096,
+          "maximum_work": 65536
+        },
+        "window": {
+          "end": 3,
+          "start": 0
+        }
+      },
+      "seed_identity": {
+        "definition": null,
+        "project_id": "owner-source-baseline",
+        "revision_id": "current",
+        "root": "root",
+        "tag": "ImmutablePlanRoot"
+      }
+    },
+    {
+      "api": "AudioDomain::gain_owners",
+      "fixture": "nonunity_shift_fractional_point_ceil_source44100",
+      "name": "fractional_actual_physical_capture_domain",
+      "query": {
+        "belongs_to_expected_plan": true,
+        "lookup": {
+          "iteration_run_comparisons": 0,
+          "sequence_comparisons": 0,
+          "visited_nodes": 2
+        },
+        "spans": [
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 0,
+                  "local_at_anchor": {
+                    "denominator": "3",
+                    "numerator": "1"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "3",
+                    "numerator": "2"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "voice",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "voice",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 3,
+              "start": 0
+            },
+            "support": "Active"
+          }
+        ],
+        "window": {
+          "end": 3,
+          "start": 0
+        },
+        "work": 13
+      },
+      "request": {
+        "limits": {
+          "maximum_spans": 4096,
+          "maximum_work": 65536
+        },
+        "window": {
+          "end": 3,
+          "start": 0
+        }
+      },
+      "seed_identity": {
+        "measured_domain": {
+          "belongs_to_expected_plan": true,
+          "instance": {
+            "node": "voice",
+            "repeats": []
+          },
+          "placement": null,
+          "root_samples": {
+            "end": 3,
+            "start": 0
+          },
+          "seed": {
+            "bypass_binding": null,
+            "constraints": [
+              {
+                "gap_after": null,
+                "kinds": [
+                  "NodeStart",
+                  "NodeEnd"
+                ],
+                "node": "root",
+                "placement_support": false,
+                "range": {
+                  "end": {
+                    "denominator": "1",
+                    "numerator": "2"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  }
+                },
+                "repeat_count": 0
+              }
+            ],
+            "definition": null,
+            "editorial": [],
+            "envelope": null,
+            "extent": {
+              "end": {
+                "denominator": "1",
+                "numerator": "2"
+              },
+              "start": {
+                "denominator": "1",
+                "numerator": "0"
+              }
+            },
+            "gap": null,
+            "grid": {
+              "frames_per_sample": {
+                "denominator": "3",
+                "numerator": "2"
+              },
+              "origin": {
+                "denominator": "1",
+                "numerator": "0"
+              },
+              "rounding_parity": false,
+              "rule": "RootRoundEven"
+            },
+            "node": "voice",
+            "repeats": [],
+            "retimes": [],
+            "suppress_entry_editorial": {
+              "end": false,
+              "start": false
+            },
+            "transform": {
+              "project_frames_per_local_frame": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "project_frames_per_sample": {
+                "denominator": "3",
+                "numerator": "2"
+              },
+              "project_origin": {
+                "denominator": "1",
+                "numerator": "0"
+              }
+            }
+          },
+          "visible_samples": {
+            "end": 3,
+            "start": 0
+          }
+        },
+        "setup_input": {
+          "domain": {
+            "belongs_to_expected_plan": true,
+            "instance": {
+              "node": "voice",
+              "repeats": []
+            },
+            "placement": null,
+            "root_samples": {
+              "end": 3,
+              "start": 0
+            },
+            "seed": {
+              "bypass_binding": null,
+              "constraints": [
+                {
+                  "gap_after": null,
+                  "kinds": [
+                    "NodeStart",
+                    "NodeEnd"
+                  ],
+                  "node": "root",
+                  "placement_support": false,
+                  "range": {
+                    "end": {
+                      "denominator": "1",
+                      "numerator": "2"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "0"
+                    }
+                  },
+                  "repeat_count": 0
+                }
+              ],
+              "definition": null,
+              "editorial": [],
+              "envelope": null,
+              "extent": {
+                "end": {
+                  "denominator": "1",
+                  "numerator": "2"
+                },
+                "start": {
+                  "denominator": "1",
+                  "numerator": "0"
+                }
+              },
+              "gap": null,
+              "grid": {
+                "frames_per_sample": {
+                  "denominator": "3",
+                  "numerator": "2"
+                },
+                "origin": {
+                  "denominator": "1",
+                  "numerator": "0"
+                },
+                "rounding_parity": false,
+                "rule": "RootRoundEven"
+              },
+              "node": "voice",
+              "repeats": [],
+              "retimes": [],
+              "suppress_entry_editorial": {
+                "end": false,
+                "start": false
+              },
+              "transform": {
+                "project_frames_per_local_frame": {
+                  "denominator": "1",
+                  "numerator": "1"
+                },
+                "project_frames_per_sample": {
+                  "denominator": "3",
+                  "numerator": "2"
+                },
+                "project_origin": {
+                  "denominator": "1",
+                  "numerator": "0"
+                }
+              }
+            },
+            "visible_samples": {
+              "end": 3,
+              "start": 0
+            }
+          },
+          "observed_at": 0,
+          "owner": {
+            "affine": {
+              "anchor": 0,
+              "local_at_anchor": {
+                "denominator": "3",
+                "numerator": "1"
+              },
+              "local_frames_per_sample": {
+                "denominator": "3",
+                "numerator": "2"
+              }
+            },
+            "belongs_to_expected_plan": true,
+            "definition": null,
+            "gap_after": null,
+            "instance": {
+              "node": "voice",
+              "repeats": []
+            },
+            "kind": "Node",
+            "origin": {
+              "definition": null,
+              "gap_after": null,
+              "instance": {
+                "node": "voice",
+                "repeats": []
+              },
+              "kind": "Node",
+              "tag": "Retained"
+            },
+            "play": null
+          },
+          "scope": "Owner",
+          "total_work": 37
+        },
+        "source": "audio_owner_input.context",
+        "tag": "ActualCheckedPhysicalDomain"
+      }
+    },
+    {
+      "api": "RenderPlan::audio_gain_owners",
+      "fixture": "actual_source_split_with_preexisting_lattice_retained_root_round_even_clipped_window",
+      "name": "split_root_full",
+      "query": {
+        "belongs_to_expected_plan": true,
+        "lookup": {
+          "iteration_run_comparisons": 0,
+          "sequence_comparisons": 4,
+          "visited_nodes": 8
+        },
+        "spans": [
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 0,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "root",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 0,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "baseline-cut-0",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 0,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "voice",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "voice",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 2,
+              "start": 0
+            },
+            "support": "Active"
+          },
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 2,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "2"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "root",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 2,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "baseline-cut-1",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 2,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "2"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "baseline-cut-2",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "baseline-cut-2",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 6,
+              "start": 2
+            },
+            "support": "Active"
+          }
+        ],
+        "window": {
+          "end": 6,
+          "start": 0
+        },
+        "work": 38
+      },
+      "request": {
+        "limits": {
+          "maximum_spans": 4096,
+          "maximum_work": 65536
+        },
+        "window": {
+          "end": 6,
+          "start": 0
+        }
+      },
+      "seed_identity": {
+        "definition": null,
+        "project_id": "owner-source-baseline",
+        "revision_id": "baseline-split",
+        "root": "root",
+        "tag": "ImmutablePlanRoot"
+      }
+    },
+    {
+      "api": "RenderPlan::audio_gain_owners",
+      "fixture": "actual_source_split_with_preexisting_lattice_retained_root_round_even_clipped_window",
+      "name": "split_root_clipped",
+      "query": {
+        "belongs_to_expected_plan": true,
+        "lookup": {
+          "iteration_run_comparisons": 0,
+          "sequence_comparisons": 2,
+          "visited_nodes": 4
+        },
+        "spans": [
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 2,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "2"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "root",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 2,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "baseline-cut-1",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 2,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "2"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "baseline-cut-2",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "baseline-cut-2",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 5,
+              "start": 2
+            },
+            "support": "Active"
+          }
+        ],
+        "window": {
+          "end": 5,
+          "start": 2
+        },
+        "work": 19
+      },
+      "request": {
+        "limits": {
+          "maximum_spans": 4096,
+          "maximum_work": 65536
+        },
+        "window": {
+          "end": 5,
+          "start": 2
+        }
+      },
+      "seed_identity": {
+        "definition": null,
+        "project_id": "owner-source-baseline",
+        "revision_id": "baseline-split",
+        "root": "root",
+        "tag": "ImmutablePlanRoot"
+      }
+    },
+    {
+      "api": "AudioDomain::gain_owners",
+      "fixture": "actual_source_split_with_preexisting_lattice_retained_root_round_even_clipped_window",
+      "name": "split_actual_physical_capture_domain",
+      "query": {
+        "belongs_to_expected_plan": true,
+        "lookup": {
+          "iteration_run_comparisons": 0,
+          "sequence_comparisons": 4,
+          "visited_nodes": 8
+        },
+        "spans": [
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 0,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "root",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 0,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "baseline-cut-0",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 0,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "voice",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "voice",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 2,
+              "start": 0
+            },
+            "support": "Active"
+          },
+          {
+            "original_is_silent": false,
+            "owners": [
+              {
+                "affine": {
+                  "anchor": 2,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "2"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "root",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 2,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "baseline-cut-1",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "tag": "Current"
+                },
+                "play": null
+              },
+              {
+                "affine": {
+                  "anchor": 2,
+                  "local_at_anchor": {
+                    "denominator": "1",
+                    "numerator": "2"
+                  },
+                  "local_frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "baseline-cut-2",
+                  "repeats": []
+                },
+                "kind": "Node",
+                "origin": {
+                  "definition": null,
+                  "gap_after": null,
+                  "instance": {
+                    "node": "baseline-cut-2",
+                    "repeats": []
+                  },
+                  "kind": "Node",
+                  "tag": "Retained"
+                },
+                "play": null
+              }
+            ],
+            "samples": {
+              "end": 6,
+              "start": 2
+            },
+            "support": "Active"
+          }
+        ],
+        "window": {
+          "end": 6,
+          "start": 0
+        },
+        "work": 38
+      },
+      "request": {
+        "limits": {
+          "maximum_spans": 4096,
+          "maximum_work": 65536
+        },
+        "window": {
+          "end": 6,
+          "start": 0
+        }
+      },
+      "seed_identity": {
+        "measured_domain": {
+          "belongs_to_expected_plan": true,
+          "instance": {
+            "node": "root",
+            "repeats": []
+          },
+          "placement": null,
+          "root_samples": {
+            "end": 6,
+            "start": 0
+          },
+          "seed": {
+            "bypass_binding": null,
+            "constraints": [],
+            "definition": null,
+            "editorial": [],
+            "envelope": null,
+            "extent": {
+              "end": {
+                "denominator": "1",
+                "numerator": "6"
+              },
+              "start": {
+                "denominator": "1",
+                "numerator": "0"
+              }
+            },
+            "gap": null,
+            "grid": {
+              "frames_per_sample": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "origin": {
+                "denominator": "1",
+                "numerator": "0"
+              },
+              "rounding_parity": false,
+              "rule": "RootRoundEven"
+            },
+            "node": "root",
+            "repeats": [],
+            "retimes": [],
+            "suppress_entry_editorial": {
+              "end": false,
+              "start": false
+            },
+            "transform": {
+              "project_frames_per_local_frame": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "project_frames_per_sample": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "project_origin": {
+                "denominator": "1",
+                "numerator": "0"
+              }
+            }
+          },
+          "visible_samples": {
+            "end": 6,
+            "start": 0
+          }
+        },
+        "setup_input": {
+          "domain": {
+            "belongs_to_expected_plan": true,
+            "instance": {
+              "node": "root",
+              "repeats": []
+            },
+            "placement": null,
+            "root_samples": {
+              "end": 6,
+              "start": 0
+            },
+            "seed": {
+              "bypass_binding": null,
+              "constraints": [],
+              "definition": null,
+              "editorial": [],
+              "envelope": null,
+              "extent": {
+                "end": {
+                  "denominator": "1",
+                  "numerator": "6"
+                },
+                "start": {
+                  "denominator": "1",
+                  "numerator": "0"
+                }
+              },
+              "gap": null,
+              "grid": {
+                "frames_per_sample": {
+                  "denominator": "1",
+                  "numerator": "1"
+                },
+                "origin": {
+                  "denominator": "1",
+                  "numerator": "0"
+                },
+                "rounding_parity": false,
+                "rule": "RootRoundEven"
+              },
+              "node": "root",
+              "repeats": [],
+              "retimes": [],
+              "suppress_entry_editorial": {
+                "end": false,
+                "start": false
+              },
+              "transform": {
+                "project_frames_per_local_frame": {
+                  "denominator": "1",
+                  "numerator": "1"
+                },
+                "project_frames_per_sample": {
+                  "denominator": "1",
+                  "numerator": "1"
+                },
+                "project_origin": {
+                  "denominator": "1",
+                  "numerator": "0"
+                }
+              }
+            },
+            "visible_samples": {
+              "end": 6,
+              "start": 0
+            }
+          },
+          "observed_at": 3,
+          "owner": {
+            "affine": {
+              "anchor": 3,
+              "local_at_anchor": {
+                "denominator": "1",
+                "numerator": "3"
+              },
+              "local_frames_per_sample": {
+                "denominator": "1",
+                "numerator": "1"
+              }
+            },
+            "belongs_to_expected_plan": true,
+            "definition": null,
+            "gap_after": null,
+            "instance": {
+              "node": "root",
+              "repeats": []
+            },
+            "kind": "Node",
+            "origin": {
+              "tag": "Current"
+            },
+            "play": null
+          },
+          "scope": "Owner",
+          "total_work": 41
+        },
+        "source": "audio_owner_input.context",
+        "tag": "ActualCheckedPhysicalDomain"
+      }
+    }
+  ],
+  "documents": [
+    {
+      "document": {
+        "assets": {},
+        "basis_state": {
+          "geometry_origin": "explicit",
+          "primary": null,
+          "rate_origin": "explicit"
+        },
+        "marks": {},
+        "nodes": {
+          "root": {
+            "kind": {
+              "children": [
+                "tone"
+              ],
+              "type": "sequence"
+            },
+            "label": "Group"
+          },
+          "tone": {
+            "audio_editorial_edges": {
+              "end": true,
+              "start": true
+            },
+            "kind": {
+              "recipe": {
+                "audio": {
+                  "frequency_hz": 440,
+                  "level": -6000,
+                  "type": "tone"
+                },
+                "duration": 512,
+                "video": {
+                  "type": "background"
+                }
+              },
+              "type": "hold"
+            },
+            "label": "Voice"
+          }
+        },
+        "overrides": {},
+        "presentation_basis": {
+          "color_policy": "sdr_rec709",
+          "frame_rate": {
+            "denominator": 1,
+            "numerator": 48000
+          },
+          "height": 16,
+          "width": 16
+        },
+        "project_id": "owner-clocks",
+        "revision_id": "current",
+        "root": "root",
+        "schema_version": 58
+      },
+      "fixture": "unbound_sequence_tone_and_actual_domain"
+    },
+    {
+      "document": {
+        "assets": {},
+        "basis_state": {
+          "geometry_origin": "explicit",
+          "primary": null,
+          "rate_origin": "explicit"
+        },
+        "gap_overrides": {
+          "repeat": [
+            {
+              "iteration": {
+                "allocation": "plays",
+                "ordinal": 0
+              },
+              "root": "gap-group"
+            }
+          ]
+        },
+        "marks": {},
+        "nodes": {
+          "alternate": {
+            "audio_editorial_edges": {
+              "end": true,
+              "start": true
+            },
+            "kind": {
+              "recipe": {
+                "audio": {
+                  "frequency_hz": 440,
+                  "level": -6000,
+                  "type": "tone"
+                },
+                "duration": 3,
+                "video": {
+                  "type": "background"
+                }
+              },
+              "type": "hold"
+            },
+            "label": "Voice"
+          },
+          "gap-group": {
+            "kind": {
+              "children": [
+                "gap-voice"
+              ],
+              "type": "sequence"
+            },
+            "label": "Group"
+          },
+          "gap-voice": {
+            "audio_editorial_edges": {
+              "end": true,
+              "start": true
+            },
+            "kind": {
+              "recipe": {
+                "audio": {
+                  "frequency_hz": 440,
+                  "level": -6000,
+                  "type": "tone"
+                },
+                "duration": 1,
+                "video": {
+                  "type": "background"
+                }
+              },
+              "type": "hold"
+            },
+            "label": "Voice"
+          },
+          "repeat": {
+            "kind": {
+              "child": "voice",
+              "gap": {
+                "audio": {
+                  "type": "silence"
+                },
+                "duration": 2,
+                "video": {
+                  "type": "background"
+                }
+              },
+              "iterations": {
+                "runs": [
+                  {
+                    "allocation": "plays",
+                    "count": 3,
+                    "first": 0
+                  }
+                ]
+              },
+              "type": "repeat"
+            },
+            "label": "Voice"
+          },
+          "root": {
+            "kind": {
+              "children": [
+                "repeat"
+              ],
+              "type": "sequence"
+            },
+            "label": "Group"
+          },
+          "voice": {
+            "audio_editorial_edges": {
+              "end": true,
+              "start": true
+            },
+            "kind": {
+              "recipe": {
+                "audio": {
+                  "frequency_hz": 440,
+                  "level": -6000,
+                  "type": "tone"
+                },
+                "duration": 4,
+                "video": {
+                  "type": "background"
+                }
+              },
+              "type": "hold"
+            },
+            "label": "Voice"
+          }
+        },
+        "overrides": {
+          "repeat": [
+            {
+              "iteration": {
+                "allocation": "plays",
+                "ordinal": 1
+              },
+              "root": "alternate"
+            }
+          ]
+        },
+        "presentation_basis": {
+          "color_policy": "sdr_rec709",
+          "frame_rate": {
+            "denominator": 1,
+            "numerator": 48000
+          },
+          "height": 16,
+          "width": 16
+        },
+        "project_id": "owner-clocks",
+        "revision_id": "current",
+        "root": "root",
+        "schema_version": 58
+      },
+      "fixture": "stable_repeat_plays_default_gap_and_overrides"
+    },
+    {
+      "document": {
+        "assets": {},
+        "audio_bindings": {
+          "bindings": {
+            "stage": {
+              "lattice": {
+                "reference": {
+                  "physical": "stage",
+                  "timing": {
+                    "allocation": "retained-clock",
+                    "ordinal": 0
+                  }
+                }
+              },
+              "resume": {
+                "phase": {
+                  "constant": {
+                    "denominator": "1",
+                    "numerator": "3"
+                  },
+                  "terms": []
+                }
+              }
+            }
+          },
+          "timings": [
+            {
+              "id": {
+                "allocation": "retained-clock",
+                "ordinal": 0
+              },
+              "layout": {
+                "nodes": {
+                  "a": {
+                    "duration": 2,
+                    "editorial_edges": {
+                      "end": true,
+                      "start": true
+                    },
+                    "kind": {
+                      "audio": {
+                        "frequency_hz": 440,
+                        "level": -6000,
+                        "type": "tone"
+                      },
+                      "type": "hold"
+                    }
+                  },
+                  "b": {
+                    "duration": 2,
+                    "editorial_edges": {
+                      "end": true,
+                      "start": true
+                    },
+                    "kind": {
+                      "audio": {
+                        "frequency_hz": 440,
+                        "level": -6000,
+                        "type": "tone"
+                      },
+                      "type": "hold"
+                    }
+                  },
+                  "group": {
+                    "duration": 4,
+                    "kind": {
+                      "children": [
+                        "a",
+                        "b"
+                      ],
+                      "type": "sequence"
+                    }
+                  },
+                  "root": {
+                    "duration": 8,
+                    "kind": {
+                      "children": [
+                        "stage"
+                      ],
+                      "type": "sequence"
+                    }
+                  },
+                  "stage": {
+                    "duration": 8,
+                    "kind": {
+                      "child": "group",
+                      "mapping": {
+                        "end": 4,
+                        "start": 0
+                      },
+                      "pitch": "preserve",
+                      "purpose": "edit",
+                      "type": "retime"
+                    }
+                  }
+                },
+                "overrides": {},
+                "rate": {
+                  "denominator": 1,
+                  "numerator": 48000
+                },
+                "root": "root"
+              }
+            }
+          ]
+        },
+        "basis_state": {
+          "geometry_origin": "explicit",
+          "primary": null,
+          "rate_origin": "explicit"
+        },
+        "marks": {},
+        "nodes": {
+          "a": {
+            "audio_editorial_edges": {
+              "end": true,
+              "start": true
+            },
+            "kind": {
+              "recipe": {
+                "audio": {
+                  "frequency_hz": 440,
+                  "level": -6000,
+                  "type": "tone"
+                },
+                "duration": 2,
+                "video": {
+                  "type": "background"
+                }
+              },
+              "type": "hold"
+            },
+            "label": "Voice"
+          },
+          "b": {
+            "audio_editorial_edges": {
+              "end": true,
+              "start": true
+            },
+            "kind": {
+              "recipe": {
+                "audio": {
+                  "frequency_hz": 440,
+                  "level": -6000,
+                  "type": "tone"
+                },
+                "duration": 2,
+                "video": {
+                  "type": "background"
+                }
+              },
+              "type": "hold"
+            },
+            "label": "Voice"
+          },
+          "group": {
+            "kind": {
+              "children": [
+                "a",
+                "b"
+              ],
+              "type": "sequence"
+            },
+            "label": "Group"
+          },
+          "prefix": {
+            "audio_editorial_edges": {
+              "end": true,
+              "start": true
+            },
+            "kind": {
+              "recipe": {
+                "audio": {
+                  "frequency_hz": 440,
+                  "level": -6000,
+                  "type": "tone"
+                },
+                "duration": 1,
+                "video": {
+                  "type": "background"
+                }
+              },
+              "type": "hold"
+            },
+            "label": "Voice"
+          },
+          "root": {
+            "kind": {
+              "children": [
+                "prefix",
+                "stage"
+              ],
+              "type": "sequence"
+            },
+            "label": "Group"
+          },
+          "stage": {
+            "kind": {
+              "child": "group",
+              "duration": 8,
+              "mapping": {
+                "end": 4,
+                "start": 0
+              },
+              "pitch": "preserve",
+              "type": "retime"
+            },
+            "label": "Voice"
+          }
+        },
+        "overrides": {},
+        "presentation_basis": {
+          "color_policy": "sdr_rec709",
+          "frame_rate": {
+            "denominator": 1,
+            "numerator": 48000
+          },
+          "height": 16,
+          "width": 16
+        },
+        "project_id": "owner-clocks",
+        "revision_id": "current",
+        "root": "root",
+        "schema_version": 58
+      },
+      "fixture": "hidden_resumed_retained_domain_vs_live_root"
+    },
+    {
+      "document": {
+        "assets": {
+          "baseline-media": {
+            "audio": {
+              "end": {
+                "ticks": 44100,
+                "time_base": {
+                  "denominator": 44100,
+                  "numerator": 1
+                }
+              },
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "denominator": 44100,
+                  "numerator": 1
+                }
+              }
+            },
+            "content_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "frame_count": null,
+            "label": "Planning metadata only",
+            "still_image": false,
+            "video": null
+          }
+        },
+        "audio_bindings": {
+          "bindings": {
+            "voice": {
+              "lattice": {
+                "reference": {
+                  "physical": "voice",
+                  "root": {
+                    "stage": "stage",
+                    "type": "preserve_input_point_ceil"
+                  },
+                  "timing": {
+                    "allocation": "retained-clock",
+                    "ordinal": 0
+                  }
+                }
+              }
+            }
+          },
+          "timings": [
+            {
+              "id": {
+                "allocation": "retained-clock",
+                "ordinal": 0
+              },
+              "layout": {
+                "nodes": {
+                  "group": {
+                    "duration": 3,
+                    "kind": {
+                      "children": [
+                        "prefix",
+                        "voice"
+                      ],
+                      "type": "sequence"
+                    }
+                  },
+                  "prefix": {
+                    "duration": 1,
+                    "editorial_edges": {
+                      "end": true,
+                      "start": true
+                    },
+                    "kind": {
+                      "audio": {
+                        "frequency_hz": 440,
+                        "level": -6000,
+                        "type": "tone"
+                      },
+                      "type": "hold"
+                    }
+                  },
+                  "root": {
+                    "duration": 6,
+                    "kind": {
+                      "children": [
+                        "stage"
+                      ],
+                      "type": "sequence"
+                    }
+                  },
+                  "stage": {
+                    "duration": 6,
+                    "kind": {
+                      "child": "group",
+                      "mapping": {
+                        "end": 3,
+                        "start": 0
+                      },
+                      "pitch": {
+                        "shift": {
+                          "semitones": 3
+                        }
+                      },
+                      "purpose": "edit",
+                      "type": "retime"
+                    }
+                  },
+                  "voice": {
+                    "duration": 2,
+                    "editorial_edges": {
+                      "end": true,
+                      "start": true
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "2"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  }
+                },
+                "overrides": {},
+                "rate": {
+                  "denominator": 1,
+                  "numerator": 32000
+                },
+                "root": "root"
+              }
+            }
+          ]
+        },
+        "basis_state": {
+          "geometry_origin": "explicit",
+          "primary": null,
+          "rate_origin": "explicit"
+        },
+        "marks": {},
+        "nodes": {
+          "root": {
+            "kind": {
+              "children": [
+                "voice"
+              ],
+              "type": "sequence"
+            },
+            "label": "Group"
+          },
+          "voice": {
+            "audio_editorial_edges": {
+              "end": true,
+              "start": true
+            },
+            "kind": {
+              "source": {
+                "audio": {
+                  "asset": "baseline-media",
+                  "span": {
+                    "end": {
+                      "ticks": 44100,
+                      "time_base": {
+                        "denominator": 44100,
+                        "numerator": 1
+                      }
+                    },
+                    "start": {
+                      "ticks": 0,
+                      "time_base": {
+                        "denominator": 44100,
+                        "numerator": 1
+                      }
+                    }
+                  }
+                },
+                "audio_mapping": {
+                  "type": "fit_beat"
+                },
+                "audio_offset": 0,
+                "duration": 2,
+                "link": "independent",
+                "video": {
+                  "type": "blank"
+                },
+                "video_mapping": {
+                  "type": "fit_beat"
+                }
+              },
+              "type": "source"
+            },
+            "label": "Voice"
+          }
+        },
+        "overrides": {},
+        "presentation_basis": {
+          "color_policy": "sdr_rec709",
+          "frame_rate": {
+            "denominator": 1,
+            "numerator": 32000
+          },
+          "height": 16,
+          "width": 16
+        },
+        "project_id": "owner-source-baseline",
+        "revision_id": "current",
+        "root": "root",
+        "schema_version": 58
+      },
+      "fixture": "nonunity_shift_fractional_point_ceil_source44100"
+    },
+    {
+      "document": {
+        "assets": {
+          "baseline-media": {
+            "audio": {
+              "end": {
+                "ticks": 48000,
+                "time_base": {
+                  "denominator": 48000,
+                  "numerator": 1
+                }
+              },
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "denominator": 48000,
+                  "numerator": 1
+                }
+              }
+            },
+            "content_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "frame_count": null,
+            "label": "Planning metadata only",
+            "still_image": false,
+            "video": null
+          }
+        },
+        "audio_bindings": {
+          "bindings": {
+            "baseline-cut-2": {
+              "lattice": {
+                "reference": {
+                  "physical": "voice",
+                  "timing": {
+                    "allocation": "baseline-pre-split-lattice",
+                    "ordinal": 0
+                  }
+                }
+              }
+            },
+            "voice": {
+              "lattice": {
+                "reference": {
+                  "physical": "voice",
+                  "timing": {
+                    "allocation": "baseline-pre-split-lattice",
+                    "ordinal": 0
+                  }
+                }
+              }
+            }
+          },
+          "timings": [
+            {
+              "id": {
+                "allocation": "baseline-pre-split-lattice",
+                "ordinal": 0
+              },
+              "layout": {
+                "nodes": {
+                  "root": {
+                    "duration": 6,
+                    "kind": {
+                      "children": [
+                        "voice"
+                      ],
+                      "type": "sequence"
+                    }
+                  },
+                  "voice": {
+                    "duration": 6,
+                    "editorial_edges": {
+                      "end": true,
+                      "start": true
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "6"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  }
+                },
+                "overrides": {},
+                "rate": {
+                  "denominator": 1,
+                  "numerator": 48000
+                },
+                "root": "root"
+              }
+            }
+          ]
+        },
+        "audio_lineage": {
+          "baseline-cut-2": {
+            "allocation": "baseline-split",
+            "origin": "voice"
+          },
+          "voice": {
+            "allocation": "baseline-split",
+            "origin": "voice"
+          }
+        },
+        "basis_state": {
+          "geometry_origin": "explicit",
+          "primary": null,
+          "rate_origin": "explicit"
+        },
+        "marks": {},
+        "nodes": {
+          "baseline-cut-0": {
+            "kind": {
+              "child": "voice",
+              "duration": 2,
+              "mapping": {
+                "end": 2,
+                "start": 0
+              },
+              "pitch": "preserve",
+              "purpose": "partition",
+              "type": "retime"
+            },
+            "label": "Voice"
+          },
+          "baseline-cut-1": {
+            "kind": {
+              "child": "baseline-cut-2",
+              "duration": 4,
+              "mapping": {
+                "end": 6,
+                "start": 2
+              },
+              "pitch": "preserve",
+              "purpose": "partition",
+              "type": "retime"
+            },
+            "label": "Voice"
+          },
+          "baseline-cut-2": {
+            "audio_editorial_edges": {
+              "end": true,
+              "start": true
+            },
+            "kind": {
+              "source": {
+                "audio": {
+                  "asset": "baseline-media",
+                  "span": {
+                    "end": {
+                      "ticks": 48000,
+                      "time_base": {
+                        "denominator": 48000,
+                        "numerator": 1
+                      }
+                    },
+                    "start": {
+                      "ticks": 0,
+                      "time_base": {
+                        "denominator": 48000,
+                        "numerator": 1
+                      }
+                    }
+                  }
+                },
+                "audio_mapping": {
+                  "type": "fit_beat"
+                },
+                "audio_offset": 0,
+                "duration": 6,
+                "link": "independent",
+                "video": {
+                  "type": "blank"
+                },
+                "video_mapping": {
+                  "type": "fit_beat"
+                }
+              },
+              "type": "source"
+            },
+            "label": "Voice"
+          },
+          "root": {
+            "kind": {
+              "children": [
+                "baseline-cut-0",
+                "baseline-cut-1"
+              ],
+              "type": "sequence"
+            },
+            "label": "Group"
+          },
+          "voice": {
+            "audio_editorial_edges": {
+              "end": true,
+              "start": true
+            },
+            "kind": {
+              "source": {
+                "audio": {
+                  "asset": "baseline-media",
+                  "span": {
+                    "end": {
+                      "ticks": 48000,
+                      "time_base": {
+                        "denominator": 48000,
+                        "numerator": 1
+                      }
+                    },
+                    "start": {
+                      "ticks": 0,
+                      "time_base": {
+                        "denominator": 48000,
+                        "numerator": 1
+                      }
+                    }
+                  }
+                },
+                "audio_mapping": {
+                  "type": "fit_beat"
+                },
+                "audio_offset": 0,
+                "duration": 6,
+                "link": "independent",
+                "video": {
+                  "type": "blank"
+                },
+                "video_mapping": {
+                  "type": "fit_beat"
+                }
+              },
+              "type": "source"
+            },
+            "label": "Voice"
+          }
+        },
+        "overrides": {},
+        "presentation_basis": {
+          "color_policy": "sdr_rec709",
+          "frame_rate": {
+            "denominator": 1,
+            "numerator": 48000
+          },
+          "height": 16,
+          "width": 16
+        },
+        "project_id": "owner-source-baseline",
+        "revision_id": "baseline-split",
+        "root": "root",
+        "schema_version": 58
+      },
+      "fixture": "actual_source_split_with_preexisting_lattice_retained_root_round_even_clipped_window"
+    }
+  ],
+  "fixture_source": "deadpan-plan/tests/fixtures/owner-query-baseline-v1/snapshot.json",
+  "runtime_source_manifest_sha256": "5a75b39ec3e22ca1be74c7f9945af8a9f364bdd11eaae65f4535c222afda3b02",
+  "schema": "deadpan.plan.old-wide-gain-query.v1",
+  "scope": {
+    "bounds": "14 finite windows; longest 512 samples; repeat has three plays and five output spans",
+    "covered": [
+      "multi-span Root and actual physical Domain",
+      "nonempty Repeat paths and ordinary DefaultGap",
+      "fractional source/point-bound clock",
+      "clipped windows",
+      "exhausted retained support with Inactive tail",
+      "actual retained RootRoundEven Domain distinct from live Root"
+    ],
+    "domain_setup": "separate checked one-sample audio_owners observation then actual audio_owner_input; setup_input and measured_domain retain exact definition, instance, placement and seed fields",
+    "limitations": [
+      "no allocation-policy oracle",
+      "no new empty-support fixture",
+      "PointCeil retained reference is not an AudioDomain; only its current physical capture Domain is measured",
+      "no gigantic repeat expansion",
+      "no media decoding or DSP"
+    ],
+    "measured_apis": [
+      "RenderPlan::audio_gain_owners",
+      "AudioDomain::gain_owners"
+    ],
+    "measured_calls": "exactly once per named case, before serialization; no canonical receipt normalization",
+    "root_setup": "compile the exact existing frozen ProjectDocument; root identity and complete document recorded",
+    "serializer": "unchanged legacy_snapshot_v1::query including private owner identity/origin/play/affine, spans/support/silence, lookup and work"
+  },
+  "variant": "main-inherited"
+}

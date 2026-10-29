@@ -1,4 +1,4 @@
-//! One-budget admission for the actual retained-owner query.
+//! Borrowed owner-query result and one-budget retained-owner admission.
 use std::ops::Range;
 
 use deadpan_core::AudioSample;
@@ -38,6 +38,25 @@ impl<'plan, I, L> AdmittedAudioOwnerQuery<'plan, I, L> {
 
     pub fn was_forwarded(&self) -> bool {
         self.forwarded
+    }
+}
+
+impl<'plan, I: Copy + Eq, L> AdmittedAudioOwnerQuery<'plan, I, L> {
+    /// All owner-query entry points use the same final issuer and work proof.
+    pub(super) fn checked<A: AudioSoundContextAdmission<Issuer = I, Lease = L>>(
+        product: Product<'plan, AudioSample, I, L>,
+        budget: &admission::Budget<'_, A>,
+    ) -> Result<Self, A> {
+        budget.check_memory(&product.query.memory)?;
+        if product.canonical.checked_add(product.additional) != Some(product.query.value.work()) {
+            return Err(PlanError::InvalidPlan("owner query work provenance mismatch").into());
+        }
+        Ok(Self {
+            query: product.query,
+            canonical: product.canonical,
+            additional: product.additional,
+            forwarded: A::METERED,
+        })
     }
 }
 
@@ -141,14 +160,5 @@ fn retained_query<'plan, A: AudioSoundContextAdmission>(
         }
     };
 
-    budget.check_memory(&product.query.memory)?;
-    if product.canonical.checked_add(product.additional) != Some(product.query.value.work()) {
-        return Err(PlanError::InvalidPlan("owner query work provenance mismatch").into());
-    }
-    Ok(AdmittedAudioOwnerQuery {
-        query: product.query,
-        canonical: product.canonical,
-        additional: product.additional,
-        forwarded: A::METERED,
-    })
+    AdmittedAudioOwnerQuery::checked(product, budget)
 }

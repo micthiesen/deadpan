@@ -2,7 +2,38 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: caller storage admitted, product goal active
+## Current state: wide queries and temporary stops admitted, product goal active
+
+The [wide query checkpoint](../qualification/wide-owner-query-admission-2026-10-29.md)
+retains actual Root/Domain/retained owner-query guards through renderer use.
+Normal and admitted Root/Domain APIs share the old walk, with one local budget
+and policy. Fourteen independently captured old cases preserve complete query
+fields and canonical work. The shared tile also admits its exact stop snapshot
+before taking the filter, and SharedMix borrows that stop without another copy.
+
+Main/isolated Audio pass 342/323 and Plan 620/607 across all 29 executables.
+Ordinary real-WAV Stage passes 203/203; definitions/history pass 171/eight.
+Strict lint, three independent reviews and source/index/evidence audits pass.
+The final Main Plan executables match the earlier passing binaries exactly;
+native Audio checks use the final rebuilt executables.
+
+The fresh Split matrix is three pass/four work-limit failures in 275.40 seconds.
+Root sound processed=true, root-sound-refinement, limited 0+511 is a newly
+refused case at plan work per read. The previous three windows now report
+structural query work: Source/Sequence cut-three 0+511 and nested/one selected
+play prefix-two 0+4096. This expands the known failure set. General sound Split
+stays disabled; no cap, weight, refund or requirement/gate status changed.
+
+Next close Authored EQ's persistent context/boundary/node storage using its
+actual direct-owner-input semantics. Its private same_at selection includes
+play identity; Shared Description's coarse first OwnerKey match is not a
+substitute. Authored tile boundary copies, other Graph containers, mix
+route/bus/layer clock copies and full recursive cold-resource closure remain
+open. The report links the precise 18-file patch and inventory identities.
+
+The following caller-storage checkpoint is historical.
+
+## Caller storage admitted
 
 The [caller storage checkpoint](../qualification/caller-node-admission-2026-10-29.md)
 admits the actual persistent stop key, treatment boundary and full shared EQ

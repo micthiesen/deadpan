@@ -479,3 +479,67 @@ fn already_cancelled_control_does_not_publish_or_leak_preparation_leases() {
     assert_eq!(renderer.active_frames, BASE);
     assert_eq!(work.borrow().sound_context_frames, 0);
 }
+
+#[test]
+fn tile_stop_admission_and_pcm_headroom_keep_the_published_filter() {
+    for refuse_snapshot in [true, false] {
+        let plan = repeated_eq_plan();
+        let owner = repeated_voice(&plan);
+        let cancelled = AtomicBool::new(false);
+        let work = RefCell::new(ReadWork::default());
+        let control = fixture::control(&cancelled, &work);
+        let mut renderer = renderer(&plan, 16 * 1024 * 1024);
+        renderer.active_frames = BASE;
+        let mut graph = graph(&plan);
+        let id = add_node(&mut renderer, &mut graph, &owner, usize::MAX, control).unwrap();
+        let snapshot = {
+            let mut admission = sound_context_admission::Admission::new(&mut renderer, control);
+            AdmittedStop::from_boundary(&graph.nodes[id].stop, &mut admission).unwrap()
+        };
+        let snapshot_frames = snapshot.lease().unwrap().frames();
+        assert!(snapshot_frames > 0);
+        drop(snapshot);
+        assert_eq!(work.borrow().sound_context_frames, 0);
+        let active = renderer.active_frames;
+        let resident = graph.resident;
+        let capacity = graph.node_capacity_frames;
+        let pcm = u64::try_from((INPUT + OUTPUT * 2) * 2).unwrap();
+        renderer.limits.maximum_resident_frames = u32::try_from(if refuse_snapshot {
+            active
+        } else {
+            active + pcm + snapshot_frames - 1
+        })
+        .unwrap();
+        let before = work.borrow().plan_work;
+        let mut permissions = Permissions::default();
+        permissions.insert(0).unwrap();
+        let mut provider = fixture::NoSources(0);
+        assert!(matches!(
+            renderer.shared_eq_tile(
+                &mut provider,
+                &mut graph,
+                id,
+                (0, permissions, None),
+                control,
+                1
+            ),
+            Err(StageAudioError::Limit("resident PCM or stage cache"))
+        ));
+        let copy_work = if refuse_snapshot {
+            3
+        } else {
+            5 + owner.instance().repeats.len()
+        };
+        assert_eq!(work.borrow().plan_work - before, copy_work);
+        assert_eq!(work.borrow().sound_context_frames, 0);
+        assert_eq!(renderer.active_frames, active);
+        assert_eq!(graph.resident, resident);
+        assert_eq!(graph.node_capacity_frames, capacity);
+        assert_eq!(graph.nodes.len(), 1);
+        assert!(graph.nodes[id].filter.is_some());
+        assert!(graph.nodes[id].tiles.is_empty());
+        assert_eq!(provider.0, 0);
+        renderer.release_shared_graph(graph, 0);
+        assert_eq!(renderer.active_frames, BASE);
+    }
+}

@@ -94,7 +94,7 @@ pub(super) fn sound_allowed(
 }
 
 fn exclude(
-    mix: &mut SharedMix<'_>,
+    mix: &mut SharedMix<'_, '_>,
     route: &shared_mix::Route<'_>,
     support: &Range<AudioSample>,
     mask: &Range<AudioSample>,
@@ -109,7 +109,7 @@ fn exclude(
 }
 
 pub(super) fn populate(
-    mix: &mut SharedMix<'_>,
+    mix: &mut SharedMix<'_, '_>,
     inputs: Inputs<'_, '_, '_>,
     admitted: impl Fn(usize) -> bool,
     control: WorkControl<'_>,
@@ -228,7 +228,7 @@ pub(super) fn populate(
     expect(dead_code, reason = "Cold admission awaits recursive resource proof")
 )]
 pub(super) fn populate_completed<'mix, 'plan>(
-    mix: &'mix mut SharedMix<'plan>,
+    mix: &'mix mut SharedMix<'plan, '_>,
     inputs: Inputs<'_, '_, '_>,
     admitted: impl Fn(usize) -> bool,
     control: WorkControl<'_>,
@@ -239,7 +239,7 @@ pub(super) fn populate_completed<'mix, 'plan>(
 
 #[cfg(test)]
 pub(in crate::stages) fn populate_roots_for_test<'mix, 'plan>(
-    mix: &'mix mut SharedMix<'plan>,
+    mix: &'mix mut SharedMix<'plan, '_>,
     roots: &[sound_events::PreparedSoundQuery<'plan>],
     samples: Range<AudioSample>,
     ids: &[usize],
@@ -264,7 +264,7 @@ pub(in crate::stages) fn populate_roots_for_test<'mix, 'plan>(
 
 #[cfg(test)]
 pub(in crate::stages) fn populate_inputs_for_test<'mix, 'plan>(
-    mix: &'mix mut SharedMix<'plan>,
+    mix: &'mix mut SharedMix<'plan, '_>,
     inputs: Inputs<'_, '_, '_>,
     admitted: impl Fn(usize) -> bool,
     control: WorkControl<'_>,

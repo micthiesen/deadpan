@@ -2,6 +2,10 @@
 //! tiles, source dependencies and resource admission; immutable contexts cannot
 //! be reconstructed from node IDs or nominal automation coordinates alone.
 
+#[cfg(test)]
+#[path = "authored_eq/wide_query_tests.rs"]
+mod wide_query_tests;
+
 use deadpan_core::AudioTreatmentStage;
 use deadpan_dsp::{
     FINITE_FILTER_INPUT_FRAMES as INPUT, FINITE_FILTER_OUTPUT_FRAMES as OUTPUT,
@@ -196,6 +200,51 @@ impl<'plan> Context<'plan> {
         Ok(range.start.max(support.start)..range.end.min(support.end))
     }
 
+    /// Retain the actual guarded query through its renderer use scope.
+    pub(super) fn owners_admitted<
+        A: deadpan_plan::AudioSoundContextAdmission<Error = StageAudioError>,
+    >(
+        &self,
+        plan: &'plan RenderPlan,
+        range: Range<AudioSample>,
+        control: WorkControl<'_>,
+        admission: &mut A,
+    ) -> Result<deadpan_plan::AdmittedAudioOwnerQuery<'plan, A::Issuer, A::Lease>, StageAudioError>
+    {
+        let query = self.owner_query_admitted(plan, range, control, admission)?;
+        Self::validate_owner_query_layers(query.query())?;
+        Ok(query)
+    }
+
+    /// Pay the exact query once. Most callers then validate every layer via
+    /// owners_admitted. Root mix routing instead selects its checked root
+    /// first and validates only that route, preserving its established order.
+    pub(super) fn owner_query_admitted<
+        A: deadpan_plan::AudioSoundContextAdmission<Error = StageAudioError>,
+    >(
+        &self,
+        plan: &'plan RenderPlan,
+        range: Range<AudioSample>,
+        control: WorkControl<'_>,
+        admission: &mut A,
+    ) -> Result<deadpan_plan::AdmittedAudioOwnerQuery<'plan, A::Issuer, A::Lease>, StageAudioError>
+    {
+        let limits = control.query_limits()?;
+        let query = match self {
+            Self::Root => plan.audio_gain_owners_admitted(range, limits, admission)?,
+            Self::Domain(domain) => domain.gain_owners_admitted(range, limits, admission)?,
+            Self::Retained(input) => input.owners_admitted(range, limits, admission)?,
+        };
+        if query.was_forwarded() != A::METERED {
+            return Err(PlanError::InvalidPlan("wide owner query accounting mode differs").into());
+        }
+        if !query.was_forwarded() {
+            control.spend_plan_work(query.work())?;
+        }
+        Ok(query)
+    }
+
+    #[cfg(test)]
     pub(super) fn owners(
         &self,
         plan: &'plan RenderPlan,
@@ -464,7 +513,15 @@ impl StageAudio {
             if range.end < end {
                 result.suppressed.push(range.end..end);
             }
-            let owners = program.context.owners(graph.plan, range.clone(), control)?;
+            let owners = {
+                let mut admission = sound_context_admission::Admission::new(self, control);
+                program.context.owners_admitted(
+                    graph.plan,
+                    range.clone(),
+                    control,
+                    &mut admission,
+                )?
+            };
             let count =
                 u32::try_from(range.end.0 - range.start.0).map_err(|_| StageAudioError::Range)?;
             let mut raw = match program.context {
@@ -497,7 +554,7 @@ impl StageAudio {
             result.relative_depth = raw.relative_depth;
             raw.suppressed.append(&mut raw.exhausted);
             result.suppressed.extend(raw.suppressed);
-            for span in owners.spans() {
+            for span in owners.query().spans() {
                 control.check()?;
                 let first = match program.stop {
                     Some(stop) => {
