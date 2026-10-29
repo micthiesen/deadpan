@@ -15,6 +15,9 @@ use super::{
 };
 use crate::PlanError;
 
+#[cfg(test)]
+#[path = "audio_domain_policy_reuse_tests.rs"]
+mod policy_reuse_tests;
 #[path = "audio_context_sharing.rs"]
 mod sharing;
 pub use sharing::{
@@ -143,6 +146,73 @@ pub struct AudioDomain<'plan> {
     pub(super) visible: Range<AudioSample>,
     pub(super) instance: InstancePath,
     pub(super) placement: Option<AudioRootPlacement>,
+}
+
+/// One successful processing query sealed to the exact borrowed physical
+/// Domain and requested range. It cannot be built from a caller-owned query.
+/// Its storage is the ordinary processing query's owned vectors; the seal and
+/// terminal witness add only stack metadata, with no independent allocation.
+pub struct AudioDomainProcessing<'context, 'plan> {
+    domain: &'context AudioDomain<'plan>,
+    samples: Range<AudioSample>,
+    query: AudioProcessingQuery<'plan>,
+    stops: super::audio::capture::ProcessingStops,
+}
+
+/// The completed queries after the single-use processing capability has been
+/// consumed. Processing work belongs to the first query, while policy work and
+/// lookups report only operations actually performed while finishing policy.
+pub struct AudioDomainProcessingPolicy<'plan> {
+    processing: AudioProcessingQuery<'plan>,
+    policy: super::AudioPolicyQuery<AudioSample>,
+}
+
+impl<'plan> AudioDomainProcessing<'_, 'plan> {
+    /// Inspect and bill this actual first processing query once before policy.
+    pub fn query(&self) -> &AudioProcessingQuery<'plan> {
+        &self.query
+    }
+
+    /// Finish policy against the identical Domain object and original range.
+    /// Fresh limits cover new policy work only; they must not subtract or bill
+    /// the first query again. An exposed processing stage uses ordinary policy.
+    pub fn finish_policy(
+        self,
+        caller: &AudioDomain<'plan>,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+    ) -> Result<AudioDomainProcessingPolicy<'plan>, PlanError> {
+        if !std::ptr::eq(self.domain, caller) || self.samples != samples {
+            return Err(PlanError::InvalidPlan(
+                "processing policy identity mismatch",
+            ));
+        }
+        let policy = if self.stops.permits_binding_reuse() {
+            super::audio_policy::domain_policy_with_processing(
+                caller,
+                samples,
+                limits,
+                &self.query.spans,
+            )?
+        } else {
+            caller.policy(samples, limits)?
+        };
+        Ok(AudioDomainProcessingPolicy {
+            processing: self.query,
+            policy,
+        })
+    }
+}
+
+impl<'plan> AudioDomainProcessingPolicy<'plan> {
+    pub fn into_queries(
+        self,
+    ) -> (
+        AudioProcessingQuery<'plan>,
+        super::AudioPolicyQuery<AudioSample>,
+    ) {
+        (self.processing, self.policy)
+    }
 }
 
 impl crate::audio_allocated::OwnedHeap for DomainGap {
@@ -362,11 +432,38 @@ impl<'plan> AudioDomain<'plan> {
         self.processing_inner(samples, limits, true)
     }
 
+    /// Co-produce a private terminal witness during the actual processing walk
+    /// so policy can reuse its binding tape without a second eligibility pass.
+    pub fn processing_for_policy(
+        &self,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+    ) -> Result<AudioDomainProcessing<'_, 'plan>, PlanError> {
+        let mut stops = super::audio::capture::ProcessingStops::default();
+        let query = self.processing_observing(samples.clone(), limits, true, Some(&mut stops))?;
+        Ok(AudioDomainProcessing {
+            domain: self,
+            samples,
+            query,
+            stops,
+        })
+    }
+
     pub(super) fn processing_inner(
         &self,
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
         stop_at_preserve: bool,
+    ) -> Result<AudioProcessingQuery<'plan>, PlanError> {
+        self.processing_observing(samples, limits, stop_at_preserve, None)
+    }
+
+    fn processing_observing(
+        &self,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+        stop_at_preserve: bool,
+        mut stops: Option<&mut super::audio::capture::ProcessingStops>,
     ) -> Result<AudioProcessingQuery<'plan>, PlanError> {
         let mut budget = self.budget(&samples, limits)?;
         let mut spans = Vec::new();
@@ -377,13 +474,12 @@ impl<'plan> AudioDomain<'plan> {
             }
             let mut span = self
                 .plan
-                .audio_walk(
+                .audio_walk_processing(
                     cursor,
                     &mut budget,
-                    Some(&self.seed),
+                    &self.seed,
                     stop_at_preserve,
-                    true,
-                    None,
+                    stops.as_deref_mut(),
                 )?
                 .into_processing();
             span.samples = cursor..span.allocated_samples.end.min(samples.end);

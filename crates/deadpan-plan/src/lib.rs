@@ -75,10 +75,10 @@ pub use plan::{
     AudioBound, AudioBoundDomain, AudioFadeEdge, AudioFadeQuery, AudioFadeSpan, AudioPolicyQuery,
 };
 pub use plan::{
-    AudioBoundaries, AudioBoundaryKind, AudioBoundaryOrigin, AudioContent, AudioDomain, AudioQuery,
-    AudioQueryLimits, AudioRetimeStage, AudioSpan, AudioTransform, LookupStats, NodeInspection,
-    NodeType, PlanInspection, PlanMetadata, RenderPlan, SilenceReason, SourceSamplingSupport,
-    StorageStats,
+    AudioBoundaries, AudioBoundaryKind, AudioBoundaryOrigin, AudioContent, AudioDomain,
+    AudioDomainProcessing, AudioDomainProcessingPolicy, AudioQuery, AudioQueryLimits,
+    AudioRetimeStage, AudioSpan, AudioTransform, LookupStats, NodeInspection, NodeType,
+    PlanInspection, PlanMetadata, RenderPlan, SilenceReason, SourceSamplingSupport, StorageStats,
 };
 pub use plan::{AudioDefinition, AudioDefinitionSelector, AudioPointDomain, AudioRootPlacement};
 pub use plan::{AudioHoldIssuer, AudioHoldPolicyQuery, AudioHoldRule};

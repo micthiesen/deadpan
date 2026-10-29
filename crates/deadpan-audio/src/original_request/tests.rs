@@ -1,6 +1,9 @@
 use super::*;
 use crate::stages::controlled_reads::{Provider, fixture_document_at_rate};
 
+#[path = "policy_reuse_tests.rs"]
+mod policy_reuse;
+
 fn fixture() -> (Arc<RenderPlan>, Provider) {
     let (document, provider) = fixture_document_at_rate(FrameRate::new(48_000, 1).unwrap());
     (Arc::new(RenderPlan::compile(&document).unwrap()), provider)

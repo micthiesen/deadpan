@@ -8,6 +8,45 @@ use deadpan_core::{
 
 const BASE_RESIDENCY: u64 = 17;
 
+thread_local! {
+    static EXHAUST_AFTER_WET: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+fn with_post_wet_work_exhaustion<R>(action: impl FnOnce() -> R) -> R {
+    struct Reset;
+    impl Drop for Reset {
+        fn drop(&mut self) {
+            EXHAUST_AFTER_WET.with(|armed| armed.set(false));
+        }
+    }
+    EXHAUST_AFTER_WET.with(|armed| assert!(!armed.replace(true)));
+    let _reset = Reset;
+    let result = action();
+    EXHAUST_AFTER_WET.with(|armed| assert!(!armed.get(), "wet publication must be reached"));
+    result
+}
+
+pub(super) fn exhaust_work_after_wet(
+    renderer: &StageAudio,
+    graph: &Graph<'_, '_>,
+    effect: TailEffect,
+    control: WorkControl<'_>,
+) {
+    if EXHAUST_AFTER_WET.with(|armed| armed.replace(false)) {
+        let slot = match effect {
+            TailEffect::Reverb => 0,
+            TailEffect::Delay => 1,
+        };
+        let retained = (crate::FiniteWetEffect::retained_bytes_bound(effect) as u64).div_ceil(8);
+        assert!(graph.wet_filters[slot].is_some());
+        assert!(graph.resident >= retained);
+        assert!(renderer.active_frames >= BASE_RESIDENCY + retained);
+        // Inject exhaustion after real publication. The next ordinary charge
+        // must fail and release the actual processor and retained graph.
+        control.work.borrow_mut().plan_work = MAX_PLAN_WORK_PER_READ;
+    }
+}
+
 fn fixture(effect: Option<TailEffect>) -> Arc<RenderPlan> {
     let id = |name: &str| NodeId::new(name).unwrap();
     let document = ProjectDocument::new(
@@ -224,29 +263,25 @@ fn shared_wet_graph_cleanup_restores_active_residency_on_success_and_error() {
         assert_eq!(renderer.active_frames, BASE_RESIDENCY);
         assert_eq!(provider.0, 0);
 
-        let successful_work = work.borrow().plan_work;
-        assert!(successful_work > 1);
-        let one_short = RefCell::new(ReadWork {
-            plan_work: MAX_PLAN_WORK_PER_READ - (successful_work - 1),
-            ..ReadWork::default()
-        });
+        let failed_work = RefCell::new(ReadWork::default());
         let mut cold = StageAudio::new(plan);
         cold.active_frames = BASE_RESIDENCY;
         // The nonidentity -6 dB send applies a billed transfer after the wet
-        // callback has constructed and published its processor. Reproduce the
-        // cold schedule with one less unit to exercise cleanup of that retained
-        // graph storage, rather than only an entry-time refusal.
+        // callback has constructed and published its processor. Exhaust work
+        // at that actual boundary: separate cold graphs can have different
+        // charged lookup collisions, so their total bills are not an oracle
+        // for one another's exact final unit.
         assert!(matches!(
-            cold.read_shared_input(
+            with_post_wet_work_exhaustion(|| cold.read_shared_input(
                 &mut provider,
                 AudioSample(128),
                 1,
-                control(&cancelled, &one_short),
+                control(&cancelled, &failed_work),
                 InputSelection::default(),
-            ),
+            )),
             Err(StageAudioError::Limit("plan work per read"))
         ));
-        assert_eq!(one_short.borrow().plan_work, MAX_PLAN_WORK_PER_READ);
+        assert_eq!(failed_work.borrow().plan_work, MAX_PLAN_WORK_PER_READ);
         assert_eq!(cold.active_frames, BASE_RESIDENCY);
         assert_eq!(provider.0, 0);
 

@@ -478,7 +478,7 @@ fn capture_observed_admitted<'plan, A: crate::AudioSoundContextAdmission>(
             context,
             true,
             true,
-            (Some(&mut captured), None, Some(observed)),
+            (Some(&mut captured), None, Some(observed), None),
         );
         #[cfg(test)]
         match &walked {

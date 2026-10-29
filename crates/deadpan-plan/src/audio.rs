@@ -18,6 +18,15 @@ use crate::{AudioBoundaryRule, AudioEnvelope, AudioSampleGrid, AudioSampleMap, P
 #[path = "audio_capture.rs"]
 pub(in crate::plan) mod capture;
 
+// Keep each optional observation borrow independent, including the clock's
+// own Plan lifetime. This names the existing stack-only argument tuple.
+type UnmeteredWalkCaptures<'slot, 'editorial, 'clock, 'clock_plan, 'processing> = (
+    Option<&'slot mut Option<AudioDomainSeed>>,
+    Option<&'editorial mut EditorialCapture>,
+    Option<&'clock super::AudioOwnerClock<'clock_plan>>,
+    Option<&'processing mut capture::ProcessingStops>,
+);
+
 /// Hard caps bound both returned occurrence paths and structural search work.
 /// A caller needing more material pages through contiguous sample ranges.
 #[derive(Debug, Clone, Copy)]
@@ -445,7 +454,25 @@ impl RenderPlan {
             seed,
             stop_at_preserve,
             stop_at_bindings,
-            (capture, None, None),
+            (capture, None, None, None),
+        )
+    }
+
+    pub(super) fn audio_walk_processing<'plan>(
+        &'plan self,
+        sample: AudioSample,
+        budget: &mut Budget,
+        seed: &AudioWalkSeed,
+        stop_at_preserve: bool,
+        processing_stops: Option<&mut capture::ProcessingStops>,
+    ) -> Result<AudioWalkSpan<'plan>, PlanError> {
+        self.audio_walk_inner(
+            sample,
+            budget,
+            Some(seed),
+            stop_at_preserve,
+            true,
+            (None, None, None, processing_stops),
         )
     }
 
@@ -463,7 +490,7 @@ impl RenderPlan {
             seed,
             stops.0,
             stops.1,
-            (None, Some(editorial), None),
+            (None, Some(editorial), None, None),
         )
     }
 
@@ -483,7 +510,7 @@ impl RenderPlan {
             seed,
             true,
             true,
-            (Some(&mut *capture), None, Some(owner)),
+            (Some(&mut *capture), None, Some(owner), None),
         );
         #[cfg(test)]
         super::audio_owners::tests::legacy_snapshot_v1::capture_baseline::capture(
@@ -506,14 +533,10 @@ impl RenderPlan {
         seed: Option<&AudioWalkSeed>,
         stop_at_preserve: bool,
         stop_at_bindings: bool,
-        captures: (
-            Option<&mut Option<AudioDomainSeed>>,
-            Option<&mut EditorialCapture>,
-            Option<&super::AudioOwnerClock<'_>>,
-        ),
+        captures: UnmeteredWalkCaptures<'_, '_, '_, '_, '_>,
     ) -> Result<AudioWalkSpan<'plan>, PlanError> {
         use super::audio_owners::admission::{self, Memory, Owned, Unmetered};
-        let (mut capture, mut editorial, owner) = captures;
+        let (mut capture, mut editorial, owner, processing_stops) = captures;
         let mut editorial_slot = Owned {
             value: editorial
                 .as_deref_mut()
@@ -545,6 +568,7 @@ impl RenderPlan {
                     None
                 },
                 owner,
+                processing_stops,
             ),
         );
         if let Some(capture) = capture {

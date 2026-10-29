@@ -23,9 +23,53 @@ impl<'plan> WalkResult<'plan, (), ()> {
     }
 }
 type Content<'plan, I, L> = GuardedBound<AudioSignalContent<'plan>, I, L>;
+#[derive(Clone, Copy)]
+enum Terminal {
+    Leaf,
+    Bound,
+    Stage,
+    ProjectedStage,
+}
+
+/// Co-produced by the existing terminal dispatch, never by rescanning a tape.
+/// A successful Leaf/Bound-only walk did not take a Preserve stop.
+#[derive(Default)]
+pub(in crate::plan) struct ProcessingStops {
+    exposed_stage: bool,
+}
+
+impl ProcessingStops {
+    fn observe(&mut self, terminal: Terminal) {
+        self.exposed_stage |= matches!(terminal, Terminal::Stage | Terminal::ProjectedStage);
+    }
+
+    pub(in crate::plan) fn permits_binding_reuse(&self) -> bool {
+        !self.exposed_stage
+    }
+}
+
+#[test]
+fn processing_stop_witness_fails_closed_and_keeps_earlier_stops() {
+    for terminal in [Terminal::Stage, Terminal::ProjectedStage] {
+        let mut stops = ProcessingStops::default();
+        stops.observe(Terminal::Leaf);
+        stops.observe(Terminal::Bound);
+        assert!(stops.permits_binding_reuse());
+        stops.observe(terminal);
+        stops.observe(Terminal::Leaf);
+        stops.observe(Terminal::Bound);
+        assert!(!stops.permits_binding_reuse());
+    }
+}
+
 impl<'plan, I: Copy + Eq, L> GuardedBound<AudioSignalContent<'plan>, I, L> {
-    fn is_leaf(&self) -> bool {
-        matches!(&**self, AudioSignalContent::Leaf(_))
+    fn terminal(&self) -> Terminal {
+        match &**self {
+            AudioSignalContent::Leaf(_) => Terminal::Leaf,
+            AudioSignalContent::Bound(_) => Terminal::Bound,
+            AudioSignalContent::Stage(_) => Terminal::Stage,
+            AudioSignalContent::ProjectedStage(_) => Terminal::ProjectedStage,
+        }
     }
     fn finish<A: AudioSoundContextAdmission<Issuer = I, Lease = L>>(
         self,
@@ -68,10 +112,11 @@ fn stage_content<'plan, A: AudioSoundContextAdmission>(
 }
 // Preserve separate slot/editorial/clock borrows and the observed clock's
 // independent Plan lifetime; this names only the existing argument tuple.
-type WalkCaptures<'slot, 'editorial, 'clock, 'clock_plan, I, L> = (
+type WalkCaptures<'slot, 'editorial, 'clock, 'clock_plan, 'processing, I, L> = (
     Option<&'slot mut Owned<Option<AudioDomainSeed>, I, L>>,
     Option<&'editorial mut Owned<EditorialCapture, I, L>>,
     Option<&'clock super::super::AudioOwnerClock<'clock_plan>>,
+    Option<&'processing mut ProcessingStops>,
 );
 
 impl RenderPlan {
@@ -82,7 +127,7 @@ impl RenderPlan {
         seed: Option<&AudioWalkSeed>,
         stop_at_preserve: bool,
         stop_at_bindings: bool,
-        captures: WalkCaptures<'_, '_, '_, '_, A::Issuer, A::Lease>,
+        captures: WalkCaptures<'_, '_, '_, '_, '_, A::Issuer, A::Lease>,
     ) -> Result<WalkResult<'plan, A::Issuer, A::Lease>, A> {
         macro_rules! push {
             ($data:ident,$capacity:ident,$value:expr) => {{
@@ -91,7 +136,7 @@ impl RenderPlan {
                 $data.push($value);
             }};
         }
-        let (mut capture, editorial_capture, input_owner) = captures;
+        let (mut capture, editorial_capture, input_owner, processing_stops) = captures;
         let rate = self.metadata.presentation_basis.frame_rate;
         let mut transform = AudioTransform {
             project_origin: ExactRatio::ZERO,
@@ -808,7 +853,11 @@ impl RenderPlan {
         budget.merge_checked(&mut memory, &mut repeats_capacity);
         budget.merge_checked(&mut memory, &mut retimes_capacity);
         let definition = budget.definition_ref(&mut memory, definition)?;
-        if !content.is_leaf() {
+        let terminal = content.terminal();
+        if let Some(stops) = processing_stops {
+            stops.observe(terminal);
+        }
+        if !matches!(terminal, Terminal::Leaf) {
             let node = budget.node(&mut memory, &self.nodes[current].inspection.id)?;
             return content.finish(memory, budget, move |content| {
                 AudioWalkSpan::Stage(AudioProcessingSpan {

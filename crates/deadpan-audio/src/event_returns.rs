@@ -606,6 +606,8 @@ impl StageAudio {
             .as_mut()
             .ok_or(PlanError::InvalidPlan("wet processor absent"))?
             .process_tile(input.0, input.1, output.0, output.1, control.cancelled)?;
+        #[cfg(test)]
+        tests::exhaust_work_after_wet(self, graph, effect, control);
         Ok(())
     }
 

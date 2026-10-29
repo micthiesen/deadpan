@@ -37,6 +37,11 @@ fn arc_frames() -> u64 {
 }
 
 fn normalize_counter(actual: &mut Value, old: &Value, imposed: bool, metered: bool) {
+    actual
+        .as_object_mut()
+        .unwrap()
+        .remove("domain_policy_trace")
+        .expect("actual legacy Domain policy receipts");
     let captures = actual
         .as_object_mut()
         .unwrap()
@@ -144,10 +149,18 @@ fn normalize_counter(actual: &mut Value, old: &Value, imposed: bool, metered: bo
 
 fn compare_matrix<const M: bool>() {
     let old: Value = serde_json::from_str(GOLDEN).unwrap();
-    let mut actual =
-        span_start::with_direct_reference(super::legacy_tile_baseline::observations::<M>);
-    let mut certified = super::legacy_tile_baseline::observations::<M>();
-    compare_certified_matrix(&mut certified, &actual);
+    let (mut actual, _) = crate::stages::original_request::with_domain_policy_trace(true, || {
+        span_start::with_direct_reference(super::legacy_tile_baseline::observations::<M>)
+    });
+    let (direct, _) = crate::stages::original_request::with_domain_policy_trace(false, || {
+        span_start::with_direct_reference(super::legacy_tile_baseline::observations::<M>)
+    });
+    let (mut certified, _) = crate::stages::original_request::with_domain_policy_trace(
+        false,
+        super::legacy_tile_baseline::observations::<M>,
+    );
+    compare_domain_policy_matrix(&mut direct.clone(), &actual);
+    compare_certified_matrix(&mut certified, &direct);
     let cases = actual.as_array_mut().unwrap();
     let old_cases = old["cases"].as_array().unwrap();
     assert_eq!(cases.len(), old_cases.len());
@@ -236,6 +249,155 @@ fn compare_matrix<const M: bool>() {
             "complete OLD case after proven new resource differences"
         );
     }
+}
+
+fn reconcile_domain_policy_receipts(actual: &Value, old: &Value) -> u64 {
+    let rows = actual.as_array().unwrap();
+    let old_rows = old.as_array().unwrap();
+    assert_eq!(rows.len(), old_rows.len(), "actual Domain request sequence");
+    let mut saved = 0_u64;
+    for (row, old_row) in rows.iter().zip(old_rows) {
+        let removed = number(old_row, "policy_work")
+            .checked_sub(number(row, "policy_work"))
+            .unwrap();
+        if removed != 0 {
+            assert_eq!(row["content_only_eligible"], true);
+            assert!(
+                row["samples"]["start"].as_i64().unwrap() < row["samples"]["end"].as_i64().unwrap()
+            );
+            assert_eq!(
+                removed,
+                number(row, "processing_work"),
+                "only the actual already-paid first processing receipt is removed"
+            );
+        }
+        for field in [
+            "visited_nodes",
+            "sequence_comparisons",
+            "iteration_run_comparisons",
+        ] {
+            assert_eq!(
+                number(&old_row["policy_lookup"], field)
+                    .checked_sub(number(&row["policy_lookup"], field))
+                    .unwrap(),
+                if removed == 0 {
+                    0
+                } else {
+                    number(&row["processing_lookup"], field)
+                },
+                "literal actual lookup receipt delta: {field}"
+            );
+        }
+        let mut checked = row.clone();
+        checked["policy_work"] = old_row["policy_work"].clone();
+        checked["policy_lookup"] = old_row["policy_lookup"].clone();
+        assert_eq!(
+            &checked, old_row,
+            "Domain identity, signed ranges, first query and request order remain literal"
+        );
+        saved = saved.checked_add(removed).unwrap();
+    }
+    saved
+}
+
+fn compare_domain_policy_counter(actual: &mut Value, old: &Value, imposed: bool) -> u64 {
+    let trace = actual
+        .as_object_mut()
+        .unwrap()
+        .remove("domain_policy_trace")
+        .unwrap();
+    let mut old = old.clone();
+    let old_trace = old
+        .as_object_mut()
+        .unwrap()
+        .remove("domain_policy_trace")
+        .unwrap();
+    let removed = reconcile_domain_policy_receipts(&trace, &old_trace);
+    assert_eq!(
+        number(actual, "old_total_controller_work"),
+        number(&old, "old_total_controller_work")
+            .checked_sub(if imposed { 0 } else { removed })
+            .unwrap(),
+        "controller delta equals only cumulative successful actual Domain policy receipts"
+    );
+    actual["old_total_controller_work"] = old["old_total_controller_work"].clone();
+    assert_eq!(
+        actual, &old,
+        "all other controller/resource/cache fields remain literal"
+    );
+    removed
+}
+
+fn remove_domain_policy_traces(observed: &mut Value) {
+    for phase in ["before", "after"] {
+        observed["setup"][phase]
+            .as_object_mut()
+            .unwrap()
+            .remove("domain_policy_trace");
+    }
+    for operation in observed["operations"].as_array_mut().unwrap() {
+        for phase in ["before", "after_return_drop"] {
+            operation[phase]
+                .as_object_mut()
+                .unwrap()
+                .remove("domain_policy_trace");
+        }
+    }
+    observed["final"]
+        .as_object_mut()
+        .unwrap()
+        .remove("domain_policy_trace");
+}
+
+fn compare_domain_policy_matrix(actual: &mut Value, old: &Value) {
+    let cases = actual.as_array_mut().unwrap();
+    let old_cases = old.as_array().unwrap();
+    assert_eq!(cases.len(), old_cases.len());
+    let mut removed = 0_u64;
+    for (case, old_case) in cases.iter_mut().zip(old_cases) {
+        assert_eq!(case["name"], old_case["name"]);
+        let observed = &mut case["observation"];
+        let expected = &old_case["observation"];
+        for phase in ["before", "after"] {
+            compare_domain_policy_counter(
+                &mut observed["setup"][phase],
+                &expected["setup"][phase],
+                false,
+            );
+        }
+        let operations = observed["operations"].as_array_mut().unwrap();
+        let old_operations = expected["operations"].as_array().unwrap();
+        assert_eq!(operations.len(), old_operations.len());
+        for (operation, old_operation) in operations.iter_mut().zip(old_operations) {
+            let imposed = operation
+                .get("imposed_controller_work_before_call")
+                .is_some();
+            for phase in ["before", "after_return_drop"] {
+                compare_domain_policy_counter(
+                    &mut operation[phase],
+                    &old_operation[phase],
+                    imposed,
+                );
+            }
+        }
+        removed = removed
+            .checked_add(compare_domain_policy_counter(
+                &mut observed["final"],
+                &expected["final"],
+                false,
+            ))
+            .unwrap();
+        let mut expected = old_case.clone();
+        remove_domain_policy_traces(&mut expected["observation"]);
+        assert_eq!(
+            case, &expected,
+            "complete native output, PCM bits, suppression, source/cache/depth and errors remain literal"
+        );
+    }
+    assert!(
+        removed > 0,
+        "actual matrix must exercise Domain policy query reuse"
+    );
 }
 
 fn compare_certified_counter(actual: &mut Value, direct: &Value, imposed: bool) -> u64 {

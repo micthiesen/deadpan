@@ -109,7 +109,7 @@ fn probe<'plan, A: AudioSoundContextAdmission>(
         Some(&input.context.seed),
         true,
         true,
-        (None, Some(&mut editorial), None),
+        (None, Some(&mut editorial), None, None),
     );
     #[cfg(test)]
     {

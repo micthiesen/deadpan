@@ -125,10 +125,7 @@ impl StageAudio {
         }
         let flattened = domain.audio(start..end, control.query_limits()?)?;
         control.spend_plan_work(flattened.work)?;
-        let processing = domain.processing(start..end, control.query_limits()?)?;
-        control.spend_plan_work(processing.work)?;
-        let policy = domain.policy(start..end, control.query_limits()?)?;
-        control.spend_plan_work(policy.work)?;
+        let (processing, policy) = prepare_domain_policy(domain, start..end, control)?;
         let fades = if edge_fades {
             let query = domain.fades(start..end, control.query_limits()?)?;
             control.spend_plan_work(query.work)?;
@@ -187,6 +184,40 @@ impl StageAudio {
         )
     }
 }
+
+fn prepare_domain_policy<'plan>(
+    domain: &AudioDomain<'plan>,
+    samples: Range<AudioSample>,
+    control: WorkControl<'_>,
+) -> Result<(AudioProcessingQuery<'plan>, AudioPolicyQuery<AudioSample>), StageAudioError> {
+    #[cfg(test)]
+    if policy_trace::legacy() {
+        let processing = domain.processing(samples.clone(), control.query_limits()?)?;
+        control.spend_plan_work(processing.work)?;
+        let policy = domain.policy(samples.clone(), control.query_limits()?)?;
+        control.spend_plan_work(policy.work)?;
+        policy_trace::record(domain, samples, &processing, &policy);
+        return Ok((processing, policy));
+    }
+    let processing = domain.processing_for_policy(samples.clone(), control.query_limits()?)?;
+    // This is the actual first walk's one charge. Finishing policy receives
+    // the fresh remaining allowance and reports only the work it performs.
+    control.spend_plan_work(processing.query().work)?;
+    let completed = processing.finish_policy(domain, samples.clone(), control.query_limits()?)?;
+    let (processing, policy) = completed.into_queries();
+    control.spend_plan_work(policy.work)?;
+    #[cfg(test)]
+    policy_trace::record(domain, samples, &processing, &policy);
+    Ok((processing, policy))
+}
+
+#[cfg(test)]
+#[path = "original_request/domain_policy_trace.rs"]
+mod policy_trace;
+#[cfg(test)]
+pub(super) use policy_trace::{
+    DomainPolicyTrace, domain_policy_trace, reset_domain_policy_trace, with_domain_policy_trace,
+};
 
 #[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
 #[path = "original_request/tests.rs"]

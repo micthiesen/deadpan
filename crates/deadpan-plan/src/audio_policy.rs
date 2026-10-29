@@ -193,6 +193,26 @@ impl AudioDomain<'_> {
     }
 }
 
+/// Only the sealed successful Domain-processing product may supply this tape.
+/// Its first query has already been billed independently by the audio host.
+pub(super) fn domain_policy_with_processing(
+    domain: &AudioDomain<'_>,
+    samples: Range<AudioSample>,
+    limits: AudioQueryLimits,
+    bindings: &[super::AudioProcessingSpan<'_>],
+) -> Result<AudioPolicyQuery<AudioSample>, PlanError> {
+    let mut work = PolicyWork::new(limits)?;
+    let suppressed = domain_policy_inner(
+        domain,
+        samples.start.0..samples.end.0,
+        &mut work,
+        0,
+        true,
+        Some(bindings),
+    )?;
+    Ok(work.result(suppressed, AudioSample))
+}
+
 fn is_suppressed(content: &AudioContent) -> bool {
     matches!(
         content,
@@ -308,6 +328,17 @@ fn domain_policy(
     depth: usize,
     endpoints: bool,
 ) -> Result<Vec<Range<i64>>, PlanError> {
+    domain_policy_inner(domain, samples, work, depth, endpoints, None)
+}
+
+fn domain_policy_inner(
+    domain: &AudioDomain<'_>,
+    samples: Range<i64>,
+    work: &mut PolicyWork,
+    depth: usize,
+    endpoints: bool,
+    processing_bindings: Option<&[super::AudioProcessingSpan<'_>]>,
+) -> Result<Vec<Range<i64>>, PlanError> {
     work.enter(depth)?;
     let range = AudioSample(samples.start)..AudioSample(samples.end);
     let current = domain.audio(range.clone(), work.limits()?)?;
@@ -338,7 +369,60 @@ fn domain_policy(
     if !bindings || samples.is_empty() {
         return Ok(suppressed);
     }
+    if let Some(bindings) = processing_bindings.filter(|spans| spans.len() <= work.maximum_spans) {
+        // The existing first walk proved that stop_at_preserve never affected
+        // a terminal. Both walks stop at bindings. Opaque Bound bodies still
+        // recurse through their ordinary independent policy below.
+        for span in bindings {
+            match &span.content {
+                AudioSignalContent::Bound(bound) => {
+                    let endpoints = endpoint_grid(endpoints, &span.retimes, work)?;
+                    suppressed.extend(bound_policy(
+                        bound,
+                        span.samples.start.0..span.samples.end.0,
+                        span.allocated_samples.start.0,
+                        work,
+                        depth + 1,
+                        endpoints,
+                    )?);
+                }
+                AudioSignalContent::Leaf(content)
+                    if is_selected_endpoint(content)
+                        && endpoint_grid(endpoints, &span.retimes, work)? =>
+                {
+                    suppressed.push(span.samples.start.0..span.samples.end.0);
+                }
+                _ => {}
+            }
+        }
+        return Ok(suppressed);
+    }
+    #[cfg(test)]
+    let (bindings, before_second_query) = {
+        let before = work.remaining;
+        let result = domain.processing_inner(range.clone(), work.limits()?, false);
+        super::audio_owners::tests::legacy_snapshot_v1::policy_binding_baseline::second_returned(
+            domain,
+            samples.clone(),
+            (depth, endpoints, before),
+            &result,
+        );
+        (result?, before)
+    };
+    #[cfg(not(test))]
     let bindings = domain.processing_inner(range, work.limits()?, false)?;
+    #[cfg(test)]
+    {
+        let result = work.observed(bindings.work, bindings.lookup);
+        super::audio_owners::tests::legacy_snapshot_v1::policy_binding_baseline::second_accounted(
+            samples.clone(),
+            (depth, before_second_query, work.remaining),
+            bindings.work,
+            &result,
+        );
+        result?;
+    }
+    #[cfg(not(test))]
     work.observed(bindings.work, bindings.lookup)?;
     for span in bindings.spans {
         match span.content {

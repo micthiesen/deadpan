@@ -453,3 +453,6 @@ pub(in crate::plan) mod span_start_baseline;
 
 #[path = "legacy_snapshot_v1/span_start_certificate_tests.rs"]
 mod span_start_certificate_tests;
+
+#[path = "legacy_snapshot_v1/policy_binding_baseline.rs"]
+pub(in crate::plan) mod policy_binding_baseline;

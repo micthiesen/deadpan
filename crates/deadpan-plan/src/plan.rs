@@ -45,8 +45,9 @@ pub use audio::*;
 #[path = "audio_domain.rs"]
 mod audio_domain;
 pub use audio_domain::{
-    AdmittedOriginalContext, AudioDomain, AudioRootPlacement, ContextChargeTransfer,
-    SharedAudioOwnerRetainedInput, preflight_context_transfer, transfer_context_charges,
+    AdmittedOriginalContext, AudioDomain, AudioDomainProcessing, AudioDomainProcessingPolicy,
+    AudioRootPlacement, ContextChargeTransfer, SharedAudioOwnerRetainedInput,
+    preflight_context_transfer, transfer_context_charges,
 };
 #[path = "audio_point_domain.rs"]
 mod audio_point_domain;

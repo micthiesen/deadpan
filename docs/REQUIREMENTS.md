@@ -466,6 +466,23 @@ still exhaust per-read work. General sound Split stays disabled. Remaining
 containers, mix copies and recursive closure stay open; no caps, prior weights,
 refunds, cold activation or requirement/gate status changed.
 
+The [physical Domain policy reuse checkpoint](qualification/authored-domain-policy-reuse-2026-10-29.md)
+uses the actual first processing walk's terminal witness to reuse eligible
+Leaf/Bound tapes at policy's second top-level query. Current policy and recursive
+Bound queries remain independent; exposed stages retain exact fallback budgets.
+Both old variants freeze matching complete private tapes and actual policy
+events, including signed hidden support. Plan passes 643/630, Audio 377/358,
+ordinary Stage 203/203 and definition/history 171/eight. Exact new/fallback
+budgets, native three-way PCM/work comparisons, strict lint and source/index
+audits pass. Three reviews include one corrected baseline-producer mode. An
+unstable cross-renderer cleanup-budget assertion is replaced by test-only
+post-publication exhaustion; its original failure and identical passing repeat
+remain evidence. The fresh Split matrix stays three pass/four work failures in
+258.13 seconds: nested selected play now exhausts sound-clock scope work, while
+the other three windows exhaust per-read work. General sound Split stays
+disabled. No caps, previous weights, refunds, cold activation, requirement/gate
+status, speed or peak-memory improvement is claimed.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 
