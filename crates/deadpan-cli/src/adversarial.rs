@@ -14,6 +14,10 @@ use serde::Serialize;
 #[global_allocator]
 static ALLOCATOR: deadpan_chaos::CountingAllocator = deadpan_chaos::CountingAllocator;
 
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+#[path = "adversarial/original_cache.rs"]
+mod original_cache;
+
 fn frames<T: Serialize>(selector: u8, messages: &[T]) -> Vec<u8> {
     let mut bytes = vec![selector];
     for message in messages {

@@ -483,6 +483,23 @@ the other three windows exhaust per-read work. General sound Split stays
 disabled. No caps, previous weights, refunds, cold activation, requirement/gate
 status, speed or peak-memory improvement is claimed.
 
+The [Original input cache checkpoint](qualification/original-input-cache-2026-10-29.md)
+publishes only bounded request-local PCM reuse from the inherited Main work.
+Hits retain exact context/range/depth/controller identity and live source
+admission. A real held-owner-query regression reproduces 420 resident frame
+units under cap 419; checked metadata admission now keeps the exact-fit cache
+and returns identical Fresh PCM when one frame short. Fixed scope storage is
+charged, and an actual allocator regression reproduces and removes a 280-byte
+empty controller-map root. Main/isolated Audio pass 378/372, ordinary native
+Stage 203/203 and full definition/history 171/171; both cleanup tests,
+formatting, lint, independent reviews and source/index/evidence audits pass.
+The fresh Split matrix remains three pass/four work failures in 256.91 seconds,
+at the same windows with structural/frozen-projection/sound-placement refusals.
+General sound Split stays disabled. A separate conserved diagnostic observes
+5,851 PCM hits after 2,012,414 query units were billed; retaining those products
+still needs complete admission and is not a claimed saving. No caps, prior
+weights, refunds, requirement/gate status, speed or peak-memory claim changes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

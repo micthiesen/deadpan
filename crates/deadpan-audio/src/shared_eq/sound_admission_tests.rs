@@ -15,6 +15,7 @@ fn graph<'plan, 'work>(plan: &'plan RenderPlan, original_only: bool) -> Graph<'p
         sends: None,
         skip: Vec::new(),
         original_only,
+        original_inputs: original_inputs::Cache::default(),
     }
 }
 fn node<'plan, 'work>(

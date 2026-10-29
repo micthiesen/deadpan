@@ -27,6 +27,7 @@ impl<'plan> Harness<'plan> for Shared {
             sends: None,
             skip: Vec::new(),
             original_only: true,
+            original_inputs: original_inputs::Cache::default(),
         }
     }
 

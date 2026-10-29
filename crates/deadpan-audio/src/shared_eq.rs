@@ -38,6 +38,8 @@ use deadpan_plan::{
 #[path = "event_returns.rs"]
 mod event_returns;
 use event_returns::{EventKey, EventRead, EventSource};
+#[path = "shared_eq/original_inputs.rs"]
+pub(super) mod original_inputs;
 
 #[path = "shared_eq/policy_prediction.rs"]
 mod policy_prediction;
@@ -101,6 +103,7 @@ struct Graph<'plan, 'work> {
     sends: Option<deadpan_core::TailEffect>,
     skip: Vec<authored_gain::OwnerIdentity>,
     original_only: bool,
+    original_inputs: original_inputs::Cache<'plan>,
 }
 
 #[derive(Default)]
@@ -276,6 +279,16 @@ impl StageAudio {
             .0
             .checked_add(i64::from(frames))
             .ok_or(TimeError::Overflow)?;
+        let cache_reservation = original_inputs::Cache::resident_frames()?;
+        let reservation = u64::from(frames)
+            .checked_mul(3)
+            .and_then(|value| value.checked_add(cache_reservation))
+            .ok_or(StageAudioError::Range)?;
+        self.make_room(reservation, false, control)?;
+        self.active_frames = self
+            .active_frames
+            .checked_add(reservation)
+            .ok_or(StageAudioError::Range)?;
         let plan = Arc::clone(&self.plan);
         let mut graph = Graph {
             plan: &plan,
@@ -291,10 +304,8 @@ impl StageAudio {
             sends: selection.sends,
             skip: selection.skip.to_vec(),
             original_only: selection.original_only,
+            original_inputs: original_inputs::Cache::default(),
         };
-        let reservation = u64::from(frames) * 3;
-        self.make_room(reservation, false, control)?;
-        self.active_frames += reservation;
         let result = (|| {
             let context = Contexts {
                 original: Context::Root,
@@ -349,7 +360,8 @@ impl StageAudio {
         result
     }
 
-    fn release_shared_graph(&mut self, graph: Graph<'_, '_>, reservation: u64) {
+    fn release_shared_graph(&mut self, mut graph: Graph<'_, '_>, reservation: u64) {
+        graph.original_inputs.clear(self);
         let graph_resident = graph.resident;
         drop(graph);
         self.active_frames -= reservation + graph_resident;
@@ -620,42 +632,23 @@ impl StageAudio {
             let mut relative_depth = 0;
             if let Some(owners) = owners {
                 let raw = if let Some(request) = prepared_original.take() {
-                    policy_prediction::validate_original(
-                        &request,
+                    self.shared_original_input_prepared(
+                        provider,
+                        graph,
                         &program.context.original,
-                        plan,
-                        original_range.start,
-                        count(&original_range)?,
+                        (original_range.clone(), request),
                         control,
-                    )?;
-                    self.read_prepared_original(provider, request, control, program.depth)?
+                        program.depth,
+                    )?
                 } else {
-                    match &program.context.original {
-                        Context::Root => self.read_controlled(
-                            provider,
-                            original_range.start,
-                            count(&original_range)?,
-                            control,
-                            true,
-                            program.depth,
-                        )?,
-                        Context::Domain(domain) => self.read_context_controlled(
-                            provider,
-                            domain,
-                            original_range.start,
-                            count(&original_range)?,
-                            control,
-                            (program.depth, true),
-                        )?,
-                        Context::Retained(input) => self.read_retained_controlled(
-                            provider,
-                            input,
-                            original_range.start,
-                            count(&original_range)?,
-                            control,
-                            (program.depth, false),
-                        )?,
-                    }
+                    self.shared_original_input(
+                        provider,
+                        graph,
+                        &program.context.original,
+                        original_range.clone(),
+                        control,
+                        program.depth,
+                    )?
                 };
                 for (span, route) in owners.query().spans().iter().zip(original_routes) {
                     for sample in span.samples().start.0..span.samples().end.0 {
@@ -683,7 +676,14 @@ impl StageAudio {
                     }
                 }
                 relative_depth = raw.relative_depth;
-                dependencies.extend(raw.dependencies);
+                dependencies.extend(
+                    raw.dependencies
+                        .iter()
+                        .map(|(id, fingerprint)| (id.clone(), *fingerprint)),
+                );
+                // Later sound returns can need the same memory. The cache
+                // owns an evictable copy; do not pin it through those reads.
+                drop(raw);
             }
             for ((root, id), route) in roots.into_iter().zip(root_ids).zip(root_routes) {
                 let event = root.voice.event();

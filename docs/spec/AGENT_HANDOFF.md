@@ -2,7 +2,39 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: wide queries and temporary stops admitted, product goal active
+## Current state: Original input cache bounded, product goal active
+
+The [Original input cache checkpoint](../qualification/original-input-cache-2026-10-29.md)
+ports only exact request-local PCM reuse into the published candidate, preserving
+Main's independent family/Split work. Live owner metadata participates in optional
+admission; exact-fit caches and one-frame-short returns identical Fresh PCM.
+The real regression fails at aggregate 420 under cap 419 before the fix.
+Fixed scope storage is charged, and an actual allocator red/green catches a
+280-byte empty controller map root after public shared-bus request cleanup.
+
+Main/isolated Audio pass 378/372; ordinary native Stage pass 203/203 and full
+definition/history pass 171/171. Main's project check and isolated direct
+formatting/Clippy pass. The isolated wrapper's missing-Git failure is retained.
+Three fresh reviews, the new allocation-test review, source/index equality and
+the evidence audit are recorded in the report. All eleven frozen oracles remain
+unchanged. The shipping source matches the isolated candidate; inherited Main
+family differences remain in its working tree.
+
+The fresh Split matrix is still three pass/four work failures in 256.91 seconds:
+Source/Sequence cut-three 0+511 and one selected play prefix-two 0+4096 exhaust
+structural work; nested selected play without root sound prefix-two 0+4096
+exhausts frozen projection; processed root sound root-sound-refinement 0+511
+exhausts sound placement. General sound-bearing Split stays disabled.
+
+Post-policy diagnostics conserve the unchanged 16,777,216 canonical work units
+and observe 5,851 actual prepared PCM hits after 2,012,414 query units were
+billed. Those products still feed policy prediction before payload lookup.
+Query retention needs full heap/lifetime admission and exact validated ownership;
+it is a candidate, not an implemented saving. Remaining variable containers,
+mix copies, recursive admission, product behavior and release gates stay open.
+No cap, previous weight, refund, requirement or gate status changes.
+
+## Wide queries and temporary stops admitted (historical)
 
 The [wide query checkpoint](../qualification/wide-owner-query-admission-2026-10-29.md)
 retains actual Root/Domain/retained owner-query guards through renderer use.

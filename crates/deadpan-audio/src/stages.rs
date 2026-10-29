@@ -659,6 +659,9 @@ pub struct StageAudio {
     plan: Arc<RenderPlan>,
     limits: StageLimits,
     cache: Vec<Arc<PreparedStage>>,
+    original_inputs: BTreeMap<u64, shared_eq::original_inputs::Cached>,
+    next_original_input: u64,
+    original_input_scope: Arc<()>,
     sound_processing_plans: BTreeMap<AudioTimingId, Arc<RenderPlan>>,
     active_frames: u64,
     active_disk_bytes: u64,
@@ -701,6 +704,9 @@ impl StageAudio {
             plan,
             limits: StageLimits::default(),
             cache: Vec::new(),
+            original_inputs: BTreeMap::new(),
+            next_original_input: 0,
+            original_input_scope: Arc::new(()),
             sound_processing_plans: BTreeMap::new(),
             active_frames: 0,
             active_disk_bytes: 0,
@@ -759,11 +765,13 @@ impl StageAudio {
         self.persistent_cache = cache;
     }
 
-    /// Retained PCM only; the bounded source halo and active work are separate.
+    /// Retained stage and request-local Original PCM; source halos and active
+    /// work are separate. Both caches share the same resident ceiling.
     pub fn cached_resident_frames(&self) -> u64 {
         self.cache
             .iter()
             .map(|entry| entry.block.samples.resident_frames())
+            .chain(self.original_inputs.values().map(|entry| entry.resident))
             .sum()
     }
 
@@ -2461,11 +2469,7 @@ impl StageAudio {
         control: WorkControl<'_>,
     ) -> Result<(), StageAudioError> {
         loop {
-            let resident = self
-                .cache
-                .iter()
-                .map(|entry| entry.block.samples.resident_frames())
-                .sum::<u64>();
+            let resident = self.cached_resident_frames();
             let disk = self
                 .cache
                 .iter()
@@ -2481,9 +2485,14 @@ impl StageAudio {
                 + additional
                 <= u64::from(self.limits.maximum_resident_frames)
                 && disk <= self.limits.maximum_disk_bytes
-                && (!new_entry || self.cache.len() < self.limits.maximum_cached_stages)
+                && (!new_entry
+                    || self.cache.len() + self.original_inputs.len()
+                        < self.limits.maximum_cached_stages)
             {
                 return Ok(());
+            }
+            if self.evict_original_input(control)? {
+                continue;
             }
             let index = self
                 .cache

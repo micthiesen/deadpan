@@ -62,6 +62,7 @@ fn graph<'plan, 'work>(plan: &'plan RenderPlan) -> Graph<'plan, 'work> {
         sends: None,
         skip: Vec::new(),
         original_only: true,
+        original_inputs: original_inputs::Cache::default(),
     }
 }
 
