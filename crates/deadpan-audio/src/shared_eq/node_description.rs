@@ -177,8 +177,12 @@ where
         return Ok(None);
     }
     let candidates = match incoming {
-        Context::Root => plan.audio_owner_input_candidates_at(at, control.query_limits()?)?,
-        Context::Domain(domain) => domain.owner_input_candidates_at(at, control.query_limits()?)?,
+        Context::Root => {
+            plan.audio_owner_input_candidates_at_admitted(at, control.query_limits()?, admission)?
+        }
+        Context::Domain(domain) => {
+            domain.owner_input_candidates_at_admitted(at, control.query_limits()?, admission)?
+        }
         Context::Retained(_) => {
             // This branch already has no repeated membership query. Keep its
             // actual retained-grid query, clock clone and immediate Arc clone.
@@ -201,20 +205,30 @@ where
             };
         }
     };
-    Context::admit_owner_query(candidates.query(), control)?;
+    if candidates.was_forwarded() != A::METERED {
+        return Err(PlanError::InvalidPlan("owner query accounting mode differs").into());
+    }
+    if A::METERED {
+        // Q was streamed by the actual Plan/Core kernel, including inspections.
+        Context::validate_owner_query_layers(candidates.query())?;
+    } else {
+        Context::admit_owner_query(candidates.query(), control)?;
+    }
     let selected = candidates.query().spans().first().and_then(|span| {
         span.owners()
             .iter()
             .position(|clock| OwnerKey::new(clock) == *key)
     });
     let capture = if let Some(index) = selected {
-        let capture = candidates.capture(index, control.query_limits()?)?;
+        // The actual query stays charged while the same legacy capture runs.
+        // Capture C is not forwarded by the query-only admission slice.
+        let capture = candidates.capture(index, control.query_limits()?, admission)?;
         control.spend_plan_work(capture.capture_work())?;
         capture
     } else {
         // Absence has only the already-paid query, and must not request fresh
         // capture limits or spend a synthetic zero-work operation.
-        candidates.without_selection()
+        candidates.without_selection(admission)?
     };
     if let Some(input) = capture.into_input() {
         let carrier = Context::finish_paid_owner_input_admitted(

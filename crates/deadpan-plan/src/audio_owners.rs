@@ -17,6 +17,14 @@ use super::{
 };
 use crate::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap, PlanError};
 
+#[path = "audio_owner_query_admission.rs"]
+pub(super) mod admission;
+#[path = "audio_owner_query.rs"]
+pub(super) mod query_admission;
+#[cfg(test)]
+use query_admission::{Output, walk_query};
+use query_admission::{State, query_tracked};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AudioOwnerKind {
     Node,
@@ -674,400 +682,60 @@ fn query_mapped<'plan, S: Copy>(
     label: impl Fn(i64) -> S,
     retained: Option<&AudioOwnerRetainedInput<'plan>>,
 ) -> Result<AudioOwnerQuery<'plan, S>, PlanError> {
-    limits.validate()?;
-    if samples.end < samples.start {
-        return Err(PlanError::AudioRangeOutOfRange);
-    }
-    let mut budget = Budget {
+    let mut local = Budget {
         remaining: limits.maximum_work,
         lookup: LookupStats::default(),
     };
-    let mut spans = Vec::new();
-    let mut cursor = samples.start;
-    while cursor < samples.end {
-        if spans.len() == limits.maximum_spans {
-            return Err(PlanError::AudioQueryLimit("owner span count"));
-        }
-        let mut output = WalkOutput {
-            start: cursor,
-            end: samples.end,
-            owners: Vec::new(),
-            support: AudioOwnerSupport::Active,
-            through_processor: false,
-            original_is_silent: false,
-        };
-        walk(
-            plan,
-            seed.clone(),
-            match retained {
-                Some(input) => Position {
-                    at: input.reference_at(AudioSample(cursor))?,
-                    step: input.reference_samples_per_output_sample(),
-                },
-                None => Position {
-                    at: ExactRatio::integer(cursor),
-                    step: ExactRatio::ONE,
-                },
-            },
-            &mut output,
-            retained.map_or(
-                AudioOwnerClockOrigin::Current,
-                AudioOwnerRetainedInput::clock_origin,
-            ),
-            &mut budget,
-            0,
-        )?;
-        if output.end <= cursor
-            || (output.owners.is_empty() && output.support == AudioOwnerSupport::Active)
-        {
-            return Err(PlanError::InvalidPlan("owner interval did not advance"));
-        }
-        let owners = output
-            .owners
-            .into_iter()
-            .map(|owner| {
-                Ok(AudioOwnerClock {
-                    plan,
-                    definition: owner.definition,
-                    instance: owner.instance,
-                    kind: owner.kind,
-                    gap_after: owner.gap_after,
-                    play: owner.play,
-                    origin: owner.origin,
-                    sampling: AudioSampleMap::new(
-                        label(cursor),
-                        owner.position.at,
-                        owner.position.step,
-                    )?,
-                })
-            })
-            .collect::<Result<Vec<_>, PlanError>>()?;
-        spans.push(AudioOwnerSpan {
-            samples: label(cursor)..label(output.end),
-            owners,
-            support: output.support,
-            original_is_silent: output.original_is_silent,
-        });
-        cursor = output.end;
-    }
-    Ok(AudioOwnerQuery {
+    let mut policy = admission::Unmetered;
+    let mut budget = admission::Budget::new(&mut local, &mut policy);
+    let seed = State::plain(seed, ());
+    admission::outer::<_, admission::Unmetered>(query_tracked(
         plan,
-        samples: label(samples.start)..label(samples.end),
-        spans,
-        lookup: budget.lookup,
-        work: limits.maximum_work - budget.remaining,
-    })
+        samples,
+        limits,
+        seed,
+        label,
+        retained,
+        &mut budget,
+    ))
+    .map(|value| value.query.unmetered())
 }
 
+#[cfg(test)]
 fn walk(
     plan: &RenderPlan,
-    mut state: Walk,
+    state: Walk,
     position: Position,
     output: &mut WalkOutput,
     origin: AudioOwnerClockOrigin,
     budget: &mut Budget,
     depth: usize,
 ) -> Result<(), PlanError> {
-    if depth > deadpan_core::MAX_DOCUMENT_DEPTH {
-        return Err(PlanError::AudioQueryLimit("owner binding depth"));
-    }
-    let mut probe_label =
-        AudioSample(i64::try_from(position.at.floor()).map_err(|_| TimeError::Overflow)?);
-    let (mut probe, mut bias) = state.grid.probe(probe_label)?;
-    loop {
-        budget.spend(1 + state.repeats.len())?;
-        budget.lookup.visited_nodes += 1;
-        let node = &plan.nodes[state.node];
-        let kind = if state.gap.is_some() {
-            AudioOwnerKind::DefaultGap
-        } else {
-            AudioOwnerKind::Node
-        };
-        let target = if state.gap.is_some() {
-            BindingTarget::Gap(state.node)
-        } else {
-            BindingTarget::Node(state.node)
-        };
-        let duration = state.gap.as_ref().map_or(node.extent, |gap| {
-            ExactRatio::integer(gap.duration.frames())
-        });
-        let extent = state.placement.origin..state.placement.frame(duration)?;
-        state.extent = intersect(state.extent, extent.clone())?;
-        if state.gap.is_some()
-            || !matches!(
-                node.kind,
-                CompiledKind::Sequence { .. }
-                    | CompiledKind::Repeat { .. }
-                    | CompiledKind::Retime {
-                        purpose: RetimePurpose::Partition,
-                        ..
-                    }
-            )
-        {
-            state.support = Some(match state.support {
-                Some(previous) => intersect(previous, extent)?,
-                None => extent,
-            });
-        }
-        let allocated =
-            state.grid.boundary(state.extent.start)?..state.grid.boundary(state.extent.end)?;
-        // A retained clock receives this sample's start transferred from its
-        // consumer, for example a RoundEven output allocation that begins a
-        // fraction of an output sample before the owner's exact origin, mapped
-        // onto a Preserve input's PointCeil grid. That first output sample
-        // still overlaps the allocation and belongs to its first sample, as on
-        // the current clock; only a sample wholly before it is outside.
-        // A transferred interval can span more than one reference sample.
-        if probe_label < allocated.start
-            && allocated.start < allocated.end
-            && matches!(origin, AudioOwnerClockOrigin::Retained { .. })
-            && position
-                .at
-                .checked_add(position.step)?
-                .compare_integer(allocated.start.0)
-                .is_gt()
-        {
-            probe_label = allocated.start;
-            (probe, bias) = state.grid.probe(probe_label)?;
-        }
-        if !allocated.contains(&probe_label) {
-            if state.allow_inactive && matches!(origin, AudioOwnerClockOrigin::Retained { .. }) {
-                if probe_label < allocated.start {
-                    restrict_end(position, allocated.start.0, output.start, &mut output.end)?;
-                }
-                output.support = AudioOwnerSupport::Inactive;
-                return Ok(());
-            }
-            return Err(PlanError::InvalidPlan(
-                "owner coordinate is outside its allocated interval",
-            ));
-        }
-        restrict_end(position, allocated.end.0, output.start, &mut output.end)?;
-        let frame = state
-            .grid
-            .frame_origin()
-            .checked_add(position.at.checked_mul(state.grid.frames_per_sample())?)?;
-        let local = Position {
-            at: state.placement.local(frame)?,
-            step: position
-                .step
-                .checked_mul(state.grid.frames_per_sample())?
-                .checked_div(state.placement.scale)?,
-        };
-        let instance = InstancePath {
-            node: node.inspection.id.clone(),
-            repeats: state.repeats.clone(),
-        };
-        let gap_after = state.gap.as_ref().and_then(|gap| gap.after.clone());
-        if state.bypass != Some(target) {
-            let transform = SignalTransform {
-                signal_origin: state.binding.placement.origin,
-                signal_frames_per_local_frame: state.binding.placement.scale,
-                grid_origin: state.binding.grid.frame_origin(),
-                signal_frames_per_sample: state.binding.grid.frames_per_sample(),
-            };
-            let binding_frame =
-                |value| state.binding.placement.frame(state.placement.local(value)?);
-            let allocated_start = state
-                .binding
-                .grid
-                .boundary(binding_frame(state.extent.start)?)?;
-            let support = state
-                .support
-                .as_ref()
-                .map(|range| {
-                    Ok::<_, TimeError>(binding_frame(range.start)?..binding_frame(range.end)?)
-                })
-                .transpose()?;
-            if let Some(bound) = plan.bound_at(
-                state.node,
-                &state.repeats,
-                state.definition.as_ref(),
-                BoundPlacement {
-                    transform,
-                    grid: state.binding.grid.rebrand(),
-                    allocated_start: SignalSample(allocated_start.0),
-                    support: support.as_ref(),
-                    constraints: &[],
-                    gap: state.gap.as_ref(),
-                },
-                budget,
-            )? {
-                let Some(domain) = bound.envelope_domain(budget)? else {
-                    if state.allow_inactive {
-                        output.support = AudioOwnerSupport::Inactive;
-                        return Ok(());
-                    }
-                    return Err(PlanError::InvalidPlan(
-                        "owner binding has empty meaningful support",
-                    ));
-                };
-                let physical_at = state
-                    .binding
-                    .placement
-                    .frame(local.at)?
-                    .checked_sub(state.binding.grid.frame_origin())?
-                    .checked_div(state.binding.grid.frames_per_sample())?;
-                let physical_step = local
-                    .step
-                    .checked_mul(state.binding.placement.scale)?
-                    .checked_div(state.binding.grid.frames_per_sample())?;
-                let reference = Position {
-                    at: bound.reference_at_offset(0)?.checked_add(
-                        physical_at
-                            .checked_sub(ExactRatio::integer(allocated_start.0))?
-                            .checked_mul(bound.reference_samples_per_output_sample())?,
-                    )?,
-                    step: physical_step.checked_mul(bound.reference_samples_per_output_sample())?,
-                };
-                let mut retained = Walk::from_seed(&domain.seed);
-                retained.allow_inactive = state.allow_inactive;
-                return walk(
-                    plan,
-                    retained,
-                    reference,
-                    output,
-                    AudioOwnerClockOrigin::Retained {
-                        definition: state.definition,
-                        instance,
-                        kind,
-                        gap_after,
-                    },
-                    budget,
-                    depth + 1,
-                );
-            }
-        }
-        budget.spend(state.definition.is_some() as usize + 1)?;
-        output.owners.push(RawOwner {
-            definition: state.definition.clone(),
-            instance,
-            kind,
-            gap_after,
-            play: None,
-            position: local,
-            origin: origin.clone(),
-        });
-        if state.gap.is_some() {
-            return Ok(());
-        }
-        let local_probe = state.placement.local(probe)?;
-        match &node.kind {
-            CompiledKind::Source { audio, .. } => {
-                output.original_is_silent = !output.through_processor && audio.is_none();
-                return Ok(());
-            }
-            CompiledKind::Hold { audio, .. } => {
-                output.original_is_silent =
-                    !output.through_processor && matches!(audio, deadpan_core::HoldAudio::Silence);
-                return Ok(());
-            }
-            CompiledKind::Sequence { entries } => {
-                let mut left = 0;
-                let mut right = entries.len();
-                while left < right {
-                    budget.spend(1)?;
-                    budget.lookup.sequence_comparisons += 1;
-                    let middle = left + (right - left) / 2;
-                    let comparison = local_probe.compare(entries[middle].end);
-                    if comparison.is_gt() || (comparison.is_eq() && bias == InsertionBias::Right) {
-                        left = middle + 1;
-                    } else {
-                        right = middle;
-                    }
-                }
-                let entry = entries
-                    .get(left)
-                    .ok_or(PlanError::InvalidPlan("owner Sequence has no child"))?;
-                state.child(entry.start, ExactRatio::ONE)?;
-                state.node = entry.child;
-            }
-            CompiledKind::Retime {
-                child,
-                start,
-                scale,
-                pitch,
-                ..
-            } => {
-                let inverse = ExactRatio::ONE.checked_div(*scale)?;
-                state.child(
-                    ExactRatio::ZERO.checked_sub(start.checked_mul(inverse)?)?,
-                    inverse,
-                )?;
-                if pitch.processes(*scale == ExactRatio::ONE) {
-                    output.through_processor = true;
-                    // Only the binding-resolution clock switches. Automation
-                    // remains on the consuming output's exact nominal mapping.
-                    // Canonical Preserve prepares its complete selected input;
-                    // an outer crop limits delivery, not this hidden support.
-                    // Retain `extent` for that delivery allocation separately.
-                    let input_end = start
-                        .checked_add(scale.checked_mul(ExactRatio::integer(
-                            node.inspection.duration.frames(),
-                        ))?)?;
-                    state.support =
-                        Some(state.placement.frame(*start)?..state.placement.frame(input_end)?);
-                    state.binding = BindingClock {
-                        grid: AudioSampleGrid::new(
-                            *start,
-                            state.grid.frames_per_sample(),
-                            AudioBoundaryRule::PointCeil,
-                        )?,
-                        placement: Placement {
-                            origin: ExactRatio::ZERO,
-                            scale: ExactRatio::ONE,
-                        },
-                    };
-                }
-                state.node = *child;
-            }
-            CompiledKind::Repeat {
-                layout,
-                gap_duration,
-                ..
-            } => {
-                let location = layout
-                    .locate_bounded(local_probe, bias, budget.remaining)
-                    .map_err(|error| {
-                        if error.code == deadpan_core::DocumentErrorCode::LimitExceeded {
-                            PlanError::AudioQueryLimit("owner Repeat work")
-                        } else {
-                            error.into()
-                        }
-                    })?;
-                budget.spend(location.comparisons)?;
-                budget.lookup.iteration_run_comparisons += location.comparisons;
-                // The Repeat's own owner was pushed above; record its play.
-                if let Some(owner) = output.owners.last_mut() {
-                    owner.play = Some(location.play.index);
-                }
-                let repeat = node.inspection.id.clone();
-                if location.in_gap {
-                    let begin = location.play.start.checked_add(location.play.duration)?;
-                    state.child(begin, ExactRatio::ONE)?;
-                    if let Some(child) = location.play.gap_child {
-                        state.repeats.push(RepeatInstance {
-                            node: repeat,
-                            iteration: location.play.iteration,
-                        });
-                        state.node = plan.by_id[&child];
-                    } else {
-                        state.gap = Some(DomainGap {
-                            after: Some(location.play.iteration),
-                            duration: *gap_duration,
-                        });
-                    }
-                } else {
-                    state.child(location.play.start, ExactRatio::ONE)?;
-                    state.repeats.push(RepeatInstance {
-                        node: repeat,
-                        iteration: location.play.iteration,
-                    });
-                    state.node = plan.by_id[&location.play.child];
-                }
-            }
-        }
-    }
+    let mut policy = admission::Unmetered;
+    let mut query_budget = admission::Budget::new(budget, &mut policy);
+    let old = std::mem::replace(
+        output,
+        WalkOutput {
+            start: 0,
+            end: 0,
+            owners: Vec::new(),
+            support: AudioOwnerSupport::Active,
+            through_processor: false,
+            original_is_silent: false,
+        },
+    );
+    let mut tracked = Output::plain(old, ());
+    let result = admission::outer::<_, admission::Unmetered>(walk_query(
+        plan,
+        State::plain(state, ()),
+        position,
+        &mut tracked,
+        &origin,
+        &mut query_budget,
+        depth,
+    ));
+    *output = tracked.value;
+    result
 }
 
 fn restrict_end(

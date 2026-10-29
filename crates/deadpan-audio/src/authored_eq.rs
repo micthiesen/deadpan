@@ -125,6 +125,13 @@ impl<'plan> Context<'plan> {
         control: WorkControl<'_>,
     ) -> Result<(), StageAudioError> {
         control.spend_plan_work(query.work())?;
+        Self::validate_owner_query_layers(query)
+    }
+
+    /// Shared validation runs for both legacy unpaid and admitted prepaid Q.
+    pub(super) fn validate_owner_query_layers(
+        query: &AudioOwnerQuery<'plan>,
+    ) -> Result<(), StageAudioError> {
         for span in query.spans() {
             deadpan_core::validate_audio_treatment_layers(
                 span.owners().iter().filter_map(|owner| owner.treatments()),

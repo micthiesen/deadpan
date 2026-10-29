@@ -11,6 +11,9 @@ use super::{
 };
 use crate::{AudioBoundaryRule, AudioSampleGrid, PlanError};
 
+#[path = "audio_definition_query.rs"]
+mod query;
+
 /// An authored alias request, not a rendered occurrence or a live binding.
 /// RepeatDefault selects the default child even when every play is overridden.
 /// RepeatGap selects a positive configured gap even when there is only one play.
@@ -182,57 +185,17 @@ impl<'plan> AudioDefinition<'plan> {
         grid_origin: ExactRatio,
         rule: AudioBoundaryRule,
     ) -> Result<AudioDomain<'plan>, PlanError> {
-        let support = placement.local_support();
-        let rate = self.plan.metadata.presentation_basis.frame_rate;
-        let frames_per_sample = ExactRatio::new(
-            i128::from(rate.numerator()),
-            i128::from(MIX_SAMPLE_RATE) * i128::from(rate.denominator()),
-        )?;
-        let transform = AudioTransform {
-            project_origin: placement.origin(),
-            project_frames_per_local_frame: placement.root_frames_per_local_frame(),
-            project_frames_per_sample: frames_per_sample,
+        let mut local = super::audio::Budget {
+            remaining: 65_536,
+            lookup: super::LookupStats::default(),
         };
-        let project_at = |point: ExactRatio| {
-            placement
-                .origin()
-                .checked_add(point.checked_mul(placement.root_frames_per_local_frame())?)
-        };
-        let extent = project_at(support.start)?..project_at(support.end)?;
-        let grid = AudioSampleGrid::<AudioSample>::new(grid_origin, frames_per_sample, rule)?;
-        let samples = grid.boundary(extent.start)?..grid.boundary(extent.end)?;
-        Ok(AudioDomain {
-            plan: self.plan,
-            seed: AudioWalkSeed {
-                definition: Some(self.selector.clone()),
-                bypass_binding: None,
-                node: self.root,
-                transform,
-                grid,
-                extent: extent.clone(),
-                envelope: Some(extent.clone()),
-                constraints: vec![EnvelopeConstraint {
-                    placement_support: true,
-                    range: extent,
-                    node: self.root,
-                    repeat_count: 0,
-                    gap_after: None,
-                    kinds: (AudioBoundaryKind::NodeStart, AudioBoundaryKind::NodeEnd),
-                }],
-                editorial: Vec::new(),
-                suppress_entry_editorial: Default::default(),
-                repeats: Vec::new(),
-                retimes: Vec::new(),
-                gap: self.gap.clone(),
-            },
-            samples: samples.clone(),
-            visible: samples,
-            instance: InstancePath {
-                node: self.root().clone(),
-                repeats: Vec::new(),
-            },
-            placement: Some(placement),
-        })
+        let mut policy = crate::plan::audio_owners::admission::Unmetered;
+        let mut budget = crate::plan::audio_owners::admission::Budget::new(&mut local, &mut policy);
+        crate::plan::audio_owners::admission::outer::<
+            _,
+            crate::plan::audio_owners::admission::Unmetered,
+        >(self.root_domain_on_grid_query(placement, grid_origin, rule, &mut budget))
+        .map(crate::plan::audio_owners::admission::Owned::unmetered)
     }
 
     pub fn belongs_to(&self, plan: &RenderPlan) -> bool {

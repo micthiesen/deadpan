@@ -2,7 +2,32 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: final context sharing admitted, product goal active
+## Current state: actual owner query admitted, product goal active
+
+The [actual owner-query admission](../qualification/owner-query-budget-2026-10-29.md)
+reserves the numerical Root/Domain candidate query through reached Plan/Core
+binding and projection kernels. Sealed candidates retain the actual parent,
+member, query and charge through legacy capture. One validation loop keeps
+unmetered BTreeSet and admitted sorted Vec storage. Linear receipts preserve
+old canonical work, add actual inspections and forward each primitive once.
+Audio skips only already-forwarded Q; legacy capture C remains separately paid.
+The temporary envelope Domain retains a documented construction-peak bound.
+No cache, cap, weight, refund, native-bound or cold/batching activation changes.
+
+Final main/isolated Audio pass 298/279; Plan 569/556 across 29 executables each.
+Core passes 807 library plus 107 binding/projection integration tests. Both
+real-WAV stage suites pass 203; main definition passes 171 and isolated history eight.
+Strict all-target lint and independent review pass. All 22 staged sources equal
+isolated compiled bytes; 19 also equal main, preserving inherited Core/Plan WIP.
+Guards cover 1,451/1,222 inputs. All compiler/runtime receipts are terminal.
+
+The fresh Split matrix stays four pass/three fail in 373.39 seconds. All-owner
+Source/Sequence cut-three limited 0+511 fails plan work per read. Nested selected
+without root sound prefix-two limited 0+4096 now exhausts audio binding work;
+one selected play prefix-two limited 0+4096 exhausts frozen projection work.
+The four existing positive cases still pass. General sound Split remains off.
+Capture/discarded spans and returned Input, retained probe/owners, caller/node
+containers and whole recursive resource closure still require implementation.
 
 The [final Original-sharing admission](../qualification/original-sharing-budget-2026-10-28.md)
 reserves both actual return sites: the moved retained input's new Arc shell,
@@ -12,8 +37,9 @@ strategies select only final sharing. Description owns values before both
 carriers. All issuers, exact ledger pointers, sums and pending subtraction
 are preflighted before one infallible node publication and joint commit.
 The existing private sound_context_frames lane now holds both charges.
-Earlier query/capture, retained inner graph/Core and node containers remain
-explicitly uncovered. No cold or batching activation is established.
+That checkpoint left earlier query/capture, retained inner graph/Core and node
+containers uncovered; the query portion is now covered above. No cold or
+batching activation is established.
 
 The [current-sound admission](../qualification/sound-context-budget-2026-10-28.md)
 reserves the actual closed constructor's chain, edge, Repeat and Arc payloads
@@ -73,7 +99,8 @@ Components. Its caller admits the complete owner-order header/payload; all
 additional reached inspections are billed. It remains intentionally unconnected
 until exact recursive/native admission exists. Graph reads stay scalar.
 
-Final main Audio/definition pass 296/171. Both enabled real-WAV stage suites
+At the final-sharing checkpoint, main Audio/definition pass 296/171.
+Both enabled real-WAV stage suites
 pass 203; main filters seven unfinished Split cases, isolated filters none.
 Isolated Audio passes 277 plus eight historical PCM cases. Full main/isolated
 Plan pass 566/553 across 29 executables each. All 18 published source files
@@ -143,23 +170,25 @@ from a changed resolver or two wrappers over it. Six explicit producers pass;
 their default ignored declarations are capture-tool controls, not acceptance.
 Existing libraries and strict lint pass. The plain Split fixture initially
 assumed retained history; the corrected fixture explicitly installs a captured
-lattice and verifies the actual old member. Product kernels remain unchanged.
+lattice and verifies the actual old member. Product kernels were unchanged at
+that baseline capture; the query implementation above came afterward.
 All 17 terminal receipts, initial/corrected manifests and immutable outputs are
 in /tmp/deadpan-owner-query-baseline-2026-10-28 and its archived inventory.
 
-Next admit the actual candidate query through its reached Plan/Core binding
-and projection kernels. The frozen interface in
-/tmp/deadpan-original-query-admission-2026-10-28/interface-contract.md has SHA
-34e027354671ae37ecf16132e0c586d47ecf94317a1d8cd510401b21a511b5a6.
-One validation loop keeps legacy BTreeSet storage when unmetered and bounded
-sorted Vec when admitted. Canonical/additional work receipts and prepaid copy
-handling preserve old C/probe totals and forward real work once. Core and Plan
-workers now own separate scratch parts under /tmp/deadpan-owner-query-budget-2026-10-28;
-parent owns barrels, Audio integration and all compilation. No live kernel
-changes or implementation qualification exist yet. Query-only integration
-must keep its lease through actual capture, while explicitly excluding capture/
-discarded span and retained probe/owners until their own closure. No full cold
-resource closure or batching activation is established.
+Next freeze the existing capture walk's complete discarded Leaf/Stage, boundary
+and retained-probe observations before changing that kernel. SnapshotV1 records
+Input seeds and C/probe work but not all discarded-span/private-bound fields.
+Preparation is in /tmp/deadpan-owner-capture-baseline-2026-10-29. Reuse the same
+14 real fixtures and unchanged old capture, with immutable expected outputs.
+Then admit the SAME audio_walk_inner, including its late work/errors after the
+owner seed is captured. Keep the seed slot and returned Input charged across
+errors and the later probe. Discarded span/Core/Box charges must release at the
+existing discard point, before the observed-owner clone. Safe preallocated Box
+initialization can preserve Core's allocation-free move bridge; no new Core
+boxing API is expected. Retained Some/Arc publication is a separate ownership
+contract, not covered by capture alone. Do not skip the discarded span, refund
+work, renew allowances, or derive ancestry from a key. No full cold-resource
+closure or batching activation is established.
 Read-only allocation research in /tmp/deadpan-context-heap-2026-10-28 covers
 15 pinned sources. Retained-size visitors do not prove constructor peaks;
 before-allocation accounting must cover actual overlapping Plan/Core scratch.

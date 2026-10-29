@@ -18,6 +18,15 @@ use crate::{
     RevisionId, TimeError,
 };
 
+pub(crate) mod admission;
+pub use admission::{
+    AdmittedAudioBinding, AudioBindingAdmission, AudioBindingBuildError, AudioBindingForwardedWork,
+    AudioBindingValue,
+};
+use admission::{
+    AdmittedResult, Build, BuildResult, ProjectedAllocation, ProjectedSupport, ScratchSet,
+    Unmetered, legacy,
+};
 mod repeat_rates;
 pub(crate) use repeat_rates::{RepeatOwnerUse, RepeatRateContext, repeated_lattice_classes};
 
@@ -396,20 +405,31 @@ impl AudioBindingEnvironment<'_> {
         matches!(self, Self::Definition { outside_repeats, .. } | Self::GapDefinition { outside_repeats, .. } if outside_repeats.contains(repeat))
     }
     fn validate(&self) -> Result<(), DocumentError> {
+        let mut raw = Work {
+            used: 0,
+            maximum: MAX_DOCUMENT_NODES,
+        };
+        let mut extra = 0;
+        legacy(self.validate_build(&mut Build::new(&mut raw, &mut extra, &mut Unmetered)))
+    }
+    fn validate_build<P: AudioBindingAdmission>(
+        &self,
+        work: &mut Build<'_, P>,
+    ) -> BuildResult<(), P::Error> {
         self.instance().validate_depth()?;
         let gap = matches!(
             self,
             Self::GapOccurrence { .. } | Self::GapDefinition { .. }
         );
-        let mut seen = BTreeSet::new();
+        let mut seen = ScratchSet::new(work, self.instance().repeats.len());
         for repeat in &self.instance().repeats {
             if gap && repeat.node == self.instance().node {
-                return Err(invalid(
-                    "own gap argument belongs outside the outer Repeat path",
-                ));
+                return Err(
+                    invalid("own gap argument belongs outside the outer Repeat path").into(),
+                );
             }
-            if !seen.insert(&repeat.node) {
-                return Err(invalid("duplicate live Repeat argument"));
+            if !seen.insert(&repeat.node, work)? {
+                return Err(invalid("duplicate live Repeat argument").into());
             }
         }
         if let Self::Definition {
@@ -420,14 +440,15 @@ impl AudioBindingEnvironment<'_> {
         } = self
         {
             if outside_repeats.len() > MAX_DOCUMENT_DEPTH {
-                return Err(limit("definition exclusion depth"));
+                return Err(limit("definition exclusion depth").into());
             }
+            seen.extend_capacity(self.instance().repeats.len() + outside_repeats.len());
             for repeat in *outside_repeats {
                 if gap && repeat == &self.instance().node {
-                    return Err(invalid("gap owner cannot be an excluded outer Repeat"));
+                    return Err(invalid("gap owner cannot be an excluded outer Repeat").into());
                 }
-                if !seen.insert(repeat) {
-                    return Err(invalid("duplicate or present excluded Repeat"));
+                if !seen.insert(repeat, work)? {
+                    return Err(invalid("duplicate or present excluded Repeat").into());
                 }
             }
         }
@@ -513,9 +534,9 @@ pub struct ResolvedAudioBinding {
     pub work: usize,
 }
 
-struct Work {
-    used: usize,
-    maximum: usize,
+pub(crate) struct Work {
+    pub(crate) used: usize,
+    pub(crate) maximum: usize,
 }
 impl Work {
     fn new(maximum: usize) -> Result<Self, DocumentError> {
@@ -630,66 +651,86 @@ fn gap_duration(
 }
 
 impl ClockScope<'_> {
-    fn project(
+    fn project<P: AudioBindingAdmission>(
         &self,
         layout: &FrozenAudioLayout,
         instance: &InstancePath,
         gap_after: Option<&IterationId>,
         allocation: bool,
-        work: &mut Work,
-    ) -> Result<
-        (
-            crate::FrozenAudioProjection,
-            Option<std::ops::Range<ExactRatio>>,
-        ),
-        DocumentError,
-    > {
+        work: &mut Build<'_, P>,
+    ) -> AdmittedResult<ProjectedAllocation, P> {
         if let AudioDefinitionScope::RepeatGap(repeat) = self.root {
             if repeat != &instance.node || !instance.repeats.is_empty() || gap_after.is_some() {
-                return Err(invalid("gap definition has occurrence arguments"));
+                return Err(invalid("gap definition has occurrence arguments").into());
             }
-            work.spend(1)?;
+            let mut storage = work.fork();
+            storage.spend(1)?;
             let duration = gap_duration(layout, repeat)?;
-            return Ok((
+            let result = (
                 crate::FrozenAudioProjection {
                     origin: ExactRatio::ZERO,
                     frames_per_local_frame: ExactRatio::ONE,
                     point: ExactRatio::ZERO,
                     local_duration: duration,
                     local_extent: ExactRatio::integer(duration.frames()),
-                    instance: instance.clone(),
+                    instance: storage.instance(instance)?,
                     gap_after: None,
                     work: 0,
                 },
                 Some(ExactRatio::ZERO..ExactRatio::integer(duration.frames())),
-            ));
+            );
+            return Ok(storage.finish(result));
         }
-        let result = if allocation {
-            layout.project_scoped_with_allocation(
-                self.root.node(),
-                instance,
-                gap_after,
-                work.remaining()?,
-            )?
+        let mode = if allocation {
+            crate::audio_reference::ProjectionMode::VisibleAllocation
         } else {
-            let (projection, support) = match gap_after {
-                Some(after) => layout.project_scoped_with_support(
-                    self.root.node(),
-                    instance,
-                    Some(after),
-                    work.remaining()?,
-                )?,
-                None => layout.project_scoped_supported(
-                    self.root.node(),
-                    instance,
-                    work.remaining()?,
-                )?,
-            };
-            (projection, Some(support))
+            crate::audio_reference::ProjectionMode::MeaningfulSupport
         };
-        work.spend(result.0.work)?;
-        Ok(result)
+        let maximum = work.remaining()?;
+        let mut value = layout.project_scoped_inner_admitted(
+            crate::audio_reference::ScopedProjectionRequest {
+                root: self.root.node(),
+                instance,
+                local: ExactRatio::ZERO,
+                gap_after,
+                maximum_work: maximum,
+                mode,
+            },
+            work.policy(),
+        )?;
+        let receipt = value.take_work(work.policy())?;
+        work.account_child(receipt)?;
+        value.map_value(work.policy(), |(projection, support)| {
+            let support = if allocation {
+                (support.start != support.end).then_some(support)
+            } else {
+                Some(support)
+            };
+            (projection, support)
+        })
     }
+}
+
+fn project_affine_build<P: AudioBindingAdmission>(
+    layout: &FrozenAudioLayout,
+    root: &NodeId,
+    instance: &InstancePath,
+    local: ExactRatio,
+    gap: Option<&IterationId>,
+    maximum: usize,
+    work: &mut Build<'_, P>,
+) -> AdmittedResult<ProjectedSupport, P> {
+    layout.project_scoped_inner_admitted(
+        crate::audio_reference::ScopedProjectionRequest {
+            root,
+            instance,
+            local,
+            gap_after: gap,
+            maximum_work: maximum,
+            mode: crate::audio_reference::ProjectionMode::Affine,
+        },
+        work.policy(),
+    )
 }
 
 fn physical(kind: &FrozenAudioKind, duration: FrameDuration) -> bool {
@@ -710,8 +751,16 @@ impl AudioPlacementTemplate {
         layout: &FrozenAudioLayout,
         work: &mut Work,
     ) -> Result<(), DocumentError> {
+        let mut extra = 0;
+        legacy(self.validate_build(layout, &mut Build::new(work, &mut extra, &mut Unmetered)))
+    }
+    fn validate_build<P: AudioBindingAdmission>(
+        &self,
+        layout: &FrozenAudioLayout,
+        work: &mut Build<'_, P>,
+    ) -> BuildResult<(), P::Error> {
         if self.arguments.len() > MAX_DOCUMENT_DEPTH || self.births.len() > MAX_DOCUMENT_DEPTH {
-            return Err(limit("audio binding lexical depth"));
+            return Err(limit("audio binding lexical depth").into());
         }
         work.spend(self.entry_count())?;
         let scope = clock_scope(layout, &self.reference.root)?;
@@ -725,7 +774,7 @@ impl AudioPlacementTemplate {
                     || self.gap_after.is_some()
                     || matches!(scope.root, AudioDefinitionScope::RepeatGap(_))
                 {
-                    return Err(invalid("audio binding requires a node physical recipe"));
+                    return Err(invalid("audio binding requires a node physical recipe").into());
                 }
             }
             AudioRecipeKind::RepeatGap => {
@@ -736,64 +785,79 @@ impl AudioPlacementTemplate {
                         || !self.arguments.is_empty()
                         || !self.births.is_empty()
                     {
-                        return Err(invalid("gap definition arguments are not canonical"));
+                        return Err(invalid("gap definition arguments are not canonical").into());
                     }
                 } else if self.gap_after.is_none() {
-                    return Err(invalid("audio gap placement omits its preceding play"));
+                    return Err(invalid("audio gap placement omits its preceding play").into());
                 }
                 if let Some(AudioRepeatValue::Captured { iteration }) = &self.gap_after {
-                    let projected = layout.project_scoped(
+                    let mut input = work.fork();
+                    let instance = InstancePath {
+                        node: input.node(&self.reference.physical)?,
+                        repeats: Vec::new(),
+                    };
+                    let input = input.finish(instance);
+                    let mut projected = project_affine_build(
+                        layout,
                         &self.reference.physical,
-                        &InstancePath {
-                            node: self.reference.physical.clone(),
-                            repeats: Vec::new(),
-                        },
+                        input.value(),
                         ExactRatio::ZERO,
                         Some(iteration),
                         work.remaining()?,
+                        work,
                     )?;
-                    work.spend(projected.work)?;
+                    let receipt = projected.take_work(work.policy())?;
+                    work.account_child(receipt)?;
                 }
             }
         }
-        let (expected, used) = layout.scoped_repeats(
+        let mut expected = layout.scoped_repeats_admitted(
             scope.root.node(),
             &self.reference.physical,
             work.remaining()?,
+            work.policy(),
         )?;
-        work.spend(used)?;
-        if !expected.iter().eq(self
+        let receipt = expected.take_work(work.policy())?;
+        work.account_child(receipt)?;
+        if !expected.value().iter().eq(self
             .arguments
             .iter()
             .map(|argument| &argument.reference_repeat))
         {
-            return Err(invalid(
-                "audio binding reference Repeat path is incomplete or unordered",
-            ));
+            return Err(
+                invalid("audio binding reference Repeat path is incomplete or unordered").into(),
+            );
         }
-        let mut live = BTreeSet::new();
+        let mut live = ScratchSet::new(work, self.arguments.len());
         for argument in &self.arguments {
             if let AudioRepeatValue::Live { repeat } = &argument.value
-                && !live.insert(repeat)
+                && !live.insert(repeat, work)?
             {
-                return Err(invalid("duplicate audio binding live Repeat"));
+                return Err(invalid("duplicate audio binding live Repeat").into());
             }
         }
-        let mut clauses = BTreeSet::new();
+        let mut clauses = ScratchSet::new(work, self.births.len());
         let mut previous_root = scope.root.node();
         for clause in &self.births {
-            if !clauses.insert(&clause.repeat) {
-                return Err(invalid("duplicate audio birth clause"));
+            if !clauses.insert(&clause.repeat, work)? {
+                return Err(invalid("duplicate audio birth clause").into());
             }
-            let (_, used) =
-                layout.scoped_repeats(previous_root, &clause.definition_root, work.remaining()?)?;
-            work.spend(used)?;
-            let (_, used) = layout.scoped_repeats(
+            let mut checked = layout.scoped_repeats_admitted(
+                previous_root,
+                &clause.definition_root,
+                work.remaining()?,
+                work.policy(),
+            )?;
+            let receipt = checked.take_work(work.policy())?;
+            work.account_child(receipt)?;
+            let mut checked = layout.scoped_repeats_admitted(
                 &clause.definition_root,
                 &self.reference.physical,
                 work.remaining()?,
+                work.policy(),
             )?;
-            work.spend(used)?;
+            let receipt = checked.take_work(work.policy())?;
+            work.account_child(receipt)?;
             previous_root = &clause.definition_root;
             match &clause.survivors {
                 AudioBirthSurvivors::CapturedRepeat { repeat } => {
@@ -803,57 +867,68 @@ impl AudioPlacementTemplate {
                         ..
                     }) = layout.nodes().get(repeat)
                     else {
-                        return Err(invalid("birth survivors require a captured Repeat"));
+                        return Err(invalid("birth survivors require a captured Repeat").into());
                     };
                     if child != &clause.definition_root || !self.arguments.iter().any(|argument| {
                         &argument.reference_repeat == repeat && matches!(&argument.value, AudioRepeatValue::Live { repeat } if repeat == &clause.repeat)
-                    }) { return Err(invalid("birth default or captured Repeat argument disagrees")); }
+                    }) { return Err(invalid("birth default or captured Repeat argument disagrees").into()); }
                 }
                 AudioBirthSurvivors::Run { first, count, .. } => {
                     if *count == 0
                         || u64::from(*first) + u64::from(*count) > u64::from(u32::MAX) + 1
                     {
-                        return Err(invalid("audio birth survivor run is invalid"));
+                        return Err(invalid("audio birth survivor run is invalid").into());
                     }
-                    if live.contains(&clause.repeat) {
+                    if live.contains(&clause.repeat, work)? {
                         return Err(invalid(
                             "explicit birth run cannot replace a captured Repeat's survivors",
-                        ));
+                        )
+                        .into());
                     }
                 }
             }
         }
         // Every variable argument has an explicit canonical birth route. A
         // concrete override can instead close that argument at capture time.
-        for repeat in live {
-            if !clauses.contains(repeat) {
-                return Err(invalid("live Repeat argument has no birth clause"));
+        for repeat in live.values() {
+            if !clauses.contains(repeat, work)? {
+                return Err(invalid("live Repeat argument has no birth clause").into());
             }
         }
         // Captured arguments must name real effective paths, even if another
         // argument remains variable. Check each selected branch independently.
         for argument in &self.arguments {
             if let AudioRepeatValue::Captured { iteration } = &argument.value {
-                let (child, used) = layout.branch_below(
+                let mut child = layout.branch_below_admitted(
                     &argument.reference_repeat,
                     &self.reference.physical,
                     work.remaining()?,
+                    work.policy(),
                 )?;
-                work.spend(used)?;
-                let projected = layout.project_scoped(
+                let receipt = child.take_work(work.policy())?;
+                work.account_child(receipt)?;
+                let mut input = work.fork();
+                input.array::<RepeatInstance>(1)?;
+                let repeats = vec![RepeatInstance {
+                    node: input.node(&argument.reference_repeat)?,
+                    iteration: input.iteration(iteration)?,
+                }];
+                let mut input = input.finish(repeats);
+                let instance = child.map_value(work.policy(), |node| InstancePath {
+                    node,
+                    repeats: input.value.take().expect("captured Repeat path"),
+                })?;
+                let mut projected = project_affine_build(
+                    layout,
                     &argument.reference_repeat,
-                    &InstancePath {
-                        node: child,
-                        repeats: vec![RepeatInstance {
-                            node: argument.reference_repeat.clone(),
-                            iteration: iteration.clone(),
-                        }],
-                    },
+                    instance.value(),
                     ExactRatio::ZERO,
                     None,
                     work.remaining()?,
+                    work,
                 )?;
-                work.spend(projected.work)?;
+                let receipt = projected.take_work(work.policy())?;
+                work.account_child(receipt)?;
             }
         }
         Ok(())
@@ -863,14 +938,28 @@ impl AudioPlacementTemplate {
         1 + self.arguments.len() + self.births.len() + usize::from(self.gap_after.is_some())
     }
 
+    // Compatibility bridge: use the caller's accumulated work and allowance.
+    // Only construction accounting is unmetered; no fresh query budget is made.
     fn resolve_with(
         &self,
         layout: &FrozenAudioLayout,
         environment: AudioBindingEnvironment<'_>,
         work: &mut Work,
     ) -> Result<ResolvedAudioPlacement, DocumentError> {
-        let before = work.used;
-        self.validate_with(layout, work)?;
+        let mut extra = 0;
+        let mut admission = Unmetered;
+        let mut build = Build::new(work, &mut extra, &mut admission);
+        legacy(self.resolve_with_build(layout, environment, &mut build))
+    }
+
+    fn resolve_with_build<P: AudioBindingAdmission>(
+        &self,
+        layout: &FrozenAudioLayout,
+        environment: AudioBindingEnvironment<'_>,
+        work: &mut Build<'_, P>,
+    ) -> BuildResult<ResolvedAudioPlacement, P::Error> {
+        let before = work.used();
+        self.validate_build(layout, work)?;
         let mut birth = None;
         for (index, clause) in self.births.iter().enumerate() {
             work.spend(environment.lookup_work() + 1)?;
@@ -879,7 +968,7 @@ impl AudioPlacementTemplate {
                     birth = Some(index);
                     continue;
                 }
-                return Err(invalid("audio binding omits a live Repeat argument"));
+                return Err(invalid("audio binding omits a live Repeat argument").into());
             };
             let survives = match &clause.survivors {
                 AudioBirthSurvivors::CapturedRepeat { repeat } => {
@@ -910,10 +999,10 @@ impl AudioPlacementTemplate {
         }
         let mut gap_birth = false;
         let gap_after = match &self.gap_after {
-            Some(AudioRepeatValue::Captured { iteration }) => Some(iteration.clone()),
+            Some(AudioRepeatValue::Captured { iteration }) => Some(work.iteration(iteration)?),
             Some(AudioRepeatValue::Live { repeat }) => {
                 if repeat != &environment.instance().node {
-                    return Err(invalid("live gap argument names another Repeat owner"));
+                    return Err(invalid("live gap argument names another Repeat owner").into());
                 }
                 work.spend(environment.lookup_work() + 1)?;
                 match environment.gap_after() {
@@ -936,38 +1025,50 @@ impl AudioPlacementTemplate {
                                 .position(iteration)
                                 .is_some_and(|position| position + 1 < iterations.len());
                         gap_birth = !survives;
-                        survives.then(|| iteration.clone())
+                        if survives {
+                            Some(work.iteration(iteration)?)
+                        } else {
+                            None
+                        }
                     }
                     None if environment.gap_definition() => {
                         gap_birth = true;
                         None
                     }
-                    None => return Err(invalid("audio gap binding omits its live preceding play")),
+                    None => {
+                        return Err(
+                            invalid("audio gap binding omits its live preceding play").into()
+                        );
+                    }
                 }
             }
             None => None,
         };
         let clock = if gap_birth {
             AudioClockRoot::GapDefinitionPointCeil {
-                repeat: self.reference.physical.clone(),
+                repeat: work.node(&self.reference.physical)?,
             }
         } else {
-            birth.map_or_else(
-                || self.reference.root.clone(),
-                |index| AudioClockRoot::DefinitionPointCeil {
-                    root: self.births[index].definition_root.clone(),
+            match birth {
+                None => work.clock(&self.reference.root)?,
+                Some(index) => AudioClockRoot::DefinitionPointCeil {
+                    root: work.node(&self.births[index].definition_root)?,
                 },
-            )
+            }
         };
         let scope = clock_scope(layout, &clock)?;
-        let (required, used) = layout.scoped_repeats(
+        let mut required = layout.scoped_repeats_admitted(
             scope.root.node(),
             &self.reference.physical,
             work.remaining()?,
+            work.policy(),
         )?;
-        work.spend(used)?;
-        let mut repeats = Vec::with_capacity(required.len());
-        for reference_repeat in required {
+        let receipt = required.take_work(work.policy())?;
+        work.account_child(receipt)?;
+        work.array::<RepeatInstance>(required.value().len())?;
+        let mut repeats = Vec::with_capacity(required.value().len());
+        let required_values = required.value.take().expect("required Repeat path");
+        for reference_repeat in required_values {
             work.spend(self.arguments.len() + environment.lookup_work() + 1)?;
             let argument = self
                 .arguments
@@ -982,16 +1083,20 @@ impl AudioPlacementTemplate {
             };
             repeats.push(RepeatInstance {
                 node: reference_repeat,
-                iteration: iteration.clone(),
+                iteration: work.iteration(iteration)?,
             });
         }
+        drop(required.buffer.take());
+        work.merge_value(&mut required)?;
         let instance = InstancePath {
-            node: self.reference.physical.clone(),
+            node: work.node(&self.reference.physical)?,
             repeats,
         };
-        let (projection, local_support) =
-            scope.project(layout, &instance, gap_after.as_ref(), false, work)?;
-        let mut local_support = local_support.expect("meaningful projection retains empty ranges");
+        let projected = scope.project(layout, &instance, gap_after.as_ref(), false, work)?;
+        let (projection, local_support) = projected.value();
+        let mut local_support = local_support
+            .clone()
+            .expect("meaningful projection retains empty ranges");
         if let Some(support) = &scope.support {
             let selected = support
                 .start
@@ -1028,7 +1133,7 @@ impl AudioPlacementTemplate {
             clock,
             birth,
             gap_birth,
-            work: work.used - before,
+            work: work.used() - before,
         })
     }
 }
@@ -1078,21 +1183,23 @@ impl AudioReanchorStep {
         Ok(())
     }
 
-    fn allocation_entry(
+    fn allocation_entry<P: AudioBindingAdmission>(
         &self,
         layout: &FrozenAudioLayout,
         placement: &ResolvedAudioPlacement,
-        work: &mut Work,
-    ) -> Result<Option<ExactRatio>, DocumentError> {
+        work: &mut Build<'_, P>,
+    ) -> BuildResult<Option<ExactRatio>, P::Error> {
         self.validate_anchor(layout)?;
         let scope = clock_scope(layout, &placement.clock)?;
-        let (projection, mut allocation) = scope.project(
+        let projected = scope.project(
             layout,
             &placement.instance,
             placement.gap_after.as_ref(),
             true,
             work,
         )?;
+        let (projection, allocation) = projected.value();
+        let mut allocation = allocation.clone();
         let captured = clock_scope(layout, &self.placement.reference.root)?;
         // A later outer wrapper can select the same definition root. Such a
         // birth keeps this root's intrinsic window; only a narrower root drops
@@ -1130,9 +1237,9 @@ impl AudioReanchorStep {
                 })
             }
             (AudioReanchorAnchor::SourceEndpoint { .. }, _) => {
-                return Err(invalid(
-                    "Source endpoint requires a positive captured allocation",
-                ));
+                return Err(
+                    invalid("Source endpoint requires a positive captured allocation").into(),
+                );
             }
         };
         entry
@@ -1142,6 +1249,7 @@ impl AudioReanchorStep {
                     .map_err(DocumentError::from)
             })
             .transpose()
+            .map_err(Into::into)
     }
 }
 
@@ -1734,6 +1842,75 @@ impl AudioBindingState {
         self.resolve_binding(binding, environment, maximum_work)
     }
 
+    pub fn resolve_in_admitted<P: AudioBindingAdmission>(
+        &self,
+        owner: &NodeId,
+        environment: AudioBindingEnvironment<'_>,
+        maximum_work: usize,
+        admission: &mut P,
+    ) -> BuildResult<AdmittedAudioBinding<P::Issuer, P::Lease>, P::Error> {
+        self.resolve_owner_admitted(
+            owner,
+            environment,
+            maximum_work,
+            AudioRecipeKind::Node,
+            admission,
+        )
+    }
+    pub fn resolve_gap_in_admitted<P: AudioBindingAdmission>(
+        &self,
+        owner: &NodeId,
+        environment: AudioBindingEnvironment<'_>,
+        maximum_work: usize,
+        admission: &mut P,
+    ) -> BuildResult<AdmittedAudioBinding<P::Issuer, P::Lease>, P::Error> {
+        self.resolve_owner_admitted(
+            owner,
+            environment,
+            maximum_work,
+            AudioRecipeKind::RepeatGap,
+            admission,
+        )
+    }
+    fn resolve_owner_admitted<P: AudioBindingAdmission>(
+        &self,
+        owner: &NodeId,
+        environment: AudioBindingEnvironment<'_>,
+        maximum_work: usize,
+        kind: AudioRecipeKind,
+        admission: &mut P,
+    ) -> BuildResult<AdmittedAudioBinding<P::Issuer, P::Lease>, P::Error> {
+        let mut raw = Work {
+            used: 0,
+            maximum: maximum_work,
+        };
+        let mut extra = 0;
+        let mut work = Build::new(&mut raw, &mut extra, admission);
+        environment.validate_build(&mut work)?;
+        if (kind == AudioRecipeKind::RepeatGap)
+            != matches!(
+                environment,
+                AudioBindingEnvironment::GapOccurrence { .. }
+                    | AudioBindingEnvironment::GapDefinition { .. }
+            )
+        {
+            return Err(invalid("audio binding environment has another recipe kind").into());
+        }
+        if &environment.instance().node != owner {
+            return Err(invalid("audio binding occurrence names another owner").into());
+        }
+        let bindings = match kind {
+            AudioRecipeKind::Node => &self.bindings,
+            AudioRecipeKind::RepeatGap => &self.gap_bindings,
+        };
+        let binding = bindings
+            .get(owner)
+            .ok_or_else(|| invalid("audio binding owner is missing"))?;
+        Work::new(maximum_work)?;
+        let result = self.resolve_binding_build(binding, environment, &mut work)?;
+        Ok(work.finish(result))
+    }
+
     /// Whether appending `step` to the Node binding `binding` can never change
     /// its resolution. This holds when no placement names a Repeat argument,
     /// birth or gap (so every occurrence and definition resolves the same
@@ -1790,16 +1967,30 @@ impl AudioBindingState {
         environment: AudioBindingEnvironment<'_>,
         maximum_work: usize,
     ) -> Result<ResolvedAudioBinding, DocumentError> {
-        let mut work = Work::new(maximum_work)?;
+        let mut raw = Work::new(maximum_work)?;
+        let mut extra = 0;
+        let mut policy = Unmetered;
+        let mut work = Build::new(&mut raw, &mut extra, &mut policy);
+        let value = legacy(self.resolve_binding_build(binding, environment, &mut work))?;
+        Ok(work.finish(value).into_legacy())
+    }
+    fn resolve_binding_build<P: AudioBindingAdmission>(
+        &self,
+        binding: &OwnedAudioBinding,
+        environment: AudioBindingEnvironment<'_>,
+        work: &mut Build<'_, P>,
+    ) -> BuildResult<ResolvedAudioBinding, P::Error> {
         work.spend(environment.instance().repeats.len() + 1)?;
-        let resolve = |template: &AudioPlacementTemplate, work: &mut Work| {
+        let resolve = |template: &AudioPlacementTemplate, work: &mut Build<'_, P>| {
             let layout = self
                 .timings
                 .get(&template.reference.timing)
                 .ok_or_else(|| invalid("audio timing identity is missing"))?;
-            template.resolve_with(layout, environment, work)
+            let mut storage = work.fork();
+            let result = template.resolve_with_build(layout, environment, &mut storage)?;
+            Ok::<_, AudioBindingBuildError<P::Error>>(storage.finish(result))
         };
-        let lattice = resolve(&binding.lattice, &mut work)?;
+        let mut lattice = resolve(&binding.lattice, work)?;
         let mut resume = binding
             .resume
             .as_ref()
@@ -1807,14 +1998,15 @@ impl AudioBindingState {
                 let mut delta = resume.phase.constant;
                 for term in &resume.phase.terms {
                     work.spend(1)?;
-                    let placement = resolve(&term.placement, &mut work)?;
-                    let from = placement.sample_boundary(term.from_local)?;
-                    let to = placement.sample_boundary(term.to_local)?;
+                    let placement = resolve(&term.placement, work)?;
+                    let from = placement.value().sample_boundary(term.from_local)?;
+                    let to = placement.value().sample_boundary(term.to_local)?;
                     let distance = ExactRatio::new(i128::from(to) - i128::from(from), 1)?;
-                    delta = delta
-                        .checked_add(distance.checked_mul(placement.local_frames_per_sample()?)?)?;
+                    delta = delta.checked_add(
+                        distance.checked_mul(placement.value().local_frames_per_sample()?)?,
+                    )?;
                 }
-                Ok::<_, DocumentError>(ResolvedAudioResume {
+                Ok::<_, AudioBindingBuildError<P::Error>>(ResolvedAudioResume {
                     local_boundary: resume.local_boundary,
                     reference_local_delta: delta,
                 })
@@ -1822,29 +2014,30 @@ impl AudioBindingState {
             .transpose()?;
         for step in &binding.reanchors {
             work.spend(1)?;
-            let placement = resolve(&step.placement, &mut work)?;
+            let placement = resolve(&step.placement, work)?;
             let layout = &self.timings[&step.placement.reference.timing];
-            let Some(entry) = step.allocation_entry(layout, &placement, &mut work)? else {
+            let Some(entry) = step.allocation_entry(layout, placement.value(), work)? else {
                 // Hidden retained context has no new anchor. A later edit may
                 // expose it, at which point the previous map must still apply.
                 continue;
             };
             let previous = resume.get_or_insert(ResolvedAudioResume {
-                local_boundary: lattice.local_support.start,
+                local_boundary: lattice.value().local_support.start,
                 reference_local_delta: ExactRatio::ZERO,
             });
-            let from = placement.sample_boundary(previous.local_boundary)?;
-            let to = placement.sample_boundary(entry)?;
+            let from = placement.value().sample_boundary(previous.local_boundary)?;
+            let to = placement.value().sample_boundary(entry)?;
             let distance = ExactRatio::new(i128::from(to) - i128::from(from), 1)?;
             previous.reference_local_delta = previous
                 .reference_local_delta
-                .checked_add(distance.checked_mul(placement.local_frames_per_sample()?)?)?;
+                .checked_add(distance.checked_mul(placement.value().local_frames_per_sample()?)?)?;
             previous.local_boundary = entry;
         }
+        work.merge_value(&mut lattice)?;
         Ok(ResolvedAudioBinding {
-            lattice,
+            lattice: lattice.value.take().expect("binding lattice"),
             resume,
-            work: work.used,
+            work: work.used(),
         })
     }
 

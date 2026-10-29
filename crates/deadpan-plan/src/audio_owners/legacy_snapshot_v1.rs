@@ -427,3 +427,6 @@ fn capture_legacy_snapshot_v1() {
     file.write_all(b"\n").unwrap();
     file.sync_all().unwrap();
 }
+
+#[path = "owner_query_admission_tests.rs"]
+mod admitted;

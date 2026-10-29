@@ -307,6 +307,19 @@ The initial wrong plain-Split fixture is corrected and retained. Strict lint,
 existing libraries and review pass. Product kernels remain unchanged; query
 admission and all existing resource/criterion/gate gaps remain open.
 
+The [actual owner-query admission](qualification/owner-query-budget-2026-10-29.md)
+now closes the numerical Root/Domain candidate query through reached Plan/Core
+binding and projection construction. Its sealed query remains charged through
+the actual legacy capture. Shared kernels preserve the frozen 14-case semantics;
+linear canonical/additional receipts forward real work once. Main/isolated Audio
+pass 298/279 and Plan 569/556 across 29 executables each. Core passes 914;
+stage suites pass 203/203 and definition/history 171/eight. Strict lint and
+independent review pass; all 22 staged sources equal isolated compiled bytes.
+The fresh Split matrix remains four pass/three fail, now including earlier
+binding/projection work exhaustion. Capture/discarded spans, retained probe and
+owners, caller/node containers and complete recursive closure remain open.
+No cap, weight, refund, cache, cold activation or requirement/gate status changes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

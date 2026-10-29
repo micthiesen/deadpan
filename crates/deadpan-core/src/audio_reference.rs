@@ -9,6 +9,10 @@ mod sound_placement;
 mod split_correspondence;
 pub use sound_placement::{FrozenSoundContextClock, FrozenSoundPlacement};
 
+use crate::audio_binding::Work;
+use crate::audio_binding::admission::{
+    AdmittedResult, AudioBindingAdmission, Build, Growing, ProjectedSupport, Unmetered, legacy,
+};
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::Write;
 use std::sync::Arc;
@@ -476,8 +480,17 @@ impl SoundClockCorrespondence {
     }
 }
 
+pub(crate) struct ScopedProjectionRequest<'a> {
+    pub(crate) root: &'a NodeId,
+    pub(crate) instance: &'a InstancePath,
+    pub(crate) local: ExactRatio,
+    pub(crate) gap_after: Option<&'a IterationId>,
+    pub(crate) maximum_work: usize,
+    pub(crate) mode: ProjectionMode,
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum ProjectionMode {
+pub(crate) enum ProjectionMode {
     Affine,
     MeaningfulSupport,
     VisibleAllocation,
@@ -2091,15 +2104,6 @@ impl FrozenAudioLayout {
         .map(|(projection, _)| projection)
     }
 
-    pub(crate) fn project_scoped_supported(
-        &self,
-        root: &NodeId,
-        instance: &InstancePath,
-        maximum_work: usize,
-    ) -> Result<(FrozenAudioProjection, std::ops::Range<ExactRatio>), DocumentError> {
-        self.project_scoped_with_support(root, instance, None, maximum_work)
-    }
-
     /// Project local zero and meaningful local support within one physical
     /// audio clock. An ancestor nonunity Preserve is a clock boundary: use its
     /// input child as the scope, or project the Preserve output itself.
@@ -2160,8 +2164,35 @@ impl FrozenAudioLayout {
         maximum_work: usize,
         mode: ProjectionMode,
     ) -> Result<(FrozenAudioProjection, std::ops::Range<ExactRatio>), DocumentError> {
+        let value = legacy(self.project_scoped_inner_admitted(
+            ScopedProjectionRequest {
+                root,
+                instance,
+                local,
+                gap_after,
+                maximum_work,
+                mode,
+            },
+            &mut Unmetered,
+        ))?;
+        Ok(value.into_legacy())
+    }
+
+    pub(crate) fn project_scoped_inner_admitted<P: AudioBindingAdmission>(
+        &self,
+        request: ScopedProjectionRequest<'_>,
+        admission: &mut P,
+    ) -> AdmittedResult<ProjectedSupport, P> {
+        let ScopedProjectionRequest {
+            root,
+            instance,
+            local,
+            gap_after,
+            maximum_work,
+            mode,
+        } = request;
         if maximum_work == 0 || maximum_work > MAX_DOCUMENT_NODES {
-            return Err(limit("invalid frozen projection budget"));
+            return Err(limit("invalid frozen projection budget").into());
         }
         instance.validate_depth()?;
         debug_assert!(
@@ -2169,13 +2200,18 @@ impl FrozenAudioLayout {
             "a provisional timing table read through an alias it does not project"
         );
         if !self.has_node(root) {
-            return Err(invalid("frozen projection scope is missing"));
+            return Err(invalid("frozen projection scope is missing").into());
         }
         let target = self
             .nodes
             .get(&instance.node)
             .ok_or_else(|| invalid("frozen projection host is missing"))?;
-        let mut work = 0usize;
+        let mut raw = Work {
+            used: 0,
+            maximum: maximum_work,
+        };
+        let mut extra = 0;
+        let mut work = Build::projection(&mut raw, &mut extra, admission);
         let mut origin = ExactRatio::ZERO;
         let mut scale = ExactRatio::ONE;
         let mut local_duration = target.duration;
@@ -2186,12 +2222,12 @@ impl FrozenAudioLayout {
                 .repeats
                 .get(&instance.node)
                 .ok_or_else(|| invalid("frozen gap scope is not a Repeat"))?;
-            spend(&mut work, layout.segment_count(), maximum_work)?;
+            work.spend(layout.segment_count())?;
             let play = layout
                 .play(gap)?
                 .ok_or_else(|| invalid("frozen gap play is missing"))?;
             if play.gap_after == ExactRatio::ZERO || play.gap_child.is_some() {
-                return Err(invalid("frozen play has no following gap"));
+                return Err(invalid("frozen play has no following gap").into());
             }
             origin = play.start.checked_add(play.duration)?;
             // A default gap remains an integral authored recipe; owned gaps
@@ -2203,7 +2239,7 @@ impl FrozenAudioLayout {
         let mut node = &instance.node;
         let mut step = instance.repeats.len();
         loop {
-            spend(&mut work, 1, maximum_work)?;
+            work.spend(1)?;
             if node == root {
                 break;
             }
@@ -2230,7 +2266,9 @@ impl FrozenAudioLayout {
                     if mode != ProjectionMode::Affine
                         && pitch.processes(mapping.duration() == self.nodes[parent].duration)
                     {
-                        return Err(invalid("frozen support scope crosses an opaque Preserve"));
+                        return Err(
+                            invalid("frozen support scope crosses an opaque Preserve").into()
+                        );
                     }
                     if mode == ProjectionMode::VisibleAllocation
                         || (mode == ProjectionMode::MeaningfulSupport
@@ -2252,10 +2290,10 @@ impl FrozenAudioLayout {
                         .ok_or_else(|| invalid("frozen occurrence omits a Repeat"))?;
                     let selected = &instance.repeats[step];
                     if &selected.node != parent {
-                        return Err(invalid("frozen Repeat path order is wrong"));
+                        return Err(invalid("frozen Repeat path order is wrong").into());
                     }
                     let layout = &self.index.repeats[parent];
-                    spend(&mut work, layout.segment_count(), maximum_work)?;
+                    work.spend(layout.segment_count())?;
                     let play = layout
                         .play(&selected.iteration)?
                         .ok_or_else(|| invalid("frozen occurrence play is missing"))?;
@@ -2271,32 +2309,33 @@ impl FrozenAudioLayout {
                         }
                         play.start.checked_add(play.duration)?
                     } else {
-                        return Err(invalid(
-                            "frozen occurrence selects the wrong override child",
-                        ));
+                        return Err(
+                            invalid("frozen occurrence selects the wrong override child").into(),
+                        );
                     };
                     origin = origin.checked_add(offset)?;
                 }
-                _ => return Err(invalid("frozen projection has a leaf parent")),
+                _ => return Err(invalid("frozen projection has a leaf parent").into()),
             }
             node = parent;
         }
         if step != 0 {
-            return Err(invalid("frozen occurrence has extra Repeat ancestors"));
+            return Err(invalid("frozen occurrence has extra Repeat ancestors").into());
         }
-        Ok((
+        let result = (
             FrozenAudioProjection {
                 origin,
                 frames_per_local_frame: scale,
                 point: origin.checked_add(local.checked_mul(scale)?)?,
                 local_duration,
                 local_extent,
-                instance: instance.clone(),
-                gap_after: gap_after.cloned(),
-                work,
+                instance: work.instance(instance)?,
+                gap_after: gap_after.map(|v| work.iteration(v)).transpose()?,
+                work: work.used(),
             },
             support,
-        ))
+        );
+        Ok(work.finish(result))
     }
 
     /// Structural Repeat ancestors from outside inward, without selecting any
@@ -2308,21 +2347,39 @@ impl FrozenAudioLayout {
         target: &NodeId,
         maximum_work: usize,
     ) -> Result<(Vec<NodeId>, usize), DocumentError> {
+        let mut value =
+            legacy(self.scoped_repeats_admitted(root, target, maximum_work, &mut Unmetered))?;
+        let work = legacy(value.take_work(&Unmetered))?.units();
+        Ok((value.into_legacy(), work))
+    }
+
+    pub(crate) fn scoped_repeats_admitted<P: AudioBindingAdmission>(
+        &self,
+        root: &NodeId,
+        target: &NodeId,
+        maximum_work: usize,
+        admission: &mut P,
+    ) -> AdmittedResult<Vec<NodeId>, P> {
         if maximum_work == 0 || maximum_work > MAX_DOCUMENT_NODES {
-            return Err(limit("invalid frozen scope budget"));
+            return Err(limit("invalid frozen scope budget").into());
         }
         debug_assert!(
             self.inner.complete.is_none() || self.projects(target),
             "a provisional timing table read through an alias it does not project"
         );
         if !self.has_node(root) || !self.has_node(target) {
-            return Err(invalid("frozen scope alias is missing"));
+            return Err(invalid("frozen scope alias is missing").into());
         }
         let mut node = target;
-        let mut repeats = Vec::new();
-        let mut work = 0;
+        let mut raw = Work {
+            used: 0,
+            maximum: maximum_work,
+        };
+        let mut extra = 0;
+        let mut work = Build::projection(&mut raw, &mut extra, admission);
+        let mut repeats = Growing::new();
         loop {
-            spend(&mut work, 1, maximum_work)?;
+            work.spend(1)?;
             if node == root {
                 break;
             }
@@ -2345,15 +2402,17 @@ impl FrozenAudioLayout {
                     ..
                 } if pitch.processes(mapping.duration() == parent_node.duration)
             ) {
-                return Err(invalid("audio binding scope crosses an opaque Preserve"));
+                return Err(invalid("audio binding scope crosses an opaque Preserve").into());
             }
             if matches!(self.nodes[parent].kind, FrozenAudioKind::Repeat { .. }) {
-                repeats.push(parent.clone());
+                let value = work.node(parent)?;
+                repeats.push(value, &mut work)?;
             }
             node = parent;
         }
-        repeats.reverse();
-        Ok((repeats, work))
+        repeats.values.reverse();
+        let (values, buffer) = repeats.finish(&mut work)?;
+        Ok(work.finish_buffer(values, buffer))
     }
 
     /// Whether this node's complete placement path contains only ordinary
@@ -2422,23 +2481,42 @@ impl FrozenAudioLayout {
         target: &NodeId,
         maximum_work: usize,
     ) -> Result<(NodeId, usize), DocumentError> {
+        let mut value =
+            legacy(self.branch_below_admitted(ancestor, target, maximum_work, &mut Unmetered))?;
+        let work = legacy(value.take_work(&Unmetered))?.units();
+        Ok((value.into_legacy(), work))
+    }
+
+    pub(crate) fn branch_below_admitted<P: AudioBindingAdmission>(
+        &self,
+        ancestor: &NodeId,
+        target: &NodeId,
+        maximum_work: usize,
+        admission: &mut P,
+    ) -> AdmittedResult<NodeId, P> {
         if maximum_work == 0 || maximum_work > MAX_DOCUMENT_NODES {
-            return Err(limit("invalid frozen branch budget"));
+            return Err(limit("invalid frozen branch budget").into());
         }
         if !self.nodes.contains_key(ancestor) || !self.nodes.contains_key(target) {
-            return Err(invalid("frozen branch alias is missing"));
+            return Err(invalid("frozen branch alias is missing").into());
         }
         let mut node = target;
-        let mut work = 0;
+        let mut raw = Work {
+            used: 0,
+            maximum: maximum_work,
+        };
+        let mut extra = 0;
+        let mut work = Build::projection(&mut raw, &mut extra, admission);
         loop {
-            spend(&mut work, 1, maximum_work)?;
+            work.spend(1)?;
             let (parent, _) = self
                 .index
                 .parents
                 .get(node)
                 .ok_or_else(|| invalid("frozen ancestor does not contain its target"))?;
             if parent == ancestor {
-                return Ok((node.clone(), work));
+                let node = work.node(node)?;
+                return Ok(work.finish(node));
             }
             node = parent;
         }

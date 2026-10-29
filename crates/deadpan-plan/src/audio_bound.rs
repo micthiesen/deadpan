@@ -14,6 +14,10 @@ use super::{
 };
 use crate::{AudioSampleGrid, PlanError};
 
+#[path = "audio_bound_query.rs"]
+mod query;
+use query::QueryBound;
+
 #[derive(Debug, Clone)]
 pub enum AudioBoundDomain<'plan> {
     Root(AudioDomain<'plan>),
@@ -106,25 +110,6 @@ impl RenderPlan {
         !self.audio_bindings.is_empty()
     }
 
-    fn definition_exclusions(
-        &self,
-        selector: &AudioDefinitionSelector,
-        budget: &mut Budget,
-    ) -> Result<(NodeId, Vec<NodeId>), PlanError> {
-        let definition = self.audio_definition(selector.clone())?;
-        let mut current = self.parents[definition.root];
-        let mut excluded = Vec::new();
-        while let Some(index) = current {
-            budget.spend(1)?;
-            if matches!(self.nodes[index].kind, CompiledKind::Repeat { .. }) {
-                excluded.push(self.nodes[index].inspection.id.clone());
-            }
-            current = self.parents[index];
-        }
-        excluded.reverse();
-        Ok((definition.root().clone(), excluded))
-    }
-
     pub(super) fn bound_at(
         &self,
         node: usize,
@@ -133,151 +118,13 @@ impl RenderPlan {
         placement: BoundPlacement<'_>,
         budget: &mut Budget,
     ) -> Result<Option<AudioBound<'_>>, PlanError> {
-        let BoundPlacement {
-            transform,
-            grid,
-            allocated_start,
-            support,
-            constraints,
-            gap,
-        } = placement;
-        // Preserve the retained binding while dormant, but do not ask its empty
-        // meaningful domain for an audible sample or an owner phase.
-        if gap.is_none()
-            && matches!(&self.nodes[node].kind, CompiledKind::Source { audio: Some(audio), .. } if audio.selection.start == audio.selection.end)
-        {
-            return Ok(None);
-        }
-        let id = &self.nodes[node].inspection.id;
-        let bindings = if gap.is_some() {
-            self.audio_bindings.gap_bindings()
-        } else {
-            self.audio_bindings.bindings()
-        };
-        if !bindings.contains_key(id) {
-            return Ok(None);
-        }
-        budget.spend(repeats.len() + 1)?;
-        let instance = InstancePath {
-            node: id.clone(),
-            repeats: repeats.to_vec(),
-        };
-        let excluded = definition
-            .map(|selector| self.definition_exclusions(selector, budget))
-            .transpose()?;
-        let environment = match (gap, &excluded) {
-            (Some(gap), Some((root, outside_repeats))) => AudioBindingEnvironment::GapDefinition {
-                root: if matches!(definition, Some(AudioDefinitionSelector::RepeatGap { .. })) {
-                    AudioDefinitionScope::RepeatGap(root)
-                } else {
-                    AudioDefinitionScope::NodeOutput(root)
-                },
-                instance: &instance,
-                outside_repeats,
-                after: gap.after.as_ref(),
-            },
-            (Some(gap), None) => AudioBindingEnvironment::GapOccurrence {
-                instance: &instance,
-                after: gap.after.as_ref().ok_or(PlanError::InvalidPlan(
-                    "bound gap occurrence has no preceding play",
-                ))?,
-            },
-            (None, Some((root, outside_repeats))) => AudioBindingEnvironment::Definition {
-                root,
-                instance: &instance,
-                outside_repeats,
-            },
-            (None, None) => AudioBindingEnvironment::Occurrence(&instance),
-        };
-        if budget.remaining == 0 {
-            return Err(PlanError::AudioQueryLimit("binding resolution"));
-        }
-        let resolved = if gap.is_some() {
-            self.audio_bindings
-                .resolve_gap_in(id, environment, budget.remaining)?
-        } else {
-            self.audio_bindings
-                .resolve_in(id, environment, budget.remaining)?
-        };
-        budget.spend(resolved.work)?;
-        let lattice = &resolved.lattice;
-        let unit = lattice.local_frames_per_sample()?;
-        let local_anchor = resolved
-            .resume
-            .as_ref()
-            .map_or(lattice.local_support.start, |resume| resume.local_boundary);
-        let phase = resolved
-            .resume
-            .as_ref()
-            .map_or(ExactRatio::ZERO, |resume| resume.reference_local_delta);
-        let reference = ExactRatio::integer(lattice.sample_boundary(lattice.local_support.start)?)
-            .checked_add(phase.checked_div(unit)?)?;
-        let current_boundary = grid.boundary(transform.signal_from_local(local_anchor)?)?;
-        let reference_step = transform
-            .signal_frames_per_sample
-            .checked_div(transform.signal_frames_per_local_frame)?
-            .checked_div(unit)?;
-        let offset = ExactRatio::new(
-            i128::from(allocated_start.0) - i128::from(current_boundary.0),
-            1,
-        )?;
-        let local = |point| transform.local_at_signal_frame(point);
-        // The retained layout fixes the sampling clock, including its original
-        // reference anchor above. It does not freeze the current raw recipe's
-        // duration. For example, lengthening a moved RoomTone Hold must expose
-        // its new tail without resetting the loop phase or other Repeat plays'
-        // historical origins. The raw Source walker separately applies current
-        // source placement; current meaningful ancestors constrain this extent.
-        let duration = gap.map_or(self.nodes[node].extent, |gap| {
-            ExactRatio::integer(gap.duration.frames())
-        });
-        let intrinsic = ExactRatio::ZERO..duration;
-        let mut support = match support {
-            Some(current) => intersect(intrinsic, local(current.start)?..local(current.end)?)?,
-            None => intrinsic,
-        };
-        // A selected Source owns a narrower physical operand than its full
-        // measured mapping. Clip before transferring it onto the resumed grid,
-        // so interpolation cannot draw across the authored crop. Ordinary
-        // placement still denotes missing input, not an endpoint mask.
-        if let CompiledKind::Source {
-            audio: Some(audio), ..
-        } = &self.nodes[node].kind
-            && audio.selected
-        {
-            support = intersect(support, audio.selection.start..audio.selection.end)?;
-        }
-        budget.spend(constraints.len())?;
-        let project = |point| {
-            lattice
-                .origin
-                .checked_add(local(point)?.checked_mul(lattice.frames_per_local_frame)?)
-        };
-        let constraints = constraints
-            .iter()
-            .map(|constraint| {
-                Ok(EnvelopeConstraint {
-                    range: project(constraint.range.start)?..project(constraint.range.end)?,
-                    ..constraint.clone()
-                })
-            })
-            .collect::<Result<Vec<_>, PlanError>>()?;
-        let envelope_scale = transform
-            .signal_frames_per_local_frame
-            .checked_div(lattice.frames_per_local_frame)?;
-        Ok(Some(AudioBound {
-            plan: self,
-            node,
-            definition: definition.cloned(),
-            instance,
-            gap: gap.cloned(),
-            resolved,
-            reference_at_anchor: reference.checked_add(offset.checked_mul(reference_step)?)?,
-            reference_step,
-            support,
-            envelope_scale,
-            constraints,
-        }))
+        let mut policy = crate::plan::audio_owners::admission::Unmetered;
+        let mut query = crate::plan::audio_owners::admission::Budget::new(budget, &mut policy);
+        crate::plan::audio_owners::admission::outer::<
+            _,
+            crate::plan::audio_owners::admission::Unmetered,
+        >(self.bound_at_query(node, repeats, definition, placement, &mut query))
+        .map(|value| value.map(QueryBound::unmetered))
     }
 }
 

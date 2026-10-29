@@ -47,6 +47,11 @@ pub use audio_tape::{AudioSignalTape, AudioSignalTapeRun};
 pub use picture::{Picture, PictureCaption, PictureFraming, PictureSample};
 pub use plan::AudioIntrinsicPreparation;
 pub use plan::PictureOwnerMap;
+pub use plan::{
+    AdmittedAudioOwnerInputCandidates, AudioOwnerInput, AudioOwnerInputCandidates,
+    AudioOwnerInputCapture, AudioOwnerInputScope, AudioOwnerOccurrence, AudioOwnerOccurrenceMap,
+    AudioOwnerOccurrences, AudioOwnerRetainedInput, AudioOwnerRetainedProbe,
+};
 pub use plan::{AdmittedOriginalContext, transfer_context_charges};
 pub use plan::{
     AdmittedSoundContext, AudioSoundContextAdmission, AudioSoundOwnerContext,
@@ -70,11 +75,6 @@ pub use plan::{AudioOccurrenceAlias, AudioSoundClockBinding, AudioSoundClockScop
 pub use plan::{
     AudioOwnerClock, AudioOwnerClockOrigin, AudioOwnerKind, AudioOwnerQuery, AudioOwnerSpan,
     AudioOwnerSupport, AudioTreatmentBoundary,
-};
-pub use plan::{
-    AudioOwnerInput, AudioOwnerInputCandidates, AudioOwnerInputCapture, AudioOwnerInputScope,
-    AudioOwnerOccurrence, AudioOwnerOccurrenceMap, AudioOwnerOccurrences, AudioOwnerRetainedInput,
-    AudioOwnerRetainedProbe,
 };
 pub use plan::{
     AudioProcessingQuery, AudioProcessingSpan, AudioSignal, AudioSignalContent, AudioSignalQuery,

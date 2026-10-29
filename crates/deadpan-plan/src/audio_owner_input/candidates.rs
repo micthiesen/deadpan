@@ -168,3 +168,128 @@ impl<'plan> AudioDomain<'plan> {
         AudioOwnerInputCandidates::checked(Parent::Domain(self), at, query, limits)
     }
 }
+
+// Query-only guard. Actual parent/query value drops before its independent lease.
+pub struct AdmittedAudioOwnerInputCandidates<'context, 'plan, I, L> {
+    value: Option<AudioOwnerInputCandidates<'context, 'plan>>,
+    canonical: usize,
+    additional: usize,
+    forwarded: bool,
+    memory: crate::plan::audio_owners::admission::Memory<I, L>,
+}
+impl<'context, 'plan, I: Copy + Eq, L> AdmittedAudioOwnerInputCandidates<'context, 'plan, I, L> {
+    pub fn query(&self) -> &AudioOwnerQuery<'plan> {
+        self.value.as_ref().expect("unconsumed query").query()
+    }
+    pub fn work(&self) -> usize {
+        self.query().work()
+    }
+    pub fn canonical_units(&self) -> usize {
+        self.canonical
+    }
+    pub fn additional_units(&self) -> usize {
+        self.additional
+    }
+    pub fn was_forwarded(&self) -> bool {
+        self.forwarded
+    }
+    fn validate<A: crate::AudioSoundContextAdmission<Issuer = I, Lease = L>>(
+        &self,
+        admission: &A,
+    ) -> Result<(), A::Error> {
+        if self.memory.issuer != admission.issuer() {
+            return Err(PlanError::AudioMetadataIssuerMismatch.into());
+        }
+        if self.forwarded != A::METERED {
+            return Err(PlanError::InvalidPlan("candidate accounting mode mismatch").into());
+        }
+        Ok(())
+    }
+    pub fn capture<A: crate::AudioSoundContextAdmission<Issuer = I, Lease = L>>(
+        mut self,
+        member: usize,
+        limits: AudioQueryLimits,
+        admission: &mut A,
+    ) -> Result<AudioOwnerInputCapture<'plan>, A::Error> {
+        self.validate(admission)?;
+        // Keep self.memory live throughout the SAME actual legacy call.
+        // Its query is consumed/dropped inside capture before lease release.
+        let result = self
+            .value
+            .take()
+            .expect("unconsumed query")
+            .capture(member, limits)
+            .map_err(A::Error::from)?;
+        self.validate(admission)?;
+        Ok(result)
+    }
+    pub fn without_selection<A: crate::AudioSoundContextAdmission<Issuer = I, Lease = L>>(
+        mut self,
+        admission: &mut A,
+    ) -> Result<AudioOwnerInputCapture<'plan>, A::Error> {
+        self.validate(admission)?;
+        let result = self
+            .value
+            .take()
+            .expect("unconsumed query")
+            .without_selection();
+        self.validate(admission)?;
+        Ok(result)
+    }
+}
+impl RenderPlan {
+    pub fn audio_owner_input_candidates_at_admitted<A: crate::AudioSoundContextAdmission>(
+        &self,
+        at: AudioSample,
+        limits: AudioQueryLimits,
+        admission: &mut A,
+    ) -> Result<AdmittedAudioOwnerInputCandidates<'_, '_, A::Issuer, A::Lease>, A::Error> {
+        let product = crate::plan::audio_owners::query_admission::root_candidates_query(
+            self, at, limits, admission,
+        )?;
+        let value = AudioOwnerInputCandidates::checked(
+            Parent::Root(self),
+            at,
+            product.query.value,
+            limits,
+        )?;
+        if product.query.memory.issuer != admission.issuer() {
+            return Err(PlanError::AudioMetadataIssuerMismatch.into());
+        }
+        Ok(AdmittedAudioOwnerInputCandidates {
+            value: Some(value),
+            canonical: product.canonical,
+            additional: product.additional,
+            forwarded: A::METERED,
+            memory: product.query.memory,
+        })
+    }
+}
+impl<'plan> AudioDomain<'plan> {
+    pub fn owner_input_candidates_at_admitted<A: crate::AudioSoundContextAdmission>(
+        &self,
+        at: AudioSample,
+        limits: AudioQueryLimits,
+        admission: &mut A,
+    ) -> Result<AdmittedAudioOwnerInputCandidates<'_, 'plan, A::Issuer, A::Lease>, A::Error> {
+        let product = crate::plan::audio_owners::query_admission::domain_candidates_query(
+            self, at, limits, admission,
+        )?;
+        let value = AudioOwnerInputCandidates::checked(
+            Parent::Domain(self),
+            at,
+            product.query.value,
+            limits,
+        )?;
+        if product.query.memory.issuer != admission.issuer() {
+            return Err(PlanError::AudioMetadataIssuerMismatch.into());
+        }
+        Ok(AdmittedAudioOwnerInputCandidates {
+            value: Some(value),
+            canonical: product.canonical,
+            additional: product.additional,
+            forwarded: A::METERED,
+            memory: product.query.memory,
+        })
+    }
+}

@@ -525,3 +525,6 @@ mod original_sharing;
 
 #[path = "legacy_query_receipts.rs"]
 mod legacy_query_receipts;
+
+#[path = "query_admission_tests.rs"]
+mod query_admission;

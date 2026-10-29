@@ -54,7 +54,7 @@ fn receipt<'plan>(
       "prepared_frames":ledger.prepared_frames,"metadata_frames":ledger.sound_context_frames,
       "source_checks":ledger.source_checks})
 }
-fn one<'plan>(
+pub(super) fn one<'plan>(
     plan: &'plan RenderPlan,
     incoming: &Context<'plan>,
     owner: &AudioOwnerClock<'plan>,
