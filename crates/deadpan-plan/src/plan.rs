@@ -83,8 +83,9 @@ mod audio_owner_input;
 #[path = "audio_owners.rs"]
 mod audio_owners;
 pub use audio_owner_input::{
-    AdmittedAudioOwnerInputCandidates, AudioOwnerInput, AudioOwnerInputCandidates,
-    AudioOwnerInputCapture, AudioOwnerInputScope, AudioOwnerRetainedInput, AudioOwnerRetainedProbe,
+    AdmittedAudioOwnerInputCandidates, AdmittedAudioOwnerInputCapture, AudioOwnerInput,
+    AudioOwnerInputCandidates, AudioOwnerInputCapture, AudioOwnerInputScope,
+    AudioOwnerRetainedInput, AudioOwnerRetainedProbe,
 };
 pub use audio_owners::{
     AudioOwnerClock, AudioOwnerClockOrigin, AudioOwnerKind, AudioOwnerQuery, AudioOwnerSpan,

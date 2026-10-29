@@ -62,6 +62,49 @@ impl Drop for CaseScope {
         }
     }
 }
+pub(in crate::plan) fn observe_case<T>(
+    name: &str,
+    label: &'static str,
+    read: impl FnOnce() -> T,
+) -> (T, Vec<Value>) {
+    let session = Session::start();
+    let value = {
+        let _scope = case_scope(name);
+        phase(label);
+        read()
+    };
+    (value, session.finish())
+}
+pub(in crate::plan) fn core_receipt(
+    resolved_work: usize,
+    lattice_work: usize,
+    total: usize,
+    canonical: usize,
+    additional: usize,
+    forwarded: bool,
+) {
+    if !active() {
+        return;
+    }
+    record(
+        json!({"kind":"actual_capture_core_receipt","resolved_work":resolved_work,
+        "lattice_work":lattice_work,"total":total,"canonical":canonical,
+        "additional":additional,"forwarded":forwarded}),
+    );
+}
+pub(in crate::plan) fn policy_failure(
+    plan: &RenderPlan,
+    at: AudioSample,
+    captured: Option<&AudioDomainSeed>,
+    work: (usize, usize),
+) {
+    if !active() {
+        return;
+    }
+    record(json!({"kind":"actual_capture_policy_refusal","at":at.0,
+        "capture_slot":captured.map(|v|seed(plan,v)),
+        "actual_capture_work_spent":work.0-work.1}));
+}
 pub(in crate::plan) fn phase(value: &'static str) {
     RECORDING.with(|slot| {
         if let Some(state) = slot.borrow_mut().as_mut() {
@@ -242,6 +285,16 @@ pub(in crate::plan) fn capture(
     owner: &AudioOwnerClock<'_>,
     captured: Option<&AudioDomainSeed>,
     walked: &Result<AudioWalkSpan<'_>, PlanError>,
+    work: (usize, usize),
+) {
+    capture_ref(plan, sample, owner, captured, walked.as_ref(), work);
+}
+pub(in crate::plan) fn capture_ref(
+    plan: &RenderPlan,
+    sample: AudioSample,
+    owner: &AudioOwnerClock<'_>,
+    captured: Option<&AudioDomainSeed>,
+    walked: Result<&AudioWalkSpan<'_>, &PlanError>,
     work: (usize, usize),
 ) {
     if !active() {

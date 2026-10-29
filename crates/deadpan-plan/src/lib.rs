@@ -48,9 +48,10 @@ pub use picture::{Picture, PictureCaption, PictureFraming, PictureSample};
 pub use plan::AudioIntrinsicPreparation;
 pub use plan::PictureOwnerMap;
 pub use plan::{
-    AdmittedAudioOwnerInputCandidates, AudioOwnerInput, AudioOwnerInputCandidates,
-    AudioOwnerInputCapture, AudioOwnerInputScope, AudioOwnerOccurrence, AudioOwnerOccurrenceMap,
-    AudioOwnerOccurrences, AudioOwnerRetainedInput, AudioOwnerRetainedProbe,
+    AdmittedAudioOwnerInputCandidates, AdmittedAudioOwnerInputCapture, AudioOwnerInput,
+    AudioOwnerInputCandidates, AudioOwnerInputCapture, AudioOwnerInputScope, AudioOwnerOccurrence,
+    AudioOwnerOccurrenceMap, AudioOwnerOccurrences, AudioOwnerRetainedInput,
+    AudioOwnerRetainedProbe,
 };
 pub use plan::{AdmittedOriginalContext, transfer_context_charges};
 pub use plan::{

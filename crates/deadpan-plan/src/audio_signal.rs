@@ -14,6 +14,9 @@ use serde::{Serialize, Serializer, ser::SerializeStruct};
 use super::audio::{Budget, intersect, maximum, minimum, source_point_from_local};
 use super::audio_bound::BindingTarget;
 use super::audio_domain::DomainGap;
+use super::audio_owners::admission::{
+    Budget as QueryBudget, Owned, Result as QueryResult, Unmetered, outer,
+};
 use super::{
     AudioContent, AudioDefinition, AudioDefinitionSelector, AudioQueryLimits, AudioRetimeStage,
     AudioTransform, CompiledKind, LookupStats, RenderPlan, SilenceReason, SourceSamplingSupport,
@@ -153,11 +156,38 @@ impl<'plan> AudioStage<'plan> {
         definition: Option<&AudioDefinitionSelector>,
         bypass_binding: Option<BindingTarget>,
     ) -> Result<Self, PlanError> {
+        // This constructor had no local canonical debit; callers retain their
+        // existing prepaid copy charge. False mode performs no additional work.
+        let mut local = Budget {
+            remaining: 0,
+            lookup: LookupStats::default(),
+        };
+        let mut admission = Unmetered;
+        outer::<_, Unmetered>(Self::for_node_admitted(
+            plan,
+            node,
+            repeats,
+            definition,
+            bypass_binding,
+            &mut QueryBudget::new(&mut local, &mut admission),
+        ))
+        .map(Owned::unmetered)
+    }
+
+    pub(in crate::plan) fn for_node_admitted<A: AudioSoundContextAdmission>(
+        plan: &'plan RenderPlan,
+        node: usize,
+        repeats: &[RepeatInstance],
+        definition: Option<&AudioDefinitionSelector>,
+        bypass_binding: Option<BindingTarget>,
+        budget: &mut QueryBudget<'_, A>,
+    ) -> QueryResult<Owned<Self, A::Issuer, A::Lease>, A> {
         let compiled = &plan.nodes[node];
         if compiled.preserve_input.is_some() {
             return Err(PlanError::InvalidPlan(
                 "owned Preserve input requires its compiled projection",
-            ));
+            )
+            .into());
         }
         let CompiledKind::Retime {
             child,
@@ -167,41 +197,54 @@ impl<'plan> AudioStage<'plan> {
             ..
         } = &compiled.kind
         else {
-            return Err(PlanError::InvalidPlan("audio stage is not a retime"));
+            return Err(PlanError::InvalidPlan("audio stage is not a retime").into());
         };
         if !pitch.processes(*scale == ExactRatio::ONE) {
-            return Err(PlanError::InvalidPlan(
-                "audio stage is not nonunity Preserve",
-            ));
+            return Err(PlanError::InvalidPlan("audio stage is not nonunity Preserve").into());
         }
         if compiled.extent != ExactRatio::integer(compiled.inspection.duration.frames()) {
             return Err(PlanError::InvalidPlan(
                 "derived Preserve allocation requires an owned processing route",
-            ));
+            )
+            .into());
         }
-        Ok(Self {
+        let mut memory = budget.memory();
+        let mut capacity = budget.memory();
+        // Field order matches the existing descriptor, including fallible
+        // selection arithmetic AFTER every descriptor identity/path copy.
+        let project_id = budget.project(&mut memory, &plan.metadata.project_id)?;
+        let revision_id = budget.revision(&mut memory, &plan.metadata.revision_id)?;
+        let definition = budget.definition_ref(&mut memory, definition)?;
+        let instance = InstancePath {
+            node: budget.node(&mut memory, &compiled.inspection.id)?,
+            repeats: budget.repeats(&mut memory, &mut capacity, repeats)?,
+        };
+        let child_id = budget.node(&mut memory, &plan.nodes[*child].inspection.id)?;
+        let selection = *start
+            ..start.checked_add(
+                scale.checked_mul(ExactRatio::integer(compiled.inspection.duration.frames()))?,
+            )?;
+        let value = Self {
             plan,
             child: *child,
             node,
             descriptor: AudioStageDescriptor {
-                project_id: plan.metadata.project_id.clone(),
-                revision_id: plan.metadata.revision_id.clone(),
-                definition: definition.cloned(),
-                instance: InstancePath {
-                    node: compiled.inspection.id.clone(),
-                    repeats: repeats.to_vec(),
-                },
-                child: plan.nodes[*child].inspection.id.clone(),
-                selection: *start
-                    ..start.checked_add(scale.checked_mul(ExactRatio::integer(
-                        compiled.inspection.duration.frames(),
-                    ))?)?,
+                project_id,
+                revision_id,
+                definition,
+                instance,
+                child: child_id,
+                selection,
                 duration: compiled.inspection.duration,
                 rate: *scale,
                 pitch: *pitch,
                 bypass_binding: bypass_binding == Some(BindingTarget::Node(node)),
             },
-        })
+        };
+        budget.check_memory(&memory)?;
+        budget.check_memory(&capacity)?;
+        budget.merge_checked(&mut memory, &mut capacity);
+        Ok(Owned { value, memory })
     }
 
     pub fn descriptor(&self) -> &AudioStageDescriptor {

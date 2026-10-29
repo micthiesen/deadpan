@@ -15,7 +15,7 @@ use super::{
 use crate::{AudioSampleGrid, PlanError};
 
 #[path = "audio_bound_query.rs"]
-mod query;
+pub(in crate::plan) mod query;
 use query::QueryBound;
 
 #[derive(Debug, Clone)]

@@ -528,3 +528,6 @@ mod legacy_query_receipts;
 
 #[path = "query_admission_tests.rs"]
 mod query_admission;
+
+#[path = "capture_admission_tests.rs"]
+mod capture_admission;

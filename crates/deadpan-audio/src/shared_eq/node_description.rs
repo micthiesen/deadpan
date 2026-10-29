@@ -220,19 +220,26 @@ where
             .position(|clock| OwnerKey::new(clock) == *key)
     });
     let capture = if let Some(index) = selected {
-        // The actual query stays charged while the same legacy capture runs.
-        // Capture C is not forwarded by the query-only admission slice.
+        // Q stays charged through the actual full capture. Metered C has
+        // already reached the controller at its real construction sites.
         let capture = candidates.capture(index, control.query_limits()?, admission)?;
-        control.spend_plan_work(capture.capture_work())?;
+        if capture.was_forwarded() != A::METERED {
+            return Err(PlanError::InvalidPlan("owner capture accounting mode differs").into());
+        }
+        if !capture.was_forwarded() {
+            control.spend_plan_work(capture.capture_work())?;
+        }
         capture
     } else {
         // Absence has only the already-paid query, and must not request fresh
         // capture limits or spend a synthetic zero-work operation.
         candidates.without_selection(admission)?
     };
-    if let Some(input) = capture.into_input() {
+    // The source Input remains charged throughout the same probe and final
+    // sharing decision; the returned context owns its independent storage.
+    if let Some(input) = capture.input() {
         let carrier = Context::finish_paid_owner_input_admitted(
-            &input,
+            input,
             input.owner(),
             at,
             control,

@@ -12,7 +12,8 @@ use crate::PlanError;
 #[path = "audio_owner_input/candidates.rs"]
 mod candidates;
 pub use candidates::{
-    AdmittedAudioOwnerInputCandidates, AudioOwnerInputCandidates, AudioOwnerInputCapture,
+    AdmittedAudioOwnerInputCandidates, AdmittedAudioOwnerInputCapture, AudioOwnerInputCandidates,
+    AudioOwnerInputCapture,
 };
 
 /// Whether the raw context is this owner or a processor surrounding it.
@@ -368,36 +369,115 @@ fn capture_observed<'plan>(
     query_work: usize,
     budget: &mut Budget,
 ) -> Result<AudioOwnerInput<'plan>, PlanError> {
+    use super::audio_owners::admission::{self, Unmetered};
+    let mut policy = Unmetered;
+    let mut admitted = admission::Budget::new(budget, &mut policy);
+    admission::outer::<_, Unmetered>(
+        capture_observed_admitted(plan, observed, at, context, query_work, &mut admitted)
+            .map(admission::Owned::unmetered),
+    )
+}
+
+fn capture_observed_admitted<'plan, A: crate::AudioSoundContextAdmission>(
+    plan: &'plan RenderPlan,
+    observed: &AudioOwnerClock<'plan>,
+    at: AudioSample,
+    context: Option<&super::audio_domain::AudioWalkSeed>,
+    query_work: usize,
+    budget: &mut super::audio_owners::admission::Budget<'_, A>,
+) -> super::audio_owners::admission::Result<
+    super::audio_owners::admission::Owned<AudioOwnerInput<'plan>, A::Issuer, A::Lease>,
+    A,
+> {
+    #[cfg(test)]
+    use super::audio_owners::admission::Error;
+    use super::audio_owners::admission::Owned;
     let before = budget.remaining;
-    let mut captured = None;
-    plan.audio_walk_owner_input(at, budget, observed, &mut captured, context)?;
-    let seed = captured.ok_or(PlanError::InvalidPlan("owner input was not captured"))?;
-    let kind = if seed.walk.gap.is_some() {
-        AudioOwnerKind::DefaultGap
-    } else {
-        AudioOwnerKind::Node
+    let mut captured = Owned {
+        value: None,
+        memory: budget.memory(),
     };
-    let scope = if seed.instance == *observed.instance()
-        && kind == observed.kind()
-        && seed.walk.gap.as_ref().and_then(|gap| gap.after.as_ref()) == observed.gap_after()
-    {
-        AudioOwnerInputScope::Owner
+    if A::METERED {
+        let walked = plan.audio_walk_inner_admitted(
+            at,
+            budget,
+            context,
+            true,
+            true,
+            (Some(&mut captured), None, Some(observed)),
+        );
+        #[cfg(test)]
+        match &walked {
+            Ok(value) => {
+                super::audio_owners::tests::legacy_snapshot_v1::capture_baseline::capture_ref(
+                    plan,
+                    at,
+                    observed,
+                    captured.value.as_ref(),
+                    Ok(value.span()),
+                    (before, budget.remaining),
+                )
+            }
+            Err(Error::Plan(error)) => {
+                super::audio_owners::tests::legacy_snapshot_v1::capture_baseline::capture_ref(
+                    plan,
+                    at,
+                    observed,
+                    captured.value.as_ref(),
+                    Err(error),
+                    (before, budget.remaining),
+                )
+            }
+            Err(Error::Policy(_)) => {
+                super::audio_owners::tests::legacy_snapshot_v1::capture_baseline::policy_failure(
+                    plan,
+                    at,
+                    captured.value.as_ref(),
+                    (before, budget.remaining),
+                )
+            }
+        }
+        // The COMPLETE actual span and all workspace/Core/Box guards end at
+        // the legacy discard, before the observed owner's unpaid old clone.
+        drop(walked?);
     } else {
-        AudioOwnerInputScope::EnclosingProcessor
-    };
-    Ok(AudioOwnerInput {
-        owner: observed.clone(),
-        observed_at: at,
-        context: AudioDomain {
-            plan,
-            seed: seed.walk,
-            samples: seed.samples,
-            visible: seed.visible,
-            instance: seed.instance,
-            placement: None,
-        },
-        scope,
-        work: query_work + (before - budget.remaining),
+        plan.audio_walk_owner_input(at, budget, observed, &mut captured.value, context)?;
+        budget.canonical_used = budget
+            .canonical_used
+            .checked_add(before - budget.remaining)
+            .ok_or(deadpan_core::TimeError::Overflow)?;
+    }
+    captured.try_map(budget, |seed, memory, budget| {
+        let seed = seed.ok_or(PlanError::InvalidPlan("owner input was not captured"))?;
+        let kind = if seed.walk.gap.is_some() {
+            AudioOwnerKind::DefaultGap
+        } else {
+            AudioOwnerKind::Node
+        };
+        let scope = if seed.instance == *observed.instance()
+            && kind == observed.kind()
+            && seed.walk.gap.as_ref().and_then(|gap| gap.after.as_ref()) == observed.gap_after()
+        {
+            AudioOwnerInputScope::Owner
+        } else {
+            AudioOwnerInputScope::EnclosingProcessor
+        };
+        Ok(AudioOwnerInput {
+            owner: budget.owner(memory, observed)?,
+            observed_at: at,
+            context: AudioDomain {
+                plan,
+                seed: seed.walk,
+                samples: seed.samples,
+                visible: seed.visible,
+                instance: seed.instance,
+                placement: None,
+            },
+            scope,
+            work: query_work
+                .checked_add(before - budget.remaining)
+                .ok_or(deadpan_core::TimeError::Overflow)?,
+        })
     })
 }
 

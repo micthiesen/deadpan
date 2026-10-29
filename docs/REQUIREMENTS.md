@@ -331,6 +331,20 @@ authority inputs are unchanged. PointCeil's private probe provider remains an
 explicit oracle gap. This is logical/work/error evidence, not heap/native or
 capture/probe admission; existing product gaps and gate statuses remain open.
 
+The [actual owner-capture admission](qualification/owner-capture-budget-2026-10-29.md)
+now admits the same full numerical capture after its paid Root/Domain query,
+including workspace, early seed, complete discarded span, safe Core-bound Box
+and returned Input through the legacy probe/final sharing call. All 16 frozen
+cases, canonical/additional receipts, exact peak/one-byte-short, late failure,
+cancellation and controller billing tests pass. Main/isolated Audio pass 300/281,
+Plan 582/569; real-WAV stages pass 203/203 and definition/history 171/eight.
+Strict lint and independent review pass. All 20 staged sources equal isolated
+compiled bytes. Split stays four pass/three fail, with nested selected play now
+exhausting structural capture work. Probe/editorial/raw-domain construction,
+retained-owner queries, final inner-charge handoff, caller/node containers and
+complete recursive closure remain open. PointCeil's private provider needs an
+additive old oracle first. No cold/batch activation or requirement/gate changes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

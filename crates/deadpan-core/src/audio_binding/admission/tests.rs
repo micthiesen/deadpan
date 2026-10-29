@@ -406,3 +406,72 @@ fn actual_resolved_move_preserves_value_before_lease_drop() {
     assert!(dropped.get());
     assert_eq!(p.0.borrow().live, 0);
 }
+
+#[test]
+fn lattice_work_is_local_category_delta_after_real_outer_prefix() {
+    let (state, path) = fixture(2);
+    let environment = AudioBindingEnvironment::Occurrence(&path);
+    let old = state.resolve_in(&path.node, environment, 100_000).unwrap();
+    let template = &state.bindings[&path.node].lattice;
+    let layout = &state.timings[&template.reference.timing];
+
+    let mut p = policy(usize::MAX);
+    let mut raw = Work::new(100_000).unwrap();
+    let mut additional = 0;
+    let mut build = Build::new(&mut raw, &mut additional, &mut p);
+    // These are the actual successful resolver prefix operations. Both
+    // categories precede the template; its .work must exclude this prefix.
+    environment.validate_build(&mut build).unwrap();
+    build.spend(path.repeats.len() + 1).unwrap();
+    let before = build.used();
+    let additional_before = *build.extra;
+    let canonical_before = before - additional_before;
+    assert_eq!(canonical_before, 2);
+    assert!(additional_before > 0);
+
+    let lattice = template
+        .resolve_with_build(layout, environment, &mut build)
+        .unwrap();
+    let local_total = build.used() - before;
+    let local_additional = *build.extra - additional_before;
+    let local_canonical = local_total - local_additional;
+    assert_eq!(lattice.work, local_total);
+    assert_eq!(local_canonical, old.lattice.work);
+    assert!(local_additional > 0);
+    assert_eq!(lattice.work, old.lattice.work + local_additional);
+    assert!(
+        build.used() > lattice.work,
+        "outer prefix must stay excluded"
+    );
+
+    let mut actual = build.finish(lattice);
+    let receipt = actual.take_work(&p).unwrap();
+    assert_eq!(receipt.units(), before + actual.value().work);
+    assert_eq!(
+        receipt.canonical_units(),
+        canonical_before + old.lattice.work
+    );
+    assert_eq!(
+        receipt.additional_units(),
+        additional_before + local_additional
+    );
+    assert_eq!(receipt.units(), p.0.borrow().work);
+    assert!(receipt.was_forwarded());
+    assert!(actual.take_work(&p).is_err());
+    drop(actual);
+    assert_eq!(p.0.borrow().live, 0);
+
+    // The public full binding has a different scalar scope: its .work is the
+    // complete root resolver total, including environment/phase/reanchor work.
+    let mut root_policy = policy(usize::MAX);
+    let mut binding = admitted(&state, &path, &mut root_policy).unwrap();
+    let receipt = binding.take_work(&root_policy).unwrap();
+    assert_eq!(binding.value().work, receipt.units());
+    assert_eq!(receipt.canonical_units(), old.work);
+    assert_eq!(receipt.units(), root_policy.0.borrow().work);
+    let nested_delta = binding.value().lattice.work - old.lattice.work;
+    assert!(nested_delta > 0);
+    assert!(nested_delta <= receipt.additional_units());
+    drop(binding);
+    assert_eq!(root_policy.0.borrow().live, 0);
+}

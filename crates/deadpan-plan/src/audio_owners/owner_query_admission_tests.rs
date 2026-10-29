@@ -130,31 +130,38 @@ fn check_mode<const M: bool>(
         assert!(p.0.borrow().live > 0);
         assert!(added >= p.0.borrow().calls);
     }
-    let input = candidates
+    let capture = candidates
         .capture(member, Default::default(), &mut p)
-        .unwrap()
-        .into_input()
         .unwrap();
-    assert_eq!(
-        input.work(),
-        total + old_c,
-        "legacy capture C remains unchanged/unpaid"
-    );
-    let mut actual = super::input(&input);
+    let capture_added = capture.capture_additional_units();
+    assert_eq!(capture.capture_canonical_units(), old_c);
+    assert_eq!(capture.query_canonical_units(), old_q);
+    assert_eq!(capture.query_additional_units(), added);
+    assert_eq!(capture.was_forwarded(), M);
+    let input = capture.input().unwrap();
+    assert_eq!(input.work(), total + old_c + capture_added);
+    let mut actual = super::input(input);
     actual["total_work"] = json!(old_q + old_c);
     assert_eq!(
         actual, case["legacy_input"],
         "full captured private Domain/seed is frozen"
     );
+    if M {
+        assert!(
+            p.0.borrow().live > 0,
+            "actual captured source Input stays charged"
+        );
+    }
+    assert_eq!(
+        p.0.borrow().forwarded,
+        if M { total + old_c + capture_added } else { 0 },
+        "Q and C each forward exactly once"
+    );
+    drop(capture);
     assert_eq!(
         p.0.borrow().live,
         0,
-        "query lease released only after actual capture consumed query"
-    );
-    assert_eq!(
-        p.0.borrow().forwarded,
-        if M { total } else { 0 },
-        "capture never debits Q again"
+        "captured Input releases with its charge"
     );
     if !M {
         assert_eq!(p.0.borrow().calls, 0);
@@ -333,3 +340,6 @@ fn seeded_invalid_limits_keep_semantic_order_but_earlier_admission_can_refuse() 
     ));
     assert_eq!(cancelled.0.borrow().live, 0);
 }
+
+#[path = "owner_capture_admission_tests.rs"]
+mod capture;

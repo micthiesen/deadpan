@@ -111,6 +111,22 @@ impl<T, I, L> std::ops::DerefMut for Owned<T, I, L> {
         &mut self.value
     }
 }
+impl<T, I: Copy + Eq, L> Owned<T, I, L> {
+    pub(in crate::plan) fn try_map<U, A: AudioSoundContextAdmission<Issuer = I, Lease = L>>(
+        mut self,
+        budget: &mut Budget<'_, A>,
+        map: impl FnOnce(T, &mut Memory<I, L>, &mut Budget<'_, A>) -> Result<U, A>,
+    ) -> Result<Owned<U, I, L>, A> {
+        budget.check_memory(&self.memory)?;
+        let value = map(self.value, &mut self.memory, budget)?;
+        let result = Owned {
+            value,
+            memory: self.memory,
+        };
+        budget.check_memory(&result.memory)?;
+        Ok(result)
+    }
+}
 impl<T> Owned<T, (), ()> {
     pub(in crate::plan) fn unmetered(self) -> T {
         self.value
@@ -254,7 +270,7 @@ impl<'a, A: AudioSoundContextAdmission> Budget<'a, A> {
         self.reserve(m, identity(id.as_str())?)?;
         Ok(id.clone())
     }
-    fn revision(
+    pub(in crate::plan) fn revision(
         &mut self,
         m: &mut Memory<A::Issuer, A::Lease>,
         id: &RevisionId,
@@ -266,6 +282,71 @@ impl<'a, A: AudioSoundContextAdmission> Budget<'a, A> {
         self.additional(1)?;
         self.reserve(m, identity(id.as_str())?)?;
         Ok(id.clone())
+    }
+    pub(in crate::plan) fn project(
+        &mut self,
+        m: &mut Memory<A::Issuer, A::Lease>,
+        id: &deadpan_core::ProjectId,
+    ) -> Result<deadpan_core::ProjectId, A> {
+        self.check_memory(m)?;
+        if A::METERED {
+            self.additional(1)?;
+            self.reserve(m, identity(id.as_str())?)?;
+        }
+        Ok(id.clone())
+    }
+    pub(in crate::plan) fn source(
+        &mut self,
+        m: &mut Memory<A::Issuer, A::Lease>,
+        source: &deadpan_core::SourceAudio,
+    ) -> Result<deadpan_core::SourceAudio, A> {
+        self.check_memory(m)?;
+        let deadpan_core::SourceAudio { asset, span } = source;
+        if A::METERED {
+            self.additional(1)?;
+            self.reserve(m, identity(asset.as_str())?)?;
+        }
+        Ok(deadpan_core::SourceAudio {
+            asset: asset.clone(),
+            span: *span,
+        })
+    }
+    pub(in crate::plan) fn instance_fixed(
+        &mut self,
+        m: &mut Memory<A::Issuer, A::Lease>,
+        value: &InstancePath,
+    ) -> Result<InstancePath, A> {
+        let mut cap = self.memory();
+        let result = self.instance(m, &mut cap, value)?;
+        self.check_memory(m)?;
+        self.check_memory(&cap)?;
+        self.merge_checked(m, &mut cap);
+        Ok(result)
+    }
+    pub(in crate::plan) fn owner<'plan>(
+        &mut self,
+        m: &mut Memory<A::Issuer, A::Lease>,
+        value: &AudioOwnerClock<'plan>,
+    ) -> Result<AudioOwnerClock<'plan>, A> {
+        self.check_memory(m)?;
+        if !A::METERED {
+            return Ok(value.clone());
+        }
+        self.additional(1)?;
+        Ok(AudioOwnerClock {
+            plan: value.plan,
+            definition: self.definition(m, &value.definition)?,
+            instance: self.instance_fixed(m, &value.instance)?,
+            kind: value.kind,
+            gap_after: value
+                .gap_after
+                .as_ref()
+                .map(|v| self.iteration(m, v))
+                .transpose()?,
+            play: value.play,
+            sampling: value.sampling,
+            origin: self.origin(m, &value.origin)?,
+        })
     }
     pub(in crate::plan) fn iteration(
         &mut self,

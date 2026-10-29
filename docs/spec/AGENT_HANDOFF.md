@@ -2,18 +2,43 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: capture oracle frozen, product goal active
+## Current state: actual capture admitted, product goal active
 
-The [actual capture baseline](../qualification/owner-capture-baseline-2026-10-29.md)
-records the SAME legacy capture/discard/probe calls before their admission.
-Both executed producers agree on 14 unchanged cases plus two unbound Stage/Source
-supplements and 128 ordered events; 32 errors retain a populated capture slot.
-The golden is immutable. Main/isolated Plan libraries pass 120/107; strict lint
-and review pass. A real foreign-Plan regression covers corrected branding checks.
-All seven staged sources equal both compiled variants; 324 other authority
-inputs and the actual descent body remain unchanged. These observer allocations
-are not memory/native qualification. PointCeil's private probe provider still
-needs an oracle before that later boundary changes. Capture is not admitted yet.
+The [actual owner-capture admission](../qualification/owner-capture-budget-2026-10-29.md)
+extends the admitted numerical Root/Domain query through the same complete walk.
+Query, working buffers, captured seed, discarded span and returned Input have
+independent charges. The full span still completes after early seed capture and
+drops before the observed owner copy. Input stays charged through the existing
+retained probe and final sharing decision. A safe preallocated Box shell maps
+the actual Core-bound value without allocating inside map_value.
+
+The immutable [old capture baseline](../qualification/owner-capture-baseline-2026-10-29.md)
+still covers all 16 cases. False output matches literally; true output compares
+all fields except two explicitly classified Core work scalars. A separate Core
+test proves lattice-local canonical/additional deltas after a real outer prefix.
+No product work fields are reset. Exact peak/one-byte-short, late populated slot,
+cancellation and numerical one-time billing tests pass. No caps, weights,
+refunds, caches, native bounds or cold/batch activation changed.
+
+Final main/isolated Audio pass 300/281 and Plan 582/569 across 29 executables
+each. Real-WAV stages pass 203/203; definition/history pass 171/eight. Strict
+all-target lint and three independent reviews pass. All 20 staged sources equal
+isolated compiled bytes; 19 also equal main, preserving the inherited Plan
+overlay. Guards cover 1,458/1,229 inputs. All 22 receipts are terminal, including
+the retained compiler/lint negatives. Main stages and Split precede only a
+reviewed private type-alias extraction; both final variants were rebuilt and
+libraries rerun, and final isolated media uses the alias version.
+
+The fresh Split matrix remains four pass/three fail in 403.46 seconds. All-owner
+Source/Sequence cut-three limited 0+511 fails plan work per read; nested selected
+without root sound prefix-two limited 0+4096 exhausts structural capture work;
+one selected play prefix-two limited 0+4096 exhausts frozen projection work.
+General sound Split remains disabled. Next freeze the actual PointCeil private
+Structural AudioSignal probe oracle, then close editorial/probe/raw-domain
+construction and the complete owning handoff through retained-owner decisions
+and final sharing. Caller/node containers and full recursive closure remain open.
+
+The following query checkpoint is historical; capture C is now admitted above.
 
 The [actual owner-query admission](../qualification/owner-query-budget-2026-10-29.md)
 reserves the numerical Root/Domain candidate query through reached Plan/Core
@@ -32,13 +57,8 @@ Strict all-target lint and independent review pass. All 22 staged sources equal
 isolated compiled bytes; 19 also equal main, preserving inherited Core/Plan WIP.
 Guards cover 1,451/1,222 inputs. All compiler/runtime receipts are terminal.
 
-The fresh Split matrix stays four pass/three fail in 373.39 seconds. All-owner
-Source/Sequence cut-three limited 0+511 fails plan work per read. Nested selected
-without root sound prefix-two limited 0+4096 now exhausts audio binding work;
-one selected play prefix-two limited 0+4096 exhausts frozen projection work.
-The four existing positive cases still pass. General sound Split remains off.
-Capture/discarded spans and returned Input, retained probe/owners, caller/node
-containers and whole recursive resource closure still require implementation.
+That query checkpoint's four-pass/three-fail Split matrix and earlier failure
+phases are retained in its report. The fresh capture matrix above supersedes it.
 
 The [final Original-sharing admission](../qualification/original-sharing-budget-2026-10-28.md)
 reserves both actual return sites: the moved retained input's new Arc shell,

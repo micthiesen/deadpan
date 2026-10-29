@@ -40,29 +40,96 @@ impl<I: Copy + Eq, L> Resolved<I, L> {
         }
     }
 }
-enum BoundValue<'plan, I, L> {
-    Legacy(AudioBound<'plan>),
-    Metered(AudioBindingValue<AudioBound<'plan>, I, L>),
+pub(in crate::plan) enum BoundValue<T, I, L> {
+    Legacy(T),
+    Metered(AudioBindingValue<T, I, L>),
 }
-pub(in crate::plan) struct QueryBound<'plan, I, L> {
-    value: BoundValue<'plan, I, L>,
+pub(in crate::plan) struct GuardedBound<T, I, L> {
+    value: BoundValue<T, I, L>,
     _memory: Memory<I, L>,
 }
-impl<'plan, I: Copy + Eq, L> std::ops::Deref for QueryBound<'plan, I, L> {
-    type Target = AudioBound<'plan>;
-    fn deref(&self) -> &Self::Target {
+pub(in crate::plan) type QueryBound<'plan, I, L> = GuardedBound<AudioBound<'plan>, I, L>;
+impl<T, I: Copy + Eq, L> std::ops::Deref for GuardedBound<T, I, L> {
+    type Target = T;
+    fn deref(&self) -> &T {
         match &self.value {
             BoundValue::Legacy(v) => v,
             BoundValue::Metered(v) => v.value(),
         }
     }
 }
-impl<'plan> QueryBound<'plan, (), ()> {
-    pub(in crate::plan) fn unmetered(self) -> AudioBound<'plan> {
+impl<T> GuardedBound<T, (), ()> {
+    pub(in crate::plan) fn unmetered(self) -> T {
         match self.value {
             BoundValue::Legacy(v) => v,
             BoundValue::Metered(_) => unreachable!("legacy binding backend"),
         }
+    }
+}
+impl<T, I: Copy + Eq, L> GuardedBound<T, I, L> {
+    pub(in crate::plan) fn plain(value: T, issuer: I) -> Self {
+        Self {
+            value: BoundValue::Legacy(value),
+            _memory: Memory::empty(issuer),
+        }
+    }
+
+    /// The callback is allocation-free and all of its actual owning fields
+    /// remain guarded by its caller through pre/post-map failure.
+    pub(in crate::plan) fn map<U, A: AudioSoundContextAdmission<Issuer = I, Lease = L>>(
+        self,
+        budget: &mut QueryBudget<'_, A>,
+        f: impl FnOnce(T) -> U,
+    ) -> Result<GuardedBound<U, I, L>, A> {
+        budget.check_memory(&self._memory)?;
+        let value = match self.value {
+            BoundValue::Legacy(v) => BoundValue::Legacy(f(v)),
+            BoundValue::Metered(v) => {
+                let adapter = CoreAdmission {
+                    outer: budget.admission,
+                };
+                BoundValue::Metered(core::<_, A>(v.map_value(&adapter, f))?)
+            }
+        };
+        let result = GuardedBound {
+            value,
+            _memory: self._memory,
+        };
+        budget.check_memory(&result._memory)?;
+        Ok(result)
+    }
+}
+impl<'plan, I: Copy + Eq, L> GuardedBound<AudioBound<'plan>, I, L> {
+    pub(in crate::plan) fn boxed<A: AudioSoundContextAdmission<Issuer = I, Lease = L>>(
+        self,
+        budget: &mut QueryBudget<'_, A>,
+    ) -> Result<GuardedBound<Box<AudioBound<'plan>>, I, L>, A> {
+        budget.check_memory(&self._memory)?;
+        if !A::METERED {
+            let BoundValue::Legacy(value) = self.value else {
+                return Err(PlanError::InvalidPlan("binding accounting mode mismatch").into());
+            };
+            return Ok(GuardedBound {
+                value: BoundValue::Legacy(Box::new(value)),
+                _memory: self._memory,
+            });
+        }
+        let mut shell = Owned {
+            value: None,
+            memory: budget.memory(),
+        };
+        budget.reserve(
+            &mut shell.memory,
+            std::alloc::Layout::new::<AudioBound<'plan>>(),
+        )?;
+        shell.value = Some(Box::<AudioBound<'plan>>::new_uninit());
+        let mut result = self.map(budget, |value| {
+            Box::write(shell.value.take().expect("prepared Box shell"), value)
+        })?;
+        budget.check_memory(&result._memory)?;
+        budget.check_memory(&shell.memory)?;
+        budget.merge_checked(&mut result._memory, &mut shell.memory);
+        Ok(result)
     }
 }
 impl RenderPlan {
@@ -205,6 +272,11 @@ impl RenderPlan {
                     };
                     core::<_, A>(value.take_work(&adapter))?
                 };
+                #[cfg(test)]
+                super::super::audio_owners::tests::legacy_snapshot_v1::capture_baseline::core_receipt(
+                    value.value().work, value.value().lattice.work, work.units(),
+                    work.canonical_units(),work.additional_units(),work.was_forwarded(),
+                );
                 budget.account_core(work)?;
             }
         }
