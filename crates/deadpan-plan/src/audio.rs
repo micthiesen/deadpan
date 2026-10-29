@@ -472,14 +472,27 @@ impl RenderPlan {
         capture: &mut Option<AudioDomainSeed>,
         seed: Option<&AudioWalkSeed>,
     ) -> Result<(), PlanError> {
-        self.audio_walk_inner(
+        #[cfg(test)]
+        let before = budget.remaining;
+        let walked = self.audio_walk_inner(
             sample,
             budget,
             seed,
             true,
             true,
-            (Some(capture), None, Some(owner)),
-        )?;
+            (Some(&mut *capture), None, Some(owner)),
+        );
+        #[cfg(test)]
+        super::audio_owners::tests::legacy_snapshot_v1::capture_baseline::capture(
+            self,
+            sample,
+            owner,
+            capture.as_ref(),
+            &walked,
+            (before, budget.remaining),
+        );
+        // Preserve the actual complete walk and its original discard point.
+        walked?;
         Ok(())
     }
 

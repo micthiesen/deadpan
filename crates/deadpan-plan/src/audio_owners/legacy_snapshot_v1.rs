@@ -7,6 +7,9 @@ use serde_json::{Value, json};
 #[path = "legacy_snapshot_v1/fixtures.rs"]
 mod fixtures;
 
+#[path = "legacy_snapshot_v1/capture_baseline.rs"]
+pub(in crate::plan) mod capture_baseline;
+
 fn exact(value: ExactRatio) -> Value {
     json!({"numerator":value.numerator().to_string(),"denominator":value.denominator().to_string()})
 }
@@ -338,6 +341,7 @@ fn case(
     selected: &str,
     selected_kind: AudioOwnerKind,
 ) -> Value {
+    let _capture_scope = capture_baseline::case_scope(name);
     let plan = parent.plan();
     let one = at..AudioSample(at.0 + 1);
     let wide = parent.query(window.clone(), Default::default()).unwrap();
@@ -349,6 +353,7 @@ fn case(
         .unwrap();
     // This clock/index comes from the independent old membership API FIRST.
     let owner = &observed.spans()[0].owners()[member];
+    capture_baseline::phase("legacy_input_ample");
     let legacy = parent.input(owner, at, Default::default()).unwrap();
     let q = observed.work();
     let c = legacy.work().checked_sub(q).unwrap();
@@ -357,6 +362,7 @@ fn case(
         query(candidates.query(), plan, |v| v.0),
         query(&observed, plan, |v| v.0)
     );
+    capture_baseline::phase("candidate_capture_ample");
     let captured = candidates.capture(member, Default::default()).unwrap();
     assert_eq!(input(captured.input().unwrap()), input(&legacy));
     assert_eq!(captured.query_work(), q);
@@ -367,16 +373,21 @@ fn case(
     };
     let q_exact = parent.query(one.clone(), q_limits(q));
     let q_short = parent.query(one.clone(), q_limits(q - 1));
+    capture_baseline::phase("legacy_input_exact");
     let i_exact = parent.input(owner, at, q_limits(legacy.work()));
+    capture_baseline::phase("legacy_input_one_short");
     let i_short = parent.input(owner, at, q_limits(legacy.work() - 1));
+    capture_baseline::phase("candidate_capture_exact");
     let c_exact = parent
         .candidates(at, Default::default())
         .unwrap()
         .capture(member, q_limits(c));
+    capture_baseline::phase("candidate_capture_one_short");
     let c_short = parent
         .candidates(at, Default::default())
         .unwrap()
         .capture(member, q_limits(c - 1));
+    capture_baseline::phase("retained_probe_ample");
     json!({"name":name,"parent_kind":match parent{Parent::Root(_)=>"Root",Parent::Domain(_)=>"ActualSeededDomain"},
        "window":sample_range(window,|v|v.0),"observation_window":sample_range(one,|v|v.0),
        "selected_alias":selected,"selected_kind":kind(selected_kind),"selected_member_index":member,

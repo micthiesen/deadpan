@@ -320,6 +320,17 @@ binding/projection work exhaustion. Capture/discarded spans, retained probe and
 owners, caller/node containers and complete recursive closure remain open.
 No cap, weight, refund, cache, cold activation or requirement/gate status changes.
 
+The [actual capture baseline](qualification/owner-capture-baseline-2026-10-29.md)
+freezes the old discarded Leaf/Stage and probe observations before capture
+admission. Both executed producers agree on 14 unchanged cases plus two validated
+supplements and 128 ordered events, including 32 late errors with populated seed
+slots. Main/isolated Plan libraries pass 120/107; strict lint and independent
+review pass. Corrected expected-Plan branding is covered by a real foreign-Plan
+regression. All seven staged sources match both runtime variants; 324 other
+authority inputs are unchanged. PointCeil's private probe provider remains an
+explicit oracle gap. This is logical/work/error evidence, not heap/native or
+capture/probe admission; existing product gaps and gate statuses remain open.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

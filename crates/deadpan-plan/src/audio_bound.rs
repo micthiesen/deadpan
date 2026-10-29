@@ -65,6 +65,38 @@ pub struct AudioBound<'plan> {
     constraints: Vec<EnvelopeConstraint>,
 }
 
+#[cfg(test)]
+impl AudioBound<'_> {
+    pub(in crate::plan) fn capture_baseline_snapshot(
+        &self,
+        expected_plan: &RenderPlan,
+    ) -> serde_json::Value {
+        use super::audio_owners::tests::legacy_snapshot_v1::capture_baseline as snapshot;
+        assert!(self.belongs_to(expected_plan));
+        let Self {
+            plan: _,
+            node,
+            definition,
+            instance,
+            gap,
+            resolved,
+            reference_at_anchor,
+            reference_step,
+            support,
+            envelope_scale,
+            constraints,
+        } = self;
+        serde_json::json!({
+            "belongs_to_expected_plan":true,
+            "node":expected_plan.nodes[*node].inspection.id.as_str(),
+            "definition":definition,"instance":instance,"gap":gap,"resolved":resolved,
+            "reference_at_anchor":reference_at_anchor,"reference_step":reference_step,
+            "support":support,"envelope_scale":envelope_scale,
+            "constraints":constraints.iter().map(|v|snapshot::constraint(expected_plan,v)).collect::<Vec<_>>(),
+        })
+    }
+}
+
 impl crate::audio_allocated::OwnedHeap for AudioBound<'_> {
     fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
         let Self {

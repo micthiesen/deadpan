@@ -1233,4 +1233,4 @@ fn treatments_are_checked_plan_owners_and_default_gap_never_duplicates_repeat_ga
 }
 
 #[path = "legacy_snapshot_v1.rs"]
-mod legacy_snapshot_v1;
+pub(in crate::plan) mod legacy_snapshot_v1;

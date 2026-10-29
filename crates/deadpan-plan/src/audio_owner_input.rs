@@ -99,7 +99,16 @@ impl<'plan> AudioOwnerInput<'plan> {
             Some(&self.context.seed),
             (true, true),
             &mut editorial,
-        )?;
+        );
+        #[cfg(test)]
+        super::audio_owners::tests::legacy_snapshot_v1::capture_baseline::probe_walk(
+            self.context.plan,
+            at,
+            &walked,
+            &editorial,
+            (limits.maximum_work, budget.remaining),
+        );
+        let walked = walked?;
         let input = match walked {
             AudioWalkSpan::Stage(span) if matches!(span.content, AudioSignalContent::Bound(_)) => {
                 let AudioSignalContent::Bound(bound) = &span.content else {
@@ -116,6 +125,12 @@ impl<'plan> AudioOwnerInput<'plan> {
             }
             _ => None,
         };
+        #[cfg(test)]
+        super::audio_owners::tests::legacy_snapshot_v1::capture_baseline::probe_result(
+            self.context.plan,
+            input.as_ref(),
+            limits.maximum_work - budget.remaining,
+        );
         Ok(AudioOwnerRetainedProbe {
             input,
             work: limits.maximum_work - budget.remaining,
@@ -158,6 +173,30 @@ pub struct AudioOwnerRetainedInput<'plan> {
 }
 
 impl<'plan> AudioOwnerRetainedInput<'plan> {
+    #[cfg(test)]
+    pub(in crate::plan) fn capture_baseline_snapshot(
+        &self,
+        expected_plan: &RenderPlan,
+    ) -> serde_json::Value {
+        use super::audio_owners::tests::legacy_snapshot_v1::capture_baseline as snapshot;
+        assert!(self.belongs_to(expected_plan));
+        assert!(std::ptr::eq(self.plan, expected_plan));
+        let Self {
+            plan: _,
+            processing,
+            editorial,
+            domain,
+            work,
+        } = self;
+        serde_json::json!({
+            "belongs_to_expected_plan":true,
+            "processing":snapshot::processing(expected_plan, processing),
+            "editorial":snapshot::editorial(expected_plan, editorial),
+            "raw_domain":snapshot::bound_domain(expected_plan, domain),
+            "work":work,
+        })
+    }
+
     pub(super) fn clock_origin(&self) -> super::AudioOwnerClockOrigin {
         super::AudioOwnerClockOrigin::Retained {
             definition: self.processing.definition.clone(),
@@ -360,4 +399,66 @@ fn capture_observed<'plan>(
         scope,
         work: query_work + (before - budget.remaining),
     })
+}
+
+#[cfg(test)]
+mod capture_baseline_branding_tests {
+    use super::*;
+
+    #[test]
+    fn actual_bound_and_retained_snapshots_reject_identical_foreign_plan() {
+        use super::super::audio_owners::tests::legacy_snapshot_v1::capture_baseline as snapshot;
+        let frozen: serde_json::Value = serde_json::from_str(include_str!(
+            "../tests/fixtures/owner-query-baseline-v1/snapshot.json"
+        ))
+        .unwrap();
+        let fixture = frozen["fixtures"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|v| v["fixture"] == "nonunity_shift_fractional_point_ceil_source44100")
+            .unwrap();
+        let doc =
+            deadpan_core::ProjectDocument::from_json(&fixture["document"].to_string()).unwrap();
+        let actual_plan = RenderPlan::compile(&doc).unwrap();
+        let foreign_plan = RenderPlan::compile(&doc).unwrap();
+        let at = AudioSample(0);
+        let owners = actual_plan
+            .audio_gain_owners(at..AudioSample(1), Default::default())
+            .unwrap();
+        let owner = owners.spans()[0]
+            .owners()
+            .iter()
+            .find(|v| v.instance().node.as_str() == "voice")
+            .unwrap();
+        let input = actual_plan
+            .audio_owner_input(owner, at, Default::default())
+            .unwrap();
+        let probe = input.retained_probe_at(at, Default::default()).unwrap();
+        let retained = probe.input().expect("real frozen fixture must reach Bound");
+        assert!(retained.belongs_to(&actual_plan));
+        assert!(!retained.belongs_to(&foreign_plan));
+        assert!(matches!(
+            retained.processing.content,
+            AudioSignalContent::Bound(_)
+        ));
+        let good_processing = snapshot::processing(&actual_plan, &retained.processing);
+        assert_eq!(good_processing["content"]["tag"], "Bound");
+        assert_eq!(
+            retained.capture_baseline_snapshot(&actual_plan)["belongs_to_expected_plan"],
+            true
+        );
+
+        // Exercise the actual content(plan, Bound) caller using this exact
+        // processing span, without a clone, replacement Box or second walk.
+        let foreign_content = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            snapshot::processing(&foreign_plan, &retained.processing)
+        }));
+        assert!(foreign_content.is_err());
+
+        let foreign_retained = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            retained.capture_baseline_snapshot(&foreign_plan)
+        }));
+        assert!(foreign_retained.is_err());
+    }
 }

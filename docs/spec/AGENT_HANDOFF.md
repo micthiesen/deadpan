@@ -2,7 +2,18 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: actual owner query admitted, product goal active
+## Current state: capture oracle frozen, product goal active
+
+The [actual capture baseline](../qualification/owner-capture-baseline-2026-10-29.md)
+records the SAME legacy capture/discard/probe calls before their admission.
+Both executed producers agree on 14 unchanged cases plus two unbound Stage/Source
+supplements and 128 ordered events; 32 errors retain a populated capture slot.
+The golden is immutable. Main/isolated Plan libraries pass 120/107; strict lint
+and review pass. A real foreign-Plan regression covers corrected branding checks.
+All seven staged sources equal both compiled variants; 324 other authority
+inputs and the actual descent body remain unchanged. These observer allocations
+are not memory/native qualification. PointCeil's private probe provider still
+needs an oracle before that later boundary changes. Capture is not admitted yet.
 
 The [actual owner-query admission](../qualification/owner-query-budget-2026-10-29.md)
 reserves the numerical Root/Domain candidate query through reached Plan/Core
@@ -175,12 +186,12 @@ that baseline capture; the query implementation above came afterward.
 All 17 terminal receipts, initial/corrected manifests and immutable outputs are
 in /tmp/deadpan-owner-query-baseline-2026-10-28 and its archived inventory.
 
-Next freeze the existing capture walk's complete discarded Leaf/Stage, boundary
-and retained-probe observations before changing that kernel. SnapshotV1 records
-Input seeds and C/probe work but not all discarded-span/private-bound fields.
-Preparation is in /tmp/deadpan-owner-capture-baseline-2026-10-29. Reuse the same
-14 real fixtures and unchanged old capture, with immutable expected outputs.
-Then admit the SAME audio_walk_inner, including its late work/errors after the
+The capture baseline above now extends SnapshotV1 with actual discarded-span,
+private Bound, boundary and probe observations. Its exact contract and source
+pins are in /tmp/deadpan-owner-capture-baseline-2026-10-29 and the archived
+inventory; contract SHA-256 is
+a3fe704c200f27bf3395dbc6e90e127038d4144f48f59d40b4346cddc6097b3e.
+Next admit the SAME audio_walk_inner, including its late work/errors after the
 owner seed is captured. Keep the seed slot and returned Input charged across
 errors and the later probe. Discarded span/Core/Box charges must release at the
 existing discard point, before the observed-owner clone. Safe preallocated Box

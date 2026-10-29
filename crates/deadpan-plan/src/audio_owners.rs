@@ -762,4 +762,4 @@ fn restrict_end(
 
 #[cfg(test)]
 #[path = "audio_owners/tests.rs"]
-mod tests;
+pub(in crate::plan) mod tests;
