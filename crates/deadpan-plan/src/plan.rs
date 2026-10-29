@@ -85,8 +85,10 @@ mod audio_owner_input;
 mod audio_owners;
 pub use audio_owner_input::{
     AdmittedAudioOwnerInputCandidates, AdmittedAudioOwnerInputCapture,
-    AdmittedAudioOwnerRetainedProbe, AudioOwnerInput, AudioOwnerInputCandidates,
+    AdmittedAudioOwnerRetainedProbe, AdmittedAudioOwnerSpanStartCandidates,
+    AdmittedAudioSpanStartInputCapture, AudioOwnerInput, AudioOwnerInputCandidates,
     AudioOwnerInputCapture, AudioOwnerInputScope, AudioOwnerRetainedInput, AudioOwnerRetainedProbe,
+    AudioOwnerSpanStartRequest, SharedAudioOwnerQueryWork,
 };
 pub use audio_owners::{
     AdmittedAudioOwnerQuery, AdmittedAudioTreatmentBoundary, AudioOwnerClock,

@@ -31,6 +31,11 @@ use super::*;
 mod node_admission_tests;
 #[path = "authored_eq/node_description.rs"]
 mod node_description;
+#[path = "authored_eq/span_start.rs"]
+mod span_start;
+#[cfg(test)]
+#[path = "authored_eq/span_start_tests.rs"]
+mod span_start_tests;
 #[cfg(test)]
 #[path = "authored_eq/tile_admission_tests.rs"]
 mod tile_admission_tests;
@@ -574,7 +579,7 @@ impl StageAudio {
             }
             let owners = {
                 let mut admission = sound_context_admission::Admission::new(self, control);
-                program.context.owners_admitted(
+                program.context.span_start_owners_admitted(
                     graph.plan,
                     range.clone(),
                     control,
@@ -613,7 +618,7 @@ impl StageAudio {
             result.relative_depth = raw.relative_depth;
             raw.suppressed.append(&mut raw.exhausted);
             result.suppressed.extend(raw.suppressed);
-            for span in owners.query().spans() {
+            for (span_index, span) in owners.query().spans().iter().enumerate() {
                 control.check()?;
                 let first = match program.stop {
                     Some(stop) => {
@@ -658,12 +663,18 @@ impl StageAudio {
                             Some((index, stage))
                         });
                 let node = if let Some((index, stage)) = selected {
-                    Some(self.eq_node(
+                    Some(self.eq_node_selected(
                         graph,
                         program,
-                        &span.owners()[index],
-                        span.samples().start,
-                        stage,
+                        node_description::Selection {
+                            request: node_description::Request {
+                                incoming: program.context,
+                                owner: &span.owners()[index],
+                                at: span.samples().start,
+                                stage,
+                            },
+                            source: owners.source(span_index),
+                        },
                         control,
                     )?)
                 } else {
@@ -745,6 +756,7 @@ impl StageAudio {
         result
     }
 
+    #[cfg(test)]
     fn eq_node<'plan, 'work>(
         &mut self,
         graph: &mut Graph<'plan, '_, 'work>,
@@ -754,6 +766,38 @@ impl StageAudio {
         stage: usize,
         control: WorkControl<'work>,
     ) -> Result<usize, StageAudioError> {
+        self.eq_node_selected(
+            graph,
+            program,
+            node_description::Selection {
+                request: node_description::Request {
+                    incoming: program.context,
+                    owner,
+                    at,
+                    stage,
+                },
+                source: node_description::Source::Direct,
+            },
+            control,
+        )
+    }
+
+    fn eq_node_selected<'plan, 'work>(
+        &mut self,
+        graph: &mut Graph<'plan, '_, 'work>,
+        program: Program<'_, 'plan>,
+        selection: node_description::Selection<
+            '_,
+            '_,
+            'plan,
+            sound_context_admission::Issuer<'work>,
+            sound_context_admission::Lease<'work>,
+        >,
+        control: WorkControl<'work>,
+    ) -> Result<usize, StageAudioError> {
+        let node_description::Request {
+            owner, at, stage, ..
+        } = selection.request;
         if let Some(index) = graph.nodes.iter().position(|node| {
             node.parent == program.parent
                 && node.boundary.before_stage() == stage
@@ -766,14 +810,9 @@ impl StageAudio {
         }
         let mut description = {
             let mut admission = sound_context_admission::Admission::new(self, control);
-            node_description::describe_admitted(
+            node_description::describe_selected_admitted(
                 graph.plan,
-                node_description::Request {
-                    incoming: program.context,
-                    owner,
-                    at,
-                    stage,
-                },
+                selection,
                 control,
                 &mut admission,
             )?

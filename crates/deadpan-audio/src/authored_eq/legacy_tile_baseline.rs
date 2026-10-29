@@ -45,9 +45,16 @@ fn block(value: &WideBlock) -> Value {
 
 fn counters(renderer: &StageAudio, graph: &Graph<'_, '_, '_>, control: WorkControl<'_>) -> Value {
     let work = control.work.borrow();
+    let captures = span_start::trace();
     json!({
         "old_total_controller_work": work.plan_work, "prepared_frames": work.prepared_frames,
         "observed_new_index_work": OBSERVED_INDEX_WORK.with(Cell::get),
+        "span_start_trace": {
+            "direct_point_work": captures.direct_point_work,
+            "direct_point_queries": captures.direct_point_queries,
+            "certified_work": captures.certified_work,
+            "certified_captures": captures.certified_captures,
+        },
         "prepared_stages": work.prepared_stages, "source_checks": work.source_checks,
         "observed": work.observed, "cache_plan_work": work.cache_plan_work,
         "request_metadata": work.sound_context_frames,
@@ -334,6 +341,7 @@ fn scenario<'plan, const M: bool>(
     errors: bool,
 ) -> Value {
     OBSERVED_INDEX_WORK.with(|value| value.set(0));
+    span_start::reset_trace();
     let owner = match incoming {
         Context::Retained(input) => input
             .owners(AudioSample(at)..AudioSample(at + 1), Default::default())

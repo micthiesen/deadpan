@@ -447,3 +447,9 @@ pub(in crate::plan) mod wide_baseline;
 
 #[path = "legacy_snapshot_v1/direct_input_baseline.rs"]
 pub(in crate::plan) mod direct_input_baseline;
+
+#[path = "legacy_snapshot_v1/span_start_baseline.rs"]
+pub(in crate::plan) mod span_start_baseline;
+
+#[path = "legacy_snapshot_v1/span_start_certificate_tests.rs"]
+mod span_start_certificate_tests;

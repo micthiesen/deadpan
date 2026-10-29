@@ -4,7 +4,7 @@
 use super::*;
 use crate::plan::AudioOwnerQuery;
 
-enum Parent<'context, 'plan> {
+pub(super) enum Parent<'context, 'plan> {
     Root(&'plan RenderPlan),
     Domain(&'context AudioDomain<'plan>),
 }
@@ -427,7 +427,7 @@ impl<'context, 'plan, I: Copy + Eq, L> AdmittedAudioOwnerInputCandidates<'contex
     }
 }
 
-fn capture_in_parent<'plan, A: crate::AudioSoundContextAdmission>(
+pub(super) fn capture_in_parent<'plan, A: crate::AudioSoundContextAdmission>(
     parent: &Parent<'_, 'plan>,
     observed: &AudioOwnerClock<'plan>,
     at: AudioSample,

@@ -49,9 +49,11 @@ pub use plan::AudioIntrinsicPreparation;
 pub use plan::PictureOwnerMap;
 pub use plan::{
     AdmittedAudioOwnerInputCandidates, AdmittedAudioOwnerInputCapture,
-    AdmittedAudioOwnerRetainedProbe, AudioOwnerInput, AudioOwnerInputCandidates,
+    AdmittedAudioOwnerRetainedProbe, AdmittedAudioOwnerSpanStartCandidates,
+    AdmittedAudioSpanStartInputCapture, AudioOwnerInput, AudioOwnerInputCandidates,
     AudioOwnerInputCapture, AudioOwnerInputScope, AudioOwnerOccurrence, AudioOwnerOccurrenceMap,
     AudioOwnerOccurrences, AudioOwnerRetainedInput, AudioOwnerRetainedProbe,
+    AudioOwnerSpanStartRequest, SharedAudioOwnerQueryWork,
 };
 pub use plan::{
     AdmittedAudioOwnerQuery, AdmittedAudioTreatmentBoundary, AudioOwnerClock,

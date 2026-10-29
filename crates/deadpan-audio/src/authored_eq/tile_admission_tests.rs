@@ -37,6 +37,13 @@ fn arc_frames() -> u64 {
 }
 
 fn normalize_counter(actual: &mut Value, old: &Value, imposed: bool, metered: bool) {
+    let captures = actual
+        .as_object_mut()
+        .unwrap()
+        .remove("span_start_trace")
+        .unwrap();
+    assert_eq!(number(&captures, "certified_captures"), 0);
+    assert_eq!(number(&captures, "certified_work"), 0);
     let additional_work = number(actual, "observed_new_index_work");
     if !metered {
         assert_eq!(additional_work, 0);
@@ -137,7 +144,10 @@ fn normalize_counter(actual: &mut Value, old: &Value, imposed: bool, metered: bo
 
 fn compare_matrix<const M: bool>() {
     let old: Value = serde_json::from_str(GOLDEN).unwrap();
-    let mut actual = super::legacy_tile_baseline::observations::<M>();
+    let mut actual =
+        span_start::with_direct_reference(super::legacy_tile_baseline::observations::<M>);
+    let mut certified = super::legacy_tile_baseline::observations::<M>();
+    compare_certified_matrix(&mut certified, &actual);
     let cases = actual.as_array_mut().unwrap();
     let old_cases = old["cases"].as_array().unwrap();
     assert_eq!(cases.len(), old_cases.len());
@@ -226,6 +236,133 @@ fn compare_matrix<const M: bool>() {
             "complete OLD case after proven new resource differences"
         );
     }
+}
+
+fn compare_certified_counter(actual: &mut Value, direct: &Value, imposed: bool) -> u64 {
+    let captures = actual
+        .as_object_mut()
+        .unwrap()
+        .remove("span_start_trace")
+        .unwrap();
+    let mut direct = direct.clone();
+    let queries = direct
+        .as_object_mut()
+        .unwrap()
+        .remove("span_start_trace")
+        .unwrap();
+    assert_eq!(number(&queries, "certified_captures"), 0);
+    assert_eq!(number(&queries, "certified_work"), 0);
+    let saved_queries = number(&queries, "direct_point_queries")
+        .checked_sub(number(&captures, "direct_point_queries"))
+        .unwrap();
+    assert_eq!(saved_queries, number(&captures, "certified_captures"));
+    let removed = number(&queries, "direct_point_work")
+        .checked_sub(number(&captures, "direct_point_work"))
+        .unwrap();
+    if saved_queries != 0 {
+        assert!(removed > 0);
+        assert!(number(&captures, "certified_work") > 0);
+    }
+    let expected = number(&direct, "old_total_controller_work")
+        .checked_sub(if imposed { 0 } else { removed })
+        .unwrap();
+    assert_eq!(
+        number(actual, "old_total_controller_work"),
+        expected,
+        "only actual direct one-sample query receipt work is removed"
+    );
+    actual["old_total_controller_work"] = direct["old_total_controller_work"].clone();
+    assert_eq!(
+        actual, &direct,
+        "all other PCM, resource, depth, cache and controller observations remain literal"
+    );
+    removed
+}
+
+fn compare_certified_matrix(actual: &mut Value, direct: &Value) {
+    let cases = actual.as_array_mut().unwrap();
+    let references = direct.as_array().unwrap();
+    assert_eq!(cases.len(), references.len());
+    let mut total_removed = 0_u64;
+    for (case, reference) in cases.iter_mut().zip(references) {
+        assert_eq!(case["name"], reference["name"]);
+        if case["name"] == "nested_equalizers" {
+            let captures = &case["observation"]["final"]["span_start_trace"];
+            assert!(number(captures, "certified_captures") > 0);
+            assert!(number(captures, "certified_work") > 0);
+        }
+        let observed = &mut case["observation"];
+        let expected = &reference["observation"];
+        for phase in ["before", "after"] {
+            assert_eq!(
+                compare_certified_counter(
+                    &mut observed["setup"][phase],
+                    &expected["setup"][phase],
+                    false
+                ),
+                0
+            );
+        }
+        for (operation, old_operation) in observed["operations"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .zip(expected["operations"].as_array().unwrap())
+        {
+            let imposed = operation
+                .get("imposed_controller_work_before_call")
+                .is_some();
+            for phase in ["before", "after_return_drop"] {
+                compare_certified_counter(&mut operation[phase], &old_operation[phase], imposed);
+            }
+            let mut old_operation = old_operation.clone();
+            for phase in ["before", "after_return_drop"] {
+                old_operation[phase]
+                    .as_object_mut()
+                    .unwrap()
+                    .remove("span_start_trace");
+            }
+            assert_eq!(
+                operation, &old_operation,
+                "complete native operation unchanged"
+            );
+        }
+        total_removed = total_removed
+            .checked_add(compare_certified_counter(
+                &mut observed["final"],
+                &expected["final"],
+                false,
+            ))
+            .unwrap();
+        let mut reference = reference.clone();
+        let expected = &mut reference["observation"];
+        for phase in ["before", "after"] {
+            expected["setup"][phase]
+                .as_object_mut()
+                .unwrap()
+                .remove("span_start_trace");
+        }
+        for operation in expected["operations"].as_array_mut().unwrap() {
+            for phase in ["before", "after_return_drop"] {
+                operation[phase]
+                    .as_object_mut()
+                    .unwrap()
+                    .remove("span_start_trace");
+            }
+        }
+        expected["final"]
+            .as_object_mut()
+            .unwrap()
+            .remove("span_start_trace");
+        assert_eq!(
+            case, &reference,
+            "complete certified case equals actual direct reference"
+        );
+    }
+    assert!(
+        total_removed > 0,
+        "the matrix must exercise actual removed queries"
+    );
 }
 
 #[test]

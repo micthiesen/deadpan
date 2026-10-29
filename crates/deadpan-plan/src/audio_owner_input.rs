@@ -15,11 +15,17 @@ use crate::{AudioSoundContextAdmission, PlanError};
 mod candidates;
 #[path = "audio_owner_probe.rs"]
 mod probe;
+#[path = "audio_owner_input/span_start.rs"]
+mod span_start;
 pub use candidates::{
     AdmittedAudioOwnerInputCandidates, AdmittedAudioOwnerInputCapture, AudioOwnerInputCandidates,
     AudioOwnerInputCapture,
 };
 pub use probe::{AdmittedAudioOwnerRetainedProbe, SharedAudioOwnerRetainedInput};
+pub use span_start::{
+    AdmittedAudioOwnerSpanStartCandidates, AdmittedAudioSpanStartInputCapture,
+    AudioOwnerSpanStartRequest, SharedAudioOwnerQueryWork,
+};
 
 /// Whether the raw context is this owner or a processor surrounding it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -451,6 +451,21 @@ matrices retain output and work parity. Integration and Split suites were not
 rerun for this mechanical change. Retained map storage still needs admission;
 no allocation-count, peak-memory, speed or acceptance improvement is claimed.
 
+The [Authored START capture checkpoint](qualification/authored-span-start-capture-2026-10-29.md)
+seals each actual Root/physical Domain wide query to capture selected active
+span START inputs without another point-membership query. Both old variants
+independently freeze 73 complete inputs and separate metered point-query costs;
+private Input/events and full native PCM differentials reconcile only actual
+removed query work. Main/isolated Plan pass 635/622 across 29 executables each,
+Audio 372/353, ordinary Stage 203/203 and definition/history 171/eight.
+Strict lint, three reviews and source/index/evidence audits pass. The combined
+Main ordinary/Split run takes 530.31 seconds, with all 203 ordinary tests passing
+and Split remaining three pass/four work-limit failures. Nested and one-selected
+play now refuse at Core frozen projection and audio binding; the other windows
+still exhaust per-read work. General sound Split stays disabled. Remaining
+containers, mix copies and recursive closure stay open; no caps, prior weights,
+refunds, cold activation or requirement/gate status changed.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 
