@@ -687,7 +687,12 @@ impl StageAudio {
                                 control,
                                 program.depth + 1,
                             )?;
-                            result.dependencies.extend(block.dependencies.clone());
+                            result.dependencies.extend(
+                                block
+                                    .dependencies
+                                    .iter()
+                                    .map(|(asset, fingerprint)| (asset.clone(), *fingerprint)),
+                            );
                             result.relative_depth = result.relative_depth.max(block.relative_depth);
                             result
                                 .suppressed

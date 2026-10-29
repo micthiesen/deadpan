@@ -444,6 +444,13 @@ unchanged. General sound Split remains disabled. Variable suppression/dependency
 containers, other Graph storage, mix copies and full recursive closure remain
 open. No caps, prior weights, refunds, cold activation or acceptance status changed.
 
+The [dependency borrowing follow-up](qualification/authored-dependency-borrow-2026-10-29.md)
+replaces an explicit cached dependency-map clone with borrowed iteration.
+Main/isolated libraries pass 370/351 and strict lint passes; complete frozen tile
+matrices retain output and work parity. Integration and Split suites were not
+rerun for this mechanical change. Retained map storage still needs admission;
+no allocation-count, peak-memory, speed or acceptance improvement is claimed.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 
