@@ -103,17 +103,6 @@ fn actual_probe_and_return_sites_preserve_work_and_exact_peak_refusal() {
         assert_eq!(matches!(old, Context::Retained(_)), retained);
         let work = RefCell::new(ReadWork::default());
         let control = fixture::control(&cancelled, &work);
-        // Independent legacy probe amount separates unchanged deferred owner
-        // work from the P now forwarded by the actual admitted constructor.
-        let old_probe_work = input
-            .retained_probe_at(AudioSample(128), control.query_limits().unwrap())
-            .unwrap()
-            .work();
-        let deferred_owner_work = old_work
-            .borrow()
-            .plan_work
-            .checked_sub(old_probe_work)
-            .unwrap();
         let mut a = policy(usize::MAX, control);
         let carrier = Context::finish_paid_owner_input_admitted(
             &input,
@@ -124,10 +113,8 @@ fn actual_probe_and_return_sites_preserve_work_and_exact_peak_refusal() {
         )
         .unwrap();
         assert_eq!(carrier.retained().is_some(), retained);
-        assert_eq!(
-            work.borrow().plan_work,
-            deferred_owner_work + a.bytes.borrow().inspections
-        );
+        assert_eq!(work.borrow().plan_work, a.bytes.borrow().inspections);
+        assert!(work.borrow().plan_work >= old_work.borrow().plan_work);
         if let Some(domain) = carrier.domain() {
             let Context::Domain(old) = &old else {
                 panic!("Domain branch");

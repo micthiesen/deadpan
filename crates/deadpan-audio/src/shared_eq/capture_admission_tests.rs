@@ -210,3 +210,134 @@ fn numerical_probe_refusal_matches_the_same_actual_query_capture_and_probe_prefi
         expected_work.borrow().plan_work
     );
 }
+
+#[test]
+fn numerical_retained_owner_refusal_matches_the_same_actual_complete_prefix() {
+    let plan = retained_plan();
+    let at = AudioSample(128);
+    let query = plan
+        .audio_gain_owners(at..AudioSample(129), Default::default())
+        .unwrap();
+    let owner = query.spans()[0]
+        .owners()
+        .iter()
+        .find(|clock| clock.instance().node.as_str() == "tone")
+        .unwrap();
+    let key = OwnerKey::new(owner);
+    let cancelled = AtomicBool::new(false);
+    let expected_work = RefCell::new(ReadWork::default());
+    let expected_control = fixture::control(&cancelled, &expected_work);
+    let mut expected = Counting::<true>::new(expected_control);
+    let candidates = plan
+        .audio_owner_input_candidates_at_admitted(
+            at,
+            expected_control.query_limits().unwrap(),
+            &mut expected,
+        )
+        .unwrap();
+    let selected = candidates.query().spans()[0]
+        .owners()
+        .iter()
+        .position(|clock| OwnerKey::new(clock) == key)
+        .unwrap();
+    let capture = candidates
+        .capture(
+            selected,
+            expected_control.query_limits().unwrap(),
+            &mut expected,
+        )
+        .unwrap();
+    let probe = capture
+        .input()
+        .unwrap()
+        .retained_probe_at_admitted(at, expected_control.query_limits().unwrap(), &mut expected)
+        .unwrap();
+    let first_owner_reservation = expected.reservations + 1;
+    expected.fail_on = Some(first_owner_reservation);
+    assert!(matches!(
+        probe.input().unwrap().owners_admitted(
+            at..AudioSample(129),
+            expected_control.query_limits().unwrap(),
+            &mut expected,
+        ),
+        Err(StageAudioError::Limit("capture allocation sentinel"))
+    ));
+    assert_eq!(expected.reservations, first_owner_reservation);
+    drop(probe);
+    drop(capture);
+
+    let actual_work = RefCell::new(ReadWork::default());
+    let actual_control = fixture::control(&cancelled, &actual_work);
+    let mut actual = Counting::<true>::new(actual_control);
+    actual.fail_on = Some(first_owner_reservation);
+    assert!(matches!(
+        original_context_admitted(
+            &plan,
+            &Context::Root,
+            &key,
+            at..AudioSample(129),
+            at,
+            actual_control,
+            &mut actual,
+        ),
+        Err(StageAudioError::Limit("capture allocation sentinel"))
+    ));
+    assert_eq!(actual.reservations, first_owner_reservation);
+    assert_eq!(actual.forwarded, expected.forwarded);
+    assert_eq!(
+        actual_work.borrow().plan_work,
+        expected_work.borrow().plan_work
+    );
+}
+
+fn retained_success_work<const M: bool>() {
+    let plan = retained_plan();
+    let at = AudioSample(128);
+    let query = plan
+        .audio_gain_owners(at..AudioSample(129), Default::default())
+        .unwrap();
+    let owner = query.spans()[0]
+        .owners()
+        .iter()
+        .find(|clock| clock.instance().node.as_str() == "tone")
+        .unwrap();
+    let cancelled = AtomicBool::new(false);
+    let work = RefCell::new(ReadWork::default());
+    let control = fixture::control(&cancelled, &work);
+    let mut policy = Counting::<M>::new(control);
+    let resolved = original_context_admitted(
+        &plan,
+        &Context::Root,
+        &OwnerKey::new(owner),
+        at..AudioSample(129),
+        at,
+        control,
+        &mut policy,
+    )
+    .unwrap()
+    .unwrap();
+    assert!(matches!(&resolved.context, Context::Retained(_)));
+    let frozen: serde_json::Value = serde_json::from_str(include_str!(
+        "../../tests/fixtures/owner-query-baseline-v1/work-receipts.json"
+    ))
+    .unwrap();
+    let old = &frozen["cases"][2];
+    assert_eq!(old["case"], "accepted_retained_tone");
+    assert_eq!(old["retained_result"], "Some");
+    let old_total = old["expected_success_receipt_total"].as_u64().unwrap() as usize;
+    assert_eq!(old_total, 60);
+    if M {
+        assert_eq!(work.borrow().plan_work, policy.forwarded);
+        assert!(policy.forwarded >= old_total);
+    } else {
+        assert_eq!(policy.forwarded, 0);
+        assert_eq!(work.borrow().plan_work, old_total);
+    }
+    drop(resolved);
+}
+
+#[test]
+fn numerical_retained_query_and_complete_prefix_reach_controller_once_in_both_modes() {
+    retained_success_work::<true>();
+    retained_success_work::<false>();
+}

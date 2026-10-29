@@ -97,6 +97,14 @@ impl AudioBound<'_> {
             "constraints":constraints.iter().map(|v|snapshot::constraint(expected_plan,v)).collect::<Vec<_>>(),
         })
     }
+
+    /// Synthetic branch coverage for empty retained support. This preserves
+    /// every real binding field and changes only the private support interval.
+    pub(in crate::plan) fn synthetic_empty_support_for_test(&self) -> Self {
+        let mut value = self.clone();
+        value.support = ExactRatio::ZERO..ExactRatio::ZERO;
+        value
+    }
 }
 
 impl crate::audio_allocated::OwnedHeap for AudioBound<'_> {

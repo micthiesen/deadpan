@@ -2,7 +2,33 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: retained probe and Graph handoff admitted, product goal active
+## Current state: retained-owner decision query admitted, product goal active
+
+The [retained-owner decision query](../qualification/retained-owner-query-budget-2026-10-29.md)
+now admits the actual one-sample query used to accept the retained probe. The
+envelope and owner walk share one remaining budget and policy. Envelope, seed,
+initial retained origin and result have their own charged lifetimes. The
+borrow-only query carrier preserves canonical/additional receipts; Audio bills
+only work that was not forwarded. Accepted query storage overlaps final sharing,
+while rejected query/probe storage drops before fallback.
+
+All four frozen Some cases and three source-split witness rows match complete
+owner fields in both modes. Exact peak, every reservation index, cancellation,
+issuer, inactive/multi-span and zero-remainder validation tests pass. Empty
+support has explicitly synthetic private-state coverage, not a normal-document
+or Empty-provider oracle. Main/isolated Audio pass 307/288 and Plan 607/594
+across all 29 executables. Real-WAV Stage passes 203 in each variant, main
+definitions 171 and isolated history eight. Strict lint and fresh
+independent review pass; final media and inventory details are in the report.
+
+The fresh Split matrix is four pass/three fail in 377.39 seconds, with the same
+three revisions, sample windows and work-limit errors as the preceding checkpoint.
+General sound Split remains disabled. No caps, weights, refunds, source admission
+or cold/batch behavior changed. Other Context::owners queries, including retained incoming one-sample selection
+and wider renderer enumeration, caller treatment-boundary/OwnerKey/node containers and complete recursive cold-resource
+closure remain open. No requirement or gate is closed.
+
+The following retained-probe checkpoint is historical.
 
 The [actual retained-probe admission](../qualification/owner-probe-budget-2026-10-29.md)
 now covers the same complete walker, editorial storage, actual Root/Point raw

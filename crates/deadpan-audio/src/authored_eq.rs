@@ -31,6 +31,7 @@ pub(super) enum Context<'plan> {
 trait FinalOriginalSharing<'plan> {
     type Output;
     type Probe;
+    type Owners;
 
     fn probe(
         &mut self,
@@ -41,6 +42,15 @@ trait FinalOriginalSharing<'plan> {
     fn probe_input(probe: &Self::Probe) -> Option<&AudioOwnerRetainedInput<'plan>>;
     fn probe_work(probe: &Self::Probe) -> usize;
     fn probe_was_forwarded(probe: &Self::Probe) -> bool;
+    fn owners(
+        &mut self,
+        retained: &AudioOwnerRetainedInput<'plan>,
+        samples: Range<AudioSample>,
+        limits: deadpan_plan::AudioQueryLimits,
+    ) -> Result<Self::Owners, StageAudioError>;
+    fn owners_query(owners: &Self::Owners) -> &AudioOwnerQuery<'plan>;
+    fn owners_work(owners: &Self::Owners) -> usize;
+    fn owners_was_forwarded(owners: &Self::Owners) -> bool;
     fn retained(self, probe: Self::Probe) -> Result<Self::Output, StageAudioError>;
     fn domain(self, value: &AudioDomain<'plan>) -> Result<Self::Output, StageAudioError>;
 }
@@ -49,6 +59,7 @@ struct LegacyOriginalSharing;
 impl<'plan> FinalOriginalSharing<'plan> for LegacyOriginalSharing {
     type Output = Context<'plan>;
     type Probe = deadpan_plan::AudioOwnerRetainedProbe<'plan>;
+    type Owners = AudioOwnerQuery<'plan>;
 
     fn probe(
         &mut self,
@@ -65,6 +76,23 @@ impl<'plan> FinalOriginalSharing<'plan> for LegacyOriginalSharing {
         probe.work()
     }
     fn probe_was_forwarded(_: &Self::Probe) -> bool {
+        false
+    }
+    fn owners(
+        &mut self,
+        retained: &AudioOwnerRetainedInput<'plan>,
+        samples: Range<AudioSample>,
+        limits: deadpan_plan::AudioQueryLimits,
+    ) -> Result<Self::Owners, StageAudioError> {
+        Ok(retained.owners(samples, limits)?)
+    }
+    fn owners_query(owners: &Self::Owners) -> &AudioOwnerQuery<'plan> {
+        owners
+    }
+    fn owners_work(owners: &Self::Owners) -> usize {
+        owners.work()
+    }
+    fn owners_was_forwarded(_: &Self::Owners) -> bool {
         false
     }
     fn retained(self, probe: Self::Probe) -> Result<Self::Output, StageAudioError> {
@@ -102,6 +130,7 @@ where
 {
     type Output = deadpan_plan::AdmittedOriginalContext<'plan, A::Issuer, A::Lease>;
     type Probe = deadpan_plan::AdmittedAudioOwnerRetainedProbe<'plan, A::Issuer, A::Lease>;
+    type Owners = deadpan_plan::AdmittedAudioOwnerQuery<'plan, A::Issuer, A::Lease>;
 
     fn probe(
         &mut self,
@@ -123,6 +152,27 @@ where
     }
     fn probe_was_forwarded(probe: &Self::Probe) -> bool {
         probe.was_forwarded()
+    }
+    fn owners(
+        &mut self,
+        retained: &AudioOwnerRetainedInput<'plan>,
+        samples: Range<AudioSample>,
+        limits: deadpan_plan::AudioQueryLimits,
+    ) -> Result<Self::Owners, StageAudioError> {
+        let owners = retained.owners_admitted(samples, limits, self.admission)?;
+        if owners.was_forwarded() != A::METERED {
+            return Err(PlanError::InvalidPlan("retained owners accounting mode differs").into());
+        }
+        Ok(owners)
+    }
+    fn owners_query(owners: &Self::Owners) -> &AudioOwnerQuery<'plan> {
+        owners.query()
+    }
+    fn owners_work(owners: &Self::Owners) -> usize {
+        owners.work()
+    }
+    fn owners_was_forwarded(owners: &Self::Owners) -> bool {
+        owners.was_forwarded()
     }
     fn retained(self, probe: Self::Probe) -> Result<Self::Output, StageAudioError> {
         probe.into_shared_admitted(self.limits()?, self.admission)
@@ -244,10 +294,12 @@ impl<'plan> Context<'plan> {
         }
         if let Some(retained) = S::probe_input(&probe) {
             let end = AudioSample(at.0.checked_add(1).ok_or(TimeError::Overflow)?);
-            let owners = retained.owners(at..end, control.query_limits()?)?;
-            control.spend_plan_work(owners.work())?;
+            let owners = share.owners(retained, at..end, control.query_limits()?)?;
+            if !S::owners_was_forwarded(&owners) {
+                control.spend_plan_work(S::owners_work(&owners))?;
+            }
             let boundary = owner.treatment_boundary(0)?;
-            if owners
+            if S::owners_query(&owners)
                 .spans()
                 .iter()
                 .any(|span| span.owners().iter().any(|owner| boundary.matches(owner)))

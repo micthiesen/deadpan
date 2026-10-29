@@ -19,6 +19,9 @@ use crate::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap, PlanError};
 
 #[path = "audio_owner_query_admission.rs"]
 pub(super) mod admission;
+#[path = "audio_retained_owner_query.rs"]
+mod retained_query;
+pub use retained_query::AdmittedAudioOwnerQuery;
 #[path = "audio_owner_query.rs"]
 pub(super) mod query_admission;
 #[cfg(test)]
@@ -494,48 +497,20 @@ impl<'plan> AudioOwnerRetainedInput<'plan> {
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
     ) -> Result<AudioOwnerQuery<'plan>, PlanError> {
-        limits.validate()?;
-        if samples.end < samples.start {
-            return Err(PlanError::AudioRangeOutOfRange);
-        }
-        let mut budget = Budget {
-            remaining: limits.maximum_work,
-            lookup: LookupStats::default(),
-        };
-        let Some(domain) = self.bound().envelope_domain(&mut budget)? else {
-            budget.spend(1)?;
-            return Ok(AudioOwnerQuery {
-                plan: self.plan,
-                spans: if samples.is_empty() {
-                    Vec::new()
-                } else {
-                    vec![AudioOwnerSpan {
-                        samples: samples.clone(),
-                        owners: Vec::new(),
-                        support: AudioOwnerSupport::Inactive,
-                        original_is_silent: false,
-                    }]
-                },
-                samples,
-                lookup: budget.lookup,
-                work: limits.maximum_work - budget.remaining,
-            });
-        };
-        let mut seed = Walk::from_seed(&domain.seed);
-        seed.allow_inactive = true;
-        let mut result = query_mapped(
-            self.plan,
-            samples.start.0..samples.end.0,
-            AudioQueryLimits {
-                maximum_work: budget.remaining,
-                ..limits
-            },
-            seed,
-            AudioSample,
-            Some(self),
-        )?;
-        result.work += limits.maximum_work - budget.remaining;
-        Ok(result)
+        let mut admission = admission::Unmetered;
+        let query = retained_query::query(self, samples, limits, &mut admission)?;
+        Ok(query.unmetered())
+    }
+
+    /// Query retained owner clocks while charging the actual envelope and
+    /// recursive walk to one shared work and allocation admission.
+    pub fn owners_admitted<A: crate::AudioSoundContextAdmission>(
+        &self,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+        admission: &mut A,
+    ) -> std::result::Result<AdmittedAudioOwnerQuery<'plan, A::Issuer, A::Lease>, A::Error> {
+        retained_query::query(self, samples, limits, admission)
     }
 }
 

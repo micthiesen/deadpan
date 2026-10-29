@@ -89,8 +89,8 @@ pub use audio_owner_input::{
     AudioOwnerInputCapture, AudioOwnerInputScope, AudioOwnerRetainedInput, AudioOwnerRetainedProbe,
 };
 pub use audio_owners::{
-    AudioOwnerClock, AudioOwnerClockOrigin, AudioOwnerKind, AudioOwnerQuery, AudioOwnerSpan,
-    AudioOwnerSupport, AudioTreatmentBoundary,
+    AdmittedAudioOwnerQuery, AudioOwnerClock, AudioOwnerClockOrigin, AudioOwnerKind,
+    AudioOwnerQuery, AudioOwnerSpan, AudioOwnerSupport, AudioTreatmentBoundary,
 };
 
 #[path = "audio_owner_occurrences.rs"]

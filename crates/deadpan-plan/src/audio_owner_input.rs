@@ -3,11 +3,13 @@
 use deadpan_core::{AudioSample, ExactRatio, TimeError};
 
 use super::audio::{AudioWalkSpan, Budget, EditorialCapture};
+use super::audio_owners::admission::{Budget as QueryBudget, Owned, Result as QueryResult};
 use super::{
-    AudioBound, AudioBoundDomain, AudioDomain, AudioFadeQuery, AudioOwnerClock, AudioOwnerKind,
-    AudioProcessingSpan, AudioQueryLimits, AudioSignalContent, LookupStats, RenderPlan,
+    AudioBound, AudioBoundDomain, AudioDomain, AudioFadeQuery, AudioOwnerClock,
+    AudioOwnerClockOrigin, AudioOwnerKind, AudioProcessingSpan, AudioQueryLimits,
+    AudioSignalContent, LookupStats, RenderPlan,
 };
-use crate::PlanError;
+use crate::{AudioSoundContextAdmission, PlanError};
 
 #[path = "audio_owner_input/candidates.rs"]
 mod candidates;
@@ -213,6 +215,48 @@ impl<'plan> AudioOwnerRetainedInput<'plan> {
             gap_after: self.processing.gap_after.clone(),
         }
     }
+
+    /// Build the first per-span retained origin under the same owner-query
+    /// admission as the walk. Per-owner origin copies are charged separately
+    /// by the existing `Budget::origin` call in `walk_query`.
+    pub(super) fn clock_origin_admitted<A: AudioSoundContextAdmission>(
+        &self,
+        budget: &mut QueryBudget<'_, A>,
+    ) -> QueryResult<Owned<AudioOwnerClockOrigin, A::Issuer, A::Lease>, A> {
+        if !A::METERED {
+            return Ok(Owned {
+                value: self.clock_origin(),
+                memory: budget.memory(),
+            });
+        }
+        let mut memory = budget.memory();
+        budget.additional(1)?;
+        let definition = budget.definition(&mut memory, &self.processing.definition)?;
+        let mut capacity = budget.memory();
+        let instance = budget.instance(&mut memory, &mut capacity, &self.processing.instance)?;
+        let gap_after = self
+            .processing
+            .gap_after
+            .as_ref()
+            .map(|value| budget.iteration(&mut memory, value))
+            .transpose()?;
+        budget.check_memory(&memory)?;
+        budget.check_memory(&capacity)?;
+        budget.merge_checked(&mut memory, &mut capacity);
+        Ok(Owned {
+            value: AudioOwnerClockOrigin::Retained {
+                definition,
+                instance,
+                kind: if self.processing.gap_after.is_some() {
+                    AudioOwnerKind::DefaultGap
+                } else {
+                    AudioOwnerKind::Node
+                },
+                gap_after,
+            },
+            memory,
+        })
+    }
     /// Checked immutable operand. Its offset origin is the original allocated
     /// start, retained by `reference_at`; serialized metadata cannot replace it.
     pub fn bound(&self) -> &AudioBound<'plan> {
@@ -220,6 +264,19 @@ impl<'plan> AudioOwnerRetainedInput<'plan> {
             unreachable!()
         };
         bound
+    }
+    /// Make a clone for private empty-support branch coverage. The bound is a
+    /// real captured operand; only its meaningful support and matching cached
+    /// raw-domain tag are replaced, so this is not a document/provider oracle.
+    #[cfg(test)]
+    pub(in crate::plan) fn synthetic_empty_support_for_test(&self) -> Self {
+        let mut value = self.clone();
+        let AudioSignalContent::Bound(bound) = &mut value.processing.content else {
+            unreachable!()
+        };
+        **bound = bound.synthetic_empty_support_for_test();
+        value.domain = AudioBoundDomain::Empty;
+        value
     }
     pub fn domain(&self) -> &AudioBoundDomain<'plan> {
         &self.domain

@@ -11,6 +11,9 @@ struct State {
     calls: usize,
     forwarded: usize,
     fail_work: bool,
+    fail_after: Option<usize>,
+    fail_on_reservation: Option<usize>,
+    rotate_at: Option<usize>,
 }
 struct Policy<const M: bool>(Rc<RefCell<State>>);
 struct Token {
@@ -31,16 +34,34 @@ impl<const M: bool> AudioSoundContextAdmission for Policy<M> {
         Rc::as_ptr(&self.0) as usize
     }
     fn spend(&mut self, n: usize) -> Result<(), PlanError> {
-        let mut state = self.0.borrow_mut();
-        if state.fail_work {
-            return Err(PlanError::AudioQueryLimit("test cancellation"));
+        let rotate = {
+            let mut state = self.0.borrow_mut();
+            if state.fail_work || state.fail_after.is_some_and(|n| state.forwarded >= n) {
+                return Err(PlanError::AudioQueryLimit("test cancellation"));
+            }
+            state.forwarded += n;
+            let rotate = state
+                .rotate_at
+                .is_some_and(|limit| state.forwarded >= limit);
+            if rotate {
+                state.rotate_at = None;
+            }
+            rotate.then_some(state.cap)
+        };
+        if let Some(cap) = rotate {
+            self.0 = Rc::new(RefCell::new(State {
+                cap,
+                ..Default::default()
+            }));
         }
-        state.forwarded += n;
         Ok(())
     }
     fn reserve(&mut self, layout: Layout) -> Result<Token, PlanError> {
         let mut state = self.0.borrow_mut();
         state.calls += 1;
+        if state.fail_on_reservation == Some(state.calls) {
+            return Err(PlanError::AudioQueryLimit("test reservation refusal"));
+        }
         let live = state.live.checked_add(layout.size()).unwrap();
         if live > state.cap {
             return Err(PlanError::AudioQueryLimit("test allocation refusal"));
@@ -183,6 +204,453 @@ fn check_mode<const M: bool>(
         "every partial query/bound/domain/recursive scope releases"
     );
 }
+
+fn kind_named(value: &str) -> AudioOwnerKind {
+    match value {
+        "Node" => AudioOwnerKind::Node,
+        "DefaultGap" => AudioOwnerKind::DefaultGap,
+        _ => panic!("unexpected frozen owner kind {value}"),
+    }
+}
+
+fn retained_from_case<'plan>(
+    plan: &'plan RenderPlan,
+    fixture: &Value,
+    case: &Value,
+) -> crate::AudioOwnerRetainedInput<'plan> {
+    let at = AudioSample(case["observation_window"]["start"].as_i64().unwrap());
+    let alias = case["selected_alias"].as_str().unwrap();
+    let kind = kind_named(case["selected_kind"].as_str().unwrap());
+    let input = if case["parent_kind"] == "Root" {
+        let observed = plan
+            .audio_gain_owners(at..AudioSample(at.0 + 1), Default::default())
+            .unwrap();
+        let owner = observed.spans()[0]
+            .owners()
+            .iter()
+            .find(|owner| owner.instance.node.as_str() == alias && owner.kind == kind)
+            .unwrap();
+        plan.audio_owner_input(owner, at, Default::default())
+            .unwrap()
+    } else {
+        let selected_index = number(&fixture["witnesses"]["selected_verified_old_member_index"]);
+        let outer = plan
+            .audio_gain_owners(at..AudioSample(at.0 + 1), Default::default())
+            .unwrap();
+        let retained_owner = &outer.spans()[0].owners()[selected_index];
+        let retained_context = plan
+            .audio_owner_input(retained_owner, at, Default::default())
+            .unwrap();
+        let domain = retained_context.context();
+        let observed = domain
+            .gain_owners(at..AudioSample(at.0 + 1), Default::default())
+            .unwrap();
+        let owner = observed.spans()[0]
+            .owners()
+            .iter()
+            .find(|owner| owner.instance.node.as_str() == alias && owner.kind == kind)
+            .unwrap();
+        domain.owner_input(owner, at, Default::default()).unwrap()
+    };
+    input
+        .retained_at(at, Default::default())
+        .unwrap()
+        .expect("frozen actual Some retained probe")
+}
+
+fn retained_from_root_member<'plan>(
+    plan: &'plan RenderPlan,
+    at: AudioSample,
+    member_index: usize,
+) -> crate::AudioOwnerRetainedInput<'plan> {
+    let observed = plan
+        .audio_gain_owners(at..AudioSample(at.0 + 1), Default::default())
+        .unwrap();
+    let owner = &observed.spans()[0].owners()[member_index];
+    plan.audio_owner_input(owner, at, Default::default())
+        .unwrap()
+        .retained_at(at, Default::default())
+        .unwrap()
+        .expect("frozen actual Some retained probe")
+}
+
+fn assert_retained_query_fields(
+    admitted: &crate::AdmittedAudioOwnerQuery<'_, usize, Token>,
+    expected: &Value,
+    plan: &RenderPlan,
+) {
+    assert_eq!(admitted.canonical_units(), number(&expected["work"]));
+    assert_eq!(
+        admitted
+            .canonical_units()
+            .checked_add(admitted.additional_units()),
+        Some(admitted.work())
+    );
+    // Only the expected total-work view changes. The immutable old canonical
+    // amount and every mapped owner, origin, span and lookup remain checked.
+    let mut expected = expected.clone();
+    expected["work"] = json!(admitted.work());
+    assert_eq!(
+        crate::plan::audio_owners::tests::legacy_snapshot_v1::query(
+            admitted.query(),
+            plan,
+            |sample| sample.0,
+        ),
+        expected,
+        "retained owner clocks, exact maps and rewritten origins stay frozen"
+    );
+}
+
+fn check_retained_mode<const M: bool>(
+    retained: &crate::AudioOwnerRetainedInput<'_>,
+    expected: &Value,
+    plan: &RenderPlan,
+) {
+    let range = interval(&expected["window"]);
+    let mut ample = policy::<M>(usize::MAX);
+    let admitted = retained
+        .owners_admitted(range.clone(), Default::default(), &mut ample)
+        .unwrap();
+    assert_retained_query_fields(&admitted, expected, plan);
+    assert_eq!(admitted.was_forwarded(), M);
+    let peak = ample.0.borrow().peak;
+    assert_eq!(
+        ample.0.borrow().forwarded,
+        if M { admitted.work() } else { 0 }
+    );
+    if M {
+        assert!(ample.0.borrow().live > 0);
+    } else {
+        assert_eq!(ample.0.borrow().calls, 0);
+        assert_eq!(admitted.additional_units(), 0);
+    }
+    drop(admitted);
+    assert_eq!(ample.0.borrow().live, 0);
+
+    if M {
+        let mut exact = policy::<true>(peak);
+        let result = retained
+            .owners_admitted(range.clone(), Default::default(), &mut exact)
+            .unwrap();
+        assert_eq!(exact.0.borrow().peak, peak);
+        drop(result);
+        assert_eq!(exact.0.borrow().live, 0);
+        for cap in 0..peak {
+            let mut short = policy::<true>(cap);
+            assert!(matches!(
+                retained.owners_admitted(range.clone(), Default::default(), &mut short),
+                Err(PlanError::AudioQueryLimit("test allocation refusal"))
+            ));
+            assert_eq!(short.0.borrow().live, 0, "reservation cap {cap}");
+        }
+    }
+}
+
+fn check_retained_snapshot_case(plan: &RenderPlan, fixture: &Value, case: &Value) {
+    let retained = retained_from_case(plan, fixture, case);
+    let expected = &case["retained_probe"]["input"]["observed_owners"];
+    let at = AudioSample(case["observation_window"]["start"].as_i64().unwrap());
+    let expected_end = AudioSample(case["observation_window"]["end"].as_i64().unwrap());
+    let legacy = retained
+        .owners(at..expected_end, Default::default())
+        .unwrap();
+    assert_eq!(
+        crate::plan::audio_owners::tests::legacy_snapshot_v1::query(&legacy, plan, |sample| sample
+            .0,),
+        *expected,
+        "legacy wrapper matches immutable retained_probe.input.observed_owners"
+    );
+    drop(legacy);
+    check_retained_mode::<false>(&retained, expected, plan);
+    check_retained_mode::<true>(&retained, expected, plan);
+}
+
+#[test]
+fn retained_owner_queries_match_every_frozen_actual_some_probe_in_both_modes() {
+    let snapshot: Value = serde_json::from_str(include_str!(
+        "../../tests/fixtures/owner-capture-baseline-v1/snapshot.json"
+    ))
+    .unwrap();
+    let fixtures = snapshot["fixtures"].as_array().unwrap();
+    let mut count = 0;
+    for fixture_index in [2usize, 3, 4] {
+        let fixture = &fixtures[fixture_index];
+        let doc = ProjectDocument::from_json(&fixture["document"].to_string()).unwrap();
+        let plan = RenderPlan::compile(&doc).unwrap();
+        for case in fixture["cases"].as_array().unwrap() {
+            if case["retained_probe"]["result"] == "Some" {
+                check_retained_snapshot_case(&plan, fixture, case);
+                count += 1;
+            }
+        }
+        if fixture_index == 4 {
+            for row in fixture["witnesses"]["actual_old_owner_rows"]
+                .as_array()
+                .unwrap()
+            {
+                let at = AudioSample(3);
+                let member = number(&row["member_index"]);
+                let retained = retained_from_root_member(&plan, at, member);
+                let expected = &row["actual_retained_probe"]["input"]["observed_owners"];
+                let legacy = retained
+                    .owners(at..AudioSample(4), Default::default())
+                    .unwrap();
+                assert_eq!(
+                    crate::plan::audio_owners::tests::legacy_snapshot_v1::query(
+                        &legacy,
+                        &plan,
+                        |sample| sample.0,
+                    ),
+                    *expected,
+                    "all independently captured split rows remain literal oracles"
+                );
+                drop(legacy);
+                check_retained_mode::<false>(&retained, expected, &plan);
+                check_retained_mode::<true>(&retained, expected, &plan);
+                count += 1;
+            }
+        }
+    }
+    assert_eq!(count, 7);
+}
+
+#[test]
+fn retained_envelope_exact_work_preserves_second_zero_remainder_validation() {
+    let snapshot: Value = serde_json::from_str(include_str!(
+        "../../tests/fixtures/owner-capture-baseline-v1/snapshot.json"
+    ))
+    .unwrap();
+    let fixture = &snapshot["fixtures"][3];
+    let doc = ProjectDocument::from_json(&fixture["document"].to_string()).unwrap();
+    let plan = RenderPlan::compile(&doc).unwrap();
+    let case = &fixture["cases"][0];
+    let retained = retained_from_case(&plan, fixture, case);
+
+    let mut local = Budget {
+        remaining: AudioQueryLimits::default().maximum_work,
+        lookup: LookupStats::default(),
+    };
+    let mut measure = policy::<true>(usize::MAX);
+    let mut budget = admission::Budget::new(&mut local, &mut measure);
+    let envelope = retained
+        .bound()
+        .envelope_domain_query(&mut budget)
+        .unwrap()
+        .unwrap();
+    let envelope_work = budget.canonical_used + budget.additional_used;
+    drop(envelope);
+    assert_eq!(measure.0.borrow().live, 0);
+
+    let mut exact = policy::<true>(usize::MAX);
+    assert!(matches!(
+        retained.owners_admitted(
+            AudioSample(0)..AudioSample(1),
+            AudioQueryLimits {
+                maximum_work: envelope_work,
+                ..Default::default()
+            },
+            &mut exact,
+        ),
+        Err(PlanError::InvalidAudioLimits)
+    ));
+    assert_eq!(exact.0.borrow().forwarded, envelope_work);
+    assert_eq!(exact.0.borrow().live, 0);
+}
+
+#[test]
+fn retained_query_cancellation_keeps_accepted_work_and_releases_partial_leases() {
+    let snapshot: Value = serde_json::from_str(include_str!(
+        "../../tests/fixtures/owner-capture-baseline-v1/snapshot.json"
+    ))
+    .unwrap();
+    let fixture = &snapshot["fixtures"][3];
+    let doc = ProjectDocument::from_json(&fixture["document"].to_string()).unwrap();
+    let plan = RenderPlan::compile(&doc).unwrap();
+    let retained = retained_from_case(&plan, fixture, &fixture["cases"][0]);
+    let mut cancelled = policy::<true>(usize::MAX);
+    cancelled.0.borrow_mut().fail_after = Some(1);
+    assert!(matches!(
+        retained.owners_admitted(
+            AudioSample(0)..AudioSample(1),
+            Default::default(),
+            &mut cancelled
+        ),
+        Err(PlanError::AudioQueryLimit("test cancellation"))
+    ));
+    assert!(cancelled.0.borrow().forwarded > 0);
+    assert_eq!(cancelled.0.borrow().live, 0);
+}
+
+#[test]
+fn retained_query_refuses_each_actual_reservation_index_and_releases_prior_leases() {
+    let snapshot: Value = serde_json::from_str(include_str!(
+        "../../tests/fixtures/owner-capture-baseline-v1/snapshot.json"
+    ))
+    .unwrap();
+    let fixture = &snapshot["fixtures"][3];
+    let doc = ProjectDocument::from_json(&fixture["document"].to_string()).unwrap();
+    let plan = RenderPlan::compile(&doc).unwrap();
+    let retained = retained_from_case(&plan, fixture, &fixture["cases"][0]);
+    let range = interval(&fixture["cases"][0]["observation_window"]);
+
+    let mut baseline = policy::<true>(usize::MAX);
+    let complete = retained
+        .owners_admitted(range.clone(), Default::default(), &mut baseline)
+        .unwrap();
+    let reservation_count = baseline.0.borrow().calls;
+    assert!(reservation_count > 0);
+    drop(complete);
+    assert_eq!(baseline.0.borrow().live, 0);
+
+    for index in 1..=reservation_count {
+        let mut refusing = policy::<true>(usize::MAX);
+        refusing.0.borrow_mut().fail_on_reservation = Some(index);
+        assert!(
+            matches!(
+                retained.owners_admitted(range.clone(), Default::default(), &mut refusing),
+                Err(PlanError::AudioQueryLimit("test reservation refusal"))
+            ),
+            "reservation index {index} of {reservation_count}"
+        );
+        assert_eq!(refusing.0.borrow().calls, index);
+        assert_eq!(refusing.0.borrow().live, 0, "reservation index {index}");
+    }
+}
+
+#[test]
+fn retained_query_validates_limits_and_range_before_admission() {
+    let snapshot: Value = serde_json::from_str(include_str!(
+        "../../tests/fixtures/owner-capture-baseline-v1/snapshot.json"
+    ))
+    .unwrap();
+    let fixture = &snapshot["fixtures"][3];
+    let doc = ProjectDocument::from_json(&fixture["document"].to_string()).unwrap();
+    let plan = RenderPlan::compile(&doc).unwrap();
+    let retained = retained_from_case(&plan, fixture, &fixture["cases"][0]);
+    let mut admission = policy::<true>(usize::MAX);
+    assert!(matches!(
+        retained.owners_admitted(
+            AudioSample(1)..AudioSample(0),
+            AudioQueryLimits {
+                maximum_spans: 0,
+                ..Default::default()
+            },
+            &mut admission,
+        ),
+        Err(PlanError::InvalidAudioLimits)
+    ));
+    assert!(matches!(
+        retained.owners_admitted(
+            AudioSample(1)..AudioSample(0),
+            Default::default(),
+            &mut admission,
+        ),
+        Err(PlanError::AudioRangeOutOfRange)
+    ));
+    assert_eq!(admission.0.borrow().forwarded, 0);
+    assert_eq!(admission.0.borrow().calls, 0);
+}
+
+#[test]
+fn retained_multi_span_query_keeps_legacy_fields_and_shared_accounting() {
+    let snapshot: Value = serde_json::from_str(include_str!(
+        "../../tests/fixtures/owner-capture-baseline-v1/snapshot.json"
+    ))
+    .unwrap();
+    let fixture = &snapshot["fixtures"][2];
+    let doc = ProjectDocument::from_json(&fixture["document"].to_string()).unwrap();
+    let plan = RenderPlan::compile(&doc).unwrap();
+    let retained = retained_from_case(&plan, fixture, &fixture["cases"][0]);
+    let range = AudioSample(1)..AudioSample(9);
+    let legacy = retained.owners(range.clone(), Default::default()).unwrap();
+    let expected =
+        crate::plan::audio_owners::tests::legacy_snapshot_v1::query(&legacy, &plan, |sample| {
+            sample.0
+        });
+    assert!(legacy.spans().len() > 1);
+    drop(legacy);
+    let mut admission = policy::<true>(usize::MAX);
+    let admitted = retained
+        .owners_admitted(range, Default::default(), &mut admission)
+        .unwrap();
+    assert_retained_query_fields(&admitted, &expected, &plan);
+    assert_eq!(
+        admitted.canonical_units() + admitted.additional_units(),
+        admitted.work()
+    );
+    assert_eq!(admission.0.borrow().forwarded, admitted.work());
+}
+
+#[test]
+fn retained_query_preserves_inactive_spans_before_the_retained_allocation() {
+    let snapshot: Value = serde_json::from_str(include_str!(
+        "../../tests/fixtures/owner-capture-baseline-v1/snapshot.json"
+    ))
+    .unwrap();
+    let fixture = &snapshot["fixtures"][3];
+    let doc = ProjectDocument::from_json(&fixture["document"].to_string()).unwrap();
+    let plan = RenderPlan::compile(&doc).unwrap();
+    let retained = retained_from_case(&plan, fixture, &fixture["cases"][0]);
+    let range = AudioSample(-10)..AudioSample(-9);
+    let legacy = retained.owners(range.clone(), Default::default()).unwrap();
+    assert_eq!(legacy.spans().len(), 1);
+    assert_eq!(legacy.spans()[0].support(), AudioOwnerSupport::Inactive);
+    assert!(legacy.spans()[0].owners().is_empty());
+    let expected =
+        crate::plan::audio_owners::tests::legacy_snapshot_v1::query(&legacy, &plan, |sample| {
+            sample.0
+        });
+    drop(legacy);
+
+    let mut admission = policy::<true>(usize::MAX);
+    let admitted = retained
+        .owners_admitted(range, Default::default(), &mut admission)
+        .unwrap();
+    assert_retained_query_fields(&admitted, &expected, &plan);
+    assert_eq!(admission.0.borrow().forwarded, admitted.work());
+}
+
+#[test]
+fn retained_query_detects_actual_mid_envelope_issuer_change_and_releases_leases() {
+    let snapshot: Value = serde_json::from_str(include_str!(
+        "../../tests/fixtures/owner-capture-baseline-v1/snapshot.json"
+    ))
+    .unwrap();
+    let fixture = &snapshot["fixtures"][3];
+    let doc = ProjectDocument::from_json(&fixture["document"].to_string()).unwrap();
+    let plan = RenderPlan::compile(&doc).unwrap();
+    let retained = retained_from_case(&plan, fixture, &fixture["cases"][0]);
+
+    let mut local = Budget {
+        remaining: AudioQueryLimits::default().maximum_work,
+        lookup: LookupStats::default(),
+    };
+    let mut measure = policy::<true>(usize::MAX);
+    let mut budget = admission::Budget::new(&mut local, &mut measure);
+    let envelope = retained
+        .bound()
+        .envelope_domain_query(&mut budget)
+        .unwrap()
+        .unwrap();
+    let envelope_work = budget.canonical_used + budget.additional_used;
+    drop(envelope);
+    assert_eq!(measure.0.borrow().live, 0);
+
+    let mut changing = policy::<true>(usize::MAX);
+    let old_issuer = Rc::clone(&changing.0);
+    changing.0.borrow_mut().rotate_at = Some(envelope_work);
+    assert!(matches!(
+        retained.owners_admitted(
+            AudioSample(0)..AudioSample(1),
+            Default::default(),
+            &mut changing
+        ),
+        Err(PlanError::AudioMetadataIssuerMismatch)
+    ));
+    assert_eq!(old_issuer.borrow().live, 0);
+    assert_eq!(changing.0.borrow().live, 0);
+}
+
 #[test]
 fn independent_old_snapshot_covers_all_fourteen_actual_query_capture_cases() {
     let expected: Value = serde_json::from_str(include_str!(
@@ -343,3 +811,92 @@ fn seeded_invalid_limits_keep_semantic_order_but_earlier_admission_can_refuse() 
 
 #[path = "owner_capture_admission_tests.rs"]
 mod capture;
+
+#[test]
+fn synthetic_empty_support_matches_legacy_branch_for_empty_and_nonempty_requests() {
+    let snapshot: Value = serde_json::from_str(include_str!(
+        "../../tests/fixtures/owner-capture-baseline-v1/snapshot.json"
+    ))
+    .unwrap();
+    let fixture = &snapshot["fixtures"][3];
+    let doc = ProjectDocument::from_json(&fixture["document"].to_string()).unwrap();
+    let plan = RenderPlan::compile(&doc).unwrap();
+    let actual = retained_from_case(&plan, fixture, &fixture["cases"][0]);
+    // Synthetic private-state branch coverage only. The real captured binding
+    // remains intact except its meaningful support is replaced with 0..0.
+    let retained = actual.synthetic_empty_support_for_test();
+    assert!(matches!(retained.domain(), crate::AudioBoundDomain::Empty));
+
+    for range in [
+        AudioSample(0)..AudioSample(0),
+        AudioSample(0)..AudioSample(1),
+    ] {
+        let legacy = retained.owners(range.clone(), Default::default()).unwrap();
+        assert!(legacy.work() > 0);
+        if range.is_empty() {
+            assert!(legacy.spans().is_empty());
+        } else {
+            assert_eq!(legacy.spans().len(), 1);
+            assert_eq!(legacy.spans()[0].support(), AudioOwnerSupport::Inactive);
+            assert!(legacy.spans()[0].owners().is_empty());
+        }
+        let expected =
+            crate::plan::audio_owners::tests::legacy_snapshot_v1::query(&legacy, &plan, |sample| {
+                sample.0
+            });
+        let old_work = legacy.work();
+        drop(legacy);
+
+        for metered in [false, true] {
+            if metered {
+                let mut policy = policy::<true>(usize::MAX);
+                let admitted = retained
+                    .owners_admitted(range.clone(), Default::default(), &mut policy)
+                    .unwrap();
+                assert_retained_query_fields(&admitted, &expected, &plan);
+                assert!(admitted.was_forwarded());
+                assert_eq!(policy.0.borrow().forwarded, admitted.work());
+                let peak = policy.0.borrow().peak;
+                if range.is_empty() {
+                    assert_eq!(policy.0.borrow().calls, 0);
+                    assert_eq!(peak, 0);
+                } else {
+                    assert!(policy.0.borrow().calls > 0);
+                    for cap in 0..peak {
+                        let mut refusing = self::policy::<true>(cap);
+                        assert!(matches!(
+                            retained.owners_admitted(
+                                range.clone(),
+                                Default::default(),
+                                &mut refusing,
+                            ),
+                            Err(PlanError::AudioQueryLimit("test allocation refusal"))
+                        ));
+                        assert_eq!(refusing.0.borrow().live, 0);
+                    }
+                }
+                drop(admitted);
+                assert_eq!(policy.0.borrow().live, 0);
+            } else {
+                let mut policy = policy::<false>(usize::MAX);
+                let admitted = retained
+                    .owners_admitted(range.clone(), Default::default(), &mut policy)
+                    .unwrap();
+                assert_eq!(admitted.canonical_units(), old_work);
+                assert_eq!(admitted.additional_units(), 0);
+                assert_eq!(admitted.work(), old_work);
+                assert!(!admitted.was_forwarded());
+                assert_eq!(
+                    crate::plan::audio_owners::tests::legacy_snapshot_v1::query(
+                        admitted.query(),
+                        &plan,
+                        |sample| sample.0,
+                    ),
+                    expected
+                );
+                assert_eq!(policy.0.borrow().forwarded, 0);
+                assert_eq!(policy.0.borrow().calls, 0);
+            }
+        }
+    }
+}

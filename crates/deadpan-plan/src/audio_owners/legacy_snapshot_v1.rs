@@ -90,7 +90,7 @@ fn coarse_clock(value: &AudioOwnerClock<'_>) -> Value {
     json!({"definition":selector(value.definition.as_ref()),"instance":instance(&value.instance),
            "kind":kind(value.kind),"gap_after":value.gap_after.as_ref().map(iteration)})
 }
-fn query<S: Copy>(
+pub(super) fn query<S: Copy>(
     value: &AudioOwnerQuery<'_, S>,
     plan: &RenderPlan,
     label: impl Fn(S) -> i64 + Copy,

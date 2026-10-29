@@ -173,10 +173,13 @@ pub(super) fn query_tracked<'plan, S: Copy, A: AudioSoundContextAdmission>(
             },
             budget.issuer,
         );
-        let origin = retained.map_or(
-            AudioOwnerClockOrigin::Current,
-            AudioOwnerRetainedInput::clock_origin,
-        );
+        let retained_origin = retained
+            .map(|input| input.clock_origin_admitted(budget))
+            .transpose()?;
+        let current_origin = AudioOwnerClockOrigin::Current;
+        let origin = retained_origin
+            .as_ref()
+            .map_or(&current_origin, |origin| &origin.value);
         walk_query(
             plan,
             seed.copy(budget)?,
@@ -191,7 +194,7 @@ pub(super) fn query_tracked<'plan, S: Copy, A: AudioSoundContextAdmission>(
                 },
             },
             &mut output,
-            &origin,
+            origin,
             budget,
             0,
         )?;

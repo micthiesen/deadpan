@@ -371,6 +371,21 @@ query admission, caller/node containers and complete recursive closure remain
 open. No caps, weights, refunds, cold/batch activation or requirement/gate status
 changed.
 
+The [retained-owner decision query](qualification/retained-owner-query-budget-2026-10-29.md)
+now admits the actual query used to accept a retained probe. Envelope, seed,
+initial retained origin and query result share one work budget with independent
+charged lifetimes. Audio forwards/bills the query once. All four frozen Some
+cases and three split witness rows preserve complete owner fields; exact peak,
+each reservation index, cancellation, issuer and zero-remainder tests pass.
+Empty-support coverage is explicitly synthetic. Main/isolated Audio pass
+307/288, Plan 607/594 across 29 executables, Stage 203/203 and definition/history
+171/eight. Strict lint
+and fresh independent review pass. Final media/inventory details are in the
+report. Other Context::owners queries, including retained incoming one-sample selection
+and wide renderer enumeration, caller/key/node containers and full recursive
+closure remain open. General sound Split stays disabled; no caps, weights,
+refunds, cold activation or requirement/gate statuses changed.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 
