@@ -2,6 +2,8 @@ use super::*;
 use crate::stages::controlled_reads::{Provider, fixture_document_at_rate};
 use deadpan_core::FrameRate;
 
+#[path = "cached_probe_tests.rs"]
+mod cached_probe;
 #[path = "prepared_input_tests.rs"]
 mod prepared;
 

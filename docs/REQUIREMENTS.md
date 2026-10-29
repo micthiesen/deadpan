@@ -500,6 +500,25 @@ General sound Split stays disabled. A separate conserved diagnostic observes
 still needs complete admission and is not a claimed saving. No caps, prior
 weights, refunds, requirement/gate status, speed or peak-memory claim changes.
 
+The [warm Original prediction checkpoint](qualification/cached-original-prediction-2026-10-29.md)
+uses an exact already admitted PCM block's masks for Root/Domain prediction,
+then consumes the same Arc numerically. Full future-reservation fit precedes
+pinning/source I/O; nonfit and stale candidates retain the cold path. Eight
+independently frozen native cases preserve complete PCM, masks, dependencies,
+source admission and cleanup. Their warm reads save 24-63 actual work units;
+cold reads pay six extra units, with every difference reconciled by real phase
+counters. Numerical zero stays permitted. Valid coherent mask corruption needs
+the separate query oracle because both warm observations share those masks.
+Core/Plan storage observers retain failed inspection debits without claiming
+construction admission. Main/isolated Audio pass 389/383, ordinary Stage 203/203
+and definition/history 171/171. Strict checks, five reviews and thirteen
+unchanged oracle hashes are recorded. The fresh Split matrix remains three
+pass/four work failures in 263.10 seconds at the same windows, now refusing at
+per-read, owner-occurrence, frozen-projection and structural work. General
+sound Split stays disabled. The exact source patch preserves Main's unrelated
+work; no caps, old weights, refunds, requirement/gate status or speed/peak-memory
+claim changes. Cold query construction peaks and other variable storage remain.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

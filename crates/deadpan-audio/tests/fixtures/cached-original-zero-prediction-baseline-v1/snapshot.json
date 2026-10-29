@@ -1,0 +1,1470 @@
+{
+  "cases": [
+    {
+      "cleanup": {
+        "active_frames": 0,
+        "cache_key_scopes": 0,
+        "cache_plan_work": 0,
+        "cached_original_payloads": 0,
+        "cached_resident_frames": 0,
+        "cached_stages": 0,
+        "next_original_input": 1,
+        "observed_dependencies": 1,
+        "phase_work": {
+          "active_depth": 0,
+          "calls": [
+            2,
+            2,
+            2,
+            0
+          ],
+          "max_active_depth": 1,
+          "nested": false,
+          "overflow": 0,
+          "work": [
+            {
+              "cache_plan_work": 0,
+              "plan_work": 58
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 18
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 38
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 0
+            }
+          ]
+        },
+        "plan_work": 542,
+        "preflight_assets": 1,
+        "prepared_frames": 0,
+        "prepared_stages": 0,
+        "projected_resident_frames": 0,
+        "provider_calls": 8,
+        "sound_context_frames": 0,
+        "source_checks": 8
+      },
+      "result": {
+        "after_arc_verification": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 288,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              2,
+              2,
+              2,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 58
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 18
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 38
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 542,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 8,
+          "sound_context_frames": 0,
+          "source_checks": 8
+        },
+        "after_first": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 288,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              1,
+              1,
+              1,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 29
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 9
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 29
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 273,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 3,
+          "sound_context_frames": 0,
+          "source_checks": 3
+        },
+        "after_second": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 288,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              2,
+              2,
+              2,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 58
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 18
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 38
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 534,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 7,
+          "sound_context_frames": 0,
+          "source_checks": 7
+        },
+        "all_zero_pcm_permitted": true,
+        "before": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 0,
+          "cached_resident_frames": 0,
+          "cached_stages": 0,
+          "next_original_input": 0,
+          "observed_dependencies": 0,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "max_active_depth": 0,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 0,
+          "preflight_assets": 0,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 0,
+          "sound_context_frames": 0,
+          "source_checks": 0
+        },
+        "before_second": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 288,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              1,
+              1,
+              1,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 29
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 9
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 29
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 281,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 4,
+          "sound_context_frames": 0,
+          "source_checks": 4
+        },
+        "context": "root",
+        "declared_source_audio": true,
+        "first": {
+          "dependencies": {
+            "media": [
+              192,
+              239,
+              0,
+              92,
+              70,
+              13,
+              95,
+              247,
+              252,
+              106,
+              125,
+              229,
+              186,
+              31,
+              165,
+              87,
+              198,
+              169,
+              210,
+              32,
+              101,
+              108,
+              171,
+              226,
+              119,
+              222,
+              145,
+              159,
+              153,
+              58,
+              55,
+              147
+            ]
+          },
+          "exhausted_field": "WideBlock has no exhausted field; exact raw exhaustion is recorded separately",
+          "f64_bits": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "relative_depth": 0,
+          "suppressed": []
+        },
+        "fixed_graph_reservation": 1465,
+        "independent_query_oracle": {
+          "cached_excluded": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "events": [
+            {
+              "kind": "retained_envelope",
+              "range": [
+                0,
+                16
+              ]
+            }
+          ],
+          "flattened_spans": 1,
+          "processing": [
+            "leaf"
+          ],
+          "query_construction_work": 29,
+          "query_excluded": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "query_visitor_work": 2,
+          "raw_dependencies": {
+            "media": [
+              192,
+              239,
+              0,
+              92,
+              70,
+              13,
+              95,
+              247,
+              252,
+              106,
+              125,
+              229,
+              186,
+              31,
+              165,
+              87,
+              198,
+              169,
+              210,
+              32,
+              101,
+              108,
+              171,
+              226,
+              119,
+              222,
+              145,
+              159,
+              153,
+              58,
+              55,
+              147
+            ]
+          },
+          "raw_exhausted": [],
+          "raw_f32_bits": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "raw_relative_depth": 0,
+          "raw_start": 0,
+          "raw_suppressed": [],
+          "zero_pcm_with_permitted_raw_policy": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ]
+        },
+        "name": "verified_zero_wav_source",
+        "prediction_enabled": true,
+        "range": [
+          0,
+          16
+        ],
+        "same_cached_arc": true,
+        "second": {
+          "dependencies": {
+            "media": [
+              192,
+              239,
+              0,
+              92,
+              70,
+              13,
+              95,
+              247,
+              252,
+              106,
+              125,
+              229,
+              186,
+              31,
+              165,
+              87,
+              198,
+              169,
+              210,
+              32,
+              101,
+              108,
+              171,
+              226,
+              119,
+              222,
+              145,
+              159,
+              153,
+              58,
+              55,
+              147
+            ]
+          },
+          "exhausted_field": "WideBlock has no exhausted field; exact raw exhaustion is recorded separately",
+          "f64_bits": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "relative_depth": 0,
+          "suppressed": []
+        },
+        "wav_sha256": [
+          74,
+          32,
+          119,
+          26,
+          33,
+          37,
+          13,
+          74,
+          185,
+          10,
+          224,
+          156,
+          88,
+          111,
+          78,
+          12,
+          227,
+          28,
+          158,
+          7,
+          39,
+          19,
+          23,
+          106,
+          33,
+          121,
+          113,
+          143,
+          220,
+          138,
+          207,
+          100
+        ]
+      }
+    },
+    {
+      "cleanup": {
+        "active_frames": 0,
+        "cache_key_scopes": 0,
+        "cache_plan_work": 0,
+        "cached_original_payloads": 0,
+        "cached_resident_frames": 0,
+        "cached_stages": 0,
+        "next_original_input": 1,
+        "observed_dependencies": 1,
+        "phase_work": {
+          "active_depth": 0,
+          "calls": [
+            2,
+            2,
+            2,
+            0
+          ],
+          "max_active_depth": 1,
+          "nested": false,
+          "overflow": 0,
+          "work": [
+            {
+              "cache_plan_work": 0,
+              "plan_work": 78
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 18
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 38
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 0
+            }
+          ]
+        },
+        "plan_work": 566,
+        "preflight_assets": 1,
+        "prepared_frames": 0,
+        "prepared_stages": 0,
+        "projected_resident_frames": 0,
+        "provider_calls": 8,
+        "sound_context_frames": 0,
+        "source_checks": 8
+      },
+      "result": {
+        "after_arc_verification": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 288,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              2,
+              2,
+              2,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 78
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 18
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 38
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 566,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 8,
+          "sound_context_frames": 0,
+          "source_checks": 8
+        },
+        "after_first": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 288,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              1,
+              1,
+              1,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 39
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 9
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 29
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 285,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 3,
+          "sound_context_frames": 0,
+          "source_checks": 3
+        },
+        "after_second": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 288,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              2,
+              2,
+              2,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 78
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 18
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 38
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 558,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 7,
+          "sound_context_frames": 0,
+          "source_checks": 7
+        },
+        "all_zero_pcm_permitted": true,
+        "before": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 0,
+          "cached_resident_frames": 0,
+          "cached_stages": 0,
+          "next_original_input": 0,
+          "observed_dependencies": 0,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "max_active_depth": 0,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 0,
+          "preflight_assets": 0,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 0,
+          "sound_context_frames": 0,
+          "source_checks": 0
+        },
+        "before_second": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 288,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              1,
+              1,
+              1,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 39
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 9
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 29
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 293,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 4,
+          "sound_context_frames": 0,
+          "source_checks": 4
+        },
+        "context": "exact_domain_arc",
+        "declared_source_audio": true,
+        "first": {
+          "dependencies": {
+            "media": [
+              192,
+              239,
+              0,
+              92,
+              70,
+              13,
+              95,
+              247,
+              252,
+              106,
+              125,
+              229,
+              186,
+              31,
+              165,
+              87,
+              198,
+              169,
+              210,
+              32,
+              101,
+              108,
+              171,
+              226,
+              119,
+              222,
+              145,
+              159,
+              153,
+              58,
+              55,
+              147
+            ]
+          },
+          "exhausted_field": "WideBlock has no exhausted field; exact raw exhaustion is recorded separately",
+          "f64_bits": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "relative_depth": 0,
+          "suppressed": []
+        },
+        "fixed_graph_reservation": 1465,
+        "independent_query_oracle": {
+          "cached_excluded": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "events": [
+            {
+              "kind": "retained_envelope",
+              "range": [
+                0,
+                16
+              ]
+            }
+          ],
+          "flattened_spans": 1,
+          "processing": [
+            "leaf"
+          ],
+          "query_construction_work": 39,
+          "query_excluded": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "query_visitor_work": 2,
+          "raw_dependencies": {
+            "media": [
+              192,
+              239,
+              0,
+              92,
+              70,
+              13,
+              95,
+              247,
+              252,
+              106,
+              125,
+              229,
+              186,
+              31,
+              165,
+              87,
+              198,
+              169,
+              210,
+              32,
+              101,
+              108,
+              171,
+              226,
+              119,
+              222,
+              145,
+              159,
+              153,
+              58,
+              55,
+              147
+            ]
+          },
+          "raw_exhausted": [],
+          "raw_f32_bits": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "raw_relative_depth": 0,
+          "raw_start": 0,
+          "raw_suppressed": [],
+          "zero_pcm_with_permitted_raw_policy": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ]
+        },
+        "name": "verified_zero_wav_source",
+        "prediction_enabled": true,
+        "range": [
+          0,
+          16
+        ],
+        "same_cached_arc": true,
+        "second": {
+          "dependencies": {
+            "media": [
+              192,
+              239,
+              0,
+              92,
+              70,
+              13,
+              95,
+              247,
+              252,
+              106,
+              125,
+              229,
+              186,
+              31,
+              165,
+              87,
+              198,
+              169,
+              210,
+              32,
+              101,
+              108,
+              171,
+              226,
+              119,
+              222,
+              145,
+              159,
+              153,
+              58,
+              55,
+              147
+            ]
+          },
+          "exhausted_field": "WideBlock has no exhausted field; exact raw exhaustion is recorded separately",
+          "f64_bits": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "relative_depth": 0,
+          "suppressed": []
+        },
+        "wav_sha256": [
+          74,
+          32,
+          119,
+          26,
+          33,
+          37,
+          13,
+          74,
+          185,
+          10,
+          224,
+          156,
+          88,
+          111,
+          78,
+          12,
+          227,
+          28,
+          158,
+          7,
+          39,
+          19,
+          23,
+          106,
+          33,
+          121,
+          113,
+          143,
+          220,
+          138,
+          207,
+          100
+        ]
+      }
+    }
+  ],
+  "coverage": "Root and exact Domain with verified signed-16 stereo WAV whose data is all zero; declared SourceAudio, empty raw exclusion and all requested zero samples permitted",
+  "legacy_query_mode": true,
+  "phase_order": [
+    "queries",
+    "prediction",
+    "original_read",
+    "probe"
+  ],
+  "producer": "actual shared read_shared_program zero Source supplement",
+  "schema": 1
+}

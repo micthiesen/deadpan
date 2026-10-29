@@ -8,8 +8,13 @@ use deadpan_plan::AudioOwnerQuery;
 /// fallible population walk. Allocated/all-false flags alone grant nothing.
 pub(in crate::stages) struct PopulationComplete(());
 
+pub(in crate::stages) enum OriginalPolicy<'a, 'plan> {
+    Queries(RootReadQueriesRef<'a, 'plan>),
+    Cached(&'a ReadBlock),
+}
+
 pub(in crate::stages) struct Original<'a, 'plan> {
-    pub(super) queries: RootReadQueriesRef<'a, 'plan>,
+    pub(super) policy: OriginalPolicy<'a, 'plan>,
     pub(super) owners: &'a AudioOwnerQuery<'plan>,
     pub(super) routes: &'a [Option<shared_mix::Route<'plan>>],
     pub(super) id: usize,
@@ -127,28 +132,62 @@ pub(super) fn populate(
                 mix.predict_range(route, span.samples(), true, control)?;
             }
         }
-        let samples = &original.queries.processing.samples;
-        raw_policy::visit(
-            original.queries,
-            samples.start,
-            count(samples)? as usize,
-            control,
-            || control.spend_plan_work(1),
-            |event| {
-                let mask = match event {
-                    raw_policy::Event::SilentHold { range, .. }
-                    | raw_policy::Event::Suppressed { range, .. }
-                    | raw_policy::Event::Exhausted(range) => range,
-                    raw_policy::Event::RetainedEnvelope { .. } => return Ok(()),
-                };
-                for (span, route) in original.owners.spans().iter().zip(original.routes) {
-                    if let Some(route) = route {
-                        exclude(mix, route, &span.samples(), &mask, control)?;
-                    }
+        match &original.policy {
+            OriginalPolicy::Queries(queries) => {
+                let samples = &queries.processing.samples;
+                raw_policy::visit(
+                    *queries,
+                    samples.start,
+                    count(samples)? as usize,
+                    control,
+                    || control.spend_plan_work(1),
+                    |event| {
+                        let mask = match event {
+                            raw_policy::Event::SilentHold { range, .. }
+                            | raw_policy::Event::Suppressed { range, .. }
+                            | raw_policy::Event::Exhausted(range) => range,
+                            raw_policy::Event::RetainedEnvelope { .. } => return Ok(()),
+                        };
+                        for (span, route) in original.owners.spans().iter().zip(original.routes) {
+                            if let Some(route) = route {
+                                exclude(mix, route, &span.samples(), &mask, control)?;
+                            }
+                        }
+                        Ok(())
+                    },
+                )?;
+            }
+            OriginalPolicy::Cached(block) => {
+                control.spend_plan_work(1)?;
+                let samples = original.owners.samples();
+                let frames = count(&samples)? as usize;
+                if block.start != samples.start || block.samples.len() != frames {
+                    return Err(
+                        PlanError::InvalidPlan("cached Original prediction range differs").into(),
+                    );
                 }
-                Ok(())
-            },
-        )?;
+                // These are the exact successful outer read's policy masks,
+                // not zero PCM or recursively inherited child suppression.
+                for ranges in [&block.suppressed, &block.exhausted] {
+                    policy_ranges::visit(
+                        block.start,
+                        frames,
+                        ranges,
+                        |sample| sample.0,
+                        || control.spend_plan_work(1),
+                        |mask, _| {
+                            for (span, route) in original.owners.spans().iter().zip(original.routes)
+                            {
+                                if let Some(route) = route {
+                                    exclude(mix, route, &span.samples(), mask, control)?;
+                                }
+                            }
+                            Ok(())
+                        },
+                    )?;
+                }
+            }
+        }
     }
     if inputs.roots.len() != inputs.root_ids.len() || inputs.roots.len() != inputs.root_routes.len()
     {

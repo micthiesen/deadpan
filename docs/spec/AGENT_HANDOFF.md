@@ -2,7 +2,53 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: Original input cache bounded, product goal active
+## Current state: warm Original prediction reuses masks, product goal active
+
+The [warm prediction checkpoint](../qualification/cached-original-prediction-2026-10-29.md)
+skips actual Original query construction on exact admitted Root/Domain PCM hits.
+The complete future mix reservation must fit without eviction before pinning or
+source admission. Current key/depth/fingerprint/cancel checks remain; the same
+Arc feeds prediction and numerical consumption, then drops before sound returns.
+No query heap is retained. Optional Graph query packs were rejected because
+generic required-resource pressure could not evict them.
+
+Six ordinary and two numerical-zero Source cases were captured before the
+fast path. Current legacy observations match those immutable bodies literally;
+warm output, masks, source counts and cleanup match. Warm reads save 24-63 real
+work units in these finite cases; each cold read pays six extra lookup units.
+All differences reconcile with nonoverlapping actual phase counters. Current
+Main/isolated observation bodies match exactly. Warm prediction shares cached
+masks with numerical permission observations, so the separate query oracle and
+explicit corruption-limitation test remain necessary.
+
+Main/isolated Core libraries pass 816/791, Plan 199/186 and Audio 389/383.
+Ordinary native Stage passes 203/203; definition/history passes 171/171.
+Strict checks, five independent reviews and the hashed evidence audit pass.
+The only later ordinary-suite source change is cfg(test) module ordering;
+final units, strict checks, current captures and Split use formatted source.
+The report retains the initial pressure-fixture failure and capture-path
+collisions. All thirteen immutable oracles retain their hashes. All fifteen
+shipping source files match the isolated candidate; Main's unrelated work stays.
+
+The fresh Split matrix is still three pass/four work failures in 263.10 seconds:
+Source/Sequence cut-three 0+511 exhausts per-read work; nested selected play
+without root sound prefix-two 0+4096 exhausts owner-occurrence work; one selected
+play prefix-two 0+4096 exhausts frozen projection; processed root sound
+root-sound-refinement 0+511 exhausts structural work. General sound-bearing Split
+stays disabled. No cap, previous weight, refund, criterion or gate changes.
+
+The new final-storage observers expose actual failed inspection work but do not
+admit constructor peaks. Next capture complete OLD ordinary Root/Domain
+AudioQuery fields, headers, lookup and canonical/error work: existing inner
+Leaf-span witnesses omit outer clipping/assembly. Then admit flattened query
+construction with the existing generic allocation guards and retain a sealed
+request-local lease through prediction/numerical use. Processing, recursive
+policy, fades, other variable containers/mix copies and full recursive admission
+remain separate required work. The evidence retains cold-query-admission-design.md
+and flat-query-oracle-gap.md with exact reusable cases and constructor sites.
+The full DP-01..24/Gates A..G goal remains active.
+
+## Original input cache bounded (historical)
 
 The [Original input cache checkpoint](../qualification/original-input-cache-2026-10-29.md)
 ports only exact request-local PCM reuse into the published candidate, preserving

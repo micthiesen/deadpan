@@ -21,6 +21,7 @@ mod audio_tape;
 mod picture;
 mod plan;
 
+pub use audio_allocated::AudioStorageMeasurement;
 pub use audio_envelope::{AudioEnvelope, AudioEnvelopeEndpoint};
 pub use audio_mix::{AudioMixGate, AudioMixQuery, AudioMixVoiceQuery, AudioSignalMix};
 pub use audio_projected_root::AudioProjectedRoot;

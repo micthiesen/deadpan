@@ -494,12 +494,53 @@ struct RouteWire {
     nodes: Vec<SoundRouteNode>,
 }
 
+/// Existing retained storage and the traversal work actually debited while
+/// inspecting it. Failure retains the successful debits before the refusal.
+#[must_use]
+#[derive(Debug)]
+pub struct SoundRouteStorageMeasurement {
+    result: Result<usize>,
+    work: usize,
+}
+
+impl SoundRouteStorageMeasurement {
+    pub fn work(&self) -> usize {
+        self.work
+    }
+
+    pub fn into_parts(self) -> (Result<usize>, usize) {
+        (self.result, self.work)
+    }
+}
+
 impl SoundRoute {
     /// Return `(retained_heap_bytes_bound, charged_work)` with checked arithmetic.
     /// Includes private lookup indexes, nested ripple arenas and Sequence
     /// indexes, using actual Vec capacities. Excludes this inline handle and
     /// allocator metadata. This measures existing storage, not construction peak.
     pub fn allocated_bytes_bound(&self, maximum_work: usize) -> Result<(usize, usize)> {
+        let (result, work) = self.measure_allocated_storage(maximum_work).into_parts();
+        result.map(|bytes| (bytes, work))
+    }
+
+    /// Measure the same retained layouts while reporting successful work debits
+    /// even when traversal or checked byte accounting fails. An unaffordable
+    /// bulk debit does not traverse its elements or consume their allowance.
+    pub fn measure_allocated_storage(&self, maximum_work: usize) -> SoundRouteStorageMeasurement {
+        let mut budget = AllocationBound {
+            remaining: maximum_work,
+            bytes: 0,
+        };
+        let result = self
+            .visit_allocated_storage(&mut budget)
+            .map(|()| budget.bytes);
+        SoundRouteStorageMeasurement {
+            result,
+            work: maximum_work - budget.remaining,
+        }
+    }
+
+    fn visit_allocated_storage(&self, budget: &mut AllocationBound) -> Result<()> {
         let Self {
             recipe_extent: _,
             output_extent: _,
@@ -507,10 +548,6 @@ impl SoundRoute {
             nodes,
             index,
         } = self;
-        let mut budget = AllocationBound {
-            remaining: maximum_work,
-            bytes: 0,
-        };
         budget.spend(1)?;
         budget.storage(nodes)?;
         for node in nodes {
@@ -525,7 +562,7 @@ impl SoundRoute {
         }
         budget.storage(index)?;
         for RouteIndex { extent: _ } in index {}
-        Ok((budget.bytes, maximum_work - budget.remaining))
+        Ok(())
     }
 
     pub fn identity(recipe_extent: ExactRatio) -> Result<Self> {
@@ -1187,8 +1224,7 @@ mod allocation_bound_tests {
     use super::*;
     use std::mem::size_of;
 
-    #[test]
-    fn nested_repeat_sequence_storage_includes_spare_capacity_and_private_indexes() {
+    fn nested_route() -> SoundRoute {
         let mut parts = Vec::with_capacity(17);
         parts.push(1);
         let mut ripple_nodes = Vec::with_capacity(11);
@@ -1210,7 +1246,12 @@ mod allocation_bound_tests {
             SoundRouteNode::Recipe {},
             SoundRouteNode::Ripple { input: 0, map },
         ]);
-        let route = SoundRoute::new(ExactRatio::integer(6), 1, nodes).unwrap();
+        SoundRoute::new(ExactRatio::integer(6), 1, nodes).unwrap()
+    }
+
+    #[test]
+    fn nested_repeat_sequence_storage_includes_spare_capacity_and_private_indexes() {
+        let route = nested_route();
         let SoundRouteNode::Ripple { map, .. } = &route.nodes[1] else {
             unreachable!()
         };
@@ -1235,5 +1276,36 @@ mod allocation_bound_tests {
             let error = route.allocated_bytes_bound(limit).unwrap_err();
             assert_eq!(error.code, DocumentErrorCode::LimitExceeded);
         }
+    }
+
+    #[test]
+    fn storage_observation_preserves_actual_debits_at_every_nested_refusal() {
+        let route = nested_route();
+        let before = route.to_json().unwrap();
+        let capacities = (route.nodes.capacity(), route.index.capacity());
+        // Actual successful debit prefixes: root, route arena, ripple root,
+        // ripple arena, Sequence parts, ripple index, Sequence ends, route index.
+        // A refused bulk debit neither visits its elements nor bills them.
+        let expected_work = [0, 1, 1, 3, 4, 4, 4, 7, 8, 8, 8, 11, 12, 12];
+        for (maximum, expected) in expected_work.into_iter().enumerate() {
+            let observed = route.measure_allocated_storage(maximum);
+            assert_eq!(observed.work(), expected, "budget {maximum}");
+            let (result, work) = observed.into_parts();
+            assert_eq!(work, expected);
+            let error = result.unwrap_err();
+            assert_eq!(error.code, DocumentErrorCode::LimitExceeded);
+            assert_eq!(error.message, "sound route heap traversal work");
+            let legacy = route.allocated_bytes_bound(maximum).unwrap_err();
+            assert_eq!(legacy.code, error.code);
+            assert_eq!(legacy.message, error.message);
+        }
+        let (result, work) = route.measure_allocated_storage(14).into_parts();
+        assert_eq!(work, 14);
+        assert_eq!(
+            route.allocated_bytes_bound(14).unwrap(),
+            (result.unwrap(), 14)
+        );
+        assert_eq!(route.to_json().unwrap(), before);
+        assert_eq!((route.nodes.capacity(), route.index.capacity()), capacities);
     }
 }

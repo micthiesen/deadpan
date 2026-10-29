@@ -268,6 +268,28 @@ fn same_context(left: &Context<'_>, right: &Context<'_>) -> bool {
     }
 }
 
+type CachedIdentity<'request, 'plan> = (
+    &'request Context<'plan>,
+    &'request Range<AudioSample>,
+    usize,
+);
+
+fn cached_original_key<'plan>(
+    graph: &mut Graph<'plan, '_>,
+    slot: usize,
+    (context, samples, depth): CachedIdentity<'_, 'plan>,
+) -> Result<u64, StageAudioError> {
+    let entry = graph.original_inputs.entries[slot]
+        .as_ref()
+        .expect("occupied cache slot");
+    if entry.depth != depth || entry.samples != *samples || !same_context(&entry.context, context) {
+        return Err(StageAudioError::ForeignDomain);
+    }
+    let key = entry.key;
+    graph.original_inputs.touch(slot);
+    Ok(key)
+}
+
 fn resident(block: &ReadBlock) -> Option<u64> {
     let bytes = block
         .samples
@@ -291,6 +313,143 @@ fn resident(block: &ReadBlock) -> Option<u64> {
 }
 
 impl StageAudio {
+    fn validate_original_input_request(
+        &self,
+        graph: &Graph<'_, '_>,
+        context: &Context<'_>,
+        samples: &Range<AudioSample>,
+        control: WorkControl<'_>,
+        depth: usize,
+    ) -> Result<u32, StageAudioError> {
+        control.check()?;
+        if !std::ptr::eq(graph.plan, self.plan.as_ref())
+            || graph
+                .original_inputs
+                .scope
+                .as_ref()
+                .is_some_and(|scope| !Arc::ptr_eq(scope, &self.original_input_scope))
+            || match context {
+                Context::Root => false,
+                Context::Domain(domain) => !domain.belongs_to(&self.plan),
+                Context::Retained(input) => !input.belongs_to(&self.plan),
+            }
+        {
+            return Err(StageAudioError::ForeignDomain);
+        }
+        if depth > self.limits.maximum_depth {
+            return Err(StageAudioError::Limit("nested stage depth"));
+        }
+        let frames = count(samples)?;
+        if frames == 0 || frames > MAX_OUTPUT_FRAMES {
+            return Err(StageAudioError::Range);
+        }
+        Ok(frames)
+    }
+
+    fn admit_cached_original(
+        &self,
+        provider: &mut impl AudioSourceProvider,
+        cached: &Arc<ReadBlock>,
+        control: WorkControl<'_>,
+        depth: usize,
+    ) -> Result<Arc<ReadBlock>, StageAudioError> {
+        let block = Arc::clone(cached);
+        if depth
+            .checked_add(block.relative_depth)
+            .is_none_or(|depth| depth > self.limits.maximum_depth)
+        {
+            return Err(StageAudioError::Limit("nested stage depth"));
+        }
+        for (asset, fingerprint) in &block.dependencies {
+            control.spend_plan_work(1)?;
+            let source = resolve_source(provider, &self.plan, asset, control.cancelled)?;
+            if control.observe(asset, source)? != *fingerprint {
+                return Err(PreparationError::IndexMismatch.into());
+            }
+        }
+        control.check()?;
+        Ok(block)
+    }
+
+    fn original_prediction_reservation_fits(
+        &self,
+        additional: u64,
+        control: WorkControl<'_>,
+    ) -> Result<bool, StageAudioError> {
+        let mut resident = 0_u64;
+        let mut disk = 0_u64;
+        for entry in &self.cache {
+            // Inspect the required stage's two retained resource metrics.
+            control.spend_plan_work(2)?;
+            let Some(next_resident) = resident.checked_add(entry.block.samples.resident_frames())
+            else {
+                return Ok(false);
+            };
+            let Some(next_disk) = disk.checked_add(entry.block.samples.disk_bytes()) else {
+                return Ok(false);
+            };
+            resident = next_resident;
+            disk = next_disk;
+        }
+        for cached in self.original_inputs.values() {
+            control.spend_plan_work(1)?;
+            let Some(next) = resident.checked_add(cached.resident) else {
+                return Ok(false);
+            };
+            resident = next;
+        }
+        // Four resident additions and two disk additions, before pinning.
+        control.spend_plan_work(6)?;
+        let work = control.work.borrow();
+        let resident = resident
+            .checked_add(self.active_frames)
+            .and_then(|frames| frames.checked_add(work.projected_resident_frames))
+            .and_then(|frames| frames.checked_add(work.sound_context_frames))
+            .and_then(|frames| frames.checked_add(additional));
+        let disk = disk
+            .checked_add(self.active_disk_bytes)
+            .and_then(|bytes| bytes.checked_add(work.projected_disk_bytes));
+        Ok(
+            resident.is_some_and(|frames| frames <= u64::from(self.limits.maximum_resident_frames))
+                && disk.is_some_and(|bytes| bytes <= self.limits.maximum_disk_bytes),
+        )
+    }
+
+    pub(super) fn try_cached_original_for_prediction<'plan, 'work>(
+        &self,
+        provider: &mut impl AudioSourceProvider,
+        graph: &mut Graph<'plan, 'work>,
+        context: &Context<'plan>,
+        (samples, additional): (Range<AudioSample>, u64),
+        control: WorkControl<'work>,
+        depth: usize,
+    ) -> Result<Option<Arc<ReadBlock>>, StageAudioError> {
+        self.validate_original_input_request(graph, context, &samples, control, depth)?;
+        if matches!(context, Context::Retained(_)) {
+            return Ok(None);
+        }
+        let lookup = LookupKey::new(context, &samples, depth);
+        let Some(slot) = graph.original_inputs.find(lookup, control)? else {
+            return Ok(None);
+        };
+        let key = graph.original_inputs.entries[slot]
+            .as_ref()
+            .expect("occupied cache slot")
+            .key;
+        let Some(cached) = self.original_inputs.get(&key) else {
+            // Preserve the late cold path's stale-key touch/removal boundary.
+            return Ok(None);
+        };
+        if !self.original_prediction_reservation_fits(additional, control)? {
+            return Ok(None);
+        }
+        // The complete no-eviction test precedes either pinning or media I/O.
+        // Neither this validation/touch nor source admission changes residency.
+        cached_original_key(graph, slot, (context, &samples, depth))?;
+        self.admit_cached_original(provider, &cached.block, control, depth)
+            .map(Some)
+    }
+
     fn remove_original_input(&mut self, key: &u64) {
         self.original_inputs.remove(key);
         // BTreeMap can retain an empty root after its last removal. Release
@@ -360,28 +519,8 @@ impl StageAudio {
         control: WorkControl<'work>,
         depth: usize,
     ) -> Result<Read, StageAudioError> {
-        control.check()?;
-        if !std::ptr::eq(graph.plan, self.plan.as_ref())
-            || graph
-                .original_inputs
-                .scope
-                .as_ref()
-                .is_some_and(|scope| !Arc::ptr_eq(scope, &self.original_input_scope))
-            || match context {
-                Context::Root => false,
-                Context::Domain(domain) => !domain.belongs_to(&self.plan),
-                Context::Retained(input) => !input.belongs_to(&self.plan),
-            }
-        {
-            return Err(StageAudioError::ForeignDomain);
-        }
-        if depth > self.limits.maximum_depth {
-            return Err(StageAudioError::Limit("nested stage depth"));
-        }
-        let frames = count(&samples)?;
-        if frames == 0 || frames > MAX_OUTPUT_FRAMES {
-            return Err(StageAudioError::Range);
-        }
+        let frames =
+            self.validate_original_input_request(graph, context, &samples, control, depth)?;
         if let Some(request) = &prepared {
             policy_prediction::validate_original(
                 request,
@@ -394,34 +533,11 @@ impl StageAudio {
         }
         let lookup = LookupKey::new(context, &samples, depth);
         if let Some(slot) = graph.original_inputs.find(lookup, control)? {
-            let entry = graph.original_inputs.entries[slot]
-                .as_ref()
-                .expect("occupied cache slot");
-            if entry.depth != depth
-                || entry.samples != samples
-                || !same_context(&entry.context, context)
-            {
-                return Err(StageAudioError::ForeignDomain);
-            }
-            let key = entry.key;
-            graph.original_inputs.touch(slot);
+            let key = cached_original_key(graph, slot, (context, &samples, depth))?;
             if let Some(cached) = self.original_inputs.get(&key) {
-                let block = Arc::clone(&cached.block);
-                if depth
-                    .checked_add(block.relative_depth)
-                    .is_none_or(|depth| depth > self.limits.maximum_depth)
-                {
-                    return Err(StageAudioError::Limit("nested stage depth"));
-                }
-                for (asset, fingerprint) in &block.dependencies {
-                    control.spend_plan_work(1)?;
-                    let source = resolve_source(provider, &self.plan, asset, control.cancelled)?;
-                    if control.observe(asset, source)? != *fingerprint {
-                        return Err(PreparationError::IndexMismatch.into());
-                    }
-                }
-                control.check()?;
-                return Ok(Read::Cached(block));
+                return self
+                    .admit_cached_original(provider, &cached.block, control, depth)
+                    .map(Read::Cached);
             }
             graph.original_inputs.remove(slot, control)?;
         }

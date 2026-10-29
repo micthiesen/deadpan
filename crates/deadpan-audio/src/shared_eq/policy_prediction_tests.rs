@@ -1,4 +1,6 @@
 use super::*;
+#[path = "cached_policy_tests.rs"]
+mod cached_policy;
 
 #[test]
 fn producer_predicates_keep_lazy_mask_checks_and_zero_gain_permission_distinct() {
@@ -90,7 +92,7 @@ fn real_wav_prediction_is_independent_of_observed_rows_and_detects_adapter_fault
             &mut mix,
             Inputs {
                 original: selected.then_some(Original {
-                    queries: request.queries(),
+                    policy: OriginalPolicy::Queries(request.queries()),
                     owners: &owners,
                     routes: &routes,
                     id: 0,

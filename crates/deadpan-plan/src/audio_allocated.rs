@@ -8,6 +8,8 @@
 #[path = "audio_metadata_admission.rs"]
 pub(crate) mod admission;
 
+mod query_storage;
+
 use std::{alloc::Layout, mem::size_of, sync::Arc};
 
 use deadpan_core::{
@@ -72,10 +74,9 @@ impl HeapBudget {
     }
 
     pub(crate) fn core_route(&mut self, route: &deadpan_core::SoundRoute) -> Result<(), PlanError> {
-        let (bytes, work) = route
-            .allocated_bytes_bound(self.remaining)
-            .map_err(|_| PlanError::AudioQueryLimit("retained sound route heap"))?;
+        let (result, work) = route.measure_allocated_storage(self.remaining).into_parts();
         self.spend(work)?;
+        let bytes = result.map_err(|_| PlanError::AudioQueryLimit("retained sound route heap"))?;
         self.add(bytes)
     }
 
@@ -97,13 +98,45 @@ pub(crate) fn measure<T: OwnedHeap + ?Sized>(
     value: &T,
     maximum_work: usize,
 ) -> Result<(usize, usize), PlanError> {
+    let (result, work) = measure_storage(value, maximum_work).into_parts();
+    result.map(|bytes| (bytes, work))
+}
+
+/// One bounded inspection of retained query storage. Bill its work even when
+/// the byte result is an error. No storage reservation is established here.
+#[must_use]
+#[derive(Debug)]
+pub struct AudioStorageMeasurement {
+    result: Result<usize, PlanError>,
+    work: usize,
+}
+
+impl AudioStorageMeasurement {
+    /// Successful traversal debits, including those preceding a failed result.
+    pub fn work(&self) -> usize {
+        self.work
+    }
+
+    /// The retained heap-byte result and the work already performed to obtain it.
+    pub fn into_parts(self) -> (Result<usize, PlanError>, usize) {
+        (self.result, self.work)
+    }
+}
+
+pub(crate) fn measure_storage<T: OwnedHeap + ?Sized>(
+    value: &T,
+    maximum_work: usize,
+) -> AudioStorageMeasurement {
     let mut budget = HeapBudget {
         remaining: maximum_work,
         bytes: 0,
         depth: 0,
     };
-    budget.visit(value)?;
-    Ok((budget.bytes, maximum_work - budget.remaining))
+    let result = budget.visit(value).map(|()| budget.bytes);
+    AudioStorageMeasurement {
+        result,
+        work: maximum_work - budget.remaining,
+    }
 }
 
 impl<T: OwnedHeap> OwnedHeap for Vec<T> {
@@ -369,3 +402,6 @@ public_measure!(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod query_storage_tests;

@@ -1,0 +1,5479 @@
+{
+  "cases": [
+    {
+      "cleanup": {
+        "active_frames": 0,
+        "cache_key_scopes": 0,
+        "cache_plan_work": 0,
+        "cached_original_payloads": 0,
+        "cached_resident_frames": 0,
+        "cached_stages": 0,
+        "next_original_input": 1,
+        "observed_dependencies": 1,
+        "phase_work": {
+          "active_depth": 0,
+          "calls": [
+            2,
+            2,
+            2,
+            0
+          ],
+          "max_active_depth": 1,
+          "nested": false,
+          "overflow": 0,
+          "work": [
+            {
+              "cache_plan_work": 0,
+              "plan_work": 58
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 18
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 38
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 0
+            }
+          ]
+        },
+        "plan_work": 542,
+        "preflight_assets": 1,
+        "prepared_frames": 0,
+        "prepared_stages": 0,
+        "projected_resident_frames": 0,
+        "provider_calls": 8,
+        "sound_context_frames": 0,
+        "source_checks": 8
+      },
+      "result": {
+        "after_arc_verification": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 288,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              2,
+              2,
+              2,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 58
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 18
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 38
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 542,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 8,
+          "sound_context_frames": 0,
+          "source_checks": 8
+        },
+        "after_first": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 288,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              1,
+              1,
+              1,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 29
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 9
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 29
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 273,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 3,
+          "sound_context_frames": 0,
+          "source_checks": 3
+        },
+        "after_second": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 288,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              2,
+              2,
+              2,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 58
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 18
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 38
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 534,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 7,
+          "sound_context_frames": 0,
+          "source_checks": 7
+        },
+        "before": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 0,
+          "cached_resident_frames": 0,
+          "cached_stages": 0,
+          "next_original_input": 0,
+          "observed_dependencies": 0,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "max_active_depth": 0,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 0,
+          "preflight_assets": 0,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 0,
+          "sound_context_frames": 0,
+          "source_checks": 0
+        },
+        "before_second": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 288,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              1,
+              1,
+              1,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 29
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 9
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 29
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 281,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 4,
+          "sound_context_frames": 0,
+          "source_checks": 4
+        },
+        "context": "root",
+        "first": {
+          "dependencies": {
+            "media": [
+              213,
+              104,
+              214,
+              48,
+              100,
+              85,
+              154,
+              235,
+              82,
+              132,
+              39,
+              115,
+              81,
+              176,
+              55,
+              30,
+              28,
+              252,
+              59,
+              128,
+              182,
+              239,
+              59,
+              95,
+              217,
+              209,
+              11,
+              186,
+              36,
+              221,
+              131,
+              5
+            ]
+          },
+          "exhausted_field": "WideBlock has no exhausted field; exact raw exhaustion is recorded separately",
+          "f64_bits": [
+            [
+              4600227595300379470,
+              13825488989362504428
+            ],
+            [
+              13823775880826319490,
+              4602327444148568805
+            ],
+            [
+              0,
+              13790750330914498042
+            ],
+            [
+              0,
+              13790780450179723817
+            ],
+            [
+              0,
+              13790804380267109622
+            ],
+            [
+              0,
+              13790822107461562812
+            ],
+            [
+              0,
+              13790833618026270116
+            ],
+            [
+              0,
+              13790838898207795125
+            ],
+            [
+              0,
+              13790837934228360880
+            ],
+            [
+              0,
+              13790830712290944428
+            ],
+            [
+              0,
+              13790817218577970886
+            ],
+            [
+              0,
+              13790797439251288402
+            ],
+            [
+              0,
+              13790771360356510346
+            ],
+            [
+              0,
+              13790738968301163642
+            ],
+            [
+              0,
+              13790700248994101688
+            ],
+            [
+              0,
+              13790655188227105677
+            ]
+          ],
+          "relative_depth": 0,
+          "suppressed": []
+        },
+        "fixed_graph_reservation": 1465,
+        "independent_query_oracle": {
+          "cached_excluded": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "events": [
+            {
+              "kind": "retained_envelope",
+              "range": [
+                0,
+                16
+              ]
+            }
+          ],
+          "flattened_spans": 1,
+          "processing": [
+            "leaf"
+          ],
+          "query_construction_work": 29,
+          "query_excluded": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "query_visitor_work": 2,
+          "raw_dependencies": {
+            "media": [
+              213,
+              104,
+              214,
+              48,
+              100,
+              85,
+              154,
+              235,
+              82,
+              132,
+              39,
+              115,
+              81,
+              176,
+              55,
+              30,
+              28,
+              252,
+              59,
+              128,
+              182,
+              239,
+              59,
+              95,
+              217,
+              209,
+              11,
+              186,
+              36,
+              221,
+              131,
+              5
+            ]
+          },
+          "raw_exhausted": [],
+          "raw_f32_bits": [
+            [
+              998244352,
+              3148524203
+            ],
+            [
+              3158310912,
+              1015021056
+            ],
+            [
+              0,
+              3102081024
+            ],
+            [
+              0,
+              3105718272
+            ],
+            [
+              0,
+              3108372480
+            ],
+            [
+              0,
+              3110895616
+            ],
+            [
+              0,
+              3112730624
+            ],
+            [
+              0,
+              3113861120
+            ],
+            [
+              0,
+              3114926080
+            ],
+            [
+              0,
+              3115925504
+            ],
+            [
+              0,
+              3116859392
+            ],
+            [
+              0,
+              3117727744
+            ],
+            [
+              0,
+              3118530559
+            ],
+            [
+              0,
+              3119267840
+            ],
+            [
+              0,
+              3119939585
+            ],
+            [
+              0,
+              3120545791
+            ]
+          ],
+          "raw_relative_depth": 0,
+          "raw_start": 0,
+          "raw_suppressed": [],
+          "zero_pcm_with_permitted_raw_policy": []
+        },
+        "name": "source",
+        "prediction_enabled": true,
+        "range": [
+          0,
+          16
+        ],
+        "same_cached_arc": true,
+        "second": {
+          "dependencies": {
+            "media": [
+              213,
+              104,
+              214,
+              48,
+              100,
+              85,
+              154,
+              235,
+              82,
+              132,
+              39,
+              115,
+              81,
+              176,
+              55,
+              30,
+              28,
+              252,
+              59,
+              128,
+              182,
+              239,
+              59,
+              95,
+              217,
+              209,
+              11,
+              186,
+              36,
+              221,
+              131,
+              5
+            ]
+          },
+          "exhausted_field": "WideBlock has no exhausted field; exact raw exhaustion is recorded separately",
+          "f64_bits": [
+            [
+              4600227595300379470,
+              13825488989362504428
+            ],
+            [
+              13823775880826319490,
+              4602327444148568805
+            ],
+            [
+              0,
+              13790750330914498042
+            ],
+            [
+              0,
+              13790780450179723817
+            ],
+            [
+              0,
+              13790804380267109622
+            ],
+            [
+              0,
+              13790822107461562812
+            ],
+            [
+              0,
+              13790833618026270116
+            ],
+            [
+              0,
+              13790838898207795125
+            ],
+            [
+              0,
+              13790837934228360880
+            ],
+            [
+              0,
+              13790830712290944428
+            ],
+            [
+              0,
+              13790817218577970886
+            ],
+            [
+              0,
+              13790797439251288402
+            ],
+            [
+              0,
+              13790771360356510346
+            ],
+            [
+              0,
+              13790738968301163642
+            ],
+            [
+              0,
+              13790700248994101688
+            ],
+            [
+              0,
+              13790655188227105677
+            ]
+          ],
+          "relative_depth": 0,
+          "suppressed": []
+        }
+      }
+    },
+    {
+      "cleanup": {
+        "active_frames": 0,
+        "cache_key_scopes": 0,
+        "cache_plan_work": 0,
+        "cached_original_payloads": 0,
+        "cached_resident_frames": 0,
+        "cached_stages": 0,
+        "next_original_input": 1,
+        "observed_dependencies": 1,
+        "phase_work": {
+          "active_depth": 0,
+          "calls": [
+            2,
+            2,
+            2,
+            0
+          ],
+          "max_active_depth": 1,
+          "nested": false,
+          "overflow": 0,
+          "work": [
+            {
+              "cache_plan_work": 0,
+              "plan_work": 102
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 34
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 38
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 0
+            }
+          ]
+        },
+        "plan_work": 734,
+        "preflight_assets": 1,
+        "prepared_frames": 0,
+        "prepared_stages": 0,
+        "projected_resident_frames": 0,
+        "provider_calls": 8,
+        "sound_context_frames": 0,
+        "source_checks": 8
+      },
+      "result": {
+        "after_arc_verification": {
+          "active_frames": 1609,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 340,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              2,
+              2,
+              2,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 102
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 34
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 38
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 734,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 8,
+          "sound_context_frames": 0,
+          "source_checks": 8
+        },
+        "after_first": {
+          "active_frames": 1609,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 340,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              1,
+              1,
+              1,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 51
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 17
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 29
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 369,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 3,
+          "sound_context_frames": 0,
+          "source_checks": 3
+        },
+        "after_second": {
+          "active_frames": 1609,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 340,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              2,
+              2,
+              2,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 102
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 34
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 38
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 726,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 7,
+          "sound_context_frames": 0,
+          "source_checks": 7
+        },
+        "before": {
+          "active_frames": 1609,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 0,
+          "cached_resident_frames": 0,
+          "cached_stages": 0,
+          "next_original_input": 0,
+          "observed_dependencies": 0,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "max_active_depth": 0,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 0,
+          "preflight_assets": 0,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 0,
+          "sound_context_frames": 0,
+          "source_checks": 0
+        },
+        "before_second": {
+          "active_frames": 1609,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 340,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              1,
+              1,
+              1,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 51
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 17
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 29
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 377,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 4,
+          "sound_context_frames": 0,
+          "source_checks": 4
+        },
+        "context": "root",
+        "first": {
+          "dependencies": {
+            "media": [
+              213,
+              104,
+              214,
+              48,
+              100,
+              85,
+              154,
+              235,
+              82,
+              132,
+              39,
+              115,
+              81,
+              176,
+              55,
+              30,
+              28,
+              252,
+              59,
+              128,
+              182,
+              239,
+              59,
+              95,
+              217,
+              209,
+              11,
+              186,
+              36,
+              221,
+              131,
+              5
+            ]
+          },
+          "exhausted_field": "WideBlock has no exhausted field; exact raw exhaustion is recorded separately",
+          "f64_bits": [
+            [
+              0,
+              13787968226212076992
+            ],
+            [
+              0,
+              13787348477625585796
+            ],
+            [
+              0,
+              13786752097123203008
+            ],
+            [
+              0,
+              13786179136998275065
+            ],
+            [
+              0,
+              13785629651100084788
+            ],
+            [
+              0,
+              13784688922869154180
+            ],
+            [
+              0,
+              13783684161278734779
+            ],
+            [
+              0,
+              13782726663961094292
+            ],
+            [
+              0,
+              13781816536980962706
+            ],
+            [
+              0,
+              13780892913352722710
+            ],
+            [
+              0,
+              13779262778333851558
+            ],
+            [
+              0,
+              13777728022187216954
+            ],
+            [
+              0,
+              13776066456381407220
+            ],
+            [
+              0,
+              13773379740237472525
+            ],
+            [
+              0,
+              13769762466960045077
+            ],
+            [
+              0,
+              13762623618142445353
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "relative_depth": 0,
+          "suppressed": [
+            [
+              512,
+              560
+            ]
+          ]
+        },
+        "fixed_graph_reservation": 1609,
+        "independent_query_oracle": {
+          "cached_excluded": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "events": [
+            {
+              "kind": "retained_envelope",
+              "range": [
+                496,
+                512
+              ]
+            },
+            {
+              "kind": "silent_hold",
+              "range": [
+                512,
+                560
+              ]
+            },
+            {
+              "kind": "suppressed",
+              "range": [
+                512,
+                560
+              ]
+            }
+          ],
+          "flattened_spans": 2,
+          "processing": [
+            "leaf",
+            "leaf"
+          ],
+          "query_construction_work": 51,
+          "query_excluded": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "query_visitor_work": 6,
+          "raw_dependencies": {
+            "media": [
+              213,
+              104,
+              214,
+              48,
+              100,
+              85,
+              154,
+              235,
+              82,
+              132,
+              39,
+              115,
+              81,
+              176,
+              55,
+              30,
+              28,
+              252,
+              59,
+              128,
+              182,
+              239,
+              59,
+              95,
+              217,
+              209,
+              11,
+              186,
+              36,
+              221,
+              131,
+              5
+            ]
+          },
+          "raw_exhausted": [],
+          "raw_f32_bits": [
+            [
+              0,
+              3121569792
+            ],
+            [
+              0,
+              3120726016
+            ],
+            [
+              0,
+              3119267840
+            ],
+            [
+              0,
+              3117711359
+            ],
+            [
+              0,
+              3116220416
+            ],
+            [
+              0,
+              3114795008
+            ],
+            [
+              0,
+              3113435136
+            ],
+            [
+              0,
+              3112108032
+            ],
+            [
+              0,
+              3109650432
+            ],
+            [
+              0,
+              3107323904
+            ],
+            [
+              0,
+              3105128448
+            ],
+            [
+              0,
+              3102343168
+            ],
+            [
+              0,
+              3098476544
+            ],
+            [
+              0,
+              3094347776
+            ],
+            [
+              0,
+              3087663104
+            ],
+            [
+              0,
+              3073376256
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "raw_relative_depth": 0,
+          "raw_start": 496,
+          "raw_suppressed": [
+            [
+              512,
+              560
+            ]
+          ],
+          "zero_pcm_with_permitted_raw_policy": []
+        },
+        "name": "silent_hold_crossing",
+        "prediction_enabled": true,
+        "range": [
+          496,
+          560
+        ],
+        "same_cached_arc": true,
+        "second": {
+          "dependencies": {
+            "media": [
+              213,
+              104,
+              214,
+              48,
+              100,
+              85,
+              154,
+              235,
+              82,
+              132,
+              39,
+              115,
+              81,
+              176,
+              55,
+              30,
+              28,
+              252,
+              59,
+              128,
+              182,
+              239,
+              59,
+              95,
+              217,
+              209,
+              11,
+              186,
+              36,
+              221,
+              131,
+              5
+            ]
+          },
+          "exhausted_field": "WideBlock has no exhausted field; exact raw exhaustion is recorded separately",
+          "f64_bits": [
+            [
+              0,
+              13787968226212076992
+            ],
+            [
+              0,
+              13787348477625585796
+            ],
+            [
+              0,
+              13786752097123203008
+            ],
+            [
+              0,
+              13786179136998275065
+            ],
+            [
+              0,
+              13785629651100084788
+            ],
+            [
+              0,
+              13784688922869154180
+            ],
+            [
+              0,
+              13783684161278734779
+            ],
+            [
+              0,
+              13782726663961094292
+            ],
+            [
+              0,
+              13781816536980962706
+            ],
+            [
+              0,
+              13780892913352722710
+            ],
+            [
+              0,
+              13779262778333851558
+            ],
+            [
+              0,
+              13777728022187216954
+            ],
+            [
+              0,
+              13776066456381407220
+            ],
+            [
+              0,
+              13773379740237472525
+            ],
+            [
+              0,
+              13769762466960045077
+            ],
+            [
+              0,
+              13762623618142445353
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "relative_depth": 0,
+          "suppressed": [
+            [
+              512,
+              560
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "cleanup": {
+        "active_frames": 0,
+        "cache_key_scopes": 0,
+        "cache_plan_work": 0,
+        "cached_original_payloads": 0,
+        "cached_resident_frames": 768,
+        "cached_stages": 1,
+        "next_original_input": 1,
+        "observed_dependencies": 1,
+        "phase_work": {
+          "active_depth": 0,
+          "calls": [
+            2,
+            2,
+            2,
+            0
+          ],
+          "max_active_depth": 1,
+          "nested": false,
+          "overflow": 0,
+          "work": [
+            {
+              "cache_plan_work": 0,
+              "plan_work": 88
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 18
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 70
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 0
+            }
+          ]
+        },
+        "plan_work": 668,
+        "preflight_assets": 1,
+        "prepared_frames": 1280,
+        "prepared_stages": 1,
+        "projected_resident_frames": 0,
+        "provider_calls": 9,
+        "sound_context_frames": 0,
+        "source_checks": 9
+      },
+      "result": {
+        "after_arc_verification": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 1056,
+          "cached_stages": 1,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              2,
+              2,
+              2,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 88
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 18
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 70
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 668,
+          "preflight_assets": 1,
+          "prepared_frames": 1280,
+          "prepared_stages": 1,
+          "projected_resident_frames": 0,
+          "provider_calls": 9,
+          "sound_context_frames": 0,
+          "source_checks": 9
+        },
+        "after_first": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 1056,
+          "cached_stages": 1,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              1,
+              1,
+              1,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 44
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 9
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 61
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 352,
+          "preflight_assets": 1,
+          "prepared_frames": 1280,
+          "prepared_stages": 1,
+          "projected_resident_frames": 0,
+          "provider_calls": 4,
+          "sound_context_frames": 0,
+          "source_checks": 4
+        },
+        "after_second": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 1056,
+          "cached_stages": 1,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              2,
+              2,
+              2,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 88
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 18
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 70
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 660,
+          "preflight_assets": 1,
+          "prepared_frames": 1280,
+          "prepared_stages": 1,
+          "projected_resident_frames": 0,
+          "provider_calls": 8,
+          "sound_context_frames": 0,
+          "source_checks": 8
+        },
+        "before": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 0,
+          "cached_resident_frames": 0,
+          "cached_stages": 0,
+          "next_original_input": 0,
+          "observed_dependencies": 0,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "max_active_depth": 0,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 0,
+          "preflight_assets": 0,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 0,
+          "sound_context_frames": 0,
+          "source_checks": 0
+        },
+        "before_second": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 1056,
+          "cached_stages": 1,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              1,
+              1,
+              1,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 44
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 9
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 61
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 360,
+          "preflight_assets": 1,
+          "prepared_frames": 1280,
+          "prepared_stages": 1,
+          "projected_resident_frames": 0,
+          "provider_calls": 5,
+          "sound_context_frames": 0,
+          "source_checks": 5
+        },
+        "context": "root",
+        "first": {
+          "dependencies": {
+            "media": [
+              213,
+              104,
+              214,
+              48,
+              100,
+              85,
+              154,
+              235,
+              82,
+              132,
+              39,
+              115,
+              81,
+              176,
+              55,
+              30,
+              28,
+              252,
+              59,
+              128,
+              182,
+              239,
+              59,
+              95,
+              217,
+              209,
+              11,
+              186,
+              36,
+              221,
+              131,
+              5
+            ]
+          },
+          "exhausted_field": "WideBlock has no exhausted field; exact raw exhaustion is recorded separately",
+          "f64_bits": [
+            [
+              4595311121377832410,
+              4583787750115192627
+            ],
+            [
+              4596176304827768754,
+              13805668184026426590
+            ],
+            [
+              4596451866704002236,
+              13803934146869280358
+            ],
+            [
+              4595728315981384355,
+              13811773846034200354
+            ],
+            [
+              4594343098626736890,
+              13808093287765229672
+            ],
+            [
+              4592440248603983771,
+              13809424333981068989
+            ],
+            [
+              4589640806743738455,
+              4578055040400993215
+            ],
+            [
+              4584393386225581404,
+              4580286554404553814
+            ],
+            [
+              4574710911558115712,
+              4589405702074224933
+            ],
+            [
+              4586296790108350422,
+              4588726663839375566
+            ],
+            [
+              4592362816225726701,
+              4590621390742123554
+            ],
+            [
+              4595621071903894548,
+              4586391695228609665
+            ],
+            [
+              4597672752206047355,
+              4585589764488222337
+            ],
+            [
+              4598415185544631600,
+              13808845918853318499
+            ],
+            [
+              4599281497976135165,
+              13810425851588272796
+            ],
+            [
+              4600180936861030828,
+              13815070454194233032
+            ]
+          ],
+          "relative_depth": 1,
+          "suppressed": []
+        },
+        "fixed_graph_reservation": 1465,
+        "independent_query_oracle": {
+          "cached_excluded": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "events": [
+            {
+              "kind": "retained_envelope",
+              "range": [
+                704,
+                720
+              ]
+            }
+          ],
+          "flattened_spans": 1,
+          "processing": [
+            "stage"
+          ],
+          "query_construction_work": 44,
+          "query_excluded": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "query_visitor_work": 2,
+          "raw_dependencies": {
+            "media": [
+              213,
+              104,
+              214,
+              48,
+              100,
+              85,
+              154,
+              235,
+              82,
+              132,
+              39,
+              115,
+              81,
+              176,
+              55,
+              30,
+              28,
+              252,
+              59,
+              128,
+              182,
+              239,
+              59,
+              95,
+              217,
+              209,
+              11,
+              186,
+              36,
+              221,
+              131,
+              5
+            ]
+          },
+          "raw_exhausted": [],
+          "raw_f32_bits": [
+            [
+              1038467685,
+              1011559328
+            ],
+            [
+              1039851719,
+              3155627981
+            ],
+            [
+              1040232053,
+              3151714025
+            ],
+            [
+              1039070823,
+              3166803032
+            ],
+            [
+              1036811404,
+              3159546124
+            ],
+            [
+              1034732571,
+              3163115662
+            ],
+            [
+              1032492806,
+              1001521121
+            ],
+            [
+              1028742765,
+              1005158378
+            ],
+            [
+              1026046387,
+              1021661060
+            ],
+            [
+              1029975628,
+              1020203279
+            ],
+            [
+              1034477117,
+              1024420228
+            ],
+            [
+              1038573677,
+              1016513029
+            ],
+            [
+              1041023581,
+              1015243404
+            ],
+            [
+              1041809265,
+              3161987999
+            ],
+            [
+              1043246341,
+              3164713948
+            ],
+            [
+              1044788537,
+              3173411053
+            ]
+          ],
+          "raw_relative_depth": 1,
+          "raw_start": 704,
+          "raw_suppressed": [],
+          "zero_pcm_with_permitted_raw_policy": []
+        },
+        "name": "preserve_stage",
+        "prediction_enabled": true,
+        "range": [
+          704,
+          720
+        ],
+        "same_cached_arc": true,
+        "second": {
+          "dependencies": {
+            "media": [
+              213,
+              104,
+              214,
+              48,
+              100,
+              85,
+              154,
+              235,
+              82,
+              132,
+              39,
+              115,
+              81,
+              176,
+              55,
+              30,
+              28,
+              252,
+              59,
+              128,
+              182,
+              239,
+              59,
+              95,
+              217,
+              209,
+              11,
+              186,
+              36,
+              221,
+              131,
+              5
+            ]
+          },
+          "exhausted_field": "WideBlock has no exhausted field; exact raw exhaustion is recorded separately",
+          "f64_bits": [
+            [
+              4595311121377832410,
+              4583787750115192627
+            ],
+            [
+              4596176304827768754,
+              13805668184026426590
+            ],
+            [
+              4596451866704002236,
+              13803934146869280358
+            ],
+            [
+              4595728315981384355,
+              13811773846034200354
+            ],
+            [
+              4594343098626736890,
+              13808093287765229672
+            ],
+            [
+              4592440248603983771,
+              13809424333981068989
+            ],
+            [
+              4589640806743738455,
+              4578055040400993215
+            ],
+            [
+              4584393386225581404,
+              4580286554404553814
+            ],
+            [
+              4574710911558115712,
+              4589405702074224933
+            ],
+            [
+              4586296790108350422,
+              4588726663839375566
+            ],
+            [
+              4592362816225726701,
+              4590621390742123554
+            ],
+            [
+              4595621071903894548,
+              4586391695228609665
+            ],
+            [
+              4597672752206047355,
+              4585589764488222337
+            ],
+            [
+              4598415185544631600,
+              13808845918853318499
+            ],
+            [
+              4599281497976135165,
+              13810425851588272796
+            ],
+            [
+              4600180936861030828,
+              13815070454194233032
+            ]
+          ],
+          "relative_depth": 1,
+          "suppressed": []
+        }
+      }
+    },
+    {
+      "cleanup": {
+        "active_frames": 0,
+        "cache_key_scopes": 0,
+        "cache_plan_work": 0,
+        "cached_original_payloads": 0,
+        "cached_resident_frames": 0,
+        "cached_stages": 0,
+        "next_original_input": 1,
+        "observed_dependencies": 1,
+        "phase_work": {
+          "active_depth": 0,
+          "calls": [
+            2,
+            2,
+            2,
+            0
+          ],
+          "max_active_depth": 1,
+          "nested": false,
+          "overflow": 0,
+          "work": [
+            {
+              "cache_plan_work": 0,
+              "plan_work": 78
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 18
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 38
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 0
+            }
+          ]
+        },
+        "plan_work": 566,
+        "preflight_assets": 1,
+        "prepared_frames": 0,
+        "prepared_stages": 0,
+        "projected_resident_frames": 0,
+        "provider_calls": 8,
+        "sound_context_frames": 0,
+        "source_checks": 8
+      },
+      "result": {
+        "after_arc_verification": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 288,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              2,
+              2,
+              2,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 78
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 18
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 38
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 566,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 8,
+          "sound_context_frames": 0,
+          "source_checks": 8
+        },
+        "after_first": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 288,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              1,
+              1,
+              1,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 39
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 9
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 29
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 285,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 3,
+          "sound_context_frames": 0,
+          "source_checks": 3
+        },
+        "after_second": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 288,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              2,
+              2,
+              2,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 78
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 18
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 38
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 558,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 7,
+          "sound_context_frames": 0,
+          "source_checks": 7
+        },
+        "before": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 0,
+          "cached_resident_frames": 0,
+          "cached_stages": 0,
+          "next_original_input": 0,
+          "observed_dependencies": 0,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "max_active_depth": 0,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 0,
+          "preflight_assets": 0,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 0,
+          "sound_context_frames": 0,
+          "source_checks": 0
+        },
+        "before_second": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 288,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              1,
+              1,
+              1,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 39
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 9
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 29
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 293,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 4,
+          "sound_context_frames": 0,
+          "source_checks": 4
+        },
+        "context": "exact_domain_arc",
+        "first": {
+          "dependencies": {
+            "media": [
+              213,
+              104,
+              214,
+              48,
+              100,
+              85,
+              154,
+              235,
+              82,
+              132,
+              39,
+              115,
+              81,
+              176,
+              55,
+              30,
+              28,
+              252,
+              59,
+              128,
+              182,
+              239,
+              59,
+              95,
+              217,
+              209,
+              11,
+              186,
+              36,
+              221,
+              131,
+              5
+            ]
+          },
+          "exhausted_field": "WideBlock has no exhausted field; exact raw exhaustion is recorded separately",
+          "f64_bits": [
+            [
+              4600227595300379470,
+              13825488989362504428
+            ],
+            [
+              13823775880826319490,
+              4602327444148568805
+            ],
+            [
+              0,
+              13790750330914498042
+            ],
+            [
+              0,
+              13790780450179723817
+            ],
+            [
+              0,
+              13790804380267109622
+            ],
+            [
+              0,
+              13790822107461562812
+            ],
+            [
+              0,
+              13790833618026270116
+            ],
+            [
+              0,
+              13790838898207795125
+            ],
+            [
+              0,
+              13790837934228360880
+            ],
+            [
+              0,
+              13790830712290944428
+            ],
+            [
+              0,
+              13790817218577970886
+            ],
+            [
+              0,
+              13790797439251288402
+            ],
+            [
+              0,
+              13790771360356510346
+            ],
+            [
+              0,
+              13790738968301163642
+            ],
+            [
+              0,
+              13790700248994101688
+            ],
+            [
+              0,
+              13790655188227105677
+            ]
+          ],
+          "relative_depth": 0,
+          "suppressed": []
+        },
+        "fixed_graph_reservation": 1465,
+        "independent_query_oracle": {
+          "cached_excluded": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "events": [
+            {
+              "kind": "retained_envelope",
+              "range": [
+                0,
+                16
+              ]
+            }
+          ],
+          "flattened_spans": 1,
+          "processing": [
+            "leaf"
+          ],
+          "query_construction_work": 39,
+          "query_excluded": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "query_visitor_work": 2,
+          "raw_dependencies": {
+            "media": [
+              213,
+              104,
+              214,
+              48,
+              100,
+              85,
+              154,
+              235,
+              82,
+              132,
+              39,
+              115,
+              81,
+              176,
+              55,
+              30,
+              28,
+              252,
+              59,
+              128,
+              182,
+              239,
+              59,
+              95,
+              217,
+              209,
+              11,
+              186,
+              36,
+              221,
+              131,
+              5
+            ]
+          },
+          "raw_exhausted": [],
+          "raw_f32_bits": [
+            [
+              998244352,
+              3148524203
+            ],
+            [
+              3158310912,
+              1015021056
+            ],
+            [
+              0,
+              3102081024
+            ],
+            [
+              0,
+              3105718272
+            ],
+            [
+              0,
+              3108372480
+            ],
+            [
+              0,
+              3110895616
+            ],
+            [
+              0,
+              3112730624
+            ],
+            [
+              0,
+              3113861120
+            ],
+            [
+              0,
+              3114926080
+            ],
+            [
+              0,
+              3115925504
+            ],
+            [
+              0,
+              3116859392
+            ],
+            [
+              0,
+              3117727744
+            ],
+            [
+              0,
+              3118530559
+            ],
+            [
+              0,
+              3119267840
+            ],
+            [
+              0,
+              3119939585
+            ],
+            [
+              0,
+              3120545791
+            ]
+          ],
+          "raw_relative_depth": 0,
+          "raw_start": 0,
+          "raw_suppressed": [],
+          "zero_pcm_with_permitted_raw_policy": []
+        },
+        "name": "source",
+        "prediction_enabled": true,
+        "range": [
+          0,
+          16
+        ],
+        "same_cached_arc": true,
+        "second": {
+          "dependencies": {
+            "media": [
+              213,
+              104,
+              214,
+              48,
+              100,
+              85,
+              154,
+              235,
+              82,
+              132,
+              39,
+              115,
+              81,
+              176,
+              55,
+              30,
+              28,
+              252,
+              59,
+              128,
+              182,
+              239,
+              59,
+              95,
+              217,
+              209,
+              11,
+              186,
+              36,
+              221,
+              131,
+              5
+            ]
+          },
+          "exhausted_field": "WideBlock has no exhausted field; exact raw exhaustion is recorded separately",
+          "f64_bits": [
+            [
+              4600227595300379470,
+              13825488989362504428
+            ],
+            [
+              13823775880826319490,
+              4602327444148568805
+            ],
+            [
+              0,
+              13790750330914498042
+            ],
+            [
+              0,
+              13790780450179723817
+            ],
+            [
+              0,
+              13790804380267109622
+            ],
+            [
+              0,
+              13790822107461562812
+            ],
+            [
+              0,
+              13790833618026270116
+            ],
+            [
+              0,
+              13790838898207795125
+            ],
+            [
+              0,
+              13790837934228360880
+            ],
+            [
+              0,
+              13790830712290944428
+            ],
+            [
+              0,
+              13790817218577970886
+            ],
+            [
+              0,
+              13790797439251288402
+            ],
+            [
+              0,
+              13790771360356510346
+            ],
+            [
+              0,
+              13790738968301163642
+            ],
+            [
+              0,
+              13790700248994101688
+            ],
+            [
+              0,
+              13790655188227105677
+            ]
+          ],
+          "relative_depth": 0,
+          "suppressed": []
+        }
+      }
+    },
+    {
+      "cleanup": {
+        "active_frames": 0,
+        "cache_key_scopes": 0,
+        "cache_plan_work": 0,
+        "cached_original_payloads": 0,
+        "cached_resident_frames": 0,
+        "cached_stages": 0,
+        "next_original_input": 1,
+        "observed_dependencies": 1,
+        "phase_work": {
+          "active_depth": 0,
+          "calls": [
+            2,
+            2,
+            2,
+            0
+          ],
+          "max_active_depth": 1,
+          "nested": false,
+          "overflow": 0,
+          "work": [
+            {
+              "cache_plan_work": 0,
+              "plan_work": 130
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 34
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 38
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 0
+            }
+          ]
+        },
+        "plan_work": 766,
+        "preflight_assets": 1,
+        "prepared_frames": 0,
+        "prepared_stages": 0,
+        "projected_resident_frames": 0,
+        "provider_calls": 8,
+        "sound_context_frames": 0,
+        "source_checks": 8
+      },
+      "result": {
+        "after_arc_verification": {
+          "active_frames": 1609,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 340,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              2,
+              2,
+              2,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 130
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 34
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 38
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 766,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 8,
+          "sound_context_frames": 0,
+          "source_checks": 8
+        },
+        "after_first": {
+          "active_frames": 1609,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 340,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              1,
+              1,
+              1,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 65
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 17
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 29
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 385,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 3,
+          "sound_context_frames": 0,
+          "source_checks": 3
+        },
+        "after_second": {
+          "active_frames": 1609,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 340,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              2,
+              2,
+              2,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 130
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 34
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 38
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 758,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 7,
+          "sound_context_frames": 0,
+          "source_checks": 7
+        },
+        "before": {
+          "active_frames": 1609,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 0,
+          "cached_resident_frames": 0,
+          "cached_stages": 0,
+          "next_original_input": 0,
+          "observed_dependencies": 0,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "max_active_depth": 0,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 0,
+          "preflight_assets": 0,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 0,
+          "sound_context_frames": 0,
+          "source_checks": 0
+        },
+        "before_second": {
+          "active_frames": 1609,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 340,
+          "cached_stages": 0,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              1,
+              1,
+              1,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 65
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 17
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 29
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 393,
+          "preflight_assets": 1,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 4,
+          "sound_context_frames": 0,
+          "source_checks": 4
+        },
+        "context": "exact_domain_arc",
+        "first": {
+          "dependencies": {
+            "media": [
+              213,
+              104,
+              214,
+              48,
+              100,
+              85,
+              154,
+              235,
+              82,
+              132,
+              39,
+              115,
+              81,
+              176,
+              55,
+              30,
+              28,
+              252,
+              59,
+              128,
+              182,
+              239,
+              59,
+              95,
+              217,
+              209,
+              11,
+              186,
+              36,
+              221,
+              131,
+              5
+            ]
+          },
+          "exhausted_field": "WideBlock has no exhausted field; exact raw exhaustion is recorded separately",
+          "f64_bits": [
+            [
+              0,
+              13787968226212076992
+            ],
+            [
+              0,
+              13787348477625585796
+            ],
+            [
+              0,
+              13786752097123203008
+            ],
+            [
+              0,
+              13786179136998275065
+            ],
+            [
+              0,
+              13785629651100084788
+            ],
+            [
+              0,
+              13784688922869154180
+            ],
+            [
+              0,
+              13783684161278734779
+            ],
+            [
+              0,
+              13782726663961094292
+            ],
+            [
+              0,
+              13781816536980962706
+            ],
+            [
+              0,
+              13780892913352722710
+            ],
+            [
+              0,
+              13779262778333851558
+            ],
+            [
+              0,
+              13777728022187216954
+            ],
+            [
+              0,
+              13776066456381407220
+            ],
+            [
+              0,
+              13773379740237472525
+            ],
+            [
+              0,
+              13769762466960045077
+            ],
+            [
+              0,
+              13762623618142445353
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "relative_depth": 0,
+          "suppressed": [
+            [
+              512,
+              560
+            ]
+          ]
+        },
+        "fixed_graph_reservation": 1609,
+        "independent_query_oracle": {
+          "cached_excluded": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "events": [
+            {
+              "kind": "retained_envelope",
+              "range": [
+                496,
+                512
+              ]
+            },
+            {
+              "kind": "silent_hold",
+              "range": [
+                512,
+                560
+              ]
+            },
+            {
+              "kind": "suppressed",
+              "range": [
+                512,
+                560
+              ]
+            }
+          ],
+          "flattened_spans": 2,
+          "processing": [
+            "leaf",
+            "leaf"
+          ],
+          "query_construction_work": 65,
+          "query_excluded": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "query_visitor_work": 6,
+          "raw_dependencies": {
+            "media": [
+              213,
+              104,
+              214,
+              48,
+              100,
+              85,
+              154,
+              235,
+              82,
+              132,
+              39,
+              115,
+              81,
+              176,
+              55,
+              30,
+              28,
+              252,
+              59,
+              128,
+              182,
+              239,
+              59,
+              95,
+              217,
+              209,
+              11,
+              186,
+              36,
+              221,
+              131,
+              5
+            ]
+          },
+          "raw_exhausted": [],
+          "raw_f32_bits": [
+            [
+              0,
+              3121569792
+            ],
+            [
+              0,
+              3120726016
+            ],
+            [
+              0,
+              3119267840
+            ],
+            [
+              0,
+              3117711359
+            ],
+            [
+              0,
+              3116220416
+            ],
+            [
+              0,
+              3114795008
+            ],
+            [
+              0,
+              3113435136
+            ],
+            [
+              0,
+              3112108032
+            ],
+            [
+              0,
+              3109650432
+            ],
+            [
+              0,
+              3107323904
+            ],
+            [
+              0,
+              3105128448
+            ],
+            [
+              0,
+              3102343168
+            ],
+            [
+              0,
+              3098476544
+            ],
+            [
+              0,
+              3094347776
+            ],
+            [
+              0,
+              3087663104
+            ],
+            [
+              0,
+              3073376256
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "raw_relative_depth": 0,
+          "raw_start": 496,
+          "raw_suppressed": [
+            [
+              512,
+              560
+            ]
+          ],
+          "zero_pcm_with_permitted_raw_policy": []
+        },
+        "name": "silent_hold_crossing",
+        "prediction_enabled": true,
+        "range": [
+          496,
+          560
+        ],
+        "same_cached_arc": true,
+        "second": {
+          "dependencies": {
+            "media": [
+              213,
+              104,
+              214,
+              48,
+              100,
+              85,
+              154,
+              235,
+              82,
+              132,
+              39,
+              115,
+              81,
+              176,
+              55,
+              30,
+              28,
+              252,
+              59,
+              128,
+              182,
+              239,
+              59,
+              95,
+              217,
+              209,
+              11,
+              186,
+              36,
+              221,
+              131,
+              5
+            ]
+          },
+          "exhausted_field": "WideBlock has no exhausted field; exact raw exhaustion is recorded separately",
+          "f64_bits": [
+            [
+              0,
+              13787968226212076992
+            ],
+            [
+              0,
+              13787348477625585796
+            ],
+            [
+              0,
+              13786752097123203008
+            ],
+            [
+              0,
+              13786179136998275065
+            ],
+            [
+              0,
+              13785629651100084788
+            ],
+            [
+              0,
+              13784688922869154180
+            ],
+            [
+              0,
+              13783684161278734779
+            ],
+            [
+              0,
+              13782726663961094292
+            ],
+            [
+              0,
+              13781816536980962706
+            ],
+            [
+              0,
+              13780892913352722710
+            ],
+            [
+              0,
+              13779262778333851558
+            ],
+            [
+              0,
+              13777728022187216954
+            ],
+            [
+              0,
+              13776066456381407220
+            ],
+            [
+              0,
+              13773379740237472525
+            ],
+            [
+              0,
+              13769762466960045077
+            ],
+            [
+              0,
+              13762623618142445353
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "relative_depth": 0,
+          "suppressed": [
+            [
+              512,
+              560
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "cleanup": {
+        "active_frames": 0,
+        "cache_key_scopes": 0,
+        "cache_plan_work": 0,
+        "cached_original_payloads": 0,
+        "cached_resident_frames": 768,
+        "cached_stages": 1,
+        "next_original_input": 1,
+        "observed_dependencies": 1,
+        "phase_work": {
+          "active_depth": 0,
+          "calls": [
+            2,
+            2,
+            2,
+            0
+          ],
+          "max_active_depth": 1,
+          "nested": false,
+          "overflow": 0,
+          "work": [
+            {
+              "cache_plan_work": 0,
+              "plan_work": 112
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 18
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 70
+            },
+            {
+              "cache_plan_work": 0,
+              "plan_work": 0
+            }
+          ]
+        },
+        "plan_work": 696,
+        "preflight_assets": 1,
+        "prepared_frames": 1280,
+        "prepared_stages": 1,
+        "projected_resident_frames": 0,
+        "provider_calls": 9,
+        "sound_context_frames": 0,
+        "source_checks": 9
+      },
+      "result": {
+        "after_arc_verification": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 1056,
+          "cached_stages": 1,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              2,
+              2,
+              2,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 112
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 18
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 70
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 696,
+          "preflight_assets": 1,
+          "prepared_frames": 1280,
+          "prepared_stages": 1,
+          "projected_resident_frames": 0,
+          "provider_calls": 9,
+          "sound_context_frames": 0,
+          "source_checks": 9
+        },
+        "after_first": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 1056,
+          "cached_stages": 1,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              1,
+              1,
+              1,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 56
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 9
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 61
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 366,
+          "preflight_assets": 1,
+          "prepared_frames": 1280,
+          "prepared_stages": 1,
+          "projected_resident_frames": 0,
+          "provider_calls": 4,
+          "sound_context_frames": 0,
+          "source_checks": 4
+        },
+        "after_second": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 1056,
+          "cached_stages": 1,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              2,
+              2,
+              2,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 112
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 18
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 70
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 688,
+          "preflight_assets": 1,
+          "prepared_frames": 1280,
+          "prepared_stages": 1,
+          "projected_resident_frames": 0,
+          "provider_calls": 8,
+          "sound_context_frames": 0,
+          "source_checks": 8
+        },
+        "before": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 0,
+          "cached_resident_frames": 0,
+          "cached_stages": 0,
+          "next_original_input": 0,
+          "observed_dependencies": 0,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "max_active_depth": 0,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 0,
+          "preflight_assets": 0,
+          "prepared_frames": 0,
+          "prepared_stages": 0,
+          "projected_resident_frames": 0,
+          "provider_calls": 0,
+          "sound_context_frames": 0,
+          "source_checks": 0
+        },
+        "before_second": {
+          "active_frames": 1465,
+          "cache_key_scopes": 0,
+          "cache_plan_work": 0,
+          "cached_original_payloads": 1,
+          "cached_resident_frames": 1056,
+          "cached_stages": 1,
+          "next_original_input": 1,
+          "observed_dependencies": 1,
+          "phase_work": {
+            "active_depth": 0,
+            "calls": [
+              1,
+              1,
+              1,
+              0
+            ],
+            "max_active_depth": 1,
+            "nested": false,
+            "overflow": 0,
+            "work": [
+              {
+                "cache_plan_work": 0,
+                "plan_work": 56
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 9
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 61
+              },
+              {
+                "cache_plan_work": 0,
+                "plan_work": 0
+              }
+            ]
+          },
+          "plan_work": 374,
+          "preflight_assets": 1,
+          "prepared_frames": 1280,
+          "prepared_stages": 1,
+          "projected_resident_frames": 0,
+          "provider_calls": 5,
+          "sound_context_frames": 0,
+          "source_checks": 5
+        },
+        "context": "exact_domain_arc",
+        "first": {
+          "dependencies": {
+            "media": [
+              213,
+              104,
+              214,
+              48,
+              100,
+              85,
+              154,
+              235,
+              82,
+              132,
+              39,
+              115,
+              81,
+              176,
+              55,
+              30,
+              28,
+              252,
+              59,
+              128,
+              182,
+              239,
+              59,
+              95,
+              217,
+              209,
+              11,
+              186,
+              36,
+              221,
+              131,
+              5
+            ]
+          },
+          "exhausted_field": "WideBlock has no exhausted field; exact raw exhaustion is recorded separately",
+          "f64_bits": [
+            [
+              4595311121377832410,
+              4583787750115192627
+            ],
+            [
+              4596176304827768754,
+              13805668184026426590
+            ],
+            [
+              4596451866704002236,
+              13803934146869280358
+            ],
+            [
+              4595728315981384355,
+              13811773846034200354
+            ],
+            [
+              4594343098626736890,
+              13808093287765229672
+            ],
+            [
+              4592440248603983771,
+              13809424333981068989
+            ],
+            [
+              4589640806743738455,
+              4578055040400993215
+            ],
+            [
+              4584393386225581404,
+              4580286554404553814
+            ],
+            [
+              4574710911558115712,
+              4589405702074224933
+            ],
+            [
+              4586296790108350422,
+              4588726663839375566
+            ],
+            [
+              4592362816225726701,
+              4590621390742123554
+            ],
+            [
+              4595621071903894548,
+              4586391695228609665
+            ],
+            [
+              4597672752206047355,
+              4585589764488222337
+            ],
+            [
+              4598415185544631600,
+              13808845918853318499
+            ],
+            [
+              4599281497976135165,
+              13810425851588272796
+            ],
+            [
+              4600180936861030828,
+              13815070454194233032
+            ]
+          ],
+          "relative_depth": 1,
+          "suppressed": []
+        },
+        "fixed_graph_reservation": 1465,
+        "independent_query_oracle": {
+          "cached_excluded": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "events": [
+            {
+              "kind": "retained_envelope",
+              "range": [
+                704,
+                720
+              ]
+            }
+          ],
+          "flattened_spans": 1,
+          "processing": [
+            "stage"
+          ],
+          "query_construction_work": 56,
+          "query_excluded": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          "query_visitor_work": 2,
+          "raw_dependencies": {
+            "media": [
+              213,
+              104,
+              214,
+              48,
+              100,
+              85,
+              154,
+              235,
+              82,
+              132,
+              39,
+              115,
+              81,
+              176,
+              55,
+              30,
+              28,
+              252,
+              59,
+              128,
+              182,
+              239,
+              59,
+              95,
+              217,
+              209,
+              11,
+              186,
+              36,
+              221,
+              131,
+              5
+            ]
+          },
+          "raw_exhausted": [],
+          "raw_f32_bits": [
+            [
+              1038467685,
+              1011559328
+            ],
+            [
+              1039851719,
+              3155627981
+            ],
+            [
+              1040232053,
+              3151714025
+            ],
+            [
+              1039070823,
+              3166803032
+            ],
+            [
+              1036811404,
+              3159546124
+            ],
+            [
+              1034732571,
+              3163115662
+            ],
+            [
+              1032492806,
+              1001521121
+            ],
+            [
+              1028742765,
+              1005158378
+            ],
+            [
+              1026046387,
+              1021661060
+            ],
+            [
+              1029975628,
+              1020203279
+            ],
+            [
+              1034477117,
+              1024420228
+            ],
+            [
+              1038573677,
+              1016513029
+            ],
+            [
+              1041023581,
+              1015243404
+            ],
+            [
+              1041809265,
+              3161987999
+            ],
+            [
+              1043246341,
+              3164713948
+            ],
+            [
+              1044788537,
+              3173411053
+            ]
+          ],
+          "raw_relative_depth": 1,
+          "raw_start": 704,
+          "raw_suppressed": [],
+          "zero_pcm_with_permitted_raw_policy": []
+        },
+        "name": "preserve_stage",
+        "prediction_enabled": true,
+        "range": [
+          704,
+          720
+        ],
+        "same_cached_arc": true,
+        "second": {
+          "dependencies": {
+            "media": [
+              213,
+              104,
+              214,
+              48,
+              100,
+              85,
+              154,
+              235,
+              82,
+              132,
+              39,
+              115,
+              81,
+              176,
+              55,
+              30,
+              28,
+              252,
+              59,
+              128,
+              182,
+              239,
+              59,
+              95,
+              217,
+              209,
+              11,
+              186,
+              36,
+              221,
+              131,
+              5
+            ]
+          },
+          "exhausted_field": "WideBlock has no exhausted field; exact raw exhaustion is recorded separately",
+          "f64_bits": [
+            [
+              4595311121377832410,
+              4583787750115192627
+            ],
+            [
+              4596176304827768754,
+              13805668184026426590
+            ],
+            [
+              4596451866704002236,
+              13803934146869280358
+            ],
+            [
+              4595728315981384355,
+              13811773846034200354
+            ],
+            [
+              4594343098626736890,
+              13808093287765229672
+            ],
+            [
+              4592440248603983771,
+              13809424333981068989
+            ],
+            [
+              4589640806743738455,
+              4578055040400993215
+            ],
+            [
+              4584393386225581404,
+              4580286554404553814
+            ],
+            [
+              4574710911558115712,
+              4589405702074224933
+            ],
+            [
+              4586296790108350422,
+              4588726663839375566
+            ],
+            [
+              4592362816225726701,
+              4590621390742123554
+            ],
+            [
+              4595621071903894548,
+              4586391695228609665
+            ],
+            [
+              4597672752206047355,
+              4585589764488222337
+            ],
+            [
+              4598415185544631600,
+              13808845918853318499
+            ],
+            [
+              4599281497976135165,
+              13810425851588272796
+            ],
+            [
+              4600180936861030828,
+              13815070454194233032
+            ]
+          ],
+          "relative_depth": 1,
+          "suppressed": []
+        }
+      }
+    }
+  ],
+  "coverage": "Root and exact Domain allocation; nonconstant gain plus saturation forces components/prediction; real Source, explicit SilentHold crossing, one Preserve Stage; same Graph and same Arc for repeat",
+  "legacy_query_mode": true,
+  "measurement_note": "Arc verification performs separately visible cache hits outside first/second snapshot intervals; independent query oracle has its own actual work ledger; Preserve prepared cache is dropped with renderer after Graph cleanup",
+  "phase_order": [
+    "queries",
+    "prediction",
+    "original_read",
+    "probe"
+  ],
+  "producer": "actual shared read_shared_program observations",
+  "schema": 1,
+  "unexercised": [
+    "Bound",
+    "nested Preserve",
+    "retained-envelope prefix/suffix exhaustion",
+    "signed Domain history",
+    "Context::Retained",
+    "source revocation",
+    "reservation eviction",
+    "deliberate mask corruption"
+  ]
+}

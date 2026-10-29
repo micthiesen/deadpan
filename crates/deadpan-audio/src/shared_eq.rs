@@ -41,6 +41,16 @@ use event_returns::{EventKey, EventRead, EventSource};
 #[path = "shared_eq/original_inputs.rs"]
 pub(super) mod original_inputs;
 
+#[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
+#[path = "shared_eq/cached_prediction_baseline.rs"]
+mod cached_prediction_baseline;
+#[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
+#[path = "shared_eq/cached_prediction_tests.rs"]
+mod cached_prediction_tests;
+#[cfg(test)]
+#[path = "shared_eq/cached_prediction_trace.rs"]
+mod cached_prediction_trace;
+
 #[path = "shared_eq/policy_prediction.rs"]
 mod policy_prediction;
 pub(super) use policy_prediction::PopulationComplete;
@@ -563,55 +573,104 @@ impl StageAudio {
         };
         let predict = mix.uses_components()
             && policy_prediction::available(&program.context.original, &roots, &beats, control)?;
+        if predict {
+            // Routes have not allocated policy or PCM. This only installs an
+            // empty prediction carrier; the fallible query factories do not
+            // inspect SharedMix. Its complete payload is still admitted below.
+            mix.begin_prediction()?;
+        }
+        let reservation = u64::from(frames)
+            .checked_mul(12)
+            .and_then(|n| n.checked_add(mix.resident_frames().ok()?))
+            .ok_or(StageAudioError::Limit("shared EQ mix PCM"));
+        let mut cached_original = None;
         let mut prepared_original = if predict && owners.is_some() && admitted(original_id) {
             let count = count(&original_range)?;
-            Some(match &program.context.original {
-                Context::Root => {
-                    self.prepare_original_root(plan, original_range.start, count, control, true)?
-                }
-                Context::Domain(domain) => self.prepare_original_domain(
-                    domain,
-                    original_range.start,
-                    count,
+            #[cfg(test)]
+            let enabled = !cached_prediction_trace::legacy();
+            #[cfg(not(test))]
+            let enabled = true;
+            if enabled && let Ok(additional) = &reservation {
+                #[cfg(test)]
+                let _probe_phase = cached_prediction_trace::ScopeGuard::new(
+                    cached_prediction_trace::Phase::Probe,
                     control,
-                    true,
-                )?,
-                Context::Retained(_) => {
-                    return Err(StageAudioError::Unsupported(
-                        "retained Original policy prediction",
-                    ));
-                }
-            })
+                );
+                cached_original = self.try_cached_original_for_prediction(
+                    provider,
+                    graph,
+                    &program.context.original,
+                    (original_range.clone(), *additional),
+                    control,
+                    program.depth,
+                )?;
+            }
+            if cached_original.is_none() {
+                #[cfg(test)]
+                let _queries_phase = cached_prediction_trace::ScopeGuard::new(
+                    cached_prediction_trace::Phase::Queries,
+                    control,
+                );
+                Some(match &program.context.original {
+                    Context::Root => self.prepare_original_root(
+                        plan,
+                        original_range.start,
+                        count,
+                        control,
+                        true,
+                    )?,
+                    Context::Domain(domain) => self.prepare_original_domain(
+                        domain,
+                        original_range.start,
+                        count,
+                        control,
+                        true,
+                    )?,
+                    Context::Retained(_) => {
+                        return Err(StageAudioError::Unsupported(
+                            "retained Original policy prediction",
+                        ));
+                    }
+                })
+            } else {
+                None
+            }
         } else {
             None
         };
-        if predict {
-            mix.begin_prediction()?;
-        }
-        let mut reservation = u64::from(frames)
-            .checked_mul(12)
-            .and_then(|n| n.checked_add(mix.resident_frames().ok()?))
-            .ok_or(StageAudioError::Limit("shared EQ mix PCM"))?;
+        // Preserve the ordinary cold query-failure priority over admission.
+        let mut reservation = reservation?;
         self.make_room(reservation, false, control)?;
         self.active_frames += reservation;
         let result = (|| {
             if predict {
                 mix.allocate_policy();
-                let original = match (&owners, &prepared_original) {
-                    (Some(owners), Some(request)) => Some(policy_prediction::Original {
-                        queries: request.queries(),
+                let original = match (&owners, &prepared_original, &cached_original) {
+                    (Some(owners), _, Some(block)) => Some(policy_prediction::Original {
+                        policy: policy_prediction::OriginalPolicy::Cached(block),
                         owners: owners.query(),
                         routes: &original_routes,
                         id: original_id,
                     }),
-                    (None, _) => None,
-                    (Some(_), None) if !admitted(original_id) => None,
+                    (Some(owners), Some(request), None) => Some(policy_prediction::Original {
+                        policy: policy_prediction::OriginalPolicy::Queries(request.queries()),
+                        owners: owners.query(),
+                        routes: &original_routes,
+                        id: original_id,
+                    }),
+                    (None, _, _) => None,
+                    (Some(_), None, None) if !admitted(original_id) => None,
                     _ => {
                         return Err(
                             PlanError::InvalidPlan("Original prediction request absent").into()
                         );
                     }
                 };
+                #[cfg(test)]
+                let _prediction_phase = cached_prediction_trace::ScopeGuard::new(
+                    cached_prediction_trace::Phase::Prediction,
+                    control,
+                );
                 policy_prediction::populate(
                     &mut mix,
                     policy_prediction::Inputs {
@@ -631,7 +690,14 @@ impl StageAudio {
             let mut dependencies = Dependencies::new();
             let mut relative_depth = 0;
             if let Some(owners) = owners {
-                let raw = if let Some(request) = prepared_original.take() {
+                #[cfg(test)]
+                let original_read_phase = cached_prediction_trace::ScopeGuard::new(
+                    cached_prediction_trace::Phase::OriginalRead,
+                    control,
+                );
+                let raw = if let Some(block) = cached_original.take() {
+                    original_inputs::Read::Cached(block)
+                } else if let Some(request) = prepared_original.take() {
                     self.shared_original_input_prepared(
                         provider,
                         graph,
@@ -650,6 +716,8 @@ impl StageAudio {
                         program.depth,
                     )?
                 };
+                #[cfg(test)]
+                drop(original_read_phase);
                 for (span, route) in owners.query().spans().iter().zip(original_routes) {
                     for sample in span.samples().start.0..span.samples().end.0 {
                         let value = raw.samples[(sample - original_range.start.0) as usize];
