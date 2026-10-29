@@ -11,7 +11,7 @@ use std::alloc::Layout;
 ///
 /// Keep `value` before `lease`: on every error or drop path, the allocation is
 /// released before its capacity admission is returned to the request ledger.
-pub(super) struct PendingNodeCapacity<'work, T> {
+pub(in crate::stages) struct PendingNodeCapacity<'work, T> {
     value: Option<Vec<T>>,
     old_len: usize,
     old_capacity: usize,
@@ -23,7 +23,7 @@ pub(super) struct PendingNodeCapacity<'work, T> {
     lease: Option<sound_context_admission::Lease<'work>>,
 }
 
-pub(super) fn prepare<'work, T>(
+pub(in crate::stages) fn prepare<'work, T>(
     controller: &mut StageAudio,
     current: &Vec<T>,
     accounted_frames: u64,
@@ -86,13 +86,13 @@ pub(super) fn prepare<'work, T>(
 }
 
 impl<'work, T> PendingNodeCapacity<'work, T> {
-    pub(super) fn new_frames(&self) -> u64 {
+    pub(in crate::stages) fn new_frames(&self) -> u64 {
         self.lease
             .as_ref()
             .map_or(0, sound_context_admission::Lease::frames)
     }
 
-    pub(super) fn retired_frames(&self) -> u64 {
+    pub(in crate::stages) fn retired_frames(&self) -> u64 {
         if self.lease.is_some() {
             self.accounted_frames
         } else {
@@ -100,7 +100,7 @@ impl<'work, T> PendingNodeCapacity<'work, T> {
         }
     }
 
-    pub(super) fn capacity_frames_after(&self) -> u64 {
+    pub(in crate::stages) fn capacity_frames_after(&self) -> u64 {
         if self.lease.is_some() {
             self.target_frames
         } else {
@@ -108,17 +108,19 @@ impl<'work, T> PendingNodeCapacity<'work, T> {
         }
     }
 
-    pub(super) fn lease(&self) -> Option<&sound_context_admission::Lease<'work>> {
+    pub(in crate::stages) fn lease(&self) -> Option<&sound_context_admission::Lease<'work>> {
         self.lease.as_ref()
     }
 
-    pub(super) fn lease_mut(&mut self) -> Option<&mut sound_context_admission::Lease<'work>> {
+    pub(in crate::stages) fn lease_mut(
+        &mut self,
+    ) -> Option<&mut sound_context_admission::Lease<'work>> {
         self.lease.as_mut()
     }
 
     /// Allocate the admitted replacement storage only when the node vector
     /// must grow. The actual allocator capacity is checked before it escapes.
-    pub(super) fn allocate(&mut self) -> Result<(), StageAudioError> {
+    pub(in crate::stages) fn allocate(&mut self) -> Result<(), StageAudioError> {
         if self.lease.is_none() {
             return Ok(());
         }
@@ -139,14 +141,17 @@ impl<'work, T> PendingNodeCapacity<'work, T> {
     }
 
     /// Charge the actual values that will be moved out of the old allocation.
-    pub(super) fn prepay_moves(&self, control: WorkControl<'work>) -> Result<(), StageAudioError> {
+    pub(in crate::stages) fn prepay_moves(
+        &self,
+        control: WorkControl<'work>,
+    ) -> Result<(), StageAudioError> {
         if self.lease.is_some() && self.old_len != 0 {
             control.spend_plan_work(self.old_len)?;
         }
         Ok(())
     }
 
-    pub(super) fn validate_current(
+    pub(in crate::stages) fn validate_current(
         &self,
         current: &Vec<T>,
         accounted_frames: u64,
@@ -169,7 +174,7 @@ impl<'work, T> PendingNodeCapacity<'work, T> {
 
     /// Infallible publication tail. The caller preflights and invokes this
     /// only after the filter and every other fallible operation has succeeded.
-    pub(super) fn publish(&mut self, current: &mut Vec<T>, node: T) {
+    pub(in crate::stages) fn publish(&mut self, current: &mut Vec<T>, node: T) {
         if let Some(mut replacement) = self.value.take() {
             for value in current.drain(..) {
                 replacement.push(value);

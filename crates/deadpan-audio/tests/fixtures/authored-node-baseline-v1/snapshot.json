@@ -1,0 +1,2216 @@
+{
+  "accounting_semantics": "graph/native/accounting fields are separate from numerical output; new persistent metadata and vector charges change totals",
+  "cases": [
+    {
+      "name": "root_tone",
+      "observation": {
+        "accounting": {
+          "active_frames": 266241,
+          "graph_resident": 266241,
+          "native_bound_units": 266241,
+          "node_count": 1,
+          "request_metadata": 0
+        },
+        "actual_eq_node_calls": 1,
+        "after_graph_drop": {
+          "active_frames": 0,
+          "request_metadata": 0
+        },
+        "cache_lookup": {
+          "actual_eq_node_calls": 1,
+          "id": 0,
+          "new_controller_work": 0,
+          "new_resident": 0,
+          "nodes": 1,
+          "same_filter": true,
+          "same_node": true
+        },
+        "controller_plan_work": 4119,
+        "incoming_context": {
+          "kind": "Root"
+        },
+        "native_filter_taps": 4097,
+        "observation": 128,
+        "requested_parent": 18446744073709551615,
+        "requested_stage": 0,
+        "result": {
+          "boundary": {
+            "before_stage": 0,
+            "matches_source_clock_at": true,
+            "matches_source_owner": true,
+            "owner": {
+              "belongs_to_expected_plan": true,
+              "definition": null,
+              "escalation_millidecibels": 0,
+              "explicit_tail_provider": false,
+              "gap_after": null,
+              "instance": {
+                "node": "root",
+                "repeats": []
+              },
+              "kind": "Node",
+              "local_at_observation": "Ok(ExactRatio { numerator: 128, denominator: 1 })",
+              "local_frames_per_sample": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "origin": "Current",
+              "sampling": {
+                "anchor": 128,
+                "local_at_anchor": {
+                  "denominator": "1",
+                  "numerator": "128"
+                },
+                "local_frames_per_sample": {
+                  "denominator": "1",
+                  "numerator": "1"
+                }
+              },
+              "treatments": {
+                "clip_gain": null,
+                "equalizer": {
+                  "bass": 3000,
+                  "middle": -6000,
+                  "treble": 1500
+                },
+                "order": [
+                  "equalizer"
+                ]
+              }
+            }
+          },
+          "context": {
+            "kind": "Domain",
+            "value": {
+              "belongs_to_expected_plan": true,
+              "definition": null,
+              "gap_after": null,
+              "instance": {
+                "node": "root",
+                "repeats": []
+              },
+              "placement": null,
+              "root_extent": {
+                "end": {
+                  "denominator": "1",
+                  "numerator": "512"
+                },
+                "start": {
+                  "denominator": "1",
+                  "numerator": "0"
+                }
+              },
+              "root_samples": [
+                0,
+                512
+              ],
+              "visible_samples": [
+                0,
+                512
+              ]
+            }
+          },
+          "filter_present": true,
+          "id": 0,
+          "incoming_retained_same_arc": null,
+          "parent": 18446744073709551615,
+          "tiles_empty": true
+        },
+        "source_owner": {
+          "belongs_to_expected_plan": true,
+          "definition": null,
+          "escalation_millidecibels": 0,
+          "explicit_tail_provider": false,
+          "gap_after": null,
+          "instance": {
+            "node": "root",
+            "repeats": []
+          },
+          "kind": "Node",
+          "local_at_observation": "Ok(ExactRatio { numerator: 128, denominator: 1 })",
+          "local_frames_per_sample": {
+            "denominator": "1",
+            "numerator": "1"
+          },
+          "origin": "Current",
+          "sampling": {
+            "anchor": 128,
+            "local_at_anchor": {
+              "denominator": "1",
+              "numerator": "128"
+            },
+            "local_frames_per_sample": {
+              "denominator": "1",
+              "numerator": "1"
+            }
+          },
+          "treatments": {
+            "clip_gain": null,
+            "equalizer": {
+              "bass": 3000,
+              "middle": -6000,
+              "treble": 1500
+            },
+            "order": [
+              "equalizer"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "actual_captured_domain",
+      "observation": {
+        "accounting": {
+          "active_frames": 266241,
+          "graph_resident": 266241,
+          "native_bound_units": 266241,
+          "node_count": 1,
+          "request_metadata": 0
+        },
+        "actual_eq_node_calls": 1,
+        "after_graph_drop": {
+          "active_frames": 0,
+          "request_metadata": 0
+        },
+        "cache_lookup": {
+          "actual_eq_node_calls": 1,
+          "id": 0,
+          "new_controller_work": 0,
+          "new_resident": 0,
+          "nodes": 1,
+          "same_filter": true,
+          "same_node": true
+        },
+        "controller_plan_work": 4119,
+        "incoming_context": {
+          "kind": "Domain",
+          "value": {
+            "belongs_to_expected_plan": true,
+            "definition": null,
+            "gap_after": null,
+            "instance": {
+              "node": "root",
+              "repeats": []
+            },
+            "placement": null,
+            "root_extent": {
+              "end": {
+                "denominator": "1",
+                "numerator": "512"
+              },
+              "start": {
+                "denominator": "1",
+                "numerator": "0"
+              }
+            },
+            "root_samples": [
+              0,
+              512
+            ],
+            "visible_samples": [
+              0,
+              512
+            ]
+          }
+        },
+        "native_filter_taps": 4097,
+        "observation": 128,
+        "requested_parent": 7,
+        "requested_stage": 0,
+        "result": {
+          "boundary": {
+            "before_stage": 0,
+            "matches_source_clock_at": true,
+            "matches_source_owner": true,
+            "owner": {
+              "belongs_to_expected_plan": true,
+              "definition": null,
+              "escalation_millidecibels": 0,
+              "explicit_tail_provider": false,
+              "gap_after": null,
+              "instance": {
+                "node": "root",
+                "repeats": []
+              },
+              "kind": "Node",
+              "local_at_observation": "Ok(ExactRatio { numerator: 128, denominator: 1 })",
+              "local_frames_per_sample": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "origin": "Current",
+              "sampling": {
+                "anchor": 128,
+                "local_at_anchor": {
+                  "denominator": "1",
+                  "numerator": "128"
+                },
+                "local_frames_per_sample": {
+                  "denominator": "1",
+                  "numerator": "1"
+                }
+              },
+              "treatments": {
+                "clip_gain": null,
+                "equalizer": {
+                  "bass": 3000,
+                  "middle": -6000,
+                  "treble": 1500
+                },
+                "order": [
+                  "equalizer"
+                ]
+              }
+            }
+          },
+          "context": {
+            "kind": "Domain",
+            "value": {
+              "belongs_to_expected_plan": true,
+              "definition": null,
+              "gap_after": null,
+              "instance": {
+                "node": "root",
+                "repeats": []
+              },
+              "placement": null,
+              "root_extent": {
+                "end": {
+                  "denominator": "1",
+                  "numerator": "512"
+                },
+                "start": {
+                  "denominator": "1",
+                  "numerator": "0"
+                }
+              },
+              "root_samples": [
+                0,
+                512
+              ],
+              "visible_samples": [
+                0,
+                512
+              ]
+            }
+          },
+          "filter_present": true,
+          "id": 0,
+          "incoming_retained_same_arc": null,
+          "parent": 7,
+          "tiles_empty": true
+        },
+        "source_owner": {
+          "belongs_to_expected_plan": true,
+          "definition": null,
+          "escalation_millidecibels": 0,
+          "explicit_tail_provider": false,
+          "gap_after": null,
+          "instance": {
+            "node": "root",
+            "repeats": []
+          },
+          "kind": "Node",
+          "local_at_observation": "Ok(ExactRatio { numerator: 128, denominator: 1 })",
+          "local_frames_per_sample": {
+            "denominator": "1",
+            "numerator": "1"
+          },
+          "origin": "Current",
+          "sampling": {
+            "anchor": 128,
+            "local_at_anchor": {
+              "denominator": "1",
+              "numerator": "128"
+            },
+            "local_frames_per_sample": {
+              "denominator": "1",
+              "numerator": "1"
+            }
+          },
+          "treatments": {
+            "clip_gain": null,
+            "equalizer": {
+              "bass": 3000,
+              "middle": -6000,
+              "treble": 1500
+            },
+            "order": [
+              "equalizer"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "owner_limit_before_resolution",
+      "observation": {
+        "accounting": {
+          "active_frames": 0,
+          "graph_resident": 0,
+          "native_bound_units": 266241,
+          "node_count": 0,
+          "request_metadata": 0
+        },
+        "actual_eq_node_calls": 1,
+        "after_graph_drop": {
+          "active_frames": 0,
+          "request_metadata": 0
+        },
+        "controller_plan_work": 0,
+        "incoming_context": {
+          "kind": "Root"
+        },
+        "native_filter_taps": 4097,
+        "observation": 128,
+        "requested_parent": 0,
+        "requested_stage": 0,
+        "result": {
+          "error": "Limit(\"EQ owner count\")"
+        },
+        "source_owner": {
+          "belongs_to_expected_plan": true,
+          "definition": null,
+          "escalation_millidecibels": 0,
+          "explicit_tail_provider": false,
+          "gap_after": null,
+          "instance": {
+            "node": "root",
+            "repeats": []
+          },
+          "kind": "Node",
+          "local_at_observation": "Ok(ExactRatio { numerator: 128, denominator: 1 })",
+          "local_frames_per_sample": {
+            "denominator": "1",
+            "numerator": "1"
+          },
+          "origin": "Current",
+          "sampling": {
+            "anchor": 128,
+            "local_at_anchor": {
+              "denominator": "1",
+              "numerator": "128"
+            },
+            "local_frames_per_sample": {
+              "denominator": "1",
+              "numerator": "1"
+            }
+          },
+          "treatments": {
+            "clip_gain": null,
+            "equalizer": {
+              "bass": 3000,
+              "middle": -6000,
+              "treble": 1500
+            },
+            "order": [
+              "equalizer"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "invalid_stage_after_resolution",
+      "observation": {
+        "accounting": {
+          "active_frames": 0,
+          "graph_resident": 0,
+          "native_bound_units": 266241,
+          "node_count": 0,
+          "request_metadata": 0
+        },
+        "actual_eq_node_calls": 1,
+        "after_graph_drop": {
+          "active_frames": 0,
+          "request_metadata": 0
+        },
+        "controller_plan_work": 22,
+        "incoming_context": {
+          "kind": "Root"
+        },
+        "native_filter_taps": 4097,
+        "observation": 128,
+        "requested_parent": 0,
+        "requested_stage": 18446744073709551615,
+        "result": {
+          "error": "Plan(InvalidPlan(\"audio treatment boundary out of range\"))"
+        },
+        "source_owner": {
+          "belongs_to_expected_plan": true,
+          "definition": null,
+          "escalation_millidecibels": 0,
+          "explicit_tail_provider": false,
+          "gap_after": null,
+          "instance": {
+            "node": "root",
+            "repeats": []
+          },
+          "kind": "Node",
+          "local_at_observation": "Ok(ExactRatio { numerator: 128, denominator: 1 })",
+          "local_frames_per_sample": {
+            "denominator": "1",
+            "numerator": "1"
+          },
+          "origin": "Current",
+          "sampling": {
+            "anchor": 128,
+            "local_at_anchor": {
+              "denominator": "1",
+              "numerator": "128"
+            },
+            "local_frames_per_sample": {
+              "denominator": "1",
+              "numerator": "1"
+            }
+          },
+          "treatments": {
+            "clip_gain": null,
+            "equalizer": {
+              "bass": 3000,
+              "middle": -6000,
+              "treble": 1500
+            },
+            "order": [
+              "equalizer"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "tone_missing_recipe_after_context",
+      "observation": {
+        "accounting": {
+          "active_frames": 0,
+          "graph_resident": 0,
+          "native_bound_units": 266241,
+          "node_count": 0,
+          "request_metadata": 0
+        },
+        "actual_eq_node_calls": 1,
+        "after_graph_drop": {
+          "active_frames": 0,
+          "request_metadata": 0
+        },
+        "controller_plan_work": 22,
+        "incoming_context": {
+          "kind": "Root"
+        },
+        "native_filter_taps": 4097,
+        "observation": 128,
+        "requested_parent": 0,
+        "requested_stage": 0,
+        "result": {
+          "error": "Plan(InvalidPlan(\"EQ recipe absent\"))"
+        },
+        "source_owner": {
+          "belongs_to_expected_plan": true,
+          "definition": null,
+          "escalation_millidecibels": 0,
+          "explicit_tail_provider": false,
+          "gap_after": null,
+          "instance": {
+            "node": "tone",
+            "repeats": []
+          },
+          "kind": "Node",
+          "local_at_observation": "Ok(ExactRatio { numerator: 128, denominator: 1 })",
+          "local_frames_per_sample": {
+            "denominator": "1",
+            "numerator": "1"
+          },
+          "origin": "Current",
+          "sampling": {
+            "anchor": 128,
+            "local_at_anchor": {
+              "denominator": "1",
+              "numerator": "128"
+            },
+            "local_frames_per_sample": {
+              "denominator": "1",
+              "numerator": "1"
+            }
+          },
+          "treatments": {
+            "clip_gain": null,
+            "order": []
+          }
+        }
+      }
+    },
+    {
+      "name": "owner_absent_at_observation",
+      "observation": {
+        "accounting": {
+          "active_frames": 0,
+          "graph_resident": 0,
+          "native_bound_units": 266241,
+          "node_count": 0,
+          "request_metadata": 0
+        },
+        "actual_eq_node_calls": 1,
+        "after_graph_drop": {
+          "active_frames": 0,
+          "request_metadata": 0
+        },
+        "controller_plan_work": 0,
+        "incoming_context": {
+          "kind": "Root"
+        },
+        "native_filter_taps": 4097,
+        "observation": 600,
+        "requested_parent": 0,
+        "requested_stage": 0,
+        "result": {
+          "error": "Plan(AudioRangeOutOfRange)"
+        },
+        "source_owner": {
+          "belongs_to_expected_plan": true,
+          "definition": null,
+          "escalation_millidecibels": 0,
+          "explicit_tail_provider": false,
+          "gap_after": null,
+          "instance": {
+            "node": "root",
+            "repeats": []
+          },
+          "kind": "Node",
+          "local_at_observation": "Ok(ExactRatio { numerator: 600, denominator: 1 })",
+          "local_frames_per_sample": {
+            "denominator": "1",
+            "numerator": "1"
+          },
+          "origin": "Current",
+          "sampling": {
+            "anchor": 128,
+            "local_at_anchor": {
+              "denominator": "1",
+              "numerator": "128"
+            },
+            "local_frames_per_sample": {
+              "denominator": "1",
+              "numerator": "1"
+            }
+          },
+          "treatments": {
+            "clip_gain": null,
+            "equalizer": {
+              "bass": 3000,
+              "middle": -6000,
+              "treble": 1500
+            },
+            "order": [
+              "equalizer"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "observation_end_overflow",
+      "observation": {
+        "accounting": {
+          "active_frames": 0,
+          "graph_resident": 0,
+          "native_bound_units": 266241,
+          "node_count": 0,
+          "request_metadata": 0
+        },
+        "actual_eq_node_calls": 1,
+        "after_graph_drop": {
+          "active_frames": 0,
+          "request_metadata": 0
+        },
+        "controller_plan_work": 0,
+        "incoming_context": {
+          "kind": "Root"
+        },
+        "native_filter_taps": 4097,
+        "observation": 9223372036854775807,
+        "requested_parent": 0,
+        "requested_stage": 0,
+        "result": {
+          "error": "Plan(Time(Overflow))"
+        },
+        "source_owner": {
+          "belongs_to_expected_plan": true,
+          "definition": null,
+          "escalation_millidecibels": 0,
+          "explicit_tail_provider": false,
+          "gap_after": null,
+          "instance": {
+            "node": "root",
+            "repeats": []
+          },
+          "kind": "Node",
+          "local_at_observation": "Ok(ExactRatio { numerator: 9223372036854775807, denominator: 1 })",
+          "local_frames_per_sample": {
+            "denominator": "1",
+            "numerator": "1"
+          },
+          "origin": "Current",
+          "sampling": {
+            "anchor": 128,
+            "local_at_anchor": {
+              "denominator": "1",
+              "numerator": "128"
+            },
+            "local_frames_per_sample": {
+              "denominator": "1",
+              "numerator": "1"
+            }
+          },
+          "treatments": {
+            "clip_gain": null,
+            "equalizer": {
+              "bass": 3000,
+              "middle": -6000,
+              "treble": 1500
+            },
+            "order": [
+              "equalizer"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "repeat_voice_first",
+      "observation": {
+        "accounting": {
+          "active_frames": 266241,
+          "graph_resident": 266241,
+          "native_bound_units": 266241,
+          "node_count": 1,
+          "request_metadata": 0
+        },
+        "actual_eq_node_calls": 1,
+        "after_graph_drop": {
+          "active_frames": 0,
+          "request_metadata": 0
+        },
+        "cache_lookup": {
+          "actual_eq_node_calls": 1,
+          "id": 0,
+          "new_controller_work": 0,
+          "new_resident": 0,
+          "nodes": 1,
+          "same_filter": true,
+          "same_node": true
+        },
+        "controller_plan_work": 4140,
+        "incoming_context": {
+          "kind": "Root"
+        },
+        "native_filter_taps": 4097,
+        "observation": 0,
+        "requested_parent": 3,
+        "requested_stage": 0,
+        "result": {
+          "boundary": {
+            "before_stage": 0,
+            "matches_source_clock_at": true,
+            "matches_source_owner": true,
+            "owner": {
+              "belongs_to_expected_plan": true,
+              "definition": null,
+              "escalation_millidecibels": 0,
+              "explicit_tail_provider": false,
+              "gap_after": null,
+              "instance": {
+                "node": "voice",
+                "repeats": [
+                  {
+                    "iteration": {
+                      "allocation": "plays",
+                      "ordinal": 0
+                    },
+                    "node": "repeat"
+                  }
+                ]
+              },
+              "kind": "Node",
+              "local_at_observation": "Ok(ExactRatio { numerator: 0, denominator: 1 })",
+              "local_frames_per_sample": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "origin": "Current",
+              "sampling": {
+                "anchor": 0,
+                "local_at_anchor": {
+                  "denominator": "1",
+                  "numerator": "0"
+                },
+                "local_frames_per_sample": {
+                  "denominator": "1",
+                  "numerator": "1"
+                }
+              },
+              "treatments": {
+                "clip_gain": null,
+                "equalizer": {
+                  "bass": 3000,
+                  "middle": -6000,
+                  "treble": 1500
+                },
+                "order": [
+                  "equalizer"
+                ]
+              }
+            }
+          },
+          "context": {
+            "kind": "Domain",
+            "value": {
+              "belongs_to_expected_plan": true,
+              "definition": null,
+              "gap_after": null,
+              "instance": {
+                "node": "voice",
+                "repeats": [
+                  {
+                    "iteration": {
+                      "allocation": "plays",
+                      "ordinal": 0
+                    },
+                    "node": "repeat"
+                  }
+                ]
+              },
+              "placement": null,
+              "root_extent": {
+                "end": {
+                  "denominator": "1",
+                  "numerator": "4"
+                },
+                "start": {
+                  "denominator": "1",
+                  "numerator": "0"
+                }
+              },
+              "root_samples": [
+                0,
+                4
+              ],
+              "visible_samples": [
+                0,
+                4
+              ]
+            }
+          },
+          "filter_present": true,
+          "id": 0,
+          "incoming_retained_same_arc": null,
+          "parent": 3,
+          "tiles_empty": true
+        },
+        "source_owner": {
+          "belongs_to_expected_plan": true,
+          "definition": null,
+          "escalation_millidecibels": 0,
+          "explicit_tail_provider": false,
+          "gap_after": null,
+          "instance": {
+            "node": "voice",
+            "repeats": [
+              {
+                "iteration": {
+                  "allocation": "plays",
+                  "ordinal": 0
+                },
+                "node": "repeat"
+              }
+            ]
+          },
+          "kind": "Node",
+          "local_at_observation": "Ok(ExactRatio { numerator: 0, denominator: 1 })",
+          "local_frames_per_sample": {
+            "denominator": "1",
+            "numerator": "1"
+          },
+          "origin": "Current",
+          "sampling": {
+            "anchor": 0,
+            "local_at_anchor": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "local_frames_per_sample": {
+              "denominator": "1",
+              "numerator": "1"
+            }
+          },
+          "treatments": {
+            "clip_gain": null,
+            "equalizer": {
+              "bass": 3000,
+              "middle": -6000,
+              "treble": 1500
+            },
+            "order": [
+              "equalizer"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "repeat_voice_last",
+      "observation": {
+        "accounting": {
+          "active_frames": 266241,
+          "graph_resident": 266241,
+          "native_bound_units": 266241,
+          "node_count": 1,
+          "request_metadata": 0
+        },
+        "actual_eq_node_calls": 1,
+        "after_graph_drop": {
+          "active_frames": 0,
+          "request_metadata": 0
+        },
+        "cache_lookup": {
+          "actual_eq_node_calls": 1,
+          "id": 0,
+          "new_controller_work": 0,
+          "new_resident": 0,
+          "nodes": 1,
+          "same_filter": true,
+          "same_node": true
+        },
+        "controller_plan_work": 4140,
+        "incoming_context": {
+          "kind": "Root"
+        },
+        "native_filter_taps": 4097,
+        "observation": 10,
+        "requested_parent": 3,
+        "requested_stage": 0,
+        "result": {
+          "boundary": {
+            "before_stage": 0,
+            "matches_source_clock_at": true,
+            "matches_source_owner": true,
+            "owner": {
+              "belongs_to_expected_plan": true,
+              "definition": null,
+              "escalation_millidecibels": 0,
+              "explicit_tail_provider": false,
+              "gap_after": null,
+              "instance": {
+                "node": "voice",
+                "repeats": [
+                  {
+                    "iteration": {
+                      "allocation": "plays",
+                      "ordinal": 2
+                    },
+                    "node": "repeat"
+                  }
+                ]
+              },
+              "kind": "Node",
+              "local_at_observation": "Ok(ExactRatio { numerator: 0, denominator: 1 })",
+              "local_frames_per_sample": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "origin": "Current",
+              "sampling": {
+                "anchor": 10,
+                "local_at_anchor": {
+                  "denominator": "1",
+                  "numerator": "0"
+                },
+                "local_frames_per_sample": {
+                  "denominator": "1",
+                  "numerator": "1"
+                }
+              },
+              "treatments": {
+                "clip_gain": null,
+                "equalizer": {
+                  "bass": 3000,
+                  "middle": -6000,
+                  "treble": 1500
+                },
+                "order": [
+                  "equalizer"
+                ]
+              }
+            }
+          },
+          "context": {
+            "kind": "Domain",
+            "value": {
+              "belongs_to_expected_plan": true,
+              "definition": null,
+              "gap_after": null,
+              "instance": {
+                "node": "voice",
+                "repeats": [
+                  {
+                    "iteration": {
+                      "allocation": "plays",
+                      "ordinal": 2
+                    },
+                    "node": "repeat"
+                  }
+                ]
+              },
+              "placement": null,
+              "root_extent": {
+                "end": {
+                  "denominator": "1",
+                  "numerator": "14"
+                },
+                "start": {
+                  "denominator": "1",
+                  "numerator": "10"
+                }
+              },
+              "root_samples": [
+                10,
+                14
+              ],
+              "visible_samples": [
+                10,
+                14
+              ]
+            }
+          },
+          "filter_present": true,
+          "id": 0,
+          "incoming_retained_same_arc": null,
+          "parent": 3,
+          "tiles_empty": true
+        },
+        "source_owner": {
+          "belongs_to_expected_plan": true,
+          "definition": null,
+          "escalation_millidecibels": 0,
+          "explicit_tail_provider": false,
+          "gap_after": null,
+          "instance": {
+            "node": "voice",
+            "repeats": [
+              {
+                "iteration": {
+                  "allocation": "plays",
+                  "ordinal": 2
+                },
+                "node": "repeat"
+              }
+            ]
+          },
+          "kind": "Node",
+          "local_at_observation": "Ok(ExactRatio { numerator: 0, denominator: 1 })",
+          "local_frames_per_sample": {
+            "denominator": "1",
+            "numerator": "1"
+          },
+          "origin": "Current",
+          "sampling": {
+            "anchor": 10,
+            "local_at_anchor": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "local_frames_per_sample": {
+              "denominator": "1",
+              "numerator": "1"
+            }
+          },
+          "treatments": {
+            "clip_gain": null,
+            "equalizer": {
+              "bass": 3000,
+              "middle": -6000,
+              "treble": 1500
+            },
+            "order": [
+              "equalizer"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "default_gap_missing_recipe",
+      "observation": {
+        "accounting": {
+          "active_frames": 0,
+          "graph_resident": 0,
+          "native_bound_units": 266241,
+          "node_count": 0,
+          "request_metadata": 0
+        },
+        "actual_eq_node_calls": 1,
+        "after_graph_drop": {
+          "active_frames": 0,
+          "request_metadata": 0
+        },
+        "controller_plan_work": 28,
+        "incoming_context": {
+          "kind": "Root"
+        },
+        "native_filter_taps": 4097,
+        "observation": 8,
+        "requested_parent": 0,
+        "requested_stage": 0,
+        "result": {
+          "error": "Plan(InvalidPlan(\"EQ recipe absent\"))"
+        },
+        "source_owner": {
+          "belongs_to_expected_plan": true,
+          "definition": null,
+          "escalation_millidecibels": 0,
+          "explicit_tail_provider": false,
+          "gap_after": {
+            "allocation": "plays",
+            "ordinal": 1
+          },
+          "instance": {
+            "node": "repeat",
+            "repeats": []
+          },
+          "kind": "DefaultGap",
+          "local_at_observation": "Ok(ExactRatio { numerator: 0, denominator: 1 })",
+          "local_frames_per_sample": {
+            "denominator": "1",
+            "numerator": "1"
+          },
+          "origin": "Current",
+          "sampling": {
+            "anchor": 8,
+            "local_at_anchor": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "local_frames_per_sample": {
+              "denominator": "1",
+              "numerator": "1"
+            }
+          },
+          "treatments": null
+        }
+      }
+    },
+    {
+      "name": "live_owner_actual_retained_probe_selection",
+      "observation": {
+        "accounting": {
+          "active_frames": 266241,
+          "graph_resident": 266241,
+          "native_bound_units": 266241,
+          "node_count": 1,
+          "request_metadata": 0
+        },
+        "actual_eq_node_calls": 1,
+        "after_graph_drop": {
+          "active_frames": 0,
+          "request_metadata": 0
+        },
+        "cache_lookup": {
+          "actual_eq_node_calls": 1,
+          "id": 0,
+          "new_controller_work": 0,
+          "new_resident": 0,
+          "nodes": 1,
+          "same_filter": true,
+          "same_node": true
+        },
+        "controller_plan_work": 4169,
+        "incoming_context": {
+          "kind": "Root"
+        },
+        "native_filter_taps": 4097,
+        "observation": 1,
+        "requested_parent": 5,
+        "requested_stage": 0,
+        "result": {
+          "boundary": {
+            "before_stage": 0,
+            "matches_source_clock_at": true,
+            "matches_source_owner": true,
+            "owner": {
+              "belongs_to_expected_plan": true,
+              "definition": null,
+              "escalation_millidecibels": 0,
+              "explicit_tail_provider": false,
+              "gap_after": null,
+              "instance": {
+                "node": "group",
+                "repeats": []
+              },
+              "kind": "Node",
+              "local_at_observation": "Ok(ExactRatio { numerator: 3, denominator: 2 })",
+              "local_frames_per_sample": {
+                "denominator": "2",
+                "numerator": "1"
+              },
+              "origin": "Retained { definition: None, instance: InstancePath { node: NodeId(\"stage\"), repeats: [] }, kind: Node, gap_after: None }",
+              "sampling": {
+                "anchor": 1,
+                "local_at_anchor": {
+                  "denominator": "2",
+                  "numerator": "3"
+                },
+                "local_frames_per_sample": {
+                  "denominator": "2",
+                  "numerator": "1"
+                }
+              },
+              "treatments": {
+                "clip_gain": null,
+                "equalizer": {
+                  "bass": 3000,
+                  "middle": -6000,
+                  "treble": 1500
+                },
+                "order": [
+                  "equalizer"
+                ]
+              }
+            }
+          },
+          "context": {
+            "belongs_to_expected_plan": true,
+            "bound": {
+              "definition": null,
+              "envelope_scale": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "instance": {
+                "node": "stage",
+                "repeats": []
+              },
+              "reference_at_anchor": {
+                "denominator": "1",
+                "numerator": "3"
+              },
+              "reference_step": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "resolved": {
+                "lattice": {
+                  "birth": null,
+                  "clock": {
+                    "type": "project_root_round_even"
+                  },
+                  "frames_per_local_frame": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  },
+                  "frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  },
+                  "gap_after": null,
+                  "gap_birth": false,
+                  "grid_origin": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "grid_rule": "root_round_even",
+                  "instance": {
+                    "node": "stage",
+                    "repeats": []
+                  },
+                  "local_duration": 8,
+                  "local_support": {
+                    "end": {
+                      "denominator": "1",
+                      "numerator": "8"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "0"
+                    }
+                  },
+                  "origin": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "work": 7
+                },
+                "resume": {
+                  "local_boundary": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "reference_local_delta": {
+                    "denominator": "1",
+                    "numerator": "3"
+                  }
+                },
+                "work": 8
+              },
+              "support": {
+                "end": {
+                  "denominator": "1",
+                  "numerator": "8"
+                },
+                "start": {
+                  "denominator": "1",
+                  "numerator": "0"
+                }
+              }
+            },
+            "kind": "Retained",
+            "raw_domain": {
+              "kind": "Root",
+              "value": {
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "stage",
+                  "repeats": []
+                },
+                "placement": {
+                  "local_support": {
+                    "end": {
+                      "denominator": "1",
+                      "numerator": "8"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "0"
+                    }
+                  },
+                  "origin": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "root_frames_per_local_frame": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "root_extent": {
+                  "end": {
+                    "denominator": "1",
+                    "numerator": "8"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  }
+                },
+                "root_samples": [
+                  0,
+                  8
+                ],
+                "visible_samples": [
+                  0,
+                  8
+                ]
+              }
+            },
+            "reference_at": {
+              "denominator": "1",
+              "numerator": "3"
+            },
+            "reference_step": {
+              "denominator": "1",
+              "numerator": "1"
+            },
+            "retained_lookup_work": 18
+          },
+          "filter_present": true,
+          "id": 0,
+          "incoming_retained_same_arc": null,
+          "parent": 5,
+          "tiles_empty": true
+        },
+        "source_owner": {
+          "belongs_to_expected_plan": true,
+          "definition": null,
+          "escalation_millidecibels": 0,
+          "explicit_tail_provider": false,
+          "gap_after": null,
+          "instance": {
+            "node": "group",
+            "repeats": []
+          },
+          "kind": "Node",
+          "local_at_observation": "Ok(ExactRatio { numerator: 3, denominator: 2 })",
+          "local_frames_per_sample": {
+            "denominator": "2",
+            "numerator": "1"
+          },
+          "origin": "Retained { definition: None, instance: InstancePath { node: NodeId(\"stage\"), repeats: [] }, kind: Node, gap_after: None }",
+          "sampling": {
+            "anchor": 1,
+            "local_at_anchor": {
+              "denominator": "2",
+              "numerator": "3"
+            },
+            "local_frames_per_sample": {
+              "denominator": "2",
+              "numerator": "1"
+            }
+          },
+          "treatments": {
+            "clip_gain": null,
+            "equalizer": {
+              "bass": 3000,
+              "middle": -6000,
+              "treble": 1500
+            },
+            "order": [
+              "equalizer"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "actual_incoming_retained",
+      "observation": {
+        "accounting": {
+          "active_frames": 266241,
+          "graph_resident": 266241,
+          "native_bound_units": 266241,
+          "node_count": 1,
+          "request_metadata": 0
+        },
+        "actual_eq_node_calls": 1,
+        "after_graph_drop": {
+          "active_frames": 0,
+          "request_metadata": 0
+        },
+        "cache_lookup": {
+          "actual_eq_node_calls": 1,
+          "id": 0,
+          "new_controller_work": 0,
+          "new_resident": 0,
+          "nodes": 1,
+          "same_filter": true,
+          "same_node": true
+        },
+        "controller_plan_work": 4097,
+        "incoming_context": {
+          "belongs_to_expected_plan": true,
+          "bound": {
+            "definition": null,
+            "envelope_scale": {
+              "denominator": "1",
+              "numerator": "1"
+            },
+            "instance": {
+              "node": "stage",
+              "repeats": []
+            },
+            "reference_at_anchor": {
+              "denominator": "1",
+              "numerator": "3"
+            },
+            "reference_step": {
+              "denominator": "1",
+              "numerator": "1"
+            },
+            "resolved": {
+              "lattice": {
+                "birth": null,
+                "clock": {
+                  "type": "project_root_round_even"
+                },
+                "frames_per_local_frame": {
+                  "denominator": "1",
+                  "numerator": "1"
+                },
+                "frames_per_sample": {
+                  "denominator": "1",
+                  "numerator": "1"
+                },
+                "gap_after": null,
+                "gap_birth": false,
+                "grid_origin": {
+                  "denominator": "1",
+                  "numerator": "0"
+                },
+                "grid_rule": "root_round_even",
+                "instance": {
+                  "node": "stage",
+                  "repeats": []
+                },
+                "local_duration": 8,
+                "local_support": {
+                  "end": {
+                    "denominator": "1",
+                    "numerator": "8"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  }
+                },
+                "origin": {
+                  "denominator": "1",
+                  "numerator": "0"
+                },
+                "work": 7
+              },
+              "resume": {
+                "local_boundary": {
+                  "denominator": "1",
+                  "numerator": "0"
+                },
+                "reference_local_delta": {
+                  "denominator": "1",
+                  "numerator": "3"
+                }
+              },
+              "work": 8
+            },
+            "support": {
+              "end": {
+                "denominator": "1",
+                "numerator": "8"
+              },
+              "start": {
+                "denominator": "1",
+                "numerator": "0"
+              }
+            }
+          },
+          "kind": "Retained",
+          "raw_domain": {
+            "kind": "Root",
+            "value": {
+              "belongs_to_expected_plan": true,
+              "definition": null,
+              "gap_after": null,
+              "instance": {
+                "node": "stage",
+                "repeats": []
+              },
+              "placement": {
+                "local_support": {
+                  "end": {
+                    "denominator": "1",
+                    "numerator": "8"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  }
+                },
+                "origin": {
+                  "denominator": "1",
+                  "numerator": "0"
+                },
+                "root_frames_per_local_frame": {
+                  "denominator": "1",
+                  "numerator": "1"
+                }
+              },
+              "root_extent": {
+                "end": {
+                  "denominator": "1",
+                  "numerator": "8"
+                },
+                "start": {
+                  "denominator": "1",
+                  "numerator": "0"
+                }
+              },
+              "root_samples": [
+                0,
+                8
+              ],
+              "visible_samples": [
+                0,
+                8
+              ]
+            }
+          },
+          "reference_at": {
+            "denominator": "1",
+            "numerator": "3"
+          },
+          "reference_step": {
+            "denominator": "1",
+            "numerator": "1"
+          },
+          "retained_lookup_work": 18
+        },
+        "native_filter_taps": 4097,
+        "observation": 1,
+        "requested_parent": 5,
+        "requested_stage": 0,
+        "result": {
+          "boundary": {
+            "before_stage": 0,
+            "matches_source_clock_at": true,
+            "matches_source_owner": true,
+            "owner": {
+              "belongs_to_expected_plan": true,
+              "definition": null,
+              "escalation_millidecibels": 0,
+              "explicit_tail_provider": false,
+              "gap_after": null,
+              "instance": {
+                "node": "group",
+                "repeats": []
+              },
+              "kind": "Node",
+              "local_at_observation": "Ok(ExactRatio { numerator: 3, denominator: 2 })",
+              "local_frames_per_sample": {
+                "denominator": "2",
+                "numerator": "1"
+              },
+              "origin": "Retained { definition: None, instance: InstancePath { node: NodeId(\"stage\"), repeats: [] }, kind: Node, gap_after: None }",
+              "sampling": {
+                "anchor": 1,
+                "local_at_anchor": {
+                  "denominator": "2",
+                  "numerator": "3"
+                },
+                "local_frames_per_sample": {
+                  "denominator": "2",
+                  "numerator": "1"
+                }
+              },
+              "treatments": {
+                "clip_gain": null,
+                "equalizer": {
+                  "bass": 3000,
+                  "middle": -6000,
+                  "treble": 1500
+                },
+                "order": [
+                  "equalizer"
+                ]
+              }
+            }
+          },
+          "context": {
+            "belongs_to_expected_plan": true,
+            "bound": {
+              "definition": null,
+              "envelope_scale": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "instance": {
+                "node": "stage",
+                "repeats": []
+              },
+              "reference_at_anchor": {
+                "denominator": "1",
+                "numerator": "3"
+              },
+              "reference_step": {
+                "denominator": "1",
+                "numerator": "1"
+              },
+              "resolved": {
+                "lattice": {
+                  "birth": null,
+                  "clock": {
+                    "type": "project_root_round_even"
+                  },
+                  "frames_per_local_frame": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  },
+                  "frames_per_sample": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  },
+                  "gap_after": null,
+                  "gap_birth": false,
+                  "grid_origin": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "grid_rule": "root_round_even",
+                  "instance": {
+                    "node": "stage",
+                    "repeats": []
+                  },
+                  "local_duration": 8,
+                  "local_support": {
+                    "end": {
+                      "denominator": "1",
+                      "numerator": "8"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "0"
+                    }
+                  },
+                  "origin": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "work": 7
+                },
+                "resume": {
+                  "local_boundary": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "reference_local_delta": {
+                    "denominator": "1",
+                    "numerator": "3"
+                  }
+                },
+                "work": 8
+              },
+              "support": {
+                "end": {
+                  "denominator": "1",
+                  "numerator": "8"
+                },
+                "start": {
+                  "denominator": "1",
+                  "numerator": "0"
+                }
+              }
+            },
+            "kind": "Retained",
+            "raw_domain": {
+              "kind": "Root",
+              "value": {
+                "belongs_to_expected_plan": true,
+                "definition": null,
+                "gap_after": null,
+                "instance": {
+                  "node": "stage",
+                  "repeats": []
+                },
+                "placement": {
+                  "local_support": {
+                    "end": {
+                      "denominator": "1",
+                      "numerator": "8"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "0"
+                    }
+                  },
+                  "origin": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "root_frames_per_local_frame": {
+                    "denominator": "1",
+                    "numerator": "1"
+                  }
+                },
+                "root_extent": {
+                  "end": {
+                    "denominator": "1",
+                    "numerator": "8"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  }
+                },
+                "root_samples": [
+                  0,
+                  8
+                ],
+                "visible_samples": [
+                  0,
+                  8
+                ]
+              }
+            },
+            "reference_at": {
+              "denominator": "1",
+              "numerator": "3"
+            },
+            "reference_step": {
+              "denominator": "1",
+              "numerator": "1"
+            },
+            "retained_lookup_work": 18
+          },
+          "filter_present": true,
+          "id": 0,
+          "incoming_retained_same_arc": true,
+          "parent": 5,
+          "tiles_empty": true
+        },
+        "source_owner": {
+          "belongs_to_expected_plan": true,
+          "definition": null,
+          "escalation_millidecibels": 0,
+          "explicit_tail_provider": false,
+          "gap_after": null,
+          "instance": {
+            "node": "group",
+            "repeats": []
+          },
+          "kind": "Node",
+          "local_at_observation": "Ok(ExactRatio { numerator: 3, denominator: 2 })",
+          "local_frames_per_sample": {
+            "denominator": "2",
+            "numerator": "1"
+          },
+          "origin": "Retained { definition: None, instance: InstancePath { node: NodeId(\"stage\"), repeats: [] }, kind: Node, gap_after: None }",
+          "sampling": {
+            "anchor": 1,
+            "local_at_anchor": {
+              "denominator": "2",
+              "numerator": "3"
+            },
+            "local_frames_per_sample": {
+              "denominator": "2",
+              "numerator": "1"
+            }
+          },
+          "treatments": {
+            "clip_gain": null,
+            "equalizer": {
+              "bass": 3000,
+              "middle": -6000,
+              "treble": 1500
+            },
+            "order": [
+              "equalizer"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "actual_hidden_domain",
+      "observation": {
+        "accounting": {
+          "active_frames": 266241,
+          "graph_resident": 266241,
+          "native_bound_units": 266241,
+          "node_count": 1,
+          "request_metadata": 0
+        },
+        "actual_eq_node_calls": 1,
+        "after_graph_drop": {
+          "active_frames": 0,
+          "request_metadata": 0
+        },
+        "cache_lookup": {
+          "actual_eq_node_calls": 1,
+          "id": 0,
+          "new_controller_work": 0,
+          "new_resident": 0,
+          "nodes": 1,
+          "same_filter": true,
+          "same_node": true
+        },
+        "controller_plan_work": 4137,
+        "incoming_context": {
+          "kind": "Domain",
+          "value": {
+            "belongs_to_expected_plan": true,
+            "definition": null,
+            "gap_after": null,
+            "instance": {
+              "node": "stage",
+              "repeats": []
+            },
+            "placement": {
+              "local_support": {
+                "end": {
+                  "denominator": "1",
+                  "numerator": "8"
+                },
+                "start": {
+                  "denominator": "1",
+                  "numerator": "0"
+                }
+              },
+              "origin": {
+                "denominator": "1",
+                "numerator": "0"
+              },
+              "root_frames_per_local_frame": {
+                "denominator": "1",
+                "numerator": "1"
+              }
+            },
+            "root_extent": {
+              "end": {
+                "denominator": "1",
+                "numerator": "8"
+              },
+              "start": {
+                "denominator": "1",
+                "numerator": "0"
+              }
+            },
+            "root_samples": [
+              0,
+              8
+            ],
+            "visible_samples": [
+              0,
+              8
+            ]
+          }
+        },
+        "native_filter_taps": 4097,
+        "observation": 3,
+        "requested_parent": 5,
+        "requested_stage": 0,
+        "result": {
+          "boundary": {
+            "before_stage": 0,
+            "matches_source_clock_at": true,
+            "matches_source_owner": true,
+            "owner": {
+              "belongs_to_expected_plan": true,
+              "definition": null,
+              "escalation_millidecibels": 0,
+              "explicit_tail_provider": false,
+              "gap_after": null,
+              "instance": {
+                "node": "group",
+                "repeats": []
+              },
+              "kind": "Node",
+              "local_at_observation": "Ok(ExactRatio { numerator: 3, denominator: 2 })",
+              "local_frames_per_sample": {
+                "denominator": "2",
+                "numerator": "1"
+              },
+              "origin": "Current",
+              "sampling": {
+                "anchor": 3,
+                "local_at_anchor": {
+                  "denominator": "2",
+                  "numerator": "3"
+                },
+                "local_frames_per_sample": {
+                  "denominator": "2",
+                  "numerator": "1"
+                }
+              },
+              "treatments": {
+                "clip_gain": null,
+                "equalizer": {
+                  "bass": 3000,
+                  "middle": -6000,
+                  "treble": 1500
+                },
+                "order": [
+                  "equalizer"
+                ]
+              }
+            }
+          },
+          "context": {
+            "kind": "Domain",
+            "value": {
+              "belongs_to_expected_plan": true,
+              "definition": null,
+              "gap_after": null,
+              "instance": {
+                "node": "stage",
+                "repeats": []
+              },
+              "placement": null,
+              "root_extent": {
+                "end": {
+                  "denominator": "1",
+                  "numerator": "8"
+                },
+                "start": {
+                  "denominator": "1",
+                  "numerator": "0"
+                }
+              },
+              "root_samples": [
+                0,
+                8
+              ],
+              "visible_samples": [
+                0,
+                8
+              ]
+            }
+          },
+          "filter_present": true,
+          "id": 0,
+          "incoming_retained_same_arc": null,
+          "parent": 5,
+          "tiles_empty": true
+        },
+        "source_owner": {
+          "belongs_to_expected_plan": true,
+          "definition": null,
+          "escalation_millidecibels": 0,
+          "explicit_tail_provider": false,
+          "gap_after": null,
+          "instance": {
+            "node": "group",
+            "repeats": []
+          },
+          "kind": "Node",
+          "local_at_observation": "Ok(ExactRatio { numerator: 3, denominator: 2 })",
+          "local_frames_per_sample": {
+            "denominator": "2",
+            "numerator": "1"
+          },
+          "origin": "Current",
+          "sampling": {
+            "anchor": 3,
+            "local_at_anchor": {
+              "denominator": "2",
+              "numerator": "3"
+            },
+            "local_frames_per_sample": {
+              "denominator": "2",
+              "numerator": "1"
+            }
+          },
+          "treatments": {
+            "clip_gain": null,
+            "equalizer": {
+              "bass": 3000,
+              "middle": -6000,
+              "treble": 1500
+            },
+            "order": [
+              "equalizer"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "excluded": [
+    "private Plan provider/play fields: parallel Plan direct-input oracle",
+    "real media",
+    "allocation-peak proof",
+    "synthetic empty-support/stub provider claims"
+  ],
+  "producer": "actual StageAudio::eq_node returned index and actual graph.nodes[index]",
+  "runtime_source_manifest_sha256": "b03a609da762898fc9522107077a5262aed52ba79d36950ef91653baa6325c52",
+  "schema": "authored-native-node-baseline-v1",
+  "setup": "fixtures and observation queries occur outside measured WorkControl; retained uses actual legacy input and raw probe; Repeat uses frozen ordinary Tone document with only live voice EQ recipe injection",
+  "tone_renders": [
+    {
+      "name": "root_tone_inside",
+      "value": {
+        "accounting": {
+          "active_frames": 0,
+          "controller_plan_work": 4268,
+          "prepared_frames": 6657,
+          "prepared_stages": 1,
+          "request_metadata": 0
+        },
+        "output": {
+          "dependencies": {},
+          "exhausted": [],
+          "pcm_bits": [
+            [
+              1047323891,
+              1047323891
+            ],
+            [
+              1047775527,
+              1047775527
+            ],
+            [
+              1048178710,
+              1048178710
+            ],
+            [
+              1048531246,
+              1048531246
+            ],
+            [
+              1048703238,
+              1048703238
+            ],
+            [
+              1048824870,
+              1048824870
+            ],
+            [
+              1048917407,
+              1048917407
+            ],
+            [
+              1048980154,
+              1048980154
+            ]
+          ],
+          "relative_depth": 2,
+          "start": 128,
+          "suppressed": []
+        },
+        "provider_reads": 0
+      }
+    },
+    {
+      "name": "root_tone_suppressed_end",
+      "value": {
+        "accounting": {
+          "active_frames": 0,
+          "controller_plan_work": 4268,
+          "prepared_frames": 6657,
+          "prepared_stages": 1,
+          "request_metadata": 0
+        },
+        "output": {
+          "dependencies": {},
+          "exhausted": [],
+          "pcm_bits": [
+            [
+              990517918,
+              990517918
+            ],
+            [
+              994823930,
+              994823930
+            ],
+            [
+              998597309,
+              998597309
+            ],
+            [
+              1000520234,
+              1000520234
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "relative_depth": 2,
+          "start": 508,
+          "suppressed": [
+            [
+              512,
+              516
+            ]
+          ]
+        },
+        "provider_reads": 0
+      }
+    },
+    {
+      "name": "repeat_tone",
+      "value": {
+        "accounting": {
+          "active_frames": 0,
+          "controller_plan_work": 9189,
+          "prepared_frames": 12304,
+          "prepared_stages": 4,
+          "request_metadata": 0
+        },
+        "output": {
+          "dependencies": {},
+          "exhausted": [],
+          "pcm_bits": [
+            [
+              3141501914,
+              3141501914
+            ],
+            [
+              1008513254,
+              1008513254
+            ],
+            [
+              1018617867,
+              1018617867
+            ],
+            [
+              3142180421,
+              3142180421
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              1022121877,
+              1022121877
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              3141501914,
+              3141501914
+            ],
+            [
+              1008513254,
+              1008513254
+            ],
+            [
+              1018617867,
+              1018617867
+            ],
+            [
+              3142180421,
+              3142180421
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ],
+          "relative_depth": 2,
+          "start": 0,
+          "suppressed": [
+            [
+              8,
+              10
+            ],
+            [
+              14,
+              16
+            ]
+          ]
+        },
+        "provider_reads": 0
+      }
+    }
+  ],
+  "variant": "main-inherited",
+  "work_semantics": "OLD controller node work includes canonical direct membership + capture + actual probe + retained membership (if any) + native FILTER_TAPS; new additional metadata work must be compared separately"
+}

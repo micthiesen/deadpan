@@ -209,6 +209,11 @@ impl<'plan, I, L> AdmittedAudioOwnerInputCapture<'plan, I, L> {
         self.forwarded
     }
 }
+impl<'plan> AdmittedAudioOwnerInputCapture<'plan, (), ()> {
+    pub(super) fn unmetered(self) -> AudioOwnerInputCapture<'plan> {
+        self.value
+    }
+}
 // Query-only guard. Actual parent/query value drops before its independent lease.
 pub struct AdmittedAudioOwnerInputCandidates<'context, 'plan, I, L> {
     value: Option<AudioOwnerInputCandidates<'context, 'plan>>,
@@ -277,31 +282,102 @@ impl<'context, 'plan, I: Copy + Eq, L> AdmittedAudioOwnerInputCandidates<'contex
         };
         let (input, canonical, additional) = {
             let mut budget = tracked::Budget::new(&mut local, admission);
-            let input = outer::<_, A>(match candidates.parent {
-                Parent::Root(plan) => capture_observed_admitted(
-                    plan,
-                    observed,
-                    candidates.at,
-                    None,
-                    query_work,
-                    &mut budget,
-                ),
-                Parent::Domain(domain) => capture_observed_admitted(
-                    domain.plan,
-                    observed,
-                    candidates.at,
-                    Some(&domain.seed),
-                    query_work,
-                    &mut budget,
-                ),
-            })?;
+            let input = outer::<_, A>(capture_in_parent(
+                &candidates.parent,
+                observed,
+                candidates.at,
+                query_work,
+                &mut budget,
+            ))?;
             (input, budget.canonical_used, budget.additional_used)
         };
+        self.finish_capture(
+            input,
+            query_work,
+            capture_limit - local.remaining,
+            (canonical, additional),
+            admission,
+        )
+    }
+
+    /// Direct membership is sealed inside Plan: the observed play and affine
+    /// clock must satisfy the exact legacy same_at comparison, not a public
+    /// treatment-owner or instance-key approximation.
+    pub(super) fn capture_observed_owner<
+        A: crate::AudioSoundContextAdmission<Issuer = I, Lease = L>,
+    >(
+        mut self,
+        owner: &AudioOwnerClock<'_>,
+        admission: &mut A,
+    ) -> Result<AdmittedAudioOwnerInputCapture<'plan, I, L>, A::Error> {
+        use crate::plan::audio_owners::admission::{self as tracked, outer};
+        self.validate(admission)?;
+        let candidates = self.value.take().expect("unconsumed query");
+        let query_work = candidates.query.work();
+        let available = candidates
+            .limits
+            .maximum_work
+            .checked_sub(query_work)
+            .ok_or(PlanError::AudioQueryLimit("candidate query work"))?;
+        let mut local = Budget {
+            remaining: available,
+            lookup: LookupStats::default(),
+        };
+        let (input, canonical, additional) = {
+            let mut budget = tracked::Budget::new(&mut local, admission);
+            let input = outer::<_, A>((|| {
+                let mut observed = None;
+                budget.additional(1)?;
+                if let Some(span) = candidates.query.spans().first() {
+                    for candidate in span.owners() {
+                        budget.additional(1)?;
+                        if candidate.same_at(owner, candidates.at) {
+                            observed = Some(candidate);
+                            break;
+                        }
+                    }
+                }
+                let observed = observed.ok_or(PlanError::InvalidPlan(
+                    "audio input owner is not current at sample",
+                ))?;
+                // Selection is new admitted work, not a replacement for Q or
+                // canonical capture C. The source Input's total includes it.
+                let before_capture = query_work
+                    .checked_add(budget.additional_used)
+                    .ok_or(TimeError::Overflow)?;
+                capture_in_parent(
+                    &candidates.parent,
+                    observed,
+                    candidates.at,
+                    before_capture,
+                    &mut budget,
+                )
+            })())?;
+            (input, budget.canonical_used, budget.additional_used)
+        };
+        self.finish_capture(
+            input,
+            query_work,
+            available - local.remaining,
+            (canonical, additional),
+            admission,
+        )
+    }
+
+    fn finish_capture<A: crate::AudioSoundContextAdmission<Issuer = I, Lease = L>>(
+        &self,
+        input: crate::plan::audio_owners::admission::Owned<AudioOwnerInput<'plan>, I, L>,
+        query_work: usize,
+        capture_work: usize,
+        work: (usize, usize),
+        admission: &A,
+    ) -> Result<AdmittedAudioOwnerInputCapture<'plan, I, L>, A::Error> {
+        let (canonical, additional) = work;
         let result = AdmittedAudioOwnerInputCapture {
             value: AudioOwnerInputCapture {
                 input: Some(input.value),
                 query_work,
-                capture_work: capture_limit - local.remaining,
+                capture_work,
             },
             query_canonical: self.canonical,
             query_additional: self.additional,
@@ -319,6 +395,9 @@ impl<'context, 'plan, I: Copy + Eq, L> AdmittedAudioOwnerInputCandidates<'contex
                 .capture_canonical
                 .checked_add(result.capture_additional)
                 != Some(result.capture_work())
+            || result
+                .input()
+                .is_some_and(|input| input.work() != result.work())
         {
             return Err(PlanError::InvalidPlan("capture work provenance mismatch").into());
         }
@@ -345,6 +424,31 @@ impl<'context, 'plan, I: Copy + Eq, L> AdmittedAudioOwnerInputCandidates<'contex
         };
         self.validate(admission)?;
         Ok(result)
+    }
+}
+
+fn capture_in_parent<'plan, A: crate::AudioSoundContextAdmission>(
+    parent: &Parent<'_, 'plan>,
+    observed: &AudioOwnerClock<'plan>,
+    at: AudioSample,
+    query_work: usize,
+    budget: &mut crate::plan::audio_owners::admission::Budget<'_, A>,
+) -> crate::plan::audio_owners::admission::Result<
+    crate::plan::audio_owners::admission::Owned<AudioOwnerInput<'plan>, A::Issuer, A::Lease>,
+    A,
+> {
+    match parent {
+        Parent::Root(plan) => {
+            capture_observed_admitted(plan, observed, at, None, query_work, budget)
+        }
+        Parent::Domain(domain) => capture_observed_admitted(
+            domain.plan,
+            observed,
+            at,
+            Some(&domain.seed),
+            query_work,
+            budget,
+        ),
     }
 }
 impl RenderPlan {

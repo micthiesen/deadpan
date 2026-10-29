@@ -4,13 +4,24 @@ use crate::stages::authored_eq::eq_admission_fixture::checks::{self, Harness, St
 struct Authored;
 
 impl<'plan> Harness<'plan> for Authored {
-    type Graph<'work> = Graph<'plan, 'plan>;
+    type Graph<'work> = Graph<'plan, 'plan, 'work>;
+
+    fn metadata_units(plan: &'plan Arc<RenderPlan>) -> u64 {
+        super::node_admission_tests::metadata_units(plan)
+    }
+
+    fn expected_tile_prepared_frames() -> u64 {
+        // The independently admitted temporary boundary refuses before the
+        // filter is taken or any tile PCM workspace is reserved.
+        0
+    }
 
     fn graph<'work>(plan: &'plan RenderPlan) -> Self::Graph<'work> {
         Graph {
             plan,
             nodes: Vec::new(),
             resident: 0,
+            node_capacity_frames: 0,
             skip: &[],
         }
     }

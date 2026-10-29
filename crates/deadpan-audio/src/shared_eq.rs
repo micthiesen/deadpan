@@ -10,7 +10,7 @@ use super::shared_mix::{
 use super::*;
 
 #[path = "shared_eq/node_capacity.rs"]
-mod node_capacity;
+pub(super) mod node_capacity;
 #[path = "shared_eq/node_description.rs"]
 mod node_description;
 

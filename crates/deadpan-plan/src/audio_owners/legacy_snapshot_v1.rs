@@ -444,3 +444,6 @@ mod admitted;
 
 #[path = "legacy_snapshot_v1/wide_baseline.rs"]
 pub(in crate::plan) mod wide_baseline;
+
+#[path = "legacy_snapshot_v1/direct_input_baseline.rs"]
+pub(in crate::plan) mod direct_input_baseline;

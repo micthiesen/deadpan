@@ -363,13 +363,31 @@ impl RenderPlan {
         at: AudioSample,
         limits: AudioQueryLimits,
     ) -> Result<AudioOwnerInput<'_>, PlanError> {
+        let mut admission = super::audio_owners::admission::Unmetered;
+        let capture = self.audio_owner_input_admitted(owner, at, limits, &mut admission)?;
+        Ok(capture
+            .unmetered()
+            .into_input()
+            .expect("direct owner capture"))
+    }
+
+    /// Resolve the same exact current owner observation while admitting its
+    /// membership query, comparison work and complete source input capture.
+    pub fn audio_owner_input_admitted<A: AudioSoundContextAdmission>(
+        &self,
+        owner: &AudioOwnerClock<'_>,
+        at: AudioSample,
+        limits: AudioQueryLimits,
+        admission: &mut A,
+    ) -> Result<AdmittedAudioOwnerInputCapture<'_, A::Issuer, A::Lease>, A::Error> {
         limits.validate()?;
         if !owner.belongs_to(self) {
-            return Err(PlanError::InvalidPlan("foreign audio input owner"));
+            return Err(PlanError::InvalidPlan("foreign audio input owner").into());
         }
-        let end = AudioSample(at.0.checked_add(1).ok_or(TimeError::Overflow)?);
-        let query = self.audio_gain_owners(at..end, limits)?;
-        resolve_input(self, owner, at, limits, query, None)
+        // The checked at+1 and actual gain-owner query retain their existing
+        // order inside the shared candidate kernel after these direct checks.
+        self.audio_owner_input_candidates_at_admitted(at, limits, admission)?
+            .capture_observed_owner(owner, admission)
     }
 }
 
@@ -383,40 +401,30 @@ impl<'plan> AudioDomain<'plan> {
         at: AudioSample,
         limits: AudioQueryLimits,
     ) -> Result<AudioOwnerInput<'plan>, PlanError> {
+        let mut admission = super::audio_owners::admission::Unmetered;
+        let capture = self.owner_input_admitted(owner, at, limits, &mut admission)?;
+        Ok(capture
+            .unmetered()
+            .into_input()
+            .expect("direct owner capture"))
+    }
+
+    /// Admit exact owner membership and complete capture on this physical
+    /// domain's own seed, including meaningful hidden support.
+    pub fn owner_input_admitted<A: AudioSoundContextAdmission>(
+        &self,
+        owner: &AudioOwnerClock<'_>,
+        at: AudioSample,
+        limits: AudioQueryLimits,
+        admission: &mut A,
+    ) -> Result<AdmittedAudioOwnerInputCapture<'plan, A::Issuer, A::Lease>, A::Error> {
         limits.validate()?;
         if !owner.belongs_to(self.plan) {
-            return Err(PlanError::InvalidPlan("foreign audio input owner"));
+            return Err(PlanError::InvalidPlan("foreign audio input owner").into());
         }
-        let end = AudioSample(at.0.checked_add(1).ok_or(TimeError::Overflow)?);
-        let query = self.gain_owners(at..end, limits)?;
-        resolve_input(self.plan, owner, at, limits, query, Some(&self.seed))
+        self.owner_input_candidates_at_admitted(at, limits, admission)?
+            .capture_observed_owner(owner, admission)
     }
-}
-
-fn resolve_input<'plan>(
-    plan: &'plan RenderPlan,
-    owner: &AudioOwnerClock<'_>,
-    at: AudioSample,
-    limits: AudioQueryLimits,
-    query: super::AudioOwnerQuery<'plan>,
-    context: Option<&super::audio_domain::AudioWalkSeed>,
-) -> Result<AudioOwnerInput<'plan>, PlanError> {
-    let observed = query
-        .spans()
-        .first()
-        .and_then(|span| {
-            span.owners()
-                .iter()
-                .find(|candidate| candidate.same_at(owner, at))
-        })
-        .ok_or(PlanError::InvalidPlan(
-            "audio input owner is not current at sample",
-        ))?;
-    let mut budget = Budget {
-        remaining: limits.maximum_work - query.work(),
-        lookup: LookupStats::default(),
-    };
-    capture_observed(plan, observed, at, context, query.work(), &mut budget)
 }
 
 /// Capture one member of the actual checked owner query. Both the ordinary
@@ -540,6 +548,10 @@ fn capture_observed_admitted<'plan, A: crate::AudioSoundContextAdmission>(
         })
     })
 }
+
+#[cfg(test)]
+#[path = "audio_owner_input/direct_admission_tests.rs"]
+mod direct_admission_tests;
 
 #[cfg(test)]
 mod capture_baseline_branding_tests {

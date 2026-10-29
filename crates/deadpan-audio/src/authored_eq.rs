@@ -6,6 +6,10 @@
 #[path = "authored_eq/wide_query_tests.rs"]
 mod wide_query_tests;
 
+#[cfg(test)]
+#[path = "authored_eq/legacy_node_baseline.rs"]
+mod legacy_node_baseline;
+
 use deadpan_core::AudioTreatmentStage;
 use deadpan_dsp::{
     FINITE_FILTER_INPUT_FRAMES as INPUT, FINITE_FILTER_OUTPUT_FRAMES as OUTPUT,
@@ -13,10 +17,16 @@ use deadpan_dsp::{
 };
 use deadpan_plan::{
     AudioOwnerClock, AudioOwnerQuery, AudioOwnerRetainedInput, AudioOwnerSupport,
-    AudioTreatmentBoundary, SharedAudioOwnerRetainedInput,
+    SharedAudioOwnerRetainedInput,
 };
 
 use super::*;
+
+#[cfg(test)]
+#[path = "authored_eq/node_admission_tests.rs"]
+mod node_admission_tests;
+#[path = "authored_eq/node_description.rs"]
+mod node_description;
 
 #[cfg(test)]
 #[path = "authored_eq/admission_tests.rs"]
@@ -369,24 +379,47 @@ struct WideBlock {
     relative_depth: usize,
 }
 
-struct Node<'plan> {
+struct Node<'plan, 'work> {
     parent: usize,
     context: Context<'plan>,
-    boundary: AudioTreatmentBoundary<'plan>,
+    boundary: deadpan_plan::AdmittedAudioTreatmentBoundary<
+        'plan,
+        sound_context_admission::Issuer<'work>,
+        sound_context_admission::Lease<'work>,
+    >,
     filter: Option<crate::Equalizer>,
     tiles: BTreeMap<i64, Arc<WideBlock>>,
 }
 
-struct Graph<'plan, 'skip> {
+struct Graph<'plan, 'skip, 'work> {
     plan: &'plan RenderPlan,
-    nodes: Vec<Node<'plan>>,
+    nodes: Vec<Node<'plan, 'work>>,
     resident: u64,
+    node_capacity_frames: u64,
     skip: &'skip [authored_gain::OwnerIdentity],
 }
 
-impl Graph<'_, '_> {
+impl Graph<'_, '_, '_> {
     fn skips(&self, owner: &AudioOwnerClock<'_>) -> bool {
         !self.skip.is_empty() && self.skip.contains(&authored_gain::identity(owner))
+    }
+}
+
+// Borrows the local admitted copy, so recursive Graph growth cannot invalidate
+// the stop. These are the two predicates the old owned boundary exposed here.
+#[derive(Clone, Copy)]
+struct StopView<'a, 'plan> {
+    owner: &'a AudioOwnerClock<'plan>,
+    before: usize,
+}
+
+impl StopView<'_, '_> {
+    fn matches(self, owner: &AudioOwnerClock<'_>) -> bool {
+        self.owner.matches_treatment_owner(owner)
+    }
+
+    fn before_stage(self) -> usize {
+        self.before
     }
 }
 
@@ -394,7 +427,7 @@ impl Graph<'_, '_> {
 struct Program<'a, 'plan> {
     context: &'a Context<'plan>,
     // None is the complete context; Some stops before this owner's EQ.
-    stop: Option<&'a AudioTreatmentBoundary<'plan>>,
+    stop: Option<StopView<'a, 'plan>>,
     parent: usize,
     depth: usize,
 }
@@ -422,6 +455,7 @@ impl StageAudio {
             plan: &plan,
             nodes: Vec::new(),
             resident: 0,
+            node_capacity_frames: 0,
             skip,
         };
         let reservation = u64::from(frames) * 3;
@@ -470,14 +504,14 @@ impl StageAudio {
         result
     }
 
-    fn read_eq_program<'plan>(
+    fn read_eq_program<'plan, 'work>(
         &mut self,
         provider: &mut impl AudioSourceProvider,
-        graph: &mut Graph<'plan, '_>,
+        graph: &mut Graph<'plan, '_, 'work>,
         program: Program<'_, 'plan>,
         start: AudioSample,
         frames: u32,
-        control: WorkControl<'_>,
+        control: WorkControl<'work>,
     ) -> Result<WideBlock, StageAudioError> {
         control.check()?;
         if frames == 0 || frames > MAX_OUTPUT_FRAMES {
@@ -658,7 +692,7 @@ impl StageAudio {
                         let until = if index == first {
                             program.stop.map_or_else(
                                 || owner.treatments().map_or(0, |recipe| recipe.order().len()),
-                                AudioTreatmentBoundary::before_stage,
+                                StopView::before_stage,
                             )
                         } else {
                             owner.treatments().map_or(0, |recipe| recipe.order().len())
@@ -681,14 +715,14 @@ impl StageAudio {
         result
     }
 
-    fn eq_node<'plan>(
+    fn eq_node<'plan, 'work>(
         &mut self,
-        graph: &mut Graph<'plan, '_>,
+        graph: &mut Graph<'plan, '_, 'work>,
         program: Program<'_, 'plan>,
         owner: &AudioOwnerClock<'plan>,
         at: AudioSample,
         stage: usize,
-        control: WorkControl<'_>,
+        control: WorkControl<'work>,
     ) -> Result<usize, StageAudioError> {
         if let Some(index) = graph.nodes.iter().position(|node| {
             node.parent == program.parent
@@ -700,52 +734,147 @@ impl StageAudio {
         if graph.nodes.len() >= self.limits.maximum_prepared_stages as usize {
             return Err(StageAudioError::Limit("EQ owner count"));
         }
-        let context = program
-            .context
-            .owner_context(graph.plan, owner, at, control)?;
-        let recipe = owner
-            .treatments()
-            .and_then(|recipe| recipe.equalizer())
-            .ok_or(PlanError::InvalidPlan("EQ recipe absent"))?;
-        let boundary = owner.treatment_boundary(stage)?;
+        let mut description = {
+            let mut admission = sound_context_admission::Admission::new(self, control);
+            node_description::describe_admitted(
+                graph.plan,
+                node_description::Request {
+                    incoming: program.context,
+                    owner,
+                    at,
+                    stage,
+                },
+                control,
+                &mut admission,
+            )?
+        };
+        let original_frames = description
+            .original
+            .as_ref()
+            .map(|value| {
+                value
+                    .leases()
+                    .into_iter()
+                    .flatten()
+                    .try_fold(0_u64, |sum, lease| {
+                        sum.checked_add(lease.frames())
+                            .ok_or(StageAudioError::Range)
+                    })
+            })
+            .transpose()?
+            .unwrap_or(0);
+        let boundary_frames = description
+            .boundary
+            .lease()
+            .map_or(0, sound_context_admission::Lease::frames);
+        let metadata = original_frames
+            .checked_add(boundary_frames)
+            .ok_or(StageAudioError::Range)?;
+        let expected_issuer = sound_context_admission::issuer(control);
+        if description.boundary.issuer() != expected_issuer
+            || description
+                .original
+                .as_ref()
+                .is_some_and(|value| value.issuer() != expected_issuer)
+        {
+            return Err(PlanError::AudioMetadataIssuerMismatch.into());
+        }
         let resident = u64::try_from(crate::Equalizer::preparation_bytes_bound())
             .map_err(|_| StageAudioError::Range)?
             .div_ceil(std::mem::size_of::<[f32; 2]>() as u64);
+        // Keep compilation in its old position, after metadata resolution.
+        control.spend_plan_work(deadpan_dsp::FINITE_FILTER_TAPS)?;
+        let maximum_nodes = self.limits.maximum_prepared_stages as usize;
+        let mut capacity = shared_eq::node_capacity::prepare(
+            self,
+            &graph.nodes,
+            graph.node_capacity_frames,
+            maximum_nodes,
+            control,
+        )?;
+        let retained = resident
+            .checked_add(metadata)
+            .and_then(|value| value.checked_add(capacity.new_frames()))
+            .ok_or(StageAudioError::Range)?;
         let next_active = self
             .active_frames
-            .checked_add(resident)
+            .checked_sub(capacity.retired_frames())
+            .and_then(|value| value.checked_add(retained))
             .ok_or(StageAudioError::Range)?;
         let next_resident = graph
             .resident
-            .checked_add(resident)
+            .checked_sub(capacity.retired_frames())
+            .and_then(|value| value.checked_add(retained))
             .ok_or(StageAudioError::Range)?;
-        // Compilation is fixed work, independent of a tile's sample count.
-        // Charge it even when another preparation compiled this same owner.
-        control.spend_plan_work(deadpan_dsp::FINITE_FILTER_TAPS)?;
+        let next_capacity_frames = capacity.capacity_frames_after();
         self.make_room(resident, false, control)?;
-        let filter = crate::Equalizer::new(recipe, control.cancelled)?;
+        let filter = crate::Equalizer::new(description.recipe, control.cancelled)?;
         control.check()?;
-        graph.nodes.push(Node {
-            parent: program.parent,
-            context,
-            boundary,
-            filter: Some(filter),
-            tiles: BTreeMap::new(),
+        capacity.allocate()?;
+        capacity.prepay_moves(control)?;
+        capacity.validate_current(&graph.nodes, graph.node_capacity_frames)?;
+        control.check()?;
+        let node_description::Description { values, original } = &mut description;
+        let context_transfer = {
+            let mut admission = sound_context_admission::Admission::new(self, control);
+            deadpan_plan::preflight_context_transfer(original.as_mut(), None, &mut admission)?
+        };
+        let [plan, core, buffer, sound] = context_transfer.leases();
+        let transfer = sound_context_admission::preflight_transfer(
+            control,
+            sound_context_admission::TransferLeases {
+                original: [plan, core, buffer],
+                sound,
+                key: None,
+                boundary: values
+                    .as_ref()
+                    .expect("unpublished Authored description")
+                    .boundary
+                    .lease(),
+                capacity: capacity.lease(),
+            },
+        )?;
+        let id = graph.nodes.len();
+        context_transfer.commit(|plan, core, buffer, sound| {
+            let node_description::DescriptionValues {
+                context,
+                boundary,
+                recipe: _,
+            } = values.take().expect("unpublished Authored description");
+            capacity.publish(
+                &mut graph.nodes,
+                Node {
+                    parent: program.parent,
+                    context,
+                    boundary,
+                    filter: Some(filter),
+                    tiles: BTreeMap::new(),
+                },
+            );
+            // The old allocation has physically dropped before its charge retires.
+            self.active_frames = next_active;
+            graph.resident = next_resident;
+            graph.node_capacity_frames = next_capacity_frames;
+            graph.nodes[id].boundary.with_lease_mut(|boundary| {
+                transfer.commit(sound_context_admission::TransferLeasesMut {
+                    original: [plan, core, buffer],
+                    sound,
+                    key: None,
+                    boundary,
+                    capacity: capacity.lease_mut(),
+                });
+            });
         });
-        // The constructor is synchronous. Admit its complete peak first, then
-        // retain that same bound while this graph owns the published filter.
-        self.active_frames = next_active;
-        graph.resident = next_resident;
-        Ok(graph.nodes.len() - 1)
+        Ok(id)
     }
 
-    fn eq_tile(
+    fn eq_tile<'plan, 'work>(
         &mut self,
         provider: &mut impl AudioSourceProvider,
-        graph: &mut Graph<'_, '_>,
+        graph: &mut Graph<'plan, '_, 'work>,
         id: usize,
         tile: i64,
-        control: WorkControl<'_>,
+        control: WorkControl<'work>,
         depth: usize,
     ) -> Result<Arc<WideBlock>, StageAudioError> {
         control.check()?;
@@ -765,7 +894,19 @@ impl StageAudio {
         let begin = tile.checked_sub(RADIUS as i64).ok_or(TimeError::Overflow)?;
         let end = begin.checked_add(INPUT as i64).ok_or(TimeError::Overflow)?;
         let context = graph.nodes[id].context.clone();
-        let boundary = graph.nodes[id].boundary.clone();
+        let boundary = {
+            let mut admission = sound_context_admission::Admission::new(self, control);
+            let boundary = &graph.nodes[id].boundary;
+            boundary.owner().treatment_boundary_admitted(
+                boundary.before_stage(),
+                control.query_limits()?,
+                &mut admission,
+            )?
+        };
+        let stop = StopView {
+            owner: boundary.owner(),
+            before: boundary.before_stage(),
+        };
         let mut filter = graph.nodes[id]
             .filter
             .take()
@@ -789,7 +930,7 @@ impl StageAudio {
                         graph,
                         Program {
                             context: &context,
-                            stop: Some(&boundary),
+                            stop: Some(stop),
                             parent: id,
                             depth,
                         },

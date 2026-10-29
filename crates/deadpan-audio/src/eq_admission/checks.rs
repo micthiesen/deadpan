@@ -14,6 +14,10 @@ pub(in crate::stages) trait Harness<'plan> {
         0
     }
 
+    fn expected_tile_prepared_frames() -> u64 {
+        (deadpan_dsp::FINITE_FILTER_INPUT_FRAMES + deadpan_dsp::FINITE_FILTER_OUTPUT_FRAMES) as u64
+    }
+
     fn graph<'work>(plan: &'plan RenderPlan) -> Self::Graph<'work>;
     fn node<'work>(
         renderer: &mut StageAudio,
@@ -111,8 +115,7 @@ pub(in crate::stages) fn actual_node_requires_full_eq_native_headroom_and_retain
         assert_eq!(renderer.active_frames, BASE + combined);
         assert_eq!(
             work.borrow().prepared_frames,
-            (deadpan_dsp::FINITE_FILTER_INPUT_FRAMES + deadpan_dsp::FINITE_FILTER_OUTPUT_FRAMES)
-                as u64
+            H::expected_tile_prepared_frames()
         );
         assert_eq!(provider.0, 0);
         let retained = H::state(&graph, None).resident;

@@ -415,6 +415,21 @@ Authored Graph metadata, other containers, mix clock copies and full recursive
 closure remain open. Caps, weights, refunds, cold activation and requirement/
 gate statuses stay unchanged.
 
+The [Authored node checkpoint](qualification/authored-node-admission-2026-10-29.md)
+admits exact direct owner-input resolution, Authored context/boundary/node
+capacity and the recursive tile boundary copy. Both old source variants freeze
+258 complete private direct-input cases and 13 actual native nodes plus three
+Tone windows. Canonical and additional work are reconciled separately; PCM
+bits and semantic fields match. Main/isolated Audio pass 351/332, Plan 627/614
+across 29 executables, ordinary Stage 203/203 and definition/history 171/eight.
+Strict lint, three fresh reviews and source/index/evidence audits pass.
+The fresh Split matrix remains three pass/four work-limit failures in 273.74
+seconds. Source/Sequence now reports plan work and nested selected play reports
+Core binding work; the other two errors are unchanged. General sound Split
+stays disabled. Tile maps/variable metadata, other containers, mix clock copies
+and full recursive closure remain open. No caps, weights, refunds, cold
+activation or requirement/gate statuses changed.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 
