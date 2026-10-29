@@ -4,17 +4,20 @@ use crate::stages::authored_eq::eq_admission_fixture::checks::{self, Harness, St
 struct Shared;
 
 impl<'plan> Harness<'plan> for Shared {
-    type Graph = Graph<'plan>;
+    type Graph<'work> = Graph<'plan, 'work>;
 
     fn metadata_units(plan: &'plan Arc<RenderPlan>) -> u64 {
         original_metadata_units(plan)
+            .checked_add(boundary_and_capacity_metadata_units(plan))
+            .unwrap()
     }
 
-    fn graph(plan: &'plan RenderPlan) -> Self::Graph {
+    fn graph<'work>(plan: &'plan RenderPlan) -> Self::Graph<'work> {
         Graph {
             plan,
             nodes: Vec::new(),
             resident: 0,
+            node_capacity_frames: 0,
             wet_filters: std::array::from_fn(|_| None),
             event_tiles: BTreeMap::new(),
             event_nodes: Default::default(),
@@ -27,11 +30,11 @@ impl<'plan> Harness<'plan> for Shared {
         }
     }
 
-    fn node(
+    fn node<'work>(
         renderer: &mut StageAudio,
-        graph: &mut Self::Graph,
+        graph: &mut Self::Graph<'work>,
         owner: &AudioOwnerClock<'plan>,
-        control: WorkControl<'_>,
+        control: WorkControl<'work>,
     ) -> Result<usize, StageAudioError> {
         let context = Contexts {
             original: Context::Root,
@@ -56,12 +59,12 @@ impl<'plan> Harness<'plan> for Shared {
         )
     }
 
-    fn tile(
+    fn tile<'work>(
         renderer: &mut StageAudio,
         provider: &mut impl AudioSourceProvider,
-        graph: &mut Self::Graph,
+        graph: &mut Self::Graph<'work>,
         id: usize,
-        control: WorkControl<'_>,
+        control: WorkControl<'work>,
     ) -> Result<(), StageAudioError> {
         let mut permissions = Permissions::default();
         permissions.insert(0)?;
@@ -84,7 +87,7 @@ impl<'plan> Harness<'plan> for Shared {
         )
     }
 
-    fn state(graph: &Self::Graph, id: Option<usize>) -> State {
+    fn state<'work>(graph: &Self::Graph<'work>, id: Option<usize>) -> State {
         State {
             nodes: graph.nodes.len(),
             resident: graph.resident,
@@ -93,11 +96,11 @@ impl<'plan> Harness<'plan> for Shared {
         }
     }
 
-    fn take_filter(graph: &mut Self::Graph, id: usize) -> crate::Equalizer {
+    fn take_filter<'work>(graph: &mut Self::Graph<'work>, id: usize) -> crate::Equalizer {
         graph.nodes[id].filter.take().unwrap()
     }
 
-    fn restore_filter(graph: &mut Self::Graph, id: usize, filter: crate::Equalizer) {
+    fn restore_filter<'work>(graph: &mut Self::Graph<'work>, id: usize, filter: crate::Equalizer) {
         graph.nodes[id].filter = Some(filter);
     }
 }
@@ -143,4 +146,55 @@ pub(super) fn original_metadata_units(plan: &Arc<RenderPlan>) -> u64 {
     drop(carrier);
     assert_eq!(work.borrow().sound_context_frames, 0);
     metadata
+}
+
+pub(super) fn boundary_and_capacity_metadata_units(plan: &Arc<RenderPlan>) -> u64 {
+    let owner = crate::stages::authored_eq::eq_admission_fixture::owner(plan);
+    let cancelled = AtomicBool::new(false);
+    let work = RefCell::new(ReadWork::default());
+    let control = crate::stages::authored_eq::eq_admission_fixture::control(&cancelled, &work);
+    let mut renderer = StageAudio::new(Arc::clone(plan));
+    let context = Contexts {
+        original: Context::Root,
+        sounds: Sounds::None,
+    };
+    let description = {
+        let mut admission = sound_context_admission::Admission::new(&mut renderer, control);
+        node_description::describe_admitted(
+            plan,
+            node_description::Request {
+                incoming: &context,
+                owner: &owner,
+                at: AudioSample(128),
+                kind: Temporal::Equalizer(crate::stages::authored_eq::eq_admission_fixture::stage(
+                    &owner,
+                )),
+                stage: crate::stages::authored_eq::eq_admission_fixture::stage(&owner),
+                original_only: true,
+            },
+            control,
+            &mut admission,
+        )
+        .unwrap()
+    };
+    let stop_frames = description
+        .stop
+        .lease()
+        .map_or(0, sound_context_admission::Lease::frames);
+    let boundary_frames = description
+        .boundary
+        .lease()
+        .map_or(0, sound_context_admission::Lease::frames);
+    let nodes = Vec::<Node<'_, '_>>::new();
+    let maximum = renderer.limits.maximum_prepared_stages as usize;
+    let capacity = node_capacity::prepare(&mut renderer, &nodes, 0, maximum, control).unwrap();
+    let capacity_frames = capacity.new_frames();
+    let total = stop_frames
+        .checked_add(boundary_frames)
+        .and_then(|value| value.checked_add(capacity_frames))
+        .unwrap();
+    drop(capacity);
+    drop(description);
+    assert_eq!(work.borrow().sound_context_frames, 0);
+    total
 }

@@ -298,12 +298,11 @@ impl<'plan> Context<'plan> {
             if !S::owners_was_forwarded(&owners) {
                 control.spend_plan_work(S::owners_work(&owners))?;
             }
-            let boundary = owner.treatment_boundary(0)?;
-            if S::owners_query(&owners)
-                .spans()
-                .iter()
-                .any(|span| span.owners().iter().any(|owner| boundary.matches(owner)))
-            {
+            if S::owners_query(&owners).spans().iter().any(|span| {
+                span.owners()
+                    .iter()
+                    .any(|candidate| owner.matches_treatment_owner(candidate))
+            }) {
                 return share.retained(probe);
             }
         }

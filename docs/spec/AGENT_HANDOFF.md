@@ -2,7 +2,39 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: retained-owner decision query admitted, product goal active
+## Current state: caller storage admitted, product goal active
+
+The [caller storage checkpoint](../qualification/caller-node-admission-2026-10-29.md)
+admits the actual persistent stop key, treatment boundary and full shared EQ
+node-vector capacity through one seven-lane Graph publication. Replacement
+capacity is reserved before native construction; old/new buffers overlap until
+the old buffer is physically freed. Retained incoming selection now uses its
+actual admitted query and preserves the incoming Arc and first matching owner.
+
+Five frozen caller cases match complete public Description observations in both
+modes. Real Graph tests cover repeated-owner charges, spare capacity, growth,
+exact/short native headroom and post-native failure before publication. Main and
+isolated Audio pass 333/314; Plan passes 610/597 across all 29 executables. All
+203 ordinary real-WAV Stage tests pass in each variant, main definitions pass
+171 and isolated historical-group tests eight. Strict lint, three fresh reviews,
+source/index equality and the archived evidence audit pass.
+
+The main Stage suite and seven-case Split matrix ran together serially in
+629.92 seconds: 207 pass, three fail. All three failures remain at the same
+revisions/windows, with changed exhaustion phases: Source/Sequence cut-three
+limited 0+511 and nested selected play without root sound prefix-two limited
+0+4096 now report plan work per read; one selected play prefix-two limited
+0+4096 reports sound placement work exhausted. General sound Split stays
+disabled. No requirement or gate is closed.
+
+Wide renderer owner queries, renderer stop clones, other Graph containers and
+full recursive cold-resource closure remain open. The checkpoint report links
+the exact patch and inventory identities; five Main-only helper compatibility
+edits remain unpublished with the inherited work.
+
+The following retained-owner decision-query checkpoint is historical.
+
+## Retained-owner decision query admitted
 
 The [retained-owner decision query](../qualification/retained-owner-query-budget-2026-10-29.md)
 now admits the actual one-sample query used to accept the retained probe. The

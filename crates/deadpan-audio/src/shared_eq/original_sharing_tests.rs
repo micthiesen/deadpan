@@ -278,20 +278,19 @@ fn description_retains_both_charges_through_boundary_failure_cancel_and_absent_s
         )
         .unwrap();
         assert!(description.original.is_some() && description.sound.is_some());
-        let total = description
-            .original
-            .as_ref()
-            .unwrap()
-            .lease()
-            .unwrap()
-            .frames()
-            + description
-                .sound
-                .as_ref()
-                .unwrap()
-                .lease()
-                .unwrap()
-                .frames();
+        let [plan_lease, core, buffer] = description.original.as_ref().unwrap().leases();
+        let total = [
+            plan_lease,
+            core,
+            buffer,
+            description.sound.as_ref().unwrap().lease(),
+            description.stop.lease(),
+            description.boundary.lease(),
+        ]
+        .into_iter()
+        .flatten()
+        .map(sound_context_admission::Lease::frames)
+        .sum::<u64>();
         assert_eq!(work.borrow().sound_context_frames, total);
         drop(description);
         assert_eq!(work.borrow().sound_context_frames, 0);
@@ -392,11 +391,18 @@ fn retained_core_and_sound_charges_survive_real_graph_reads_and_failed_admission
         assert!(plan_lease.is_some() && core.is_some());
         let sound = description.sound.as_ref().unwrap().lease();
         assert!(sound.is_some());
-        let total = [plan_lease, core, buffer, sound]
-            .into_iter()
-            .flatten()
-            .map(sound_context_admission::Lease::frames)
-            .sum::<u64>();
+        let total = [
+            plan_lease,
+            core,
+            buffer,
+            sound,
+            description.stop.lease(),
+            description.boundary.lease(),
+        ]
+        .into_iter()
+        .flatten()
+        .map(sound_context_admission::Lease::frames)
+        .sum::<u64>();
         assert_eq!(work.borrow().sound_context_frames, total);
         drop(description);
         assert_eq!(work.borrow().sound_context_frames, 0);

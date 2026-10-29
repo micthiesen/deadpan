@@ -13,21 +13,21 @@ pub(super) struct Request<'request, 'plan> {
     pub(super) original_only: bool,
 }
 
-pub(super) struct DescriptionValues<'plan> {
+pub(super) struct DescriptionValues<'plan, I: Copy + Eq, L> {
     pub(super) context: Contexts<'plan>,
-    pub(super) boundary: AudioTreatmentBoundary<'plan>,
-    pub(super) stop: Boundary,
+    pub(super) boundary: deadpan_plan::AdmittedAudioTreatmentBoundary<'plan, I, L>,
+    pub(super) stop: AdmittedStop<I, L>,
     pub(super) kind: Temporal,
 }
 
 /// Owning context clones drop before the admitted carrier and its final lease.
 pub(super) struct Description<'plan, I: Copy + Eq, L> {
-    pub(super) values: Option<DescriptionValues<'plan>>,
+    pub(super) values: Option<DescriptionValues<'plan, I, L>>,
     pub(super) original: Option<deadpan_plan::AdmittedOriginalContext<'plan, I, L>>,
     pub(super) sound: Option<deadpan_plan::AdmittedSoundContext<'plan, I, L>>,
 }
 impl<'plan, I: Copy + Eq, L> std::ops::Deref for Description<'plan, I, L> {
-    type Target = DescriptionValues<'plan>;
+    type Target = DescriptionValues<'plan, I, L>;
     fn deref(&self) -> &Self::Target {
         self.values.as_ref().expect("unpublished description")
     }
@@ -67,7 +67,8 @@ where
         stage,
         original_only,
     } = request;
-    let key = OwnerKey::new(owner);
+    let stop = AdmittedStop::new(owner, stage, admission)?;
+    let key = &stop.owner;
     let mut sound = if !original_only && owner.kind() == deadpan_plan::AudioOwnerKind::Node {
         let context = plan.audio_sound_instance_context_admitted(
             owner.instance(),
@@ -85,15 +86,9 @@ where
         plan,
         at..AudioSample(at.0.checked_add(1).ok_or(TimeError::Overflow)?),
     )?;
-    let original = if let Some(original) = original_context_admitted(
-        plan,
-        &incoming.original,
-        &key,
-        range,
-        at,
-        control,
-        admission,
-    )? {
+    let original = if let Some(original) =
+        original_context_admitted(plan, &incoming.original, key, range, at, control, admission)?
+    {
         original
     } else if let Some(context) = sound.take() {
         sound = Some(context.with_processing_domain(admission)?);
@@ -110,7 +105,26 @@ where
     } else {
         return Err(PlanError::InvalidPlan("missing shared EQ Original context").into());
     };
-    let boundary = owner.treatment_boundary(stage)?;
+    let limits = if A::METERED {
+        control.query_limits()?
+    } else {
+        deadpan_plan::AudioQueryLimits::default()
+    };
+    let boundary = owner.treatment_boundary_admitted(stage, limits, admission)?;
+    if boundary.was_forwarded() != A::METERED {
+        return Err(PlanError::InvalidPlan("treatment boundary admission mode").into());
+    }
+    let issuer = stop.issuer();
+    if admission.issuer() != issuer
+        || boundary.issuer() != issuer
+        || original
+            .carrier
+            .as_ref()
+            .is_some_and(|value| value.issuer() != issuer)
+        || sound.as_ref().is_some_and(|value| value.issuer() != issuer)
+    {
+        return Err(PlanError::AudioMetadataIssuerMismatch.into());
+    }
     Ok(Description {
         values: Some(DescriptionValues {
             context: Contexts {
@@ -120,10 +134,7 @@ where
                 }),
             },
             boundary,
-            stop: Boundary {
-                owner: key,
-                before: stage,
-            },
+            stop,
             kind,
         }),
         original: original.carrier,
@@ -183,21 +194,28 @@ where
         Context::Domain(domain) => {
             domain.owner_input_candidates_at_admitted(at, control.query_limits()?, admission)?
         }
-        Context::Retained(_) => {
-            // This branch already has no repeated membership query. Keep its
-            // actual retained-grid query, clock clone and immediate Arc clone.
-            let observed = {
-                let query = incoming.owners(plan, range, control)?;
-                query
-                    .spans()
-                    .iter()
-                    .flat_map(|span| span.owners())
-                    .find(|clock| OwnerKey::new(clock) == *key)
-                    .cloned()
-            };
+        Context::Retained(input) => {
+            let query = input.owners_admitted(range, control.query_limits()?, admission)?;
+            if query.was_forwarded() != A::METERED {
+                return Err(PlanError::InvalidPlan(
+                    "retained incoming query accounting mode differs",
+                )
+                .into());
+            }
+            if query.was_forwarded() {
+                Context::validate_owner_query_layers(query.query())?;
+            } else {
+                Context::admit_owner_query(query.query(), control)?;
+            }
+            let observed = query
+                .query()
+                .spans()
+                .iter()
+                .flat_map(|span| span.owners())
+                .find(|clock| key.matches(clock));
             return if let Some(clock) = observed {
                 Ok(Some(ResolvedOriginal {
-                    context: incoming.owner_context(plan, &clock, at, control)?,
+                    context: incoming.owner_context(plan, clock, at, control)?,
                     carrier: None,
                 }))
             } else {
@@ -214,11 +232,11 @@ where
     } else {
         Context::admit_owner_query(candidates.query(), control)?;
     }
-    let selected = candidates.query().spans().first().and_then(|span| {
-        span.owners()
-            .iter()
-            .position(|clock| OwnerKey::new(clock) == *key)
-    });
+    let selected = candidates
+        .query()
+        .spans()
+        .first()
+        .and_then(|span| span.owners().iter().position(|clock| key.matches(clock)));
     let capture = if let Some(index) = selected {
         // Q stays charged through the actual full capture. Metered C has
         // already reached the controller at its real construction sites.

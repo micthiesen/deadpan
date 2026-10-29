@@ -22,6 +22,9 @@ pub(super) mod admission;
 #[path = "audio_retained_owner_query.rs"]
 mod retained_query;
 pub use retained_query::AdmittedAudioOwnerQuery;
+#[path = "audio_treatment_boundary_admission.rs"]
+mod treatment_boundary_admission;
+pub use treatment_boundary_admission::AdmittedAudioTreatmentBoundary;
 #[path = "audio_owner_query.rs"]
 pub(super) mod query_admission;
 #[cfg(test)]
@@ -112,15 +115,31 @@ impl<'plan> AudioOwnerClock<'plan> {
         &self,
         before_stage: usize,
     ) -> Result<AudioTreatmentBoundary<'plan>, PlanError> {
+        self.validate_treatment_stage(before_stage)?;
+        Ok(AudioTreatmentBoundary {
+            owner: self.clone(),
+            before_stage,
+        })
+    }
+
+    fn validate_treatment_stage(&self, before_stage: usize) -> Result<(), PlanError> {
         if before_stage > self.treatments().map_or(0, |value| value.order().len()) {
             return Err(PlanError::InvalidPlan(
                 "audio treatment boundary out of range",
             ));
         }
-        Ok(AudioTreatmentBoundary {
-            owner: self.clone(),
-            before_stage,
-        })
+        Ok(())
+    }
+
+    /// Same treatment input identity, independent of current Repeat play or
+    /// affine sampling. This inspection borrows both clocks without copying.
+    pub fn matches_treatment_owner(&self, candidate: &AudioOwnerClock<'_>) -> bool {
+        self.belongs_to(candidate.plan)
+            && self.definition == candidate.definition
+            && self.instance == candidate.instance
+            && self.kind == candidate.kind
+            && self.gap_after == candidate.gap_after
+            && self.origin == candidate.origin
     }
 
     pub(super) fn same_at(&self, other: &AudioOwnerClock<'_>, at: AudioSample) -> bool {
@@ -176,12 +195,7 @@ impl<'plan> AudioTreatmentBoundary<'plan> {
         self.before_stage
     }
     pub fn matches(&self, candidate: &AudioOwnerClock<'_>) -> bool {
-        self.owner.belongs_to(candidate.plan)
-            && self.owner.definition == candidate.definition
-            && self.owner.instance == candidate.instance
-            && self.owner.kind == candidate.kind
-            && self.owner.gap_after == candidate.gap_after
-            && self.owner.origin == candidate.origin
+        self.owner.matches_treatment_owner(candidate)
     }
     /// Reuse within the SAME checked processing context additionally requires
     /// an equal affine clock. A whole Repeat's current play is evaluated by
@@ -738,3 +752,7 @@ fn restrict_end(
 #[cfg(test)]
 #[path = "audio_owners/tests.rs"]
 pub(in crate::plan) mod tests;
+
+#[cfg(test)]
+#[path = "audio_owners/treatment_boundary_admission_tests.rs"]
+mod treatment_boundary_admission_tests;

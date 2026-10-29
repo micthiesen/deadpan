@@ -4,15 +4,22 @@
 //! the common saturation drive from all permitted inputs.
 
 use super::authored_eq::Context;
-use super::shared_mix::{Boundary, Contribution, OwnerKey, Permissions, SharedMix, Temporal};
+use super::shared_mix::{
+    AdmittedStop, Boundary, Contribution, OwnerKey, Permissions, SharedMix, Temporal,
+};
 use super::*;
 
+#[path = "shared_eq/node_capacity.rs"]
+mod node_capacity;
 #[path = "shared_eq/node_description.rs"]
 mod node_description;
 
 #[cfg(test)]
 #[path = "shared_eq/admission_tests.rs"]
 mod admission_tests;
+#[cfg(test)]
+#[path = "shared_eq/caller_graph_tests.rs"]
+mod caller_graph_tests;
 #[cfg(test)]
 #[path = "shared_eq/sound_admission_tests.rs"]
 mod sound_admission_tests;
@@ -22,7 +29,7 @@ use deadpan_dsp::{
     FINITE_FILTER_RADIUS as RADIUS,
 };
 use deadpan_plan::{
-    AudioOwnerClock, AudioOwnerSupport, AudioSoundOwnerContext, AudioTreatmentBoundary,
+    AdmittedAudioTreatmentBoundary, AudioOwnerClock, AudioOwnerSupport, AudioSoundOwnerContext,
 };
 
 #[path = "event_returns.rs"]
@@ -62,19 +69,25 @@ struct WideBlock {
     dependencies: Dependencies,
     relative_depth: usize,
 }
-struct Node<'plan> {
+struct Node<'plan, 'work> {
     parent: usize,
     context: Contexts<'plan>,
-    boundary: AudioTreatmentBoundary<'plan>,
-    stop: Boundary,
+    boundary: AdmittedAudioTreatmentBoundary<
+        'plan,
+        sound_context_admission::Issuer<'work>,
+        sound_context_admission::Lease<'work>,
+    >,
+    stop:
+        AdmittedStop<sound_context_admission::Issuer<'work>, sound_context_admission::Lease<'work>>,
     filter: Option<crate::Equalizer>,
     kind: Temporal,
     tiles: BTreeMap<(i64, Permissions, Option<usize>), Arc<WideBlock>>,
 }
-struct Graph<'plan> {
+struct Graph<'plan, 'work> {
     plan: &'plan RenderPlan,
-    nodes: Vec<Node<'plan>>,
+    nodes: Vec<Node<'plan, 'work>>,
     resident: u64,
+    node_capacity_frames: u64,
     wet_filters: [Option<crate::FiniteWetEffect>; 2],
     event_tiles: BTreeMap<EventKey, Arc<WideBlock>>,
     event_nodes: std::collections::BTreeSet<EventKey>,
@@ -94,7 +107,7 @@ pub(super) struct InputSelection<'a> {
     pub(super) skip: &'a [authored_gain::OwnerIdentity],
     pub(super) original_only: bool,
 }
-impl<'plan> Graph<'plan> {
+impl<'plan, 'work> Graph<'plan, 'work> {
     fn voice(&mut self, voice: Voice) -> Result<usize, StageAudioError> {
         if let Some(id) = self.voices.get(&voice) {
             return Ok(*id);
@@ -265,6 +278,7 @@ impl StageAudio {
             plan: &plan,
             nodes: Vec::new(),
             resident: 0,
+            node_capacity_frames: 0,
             wet_filters: std::array::from_fn(|_| None),
             event_tiles: BTreeMap::new(),
             event_nodes: Default::default(),
@@ -332,20 +346,20 @@ impl StageAudio {
         result
     }
 
-    fn release_shared_graph(&mut self, graph: Graph<'_>, reservation: u64) {
+    fn release_shared_graph(&mut self, graph: Graph<'_, '_>, reservation: u64) {
         let graph_resident = graph.resident;
         drop(graph);
         self.active_frames -= reservation + graph_resident;
     }
 
-    fn read_shared_program<'plan>(
+    fn read_shared_program<'plan, 'work>(
         &mut self,
         provider: &mut impl AudioSourceProvider,
-        graph: &mut Graph<'plan>,
+        graph: &mut Graph<'plan, 'work>,
         program: Program<'_, 'plan>,
         start: AudioSample,
         frames: u32,
-        control: WorkControl<'_>,
+        control: WorkControl<'work>,
     ) -> Result<WideBlock, StageAudioError> {
         control.check()?;
         if frames == 0 || frames > MAX_OUTPUT_FRAMES {
@@ -832,14 +846,14 @@ impl StageAudio {
         result
     }
 
-    fn shared_eq_node<'plan>(
+    fn shared_eq_node<'plan, 'work>(
         &mut self,
-        graph: &mut Graph<'plan>,
+        graph: &mut Graph<'plan, 'work>,
         program: Program<'_, 'plan>,
         owner: &AudioOwnerClock<'plan>,
         at: AudioSample,
         kind: Temporal,
-        control: WorkControl<'_>,
+        control: WorkControl<'work>,
     ) -> Result<usize, StageAudioError> {
         let stage = kind.boundary(owner);
         if let Some(id) = graph.nodes.iter().position(|node| {
@@ -892,9 +906,19 @@ impl StageAudio {
             })
             .transpose()?
             .unwrap_or(0);
-        let metadata_frames = sound_frames
-            .checked_add(original_frames)
-            .ok_or(StageAudioError::Range)?;
+        let key_frames = description
+            .stop
+            .lease()
+            .map_or(0, sound_context_admission::Lease::frames);
+        let boundary_frames = description
+            .boundary
+            .lease()
+            .map_or(0, sound_context_admission::Lease::frames);
+        let metadata_frames = [original_frames, sound_frames, key_frames, boundary_frames]
+            .into_iter()
+            .try_fold(0_u64, |total, frames| {
+                total.checked_add(frames).ok_or(StageAudioError::Range)
+            })?;
         let expected_issuer = sound_context_admission::issuer(control);
         if description
             .sound
@@ -904,6 +928,8 @@ impl StageAudio {
                 .original
                 .as_ref()
                 .is_some_and(|value| value.issuer() != expected_issuer)
+            || description.stop.issuer() != expected_issuer
+            || description.boundary.issuer() != expected_issuer
         {
             return Err(PlanError::AudioMetadataIssuerMismatch.into());
         }
@@ -913,77 +939,127 @@ impl StageAudio {
                 .div_ceil(std::mem::size_of::<[f32; 2]>() as u64),
             Temporal::Wet(_) => 0,
         };
+        let recipe = match kind {
+            Temporal::Equalizer(_) => Some(
+                owner
+                    .treatments()
+                    .and_then(|value| value.equalizer())
+                    .ok_or(PlanError::InvalidPlan("EQ recipe absent"))?,
+            ),
+            Temporal::Wet(_) => None,
+        };
+        if recipe.is_some() {
+            control.spend_plan_work(deadpan_dsp::FINITE_FILTER_TAPS)?;
+        }
+        // This reservation precedes filter construction: its make_room must
+        // see the complete planned metadata plus the still-live old buffer.
+        let maximum_nodes = self.limits.maximum_prepared_stages as usize;
+        let mut capacity = node_capacity::prepare(
+            self,
+            &graph.nodes,
+            graph.node_capacity_frames,
+            maximum_nodes,
+            control,
+        )?;
         let retained = resident
             .checked_add(metadata_frames)
+            .and_then(|value| value.checked_add(capacity.new_frames()))
             .ok_or(StageAudioError::Range)?;
         let next_active = self
             .active_frames
-            .checked_add(retained)
+            .checked_sub(capacity.retired_frames())
+            .and_then(|value| value.checked_add(retained))
             .ok_or(StageAudioError::Range)?;
         let next_resident = graph
             .resident
-            .checked_add(retained)
+            .checked_sub(capacity.retired_frames())
+            .and_then(|value| value.checked_add(retained))
             .ok_or(StageAudioError::Range)?;
-        let filter = match kind {
-            Temporal::Equalizer(_) => {
-                let recipe = owner
-                    .treatments()
-                    .and_then(|r| r.equalizer())
-                    .ok_or(PlanError::InvalidPlan("EQ recipe absent"))?;
-                control.spend_plan_work(deadpan_dsp::FINITE_FILTER_TAPS)?;
-                self.make_room(resident, false, control)?;
-                Some(crate::Equalizer::new(recipe, control.cancelled)?)
-            }
-            Temporal::Wet(_) => None,
+        let next_capacity_frames = capacity.capacity_frames_after();
+        let filter = if let Some(recipe) = recipe {
+            self.make_room(resident, false, control)?;
+            Some(crate::Equalizer::new(recipe, control.cancelled)?)
+        } else {
+            None
         };
         control.check()?;
-        // Reserve the existing Node Vec growth before the infallible handoff.
-        // Graph containers remain outside this metadata admission.
-        graph.nodes.reserve(1);
-        // The token borrows only the carriers. The temporary controller
-        // borrow ends before the final ledger snapshot and publication.
+        capacity.allocate()?;
+        capacity.prepay_moves(control)?;
+        capacity.validate_current(&graph.nodes, graph.node_capacity_frames)?;
+        control.check()?;
+        let node_description::Description {
+            values,
+            original,
+            sound,
+        } = &mut description;
         let context_transfer = {
             let mut admission = sound_context_admission::Admission::new(self, control);
             deadpan_plan::preflight_context_transfer(
-                description.original.as_mut(),
-                description.sound.as_mut(),
+                original.as_mut(),
+                sound.as_mut(),
                 &mut admission,
             )?
         };
-        let [original, core, buffer, sound] = context_transfer.leases();
-        let transfer =
-            sound_context_admission::preflight_transfer(control, original, core, buffer, sound)?;
-        let values = &mut description.values;
-        context_transfer.commit(|original, core, buffer, sound| {
+        let [plan, core, buffer, sound] = context_transfer.leases();
+        let unpublished = values.as_ref().expect("unpublished description");
+        let transfer = sound_context_admission::preflight_transfer(
+            control,
+            sound_context_admission::TransferLeases {
+                original: [plan, core, buffer],
+                sound,
+                key: unpublished.stop.lease(),
+                boundary: unpublished.boundary.lease(),
+                capacity: capacity.lease(),
+            },
+        )?;
+        let id = graph.nodes.len();
+        context_transfer.commit(|plan, core, buffer, sound| {
             let node_description::DescriptionValues {
                 context,
                 boundary,
                 stop,
                 kind,
             } = values.take().expect("unpublished description");
-            graph.nodes.push(Node {
-                parent: program.parent,
-                context,
-                boundary,
-                stop,
-                filter,
-                kind,
-                tiles: BTreeMap::new(),
-            });
+            capacity.publish(
+                &mut graph.nodes,
+                Node {
+                    parent: program.parent,
+                    context,
+                    boundary,
+                    stop,
+                    filter,
+                    kind,
+                    tiles: BTreeMap::new(),
+                },
+            );
+            // publish has physically freed the old vector before retiring it.
             self.active_frames = next_active;
             graph.resident = next_resident;
-            transfer.commit(original, core, buffer, sound);
+            graph.node_capacity_frames = next_capacity_frames;
+            let Node { boundary, stop, .. } = &mut graph.nodes[id];
+            boundary.with_lease_mut(|boundary| {
+                stop.with_lease_mut(|key| {
+                    transfer.commit(sound_context_admission::TransferLeasesMut {
+                        original: [plan, core, buffer],
+                        sound,
+                        key,
+                        boundary,
+                        capacity: capacity.lease_mut(),
+                    });
+                });
+            });
         });
-        Ok(graph.nodes.len() - 1)
+
+        Ok(id)
     }
 
-    fn shared_eq_tile(
+    fn shared_eq_tile<'plan, 'work>(
         &mut self,
         provider: &mut impl AudioSourceProvider,
-        graph: &mut Graph<'_>,
+        graph: &mut Graph<'plan, 'work>,
         id: usize,
         key: (i64, Permissions, Option<usize>),
-        control: WorkControl<'_>,
+        control: WorkControl<'work>,
         depth: usize,
     ) -> Result<Arc<WideBlock>, StageAudioError> {
         control.check()?;

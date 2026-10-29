@@ -239,7 +239,13 @@ fn joint_transfer_rejects_equal_content_foreign_ledger_before_any_commit() {
     };
     let frames = value.lease().unwrap().frames();
     assert!(matches!(
-        preflight_transfer(b, value.lease(), None, None, None),
+        preflight_transfer(
+            b,
+            TransferLeases {
+                original: [value.lease(), None, None],
+                ..Default::default()
+            }
+        ),
         Err(StageAudioError::Plan(
             PlanError::AudioMetadataIssuerMismatch
         ))
@@ -251,10 +257,10 @@ fn joint_transfer_rejects_equal_content_foreign_ledger_before_any_commit() {
 }
 
 #[test]
-fn joint_transfer_commits_all_four_actual_lanes_without_releasing_other_pending_work() {
+fn joint_transfer_commits_all_seven_lanes_without_releasing_other_pending_work() {
     let cancelled = AtomicBool::new(false);
     let work = RefCell::new(ReadWork::default());
-    work.borrow_mut().sound_context_frames = 31;
+    work.borrow_mut().sound_context_frames = 63;
     let control = eq::control(&cancelled, &work);
     let mut original = Lease {
         ledger: &work,
@@ -272,77 +278,102 @@ fn joint_transfer_commits_all_four_actual_lanes_without_releasing_other_pending_
         ledger: &work,
         frames: 5,
     };
+    let mut key = Lease {
+        ledger: &work,
+        frames: 2,
+    };
+    let mut boundary = Lease {
+        ledger: &work,
+        frames: 13,
+    };
+    let mut capacity = Lease {
+        ledger: &work,
+        frames: 17,
+    };
     let transfer = preflight_transfer(
         control,
-        Some(&original),
-        Some(&core),
-        Some(&buffer),
-        Some(&sound),
+        TransferLeases {
+            original: [Some(&original), Some(&core), Some(&buffer)],
+            sound: Some(&sound),
+            key: Some(&key),
+            boundary: Some(&boundary),
+            capacity: Some(&capacity),
+        },
     )
     .unwrap();
-    assert_eq!(work.borrow().sound_context_frames, 31);
-    transfer.commit(
-        Some(&mut original),
-        Some(&mut core),
-        Some(&mut buffer),
-        Some(&mut sound),
-    );
+    assert_eq!(work.borrow().sound_context_frames, 63);
+    transfer.commit(TransferLeasesMut {
+        original: [Some(&mut original), Some(&mut core), Some(&mut buffer)],
+        sound: Some(&mut sound),
+        key: Some(&mut key),
+        boundary: Some(&mut boundary),
+        capacity: Some(&mut capacity),
+    });
     assert_eq!(work.borrow().sound_context_frames, 5);
     assert_eq!(
         [
             original.frames(),
             core.frames(),
             buffer.frames(),
-            sound.frames()
+            sound.frames(),
+            key.frames(),
+            boundary.frames(),
+            capacity.frames()
         ],
-        [0; 4]
+        [0; 7]
     );
-    // Even a trusted caller repeating a zero-frame host transfer cannot consume
-    // somebody else's remaining charge. The Core token additionally rejects reuse.
     let empty = preflight_transfer(
         control,
-        Some(&original),
-        Some(&core),
-        Some(&buffer),
-        Some(&sound),
+        TransferLeases {
+            original: [Some(&original), Some(&core), Some(&buffer)],
+            sound: Some(&sound),
+            key: Some(&key),
+            boundary: Some(&boundary),
+            capacity: Some(&capacity),
+        },
     )
     .unwrap();
-    empty.commit(
-        Some(&mut original),
-        Some(&mut core),
-        Some(&mut buffer),
-        Some(&mut sound),
-    );
-    drop((original, core, buffer, sound));
+    empty.commit(TransferLeasesMut {
+        original: [Some(&mut original), Some(&mut core), Some(&mut buffer)],
+        sound: Some(&mut sound),
+        key: Some(&mut key),
+        boundary: Some(&mut boundary),
+        capacity: Some(&mut capacity),
+    });
+    drop((original, core, buffer, sound, key, boundary, capacity));
     assert_eq!(work.borrow().sound_context_frames, 5);
 }
 
 #[test]
 fn every_joint_lane_rejects_a_foreign_ledger_without_mutating_either_pending_sum() {
-    for foreign in 0..4 {
+    for foreign in 0..7 {
         let cancelled = AtomicBool::new(false);
         let left = RefCell::new(ReadWork::default());
         let right = RefCell::new(ReadWork::default());
-        let amounts = [3_u64, 7, 11, 5];
-        left.borrow_mut().sound_context_frames = 26 - amounts[foreign];
+        let amounts = [3_u64, 7, 11, 5, 2, 13, 17];
+        let total = amounts.iter().sum::<u64>();
+        left.borrow_mut().sound_context_frames = total - amounts[foreign];
         right.borrow_mut().sound_context_frames = amounts[foreign];
-        let leases = std::array::from_fn::<_, 4, _>(|index| Lease {
+        let leases = std::array::from_fn::<_, 7, _>(|index| Lease {
             ledger: if index == foreign { &right } else { &left },
             frames: amounts[index],
         });
         assert!(matches!(
             preflight_transfer(
                 eq::control(&cancelled, &left),
-                Some(&leases[0]),
-                Some(&leases[1]),
-                Some(&leases[2]),
-                Some(&leases[3]),
+                TransferLeases {
+                    original: [Some(&leases[0]), Some(&leases[1]), Some(&leases[2])],
+                    sound: Some(&leases[3]),
+                    key: Some(&leases[4]),
+                    boundary: Some(&leases[5]),
+                    capacity: Some(&leases[6]),
+                }
             ),
             Err(StageAudioError::Plan(
                 PlanError::AudioMetadataIssuerMismatch
             ))
         ));
-        assert_eq!(left.borrow().sound_context_frames, 26 - amounts[foreign]);
+        assert_eq!(left.borrow().sound_context_frames, total - amounts[foreign]);
         assert_eq!(right.borrow().sound_context_frames, amounts[foreign]);
         drop(leases);
         assert_eq!(left.borrow().sound_context_frames, 0);

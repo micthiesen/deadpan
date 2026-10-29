@@ -90,6 +90,15 @@ impl OwnerKey {
             && self.gap == (owner.kind() == deadpan_plan::AudioOwnerKind::DefaultGap)
             && self.after.as_ref() == owner.gap_after()
     }
+
+    #[cfg(test)]
+    pub(super) fn snapshot_fields(&self) -> serde_json::Value {
+        serde_json::json!({
+            "instance":self.instance,
+            "gap":self.gap,
+            "after":self.after,
+        })
+    }
 }
 
 #[derive(Clone)]
@@ -97,6 +106,10 @@ pub(super) struct Boundary {
     pub(super) owner: OwnerKey,
     pub(super) before: usize,
 }
+
+#[path = "shared_mix/caller_key.rs"]
+mod caller_key;
+pub(super) use caller_key::AdmittedStop;
 
 #[derive(Clone)]
 struct Layer<'plan> {

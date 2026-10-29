@@ -70,13 +70,13 @@ struct EventProgram<'a, 'plan> {
 }
 
 impl StageAudio {
-    pub(super) fn read_event_returns(
+    pub(super) fn read_event_returns<'work>(
         &mut self,
         provider: &mut impl AudioSourceProvider,
-        graph: &mut Graph<'_>,
+        graph: &mut Graph<'_, 'work>,
         source: EventSource<'_, '_>,
         request: EventRead<'_>,
-        control: WorkControl<'_>,
+        control: WorkControl<'work>,
     ) -> Result<EventOutput, StageAudioError> {
         let (allocation, audible) = match source.input {
             AudioRoutedRootInput::Source(input) => (input.samples()?, input.audible_samples()),
@@ -243,14 +243,14 @@ impl StageAudio {
         })
     }
 
-    fn event_return_tile(
+    fn event_return_tile<'work>(
         &mut self,
         provider: &mut impl AudioSourceProvider,
-        graph: &mut Graph<'_>,
+        graph: &mut Graph<'_, 'work>,
         input: &AudioRoutedRootInput<'_>,
         key: EventKey,
         recipe: &AudioTreatments,
-        control: WorkControl<'_>,
+        control: WorkControl<'work>,
     ) -> Result<Arc<WideBlock>, StageAudioError> {
         control.check()?;
         if let Some(block) = graph.event_tiles.get(&key) {
@@ -424,14 +424,14 @@ impl StageAudio {
     /// Overlapping EQ input windows share their pre-filter prefix; dry output
     /// and reverb/delay histories share the complete treated input. These tiles
     /// add no processing stage or history and retain the existing work limits.
-    fn event_prefix(
+    fn event_prefix<'work>(
         &mut self,
         provider: &mut impl AudioSourceProvider,
-        graph: &mut Graph<'_>,
+        graph: &mut Graph<'_, 'work>,
         program: EventProgram<'_, '_>,
         samples: Range<AudioSample>,
         until: usize,
-        control: WorkControl<'_>,
+        control: WorkControl<'work>,
     ) -> Result<WideBlock, StageAudioError> {
         let frames = count(&samples)?;
         if frames > MAX_OUTPUT_FRAMES {
@@ -478,14 +478,14 @@ impl StageAudio {
 
     /// Evaluate a strict prefix in the complete retained event clock. Temporal
     /// tiles recurse only to earlier stages; delivery cuts never become history.
-    fn event_prefix_uncached(
+    fn event_prefix_uncached<'work>(
         &mut self,
         provider: &mut impl AudioSourceProvider,
-        graph: &mut Graph<'_>,
+        graph: &mut Graph<'_, 'work>,
         program: EventProgram<'_, '_>,
         samples: Range<AudioSample>,
         until: usize,
-        control: WorkControl<'_>,
+        control: WorkControl<'work>,
     ) -> Result<WideBlock, StageAudioError> {
         control.check()?;
         let EventProgram {
@@ -584,13 +584,13 @@ impl StageAudio {
         Ok(output)
     }
 
-    pub(super) fn process_shared_wet(
+    pub(super) fn process_shared_wet<'work>(
         &mut self,
-        graph: &mut Graph<'_>,
+        graph: &mut Graph<'_, 'work>,
         effect: TailEffect,
         input: (&[f64], &[f64]),
         output: (&mut [f64], &mut [f64]),
-        control: WorkControl<'_>,
+        control: WorkControl<'work>,
     ) -> Result<(), StageAudioError> {
         let slot = match effect {
             TailEffect::Reverb => 0,

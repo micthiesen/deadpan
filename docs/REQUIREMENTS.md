@@ -386,6 +386,21 @@ and wide renderer enumeration, caller/key/node containers and full recursive
 closure remain open. General sound Split stays disabled; no caps, weights,
 refunds, cold activation or requirement/gate statuses changed.
 
+The [caller storage checkpoint](qualification/caller-node-admission-2026-10-29.md)
+admits the actual persistent stop key, treatment boundary and full shared EQ
+node-vector capacity through seven-lane Graph publication. Old/new capacity and
+native preparation overlap under one request ledger. Retained incoming owner
+selection now uses the actual admitted query. Five frozen caller cases match
+complete public fields in both modes; real Graph growth, exact/short peak and
+post-native failure tests pass. Main/isolated Audio pass 333/314, Plan 610/597
+across 29 executables, ordinary Stage 203/203 and definition/history 171/eight.
+Strict lint, three fresh reviews and source/index/evidence audits pass. The
+combined main Stage/Split run is 207 pass/three fail in 629.92 seconds; the same
+Split windows now report two plan-work failures and one sound-placement-work
+failure. General sound Split remains disabled. Wide renderer queries, stop
+clones, other Graph containers and full recursive closure remain open. No caps,
+weights, refunds, cold activation or requirement/gate statuses changed.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

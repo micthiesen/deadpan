@@ -1,10 +1,11 @@
 use super::*;
 use crate::stages::authored_eq::eq_admission_fixture as eq;
-fn graph(plan: &RenderPlan, original_only: bool) -> Graph<'_> {
+fn graph<'plan, 'work>(plan: &'plan RenderPlan, original_only: bool) -> Graph<'plan, 'work> {
     Graph {
         plan,
         nodes: Vec::new(),
         resident: 0,
+        node_capacity_frames: 0,
         wet_filters: std::array::from_fn(|_| None),
         event_tiles: BTreeMap::new(),
         event_nodes: Default::default(),
@@ -16,11 +17,11 @@ fn graph(plan: &RenderPlan, original_only: bool) -> Graph<'_> {
         original_only,
     }
 }
-fn node<'plan>(
+fn node<'plan, 'work>(
     renderer: &mut StageAudio,
-    graph: &mut Graph<'plan>,
+    graph: &mut Graph<'plan, 'work>,
     owner: &AudioOwnerClock<'plan>,
-    control: WorkControl<'_>,
+    control: WorkControl<'work>,
 ) -> Result<usize, StageAudioError> {
     renderer.shared_eq_node(
         graph,
@@ -62,10 +63,11 @@ fn nested_native_entry_sees_outstanding_metadata_and_no_work_is_refunded() {
         .unwrap()
     };
     let original = super::admission_tests::original_metadata_units(&plan);
+    let boundary_and_capacity = super::admission_tests::boundary_and_capacity_metadata_units(&plan);
     let m = work.borrow().sound_context_frames;
     assert!(m > 1);
     renderer.limits.maximum_resident_frames =
-        u32::try_from(eq::BASE + eq::units() + original + m - 1).unwrap();
+        u32::try_from(eq::BASE + eq::units() + original + boundary_and_capacity + m - 1).unwrap();
     let before_work = work.borrow().plan_work;
     let mut graph = graph(&plan, true);
     assert!(matches!(
@@ -79,8 +81,14 @@ fn nested_native_entry_sees_outstanding_metadata_and_no_work_is_refunded() {
     drop(metadata);
     assert_eq!(work.borrow().sound_context_frames, 0);
     node(&mut renderer, &mut graph, &owner, control).unwrap();
-    assert_eq!(renderer.active_frames, eq::BASE + eq::units() + original);
-    assert_eq!(graph.resident, eq::units() + original);
+    assert_eq!(
+        renderer.active_frames,
+        eq::BASE + eq::units() + original + boundary_and_capacity
+    );
+    assert_eq!(
+        graph.resident,
+        eq::units() + original + boundary_and_capacity
+    );
     renderer.release_shared_graph(graph, 0);
     assert_eq!(renderer.active_frames, eq::BASE);
 }
@@ -93,6 +101,22 @@ fn successful_graph_handoff_and_cancelled_tile_release_each_charge_once() {
     let control = eq::control(&cancelled, &work);
     let mut renderer = StageAudio::new(Arc::clone(&plan));
     renderer.active_frames = eq::BASE;
+    let sound_metadata = {
+        let mut admission = sound_context_admission::Admission::new(&mut renderer, control);
+        plan.audio_sound_instance_context_admitted(
+            owner.instance(),
+            control.query_limits().unwrap(),
+            &mut admission,
+        )
+        .unwrap()
+        .into_shared(&mut admission)
+        .unwrap()
+    };
+    let sound_metadata_frames = work.borrow().sound_context_frames;
+    drop(sound_metadata);
+    assert_eq!(work.borrow().sound_context_frames, 0);
+    let original = super::admission_tests::original_metadata_units(&plan);
+    let boundary_and_capacity = super::admission_tests::boundary_and_capacity_metadata_units(&plan);
     let mut graph = graph(&plan, false);
     let id = node(&mut renderer, &mut graph, &owner, control).unwrap();
     assert_eq!(
@@ -103,6 +127,10 @@ fn successful_graph_handoff_and_cancelled_tile_release_each_charge_once() {
     assert!(
         graph.resident > eq::units(),
         "Graph retains metadata plus native bound"
+    );
+    assert_eq!(
+        graph.resident,
+        eq::units() + original + boundary_and_capacity + sound_metadata_frames
     );
     assert_eq!(renderer.active_frames, eq::BASE + graph.resident);
     let Sounds::Owner(sound) = &graph.nodes[id].context.sounds else {

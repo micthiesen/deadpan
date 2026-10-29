@@ -8,34 +8,34 @@ pub(in crate::stages) struct State {
 }
 
 pub(in crate::stages) trait Harness<'plan> {
-    type Graph;
+    type Graph<'work>;
 
     fn metadata_units(_plan: &'plan Arc<RenderPlan>) -> u64 {
         0
     }
 
-    fn graph(plan: &'plan RenderPlan) -> Self::Graph;
-    fn node(
+    fn graph<'work>(plan: &'plan RenderPlan) -> Self::Graph<'work>;
+    fn node<'work>(
         renderer: &mut StageAudio,
-        graph: &mut Self::Graph,
+        graph: &mut Self::Graph<'work>,
         owner: &AudioOwnerClock<'plan>,
-        control: WorkControl<'_>,
+        control: WorkControl<'work>,
     ) -> Result<usize, StageAudioError>;
-    fn tile(
+    fn tile<'work>(
         renderer: &mut StageAudio,
         provider: &mut impl AudioSourceProvider,
-        graph: &mut Self::Graph,
+        graph: &mut Self::Graph<'work>,
         id: usize,
-        control: WorkControl<'_>,
+        control: WorkControl<'work>,
     ) -> Result<(), StageAudioError>;
     fn read(
         renderer: &mut StageAudio,
         provider: &mut impl AudioSourceProvider,
         control: WorkControl<'_>,
     ) -> Result<ReadBlock, StageAudioError>;
-    fn state(graph: &Self::Graph, id: Option<usize>) -> State;
-    fn take_filter(graph: &mut Self::Graph, id: usize) -> crate::Equalizer;
-    fn restore_filter(graph: &mut Self::Graph, id: usize, filter: crate::Equalizer);
+    fn state<'work>(graph: &Self::Graph<'work>, id: Option<usize>) -> State;
+    fn take_filter<'work>(graph: &mut Self::Graph<'work>, id: usize) -> crate::Equalizer;
+    fn restore_filter<'work>(graph: &mut Self::Graph<'work>, id: usize, filter: crate::Equalizer);
 }
 
 pub(in crate::stages) fn actual_node_requires_full_eq_native_headroom_and_retains_it_once<
@@ -60,9 +60,9 @@ pub(in crate::stages) fn actual_node_requires_full_eq_native_headroom_and_retain
         )
         .unwrap();
         renderer.active_frames = BASE;
-        let mut graph = H::graph(plan);
         let work = RefCell::new(ReadWork::default());
         let control = control(&cancelled, &work);
+        let mut graph = H::graph(plan);
         let result = H::node(&mut renderer, &mut graph, &owner, control);
         if headroom < combined {
             assert!(matches!(

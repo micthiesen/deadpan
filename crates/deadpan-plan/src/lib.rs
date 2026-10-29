@@ -54,8 +54,9 @@ pub use plan::{
     AudioOwnerOccurrences, AudioOwnerRetainedInput, AudioOwnerRetainedProbe,
 };
 pub use plan::{
-    AdmittedAudioOwnerQuery, AudioOwnerClock, AudioOwnerClockOrigin, AudioOwnerKind,
-    AudioOwnerQuery, AudioOwnerSpan, AudioOwnerSupport, AudioTreatmentBoundary,
+    AdmittedAudioOwnerQuery, AdmittedAudioTreatmentBoundary, AudioOwnerClock,
+    AudioOwnerClockOrigin, AudioOwnerKind, AudioOwnerQuery, AudioOwnerSpan, AudioOwnerSupport,
+    AudioTreatmentBoundary,
 };
 pub use plan::{
     AdmittedOriginalContext, ContextChargeTransfer, SharedAudioOwnerRetainedInput,

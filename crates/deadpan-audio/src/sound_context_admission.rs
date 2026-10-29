@@ -1,6 +1,6 @@
 //! Request-local admission for current-sound and actual Original metadata.
-//! Query, capture, probe and final-sharing leases use sound_context_frames.
-//! Retained-owner queries and Graph containers remain outside this slice.
+//! Query/capture/probe, caller copies and node storage share the request ledger.
+//! Wider renderer queries and the other Graph containers remain separate work.
 use super::*;
 use deadpan_plan::AudioSoundContextAdmission;
 use std::alloc::Layout;
@@ -31,15 +31,40 @@ pub(super) struct JointTransfer<'work> {
     ledger: &'work RefCell<ReadWork>,
     remaining: u64,
 }
+#[derive(Default)]
+pub(super) struct TransferLeases<'value, 'work> {
+    pub(super) original: [Option<&'value Lease<'work>>; 3],
+    pub(super) sound: Option<&'value Lease<'work>>,
+    pub(super) key: Option<&'value Lease<'work>>,
+    pub(super) boundary: Option<&'value Lease<'work>>,
+    pub(super) capacity: Option<&'value Lease<'work>>,
+}
+#[derive(Default)]
+pub(super) struct TransferLeasesMut<'value, 'work> {
+    pub(super) original: [Option<&'value mut Lease<'work>>; 3],
+    pub(super) sound: Option<&'value mut Lease<'work>>,
+    pub(super) key: Option<&'value mut Lease<'work>>,
+    pub(super) boundary: Option<&'value mut Lease<'work>>,
+    pub(super) capacity: Option<&'value mut Lease<'work>>,
+}
 pub(super) fn preflight_transfer<'work>(
     control: WorkControl<'work>,
-    original: Option<&Lease<'work>>,
-    core: Option<&Lease<'work>>,
-    buffer: Option<&Lease<'work>>,
-    sound: Option<&Lease<'work>>,
+    leases: TransferLeases<'_, 'work>,
 ) -> Result<JointTransfer<'work>, StageAudioError> {
     let mut total = 0_u64;
-    for lease in [original, core, buffer, sound].into_iter().flatten() {
+    let [plan, core, buffer] = leases.original;
+    for lease in [
+        plan,
+        core,
+        buffer,
+        leases.sound,
+        leases.key,
+        leases.boundary,
+        leases.capacity,
+    ]
+    .into_iter()
+    .flatten()
+    {
         if !std::ptr::eq(lease.ledger, control.work) {
             return Err(PlanError::AudioMetadataIssuerMismatch.into());
         }
@@ -60,15 +85,21 @@ pub(super) fn preflight_transfer<'work>(
 }
 impl<'work> JointTransfer<'work> {
     /// The no-fail publication tail: no arithmetic, reservation or callbacks.
-    pub(super) fn commit(
-        self,
-        original: Option<&mut Lease<'work>>,
-        core: Option<&mut Lease<'work>>,
-        buffer: Option<&mut Lease<'work>>,
-        sound: Option<&mut Lease<'work>>,
-    ) {
+    pub(super) fn commit(self, leases: TransferLeasesMut<'_, 'work>) {
         self.ledger.borrow_mut().sound_context_frames = self.remaining;
-        for lease in [original, core, buffer, sound].into_iter().flatten() {
+        let [plan, core, buffer] = leases.original;
+        for lease in [
+            plan,
+            core,
+            buffer,
+            leases.sound,
+            leases.key,
+            leases.boundary,
+            leases.capacity,
+        ]
+        .into_iter()
+        .flatten()
+        {
             lease.frames = 0;
         }
     }

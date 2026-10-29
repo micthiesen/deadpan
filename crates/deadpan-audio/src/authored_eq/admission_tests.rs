@@ -4,9 +4,9 @@ use crate::stages::authored_eq::eq_admission_fixture::checks::{self, Harness, St
 struct Authored;
 
 impl<'plan> Harness<'plan> for Authored {
-    type Graph = Graph<'plan, 'plan>;
+    type Graph<'work> = Graph<'plan, 'plan>;
 
-    fn graph(plan: &'plan RenderPlan) -> Self::Graph {
+    fn graph<'work>(plan: &'plan RenderPlan) -> Self::Graph<'work> {
         Graph {
             plan,
             nodes: Vec::new(),
@@ -15,11 +15,11 @@ impl<'plan> Harness<'plan> for Authored {
         }
     }
 
-    fn node(
+    fn node<'work>(
         renderer: &mut StageAudio,
-        graph: &mut Self::Graph,
+        graph: &mut Self::Graph<'work>,
         owner: &AudioOwnerClock<'plan>,
-        control: WorkControl<'_>,
+        control: WorkControl<'work>,
     ) -> Result<usize, StageAudioError> {
         renderer.eq_node(
             graph,
@@ -36,12 +36,12 @@ impl<'plan> Harness<'plan> for Authored {
         )
     }
 
-    fn tile(
+    fn tile<'work>(
         renderer: &mut StageAudio,
         provider: &mut impl AudioSourceProvider,
-        graph: &mut Self::Graph,
+        graph: &mut Self::Graph<'work>,
         id: usize,
-        control: WorkControl<'_>,
+        control: WorkControl<'work>,
     ) -> Result<(), StageAudioError> {
         renderer
             .eq_tile(provider, graph, id, 0, control, 1)
@@ -56,7 +56,7 @@ impl<'plan> Harness<'plan> for Authored {
         renderer.read_authored_equalizers(provider, AudioSample(128), 1, control, 0, &[])
     }
 
-    fn state(graph: &Self::Graph, id: Option<usize>) -> State {
+    fn state<'work>(graph: &Self::Graph<'work>, id: Option<usize>) -> State {
         State {
             nodes: graph.nodes.len(),
             resident: graph.resident,
@@ -65,11 +65,11 @@ impl<'plan> Harness<'plan> for Authored {
         }
     }
 
-    fn take_filter(graph: &mut Self::Graph, id: usize) -> crate::Equalizer {
+    fn take_filter<'work>(graph: &mut Self::Graph<'work>, id: usize) -> crate::Equalizer {
         graph.nodes[id].filter.take().unwrap()
     }
 
-    fn restore_filter(graph: &mut Self::Graph, id: usize, filter: crate::Equalizer) {
+    fn restore_filter<'work>(graph: &mut Self::Graph<'work>, id: usize, filter: crate::Equalizer) {
         graph.nodes[id].filter = Some(filter);
     }
 }
