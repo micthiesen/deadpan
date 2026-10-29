@@ -3,6 +3,10 @@
 //! be reconstructed from node IDs or nominal automation coordinates alone.
 
 #[cfg(test)]
+#[path = "authored_eq/legacy_tile_baseline.rs"]
+mod legacy_tile_baseline;
+
+#[cfg(test)]
 #[path = "authored_eq/wide_query_tests.rs"]
 mod wide_query_tests;
 
@@ -27,6 +31,13 @@ use super::*;
 mod node_admission_tests;
 #[path = "authored_eq/node_description.rs"]
 mod node_description;
+#[cfg(test)]
+#[path = "authored_eq/tile_admission_tests.rs"]
+mod tile_admission_tests;
+#[path = "authored_eq/tile_block.rs"]
+mod tile_block;
+#[path = "authored_eq/tile_index.rs"]
+mod tile_index;
 
 #[cfg(test)]
 #[path = "authored_eq/admission_tests.rs"]
@@ -388,7 +399,7 @@ struct Node<'plan, 'work> {
         sound_context_admission::Lease<'work>,
     >,
     filter: Option<crate::Equalizer>,
-    tiles: BTreeMap<i64, Arc<WideBlock>>,
+    tiles: tile_index::TileIndex,
 }
 
 struct Graph<'plan, 'skip, 'work> {
@@ -505,6 +516,20 @@ impl StageAudio {
     }
 
     fn read_eq_program<'plan, 'work>(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        graph: &mut Graph<'plan, '_, 'work>,
+        program: Program<'_, 'plan>,
+        start: AudioSample,
+        frames: u32,
+        control: WorkControl<'work>,
+    ) -> Result<WideBlock, StageAudioError> {
+        self.read_eq_program_with_index_work::<true>(
+            provider, graph, program, start, frames, control,
+        )
+    }
+
+    fn read_eq_program_with_index_work<'plan, 'work, const METER_WORK: bool>(
         &mut self,
         provider: &mut impl AudioSourceProvider,
         graph: &mut Graph<'plan, '_, 'work>,
@@ -654,7 +679,7 @@ impl StageAudio {
                             .checked_mul(OUTPUT as i64)
                             .ok_or(TimeError::Overflow)?;
                         if cached.as_ref().is_none_or(|(key, _)| *key != tile) {
-                            let block = self.eq_tile(
+                            let block = self.eq_tile_with_index_work::<METER_WORK>(
                                 provider,
                                 graph,
                                 id,
@@ -848,7 +873,7 @@ impl StageAudio {
                     context,
                     boundary,
                     filter: Some(filter),
-                    tiles: BTreeMap::new(),
+                    tiles: tile_index::TileIndex::new(),
                 },
             );
             // The old allocation has physically dropped before its charge retires.
@@ -868,7 +893,20 @@ impl StageAudio {
         Ok(id)
     }
 
+    #[cfg(test)]
     fn eq_tile<'plan, 'work>(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        graph: &mut Graph<'plan, '_, 'work>,
+        id: usize,
+        tile: i64,
+        control: WorkControl<'work>,
+        depth: usize,
+    ) -> Result<Arc<WideBlock>, StageAudioError> {
+        self.eq_tile_with_index_work::<true>(provider, graph, id, tile, control, depth)
+    }
+
+    fn eq_tile_with_index_work<'plan, 'work, const METER_WORK: bool>(
         &mut self,
         provider: &mut impl AudioSourceProvider,
         graph: &mut Graph<'plan, '_, 'work>,
@@ -881,7 +919,7 @@ impl StageAudio {
         if depth > self.limits.maximum_depth {
             return Err(StageAudioError::Limit("nested stage depth"));
         }
-        if let Some(block) = graph.nodes[id].tiles.get(&tile) {
+        if let Some(block) = graph.nodes[id].tiles.get::<METER_WORK>(tile, control)? {
             if depth
                 .checked_sub(1)
                 .and_then(|parent| parent.checked_add(block.relative_depth))
@@ -925,7 +963,7 @@ impl StageAudio {
                 while at < end {
                     let count = u32::try_from((end - at).min(i64::from(MAX_OUTPUT_FRAMES)))
                         .map_err(|_| StageAudioError::Range)?;
-                    let block = self.read_eq_program(
+                    let block = self.read_eq_program_with_index_work::<METER_WORK>(
                         provider,
                         graph,
                         Program {
@@ -973,17 +1011,60 @@ impl StageAudio {
                 }
                 control.check()?;
                 let resident = (OUTPUT * 2) as u64;
+                // Prepare against the actual index after recursion. Both old
+                // storage and the complete replacement stay live at this peak.
+                let mut index =
+                    tile_index::prepare::<METER_WORK>(self, &graph.nodes[id].tiles, tile, control)?;
+                let mut block = tile_block::PendingArc::new(
+                    self,
+                    WideBlock {
+                        samples,
+                        suppressed,
+                        dependencies,
+                        relative_depth,
+                    },
+                    control,
+                )?;
+                let retained = resident
+                    .checked_add(index.new_frames())
+                    .and_then(|value| value.checked_add(block.frames()))
+                    .ok_or(StageAudioError::Range)?;
+                let next_active = self
+                    .active_frames
+                    .checked_sub(index.retired_frames())
+                    .and_then(|value| value.checked_add(retained))
+                    .ok_or(StageAudioError::Range)?;
+                let next_resident = graph
+                    .resident
+                    .checked_sub(index.retired_frames())
+                    .and_then(|value| value.checked_add(retained))
+                    .ok_or(StageAudioError::Range)?;
+                // The existing retained PCM bound sees both new metadata
+                // leases; samples themselves are not billed a second time.
                 self.make_room(resident, false, control)?;
-                self.active_frames += resident;
-                graph.resident += resident;
-                let block = Arc::new(WideBlock {
-                    samples,
-                    suppressed,
-                    dependencies,
-                    relative_depth,
+                index.allocate()?;
+                index.prepay_moves::<METER_WORK>(control)?;
+                index.validate_current::<METER_WORK>(&graph.nodes[id].tiles, control)?;
+                control.check()?;
+                let transfer = sound_context_admission::preflight_tile_transfer(
+                    control,
+                    sound_context_admission::TileTransferLeases {
+                        index: index.lease(),
+                        arc_shell: block.lease(),
+                    },
+                )?;
+                index.publish(
+                    &mut graph.nodes[id].tiles,
+                    Arc::clone(block.value.as_ref().expect("unpublished tile")),
+                );
+                // publish physically dropped the old Vec before retirement.
+                self.active_frames = next_active;
+                graph.resident = next_resident;
+                transfer.commit(sound_context_admission::TileTransferLeasesMut {
+                    index: index.lease_mut(),
+                    arc_shell: block.lease_mut(),
                 });
-                graph.nodes[id].tiles.insert(tile, Arc::clone(&block));
-                Ok(block)
+                Ok(block.value.take().expect("published tile"))
             })();
             self.active_frames -= reservation;
             result

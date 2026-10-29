@@ -47,24 +47,49 @@ pub(super) struct TransferLeasesMut<'value, 'work> {
     pub(super) boundary: Option<&'value mut Lease<'work>>,
     pub(super) capacity: Option<&'value mut Lease<'work>>,
 }
+pub(super) struct TileTransferLeases<'value, 'work> {
+    pub(super) index: Option<&'value Lease<'work>>,
+    pub(super) arc_shell: Option<&'value Lease<'work>>,
+}
+pub(super) struct TileTransferLeasesMut<'value, 'work> {
+    pub(super) index: Option<&'value mut Lease<'work>>,
+    pub(super) arc_shell: Option<&'value mut Lease<'work>>,
+}
+pub(super) struct TileTransfer<'work> {
+    inner: JointTransfer<'work>,
+}
 pub(super) fn preflight_transfer<'work>(
     control: WorkControl<'work>,
     leases: TransferLeases<'_, 'work>,
 ) -> Result<JointTransfer<'work>, StageAudioError> {
-    let mut total = 0_u64;
     let [plan, core, buffer] = leases.original;
-    for lease in [
-        plan,
-        core,
-        buffer,
-        leases.sound,
-        leases.key,
-        leases.boundary,
-        leases.capacity,
-    ]
-    .into_iter()
-    .flatten()
-    {
+    preflight_slots(
+        control,
+        &[
+            plan,
+            core,
+            buffer,
+            leases.sound,
+            leases.key,
+            leases.boundary,
+            leases.capacity,
+        ],
+    )
+}
+pub(super) fn preflight_tile_transfer<'work>(
+    control: WorkControl<'work>,
+    leases: TileTransferLeases<'_, 'work>,
+) -> Result<TileTransfer<'work>, StageAudioError> {
+    Ok(TileTransfer {
+        inner: preflight_slots(control, &[leases.index, leases.arc_shell])?,
+    })
+}
+fn preflight_slots<'work>(
+    control: WorkControl<'work>,
+    leases: &[Option<&Lease<'work>>],
+) -> Result<JointTransfer<'work>, StageAudioError> {
+    let mut total = 0_u64;
+    for lease in leases.iter().flatten() {
         if !std::ptr::eq(lease.ledger, control.work) {
             return Err(PlanError::AudioMetadataIssuerMismatch.into());
         }
@@ -86,9 +111,8 @@ pub(super) fn preflight_transfer<'work>(
 impl<'work> JointTransfer<'work> {
     /// The no-fail publication tail: no arithmetic, reservation or callbacks.
     pub(super) fn commit(self, leases: TransferLeasesMut<'_, 'work>) {
-        self.ledger.borrow_mut().sound_context_frames = self.remaining;
         let [plan, core, buffer] = leases.original;
-        for lease in [
+        self.commit_slots(&mut [
             plan,
             core,
             buffer,
@@ -96,12 +120,19 @@ impl<'work> JointTransfer<'work> {
             leases.key,
             leases.boundary,
             leases.capacity,
-        ]
-        .into_iter()
-        .flatten()
-        {
+        ]);
+    }
+    fn commit_slots(self, leases: &mut [Option<&mut Lease<'work>>]) {
+        self.ledger.borrow_mut().sound_context_frames = self.remaining;
+        for lease in leases.iter_mut().flatten() {
             lease.frames = 0;
         }
+    }
+}
+impl<'work> TileTransfer<'work> {
+    pub(super) fn commit(self, leases: TileTransferLeasesMut<'_, 'work>) {
+        self.inner
+            .commit_slots(&mut [leases.index, leases.arc_shell]);
     }
 }
 

@@ -430,6 +430,20 @@ stays disabled. Tile maps/variable metadata, other containers, mix clock copies
 and full recursive closure remain open. No caps, weights, refunds, cold
 activation or requirement/gate statuses changed.
 
+The [Authored tile checkpoint](qualification/authored-tile-index-2026-10-29.md)
+admits actual sorted tile-index Vec capacity and each shallow Arc allocation.
+Seven old native scenarios match both source variants; full f64 PCM, dependencies,
+cache behavior and old controller work remain pinned. New comparison/write fees
+and storage deltas are checked separately. Main/isolated Audio pass 370/351,
+ordinary Stage 203/203 and definition/history 171/eight; strict lint and three
+fresh reviews pass. Unchanged Plan 627/614 results are reused with exact
+executable/source/dependency audits. The fresh Split matrix stays three pass/four
+work-limit failures in 267.31 seconds. Nested selected play now reports recursive
+policy work and one selected play reports owner ancestry; other errors are
+unchanged. General sound Split remains disabled. Variable suppression/dependency
+containers, other Graph storage, mix copies and full recursive closure remain
+open. No caps, prior weights, refunds, cold activation or acceptance status changed.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 
