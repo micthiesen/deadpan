@@ -342,8 +342,19 @@ Strict lint and independent review pass. All 20 staged sources equal isolated
 compiled bytes. Split stays four pass/three fail, with nested selected play now
 exhausting structural capture work. Probe/editorial/raw-domain construction,
 retained-owner queries, final inner-charge handoff, caller/node containers and
-complete recursive closure remain open. PointCeil's private provider needs an
-additive old oracle first. No cold/batch activation or requirement/gate changes.
+complete recursive closure remain open. The PointCeil oracle prerequisite is
+recorded below. No cold/batch activation or requirement/gate changes.
+
+The additive [PointCeil probe supplement](qualification/owner-probe-point-baseline-2026-10-29.md)
+borrows the actual returned private Structural AudioSignal after evaluation,
+using the existing old probe calls. All 16 cases, 128 observations and immutable
+v1 metadata remain literal-equal; main/isolated outputs agree. All four explicit
+producer runs pass, final Plan libraries pass 134/121 and strict lint passes.
+Review's path, metadata and foreign-Plan regression corrections are covered.
+All four staged sources equal both compiled variants, with production bodies
+unchanged. This closes the oracle gap for the exercised Structural constructor;
+Empty and other providers remain unexercised. Probe admission and the full
+owning handoff remain open. Split and requirement/gate statuses are unchanged.
 
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.

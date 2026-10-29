@@ -2,7 +2,24 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: actual capture admitted, product goal active
+## Current state: probe provider oracle frozen, product goal active
+
+The [PointCeil probe supplement](../qualification/owner-probe-point-baseline-2026-10-29.md)
+now borrows the actual returned private Structural AudioSignal after evaluation.
+It invokes the same old producer once and leaves all 16 cases, 128 observations
+and immutable v1 metadata literal-equal. Main/isolated outputs agree; the golden
+is additive and the earlier baseline remains unchanged. The actual Point case
+has work21. Other providers and Empty remain unexercised. This is logical evidence,
+not probe admission or a memory/native qualification.
+
+Final Plan libraries pass 134/121; all four explicit producer invocations and
+strict lint pass. Review's path, full-metadata comparison and panic-identity
+corrections are covered, including a valid shorter foreign Plan. All four sources
+equal main/isolated/index bytes; both runtime bodies outside cfg(test) remain
+identical. All 15 receipts are terminal; one invalid-Source-root fixture failure
+is retained. The other 335 authority inputs remain unchanged. Next close the
+editorial/probe/raw-domain construction and complete guarded handoff through the
+real retained-owner decision, final sharing and joint Graph publication.
 
 The [actual owner-capture admission](../qualification/owner-capture-budget-2026-10-29.md)
 extends the admitted numerical Root/Domain query through the same complete walk.
@@ -33,10 +50,9 @@ The fresh Split matrix remains four pass/three fail in 403.46 seconds. All-owner
 Source/Sequence cut-three limited 0+511 fails plan work per read; nested selected
 without root sound prefix-two limited 0+4096 exhausts structural capture work;
 one selected play prefix-two limited 0+4096 exhausts frozen projection work.
-General sound Split remains disabled. Next freeze the actual PointCeil private
-Structural AudioSignal probe oracle, then close editorial/probe/raw-domain
-construction and the complete owning handoff through retained-owner decisions
-and final sharing. Caller/node containers and full recursive closure remain open.
+General sound Split remains disabled. Its PointCeil oracle prerequisite is now
+recorded above; complete probe handoff, caller/node containers and full recursive
+closure remain open.
 
 The following query checkpoint is historical; capture C is now admitted above.
 

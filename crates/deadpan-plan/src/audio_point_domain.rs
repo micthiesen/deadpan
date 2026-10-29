@@ -46,6 +46,39 @@ impl crate::audio_allocated::OwnedHeap for AudioPointDomain<'_> {
 }
 
 impl<'plan> AudioPointDomain<'plan> {
+    /// Test-only borrowed view of the ACTUAL returned object after evaluation
+    /// replacement. This does not call signal(), clone or query its provider.
+    #[cfg(test)]
+    pub(in crate::plan) fn probe_baseline_snapshot(
+        &self,
+        expected_plan: &RenderPlan,
+    ) -> serde_json::Value {
+        assert!(
+            self.belongs_to(expected_plan),
+            "foreign Plan in Point probe snapshot"
+        );
+        let Self {
+            plan: _,
+            selector,
+            root,
+            placement,
+            grid,
+            sampling,
+            samples,
+            signal,
+        } = self;
+        serde_json::json!({
+            "belongs_to_expected_plan":true,
+            "selector":selector,
+            "root":expected_plan.nodes[*root].inspection.id.as_str(),
+            "placement":placement,
+            "grid":grid,
+            "sampling":sampling,
+            "samples":samples,
+            "structural_signal":signal.probe_baseline_snapshot(expected_plan),
+        })
+    }
+
     pub(super) fn set_evaluation(
         &mut self,
         definition: Option<AudioDefinitionSelector>,

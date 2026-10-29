@@ -604,6 +604,56 @@ pub struct AudioSignal<'plan> {
     provider: SignalProvider<'plan>,
 }
 
+#[cfg(test)]
+impl AudioSignal<'_> {
+    /// Exhaustive private fields of this constructor's Structural signal only.
+    /// An unexpected provider is rejected instead of silently omitting a graph.
+    pub(in crate::plan) fn probe_baseline_snapshot(
+        &self,
+        expected_plan: &RenderPlan,
+    ) -> serde_json::Value {
+        assert!(self.belongs_to(expected_plan));
+        let Self {
+            plan: _,
+            root,
+            support,
+            sampling_support,
+            constrain_support,
+            repeats,
+            definition,
+            placed_transform,
+            bypass_binding,
+            gap,
+            provider,
+        } = self;
+        assert!(
+            matches!(provider, SignalProvider::Structural),
+            "actual raw PointCeil constructor must retain Structural provider"
+        );
+        let bypass = bypass_binding.map(|target| match target {
+            BindingTarget::Node(index) => serde_json::json!({
+                "tag":"Node","node":expected_plan.nodes[index].inspection.id.as_str(),
+            }),
+            BindingTarget::Gap(index) => serde_json::json!({
+                "tag":"Gap","node":expected_plan.nodes[index].inspection.id.as_str(),
+            }),
+        });
+        serde_json::json!({
+            "belongs_to_expected_plan":true,
+            "root":expected_plan.nodes[*root].inspection.id.as_str(),
+            "support":support,
+            "sampling_support":sampling_support,
+            "constrain_support":constrain_support,
+            "repeats":repeats,
+            "definition":definition,
+            "placed_transform":placed_transform,
+            "bypass_binding":bypass,
+            "gap":gap,
+            "provider":"Structural",
+        })
+    }
+}
+
 impl crate::audio_allocated::OwnedHeap for AudioStage<'_> {
     fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
         let Self {

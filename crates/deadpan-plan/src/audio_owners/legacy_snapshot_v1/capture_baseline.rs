@@ -5,6 +5,9 @@ use crate::plan::audio::{AudioWalkSpan, EditorialCapture, EnvelopeConstraint};
 use crate::plan::audio_domain::AudioDomainSeed;
 use std::cell::RefCell;
 
+#[path = "probe_baseline.rs"]
+pub(in crate::plan) mod probe_baseline;
+
 #[derive(Default)]
 struct Recording {
     case: Option<String>,
@@ -347,6 +350,7 @@ pub(in crate::plan) fn probe_result(
         "result":if value.is_some(){"Some"}else{"None"},
         "retained_input":value.map(|v|v.capture_baseline_snapshot(expected_plan)),
     }));
+    probe_baseline::returned_point(expected_plan, value, work);
 }
 
 #[test]
