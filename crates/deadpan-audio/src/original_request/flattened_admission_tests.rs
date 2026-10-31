@@ -19,7 +19,7 @@ impl AudioSourceProvider for LeaseWatchingProvider<'_> {
         assert!(self.expected_minimum > 0);
         assert!(
             self.work.borrow().sound_context_frames >= self.expected_minimum,
-            "actual numerical source admission must retain the flattened query lease"
+            "actual numerical source admission must retain both prepared query leases"
         );
         self.observed += 1;
         if self.refuse {
@@ -81,7 +81,7 @@ fn flattened_request_lease_is_live_during_real_source_io_and_dies_before_returne
             assert_eq!(
                 work.borrow().sound_context_frames,
                 0,
-                "returned PCM does not retain flattened metadata"
+                "returned PCM does not retain prepared query metadata"
             );
             assert_eq!(reader.active_frames, 0);
             drop(block);
@@ -215,7 +215,7 @@ fn flattened_foreign_readwork_is_refused_before_query_read_and_source_admission(
 }
 
 #[test]
-fn flattened_live_charge_reduces_actual_required_pcm_reservation_room() {
+fn flattened_and_processing_live_charge_reduces_actual_required_pcm_reservation_room() {
     for domain_read in [false, true] {
         let (plan, provider) = fixture();
         let domain = plan
@@ -255,6 +255,10 @@ fn flattened_live_charge_reduces_actual_required_pcm_reservation_room() {
 
 #[test]
 fn flattened_later_processing_failure_drops_earlier_flattened_lease_without_refunding_work() {
+    with_legacy_processing_queries(legacy_processing_failure_after_admitted_flattened);
+}
+
+fn legacy_processing_failure_after_admitted_flattened() {
     for domain_read in [false, true] {
         let (plan, provider) = fixture();
         let domain = plan

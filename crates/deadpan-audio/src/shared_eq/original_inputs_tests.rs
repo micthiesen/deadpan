@@ -153,17 +153,49 @@ fn original_input_optional_cache_respects_live_owner_query_metadata_budget() {
     assert_eq!(measurement_work.borrow().sound_context_frames, 0);
 
     let total = pcm_resident.checked_add(metadata_resident).unwrap();
-    // Run the exact-fit control first so the red regression also establishes
-    // that this same fixture and finite constructor can complete the read.
+    // Cold reading constructs processing metadata while the separate owner
+    // lease is live. The publication ceiling does not cover that earlier peak.
+    let mut cold_renderer = StageAudio::with_limits(
+        Arc::clone(&plan),
+        StageLimits {
+            maximum_resident_frames: u32::try_from(total).unwrap(),
+            ..StageLimits::default()
+        },
+    )
+    .unwrap();
+    let cold_work = RefCell::new(ReadWork::default());
+    let cold_control = control(&cancelled, &cold_work);
+    let mut cold_graph = graph(&plan);
+    let cold_owners = {
+        let mut admission =
+            sound_context_admission::Admission::new(&mut cold_renderer, cold_control);
+        Context::Root.owners_admitted(&plan, samples.clone(), cold_control, &mut admission)
+    }
+    .unwrap();
+    assert_eq!(cold_work.borrow().sound_context_frames, metadata_resident);
+    let cold_result = cold_renderer.shared_original_input(
+        &mut provider,
+        &mut cold_graph,
+        &Context::Root,
+        samples.clone(),
+        cold_control,
+        0,
+    );
+    assert!(matches!(
+        cold_result,
+        Err(StageAudioError::Limit("resident PCM or stage cache"))
+    ));
+    assert_eq!(cold_work.borrow().sound_context_frames, metadata_resident);
+    assert_eq!(cold_renderer.cached_resident_frames(), 0);
+    assert_eq!(cold_renderer.cached_stage_count(), 0);
+    drop(cold_owners);
+    assert_eq!(cold_work.borrow().sound_context_frames, 0);
+
+    // Hold a real owner lease while measuring optional publication. Establish
+    // both allocations at ample capacity, then apply the exact/one-short
+    // retained-state ceiling before the cache decision.
     for (ceiling, should_cache) in [(total, true), (total.checked_sub(1).unwrap(), false)] {
-        let mut renderer = StageAudio::with_limits(
-            Arc::clone(&plan),
-            StageLimits {
-                maximum_resident_frames: u32::try_from(ceiling).unwrap(),
-                ..StageLimits::default()
-            },
-        )
-        .unwrap();
+        let mut renderer = StageAudio::new(Arc::clone(&plan));
         let work = RefCell::new(ReadWork::default());
         let control = control(&cancelled, &work);
         let mut graph = graph(&plan);
@@ -182,20 +214,28 @@ fn original_input_optional_cache_respects_live_owner_query_metadata_budget() {
         let calls = provider.calls;
         let source_checks = work.borrow().source_checks;
         let raw = renderer
-            .shared_original_input(
-                &mut provider,
-                &mut graph,
-                &Context::Root,
-                samples.clone(),
-                control,
-                0,
-            )
+            .read_controlled(&mut provider, samples.start, 64, control, true, 0)
             .unwrap();
         assert!(
             provider.calls > calls,
             "completed read must admit its real source"
         );
         assert!(work.borrow().source_checks > source_checks);
+        let calls = provider.calls;
+        let source_checks = work.borrow().source_checks;
+        renderer.limits.maximum_resident_frames = u32::try_from(ceiling).unwrap();
+        let lookup = LookupKey::new(&Context::Root, &samples, 0);
+        let raw = renderer
+            .cache_original_input(
+                &mut graph,
+                &Context::Root,
+                (samples.clone(), 0, lookup),
+                raw,
+                control,
+            )
+            .unwrap();
+        assert_eq!(provider.calls, calls);
+        assert_eq!(work.borrow().source_checks, source_checks);
         assert_eq!(raw.start, reference.start);
         assert_eq!(raw.samples, reference.samples);
         assert_eq!(raw.suppressed, reference.suppressed);

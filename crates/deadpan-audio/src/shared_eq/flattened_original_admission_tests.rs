@@ -88,7 +88,7 @@ fn flattened_lease_remains_live_inside_actual_policy_population_then_releases_af
                 assert_eq!(
                     work.borrow().sound_context_frames,
                     live,
-                    "actual Original selection callback sees the request's live flattened charge"
+                    "actual Original selection callback sees both prepared query leases"
                 );
                 observed.set(observed.get() + 1);
                 true
@@ -198,7 +198,7 @@ fn flattened_prepared_late_cache_hit_drops_unused_query_lease_and_preserves_cach
         assert_eq!(
             work.borrow().sound_context_frames,
             0,
-            "unused prepared flattened query and its lease die on the hit return"
+            "unused prepared query metadata and both leases die on the hit return"
         );
         drop(first);
         drop(hit);
@@ -358,3 +358,6 @@ fn flattened_early_warm_probe_skips_all_query_construction_and_retains_no_query_
         assert_eq!(work.borrow().sound_context_frames, 0);
     }
 }
+
+#[path = "processing_original_admission_tests.rs"]
+mod processing_admission;

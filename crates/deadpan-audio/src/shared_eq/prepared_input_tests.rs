@@ -65,8 +65,8 @@ fn prepared_miss_and_hit_reuse_one_query_and_keep_live_source_admission() {
         .unwrap();
     assert_eq!(
         work.borrow().plan_work - before_hit,
-        hit_work + 2,
-        "the hit bills sealed request validation and its actual issuer comparison once each"
+        hit_work + 3,
+        "the hit bills sealed request validation and both actual issuer comparisons once each"
     );
     assert_eq!(work.borrow().sound_context_frames, 0);
     assert!(provider.calls > calls);

@@ -23,6 +23,12 @@ use super::{
 };
 use crate::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap, PlanError};
 
+#[path = "audio_signal_processing_query.rs"]
+mod processing_query;
+
+#[path = "audio_signal_query.rs"]
+mod query;
+
 #[path = "audio_source_voice.rs"]
 mod source_voice;
 pub use source_voice::{AudioSourceVoice, AudioSourceVoiceIdentity, AudioSourceVoiceRecipe};
@@ -721,54 +727,8 @@ impl RenderPlan {
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
     ) -> Result<AudioProcessingQuery<'_>, PlanError> {
-        let query = self.audio_signal().query_inner(
-            SignalSample(samples.start.0)..SignalSample(samples.end.0),
-            limits,
-            AudioBoundaryRule::RoundEven,
-            true,
-            true,
-        )?;
-        Ok(AudioProcessingQuery {
-            project_id: query.project_id,
-            revision_id: query.revision_id,
-            samples,
-            spans: query
-                .spans
-                .into_iter()
-                .map(|span| {
-                    Ok(AudioProcessingSpan {
-                        definition: span.definition,
-                        samples: AudioSample(span.samples.start.0)..AudioSample(span.samples.end.0),
-                        allocated_samples: AudioSample(span.allocated_samples.start.0)
-                            ..AudioSample(span.allocated_samples.end.0),
-                        project_extent: span.signal_extent,
-                        instance: span.instance,
-                        gap_after: span.gap_after,
-                        transform: AudioTransform {
-                            project_origin: span.transform.signal_origin,
-                            project_frames_per_local_frame: span
-                                .transform
-                                .signal_frames_per_local_frame,
-                            project_frames_per_sample: span.transform.signal_frames_per_sample,
-                        },
-                        grid: AudioSampleGrid::new(
-                            span.grid.frame_origin(),
-                            span.grid.frames_per_sample(),
-                            span.grid.boundary_rule(),
-                        )?,
-                        sampling: AudioSampleMap::new(
-                            AudioSample(span.sampling.anchor().0),
-                            span.sampling.local_at_anchor(),
-                            span.sampling.local_frames_per_sample(),
-                        )?,
-                        retimes: span.retimes,
-                        content: span.content,
-                    })
-                })
-                .collect::<Result<_, PlanError>>()?,
-            lookup: query.lookup,
-            work: query.work,
-        })
+        self.audio_processing_admitted(samples, limits, &mut Unmetered)
+            .map(crate::AdmittedAudioProcessingQuery::unmetered)
     }
 }
 
@@ -1012,6 +972,15 @@ impl<'plan> AudioSignal<'plan> {
         stop_at_preserve: bool,
         stop_at_bindings: bool,
     ) -> Result<AudioSignalQuery<'plan>, PlanError> {
+        if matches!(self.provider, SignalProvider::Structural) {
+            return self.structural_query_unmetered(
+                samples,
+                limits,
+                rule,
+                stop_at_preserve,
+                stop_at_bindings,
+            );
+        }
         limits.validate()?;
         if matches!(self.provider, SignalProvider::RequiresOwnedInput) {
             return Err(PlanError::InvalidPlan(
@@ -1129,294 +1098,15 @@ impl<'plan> AudioSignal<'plan> {
         stop_at_bindings: bool,
         budget: &mut Budget,
     ) -> Result<AudioSignalSpan<'plan>, PlanError> {
-        let mut transform = self.transform()?;
-        let (probe, bias) = grid.probe(sample)?;
-        let mut extent = self.support.clone();
-        let mut sampling_extent = self.constrain_support.then(|| {
-            self.sampling_support
-                .clone()
-                .unwrap_or_else(|| self.support.clone())
-        });
-        let mut current = self.root;
-        let mut repeats = self.repeats.clone();
-        let mut retimes = Vec::new();
-        let mut gap = self.gap.clone();
-        let (content, gap_after) = loop {
-            budget.spend(1)?;
-            budget.lookup.visited_nodes += 1;
-            let node = &self.plan.nodes[current];
-            if let Some(gap) = gap.take() {
-                let CompiledKind::Repeat {
-                    gap_audio: Some(audio),
-                    ..
-                } = &node.kind
-                else {
-                    return Err(PlanError::InvalidPlan(
-                        "audio signal gap definition is missing",
-                    ));
-                };
-                let gap_extent = transform.signal_origin
-                    ..transform.signal_from_local(ExactRatio::integer(gap.duration.frames()))?;
-                extent = intersect(extent, gap_extent.clone())?;
-                sampling_extent = Some(match sampling_extent {
-                    Some(previous) => intersect(previous, gap_extent)?,
-                    None => gap_extent,
-                });
-                if stop_at_bindings
-                    && self.bypass_binding != Some(BindingTarget::Gap(current))
-                    && let Some(bound) = self.plan.bound_at(
-                        current,
-                        &repeats,
-                        self.definition.as_ref(),
-                        super::audio_bound::BoundPlacement {
-                            transform,
-                            grid,
-                            allocated_start: grid.boundary(extent.start)?,
-                            support: sampling_extent.as_ref(),
-                            constraints: &[],
-                            gap: Some(&gap),
-                        },
-                        budget,
-                    )?
-                {
-                    break (AudioSignalContent::Bound(Box::new(bound)), gap.after);
-                }
-                break (
-                    AudioSignalContent::Leaf(AudioContent::from_hold(audio, gap.duration)),
-                    gap.after.clone(),
-                );
-            }
-            if node.preserve_input.is_some() {
-                return Err(PlanError::InvalidPlan(
-                    "owned Preserve output requires its splice placement; use the intrinsic projection for preparation",
-                ));
-            }
-            let node_extent = transform.signal_origin..transform.signal_from_local(node.extent)?;
-            extent = intersect(extent, node_extent.clone())?;
-            if !matches!(
-                node.kind,
-                CompiledKind::Retime {
-                    purpose: RetimePurpose::Partition,
-                    ..
-                } | CompiledKind::Sequence { .. }
-                    | CompiledKind::Repeat { .. }
-            ) {
-                sampling_extent = Some(match sampling_extent {
-                    Some(previous) => intersect(previous, node_extent)?,
-                    None => node_extent,
-                });
-            }
-            if stop_at_bindings
-                && self.bypass_binding != Some(BindingTarget::Node(current))
-                && let Some(bound) = self.plan.bound_at(
-                    current,
-                    &repeats,
-                    self.definition.as_ref(),
-                    super::audio_bound::BoundPlacement {
-                        transform,
-                        grid,
-                        allocated_start: grid.boundary(extent.start)?,
-                        support: sampling_extent.as_ref(),
-                        constraints: &[],
-                        gap: None,
-                    },
-                    budget,
-                )?
-            {
-                break (AudioSignalContent::Bound(Box::new(bound)), None);
-            }
-            let local = transform.local_at_signal_frame(probe)?;
-            match &node.kind {
-                CompiledKind::Source { audio: None, .. } => {
-                    break (
-                        AudioSignalContent::Leaf(AudioContent::Silence {
-                            reason: SilenceReason::NoSourceAudio,
-                        }),
-                        None,
-                    );
-                }
-                CompiledKind::Source {
-                    audio: Some(audio), ..
-                } => {
-                    if audio.selection.start == audio.selection.end {
-                        break (
-                            AudioSignalContent::Leaf(AudioContent::Silence {
-                                reason: SilenceReason::OutsideSourceSelection,
-                            }),
-                            None,
-                        );
-                    }
-                    let start = transform.signal_from_local(audio.selection.start)?;
-                    let end = transform.signal_from_local(audio.selection.end)?;
-                    let content = if sample < grid.boundary(start)? {
-                        extent.end = minimum(extent.end, start)?;
-                        AudioContent::Silence {
-                            reason: audio.outside_reason(),
-                        }
-                    } else if sample >= grid.boundary(end)? {
-                        extent.start = maximum(extent.start, end)?;
-                        AudioContent::Silence {
-                            reason: audio.outside_reason(),
-                        }
-                    } else {
-                        extent = intersect(extent, start..end)?;
-                        let support = intersect(
-                            sampling_extent
-                                .clone()
-                                .ok_or(PlanError::InvalidPlan("source has no sampling domain"))?,
-                            start..end,
-                        )?;
-                        AudioContent::Source {
-                            source: audio.source.clone(),
-                            start: audio.start,
-                            duration: audio.duration,
-                            support: SourceSamplingSupport::from_local(
-                                &audio.source,
-                                audio.start,
-                                audio.duration,
-                                transform.local_at_signal_frame(support.start)?
-                                    ..transform.local_at_signal_frame(support.end)?,
-                            )?,
-                        }
-                    };
-                    break (AudioSignalContent::Leaf(content), None);
-                }
-                CompiledKind::Hold { audio, .. } => {
-                    break (
-                        AudioSignalContent::Leaf(AudioContent::from_hold(
-                            audio,
-                            node.inspection.duration,
-                        )),
-                        None,
-                    );
-                }
-                CompiledKind::Sequence { entries } => {
-                    let mut left = 0;
-                    let mut right = entries.len();
-                    while left < right {
-                        budget.spend(1)?;
-                        budget.lookup.sequence_comparisons += 1;
-                        let middle = left + (right - left) / 2;
-                        let comparison = local.compare(entries[middle].end);
-                        let preceding = comparison.is_gt()
-                            || (comparison.is_eq() && bias == InsertionBias::Right);
-                        if preceding {
-                            left = middle + 1;
-                        } else {
-                            right = middle;
-                        }
-                    }
-                    let entry = entries
-                        .get(left)
-                        .ok_or(PlanError::InvalidPlan("audio signal sequence has no child"))?;
-                    transform = transform.child(entry.start, ExactRatio::ONE)?;
-                    current = entry.child;
-                }
-                CompiledKind::Retime {
-                    child,
-                    start,
-                    scale,
-                    pitch,
-                    purpose,
-                } => {
-                    if stop_at_preserve && pitch.processes(*scale == ExactRatio::ONE) {
-                        break (
-                            AudioSignalContent::Stage(AudioStage::for_node(
-                                self.plan,
-                                current,
-                                &repeats,
-                                self.definition.as_ref(),
-                                self.bypass_binding,
-                            )?),
-                            None,
-                        );
-                    }
-                    if *purpose != RetimePurpose::Partition {
-                        retimes.push(AudioRetimeStage {
-                            node: node.inspection.id.clone(),
-                            child_start: *start,
-                            child_frames_per_local_frame: *scale,
-                            pitch: *pitch,
-                        });
-                    }
-                    let inverse = ExactRatio::ONE.checked_div(*scale)?;
-                    transform = transform.child(
-                        ExactRatio::ZERO.checked_sub(start.checked_mul(inverse)?)?,
-                        inverse,
-                    )?;
-                    current = *child;
-                }
-                CompiledKind::Repeat {
-                    layout,
-                    gap_duration,
-                    ..
-                } => {
-                    let location = layout
-                        .locate_bounded(local, bias, budget.remaining)
-                        .map_err(|error| {
-                            if error.code == deadpan_core::DocumentErrorCode::LimitExceeded {
-                                PlanError::AudioQueryLimit("structural work")
-                            } else {
-                                error.into()
-                            }
-                        })?;
-                    budget.spend(location.comparisons)?;
-                    budget.lookup.iteration_run_comparisons += location.comparisons;
-                    if location.in_gap {
-                        let start = location.play.start.checked_add(location.play.duration)?;
-                        transform = transform.child(start, ExactRatio::ONE)?;
-                        if let Some(child) = location.play.gap_child {
-                            repeats.push(RepeatInstance {
-                                node: node.inspection.id.clone(),
-                                iteration: location.play.iteration,
-                            });
-                            current = self.plan.by_id[&child];
-                            continue;
-                        }
-                        gap = Some(DomainGap {
-                            after: Some(location.play.iteration),
-                            duration: *gap_duration,
-                        });
-                        continue;
-                    }
-                    transform = transform.child(location.play.start, ExactRatio::ONE)?;
-                    repeats.push(RepeatInstance {
-                        node: node.inspection.id.clone(),
-                        iteration: location.play.iteration,
-                    });
-                    current = self.plan.by_id[&location.play.child];
-                }
-            }
-        };
-        let allocated_samples = grid.boundary(extent.start)?..grid.boundary(extent.end)?;
-        if !allocated_samples.contains(&sample) {
-            return Err(PlanError::InvalidPlan(
-                "audio signal interval did not advance",
-            ));
-        }
-        let sampling = AudioSampleMap::new(
-            allocated_samples.start,
-            transform.local_at(allocated_samples.start)?,
-            transform
-                .signal_frames_per_sample
-                .checked_div(transform.signal_frames_per_local_frame)?,
-        )?;
-        Ok(AudioSignalSpan {
-            definition: self.definition.clone(),
-            samples: allocated_samples.clone(),
-            allocated_samples,
-            signal_extent: extent,
-            instance: InstancePath {
-                node: self.plan.nodes[current].inspection.id.clone(),
-                repeats,
-            },
-            gap_after,
-            transform,
+        let mut admission = Unmetered;
+        outer::<_, Unmetered>(self.span_admitted(
+            sample,
             grid,
-            sampling,
-            retimes,
-            content,
-        })
+            stop_at_preserve,
+            stop_at_bindings,
+            &mut QueryBudget::new(budget, &mut admission),
+        ))
+        .map(super::audio_bound::query::GuardedBound::unmetered)
     }
 }
 

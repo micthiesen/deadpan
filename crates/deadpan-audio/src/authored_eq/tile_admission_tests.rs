@@ -36,9 +36,9 @@ fn arc_frames() -> u64 {
         .div_ceil(8)
 }
 
-fn flattened_fees(trace: &Value) -> [u64; 2] {
+fn query_fees(trace: &Value, product: &str) -> [u64; 2] {
     for field in ["nested", "invalid", "overflow"] {
-        assert_eq!(trace[field], false, "invalid flattened receipt: {trace}");
+        assert_eq!(trace[field], false, "invalid {product} receipt: {trace}");
     }
     assert_eq!(number(trace, "active_depth"), 0);
     assert!(number(trace, "max_active_depth") <= 1);
@@ -56,14 +56,16 @@ fn flattened_fees(trace: &Value) -> [u64; 2] {
                 .checked_add(number(lane, "additional_units"))
                 .unwrap()
                 .checked_add(number(lane, "partial_work"))
+                .unwrap()
+                .checked_add(number(lane, "host_eviction_work"))
                 .unwrap(),
-            "actual forwarded deltas reconcile against completed and failed constructors"
+            "actual {product} deltas retain Plan successful/partial work and explicit host eviction work"
         );
         assert_eq!(number(lane, "issuer_checks"), number(lane, "issuer_work"));
         assert_eq!(
             number(lane, "partial_work"),
             0,
-            "partial constructor refusal needs a separate old-work qualification: {trace}"
+            "{product} partial constructor refusal needs separate OLD-work qualification: {trace}"
         );
         number(lane, "additional_units")
             .checked_add(number(lane, "issuer_work"))
@@ -71,75 +73,117 @@ fn flattened_fees(trace: &Value) -> [u64; 2] {
     })
 }
 
-fn assert_ordinary_flattened_trace(trace: &Value) {
-    assert_eq!(flattened_fees(trace), [0, 0]);
+fn host_eviction_receipt(trace: &Value) -> [u64; 2] {
+    let lanes = trace["all_host_eviction_work"].as_array().unwrap();
+    assert_eq!(lanes.len(), 2);
+    [lanes[0].as_u64().unwrap(), lanes[1].as_u64().unwrap()]
+}
+
+fn reconcile_paired_flat_host_receipts(actual: &mut Value, old: &Value) {
+    assert_eq!(
+        query_fees(actual, "paired flattened"),
+        query_fees(old, "paired reference flattened")
+    );
+    for lane in ["plan", "cache"] {
+        assert_eq!(
+            number(&actual[lane], "accepted_work")
+                .checked_sub(number(&actual[lane], "host_eviction_work"))
+                .unwrap(),
+            number(&old[lane], "accepted_work")
+                .checked_sub(number(&old[lane], "host_eviction_work"))
+                .unwrap(),
+        );
+        actual[lane]["accepted_work"] = old[lane]["accepted_work"].clone();
+        actual[lane]["host_eviction_work"] = old[lane]["host_eviction_work"].clone();
+    }
+    actual["all_host_eviction_work"] = old["all_host_eviction_work"].clone();
+    assert_eq!(
+        actual, old,
+        "paired flat constructors differ only in witnessed host eviction work"
+    );
+}
+
+fn assert_ordinary_query_trace(trace: &Value, product: &str) {
+    assert_eq!(query_fees(trace, product), [0, 0]);
     assert_eq!(number(trace, "max_active_depth"), 0);
     for name in ["plan", "cache"] {
         for value in trace[name].as_object().unwrap().values() {
-            assert_eq!(value.as_u64(), Some(0), "ordinary flattened trace: {trace}");
+            assert_eq!(value.as_u64(), Some(0), "ordinary {product} trace: {trace}");
         }
     }
 }
 
+fn take_query_trace(value: &mut Value, field: &str) -> Value {
+    value
+        .as_object_mut()
+        .unwrap()
+        .remove(field)
+        .unwrap_or_else(|| panic!("missing explicit {field} instrumentation"))
+}
+
 fn compare_flattened_counter(actual: &mut Value, ordinary: &Value, imposed: bool) -> [u64; 2] {
-    let trace = actual
-        .as_object_mut()
-        .unwrap()
-        .remove("flattened_work_trace")
-        .unwrap();
     let mut ordinary = ordinary.clone();
-    let old_trace = ordinary
-        .as_object_mut()
-        .unwrap()
-        .remove("flattened_work_trace")
-        .unwrap();
-    assert_ordinary_flattened_trace(&old_trace);
-    let fees = flattened_fees(&trace);
+    let mut fees = [0_u64; 2];
+    let mut paired_host = None;
+    for (field, product) in [
+        ("flattened_work_trace", "flattened"),
+        ("processing_work_trace", "processing"),
+    ] {
+        let trace = take_query_trace(actual, field);
+        let old_trace = take_query_trace(&mut ordinary, field);
+        assert_ordinary_query_trace(&old_trace, product);
+        let product_fees = query_fees(&trace, product);
+        let host = (
+            host_eviction_receipt(&trace),
+            host_eviction_receipt(&old_trace),
+        );
+        if let Some(previous) = paired_host {
+            assert_eq!(
+                host, previous,
+                "both product snapshots share one actual host debit receipt"
+            );
+        }
+        paired_host = Some(host);
+        for lane in 0..2 {
+            fees[lane] = fees[lane].checked_add(product_fees[lane]).unwrap();
+        }
+    }
     for (index, field) in ["old_total_controller_work", "cache_plan_work"]
         .into_iter()
         .enumerate()
     {
+        let (host, old_host) = paired_host.expect("both actual product receipts");
         let additional = if imposed && index == 0 {
             0
         } else {
-            fees[index]
+            i128::from(fees[index]) + i128::from(host[index]) - i128::from(old_host[index])
         };
         assert_eq!(
-            number(actual, field),
-            number(&ordinary, field).checked_add(additional).unwrap(),
-            "only actual additional and issuer receipts differ: {field}"
+            i128::from(number(actual, field)),
+            i128::from(number(&ordinary, field)) + additional,
+            "only independently observed query fees and paired actual host eviction debits differ: {field}"
         );
         actual[field] = ordinary[field].clone();
     }
     assert_eq!(
         actual, &ordinary,
-        "all other flattened-mode observations remain literal"
+        "all other Original-query observations remain literal"
     );
     fees
 }
 
 fn remove_flattened_traces(observed: &mut Value) {
-    for phase in ["before", "after"] {
-        observed["setup"][phase]
-            .as_object_mut()
-            .unwrap()
-            .remove("flattened_work_trace")
-            .unwrap();
-    }
-    for operation in observed["operations"].as_array_mut().unwrap() {
-        for phase in ["before", "after_return_drop"] {
-            operation[phase]
-                .as_object_mut()
-                .unwrap()
-                .remove("flattened_work_trace")
-                .unwrap();
+    for field in ["flattened_work_trace", "processing_work_trace"] {
+        for phase in ["before", "after"] {
+            take_query_trace(&mut observed["setup"][phase], field);
         }
+        for operation in observed["operations"].as_array_mut().unwrap() {
+            for phase in ["before", "after_return_drop"] {
+                take_query_trace(&mut operation[phase], field);
+            }
+        }
+        take_query_trace(&mut observed["final"], field);
     }
-    observed["final"]
-        .as_object_mut()
-        .unwrap()
-        .remove("flattened_work_trace")
-        .unwrap();
 }
 
 fn compare_flattened_matrix(actual: &mut Value, ordinary: &Value) {
@@ -167,11 +211,12 @@ fn compare_flattened_matrix(actual: &mut Value, ordinary: &Value) {
                 .get("imposed_controller_work_before_call")
                 .is_some();
             if imposed {
-                assert_eq!(
-                    operation["before"]["flattened_work_trace"],
-                    operation["after_return_drop"]["flattened_work_trace"],
-                    "imposed exhaustion performs no new flattened work"
-                );
+                for field in ["flattened_work_trace", "processing_work_trace"] {
+                    assert_eq!(
+                        operation["before"][field], operation["after_return_drop"][field],
+                        "imposed exhaustion performs no new Original query work: {field}"
+                    );
+                }
             }
             for phase in ["before", "after_return_drop"] {
                 compare_flattened_counter(&mut operation[phase], &reference[phase], imposed);
@@ -209,12 +254,13 @@ fn compare_flattened_matrix(actual: &mut Value, ordinary: &Value) {
 }
 
 fn normalize_counter(actual: &mut Value, old: &Value, imposed: bool, metered: bool) {
-    let flattened = actual
-        .as_object_mut()
-        .unwrap()
-        .remove("flattened_work_trace")
-        .unwrap();
-    assert_ordinary_flattened_trace(&flattened);
+    for (field, product) in [
+        ("flattened_work_trace", "flattened"),
+        ("processing_work_trace", "processing"),
+    ] {
+        let trace = take_query_trace(actual, field);
+        assert_ordinary_query_trace(&trace, product);
+    }
     actual
         .as_object_mut()
         .unwrap()
@@ -339,7 +385,7 @@ fn compare_matrix<const M: bool>() {
     );
     compare_domain_policy_matrix(&mut direct.clone(), &actual);
     compare_certified_matrix(&mut certified, &direct);
-    let (mut ordinary, _) = crate::stages::original_request::with_legacy_flattened_queries(|| {
+    let (mut ordinary, _) = crate::stages::original_request::with_legacy_original_queries(|| {
         crate::stages::original_request::with_domain_policy_trace(true, || {
             span_start::with_direct_reference(super::legacy_tile_baseline::observations::<M>)
         })
@@ -441,6 +487,19 @@ fn reconcile_domain_policy_receipts(actual: &Value, old: &Value) -> u64 {
     assert_eq!(rows.len(), old_rows.len(), "actual Domain request sequence");
     let mut saved = 0_u64;
     for (row, old_row) in rows.iter().zip(old_rows) {
+        for value in [row, old_row] {
+            assert_eq!(
+                number(value, "processing_work"),
+                number(value, "processing_canonical_work")
+                    .checked_add(number(value, "processing_additional_work"))
+                    .unwrap(),
+                "actual Domain first processing receipt categories"
+            );
+        }
+        assert_eq!(
+            row["processing_canonical_work"], old_row["processing_canonical_work"],
+            "Domain first-query canonical work remains literal"
+        );
         let removed = number(old_row, "policy_work")
             .checked_sub(number(row, "policy_work"))
             .unwrap();
@@ -451,8 +510,8 @@ fn reconcile_domain_policy_receipts(actual: &Value, old: &Value) -> u64 {
             );
             assert_eq!(
                 removed,
-                number(row, "processing_work"),
-                "only the actual already-paid first processing receipt is removed"
+                number(row, "processing_canonical_work"),
+                "only the actual already-paid first canonical processing receipt is removed"
             );
         }
         for field in [
@@ -472,12 +531,25 @@ fn reconcile_domain_policy_receipts(actual: &Value, old: &Value) -> u64 {
                 "literal actual lookup receipt delta: {field}"
             );
         }
+        assert_eq!(
+            i128::from(number(row, "processing_work"))
+                - i128::from(number(old_row, "processing_work")),
+            i128::from(number(row, "processing_additional_work"))
+                - i128::from(number(old_row, "processing_additional_work")),
+            "changed total first-query work is exactly its separately recorded additional work"
+        );
         let mut checked = row.clone();
-        checked["policy_work"] = old_row["policy_work"].clone();
-        checked["policy_lookup"] = old_row["policy_lookup"].clone();
+        for field in [
+            "policy_work",
+            "policy_lookup",
+            "processing_work",
+            "processing_additional_work",
+        ] {
+            checked[field] = old_row[field].clone();
+        }
         assert_eq!(
             &checked, old_row,
-            "Domain identity, signed ranges, first query and request order remain literal"
+            "Domain identity, signed ranges, canonical first query and request order remain literal"
         );
         saved = saved.checked_add(removed).unwrap();
     }
@@ -496,15 +568,42 @@ fn compare_domain_policy_counter(actual: &mut Value, old: &Value, imposed: bool)
         .unwrap()
         .remove("domain_policy_trace")
         .unwrap();
+    let processing = take_query_trace(actual, "processing_work_trace");
+    let old_processing = take_query_trace(&mut old, "processing_work_trace");
+    let fees = query_fees(&processing, "processing");
+    let old_fees = query_fees(&old_processing, "processing reference");
     let removed = reconcile_domain_policy_receipts(&trace, &old_trace);
-    assert_eq!(
-        number(actual, "old_total_controller_work"),
-        number(&old, "old_total_controller_work")
-            .checked_sub(if imposed { 0 } else { removed })
-            .unwrap(),
-        "controller delta equals only cumulative successful actual Domain policy receipts"
+    for (lane, field) in ["old_total_controller_work", "cache_plan_work"]
+        .into_iter()
+        .enumerate()
+    {
+        let host = host_eviction_receipt(&processing);
+        let old_host = host_eviction_receipt(&old_processing);
+        assert_eq!(host_eviction_receipt(&actual["flattened_work_trace"]), host);
+        assert_eq!(
+            host_eviction_receipt(&old["flattened_work_trace"]),
+            old_host
+        );
+        let difference = i128::from(fees[lane]) - i128::from(old_fees[lane])
+            + i128::from(host[lane])
+            - i128::from(old_host[lane]);
+        let removed = if lane == 0 { i128::from(removed) } else { 0 };
+        let adjustment = if imposed && lane == 0 {
+            0
+        } else {
+            difference - removed
+        };
+        assert_eq!(
+            i128::from(number(actual, field)),
+            i128::from(number(&old, field)) + adjustment,
+            "only actual policy savings and separately witnessed processing fees differ: {field}"
+        );
+        actual[field] = old[field].clone();
+    }
+    reconcile_paired_flat_host_receipts(
+        &mut actual["flattened_work_trace"],
+        &old["flattened_work_trace"],
     );
-    actual["old_total_controller_work"] = old["old_total_controller_work"].clone();
     assert_eq!(
         actual, &old,
         "all other controller/resource/cache fields remain literal"
@@ -513,24 +612,17 @@ fn compare_domain_policy_counter(actual: &mut Value, old: &Value, imposed: bool)
 }
 
 fn remove_domain_policy_traces(observed: &mut Value) {
-    for phase in ["before", "after"] {
-        observed["setup"][phase]
-            .as_object_mut()
-            .unwrap()
-            .remove("domain_policy_trace");
-    }
-    for operation in observed["operations"].as_array_mut().unwrap() {
-        for phase in ["before", "after_return_drop"] {
-            operation[phase]
-                .as_object_mut()
-                .unwrap()
-                .remove("domain_policy_trace");
+    for field in ["domain_policy_trace", "processing_work_trace"] {
+        for phase in ["before", "after"] {
+            take_query_trace(&mut observed["setup"][phase], field);
         }
+        for operation in observed["operations"].as_array_mut().unwrap() {
+            for phase in ["before", "after_return_drop"] {
+                take_query_trace(&mut operation[phase], field);
+            }
+        }
+        take_query_trace(&mut observed["final"], field);
     }
-    observed["final"]
-        .as_object_mut()
-        .unwrap()
-        .remove("domain_policy_trace");
 }
 
 fn compare_domain_policy_matrix(actual: &mut Value, old: &Value) {
@@ -585,6 +677,17 @@ fn compare_domain_policy_matrix(actual: &mut Value, old: &Value) {
 }
 
 fn compare_certified_counter(actual: &mut Value, direct: &Value, imposed: bool) -> u64 {
+    for (field, product) in [
+        ("flattened_work_trace", "flattened"),
+        ("processing_work_trace", "processing"),
+    ] {
+        query_fees(&actual[field], product);
+        query_fees(&direct[field], product);
+        assert_eq!(
+            actual[field], direct[field],
+            "certified capture keeps actual Original-query receipts literal: {field}"
+        );
+    }
     let captures = actual
         .as_object_mut()
         .unwrap()

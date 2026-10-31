@@ -74,7 +74,7 @@ pub(super) fn root(plan: &RenderPlan, samples: Range<AudioSample>) -> Observatio
     let ledger = Ledger::default();
     let query = plan
         .audio_admitted(
-            samples,
+            samples.clone(),
             AudioQueryLimits::default(),
             &mut Admission(&ledger),
         )
@@ -85,6 +85,19 @@ pub(super) fn root(plan: &RenderPlan, samples: Range<AudioSample>) -> Observatio
         query.work(),
         query.canonical_units() + query.additional_units()
     );
+    let processing = plan
+        .audio_processing_admitted(
+            samples,
+            AudioQueryLimits::default(),
+            &mut Admission(&ledger),
+        )
+        .unwrap();
+    assert!(processing.was_forwarded());
+    assert_eq!(ledger.work.get(), query.work() + processing.work());
+    assert_eq!(
+        processing.work(),
+        processing.canonical_units() + processing.additional_units()
+    );
     assert!(ledger.reservations.get() > 0);
     let observation = Observation {
         retained_frames: ledger.live.get(),
@@ -92,7 +105,7 @@ pub(super) fn root(plan: &RenderPlan, samples: Range<AudioSample>) -> Observatio
     };
     assert!(observation.retained_frames > 0);
     assert!(observation.peak_frames >= observation.retained_frames);
-    drop(query);
+    drop((query, processing));
     assert_eq!(ledger.live.get(), 0);
     observation
 }

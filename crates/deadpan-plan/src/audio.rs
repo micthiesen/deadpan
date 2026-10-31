@@ -21,6 +21,10 @@ pub(in crate::plan) mod capture;
 pub(in crate::plan) mod flattened_query;
 pub use flattened_query::AdmittedAudioQuery;
 
+#[path = "audio_processing_query.rs"]
+pub(in crate::plan) mod processing_query;
+pub use processing_query::AdmittedAudioProcessingQuery;
+
 // Keep each optional observation borrow independent, including the clock's
 // own Plan lifetime. This names the existing stack-only argument tuple.
 type UnmeteredWalkCaptures<'slot, 'editorial, 'clock, 'clock_plan, 'processing> = (
@@ -422,24 +426,6 @@ impl RenderPlan {
             stop_at_preserve,
             stop_at_bindings,
             (capture, None, None, None),
-        )
-    }
-
-    pub(super) fn audio_walk_processing<'plan>(
-        &'plan self,
-        sample: AudioSample,
-        budget: &mut Budget,
-        seed: &AudioWalkSeed,
-        stop_at_preserve: bool,
-        processing_stops: Option<&mut capture::ProcessingStops>,
-    ) -> Result<AudioWalkSpan<'plan>, PlanError> {
-        self.audio_walk_inner(
-            sample,
-            budget,
-            Some(seed),
-            stop_at_preserve,
-            true,
-            (None, None, None, processing_stops),
         )
     }
 

@@ -2,7 +2,59 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: flattened Original queries admitted, product goal active
+## Current state: processing Original queries admitted, product goal active
+
+The [processing-query checkpoint](../qualification/processing-original-query-admission-2026-10-30.md)
+admits actual Root/physical-Domain processing construction and retains its sealed
+carrier beside the flattened carrier through policy population and numerical
+reads. Narrow Core composition preserves both payload/lease lanes without a
+general metered extraction. Actual growth and Root conversion overlap their
+complete old/input and replacement/output buffers. The sealed Domain witness
+reuses only its actual first binding tape and preserves fresh policy limits.
+
+Before production changes, both variants captured 446 complete ordinary
+observations from 33 actual parents. All fifteen immutable bodies retain their
+hashes. Nested Bound differences require complete paired ordinary/admitted Core
+values and real canonical/additional receipts; there is no broad work-field
+stripping. Temporary allocation-free Core Arc identity clones and conservative
+Domain WalkResult charges are explicitly bounded in the report.
+
+Default consumption checks both query issuers; sealed request validation keeps
+its separate cost. Actual host eviction debits have an independent accepted-site
+receipt and are counted once. Real WAV tests cover live policy/source callbacks,
+foreign issuer, failed partial work, unused/late-hit cleanup, combined required
+PCM room and warm zero-construction behavior. Exact publication and warm-probe
+tests isolate their budget boundary while preserving separate cold-pressure
+refusals. The three-buffer gain and four-minute streaming fixtures include both
+queries' measured admission peak; production limits are unchanged.
+
+Main/isolated Core pass 827/802, Plan 679/666 including all 28 integration
+executables, Audio 408/402, ordinary native Stage 203/203 and definition/history
+171/171. Strict checks, formatting, hygiene, independent reviews and source,
+index and evidence audits pass. Complete current eight-case native bodies agree
+exactly. Cold reads add 59-114 units over fully legacy; warm reads still save
+24-63. These are work counts, not speed or process-memory measurements. A later
+three-line scope-comment correction is byte-proved and strict checks reran.
+
+Fresh Split remains three pass/four fail in 252.14 seconds: Source/Sequence
+cut-three 0+511, one selected play prefix-two 0+4096 and processed root sound
+root-sound-refinement 0+511 exhaust per-read work; nested selected play without
+root sound prefix-two 0+4096 exhausts frozen projection work. General
+sound-bearing Split stays disabled. All 48 shipping source/fixture paths equal
+the isolated candidate. Main's unrelated research, including three touched-file
+deltas, remains unpublished in its working tree.
+
+Next freeze complete OLD Root/Domain policy outputs, errors, work and sealed
+finish observations before changing their algorithms. Admit that complete
+recursive policy product and its host lifetime next. Empty policy's post-enter
+fresh allowance and invalid-range/depth ordering need literal witnesses. Fades
+are the next independent conditional product, with separate edge/origin and
+history semantics. The archived policy-fade-admission-next.md pins the actual
+allocation/debit sites and capture contract. Other variable containers, inner
+ordinary queries and full recursive preparation remain open. The full
+DP-01..24/Gates A..G goal stays active.
+
+## Flattened Original queries admitted (historical)
 
 The [flattened query checkpoint](../qualification/flattened-original-query-admission-2026-10-30.md)
 admits actual Root/Domain flattened construction and retains its sealed lease

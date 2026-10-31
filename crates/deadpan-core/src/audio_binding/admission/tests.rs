@@ -714,3 +714,6 @@ fn charge_transfer_empty_compatibility_value_still_commits_only_once() {
     assert!(!work.was_forwarded());
     assert_eq!(work.units(), 0);
 }
+
+#[path = "composition_tests.rs"]
+mod composition;

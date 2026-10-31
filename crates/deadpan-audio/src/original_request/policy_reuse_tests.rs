@@ -1,3 +1,5 @@
+// These tests isolate the prior policy-reuse change. Default admitted processing
+// has separate actual ReadWork lifecycle and receipt coverage.
 use super::*;
 use deadpan_core::*;
 use deadpan_plan::LookupStats;
@@ -176,6 +178,12 @@ fn assert_trace_delta(old: &[DomainPolicyTrace], new: &[DomainPolicyTrace]) -> u
 
 #[test]
 fn binding_domain_reuses_one_walk_without_changing_queries_or_pcm() {
+    with_legacy_processing_queries(
+        binding_domain_reuses_one_walk_without_changing_queries_or_pcm_legacy_processing,
+    );
+}
+
+fn binding_domain_reuses_one_walk_without_changing_queries_or_pcm_legacy_processing() {
     for case in [BindingCase::Source, BindingCase::Unrelated] {
         for edge_fades in [false, true] {
             let (plan, mut provider) = bound_fixture(case);
@@ -271,6 +279,12 @@ fn binding_domain_reuses_one_walk_without_changing_queries_or_pcm() {
 
 #[test]
 fn exposed_stage_fallback_preserves_exact_and_one_short_global_budgets() {
+    with_legacy_processing_queries(
+        exposed_stage_fallback_preserves_exact_and_one_short_global_budgets_legacy_processing,
+    );
+}
+
+fn exposed_stage_fallback_preserves_exact_and_one_short_global_budgets_legacy_processing() {
     for case in [BindingCase::Preserve, BindingCase::ShiftAtUnity] {
         for edge_fades in [false, true] {
             let (plan, provider) = bound_fixture(case);
@@ -383,6 +397,12 @@ fn exposed_stage_fallback_preserves_exact_and_one_short_global_budgets() {
 
 #[test]
 fn failed_first_processing_query_keeps_old_partial_bill_and_error() {
+    with_legacy_processing_queries(
+        failed_first_processing_query_keeps_old_partial_bill_and_error_legacy_processing,
+    );
+}
+
+fn failed_first_processing_query_keeps_old_partial_bill_and_error_legacy_processing() {
     let (plan, provider) = bound_fixture(BindingCase::Source);
     let input = root_input(&plan);
     let domain = input.context();
@@ -442,6 +462,12 @@ fn failed_first_processing_query_keeps_old_partial_bill_and_error() {
 
 #[test]
 fn root_preparation_with_bindings_keeps_the_original_query_and_work_path() {
+    with_legacy_processing_queries(
+        root_preparation_with_bindings_keeps_the_original_query_and_work_path_legacy_processing,
+    );
+}
+
+fn root_preparation_with_bindings_keeps_the_original_query_and_work_path_legacy_processing() {
     let (plan, provider) = bound_fixture(BindingCase::Source);
     let cancelled = AtomicBool::new(false);
     let work = RefCell::new(ReadWork::default());
@@ -481,6 +507,12 @@ fn root_preparation_with_bindings_keeps_the_original_query_and_work_path() {
 
 #[test]
 fn eligible_domain_preparation_obeys_its_exact_new_cumulative_budget() {
+    with_legacy_processing_queries(
+        eligible_domain_preparation_obeys_its_exact_new_cumulative_budget_legacy_processing,
+    );
+}
+
+fn eligible_domain_preparation_obeys_its_exact_new_cumulative_budget_legacy_processing() {
     for case in [BindingCase::Source, BindingCase::Unrelated] {
         for edge_fades in [false, true] {
             let (plan, provider) = bound_fixture(case);
@@ -577,3 +609,6 @@ fn eligible_domain_preparation_obeys_its_exact_new_cumulative_budget() {
         }
     }
 }
+
+#[path = "processing_policy_admission_tests.rs"]
+mod processing_admission;

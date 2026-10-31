@@ -73,7 +73,7 @@ pub(super) fn retime<A: AudioSoundContextAdmission>(
         pitch: *pitch,
     })
 }
-pub(super) fn hold<A: AudioSoundContextAdmission>(
+pub(in crate::plan) fn hold<A: AudioSoundContextAdmission>(
     value: &HoldAudio,
     duration: FrameDuration,
     memory: &mut Memory<A::Issuer, A::Lease>,

@@ -537,6 +537,27 @@ evict optional PCM; requested Layout peaks do not establish process RSS.
 Processing, recursive policy, fades and full recursive admission remain open.
 No cap, prior weight, refund, requirement or gate changes.
 
+The [processing Original query checkpoint](qualification/processing-original-query-admission-2026-10-30.md)
+admits actual Root/physical-Domain processing construction, overlapping vector
+growth/conversion, and a sealed first-policy witness. Both Original carriers stay
+charged through policy population and numerical consumption. Independent
+complete OLD captures contain 446 observations from 33 parents; all fifteen
+oracle bodies retain their hashes. Paired Core values/receipts justify only
+specific nested counters, and actual host eviction work is recorded separately.
+Real WAV lifecycle, exact/short work and metadata-pressure tests pass.
+Main/isolated Core pass 827/802, Plan 679/666 including integrations, Audio
+408/402, ordinary Stage 203/203 and definition/history 171/171. Current eight-case
+native bodies agree exactly; cold work adds 59-114 units over fully legacy,
+while warm savings remain 24-63. Strict checks, independent reviews and
+source/index/evidence audits pass. Only a three-line module-scope comment changed
+after runtime verification; its remainder is byte-proved and strict checks reran.
+Fresh Split stays three pass/four fail in 252.14 seconds: Source/Sequence,
+selected play and processed root sound exhaust per-read work; nested selected
+play exhausts frozen projection work at the same named windows. General sound
+Split remains disabled. Recursive policy/fade construction, remaining variable
+containers and full recursive preparation stay open. No cap, prior weight,
+refund, requirement/gate status or speed/RSS claim changes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

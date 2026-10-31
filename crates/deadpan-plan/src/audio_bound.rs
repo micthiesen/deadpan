@@ -14,11 +14,10 @@ use super::{
 };
 use crate::{AudioSampleGrid, PlanError};
 
-#[path = "audio_bound_query.rs"]
-pub(in crate::plan) mod query;
-use query::QueryBound;
 #[path = "audio_bound_probe.rs"]
 mod probe;
+#[path = "audio_bound_query.rs"]
+pub(in crate::plan) mod query;
 
 #[derive(Debug, Clone)]
 pub enum AudioBoundDomain<'plan> {
@@ -150,23 +149,6 @@ impl Eq for AudioBound<'_> {}
 impl RenderPlan {
     pub fn has_audio_bindings(&self) -> bool {
         !self.audio_bindings.is_empty()
-    }
-
-    pub(super) fn bound_at(
-        &self,
-        node: usize,
-        repeats: &[RepeatInstance],
-        definition: Option<&AudioDefinitionSelector>,
-        placement: BoundPlacement<'_>,
-        budget: &mut Budget,
-    ) -> Result<Option<AudioBound<'_>>, PlanError> {
-        let mut policy = crate::plan::audio_owners::admission::Unmetered;
-        let mut query = crate::plan::audio_owners::admission::Budget::new(budget, &mut policy);
-        crate::plan::audio_owners::admission::outer::<
-            _,
-            crate::plan::audio_owners::admission::Unmetered,
-        >(self.bound_at_query(node, repeats, definition, placement, &mut query))
-        .map(|value| value.map(QueryBound::unmetered))
     }
 }
 

@@ -61,15 +61,22 @@ fn previous_queries<'plan>(
     })
 }
 
-/// Compare every query field except flattened work, whose canonical and
-/// allocation-site units are checked independently below.
+/// Compare every query field except the two top-level constructor work totals.
+/// Canonical and additional units are reconciled separately below.
 fn same_queries(actual: RootReadQueriesRef<'_, '_>, expected: RootReadQueriesRef<'_, '_>) {
     assert_eq!(actual.flattened.project_id, expected.flattened.project_id);
     assert_eq!(actual.flattened.revision_id, expected.flattened.revision_id);
     assert_eq!(actual.flattened.samples, expected.flattened.samples);
     assert_eq!(actual.flattened.spans, expected.flattened.spans);
     assert_eq!(actual.flattened.lookup, expected.flattened.lookup);
-    assert_eq!(actual.processing, expected.processing);
+    assert_eq!(actual.processing.project_id, expected.processing.project_id);
+    assert_eq!(
+        actual.processing.revision_id,
+        expected.processing.revision_id
+    );
+    assert_eq!(actual.processing.samples, expected.processing.samples);
+    assert_eq!(actual.processing.spans, expected.processing.spans);
+    assert_eq!(actual.processing.lookup, expected.processing.lookup);
     assert_eq!(actual.policy.suppressed, expected.policy.suppressed);
     assert_eq!(actual.policy.contents, expected.policy.contents);
     assert_eq!(actual.policy.lookup, expected.policy.lookup);
@@ -98,6 +105,37 @@ fn assert_flattened_cost(
     assert!(
         additional > 0,
         "the real fixture must execute admitted work"
+    );
+    additional
+}
+
+fn processing_work(request: &PreparedOriginalRequest<'_, '_, '_>) -> (usize, usize) {
+    match &request.queries.processing {
+        Processing::Admitted { query, .. } => {
+            assert!(query.was_forwarded());
+            assert_eq!(
+                query.work(),
+                query
+                    .canonical_units()
+                    .checked_add(query.additional_units())
+                    .unwrap()
+            );
+            assert_eq!(request.queries().processing.work, query.work());
+            (query.canonical_units(), query.additional_units())
+        }
+        Processing::Legacy(query) => (query.work, 0),
+    }
+}
+
+fn assert_processing_cost(
+    request: &PreparedOriginalRequest<'_, '_, '_>,
+    ordinary: &AudioProcessingQuery<'_>,
+) -> usize {
+    let (canonical, additional) = processing_work(request);
+    assert_eq!(canonical, ordinary.work);
+    assert!(
+        additional > 0,
+        "this default path must admit actual processing metadata"
     );
     additional
 }
@@ -163,7 +201,8 @@ fn prepared_root_and_domain_match_previous_query_content_work_and_actual_reads()
                 )
                 .unwrap();
                 same_queries(request.queries(), expected.as_borrowed());
-                let additional = assert_flattened_cost(&request, &expected.flattened);
+                let additional = assert_flattened_cost(&request, &expected.flattened)
+                    + assert_processing_cost(&request, &expected.processing);
                 assert_eq!(
                     work.borrow().plan_work,
                     expected_work.borrow().plan_work + additional,
@@ -186,8 +225,8 @@ fn prepared_root_and_domain_match_previous_query_content_work_and_actual_reads()
                 assert_eq!(provider.calls, expected_provider.calls);
                 assert_eq!(
                     work.borrow().plan_work,
-                    expected_work.borrow().plan_work + additional + 1,
-                    "the consuming read bills its actual issuer comparison"
+                    expected_work.borrow().plan_work + additional + 2,
+                    "the consuming read bills both actual issuer comparisons"
                 );
                 assert_eq!(work.borrow().sound_context_frames, 0);
                 assert_eq!(
@@ -229,7 +268,7 @@ fn prepared_source_read_needs_only_its_exact_issuer_work_allowance() {
         );
         assert_eq!(provider.calls, 0);
         let preparation_work = work.borrow().plan_work;
-        work.borrow_mut().plan_work = MAX_PLAN_WORK_PER_READ - 1;
+        work.borrow_mut().plan_work = MAX_PLAN_WORK_PER_READ - 2;
         let block = reader
             .read_prepared_original(&mut provider, request, control, 0)
             .unwrap();
@@ -248,7 +287,7 @@ fn prepared_source_read_needs_only_its_exact_issuer_work_allowance() {
         assert_eq!(provider.calls, calls);
 
         let wrapper_work = RefCell::new(ReadWork {
-            plan_work: MAX_PLAN_WORK_PER_READ - preparation_work - 1,
+            plan_work: MAX_PLAN_WORK_PER_READ - preparation_work - 2,
             ..Default::default()
         });
         let wrapper_control = work_control(&cancelled, &wrapper_work);
@@ -285,7 +324,7 @@ fn prepared_source_read_needs_only_its_exact_issuer_work_allowance() {
             wrapper_reader.prepare_original_root(&plan, AudioSample(0), 64, short_control, true)
         }
         .unwrap();
-        short_work.borrow_mut().plan_work = MAX_PLAN_WORK_PER_READ;
+        short_work.borrow_mut().plan_work = MAX_PLAN_WORK_PER_READ - 1;
         let calls = provider.calls;
         assert!(matches!(
             wrapper_reader.read_prepared_original(&mut provider, request, short_control, 0),
@@ -427,7 +466,8 @@ fn exact_preparation_budget_and_one_short_bill_actual_forwarded_work() {
         }
         .unwrap();
         same_queries(reference.queries(), ordinary.as_borrowed());
-        let additional = assert_flattened_cost(&reference, &ordinary.flattened);
+        let additional = assert_flattened_cost(&reference, &ordinary.flattened)
+            + assert_processing_cost(&reference, &ordinary.processing);
         let needed = measured.borrow().plan_work;
         let ordinary_needed = ordinary_work.borrow().plan_work;
         assert_eq!(needed, ordinary_needed + additional);
@@ -463,6 +503,7 @@ fn exact_preparation_budget_and_one_short_bill_actual_forwarded_work() {
                 let request = result.unwrap();
                 same_queries(request.queries(), reference.queries());
                 assert_eq!(flattened_work(&request), flattened_work(&reference));
+                assert_eq!(processing_work(&request), processing_work(&reference));
                 assert_eq!(work.borrow().plan_work, MAX_PLAN_WORK_PER_READ);
                 drop(request);
             } else {
@@ -566,8 +607,8 @@ fn prepared_read_still_checks_cancellation_deadline_and_depth_before_sources() {
             }
             assert_eq!(
                 work.borrow().plan_work,
-                spent + usize::from(failure == 2),
-                "only a live control can bill the issuer comparison before depth rejection"
+                spent + 2 * usize::from(failure == 2),
+                "only a live control bills both issuer comparisons before depth rejection"
             );
             assert_eq!(work.borrow().sound_context_frames, 0);
             assert_eq!(provider.calls, 0);
@@ -657,8 +698,8 @@ fn prepared_metadata_does_not_waive_fresh_source_admission() {
         );
         assert_eq!(
             work.borrow().plan_work,
-            spent + 1,
-            "fresh source rejection follows the actual issuer comparison"
+            spent + 2,
+            "fresh source rejection follows both actual issuer comparisons"
         );
         assert_eq!(work.borrow().sound_context_frames, 0);
     }
@@ -667,3 +708,6 @@ fn prepared_metadata_does_not_waive_fresh_source_admission() {
 
 #[path = "flattened_admission_tests.rs"]
 mod flattened_admission;
+
+#[path = "processing_admission_tests.rs"]
+mod processing_admission;

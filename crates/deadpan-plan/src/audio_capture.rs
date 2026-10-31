@@ -5,7 +5,7 @@ use crate::plan::audio_bound::query::GuardedBound;
 use crate::plan::audio_boundary::AdmittedExtent;
 use crate::plan::audio_owners::admission::{Budget as QueryBudget, Memory, Owned, Result};
 #[path = "audio_capture_storage.rs"]
-mod storage;
+pub(in crate::plan) mod storage;
 
 pub(in crate::plan) struct WalkResult<'plan, I, L> {
     pub(in crate::plan) value: GuardedBound<AudioWalkSpan<'plan>, I, L>,

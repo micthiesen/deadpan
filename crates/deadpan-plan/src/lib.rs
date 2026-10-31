@@ -46,9 +46,15 @@ pub use audio_source_root::AudioRootSource;
 pub use audio_tape::{AudioSignalTape, AudioSignalTapeRun};
 
 pub use picture::{Picture, PictureCaption, PictureFraming, PictureSample};
-pub use plan::AdmittedAudioQuery;
 pub use plan::AudioIntrinsicPreparation;
 pub use plan::PictureOwnerMap;
+pub use plan::{
+    AdmittedAudioDomainProcessing, AdmittedAudioDomainProcessingPolicy, AudioBoundaries,
+    AudioBoundaryKind, AudioBoundaryOrigin, AudioContent, AudioDomain, AudioDomainProcessing,
+    AudioDomainProcessingPolicy, AudioQuery, AudioQueryLimits, AudioRetimeStage, AudioSpan,
+    AudioTransform, LookupStats, NodeInspection, NodeType, PlanInspection, PlanMetadata,
+    RenderPlan, SilenceReason, SourceSamplingSupport, StorageStats,
+};
 pub use plan::{
     AdmittedAudioOwnerInputCandidates, AdmittedAudioOwnerInputCapture,
     AdmittedAudioOwnerRetainedProbe, AdmittedAudioOwnerSpanStartCandidates,
@@ -62,6 +68,7 @@ pub use plan::{
     AudioOwnerClockOrigin, AudioOwnerKind, AudioOwnerQuery, AudioOwnerSpan, AudioOwnerSupport,
     AudioTreatmentBoundary,
 };
+pub use plan::{AdmittedAudioProcessingQuery, AdmittedAudioQuery};
 pub use plan::{
     AdmittedOriginalContext, ContextChargeTransfer, SharedAudioOwnerRetainedInput,
     preflight_context_transfer, transfer_context_charges,
@@ -75,12 +82,6 @@ pub use plan::{
 };
 pub use plan::{
     AudioBound, AudioBoundDomain, AudioFadeEdge, AudioFadeQuery, AudioFadeSpan, AudioPolicyQuery,
-};
-pub use plan::{
-    AudioBoundaries, AudioBoundaryKind, AudioBoundaryOrigin, AudioContent, AudioDomain,
-    AudioDomainProcessing, AudioDomainProcessingPolicy, AudioQuery, AudioQueryLimits,
-    AudioRetimeStage, AudioSpan, AudioTransform, LookupStats, NodeInspection, NodeType,
-    PlanInspection, PlanMetadata, RenderPlan, SilenceReason, SourceSamplingSupport, StorageStats,
 };
 pub use plan::{AudioDefinition, AudioDefinitionSelector, AudioPointDomain, AudioRootPlacement};
 pub use plan::{AudioHoldIssuer, AudioHoldPolicyQuery, AudioHoldRule};

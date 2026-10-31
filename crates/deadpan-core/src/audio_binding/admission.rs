@@ -97,6 +97,15 @@ pub struct AudioBindingValue<T, I, L> {
     metered: bool,
     charge_transferred: bool,
 }
+// Both values must precede every independent input charge, including when
+// composition fails before the first merge.
+struct PendingComposition<T, U, L> {
+    value: Option<(T, U)>,
+    lease: Option<L>,
+    buffer: Option<L>,
+    other_lease: Option<L>,
+    other_buffer: Option<L>,
+}
 pub type AdmittedAudioBinding<I, L> = AudioBindingValue<ResolvedAudioBinding, I, L>;
 /// A checked exclusive borrow for one host-owned charge publication.
 /// Dropping an unused token leaves the value and its charges retryable.
@@ -169,6 +178,81 @@ impl<T, I: Copy + Eq, L> AudioBindingValue<T, I, L> {
             .take()
             .ok_or_else(|| invalid("binding receipt already consumed").into())
     }
+
+    /// Validate composition without consuming the value, work or charge state.
+    /// The caller must take and account each input receipt before composition.
+    pub fn validate_composition<P: AudioBindingAdmission<Issuer = I, Lease = L>>(
+        &self,
+        p: &P,
+    ) -> BuildResult<(), P::Error> {
+        self.validate(p)?;
+        if self.charge_transferred {
+            return Err(invalid("binding charge transfer already committed").into());
+        }
+        if self.work.is_some() {
+            return Err(invalid("binding composition requires consumed work receipt").into());
+        }
+        Ok(())
+    }
+
+    /// Combine guarded values without allocation, debits or charge publication.
+    /// Only the trusted infallible merge may move the independent charges.
+    pub fn zip_value<U, P: AudioBindingAdmission<Issuer = I, Lease = L>>(
+        mut self,
+        mut other: AudioBindingValue<U, I, L>,
+        p: &mut P,
+    ) -> BuildResult<AudioBindingValue<(T, U), I, L>, P::Error> {
+        let mut pending = PendingComposition {
+            value: Some((
+                self.value.take().expect("unmoved binding value"),
+                other.value.take().expect("unmoved binding value"),
+            )),
+            lease: self.lease.take(),
+            buffer: self.buffer.take(),
+            other_lease: other.lease.take(),
+            other_buffer: other.buffer.take(),
+        };
+        let issuers = (self.issuer, other.issuer);
+        let modes = (self.metered, other.metered);
+        let transferred = self.charge_transferred || other.charge_transferred;
+        let pending_work = self.work.is_some() || other.work.is_some();
+        let validate = |p: &P| -> BuildResult<(), P::Error> {
+            let issuer = p.issuer();
+            if issuers.0 != issuer || issuers.1 != issuer || modes != (P::METERED, P::METERED) {
+                return Err(AudioBindingBuildError::Policy(p.issuer_mismatch()));
+            }
+            if transferred {
+                return Err(invalid("binding charge transfer already committed").into());
+            }
+            if pending_work {
+                return Err(invalid("binding composition requires consumed work receipt").into());
+            }
+            Ok(())
+        };
+        validate(p)?;
+        match (&mut pending.lease, &mut pending.other_lease) {
+            (Some(into), Some(from)) => p.merge(into, from),
+            (None, _) => pending.lease = pending.other_lease.take(),
+            _ => {}
+        }
+        validate(p)?;
+        match (&mut pending.buffer, &mut pending.other_buffer) {
+            (Some(into), Some(from)) => p.merge(into, from),
+            (None, _) => pending.buffer = pending.other_buffer.take(),
+            _ => {}
+        }
+        validate(p)?;
+        Ok(AudioBindingValue {
+            value: pending.value.take(),
+            issuer: self.issuer,
+            lease: pending.lease.take(),
+            buffer: pending.buffer.take(),
+            work: None,
+            metered: self.metered,
+            charge_transferred: false,
+        })
+    }
+
     /// Trusted infallible, non-unwinding and allocation-free ownership move.
     pub fn map_value<U, P: AudioBindingAdmission<Issuer = I, Lease = L>>(
         mut self,

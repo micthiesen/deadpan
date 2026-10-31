@@ -9,6 +9,8 @@ pub(in crate::stages) struct DomainPolicyTrace {
     pub domain_visible_samples: Range<AudioSample>,
     pub samples: Range<AudioSample>,
     pub processing_work: usize,
+    pub processing_canonical_work: usize,
+    pub processing_additional_work: usize,
     pub processing_lookup: deadpan_plan::LookupStats,
     pub policy_work: usize,
     pub policy_lookup: deadpan_plan::LookupStats,
@@ -33,18 +35,22 @@ pub(super) fn record(
     samples: Range<AudioSample>,
     processing: &AudioProcessingQuery<'_>,
     policy: &AudioPolicyQuery<AudioSample>,
+    receipt: (usize, usize),
 ) {
     STATE.with(|state| {
         let mut state = state.borrow_mut();
         let Some(rows) = &mut state.rows else {
             return;
         };
+        assert_eq!(receipt.0.checked_add(receipt.1), Some(processing.work));
         rows.push(DomainPolicyTrace {
             domain_instance: domain.instance().clone(),
             domain_root_samples: domain.root_samples(),
             domain_visible_samples: domain.visible_samples(),
             samples,
             processing_work: processing.work,
+            processing_canonical_work: receipt.0,
+            processing_additional_work: receipt.1,
             processing_lookup: processing.lookup,
             policy_work: policy.work,
             policy_lookup: policy.lookup,

@@ -187,15 +187,57 @@ fn early_probe_respects_exact_future_reservation_with_actual_live_owner_metadata
         .checked_add(ADDITIONAL)
         .unwrap();
 
+    // Preserve a separate cold-path assertion: at the final retained-state
+    // ceiling, constructing the real query before the second source read can
+    // force the optional PCM cache to shed an entry for read-time headroom.
+    let mut cold_renderer = StageAudio::with_limits(
+        Arc::clone(&plan),
+        StageLimits {
+            maximum_resident_frames: u32::try_from(full).unwrap(),
+            ..StageLimits::default()
+        },
+    )
+    .unwrap();
+    let cold_work = RefCell::new(ReadWork::default());
+    let cold_control = control(&cancelled, &cold_work);
+    let mut cold_graph = graph(&plan);
+    let cold_owners = {
+        let mut admission =
+            sound_context_admission::Admission::new(&mut cold_renderer, cold_control);
+        Context::Root
+            .owners_admitted(
+                &plan,
+                AudioSample(0)..AudioSample(64),
+                cold_control,
+                &mut admission,
+            )
+            .unwrap()
+    };
+    seed(
+        &mut cold_renderer,
+        &mut provider,
+        &mut cold_graph,
+        AudioSample(0)..AudioSample(64),
+        cold_control,
+    );
+    seed(
+        &mut cold_renderer,
+        &mut provider,
+        &mut cold_graph,
+        AudioSample(1)..AudioSample(65),
+        cold_control,
+    );
+    assert_eq!(cold_work.borrow().sound_context_frames, metadata);
+    assert!(cold_renderer.cached_resident_frames() < cached);
+    drop(cold_owners);
+    cold_graph.original_inputs.clear(&mut cold_renderer);
+    assert_eq!(cold_renderer.cached_resident_frames(), 0);
+
     for (ceiling, hit) in [(full, true), (full - 1, false)] {
-        let mut renderer = StageAudio::with_limits(
-            Arc::clone(&plan),
-            StageLimits {
-                maximum_resident_frames: u32::try_from(ceiling).unwrap(),
-                ..StageLimits::default()
-            },
-        )
-        .unwrap();
+        // Warm a valid two-entry cache and live owner query before imposing
+        // the probe budget. Cold processing-query construction has a larger
+        // temporary peak and can evict optional entries under this ceiling.
+        let mut renderer = StageAudio::new(Arc::clone(&plan));
         let work = RefCell::new(ReadWork::default());
         let control = control(&cancelled, &work);
         let mut graph = graph(&plan);
@@ -228,6 +270,7 @@ fn early_probe_respects_exact_future_reservation_with_actual_live_owner_metadata
             control,
         );
         assert_eq!(renderer.cached_resident_frames(), cached);
+        renderer.limits.maximum_resident_frames = u32::try_from(ceiling).unwrap();
         if hit {
             let calls = provider.calls;
             let expected = Arc::as_ptr(&renderer.original_inputs[&key].block);

@@ -997,15 +997,75 @@ fn nonfinite_authored_output_rejects_after_admission_without_poisoning_inspectio
     );
     let document = changed(&base, &[("source", boost.clone()), ("root", boost)]);
     let plan = Arc::new(RenderPlan::compile(&document).unwrap());
-    let mut renderer = StageAudio::with_limits(
-        plan,
+    let metadata = super::flattened_metadata::root(&plan, AudioSample(0)..AudioSample(256));
+    let pcm_frames = 3_u32.checked_mul(256).unwrap();
+    let sufficient = pcm_frames
+        .checked_add(u32::try_from(metadata.peak_frames).unwrap())
+        .unwrap();
+    assert!(
+        sufficient > 1024,
+        "the old ceiling must remain a pressure case"
+    );
+    let mut provider = FixtureProvider::new();
+
+    // Preserve the former 1024-frame boundary as a budget refusal, distinct
+    // from the authored non-finite result below. The inspection read fits but
+    // authored conversion cannot reserve its three PCM work frames plus the
+    // actual simultaneous Root metadata peak.
+    let mut constrained = StageAudio::with_limits(
+        Arc::clone(&plan),
         StageLimits {
             maximum_resident_frames: 1024,
             ..Default::default()
         },
     )
     .unwrap();
-    let mut provider = FixtureProvider::new();
+    let constrained_before = constrained
+        .prepare_edge_faded(
+            &mut provider,
+            AudioSample(0),
+            256,
+            GAIN_TIMEOUT,
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    let calls = provider.calls;
+    assert!(matches!(
+        constrained.prepare_authored_bus(
+            &mut provider,
+            AudioSample(0),
+            256,
+            GAIN_TIMEOUT,
+            &AtomicBool::new(false),
+        ),
+        Err(StageAudioError::Limit("resident PCM or stage cache"))
+    ));
+    assert_eq!(
+        provider.calls, calls,
+        "pressure refusal precedes source reads"
+    );
+    let constrained_after = constrained
+        .prepare_edge_faded(
+            &mut provider,
+            AudioSample(0),
+            256,
+            GAIN_TIMEOUT,
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    assert_eq!(constrained_before, constrained_after);
+
+    // At the measured sufficient ceiling, both attempts must pass admission,
+    // fetch fresh source data, and fail only when non-finite authored samples
+    // are converted. The independent inspection remains identical afterward.
+    let mut renderer = StageAudio::with_limits(
+        plan,
+        StageLimits {
+            maximum_resident_frames: sufficient,
+            ..Default::default()
+        },
+    )
+    .unwrap();
     let before = renderer
         .prepare_edge_faded(
             &mut provider,
@@ -1017,21 +1077,22 @@ fn nonfinite_authored_output_rejects_after_admission_without_poisoning_inspectio
         .unwrap();
     for _ in 0..2 {
         let calls = provider.calls;
+        let result = renderer.prepare_authored_bus(
+            &mut provider,
+            AudioSample(0),
+            256,
+            GAIN_TIMEOUT,
+            &AtomicBool::new(false),
+        );
         assert!(matches!(
-            renderer.prepare_authored_bus(
-                &mut provider,
-                AudioSample(0),
-                256,
-                GAIN_TIMEOUT,
-                &AtomicBool::new(false)
-            ),
+            result,
             Err(StageAudioError::Preparation(
                 PreparationError::InvalidSamples
             ))
         ));
         assert!(
             provider.calls > calls,
-            "gain failure does not bypass admission"
+            "gain failure does not bypass source admission"
         );
     }
     let after = renderer

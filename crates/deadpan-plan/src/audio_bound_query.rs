@@ -74,6 +74,90 @@ impl<T, I: Copy + Eq, L> GuardedBound<T, I, L> {
         }
     }
 
+    pub(in crate::plan) fn adopt_memory<A: AudioSoundContextAdmission<Issuer = I, Lease = L>>(
+        self,
+        memory: Memory<I, L>,
+        budget: &mut QueryBudget<'_, A>,
+    ) -> Result<Self, A> {
+        let mut guarded = Owned {
+            value: self,
+            memory,
+        };
+        budget.check_memory(&guarded.value._memory)?;
+        budget.check_memory(&guarded.memory)?;
+        budget.merge_checked(&mut guarded.value._memory, &mut guarded.memory);
+        budget.check_memory(&guarded.value._memory)?;
+        Ok(guarded.value)
+    }
+
+    /// Independent Core lanes stay behind both values throughout collection.
+    pub(in crate::plan) fn zip<U, A: AudioSoundContextAdmission<Issuer = I, Lease = L>>(
+        self,
+        other: GuardedBound<U, I, L>,
+        budget: &mut QueryBudget<'_, A>,
+    ) -> Result<GuardedBound<(T, U), I, L>, A> {
+        struct Inputs<T, U, I, L> {
+            left: Option<BoundValue<T, I, L>>,
+            right: Option<BoundValue<U, I, L>>,
+            memory: Memory<I, L>,
+            other_memory: Memory<I, L>,
+        }
+        struct Joined<T, I, L> {
+            value: BoundValue<T, I, L>,
+            memory: Memory<I, L>,
+            other_memory: Memory<I, L>,
+        }
+        let mut inputs = Inputs {
+            left: Some(self.value),
+            right: Some(other.value),
+            memory: self._memory,
+            other_memory: other._memory,
+        };
+        budget.check_memory(&inputs.memory)?;
+        budget.check_memory(&inputs.other_memory)?;
+        let value = {
+            let mut adapter = CoreAdmission {
+                outer: budget.admission,
+            };
+            if let Some(BoundValue::Metered(value)) = inputs.left.as_ref() {
+                core::<_, A>(value.validate_composition(&adapter))?;
+            }
+            if let Some(BoundValue::Metered(value)) = inputs.right.as_ref() {
+                core::<_, A>(value.validate_composition(&adapter))?;
+            }
+            match (
+                inputs.left.take().expect("guarded left value"),
+                inputs.right.take().expect("guarded right value"),
+            ) {
+                (BoundValue::Legacy(left), BoundValue::Legacy(right)) => {
+                    BoundValue::Legacy((left, right))
+                }
+                (BoundValue::Legacy(left), BoundValue::Metered(right)) => BoundValue::Metered(
+                    core::<_, A>(right.map_value(&adapter, |right| (left, right)))?,
+                ),
+                (BoundValue::Metered(left), BoundValue::Legacy(right)) => BoundValue::Metered(
+                    core::<_, A>(left.map_value(&adapter, |left| (left, right)))?,
+                ),
+                (BoundValue::Metered(left), BoundValue::Metered(right)) => {
+                    BoundValue::Metered(core::<_, A>(left.zip_value(right, &mut adapter))?)
+                }
+            }
+        };
+        let mut joined = Joined {
+            value,
+            memory: inputs.memory,
+            other_memory: inputs.other_memory,
+        };
+        budget.check_memory(&joined.memory)?;
+        budget.check_memory(&joined.other_memory)?;
+        budget.merge_checked(&mut joined.memory, &mut joined.other_memory);
+        budget.check_memory(&joined.memory)?;
+        Ok(GuardedBound {
+            value: joined.value,
+            _memory: joined.memory,
+        })
+    }
+
     /// The callback is allocation-free and all of its actual owning fields
     /// remain guarded by its caller through pre/post-map failure.
     pub(in crate::plan) fn map<U, A: AudioSoundContextAdmission<Issuer = I, Lease = L>>(
@@ -322,6 +406,11 @@ impl RenderPlan {
                 super::super::audio_owners::tests::legacy_snapshot_v1::capture_baseline::core_receipt(
                     value.value().work, value.value().lattice.work, work.units(),
                     work.canonical_units(),work.additional_units(),work.was_forwarded(),
+                );
+                #[cfg(test)]
+                super::super::audio_owners::tests::legacy_snapshot_v1::capture_baseline::paired_core_binding(
+                    &self.audio_bindings, id, environment, gap.is_some(), budget.remaining,
+                    value.value(), (work.units(), work.canonical_units(), work.additional_units(), work.was_forwarded()),
                 );
                 budget.account_core(work)?;
             }

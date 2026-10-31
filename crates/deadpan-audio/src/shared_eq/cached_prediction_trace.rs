@@ -102,7 +102,7 @@ pub(super) fn with_legacy<T>(action: impl FnOnce() -> T) -> T {
         }
     }
     let _restore = Restore(LEGACY.with(|mode| mode.replace(true)));
-    super::original_request::with_legacy_flattened_queries(action)
+    super::original_request::with_legacy_original_queries(action)
 }
 
 pub(super) fn reset() {

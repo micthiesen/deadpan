@@ -5,6 +5,9 @@ use crate::plan::audio_owners::tests::legacy_snapshot_v1::{
 };
 use serde_json::{Value, json};
 
+#[path = "audio_domain_admitted_policy_tests.rs"]
+mod admitted;
+
 fn lookup(value: LookupStats) -> Value {
     json!({"visited_nodes":value.visited_nodes,"sequence_comparisons":value.sequence_comparisons,
         "iteration_run_comparisons":value.iteration_run_comparisons})

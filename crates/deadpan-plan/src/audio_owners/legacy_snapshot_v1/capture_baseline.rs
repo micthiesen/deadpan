@@ -95,6 +95,195 @@ pub(in crate::plan) fn core_receipt(
         "additional":additional,"forwarded":forwarded}),
     );
 }
+pub(in crate::plan) fn assert_processing_with_paired_core_work(
+    observed: &Value,
+    canonical_work: usize,
+    old: &Value,
+    events: &[Value],
+    case: &str,
+) {
+    let paired = events
+        .iter()
+        .map(|event| &event["observation"])
+        .filter(|event| event["kind"] == "actual_processing_paired_core_binding")
+        .collect::<Vec<_>>();
+    let mut used = vec![false; paired.len()];
+    let mut comparison = observed.clone();
+    comparison["work"] = json!(canonical_work);
+    let old_spans = old["spans"].as_array().unwrap();
+    let spans = comparison["spans"].as_array_mut().unwrap();
+    assert_eq!(spans.len(), old_spans.len(), "{case} span count");
+    for (index, span) in spans.iter_mut().enumerate() {
+        if span["content"]["tag"] != "Bound" {
+            continue;
+        }
+        let bound = &span["content"]["value"];
+        let admitted = &bound["resolved"];
+        let selected = paired
+            .iter()
+            .enumerate()
+            .position(|(at, record)| {
+                !used[at]
+                    && record["owner"] == bound["node"]
+                    && record["environment"]["instance"] == bound["instance"]
+                    && record["is_gap"] == json!(!bound["gap"].is_null())
+                    && record["admitted"] == *admitted
+            })
+            .expect("every actual returned Bound must have a same-input full Core observation");
+        used[selected] = true;
+        let record = paired[selected];
+        assert_eq!(
+            record["ordinary"]["result"], "Ok",
+            "{case} ordinary Core probe"
+        );
+        let ordinary = &record["ordinary"]["resolved"];
+        let expected = &old_spans[index]["content"]["value"]["resolved"];
+        assert_eq!(
+            ordinary, expected,
+            "{case} independent ordinary complete resolved value"
+        );
+        let receipt = &record["receipt"];
+        let total = receipt["total"].as_u64().unwrap();
+        let canonical = receipt["canonical"].as_u64().unwrap();
+        let additional = receipt["additional"].as_u64().unwrap();
+        assert_eq!(receipt["forwarded"], true);
+        assert_eq!(total, admitted["work"].as_u64().unwrap());
+        assert_eq!(canonical, ordinary["work"].as_u64().unwrap());
+        assert_eq!(canonical.checked_add(additional), Some(total));
+        assert_eq!(total.checked_sub(canonical), Some(additional));
+        assert_eq!(
+            record["extra_scope"]["entire_additional_is_main_lattice"], true,
+            "{case} needs a separate local-category witness for nonempty outer environment/journal work"
+        );
+        for key in [
+            "environment_repeat_count",
+            "excluded_count",
+            "resume_terms",
+            "reanchors",
+        ] {
+            assert_eq!(
+                record["extra_scope"][key], 0,
+                "{case} extra-scope predicate {key}"
+            );
+        }
+        let admitted_lattice = admitted["lattice"]["work"].as_u64().unwrap();
+        let ordinary_lattice = ordinary["lattice"]["work"].as_u64().unwrap();
+        assert_eq!(
+            admitted_lattice.checked_sub(ordinary_lattice),
+            Some(additional),
+            "{case} complete additional scope is inside the main lattice for this checked input"
+        );
+        let mut scalar_checked = admitted.clone();
+        scalar_checked["work"] = ordinary["work"].clone();
+        scalar_checked["lattice"]["work"] = ordinary["lattice"]["work"].clone();
+        assert_eq!(
+            &scalar_checked, ordinary,
+            "{case} every other Core field remains literal"
+        );
+        span["content"]["value"]["resolved"]["work"] = ordinary["work"].clone();
+        span["content"]["value"]["resolved"]["lattice"]["work"] =
+            ordinary["lattice"]["work"].clone();
+    }
+    assert!(
+        used.iter().all(|value| *value),
+        "{case} unused actual paired Bound observations: {used:?}"
+    );
+    assert_eq!(
+        &comparison, old,
+        "{case} full query with independently checked work scopes"
+    );
+}
+
+pub(in crate::plan) fn paired_core_binding(
+    bindings: &deadpan_core::AudioBindingState,
+    owner: &NodeId,
+    environment: deadpan_core::AudioBindingEnvironment<'_>,
+    is_gap: bool,
+    maximum_work: usize,
+    admitted: &deadpan_core::ResolvedAudioBinding,
+    receipt: (usize, usize, usize, bool),
+) {
+    let enabled = RECORDING.with(|slot| {
+        slot.borrow()
+            .as_ref()
+            .is_some_and(|state| state.case.is_some() && state.phase == "admitted_processing_query")
+    });
+    if !enabled {
+        return;
+    }
+    use deadpan_core::{AudioBindingEnvironment as Environment, AudioDefinitionScope};
+    let (path, excluded, environment_json) = match environment {
+        Environment::Occurrence(path) => (
+            path,
+            0,
+            json!({"tag":"Occurrence","instance":instance(path)}),
+        ),
+        Environment::Definition {
+            root,
+            instance: path,
+            outside_repeats,
+        } => (
+            path,
+            outside_repeats.len(),
+            json!({"tag":"Definition","root":root,"instance":instance(path),"outside_repeats":outside_repeats}),
+        ),
+        Environment::GapOccurrence {
+            instance: path,
+            after,
+        } => (
+            path,
+            0,
+            json!({"tag":"GapOccurrence","instance":instance(path),"after":after}),
+        ),
+        Environment::GapDefinition {
+            root,
+            instance: path,
+            outside_repeats,
+            after,
+        } => (
+            path,
+            outside_repeats.len(),
+            json!({"tag":"GapDefinition","root":match root {
+                AudioDefinitionScope::NodeOutput(node)=>json!({"tag":"NodeOutput","node":node}),
+                AudioDefinitionScope::RepeatGap(repeat)=>json!({"tag":"RepeatGap","repeat":repeat}),
+            },"instance":instance(path),"outside_repeats":outside_repeats,"after":after}),
+        ),
+    };
+    let binding = if is_gap {
+        bindings.gap_bindings()
+    } else {
+        bindings.bindings()
+    }
+    .get(owner)
+    .expect("actual successful Core binding");
+    let resume_terms = binding
+        .resume
+        .as_ref()
+        .map_or(0, |value| value.phase.terms.len());
+    let entire_extra_is_main_lattice = path.repeats.is_empty()
+        && excluded == 0
+        && resume_terms == 0
+        && binding.reanchors.is_empty();
+    let ordinary = if is_gap {
+        bindings.resolve_gap_in(owner, environment, maximum_work)
+    } else {
+        bindings.resolve_in(owner, environment, maximum_work)
+    };
+    let ordinary = match ordinary {
+        Ok(value) => json!({"result":"Ok","resolved":value}),
+        Err(error) => json!({"result":"Error","error":{"code":error.code,"message":error.message}}),
+    };
+    record(json!({
+        "kind":"actual_processing_paired_core_binding","owner":owner,"is_gap":is_gap,
+        "environment":environment_json,"maximum_work":maximum_work,"binding":binding,
+        "admitted":admitted,"ordinary":ordinary,
+        "receipt":{"total":receipt.0,"canonical":receipt.1,"additional":receipt.2,"forwarded":receipt.3},
+        "extra_scope":{"environment_repeat_count":path.repeats.len(),"excluded_count":excluded,
+            "resume_terms":resume_terms,"reanchors":binding.reanchors.len(),
+            "entire_additional_is_main_lattice":entire_extra_is_main_lattice},
+    }));
+}
+
 pub(in crate::plan) fn policy_failure(
     plan: &RenderPlan,
     at: AudioSample,

@@ -465,6 +465,8 @@ impl StageAudio {
     ) -> Result<bool, StageAudioError> {
         for (&key, cached) in &self.original_inputs {
             control.spend_plan_work(1)?;
+            #[cfg(test)]
+            original_request::flattened_work_trace::host_eviction_spent(control);
             if Arc::strong_count(&cached.block) == 1 {
                 self.remove_original_input(&key);
                 return Ok(true);
@@ -568,6 +570,17 @@ impl StageAudio {
                 )?,
             }
         };
+        self.cache_original_input(graph, context, (samples, depth, lookup), block, control)
+    }
+
+    fn cache_original_input<'plan, 'work>(
+        &mut self,
+        graph: &mut Graph<'plan, 'work>,
+        context: &Context<'plan>,
+        (samples, depth, lookup): (Range<AudioSample>, usize, LookupKey),
+        block: ReadBlock,
+        control: WorkControl<'work>,
+    ) -> Result<Read, StageAudioError> {
         control.check()?;
         let Some(resident) = resident(&block) else {
             return Ok(Read::Fresh(block));

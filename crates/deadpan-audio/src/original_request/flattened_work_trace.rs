@@ -11,6 +11,7 @@ pub(in crate::stages) struct Lane {
     canonical_units: usize,
     additional_units: usize,
     partial_work: usize,
+    host_eviction_work: usize,
     issuer_checks: u64,
     issuer_work: usize,
 }
@@ -21,24 +22,76 @@ pub(in crate::stages) struct Snapshot {
     cache: Lane,
     active_depth: u32,
     max_active_depth: u32,
+    all_host_eviction_work: [usize; 2],
     nested: bool,
     invalid: bool,
     overflow: bool,
 }
 
+#[derive(Clone, Copy)]
+enum Product {
+    Flattened,
+    Processing,
+}
+
+impl Product {
+    const fn index(self) -> usize {
+        match self {
+            Self::Flattened => 0,
+            Self::Processing => 1,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Default)]
+struct HostEvictions {
+    units: [usize; 2],
+    overflow: bool,
+}
+
 thread_local! {
-    static TRACE: Cell<Snapshot> = Cell::new(Snapshot::default());
+    static TRACE: Cell<[Snapshot; 2]> = Cell::new([Snapshot::default(); 2]);
+    static HOST_EVICTIONS: Cell<HostEvictions> = Cell::new(HostEvictions::default());
+}
+
+// Called only after the existing real eviction scan debit succeeds.
+pub(in crate::stages) fn host_eviction_spent(control: WorkControl<'_>) {
+    let lane = usize::from(control.work.borrow().cache_key_scopes > 0);
+    HOST_EVICTIONS.with(|counter| {
+        let mut state = counter.get();
+        if let Some(next) = state.units[lane].checked_add(1) {
+            state.units[lane] = next;
+        } else {
+            state.overflow = true;
+        }
+        counter.set(state);
+    });
 }
 
 pub(in crate::stages) fn reset() {
     TRACE.with(|trace| {
-        assert_eq!(trace.get().active_depth, 0);
-        trace.set(Snapshot::default());
+        let state = trace.get();
+        assert_eq!(state[Product::Flattened.index()].active_depth, 0);
+        assert_eq!(state[Product::Processing.index()].active_depth, 0);
+        trace.set([Snapshot::default(); 2]);
     });
+    HOST_EVICTIONS.with(|counter| counter.set(HostEvictions::default()));
 }
 
 pub(in crate::stages) fn snapshot() -> Snapshot {
-    TRACE.with(Cell::get)
+    snapshot_product(Product::Flattened)
+}
+
+pub(in crate::stages) fn processing_snapshot() -> Snapshot {
+    snapshot_product(Product::Processing)
+}
+
+fn snapshot_product(product: Product) -> Snapshot {
+    let mut snapshot = TRACE.with(|trace| trace.get()[product.index()]);
+    let host = HOST_EVICTIONS.with(Cell::get);
+    snapshot.all_host_eviction_work = host.units;
+    snapshot.overflow |= host.overflow;
+    snapshot
 }
 
 fn add(value: &mut usize, amount: usize, overflow: &mut bool) {
@@ -58,9 +111,18 @@ fn count(value: &mut u64, overflow: &mut bool) {
 }
 
 pub(super) fn issuer_spent(control: WorkControl<'_>) {
+    issuer_spent_for(Product::Flattened, control);
+}
+
+pub(super) fn processing_issuer_spent(control: WorkControl<'_>) {
+    issuer_spent_for(Product::Processing, control);
+}
+
+fn issuer_spent_for(product: Product, control: WorkControl<'_>) {
     let cache = control.work.borrow().cache_key_scopes > 0;
     TRACE.with(|trace| {
-        let mut state = trace.get();
+        let mut slots = trace.get();
+        let state = &mut slots[product.index()];
         let lane = if cache {
             &mut state.cache
         } else {
@@ -68,13 +130,15 @@ pub(super) fn issuer_spent(control: WorkControl<'_>) {
         };
         count(&mut lane.issuer_checks, &mut state.overflow);
         add(&mut lane.issuer_work, 1, &mut state.overflow);
-        trace.set(state);
+        trace.set(slots);
     });
 }
 
 pub(super) struct ScopeGuard<'work> {
     control: WorkControl<'work>,
+    product: Product,
     before: [usize; 2],
+    before_host_evictions: [usize; 2],
     cache: bool,
     tracked_depth: bool,
     completed: Option<(usize, usize, usize, bool)>,
@@ -82,12 +146,21 @@ pub(super) struct ScopeGuard<'work> {
 
 impl<'work> ScopeGuard<'work> {
     pub(super) fn new(control: WorkControl<'work>) -> Self {
+        Self::new_product(Product::Flattened, control)
+    }
+
+    pub(super) fn new_processing(control: WorkControl<'work>) -> Self {
+        Self::new_product(Product::Processing, control)
+    }
+
+    fn new_product(product: Product, control: WorkControl<'work>) -> Self {
         let work = control.work.borrow();
         let before = [work.plan_work, work.cache_plan_work];
         let cache = work.cache_key_scopes > 0;
         drop(work);
         let tracked_depth = TRACE.with(|trace| {
-            let mut state = trace.get();
+            let mut slots = trace.get();
+            let state = &mut slots[product.index()];
             state.nested |= state.active_depth != 0;
             let tracked = if let Some(depth) = state.active_depth.checked_add(1) {
                 state.active_depth = depth;
@@ -97,12 +170,14 @@ impl<'work> ScopeGuard<'work> {
                 state.overflow = true;
                 false
             };
-            trace.set(state);
+            trace.set(slots);
             tracked
         });
         Self {
             control,
+            product,
             before,
+            before_host_evictions: HOST_EVICTIONS.with(|counter| counter.get().units),
             cache,
             tracked_depth,
             completed: None,
@@ -125,8 +200,11 @@ impl Drop for ScopeGuard<'_> {
         let work = self.control.work.borrow();
         let after = [work.plan_work, work.cache_plan_work];
         drop(work);
+        let host = HOST_EVICTIONS.with(Cell::get);
         TRACE.with(|trace| {
-            let mut state = trace.get();
+            let mut slots = trace.get();
+            let state = &mut slots[self.product.index()];
+            state.overflow |= host.overflow;
             let deltas = [
                 after[0].checked_sub(self.before[0]),
                 after[1].checked_sub(self.before[1]),
@@ -135,12 +213,25 @@ impl Drop for ScopeGuard<'_> {
                 state.invalid = true;
             }
             let deltas = deltas.map(|delta| delta.unwrap_or(0));
+            let host_deltas = std::array::from_fn::<_, 2, _>(|lane| {
+                host.units[lane].checked_sub(self.before_host_evictions[lane])
+            });
+            if host_deltas.iter().any(Option::is_none) {
+                state.invalid = true;
+            }
+            let host_deltas = host_deltas.map(|delta| delta.unwrap_or(0));
+            let forwarded_units =
+                std::array::from_fn::<_, 2, _>(|lane| deltas[lane].checked_sub(host_deltas[lane]));
+            if forwarded_units.iter().any(Option::is_none) {
+                state.invalid = true;
+            }
+            let forwarded_units = forwarded_units.map(|units| units.unwrap_or(0));
             let selected = usize::from(self.cache);
-            state.invalid |= deltas[1 - selected] != 0;
+            state.invalid |= deltas[1 - selected] != 0 || host_deltas[1 - selected] != 0;
             if let Some((canonical, additional, total, forwarded)) = self.completed {
                 state.invalid |= !forwarded
                     || canonical.checked_add(additional) != Some(total)
-                    || deltas[selected] != total;
+                    || forwarded_units[selected] != total;
             }
             for (index, accepted) in deltas.into_iter().enumerate() {
                 let lane = if index == 0 {
@@ -149,6 +240,11 @@ impl Drop for ScopeGuard<'_> {
                     &mut state.cache
                 };
                 add(&mut lane.accepted_work, accepted, &mut state.overflow);
+                add(
+                    &mut lane.host_eviction_work,
+                    host_deltas[index],
+                    &mut state.overflow,
+                );
                 if index != selected {
                     continue;
                 }
@@ -159,7 +255,11 @@ impl Drop for ScopeGuard<'_> {
                     add(&mut lane.additional_units, additional, &mut state.overflow);
                 } else {
                     count(&mut lane.failed_queries, &mut state.overflow);
-                    add(&mut lane.partial_work, accepted, &mut state.overflow);
+                    add(
+                        &mut lane.partial_work,
+                        forwarded_units[index],
+                        &mut state.overflow,
+                    );
                 }
             }
             if self.tracked_depth {
@@ -169,7 +269,7 @@ impl Drop for ScopeGuard<'_> {
                     state.invalid = true;
                 }
             }
-            trace.set(state);
+            trace.set(slots);
         });
     }
 }

@@ -1,6 +1,6 @@
-//! Allocation-site admission for the closed current-sound context and flattened
-//! Root/Domain AudioQuery construction, including cold Original flattened queries.
-//! Original processing, policy and fade construction peaks remain separate.
+//! Allocation-site admission for current-sound contexts and Root/Domain
+//! flattened and processing queries, including cold Original preparation.
+//! Recursive policy and fade construction peaks remain separate.
 
 use super::*;
 use crate::audio_allocated::admission::{arc, array, identity, reserve, validate};

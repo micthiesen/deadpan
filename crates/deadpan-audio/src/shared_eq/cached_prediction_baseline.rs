@@ -185,7 +185,7 @@ fn query_oracle<'plan>(
     let cancelled = AtomicBool::new(false);
     let work = RefCell::new(ReadWork::default());
     let control = control(&cancelled, &work);
-    let request = original_request::with_legacy_flattened_queries(|| match context {
+    let request = original_request::with_legacy_original_queries(|| match context {
         Context::Root => renderer.prepare_original_root(plan, start, frames, control, true),
         Context::Domain(domain) => {
             renderer.prepare_original_domain(domain, start, frames, control, true)

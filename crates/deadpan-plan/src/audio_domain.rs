@@ -167,6 +167,66 @@ pub struct AudioDomainProcessingPolicy<'plan> {
     policy: super::AudioPolicyQuery<AudioSample>,
 }
 
+/// One admitted first processing query sealed to its exact Domain and range.
+/// The construction lease remains live through policy reuse and fallback.
+pub struct AdmittedAudioDomainProcessing<'context, 'plan, I, L> {
+    domain: &'context AudioDomain<'plan>,
+    samples: Range<AudioSample>,
+    query: super::audio::AdmittedAudioProcessingQuery<'plan, I, L>,
+    stops: super::audio::capture::ProcessingStops,
+}
+
+/// Admitted first-query storage paired with separately performed policy work.
+pub struct AdmittedAudioDomainProcessingPolicy<'plan, I, L> {
+    processing: super::audio::AdmittedAudioProcessingQuery<'plan, I, L>,
+    policy: super::AudioPolicyQuery<AudioSample>,
+}
+
+impl<'plan, I: Copy + Eq, L> AdmittedAudioDomainProcessing<'_, 'plan, I, L> {
+    pub fn query(&self) -> &super::audio::AdmittedAudioProcessingQuery<'plan, I, L> {
+        &self.query
+    }
+
+    /// Fresh limits cover policy only; first-query work stays separate.
+    pub fn finish_policy(
+        self,
+        caller: &AudioDomain<'plan>,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+    ) -> Result<AdmittedAudioDomainProcessingPolicy<'plan, I, L>, PlanError> {
+        if !std::ptr::eq(self.domain, caller) || self.samples != samples {
+            return Err(PlanError::InvalidPlan(
+                "processing policy identity mismatch",
+            ));
+        }
+        let policy = if self.stops.permits_binding_reuse() {
+            super::audio_policy::domain_policy_with_processing(
+                caller,
+                samples,
+                limits,
+                &self.query.query().spans,
+            )?
+        } else {
+            caller.policy(samples, limits)?
+        };
+        Ok(AdmittedAudioDomainProcessingPolicy {
+            processing: self.query,
+            policy,
+        })
+    }
+}
+
+impl<'plan, I, L> AdmittedAudioDomainProcessingPolicy<'plan, I, L> {
+    pub fn into_queries(
+        self,
+    ) -> (
+        super::audio::AdmittedAudioProcessingQuery<'plan, I, L>,
+        super::AudioPolicyQuery<AudioSample>,
+    ) {
+        (self.processing, self.policy)
+    }
+}
+
 impl<'plan> AudioDomainProcessing<'_, 'plan> {
     /// Inspect and bill this actual first processing query once before policy.
     pub fn query(&self) -> &AudioProcessingQuery<'plan> {
@@ -446,6 +506,29 @@ impl<'plan> AudioDomain<'plan> {
         })
     }
 
+    /// Co-produce the policy witness while retaining actual processing leases.
+    pub fn processing_for_policy_admitted<A: crate::AudioSoundContextAdmission>(
+        &self,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+        admission: &mut A,
+    ) -> Result<AdmittedAudioDomainProcessing<'_, 'plan, A::Issuer, A::Lease>, A::Error> {
+        let mut stops = super::audio::capture::ProcessingStops::default();
+        let query = self.processing_observing_admitted(
+            samples.clone(),
+            limits,
+            true,
+            Some(&mut stops),
+            admission,
+        )?;
+        Ok(AdmittedAudioDomainProcessing {
+            domain: self,
+            samples,
+            query,
+            stops,
+        })
+    }
+
     pub(super) fn processing_inner(
         &self,
         samples: Range<AudioSample>,
@@ -460,36 +543,42 @@ impl<'plan> AudioDomain<'plan> {
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
         stop_at_preserve: bool,
-        mut stops: Option<&mut super::audio::capture::ProcessingStops>,
+        stops: Option<&mut super::audio::capture::ProcessingStops>,
     ) -> Result<AudioProcessingQuery<'plan>, PlanError> {
-        let mut budget = self.budget(&samples, limits)?;
-        let mut spans = Vec::new();
-        let mut cursor = samples.start;
-        while cursor < samples.end {
-            if spans.len() == limits.maximum_spans {
-                return Err(PlanError::AudioQueryLimit("span count"));
-            }
-            let mut span = self
-                .plan
-                .audio_walk_processing(
-                    cursor,
-                    &mut budget,
-                    &self.seed,
-                    stop_at_preserve,
-                    stops.as_deref_mut(),
-                )?
-                .into_processing();
-            span.samples = cursor..span.allocated_samples.end.min(samples.end);
-            cursor = span.samples.end;
-            spans.push(span);
-        }
-        Ok(AudioProcessingQuery {
-            project_id: self.plan.metadata.project_id.clone(),
-            revision_id: self.plan.metadata.revision_id.clone(),
+        use super::audio_owners::admission::Unmetered;
+        self.processing_observing_admitted(samples, limits, stop_at_preserve, stops, &mut Unmetered)
+            .map(super::audio::AdmittedAudioProcessingQuery::unmetered)
+    }
+
+    /// Retain the actual processing query and all independent construction leases.
+    pub fn processing_admitted<A: crate::AudioSoundContextAdmission>(
+        &self,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+        admission: &mut A,
+    ) -> Result<super::audio::AdmittedAudioProcessingQuery<'plan, A::Issuer, A::Lease>, A::Error>
+    {
+        self.processing_observing_admitted(samples, limits, true, None, admission)
+    }
+
+    fn processing_observing_admitted<A: crate::AudioSoundContextAdmission>(
+        &self,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+        stop_at_preserve: bool,
+        stops: Option<&mut super::audio::capture::ProcessingStops>,
+        admission: &mut A,
+    ) -> Result<super::audio::AdmittedAudioProcessingQuery<'plan, A::Issuer, A::Lease>, A::Error>
+    {
+        let local = self.budget(&samples, limits)?;
+        super::audio::processing_query::domain_query(
+            self.plan,
+            &self.seed,
             samples,
-            spans,
-            lookup: budget.lookup,
-            work: limits.maximum_work - budget.remaining,
-        })
+            limits,
+            local,
+            (stop_at_preserve, stops),
+            admission,
+        )
     }
 }
