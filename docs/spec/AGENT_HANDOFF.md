@@ -2,7 +2,58 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: four Original queries admitted, product goal active
+## Current state: retained fades admitted, product goal active
+
+The [retained-fade checkpoint](../qualification/retained-fade-query-admission-2026-10-31.md)
+adds the actual standalone retained fade constructor and holds its fade and
+optional owner carriers through native consumption. False mode preserves the
+unchanged ordinary method. True mode retains literal stored Bound/resolved/
+lattice work, full signed history, every finite owning payload and overlapping
+origin/side/outer buffers. Native input.work remains literal; successful
+metadata is not rebilled. Production caps, DSP and persisted formats are unchanged.
+
+Three pre-implementation OLD witnesses and one separately identified current-tree
+ordinary-algorithm supplement retain 21 exact oracle hashes. The supplement's
+ordinary method and module match published ee9742711868fde9a78bcb945adfd36e67f504d6.
+False mode compares 4,048 complete logical observations, true mode 2,489 OLD
+successes, and exact/short limits and callback failures cover 54 actual Some
+handles. Combined overlap checks cover 638 nonempty queries, including 36
+both-nonempty origin merges. Independent reviews strengthened callback-prefix,
+combined-lease and exact native refusal assertions.
+
+Both roots' complete 744-request real-WAV NEW captures agree. They preserve 264
+complete successful payloads and 410 typed errors; 42 new refusals and 28 earlier
+errors occur only under literal injected-work or one-frame residency limits.
+Twelve changed reads reach the same source events before a later work refusal.
+Their unallocated legacy downstream work remains separate from constructor
+receipts. No whole-read accounting, speed, RSS or listening result is claimed.
+
+Main/isolated Plan pass 723/710 tests across 29 executables each; native Audio
+passes 1,010/1,004 across 21 each, including ordinary stages 203 and
+definition/history 171 per root. Plan retains 22 ignored tests and Audio nine.
+Fourteen native passes reuse byte-identical final executable pins. Strict
+checks, formatting, hygiene and final source/index/evidence audits pass.
+The isolated copy uses explicit all-target Plan/Audio Clippy because it has no
+.git. All 45 shipping source/fixture blobs equal that candidate; Main's
+unrelated working-tree research remains intact.
+
+Fresh Split remains three pass/four fail in 252.60 seconds: Source/Sequence
+cut-three 0+511 exhausts structural query work; nested selected play without
+root sound prefix-two 0+4,096 exhausts frozen projection work; one selected play
+at that window exhausts per-read work; processed root sound
+root-sound-refinement 0+511 exhausts frozen projection work. General sound-bearing
+Split stays disabled. The qualification links the complete verified evidence.
+
+Next expose and consume the already internally admitted AudioBound::raw_domain
+reconstruction through a sealed native carrier. Freeze complete ordinary Root
+and private Point-domain bodies, actual owning provenance and today's native
+read behavior before changing that boundary. Root transfer currently consumes
+the Domain; Point's later signal clone remains a separately identified boundary.
+Recursive Signal/Tape/Mix/Source/Occurrence/Projected products, general Graph
+containers and complete preparation remain open. No requirement or Gate closes;
+the full DP-01..24/Gates A..G goal stays active.
+
+## Four Original queries admitted (historical)
 
 The [fade-query checkpoint](../qualification/fade-original-query-admission-2026-10-30.md)
 admits actual Root/physical-Domain fades and retains the conditional fourth

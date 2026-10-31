@@ -11,6 +11,9 @@ use super::{
 };
 use crate::{AudioSoundContextAdmission, PlanError};
 
+#[path = "audio_retained_fades_query.rs"]
+pub(in crate::plan) mod retained_fades;
+
 #[path = "audio_owner_input/candidates.rs"]
 mod candidates;
 #[path = "audio_owner_probe.rs"]

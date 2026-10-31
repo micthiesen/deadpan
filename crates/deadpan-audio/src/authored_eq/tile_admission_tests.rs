@@ -79,6 +79,86 @@ fn host_eviction_receipt(trace: &Value) -> [u64; 2] {
     [lanes[0].as_u64().unwrap(), lanes[1].as_u64().unwrap()]
 }
 
+fn retained_product_receipt(trace: &Value, product: &str) -> [u64; 2] {
+    for field in ["nested", "invalid", "overflow"] {
+        assert_eq!(
+            trace[field], false,
+            "invalid retained {product} receipt: {trace}"
+        );
+    }
+    assert_eq!(number(trace, "active_depth"), 0);
+    assert!(number(trace, "max_active_depth") <= 1);
+    ["plan", "cache"].map(|lane_name| {
+        let lane = &trace[lane_name];
+        assert_eq!(
+            number(lane, "constructor_calls"),
+            number(lane, "completed_queries")
+                .checked_add(number(lane, "failed_queries"))
+                .unwrap(),
+            "retained {product} constructor accounting: {trace}"
+        );
+        let accepted = number(lane, "accepted_work");
+        let canonical = number(lane, "canonical_units");
+        let additional = number(lane, "additional_units");
+        let partial = number(lane, "partial_work");
+        let eviction = number(lane, "host_eviction_work");
+        assert_eq!(
+            accepted,
+            canonical
+                .checked_add(additional)
+                .unwrap()
+                .checked_add(partial)
+                .unwrap()
+                .checked_add(eviction)
+                .unwrap(),
+            "retained {product} separates forwarded admission from host eviction: {trace}"
+        );
+        assert_eq!(
+            partial, 0,
+            "this paired OLD matrix has no accounting for failed retained constructor prefixes: {trace}"
+        );
+        if number(lane, "completed_queries") == 0 {
+            assert_eq!(canonical, 0, "no completed retained query can contribute canonical work");
+            assert_eq!(additional, 0, "no completed retained query can contribute additional work");
+        }
+        additional
+    })
+}
+
+fn retained_query_additional(trace: &Value, host_evictions: [u64; 2]) -> [u64; 2] {
+    let mut additional = [0_u64; 2];
+    let mut local_evictions = [0_u64; 2];
+    for (field, product) in [
+        ("retained_fade_work_trace", "fade"),
+        ("retained_owners_work_trace", "owners"),
+    ] {
+        let receipt = &trace[field];
+        let product_additional = retained_product_receipt(receipt, product);
+        let product_evictions =
+            ["plan", "cache"].map(|lane_name| number(&receipt[lane_name], "host_eviction_work"));
+        assert_eq!(
+            host_eviction_receipt(receipt),
+            host_evictions,
+            "retained {product} eviction snapshot is the same global host receipt"
+        );
+        for lane in 0..2 {
+            additional[lane] = additional[lane]
+                .checked_add(product_additional[lane])
+                .unwrap();
+            local_evictions[lane] = local_evictions[lane]
+                .checked_add(product_evictions[lane])
+                .unwrap();
+        }
+    }
+    for lane in 0..2 {
+        assert!(
+            local_evictions[lane] <= host_evictions[lane],
+            "retained-scope evictions are included in the global receipt"
+        );
+    }
+    additional
+}
+
 fn reconcile_paired_flat_host_receipts(actual: &mut Value, old: &Value) {
     assert_eq!(
         query_fees(actual, "paired flattened"),
@@ -150,6 +230,24 @@ fn compare_flattened_counter(actual: &mut Value, ordinary: &Value, imposed: bool
             fees[lane] = fees[lane].checked_add(product_fees[lane]).unwrap();
         }
     }
+    let (actual_host, ordinary_host) = paired_host.expect("all actual product receipts");
+    let retained_query_work = retained_query_additional(actual, actual_host);
+    let ordinary_retained_additional = retained_query_additional(&ordinary, ordinary_host);
+    assert_eq!(
+        ordinary_retained_additional,
+        [0, 0],
+        "legacy retained constructors forward no added work"
+    );
+    for field in ["retained_fade_work_trace", "retained_owners_work_trace"] {
+        let trace = take_query_trace(actual, field);
+        let ordinary_trace = take_query_trace(&mut ordinary, field);
+        for lane in ["plan", "cache"] {
+            assert_eq!(ordinary_trace[lane]["constructor_calls"], 0);
+            assert_eq!(ordinary_trace[lane]["accepted_work"], 0);
+        }
+        assert_eq!(host_eviction_receipt(&trace), actual_host);
+        assert_eq!(host_eviction_receipt(&ordinary_trace), ordinary_host);
+    }
     for (index, field) in ["old_total_controller_work", "cache_plan_work"]
         .into_iter()
         .enumerate()
@@ -159,11 +257,11 @@ fn compare_flattened_counter(actual: &mut Value, ordinary: &Value, imposed: bool
             0
         } else {
             i128::from(fees[index]) + i128::from(host[index]) - i128::from(old_host[index])
-        };
+        } + i128::from(retained_query_work[index]);
         assert_eq!(
             i128::from(number(actual, field)),
             i128::from(number(&ordinary, field)) + additional,
-            "only independently observed query fees and paired actual host eviction debits differ: {field}"
+            "only independently observed new query fees and global paired host evictions differ: {field}"
         );
         actual[field] = ordinary[field].clone();
     }
@@ -180,6 +278,8 @@ fn remove_flattened_traces(observed: &mut Value) {
         "processing_work_trace",
         "policy_work_trace",
         "fade_work_trace",
+        "retained_fade_work_trace",
+        "retained_owners_work_trace",
     ] {
         for phase in ["before", "after"] {
             take_query_trace(&mut observed["setup"][phase], field);
@@ -223,6 +323,8 @@ fn compare_flattened_matrix(actual: &mut Value, ordinary: &Value) {
                     "processing_work_trace",
                     "policy_work_trace",
                     "fade_work_trace",
+                    "retained_fade_work_trace",
+                    "retained_owners_work_trace",
                 ] {
                     assert_eq!(
                         operation["before"][field], operation["after_return_drop"][field],
@@ -266,6 +368,7 @@ fn compare_flattened_matrix(actual: &mut Value, ordinary: &Value) {
 }
 
 fn normalize_counter(actual: &mut Value, old: &Value, imposed: bool, metered: bool) {
+    let mut root_host_evictions = None;
     for (field, product) in [
         ("flattened_work_trace", "flattened"),
         ("processing_work_trace", "processing"),
@@ -274,6 +377,14 @@ fn normalize_counter(actual: &mut Value, old: &Value, imposed: bool, metered: bo
     ] {
         let trace = take_query_trace(actual, field);
         assert_ordinary_query_trace(&trace, product);
+        let host = host_eviction_receipt(&trace);
+        if let Some(previous) = root_host_evictions {
+            assert_eq!(
+                host, previous,
+                "all root query traces expose the same global eviction receipt"
+            );
+        }
+        root_host_evictions = Some(host);
     }
     actual
         .as_object_mut()
@@ -291,19 +402,35 @@ fn normalize_counter(actual: &mut Value, old: &Value, imposed: bool, metered: bo
     if !metered {
         assert_eq!(additional_work, 0);
     }
+    let root_host_evictions = root_host_evictions.expect("all four root query receipts");
+    let retained_query_work = retained_query_additional(actual, root_host_evictions);
     let expected_work = number(old, "old_total_controller_work")
         .checked_add(if imposed { 0 } else { additional_work })
+        .unwrap()
+        .checked_add(retained_query_work[0])
+        .unwrap()
+        .checked_add(retained_query_work[1])
         .unwrap();
     assert_eq!(
         number(actual, "old_total_controller_work"),
         expected_work,
-        "old work plus only accepted new index comparisons/moves"
+        "OLD reader/canonical work plus only accepted new index and retained additional work"
     );
     actual["old_total_controller_work"] = old["old_total_controller_work"].clone();
     actual
         .as_object_mut()
         .unwrap()
         .remove("observed_new_index_work");
+    actual
+        .as_object_mut()
+        .unwrap()
+        .remove("retained_fade_work_trace")
+        .expect("actual retained fade admission receipt");
+    actual
+        .as_object_mut()
+        .unwrap()
+        .remove("retained_owners_work_trace")
+        .expect("actual retained owner admission receipt");
 
     assert_eq!(
         number(old, "node_shallow_bytes"),

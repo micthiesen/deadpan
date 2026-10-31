@@ -909,3 +909,6 @@ fn intrusive_index_storage_does_not_increase_the_admitted_fixed_footprint() {
     );
     assert!(Cache::resident_frames().unwrap() * 8 >= std::mem::size_of::<Cache<'_>>() as u64);
 }
+
+#[path = "retained_host_gap_tests.rs"]
+mod retained_host_gap_tests;

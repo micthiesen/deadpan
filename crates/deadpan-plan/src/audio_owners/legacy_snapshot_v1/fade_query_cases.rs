@@ -1209,7 +1209,7 @@ mod gap_cases {
     }
 }
 
-pub(super) fn visit_cases(mut visit: impl FnMut(Parent<'_, '_>, &Value)) {
+pub(in crate::plan) fn visit_cases(mut visit: impl FnMut(Parent<'_, '_>, &Value)) {
     translations(&mut visit);
     point_and_preserve(&mut visit);
     fractional(&mut visit);

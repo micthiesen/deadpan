@@ -7,6 +7,9 @@ use crate::plan::audio_owners::admission::{
 };
 use deadpan_core::{AdmittedAudioBinding, AudioBindingValue};
 
+#[path = "audio_bound_fade_copy.rs"]
+mod fade_copy;
+
 type BoundResult<'plan, A> = Result<
     Option<
         QueryBound<

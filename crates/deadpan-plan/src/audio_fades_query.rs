@@ -51,7 +51,7 @@ impl<I: Copy + Eq, L> AdmittedAudioFadeQuery<I, L> {
     }
 }
 
-fn ordinary<A: AudioSoundContextAdmission>(
+pub(in crate::plan) fn ordinary<A: AudioSoundContextAdmission>(
     query: AudioFadeQuery,
     admission: &A,
 ) -> QueryResult<AdmittedAudioFadeQuery<A::Issuer, A::Lease>, A> {
@@ -222,30 +222,39 @@ fn construct<A: AudioSoundContextAdmission>(
             let finished = span.finish(&mut budget)?;
             spans = collection::push(spans, finished, &mut budget)?;
         }
-        let canonical = budget.canonical_used;
-        let additional = budget.additional_used;
-        let work = canonical
-            .checked_add(additional)
-            .ok_or(TimeError::Overflow)?;
-        if limits.maximum_work.checked_sub(budget.remaining) != Some(work) {
-            return Err(PlanError::InvalidPlan("fade query work provenance mismatch").into());
-        }
-        let lookup = budget.lookup;
-        let value = spans.map(&mut budget, |spans| FadeBuffer {
-            query: AudioFadeQuery {
-                spans: spans.spans,
-                lookup,
-                work,
-            },
-            _capacity: spans.capacity,
-        })?;
-        Ok(AdmittedAudioFadeQuery {
-            value,
-            canonical,
-            additional,
-            forwarded: true,
-        })
+        finish_query(spans, limits.maximum_work, &mut budget)
     })())
+}
+
+pub(in crate::plan) fn finish_query<A: AudioSoundContextAdmission>(
+    spans: collection::Collected<AudioFadeSpan, A>,
+    maximum_work: usize,
+    budget: &mut QueryBudget<'_, A>,
+) -> QueryResult<AdmittedAudioFadeQuery<A::Issuer, A::Lease>, A> {
+    budget.check()?;
+    let canonical = budget.canonical_used;
+    let additional = budget.additional_used;
+    let work = canonical
+        .checked_add(additional)
+        .ok_or(TimeError::Overflow)?;
+    if maximum_work.checked_sub(budget.remaining) != Some(work) {
+        return Err(PlanError::InvalidPlan("fade query work provenance mismatch").into());
+    }
+    let lookup = budget.lookup;
+    let value = spans.map(budget, |spans| FadeBuffer {
+        query: AudioFadeQuery {
+            spans: spans.spans,
+            lookup,
+            work,
+        },
+        _capacity: spans.capacity,
+    })?;
+    Ok(AdmittedAudioFadeQuery {
+        value,
+        canonical,
+        additional,
+        forwarded: true,
+    })
 }
 
 struct Retained {
@@ -453,6 +462,30 @@ fn bound_fade<A: AudioSoundContextAdmission>(
         return Err(PlanError::InvalidPlan("fade has no bound output").into());
     };
     let end = end.min(processing.allocated_samples.end);
+    bound_fade_untrimmed(primary, start, end, outer, budget)
+}
+
+pub(in crate::plan) fn retained_bound_span_admitted<A: AudioSoundContextAdmission>(
+    primary: Guard<AudioWalkSpan<'_>, A>,
+    start: AudioSample,
+    end: AudioSample,
+    outer: Kept<EditorialCapture, A>,
+    budget: &mut QueryBudget<'_, A>,
+) -> QueryResult<Guard<AudioFadeSpan, A>, A> {
+    bound_fade_untrimmed(primary, start, end, outer, budget)?.finish(budget)
+}
+
+fn bound_fade_untrimmed<A: AudioSoundContextAdmission>(
+    primary: Guard<AudioWalkSpan<'_>, A>,
+    start: AudioSample,
+    end: AudioSample,
+    outer: Kept<EditorialCapture, A>,
+    budget: &mut QueryBudget<'_, A>,
+) -> QueryResult<SpanWork<A::Issuer, A::Lease>, A> {
+    let AudioWalkSpan::Stage(processing) = &*primary else {
+        return Err(PlanError::InvalidPlan("fade has no bound output").into());
+    };
+
     let AudioSignalContent::Bound(bound) = &processing.content else {
         return Err(PlanError::InvalidPlan("fade has no bound output").into());
     };

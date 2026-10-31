@@ -215,7 +215,7 @@ fn pitch(value: PitchPolicy) -> Value {
         PitchPolicy::Shift { semitones } => json!({"tag":"Shift","semitones":semitones}),
     }
 }
-fn input(value: &AudioOwnerInput<'_>) -> Value {
+pub(in crate::plan) fn input(value: &AudioOwnerInput<'_>) -> Value {
     let plan = value.context().plan;
     json!({"observed_at":value.observed_at().0,
        "scope":match value.scope(){crate::AudioOwnerInputScope::Owner=>"Owner",crate::AudioOwnerInputScope::EnclosingProcessor=>"EnclosingProcessor"},
@@ -248,7 +248,7 @@ fn retained_probe(value: &AudioOwnerInput<'_>) -> Value {
         }
     }
 }
-fn error_json(value: &PlanError) -> Value {
+pub(in crate::plan) fn error_json(value: &PlanError) -> Value {
     match value {
         PlanError::AudioRangeOutOfRange => json!({"variant":"AudioRangeOutOfRange"}),
         PlanError::InvalidAudioLimits => json!({"variant":"InvalidAudioLimits"}),

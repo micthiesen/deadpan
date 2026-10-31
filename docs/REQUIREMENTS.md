@@ -599,6 +599,30 @@ other variable containers, inner ordinary queries and full recursive preparation
 remain open. No cap, prior weight, refund, requirement/gate status or speed/RSS
 claim changes.
 
+The [standalone retained-fade checkpoint](qualification/retained-fade-query-admission-2026-10-31.md)
+admits finite copies of the actual retained processing/Bound/editorial state,
+preserving literal stored work and complete signed history. Its fade and
+optional owner carriers survive native validation, source/nested reads and
+numerical consumption. False mode preserves 4,048 complete OLD observations;
+true mode compares 2,489 OLD successes. Exact/short work, requested Layout peaks,
+callback failures and issuer rotation cover 54 actual Some handles. Combined
+overlap evidence covers 638 nonempty windows and 36 genuine both-nonempty origin
+merges. All 21 immutable oracle bodies retain their hashes; the coincident-edge
+supplement is explicitly a post-implementation capture of the unchanged ordinary
+algorithm. Both 744-request native captures agree: 264 exact successful payloads,
+410 unchanged errors, 42 new refusals and 28 earlier errors confined to literal
+tight budgets. Twelve later refusals reach identical source events; accepted
+legacy work outside the captured constructor receipts remains separate.
+Main/isolated Plan pass 723/710 and native Audio 1,010/1,004, including ordinary
+stages 203 and definition/history 171 per root. Strict checks, formatting,
+hygiene, independent reviews and source/index/evidence audits pass. Fresh Split
+remains three pass/four fail in 252.60 seconds and stays disabled: Source/Sequence
+exhausts structural query work, the selected play exhausts per-read work, and
+nested selected play and processed root sound exhaust frozen projection work.
+Raw-domain reconstruction, other recursive
+products and complete preparation remain open. No cap, prior weight, refund,
+requirement/Gate status or speed/RSS claim changes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

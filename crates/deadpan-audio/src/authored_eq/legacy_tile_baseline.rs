@@ -54,6 +54,8 @@ fn counters(renderer: &StageAudio, graph: &Graph<'_, '_, '_>, control: WorkContr
         "processing_work_trace": crate::stages::original_request::flattened_work_trace::processing_snapshot(),
         "policy_work_trace": crate::stages::original_request::flattened_work_trace::policy_snapshot(),
         "fade_work_trace": crate::stages::original_request::flattened_work_trace::fade_snapshot(),
+        "retained_fade_work_trace": crate::stages::retained_request::trace::fade_snapshot(),
+        "retained_owners_work_trace": crate::stages::retained_request::trace::owners_snapshot(),
         "span_start_trace": {
             "direct_point_work": captures.direct_point_work,
             "direct_point_queries": captures.direct_point_queries,
@@ -347,6 +349,7 @@ fn scenario<'plan, const M: bool>(
 ) -> Value {
     OBSERVED_INDEX_WORK.with(|value| value.set(0));
     crate::stages::original_request::flattened_work_trace::reset();
+    crate::stages::retained_request::trace::reset();
     span_start::reset_trace();
     crate::stages::original_request::reset_domain_policy_trace();
     let owner = match incoming {

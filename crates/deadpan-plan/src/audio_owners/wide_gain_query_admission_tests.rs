@@ -573,3 +573,6 @@ mod policy_point;
 
 #[path = "fade_query_admission_tests.rs"]
 mod fade_admission;
+
+#[path = "retained_fade_baseline.rs"]
+mod retained_fade_baseline;

@@ -72,6 +72,12 @@ pub(in crate::stages) fn host_eviction_spent(control: WorkControl<'_>) {
     });
 }
 
+// The retained trace reads this same accepted-eviction receipt without new slots.
+pub(in crate::stages) fn host_eviction_units() -> ([usize; 2], bool) {
+    let host = HOST_EVICTIONS.with(Cell::get);
+    (host.units, host.overflow)
+}
+
 pub(in crate::stages) fn reset() {
     TRACE.with(|trace| {
         let state = trace.get();

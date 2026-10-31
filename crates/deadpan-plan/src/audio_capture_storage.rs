@@ -26,7 +26,7 @@ pub(super) fn copy_vec<T: Clone, A: AudioSoundContextAdmission>(
     }
     Ok(result)
 }
-pub(super) fn fixed<T: Clone, A: AudioSoundContextAdmission>(
+pub(in crate::plan) fn fixed<T: Clone, A: AudioSoundContextAdmission>(
     values: &[T],
     memory: &mut Memory<A::Issuer, A::Lease>,
     budget: &mut QueryBudget<'_, A>,
@@ -39,7 +39,7 @@ pub(super) fn fixed<T: Clone, A: AudioSoundContextAdmission>(
     budget.merge_checked(memory, &mut capacity)?;
     Ok(result)
 }
-pub(super) fn editorial<A: AudioSoundContextAdmission>(
+pub(in crate::plan) fn editorial<A: AudioSoundContextAdmission>(
     value: &EditorialConstraint,
     memory: &mut Memory<A::Issuer, A::Lease>,
     budget: &mut QueryBudget<'_, A>,
@@ -55,7 +55,7 @@ pub(super) fn editorial<A: AudioSoundContextAdmission>(
         incident_samples: *incident_samples,
     })
 }
-pub(super) fn retime<A: AudioSoundContextAdmission>(
+pub(in crate::plan) fn retime<A: AudioSoundContextAdmission>(
     value: &super::super::AudioRetimeStage,
     memory: &mut Memory<A::Issuer, A::Lease>,
     budget: &mut QueryBudget<'_, A>,

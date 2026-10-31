@@ -363,6 +363,9 @@ struct ReadBlock {
 #[path = "original_request.rs"]
 mod original_request;
 
+#[path = "retained_request.rs"]
+mod retained_request;
+
 struct RootReadQueries<'plan> {
     flattened: AudioQuery,
     processing: AudioProcessingQuery<'plan>,
@@ -1380,13 +1383,11 @@ impl StageAudio {
                 .ok_or(StageAudioError::Range)?,
         );
         control.spend_plan_work(input.work())?;
-        let fades = input.fades(start..end, control.query_limits()?)?;
-        control.spend_plan_work(fades.work)?;
-        crate::edges::validate_creative_fades(start, frames as usize, &fades.spans)?;
+        let fades = self.prepare_retained_fades(input, start..end, control)?;
+        crate::edges::validate_creative_fades(start, frames as usize, &fades.query().spans)?;
         let owners = if authored {
-            let query = input.owners(start..end, control.query_limits()?)?;
-            control.spend_plan_work(query.work())?;
-            for span in query.spans() {
+            let query = self.prepare_retained_owners(input, start..end, control)?;
+            for span in query.query().spans() {
                 deadpan_core::validate_audio_treatment_layers(
                     span.owners().iter().filter_map(|owner| owner.treatments()),
                 )?;
@@ -1432,16 +1433,22 @@ impl StageAudio {
                 suppressed,
                 exhausted: Vec::new(),
             };
-            crate::edges::apply_creative_fades(start, &mut block.samples, &fades.spans)?;
+            crate::edges::apply_creative_fades(start, &mut block.samples, &fades.query().spans)?;
             if let Some(owners) = &owners {
-                let gained =
-                    authored_gain::original_samples_with_owners(&block, owners, control, &[])?;
+                let gained = authored_gain::original_samples_with_owners(
+                    &block,
+                    owners.query(),
+                    control,
+                    &[],
+                )?;
                 authored_gain::write_finite_samples(&mut block.samples, gained)?;
             }
             control.check()?;
             Ok(block)
         })();
         self.active_frames -= reservation;
+        drop(owners);
+        drop(fades);
         result
     }
 
