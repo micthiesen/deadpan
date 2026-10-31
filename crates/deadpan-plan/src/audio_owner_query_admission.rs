@@ -132,6 +132,26 @@ impl<T> Owned<T, (), ()> {
         self.value
     }
 }
+#[derive(Clone, Copy)]
+pub(in crate::plan) struct QueryCheckpoint {
+    remaining: usize,
+    canonical: usize,
+    additional: usize,
+    lookup: LookupStats,
+}
+impl QueryCheckpoint {
+    pub(in crate::plan) fn remaining(self) -> usize {
+        self.remaining
+    }
+}
+
+pub(in crate::plan) struct QueryUsage {
+    pub(in crate::plan) work: usize,
+    pub(in crate::plan) canonical: usize,
+    pub(in crate::plan) additional: usize,
+    pub(in crate::plan) lookup: LookupStats,
+}
+
 pub(in crate::plan) struct Budget<'a, A: AudioSoundContextAdmission> {
     local: &'a mut super::Budget,
     pub(in crate::plan) admission: &'a mut A,
@@ -165,6 +185,56 @@ impl<'a, A: AudioSoundContextAdmission> Budget<'a, A> {
             return Err(PlanError::AudioMetadataIssuerMismatch.into());
         }
         Ok(())
+    }
+    pub(in crate::plan) fn checkpoint(&self) -> QueryCheckpoint {
+        QueryCheckpoint {
+            remaining: self.remaining,
+            canonical: self.canonical_used,
+            additional: self.additional_used,
+            lookup: self.lookup,
+        }
+    }
+    /// Describe a completed child without forwarding or folding its work again.
+    pub(in crate::plan) fn usage_since(&self, start: QueryCheckpoint) -> Result<QueryUsage, A> {
+        self.check()?;
+        let mismatch = || PlanError::InvalidPlan("audio child query work provenance mismatch");
+        let canonical = self
+            .canonical_used
+            .checked_sub(start.canonical)
+            .ok_or_else(mismatch)?;
+        let additional = self
+            .additional_used
+            .checked_sub(start.additional)
+            .ok_or_else(mismatch)?;
+        let work = canonical
+            .checked_add(additional)
+            .ok_or(TimeError::Overflow)?;
+        if start.remaining.checked_sub(self.remaining) != Some(work) {
+            return Err(mismatch().into());
+        }
+        let lookup = LookupStats {
+            visited_nodes: self
+                .lookup
+                .visited_nodes
+                .checked_sub(start.lookup.visited_nodes)
+                .ok_or_else(mismatch)?,
+            sequence_comparisons: self
+                .lookup
+                .sequence_comparisons
+                .checked_sub(start.lookup.sequence_comparisons)
+                .ok_or_else(mismatch)?,
+            iteration_run_comparisons: self
+                .lookup
+                .iteration_run_comparisons
+                .checked_sub(start.lookup.iteration_run_comparisons)
+                .ok_or_else(mismatch)?,
+        };
+        Ok(QueryUsage {
+            work,
+            canonical,
+            additional,
+            lookup,
+        })
     }
     pub(in crate::plan) fn memory(&self) -> Memory<A::Issuer, A::Lease> {
         Memory::empty(self.issuer)

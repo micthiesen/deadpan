@@ -24,7 +24,7 @@ use super::{
 use crate::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap, PlanError};
 
 #[path = "audio_signal_processing_query.rs"]
-mod processing_query;
+pub(in crate::plan) mod processing_query;
 
 #[path = "audio_signal_query.rs"]
 mod query;
@@ -803,6 +803,50 @@ impl<'plan> AudioSignal<'plan> {
     pub fn belongs_to(&self, plan: &RenderPlan) -> bool {
         std::ptr::eq(self.plan, plan)
     }
+
+    pub(in crate::plan) fn point_signal_clone_admitted<A: crate::AudioSoundContextAdmission>(
+        &self,
+        budget: &mut QueryBudget<'_, A>,
+    ) -> QueryResult<Owned<Self, A::Issuer, A::Lease>, A> {
+        if !A::METERED {
+            return Ok(Owned {
+                value: self.clone(),
+                memory: budget.memory(),
+            });
+        }
+        budget.check()?;
+        if !matches!(self.provider, SignalProvider::Structural) {
+            return Err(PlanError::InvalidPlan(
+                "admitted Point signal must use its Structural provider",
+            )
+            .into());
+        }
+
+        let mut memory = budget.memory();
+        let mut capacity = budget.memory();
+        let repeats = budget.repeats(&mut memory, &mut capacity, &self.repeats)?;
+        let definition = budget.definition(&mut memory, &self.definition)?;
+        let gap = budget.gap(&mut memory, &self.gap)?;
+        let value = Self {
+            plan: self.plan,
+            root: self.root,
+            support: self.support.clone(),
+            sampling_support: self.sampling_support.clone(),
+            constrain_support: self.constrain_support,
+            repeats,
+            definition,
+            placed_transform: self.placed_transform,
+            bypass_binding: self.bypass_binding,
+            gap,
+            provider: SignalProvider::Structural,
+        };
+        budget.check_memory(&memory)?;
+        budget.check_memory(&capacity)?;
+        budget.merge_checked(&mut memory, &mut capacity);
+        budget.check_memory(&memory)?;
+        Ok(Owned { value, memory })
+    }
+
     pub(super) fn has_audio_bindings(&self) -> bool {
         matches!(self.provider, SignalProvider::Structural) && self.plan.has_audio_bindings()
     }

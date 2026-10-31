@@ -1,6 +1,8 @@
 //! Real ReadWork/WAV boundaries; no alternate lease accounting policy.
 use super::*;
 
+// Keep this earlier processing-only proof on its literal ordinary policy backend.
+
 fn processing_trace() -> serde_json::Value {
     serde_json::to_value(flattened_work_trace::processing_snapshot()).unwrap()
 }
@@ -45,6 +47,11 @@ impl AudioSourceProvider for ProcessingWatchingProvider<'_> {
 
 #[test]
 fn processing_only_carrier_bills_once_and_lives_through_wav_io_unused_drop_and_error() {
+    with_legacy_policy_queries(processing_only_carrier_bills_once_and_lives_through_wav_io_unused_drop_and_error_legacy_policy);
+}
+
+fn processing_only_carrier_bills_once_and_lives_through_wav_io_unused_drop_and_error_legacy_policy()
+{
     for domain_read in [false, true] {
         for outcome in 0..3 {
             let (plan, provider) = fixture();
@@ -161,6 +168,11 @@ fn processing_only_carrier_bills_once_and_lives_through_wav_io_unused_drop_and_e
 
 #[test]
 fn processing_foreign_readwork_is_rejected_with_legacy_flattened_before_source_or_query_io() {
+    with_legacy_policy_queries(processing_foreign_readwork_is_rejected_with_legacy_flattened_before_source_or_query_io_legacy_policy);
+}
+
+fn processing_foreign_readwork_is_rejected_with_legacy_flattened_before_source_or_query_io_legacy_policy()
+ {
     for domain_read in [false, true] {
         let (plan, mut provider) = fixture();
         let domain = plan
@@ -211,6 +223,12 @@ fn processing_foreign_readwork_is_rejected_with_legacy_flattened_before_source_o
 
 #[test]
 fn processing_and_flattened_real_charges_add_and_each_reduces_required_pcm_room() {
+    with_legacy_policy_queries(
+        processing_and_flattened_real_charges_add_and_each_reduces_required_pcm_room_legacy_policy,
+    );
+}
+
+fn processing_and_flattened_real_charges_add_and_each_reduces_required_pcm_room_legacy_policy() {
     for domain_read in [false, true] {
         let (plan, provider) = fixture();
         let domain = plan
@@ -281,6 +299,11 @@ fn processing_and_flattened_real_charges_add_and_each_reduces_required_pcm_room(
 
 #[test]
 fn processing_failed_constructor_keeps_real_partial_fees_and_releases_earlier_flattened_lease() {
+    with_legacy_policy_queries(processing_failed_constructor_keeps_real_partial_fees_and_releases_earlier_flattened_lease_legacy_policy);
+}
+
+fn processing_failed_constructor_keeps_real_partial_fees_and_releases_earlier_flattened_lease_legacy_policy()
+ {
     for domain_read in [false, true] {
         let (plan, provider) = fixture();
         let domain = plan

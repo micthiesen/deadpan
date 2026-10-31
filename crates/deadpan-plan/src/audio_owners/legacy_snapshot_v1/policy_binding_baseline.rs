@@ -6,16 +6,16 @@ use std::{cell::RefCell, fs::OpenOptions, io::Write, path::Path};
 thread_local! {
     static EVENTS: RefCell<Option<Vec<Value>>> = const { RefCell::new(None) };
 }
-struct Observation;
+pub(in crate::plan) struct Observation;
 impl Observation {
-    fn start() -> Self {
+    pub(in crate::plan) fn start() -> Self {
         EVENTS.with(|slot| {
             assert!(slot.borrow().is_none(), "nested policy observation");
             *slot.borrow_mut() = Some(Vec::new());
         });
         Self
     }
-    fn finish(self) -> Vec<Value> {
+    pub(in crate::plan) fn finish(self) -> Vec<Value> {
         EVENTS.with(|slot| slot.borrow_mut().take().unwrap())
     }
 }

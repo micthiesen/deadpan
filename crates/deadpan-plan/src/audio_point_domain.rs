@@ -211,6 +211,15 @@ impl<'plan> AudioPointDomain<'plan> {
     pub fn signal(&self) -> AudioSignal<'plan> {
         self.signal.clone()
     }
+    pub(in crate::plan) fn signal_admitted<A: crate::AudioSoundContextAdmission>(
+        &self,
+        budget: &mut crate::plan::audio_owners::admission::Budget<'_, A>,
+    ) -> crate::plan::audio_owners::admission::Result<
+        crate::plan::audio_owners::admission::Owned<AudioSignal<'plan>, A::Issuer, A::Lease>,
+        A,
+    > {
+        self.signal.point_signal_clone_admitted(budget)
+    }
     pub fn belongs_to(&self, plan: &RenderPlan) -> bool {
         std::ptr::eq(self.plan, plan)
     }

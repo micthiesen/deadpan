@@ -32,6 +32,7 @@ pub(in crate::stages) struct Snapshot {
 enum Product {
     Flattened,
     Processing,
+    Policy,
 }
 
 impl Product {
@@ -39,6 +40,7 @@ impl Product {
         match self {
             Self::Flattened => 0,
             Self::Processing => 1,
+            Self::Policy => 2,
         }
     }
 }
@@ -50,7 +52,7 @@ struct HostEvictions {
 }
 
 thread_local! {
-    static TRACE: Cell<[Snapshot; 2]> = Cell::new([Snapshot::default(); 2]);
+    static TRACE: Cell<[Snapshot; 3]> = Cell::new([Snapshot::default(); 3]);
     static HOST_EVICTIONS: Cell<HostEvictions> = Cell::new(HostEvictions::default());
 }
 
@@ -71,9 +73,10 @@ pub(in crate::stages) fn host_eviction_spent(control: WorkControl<'_>) {
 pub(in crate::stages) fn reset() {
     TRACE.with(|trace| {
         let state = trace.get();
-        assert_eq!(state[Product::Flattened.index()].active_depth, 0);
-        assert_eq!(state[Product::Processing.index()].active_depth, 0);
-        trace.set([Snapshot::default(); 2]);
+        for product in [Product::Flattened, Product::Processing, Product::Policy] {
+            assert_eq!(state[product.index()].active_depth, 0);
+        }
+        trace.set([Snapshot::default(); 3]);
     });
     HOST_EVICTIONS.with(|counter| counter.set(HostEvictions::default()));
 }
@@ -84,6 +87,10 @@ pub(in crate::stages) fn snapshot() -> Snapshot {
 
 pub(in crate::stages) fn processing_snapshot() -> Snapshot {
     snapshot_product(Product::Processing)
+}
+
+pub(in crate::stages) fn policy_snapshot() -> Snapshot {
+    snapshot_product(Product::Policy)
 }
 
 fn snapshot_product(product: Product) -> Snapshot {
@@ -116,6 +123,10 @@ pub(super) fn issuer_spent(control: WorkControl<'_>) {
 
 pub(super) fn processing_issuer_spent(control: WorkControl<'_>) {
     issuer_spent_for(Product::Processing, control);
+}
+
+pub(super) fn policy_issuer_spent(control: WorkControl<'_>) {
+    issuer_spent_for(Product::Policy, control);
 }
 
 fn issuer_spent_for(product: Product, control: WorkControl<'_>) {
@@ -151,6 +162,10 @@ impl<'work> ScopeGuard<'work> {
 
     pub(super) fn new_processing(control: WorkControl<'work>) -> Self {
         Self::new_product(Product::Processing, control)
+    }
+
+    pub(super) fn new_policy(control: WorkControl<'work>) -> Self {
+        Self::new_product(Product::Policy, control)
     }
 
     fn new_product(product: Product, control: WorkControl<'work>) -> Self {

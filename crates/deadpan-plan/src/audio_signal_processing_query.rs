@@ -5,12 +5,12 @@ use crate::plan::audio::processing_query as collection;
 use crate::plan::audio_bound::query::GuardedBound;
 use crate::plan::audio_owners::admission::Memory;
 
-struct SignalBuffer<'plan, I, L> {
-    query: AudioSignalQuery<'plan>,
-    capacity: Memory<I, L>,
+pub(in crate::plan) struct SignalBuffer<'plan, I, L> {
+    pub(in crate::plan) query: AudioSignalQuery<'plan>,
+    pub(in crate::plan) capacity: Memory<I, L>,
 }
 
-type SignalValue<'plan, A> = GuardedBound<
+pub(in crate::plan) type SignalValue<'plan, A> = GuardedBound<
     SignalBuffer<
         'plan,
         <A as AudioSoundContextAdmission>::Issuer,
@@ -19,7 +19,7 @@ type SignalValue<'plan, A> = GuardedBound<
     <A as AudioSoundContextAdmission>::Issuer,
     <A as AudioSoundContextAdmission>::Lease,
 >;
-type SignalResult<'plan, A> = QueryResult<SignalValue<'plan, A>, A>;
+pub(in crate::plan) type SignalResult<'plan, A> = QueryResult<SignalValue<'plan, A>, A>;
 
 impl<'plan> AudioSignal<'plan> {
     fn structural_grid(
@@ -68,6 +68,23 @@ impl<'plan> AudioSignal<'plan> {
         .map(|value| value.unmetered().query)
     }
 
+    pub(in crate::plan) fn structural_child_query<A: AudioSoundContextAdmission>(
+        &self,
+        samples: Range<SignalSample>,
+        limits: AudioQueryLimits,
+        rule: AudioBoundaryRule,
+        stops: (bool, bool),
+        budget: &mut QueryBudget<'_, A>,
+    ) -> SignalResult<'plan, A> {
+        let grid = self.structural_grid(&samples, limits, rule)?;
+        if !matches!(self.provider, SignalProvider::Structural) {
+            return Err(
+                PlanError::InvalidPlan("audio child query requires structural signal").into(),
+            );
+        }
+        self.structural_query_admitted(samples, limits, grid, stops.0, stops.1, budget)
+    }
+
     fn structural_query_admitted<A: AudioSoundContextAdmission>(
         &self,
         samples: Range<SignalSample>,
@@ -77,6 +94,10 @@ impl<'plan> AudioSignal<'plan> {
         stop_at_bindings: bool,
         budget: &mut QueryBudget<'_, A>,
     ) -> SignalResult<'plan, A> {
+        let start = budget.checkpoint();
+        if limits.maximum_work != start.remaining() {
+            return Err(PlanError::InvalidPlan("processing query work provenance mismatch").into());
+        }
         let mut accumulator = collection::empty(budget);
         let mut cursor = samples.start;
         while cursor < samples.end {
@@ -103,14 +124,12 @@ impl<'plan> AudioSignal<'plan> {
         header.value.2 = budget.definition(&mut header.memory, &self.definition)?;
         let header =
             GuardedBound::plain(header.value, budget.issuer).adopt_memory(header.memory, budget)?;
-        let work = budget
-            .canonical_used
-            .checked_add(budget.additional_used)
-            .ok_or(TimeError::Overflow)?;
+        let usage = budget.usage_since(start)?;
+        let work = usage.work;
         if limits.maximum_work.checked_sub(budget.remaining) != Some(work) {
             return Err(PlanError::InvalidPlan("processing query work provenance mismatch").into());
         }
-        let lookup = budget.lookup;
+        let lookup = usage.lookup;
         accumulator
             .zip(header, budget)?
             .map(budget, |(accumulator, header)| SignalBuffer {

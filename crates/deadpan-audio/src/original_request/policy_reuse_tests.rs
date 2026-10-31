@@ -4,6 +4,10 @@ use super::*;
 use deadpan_core::*;
 use deadpan_plan::LookupStats;
 
+fn with_legacy_processing_queries<T>(action: impl FnOnce() -> T) -> T {
+    super::with_legacy_policy_queries(|| super::with_legacy_processing_queries(action))
+}
+
 #[derive(Clone, Copy, Debug)]
 enum BindingCase {
     Source,

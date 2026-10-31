@@ -34,6 +34,16 @@ impl AdmittedAudioQuery<(), ()> {
     }
 }
 
+pub(in crate::plan) struct FlatBuffer<I, L> {
+    pub(in crate::plan) query: AudioQuery,
+    pub(in crate::plan) capacity: Memory<I, L>,
+}
+pub(in crate::plan) type FlatValue<A> = Owned<
+    FlatBuffer<<A as AudioSoundContextAdmission>::Issuer, <A as AudioSoundContextAdmission>::Lease>,
+    <A as AudioSoundContextAdmission>::Issuer,
+    <A as AudioSoundContextAdmission>::Lease,
+>;
+
 // Every actual value precedes its payload and replaceable vector-buffer charge,
 // including a partial header clone and all earlier spans on any failed walk.
 struct Build<I, L> {
@@ -77,16 +87,42 @@ pub(in crate::plan) fn query<A: AudioSoundContextAdmission>(
     admission: &mut A,
 ) -> std::result::Result<AdmittedAudioQuery<A::Issuer, A::Lease>, A::Error> {
     let mut budget = QueryBudget::new(&mut local, admission);
-    admission::outer::<_, A>(assemble(plan, seed, samples, limits, &mut budget))
+    admission::outer::<_, A>((|| {
+        let start = budget.checkpoint();
+        let value = child_query(plan, seed, samples, limits, &mut budget)?;
+        let usage = budget.usage_since(start)?;
+        if limits.maximum_work.checked_sub(budget.remaining) != Some(usage.work)
+            || value.query.work != usage.work
+        {
+            return Err(PlanError::InvalidPlan("flattened query work provenance mismatch").into());
+        }
+        let query = value.try_map(&mut budget, |mut value, memory, budget| {
+            budget.check_memory(&value.capacity)?;
+            budget.merge_checked(memory, &mut value.capacity);
+            budget.check_memory(memory)?;
+            Ok(value.query)
+        })?;
+        Ok(AdmittedAudioQuery {
+            query,
+            canonical: usage.canonical,
+            additional: usage.additional,
+            forwarded: A::METERED,
+        })
+    })())
 }
 
-fn assemble<A: AudioSoundContextAdmission>(
+/// The caller preserves the actual Root/Domain range validation before assembly.
+pub(in crate::plan) fn child_query<A: AudioSoundContextAdmission>(
     plan: &RenderPlan,
     seed: Option<&AudioWalkSeed>,
     samples: Range<AudioSample>,
     limits: AudioQueryLimits,
     budget: &mut QueryBudget<'_, A>,
-) -> Result<AdmittedAudioQuery<A::Issuer, A::Lease>, A> {
+) -> Result<FlatValue<A>, A> {
+    let start = budget.checkpoint();
+    if limits.maximum_work != start.remaining() {
+        return Err(PlanError::InvalidPlan("flattened query work provenance mismatch").into());
+    }
     let mut build = Build {
         project_id: None,
         revision_id: None,
@@ -129,35 +165,29 @@ fn assemble<A: AudioSoundContextAdmission>(
     build.revision_id = Some(budget.revision(&mut build.payload, &plan.metadata.revision_id)?);
     budget.check_memory(&build.payload)?;
     budget.check_memory(&build.capacity)?;
-    budget.merge_checked(&mut build.payload, &mut build.capacity);
-    let canonical = budget.canonical_used;
-    let additional = budget.additional_used;
-    let work = canonical
-        .checked_add(additional)
-        .ok_or(TimeError::Overflow)?;
+    let usage = budget.usage_since(start)?;
+    let work = usage.work;
     if limits.maximum_work.checked_sub(budget.remaining) != Some(work) {
         return Err(PlanError::InvalidPlan("flattened query work provenance mismatch").into());
     }
     let query = Owned {
-        value: AudioQuery {
-            project_id: build
-                .project_id
-                .expect("completed flattened project header"),
-            revision_id: build
-                .revision_id
-                .expect("completed flattened revision header"),
-            samples,
-            spans: build.spans,
-            lookup: budget.lookup,
-            work,
+        value: FlatBuffer {
+            query: AudioQuery {
+                project_id: build
+                    .project_id
+                    .expect("completed flattened project header"),
+                revision_id: build
+                    .revision_id
+                    .expect("completed flattened revision header"),
+                samples,
+                spans: build.spans,
+                lookup: usage.lookup,
+                work,
+            },
+            capacity: build.capacity,
         },
         memory: build.payload,
     };
     budget.check_memory(&query.memory)?;
-    Ok(AdmittedAudioQuery {
-        query,
-        canonical,
-        additional,
-        forwarded: A::METERED,
-    })
+    Ok(query)
 }

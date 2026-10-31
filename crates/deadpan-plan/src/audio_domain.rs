@@ -182,9 +182,59 @@ pub struct AdmittedAudioDomainProcessingPolicy<'plan, I, L> {
     policy: super::AudioPolicyQuery<AudioSample>,
 }
 
+/// Independent admitted products retain both construction leases through a read.
+pub struct AdmittedAudioDomainPolicy<'plan, I, L> {
+    processing: super::audio::AdmittedAudioProcessingQuery<'plan, I, L>,
+    policy: super::AdmittedAudioPolicyQuery<I, L>,
+}
+
+impl<'plan, I, L> AdmittedAudioDomainPolicy<'plan, I, L> {
+    pub fn into_queries(
+        self,
+    ) -> (
+        super::audio::AdmittedAudioProcessingQuery<'plan, I, L>,
+        super::AdmittedAudioPolicyQuery<I, L>,
+    ) {
+        (self.processing, self.policy)
+    }
+}
+
 impl<'plan, I: Copy + Eq, L> AdmittedAudioDomainProcessing<'_, 'plan, I, L> {
     pub fn query(&self) -> &super::audio::AdmittedAudioProcessingQuery<'plan, I, L> {
         &self.query
+    }
+
+    /// Construct policy with fresh admission while retaining the sealed first tape.
+    pub fn finish_policy_admitted<A: crate::AudioSoundContextAdmission<Issuer = I, Lease = L>>(
+        self,
+        caller: &AudioDomain<'plan>,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+        admission: &mut A,
+    ) -> Result<AdmittedAudioDomainPolicy<'plan, I, L>, A::Error> {
+        if !std::ptr::eq(self.domain, caller) || self.samples != samples {
+            return Err(PlanError::InvalidPlan("processing policy identity mismatch").into());
+        }
+        let mut local = Budget {
+            remaining: limits.maximum_work,
+            lookup: LookupStats::default(),
+        };
+        let mut budget = super::audio_owners::admission::Budget::new(&mut local, admission);
+        super::audio_owners::admission::outer::<_, A>((|| {
+            let processing = self.query.validate_for(&mut budget)?;
+            let bindings = self
+                .stops
+                .permits_binding_reuse()
+                .then_some(processing.query().spans.as_slice());
+            let policy = super::audio_policy::query::domain_query_with_processing(
+                caller,
+                samples,
+                limits,
+                bindings,
+                &mut budget,
+            )?;
+            Ok(AdmittedAudioDomainPolicy { processing, policy })
+        })())
     }
 
     /// Fresh limits cover policy only; first-query work stays separate.
@@ -579,6 +629,58 @@ impl<'plan> AudioDomain<'plan> {
             local,
             (stop_at_preserve, stops),
             admission,
+        )
+    }
+}
+
+impl<'plan> AudioDomain<'plan> {
+    pub(in crate::plan) fn audio_child_query<A: crate::AudioSoundContextAdmission>(
+        &self,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+        budget: &mut super::audio_owners::admission::Budget<'_, A>,
+    ) -> super::audio_owners::admission::Result<super::audio::flattened_query::FlatValue<A>, A>
+    {
+        limits.validate()?;
+        if samples.start < self.samples.start
+            || samples.end < samples.start
+            || samples.end > self.samples.end
+        {
+            return Err(PlanError::AudioRangeOutOfRange.into());
+        }
+        super::audio::flattened_query::child_query(
+            self.plan,
+            Some(&self.seed),
+            samples,
+            limits,
+            budget,
+        )
+    }
+
+    pub(in crate::plan) fn processing_child_query<A: crate::AudioSoundContextAdmission>(
+        &self,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+        stop_at_preserve: bool,
+        budget: &mut super::audio_owners::admission::Budget<'_, A>,
+    ) -> super::audio_owners::admission::Result<
+        super::audio::processing_query::ProcessingChild<'plan, A>,
+        A,
+    > {
+        limits.validate()?;
+        if samples.start < self.samples.start
+            || samples.end < samples.start
+            || samples.end > self.samples.end
+        {
+            return Err(PlanError::AudioRangeOutOfRange.into());
+        }
+        super::audio::processing_query::child_domain_query(
+            self.plan,
+            &self.seed,
+            samples,
+            limits,
+            stop_at_preserve,
+            budget,
         )
     }
 }

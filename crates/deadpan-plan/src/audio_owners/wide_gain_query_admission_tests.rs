@@ -561,3 +561,12 @@ mod flattened;
 
 #[path = "processing_query_admission_tests.rs"]
 mod processing_admission;
+
+#[path = "policy_child_admission_tests.rs"]
+mod policy_children;
+
+#[path = "policy_query_admission_tests.rs"]
+mod policy_admission;
+
+#[path = "policy_point_clone_tests.rs"]
+mod policy_point;

@@ -1,9 +1,9 @@
 //! One current Original query preparation, consumed by its exact read.
-//! Flattened and processing metadata retain allocation-site charges through the read.
-//! Policy, fades and the captured Domain identity keep their existing borrows.
+//! Flattened, processing and policy metadata retain allocation-site charges through the read.
+//! Fades and the captured Domain identity keep their existing borrows.
 
 use super::*;
-use deadpan_plan::{AdmittedAudioProcessingQuery, AdmittedAudioQuery};
+use deadpan_plan::{AdmittedAudioPolicyQuery, AdmittedAudioProcessingQuery, AdmittedAudioQuery};
 
 /// The immutable flattened value owns its allocation-site charge.
 enum Flattened<'work> {
@@ -84,10 +84,48 @@ impl<'plan> Processing<'plan, '_> {
     }
 }
 
+enum Policy<'work> {
+    Admitted {
+        query: AdmittedAudioPolicyQuery<
+            sound_context_admission::Issuer<'work>,
+            sound_context_admission::Lease<'work>,
+        >,
+        issuer: sound_context_admission::Issuer<'work>,
+    },
+    #[cfg(test)]
+    Legacy(AudioPolicyQuery<AudioSample>),
+}
+
+impl Policy<'_> {
+    fn query(&self) -> &AudioPolicyQuery<AudioSample> {
+        match self {
+            Self::Admitted { query, .. } => query.query(),
+            #[cfg(test)]
+            Self::Legacy(query) => query,
+        }
+    }
+
+    fn validate_issuer(&self, control: WorkControl<'_>) -> Result<(), StageAudioError> {
+        match self {
+            Self::Admitted { issuer, .. } => {
+                control.spend_plan_work(1)?;
+                #[cfg(test)]
+                flattened_work_trace::policy_issuer_spent(control);
+                if *issuer != sound_context_admission::issuer(control) {
+                    return Err(PlanError::AudioMetadataIssuerMismatch.into());
+                }
+                Ok(())
+            }
+            #[cfg(test)]
+            Self::Legacy(_) => Ok(()),
+        }
+    }
+}
+
 struct PreparedQueries<'plan, 'work> {
     flattened: Flattened<'work>,
     processing: Processing<'plan, 'work>,
-    policy: AudioPolicyQuery<AudioSample>,
+    policy: Policy<'work>,
     fades: Option<AudioFadeQuery>,
 }
 
@@ -110,14 +148,15 @@ impl<'plan> PreparedOriginalRequest<'_, 'plan, '_> {
         RootReadQueriesRef {
             flattened: self.queries.flattened.query(),
             processing: self.queries.processing.query(),
-            policy: &self.queries.policy,
+            policy: self.queries.policy.query(),
             fades: self.queries.fades.as_ref(),
         }
     }
 
     pub(super) fn validate_issuer(&self, control: WorkControl<'_>) -> Result<(), StageAudioError> {
         self.queries.flattened.validate_issuer(control)?;
-        self.queries.processing.validate_issuer(control)
+        self.queries.processing.validate_issuer(control)?;
+        self.queries.policy.validate_issuer(control)
     }
 
     pub(super) fn matches_root(
@@ -176,8 +215,7 @@ impl StageAudio {
         let flattened =
             self.prepare_flattened(Origin::Root(plan), start..AudioSample(end), control)?;
         let processing = self.prepare_processing_root(plan, start..AudioSample(end), control)?;
-        let policy = plan.audio_policy(start..AudioSample(end), control.query_limits()?)?;
-        control.spend_plan_work(policy.work)?;
+        let policy = self.prepare_root_policy(plan, start..AudioSample(end), control)?;
         let fades = if edge_fades {
             let query = plan.audio_fades(start..AudioSample(end), control.query_limits()?)?;
             control.spend_plan_work(query.work)?;
@@ -275,12 +313,46 @@ impl StageAudio {
         Ok(Processing::Admitted { query, issuer })
     }
 
+    fn prepare_root_policy<'work>(
+        &mut self,
+        plan: &RenderPlan,
+        samples: Range<AudioSample>,
+        control: WorkControl<'work>,
+    ) -> Result<Policy<'work>, StageAudioError> {
+        #[cfg(test)]
+        if legacy_policy_queries() {
+            let query = plan.audio_policy(samples, control.query_limits()?)?;
+            control.spend_plan_work(query.work)?;
+            return Ok(Policy::Legacy(query));
+        }
+
+        let limits = control.query_limits()?;
+        let issuer = sound_context_admission::issuer(control);
+        #[cfg(test)]
+        let mut policy_work_trace = flattened_work_trace::ScopeGuard::new_policy(control);
+        let query = {
+            let mut admission = sound_context_admission::Admission::new(self, control);
+            plan.audio_policy_admitted(samples, limits, &mut admission)?
+        };
+        #[cfg(test)]
+        {
+            policy_work_trace.completed(
+                query.canonical_units(),
+                query.additional_units(),
+                query.work(),
+                query.was_forwarded(),
+            );
+            drop(policy_work_trace);
+        }
+        Ok(Policy::Admitted { query, issuer })
+    }
+
     fn prepare_domain_policy<'plan, 'work>(
         &mut self,
         domain: &AudioDomain<'plan>,
         samples: Range<AudioSample>,
         control: WorkControl<'work>,
-    ) -> Result<(Processing<'plan, 'work>, AudioPolicyQuery<AudioSample>), StageAudioError> {
+    ) -> Result<(Processing<'plan, 'work>, Policy<'work>), StageAudioError> {
         #[cfg(test)]
         if policy_trace::legacy() {
             let processing = domain.processing(samples.clone(), control.query_limits()?)?;
@@ -288,7 +360,7 @@ impl StageAudio {
             let policy = domain.policy(samples.clone(), control.query_limits()?)?;
             control.spend_plan_work(policy.work)?;
             policy_trace::record(domain, samples, &processing, &policy, (processing.work, 0));
-            return Ok((Processing::Legacy(processing), policy));
+            return Ok((Processing::Legacy(processing), Policy::Legacy(policy)));
         }
         #[cfg(test)]
         if legacy_processing_queries() {
@@ -300,7 +372,7 @@ impl StageAudio {
             let (processing, policy) = completed.into_queries();
             control.spend_plan_work(policy.work)?;
             policy_trace::record(domain, samples, &processing, &policy, (processing.work, 0));
-            return Ok((Processing::Legacy(processing), policy));
+            return Ok((Processing::Legacy(processing), Policy::Legacy(policy)));
         }
         let limits = control.query_limits()?;
         let issuer = sound_context_admission::issuer(control);
@@ -321,16 +393,55 @@ impl StageAudio {
             );
             drop(processing_work_trace);
         }
-        let completed =
-            processing.finish_policy(domain, samples.clone(), control.query_limits()?)?;
+        #[cfg(test)]
+        if legacy_policy_queries() {
+            let completed =
+                processing.finish_policy(domain, samples.clone(), control.query_limits()?)?;
+            let (query, policy) = completed.into_queries();
+            control.spend_plan_work(policy.work)?;
+            let receipt = (query.canonical_units(), query.additional_units());
+            let processing = Processing::Admitted { query, issuer };
+            policy_trace::record(domain, samples, processing.query(), &policy, receipt);
+            return Ok((processing, Policy::Legacy(policy)));
+        }
+
+        let limits = control.query_limits()?;
+        #[cfg(test)]
+        let mut policy_work_trace = flattened_work_trace::ScopeGuard::new_policy(control);
+        let completed = {
+            let mut admission = sound_context_admission::Admission::new(self, control);
+            processing.finish_policy_admitted(domain, samples.clone(), limits, &mut admission)?
+        };
         let (query, policy) = completed.into_queries();
-        control.spend_plan_work(policy.work)?;
+        #[cfg(test)]
+        {
+            policy_work_trace.completed(
+                policy.canonical_units(),
+                policy.additional_units(),
+                policy.work(),
+                policy.was_forwarded(),
+            );
+            drop(policy_work_trace);
+        }
         #[cfg(test)]
         let receipt = (query.canonical_units(), query.additional_units());
         let processing = Processing::Admitted { query, issuer };
         #[cfg(test)]
-        policy_trace::record(domain, samples, processing.query(), &policy, receipt);
-        Ok((processing, policy))
+        policy_trace::record_admitted(
+            domain,
+            samples,
+            processing.query(),
+            policy.query(),
+            receipt,
+            (policy.canonical_units(), policy.additional_units()),
+        );
+        Ok((
+            processing,
+            Policy::Admitted {
+                query: policy,
+                issuer,
+            },
+        ))
     }
 
     fn prepare_flattened<'work>(
@@ -432,6 +543,30 @@ thread_local! {
 }
 
 #[cfg(test)]
+thread_local! {
+    static LEGACY_POLICY_QUERIES: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+#[cfg(test)]
+fn legacy_policy_queries() -> bool {
+    LEGACY_POLICY_QUERIES.with(std::cell::Cell::get)
+}
+
+/// Keep the literal ordinary policy constructor available independently of
+/// flattened and processing compatibility modes.
+#[cfg(test)]
+pub(super) fn with_legacy_policy_queries<T>(action: impl FnOnce() -> T) -> T {
+    struct Restore(bool);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            LEGACY_POLICY_QUERIES.with(|mode| mode.set(self.0));
+        }
+    }
+    let _restore = Restore(LEGACY_POLICY_QUERIES.with(|mode| mode.replace(true)));
+    action()
+}
+
+#[cfg(test)]
 fn legacy_processing_queries() -> bool {
     LEGACY_PROCESSING_QUERIES.with(std::cell::Cell::get)
 }
@@ -473,8 +608,12 @@ pub(super) fn with_legacy_flattened_queries<T>(action: impl FnOnce() -> T) -> T 
 mod policy_trace;
 
 #[cfg(test)]
+/// Select the literal OLD constructors for flattened, processing and policy
+/// queries in one Original preparation.
 pub(super) fn with_legacy_original_queries<T>(action: impl FnOnce() -> T) -> T {
-    with_legacy_processing_queries(|| with_legacy_flattened_queries(action))
+    with_legacy_policy_queries(|| {
+        with_legacy_processing_queries(|| with_legacy_flattened_queries(action))
+    })
 }
 #[cfg(test)]
 pub(super) use policy_trace::{

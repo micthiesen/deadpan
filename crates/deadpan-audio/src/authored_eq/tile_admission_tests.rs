@@ -128,6 +128,7 @@ fn compare_flattened_counter(actual: &mut Value, ordinary: &Value, imposed: bool
     for (field, product) in [
         ("flattened_work_trace", "flattened"),
         ("processing_work_trace", "processing"),
+        ("policy_work_trace", "policy"),
     ] {
         let trace = take_query_trace(actual, field);
         let old_trace = take_query_trace(&mut ordinary, field);
@@ -140,7 +141,7 @@ fn compare_flattened_counter(actual: &mut Value, ordinary: &Value, imposed: bool
         if let Some(previous) = paired_host {
             assert_eq!(
                 host, previous,
-                "both product snapshots share one actual host debit receipt"
+                "all product snapshots share one actual host debit receipt"
             );
         }
         paired_host = Some(host);
@@ -152,7 +153,7 @@ fn compare_flattened_counter(actual: &mut Value, ordinary: &Value, imposed: bool
         .into_iter()
         .enumerate()
     {
-        let (host, old_host) = paired_host.expect("both actual product receipts");
+        let (host, old_host) = paired_host.expect("all actual product receipts");
         let additional = if imposed && index == 0 {
             0
         } else {
@@ -173,7 +174,11 @@ fn compare_flattened_counter(actual: &mut Value, ordinary: &Value, imposed: bool
 }
 
 fn remove_flattened_traces(observed: &mut Value) {
-    for field in ["flattened_work_trace", "processing_work_trace"] {
+    for field in [
+        "flattened_work_trace",
+        "processing_work_trace",
+        "policy_work_trace",
+    ] {
         for phase in ["before", "after"] {
             take_query_trace(&mut observed["setup"][phase], field);
         }
@@ -211,7 +216,11 @@ fn compare_flattened_matrix(actual: &mut Value, ordinary: &Value) {
                 .get("imposed_controller_work_before_call")
                 .is_some();
             if imposed {
-                for field in ["flattened_work_trace", "processing_work_trace"] {
+                for field in [
+                    "flattened_work_trace",
+                    "processing_work_trace",
+                    "policy_work_trace",
+                ] {
                     assert_eq!(
                         operation["before"][field], operation["after_return_drop"][field],
                         "imposed exhaustion performs no new Original query work: {field}"
@@ -257,6 +266,7 @@ fn normalize_counter(actual: &mut Value, old: &Value, imposed: bool, metered: bo
     for (field, product) in [
         ("flattened_work_trace", "flattened"),
         ("processing_work_trace", "processing"),
+        ("policy_work_trace", "policy"),
     ] {
         let trace = take_query_trace(actual, field);
         assert_ordinary_query_trace(&trace, product);
@@ -500,9 +510,25 @@ fn reconcile_domain_policy_receipts(actual: &Value, old: &Value) -> u64 {
             row["processing_canonical_work"], old_row["processing_canonical_work"],
             "Domain first-query canonical work remains literal"
         );
-        let removed = number(old_row, "policy_work")
-            .checked_sub(number(row, "policy_work"))
+        for value in [row, old_row] {
+            assert_eq!(
+                number(value, "policy_work"),
+                number(value, "policy_canonical_work")
+                    .checked_add(number(value, "policy_additional_work"))
+                    .unwrap(),
+                "actual Domain policy receipt categories"
+            );
+        }
+        let removed = number(old_row, "policy_canonical_work")
+            .checked_sub(number(row, "policy_canonical_work"))
             .unwrap();
+        assert_eq!(
+            i128::from(number(row, "policy_work")) - i128::from(number(old_row, "policy_work")),
+            i128::from(number(row, "policy_additional_work"))
+                - i128::from(number(old_row, "policy_additional_work"))
+                - i128::from(removed),
+            "policy total changes only by actual additional work and the witnessed removed walk"
+        );
         if removed != 0 {
             assert_eq!(row["content_only_eligible"], true);
             assert!(
@@ -541,6 +567,8 @@ fn reconcile_domain_policy_receipts(actual: &Value, old: &Value) -> u64 {
         let mut checked = row.clone();
         for field in [
             "policy_work",
+            "policy_canonical_work",
+            "policy_additional_work",
             "policy_lookup",
             "processing_work",
             "processing_additional_work",
@@ -572,6 +600,10 @@ fn compare_domain_policy_counter(actual: &mut Value, old: &Value, imposed: bool)
     let old_processing = take_query_trace(&mut old, "processing_work_trace");
     let fees = query_fees(&processing, "processing");
     let old_fees = query_fees(&old_processing, "processing reference");
+    let policy = take_query_trace(actual, "policy_work_trace");
+    let old_policy = take_query_trace(&mut old, "policy_work_trace");
+    let policy_fees = query_fees(&policy, "policy");
+    let old_policy_fees = query_fees(&old_policy, "policy reference");
     let removed = reconcile_domain_policy_receipts(&trace, &old_trace);
     for (lane, field) in ["old_total_controller_work", "cache_plan_work"]
         .into_iter()
@@ -579,12 +611,16 @@ fn compare_domain_policy_counter(actual: &mut Value, old: &Value, imposed: bool)
     {
         let host = host_eviction_receipt(&processing);
         let old_host = host_eviction_receipt(&old_processing);
+        assert_eq!(host_eviction_receipt(&policy), host);
+        assert_eq!(host_eviction_receipt(&old_policy), old_host);
         assert_eq!(host_eviction_receipt(&actual["flattened_work_trace"]), host);
         assert_eq!(
             host_eviction_receipt(&old["flattened_work_trace"]),
             old_host
         );
         let difference = i128::from(fees[lane]) - i128::from(old_fees[lane])
+            + i128::from(policy_fees[lane])
+            - i128::from(old_policy_fees[lane])
             + i128::from(host[lane])
             - i128::from(old_host[lane]);
         let removed = if lane == 0 { i128::from(removed) } else { 0 };
@@ -596,7 +632,7 @@ fn compare_domain_policy_counter(actual: &mut Value, old: &Value, imposed: bool)
         assert_eq!(
             i128::from(number(actual, field)),
             i128::from(number(&old, field)) + adjustment,
-            "only actual policy savings and separately witnessed processing fees differ: {field}"
+            "only actual policy savings and separately witnessed processing/policy fees differ: {field}"
         );
         actual[field] = old[field].clone();
     }
@@ -612,7 +648,11 @@ fn compare_domain_policy_counter(actual: &mut Value, old: &Value, imposed: bool)
 }
 
 fn remove_domain_policy_traces(observed: &mut Value) {
-    for field in ["domain_policy_trace", "processing_work_trace"] {
+    for field in [
+        "domain_policy_trace",
+        "processing_work_trace",
+        "policy_work_trace",
+    ] {
         for phase in ["before", "after"] {
             take_query_trace(&mut observed["setup"][phase], field);
         }
@@ -680,6 +720,7 @@ fn compare_certified_counter(actual: &mut Value, direct: &Value, imposed: bool) 
     for (field, product) in [
         ("flattened_work_trace", "flattened"),
         ("processing_work_trace", "processing"),
+        ("policy_work_trace", "policy"),
     ] {
         query_fees(&actual[field], product);
         query_fees(&direct[field], product);

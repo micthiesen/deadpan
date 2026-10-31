@@ -558,6 +558,27 @@ Split remains disabled. Recursive policy/fade construction, remaining variable
 containers and full recursive preparation stay open. No cap, prior weight,
 refund, requirement/gate status or speed/RSS claim changes.
 
+The [policy Original query checkpoint](qualification/policy-original-query-admission-2026-10-30.md)
+admits actual recursive Root/physical-Domain policy construction, child local
+receipts, Point owning clones and offset conversion, and sealed first-policy
+finish. Original reads retain and validate all three query carriers. Complete
+OLD captures contain 1,613 actual calls; false mode replays their full outputs,
+errors, work, lookup and events without callbacks. All sixteen oracle bodies
+retain their pins. Twenty focused Plan tests and actual WAV lifecycle tests
+cover failure cleanup, identity, limits, overlap and once-only work receipts.
+Dense full physical Domain construction explicitly exhausts the unchanged
+65,536-unit allowance; the negative regression retains that boundary.
+Main/isolated Core pass 827/802, Plan 702/689 including integrations, Audio
+412/406, ordinary Stage 203/203 and definition/history 171/171. Strict checks,
+reviews and source/index/evidence audits pass. Final native bodies agree
+exactly; cold work adds 75-179 units over fully legacy and warm savings remain
+24-63. Fresh Split stays three pass/four fail in 264.77 seconds: Source/Sequence,
+selected play and processed root sound exhaust per-read work; nested selected
+play exhausts frozen projection work at the same windows. General sound Split
+stays disabled. Fades, other variable containers, inner ordinary queries and
+full recursive preparation remain open. No cap, prior weight, refund,
+requirement/gate status or speed/RSS claim changes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

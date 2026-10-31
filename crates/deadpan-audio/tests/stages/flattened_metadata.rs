@@ -87,7 +87,7 @@ pub(super) fn root(plan: &RenderPlan, samples: Range<AudioSample>) -> Observatio
     );
     let processing = plan
         .audio_processing_admitted(
-            samples,
+            samples.clone(),
             AudioQueryLimits::default(),
             &mut Admission(&ledger),
         )
@@ -98,6 +98,22 @@ pub(super) fn root(plan: &RenderPlan, samples: Range<AudioSample>) -> Observatio
         processing.work(),
         processing.canonical_units() + processing.additional_units()
     );
+    let policy = plan
+        .audio_policy_admitted(
+            samples,
+            AudioQueryLimits::default(),
+            &mut Admission(&ledger),
+        )
+        .unwrap();
+    assert!(policy.was_forwarded());
+    assert_eq!(
+        policy.work(),
+        policy.canonical_units() + policy.additional_units()
+    );
+    assert_eq!(
+        ledger.work.get(),
+        query.work() + processing.work() + policy.work()
+    );
     assert!(ledger.reservations.get() > 0);
     let observation = Observation {
         retained_frames: ledger.live.get(),
@@ -105,7 +121,7 @@ pub(super) fn root(plan: &RenderPlan, samples: Range<AudioSample>) -> Observatio
     };
     assert!(observation.retained_frames > 0);
     assert!(observation.peak_frames >= observation.retained_frames);
-    drop((query, processing));
+    drop((query, processing, policy));
     assert_eq!(ledger.live.get(), 0);
     observation
 }

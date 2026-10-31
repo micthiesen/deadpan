@@ -49,11 +49,11 @@ pub use picture::{Picture, PictureCaption, PictureFraming, PictureSample};
 pub use plan::AudioIntrinsicPreparation;
 pub use plan::PictureOwnerMap;
 pub use plan::{
-    AdmittedAudioDomainProcessing, AdmittedAudioDomainProcessingPolicy, AudioBoundaries,
-    AudioBoundaryKind, AudioBoundaryOrigin, AudioContent, AudioDomain, AudioDomainProcessing,
-    AudioDomainProcessingPolicy, AudioQuery, AudioQueryLimits, AudioRetimeStage, AudioSpan,
-    AudioTransform, LookupStats, NodeInspection, NodeType, PlanInspection, PlanMetadata,
-    RenderPlan, SilenceReason, SourceSamplingSupport, StorageStats,
+    AdmittedAudioDomainPolicy, AdmittedAudioDomainProcessing, AdmittedAudioDomainProcessingPolicy,
+    AudioBoundaries, AudioBoundaryKind, AudioBoundaryOrigin, AudioContent, AudioDomain,
+    AudioDomainProcessing, AudioDomainProcessingPolicy, AudioQuery, AudioQueryLimits,
+    AudioRetimeStage, AudioSpan, AudioTransform, LookupStats, NodeInspection, NodeType,
+    PlanInspection, PlanMetadata, RenderPlan, SilenceReason, SourceSamplingSupport, StorageStats,
 };
 pub use plan::{
     AdmittedAudioOwnerInputCandidates, AdmittedAudioOwnerInputCapture,
@@ -68,7 +68,7 @@ pub use plan::{
     AudioOwnerClockOrigin, AudioOwnerKind, AudioOwnerQuery, AudioOwnerSpan, AudioOwnerSupport,
     AudioTreatmentBoundary,
 };
-pub use plan::{AdmittedAudioProcessingQuery, AdmittedAudioQuery};
+pub use plan::{AdmittedAudioPolicyQuery, AdmittedAudioProcessingQuery, AdmittedAudioQuery};
 pub use plan::{
     AdmittedOriginalContext, ContextChargeTransfer, SharedAudioOwnerRetainedInput,
     preflight_context_transfer, transfer_context_charges,

@@ -13,6 +13,8 @@ pub(in crate::stages) struct DomainPolicyTrace {
     pub processing_additional_work: usize,
     pub processing_lookup: deadpan_plan::LookupStats,
     pub policy_work: usize,
+    pub policy_canonical_work: usize,
+    pub policy_additional_work: usize,
     pub policy_lookup: deadpan_plan::LookupStats,
     pub content_only_eligible: bool,
 }
@@ -37,12 +39,34 @@ pub(super) fn record(
     policy: &AudioPolicyQuery<AudioSample>,
     receipt: (usize, usize),
 ) {
+    record_admitted(
+        domain,
+        samples,
+        processing,
+        policy,
+        receipt,
+        (policy.work, 0),
+    );
+}
+
+pub(super) fn record_admitted(
+    domain: &AudioDomain<'_>,
+    samples: Range<AudioSample>,
+    processing: &AudioProcessingQuery<'_>,
+    policy: &AudioPolicyQuery<AudioSample>,
+    receipt: (usize, usize),
+    policy_receipt: (usize, usize),
+) {
     STATE.with(|state| {
         let mut state = state.borrow_mut();
         let Some(rows) = &mut state.rows else {
             return;
         };
         assert_eq!(receipt.0.checked_add(receipt.1), Some(processing.work));
+        assert_eq!(
+            policy_receipt.0.checked_add(policy_receipt.1),
+            Some(policy.work)
+        );
         rows.push(DomainPolicyTrace {
             domain_instance: domain.instance().clone(),
             domain_root_samples: domain.root_samples(),
@@ -53,6 +77,8 @@ pub(super) fn record(
             processing_additional_work: receipt.1,
             processing_lookup: processing.lookup,
             policy_work: policy.work,
+            policy_canonical_work: policy_receipt.0,
+            policy_additional_work: policy_receipt.1,
             policy_lookup: policy.lookup,
             content_only_eligible: processing.spans.iter().all(|span| {
                 matches!(

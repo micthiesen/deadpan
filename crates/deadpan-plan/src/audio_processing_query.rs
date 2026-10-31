@@ -2,13 +2,28 @@
 use super::*;
 use crate::audio_allocated::admission::array;
 use crate::plan::audio_bound::query::GuardedBound;
-use crate::plan::audio_owners::admission::{self, Budget as QueryBudget, Memory, Owned, Result};
+use crate::plan::audio_owners::admission::{
+    self, Budget as QueryBudget, Memory, Owned, QueryCheckpoint, Result,
+};
 use crate::{AudioProcessingQuery, AudioSoundContextAdmission};
 
+pub(in crate::plan) struct ProcessingBuffer<'plan, I, L> {
+    pub(in crate::plan) query: AudioProcessingQuery<'plan>,
+    pub(in crate::plan) capacity: Memory<I, L>,
+}
 struct ProcessingValue<'plan, I, L> {
     query: AudioProcessingQuery<'plan>,
     _capacity: Memory<I, L>,
 }
+pub(in crate::plan) type ProcessingChild<'plan, A> = GuardedBound<
+    ProcessingBuffer<
+        'plan,
+        <A as AudioSoundContextAdmission>::Issuer,
+        <A as AudioSoundContextAdmission>::Lease,
+    >,
+    <A as AudioSoundContextAdmission>::Issuer,
+    <A as AudioSoundContextAdmission>::Lease,
+>;
 
 /// Actual processing storage and its independent Core/Plan leases remain owned.
 pub struct AdmittedAudioProcessingQuery<'plan, I, L> {
@@ -32,6 +47,28 @@ impl<'plan, I: Copy + Eq, L> AdmittedAudioProcessingQuery<'plan, I, L> {
     }
     pub fn was_forwarded(&self) -> bool {
         self.forwarded
+    }
+    pub(in crate::plan) fn validate_for<A: AudioSoundContextAdmission<Issuer = I, Lease = L>>(
+        self,
+        budget: &mut QueryBudget<'_, A>,
+    ) -> Result<Self, A> {
+        if self.was_forwarded() != A::METERED {
+            return Err(PlanError::InvalidPlan("processing accounting mode mismatch").into());
+        }
+        budget.check_memory(&self.value._capacity)?;
+        let Self {
+            value,
+            canonical,
+            additional,
+            forwarded,
+        } = self;
+        let value = value.map(budget, std::convert::identity)?;
+        Ok(Self {
+            value,
+            canonical,
+            additional,
+            forwarded,
+        })
     }
 }
 impl<'plan> AdmittedAudioProcessingQuery<'plan, (), ()> {
@@ -144,13 +181,14 @@ pub(in crate::plan) fn push<S, A: AudioSoundContextAdmission>(
     })
 }
 
-pub(in crate::plan) fn finish<'plan, A: AudioSoundContextAdmission>(
+fn finish_child<'plan, A: AudioSoundContextAdmission>(
     plan: &'plan RenderPlan,
     samples: Range<AudioSample>,
     limits: AudioQueryLimits,
     accumulator: Collected<AudioProcessingSpan<'plan>, A>,
     budget: &mut QueryBudget<'_, A>,
-) -> Result<AdmittedAudioProcessingQuery<'plan, A::Issuer, A::Lease>, A> {
+    start: QueryCheckpoint,
+) -> Result<ProcessingChild<'plan, A>, A> {
     let mut header = Owned {
         value: (None, None),
         memory: budget.memory(),
@@ -159,18 +197,15 @@ pub(in crate::plan) fn finish<'plan, A: AudioSoundContextAdmission>(
     header.value.1 = Some(budget.revision(&mut header.memory, &plan.metadata.revision_id)?);
     let header =
         GuardedBound::plain(header.value, budget.issuer).adopt_memory(header.memory, budget)?;
-    let canonical = budget.canonical_used;
-    let additional = budget.additional_used;
-    let work = canonical
-        .checked_add(additional)
-        .ok_or(TimeError::Overflow)?;
+    let usage = budget.usage_since(start)?;
+    let work = usage.work;
     if limits.maximum_work.checked_sub(budget.remaining) != Some(work) {
         return Err(PlanError::InvalidPlan("processing query work provenance mismatch").into());
     }
-    let lookup = budget.lookup;
-    let value = accumulator
+    let lookup = usage.lookup;
+    accumulator
         .zip(header, budget)?
-        .map(budget, |(accumulator, header)| ProcessingValue {
+        .map(budget, |(accumulator, header)| ProcessingBuffer {
             query: AudioProcessingQuery {
                 project_id: header.0.expect("completed processing project header"),
                 revision_id: header.1.expect("completed processing revision header"),
@@ -179,14 +214,8 @@ pub(in crate::plan) fn finish<'plan, A: AudioSoundContextAdmission>(
                 lookup,
                 work,
             },
-            _capacity: accumulator.capacity,
-        })?;
-    Ok(AdmittedAudioProcessingQuery {
-        value,
-        canonical,
-        additional,
-        forwarded: A::METERED,
-    })
+            capacity: accumulator.capacity,
+        })
 }
 
 pub(in crate::plan) fn domain_query<'plan, A: AudioSoundContextAdmission>(
@@ -198,39 +227,92 @@ pub(in crate::plan) fn domain_query<'plan, A: AudioSoundContextAdmission>(
     stops: (bool, Option<&mut capture::ProcessingStops>),
     admission: &mut A,
 ) -> std::result::Result<AdmittedAudioProcessingQuery<'plan, A::Issuer, A::Lease>, A::Error> {
-    let (stop_at_preserve, mut stops) = stops;
     let mut budget = QueryBudget::new(&mut local, admission);
     admission::outer::<_, A>((|| {
-        let mut accumulator = empty(&budget);
-        let mut cursor = samples.start;
-        while cursor < samples.end {
-            if accumulator.spans.len() == limits.maximum_spans {
-                return Err(PlanError::AudioQueryLimit("span count").into());
-            }
-            let walk = plan.audio_walk_inner_admitted(
-                cursor,
-                &mut budget,
-                Some(seed),
-                stop_at_preserve,
-                true,
-                (None, None, None, stops.as_deref_mut()),
-            )?;
-            let value = walk.value.adopt_memory(walk.memory, &mut budget)?;
-            let end = match &*value {
-                AudioWalkSpan::Leaf(span) => span.allocated_samples.end,
-                AudioWalkSpan::Stage(span) => span.allocated_samples.end,
-            }
-            .min(samples.end);
-            let span = value.map(&mut budget, |value| {
-                let mut span = value.into_processing();
-                span.samples = cursor..end;
-                span
-            })?;
-            cursor = end;
-            accumulator = push(accumulator, span, &mut budget)?;
+        let value = assemble_domain(plan, seed, samples, limits, stops, &mut budget)?;
+        let canonical = budget.canonical_used;
+        let additional = budget.additional_used;
+        let work = canonical
+            .checked_add(additional)
+            .ok_or(TimeError::Overflow)?;
+        if value.query.work != work
+            || limits.maximum_work.checked_sub(budget.remaining) != Some(work)
+        {
+            return Err(PlanError::InvalidPlan("processing query work provenance mismatch").into());
         }
-        finish(plan, samples, limits, accumulator, &mut budget)
+        let value = value.map(&mut budget, |value| ProcessingValue {
+            query: value.query,
+            _capacity: value.capacity,
+        })?;
+        Ok(AdmittedAudioProcessingQuery {
+            value,
+            canonical,
+            additional,
+            forwarded: A::METERED,
+        })
     })())
+}
+
+pub(in crate::plan) fn child_domain_query<'plan, A: AudioSoundContextAdmission>(
+    plan: &'plan RenderPlan,
+    seed: &AudioWalkSeed,
+    samples: Range<AudioSample>,
+    limits: AudioQueryLimits,
+    stop_at_preserve: bool,
+    budget: &mut QueryBudget<'_, A>,
+) -> Result<ProcessingChild<'plan, A>, A> {
+    assemble_domain(
+        plan,
+        seed,
+        samples,
+        limits,
+        (stop_at_preserve, None),
+        budget,
+    )
+}
+
+fn assemble_domain<'plan, A: AudioSoundContextAdmission>(
+    plan: &'plan RenderPlan,
+    seed: &AudioWalkSeed,
+    samples: Range<AudioSample>,
+    limits: AudioQueryLimits,
+    stops: (bool, Option<&mut capture::ProcessingStops>),
+    budget: &mut QueryBudget<'_, A>,
+) -> Result<ProcessingChild<'plan, A>, A> {
+    let start = budget.checkpoint();
+    if limits.maximum_work != start.remaining() {
+        return Err(PlanError::InvalidPlan("processing query work provenance mismatch").into());
+    }
+    let (stop_at_preserve, mut stops) = stops;
+    let mut accumulator = empty(budget);
+    let mut cursor = samples.start;
+    while cursor < samples.end {
+        if accumulator.spans.len() == limits.maximum_spans {
+            return Err(PlanError::AudioQueryLimit("span count").into());
+        }
+        let walk = plan.audio_walk_inner_admitted(
+            cursor,
+            budget,
+            Some(seed),
+            stop_at_preserve,
+            true,
+            (None, None, None, stops.as_deref_mut()),
+        )?;
+        let value = walk.value.adopt_memory(walk.memory, budget)?;
+        let end = match &*value {
+            AudioWalkSpan::Leaf(span) => span.allocated_samples.end,
+            AudioWalkSpan::Stage(span) => span.allocated_samples.end,
+        }
+        .min(samples.end);
+        let span = value.map(budget, |value| {
+            let mut span = value.into_processing();
+            span.samples = cursor..end;
+            span
+        })?;
+        cursor = end;
+        accumulator = push(accumulator, span, budget)?;
+    }
+    finish_child(plan, samples, limits, accumulator, budget, start)
 }
 pub(in crate::plan) fn ordinary<'plan, A: AudioSoundContextAdmission>(
     query: AudioProcessingQuery<'plan>,

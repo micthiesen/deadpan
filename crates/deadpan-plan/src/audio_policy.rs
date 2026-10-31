@@ -11,6 +11,10 @@ use super::{
 };
 use crate::{AudioBoundaryRule, PlanError};
 
+#[path = "audio_policy_query.rs"]
+pub(in crate::plan) mod query;
+pub use query::AdmittedAudioPolicyQuery;
+
 #[derive(Debug, Clone)]
 pub struct AudioPolicyQuery<S> {
     pub suppressed: Vec<Range<S>>,

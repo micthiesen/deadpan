@@ -1,8 +1,16 @@
 //! Default admitted first-query coverage, separate from legacy policy-savings tests.
 use super::*;
 
+// Keep this earlier processing-only proof on its literal ordinary policy backend.
+
 #[test]
 fn admitted_bound_domain_keeps_canonical_receipts_policy_and_actual_wav_output() {
+    with_legacy_policy_queries(
+        admitted_bound_domain_keeps_canonical_receipts_policy_and_actual_wav_output_legacy_policy,
+    );
+}
+
+fn admitted_bound_domain_keeps_canonical_receipts_policy_and_actual_wav_output_legacy_policy() {
     for case in [BindingCase::Source, BindingCase::Unrelated] {
         let (plan, mut provider) = bound_fixture(case);
         let (_, mut old_provider) = bound_fixture(case);

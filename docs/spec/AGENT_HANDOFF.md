@@ -2,7 +2,59 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: processing Original queries admitted, product goal active
+## Current state: policy Original queries admitted, product goal active
+
+The [policy-query checkpoint](../qualification/policy-original-query-admission-2026-10-30.md)
+admits actual recursive Root/physical-Domain policy construction and retains its
+carrier beside flattened and processing products through Original numerical
+consumption. Guarded child checkpoints preserve local work and lookup receipts;
+actual content inventories, range buffers, Point Signal cloning and reference
+offset conversion retain their overlapping owning allocations. Sealed Domain
+finish validates and retains its actual first processing carrier, with fresh
+policy limits and no rebilling of first-query work.
+
+Both variants froze 1,613 complete OLD observations before production changes.
+False mode replays all fields, errors, exact work, lookup and second-query events
+without callbacks. All sixteen immutable oracle bodies retain their hashes.
+Twenty focused Plan tests cover exact/short work and requested Layout peaks,
+actual Point traversal and signed offsets, callback refusal/cancellation/rotation,
+sealed reuse/fallback, mixed modes, identity and cleanup. Dense full physical
+Domain construction has OLD canonical work 22,033 and 512 contents, but admitted
+construction exhausts the unchanged 65,536 allowance; its explicit negative
+regression retains that limit and releases every lease.
+
+Default Original consumption validates all three issuers; sealed request
+validation remains separate. Actual constructor and eviction work each count
+once. Real WAV tests cover live source failure, partial accepted work, foreign
+policy issuer, unused drop, exact consumption and metadata pressure. Native
+residency fixtures measure all three simultaneous products.
+
+Main/isolated Core pass 827/802; Plan libraries 252/239 plus all 28 integration
+executables, 450 tests each; Audio 412/406; ordinary native Stage 203/203;
+definition/history 171/171. Plan retains twelve ignored tests and Audio six.
+Final source precedes all final native builds. Strict checks, formatting,
+hygiene, independent reviews and source/index/evidence audits pass. Complete
+current eight-case native bodies agree exactly. Cold work adds 75-179 units
+over fully legacy; warm reads retain 24-63-unit savings. These are work counts,
+not speed or process-memory measurements.
+
+Fresh Split remains three pass/four fail in 264.77 seconds: Source/Sequence
+cut-three 0+511, selected play prefix-two 0+4096 and processed root sound
+root-sound-refinement 0+511 exhaust per-read work; nested selected play without
+root sound prefix-two 0+4096 exhausts frozen projection work. General
+sound-bearing Split stays disabled. All 38 shipping source/fixture paths equal
+the isolated candidate. Main's unrelated research remains unpublished,
+including its working-tree-only plan.rs module declarations.
+
+Next capture complete OLD Root/Domain fade outputs, errors, work, edge origins
+and retained history before changing fade algorithms. The prepare-only producer
+is in scratch, uncaptured; publish this policy checkpoint before running it.
+Then admit that independent conditional product and its host lifetime. Other
+variable containers, inner ordinary queries and full recursive preparation
+remain open. No cap, prior weight, refund, requirement or gate changes. The full
+DP-01..24/Gates A..G goal stays active.
+
+## Processing Original queries admitted (historical)
 
 The [processing-query checkpoint](../qualification/processing-original-query-admission-2026-10-30.md)
 admits actual Root/physical-Domain processing construction and retains its sealed

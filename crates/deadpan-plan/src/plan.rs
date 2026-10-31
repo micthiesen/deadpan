@@ -45,10 +45,10 @@ pub use audio::*;
 #[path = "audio_domain.rs"]
 mod audio_domain;
 pub use audio_domain::{
-    AdmittedAudioDomainProcessing, AdmittedAudioDomainProcessingPolicy, AdmittedOriginalContext,
-    AudioDomain, AudioDomainProcessing, AudioDomainProcessingPolicy, AudioRootPlacement,
-    ContextChargeTransfer, SharedAudioOwnerRetainedInput, preflight_context_transfer,
-    transfer_context_charges,
+    AdmittedAudioDomainPolicy, AdmittedAudioDomainProcessing, AdmittedAudioDomainProcessingPolicy,
+    AdmittedOriginalContext, AudioDomain, AudioDomainProcessing, AudioDomainProcessingPolicy,
+    AudioRootPlacement, ContextChargeTransfer, SharedAudioOwnerRetainedInput,
+    preflight_context_transfer, transfer_context_charges,
 };
 #[path = "audio_point_domain.rs"]
 mod audio_point_domain;
@@ -74,7 +74,7 @@ mod audio_preserve_input;
 pub use audio_bound::{AudioBound, AudioBoundDomain};
 #[path = "audio_policy.rs"]
 mod audio_policy;
-pub use audio_policy::AudioPolicyQuery;
+pub use audio_policy::{AdmittedAudioPolicyQuery, AudioPolicyQuery};
 #[path = "audio_hold_policy.rs"]
 mod audio_hold_policy;
 pub use audio_hold_policy::{AudioHoldIssuer, AudioHoldPolicyQuery, AudioHoldRule};
