@@ -46,6 +46,10 @@ use signal_policy_input::SignalPolicyInput;
 mod point_policy_request;
 
 #[cfg(test)]
+#[path = "root_mask_request.rs"]
+mod root_mask_request;
+
+#[cfg(test)]
 use crate::RootSignalBlock;
 
 #[path = "raw_policy.rs"]
@@ -2028,20 +2032,27 @@ impl StageAudio {
             };
             samples.extend(block);
         }
-        let raw_policy::Applied {
+        let raw_policy::PendingApplied {
             suppressed,
             exhausted,
-        } = raw_policy::apply(queries, start, &mut samples, control)?;
+        } = raw_policy::apply_owned(
+            queries,
+            start,
+            &mut samples,
+            control,
+            &mut self.masks(control),
+        )?;
         if let Some(fades) = queries.fades {
             crate::edges::apply_creative_fades(start, &mut samples, &fades.spans)?;
         }
         control.check()?;
+        let suppressed = suppressed.finish(&self.masks(control))?;
         Ok(ReadBlock {
             start,
             samples,
             dependencies,
             relative_depth,
-            suppressed: AudioSuppressionMask::plain(merged_suppression(suppressed)),
+            suppressed,
             exhausted,
         })
     }

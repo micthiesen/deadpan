@@ -276,9 +276,12 @@ fn prepared_root_and_domain_match_previous_query_content_work_and_actual_reads_l
 
 #[test]
 fn prepared_source_read_needs_only_its_exact_issuer_work_allowance() {
-    with_legacy_fade_queries(
-        prepared_source_read_needs_only_its_exact_issuer_work_allowance_legacy_fade,
-    );
+    // Keep the exact issuer-fee witness independent of native Root collection.
+    crate::stages::root_mask_request::with_legacy_root_masks(|| {
+        with_legacy_fade_queries(
+            prepared_source_read_needs_only_its_exact_issuer_work_allowance_legacy_fade,
+        );
+    });
 }
 
 fn prepared_source_read_needs_only_its_exact_issuer_work_allowance_legacy_fade() {

@@ -680,9 +680,24 @@ All 31 before payloads remain fixed. Three current 744+10+4 captures per build
 agree; all 744 complete native outputs and all 14 internal/transfer outputs and
 held-account lifetime fields remain exact. Work/residency receipts change
 honestly with admission and removal of the native Vec copy.
-Root output-mask emission, projected-provider policy, independent derived
-bus/equalizer masks, exhausted vectors, PCM/dependencies and whole preparation
-remain owed. No existing requirement or Gate acceptance changes.
+The subsequent [Root suppression checkpoint](qualification/root-mask-emission-2026-10-31.md)
+funds the actual AudioSample destination while source queries remain live,
+retains its pending vector/Box through fades, and merges in place. All 21 Audio
+targets pass, 1120/1114 tests with 22 ignored manual captures and Main's seven
+unfinished Split tests filtered; libraries pass 539/533. Checked overlap,
+pointer/capacity lifetime, exact post-admission ceiling, public whole-request
+pressure/recovery, warm cache, work prefixes and cancellation/expiry pass.
+Strict checks, formatting, hygiene and independent reviews pass.
+All 32 before payloads stay fixed; three historical complete bodies reproduce
+exactly, and three current 744+10+4 captures per build agree. All 744 outputs
+and 42 internal/transfer output fields remain exact. Eight aggregate account
+fields honestly change None to shell3. An extra public Domain case retains
+fully charged capacity2 where the old second merge copied to capacity1;
+PCM/ranges stay exact. This is not universal capacity parity.
+Projected-provider policy, independent derived bus/equalizer masks, exhausted
+vectors, PCM/dependencies and whole preparation remain owed. Next isolate the
+non-separate SharedMix producer inside its live source reservation.
+No existing requirement or Gate acceptance changes.
 
 The [typed-mask foundation](qualification/internal-mask-foundation-2026-10-31.md)
 keeps the public Reference owner active while sealing its generic storage to

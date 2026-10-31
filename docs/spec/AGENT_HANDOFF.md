@@ -2,36 +2,51 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: Point policy final-mask custody, product goal active
+## Current state: Root suppression destination owned, product goal active
 
-The [Point policy custody checkpoint](../qualification/point-policy-final-mask-custody-2026-10-31.md)
-admits the actual SignalSample PointCeil policy and keeps its exact final Vec
-lease separate from the complete inventory. Native preparation funds only the
-Storage Box while the source query remains charged. Exclusive ledger preflight
-precedes an immediate allocation-free transfer of that same Vec and lease.
-There is no unsafe code, second destination Vec, cap increase or work refund.
-Root AudioSample RoundEven finalization is unchanged.
+The [Root destination checkpoint](../qualification/root-mask-emission-2026-10-31.md)
+funds actual AudioSample RoundEven suppression while its checked source queries
+remain live. A separately billed tag count precedes literal visitor/PCM order;
+the pending vector and future Box remain funded through creative fades, then
+finish and merge in place at the old boundary. Point's SignalSample PointCeil
+policy handoff stays active. Exhausted vectors remain ordinary.
 
-All 21 Audio targets pass per variant, 1,107/1,101 tests with 21 ignored manual
-captures and Main's seven unfinished Split tests filtered. Plan libraries pass
-289/276 and final Audio libraries 526/520. Actual native custody, exact pointer/
-capacity, failure-prefix, concurrent owner-drop and post-controller lifetime
-tests pass. Strict checks, formatting, hygiene, source preservation and reviews
-pass; rustdoc verification contains no executable examples.
+All 21 Audio targets pass, 1,120 Main/1,114 isolated tests, 22 ignored manual
+entrypoints; Main's seven unfinished Split tests remain filtered. Libraries
+pass 539/533. Checked source/destination pointer overlap, isolated exact ceiling,
+public whole-request pressure, same-ceiling recovery, WAV-backed warm cache,
+work prefixes and cancellation/expiry cleanup pass. Strict checks, formatting,
+hygiene and reviews pass. Rustdoc contains zero executable examples.
 
-All 31 before payloads remain fixed. Both complete prior bodies reproduce
-exactly; three current 744+10+4 captures per build agree. All 744 complete
-outputs stay exact, including 264 successes and 480 typed errors. The ten
-internal and four transfer outputs and held-account lifetimes also stay exact.
-Work and peak metadata receipts reflect real policy admission and removal of
-the native Vec copy. No requirement or Gate credit changes.
+All 32 before payloads remain fixed. Three historical bodies reproduce exactly;
+three current 744+10+4 captures per build agree. All 744 complete outputs
+(264 successes/480 errors) and 42 internal/transfer output fields remain exact.
+Eight account fields in two aggregate cases change literally from None to
+shell3 after real intermediate payloads drop. The extra standalone public
+Domain case retains funded capacity2 where the old second merge copied into
+capacity1; PCM and ranges match. Do not claim universal capacity parity.
+The 477 completed query intervals reconcile; one partial stays partial.
 
-Next fund Root output-mask emission in raw_policy::apply and the old post-fade
-merge tail. Its input policy is already guarded; its fresh native output needs
-separate typed AudioSample ownership. Preserve actual visitor/PCM/fade order
-and bill the count prepass independently. Projected-provider policy, derived
-bus/equalizer masks, exhausted vectors, PCM/dependencies and whole preparation
-remain owed. General sound-bearing Split stays disabled.
+Five historical library failures and three sound-admission fixture failures
+are retained with their corrections. Old fee/oracle tests use explicit D-only
+replay; active tests measure real work/whole-request limits and preserve all
+old assertions. The sound correction changes one executable; the other 20 are
+byte-identical to their actual passing builds. Main's 2,908 and the isolated
+copy's 2,580 other initial named inputs stay exact; the isolated source is the
+shipping authority.
+
+Next isolate non-separate SharedMix permission-mask emission. Keep its source
+grid funded through projection and disposal inside the existing reservation
+closure; carry the owner through WideBlock without Plain rewrapping. Separate
+Components and projected PreserveTape output are distinct later producers.
+Exhausted vectors, PCM/dependencies and whole preparation remain owed.
+No requirement or Gate credit changes; general sound-bearing Split stays disabled.
+
+The preceding [Point policy custody checkpoint](../qualification/point-policy-final-mask-custody-2026-10-31.md)
+keeps the exact final Signal Vec lease separate from its inventory. Native
+Box-only preparation and exclusive preflight precede immediate allocation-free
+custody transfer. Its source/inventory and concurrent-drop evidence remains
+independent of this Root destination.
 
 ## Preceding native ownership checkpoints
 

@@ -257,6 +257,100 @@ fn reached_provider(error: StageAudioError) {
     );
 }
 
+// Measure a reusable raw request's public admission boundary without assuming
+// the native mask's layout or charging the Plan-only metadata peak twice.
+fn reusable_raw_resident_limit(plan: &Arc<RenderPlan>, frames: u32) -> u32 {
+    fn reaches_twice(plan: &Arc<RenderPlan>, frames: u32, cap: u32) -> bool {
+        let mut renderer = StageAudio::with_limits(
+            Arc::clone(plan),
+            StageLimits {
+                maximum_resident_frames: cap,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let mut provider = SentinelProvider::default();
+        let active = AtomicBool::new(false);
+        for expected_calls in 1..=2 {
+            let before_calls = provider.calls.len();
+            let error = renderer
+                .prepare_edge_faded(&mut provider, AudioSample(0), frames, TIMEOUT, &active)
+                .unwrap_err();
+            assert_eq!(renderer.cached_stage_count(), 0);
+            match error {
+                StageAudioError::Preparation(PreparationError::SourceUnavailable(message))
+                    if message == PROVIDER_SENTINEL =>
+                {
+                    assert_eq!(provider.calls.len(), expected_calls);
+                    assert_eq!(provider.calls.last(), Some(&asset("effect")));
+                }
+                StageAudioError::Limit("resident PCM or stage cache") => {
+                    assert_eq!(
+                        provider.calls.len(),
+                        before_calls,
+                        "resident refusal must precede this request's provider call"
+                    );
+                    return false;
+                }
+                error => panic!("unexpected raw admission outcome at cap {cap}: {error:?}"),
+            }
+        }
+        true
+    }
+
+    let mut below = 1;
+    let mut boundary = StageLimits::default().maximum_resident_frames;
+    assert!(!reaches_twice(plan, frames, below));
+    assert!(reaches_twice(plan, frames, boundary));
+    while boundary - below > 1 {
+        let middle = below + (boundary - below) / 2;
+        if reaches_twice(plan, frames, middle) {
+            boundary = middle;
+        } else {
+            below = middle;
+        }
+    }
+    assert_eq!(boundary, below + 1);
+    assert!(!reaches_twice(plan, frames, below));
+    assert!(reaches_twice(plan, frames, boundary));
+
+    // Keep the larger-request exclusion independent of the measured success.
+    let mut renderer = StageAudio::with_limits(
+        Arc::clone(plan),
+        StageLimits {
+            maximum_resident_frames: boundary,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    let mut provider = SentinelProvider::default();
+    let active = AtomicBool::new(false);
+    assert!(matches!(
+        renderer.prepare_edge_faded(
+            &mut provider,
+            AudioSample(0),
+            frames.checked_mul(2).unwrap(),
+            TIMEOUT,
+            &active,
+        ),
+        Err(StageAudioError::Limit("resident PCM or stage cache"))
+    ));
+    assert!(provider.calls.is_empty());
+    assert_eq!(renderer.cached_stage_count(), 0);
+    // Do not calibrate a growing failed-request leak into the two-read boundary.
+    for expected_calls in 1..=3 {
+        reached_provider(
+            renderer
+                .prepare_edge_faded(&mut provider, AudioSample(0), frames, TIMEOUT, &active)
+                .unwrap_err(),
+        );
+        assert_eq!(provider.calls.len(), expected_calls);
+        assert_eq!(provider.calls.last(), Some(&asset("effect")));
+        assert_eq!(renderer.cached_stage_count(), 0);
+    }
+    boundary
+}
+
 #[test]
 fn original_and_sound_dependencies_share_one_limit_before_provider_resolution() {
     let active = AtomicBool::new(false);
@@ -287,7 +381,7 @@ fn original_and_sound_dependencies_share_one_limit_before_provider_resolution() 
 #[test]
 fn resident_budget_rejection_and_provider_failure_release_bus_reservations() {
     let plan = held_sound();
-    let limit = resident_limit(&plan, 640);
+    let limit = reusable_raw_resident_limit(&plan, 128);
     let mut renderer = StageAudio::with_limits(
         plan,
         StageLimits {
@@ -387,7 +481,7 @@ fn nonlinear_bus_pcm_is_admitted_before_media_and_released_after_failure() {
 #[test]
 fn initial_and_inflight_cancellation_leave_the_same_sound_renderer_reusable() {
     let plan = held_sound();
-    let limit = resident_limit(&plan, 640);
+    let limit = reusable_raw_resident_limit(&plan, 128);
     let mut renderer = StageAudio::with_limits(
         plan,
         StageLimits {
@@ -484,7 +578,7 @@ fn routed_sound_and_original_admit_dependencies_under_one_budget() {
 #[test]
 fn gap_masked_sound_keeps_dependency_and_releases_failed_and_cancelled_reservations() {
     let plan = gap_masked_sound();
-    let limit = resident_limit(&plan, 768);
+    let limit = reusable_raw_resident_limit(&plan, 128);
     let mut renderer = StageAudio::with_limits(
         plan,
         StageLimits {

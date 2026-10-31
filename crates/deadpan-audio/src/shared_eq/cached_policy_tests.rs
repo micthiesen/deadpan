@@ -325,9 +325,9 @@ fn cached_original_policy_keeps_selection_and_actual_owner_support_separate() {
     // Narrow private-fixture perturbation: remove cached exclusions so only
     // current owner support can reject inactive spans. This is not a claim
     // that a modified derived block could enter the authenticated cache.
-    let mut suppressed = raw.suppressed.into_legacy_vector();
-    suppressed.clear();
-    raw.suppressed = AudioSuppressionMask::plain(suppressed);
+    assert!(raw.suppressed.is_owned());
+    // Drop the real admitted owner; this private corruption needs an empty mask.
+    raw.suppressed = AudioSuppressionMask::default();
     raw.exhausted.clear();
     for selected in [false, true] {
         let allowed: Vec<_> = (96..160)

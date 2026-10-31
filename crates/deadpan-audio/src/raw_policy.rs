@@ -3,6 +3,7 @@
 
 use super::*;
 use deadpan_plan::AudioSpan;
+use point_suppression::ops::{MaskContext, MaskWorkPhase, RangeBuilder, begin_ranges};
 
 /// Ordered operations at the final policy boundary. A metadata consumer can
 /// record masks without evaluating the retained-envelope numeric operation.
@@ -108,13 +109,14 @@ fn span_offsets(
     Ok(left..right)
 }
 
-/// The real final policy consumer. PCM remains at its original operation
-/// boundaries; only the decisions above are shared with metadata consumers.
+/// Literal pre-owned consumer retained for exact compatibility observations.
+#[cfg(test)]
 pub(super) struct Applied {
     pub(super) suppressed: Vec<Range<AudioSample>>,
     pub(super) exhausted: Vec<Range<AudioSample>>,
 }
 
+#[cfg(test)]
 pub(super) fn apply(
     queries: RootReadQueriesRef<'_, '_>,
     start: AudioSample,
@@ -149,6 +151,101 @@ pub(super) fn apply(
     )?;
     Ok(Applied {
         suppressed,
+        exhausted,
+    })
+}
+
+pub(super) struct PendingApplied {
+    pub(super) suppressed: PendingSuppression,
+    pub(super) exhausted: Vec<Range<AudioSample>>,
+}
+
+pub(super) enum PendingSuppression {
+    #[cfg(test)]
+    Legacy(Vec<Range<AudioSample>>),
+    Owned(Option<RangeBuilder<AudioSample>>),
+}
+
+impl PendingSuppression {
+    pub(super) fn finish<C: MaskContext>(
+        self,
+        context: &C,
+    ) -> Result<AudioSuppressionMask, StageAudioError> {
+        match self {
+            #[cfg(test)]
+            Self::Legacy(ranges) => Ok(AudioSuppressionMask::plain(merged_suppression(ranges))),
+            Self::Owned(None) => Ok(AudioSuppressionMask::default()),
+            Self::Owned(Some(builder)) => builder.finish(context)?.merge(context),
+        }
+    }
+}
+
+// Count emissions of a successful visit, including empty SilentHold spans and
+// duplicates. Do not move range/envelope validation ahead of its actual event.
+fn suppression_capacity<C: MaskContext>(
+    queries: RootReadQueriesRef<'_, '_>,
+    context: &C,
+) -> Result<usize, StageAudioError> {
+    let mut capacity = queries.policy.suppressed.len();
+    for span in &queries.flattened.spans {
+        context.check()?;
+        context.spend(MaskWorkPhase::Scan, 1)?;
+        if is_silent_hold(&span.content) {
+            capacity = capacity.checked_add(1).ok_or(StageAudioError::Range)?;
+        }
+    }
+    Ok(capacity)
+}
+
+pub(super) fn apply_owned<C: MaskContext>(
+    queries: RootReadQueriesRef<'_, '_>,
+    start: AudioSample,
+    samples: &mut [[f32; 2]],
+    control: WorkControl<'_>,
+    context: &mut C,
+) -> Result<PendingApplied, StageAudioError> {
+    #[cfg(test)]
+    if super::root_mask_request::legacy() {
+        let Applied {
+            suppressed,
+            exhausted,
+        } = apply(queries, start, samples, control)?;
+        return Ok(PendingApplied {
+            suppressed: PendingSuppression::Legacy(suppressed),
+            exhausted,
+        });
+    }
+    let capacity = suppression_capacity(queries, context)?;
+    let mut suppressed = None;
+    let mut exhausted = Vec::new();
+    visit(
+        queries,
+        start,
+        samples.len(),
+        control,
+        || Ok(()),
+        |event| {
+            match event {
+                Event::SilentHold { range, offsets } | Event::Suppressed { range, offsets } => {
+                    samples[offsets].fill([0.0; 2]);
+                    if suppressed.is_none() {
+                        suppressed = Some(begin_ranges::<AudioSample, C>(context, capacity)?);
+                    }
+                    suppressed
+                        .as_mut()
+                        .expect("suppression event has funded destination")
+                        .push(range, context)?;
+                }
+                Event::RetainedEnvelope { span, offsets } => {
+                    crate::edges::apply_retained_envelope(span, &mut samples[offsets], false)?;
+                }
+                Event::Exhausted(range) => exhausted.push(range),
+            }
+            Ok(())
+        },
+    )?;
+    Ok(PendingApplied {
+        suppressed: PendingSuppression::Owned(suppressed),
         exhausted,
     })
 }

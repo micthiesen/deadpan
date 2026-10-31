@@ -3,6 +3,9 @@ use super::*;
 use deadpan_core::{BeatNode, HoldAudio, HoldRecipe, HoldVideo};
 use deadpan_plan::{AudioDefinitionSelector, AudioPointDomain, AudioRootPlacement};
 
+#[path = "original_inputs_root_mask_tests.rs"]
+mod root_mask_emission;
+
 fn setup() -> (Arc<RenderPlan>, Provider) {
     let (document, provider) = fixture_document_at_rate(FrameRate::new(48_000, 1).unwrap());
     let mut wire = serde_json::to_value(document).unwrap();

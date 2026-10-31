@@ -90,6 +90,13 @@ pub(crate) struct RangeBuilder<S: MaskSample> {
     pending: Option<Storage<S>>,
 }
 impl<S: MaskSample> RangeBuilder<S> {
+    #[cfg(test)]
+    pub(crate) fn as_slice(&self) -> &[Range<S>] {
+        self.pending
+            .as_ref()
+            .map_or(&[], |value| value.ranges.as_slice())
+    }
+
     pub(crate) fn len(&self) -> usize {
         self.pending.as_ref().map_or(0, |value| value.ranges.len())
     }

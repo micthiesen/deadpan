@@ -47,7 +47,10 @@ impl AudioSourceProvider for ProcessingWatchingProvider<'_> {
 
 #[test]
 fn processing_only_carrier_bills_once_and_lives_through_wav_io_unused_drop_and_error() {
-    with_legacy_fade_queries(processing_only_carrier_bills_once_and_lives_through_wav_io_unused_drop_and_error_legacy_fade);
+    // Isolate processing admission from the separately billed Root collector.
+    crate::stages::root_mask_request::with_legacy_root_masks(|| {
+        with_legacy_fade_queries(processing_only_carrier_bills_once_and_lives_through_wav_io_unused_drop_and_error_legacy_fade);
+    });
 }
 
 fn processing_only_carrier_bills_once_and_lives_through_wav_io_unused_drop_and_error_legacy_fade() {

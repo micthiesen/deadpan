@@ -119,6 +119,12 @@ fn compare(legacy: &Value, warm: &Value) -> Value {
 }
 
 fn observations() -> Value {
+    // This compares an immutable pre-fast-path witness, including residency.
+    // Both prediction modes must retain its historical Root Vec representation.
+    crate::stages::root_mask_request::with_legacy_root_masks(observations_legacy_root)
+}
+
+fn observations_legacy_root() -> Value {
     let old: Value = serde_json::from_str(include_str!(
         "../../tests/fixtures/cached-original-prediction-baseline-v1/snapshot.json"
     ))

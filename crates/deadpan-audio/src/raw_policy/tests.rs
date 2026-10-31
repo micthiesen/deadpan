@@ -397,3 +397,9 @@ fn cold_billing_cancellation_and_exact_work_refusals_propagate_without_refund() 
     ));
     assert_eq!(events, 0);
 }
+
+#[path = "owned_tests.rs"]
+mod owned;
+
+#[path = "guarded_query_tests.rs"]
+mod guarded_query;

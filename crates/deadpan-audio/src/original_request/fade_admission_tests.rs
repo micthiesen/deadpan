@@ -466,6 +466,13 @@ fn failed_fade_construction_keeps_actual_partial_work_and_drops_all_four_product
 
 #[test]
 fn four_product_consumption_has_an_exact_four_unit_boundary_before_source_io() {
+    // Preserve the four issuer comparisons as an exact historical boundary.
+    crate::stages::root_mask_request::with_legacy_root_masks(
+        four_product_consumption_has_an_exact_four_unit_boundary_before_source_io_legacy_root,
+    );
+}
+
+fn four_product_consumption_has_an_exact_four_unit_boundary_before_source_io_legacy_root() {
     for domain_read in [false, true] {
         for remaining in [4, 3] {
             let (plan, mut provider) = fixture();

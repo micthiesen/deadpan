@@ -13,5 +13,5 @@ pub(super) fn with_legacy_policy<T>(action: impl FnOnce() -> T) -> T {
         }
     }
     let _restore = Restore(LEGACY.with(|legacy| legacy.replace(true)));
-    action()
+    super::root_mask_request::with_legacy_root_masks(action)
 }

@@ -48,7 +48,7 @@ pub(super) fn interval_receipt_if_capturing() -> Option<Value> {
 #[ignore = "manual current internal mask qualification; fresh /tmp and pinned sources"]
 fn capture_active_internal_mask_after_v1() {
     crate::stages::point_policy_request::with_legacy_policy(|| {
-        capture_after("DEADPAN_INTERNAL_MASK_AFTER", false, false);
+        capture_after("DEADPAN_INTERNAL_MASK_AFTER", false, false, false);
     });
 }
 
@@ -56,17 +56,26 @@ fn capture_active_internal_mask_after_v1() {
 #[ignore = "manual additive query intervals; fresh /tmp and pinned sources"]
 fn capture_active_query_intervals_v1() {
     crate::stages::point_policy_request::with_legacy_policy(|| {
-        capture_after("DEADPAN_QUERY_INTERVAL_AFTER", true, false);
+        capture_after("DEADPAN_QUERY_INTERVAL_AFTER", true, false, false);
     });
 }
 
 #[test]
 #[ignore = "manual active Point policy handoff capture; pinned sources and fresh /tmp"]
 fn capture_active_point_policy_after_v1() {
-    capture_after("DEADPAN_POINT_POLICY_AFTER", true, true);
+    crate::stages::root_mask_request::with_legacy_root_masks(|| {
+        capture_after("DEADPAN_POINT_POLICY_AFTER", true, true, false);
+    });
 }
 
-fn capture_after(prefix: &str, intervals: bool, policy: bool) {
+#[test]
+#[ignore = "manual active Root mask destination capture; pinned sources and fresh /tmp"]
+fn capture_active_root_mask_after_v1() {
+    assert!(!crate::stages::root_mask_request::legacy());
+    capture_after("DEADPAN_ROOT_MASK_AFTER", true, true, true);
+}
+
+fn capture_after(prefix: &str, intervals: bool, policy: bool, root: bool) {
     let output = std::env::var(format!("{prefix}_OUTPUT")).expect("fresh output path");
     let path = Path::new(&output);
     assert!(path.is_absolute());
@@ -86,7 +95,9 @@ fn capture_after(prefix: &str, intervals: bool, policy: bool) {
     assert!(source.len() == 64 && source.bytes().all(|byte| byte.is_ascii_hexdigit()));
     assert_eq!(
         std::env::var(format!("{prefix}_PUBLISHED_CHECKPOINT")).unwrap(),
-        if policy {
+        if root {
+            "44068bd971dee62e2ed8cbaffbb2f18922283f83"
+        } else if policy {
             "eedbc58272bdd009a65239b7104ddb786a2554fc"
         } else if intervals {
             "ab211a2f132379a246157c3596d95fc42121541c"
@@ -94,7 +105,21 @@ fn capture_after(prefix: &str, intervals: bool, policy: bool) {
             CHECKPOINT
         }
     );
-    let value = observed_body(&variant, &source, intervals, policy);
+    let mut value = observed_body(&variant, &source, intervals, policy);
+    if root {
+        value["schema"] = json!("active-root-mask-after-v1");
+        value["root_mask_checkpoint"] = json!("44068bd971dee62e2ed8cbaffbb2f18922283f83");
+        value["root_mask_before"] = json!({
+            "path":"tests/fixtures/root-mask-emission-baseline-v1/snapshot.json",
+            "sha256":"afa6038a02c959c7192c09c08a89266c7d52151a5e59a4f69828fbdf67e7414e",
+        });
+        value["native_requests"]["scope"] = json!(
+            "744 actual current native requests with funded typed AudioSample Root output-mask emission. Existing query intervals remain separate; native mask work is whole invocation, not a synthesized query fee."
+        );
+        value["scope"] = json!(
+            "Actual native Root output suppression Vec, future/final Box and in-place merge stay charged while source queries remain live. C Point policy remains active. Projected-provider/derived policies, exhausted vectors, PCM/dependencies and whole preparation remain outside this claim."
+        );
+    }
     let file = OpenOptions::new()
         .create_new(true)
         .write(true)
@@ -179,6 +204,27 @@ fn active_internal_masks_before_point_policy_match_frozen_v1() {
     let expected: Value = serde_json::from_slice(bytes).unwrap();
     let mut actual = crate::stages::point_policy_request::with_legacy_policy(|| {
         observed_body("scoped-published", &"0".repeat(64), false, false)
+    });
+    for field in ["variant", "source_sha256"] {
+        actual.as_object_mut().unwrap().remove(field);
+        actual["native_requests"]
+            .as_object_mut()
+            .unwrap()
+            .remove(field);
+    }
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn point_policy_before_root_emission_matches_frozen_v1() {
+    let bytes = include_bytes!("../../tests/fixtures/root-mask-emission-baseline-v1/snapshot.json");
+    assert_eq!(
+        hex(Sha256::digest(bytes)),
+        "afa6038a02c959c7192c09c08a89266c7d52151a5e59a4f69828fbdf67e7414e",
+    );
+    let expected: Value = serde_json::from_slice(bytes).unwrap();
+    let mut actual = crate::stages::root_mask_request::with_legacy_root_masks(|| {
+        observed_body("scoped-published", &"0".repeat(64), true, true)
     });
     for field in ["variant", "source_sha256"] {
         actual.as_object_mut().unwrap().remove(field);
