@@ -32,8 +32,15 @@ preserves Main's 2,903 and the isolated copy's 2,575 other initial named inputs.
 Publication uses the tested isolated source; the earlier common-patch proof
 preserves three inherited Main differences.
 
-Next qualify the separate narrow raw/Point interval observer, then retain the
-precise final SignalSample PointCeil policy
+The [additive raw/Point interval observer](../qualification/native-query-intervals-2026-10-31.md)
+now qualifies 477 completed intervals and one literal partial prefix across the
+complete 744+10+4 body. Both lanes reconcile from actual query claims plus
+independent native phase and host-eviction boundaries. Fourteen new tests and
+all 515/509 library tests pass. Three captures per build agree exactly; removing
+only additive fields reproduces the prior complete body. All 30 before payloads
+and other initial named inputs remain fixed. No acceptance credit changes.
+
+Next retain the precise final SignalSample PointCeil policy
 mask lease before Plan folds it into the general guard. Prepare the native Box
 while the complete query remains charged; final handoff needs an exclusive
 ledger preflight and an immediate no-fail Vec/lease transfer. Keep actual old

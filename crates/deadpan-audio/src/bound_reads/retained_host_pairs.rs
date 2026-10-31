@@ -48,6 +48,9 @@ fn receipts() -> Value {
     if let Some(mask) = native_mask_after::receipt_if_capturing() {
         value["native_mask_work"] = mask;
     }
+    if let Some(intervals) = native_mask_after::interval_receipt_if_capturing() {
+        value["native_query_intervals"] = intervals;
+    }
     value
 }
 fn integer(value: &Value) -> u64 {

@@ -25,6 +25,7 @@ pub(crate) struct Snapshot {
     overflow: bool,
 }
 thread_local! {
+    static RESET_EPOCH: Cell<Option<u64>> = const { Cell::new(Some(0)) };
     static ENABLED: Cell<bool> = const { Cell::new(false) };
     static TRACE: Cell<Snapshot> = Cell::new(Snapshot::default());
 }
@@ -57,6 +58,7 @@ fn add_u64(target: &mut u64, amount: u64, overflow: &mut bool) {
     }
 }
 pub(crate) fn reset() {
+    RESET_EPOCH.with(|epoch| epoch.set(epoch.get().and_then(|value| value.checked_add(1))));
     TRACE.with(|trace| trace.set(Snapshot::default()));
     ENABLED.with(|enabled| enabled.set(true));
 }
@@ -97,3 +99,35 @@ pub(crate) fn host_residency_accepted(cache: bool, units: usize) {
         add_usize(&mut lane.accepted_host_residency_units, units, overflow);
     });
 }
+
+#[derive(Clone, Copy, Serialize)]
+pub(crate) struct WorkBoundary {
+    pub(crate) enabled: bool,
+    pub(crate) reset_epoch: Option<u64>,
+    pub(crate) lanes: [[usize; 8]; 2],
+    pub(crate) overflow: bool,
+}
+pub(crate) fn work_boundary() -> WorkBoundary {
+    let value = snapshot();
+    let units = |lane: Lane| {
+        [
+            lane.accepted_account_units,
+            lane.accepted_scan_units,
+            lane.accepted_map_units,
+            lane.accepted_zero_units,
+            lane.accepted_mark_units,
+            lane.accepted_vector_units,
+            lane.accepted_storage_units,
+            lane.accepted_host_residency_units,
+        ]
+    };
+    WorkBoundary {
+        enabled: ENABLED.with(Cell::get),
+        reset_epoch: RESET_EPOCH.with(Cell::get),
+        lanes: [units(value.plan), units(value.cache)],
+        overflow: value.overflow,
+    }
+}
+
+#[path = "ops_trace_epoch_tests.rs"]
+mod epoch_tests;

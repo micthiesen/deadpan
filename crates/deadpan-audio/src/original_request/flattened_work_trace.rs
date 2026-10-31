@@ -55,11 +55,13 @@ struct HostEvictions {
 
 thread_local! {
     static TRACE: Cell<[Snapshot; 4]> = Cell::new([Snapshot::default(); 4]);
+    static HOST_RESET_EPOCH: Cell<Option<u64>> = const { Cell::new(Some(0)) };
     static HOST_EVICTIONS: Cell<HostEvictions> = Cell::new(HostEvictions::default());
 }
 
 // Called only after the existing real eviction scan debit succeeds.
 pub(in crate::stages) fn host_eviction_spent(control: WorkControl<'_>) {
+    crate::stages::native_query_interval_trace::accepted_work(control);
     let lane = usize::from(control.work.borrow().cache_key_scopes > 0);
     HOST_EVICTIONS.with(|counter| {
         let mut state = counter.get();
@@ -79,6 +81,7 @@ pub(in crate::stages) fn host_eviction_units() -> ([usize; 2], bool) {
 }
 
 pub(in crate::stages) fn reset() {
+    HOST_RESET_EPOCH.with(|epoch| epoch.set(epoch.get().and_then(|value| value.checked_add(1))));
     TRACE.with(|trace| {
         let state = trace.get();
         for product in [
@@ -313,3 +316,11 @@ impl Drop for ScopeGuard<'_> {
         });
     }
 }
+
+pub(in crate::stages) fn host_eviction_boundary() -> ([usize; 2], bool, Option<u64>) {
+    let (units, overflow) = host_eviction_units();
+    (units, overflow, HOST_RESET_EPOCH.with(Cell::get))
+}
+
+#[path = "host_epoch_tests.rs"]
+mod epoch_tests;

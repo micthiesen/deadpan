@@ -766,12 +766,21 @@ mod transfer_entries;
 #[path = "internal_mask_owned_tests.rs"]
 mod owned_native_tests;
 
-pub(super) fn current_owned_mask_observations() -> Value {
+pub(super) fn current_owned_mask_observations_with_intervals(intervals: bool) -> Value {
     let cases = cases_internal().into_iter().map(|case| {
         point_suppression::ops::trace::reset();
+        if intervals {
+            crate::stages::native_query_interval_trace::reset();
+        }
         let mut row = case_internal(case);
         row["native_mask_work_whole_case"] =
             serde_json::to_value(point_suppression::ops::trace::snapshot()).unwrap();
+        if intervals {
+            row["native_query_intervals_whole_case"] = serde_json::to_value(
+                crate::stages::native_query_interval_trace::snapshot(),
+            ).unwrap();
+            crate::stages::native_query_interval_trace::disable();
+        }
         point_suppression::ops::trace::disable();
         row["scope"]["internal_masks"] = json!(
             "actual active native destinations; independent Plan policy producers remain ordinary"
@@ -790,6 +799,9 @@ pub(super) fn current_owned_mask_observations() -> Value {
             "PointDomainAudioBlock":structure::<PointDomainAudioBlock>()
         },
         "cases":cases,
-        "public_transfers":transfer_entries::current_owned_transfer_observations()
+        "public_transfers":transfer_entries::current_owned_transfer_observations(intervals)
     })
 }
+
+#[path = "native_query_interval_tests.rs"]
+mod native_intervals;

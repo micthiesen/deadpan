@@ -72,6 +72,9 @@ mod authored_gain;
 #[path = "authored_eq.rs"]
 mod authored_eq;
 #[cfg(test)]
+#[path = "native_query_interval_trace.rs"]
+mod native_query_interval_trace;
+#[cfg(test)]
 #[path = "point_content_query_trace.rs"]
 mod point_content_query_trace;
 #[cfg(test)]
@@ -2509,6 +2512,8 @@ impl StageAudio {
         let frames = self.owned_suppression.live_frames();
         if frames != 0 {
             control.spend_plan_work(1)?;
+            #[cfg(test)]
+            native_query_interval_trace::accepted_work(control);
             #[cfg(test)]
             point_suppression::work_trace::residency_spent();
             #[cfg(test)]

@@ -87,6 +87,7 @@ fn add(value: &mut usize, amount: usize, overflow: &mut bool) {
 }
 
 pub(super) struct ScopeGuard<'work> {
+    native_interval: crate::stages::native_query_interval_trace::ScopeGuard<'work>,
     control: WorkControl<'work>,
     lane: LaneKind,
     before: [usize; 2],
@@ -97,9 +98,14 @@ pub(super) struct ScopeGuard<'work> {
 
 impl<'work> ScopeGuard<'work> {
     pub(super) fn new(control: WorkControl<'work>) -> Self {
+        let native_interval = crate::stages::native_query_interval_trace::ScopeGuard::new(
+            crate::stages::native_query_interval_trace::Kind::PointContent,
+            control,
+        );
         let enabled = ENABLED.with(Cell::get);
         if !enabled {
             return Self {
+                native_interval,
                 control,
                 lane: LaneKind::Plan,
                 before: [0; 2],
@@ -135,6 +141,7 @@ impl<'work> ScopeGuard<'work> {
             }
         });
         Self {
+            native_interval,
             control,
             lane,
             before,
@@ -153,6 +160,17 @@ impl<'work> ScopeGuard<'work> {
         ordinary: bool,
         spans: usize,
     ) {
+        self.native_interval
+            .completed(crate::stages::native_query_interval_trace::Claim {
+                canonical,
+                additional,
+                total,
+                expected_debit: total,
+                forwarded,
+                ordinary,
+                raw_kind: None,
+                result_spans: Some(spans),
+            });
         if self.tracked {
             self.completed = Some((canonical, additional, total, forwarded, ordinary, spans));
         }

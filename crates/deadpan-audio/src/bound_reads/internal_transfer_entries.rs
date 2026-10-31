@@ -316,7 +316,7 @@ fn strip_transfer_identity(mut value: Value) -> Value {
     value
 }
 
-pub(super) fn current_owned_transfer_observations() -> Value {
+pub(super) fn current_owned_transfer_observations(intervals: bool) -> Value {
     let cases = [
         (Entry::FullRoot, 0, "public-full-root-silent-hold"),
         (
@@ -338,9 +338,18 @@ pub(super) fn current_owned_transfer_observations() -> Value {
     .into_iter()
     .map(|(entry, anchor, name)| {
         point_suppression::ops::trace::reset();
+        if intervals {
+            crate::stages::native_query_interval_trace::reset();
+        }
         let mut row = case(entry, anchor, name);
         row["native_mask_work_whole_case"] =
             serde_json::to_value(point_suppression::ops::trace::snapshot()).unwrap();
+        if intervals {
+            row["native_query_intervals_whole_case"] =
+                serde_json::to_value(crate::stages::native_query_interval_trace::snapshot())
+                    .unwrap();
+            crate::stages::native_query_interval_trace::disable();
+        }
         point_suppression::ops::trace::disable();
         row
     })

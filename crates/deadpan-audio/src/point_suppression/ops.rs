@@ -26,6 +26,8 @@ pub(in crate::stages) fn spend_work(
 ) -> Result<(), StageAudioError> {
     control.spend_plan_work(units)?;
     #[cfg(test)]
+    crate::stages::native_query_interval_trace::accepted_work(control);
+    #[cfg(test)]
     trace::spend_accepted(control.work.borrow().cache_key_scopes > 0, phase, units);
     #[cfg(not(test))]
     let _ = phase;

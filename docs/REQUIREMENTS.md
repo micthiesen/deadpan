@@ -662,6 +662,13 @@ preservation pass. The
 repairs two stale constructors and restores the isolated published manifest.
 Whole-workspace all-target compilation and six actual tracking plus four
 extension-geometry tests now pass in both variants.
+The [additive query interval observer](qualification/native-query-intervals-2026-10-31.md)
+qualifies 477 completed raw/Point intervals and one literal partial prefix in
+the complete 744+10+4 body. Both lanes reconcile from actual query claims plus
+independent native and host-eviction boundaries. Fourteen new tests, all
+515/509 Audio library tests, strict checks, formatting, hygiene and reviews pass.
+Three captures per build agree exactly; removing only additive fields recovers
+the preceding complete body. All 30 before payloads remain fixed.
 Plan policy producers and independent bus/equalizer products remain ordinary,
 so whole policy/preparation and existing requirement/Gate acceptance remain open.
 
