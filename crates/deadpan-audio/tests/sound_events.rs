@@ -5,6 +5,7 @@
 //! making decoder availability or native media setup part of these tests.
 
 use std::collections::BTreeMap;
+use std::ops::Range;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
@@ -17,6 +18,16 @@ use deadpan_plan::RenderPlan;
 
 const TIMEOUT: Duration = Duration::from_secs(10);
 const PROVIDER_SENTINEL: &str = "synthetic provider reached after admission";
+
+#[path = "stages/flattened_metadata.rs"]
+mod flattened_metadata;
+
+fn resident_limit(plan: &RenderPlan, pcm_frames: u32) -> u32 {
+    let metadata = flattened_metadata::root(plan, AudioSample(0)..AudioSample(256));
+    pcm_frames
+        .checked_add(u32::try_from(metadata.peak_frames).unwrap())
+        .unwrap()
+}
 
 fn node(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
@@ -236,11 +247,14 @@ impl AudioSourceProvider for SentinelProvider {
 }
 
 fn reached_provider(error: StageAudioError) {
-    assert!(matches!(
-        error,
-        StageAudioError::Preparation(PreparationError::SourceUnavailable(message))
-            if message == PROVIDER_SENTINEL
-    ));
+    assert!(
+        matches!(
+            &error,
+            StageAudioError::Preparation(PreparationError::SourceUnavailable(message))
+                if message == PROVIDER_SENTINEL
+        ),
+        "{error:?}"
+    );
 }
 
 #[test]
@@ -272,10 +286,12 @@ fn original_and_sound_dependencies_share_one_limit_before_provider_resolution() 
 
 #[test]
 fn resident_budget_rejection_and_provider_failure_release_bus_reservations() {
+    let plan = held_sound();
+    let limit = resident_limit(&plan, 640);
     let mut renderer = StageAudio::with_limits(
-        held_sound(),
+        plan,
         StageLimits {
-            maximum_resident_frames: 640,
+            maximum_resident_frames: limit,
             ..Default::default()
         },
     )
@@ -335,10 +351,11 @@ fn nonlinear_bus_pcm_is_admitted_before_media_and_released_after_failure() {
         256,
         None,
     );
+    let limit = resident_limit(&plan, 640);
     let mut renderer = StageAudio::with_limits(
         plan,
         StageLimits {
-            maximum_resident_frames: 640,
+            maximum_resident_frames: limit,
             ..Default::default()
         },
     )
@@ -369,10 +386,12 @@ fn nonlinear_bus_pcm_is_admitted_before_media_and_released_after_failure() {
 
 #[test]
 fn initial_and_inflight_cancellation_leave_the_same_sound_renderer_reusable() {
+    let plan = held_sound();
+    let limit = resident_limit(&plan, 640);
     let mut renderer = StageAudio::with_limits(
-        held_sound(),
+        plan,
         StageLimits {
-            maximum_resident_frames: 640,
+            maximum_resident_frames: limit,
             ..Default::default()
         },
     )
@@ -464,10 +483,12 @@ fn routed_sound_and_original_admit_dependencies_under_one_budget() {
 
 #[test]
 fn gap_masked_sound_keeps_dependency_and_releases_failed_and_cancelled_reservations() {
+    let plan = gap_masked_sound();
+    let limit = resident_limit(&plan, 768);
     let mut renderer = StageAudio::with_limits(
-        gap_masked_sound(),
+        plan,
         StageLimits {
-            maximum_resident_frames: 768,
+            maximum_resident_frames: limit,
             ..Default::default()
         },
     )

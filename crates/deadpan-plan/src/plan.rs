@@ -80,7 +80,7 @@ mod audio_hold_policy;
 pub use audio_hold_policy::{AudioHoldIssuer, AudioHoldPolicyQuery, AudioHoldRule};
 #[path = "audio_fades.rs"]
 mod audio_fades;
-pub use audio_fades::{AudioFadeEdge, AudioFadeQuery, AudioFadeSpan};
+pub use audio_fades::{AdmittedAudioFadeQuery, AudioFadeEdge, AudioFadeQuery, AudioFadeSpan};
 #[path = "audio_owner_input.rs"]
 mod audio_owner_input;
 #[path = "audio_owners.rs"]

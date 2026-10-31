@@ -33,6 +33,10 @@ impl AudioSourceProvider for LeaseWatchingProvider<'_> {
 
 #[test]
 fn flattened_request_lease_is_live_during_real_source_io_and_dies_before_returned_pcm() {
+    with_legacy_fade_queries(historical_flattened_request_lease_is_live_during_real_source_io_and_dies_before_returned_pcm);
+}
+
+fn historical_flattened_request_lease_is_live_during_real_source_io_and_dies_before_returned_pcm() {
     for domain_read in [false, true] {
         for edge_fades in [false, true] {
             let (plan, provider) = fixture();
@@ -92,6 +96,12 @@ fn flattened_request_lease_is_live_during_real_source_io_and_dies_before_returne
 
 #[test]
 fn flattened_unused_and_failed_prepared_requests_release_live_real_ledger_charge() {
+    with_legacy_fade_queries(
+        historical_flattened_unused_and_failed_prepared_requests_release_live_real_ledger_charge,
+    );
+}
+
+fn historical_flattened_unused_and_failed_prepared_requests_release_live_real_ledger_charge() {
     for domain_read in [false, true] {
         for failure in 0..5 {
             let (plan, provider) = fixture();
@@ -173,6 +183,12 @@ fn flattened_unused_and_failed_prepared_requests_release_live_real_ledger_charge
 
 #[test]
 fn flattened_foreign_readwork_is_refused_before_query_read_and_source_admission() {
+    with_legacy_fade_queries(
+        historical_flattened_foreign_readwork_is_refused_before_query_read_and_source_admission,
+    );
+}
+
+fn historical_flattened_foreign_readwork_is_refused_before_query_read_and_source_admission() {
     for domain_read in [false, true] {
         let (plan, mut provider) = fixture();
         let domain = plan
@@ -216,6 +232,10 @@ fn flattened_foreign_readwork_is_refused_before_query_read_and_source_admission(
 
 #[test]
 fn flattened_and_processing_live_charge_reduces_actual_required_pcm_reservation_room() {
+    with_legacy_fade_queries(historical_flattened_and_processing_live_charge_reduces_actual_required_pcm_reservation_room);
+}
+
+fn historical_flattened_and_processing_live_charge_reduces_actual_required_pcm_reservation_room() {
     for domain_read in [false, true] {
         let (plan, provider) = fixture();
         let domain = plan
@@ -255,6 +275,11 @@ fn flattened_and_processing_live_charge_reduces_actual_required_pcm_reservation_
 
 #[test]
 fn flattened_later_processing_failure_drops_earlier_flattened_lease_without_refunding_work() {
+    with_legacy_fade_queries(historical_flattened_later_processing_failure_drops_earlier_flattened_lease_without_refunding_work);
+}
+
+fn historical_flattened_later_processing_failure_drops_earlier_flattened_lease_without_refunding_work()
+ {
     with_legacy_processing_queries(legacy_processing_failure_after_admitted_flattened);
 }
 

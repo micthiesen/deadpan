@@ -129,6 +129,7 @@ fn compare_flattened_counter(actual: &mut Value, ordinary: &Value, imposed: bool
         ("flattened_work_trace", "flattened"),
         ("processing_work_trace", "processing"),
         ("policy_work_trace", "policy"),
+        ("fade_work_trace", "fade"),
     ] {
         let trace = take_query_trace(actual, field);
         let old_trace = take_query_trace(&mut ordinary, field);
@@ -178,6 +179,7 @@ fn remove_flattened_traces(observed: &mut Value) {
         "flattened_work_trace",
         "processing_work_trace",
         "policy_work_trace",
+        "fade_work_trace",
     ] {
         for phase in ["before", "after"] {
             take_query_trace(&mut observed["setup"][phase], field);
@@ -220,6 +222,7 @@ fn compare_flattened_matrix(actual: &mut Value, ordinary: &Value) {
                     "flattened_work_trace",
                     "processing_work_trace",
                     "policy_work_trace",
+                    "fade_work_trace",
                 ] {
                     assert_eq!(
                         operation["before"][field], operation["after_return_drop"][field],
@@ -267,6 +270,7 @@ fn normalize_counter(actual: &mut Value, old: &Value, imposed: bool, metered: bo
         ("flattened_work_trace", "flattened"),
         ("processing_work_trace", "processing"),
         ("policy_work_trace", "policy"),
+        ("fade_work_trace", "fade"),
     ] {
         let trace = take_query_trace(actual, field);
         assert_ordinary_query_trace(&trace, product);
@@ -604,6 +608,10 @@ fn compare_domain_policy_counter(actual: &mut Value, old: &Value, imposed: bool)
     let old_policy = take_query_trace(&mut old, "policy_work_trace");
     let policy_fees = query_fees(&policy, "policy");
     let old_policy_fees = query_fees(&old_policy, "policy reference");
+    let fade = take_query_trace(actual, "fade_work_trace");
+    let old_fade = take_query_trace(&mut old, "fade_work_trace");
+    let fade_fees = query_fees(&fade, "fade");
+    let old_fade_fees = query_fees(&old_fade, "fade reference");
     let removed = reconcile_domain_policy_receipts(&trace, &old_trace);
     for (lane, field) in ["old_total_controller_work", "cache_plan_work"]
         .into_iter()
@@ -613,6 +621,8 @@ fn compare_domain_policy_counter(actual: &mut Value, old: &Value, imposed: bool)
         let old_host = host_eviction_receipt(&old_processing);
         assert_eq!(host_eviction_receipt(&policy), host);
         assert_eq!(host_eviction_receipt(&old_policy), old_host);
+        assert_eq!(host_eviction_receipt(&fade), host);
+        assert_eq!(host_eviction_receipt(&old_fade), old_host);
         assert_eq!(host_eviction_receipt(&actual["flattened_work_trace"]), host);
         assert_eq!(
             host_eviction_receipt(&old["flattened_work_trace"]),
@@ -621,6 +631,8 @@ fn compare_domain_policy_counter(actual: &mut Value, old: &Value, imposed: bool)
         let difference = i128::from(fees[lane]) - i128::from(old_fees[lane])
             + i128::from(policy_fees[lane])
             - i128::from(old_policy_fees[lane])
+            + i128::from(fade_fees[lane])
+            - i128::from(old_fade_fees[lane])
             + i128::from(host[lane])
             - i128::from(old_host[lane]);
         let removed = if lane == 0 { i128::from(removed) } else { 0 };
@@ -632,7 +644,7 @@ fn compare_domain_policy_counter(actual: &mut Value, old: &Value, imposed: bool)
         assert_eq!(
             i128::from(number(actual, field)),
             i128::from(number(&old, field)) + adjustment,
-            "only actual policy savings and separately witnessed processing/policy fees differ: {field}"
+            "only actual policy savings and separately witnessed processing/policy/fade fees differ: {field}"
         );
         actual[field] = old[field].clone();
     }
@@ -652,6 +664,7 @@ fn remove_domain_policy_traces(observed: &mut Value) {
         "domain_policy_trace",
         "processing_work_trace",
         "policy_work_trace",
+        "fade_work_trace",
     ] {
         for phase in ["before", "after"] {
             take_query_trace(&mut observed["setup"][phase], field);
@@ -721,6 +734,7 @@ fn compare_certified_counter(actual: &mut Value, direct: &Value, imposed: bool) 
         ("flattened_work_trace", "flattened"),
         ("processing_work_trace", "processing"),
         ("policy_work_trace", "policy"),
+        ("fade_work_trace", "fade"),
     ] {
         query_fees(&actual[field], product);
         query_fees(&direct[field], product);

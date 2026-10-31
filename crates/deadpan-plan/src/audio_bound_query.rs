@@ -85,7 +85,7 @@ impl<T, I: Copy + Eq, L> GuardedBound<T, I, L> {
         };
         budget.check_memory(&guarded.value._memory)?;
         budget.check_memory(&guarded.memory)?;
-        budget.merge_checked(&mut guarded.value._memory, &mut guarded.memory);
+        budget.merge_checked(&mut guarded.value._memory, &mut guarded.memory)?;
         budget.check_memory(&guarded.value._memory)?;
         Ok(guarded.value)
     }
@@ -150,7 +150,7 @@ impl<T, I: Copy + Eq, L> GuardedBound<T, I, L> {
         };
         budget.check_memory(&joined.memory)?;
         budget.check_memory(&joined.other_memory)?;
-        budget.merge_checked(&mut joined.memory, &mut joined.other_memory);
+        budget.merge_checked(&mut joined.memory, &mut joined.other_memory)?;
         budget.check_memory(&joined.memory)?;
         Ok(GuardedBound {
             value: joined.value,
@@ -214,7 +214,7 @@ impl<'plan, I: Copy + Eq, L> GuardedBound<crate::plan::audio::AudioWalkSpan<'pla
                     value: span,
                     memory,
                 };
-                budget.merge_checked(&mut result.memory, &mut leaf_memory);
+                budget.merge_checked(&mut result.memory, &mut leaf_memory)?;
                 budget.check_memory(&result.memory)?;
                 Ok(result)
             }
@@ -258,7 +258,7 @@ impl<'plan, I: Copy + Eq, L> GuardedBound<AudioBound<'plan>, I, L> {
         })?;
         budget.check_memory(&result._memory)?;
         budget.check_memory(&shell.memory)?;
-        budget.merge_checked(&mut result._memory, &mut shell.memory);
+        budget.merge_checked(&mut result._memory, &mut shell.memory)?;
         Ok(result)
     }
 }
@@ -290,7 +290,7 @@ impl RenderPlan {
         let root = budget.node(memory, definition.root())?;
         budget.check_memory(memory)?;
         budget.check_memory(&capacity)?;
-        budget.merge_checked(memory, &mut capacity);
+        budget.merge_checked(memory, &mut capacity)?;
         Ok((root, excluded))
     }
     pub(in crate::plan) fn bound_at_query<A: AudioSoundContextAdmission>(
@@ -334,7 +334,7 @@ impl RenderPlan {
         };
         budget.check_memory(&memory)?;
         budget.check_memory(&instance_capacity)?;
-        budget.merge_checked(&mut memory, &mut instance_capacity);
+        budget.merge_checked(&mut memory, &mut instance_capacity)?;
         let mut excluded_memory = budget.memory();
         let excluded = definition
             .map(|selector| {
@@ -488,7 +488,7 @@ impl RenderPlan {
         }
         budget.check_memory(&memory)?;
         budget.check_memory(&constraint_capacity)?;
-        budget.merge_checked(&mut memory, &mut constraint_capacity);
+        budget.merge_checked(&mut memory, &mut constraint_capacity)?;
         let constraints = copied_constraints;
         let envelope_scale = transform
             .signal_frames_per_local_frame
@@ -584,7 +584,7 @@ impl<'plan> AudioBound<'plan> {
             budget.repeats(&mut domain.memory, &mut capacity, &self.instance.repeats)?;
         budget.check_memory(&domain.memory)?;
         budget.check_memory(&capacity)?;
-        budget.merge_checked(&mut domain.memory, &mut capacity);
+        budget.merge_checked(&mut domain.memory, &mut capacity)?;
         if !self.constraints.is_empty() {
             let count = domain.value.seed.constraints.len() + self.constraints.len();
             let mut next_capacity = budget.memory();
@@ -601,13 +601,13 @@ impl<'plan> AudioBound<'plan> {
             domain.value.seed.constraints = next;
             budget.check_memory(&domain.memory)?;
             budget.check_memory(&next_capacity)?;
-            budget.merge_checked(&mut domain.memory, &mut next_capacity);
+            budget.merge_checked(&mut domain.memory, &mut next_capacity)?;
         }
         let mut cap = budget.memory();
         domain.value.instance = budget.instance(&mut domain.memory, &mut cap, &self.instance)?;
         budget.check_memory(&domain.memory)?;
         budget.check_memory(&cap)?;
-        budget.merge_checked(&mut domain.memory, &mut cap);
+        budget.merge_checked(&mut domain.memory, &mut cap)?;
         Ok(Some(domain))
     }
 }
@@ -625,7 +625,7 @@ impl<T, I: Copy + Eq, L> GuardedBound<T, I, L> {
     ) -> Result<(), A> {
         budget.check_memory(&self._memory)?;
         budget.check_memory(memory)?;
-        budget.merge_checked(&mut self._memory, memory);
+        budget.merge_checked(&mut self._memory, memory)?;
         Ok(())
     }
     pub(in crate::plan) fn charges(&self) -> [Option<&L>; 3] {

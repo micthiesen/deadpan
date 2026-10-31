@@ -14,6 +14,10 @@ use super::{
     AudioSignalContent, AudioSpan, LookupStats, PlanError, RenderPlan,
 };
 
+#[path = "audio_fades_query.rs"]
+pub(in crate::plan) mod query;
+pub use query::AdmittedAudioFadeQuery;
+
 /// One side of a creative envelope. Start distance increases by one per output
 /// sample; end distance decreases. Retained opposite sides keep their own width
 /// and exact phase when a new editorial boundary is authored.

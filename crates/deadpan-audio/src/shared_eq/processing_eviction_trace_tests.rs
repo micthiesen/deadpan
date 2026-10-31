@@ -3,6 +3,15 @@ use super::*;
 
 #[test]
 fn completed_original_constructors_separate_real_eviction_work_in_both_products_and_lanes() {
+    original_request::with_legacy_fade_queries(|| eviction_receipts(1, false));
+}
+
+#[test]
+fn four_products_keep_actual_eviction_receipts_with_multiple_real_cached_wav_inputs() {
+    eviction_receipts(2, true);
+}
+
+fn eviction_receipts(cached_inputs: usize, admitted_fades: bool) {
     for processing_eviction in [false, true] {
         for cache_lane in [false, true] {
             let (plan, mut provider) = fixture();
@@ -39,21 +48,24 @@ fn completed_original_constructors_separate_real_eviction_work_in_both_products_
             assert_eq!(provider.calls, 0);
 
             let mut graph = graph(&plan);
-            let cached = renderer
-                .shared_original_input(
-                    &mut provider,
-                    &mut graph,
-                    &Context::Root,
-                    AudioSample(0)..AudioSample(256),
-                    control,
-                    0,
-                )
-                .unwrap();
-            let original_inputs::Read::Cached(cached) = cached else {
-                panic!("real cold read must publish the verified WAV cache payload");
-            };
-            drop(cached); // Leave the controller's single Arc evictable.
-            assert_eq!(renderer.original_inputs.len(), 1);
+            for index in 0..cached_inputs {
+                let start = i64::try_from(index).unwrap() * 256;
+                let cached = renderer
+                    .shared_original_input(
+                        &mut provider,
+                        &mut graph,
+                        &Context::Root,
+                        AudioSample(start)..AudioSample(start + 256),
+                        control,
+                        0,
+                    )
+                    .unwrap();
+                let original_inputs::Read::Cached(cached) = cached else {
+                    panic!("real cold read must publish the verified WAV cache payload");
+                };
+                drop(cached); // Leave the controller's cache Arcs evictable.
+            }
+            assert_eq!(renderer.original_inputs.len(), cached_inputs);
             let cached_frames = renderer.cached_resident_frames();
             assert!(
                 cached_frames > required_peak,
@@ -80,15 +92,20 @@ fn completed_original_constructors_separate_real_eviction_work_in_both_products_
                 provider.calls, calls,
                 "constructor pressure never reopens WAV"
             );
-            assert!(
-                renderer.original_inputs.is_empty(),
-                "actual existing cache payload was evicted"
-            );
+            let remaining = usize::from(admitted_fades && processing_eviction);
+            assert_eq!(renderer.original_inputs.len(), remaining);
+            let evicted = cached_inputs - remaining;
             assert!(work.borrow().sound_context_frames > 0);
             let flat =
                 serde_json::to_value(original_request::flattened_work_trace::snapshot()).unwrap();
             let processing =
                 serde_json::to_value(original_request::flattened_work_trace::processing_snapshot())
+                    .unwrap();
+            let policy =
+                serde_json::to_value(original_request::flattened_work_trace::policy_snapshot())
+                    .unwrap();
+            let fades =
+                serde_json::to_value(original_request::flattened_work_trace::fade_snapshot())
                     .unwrap();
             let lane = if cache_lane { "cache" } else { "plan" };
             let other = if cache_lane { "plan" } else { "cache" };
@@ -102,7 +119,14 @@ fn completed_original_constructors_separate_real_eviction_work_in_both_products_
             } else {
                 &processing
             };
-            for trace in [&flat, &processing] {
+            let mut products = vec![&flat, &processing, &policy];
+            if admitted_fades {
+                products.push(&fades);
+            } else {
+                assert_eq!(fades[lane]["constructor_calls"], 0);
+                assert_eq!(fades[lane]["accepted_work"], 0);
+            }
+            for trace in products {
                 for field in ["invalid", "nested", "overflow"] {
                     assert_eq!(trace[field], false, "{trace}");
                 }
@@ -112,7 +136,10 @@ fn completed_original_constructors_separate_real_eviction_work_in_both_products_
                 assert_eq!(trace[lane]["failed_queries"], 0);
                 assert_eq!(trace[lane]["partial_work"], 0);
                 assert_eq!(trace[other]["accepted_work"], 0);
-                assert_eq!(trace["all_host_eviction_work"][usize::from(cache_lane)], 1);
+                assert_eq!(
+                    trace["all_host_eviction_work"][usize::from(cache_lane)],
+                    evicted
+                );
                 assert_eq!(trace["all_host_eviction_work"][usize::from(!cache_lane)], 0);
                 let canonical = trace[lane]["canonical_units"].as_u64().unwrap();
                 let additional = trace[lane]["additional_units"].as_u64().unwrap();
@@ -122,8 +149,10 @@ fn completed_original_constructors_separate_real_eviction_work_in_both_products_
                     canonical + additional + eviction
                 );
             }
-            assert_eq!(selected[lane]["host_eviction_work"], 1);
+            assert_eq!(selected[lane]["host_eviction_work"], evicted);
             assert_eq!(not_selected[lane]["host_eviction_work"], 0);
+            assert_eq!(policy[lane]["host_eviction_work"], 0);
+            assert_eq!(fades[lane]["host_eviction_work"], 0);
             let queries = request.queries();
             let constructor_and_policy = queries.flattened.work
                 + queries.processing.work
@@ -134,7 +163,10 @@ fn completed_original_constructors_separate_real_eviction_work_in_both_products_
                 [work.plan_work, work.cache_plan_work]
             };
             let index = usize::from(cache_lane);
-            assert_eq!(after[index] - before[index], constructor_and_policy + 1);
+            assert_eq!(
+                after[index] - before[index],
+                constructor_and_policy + evicted
+            );
             assert_eq!(after[1 - index], before[1 - index]);
             drop(request);
             assert_eq!(work.borrow().sound_context_frames, 0);

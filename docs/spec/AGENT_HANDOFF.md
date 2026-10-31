@@ -2,7 +2,68 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: policy Original queries admitted, product goal active
+## Current state: four Original queries admitted, product goal active
+
+The [fade-query checkpoint](../qualification/fade-original-query-admission-2026-10-30.md)
+admits actual Root/physical-Domain fades and retains the conditional fourth
+carrier through Original prediction and numerical consumption. Actual primary,
+geometry, envelope, origin and side-buffer operations retain their overlapping
+Plan/Core leases. The shared private merge helper checks both issuer lanes
+before and after every actual merge; all 49 callers propagate failure.
+
+After publishing policy checkpoint 7da84fc1b57897bd990a51f575b60f1b903c7318,
+both roots froze 2,354 complete OLD Root/Domain observations from 80 parents.
+False mode replays all fields/errors/work/lookup without spend/reserve/merge
+callbacks; true mode
+compares all 1,046 successful outputs under literal span caps and the existing
+default work allowance for new fees. Exact/one-short admitted work and requested
+Layout peaks cover all 80 full parents. Nine focused Plan tests plus real WAV
+host tests cover allocation overlap, accepted-prefix failure, cancellation,
+issuer rotation, optional fade comparison and complete cleanup. All seventeen
+immutable oracle bodies retain their hashes.
+
+Four-product eviction evidence uses two real cached 256-frame WAV windows and
+reconciles actual host eviction once in both lanes. Native residency fixtures
+measure simultaneous metadata separately from PCM. Four sound-events fixtures
+initially refused before their provider/cancellation sentinel; they now add
+actual measured metadata to their unchanged PCM allowances. All six pass,
+including the larger refusal and repeated cleanup. A definition fixture adds
+the larger measured metadata peak of its small and large reads to its unchanged
+PCM allowance. Its refusal/recovery case and both complete definition targets
+pass. Production caps are unchanged.
+
+Main/isolated Plan pass 262/249 plus all 28 integration executables, 450 tests
+each; Audio 419/413; ordinary Stage 203/203; definition/history 171/171;
+the other 18 Audio integration
+executables pass 207/207. Plan retains fourteen ignored tests
+and Audio six. All 21 native Audio executables per root have passing results;
+unchanged executable pins retain earlier passes after the independent test-only
+correction. Final strict checks, formatting, hygiene, reviews and source/index/
+evidence audits pass. Complete eight-case native bodies agree exactly.
+Cold work adds 110-233 units over fully legacy; warm savings remain
+24-63. These are work counts, not speed or RSS measurements.
+
+Fresh Split: 3 pass/4 fail in 257.58 seconds.
+
+- Source/Sequence refinement: cut-three, 0+511, plan work per read.
+- nested selected play root_sound=false: prefix-two, 0+4096, frozen projection work exhausted.
+- one selected play: prefix-two, 0+4096, plan work per read.
+- root sound processed=true: root-sound-refinement, 0+511, plan work per read.
+
+General sound-bearing Split remains disabled. All 45 shipping source/fixture
+paths equal the isolated candidate. Main's unrelated research, including its
+working-tree-only plan.rs module declarations, remains unpublished.
+
+Next freeze complete OLD standalone retained-fade queries and actual retained
+input provenance before changing that independent product and its
+read_retained_controlled lifetime. An actual admitted-created retained handle
+can carry augmented resolved.work; do not replace it with an ordinary rebuild
+or normalize that scalar. The prior six-factory supplement has only one Some.
+Other variable containers, inner ordinary queries and complete recursive
+preparation remain open. No cap, prior weight, refund, requirement or gate
+changes. The full DP-01..24/Gates A..G goal stays active.
+
+## Policy Original queries admitted (historical)
 
 The [policy-query checkpoint](../qualification/policy-original-query-admission-2026-10-30.md)
 admits actual recursive Root/physical-Domain policy construction and retains its

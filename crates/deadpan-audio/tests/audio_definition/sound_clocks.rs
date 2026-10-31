@@ -1,6 +1,9 @@
 //! Exercise command-created clocks through the ordinary authored audio bus.
 use super::*;
 
+#[path = "../stages/flattened_metadata.rs"]
+mod flattened_metadata;
+
 #[path = "sound_clocks/repeats.rs"]
 mod repeats;
 
@@ -954,10 +957,16 @@ fn neutral_groups_outside_retained_sound_scopes_preserve_pcm_and_allow_later_tim
 #[test]
 fn retained_sound_and_current_bus_share_the_pcm_residency_cap() {
     let moved = insert_prefix(&ntsc(AudioEdgePolicy::Hard));
+    let plan = compile(&moved, false);
+    let small_metadata = flattened_metadata::root(&plan, AudioSample(4805)..AudioSample(4837));
+    let large_metadata = flattened_metadata::root(&plan, AudioSample(4805)..AudioSample(5061));
+    let metadata_peak = small_metadata.peak_frames.max(large_metadata.peak_frames);
     let mut renderer = StageAudio::with_limits(
-        compile(&moved, false),
+        plan,
         StageLimits {
-            maximum_resident_frames: 1280,
+            maximum_resident_frames: 1280_u32
+                .checked_add(u32::try_from(metadata_peak).unwrap())
+                .unwrap(),
             ..Default::default()
         },
     )
@@ -971,7 +980,7 @@ fn retained_sound_and_current_bus_share_the_pcm_residency_cap() {
             TIMEOUT,
             &AtomicBool::new(false)
         ),
-        Err(StageAudioError::Limit(_))
+        Err(StageAudioError::Limit("resident PCM or stage cache"))
     ));
     assert_eq!(provider.fixture.calls, 0);
     // A failed reservation leaves the current plan and controller usable.

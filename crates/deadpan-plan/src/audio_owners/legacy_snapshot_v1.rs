@@ -465,3 +465,6 @@ pub(in crate::plan) mod processing_query_baseline;
 
 #[path = "legacy_snapshot_v1/policy_query_baseline.rs"]
 pub(in crate::plan) mod policy_query_baseline;
+
+#[path = "legacy_snapshot_v1/fade_query_baseline.rs"]
+pub(in crate::plan) mod fade_query_baseline;

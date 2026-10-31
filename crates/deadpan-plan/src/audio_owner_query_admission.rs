@@ -313,12 +313,13 @@ impl<'a, A: AudioSoundContextAdmission> Budget<'a, A> {
         }
         Ok(())
     }
-    /// Call only after checking both issuers and completing all fallible work.
     pub(in crate::plan) fn merge_checked(
         &mut self,
         a: &mut Memory<A::Issuer, A::Lease>,
         b: &mut Memory<A::Issuer, A::Lease>,
-    ) {
+    ) -> Result<(), A> {
+        self.check_memory(a)?;
+        self.check_memory(b)?;
         if let Some(mut issued) = b.lease.take() {
             if let Some(target) = a.lease.as_mut() {
                 self.admission.merge(target, &mut issued);
@@ -326,6 +327,8 @@ impl<'a, A: AudioSoundContextAdmission> Budget<'a, A> {
                 a.lease = Some(issued);
             }
         }
+        self.check_memory(a)?;
+        self.check_memory(b)
     }
     pub(in crate::plan) fn node(
         &mut self,
@@ -390,7 +393,7 @@ impl<'a, A: AudioSoundContextAdmission> Budget<'a, A> {
         let result = self.instance(m, &mut cap, value)?;
         self.check_memory(m)?;
         self.check_memory(&cap)?;
-        self.merge_checked(m, &mut cap);
+        self.merge_checked(m, &mut cap)?;
         Ok(result)
     }
     pub(in crate::plan) fn owner<'plan>(
@@ -611,7 +614,7 @@ impl<'a, A: AudioSoundContextAdmission> Budget<'a, A> {
                 let instance = self.instance(m, &mut cap, instance)?;
                 self.check_memory(m)?;
                 self.check_memory(&cap)?;
-                self.merge_checked(m, &mut cap);
+                self.merge_checked(m, &mut cap)?;
                 Ok(AudioOwnerClockOrigin::Retained {
                     definition,
                     instance,

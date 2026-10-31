@@ -88,7 +88,7 @@ impl BoundaryOwner<'_> {
         };
         budget.check_memory(&memory)?;
         budget.check_memory(&capacity)?;
-        budget.merge_checked(&mut memory, &mut capacity);
+        budget.merge_checked(&mut memory, &mut capacity)?;
         Ok(Owned { value, memory })
     }
 }
@@ -207,7 +207,7 @@ impl<I: Copy + Eq, L> AdmittedExtent<I, L> {
             )?;
             budget.check_memory(&self.memory.origins)?;
             budget.check_memory(&origin.memory)?;
-            budget.merge_checked(&mut self.memory.origins, &mut origin.memory);
+            budget.merge_checked(&mut self.memory.origins, &mut origin.memory)?;
             self.value.boundaries.start.push(origin.value);
         }
         Ok(())
@@ -231,7 +231,7 @@ impl<I: Copy + Eq, L> AdmittedExtent<I, L> {
             budget.grow(&mut self.value.boundaries.end, &mut self.memory.end, needed)?;
             budget.check_memory(&self.memory.origins)?;
             budget.check_memory(&origin.memory)?;
-            budget.merge_checked(&mut self.memory.origins, &mut origin.memory);
+            budget.merge_checked(&mut self.memory.origins, &mut origin.memory)?;
             self.value.boundaries.end.push(origin.value);
         }
         Ok(())
@@ -244,8 +244,8 @@ impl<I: Copy + Eq, L> AdmittedExtent<I, L> {
         budget.check_memory(&self.memory.origins)?;
         budget.check_memory(&self.memory.start)?;
         budget.check_memory(&self.memory.end)?;
-        budget.merge_checked(&mut self.memory.origins, &mut self.memory.start);
-        budget.merge_checked(&mut self.memory.origins, &mut self.memory.end);
+        budget.merge_checked(&mut self.memory.origins, &mut self.memory.start)?;
+        budget.merge_checked(&mut self.memory.origins, &mut self.memory.end)?;
         Ok(Owned {
             value: self.value,
             memory: self.memory.origins,

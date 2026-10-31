@@ -579,6 +579,26 @@ stays disabled. Fades, other variable containers, inner ordinary queries and
 full recursive preparation remain open. No cap, prior weight, refund,
 requirement/gate status or speed/RSS claim changes.
 
+The [fade Original query checkpoint](qualification/fade-original-query-admission-2026-10-30.md)
+admits actual Root/physical-Domain fades and the conditional fourth Original
+carrier. The independent 80-parent OLD corpus has 2,354 actual calls; true mode
+compares all 1,046 successes and false mode all complete outputs/errors/work.
+All seventeen oracle pins remain unchanged. Nine focused Plan tests and real
+WAV/ReadWork tests cover actual overlapping layouts, exact/short work and peaks,
+issuer/cancellation/refusal cleanup, optional consumption and four-product
+eviction receipts. The shared merge seam checks both issuer lanes before and
+after all actual callbacks. Main/isolated Plan pass 712/699 including integrations,
+Audio 419/413,
+ordinary Stage 203/203, definition/history 171/171 and all other Audio integration
+executables. Strict checks, reviews and source/index/evidence audits pass.
+Complete current native bodies agree; cold work adds 110-233 units
+over fully legacy and warm savings remain 24-63.
+Fresh General Split remains 3 pass/4 fail in
+257.58 seconds and stays disabled. Standalone retained-input fades,
+other variable containers, inner ordinary queries and full recursive preparation
+remain open. No cap, prior weight, refund, requirement/gate status or speed/RSS
+claim changes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

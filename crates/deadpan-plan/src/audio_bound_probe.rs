@@ -109,14 +109,14 @@ impl<'plan> AudioBound<'plan> {
                 let mut copied_repeats = repeats(&self.instance.repeats, budget)?;
                 budget.check_memory(&evaluation.memory)?;
                 budget.check_memory(&copied_repeats.memory)?;
-                budget.merge_checked(&mut evaluation.memory, &mut copied_repeats.memory);
+                budget.merge_checked(&mut evaluation.memory, &mut copied_repeats.memory)?;
                 evaluation.value = Some((selector, copied_repeats.value));
                 budget.check_memory(&domain.memory)?;
                 budget.check_memory(&evaluation.memory)?;
                 let (selector, copied_repeats) =
                     evaluation.value.take().expect("copied evaluation");
                 // No fallible operation between charge merge and owning move.
-                budget.merge_checked(&mut domain.memory, &mut evaluation.memory);
+                budget.merge_checked(&mut domain.memory, &mut evaluation.memory)?;
                 domain
                     .value
                     .set_evaluation(selector, copied_repeats, Some(self.binding_target()));
@@ -141,7 +141,7 @@ impl<'plan> AudioBound<'plan> {
         let mut copied_repeats = repeats(&self.instance.repeats, budget)?;
         budget.check_memory(&domain.memory)?;
         budget.check_memory(&copied_repeats.memory)?;
-        budget.merge_checked(&mut domain.memory, &mut copied_repeats.memory);
+        budget.merge_checked(&mut domain.memory, &mut copied_repeats.memory)?;
         domain.value.seed.repeats = copied_repeats.value;
         if !self.constraints.is_empty() {
             let count = domain
@@ -167,7 +167,7 @@ impl<'plan> AudioBound<'plan> {
             }
             budget.check_memory(&domain.memory)?;
             budget.check_memory(&next.memory)?;
-            budget.merge_checked(&mut domain.memory, &mut next.memory);
+            budget.merge_checked(&mut domain.memory, &mut next.memory)?;
             domain.value.seed.constraints = next.value;
         }
         let mut instance = Owned {
@@ -177,7 +177,7 @@ impl<'plan> AudioBound<'plan> {
         instance.value = Some(budget.instance_fixed(&mut instance.memory, &self.instance)?);
         budget.check_memory(&domain.memory)?;
         budget.check_memory(&instance.memory)?;
-        budget.merge_checked(&mut domain.memory, &mut instance.memory);
+        budget.merge_checked(&mut domain.memory, &mut instance.memory)?;
         domain.value.instance = instance.value.expect("copied instance");
         Ok(())
     }

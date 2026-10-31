@@ -5,6 +5,12 @@ use super::*;
 
 #[test]
 fn admitted_bound_domain_keeps_canonical_receipts_policy_and_actual_wav_output() {
+    with_legacy_fade_queries(
+        historical_admitted_bound_domain_keeps_canonical_receipts_policy_and_actual_wav_output,
+    );
+}
+
+fn historical_admitted_bound_domain_keeps_canonical_receipts_policy_and_actual_wav_output() {
     with_legacy_policy_queries(
         admitted_bound_domain_keeps_canonical_receipts_policy_and_actual_wav_output_legacy_policy,
     );

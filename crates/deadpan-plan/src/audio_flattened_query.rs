@@ -98,7 +98,7 @@ pub(in crate::plan) fn query<A: AudioSoundContextAdmission>(
         }
         let query = value.try_map(&mut budget, |mut value, memory, budget| {
             budget.check_memory(&value.capacity)?;
-            budget.merge_checked(memory, &mut value.capacity);
+            budget.merge_checked(memory, &mut value.capacity)?;
             budget.check_memory(memory)?;
             Ok(value.query)
         })?;
@@ -158,7 +158,7 @@ pub(in crate::plan) fn child_query<A: AudioSoundContextAdmission>(
         budget.check_memory(&build.payload)?;
         budget.check_memory(&span.memory)?;
         build.spans.push(span.value);
-        budget.merge_checked(&mut build.payload, &mut span.memory);
+        budget.merge_checked(&mut build.payload, &mut span.memory)?;
     }
     // Preserve the legacy header-clone point after every span is constructed.
     build.project_id = Some(budget.project(&mut build.payload, &plan.metadata.project_id)?);

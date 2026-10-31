@@ -33,6 +33,7 @@ enum Product {
     Flattened,
     Processing,
     Policy,
+    Fade,
 }
 
 impl Product {
@@ -41,6 +42,7 @@ impl Product {
             Self::Flattened => 0,
             Self::Processing => 1,
             Self::Policy => 2,
+            Self::Fade => 3,
         }
     }
 }
@@ -52,7 +54,7 @@ struct HostEvictions {
 }
 
 thread_local! {
-    static TRACE: Cell<[Snapshot; 3]> = Cell::new([Snapshot::default(); 3]);
+    static TRACE: Cell<[Snapshot; 4]> = Cell::new([Snapshot::default(); 4]);
     static HOST_EVICTIONS: Cell<HostEvictions> = Cell::new(HostEvictions::default());
 }
 
@@ -73,10 +75,15 @@ pub(in crate::stages) fn host_eviction_spent(control: WorkControl<'_>) {
 pub(in crate::stages) fn reset() {
     TRACE.with(|trace| {
         let state = trace.get();
-        for product in [Product::Flattened, Product::Processing, Product::Policy] {
+        for product in [
+            Product::Flattened,
+            Product::Processing,
+            Product::Policy,
+            Product::Fade,
+        ] {
             assert_eq!(state[product.index()].active_depth, 0);
         }
-        trace.set([Snapshot::default(); 3]);
+        trace.set([Snapshot::default(); 4]);
     });
     HOST_EVICTIONS.with(|counter| counter.set(HostEvictions::default()));
 }
@@ -91,6 +98,10 @@ pub(in crate::stages) fn processing_snapshot() -> Snapshot {
 
 pub(in crate::stages) fn policy_snapshot() -> Snapshot {
     snapshot_product(Product::Policy)
+}
+
+pub(in crate::stages) fn fade_snapshot() -> Snapshot {
+    snapshot_product(Product::Fade)
 }
 
 fn snapshot_product(product: Product) -> Snapshot {
@@ -127,6 +138,10 @@ pub(super) fn processing_issuer_spent(control: WorkControl<'_>) {
 
 pub(super) fn policy_issuer_spent(control: WorkControl<'_>) {
     issuer_spent_for(Product::Policy, control);
+}
+
+pub(super) fn fade_issuer_spent(control: WorkControl<'_>) {
+    issuer_spent_for(Product::Fade, control);
 }
 
 fn issuer_spent_for(product: Product, control: WorkControl<'_>) {
@@ -166,6 +181,10 @@ impl<'work> ScopeGuard<'work> {
 
     pub(super) fn new_policy(control: WorkControl<'work>) -> Self {
         Self::new_product(Product::Policy, control)
+    }
+
+    pub(super) fn new_fade(control: WorkControl<'work>) -> Self {
+        Self::new_product(Product::Fade, control)
     }
 
     fn new_product(product: Product, control: WorkControl<'work>) -> Self {

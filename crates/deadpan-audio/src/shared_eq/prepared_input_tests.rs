@@ -1,5 +1,16 @@
 use super::*;
 
+fn prepared_query_receipts() -> [serde_json::Value; 4] {
+    use crate::stages::original_request::flattened_work_trace as trace;
+    [
+        trace::snapshot(),
+        trace::processing_snapshot(),
+        trace::policy_snapshot(),
+        trace::fade_snapshot(),
+    ]
+    .map(|value| serde_json::to_value(value).unwrap())
+}
+
 #[test]
 fn prepared_miss_and_hit_reuse_one_query_and_keep_live_source_admission() {
     let (plan, mut provider) = fixture();
@@ -30,6 +41,7 @@ fn prepared_miss_and_hit_reuse_one_query_and_keep_live_source_admission() {
         .unwrap();
     assert_eq!(work.borrow().sound_context_frames, 0);
     let before_legacy = work.borrow().plan_work;
+    let before_early_receipts = prepared_query_receipts();
     let legacy = renderer
         .shared_original_input(
             &mut provider,
@@ -40,6 +52,11 @@ fn prepared_miss_and_hit_reuse_one_query_and_keep_live_source_admission() {
             0,
         )
         .unwrap();
+    assert_eq!(
+        prepared_query_receipts(),
+        before_early_receipts,
+        "an early warm cache hit builds and compares none of the four query carriers"
+    );
     let hit_work = work.borrow().plan_work - before_legacy;
     let before_query = work.borrow().plan_work;
     let request = renderer
@@ -52,6 +69,7 @@ fn prepared_miss_and_hit_reuse_one_query_and_keep_live_source_admission() {
         "the attempted cold path bills its real metadata construction even on a hit"
     );
     let before_hit = work.borrow().plan_work;
+    let before_hit_receipts = prepared_query_receipts();
     let calls = provider.calls;
     let prepared_hit = renderer
         .shared_original_input_prepared(
@@ -65,11 +83,34 @@ fn prepared_miss_and_hit_reuse_one_query_and_keep_live_source_admission() {
         .unwrap();
     assert_eq!(
         work.borrow().plan_work - before_hit,
-        hit_work + 1 + 3,
-        "the hit bills sealed request validation and all three actual issuer comparisons once each"
+        hit_work + 1 + 4,
+        "the hit bills sealed request validation and all four actual issuer comparisons once each"
     );
     assert_eq!(work.borrow().sound_context_frames, 0);
     assert!(provider.calls > calls);
+    let after_hit_receipts = prepared_query_receipts();
+    for (before, after) in before_hit_receipts.iter().zip(&after_hit_receipts) {
+        for lane in ["plan", "cache"] {
+            let increase = if lane == "plan" { 1 } else { 0 };
+            for field in ["issuer_checks", "issuer_work"] {
+                assert_eq!(
+                    after[lane][field].as_u64().unwrap(),
+                    before[lane][field].as_u64().unwrap() + increase
+                );
+            }
+            for field in [
+                "constructor_calls",
+                "completed_queries",
+                "failed_queries",
+                "accepted_work",
+            ] {
+                assert_eq!(
+                    after[lane][field], before[lane][field],
+                    "late hit retains its supplied carrier without reconstruction: {field}"
+                );
+            }
+        }
+    }
     let (Read::Cached(first), Read::Cached(legacy), Read::Cached(prepared_hit)) =
         (&first, &legacy, &prepared_hit)
     else {

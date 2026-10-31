@@ -570,3 +570,6 @@ mod policy_admission;
 
 #[path = "policy_point_clone_tests.rs"]
 mod policy_point;
+
+#[path = "fade_query_admission_tests.rs"]
+mod fade_admission;

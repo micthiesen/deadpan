@@ -191,6 +191,12 @@ fn same_blocks(actual: &ReadBlock, expected: &ReadBlock) {
 
 #[test]
 fn prepared_root_and_domain_match_previous_query_content_work_and_actual_reads() {
+    with_legacy_fade_queries(
+        prepared_root_and_domain_match_previous_query_content_work_and_actual_reads_legacy_fade,
+    );
+}
+
+fn prepared_root_and_domain_match_previous_query_content_work_and_actual_reads_legacy_fade() {
     for domain_read in [false, true] {
         for edge_fades in [false, true] {
             for start in [0, 512, 640] {
@@ -270,6 +276,12 @@ fn prepared_root_and_domain_match_previous_query_content_work_and_actual_reads()
 
 #[test]
 fn prepared_source_read_needs_only_its_exact_issuer_work_allowance() {
+    with_legacy_fade_queries(
+        prepared_source_read_needs_only_its_exact_issuer_work_allowance_legacy_fade,
+    );
+}
+
+fn prepared_source_read_needs_only_its_exact_issuer_work_allowance_legacy_fade() {
     for domain_read in [false, true] {
         let (plan, mut provider) = fixture();
         let domain = plan
@@ -368,6 +380,12 @@ fn prepared_source_read_needs_only_its_exact_issuer_work_allowance() {
 
 #[test]
 fn prepared_identity_requires_exact_plan_domain_window_and_edge_mode() {
+    with_legacy_fade_queries(
+        prepared_identity_requires_exact_plan_domain_window_and_edge_mode_legacy_fade,
+    );
+}
+
+fn prepared_identity_requires_exact_plan_domain_window_and_edge_mode_legacy_fade() {
     let (plan, mut provider) = fixture();
     let equal_foreign = Arc::new(plan.as_ref().clone());
     let domain = plan
@@ -411,6 +429,12 @@ fn prepared_identity_requires_exact_plan_domain_window_and_edge_mode() {
 
 #[test]
 fn preparation_preserves_root_and_domain_range_and_foreign_errors() {
+    with_legacy_fade_queries(
+        preparation_preserves_root_and_domain_range_and_foreign_errors_legacy_fade,
+    );
+}
+
+fn preparation_preserves_root_and_domain_range_and_foreign_errors_legacy_fade() {
     let (plan, provider) = fixture();
     let equal_foreign = Arc::new(plan.as_ref().clone());
     let domain = plan
@@ -459,6 +483,12 @@ fn preparation_preserves_root_and_domain_range_and_foreign_errors() {
 
 #[test]
 fn exact_preparation_budget_and_one_short_bill_actual_forwarded_work() {
+    with_legacy_fade_queries(
+        exact_preparation_budget_and_one_short_bill_actual_forwarded_work_legacy_fade,
+    );
+}
+
+fn exact_preparation_budget_and_one_short_bill_actual_forwarded_work_legacy_fade() {
     let (plan, provider) = fixture();
     let domain = plan
         .audio_domain_at(AudioSample(0), Default::default())
@@ -597,6 +627,12 @@ fn exact_preparation_budget_and_one_short_bill_actual_forwarded_work() {
 
 #[test]
 fn prepared_read_still_checks_cancellation_deadline_and_depth_before_sources() {
+    with_legacy_fade_queries(
+        prepared_read_still_checks_cancellation_deadline_and_depth_before_sources_legacy_fade,
+    );
+}
+
+fn prepared_read_still_checks_cancellation_deadline_and_depth_before_sources_legacy_fade() {
     let (plan, mut provider) = fixture();
     let domain = plan
         .audio_domain_at(AudioSample(0), Default::default())
@@ -650,6 +686,12 @@ fn prepared_read_still_checks_cancellation_deadline_and_depth_before_sources() {
 
 #[test]
 fn planning_cancellation_and_deadline_keep_priority_over_invalid_range() {
+    with_legacy_fade_queries(
+        planning_cancellation_and_deadline_keep_priority_over_invalid_range_legacy_fade,
+    );
+}
+
+fn planning_cancellation_and_deadline_keep_priority_over_invalid_range_legacy_fade() {
     let (plan, provider) = fixture();
     let domain = plan
         .audio_domain_at(AudioSample(0), Default::default())
@@ -683,6 +725,10 @@ fn planning_cancellation_and_deadline_keep_priority_over_invalid_range() {
 
 #[test]
 fn prepared_metadata_does_not_waive_fresh_source_admission() {
+    with_legacy_fade_queries(prepared_metadata_does_not_waive_fresh_source_admission_legacy_fade);
+}
+
+fn prepared_metadata_does_not_waive_fresh_source_admission_legacy_fade() {
     struct Unavailable(usize);
     impl AudioSourceProvider for Unavailable {
         fn source(
@@ -737,6 +783,9 @@ fn prepared_metadata_does_not_waive_fresh_source_admission() {
     }
     assert_eq!(provider.calls, 0);
 }
+
+#[path = "fade_admission_tests.rs"]
+mod fade_admission;
 
 #[path = "policy_admission_tests.rs"]
 mod policy_admission;

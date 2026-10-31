@@ -48,7 +48,7 @@ impl<'plan> AudioDefinition<'plan> {
         }];
         budget.check_memory(&memory)?;
         budget.check_memory(&capacity)?;
-        budget.merge_checked(&mut memory, &mut capacity);
+        budget.merge_checked(&mut memory, &mut capacity)?;
         let gap = budget.gap(&mut memory, &self.gap)?;
         let node = budget.node(&mut memory, self.root())?;
         let value = AudioDomain {

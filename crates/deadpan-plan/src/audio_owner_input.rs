@@ -248,7 +248,7 @@ impl<'plan> AudioOwnerRetainedInput<'plan> {
             .transpose()?;
         budget.check_memory(&memory)?;
         budget.check_memory(&capacity)?;
-        budget.merge_checked(&mut memory, &mut capacity);
+        budget.merge_checked(&mut memory, &mut capacity)?;
         Ok(Owned {
             value: AudioOwnerClockOrigin::Retained {
                 definition,

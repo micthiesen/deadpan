@@ -36,7 +36,7 @@ pub(super) fn fixed<T: Clone, A: AudioSoundContextAdmission>(
     let result = copy_vec(values, memory, &mut capacity, budget, copy)?;
     budget.check_memory(memory)?;
     budget.check_memory(&capacity)?;
-    budget.merge_checked(memory, &mut capacity);
+    budget.merge_checked(memory, &mut capacity)?;
     Ok(result)
 }
 pub(super) fn editorial<A: AudioSoundContextAdmission>(

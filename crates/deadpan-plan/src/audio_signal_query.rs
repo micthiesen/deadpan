@@ -407,9 +407,9 @@ impl<'plan> AudioSignal<'plan> {
         budget.check_memory(&memory)?;
         budget.check_memory(&repeats_capacity)?;
         budget.check_memory(&retimes_capacity)?;
-        budget.merge_checked(&mut memory, &mut repeats_capacity);
+        budget.merge_checked(&mut memory, &mut repeats_capacity)?;
         budget.check_memory(&memory)?;
-        budget.merge_checked(&mut memory, &mut retimes_capacity);
+        budget.merge_checked(&mut memory, &mut retimes_capacity)?;
         let fields = FinishFields {
             definition: budget.definition(&mut memory, &self.definition)?,
             samples: allocated_samples.clone(),

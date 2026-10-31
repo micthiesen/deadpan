@@ -111,7 +111,7 @@ fn retained_query<'plan, A: AudioSoundContextAdmission>(
             }
             budget.check_memory(&payload)?;
             budget.check_memory(&capacity)?;
-            budget.merge_checked(&mut payload, &mut capacity);
+            budget.merge_checked(&mut payload, &mut capacity)?;
             let canonical = budget.canonical_used;
             let additional = budget.additional_used;
             let work = canonical

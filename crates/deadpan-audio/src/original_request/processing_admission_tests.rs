@@ -47,6 +47,10 @@ impl AudioSourceProvider for ProcessingWatchingProvider<'_> {
 
 #[test]
 fn processing_only_carrier_bills_once_and_lives_through_wav_io_unused_drop_and_error() {
+    with_legacy_fade_queries(processing_only_carrier_bills_once_and_lives_through_wav_io_unused_drop_and_error_legacy_fade);
+}
+
+fn processing_only_carrier_bills_once_and_lives_through_wav_io_unused_drop_and_error_legacy_fade() {
     with_legacy_policy_queries(processing_only_carrier_bills_once_and_lives_through_wav_io_unused_drop_and_error_legacy_policy);
 }
 
@@ -168,6 +172,11 @@ fn processing_only_carrier_bills_once_and_lives_through_wav_io_unused_drop_and_e
 
 #[test]
 fn processing_foreign_readwork_is_rejected_with_legacy_flattened_before_source_or_query_io() {
+    with_legacy_fade_queries(processing_foreign_readwork_is_rejected_with_legacy_flattened_before_source_or_query_io_legacy_fade);
+}
+
+fn processing_foreign_readwork_is_rejected_with_legacy_flattened_before_source_or_query_io_legacy_fade()
+ {
     with_legacy_policy_queries(processing_foreign_readwork_is_rejected_with_legacy_flattened_before_source_or_query_io_legacy_policy);
 }
 
@@ -223,6 +232,12 @@ fn processing_foreign_readwork_is_rejected_with_legacy_flattened_before_source_o
 
 #[test]
 fn processing_and_flattened_real_charges_add_and_each_reduces_required_pcm_room() {
+    with_legacy_fade_queries(
+        processing_and_flattened_real_charges_add_and_each_reduces_required_pcm_room_legacy_fade,
+    );
+}
+
+fn processing_and_flattened_real_charges_add_and_each_reduces_required_pcm_room_legacy_fade() {
     with_legacy_policy_queries(
         processing_and_flattened_real_charges_add_and_each_reduces_required_pcm_room_legacy_policy,
     );
@@ -299,6 +314,11 @@ fn processing_and_flattened_real_charges_add_and_each_reduces_required_pcm_room_
 
 #[test]
 fn processing_failed_constructor_keeps_real_partial_fees_and_releases_earlier_flattened_lease() {
+    with_legacy_fade_queries(processing_failed_constructor_keeps_real_partial_fees_and_releases_earlier_flattened_lease_legacy_fade);
+}
+
+fn processing_failed_constructor_keeps_real_partial_fees_and_releases_earlier_flattened_lease_legacy_fade()
+ {
     with_legacy_policy_queries(processing_failed_constructor_keeps_real_partial_fees_and_releases_earlier_flattened_lease_legacy_policy);
 }
 

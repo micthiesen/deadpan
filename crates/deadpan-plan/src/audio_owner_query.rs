@@ -107,7 +107,7 @@ impl<I: Copy + Eq, L> State<I, L> {
         budget.check_memory(&self.memory)?;
         budget.check_memory(source)?;
         self.value.repeats.push(value);
-        budget.merge_checked(&mut self.memory, source);
+        budget.merge_checked(&mut self.memory, source)?;
         Ok(())
     }
 }
@@ -249,13 +249,13 @@ pub(super) fn query_tracked<'plan, S: Copy, A: AudioSoundContextAdmission>(
             support: output.support,
             original_is_silent: output.original_is_silent,
         });
-        budget.merge_checked(&mut payload, &mut output.memory);
-        budget.merge_checked(&mut payload, &mut owners_capacity);
+        budget.merge_checked(&mut payload, &mut output.memory)?;
+        budget.merge_checked(&mut payload, &mut owners_capacity)?;
         cursor = output.end;
     }
     budget.check_memory(&payload)?;
     budget.check_memory(&capacity)?;
-    budget.merge_checked(&mut payload, &mut capacity);
+    budget.merge_checked(&mut payload, &mut capacity)?;
     let canonical = budget.canonical_used;
     let additional = budget.additional_used;
     let work = canonical
@@ -386,7 +386,7 @@ pub(super) fn walk_query<A: crate::AudioSoundContextAdmission>(
         };
         budget.check_memory(&instance_memory)?;
         budget.check_memory(&instance_capacity)?;
-        budget.merge_checked(&mut instance_memory, &mut instance_capacity);
+        budget.merge_checked(&mut instance_memory, &mut instance_capacity)?;
         let gap_after = state
             .gap
             .as_ref()
@@ -492,7 +492,7 @@ pub(super) fn walk_query<A: crate::AudioSoundContextAdmission>(
             position: local,
             origin: copied_origin,
         });
-        budget.merge_checked(&mut output.memory, &mut instance_memory);
+        budget.merge_checked(&mut output.memory, &mut instance_memory)?;
         if state.gap.is_some() {
             return Ok(());
         }

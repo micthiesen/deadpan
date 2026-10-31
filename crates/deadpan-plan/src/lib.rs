@@ -56,6 +56,10 @@ pub use plan::{
     PlanInspection, PlanMetadata, RenderPlan, SilenceReason, SourceSamplingSupport, StorageStats,
 };
 pub use plan::{
+    AdmittedAudioFadeQuery, AdmittedAudioPolicyQuery, AdmittedAudioProcessingQuery,
+    AdmittedAudioQuery,
+};
+pub use plan::{
     AdmittedAudioOwnerInputCandidates, AdmittedAudioOwnerInputCapture,
     AdmittedAudioOwnerRetainedProbe, AdmittedAudioOwnerSpanStartCandidates,
     AdmittedAudioSpanStartInputCapture, AudioOwnerInput, AudioOwnerInputCandidates,
@@ -68,7 +72,6 @@ pub use plan::{
     AudioOwnerClockOrigin, AudioOwnerKind, AudioOwnerQuery, AudioOwnerSpan, AudioOwnerSupport,
     AudioTreatmentBoundary,
 };
-pub use plan::{AdmittedAudioPolicyQuery, AdmittedAudioProcessingQuery, AdmittedAudioQuery};
 pub use plan::{
     AdmittedOriginalContext, ContextChargeTransfer, SharedAudioOwnerRetainedInput,
     preflight_context_transfer, transfer_context_charges,

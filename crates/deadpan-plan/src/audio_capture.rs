@@ -114,7 +114,7 @@ fn stage_content<'plan, A: AudioSoundContextAdmission>(
 ) -> Result<Content<'plan, A::Issuer, A::Lease>, A> {
     budget.check_memory(memory)?;
     budget.check_memory(&stage.memory)?;
-    budget.merge_checked(memory, &mut stage.memory);
+    budget.merge_checked(memory, &mut stage.memory)?;
     Ok(Content::plain(
         AudioSignalContent::Stage(stage.value),
         budget.issuer,
@@ -812,9 +812,9 @@ impl RenderPlan {
             // below retain the prepaid canonical aggregate above.
             budget.check_memory(&editorial_memory)?;
             budget.check_memory(&editorial_capacity)?;
-            budget.merge_checked(&mut editorial_memory, &mut editorial_capacity);
+            budget.merge_checked(&mut editorial_memory, &mut editorial_capacity)?;
             next.value.editorial = editorial;
-            budget.merge_checked(&mut next.memory, &mut editorial_memory);
+            budget.merge_checked(&mut next.memory, &mut editorial_memory)?;
             next.value.constraints =
                 storage::fixed(&constraints, &mut next.memory, budget, |v, m, b| {
                     b.constraint(m, v)
@@ -860,8 +860,8 @@ impl RenderPlan {
         budget.check_memory(&memory)?;
         budget.check_memory(&repeats_capacity)?;
         budget.check_memory(&retimes_capacity)?;
-        budget.merge_checked(&mut memory, &mut repeats_capacity);
-        budget.merge_checked(&mut memory, &mut retimes_capacity);
+        budget.merge_checked(&mut memory, &mut repeats_capacity)?;
+        budget.merge_checked(&mut memory, &mut retimes_capacity)?;
         let definition = budget.definition_ref(&mut memory, definition)?;
         let terminal = content.terminal();
         if let Some(stops) = processing_stops {
@@ -889,7 +889,7 @@ impl RenderPlan {
         let node = budget.node(&mut memory, &self.nodes[current].inspection.id)?;
         budget.check_memory(&memory)?;
         budget.check_memory(&envelope.memory)?;
-        budget.merge_checked(&mut memory, &mut envelope.memory);
+        budget.merge_checked(&mut memory, &mut envelope.memory)?;
         content.finish(memory, budget, move |content| {
             let AudioSignalContent::Leaf(content) = content else {
                 unreachable!("checked leaf")

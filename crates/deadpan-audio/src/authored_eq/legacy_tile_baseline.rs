@@ -53,6 +53,7 @@ fn counters(renderer: &StageAudio, graph: &Graph<'_, '_, '_>, control: WorkContr
         "flattened_work_trace": crate::stages::original_request::flattened_work_trace::snapshot(),
         "processing_work_trace": crate::stages::original_request::flattened_work_trace::processing_snapshot(),
         "policy_work_trace": crate::stages::original_request::flattened_work_trace::policy_snapshot(),
+        "fade_work_trace": crate::stages::original_request::flattened_work_trace::fade_snapshot(),
         "span_start_trace": {
             "direct_point_work": captures.direct_point_work,
             "direct_point_queries": captures.direct_point_queries,

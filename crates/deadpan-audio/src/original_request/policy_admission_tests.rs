@@ -45,6 +45,12 @@ where
 
 #[test]
 fn policy_is_admitted_once_and_kept_live_through_the_real_source_failure() {
+    with_legacy_fade_queries(
+        policy_is_admitted_once_and_kept_live_through_the_real_source_failure_legacy_fade,
+    );
+}
+
+fn policy_is_admitted_once_and_kept_live_through_the_real_source_failure_legacy_fade() {
     struct RefuseWithAllMetadataLive<'work> {
         _inner: Provider,
         work: &'work RefCell<ReadWork>,
@@ -124,6 +130,12 @@ fn policy_is_admitted_once_and_kept_live_through_the_real_source_failure() {
 
 #[test]
 fn policy_partial_failure_keeps_actual_debits_and_releases_all_query_leases() {
+    with_legacy_fade_queries(
+        policy_partial_failure_keeps_actual_debits_and_releases_all_query_leases_legacy_fade,
+    );
+}
+
+fn policy_partial_failure_keeps_actual_debits_and_releases_all_query_leases_legacy_fade() {
     for domain_read in [false, true] {
         let (plan, _) = fixture();
         let domain = plan
@@ -192,6 +204,12 @@ fn policy_partial_failure_keeps_actual_debits_and_releases_all_query_leases() {
 
 #[test]
 fn only_the_policy_carrier_can_have_a_foreign_readwork_issuer() {
+    with_legacy_fade_queries(
+        only_the_policy_carrier_can_have_a_foreign_readwork_issuer_legacy_fade,
+    );
+}
+
+fn only_the_policy_carrier_can_have_a_foreign_readwork_issuer_legacy_fade() {
     for domain_read in [false, true] {
         let (plan, mut provider) = fixture();
         let domain = plan
@@ -267,6 +285,12 @@ fn only_the_policy_carrier_can_have_a_foreign_readwork_issuer() {
 
 #[test]
 fn unused_policy_carrier_releases_its_real_readwork_charge_without_refund() {
+    with_legacy_fade_queries(
+        unused_policy_carrier_releases_its_real_readwork_charge_without_refund_legacy_fade,
+    );
+}
+
+fn unused_policy_carrier_releases_its_real_readwork_charge_without_refund_legacy_fade() {
     for domain_read in [false, true] {
         let (plan, _) = fixture();
         let domain = plan

@@ -249,7 +249,7 @@ impl<'plan> AudioStage<'plan> {
         };
         budget.check_memory(&memory)?;
         budget.check_memory(&capacity)?;
-        budget.merge_checked(&mut memory, &mut capacity);
+        budget.merge_checked(&mut memory, &mut capacity)?;
         Ok(Owned { value, memory })
     }
 
@@ -842,7 +842,7 @@ impl<'plan> AudioSignal<'plan> {
         };
         budget.check_memory(&memory)?;
         budget.check_memory(&capacity)?;
-        budget.merge_checked(&mut memory, &mut capacity);
+        budget.merge_checked(&mut memory, &mut capacity)?;
         budget.check_memory(&memory)?;
         Ok(Owned { value, memory })
     }

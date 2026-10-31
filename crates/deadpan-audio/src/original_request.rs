@@ -1,9 +1,12 @@
 //! One current Original query preparation, consumed by its exact read.
-//! Flattened, processing and policy metadata retain allocation-site charges through the read.
-//! Fades and the captured Domain identity keep their existing borrows.
+//! Flattened, processing, policy and conditional fades retain allocation-site charges through the read.
+//! The captured Domain identity keeps its existing borrow.
 
 use super::*;
-use deadpan_plan::{AdmittedAudioPolicyQuery, AdmittedAudioProcessingQuery, AdmittedAudioQuery};
+use deadpan_plan::{
+    AdmittedAudioFadeQuery, AdmittedAudioPolicyQuery, AdmittedAudioProcessingQuery,
+    AdmittedAudioQuery,
+};
 
 /// The immutable flattened value owns its allocation-site charge.
 enum Flattened<'work> {
@@ -122,11 +125,49 @@ impl Policy<'_> {
     }
 }
 
+enum Fade<'work> {
+    Admitted {
+        query: AdmittedAudioFadeQuery<
+            sound_context_admission::Issuer<'work>,
+            sound_context_admission::Lease<'work>,
+        >,
+        issuer: sound_context_admission::Issuer<'work>,
+    },
+    #[cfg(test)]
+    Legacy(AudioFadeQuery),
+}
+
+impl Fade<'_> {
+    fn query(&self) -> &AudioFadeQuery {
+        match self {
+            Self::Admitted { query, .. } => query.query(),
+            #[cfg(test)]
+            Self::Legacy(query) => query,
+        }
+    }
+
+    fn validate_issuer(&self, control: WorkControl<'_>) -> Result<(), StageAudioError> {
+        match self {
+            Self::Admitted { issuer, .. } => {
+                control.spend_plan_work(1)?;
+                #[cfg(test)]
+                flattened_work_trace::fade_issuer_spent(control);
+                if *issuer != sound_context_admission::issuer(control) {
+                    return Err(PlanError::AudioMetadataIssuerMismatch.into());
+                }
+                Ok(())
+            }
+            #[cfg(test)]
+            Self::Legacy(_) => Ok(()),
+        }
+    }
+}
+
 struct PreparedQueries<'plan, 'work> {
     flattened: Flattened<'work>,
     processing: Processing<'plan, 'work>,
     policy: Policy<'work>,
-    fades: Option<AudioFadeQuery>,
+    fades: Option<Fade<'work>>,
 }
 
 #[derive(Clone, Copy)]
@@ -149,14 +190,18 @@ impl<'plan> PreparedOriginalRequest<'_, 'plan, '_> {
             flattened: self.queries.flattened.query(),
             processing: self.queries.processing.query(),
             policy: self.queries.policy.query(),
-            fades: self.queries.fades.as_ref(),
+            fades: self.queries.fades.as_ref().map(Fade::query),
         }
     }
 
     pub(super) fn validate_issuer(&self, control: WorkControl<'_>) -> Result<(), StageAudioError> {
         self.queries.flattened.validate_issuer(control)?;
         self.queries.processing.validate_issuer(control)?;
-        self.queries.policy.validate_issuer(control)
+        self.queries.policy.validate_issuer(control)?;
+        if let Some(fades) = &self.queries.fades {
+            fades.validate_issuer(control)?;
+        }
+        Ok(())
     }
 
     pub(super) fn matches_root(
@@ -217,9 +262,7 @@ impl StageAudio {
         let processing = self.prepare_processing_root(plan, start..AudioSample(end), control)?;
         let policy = self.prepare_root_policy(plan, start..AudioSample(end), control)?;
         let fades = if edge_fades {
-            let query = plan.audio_fades(start..AudioSample(end), control.query_limits()?)?;
-            control.spend_plan_work(query.work)?;
-            Some(query)
+            Some(self.prepare_fades(Origin::Root(plan), start..AudioSample(end), control)?)
         } else {
             None
         };
@@ -260,9 +303,7 @@ impl StageAudio {
         let flattened = self.prepare_flattened(Origin::Domain(domain), start..end, control)?;
         let (processing, policy) = self.prepare_domain_policy(domain, start..end, control)?;
         let fades = if edge_fades {
-            let query = domain.fades(start..end, control.query_limits()?)?;
-            control.spend_plan_work(query.work)?;
-            Some(query)
+            Some(self.prepare_fades(Origin::Domain(domain), start..end, control)?)
         } else {
             None
         };
@@ -444,6 +485,45 @@ impl StageAudio {
         ))
     }
 
+    fn prepare_fades<'work>(
+        &mut self,
+        origin: Origin<'_, '_>,
+        samples: Range<AudioSample>,
+        control: WorkControl<'work>,
+    ) -> Result<Fade<'work>, StageAudioError> {
+        let limits = control.query_limits()?;
+        #[cfg(test)]
+        if legacy_fade_queries() {
+            let query = match origin {
+                Origin::Root(plan) => plan.audio_fades(samples, limits)?,
+                Origin::Domain(domain) => domain.fades(samples, limits)?,
+            };
+            control.spend_plan_work(query.work)?;
+            return Ok(Fade::Legacy(query));
+        }
+        let issuer = sound_context_admission::issuer(control);
+        #[cfg(test)]
+        let mut fade_work_trace = flattened_work_trace::ScopeGuard::new_fade(control);
+        let query = {
+            let mut admission = sound_context_admission::Admission::new(self, control);
+            match origin {
+                Origin::Root(plan) => plan.audio_fades_admitted(samples, limits, &mut admission)?,
+                Origin::Domain(domain) => domain.fades_admitted(samples, limits, &mut admission)?,
+            }
+        };
+        #[cfg(test)]
+        {
+            fade_work_trace.completed(
+                query.canonical_units(),
+                query.additional_units(),
+                query.work(),
+                query.was_forwarded(),
+            );
+            drop(fade_work_trace);
+        }
+        Ok(Fade::Admitted { query, issuer })
+    }
+
     fn prepare_flattened<'work>(
         &mut self,
         origin: Origin<'_, '_>,
@@ -548,6 +628,29 @@ thread_local! {
 }
 
 #[cfg(test)]
+thread_local! {
+    static LEGACY_FADE_QUERIES: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+#[cfg(test)]
+fn legacy_fade_queries() -> bool {
+    LEGACY_FADE_QUERIES.with(std::cell::Cell::get)
+}
+
+/// Keep earlier product proofs on the literal ordinary conditional-fade path.
+#[cfg(test)]
+pub(super) fn with_legacy_fade_queries<T>(action: impl FnOnce() -> T) -> T {
+    struct Restore(bool);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            LEGACY_FADE_QUERIES.with(|mode| mode.set(self.0));
+        }
+    }
+    let _restore = Restore(LEGACY_FADE_QUERIES.with(|mode| mode.replace(true)));
+    action()
+}
+
+#[cfg(test)]
 fn legacy_policy_queries() -> bool {
     LEGACY_POLICY_QUERIES.with(std::cell::Cell::get)
 }
@@ -608,11 +711,12 @@ pub(super) fn with_legacy_flattened_queries<T>(action: impl FnOnce() -> T) -> T 
 mod policy_trace;
 
 #[cfg(test)]
-/// Select the literal OLD constructors for flattened, processing and policy
-/// queries in one Original preparation.
+/// Select the literal OLD constructors for all four products in one Original preparation.
 pub(super) fn with_legacy_original_queries<T>(action: impl FnOnce() -> T) -> T {
-    with_legacy_policy_queries(|| {
-        with_legacy_processing_queries(|| with_legacy_flattened_queries(action))
+    with_legacy_fade_queries(|| {
+        with_legacy_policy_queries(|| {
+            with_legacy_processing_queries(|| with_legacy_flattened_queries(action))
+        })
     })
 }
 #[cfg(test)]

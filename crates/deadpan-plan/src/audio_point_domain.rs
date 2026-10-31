@@ -181,7 +181,7 @@ impl<'plan> AudioPointDomain<'plan> {
         });
         budget.check_memory(&result.memory)?;
         budget.check_memory(&signal.memory)?;
-        budget.merge_checked(&mut result.memory, &mut signal.memory);
+        budget.merge_checked(&mut result.memory, &mut signal.memory)?;
         Ok(Owned {
             value: result.value.expect("constructed Point"),
             memory: result.memory,
