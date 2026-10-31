@@ -37,6 +37,14 @@ use crate::{
 mod signal_input;
 use signal_input::SignalInput;
 
+#[path = "signal_policy_input.rs"]
+mod signal_policy_input;
+use signal_policy_input::SignalPolicyInput;
+
+#[cfg(test)]
+#[path = "point_policy_request.rs"]
+mod point_policy_request;
+
 #[cfg(test)]
 use crate::RootSignalBlock;
 
@@ -1269,14 +1277,25 @@ impl StageAudio {
             point_result_lifetime.acquired();
         }
         control.check()?;
-        let policy = domain
-            .signal_ref()
-            .policy(samples, control.query_limits()?)?;
-        control.spend_plan_work(policy.work)?;
-        self.preflight_signal_queries(query.query(), &policy, control, depth)?;
+        let ordinary_policy = signal_policy_input::legacy();
+        let policy = if ordinary_policy {
+            SignalPolicyInput::Ordinary(
+                domain
+                    .signal_ref()
+                    .policy(samples, control.query_limits()?)?,
+            )
+        } else {
+            let limits = control.query_limits()?;
+            let mut admission = sound_context_admission::Admission::new(self, control);
+            SignalPolicyInput::Admitted(domain.policy_admitted(samples, limits, &mut admission)?)
+        };
+        if !policy.was_forwarded() {
+            control.spend_plan_work(policy.view().work)?;
+        }
+        self.preflight_signal_queries(query.query(), policy.view(), control, depth)?;
         let mut block =
             self.read_signal_queries(query.query(), policy, provider, control, depth)?;
-        if !point_suppression::internal_legacy() {
+        if ordinary_policy && !point_suppression::internal_legacy() {
             block.suppressed = block.suppressed.into_admitted(&mut self.masks(control))?;
         }
         control.check()?;
@@ -2787,20 +2806,21 @@ impl StageAudio {
             control.query_limits()?,
         )?;
         control.spend_plan_work(policy.work)?;
-        self.preflight_signal_queries(&query, &policy, control, depth)?;
+        let policy = SignalPolicyInput::Ordinary(policy);
+        self.preflight_signal_queries(&query, policy.view(), control, depth)?;
         self.read_signal_queries(&query, policy, provider, control, depth)
     }
 
     fn preflight_signal_queries(
         &mut self,
         query: &AudioSignalQuery<'_>,
-        policy: &AudioPolicyQuery<SignalSample>,
+        policy: deadpan_plan::SignalPolicyView<'_>,
         control: WorkControl<'_>,
         depth: usize,
     ) -> Result<(), StageAudioError> {
         #[cfg(test)]
         point_content_query_trace::consumer(point_content_query_trace::Consumer::Preflight);
-        for content in &policy.contents {
+        for content in policy.contents {
             control.preflight_content(content, &self.plan)?;
         }
         for span in &query.spans {
@@ -2818,12 +2838,12 @@ impl StageAudio {
         Ok(())
     }
 
-    fn read_signal_queries(
+    fn read_signal_queries<'work>(
         &mut self,
         query: &AudioSignalQuery<'_>,
-        policy: AudioPolicyQuery<SignalSample>,
+        policy: SignalPolicyInput<'work>,
         provider: &mut impl AudioSourceProvider,
-        control: WorkControl<'_>,
+        control: WorkControl<'work>,
         depth: usize,
     ) -> Result<SignalBlock, StageAudioError> {
         #[cfg(test)]
@@ -2929,8 +2949,10 @@ impl StageAudio {
             samples.extend(block);
         }
         control.check()?;
-        apply_suppression(start, &mut samples, &policy.suppressed, |sample| sample.0)?;
-        let suppressed = SignalSuppressionMask::plain(merged_suppression(policy.suppressed));
+        apply_suppression(start, &mut samples, policy.view().suppressed, |sample| {
+            sample.0
+        })?;
+        let suppressed = policy.into_suppression(self, control)?;
         Ok(SignalBlock {
             samples,
             dependencies,

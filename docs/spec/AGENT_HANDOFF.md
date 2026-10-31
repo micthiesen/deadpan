@@ -2,7 +2,38 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: internal native mask destinations, product goal active
+## Current state: Point policy final-mask custody, product goal active
+
+The [Point policy custody checkpoint](../qualification/point-policy-final-mask-custody-2026-10-31.md)
+admits the actual SignalSample PointCeil policy and keeps its exact final Vec
+lease separate from the complete inventory. Native preparation funds only the
+Storage Box while the source query remains charged. Exclusive ledger preflight
+precedes an immediate allocation-free transfer of that same Vec and lease.
+There is no unsafe code, second destination Vec, cap increase or work refund.
+Root AudioSample RoundEven finalization is unchanged.
+
+All 21 Audio targets pass per variant, 1,107/1,101 tests with 21 ignored manual
+captures and Main's seven unfinished Split tests filtered. Plan libraries pass
+289/276 and final Audio libraries 526/520. Actual native custody, exact pointer/
+capacity, failure-prefix, concurrent owner-drop and post-controller lifetime
+tests pass. Strict checks, formatting, hygiene, source preservation and reviews
+pass; rustdoc verification contains no executable examples.
+
+All 31 before payloads remain fixed. Both complete prior bodies reproduce
+exactly; three current 744+10+4 captures per build agree. All 744 complete
+outputs stay exact, including 264 successes and 480 typed errors. The ten
+internal and four transfer outputs and held-account lifetimes also stay exact.
+Work and peak metadata receipts reflect real policy admission and removal of
+the native Vec copy. No requirement or Gate credit changes.
+
+Next fund Root output-mask emission in raw_policy::apply and the old post-fade
+merge tail. Its input policy is already guarded; its fresh native output needs
+separate typed AudioSample ownership. Preserve actual visitor/PCM/fade order
+and bill the count prepass independently. Projected-provider policy, derived
+bus/equalizer masks, exhausted vectors, PCM/dependencies and whole preparation
+remain owed. General sound-bearing Split stays disabled.
+
+## Preceding native ownership checkpoints
 
 The [internal native destination checkpoint](../qualification/internal-mask-runtime-2026-10-31.md)
 keeps real Point/Bound, controlled transfer and direct recipient/cache masks
@@ -40,12 +71,8 @@ all 515/509 library tests pass. Three captures per build agree exactly; removing
 only additive fields reproduces the prior complete body. All 30 before payloads
 and other initial named inputs remain fixed. No acceptance credit changes.
 
-Next retain the precise final SignalSample PointCeil policy
-mask lease before Plan folds it into the general guard. Prepare the native Box
-while the complete query remains charged; final handoff needs an exclusive
-ledger preflight and an immediate no-fail Vec/lease transfer. Keep actual old
-invalid attribution flags, caps and canonical weights unchanged. No requirement
-or Gate credit changes; general sound-bearing Split stays disabled.
+The Point policy custody checkpoint described above keeps actual old invalid
+attribution flags, caps and canonical weights unchanged.
 
 ## Typed mask foundation (historical)
 

@@ -18,6 +18,12 @@ use crate::plan::{
 };
 use deadpan_core::{ProjectId, RevisionId};
 
+#[path = "audio_point_policy_query.rs"]
+mod point;
+pub use point::{
+    AdmittedSignalPolicyQuery, AudioSignalPolicyMaskHandoff, SignalPolicyMaskRef, SignalPolicyView,
+};
+
 struct PolicyBuffer<I, L> {
     query: AudioPolicyQuery<AudioSample>,
     _contents_capacity: Memory<I, L>,

@@ -117,8 +117,13 @@ impl StageAudio {
         let mut relative_depth = 0;
         for voice in query.voices {
             control.check()?;
-            let mut block =
-                self.read_signal_queries(&voice.signal, voice.policy, provider, control, depth)?;
+            let mut block = self.read_signal_queries(
+                &voice.signal,
+                voice.policy.into(),
+                provider,
+                control,
+                depth,
+            )?;
             if block.samples.len() != sum.len() {
                 return Err(PlanError::InvalidPlan("incomplete mix voice PCM").into());
             }

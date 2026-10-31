@@ -213,7 +213,8 @@ impl StageAudio {
     ) -> Result<ReadBlock, StageAudioError> {
         match input {
             PreparedSoundInput::Direct { signal, policy } => {
-                let block = self.read_signal_queries(&signal, policy, provider, control, 0)?;
+                let block =
+                    self.read_signal_queries(&signal, policy.into(), provider, control, 0)?;
                 Ok(ReadBlock {
                     start,
                     samples: block.samples,

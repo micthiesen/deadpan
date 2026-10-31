@@ -185,6 +185,9 @@ mod mutations;
 #[path = "point_suppression/projections.rs"]
 mod projections;
 
+#[path = "point_suppression/policy_handoff.rs"]
+pub(in crate::stages) mod policy_handoff;
+
 pub(in crate::stages) fn internal_legacy() -> bool {
     #[cfg(test)]
     return super::internal_mask_request::legacy();

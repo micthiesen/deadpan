@@ -77,6 +77,9 @@ pub use plan::{
     preflight_context_transfer, transfer_context_charges,
 };
 pub use plan::{
+    AdmittedSignalPolicyQuery, AudioSignalPolicyMaskHandoff, SignalPolicyMaskRef, SignalPolicyView,
+};
+pub use plan::{
     AdmittedSoundContext, AudioSoundContextAdmission, AudioSoundOwnerContext,
     AudioSoundPermissionFamily, AudioSoundPlacement, AudioSoundPlacementHistory,
     AudioSoundPlacementHistoryCursor, AudioSoundProcessingHistory, AudioSourceOccurrence,

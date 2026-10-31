@@ -120,7 +120,25 @@ fn assert_private_survival(setup: Checked, node: &str, frames: u32, bound: bool,
     let trace = native_trace();
     assert_eq!(trace["overflow"], false);
     positive(&trace, "accepted_payload_reservations");
-    positive(&trace, "accepted_map_units");
+    if !bound && matches!(node, "a" | "quiet") {
+        // Plan already owns the final Vec; native admission adds only its Box.
+        for field in [
+            "accepted_map_units",
+            "accepted_vector_units",
+            "accepted_scan_units",
+        ] {
+            assert_eq!(trace["plan"][field], 0);
+        }
+        assert_eq!(trace["plan"]["accepted_payload_reservations"], 1);
+        let vector =
+            point_suppression::policy_handoff::vector_frames(value.suppressed.capacity()).unwrap();
+        let storage =
+            point_suppression::payload_frames(value.suppressed.capacity()).unwrap() - vector;
+        assert_eq!(trace["plan"]["accepted_payload_frames"], storage);
+        assert_eq!(trace["plan"]["accepted_storage_units"], 1);
+    } else {
+        positive(&trace, "accepted_map_units");
+    }
     if bound {
         let raw = serde_json::to_value(raw_domain_query_trace::snapshot()).unwrap();
         assert_eq!(raw["nested_point_callbacks"], 1);

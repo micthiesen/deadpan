@@ -5,6 +5,9 @@ use super::*;
 use deadpan_plan::AudioSoundContextAdmission;
 use std::alloc::Layout;
 
+#[path = "sound_context_admission/policy_mask_handoff.rs"]
+pub(in crate::stages) mod policy_mask_handoff;
+
 #[derive(Clone, Copy)]
 pub(super) struct Issuer<'work>(&'work RefCell<ReadWork>);
 impl PartialEq for Issuer<'_> {

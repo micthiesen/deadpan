@@ -47,16 +47,26 @@ pub(super) fn interval_receipt_if_capturing() -> Option<Value> {
 #[test]
 #[ignore = "manual current internal mask qualification; fresh /tmp and pinned sources"]
 fn capture_active_internal_mask_after_v1() {
-    capture_after("DEADPAN_INTERNAL_MASK_AFTER", false);
+    crate::stages::point_policy_request::with_legacy_policy(|| {
+        capture_after("DEADPAN_INTERNAL_MASK_AFTER", false, false);
+    });
 }
 
 #[test]
 #[ignore = "manual additive query intervals; fresh /tmp and pinned sources"]
 fn capture_active_query_intervals_v1() {
-    capture_after("DEADPAN_QUERY_INTERVAL_AFTER", true);
+    crate::stages::point_policy_request::with_legacy_policy(|| {
+        capture_after("DEADPAN_QUERY_INTERVAL_AFTER", true, false);
+    });
 }
 
-fn capture_after(prefix: &str, intervals: bool) {
+#[test]
+#[ignore = "manual active Point policy handoff capture; pinned sources and fresh /tmp"]
+fn capture_active_point_policy_after_v1() {
+    capture_after("DEADPAN_POINT_POLICY_AFTER", true, true);
+}
+
+fn capture_after(prefix: &str, intervals: bool, policy: bool) {
     let output = std::env::var(format!("{prefix}_OUTPUT")).expect("fresh output path");
     let path = Path::new(&output);
     assert!(path.is_absolute());
@@ -76,16 +86,32 @@ fn capture_after(prefix: &str, intervals: bool) {
     assert!(source.len() == 64 && source.bytes().all(|byte| byte.is_ascii_hexdigit()));
     assert_eq!(
         std::env::var(format!("{prefix}_PUBLISHED_CHECKPOINT")).unwrap(),
-        if intervals {
+        if policy {
+            "eedbc58272bdd009a65239b7104ddb786a2554fc"
+        } else if intervals {
             "ab211a2f132379a246157c3596d95fc42121541c"
         } else {
             CHECKPOINT
         }
     );
+    let value = observed_body(&variant, &source, intervals, policy);
+    let file = OpenOptions::new()
+        .create_new(true)
+        .write(true)
+        .open(path)
+        .unwrap();
+    let mut writer = std::io::BufWriter::new(file);
+    serde_json::to_writer_pretty(&mut writer, &value).unwrap();
+    writer.write_all(b"\n").unwrap();
+    writer.flush().unwrap();
+    writer.get_ref().sync_all().unwrap();
+}
+
+fn observed_body(variant: &str, source: &str, intervals: bool, policy: bool) -> Value {
     let _capture = Capture::new();
     INTERVALS.set(intervals);
     let mut native =
-        raw_domain_host_baseline::captured_body_with_point(&variant, &source, CHECKPOINT, true);
+        raw_domain_host_baseline::captured_body_with_point(variant, source, CHECKPOINT, true);
     native["schema"] = json!("active-internal-mask-native-request-set-v1");
     native["scope"] = json!(
         "744 actual active-runtime requests with literal outputs, work, capacities, errors and earlier query traces. Native mask work is one independent top-level invocation receipt, including nested calls, not per nested query attribution. Earlier invalid flags are preserved; public mask capacity alone does not prove account lifetime."
@@ -117,14 +143,49 @@ fn capture_after(prefix: &str, intervals: bool) {
             "Additive actual raw/Point query intervals with literal completion claims and independent native/host boundaries. Parent rows include child rows and cannot be summed. Partial intervals have no invented query debit. Old receipts and invalid flags remain literal; no whole preparation ownership claim."
         );
     }
-    let file = OpenOptions::new()
-        .create_new(true)
-        .write(true)
-        .open(path)
-        .unwrap();
-    let mut writer = std::io::BufWriter::new(file);
-    serde_json::to_writer_pretty(&mut writer, &value).unwrap();
-    writer.write_all(b"\n").unwrap();
-    writer.flush().unwrap();
-    writer.get_ref().sync_all().unwrap();
+    if policy {
+        value["schema"] = json!("active-point-policy-after-v1");
+        value["policy_checkpoint"] = json!("eedbc58272bdd009a65239b7104ddb786a2554fc");
+        value["immediate_before"] = json!({
+            "path":"tests/fixtures/point-policy-final-mask-baseline-v1/snapshot.json",
+            "sha256":"af7a292718365c34fa03692e2cbe58a2cfb3c6d444b5ae29d52647e1fdbbff14",
+        });
+        value["native_requests"]["scope"] = json!(
+            "744 actual current requests. Point Signal policy is admitted and transfers its exact final Vec lease; independent native phase receipts remain whole invocation and raw/Point content intervals remain separately observed."
+        );
+        value["scope"] = json!(
+            "Current Point SignalSample PointCeil policy metadata and exact final Vec lease handoff. Root/derived bus/equalizer products and whole preparation remain outside this claim. Historical authorities remain literal; the immediate complete before body is separately named."
+        );
+        for row in value["internal_and_transfer_paths"]["cases"]
+            .as_array_mut()
+            .unwrap()
+        {
+            row["scope"]["internal_masks"] = json!(
+                "actual native destinations and admitted Point Signal policy; independent projected-provider and derived policies remain ordinary"
+            );
+        }
+    }
+    value
+}
+
+#[test]
+fn active_internal_masks_before_point_policy_match_frozen_v1() {
+    let bytes =
+        include_bytes!("../../tests/fixtures/point-policy-final-mask-baseline-v1/snapshot.json");
+    assert_eq!(
+        hex(Sha256::digest(bytes)),
+        "af7a292718365c34fa03692e2cbe58a2cfb3c6d444b5ae29d52647e1fdbbff14",
+    );
+    let expected: Value = serde_json::from_slice(bytes).unwrap();
+    let mut actual = crate::stages::point_policy_request::with_legacy_policy(|| {
+        observed_body("scoped-published", &"0".repeat(64), false, false)
+    });
+    for field in ["variant", "source_sha256"] {
+        actual.as_object_mut().unwrap().remove(field);
+        actual["native_requests"]
+            .as_object_mut()
+            .unwrap()
+            .remove(field);
+    }
+    assert_eq!(actual, expected);
 }

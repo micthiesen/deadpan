@@ -74,7 +74,10 @@ mod audio_preserve_input;
 pub use audio_bound::{AdmittedAudioBoundDomain, AudioBound, AudioBoundDomain};
 #[path = "audio_policy.rs"]
 mod audio_policy;
-pub use audio_policy::{AdmittedAudioPolicyQuery, AudioPolicyQuery};
+pub use audio_policy::{
+    AdmittedAudioPolicyQuery, AdmittedSignalPolicyQuery, AudioPolicyQuery,
+    AudioSignalPolicyMaskHandoff, SignalPolicyMaskRef, SignalPolicyView,
+};
 #[path = "audio_hold_policy.rs"]
 mod audio_hold_policy;
 pub use audio_hold_policy::{AudioHoldIssuer, AudioHoldPolicyQuery, AudioHoldRule};

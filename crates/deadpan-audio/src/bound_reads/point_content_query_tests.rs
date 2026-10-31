@@ -203,8 +203,13 @@ fn observe_point(
 fn point_content_carrier_survives_actual_wav_success_failure_and_cancel_in_both_lanes() {
     for cache in [false, true] {
         for fault in [Fault::None, Fault::ProviderFailure, Fault::ProviderCancel] {
-            let old = observed_point(cache, fault, true);
-            let new = observed_point(cache, fault, false);
+            // Isolate this constructor's fee from the later Point policy admission.
+            let (old, new) = crate::stages::point_policy_request::with_legacy_policy(|| {
+                (
+                    observed_point(cache, fault, true),
+                    observed_point(cache, fault, false),
+                )
+            });
             assert_eq!(new["output"], old["output"]);
             assert_eq!(new["provider_calls"], old["provider_calls"]);
             assert!(new["provider_calls"].as_u64().unwrap() > 0);

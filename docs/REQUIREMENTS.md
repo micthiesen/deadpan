@@ -669,8 +669,20 @@ independent native and host-eviction boundaries. Fourteen new tests, all
 515/509 Audio library tests, strict checks, formatting, hygiene and reviews pass.
 Three captures per build agree exactly; removing only additive fields recovers
 the preceding complete body. All 30 before payloads remain fixed.
-Plan policy producers and independent bus/equalizer products remain ordinary,
-so whole policy/preparation and existing requirement/Gate acceptance remain open.
+The [Point policy final-mask checkpoint](qualification/point-policy-final-mask-custody-2026-10-31.md)
+now admits the actual SignalSample PointCeil policy, retains its exact final
+Vec lease separately and transfers that same allocation into native ownership.
+Box-only overlap and exclusive ledger preflight precede an allocation-free
+commit. All 21 Audio targets pass, 1,107/1,101 tests; Plan libraries pass 289/276
+and final Audio libraries 526/520. Actual pointer/lifetime/failure/concurrent-drop
+tests, strict checks, formatting, hygiene and independent reviews pass.
+All 31 before payloads remain fixed. Three current 744+10+4 captures per build
+agree; all 744 complete native outputs and all 14 internal/transfer outputs and
+held-account lifetime fields remain exact. Work/residency receipts change
+honestly with admission and removal of the native Vec copy.
+Root output-mask emission, projected-provider policy, independent derived
+bus/equalizer masks, exhausted vectors, PCM/dependencies and whole preparation
+remain owed. No existing requirement or Gate acceptance changes.
 
 The [typed-mask foundation](qualification/internal-mask-foundation-2026-10-31.md)
 keeps the public Reference owner active while sealing its generic storage to

@@ -13,7 +13,10 @@ use crate::{AudioBoundaryRule, PlanError};
 
 #[path = "audio_policy_query.rs"]
 pub(in crate::plan) mod query;
-pub use query::AdmittedAudioPolicyQuery;
+pub use query::{
+    AdmittedAudioPolicyQuery, AdmittedSignalPolicyQuery, AudioSignalPolicyMaskHandoff,
+    SignalPolicyMaskRef, SignalPolicyView,
+};
 
 #[derive(Debug, Clone)]
 pub struct AudioPolicyQuery<S> {
