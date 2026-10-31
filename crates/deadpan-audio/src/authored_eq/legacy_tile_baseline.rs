@@ -50,6 +50,7 @@ fn counters(renderer: &StageAudio, graph: &Graph<'_, '_, '_>, control: WorkContr
         "old_total_controller_work": work.plan_work, "prepared_frames": work.prepared_frames,
         "observed_new_index_work": OBSERVED_INDEX_WORK.with(Cell::get),
         "domain_policy_trace": crate::stages::original_request::domain_policy_trace(),
+        "flattened_work_trace": crate::stages::original_request::flattened_work_trace::snapshot(),
         "span_start_trace": {
             "direct_point_work": captures.direct_point_work,
             "direct_point_queries": captures.direct_point_queries,
@@ -342,6 +343,7 @@ fn scenario<'plan, const M: bool>(
     errors: bool,
 ) -> Value {
     OBSERVED_INDEX_WORK.with(|value| value.set(0));
+    crate::stages::original_request::flattened_work_trace::reset();
     span_start::reset_trace();
     crate::stages::original_request::reset_domain_policy_trace();
     let owner = match incoming {
@@ -700,8 +702,9 @@ fn produce_legacy_authored_tile_baseline() {
     let source =
         std::env::var("DEADPAN_AUTHORED_TILE_SOURCE_SHA256").expect("source authority required");
     assert!(source.len() == 64 && source.bytes().all(|byte| byte.is_ascii_hexdigit()));
-    let (cases, _) =
-        crate::stages::original_request::with_domain_policy_trace(true, observations::<true>);
+    let (cases, _) = crate::stages::original_request::with_legacy_flattened_queries(|| {
+        crate::stages::original_request::with_domain_policy_trace(true, observations::<true>)
+    });
     let result = json!({"schema": "AuthoredTileBaselineV1",
         "producer": "postfreeze_eq_tile_and_read_eq_program_observations",
         "variant": variant, "source_sha256": source,

@@ -36,7 +36,185 @@ fn arc_frames() -> u64 {
         .div_ceil(8)
 }
 
+fn flattened_fees(trace: &Value) -> [u64; 2] {
+    for field in ["nested", "invalid", "overflow"] {
+        assert_eq!(trace[field], false, "invalid flattened receipt: {trace}");
+    }
+    assert_eq!(number(trace, "active_depth"), 0);
+    assert!(number(trace, "max_active_depth") <= 1);
+    ["plan", "cache"].map(|name| {
+        let lane = &trace[name];
+        assert_eq!(
+            number(lane, "constructor_calls"),
+            number(lane, "completed_queries")
+                .checked_add(number(lane, "failed_queries"))
+                .unwrap()
+        );
+        assert_eq!(
+            number(lane, "accepted_work"),
+            number(lane, "canonical_units")
+                .checked_add(number(lane, "additional_units"))
+                .unwrap()
+                .checked_add(number(lane, "partial_work"))
+                .unwrap(),
+            "actual forwarded deltas reconcile against completed and failed constructors"
+        );
+        assert_eq!(number(lane, "issuer_checks"), number(lane, "issuer_work"));
+        assert_eq!(
+            number(lane, "partial_work"),
+            0,
+            "partial constructor refusal needs a separate old-work qualification: {trace}"
+        );
+        number(lane, "additional_units")
+            .checked_add(number(lane, "issuer_work"))
+            .unwrap()
+    })
+}
+
+fn assert_ordinary_flattened_trace(trace: &Value) {
+    assert_eq!(flattened_fees(trace), [0, 0]);
+    assert_eq!(number(trace, "max_active_depth"), 0);
+    for name in ["plan", "cache"] {
+        for value in trace[name].as_object().unwrap().values() {
+            assert_eq!(value.as_u64(), Some(0), "ordinary flattened trace: {trace}");
+        }
+    }
+}
+
+fn compare_flattened_counter(actual: &mut Value, ordinary: &Value, imposed: bool) -> [u64; 2] {
+    let trace = actual
+        .as_object_mut()
+        .unwrap()
+        .remove("flattened_work_trace")
+        .unwrap();
+    let mut ordinary = ordinary.clone();
+    let old_trace = ordinary
+        .as_object_mut()
+        .unwrap()
+        .remove("flattened_work_trace")
+        .unwrap();
+    assert_ordinary_flattened_trace(&old_trace);
+    let fees = flattened_fees(&trace);
+    for (index, field) in ["old_total_controller_work", "cache_plan_work"]
+        .into_iter()
+        .enumerate()
+    {
+        let additional = if imposed && index == 0 {
+            0
+        } else {
+            fees[index]
+        };
+        assert_eq!(
+            number(actual, field),
+            number(&ordinary, field).checked_add(additional).unwrap(),
+            "only actual additional and issuer receipts differ: {field}"
+        );
+        actual[field] = ordinary[field].clone();
+    }
+    assert_eq!(
+        actual, &ordinary,
+        "all other flattened-mode observations remain literal"
+    );
+    fees
+}
+
+fn remove_flattened_traces(observed: &mut Value) {
+    for phase in ["before", "after"] {
+        observed["setup"][phase]
+            .as_object_mut()
+            .unwrap()
+            .remove("flattened_work_trace")
+            .unwrap();
+    }
+    for operation in observed["operations"].as_array_mut().unwrap() {
+        for phase in ["before", "after_return_drop"] {
+            operation[phase]
+                .as_object_mut()
+                .unwrap()
+                .remove("flattened_work_trace")
+                .unwrap();
+        }
+    }
+    observed["final"]
+        .as_object_mut()
+        .unwrap()
+        .remove("flattened_work_trace")
+        .unwrap();
+}
+
+fn compare_flattened_matrix(actual: &mut Value, ordinary: &Value) {
+    let cases = actual.as_array_mut().unwrap();
+    let references = ordinary.as_array().unwrap();
+    assert_eq!(cases.len(), references.len());
+    let mut total_fees = [0_u64; 2];
+    let mut witnessed = [0_u64; 3];
+    for (case, reference) in cases.iter_mut().zip(references) {
+        assert_eq!(case["name"], reference["name"]);
+        let observed = &mut case["observation"];
+        let expected = &reference["observation"];
+        for phase in ["before", "after"] {
+            compare_flattened_counter(
+                &mut observed["setup"][phase],
+                &expected["setup"][phase],
+                false,
+            );
+        }
+        let operations = observed["operations"].as_array_mut().unwrap();
+        let expected_operations = expected["operations"].as_array().unwrap();
+        assert_eq!(operations.len(), expected_operations.len());
+        for (operation, reference) in operations.iter_mut().zip(expected_operations) {
+            let imposed = operation
+                .get("imposed_controller_work_before_call")
+                .is_some();
+            if imposed {
+                assert_eq!(
+                    operation["before"]["flattened_work_trace"],
+                    operation["after_return_drop"]["flattened_work_trace"],
+                    "imposed exhaustion performs no new flattened work"
+                );
+            }
+            for phase in ["before", "after_return_drop"] {
+                compare_flattened_counter(&mut operation[phase], &reference[phase], imposed);
+            }
+        }
+        for name in ["plan", "cache"] {
+            for (index, field) in ["completed_queries", "additional_units", "issuer_work"]
+                .into_iter()
+                .enumerate()
+            {
+                witnessed[index] = witnessed[index]
+                    .checked_add(number(
+                        &observed["final"]["flattened_work_trace"][name],
+                        field,
+                    ))
+                    .unwrap();
+            }
+        }
+        let fees = compare_flattened_counter(&mut observed["final"], &expected["final"], false);
+        for index in 0..2 {
+            total_fees[index] = total_fees[index].checked_add(fees[index]).unwrap();
+        }
+        let mut reference = reference.clone();
+        remove_flattened_traces(&mut reference["observation"]);
+        assert_eq!(
+            case, &reference,
+            "complete current PCM, cache, provider, policy and error matrix"
+        );
+    }
+    assert!(
+        total_fees.into_iter().any(|fee| fee > 0),
+        "the corpus must execute admitted flattened work"
+    );
+    assert!(witnessed.into_iter().all(|units| units > 0));
+}
+
 fn normalize_counter(actual: &mut Value, old: &Value, imposed: bool, metered: bool) {
+    let flattened = actual
+        .as_object_mut()
+        .unwrap()
+        .remove("flattened_work_trace")
+        .unwrap();
+    assert_ordinary_flattened_trace(&flattened);
     actual
         .as_object_mut()
         .unwrap()
@@ -161,7 +339,13 @@ fn compare_matrix<const M: bool>() {
     );
     compare_domain_policy_matrix(&mut direct.clone(), &actual);
     compare_certified_matrix(&mut certified, &direct);
-    let cases = actual.as_array_mut().unwrap();
+    let (mut ordinary, _) = crate::stages::original_request::with_legacy_flattened_queries(|| {
+        crate::stages::original_request::with_domain_policy_trace(true, || {
+            span_start::with_direct_reference(super::legacy_tile_baseline::observations::<M>)
+        })
+    });
+    compare_flattened_matrix(&mut actual, &ordinary);
+    let cases = ordinary.as_array_mut().unwrap();
     let old_cases = old["cases"].as_array().unwrap();
     assert_eq!(cases.len(), old_cases.len());
     for (case, old_case) in cases.iter_mut().zip(old_cases) {

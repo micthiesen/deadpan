@@ -31,7 +31,7 @@ pub(in crate::stages) struct Inputs<'a, 'plan, 'history> {
 }
 
 pub(super) fn validate_original(
-    request: &original_request::PreparedOriginalRequest<'_, '_>,
+    request: &original_request::PreparedOriginalRequest<'_, '_, '_>,
     context: &Context<'_>,
     plan: &RenderPlan,
     start: AudioSample,
@@ -47,6 +47,7 @@ pub(super) fn validate_original(
     if !matches {
         return Err(StageAudioError::ForeignDomain);
     }
+    request.validate_issuer(control)?;
     Ok(())
 }
 

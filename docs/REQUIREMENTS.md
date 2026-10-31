@@ -519,6 +519,24 @@ sound Split stays disabled. The exact source patch preserves Main's unrelated
 work; no caps, old weights, refunds, requirement/gate status or speed/peak-memory
 claim changes. Cold query construction peaks and other variable storage remain.
 
+The [flattened Original query checkpoint](qualification/flattened-original-query-admission-2026-10-30.md)
+admits the actual Root/Domain flattened constructor, outer buffer replacement
+and identity ownership, retaining a sealed query lease through policy prediction
+and numerical reads. Ordinary query semantics and all fourteen frozen oracle
+bodies remain unchanged. Complete current native observations agree in both
+variants; cold reads add 43-60 measured units over the legacy path, while warm
+prediction retains its 24-63-unit savings. Exact/short admission, live source
+and policy callbacks, failed work receipts and native residency tests pass.
+Main/isolated Core pass 816/791, Plan 661/648 including integrations, Audio
+398/392, ordinary Stage 203/203 and definition/history 171/171. Strict checks,
+seven focused reviews and source/index/evidence audits pass. The fresh Split
+matrix remains three pass/four failures in 248.91 seconds at the same windows,
+refusing at structural, audio-binding, tape work/span and permission-family
+work. General sound Split stays disabled. Required cold metadata admission can
+evict optional PCM; requested Layout peaks do not establish process RSS.
+Processing, recursive policy, fades and full recursive admission remain open.
+No cap, prior weight, refund, requirement or gate changes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

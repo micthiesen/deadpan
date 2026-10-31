@@ -61,14 +61,45 @@ fn previous_queries<'plan>(
     })
 }
 
-fn same_queries(actual: RootReadQueriesRef<'_, '_>, expected: &RootReadQueries<'_>) {
-    assert_eq!(actual.flattened, &expected.flattened);
-    assert_eq!(actual.processing, &expected.processing);
+/// Compare every query field except flattened work, whose canonical and
+/// allocation-site units are checked independently below.
+fn same_queries(actual: RootReadQueriesRef<'_, '_>, expected: RootReadQueriesRef<'_, '_>) {
+    assert_eq!(actual.flattened.project_id, expected.flattened.project_id);
+    assert_eq!(actual.flattened.revision_id, expected.flattened.revision_id);
+    assert_eq!(actual.flattened.samples, expected.flattened.samples);
+    assert_eq!(actual.flattened.spans, expected.flattened.spans);
+    assert_eq!(actual.flattened.lookup, expected.flattened.lookup);
+    assert_eq!(actual.processing, expected.processing);
     assert_eq!(actual.policy.suppressed, expected.policy.suppressed);
     assert_eq!(actual.policy.contents, expected.policy.contents);
     assert_eq!(actual.policy.lookup, expected.policy.lookup);
     assert_eq!(actual.policy.work, expected.policy.work);
-    assert_eq!(actual.fades, expected.fades.as_ref());
+    assert_eq!(actual.fades, expected.fades);
+}
+
+fn flattened_work(request: &PreparedOriginalRequest<'_, '_, '_>) -> (usize, usize) {
+    let Flattened::Admitted { query, .. } = &request.queries.flattened else {
+        panic!("this test must exercise allocation-site admission");
+    };
+    assert!(query.was_forwarded());
+    let canonical = query.canonical_units();
+    let additional = query.additional_units();
+    assert_eq!(query.work(), canonical.checked_add(additional).unwrap());
+    assert_eq!(request.queries().flattened.work, query.work());
+    (canonical, additional)
+}
+
+fn assert_flattened_cost(
+    request: &PreparedOriginalRequest<'_, '_, '_>,
+    ordinary: &AudioQuery,
+) -> usize {
+    let (canonical, additional) = flattened_work(request);
+    assert_eq!(canonical, ordinary.work);
+    assert!(
+        additional > 0,
+        "the real fixture must execute admitted work"
+    );
+    additional
 }
 
 fn same_blocks(actual: &ReadBlock, expected: &ReadBlock) {
@@ -131,8 +162,13 @@ fn prepared_root_and_domain_match_previous_query_content_work_and_actual_reads()
                     edge_fades,
                 )
                 .unwrap();
-                same_queries(request.queries(), &expected);
-                assert_eq!(work.borrow().plan_work, expected_work.borrow().plan_work);
+                same_queries(request.queries(), expected.as_borrowed());
+                let additional = assert_flattened_cost(&request, &expected.flattened);
+                assert_eq!(
+                    work.borrow().plan_work,
+                    expected_work.borrow().plan_work + additional,
+                    "canonical queries plus actual forwarded allocation work, each once"
+                );
                 let actual = reader
                     .read_prepared_original(&mut provider, request, control, 0)
                     .unwrap();
@@ -148,7 +184,12 @@ fn prepared_root_and_domain_match_previous_query_content_work_and_actual_reads()
                     .unwrap();
                 same_blocks(&actual, &expected);
                 assert_eq!(provider.calls, expected_provider.calls);
-                assert_eq!(work.borrow().plan_work, expected_work.borrow().plan_work);
+                assert_eq!(
+                    work.borrow().plan_work,
+                    expected_work.borrow().plan_work + additional + 1,
+                    "the consuming read bills its actual issuer comparison"
+                );
+                assert_eq!(work.borrow().sound_context_frames, 0);
                 assert_eq!(
                     work.borrow().source_checks,
                     expected_work.borrow().source_checks
@@ -159,7 +200,7 @@ fn prepared_root_and_domain_match_previous_query_content_work_and_actual_reads()
 }
 
 #[test]
-fn prepared_source_read_does_not_requery_with_no_plan_work_remaining() {
+fn prepared_source_read_needs_only_its_exact_issuer_work_allowance() {
     for domain_read in [false, true] {
         let (plan, mut provider) = fixture();
         let domain = plan
@@ -188,7 +229,7 @@ fn prepared_source_read_does_not_requery_with_no_plan_work_remaining() {
         );
         assert_eq!(provider.calls, 0);
         let preparation_work = work.borrow().plan_work;
-        work.borrow_mut().plan_work = MAX_PLAN_WORK_PER_READ;
+        work.borrow_mut().plan_work = MAX_PLAN_WORK_PER_READ - 1;
         let block = reader
             .read_prepared_original(&mut provider, request, control, 0)
             .unwrap();
@@ -198,6 +239,7 @@ fn prepared_source_read_does_not_requery_with_no_plan_work_remaining() {
             "prepared metadata never substitutes for live admission"
         );
         assert_eq!(work.borrow().plan_work, MAX_PLAN_WORK_PER_READ);
+        assert_eq!(work.borrow().sound_context_frames, 0);
         let calls = provider.calls;
         assert!(matches!(
             reader.read_controlled(&mut provider, AudioSample(0), 64, control, true, 0),
@@ -206,7 +248,7 @@ fn prepared_source_read_does_not_requery_with_no_plan_work_remaining() {
         assert_eq!(provider.calls, calls);
 
         let wrapper_work = RefCell::new(ReadWork {
-            plan_work: MAX_PLAN_WORK_PER_READ - preparation_work,
+            plan_work: MAX_PLAN_WORK_PER_READ - preparation_work - 1,
             ..Default::default()
         });
         let wrapper_control = work_control(&cancelled, &wrapper_work);
@@ -233,6 +275,25 @@ fn prepared_source_read_does_not_requery_with_no_plan_work_remaining() {
         .unwrap();
         same_blocks(&wrapper, &block);
         assert_eq!(wrapper_work.borrow().plan_work, MAX_PLAN_WORK_PER_READ);
+        assert_eq!(wrapper_work.borrow().sound_context_frames, 0);
+
+        let short_work = RefCell::new(ReadWork::default());
+        let short_control = work_control(&cancelled, &short_work);
+        let request = if domain_read {
+            wrapper_reader.prepare_original_domain(&domain, AudioSample(0), 64, short_control, true)
+        } else {
+            wrapper_reader.prepare_original_root(&plan, AudioSample(0), 64, short_control, true)
+        }
+        .unwrap();
+        short_work.borrow_mut().plan_work = MAX_PLAN_WORK_PER_READ;
+        let calls = provider.calls;
+        assert!(matches!(
+            wrapper_reader.read_prepared_original(&mut provider, request, short_control, 0),
+            Err(StageAudioError::Limit("plan work per read"))
+        ));
+        assert_eq!(provider.calls, calls, "one short rejects before source I/O");
+        assert_eq!(short_work.borrow().plan_work, MAX_PLAN_WORK_PER_READ);
+        assert_eq!(short_work.borrow().sound_context_frames, 0);
     }
 }
 
@@ -247,7 +308,7 @@ fn prepared_identity_requires_exact_plan_domain_window_and_edge_mode() {
     let cancelled = AtomicBool::new(false);
     let work = RefCell::new(ReadWork::default());
     let control = work_control(&cancelled, &work);
-    let reader = StageAudio::new(Arc::clone(&plan));
+    let mut reader = StageAudio::new(Arc::clone(&plan));
     let root = reader
         .prepare_original_root(&plan, AudioSample(0), 64, control, true)
         .unwrap();
@@ -292,7 +353,7 @@ fn preparation_preserves_root_and_domain_range_and_foreign_errors() {
     let cancelled = AtomicBool::new(false);
     let work = RefCell::new(ReadWork::default());
     let control = work_control(&cancelled, &work);
-    let reader = StageAudio::new(Arc::clone(&plan));
+    let mut reader = StageAudio::new(Arc::clone(&plan));
     for (start, frames) in [
         (AudioSample(0), 0),
         (AudioSample(0), MAX_OUTPUT_FRAMES + 1),
@@ -328,57 +389,135 @@ fn preparation_preserves_root_and_domain_range_and_foreign_errors() {
 }
 
 #[test]
-fn exact_preparation_budget_and_one_short_match_previous_query_sequence() {
+fn exact_preparation_budget_and_one_short_bill_actual_forwarded_work() {
     let (plan, provider) = fixture();
     let domain = plan
         .audio_domain_at(AudioSample(0), Default::default())
         .unwrap();
-    let reader = StageAudio::new(Arc::clone(&plan));
+    let mut reader = StageAudio::new(Arc::clone(&plan));
     let cancelled = AtomicBool::new(false);
     for domain_read in [false, true] {
-        let measured = RefCell::new(ReadWork::default());
-        previous_queries(
+        let ordinary_work = RefCell::new(ReadWork::default());
+        let ordinary = previous_queries(
             &plan,
             domain_read.then_some(&domain),
             AudioSample(0),
             64,
-            work_control(&cancelled, &measured),
+            work_control(&cancelled, &ordinary_work),
             true,
         )
         .unwrap();
+        let measured = RefCell::new(ReadWork::default());
+        let reference = if domain_read {
+            reader.prepare_original_domain(
+                &domain,
+                AudioSample(0),
+                64,
+                work_control(&cancelled, &measured),
+                true,
+            )
+        } else {
+            reader.prepare_original_root(
+                &plan,
+                AudioSample(0),
+                64,
+                work_control(&cancelled, &measured),
+                true,
+            )
+        }
+        .unwrap();
+        same_queries(reference.queries(), ordinary.as_borrowed());
+        let additional = assert_flattened_cost(&reference, &ordinary.flattened);
         let needed = measured.borrow().plan_work;
-        assert!(needed > 1);
+        let ordinary_needed = ordinary_work.borrow().plan_work;
+        assert_eq!(needed, ordinary_needed + additional);
+        let queries = reference.queries();
+        let completed = queries.flattened.work + queries.processing.work + queries.policy.work;
+        assert!(queries.fades.unwrap().work > 0);
+        let mut admitted_error = None;
+
         for remaining in [needed, needed - 1] {
             let work = RefCell::new(ReadWork {
                 plan_work: MAX_PLAN_WORK_PER_READ - remaining,
                 ..Default::default()
             });
-            let old_work = RefCell::new(ReadWork {
+            let initial = work.borrow().plan_work;
+            let result = if domain_read {
+                reader.prepare_original_domain(
+                    &domain,
+                    AudioSample(0),
+                    64,
+                    work_control(&cancelled, &work),
+                    true,
+                )
+            } else {
+                reader.prepare_original_root(
+                    &plan,
+                    AudioSample(0),
+                    64,
+                    work_control(&cancelled, &work),
+                    true,
+                )
+            };
+            if remaining == needed {
+                let request = result.unwrap();
+                same_queries(request.queries(), reference.queries());
+                assert_eq!(flattened_work(&request), flattened_work(&reference));
+                assert_eq!(work.borrow().plan_work, MAX_PLAN_WORK_PER_READ);
+                drop(request);
+            } else {
+                assert!(
+                    result.is_err(),
+                    "one short cannot finish the actual fade query"
+                );
+                admitted_error = Some(result.err().unwrap().to_string());
+                assert_eq!(
+                    work.borrow().plan_work,
+                    initial + completed,
+                    "failed final query retains every earlier forwarded/completed bill"
+                );
+            }
+            assert_eq!(work.borrow().sound_context_frames, 0);
+        }
+
+        // The ordinary oracle retains its own smaller boundary; its work is
+        // not used as the admitted constructor's allowance.
+        let mut ordinary_error = None;
+        for remaining in [ordinary_needed, ordinary_needed - 1] {
+            let work = RefCell::new(ReadWork {
                 plan_work: MAX_PLAN_WORK_PER_READ - remaining,
                 ..Default::default()
             });
-            let control = work_control(&cancelled, &work);
-            let result = if domain_read {
-                reader.prepare_original_domain(&domain, AudioSample(0), 64, control, true)
-            } else {
-                reader.prepare_original_root(&plan, AudioSample(0), 64, control, true)
-            };
-            let old = previous_queries(
+            let result = previous_queries(
                 &plan,
                 domain_read.then_some(&domain),
                 AudioSample(0),
                 64,
-                work_control(&cancelled, &old_work),
+                work_control(&cancelled, &work),
                 true,
             );
-            assert_eq!(result.is_ok(), remaining == needed);
-            assert_eq!(result.is_ok(), old.is_ok());
-            assert_eq!(
-                result.err().map(|error| error.to_string()),
-                old.err().map(|error| error.to_string())
-            );
-            assert_eq!(work.borrow().plan_work, old_work.borrow().plan_work);
+            assert_eq!(result.is_ok(), remaining == ordinary_needed);
+            if remaining != ordinary_needed {
+                ordinary_error = Some(result.err().unwrap().to_string());
+            }
+            let expected = if remaining == ordinary_needed {
+                MAX_PLAN_WORK_PER_READ
+            } else {
+                MAX_PLAN_WORK_PER_READ - remaining
+                    + ordinary.flattened.work
+                    + ordinary.processing.work
+                    + ordinary.policy.work
+            };
+            assert_eq!(work.borrow().plan_work, expected);
         }
+        assert_eq!(admitted_error, ordinary_error);
+        drop(reference);
+        assert_eq!(measured.borrow().sound_context_frames, 0);
+        assert_eq!(
+            measured.borrow().plan_work,
+            needed,
+            "dropping metadata never refunds work"
+        );
     }
     assert_eq!(provider.calls, 0);
 }
@@ -425,7 +564,12 @@ fn prepared_read_still_checks_cancellation_deadline_and_depth_before_sources() {
                     StageAudioError::Limit("nested stage depth")
                 )),
             }
-            assert_eq!(work.borrow().plan_work, spent);
+            assert_eq!(
+                work.borrow().plan_work,
+                spent + usize::from(failure == 2),
+                "only a live control can bill the issuer comparison before depth rejection"
+            );
+            assert_eq!(work.borrow().sound_context_frames, 0);
             assert_eq!(provider.calls, 0);
         }
     }
@@ -437,7 +581,7 @@ fn planning_cancellation_and_deadline_keep_priority_over_invalid_range() {
     let domain = plan
         .audio_domain_at(AudioSample(0), Default::default())
         .unwrap();
-    let reader = StageAudio::new(Arc::clone(&plan));
+    let mut reader = StageAudio::new(Arc::clone(&plan));
     for domain_read in [false, true] {
         for cancelled_now in [false, true] {
             let cancelled = AtomicBool::new(cancelled_now);
@@ -511,7 +655,15 @@ fn prepared_metadata_does_not_waive_fresh_source_admission() {
                 .preflight_assets
                 .contains(&AssetId::new("media").unwrap())
         );
-        assert_eq!(work.borrow().plan_work, spent);
+        assert_eq!(
+            work.borrow().plan_work,
+            spent + 1,
+            "fresh source rejection follows the actual issuer comparison"
+        );
+        assert_eq!(work.borrow().sound_context_frames, 0);
     }
     assert_eq!(provider.calls, 0);
 }
+
+#[path = "flattened_admission_tests.rs"]
+mod flattened_admission;

@@ -492,7 +492,7 @@ impl StageAudio {
         context: &Context<'plan>,
         (samples, prepared): (
             Range<AudioSample>,
-            original_request::PreparedOriginalRequest<'context, 'plan>,
+            original_request::PreparedOriginalRequest<'context, 'plan, 'work>,
         ),
         control: WorkControl<'work>,
         depth: usize,
@@ -514,7 +514,7 @@ impl StageAudio {
         context: &Context<'plan>,
         (samples, prepared): (
             Range<AudioSample>,
-            Option<original_request::PreparedOriginalRequest<'context, 'plan>>,
+            Option<original_request::PreparedOriginalRequest<'context, 'plan, 'work>>,
         ),
         control: WorkControl<'work>,
         depth: usize,

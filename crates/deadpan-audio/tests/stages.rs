@@ -59,6 +59,9 @@ mod event_treatments;
 #[path = "stages/streaming.rs"]
 mod streaming;
 
+#[path = "stages/flattened_metadata.rs"]
+mod flattened_metadata;
+
 #[path = "stages/disk_cache.rs"]
 mod disk_cache;
 

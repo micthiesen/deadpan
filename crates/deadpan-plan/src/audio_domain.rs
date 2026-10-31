@@ -8,7 +8,7 @@ use deadpan_core::{
 };
 use serde::{Deserialize, Serialize};
 
-use super::audio::{AudioWalkSpan, Budget, EnvelopeConstraint};
+use super::audio::{Budget, EnvelopeConstraint};
 use super::{
     AudioDefinitionSelector, AudioProcessingQuery, AudioQuery, AudioQueryLimits, AudioRetimeStage,
     AudioTransform, LookupStats, RenderPlan,
@@ -395,31 +395,28 @@ impl<'plan> AudioDomain<'plan> {
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
     ) -> Result<AudioQuery, PlanError> {
-        let mut budget = self.budget(&samples, limits)?;
-        let mut spans = Vec::new();
-        let mut cursor = samples.start;
-        while cursor < samples.end {
-            if spans.len() == limits.maximum_spans {
-                return Err(PlanError::AudioQueryLimit("span count"));
-            }
-            let AudioWalkSpan::Leaf(mut span) =
-                self.plan
-                    .audio_walk(cursor, &mut budget, Some(&self.seed), false, false, None)?
-            else {
-                return Err(PlanError::InvalidPlan("flattened audio retained a stage"));
-            };
-            span.samples = cursor..span.allocated_samples.end.min(samples.end);
-            cursor = span.samples.end;
-            spans.push(span);
-        }
-        Ok(AudioQuery {
-            project_id: self.plan.metadata.project_id.clone(),
-            revision_id: self.plan.metadata.revision_id.clone(),
+        use super::audio_owners::admission::Unmetered;
+        self.audio_admitted(samples, limits, &mut Unmetered)
+            .map(super::audio::AdmittedAudioQuery::unmetered)
+    }
+
+    /// Construct the actual flattened query under one allocation/work policy.
+    /// The returned carrier retains its charge for every immutable query borrow.
+    pub fn audio_admitted<A: crate::AudioSoundContextAdmission>(
+        &self,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+        admission: &mut A,
+    ) -> Result<super::audio::AdmittedAudioQuery<A::Issuer, A::Lease>, A::Error> {
+        let local = self.budget(&samples, limits)?;
+        super::audio::flattened_query::query(
+            self.plan,
+            Some(&self.seed),
             samples,
-            spans,
-            lookup: budget.lookup,
-            work: limits.maximum_work - budget.remaining,
-        })
+            limits,
+            local,
+            admission,
+        )
     }
 
     /// Resolve processing on the captured root grid. Preserve stages keep their

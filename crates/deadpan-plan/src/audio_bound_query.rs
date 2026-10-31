@@ -99,6 +99,52 @@ impl<T, I: Copy + Eq, L> GuardedBound<T, I, L> {
         Ok(result)
     }
 }
+// This extraction is deliberately limited to the actual flattened walker.
+// A Core-backed value cannot escape its independent Core guard through it.
+impl<'plan, I: Copy + Eq, L> GuardedBound<crate::plan::audio::AudioWalkSpan<'plan>, I, L> {
+    pub(in crate::plan) fn flattened_leaf<A: AudioSoundContextAdmission<Issuer = I, Lease = L>>(
+        self,
+        memory: Memory<I, L>,
+        budget: &mut QueryBudget<'_, A>,
+    ) -> Result<Owned<crate::plan::audio::AudioSpan, I, L>, A> {
+        use crate::plan::audio::AudioWalkSpan;
+        // Check while the complete value precedes both independent guards.
+        let guarded = Owned {
+            value: self,
+            memory,
+        };
+        budget.check_memory(&guarded.memory)?;
+        budget.check_memory(&guarded.value._memory)?;
+        match guarded {
+            Owned {
+                value:
+                    GuardedBound {
+                        value: BoundValue::Legacy(AudioWalkSpan::Leaf(span)),
+                        _memory: mut leaf_memory,
+                    },
+                memory,
+            } => {
+                // No callback or fallible operation separates this exact Leaf
+                // move from its complete value-before-memory carrier.
+                let mut result = Owned {
+                    value: span,
+                    memory,
+                };
+                budget.merge_checked(&mut result.memory, &mut leaf_memory);
+                budget.check_memory(&result.memory)?;
+                Ok(result)
+            }
+            rejected => {
+                // Keep the rejected Stage/Core value ahead of both guards.
+                let label = match &rejected.value.value {
+                    BoundValue::Legacy(_) => "flattened audio retained a stage",
+                    BoundValue::Metered(_) => "flattened audio retained a metered binding",
+                };
+                Err(PlanError::InvalidPlan(label).into())
+            }
+        }
+    }
+}
 impl<'plan, I: Copy + Eq, L> GuardedBound<AudioBound<'plan>, I, L> {
     pub(in crate::plan) fn boxed<A: AudioSoundContextAdmission<Issuer = I, Lease = L>>(
         self,

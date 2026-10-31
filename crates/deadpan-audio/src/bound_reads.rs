@@ -1348,12 +1348,39 @@ fn bound_reads_share_cancellation_work_and_complete_cached_dependencies() {
         .unwrap()
         .work;
     assert!(first_query_work > 0);
+    let measured = RefCell::new(ReadWork::default());
+    let flattened = {
+        let mut admission = sound_context_admission::Admission::new(
+            &mut renderer,
+            WorkControl {
+                work: &measured,
+                ..control
+            },
+        );
+        plan.audio_admitted(
+            AudioSample(128)..AudioSample(192),
+            Default::default(),
+            &mut admission,
+        )
+        .unwrap()
+    };
+    assert!(flattened.was_forwarded());
+    assert_eq!(flattened.canonical_units(), first_query_work);
+    assert!(flattened.additional_units() > 0);
+    let first_query_work = flattened.work();
+    assert_eq!(measured.borrow().plan_work, first_query_work);
+    assert_eq!(
+        first_query_work,
+        flattened.canonical_units() + flattened.additional_units()
+    );
+    drop(flattened);
+    assert_eq!(measured.borrow().sound_context_frames, 0);
     let first_only = RefCell::new(ReadWork {
         plan_work: MAX_PLAN_WORK_PER_READ - first_query_work,
         ..Default::default()
     });
-    assert!(matches!(
-        renderer.read_controlled(
+    let error = renderer
+        .read_controlled(
             &mut provider,
             AudioSample(128),
             64,
@@ -1362,15 +1389,20 @@ fn bound_reads_share_cancellation_work_and_complete_cached_dependencies() {
                 ..control
             },
             false,
-            0
-        ),
-        Err(StageAudioError::Limit("plan work per read"))
-    ));
+            0,
+        )
+        .err()
+        .expect("the processing query has no remaining work allowance");
+    assert!(
+        matches!(error, StageAudioError::Limit("plan work per read")),
+        "actual refusal after the complete admitted flattened query: {error:?}"
+    );
     assert_eq!(
         first_only.borrow().plan_work,
         MAX_PLAN_WORK_PER_READ,
-        "the first query is charged before the second receives any work allowance"
+        "the actual forwarded first-query total is retained before the second receives any allowance"
     );
+    assert_eq!(first_only.borrow().sound_context_frames, 0);
     assert_eq!(provider.calls, calls);
 
     let processing = plan
@@ -1386,12 +1418,40 @@ fn bound_reads_share_cancellation_work_and_complete_cached_dependencies() {
         .audio(AudioSample(128)..AudioSample(192), Default::default())
         .unwrap()
         .work;
+    let measured = RefCell::new(ReadWork::default());
+    let flattened = {
+        let mut admission = sound_context_admission::Admission::new(
+            &mut renderer,
+            WorkControl {
+                work: &measured,
+                ..control
+            },
+        );
+        domain
+            .audio_admitted(
+                AudioSample(128)..AudioSample(192),
+                Default::default(),
+                &mut admission,
+            )
+            .unwrap()
+    };
+    assert!(flattened.was_forwarded());
+    assert_eq!(flattened.canonical_units(), first_query_work);
+    assert!(flattened.additional_units() > 0);
+    let first_query_work = flattened.work();
+    assert_eq!(measured.borrow().plan_work, first_query_work);
+    assert_eq!(
+        first_query_work,
+        flattened.canonical_units() + flattened.additional_units()
+    );
+    drop(flattened);
+    assert_eq!(measured.borrow().sound_context_frames, 0);
     let domain_first_only = RefCell::new(ReadWork {
         plan_work: MAX_PLAN_WORK_PER_READ - first_query_work,
         ..Default::default()
     });
-    assert!(matches!(
-        renderer.read_domain_controlled(
+    let error = renderer
+        .read_domain_controlled(
             &mut provider,
             &domain,
             AudioSample(128),
@@ -1400,11 +1460,16 @@ fn bound_reads_share_cancellation_work_and_complete_cached_dependencies() {
                 work: &domain_first_only,
                 ..control
             },
-            0
-        ),
-        Err(StageAudioError::Limit("plan work per read"))
-    ));
+            0,
+        )
+        .err()
+        .expect("the Domain processing query has no remaining allowance");
+    assert!(
+        matches!(error, StageAudioError::Limit("plan work per read")),
+        "actual Domain refusal after the complete admitted flattened query: {error:?}"
+    );
     assert_eq!(domain_first_only.borrow().plan_work, MAX_PLAN_WORK_PER_READ);
+    assert_eq!(domain_first_only.borrow().sound_context_frames, 0);
     assert_eq!(provider.calls, calls);
 
     let mut cold = StageAudio::new(Arc::clone(&plan));

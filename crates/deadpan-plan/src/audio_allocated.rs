@@ -404,4 +404,4 @@ public_measure!(
 mod tests;
 
 #[cfg(test)]
-mod query_storage_tests;
+pub(crate) mod query_storage_tests;

@@ -2,7 +2,53 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: warm Original prediction reuses masks, product goal active
+## Current state: flattened Original queries admitted, product goal active
+
+The [flattened query checkpoint](../qualification/flattened-original-query-admission-2026-10-30.md)
+admits actual Root/Domain flattened construction and retains its sealed lease
+through policy population and numerical use. Ordinary constructors share the
+same assembly with their original unmetered allocator. Full replacement buffers
+overlap their old buffers and contents under admission; guarded values drop
+before charges. There is no public metered extraction or general Core escape.
+Required metadata may evict optional PCM during cold construction. Early warm
+prediction still constructs no query; numerical consumption admits fresh source
+state and uses the same private PCM Arc.
+
+The complete 57-observation OLD query witness was captured before integration.
+All fourteen immutable oracle bodies retain their hashes. Twelve Plan tests,
+nine real-ledger/WAV host tests and revised exact native residency bounds cover
+the constructor and lifetime. Authored tests retain an independent ordinary
+flattened reference and account for actual added fees, including failed partial
+work, without rewriting the literal golden. Complete current eight-case native
+bodies agree exactly. Cold totals add 43-60 units over legacy; warm reads retain
+24-63-unit savings. These finite work counts are not speed measurements.
+
+Final Main/isolated Core pass 816/791, Plan 661/648 including all 28 integration
+executables, Audio 398/392, ordinary native Stage 203/203 and definition/history
+171/171. Main strict check, isolated all-target lint/formatting, hygiene, seven
+focused reviews and source/index/evidence audits pass. Final native runs use
+final source. All 34 shipping source/fixture paths equal the isolated candidate;
+Main's unrelated family/Split work remains unpublished in its working tree.
+The evidence preserves failed attempts and a bounded Main diagnostic overlay.
+
+Fresh Split remains three pass/four fail in 248.91 seconds: Source/Sequence
+cut-three 0+511 exhausts structural work; nested selected play without root
+sound prefix-two 0+4096 exhausts audio binding work; one selected play prefix-two
+0+4096 exhausts audio tape work/span; processed root sound root-sound-refinement
+0+511 exhausts Split permission family work. General sound-bearing Split stays
+disabled. No cap, previous weight, refund, criterion or gate changes.
+
+Next capture complete OLD Root processing observations, then admit actual
+Root/Domain AudioProcessingQuery construction and the sealed first-policy
+witness together. Existing metered Core payloads need a reviewed composition
+seam that preserves their guards; do not widen the flattened-leaf extractor.
+Root processing has a different canonical walk and overlapping input/output
+conversion buffers. The preserved processing-query-admission-next.md pins exact
+sites and distinctions. Policy/fade constructor peaks, inner ordinary queries,
+other variable containers/mix copies and full recursive admission remain open.
+The full DP-01..24/Gates A..G goal remains active.
+
+## Warm Original prediction reuses masks (historical)
 
 The [warm prediction checkpoint](../qualification/cached-original-prediction-2026-10-29.md)
 skips actual Original query construction on exact admitted Root/Domain PCM hits.

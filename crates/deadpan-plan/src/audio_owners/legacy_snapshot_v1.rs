@@ -456,3 +456,6 @@ mod span_start_certificate_tests;
 
 #[path = "legacy_snapshot_v1/policy_binding_baseline.rs"]
 pub(in crate::plan) mod policy_binding_baseline;
+
+#[path = "legacy_snapshot_v1/flattened_query_baseline.rs"]
+pub(in crate::plan) mod flattened_query_baseline;

@@ -1055,6 +1055,20 @@ fn gain_conversion_reuses_original_with_exact_three_frame_residency() {
     let plan = Arc::new(RenderPlan::compile(&document).unwrap());
     let mut provider = FixtureProvider::new();
     let expected = authored_all(&document, &mut provider, &[256]);
+    let processing = plan
+        .audio_processing(AudioSample(0)..AudioSample(256), Default::default())
+        .unwrap();
+    assert!(!processing.spans.is_empty());
+    assert!(processing.spans.iter().all(|span| matches!(
+        span.content,
+        deadpan_plan::AudioSignalContent::Leaf(deadpan_plan::AudioContent::Source { .. })
+    )));
+    drop(processing);
+    let metadata = super::flattened_metadata::root(&plan, AudioSample(0)..AudioSample(256));
+    let pcm_frames = 3_u32.checked_mul(256).unwrap();
+    let aggregate = pcm_frames
+        .checked_add(u32::try_from(metadata.peak_frames).unwrap())
+        .unwrap();
     for maximum_resident_frames in [767, 768] {
         let mut renderer = StageAudio::with_limits(
             Arc::clone(&plan),
@@ -1072,22 +1086,45 @@ fn gain_conversion_reuses_original_with_exact_three_frame_residency() {
             GAIN_TIMEOUT,
             &AtomicBool::new(false),
         );
-        if maximum_resident_frames == 767 {
-            assert!(matches!(
-                result,
-                Err(StageAudioError::Limit("resident PCM or stage cache"))
-            ));
-            assert_eq!(
-                provider.calls, calls,
-                "insufficient buffer space rejects before source work"
-            );
-        } else {
+        assert!(matches!(
+            result,
+            Err(StageAudioError::Limit("resident PCM or stage cache"))
+        ));
+        assert_eq!(
+            provider.calls, calls,
+            "the old PCM-only limits omit real flattened metadata and reject before source work"
+        );
+    }
+    for maximum_resident_frames in [aggregate - 1, aggregate] {
+        let mut renderer = StageAudio::with_limits(
+            Arc::clone(&plan),
+            StageLimits {
+                maximum_resident_frames,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let calls = provider.calls;
+        let result = renderer.prepare_authored_bus(
+            &mut provider,
+            AudioSample(0),
+            256,
+            GAIN_TIMEOUT,
+            &AtomicBool::new(false),
+        );
+        if maximum_resident_frames == aggregate {
             assert_eq!(result.unwrap().samples, expected);
             assert!(provider.calls > calls);
             assert_eq!(
                 authored(&mut renderer, &mut provider, 0, 256).samples,
                 expected
             );
+        } else {
+            assert!(matches!(
+                result,
+                Err(StageAudioError::Limit("resident PCM or stage cache"))
+            ));
+            assert_eq!(provider.calls, calls);
         }
     }
 }

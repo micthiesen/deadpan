@@ -175,7 +175,7 @@ fn wide(block: &WideBlock) -> Value {
 }
 
 fn query_oracle<'plan>(
-    renderer: &StageAudio,
+    renderer: &mut StageAudio,
     plan: &'plan RenderPlan,
     context: &Context<'plan>,
     start: AudioSample,
@@ -185,13 +185,13 @@ fn query_oracle<'plan>(
     let cancelled = AtomicBool::new(false);
     let work = RefCell::new(ReadWork::default());
     let control = control(&cancelled, &work);
-    let request = match context {
+    let request = original_request::with_legacy_flattened_queries(|| match context {
         Context::Root => renderer.prepare_original_root(plan, start, frames, control, true),
         Context::Domain(domain) => {
             renderer.prepare_original_domain(domain, start, frames, control, true)
         }
         Context::Retained(_) => unreachable!("retained prediction is outside this corpus"),
-    }
+    })
     .unwrap();
     let construction_work = work.borrow().plan_work;
     let queries = request.queries();
@@ -346,7 +346,7 @@ pub(super) fn matrix() -> Value {
             else {
                 panic!("completed shared read must publish its actual Original input");
             };
-            let oracle = query_oracle(&renderer, &plan, &context, start, frames, &first_pin);
+            let oracle = query_oracle(&mut renderer, &plan, &context, start, frames, &first_pin);
             if name == "silent_hold_crossing" {
                 assert!(
                     oracle["query_excluded"]
@@ -609,7 +609,7 @@ pub(super) fn zero_matrix() -> Value {
         assert!(first_pin.exhausted.is_empty());
         assert!(!first_pin.dependencies.is_empty());
         let oracle = query_oracle(
-            &renderer,
+            &mut renderer,
             &plan,
             &context,
             AudioSample(0),
@@ -729,3 +729,6 @@ fn produce_old_cached_prediction_zero_matrix() {
         .unwrap();
     file.write_all(b"\n").unwrap();
 }
+
+#[path = "flattened_original_admission_tests.rs"]
+mod flattened_original_admission;

@@ -46,6 +46,7 @@ pub use audio_source_root::AudioRootSource;
 pub use audio_tape::{AudioSignalTape, AudioSignalTapeRun};
 
 pub use picture::{Picture, PictureCaption, PictureFraming, PictureSample};
+pub use plan::AdmittedAudioQuery;
 pub use plan::AudioIntrinsicPreparation;
 pub use plan::PictureOwnerMap;
 pub use plan::{

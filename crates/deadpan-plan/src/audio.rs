@@ -17,6 +17,9 @@ use crate::{AudioBoundaryRule, AudioEnvelope, AudioSampleGrid, AudioSampleMap, P
 
 #[path = "audio_capture.rs"]
 pub(in crate::plan) mod capture;
+#[path = "audio_flattened_query.rs"]
+pub(in crate::plan) mod flattened_query;
+pub use flattened_query::AdmittedAudioQuery;
 
 // Keep each optional observation borrow independent, including the clock's
 // own Plan lifetime. This names the existing stack-only argument tuple.
@@ -398,45 +401,9 @@ impl RenderPlan {
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
     ) -> Result<AudioQuery, PlanError> {
-        limits.validate()?;
-        if samples.start.0 < 0
-            || samples.end < samples.start
-            || samples.end > self.audio_duration()?
-        {
-            return Err(PlanError::AudioRangeOutOfRange);
-        }
-        let mut budget = Budget {
-            remaining: limits.maximum_work,
-            lookup: LookupStats::default(),
-        };
-        let mut spans = Vec::new();
-        let mut cursor = samples.start;
-        while cursor < samples.end {
-            if spans.len() == limits.maximum_spans {
-                return Err(PlanError::AudioQueryLimit("span count"));
-            }
-            let mut span = self.audio_span(cursor, &mut budget)?;
-            span.samples = cursor..span.allocated_samples.end.min(samples.end);
-            cursor = span.samples.end;
-            spans.push(span);
-        }
-        Ok(AudioQuery {
-            project_id: self.metadata.project_id.clone(),
-            revision_id: self.metadata.revision_id.clone(),
-            samples,
-            spans,
-            lookup: budget.lookup,
-            work: limits.maximum_work - budget.remaining,
-        })
-    }
-
-    fn audio_span(&self, sample: AudioSample, budget: &mut Budget) -> Result<AudioSpan, PlanError> {
-        match self.audio_walk(sample, budget, None, false, false, None)? {
-            AudioWalkSpan::Leaf(span) => Ok(span),
-            AudioWalkSpan::Stage(_) => {
-                Err(PlanError::InvalidPlan("flattened audio retained a stage"))
-            }
-        }
+        use super::audio_owners::admission::Unmetered;
+        self.audio_admitted(samples, limits, &mut Unmetered)
+            .map(AdmittedAudioQuery::unmetered)
     }
 
     pub(super) fn audio_walk<'plan>(

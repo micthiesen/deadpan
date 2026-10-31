@@ -555,3 +555,6 @@ fn wide_gain_root_duration_error_precedes_inherited_limits_and_reversed_range() 
     ));
     assert_eq!(policy.0.borrow().work_calls, 0);
 }
+
+#[path = "flattened_query_admission_tests.rs"]
+mod flattened;

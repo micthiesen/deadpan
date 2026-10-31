@@ -17,6 +17,16 @@ impl<'plan, I: Copy + Eq, L> WalkResult<'plan, I, L> {
         &self.value
     }
 }
+impl<'plan, I: Copy + Eq, L> WalkResult<'plan, I, L> {
+    /// Flattening never stops at bindings or Preserve stages. Retain both actual
+    /// Plan guards while extracting only that closed legacy Leaf shape.
+    pub(in crate::plan) fn flattened_leaf<A: AudioSoundContextAdmission<Issuer = I, Lease = L>>(
+        self,
+        budget: &mut QueryBudget<'_, A>,
+    ) -> Result<Owned<AudioSpan, I, L>, A> {
+        self.value.flattened_leaf(self.memory, budget)
+    }
+}
 impl<'plan> WalkResult<'plan, (), ()> {
     pub(in crate::plan) fn unmetered(self) -> AudioWalkSpan<'plan> {
         self.value.unmetered()

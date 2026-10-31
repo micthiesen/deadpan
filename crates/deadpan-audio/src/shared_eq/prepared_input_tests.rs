@@ -11,6 +11,11 @@ fn prepared_miss_and_hit_reuse_one_query_and_keep_live_source_admission() {
     let request = renderer
         .prepare_original_root(&plan, AudioSample(0), 64, control, true)
         .unwrap();
+    let query_metadata = work.borrow().sound_context_frames;
+    assert!(
+        query_metadata > 0,
+        "the actual flattened query retains its charge"
+    );
     let query_work = work.borrow().plan_work;
     assert!(query_work > 0);
     let first = renderer
@@ -23,6 +28,7 @@ fn prepared_miss_and_hit_reuse_one_query_and_keep_live_source_admission() {
             0,
         )
         .unwrap();
+    assert_eq!(work.borrow().sound_context_frames, 0);
     let before_legacy = work.borrow().plan_work;
     let legacy = renderer
         .shared_original_input(
@@ -39,6 +45,7 @@ fn prepared_miss_and_hit_reuse_one_query_and_keep_live_source_admission() {
     let request = renderer
         .prepare_original_root(&plan, AudioSample(0), 64, control, true)
         .unwrap();
+    assert_eq!(work.borrow().sound_context_frames, query_metadata);
     assert_eq!(
         work.borrow().plan_work - before_query,
         query_work,
@@ -58,9 +65,10 @@ fn prepared_miss_and_hit_reuse_one_query_and_keep_live_source_admission() {
         .unwrap();
     assert_eq!(
         work.borrow().plan_work - before_hit,
-        hit_work + 1,
-        "only sealed request validation is added to the actual hit; queries are not rebuilt"
+        hit_work + 2,
+        "the hit bills sealed request validation and its actual issuer comparison once each"
     );
+    assert_eq!(work.borrow().sound_context_frames, 0);
     assert!(provider.calls > calls);
     let (Read::Cached(first), Read::Cached(legacy), Read::Cached(prepared_hit)) =
         (&first, &legacy, &prepared_hit)

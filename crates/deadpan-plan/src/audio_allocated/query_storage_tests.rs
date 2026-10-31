@@ -52,7 +52,13 @@ fn preserve(child: &str, duration: i64, input: i64) -> BeatNode {
     };
     node
 }
-fn fixture() -> RenderPlan {
+pub(crate) fn fixture() -> RenderPlan {
+    fixture_with_asset(source().asset)
+}
+
+pub(crate) fn fixture_with_asset(asset: AssetId) -> RenderPlan {
+    let mut source = source();
+    source.asset = asset;
     let rate = FrameRate::new(48_000, 1).unwrap();
     let document = ProjectDocument::new(
         ProjectId::new("query-storage").unwrap(),
@@ -80,8 +86,8 @@ fn fixture() -> RenderPlan {
             edit_window: None,
             video: SourceVideo::Blank,
             video_mapping: SourceVideoMapping::FitBeat,
-            audio: Some(source()),
-            audio_mapping: SourceAudioMapping::natural_rate(source().span, rate).unwrap(),
+            audio: Some(source.clone()),
+            audio_mapping: SourceAudioMapping::natural_rate(source.span, rate).unwrap(),
             audio_offset: AudioSample(0),
             link: LinkRelation::Independent,
         },
@@ -96,12 +102,12 @@ fn fixture() -> RenderPlan {
     ]))
     .unwrap();
     wire["assets"] = serde_json::to_value(BTreeMap::from([(
-        source().asset,
+        source.asset.clone(),
         AssetRecord {
             label: "Qualified catalog".into(),
             content_hash: "a".repeat(64),
             video: None,
-            audio: Some(source().span),
+            audio: Some(source.span),
             still_image: false,
             frame_count: None,
             source_qualification: Some(SourceQualificationId::new("b".repeat(64)).unwrap()),
