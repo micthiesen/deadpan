@@ -23,15 +23,17 @@ native authority, 700 outputs stay exact and 44 were already failures but now
 report a different budget error. No successful output changes or is lost.
 
 Required strict checks, production workspace compilation, formatting, hygiene,
-independent reviews and preservation audits pass. The broad workspace all-target
-compile exposed two untouched native fixture API errors in both roots; the
-isolated copy also lacks a published encoded-manifest fixture. Their exact
-repairs are prepared separately. Main's 2,847 and the isolated copy's 2,519
-unowned initial inputs are preserved; publication uses the tested isolated
-source, including narrow common patches around three inherited Main differences.
+independent reviews and preservation audits pass. The
+[native fixture follow-up](../qualification/native-fixture-api-2026-10-31.md)
+repairs the two stale constructors and restores the isolated published manifest.
+Whole-workspace all-target compilation now passes in both variants, as do six
+actual tracking and four extension-geometry tests per variant. The follow-up
+preserves Main's 2,903 and the isolated copy's 2,575 other initial named inputs.
+Publication uses the tested isolated source; the earlier common-patch proof
+preserves three inherited Main differences.
 
-Next repair those stale test fixtures, qualify the separate narrow raw/Point
-interval observer, then retain the precise final SignalSample PointCeil policy
+Next qualify the separate narrow raw/Point interval observer, then retain the
+precise final SignalSample PointCeil policy
 mask lease before Plan folds it into the general guard. Prepare the native Box
 while the complete query remains charged; final handoff needs an exclusive
 ledger preflight and an immediate no-fail Vec/lease transfer. Keep actual old

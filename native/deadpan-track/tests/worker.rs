@@ -517,6 +517,7 @@ fn a_saved_target_reloads_follows_in_the_plan_and_corrects_only_its_range() {
         value: FramingValue::Follow {
             target: id.clone(),
             scale: ExactRatio::integer(2),
+            centering: deadpan_core::FollowCentering::Unconstrained,
             scale_transition: None,
             fallback: FramingPose::identity(),
         },

@@ -657,8 +657,11 @@ lifetime after request/controller drop. All 21 Audio targets pass per variant,
 stay exact. Complete current bodies agree across builds; 700 prior outputs are
 identical and 44 prior failures now report a different budget error. Production
 workspace checks, strict Audio checks, formatting, hygiene, reviews and source
-preservation pass. Broader workspace test compilation still exposes two stale
-native API fixtures and an omitted isolated media manifest; repairs are separate.
+preservation pass. The
+[native fixture follow-up](qualification/native-fixture-api-2026-10-31.md)
+repairs two stale constructors and restores the isolated published manifest.
+Whole-workspace all-target compilation and six actual tracking plus four
+extension-geometry tests now pass in both variants.
 Plan policy producers and independent bus/equalizer products remain ordinary,
 so whole policy/preparation and existing requirement/Gate acceptance remain open.
 

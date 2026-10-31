@@ -125,7 +125,8 @@ impl SelectedFixture {
                     region: TargetRegion {
                         center: [500_000, 500_000],
                         size: [333_333, 333_333],
-                    },
+                    }
+                    .into(),
                     samples: vec![],
                     corrections: vec![],
                     provenance: None,
