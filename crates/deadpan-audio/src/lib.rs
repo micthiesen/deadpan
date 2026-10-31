@@ -79,7 +79,7 @@ pub use signal_transfer::{
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use stages::{
     BeatSoundOwnerInputBlock, DefinitionAudioBlock, DomainAudioBlock, EdgeFadedBlock,
-    MAX_EDGE_PREPARATION_FRAMES, OwnerEqualizedBlock, PointDomainAudioBlock,
+    MAX_EDGE_PREPARATION_FRAMES, OwnerEqualizedBlock, PointDomainAudioBlock, PointSuppressionMask,
     PreparedOwnerEqualizer, ProjectedRootBlock, RetainedSoundInputBlock, RoutedRootBlock,
     RoutedSignalBlock, SourceOccurrenceBlock, SourceOccurrencesBlock, StageAudio, StageAudioError,
     StageLimits, TapeAudioBlock, TimeMappedBlock, TransferredDomainBlock, TransferredRootBlock,

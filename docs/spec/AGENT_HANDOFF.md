@@ -2,7 +2,35 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: Point content queries admitted, product goal active
+## Current state: public Point destination owned, product goal active
+
+The [public Point destination checkpoint](../qualification/point-suppression-output-ownership-2026-10-31.md)
+owns the final reference-labelled suppression allocation returned by the public
+Point reader. Its closed account survives request/controller destruction and
+counts held outputs against all three residency gates. JSON and labels stay
+exact; the public Rust mask is immutable and the block no longer derives Clone.
+Internal policy, SignalBlock/ReadBlock and transfer masks remain ordinary Vecs.
+This is a destination prerequisite, not Point-policy or whole-read admission.
+
+Fresh before captures freeze all 744 current native observations and eight
+private/public output cases. Both actual 514-frame aggregate attempts return 257
+mask ranges. All 28 immutable payload hashes stay exact. Focused lifetime,
+failure-prefix, concurrent-drop, later-request pressure and real Original cache
+tests pass in both variants, as does the complete eight-case before body in
+ordinary and owned modes. All 21 Audio targets pass per variant: 1,044 Main and
+1,038 isolated tests, 14 ignored each; Main's seven unfinished Split tests stay
+filtered. Stronger exact-shell and work-prefix assertions pass. Strict checks,
+formatting, doctests, hygiene, independent reviews and source audits pass.
+Final post-lint libraries pass 463/457; only scoped lint expectations follow the
+full matrix. Main's unowned changes are preserved and excluded from publication.
+
+Next extend ownership through the actual internal Point/Bound/transfer/cache
+seams before admitting SignalSample Point policy with a sealed final-mask
+handoff. Keep the actual PointCeil grid. No cap, prior canonical weight or acceptance credit
+changes; general sound-bearing Split stays disabled. The full product goal
+remains active.
+
+## Point content queries admitted (historical)
 
 The [Point content checkpoint](../qualification/point-content-query-admission-2026-10-31.md)
 admits the fresh Structural PointCeil content query and retains its exact payload

@@ -400,11 +400,13 @@ impl StageAudio {
         }
         // Four resident additions and two disk additions, before pinning.
         control.spend_plan_work(6)?;
+        let owned_suppression = self.owned_suppression_residency(control)?;
         let work = control.work.borrow();
         let resident = resident
             .checked_add(self.active_frames)
             .and_then(|frames| frames.checked_add(work.projected_resident_frames))
             .and_then(|frames| frames.checked_add(work.sound_context_frames))
+            .and_then(|frames| frames.checked_add(owned_suppression))
             .and_then(|frames| frames.checked_add(additional));
         let disk = disk
             .checked_add(self.active_disk_bytes)
@@ -616,6 +618,7 @@ impl StageAudio {
             self.remove_original_input(&key);
         }
         loop {
+            let owned_suppression = self.owned_suppression_residency(control)?;
             let fits = self
                 .cached_resident_frames()
                 .checked_add(self.active_frames)
@@ -623,6 +626,7 @@ impl StageAudio {
                     frames.checked_add(control.work.borrow().projected_resident_frames)
                 })
                 .and_then(|frames| frames.checked_add(control.work.borrow().sound_context_frames))
+                .and_then(|frames| frames.checked_add(owned_suppression))
                 .and_then(|frames| frames.checked_add(resident))
                 .is_some_and(|frames| frames <= u64::from(self.limits.maximum_resident_frames));
             if fits && self.cache.len() + self.original_inputs.len() < slots {

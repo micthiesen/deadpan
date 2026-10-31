@@ -4,6 +4,8 @@ use deadpan_core::FrameRate;
 
 #[path = "cached_probe_tests.rs"]
 mod cached_probe;
+#[path = "original_inputs_owned_masks_tests.rs"]
+mod owned_masks;
 #[path = "prepared_input_tests.rs"]
 mod prepared;
 

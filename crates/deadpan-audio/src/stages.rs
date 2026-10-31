@@ -89,6 +89,10 @@ mod shared_mix;
 #[path = "sound_context_admission.rs"]
 mod sound_context_admission;
 
+#[path = "point_suppression.rs"]
+mod point_suppression;
+pub use point_suppression::PointSuppressionMask;
+
 #[path = "owner_equalizer.rs"]
 mod owner_equalizer;
 pub use owner_equalizer::{OwnerEqualizedBlock, PreparedOwnerEqualizer};
@@ -292,7 +296,7 @@ pub struct TapeAudioBlock {
 
 /// Current owned PCM evaluated on the selected PointCeil reference grid.
 /// Signed labels retain their original meaning rather than becoming root samples.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct PointDomainAudioBlock {
     pub schema_version: u32,
     pub stage: &'static str,
@@ -305,7 +309,7 @@ pub struct PointDomainAudioBlock {
     pub reference_samples: Range<ReferenceSample>,
     pub start: ReferenceSample,
     pub samples: Vec<[f32; 2]>,
-    pub suppressed: Vec<Range<ReferenceSample>>,
+    pub suppressed: PointSuppressionMask,
 }
 
 /// This revision's raw root signal sampled on an explicitly mapped preparation
@@ -724,6 +728,7 @@ pub struct StageAudio {
     /// Set while a live tail reads the sound before it. Other tails in that
     /// window count as silent, so tails never feed each other or chain.
     feeding_tail: bool,
+    owned_suppression: point_suppression::Account,
 }
 
 /// All layouts share the controller's cache, active allocations and request
@@ -767,6 +772,7 @@ impl StageAudio {
             preparation_monitor: None,
             persistent_cache: None,
             feeding_tail: false,
+            owned_suppression: point_suppression::Account::default(),
         }
     }
 
@@ -1144,28 +1150,14 @@ impl StageAudio {
         check_cancel(cancelled)?;
         validate_timeout(timeout)?;
         let work = RefCell::new(ReadWork::default());
-        let block = self.read_point_domain_controlled(
-            provider,
-            domain,
-            start,
-            frames,
-            WorkControl {
-                cancelled,
-                deadline: Instant::now() + timeout,
-                work: &work,
-            },
-            0,
-        )?;
-        let suppressed = block
-            .suppressed
-            .into_iter()
-            .map(|range| {
-                Ok::<_, PlanError>(
-                    domain.reference_at_signal(range.start)?
-                        ..domain.reference_at_signal(range.end)?,
-                )
-            })
-            .collect::<Result<_, _>>()?;
+        let control = WorkControl {
+            cancelled,
+            deadline: Instant::now() + timeout,
+            work: &work,
+        };
+        let block =
+            self.read_point_domain_controlled(provider, domain, start, frames, control, 0)?;
+        let suppressed = self.admit_point_suppression(block.suppressed, domain, control)?;
         Ok(PointDomainAudioBlock {
             schema_version: 1,
             stage: "owned_point_domain_pcm_before_effects",
@@ -2613,6 +2605,19 @@ impl StageAudio {
         self.make_room_for(additional, 0, new_entry, control)
     }
 
+    fn owned_suppression_residency(
+        &self,
+        control: WorkControl<'_>,
+    ) -> Result<u64, StageAudioError> {
+        let frames = self.owned_suppression.live_frames();
+        if frames != 0 {
+            control.spend_plan_work(1)?;
+            #[cfg(test)]
+            point_suppression::work_trace::residency_spent();
+        }
+        Ok(frames)
+    }
+
     fn make_room_for(
         &mut self,
         additional: u64,
@@ -2630,10 +2635,12 @@ impl StageAudio {
                 + self.active_disk_bytes
                 + control.work.borrow().projected_disk_bytes
                 + disk_bytes;
+            let owned_suppression = self.owned_suppression_residency(control)?;
             if resident
                 + self.active_frames
                 + control.work.borrow().projected_resident_frames
                 + control.work.borrow().sound_context_frames
+                + owned_suppression
                 + additional
                 <= u64::from(self.limits.maximum_resident_frames)
                 && disk <= self.limits.maximum_disk_bytes

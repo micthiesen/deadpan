@@ -745,3 +745,9 @@ mod raw_domain_lifetime_tests;
 
 #[path = "point_content_query_tests.rs"]
 mod point_content_query_tests;
+
+#[path = "owned_suppression_baseline.rs"]
+mod owned_suppression_baseline;
+
+#[path = "point_suppression_tests.rs"]
+mod point_suppression_tests;

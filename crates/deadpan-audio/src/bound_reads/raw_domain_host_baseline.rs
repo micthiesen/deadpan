@@ -212,3 +212,6 @@ fn capture_point_content_native(point_legacy: bool) {
 
 #[path = "point_content_host_baseline.rs"]
 mod point_content_host_baseline;
+
+#[path = "owned_suppression_native_regression.rs"]
+mod owned_suppression_native_regression;

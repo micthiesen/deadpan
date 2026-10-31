@@ -641,6 +641,14 @@ stays disabled. The later Point signal clone, recursive products and complete
 preparation remain open. No cap, prior weight, refund, requirement/Gate status
 or speed/RSS claim changes.
 
+The [public Point suppression destination checkpoint](qualification/point-suppression-output-ownership-2026-10-31.md)
+introduces an immutable returned mask with a controller-associated owned charge.
+Real-WAV lifetime, cross-request pressure and both Original cache checks pass.
+All 21 Audio targets pass per variant, 1,044/1,038 tests, with strict checks,
+formatting, doctests, hygiene and 28 unchanged immutable payload hashes. Internal
+policy and transfer storage are still ordinary Vecs, so this grants no Point
+policy, whole-preparation, requirement or Gate credit.
+
 The [Point content admission checkpoint](qualification/point-content-query-admission-2026-10-31.md)
 retains fresh Structural Point query payload/capacity leases through the borrowed
 native consumer and forwards construction work once. Independent before bodies
