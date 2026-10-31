@@ -79,6 +79,23 @@ impl<'plan> AudioPointDomain<'plan> {
         })
     }
 
+    #[cfg(test)]
+    pub(in crate::plan) fn probe_structural_repeat_capacity(&self) -> usize {
+        self.signal.probe_structural_repeat_capacity()
+    }
+    #[cfg(test)]
+    pub(in crate::plan) fn probe_structural_definition_present(&self) -> bool {
+        self.signal.probe_structural_definition_present()
+    }
+    #[cfg(test)]
+    pub(in crate::plan) fn probe_structural_selector(&self) -> Option<&AudioDefinitionSelector> {
+        self.signal.probe_structural_selector()
+    }
+    #[cfg(test)]
+    pub(in crate::plan) fn probe_top_selector(&self) -> &AudioDefinitionSelector {
+        &self.selector
+    }
+
     pub(super) fn set_evaluation(
         &mut self,
         definition: Option<AudioDefinitionSelector>,

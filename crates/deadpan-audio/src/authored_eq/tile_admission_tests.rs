@@ -159,6 +159,86 @@ fn retained_query_additional(trace: &Value, host_evictions: [u64; 2]) -> [u64; 2
     additional
 }
 
+fn raw_query_additional(trace: &Value, host_evictions: [u64; 2]) -> [u64; 2] {
+    for field in ["nested", "invalid", "overflow"] {
+        assert_eq!(trace[field], false, "invalid raw-domain receipt: {trace}");
+    }
+    assert_eq!(number(trace, "active_depth"), 0);
+    assert!(number(trace, "max_active_depth") <= 1);
+    ["plan", "cache"].map(|name| {
+        let lane = &trace[name];
+        let completed = number(lane, "completed_queries");
+        let ordinary = number(lane, "ordinary_calls");
+        let failed = number(lane, "failed_queries");
+        assert_eq!(
+            number(lane, "constructor_calls"),
+            completed
+                .checked_add(ordinary)
+                .unwrap()
+                .checked_add(failed)
+                .unwrap()
+        );
+        assert_eq!(number(lane, "admitted_calls"), completed);
+        assert_eq!(
+            number(lane, "canonical_units"),
+            0,
+            "fresh raw reconstruction never rebills Bound/Core canonical work"
+        );
+        let kinds = lane["kind_counts"].as_array().unwrap();
+        assert_eq!(kinds.len(), 3);
+        assert_eq!(
+            kinds.iter().map(|v| v.as_u64().unwrap()).sum::<u64>(),
+            completed.checked_add(ordinary).unwrap()
+        );
+        let additional = number(lane, "additional_units");
+        let partial = number(lane, "partial_work");
+        let eviction = number(lane, "host_eviction_work");
+        assert_eq!(
+            number(lane, "accepted_work"),
+            additional
+                .checked_add(partial)
+                .unwrap()
+                .checked_add(eviction)
+                .unwrap()
+        );
+        assert_eq!(
+            partial, 0,
+            "failed raw-domain prefixes require separate OLD-work qualification: {trace}"
+        );
+        if completed == 0 {
+            assert_eq!(additional, 0);
+        }
+        assert!(
+            eviction <= host_evictions[usize::from(name == "cache")],
+            "raw-scope evictions belong to the same global host receipt"
+        );
+        additional
+    })
+}
+
+fn assert_raw_pair_except_host(actual: &Value, reference: &Value) {
+    assert_eq!(
+        actual.as_object().unwrap().len(),
+        reference.as_object().unwrap().len()
+    );
+    for (field, expected) in reference.as_object().unwrap() {
+        if matches!(field.as_str(), "plan" | "cache") {
+            let actual = &actual[field];
+            assert_eq!(
+                actual.as_object().unwrap().len(),
+                expected.as_object().unwrap().len()
+            );
+            for (field, expected) in expected.as_object().unwrap() {
+                if !matches!(field.as_str(), "accepted_work" | "host_eviction_work") {
+                    assert_eq!(&actual[field], expected, "paired raw-domain field {field}");
+                }
+            }
+        } else {
+            assert_eq!(&actual[field], expected, "paired raw-domain field {field}");
+        }
+    }
+}
+
 fn reconcile_paired_flat_host_receipts(actual: &mut Value, old: &Value) {
     assert_eq!(
         query_fees(actual, "paired flattened"),
@@ -248,6 +328,19 @@ fn compare_flattened_counter(actual: &mut Value, ordinary: &Value, imposed: bool
         assert_eq!(host_eviction_receipt(&trace), actual_host);
         assert_eq!(host_eviction_receipt(&ordinary_trace), ordinary_host);
     }
+    let raw = take_query_trace(actual, "raw_domain_work_trace");
+    let ordinary_raw = take_query_trace(&mut ordinary, "raw_domain_work_trace");
+    let raw_additional = raw_query_additional(&raw, actual_host);
+    assert_eq!(raw_query_additional(&ordinary_raw, ordinary_host), [0, 0]);
+    for lane in ["plan", "cache"] {
+        assert_eq!(ordinary_raw[lane]["admitted_calls"], 0);
+        for field in ["constructor_calls", "failed_queries", "kind_counts"] {
+            assert_eq!(
+                raw[lane][field], ordinary_raw[lane][field],
+                "same raw-domain outcomes on the actual paired reader"
+            );
+        }
+    }
     for (index, field) in ["old_total_controller_work", "cache_plan_work"]
         .into_iter()
         .enumerate()
@@ -257,11 +350,13 @@ fn compare_flattened_counter(actual: &mut Value, ordinary: &Value, imposed: bool
             0
         } else {
             i128::from(fees[index]) + i128::from(host[index]) - i128::from(old_host[index])
-        } + i128::from(retained_query_work[index]);
+                + i128::from(retained_query_work[index])
+                + i128::from(raw_additional[index])
+        };
         assert_eq!(
             i128::from(number(actual, field)),
             i128::from(number(&ordinary, field)) + additional,
-            "only independently observed new query fees and global paired host evictions differ: {field}"
+            "only independent Original/retained/raw fees and one global paired host eviction receipt differ: {field}"
         );
         actual[field] = ordinary[field].clone();
     }
@@ -280,6 +375,7 @@ fn remove_flattened_traces(observed: &mut Value) {
         "fade_work_trace",
         "retained_fade_work_trace",
         "retained_owners_work_trace",
+        "raw_domain_work_trace",
     ] {
         for phase in ["before", "after"] {
             take_query_trace(&mut observed["setup"][phase], field);
@@ -298,6 +394,7 @@ fn compare_flattened_matrix(actual: &mut Value, ordinary: &Value) {
     let references = ordinary.as_array().unwrap();
     assert_eq!(cases.len(), references.len());
     let mut total_fees = [0_u64; 2];
+    let mut raw_additional_witnessed = 0_u64;
     let mut witnessed = [0_u64; 3];
     for (case, reference) in cases.iter_mut().zip(references) {
         assert_eq!(case["name"], reference["name"]);
@@ -325,6 +422,7 @@ fn compare_flattened_matrix(actual: &mut Value, ordinary: &Value) {
                     "fade_work_trace",
                     "retained_fade_work_trace",
                     "retained_owners_work_trace",
+                    "raw_domain_work_trace",
                 ] {
                     assert_eq!(
                         operation["before"][field], operation["after_return_drop"][field],
@@ -349,6 +447,14 @@ fn compare_flattened_matrix(actual: &mut Value, ordinary: &Value) {
                     .unwrap();
             }
         }
+        for lane in ["plan", "cache"] {
+            raw_additional_witnessed = raw_additional_witnessed
+                .checked_add(number(
+                    &observed["final"]["raw_domain_work_trace"][lane],
+                    "additional_units",
+                ))
+                .unwrap();
+        }
         let fees = compare_flattened_counter(&mut observed["final"], &expected["final"], false);
         for index in 0..2 {
             total_fees[index] = total_fees[index].checked_add(fees[index]).unwrap();
@@ -365,6 +471,10 @@ fn compare_flattened_matrix(actual: &mut Value, ordinary: &Value) {
         "the corpus must execute admitted flattened work"
     );
     assert!(witnessed.into_iter().all(|units| units > 0));
+    assert!(
+        raw_additional_witnessed > 0,
+        "actual raw-domain construction fees are exercised"
+    );
 }
 
 fn normalize_counter(actual: &mut Value, old: &Value, imposed: bool, metered: bool) {
@@ -404,6 +514,14 @@ fn normalize_counter(actual: &mut Value, old: &Value, imposed: bool, metered: bo
     }
     let root_host_evictions = root_host_evictions.expect("all four root query receipts");
     let retained_query_work = retained_query_additional(actual, root_host_evictions);
+    let raw = take_query_trace(actual, "raw_domain_work_trace");
+    assert_eq!(raw_query_additional(&raw, root_host_evictions), [0, 0]);
+    for lane in ["plan", "cache"] {
+        assert_eq!(
+            raw[lane]["admitted_calls"], 0,
+            "whole Original legacy scope keeps raw reconstruction ordinary"
+        );
+    }
     let expected_work = number(old, "old_total_controller_work")
         .checked_add(if imposed { 0 } else { additional_work })
         .unwrap()
@@ -739,6 +857,11 @@ fn compare_domain_policy_counter(actual: &mut Value, old: &Value, imposed: bool)
     let old_fade = take_query_trace(&mut old, "fade_work_trace");
     let fade_fees = query_fees(&fade, "fade");
     let old_fade_fees = query_fees(&old_fade, "fade reference");
+    let raw = take_query_trace(actual, "raw_domain_work_trace");
+    let old_raw = take_query_trace(&mut old, "raw_domain_work_trace");
+    let raw_fees = raw_query_additional(&raw, host_eviction_receipt(&processing));
+    let old_raw_fees = raw_query_additional(&old_raw, host_eviction_receipt(&old_processing));
+    assert_raw_pair_except_host(&raw, &old_raw);
     let removed = reconcile_domain_policy_receipts(&trace, &old_trace);
     for (lane, field) in ["old_total_controller_work", "cache_plan_work"]
         .into_iter()
@@ -760,6 +883,8 @@ fn compare_domain_policy_counter(actual: &mut Value, old: &Value, imposed: bool)
             - i128::from(old_policy_fees[lane])
             + i128::from(fade_fees[lane])
             - i128::from(old_fade_fees[lane])
+            + i128::from(raw_fees[lane])
+            - i128::from(old_raw_fees[lane])
             + i128::from(host[lane])
             - i128::from(old_host[lane]);
         let removed = if lane == 0 { i128::from(removed) } else { 0 };
@@ -792,6 +917,7 @@ fn remove_domain_policy_traces(observed: &mut Value) {
         "processing_work_trace",
         "policy_work_trace",
         "fade_work_trace",
+        "raw_domain_work_trace",
     ] {
         for phase in ["before", "after"] {
             take_query_trace(&mut observed["setup"][phase], field);
@@ -870,6 +996,18 @@ fn compare_certified_counter(actual: &mut Value, direct: &Value, imposed: bool) 
             "certified capture keeps actual Original-query receipts literal: {field}"
         );
     }
+    raw_query_additional(
+        &actual["raw_domain_work_trace"],
+        host_eviction_receipt(&actual["flattened_work_trace"]),
+    );
+    raw_query_additional(
+        &direct["raw_domain_work_trace"],
+        host_eviction_receipt(&direct["flattened_work_trace"]),
+    );
+    assert_eq!(
+        actual["raw_domain_work_trace"], direct["raw_domain_work_trace"],
+        "certified capture preserves actual raw constructor receipts"
+    );
     let captures = actual
         .as_object_mut()
         .unwrap()

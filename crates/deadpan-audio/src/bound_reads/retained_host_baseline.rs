@@ -739,3 +739,6 @@ mod admission_tests;
 
 #[path = "retained_host_pairs.rs"]
 mod pairs;
+
+#[path = "raw_domain_lifetime_tests.rs"]
+mod raw_domain_lifetime_tests;

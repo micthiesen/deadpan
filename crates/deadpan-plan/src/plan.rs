@@ -71,7 +71,7 @@ mod audio_intrinsic_preparation;
 pub use audio_intrinsic_preparation::AudioIntrinsicPreparation;
 #[path = "audio_preserve_input.rs"]
 mod audio_preserve_input;
-pub use audio_bound::{AudioBound, AudioBoundDomain};
+pub use audio_bound::{AdmittedAudioBoundDomain, AudioBound, AudioBoundDomain};
 #[path = "audio_policy.rs"]
 mod audio_policy;
 pub use audio_policy::{AdmittedAudioPolicyQuery, AudioPolicyQuery};

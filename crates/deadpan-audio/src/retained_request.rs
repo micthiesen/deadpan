@@ -133,5 +133,5 @@ pub(super) fn with_legacy_retained_queries<T>(action: impl FnOnce() -> T) -> T {
         }
     }
     let _restore = Restore(LEGACY.with(|mode| mode.replace(true)));
-    action()
+    super::raw_domain_request::with_legacy_raw_domain(action)
 }

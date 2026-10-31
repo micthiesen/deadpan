@@ -623,6 +623,24 @@ Raw-domain reconstruction, other recursive
 products and complete preparation remain open. No cap, prior weight, refund,
 requirement/Gate status or speed/RSS claim changes.
 
+The [fresh raw-domain checkpoint](qualification/raw-domain-query-admission-2026-10-31.md)
+admits the actual standalone Bound reconstruction and retains its sealed carrier
+through native Root/Point consumption. Root transfer borrows its already leased
+domain. False mode preserves the ordinary algorithm; true mode retains zero
+canonical work, literal stored work and the fixed local allowance. Pre-change
+witnesses preserve 77 complete actual Root/Point operands and 744 real-WAV native
+requests; all 23 oracle hashes stay exact. Exact/short limits, callback-prefix/
+issuer failures, selected live heap overlap and seven real native lifetime/cache/
+eviction tests pass. Final Main/isolated native bodies agree: 264 same successful
+payloads, 468 same typed errors, 12 differing work-budget errors only under
+injected prior work. All 664 non-injected requests reconcile direct constructor
+fees; the other 80 retain surrounding Original work separately. Plan passes
+727/714 and Audio 1,018/1,012, with strict checks, formatting, doctests, hygiene,
+reviews and exact scoped source/evidence audits. General sound-bearing Split
+stays disabled. The later Point signal clone, recursive products and complete
+preparation remain open. No cap, prior weight, refund, requirement/Gate status
+or speed/RSS claim changes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

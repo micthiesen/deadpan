@@ -16,12 +16,12 @@ use deadpan_dsp::{CanonicalRecipe, CanonicalStretch};
 use deadpan_dsp::{StereoPcm, StreamRecipe, StreamingStretch, StretchRate};
 use deadpan_media::audio_index::AudioChannelLayout;
 use deadpan_plan::{
-    AudioBound, AudioBoundDomain, AudioContent, AudioDefinition, AudioDefinitionSelector,
-    AudioDomain, AudioFadeQuery, AudioPointDomain, AudioPolicyQuery, AudioProcessingQuery,
-    AudioProcessingSpan, AudioProjectionIdentity, AudioQuery, AudioQueryLimits, AudioSignalContent,
-    AudioSignalMix, AudioSignalQuery, AudioSignalSpan, AudioSignalTape, AudioStage,
-    AudioStageDescriptor, AudioStageProjection, PlanError, ReferenceSample, RenderPlan,
-    SignalSample, SilenceReason,
+    AdmittedAudioBoundDomain, AudioBound, AudioBoundDomain, AudioContent, AudioDefinition,
+    AudioDefinitionSelector, AudioDomain, AudioFadeQuery, AudioPointDomain, AudioPolicyQuery,
+    AudioProcessingQuery, AudioProcessingSpan, AudioProjectionIdentity, AudioQuery,
+    AudioQueryLimits, AudioSignalContent, AudioSignalMix, AudioSignalQuery, AudioSignalSpan,
+    AudioSignalTape, AudioStage, AudioStageDescriptor, AudioStageProjection, PlanError,
+    ReferenceSample, RenderPlan, SignalSample, SilenceReason,
 };
 use serde::Serialize;
 
@@ -68,6 +68,12 @@ mod authored_gain;
 
 #[path = "authored_eq.rs"]
 mod authored_eq;
+#[cfg(test)]
+#[path = "raw_domain_query_trace.rs"]
+mod raw_domain_query_trace;
+#[cfg(test)]
+#[path = "raw_domain_request.rs"]
+mod raw_domain_request;
 #[path = "shared_components.rs"]
 mod shared_components;
 #[path = "shared_eq.rs"]
@@ -346,6 +352,30 @@ pub struct EdgeFadedBlock {
     pub start: AudioSample,
     pub samples: Vec<[f32; 2]>,
     pub suppressed: Vec<Range<AudioSample>>,
+}
+
+enum RawBoundDomain<'plan, I, L> {
+    #[cfg(test)]
+    Ordinary(AudioBoundDomain<'plan>),
+    Admitted(AdmittedAudioBoundDomain<'plan, I, L>),
+}
+impl<'plan, I, L> RawBoundDomain<'plan, I, L> {
+    fn domain(&self) -> &AudioBoundDomain<'plan> {
+        match self {
+            #[cfg(test)]
+            Self::Ordinary(value) => value,
+            Self::Admitted(value) => value.domain(),
+        }
+    }
+
+    #[cfg(test)]
+    fn trace_product(&self) -> raw_domain_query_trace::Product {
+        match self.domain() {
+            AudioBoundDomain::Root(_) => raw_domain_query_trace::Product::Root,
+            AudioBoundDomain::Point(_) => raw_domain_query_trace::Product::Point,
+            AudioBoundDomain::Empty => raw_domain_query_trace::Product::Empty,
+        }
+    }
 }
 
 struct ReadBlock {
@@ -1495,10 +1525,13 @@ impl StageAudio {
 
     // Recursive consumers retain their parent's deadline, work allowance and
     // depth. The returned dependencies cover every halo, including cache hits.
-    fn read_domain_transferred_controlled(
+    fn read_domain_transferred_controlled<
+        'plan,
+        T: crate::domain_transfer::DomainTransferView<'plan>,
+    >(
         &mut self,
         provider: &mut impl AudioSourceProvider,
-        transfer: &DomainSignalTransfer<'_>,
+        transfer: &T,
         start: SignalSample,
         frames: u32,
         control: WorkControl<'_>,
@@ -1519,6 +1552,8 @@ impl StageAudio {
             frames,
             control.cancelled,
             |at, count| {
+                #[cfg(test)]
+                raw_domain_query_trace::nested_callback(raw_domain_query_trace::Product::Root);
                 // `at` indexes a zero-based carrier of already allocated root
                 // samples. Restore the integer label, not a rounded frame origin.
                 let absolute = AudioSample(at.0.checked_add(anchor).ok_or(TimeError::Overflow)?);
@@ -1611,12 +1646,51 @@ impl StageAudio {
         }
         let step = bound.reference_samples_per_output_sample();
         let output = SignalSample(0)..SignalSample(i64::from(frames));
-        match bound.raw_domain()? {
+        #[cfg(test)]
+        let mut raw_result_lifetime = raw_domain_query_trace::ResultGuard::new();
+        #[cfg(test)]
+        let raw_domain = {
+            let mut trace = raw_domain_query_trace::ScopeGuard::new(control);
+            let raw_domain = if raw_domain_request::legacy() {
+                RawBoundDomain::Ordinary(bound.raw_domain()?)
+            } else {
+                let mut admission = sound_context_admission::Admission::new(self, control);
+                RawBoundDomain::Admitted(bound.raw_domain_query(&mut admission)?)
+            };
+            let product = raw_domain.trace_product();
+            let receipt = match &raw_domain {
+                RawBoundDomain::Ordinary(_) => (0, 0, 0, false),
+                RawBoundDomain::Admitted(value) => (
+                    value.canonical_units(),
+                    value.additional_units(),
+                    value.total_units(),
+                    value.was_forwarded(),
+                ),
+            };
+            trace.completed(receipt.0, receipt.1, receipt.2, receipt.3, product);
+            raw_domain
+        };
+        #[cfg(not(test))]
+        let raw_domain = {
+            let mut admission = sound_context_admission::Admission::new(self, control);
+            RawBoundDomain::Admitted(bound.raw_domain_query(&mut admission)?)
+        };
+        #[cfg(test)]
+        if matches!(&raw_domain, RawBoundDomain::Admitted(_)) {
+            raw_result_lifetime.acquired();
+        }
+        match raw_domain.domain() {
             AudioBoundDomain::Root(domain) => {
                 if domain.root_samples().is_empty() {
                     return Ok(empty_bound_block(frames));
                 }
-                let transfer = DomainSignalTransfer::new(domain, at, output.start, step, output)?;
+                let transfer = crate::domain_transfer::DomainSignalTransfer::borrowed(
+                    domain,
+                    at,
+                    output.start,
+                    step,
+                    output,
+                )?;
                 self.read_domain_transferred_controlled(
                     provider,
                     &transfer,
@@ -1650,9 +1724,13 @@ impl StageAudio {
                     frames,
                     control.cancelled,
                     |storage, count| {
+                        #[cfg(test)]
+                        raw_domain_query_trace::nested_callback(
+                            raw_domain_query_trace::Product::Point,
+                        );
                         let reference = domain.reference_at_signal(SignalSample(storage.0))?;
                         let block = self.read_point_domain_controlled(
-                            provider, &domain, reference, count, control, depth,
+                            provider, domain, reference, count, control, depth,
                         )?;
                         dependencies.extend(block.dependencies);
                         relative_depth = relative_depth.max(block.relative_depth);

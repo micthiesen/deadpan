@@ -46,7 +46,7 @@ fn block(value: &WideBlock) -> Value {
 fn counters(renderer: &StageAudio, graph: &Graph<'_, '_, '_>, control: WorkControl<'_>) -> Value {
     let work = control.work.borrow();
     let captures = span_start::trace();
-    json!({
+    let mut value = json!({
         "old_total_controller_work": work.plan_work, "prepared_frames": work.prepared_frames,
         "observed_new_index_work": OBSERVED_INDEX_WORK.with(Cell::get),
         "domain_policy_trace": crate::stages::original_request::domain_policy_trace(),
@@ -87,7 +87,10 @@ fn counters(renderer: &StageAudio, graph: &Graph<'_, '_, '_>, control: WorkContr
                 "dependencies": block.dependencies, "relative_depth": block.relative_depth,
             })).collect::<Vec<_>>(),
         })).collect::<Vec<_>>(),
-    })
+    });
+    value["raw_domain_work_trace"] =
+        serde_json::to_value(crate::stages::raw_domain_query_trace::snapshot()).unwrap();
+    value
 }
 
 struct Provider {
@@ -350,6 +353,14 @@ fn scenario<'plan, const M: bool>(
     OBSERVED_INDEX_WORK.with(|value| value.set(0));
     crate::stages::original_request::flattened_work_trace::reset();
     crate::stages::retained_request::trace::reset();
+    crate::stages::raw_domain_query_trace::reset();
+    struct DisableRawTrace;
+    impl Drop for DisableRawTrace {
+        fn drop(&mut self) {
+            crate::stages::raw_domain_query_trace::disable();
+        }
+    }
+    let _raw_trace = DisableRawTrace;
     span_start::reset_trace();
     crate::stages::original_request::reset_domain_policy_trace();
     let owner = match incoming {

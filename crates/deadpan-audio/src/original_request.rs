@@ -713,10 +713,12 @@ mod policy_trace;
 #[cfg(test)]
 /// Select the literal OLD Original and nested retained constructors.
 pub(super) fn with_legacy_original_queries<T>(action: impl FnOnce() -> T) -> T {
-    super::retained_request::with_legacy_retained_queries(|| {
-        with_legacy_fade_queries(|| {
-            with_legacy_policy_queries(|| {
-                with_legacy_processing_queries(|| with_legacy_flattened_queries(action))
+    super::raw_domain_request::with_legacy_raw_domain(|| {
+        super::retained_request::with_legacy_retained_queries(|| {
+            with_legacy_fade_queries(|| {
+                with_legacy_policy_queries(|| {
+                    with_legacy_processing_queries(|| with_legacy_flattened_queries(action))
+                })
             })
         })
     })

@@ -672,6 +672,24 @@ impl crate::audio_allocated::OwnedHeap for AudioStage<'_> {
     }
 }
 
+#[cfg(test)]
+impl AudioSignal<'_> {
+    pub(in crate::plan) fn probe_structural_repeat_capacity(&self) -> usize {
+        assert!(matches!(&self.provider, SignalProvider::Structural));
+        self.repeats.capacity()
+    }
+
+    pub(in crate::plan) fn probe_structural_definition_present(&self) -> bool {
+        assert!(matches!(&self.provider, SignalProvider::Structural));
+        self.definition.is_some()
+    }
+
+    pub(in crate::plan) fn probe_structural_selector(&self) -> Option<&AudioDefinitionSelector> {
+        assert!(matches!(&self.provider, SignalProvider::Structural));
+        self.definition.as_ref()
+    }
+}
+
 impl crate::audio_allocated::OwnedHeap for AudioSignal<'_> {
     fn visit_heap(&self, budget: &mut crate::audio_allocated::HeapBudget) -> Result<(), PlanError> {
         let Self {

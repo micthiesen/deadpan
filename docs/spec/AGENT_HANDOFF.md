@@ -2,7 +2,45 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: retained fades admitted, product goal active
+## Current state: raw domains admitted, product goal active
+
+The [raw-domain checkpoint](../qualification/raw-domain-query-admission-2026-10-31.md)
+exposes the existing admitted fresh Bound constructor through a sealed carrier.
+Native Root transfer borrows it; Root/Point consumption retains its lease until
+the read ends. The fixed 65,536 allowance, zero canonical work and literal stored
+Bound/Core work remain unchanged. Additional finite metadata is charged once.
+No production cap, canonical weight, DSP or persisted format changes.
+
+Two pre-implementation witnesses retain 77 complete ordinary Root/Point operands
+and 744 actual native requests. All 23 oracle hashes stay exact. Public false/
+true parity, exact/short work and Layout limits, callback refusal/cancellation/
+issuer sweeps and real-ledger phase checks pass. All 59 Root evaluation
+replacement selectors in that corpus are None; no Some or Empty is fabricated.
+Seven new real-WAV tests verify actual native carrier lifetime, error cleanup,
+local refusal, genuine silent Hold bypass, cache re-admission and actual eviction.
+
+Both final native bodies agree: 264 successful payloads and 468 typed errors are
+unchanged; 12 work-budget errors differ only with injected prior plan work and
+reach the same provider events. All 664 non-injected requests reconcile direct
+fees. The 80 injected requests retain their surrounding work separately; nested
+Original receipts are not added or called whole-read admission.
+
+Main/isolated Plan pass 727/714 across 29 targets each, 24 ignored each; native
+Audio passes 1,018/1,012 across 21 each, 10 ignored each. Strict checks,
+formatting, doctests, hygiene, independent reviews and final source/index/evidence
+audits pass. The qualification records the fresh Split research failures;
+general sound-bearing Split stays disabled. All 30 shipping blobs equal the
+isolated candidate and Main's unrelated working-tree research remains intact.
+
+Next remove the unnecessary Point::signal clone in the synchronous native
+Point reader by borrowing its already leased stored signal. Preserve the public
+owning clone method. The current immutable private Point snapshots and native
+captures supply the before witness. Recursive Signal/Tape/Mix/Source/
+Occurrence/Projected products, general Graph containers, full preparation and
+the remaining specification remain open. No requirement or Gate closes;
+the full DP-01..24/Gates A..G goal stays active.
+
+## Retained fades admitted (historical)
 
 The [retained-fade checkpoint](../qualification/retained-fade-query-admission-2026-10-31.md)
 adds the actual standalone retained fade constructor and holds its fade and

@@ -16,6 +16,9 @@ use crate::{AudioSampleGrid, PlanError};
 
 #[path = "audio_bound_probe.rs"]
 mod probe;
+pub use probe::AdmittedAudioBoundDomain;
+#[cfg(test)]
+pub(in crate::plan) use probe::phase_trace;
 #[path = "audio_bound_query.rs"]
 pub(in crate::plan) mod query;
 

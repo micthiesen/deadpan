@@ -49,15 +49,15 @@ pub use picture::{Picture, PictureCaption, PictureFraming, PictureSample};
 pub use plan::AudioIntrinsicPreparation;
 pub use plan::PictureOwnerMap;
 pub use plan::{
+    AdmittedAudioBoundDomain, AdmittedAudioFadeQuery, AdmittedAudioPolicyQuery,
+    AdmittedAudioProcessingQuery, AdmittedAudioQuery,
+};
+pub use plan::{
     AdmittedAudioDomainPolicy, AdmittedAudioDomainProcessing, AdmittedAudioDomainProcessingPolicy,
     AudioBoundaries, AudioBoundaryKind, AudioBoundaryOrigin, AudioContent, AudioDomain,
     AudioDomainProcessing, AudioDomainProcessingPolicy, AudioQuery, AudioQueryLimits,
     AudioRetimeStage, AudioSpan, AudioTransform, LookupStats, NodeInspection, NodeType,
     PlanInspection, PlanMetadata, RenderPlan, SilenceReason, SourceSamplingSupport, StorageStats,
-};
-pub use plan::{
-    AdmittedAudioFadeQuery, AdmittedAudioPolicyQuery, AdmittedAudioProcessingQuery,
-    AdmittedAudioQuery,
 };
 pub use plan::{
     AdmittedAudioOwnerInputCandidates, AdmittedAudioOwnerInputCapture,

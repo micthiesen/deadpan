@@ -301,3 +301,6 @@ fn real_retained_original_cache_hit_rechecks_source_and_bypasses_retained_constr
     assert_eq!(renderer.active_frames, 0);
     assert_eq!(renderer.active_disk_bytes, 0);
 }
+
+#[path = "raw_domain_gap_tests.rs"]
+mod raw_domain_gap_tests;

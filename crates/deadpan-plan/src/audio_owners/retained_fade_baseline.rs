@@ -307,6 +307,7 @@ fn retained_body(
     admission_tests::observe(input, retained, &observations, caller);
     copy_tests::observe(input, retained, &observations);
     overlap_tests::observe(input, retained, &observations);
+    raw_domain_baseline::observe(input, retained, caller);
     json!({"retained":retained.capture_baseline_snapshot(input.context().plan),
         "literal_bound_work_prepaid_per_span":retained.bound().work(),
         "retained_input_work":retained.work(),
@@ -315,6 +316,7 @@ fn retained_body(
 }
 
 fn ordinary_handle(input: &AudioOwnerInput<'_>, extra: &[(&str, i64, i64)]) -> Value {
+    let _raw_scope = raw_domain_baseline::Scope::new("ordinary_probe");
     match input.retained_probe_at(input.observed_at(), Default::default()) {
         Err(error) => {
             json!({"mode":"ordinary_probe","result":"Error","error":snapshot::error_json(&error),
@@ -340,6 +342,7 @@ fn admitted_handle<const M: bool>(
     } else {
         "actual_admitted_probe_unmetered"
     };
+    let _raw_scope = raw_domain_baseline::Scope::new(mode);
     let result = match input.retained_probe_at_admitted(
         input.observed_at(),
         Default::default(),
@@ -373,6 +376,7 @@ fn admitted_handle<const M: bool>(
 }
 
 fn shared_handle(input: &AudioOwnerInput<'_>, extra: &[(&str, i64, i64)]) -> Value {
+    let _raw_scope = raw_domain_baseline::Scope::new("actual_admitted_probe_selected_then_shared");
     let mut policy = Policy::<true>::new(usize::MAX);
     let at = input.observed_at();
     let result = match input.retained_probe_at_admitted(at, Default::default(), &mut policy) {
@@ -449,6 +453,7 @@ fn shared_handle(input: &AudioOwnerInput<'_>, extra: &[(&str, i64, i64)]) -> Val
 }
 
 fn one(descriptor: &Value, input: &AudioOwnerInput<'_>, extra: &[(&str, i64, i64)]) -> Value {
+    let _raw_fixture = raw_domain_baseline::FixtureScope::new(descriptor);
     json!({"fixture":descriptor,"setup_input":snapshot::input(input),
         "setup":{"observed_at":input.observed_at().0,"probe_limits":limits_value(Default::default())},
         "handles":[ordinary_handle(input,extra),admitted_handle::<false>(input,extra),
@@ -553,3 +558,6 @@ mod copy_tests;
 
 #[path = "retained_fade_overlap_tests.rs"]
 mod overlap_tests;
+
+#[path = "raw_domain_baseline.rs"]
+mod raw_domain_baseline;

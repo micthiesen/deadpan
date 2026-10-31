@@ -24,15 +24,20 @@ fn frozen() -> Value {
 fn reset() {
     original_request::flattened_work_trace::reset();
     trace::reset();
+    raw_domain_host_baseline::reset_if_capturing();
 }
 fn receipts() -> Value {
-    json!({"fade":trace::fade_snapshot(),"owners":trace::owners_snapshot(),
+    let mut value = json!({"fade":trace::fade_snapshot(),"owners":trace::owners_snapshot(),
     "original_queries":{
         "flattened":original_request::flattened_work_trace::snapshot(),
         "processing":original_request::flattened_work_trace::processing_snapshot(),
         "policy":original_request::flattened_work_trace::policy_snapshot(),
         "fade":original_request::flattened_work_trace::fade_snapshot(),
-    }})
+    }});
+    if let Some(raw) = raw_domain_host_baseline::receipt_if_capturing() {
+        value["raw_domain"] = raw;
+    }
+    value
 }
 fn integer(value: &Value) -> u64 {
     value.as_u64().expect("actual integer receipt")
@@ -310,7 +315,53 @@ fn assert_work_fields_equal_except_explicit_plan_debit(actual: &Value, old: &Val
         }
     }
 }
-fn assert_success_pair(old: &Value, pair: &Value) {
+fn assert_raw_receipt(receipt: &Value) -> [u64; 2] {
+    for field in ["nested", "invalid", "overflow"] {
+        assert_eq!(receipt[field], false);
+    }
+    assert_eq!(integer(&receipt["active_depth"]), 0);
+    assert!(integer(&receipt["max_active_depth"]) <= 1);
+    ["plan", "cache"].map(|name| {
+        let lane = &receipt[name];
+        let completed = integer(&lane["completed_queries"]);
+        let ordinary = integer(&lane["ordinary_calls"]);
+        let failed = integer(&lane["failed_queries"]);
+        assert_eq!(
+            integer(&lane["constructor_calls"]),
+            completed
+                .checked_add(ordinary)
+                .unwrap()
+                .checked_add(failed)
+                .unwrap()
+        );
+        assert_eq!(integer(&lane["admitted_calls"]), completed);
+        assert_eq!(integer(&lane["canonical_units"]), 0);
+        let kinds = lane["kind_counts"].as_array().unwrap();
+        assert_eq!(kinds.len(), 3);
+        assert_eq!(
+            kinds.iter().map(integer).sum::<u64>(),
+            completed.checked_add(ordinary).unwrap()
+        );
+        let additional = integer(&lane["additional_units"]);
+        let partial = integer(&lane["partial_work"]);
+        let host = integer(&lane["host_eviction_work"]);
+        assert_eq!(
+            integer(&lane["accepted_work"]),
+            additional
+                .checked_add(partial)
+                .unwrap()
+                .checked_add(host)
+                .unwrap()
+        );
+        if completed == 0 {
+            assert_eq!(additional, 0);
+        }
+        additional
+    })
+}
+
+fn assert_success_pair(old: &Value, pair: &Value, raw_receipt: &Value) {
+    let raw_additional = assert_raw_receipt(raw_receipt);
     assert_eq!(pair["comparison"], "same_complete_pcm_and_metadata");
     let new = &pair["new"];
     let receipt = &pair["receipts"];
@@ -340,6 +391,12 @@ fn assert_success_pair(old: &Value, pair: &Value) {
     );
     for (lane, counter) in [("plan", "plan_work"), ("cache", "cache_plan_work")] {
         assert_eq!(lane_total(receipt, "partial_work", lane), 0);
+        assert_eq!(
+            raw_receipt[lane]["failed_queries"], 0,
+            "successful raw metadata construction has no failed prefix"
+        );
+        assert_eq!(raw_receipt[lane]["partial_work"], 0);
+        assert_eq!(raw_receipt[lane]["host_eviction_work"], 0);
         // These fresh paired defaults have no preexisting evictable cache entry.
         assert_eq!(lane_total(receipt, "host_eviction_work", lane), 0);
         assert_eq!(
@@ -348,8 +405,15 @@ fn assert_success_pair(old: &Value, pair: &Value) {
         );
         assert_eq!(
             delta(new, counter) - delta(old, counter),
-            lane_total(receipt, "additional_units", lane),
-            "complete NEW minus OLD debit equals independent successful additional receipts"
+            lane_total(receipt, "additional_units", lane)
+                .checked_add(raw_additional[usize::from(lane == "cache")])
+                .unwrap(),
+            "complete NEW minus OLD debit equals independent retained and raw successful receipts; global host eviction is zero in these fresh pairs"
+        );
+        assert_eq!(
+            pair["legacy_receipts"]["fade"]["all_host_eviction_work"][usize::from(lane == "cache")],
+            0,
+            "actual legacy paired host receipt is zero too"
         );
     }
     let actual_events = new["provider_events"].as_array().unwrap();
@@ -395,6 +459,7 @@ fn new_native_success_matches_full_old_pcm_masks_dependencies_depth_and_explicit
     let old = frozen();
     let fixtures = cases::fixtures();
     let mut count = 0;
+    let mut raw_completed = 0_u64;
     for fixture in &fixtures {
         let old_case = old["cases"]
             .as_array()
@@ -414,12 +479,21 @@ fn new_native_success_matches_full_old_pcm_masks_dependencies_depth_and_explicit
                     && v["read"]["request"]["frames"] == frames
             })
         {
+            raw_domain_query_trace::reset();
             let paired = pair(fixture, value, true);
-            assert_success_pair(value, &paired);
+            let raw_receipt = serde_json::to_value(raw_domain_query_trace::snapshot()).unwrap();
+            raw_domain_query_trace::disable();
+            assert_success_pair(value, &paired, &raw_receipt);
+            raw_completed += integer(&raw_receipt["plan"]["completed_queries"])
+                + integer(&raw_receipt["cache"]["completed_queries"]);
             count += 1;
         }
     }
     assert_eq!(count, 40);
+    assert!(
+        raw_completed > 0,
+        "fresh actual public raw constructors are exercised"
+    );
 }
 #[test]
 fn actual_early_and_source_failures_preserve_old_priority_with_separate_partial_receipts() {
@@ -476,6 +550,35 @@ fn actual_early_and_source_failures_preserve_old_priority_with_separate_partial_
     assert_eq!(count, 64);
 }
 
+fn current_body(variant: &str, source: &str) -> Value {
+    let old = frozen();
+    let mut output = Vec::new();
+    let mut count = 0;
+    for fixture in cases::fixtures() {
+        let old_case = old["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|v| v["name"] == fixture.name)
+            .unwrap();
+        fixture_matches(&fixture, old_case);
+        let operations=old_case["operations"].as_array().unwrap().iter().enumerate().map(|(index,row)|{
+            count+=1;
+            json!({"old_operation_index":index,"old_request":row["read"]["request"],"mode":row["mode"],"authored":row["authored"],
+                "paired":pair(&fixture,row,false)})
+        }).collect::<Vec<_>>();
+        output.push(json!({"fixture":fixture.name,"operations":operations}));
+    }
+    assert_eq!(count, 744);
+    json!({"schema":"new-retained-native-pairs-v1","variant":variant,"source_sha256":source,
+        "old_frozen_sha256":OLD_SHA256,"operations":count,
+        "scope":"Complete actual NEW results against the same literal OLD request set and actual input provenance. Tight old work/residency requests may refuse earlier; classifications preserve the full typed errors and accepted-prefix receipts.",
+        "cases":output})
+}
+
+#[path = "raw_domain_host_baseline.rs"]
+mod raw_domain_host_baseline;
+
 #[test]
 #[ignore = "manual NEW native paired capture; same 744 frozen OLD requests, fresh create_new /tmp output"]
 fn capture_new_retained_host_pairs_v1() {
@@ -503,29 +606,7 @@ fn capture_new_retained_host_pairs_v1() {
         .write(true)
         .open(path)
         .unwrap();
-    let old = frozen();
-    let mut output = Vec::new();
-    let mut count = 0;
-    for fixture in cases::fixtures() {
-        let old_case = old["cases"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|v| v["name"] == fixture.name)
-            .unwrap();
-        fixture_matches(&fixture, old_case);
-        let operations=old_case["operations"].as_array().unwrap().iter().enumerate().map(|(index,row)|{
-            count+=1;
-            json!({"old_operation_index":index,"old_request":row["read"]["request"],"mode":row["mode"],"authored":row["authored"],
-                "paired":pair(&fixture,row,false)})
-        }).collect::<Vec<_>>();
-        output.push(json!({"fixture":fixture.name,"operations":operations}));
-    }
-    assert_eq!(count, 744);
-    let value = json!({"schema":"new-retained-native-pairs-v1","variant":variant,"source_sha256":source,
-        "old_frozen_sha256":OLD_SHA256,"operations":count,
-        "scope":"Complete actual NEW results against the same literal OLD request set and actual input provenance. Tight old work/residency requests may refuse earlier; classifications preserve the full typed errors and accepted-prefix receipts.",
-        "cases":output});
+    let value = current_body(&variant, &source);
     serde_json::to_writer_pretty(&mut file, &value).unwrap();
     file.write_all(b"\n").unwrap();
     file.sync_all().unwrap();

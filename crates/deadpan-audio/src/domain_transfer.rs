@@ -37,29 +37,37 @@ impl<'plan> DomainSignalTransfer<'plan> {
         root_samples_per_signal_sample: ExactRatio,
         output: Range<SignalSample>,
     ) -> Result<Self, SignalTransferError> {
-        let root_support = domain.root_samples();
-        let length = root_support
-            .end
-            .0
-            .checked_sub(root_support.start.0)
-            .filter(|length| *length > 0)
-            .ok_or(SignalTransferError::Range)?;
-        let carrier = RootSignalTransfer::new(
-            AudioSample(0)..AudioSample(length),
-            root_at_anchor.checked_sub(ExactRatio::integer(root_support.start.0))?,
+        let (descriptor, carrier) = transfer_parts(
+            &domain,
+            root_at_anchor,
             signal_anchor,
             root_samples_per_signal_sample,
-            output.clone(),
+            output,
         )?;
         Ok(Self {
             domain,
-            descriptor: DomainTransferDescriptor {
-                root_support,
-                root_at_anchor,
-                signal_anchor,
-                root_samples_per_signal_sample,
-                output,
-            },
+            descriptor,
+            carrier,
+        })
+    }
+
+    pub(crate) fn borrowed<'domain>(
+        domain: &'domain AudioDomain<'plan>,
+        root_at_anchor: ExactRatio,
+        signal_anchor: SignalSample,
+        root_samples_per_signal_sample: ExactRatio,
+        output: Range<SignalSample>,
+    ) -> Result<BorrowedDomainSignalTransfer<'domain, 'plan>, SignalTransferError> {
+        let (descriptor, carrier) = transfer_parts(
+            domain,
+            root_at_anchor,
+            signal_anchor,
+            root_samples_per_signal_sample,
+            output,
+        )?;
+        Ok(BorrowedDomainSignalTransfer {
+            domain,
+            descriptor,
             carrier,
         })
     }
@@ -77,8 +85,71 @@ impl<'plan> DomainSignalTransfer<'plan> {
             .root_position(sample)?
             .checked_add(ExactRatio::integer(self.descriptor.root_support.start.0))
     }
+}
 
-    pub(crate) fn carrier(&self) -> &RootSignalTransfer {
+pub(crate) struct BorrowedDomainSignalTransfer<'domain, 'plan> {
+    domain: &'domain AudioDomain<'plan>,
+    descriptor: DomainTransferDescriptor,
+    carrier: RootSignalTransfer,
+}
+
+pub(crate) trait DomainTransferView<'plan> {
+    fn domain(&self) -> &AudioDomain<'plan>;
+    fn descriptor(&self) -> &DomainTransferDescriptor;
+    fn carrier(&self) -> &RootSignalTransfer;
+}
+impl<'plan> DomainTransferView<'plan> for DomainSignalTransfer<'plan> {
+    fn domain(&self) -> &AudioDomain<'plan> {
+        &self.domain
+    }
+    fn descriptor(&self) -> &DomainTransferDescriptor {
+        &self.descriptor
+    }
+    fn carrier(&self) -> &RootSignalTransfer {
         &self.carrier
     }
+}
+impl<'domain, 'plan> DomainTransferView<'plan> for BorrowedDomainSignalTransfer<'domain, 'plan> {
+    fn domain(&self) -> &AudioDomain<'plan> {
+        self.domain
+    }
+    fn descriptor(&self) -> &DomainTransferDescriptor {
+        &self.descriptor
+    }
+    fn carrier(&self) -> &RootSignalTransfer {
+        &self.carrier
+    }
+}
+
+fn transfer_parts(
+    domain: &AudioDomain<'_>,
+    root_at_anchor: ExactRatio,
+    signal_anchor: SignalSample,
+    root_samples_per_signal_sample: ExactRatio,
+    output: Range<SignalSample>,
+) -> Result<(DomainTransferDescriptor, RootSignalTransfer), SignalTransferError> {
+    let root_support = domain.root_samples();
+    let length = root_support
+        .end
+        .0
+        .checked_sub(root_support.start.0)
+        .filter(|length| *length > 0)
+        .ok_or(SignalTransferError::Range)?;
+    let carrier = RootSignalTransfer::new(
+        AudioSample(0)..AudioSample(length),
+        root_at_anchor.checked_sub(ExactRatio::integer(root_support.start.0))?,
+        signal_anchor,
+        root_samples_per_signal_sample,
+        output.clone(),
+    )?;
+    Ok((
+        DomainTransferDescriptor {
+            root_support,
+            root_at_anchor,
+            signal_anchor,
+            root_samples_per_signal_sample,
+            output,
+        },
+        carrier,
+    ))
 }
