@@ -641,6 +641,24 @@ stays disabled. The later Point signal clone, recursive products and complete
 preparation remain open. No cap, prior weight, refund, requirement/Gate status
 or speed/RSS claim changes.
 
+The [Point content admission checkpoint](qualification/point-content-query-admission-2026-10-31.md)
+retains fresh Structural Point query payload/capacity leases through the borrowed
+native consumer and forwards construction work once. Independent before bodies
+and both variants' tests cover all 359 logical requests, real Leaf/Stage/Bound
+content, collection growth, callback failures and same-issuer raw lifetimes.
+Nine native WAV tests cover nested carriers, cache hits, refusal/cancellation
+and actual Original eviction.
+
+Both complete 744-request native captures retain 264 successes and 480 typed
+errors. Their 64 actual Point constructors add 672 plan and 96 cache work units
+per variant; all independent surrounding receipts stay unchanged and every
+difference reconciles against a qualified ordinary replay. All 26 immutable
+payload hashes stay exact. All 29 Plan and 21 Audio executables per variant pass
+(732/719 Plan and 1028/1022 Audio), with strict checks, doctests,
+hygiene and independent reviews. The seven unfinished Main Split research cases
+were not rerun. General sound-bearing Split remains disabled. Point policy and
+whole preparation remain open; acceptance credit and Gate statuses do not change.
+
 The [Point signal borrow checkpoint](qualification/point-signal-borrow-2026-10-31.md)
 removes one unnecessary owning copy in the synchronous native Point reader.
 The exact stored signal is borrowed while its existing admitted domain carrier

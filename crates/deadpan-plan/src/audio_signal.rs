@@ -25,6 +25,7 @@ use crate::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap, PlanError};
 
 #[path = "audio_signal_processing_query.rs"]
 pub(in crate::plan) mod processing_query;
+pub use processing_query::AdmittedAudioPointContentQuery;
 
 #[path = "audio_signal_query.rs"]
 mod query;
@@ -145,6 +146,45 @@ pub struct AudioStage<'plan> {
     node: usize,
     #[serde(flatten)]
     descriptor: AudioStageDescriptor,
+}
+
+#[cfg(test)]
+impl AudioStage<'_> {
+    pub(in crate::plan) fn point_content_old_snapshot(
+        &self,
+        expected_plan: &RenderPlan,
+    ) -> serde_json::Value {
+        assert!(self.belongs_to(expected_plan));
+        let Self {
+            plan: _,
+            child,
+            node,
+            descriptor,
+        } = self;
+        let AudioStageDescriptor {
+            project_id,
+            revision_id,
+            definition,
+            instance,
+            child: descriptor_child,
+            selection,
+            duration,
+            rate,
+            pitch,
+            bypass_binding,
+        } = descriptor;
+        let mut value = serde_json::json!({
+            "belongs_to_expected_plan":true,
+            "child_index":child,"child_node":expected_plan.nodes[*child].inspection.id.as_str(),
+            "node_index":node,"node":expected_plan.nodes[*node].inspection.id.as_str(),
+        });
+        value["descriptor"] = serde_json::json!({
+            "project_id":project_id,"revision_id":revision_id,"definition":definition,
+            "instance":instance,"child":descriptor_child,"selection":selection,
+            "duration":duration,"rate":rate,"pitch":pitch,"bypass_binding":bypass_binding,
+        });
+        value
+    }
 }
 
 impl PartialEq for AudioStage<'_> {

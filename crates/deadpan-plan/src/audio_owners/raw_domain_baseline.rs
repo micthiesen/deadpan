@@ -218,6 +218,7 @@ fn reconstruct(
     let bound_after = bound.capture_baseline_snapshot(plan);
     assert_eq!(bound_before, bound_after);
     admission_tests::observe(plan, bound, caller);
+    point_content_baseline::observe(plan, bound, caller);
     json!({"literal_bound_work":bound.work(),
         "literal_resolved_work":resolved_work,
         "literal_lattice_work":lattice_work,"bound_before":bound_before,
@@ -285,6 +286,14 @@ fn processing_cases() -> Value {
                 let mut bounds = Vec::new();
                 for (index, span) in query.spans.iter().enumerate() {
                     if let AudioSignalContent::Bound(bound) = &span.content {
+                        let _point_content_scope = point_content_baseline::DirectScope::new(
+                            match parent {
+                                Parent::Root(_) => "root_processing",
+                                Parent::Domain(_) => "domain_processing",
+                            },
+                            descriptor,
+                            index,
+                        );
                         match parent {
                             Parent::Root(_) => root_bounds += 1,
                             Parent::Domain(_) => domain_bounds += 1,
@@ -309,6 +318,11 @@ fn processing_cases() -> Value {
                     let mut bounds = Vec::new();
                     for (index, span) in query.spans.iter().enumerate() {
                         if let AudioSignalContent::Bound(bound) = &span.content {
+                            let _point_content_scope = point_content_baseline::DirectScope::new(
+                                "root_signal",
+                                descriptor,
+                                index,
+                            );
                             signal_bounds += 1;
                             bounds.push(json!({"span_index":index,"construction":reconstruct(plan,bound,None)}));
                         }
@@ -421,3 +435,6 @@ fn raw_domain_matches_explicit_external_old_v1() {
 
 #[path = "raw_domain_admission_tests.rs"]
 mod admission_tests;
+
+#[path = "point_content_baseline.rs"]
+mod point_content_baseline;

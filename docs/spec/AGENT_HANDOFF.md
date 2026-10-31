@@ -2,7 +2,44 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: Point signals borrowed, product goal active
+## Current state: Point content queries admitted, product goal active
+
+The [Point content checkpoint](../qualification/point-content-query-admission-2026-10-31.md)
+admits the fresh Structural PointCeil content query and retains its exact payload
+and capacity leases through the native borrowed consumer. False mode preserves
+the ordinary constructor without policy callbacks; true mode reuses the existing
+helper and forwards its literal construction work once. Caps, canonical weights,
+DSP and saved formats are unchanged.
+
+Complete logical before bodies cover 306 raw-operand requests plus 53 public
+requests, including genuine Leaf, Stage and Bound content and real vector growth.
+Both variants pass all 359 public comparisons, callback failures, exact/short
+work and peak tests, and shared raw-carrier cleanup. Nine real-WAV native tests
+cover nested Bound lifetimes, Stage cache hits, refusals, cancellation and actual
+Original-cache eviction.
+
+Both complete 744-request captures preserve 264 successes and 480 typed errors.
+Their 64 actual Point constructors add exactly 672 plan and 96 cache units per
+variant, independently reconciled against a narrow ordinary replay whose entire
+historical body matches the frozen native before body. No outside receipt changes.
+All 26 immutable payload hashes remain exact.
+
+All 29 Plan and 21 Audio executables pass per variant: Plan 732/719 and Audio
+1028/1022, plus strict checks, doctests, hygiene and independent reviews.
+Seven inherited unfinished Split research tests remain explicitly filtered and
+were not rerun here. General sound-bearing Split stays disabled.
+
+Next freeze and admit the fresh SignalSample policy in
+read_point_domain_controlled on the actual PointCeil grid. Retain both sealed
+carriers through policy and numerical consumption. The existing admitted walk
+needs a SignalSample finalizer; resolve the current suppressed-Vec output move
+with an explicit lease handoff before implementation. Root-grid conversion or
+an unadmitted clone is not an equivalent solution. The qualification archive
+retains the read-only helper/ownership study. Other providers, Tape/Mix,
+Graph containers, downstream owning metadata and complete preparation remain
+open. No requirement or Gate closes; the full product goal is active.
+
+## Point signals borrowed (historical)
 
 The [Point signal checkpoint](../qualification/point-signal-borrow-2026-10-31.md)
 removes the native synchronous Point reader's unnecessary owning signal copy.

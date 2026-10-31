@@ -37,6 +37,13 @@ fn receipts() -> Value {
     if let Some(raw) = raw_domain_host_baseline::receipt_if_capturing() {
         value["raw_domain"] = raw;
     }
+    if let Some(point) = raw_domain_host_baseline::point_receipt_if_capturing() {
+        value["point_content"] = point;
+        let (units, overflow) = original_request::flattened_work_trace::host_eviction_units();
+        value["point_content_host_eviction"] = json!({
+            "accepted_units_by_lane":units,"overflow":overflow,
+        });
+    }
     value
 }
 fn integer(value: &Value) -> u64 {
@@ -480,7 +487,9 @@ fn new_native_success_matches_full_old_pcm_masks_dependencies_depth_and_explicit
             })
         {
             raw_domain_query_trace::reset();
-            let paired = pair(fixture, value, true);
+            let paired = crate::stages::point_content_request::with_legacy_point_content(|| {
+                pair(fixture, value, true)
+            });
             let raw_receipt = serde_json::to_value(raw_domain_query_trace::snapshot()).unwrap();
             raw_domain_query_trace::disable();
             assert_success_pair(value, &paired, &raw_receipt);

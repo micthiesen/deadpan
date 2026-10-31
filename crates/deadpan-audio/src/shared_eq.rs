@@ -1373,3 +1373,44 @@ fn add_sound(
     }
     Ok(())
 }
+
+#[cfg(test)]
+pub(super) fn with_cached_original_for_point_test<P: AudioSourceProvider, R>(
+    renderer: &mut StageAudio,
+    provider: &mut P,
+    control: WorkControl<'_>,
+    action: impl FnOnce(&mut StageAudio, &mut P) -> R,
+) -> R {
+    let plan = Arc::clone(&renderer.plan);
+    let mut graph = Graph {
+        plan: &plan,
+        nodes: Vec::new(),
+        resident: 0,
+        node_capacity_frames: 0,
+        wet_filters: std::array::from_fn(|_| None),
+        event_tiles: BTreeMap::new(),
+        event_nodes: Default::default(),
+        event_filters: BTreeMap::new(),
+        voices: BTreeMap::new(),
+        permission_families: BTreeMap::new(),
+        sends: None,
+        skip: Vec::new(),
+        original_only: true,
+        original_inputs: original_inputs::Cache::default(),
+    };
+    let cached = renderer
+        .shared_original_input(
+            provider,
+            &mut graph,
+            &Context::Root,
+            AudioSample(0)..AudioSample(i64::from(MAX_OUTPUT_FRAMES)),
+            control,
+            0,
+        )
+        .unwrap();
+    assert!(matches!(&cached, original_inputs::Read::Cached(_)));
+    drop(cached);
+    let result = action(renderer, provider);
+    graph.original_inputs.clear(renderer);
+    result
+}

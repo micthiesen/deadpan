@@ -1,4 +1,4 @@
-//! Actual Root signal assembly and processing conversion.
+//! Actual Structural signal assembly, Point content and Root processing queries.
 use super::*;
 use crate::audio_allocated::admission::array;
 use crate::plan::audio::processing_query as collection;
@@ -20,6 +20,108 @@ pub(in crate::plan) type SignalValue<'plan, A> = GuardedBound<
     <A as AudioSoundContextAdmission>::Lease,
 >;
 pub(in crate::plan) type SignalResult<'plan, A> = QueryResult<SignalValue<'plan, A>, A>;
+
+enum PointContentValue<'plan, I, L> {
+    Ordinary(AudioSignalQuery<'plan>),
+    Admitted(GuardedBound<SignalBuffer<'plan, I, L>, I, L>),
+}
+
+/// Fresh Structural Point content and its independent construction leases.
+/// Borrow the query while this carrier retains both payload and vector storage.
+pub struct AdmittedAudioPointContentQuery<'plan, I, L> {
+    value: PointContentValue<'plan, I, L>,
+    canonical: usize,
+    additional: usize,
+    forwarded: bool,
+}
+
+impl<'plan, I: Copy + Eq, L> AdmittedAudioPointContentQuery<'plan, I, L> {
+    pub fn query(&self) -> &AudioSignalQuery<'plan> {
+        match &self.value {
+            PointContentValue::Ordinary(value) => value,
+            PointContentValue::Admitted(value) => &value.query,
+        }
+    }
+
+    pub fn canonical_units(&self) -> usize {
+        self.canonical
+    }
+
+    pub fn additional_units(&self) -> usize {
+        self.additional
+    }
+
+    pub fn total_units(&self) -> usize {
+        self.canonical + self.additional
+    }
+
+    pub fn was_forwarded(&self) -> bool {
+        self.forwarded
+    }
+}
+
+impl<'plan> crate::AudioPointDomain<'plan> {
+    /// Construct content on this Point's intrinsic SignalSample clock.
+    /// Metered construction forwards its canonical and additional work once;
+    /// false mode retains the unchanged ordinary query without policy callbacks.
+    pub fn content_query_admitted<A: AudioSoundContextAdmission>(
+        &self,
+        samples: Range<SignalSample>,
+        limits: AudioQueryLimits,
+        admission: &mut A,
+    ) -> Result<AdmittedAudioPointContentQuery<'plan, A::Issuer, A::Lease>, A::Error> {
+        if !A::METERED {
+            let query = self
+                .signal_ref()
+                .query(samples, limits)
+                .map_err(A::Error::from)?;
+            let canonical = query.work;
+            return Ok(AdmittedAudioPointContentQuery {
+                value: PointContentValue::Ordinary(query),
+                canonical,
+                additional: 0,
+                forwarded: false,
+            });
+        }
+
+        let mut local = Budget {
+            remaining: limits.maximum_work,
+            lookup: LookupStats::default(),
+        };
+        let mut budget = QueryBudget::new(&mut local, admission);
+        outer::<_, A>((|| {
+            let value = self.signal_ref().structural_child_query(
+                samples,
+                limits,
+                AudioBoundaryRule::PointCeil,
+                (true, true),
+                &mut budget,
+            )?;
+            let canonical = budget.canonical_used;
+            let additional = budget.additional_used;
+            let work = canonical
+                .checked_add(additional)
+                .ok_or(TimeError::Overflow)?;
+            if value.query.work != work
+                || limits.maximum_work.checked_sub(budget.remaining) != Some(work)
+            {
+                return Err(
+                    PlanError::InvalidPlan("Point content query work provenance mismatch").into(),
+                );
+            }
+            budget.check_memory(&value.capacity)?;
+            let value = value.map(&mut budget, std::convert::identity)?;
+            budget.check_memory(&value.capacity)?;
+            budget.check()?;
+            Ok(AdmittedAudioPointContentQuery {
+                value: PointContentValue::Admitted(value),
+                canonical,
+                additional,
+                forwarded: true,
+            })
+        })())
+    }
+}
 
 impl<'plan> AudioSignal<'plan> {
     fn structural_grid(

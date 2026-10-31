@@ -742,3 +742,6 @@ mod pairs;
 
 #[path = "raw_domain_lifetime_tests.rs"]
 mod raw_domain_lifetime_tests;
+
+#[path = "point_content_query_tests.rs"]
+mod point_content_query_tests;

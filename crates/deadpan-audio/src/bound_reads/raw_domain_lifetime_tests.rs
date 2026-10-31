@@ -129,6 +129,17 @@ fn observed(
     fault: Fault,
     legacy: bool,
 ) -> Value {
+    crate::stages::point_content_request::with_legacy_point_content(|| {
+        observed_with_ordinary_point(fixture, shared, authored, fault, legacy)
+    })
+}
+fn observed_with_ordinary_point(
+    fixture: &cases::Fixture,
+    shared: bool,
+    authored: bool,
+    fault: Fault,
+    legacy: bool,
+) -> Value {
     with_retained(
         fixture,
         shared,

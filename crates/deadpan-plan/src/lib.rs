@@ -49,8 +49,8 @@ pub use picture::{Picture, PictureCaption, PictureFraming, PictureSample};
 pub use plan::AudioIntrinsicPreparation;
 pub use plan::PictureOwnerMap;
 pub use plan::{
-    AdmittedAudioBoundDomain, AdmittedAudioFadeQuery, AdmittedAudioPolicyQuery,
-    AdmittedAudioProcessingQuery, AdmittedAudioQuery,
+    AdmittedAudioBoundDomain, AdmittedAudioFadeQuery, AdmittedAudioPointContentQuery,
+    AdmittedAudioPolicyQuery, AdmittedAudioProcessingQuery, AdmittedAudioQuery,
 };
 pub use plan::{
     AdmittedAudioDomainPolicy, AdmittedAudioDomainProcessing, AdmittedAudioDomainProcessingPolicy,

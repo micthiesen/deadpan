@@ -13,5 +13,5 @@ pub(super) fn with_legacy_raw_domain<T>(action: impl FnOnce() -> T) -> T {
         }
     }
     let _restore = Restore(LEGACY.with(|mode| mode.replace(true)));
-    action()
+    super::point_content_request::with_legacy_point_content(action)
 }

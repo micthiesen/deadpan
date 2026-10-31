@@ -16,12 +16,12 @@ use deadpan_dsp::{CanonicalRecipe, CanonicalStretch};
 use deadpan_dsp::{StereoPcm, StreamRecipe, StreamingStretch, StretchRate};
 use deadpan_media::audio_index::AudioChannelLayout;
 use deadpan_plan::{
-    AdmittedAudioBoundDomain, AudioBound, AudioBoundDomain, AudioContent, AudioDefinition,
-    AudioDefinitionSelector, AudioDomain, AudioFadeQuery, AudioPointDomain, AudioPolicyQuery,
-    AudioProcessingQuery, AudioProcessingSpan, AudioProjectionIdentity, AudioQuery,
-    AudioQueryLimits, AudioSignalContent, AudioSignalMix, AudioSignalQuery, AudioSignalSpan,
-    AudioSignalTape, AudioStage, AudioStageDescriptor, AudioStageProjection, PlanError,
-    ReferenceSample, RenderPlan, SignalSample, SilenceReason,
+    AdmittedAudioBoundDomain, AdmittedAudioPointContentQuery, AudioBound, AudioBoundDomain,
+    AudioContent, AudioDefinition, AudioDefinitionSelector, AudioDomain, AudioFadeQuery,
+    AudioPointDomain, AudioPolicyQuery, AudioProcessingQuery, AudioProcessingSpan,
+    AudioProjectionIdentity, AudioQuery, AudioQueryLimits, AudioSignalContent, AudioSignalMix,
+    AudioSignalQuery, AudioSignalSpan, AudioSignalTape, AudioStage, AudioStageDescriptor,
+    AudioStageProjection, PlanError, ReferenceSample, RenderPlan, SignalSample, SilenceReason,
 };
 use serde::Serialize;
 
@@ -68,6 +68,12 @@ mod authored_gain;
 
 #[path = "authored_eq.rs"]
 mod authored_eq;
+#[cfg(test)]
+#[path = "point_content_query_trace.rs"]
+mod point_content_query_trace;
+#[cfg(test)]
+#[path = "point_content_request.rs"]
+mod point_content_request;
 #[cfg(test)]
 #[path = "raw_domain_query_trace.rs"]
 mod raw_domain_query_trace;
@@ -352,6 +358,21 @@ pub struct EdgeFadedBlock {
     pub start: AudioSample,
     pub samples: Vec<[f32; 2]>,
     pub suppressed: Vec<Range<AudioSample>>,
+}
+
+enum PointContentQuery<'plan, I, L> {
+    #[cfg(test)]
+    Ordinary(AudioSignalQuery<'plan>),
+    Admitted(AdmittedAudioPointContentQuery<'plan, I, L>),
+}
+impl<'plan, I: Copy + Eq, L> PointContentQuery<'plan, I, L> {
+    fn query(&self) -> &AudioSignalQuery<'plan> {
+        match self {
+            #[cfg(test)]
+            Self::Ordinary(value) => value,
+            Self::Admitted(value) => value.query(),
+        }
+    }
 }
 
 enum RawBoundDomain<'plan, I, L> {
@@ -1190,15 +1211,61 @@ impl StageAudio {
                 .ok_or(StageAudioError::Range)?,
         );
         let signal_start = domain.signal_at_reference(start)?;
-        domain.signal_at_reference(end)?;
-        let block = self.read_signal(
-            domain.signal_ref(),
-            provider,
-            signal_start,
-            frames,
-            control,
-            depth,
-        )?;
+        let signal_end = domain.signal_at_reference(end)?;
+        control.check()?;
+        let samples = signal_start..signal_end;
+        let limits = control.query_limits()?;
+        #[cfg(test)]
+        let mut point_result_lifetime = point_content_query_trace::ResultGuard::new();
+        #[cfg(test)]
+        let query = {
+            let mut trace = point_content_query_trace::ScopeGuard::new(control);
+            if point_content_request::legacy() {
+                let query = domain.signal_ref().query(samples.clone(), limits)?;
+                control.spend_plan_work(query.work)?;
+                trace.completed(query.work, 0, query.work, false, true, query.spans.len());
+                PointContentQuery::Ordinary(query)
+            } else {
+                let query = {
+                    let mut admission = sound_context_admission::Admission::new(self, control);
+                    domain.content_query_admitted(samples.clone(), limits, &mut admission)?
+                };
+                if !query.was_forwarded() {
+                    control.spend_plan_work(query.total_units())?;
+                }
+                trace.completed(
+                    query.canonical_units(),
+                    query.additional_units(),
+                    query.total_units(),
+                    query.was_forwarded(),
+                    false,
+                    query.query().spans.len(),
+                );
+                PointContentQuery::Admitted(query)
+            }
+        };
+        #[cfg(not(test))]
+        let query = {
+            let query = {
+                let mut admission = sound_context_admission::Admission::new(self, control);
+                domain.content_query_admitted(samples.clone(), limits, &mut admission)?
+            };
+            if !query.was_forwarded() {
+                control.spend_plan_work(query.total_units())?;
+            }
+            PointContentQuery::Admitted(query)
+        };
+        #[cfg(test)]
+        if matches!(&query, PointContentQuery::Admitted(_)) {
+            point_result_lifetime.acquired();
+        }
+        control.check()?;
+        let policy = domain
+            .signal_ref()
+            .policy(samples, control.query_limits()?)?;
+        control.spend_plan_work(policy.work)?;
+        self.preflight_signal_queries(query.query(), &policy, control, depth)?;
+        let block = self.read_signal_queries(query.query(), policy, provider, control, depth)?;
         control.check()?;
         Ok(block)
     }
@@ -2806,6 +2873,19 @@ impl StageAudio {
             control.query_limits()?,
         )?;
         control.spend_plan_work(policy.work)?;
+        self.preflight_signal_queries(&query, &policy, control, depth)?;
+        self.read_signal_queries(&query, policy, provider, control, depth)
+    }
+
+    fn preflight_signal_queries(
+        &mut self,
+        query: &AudioSignalQuery<'_>,
+        policy: &AudioPolicyQuery<SignalSample>,
+        control: WorkControl<'_>,
+        depth: usize,
+    ) -> Result<(), StageAudioError> {
+        #[cfg(test)]
+        point_content_query_trace::consumer(point_content_query_trace::Consumer::Preflight);
         for content in &policy.contents {
             control.preflight_content(content, &self.plan)?;
         }
@@ -2817,20 +2897,23 @@ impl StageAudio {
                 AudioSignalContent::ProjectedStage(stage) => {
                     self.preflight_projected(stage, control, depth + 1)?;
                 }
+                // Stage/Bound preparation owns its recursive admission boundary.
                 AudioSignalContent::Stage(_) | AudioSignalContent::Bound(_) => {}
             }
         }
-        self.read_signal_queries(query, policy, provider, control, depth)
+        Ok(())
     }
 
     fn read_signal_queries(
         &mut self,
-        query: AudioSignalQuery<'_>,
+        query: &AudioSignalQuery<'_>,
         policy: AudioPolicyQuery<SignalSample>,
         provider: &mut impl AudioSourceProvider,
         control: WorkControl<'_>,
         depth: usize,
     ) -> Result<SignalBlock, StageAudioError> {
+        #[cfg(test)]
+        point_content_query_trace::consumer(point_content_query_trace::Consumer::Numerical);
         let cancelled = control.cancelled;
         let start = query.samples.start;
         let frames =
@@ -2838,7 +2921,9 @@ impl StageAudio {
         let mut samples = Vec::with_capacity(frames as usize);
         let mut dependencies = Dependencies::new();
         let mut relative_depth = 0;
-        for span in query.spans {
+        for span in &query.spans {
+            #[cfg(test)]
+            point_content_query_trace::consumer(point_content_query_trace::Consumer::Span);
             control.check()?;
             let start = AudioSample(span.samples.start.0);
             let count = u32::try_from(span.samples.end.0 - span.samples.start.0)
@@ -2850,8 +2935,7 @@ impl StageAudio {
                         source.asset.clone(),
                         control.observe(&source.asset, prepared)?,
                     );
-                    let recipe =
-                        signal_source_recipe(&span, prepared.index().stream().sample_rate)?;
+                    let recipe = signal_source_recipe(span, prepared.index().stream().sample_rate)?;
                     prepare_source_block(
                         prepared,
                         recipe,
@@ -2882,7 +2966,7 @@ impl StageAudio {
                     dependencies.extend(prepared.block.dependencies.clone());
                     relative_depth = relative_depth.max(1 + prepared.block.relative_depth);
                     let recipe = signal_stage_recipe(
-                        &span,
+                        span,
                         prepared.block.samples.len(),
                         self.plan.metadata().presentation_basis.frame_rate,
                     )?;
@@ -2894,7 +2978,7 @@ impl StageAudio {
                     dependencies.extend(prepared.block.dependencies.clone());
                     relative_depth = relative_depth.max(1 + prepared.block.relative_depth);
                     let recipe = signal_stage_recipe(
-                        &span,
+                        span,
                         prepared.block.samples.len(),
                         self.plan.metadata().presentation_basis.frame_rate,
                     )?;
@@ -2905,7 +2989,7 @@ impl StageAudio {
                     dependencies.extend(prepared.dependencies.clone());
                     relative_depth = relative_depth.max(1 + prepared.relative_depth);
                     let recipe = signal_stage_recipe(
-                        &span,
+                        span,
                         prepared.samples.len(),
                         self.plan.metadata().presentation_basis.frame_rate,
                     )?;
