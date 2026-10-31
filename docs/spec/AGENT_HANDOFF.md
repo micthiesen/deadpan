@@ -2,7 +2,31 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: public Point destination owned, product goal active
+## Current state: typed mask foundation, product goal active
+
+The [typed-mask foundation](../qualification/internal-mask-foundation-2026-10-31.md)
+generalizes the active public owner over sealed ReferenceSample, SignalSample
+and AudioSample labels. Its public Reference alias, layout, charges, drop order,
+mapper work and JSON stay exact. Internal production masks still use ordinary
+Vecs; the controlled transfer and builders remain future integration work.
+
+Fresh actual before captures freeze ten checked internal paths. Both variants
+agree byte-for-byte: nine reads succeed, one lower-quota read reports the real
+resident limit, genuine Preserve Bound transfers return nonempty masks, and
+both 514-frame aggregates return257 ranges. The29th independent oracle preserves
+the held-output query trace's actual invalid flag:36 accepted units include26
+query units plus10 independent residency units. This is a trace-attribution
+limitation, not a lifetime failure; canonical work is not changed to hide it.
+
+Both Audio libraries pass464/458 with16 ignored manual captures; the complete
+ten-case external regression, existing744-case body and eight-case output body
+pass. Main's strict check, isolated all-target Audio Clippy, formatting, hygiene,
+independent review and preservation audits pass. All29 immutable payload hashes
+remain exact. Integration runtime passes are retained from the preceding public
+owner checkpoint, not repeated for this type-only generalization. No Gate or
+requirement credit changes; general sound-bearing Split remains disabled.
+
+## Public Point destination owned (historical)
 
 The [public Point destination checkpoint](../qualification/point-suppression-output-ownership-2026-10-31.md)
 owns the final reference-labelled suppression allocation returned by the public

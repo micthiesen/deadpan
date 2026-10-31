@@ -649,6 +649,17 @@ formatting, doctests, hygiene and 28 unchanged immutable payload hashes. Interna
 policy and transfer storage are still ordinary Vecs, so this grants no Point
 policy, whole-preparation, requirement or Gate credit.
 
+The [typed-mask foundation](qualification/internal-mask-foundation-2026-10-31.md)
+keeps the public Reference owner active while sealing its generic storage to
+Reference, Signal and Audio labels. Both libraries pass464/458 and preserve the
+existing744-case and eight-case bodies. A fresh ten-case internal-path oracle
+agrees across both builds, including positive real Preserve Bound transfers,
+257-range aggregates and the genuine quota refusal. Its actual held-output trace
+retains36 accepted units:26 query plus10 independent residency units. The old
+query tracer's invalid flag is preserved as an attribution limitation. Strict
+checks, hygiene, review and29 immutable payload hashes pass; internal production
+ownership, Point policy, complete preparation and existing acceptance remain open.
+
 The [Point content admission checkpoint](qualification/point-content-query-admission-2026-10-31.md)
 retains fresh Structural Point query payload/capacity leases through the borrowed
 native consumer and forwards construction work once. Independent before bodies

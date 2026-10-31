@@ -751,3 +751,6 @@ mod owned_suppression_baseline;
 
 #[path = "point_suppression_tests.rs"]
 mod point_suppression_tests;
+
+#[path = "internal_suppression_baseline.rs"]
+mod internal_suppression_baseline;

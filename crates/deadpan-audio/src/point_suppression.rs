@@ -121,13 +121,25 @@ impl Drop for Charge {
     }
 }
 
-struct Storage {
-    ranges: Vec<Range<ReferenceSample>>,
+mod sealed {
+    pub trait Sample {}
+    impl Sample for super::ReferenceSample {}
+    impl Sample for super::SignalSample {}
+    impl Sample for super::AudioSample {}
+}
+
+pub trait MaskSample: sealed::Sample + Copy + Eq + fmt::Debug + Serialize {}
+impl MaskSample for ReferenceSample {}
+impl MaskSample for SignalSample {}
+impl MaskSample for AudioSample {}
+
+struct Storage<S: MaskSample> {
+    ranges: Vec<Range<S>>,
     charge: Charge,
 }
 
-struct OwnedMask {
-    storage: Option<Box<Storage>>,
+struct OwnedMask<S: MaskSample> {
+    storage: Option<Box<Storage<S>>>,
 }
 
 // Keep physical Box deallocation ahead of both the Vec and its charge.
@@ -139,7 +151,7 @@ struct OwnedMask {
 fn unbox<T>(boxed: Box<T>) -> T {
     *boxed
 }
-impl Drop for OwnedMask {
+impl<S: MaskSample> Drop for OwnedMask<S> {
     fn drop(&mut self) {
         if let Some(storage) = self.storage.take() {
             let Storage { ranges, charge } = unbox(storage);
@@ -149,21 +161,23 @@ impl Drop for OwnedMask {
     }
 }
 
-enum Value {
-    Plain(Vec<Range<ReferenceSample>>),
-    Owned(OwnedMask),
+enum Value<S: MaskSample> {
+    Plain(Vec<Range<S>>),
+    Owned(OwnedMask<S>),
 }
 
 /// Immutable suppression ranges whose admitted storage may outlive StageAudio.
-pub struct PointSuppressionMask {
-    value: Value,
+pub struct SuppressionMask<S: MaskSample> {
+    value: Value<S>,
 }
-impl PointSuppressionMask {
-    pub fn as_slice(&self) -> &[Range<ReferenceSample>] {
+pub type PointSuppressionMask = SuppressionMask<ReferenceSample>;
+
+impl<S: MaskSample> SuppressionMask<S> {
+    pub fn as_slice(&self) -> &[Range<S>] {
         self.ranges()
     }
 
-    pub fn iter(&self) -> std::slice::Iter<'_, Range<ReferenceSample>> {
+    pub fn iter(&self) -> std::slice::Iter<'_, Range<S>> {
         self.as_slice().iter()
     }
 
@@ -179,7 +193,7 @@ impl PointSuppressionMask {
         self.ranges().capacity()
     }
 
-    fn ranges(&self) -> &Vec<Range<ReferenceSample>> {
+    fn ranges(&self) -> &Vec<Range<S>> {
         match &self.value {
             Value::Plain(value) => value,
             Value::Owned(value) => {
@@ -192,49 +206,49 @@ impl PointSuppressionMask {
         }
     }
 }
-impl Default for PointSuppressionMask {
+impl<S: MaskSample> Default for SuppressionMask<S> {
     fn default() -> Self {
         Self {
             value: Value::Plain(Vec::new()),
         }
     }
 }
-impl Deref for PointSuppressionMask {
-    type Target = [Range<ReferenceSample>];
+impl<S: MaskSample> Deref for SuppressionMask<S> {
+    type Target = [Range<S>];
     fn deref(&self) -> &Self::Target {
         self.as_slice()
     }
 }
-impl<'a> IntoIterator for &'a PointSuppressionMask {
-    type Item = &'a Range<ReferenceSample>;
-    type IntoIter = std::slice::Iter<'a, Range<ReferenceSample>>;
+impl<'a, S: MaskSample> IntoIterator for &'a SuppressionMask<S> {
+    type Item = &'a Range<S>;
+    type IntoIter = std::slice::Iter<'a, Range<S>>;
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
 }
-impl PartialEq for PointSuppressionMask {
+impl<S: MaskSample> PartialEq for SuppressionMask<S> {
     fn eq(&self, other: &Self) -> bool {
         self.as_slice() == other.as_slice()
     }
 }
-impl PartialEq<Vec<Range<ReferenceSample>>> for PointSuppressionMask {
-    fn eq(&self, other: &Vec<Range<ReferenceSample>>) -> bool {
+impl<S: MaskSample> PartialEq<Vec<Range<S>>> for SuppressionMask<S> {
+    fn eq(&self, other: &Vec<Range<S>>) -> bool {
         self.as_slice() == other.as_slice()
     }
 }
-impl PartialEq<PointSuppressionMask> for Vec<Range<ReferenceSample>> {
-    fn eq(&self, other: &PointSuppressionMask) -> bool {
+impl<S: MaskSample> PartialEq<SuppressionMask<S>> for Vec<Range<S>> {
+    fn eq(&self, other: &SuppressionMask<S>) -> bool {
         self.as_slice() == other.as_slice()
     }
 }
-impl Eq for PointSuppressionMask {}
-impl fmt::Debug for PointSuppressionMask {
+impl<S: MaskSample> Eq for SuppressionMask<S> {}
+impl<S: MaskSample> fmt::Debug for SuppressionMask<S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.as_slice().fmt(f)
     }
 }
-impl Serialize for PointSuppressionMask {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+impl<S: MaskSample> Serialize for SuppressionMask<S> {
+    fn serialize<T: Serializer>(&self, serializer: T) -> Result<T::Ok, T::Error> {
         self.as_slice().serialize(serializer)
     }
 }
@@ -248,10 +262,12 @@ pub(super) fn shell_frames() -> Result<u64, StageAudioError> {
     frames_for(Layout::new::<ArcShell>())
 }
 pub(super) fn payload_frames(capacity: usize) -> Result<u64, StageAudioError> {
-    let vector =
-        Layout::array::<Range<ReferenceSample>>(capacity).map_err(|_| StageAudioError::Range)?;
+    payload_frames_for::<ReferenceSample>(capacity)
+}
+fn payload_frames_for<S: MaskSample>(capacity: usize) -> Result<u64, StageAudioError> {
+    let vector = Layout::array::<Range<S>>(capacity).map_err(|_| StageAudioError::Range)?;
     frames_for(vector)?
-        .checked_add(frames_for(Layout::new::<Storage>())?)
+        .checked_add(frames_for(Layout::new::<Storage<S>>())?)
         .ok_or(StageAudioError::Range)
 }
 
@@ -474,14 +490,14 @@ pub(super) mod work_trace {
 mod tests {
     use super::*;
 
-    fn owned(account: &mut Account, ranges: Vec<Range<ReferenceSample>>) -> PointSuppressionMask {
+    fn owned<S: MaskSample>(account: &mut Account, ranges: Vec<Range<S>>) -> SuppressionMask<S> {
         if account.handle.is_none() {
             account.initialize_after_admission(shell_frames().unwrap());
         }
         let charge = account
-            .charge_after_admission(payload_frames(ranges.capacity()).unwrap())
+            .charge_after_admission(payload_frames_for::<S>(ranges.capacity()).unwrap())
             .unwrap();
-        PointSuppressionMask {
+        SuppressionMask {
             value: Value::Owned(OwnedMask {
                 storage: Some(Box::new(Storage { ranges, charge })),
             }),
@@ -596,9 +612,44 @@ mod tests {
         );
         assert_eq!(std::mem::size_of::<AccountData>(), 8);
         assert_eq!(Layout::new::<ArcShell>().size(), 24);
-        assert_eq!(Layout::new::<Storage>().size(), 40);
+        assert_eq!(Layout::new::<Storage<ReferenceSample>>().size(), 40);
         assert_eq!(std::mem::size_of::<Charge>(), 16);
         assert_eq!(shell_frames().unwrap(), 3);
         assert_eq!(payload_frames(1).unwrap(), 7);
+    }
+
+    #[test]
+    fn distinct_sample_labels_share_account_without_relabelling_ranges() {
+        fn check_layout<S: MaskSample>() {
+            assert_eq!(
+                Layout::new::<SuppressionMask<S>>(),
+                Layout::new::<Vec<Range<S>>>()
+            );
+            assert_eq!(Layout::new::<Storage<S>>().size(), 40);
+            assert_eq!(payload_frames_for::<S>(1).unwrap(), 7);
+        }
+        check_layout::<ReferenceSample>();
+        check_layout::<SignalSample>();
+        check_layout::<AudioSample>();
+
+        let mut account = Account::default();
+        let signal = owned(&mut account, vec![SignalSample(-7)..SignalSample(9)]);
+        let audio = owned(&mut account, vec![AudioSample(11)..AudioSample(19)]);
+        let reference = owned(&mut account, vec![ReferenceSample(23)..ReferenceSample(29)]);
+        let observer = account.observer().unwrap();
+        drop(account);
+        assert_eq!(observer.live_frames(), 24);
+        assert_eq!(signal.as_slice(), [SignalSample(-7)..SignalSample(9)]);
+        assert_eq!(audio.as_slice(), [AudioSample(11)..AudioSample(19)]);
+        assert_eq!(
+            reference.as_slice(),
+            [ReferenceSample(23)..ReferenceSample(29)]
+        );
+        drop(signal);
+        assert_eq!(observer.live_frames(), 17);
+        drop(audio);
+        assert_eq!(observer.live_frames(), 10);
+        drop(reference);
+        assert_eq!(observer.live_frames(), 3);
     }
 }
