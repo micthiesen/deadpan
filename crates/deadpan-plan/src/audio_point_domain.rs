@@ -228,6 +228,12 @@ impl<'plan> AudioPointDomain<'plan> {
     pub fn signal(&self) -> AudioSignal<'plan> {
         self.signal.clone()
     }
+
+    /// Borrow the exact stored structural signal for synchronous consumers.
+    /// Use signal() when an independent owned signal copy is required.
+    pub fn signal_ref(&self) -> &AudioSignal<'plan> {
+        &self.signal
+    }
     pub(in crate::plan) fn signal_admitted<A: crate::AudioSoundContextAdmission>(
         &self,
         budget: &mut crate::plan::audio_owners::admission::Budget<'_, A>,

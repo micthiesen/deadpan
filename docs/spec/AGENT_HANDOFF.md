@@ -2,7 +2,33 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: raw domains admitted, product goal active
+## Current state: Point signals borrowed, product goal active
+
+The [Point signal checkpoint](../qualification/point-signal-borrow-2026-10-31.md)
+removes the native synchronous Point reader's unnecessary owning signal copy.
+signal_ref() borrows the exact stored Structural signal while its existing raw
+carrier remains live. Public signal() clone semantics, work, leases, caps, DSP
+and persisted formats are unchanged.
+
+All 18 frozen private Point signal payloads match. Both complete 744-request
+native bodies equal the published raw-domain canonical body, including all
+successful payloads, typed errors, work/provider/receipt state and cleanup.
+Plan libraries pass 278/265; Audio libraries 437/431; 29 targeted native
+integration tests pass per root. Strict checks, formatting, doctests, hygiene,
+independent review and source/evidence audits pass. All four shipping blobs equal
+both roots; all 23 oracle hashes and unowned inputs stay exact.
+The preceding full matrix and three-pass/four-fail Split research were not
+rerun for this copy removal. General sound-bearing Split stays disabled.
+
+Next freeze and admit the fresh Structural Point content query through
+AudioPointDomain, reusing structural_child_query on its actual PointCeil grid.
+Keep its sealed carrier while the native consumer borrows query spans; preserve
+SignalSample policy as a separate next boundary. The existing 18 private signal
+snapshots are not a generated-query oracle. Other Signal providers, Tape/Mix
+aggregation, general Graph containers, complete preparation and the remaining
+specification stay open. No requirement or Gate closes; the full goal is active.
+
+## Raw domains admitted (historical)
 
 The [raw-domain checkpoint](../qualification/raw-domain-query-admission-2026-10-31.md)
 exposes the existing admitted fresh Bound constructor through a sealed carrier.

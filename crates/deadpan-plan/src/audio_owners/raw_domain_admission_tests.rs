@@ -1,6 +1,9 @@
 //! Public raw-query acceptance over the independently frozen 77 real operands.
 use super::*;
 
+#[path = "raw_domain_point_borrow_tests.rs"]
+mod point_borrow_tests;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct OwnState {
     live: usize,
@@ -580,6 +583,7 @@ enum Mode {
     Budgets,
     Failures,
     Phase,
+    BorrowedPointSignal,
 }
 struct Run {
     mode: Mode,
@@ -589,6 +593,7 @@ struct Run {
     points: usize,
     attempts: usize,
     seal_callbacks: usize,
+    borrowed_points: usize,
 }
 thread_local! { static RUN: RefCell<Option<Run>> = const { RefCell::new(None) }; }
 struct Reset;
@@ -597,6 +602,22 @@ impl Drop for Reset {
         RUN.with(|run| *run.borrow_mut() = None);
     }
 }
+fn borrowed_point_signal(
+    plan: &RenderPlan,
+    bound: &AudioBound<'_>,
+    row: &Value,
+    caller: Option<&Rc<RefCell<PolicyState>>>,
+) -> (usize, usize) {
+    let mut recorder = Recording::<true>::new(caller, Fault::None);
+    let result = bound.raw_domain_query(&mut recorder).unwrap();
+    assert_value(plan, &result, row, &recorder);
+    let is_point = point_borrow_tests::assert_matches_frozen(plan, result.domain(), row);
+    let seals = public_events(&frozen_events(row), &recorder.events);
+    drop(result);
+    recorder.assert_released();
+    (usize::from(is_point), seals)
+}
+
 fn phase_query(
     plan: &RenderPlan,
     bound: &AudioBound<'_>,
@@ -647,11 +668,18 @@ pub(super) fn observe(
     };
     check_bound(plan, bound, &row);
     assert_eq!(caller_state(caller), row["ordinary"]["caller_before"]);
-    let (attempts, seals) = match mode {
-        Mode::Values => (0, false_true(plan, bound, &row, caller)),
-        Mode::Budgets => (4, budgets(plan, bound, &row, caller)),
-        Mode::Failures => failures(plan, bound, &row, caller),
-        Mode::Phase => (0, phase_query(plan, bound, &row, caller)),
+    let (attempts, seals, borrowed_points) = match mode {
+        Mode::Values => (0, false_true(plan, bound, &row, caller), 0),
+        Mode::Budgets => (4, budgets(plan, bound, &row, caller), 0),
+        Mode::Failures => {
+            let (attempts, seals) = failures(plan, bound, &row, caller);
+            (attempts, seals, 0)
+        }
+        Mode::Phase => (0, phase_query(plan, bound, &row, caller), 0),
+        Mode::BorrowedPointSignal => {
+            let (borrowed_points, seals) = borrowed_point_signal(plan, bound, &row, caller);
+            (0, seals, borrowed_points)
+        }
     };
     check_bound(plan, bound, &row);
     assert_eq!(
@@ -671,6 +699,7 @@ pub(super) fn observe(
         }
         run.attempts += attempts;
         run.seal_callbacks += seals;
+        run.borrowed_points += borrowed_points;
     });
 }
 fn run(mode: Mode) {
@@ -717,6 +746,7 @@ fn run(mode: Mode) {
             points: 0,
             attempts: 0,
             seal_callbacks: 0,
+            borrowed_points: 0,
         });
     });
     let _reset = Reset;
@@ -738,12 +768,21 @@ fn run(mode: Mode) {
             run.attempts,
             frozen_failure_attempts + run.seal_callbacks * 3
         ),
+        Mode::BorrowedPointSignal => {
+            assert_eq!(run.attempts, 0);
+            assert_eq!(run.borrowed_points, 18);
+        }
     }
 }
 #[test]
 fn public_false_and_true_match_all_77_frozen_operands_without_rebilling() {
     run(Mode::Values);
 }
+#[test]
+fn borrowed_point_signal_matches_all_18_frozen_point_payloads() {
+    run(Mode::BorrowedPointSignal);
+}
+
 #[test]
 fn public_exact_and_one_short_work_and_requested_peak_for_all_77() {
     run(Mode::Budgets);

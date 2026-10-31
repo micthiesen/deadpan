@@ -641,6 +641,19 @@ stays disabled. The later Point signal clone, recursive products and complete
 preparation remain open. No cap, prior weight, refund, requirement/Gate status
 or speed/RSS claim changes.
 
+The [Point signal borrow checkpoint](qualification/point-signal-borrow-2026-10-31.md)
+removes one unnecessary owning copy in the synchronous native Point reader.
+The exact stored signal is borrowed while its existing admitted domain carrier
+lives; the public owning signal method is unchanged. All 18 frozen private
+payloads and both complete 744-request native bodies remain exact, including
+work, provider events, constructor receipts and cleanup. Plan libraries pass
+278/265, Audio libraries 437/431 and 29 targeted integration tests per root.
+Strict checks, formatting, doctests, hygiene, independent review and exact scoped
+source/evidence audits pass. The preceding broader matrix and Split research
+are explicitly not rerun here. Fresh content/policy query construction and
+recursive preparation remain open; general sound-bearing Split stays disabled.
+No cap, prior weight, refund, requirement/Gate status or speed/RSS claim changes.
+
 The following paragraphs retain the earlier preparation checkpoints and their
 original three-pass/four-fail results.
 

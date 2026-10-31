@@ -1192,7 +1192,7 @@ impl StageAudio {
         let signal_start = domain.signal_at_reference(start)?;
         domain.signal_at_reference(end)?;
         let block = self.read_signal(
-            &domain.signal(),
+            domain.signal_ref(),
             provider,
             signal_start,
             frames,
