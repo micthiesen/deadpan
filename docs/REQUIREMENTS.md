@@ -649,6 +649,19 @@ formatting, doctests, hygiene and 28 unchanged immutable payload hashes. Interna
 policy and transfer storage are still ordinary Vecs, so this grants no Point
 policy, whole-preparation, requirement or Gate credit.
 
+The [internal native destination checkpoint](qualification/internal-mask-runtime-2026-10-31.md)
+extends typed ownership through real Point/Bound/transfer outputs, direct native
+receivers and cache copies, with separately funded flags and exact account
+lifetime after request/controller drop. All 21 Audio targets pass per variant,
+1,082/1,076 tests; final libraries pass 501/495. Thirty immutable before payloads
+stay exact. Complete current bodies agree across builds; 700 prior outputs are
+identical and 44 prior failures now report a different budget error. Production
+workspace checks, strict Audio checks, formatting, hygiene, reviews and source
+preservation pass. Broader workspace test compilation still exposes two stale
+native API fixtures and an omitted isolated media manifest; repairs are separate.
+Plan policy producers and independent bus/equalizer products remain ordinary,
+so whole policy/preparation and existing requirement/Gate acceptance remain open.
+
 The [typed-mask foundation](qualification/internal-mask-foundation-2026-10-31.md)
 keeps the public Reference owner active while sealing its generic storage to
 Reference, Signal and Audio labels. Both libraries pass464/458 and preserve the

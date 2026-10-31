@@ -29,13 +29,16 @@ use crate::sequence::{original_sample, resolve_source, source_samples};
 use crate::{
     AudioSourceProvider, DomainSignalTransfer, DomainTransferDescriptor, MAX_OUTPUT_FRAMES,
     PcmWindow, PreparationActivity, PreparationError, PreparationMonitor, ResampleRecipe,
-    Resampler, RoomTone, RoomToneRecipe, RootSignalBlock, RootSignalTransfer, SignalTransferError,
-    StereoMatrix, check_cancel,
+    Resampler, RoomTone, RoomToneRecipe, RootSignalTransfer, SignalTransferError, StereoMatrix,
+    check_cancel,
 };
 
 #[path = "signal_input.rs"]
 mod signal_input;
 use signal_input::SignalInput;
+
+#[cfg(test)]
+use crate::RootSignalBlock;
 
 #[path = "raw_policy.rs"]
 mod raw_policy;
@@ -90,8 +93,19 @@ mod shared_mix;
 mod sound_context_admission;
 
 #[path = "point_suppression.rs"]
-mod point_suppression;
-pub use point_suppression::PointSuppressionMask;
+pub(crate) mod point_suppression;
+pub use point_suppression::{AudioSuppressionMask, PointSuppressionMask, SignalSuppressionMask};
+
+#[cfg(test)]
+#[path = "internal_mask_request.rs"]
+mod internal_mask_request;
+#[cfg(test)]
+#[path = "legacy_mask_transfers.rs"]
+mod legacy_mask_transfers;
+#[path = "mask_context.rs"]
+mod mask_context;
+#[path = "mask_transfers.rs"]
+mod mask_transfers;
 
 #[path = "owner_equalizer.rs"]
 mod owner_equalizer;
@@ -228,7 +242,7 @@ impl StageAudioError {
 
 /// Before fades, treatments, sends and mastering. Explicit suppression ranges
 /// survive for downstream processing; later effects may not fill silent Holds.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct TimeMappedBlock {
     pub schema_version: u32,
     pub stage: &'static str,
@@ -236,7 +250,7 @@ pub struct TimeMappedBlock {
     pub revision_id: RevisionId,
     pub start: AudioSample,
     pub samples: Vec<[f32; 2]>,
-    pub suppressed: Vec<Range<AudioSample>>,
+    pub suppressed: AudioSuppressionMask,
 }
 
 /// Raw PCM from one physical processing domain, before creative fades. Signed
@@ -244,7 +258,7 @@ pub struct TimeMappedBlock {
 /// context outside the domain's visible allocation or the project root itself.
 /// Explicit suppression includes silent Holds, envelope exhaustion and Source
 /// selection endpoints on their owning physical grid.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct DomainAudioBlock {
     pub schema_version: u32,
     pub stage: &'static str,
@@ -260,13 +274,13 @@ pub struct DomainAudioBlock {
     pub visible_samples: Range<AudioSample>,
     pub start: AudioSample,
     pub samples: Vec<[f32; 2]>,
-    pub suppressed: Vec<Range<AudioSample>>,
+    pub suppressed: AudioSuppressionMask,
 }
 
 /// A captured authored definition's raw output on its canonical local-zero
 /// point grid. Its selector identifies a definition independently of project
 /// occurrences. This is not final timeline allocation.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct DefinitionAudioBlock {
     pub schema_version: u32,
     pub stage: &'static str,
@@ -276,13 +290,13 @@ pub struct DefinitionAudioBlock {
     pub root: deadpan_core::NodeId,
     pub start: SignalSample,
     pub samples: Vec<[f32; 2]>,
-    pub suppressed: Vec<Range<SignalSample>>,
+    pub suppressed: SignalSuppressionMask,
 }
 
 /// Live structural or intrinsic-stage PCM on one common point grid. Tape windows allocate
 /// reads; they do not restart resampling or create new filter edges. This is
 /// preparation PCM, not final timeline allocation.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct TapeAudioBlock {
     pub schema_version: u32,
     pub stage: &'static str,
@@ -291,7 +305,7 @@ pub struct TapeAudioBlock {
     pub support: Range<ExactRatio>,
     pub start: SignalSample,
     pub samples: Vec<[f32; 2]>,
-    pub suppressed: Vec<Range<SignalSample>>,
+    pub suppressed: SignalSuppressionMask,
 }
 
 /// Current owned PCM evaluated on the selected PointCeil reference grid.
@@ -315,7 +329,7 @@ pub struct PointDomainAudioBlock {
 /// This revision's raw root signal sampled on an explicitly mapped preparation
 /// grid. Root audibility is applied before interpolation and retained afterwards;
 /// creative fades and the consuming stage's own policy remain separate.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct TransferredRootBlock {
     pub schema_version: u32,
     pub stage: &'static str,
@@ -324,13 +338,13 @@ pub struct TransferredRootBlock {
     pub transfer: RootSignalTransfer,
     pub start: SignalSample,
     pub samples: Vec<[f32; 2]>,
-    pub suppressed: Vec<Range<SignalSample>>,
+    pub suppressed: SignalSuppressionMask,
 }
 
 /// A single admitted physical domain transferred onto a preparation grid.
 /// Metadata retains the signed captured root clock independently of the output
 /// SignalSample grid. Current consuming-stage policies still apply separately.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct TransferredDomainBlock {
     pub schema_version: u32,
     pub stage: &'static str,
@@ -345,13 +359,13 @@ pub struct TransferredDomainBlock {
     pub transfer: DomainTransferDescriptor,
     pub start: SignalSample,
     pub samples: Vec<[f32; 2]>,
-    pub suppressed: Vec<Range<SignalSample>>,
+    pub suppressed: SignalSuppressionMask,
 }
 
 /// Prepared pre-master PCM. Inspect `stage` and `processing_order`: edge-only
 /// reads omit node gain, whereas authored bus preparation includes gain and
 /// the independent root sound mix. Neither includes the final limiter.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct EdgeFadedBlock {
     pub schema_version: u32,
     pub stage: &'static str,
@@ -361,7 +375,7 @@ pub struct EdgeFadedBlock {
     pub revision_id: RevisionId,
     pub start: AudioSample,
     pub samples: Vec<[f32; 2]>,
-    pub suppressed: Vec<Range<AudioSample>>,
+    pub suppressed: AudioSuppressionMask,
 }
 
 enum PointContentQuery<'plan, I, L> {
@@ -411,7 +425,7 @@ struct ReadBlock {
     dependencies: Dependencies,
     // Maximum recursive preparation depth below this read's entry depth.
     relative_depth: usize,
-    suppressed: Vec<Range<AudioSample>>,
+    suppressed: AudioSuppressionMask,
     exhausted: Vec<Range<AudioSample>>,
 }
 
@@ -509,7 +523,7 @@ pub(crate) struct PreparedBus {
 struct SignalBlock {
     samples: Vec<[f32; 2]>,
     dependencies: Dependencies,
-    suppressed: Vec<Range<SignalSample>>,
+    suppressed: SignalSuppressionMask,
     // Retained with cached PCM so reuse at a deeper caller is re-admitted.
     relative_depth: usize,
 }
@@ -952,7 +966,7 @@ impl StageAudio {
         }
         let control = budget.control();
         let mut samples = Vec::with_capacity(frames as usize);
-        let mut suppressed = Vec::new();
+        let mut suppressed = AudioSuppressionMask::default();
         let mut dependencies = Dependencies::new();
         let mut cursor = start;
         let independent = !self.plan.sounds().is_empty() || !self.plan.beat_sounds().is_empty();
@@ -977,11 +991,11 @@ impl StageAudio {
                 .map_err(|_| StageAudioError::PreparationRange)?;
             let block = self.read_authored_bus(provider, cursor, count, control, authored_gain)?;
             samples.extend(block.samples);
-            suppressed.extend(block.suppressed);
+            suppressed.extend(block.suppressed, &mut self.masks(control))?;
             dependencies.extend(block.dependencies);
             cursor.0 += i64::from(count);
         }
-        let suppressed = merged_suppression(suppressed);
+        let suppressed = suppressed.merge(&self.masks(control))?;
         control.check()?;
         let has_sounds = !self.plan.sounds().is_empty()
             || !self.plan.beat_sounds().is_empty()
@@ -1157,7 +1171,7 @@ impl StageAudio {
         };
         let block =
             self.read_point_domain_controlled(provider, domain, start, frames, control, 0)?;
-        let suppressed = self.admit_point_suppression(block.suppressed, domain, control)?;
+        let suppressed = self.map_point_suppression(block.suppressed, domain, control)?;
         Ok(PointDomainAudioBlock {
             schema_version: 1,
             stage: "owned_point_domain_pcm_before_effects",
@@ -1257,7 +1271,11 @@ impl StageAudio {
             .policy(samples, control.query_limits()?)?;
         control.spend_plan_work(policy.work)?;
         self.preflight_signal_queries(query.query(), &policy, control, depth)?;
-        let block = self.read_signal_queries(query.query(), policy, provider, control, depth)?;
+        let mut block =
+            self.read_signal_queries(query.query(), policy, provider, control, depth)?;
+        if !point_suppression::internal_legacy() {
+            block.suppressed = block.suppressed.into_admitted(&mut self.masks(control))?;
+        }
         control.check()?;
         Ok(block)
     }
@@ -1277,19 +1295,15 @@ impl StageAudio {
         check_cancel(cancelled)?;
         validate_timeout(timeout)?;
         let work = RefCell::new(ReadWork::default());
-        let mut block = self.read_domain_controlled(
-            provider,
-            domain,
-            start,
-            frames,
-            WorkControl {
-                cancelled,
-                deadline: Instant::now() + timeout,
-                work: &work,
-            },
-            0,
-        )?;
-        block.suppressed.append(&mut block.exhausted);
+        let control = WorkControl {
+            cancelled,
+            deadline: Instant::now() + timeout,
+            work: &work,
+        };
+        let mut block = self.read_domain_controlled(provider, domain, start, frames, control, 0)?;
+        block
+            .suppressed
+            .append_exhausted(&mut block.exhausted, &mut self.masks(control))?;
         Ok(DomainAudioBlock {
             schema_version: 1,
             stage: "physical_domain_pcm_before_effects",
@@ -1303,7 +1317,7 @@ impl StageAudio {
             visible_samples: domain.visible_samples(),
             start: block.start,
             samples: block.samples,
-            suppressed: merged_suppression(block.suppressed),
+            suppressed: block.suppressed.merge(&self.masks(control))?,
         })
     }
 
@@ -1346,7 +1360,9 @@ impl StageAudio {
         let domain = input.context();
         let mut block =
             self.read_context_controlled(provider, domain, start, frames, control, (0, true))?;
-        block.suppressed.append(&mut block.exhausted);
+        block
+            .suppressed
+            .append_exhausted(&mut block.exhausted, &mut self.masks(control))?;
         Ok(DomainAudioBlock {
             schema_version: 1,
             stage: "owner_input_after_time_pitch_and_edges",
@@ -1360,7 +1376,7 @@ impl StageAudio {
             visible_samples: domain.visible_samples(),
             start: block.start,
             samples: block.samples,
-            suppressed: merged_suppression(block.suppressed),
+            suppressed: block.suppressed.merge(&self.masks(control))?,
         })
     }
 
@@ -1442,7 +1458,7 @@ impl StageAudio {
             revision_id: self.plan.metadata().revision_id.clone(),
             start,
             samples: block.samples,
-            suppressed: merged_suppression(block.suppressed),
+            suppressed: block.suppressed.merge(&self.masks(control))?,
         })
     }
 
@@ -1496,24 +1512,25 @@ impl StageAudio {
                 (frames, depth),
                 control,
             )?;
-            let suppressed = raw
-                .suppressed
-                .into_iter()
-                .map(|range| {
-                    Ok(AudioSample(
-                        start
-                            .0
-                            .checked_add(range.start.0)
-                            .ok_or(TimeError::Overflow)?,
-                    )
-                        ..AudioSample(
+            let suppressed = raw.suppressed.try_map(
+                |range| {
+                    Ok::<_, TimeError>(
+                        AudioSample(
                             start
                                 .0
-                                .checked_add(range.end.0)
+                                .checked_add(range.start.0)
                                 .ok_or(TimeError::Overflow)?,
-                        ))
-                })
-                .collect::<Result<Vec<_>, TimeError>>()?;
+                        )
+                            ..AudioSample(
+                                start
+                                    .0
+                                    .checked_add(range.end.0)
+                                    .ok_or(TimeError::Overflow)?,
+                            ),
+                    )
+                },
+                &mut self.masks(control),
+            )?;
             let mut block = ReadBlock {
                 start,
                 samples: raw.samples,
@@ -1582,85 +1599,6 @@ impl StageAudio {
         })
     }
 
-    // Recursive consumers retain their parent's deadline, work allowance and
-    // depth. The returned dependencies cover every halo, including cache hits.
-    fn read_domain_transferred_controlled<
-        'plan,
-        T: crate::domain_transfer::DomainTransferView<'plan>,
-    >(
-        &mut self,
-        provider: &mut impl AudioSourceProvider,
-        transfer: &T,
-        start: SignalSample,
-        frames: u32,
-        control: WorkControl<'_>,
-        depth: usize,
-    ) -> Result<SignalBlock, StageAudioError> {
-        control.check()?;
-        if depth > self.limits.maximum_depth {
-            return Err(StageAudioError::Limit("nested stage depth"));
-        }
-        if !transfer.domain().belongs_to(&self.plan) {
-            return Err(StageAudioError::ForeignDomain);
-        }
-        let mut dependencies = Dependencies::new();
-        let mut relative_depth = 0;
-        let anchor = transfer.descriptor().root_support.start.0;
-        let block = transfer.carrier().render::<StageAudioError>(
-            start,
-            frames,
-            control.cancelled,
-            |at, count| {
-                #[cfg(test)]
-                raw_domain_query_trace::nested_callback(raw_domain_query_trace::Product::Root);
-                // `at` indexes a zero-based carrier of already allocated root
-                // samples. Restore the integer label, not a rounded frame origin.
-                let absolute = AudioSample(at.0.checked_add(anchor).ok_or(TimeError::Overflow)?);
-                let mut block = self.read_domain_controlled(
-                    provider,
-                    transfer.domain(),
-                    absolute,
-                    count,
-                    control,
-                    depth,
-                )?;
-                dependencies.extend(block.dependencies);
-                relative_depth = relative_depth.max(block.relative_depth);
-                block.suppressed.append(&mut block.exhausted);
-                let suppressed = block
-                    .suppressed
-                    .into_iter()
-                    .map(|range| {
-                        Ok::<_, TimeError>(
-                            AudioSample(
-                                range
-                                    .start
-                                    .0
-                                    .checked_sub(anchor)
-                                    .ok_or(TimeError::Overflow)?,
-                            )
-                                ..AudioSample(
-                                    range.end.0.checked_sub(anchor).ok_or(TimeError::Overflow)?,
-                                ),
-                        )
-                    })
-                    .collect::<Result<_, _>>()?;
-                Ok(RootSignalBlock {
-                    start: at,
-                    samples: block.samples,
-                    suppressed,
-                })
-            },
-        )?;
-        control.check()?;
-        Ok(SignalBlock {
-            samples: block.samples,
-            dependencies,
-            suppressed: block.suppressed,
-            relative_depth,
-        })
-    }
-
     /// Read a bound physical recipe with this read's admission and work state.
     /// Output labels are rebased from the containing span, never rerounded.
     fn read_bound(
@@ -1701,7 +1639,7 @@ impl StageAudio {
             return Err(StageAudioError::Range);
         }
         if bound.is_silent_hold() {
-            return Ok(empty_bound_block(frames));
+            return self.empty_bound_controlled(frames, control);
         }
         let step = bound.reference_samples_per_output_sample();
         let output = SignalSample(0)..SignalSample(i64::from(frames));
@@ -1741,7 +1679,7 @@ impl StageAudio {
         match raw_domain.domain() {
             AudioBoundDomain::Root(domain) => {
                 if domain.root_samples().is_empty() {
-                    return Ok(empty_bound_block(frames));
+                    return self.empty_bound_controlled(frames, control);
                 }
                 let transfer = crate::domain_transfer::DomainSignalTransfer::borrowed(
                     domain,
@@ -1767,7 +1705,7 @@ impl StageAudio {
                     .checked_sub(support.start.0)
                     .ok_or(TimeError::Overflow)?;
                 if length == 0 {
-                    return Ok(empty_bound_block(frames));
+                    return self.empty_bound_controlled(frames, control);
                 }
                 let transfer = RootSignalTransfer::new(
                     AudioSample(0)..AudioSample(length),
@@ -1776,45 +1714,11 @@ impl StageAudio {
                     step,
                     output,
                 )?;
-                let mut dependencies = Dependencies::new();
-                let mut relative_depth = 0;
-                let block = transfer.render::<StageAudioError>(
-                    SignalSample(0),
-                    frames,
-                    control.cancelled,
-                    |storage, count| {
-                        #[cfg(test)]
-                        raw_domain_query_trace::nested_callback(
-                            raw_domain_query_trace::Product::Point,
-                        );
-                        let reference = domain.reference_at_signal(SignalSample(storage.0))?;
-                        let block = self.read_point_domain_controlled(
-                            provider, domain, reference, count, control, depth,
-                        )?;
-                        dependencies.extend(block.dependencies);
-                        relative_depth = relative_depth.max(block.relative_depth);
-                        // These labels index the already rebased carrier. The
-                        // PointCeil reference origin remains in `domain`.
-                        Ok(RootSignalBlock {
-                            start: storage,
-                            samples: block.samples,
-                            suppressed: block
-                                .suppressed
-                                .into_iter()
-                                .map(|range| AudioSample(range.start.0)..AudioSample(range.end.0))
-                                .collect(),
-                        })
-                    },
-                )?;
-                control.check()?;
-                Ok(SignalBlock {
-                    samples: block.samples,
-                    dependencies,
-                    suppressed: block.suppressed,
-                    relative_depth,
-                })
+                self.read_point_bound_transferred_controlled(
+                    provider, domain, &transfer, frames, control, depth,
+                )
             }
-            AudioBoundDomain::Empty => Ok(empty_bound_block(frames)),
+            AudioBoundDomain::Empty => self.empty_bound_controlled(frames, control),
         }
     }
 
@@ -1843,15 +1747,8 @@ impl StageAudio {
             deadline: Instant::now() + timeout,
             work: &work,
         };
-        let block = transfer.render::<StageAudioError>(start, frames, cancelled, |at, count| {
-            let mut block = self.read_controlled(provider, at, count, control, false, 0)?;
-            block.suppressed.append(&mut block.exhausted);
-            Ok(RootSignalBlock {
-                start: block.start,
-                samples: block.samples,
-                suppressed: block.suppressed,
-            })
-        })?;
+        let block =
+            self.read_root_transferred_controlled(provider, transfer, start, frames, control)?;
         control.check()?;
         Ok(TransferredRootBlock {
             schema_version: 1,
@@ -2122,7 +2019,7 @@ impl StageAudio {
             samples,
             dependencies,
             relative_depth,
-            suppressed: merged_suppression(suppressed),
+            suppressed: AudioSuppressionMask::plain(merged_suppression(suppressed)),
             exhausted,
         })
     }
@@ -2388,7 +2285,7 @@ impl StageAudio {
             .map(|samples| SignalBlock {
                 samples,
                 dependencies: BTreeMap::new(),
-                suppressed: Vec::new(),
+                suppressed: SignalSuppressionMask::default(),
                 relative_depth: 0,
             });
             self.active_frames -= reservation;
@@ -2520,7 +2417,7 @@ impl StageAudio {
                 Ok::<_, StageAudioError>(SignalBlock {
                     samples,
                     dependencies,
-                    suppressed: Vec::new(),
+                    suppressed: SignalSuppressionMask::default(),
                     relative_depth,
                 })
             })();
@@ -2588,7 +2485,7 @@ impl StageAudio {
             Ok::<_, StageAudioError>(SignalBlock {
                 samples,
                 dependencies: BTreeMap::from([(source.asset.clone(), fingerprint)]),
-                suppressed: Vec::new(),
+                suppressed: SignalSuppressionMask::default(),
                 relative_depth: 0,
             })
         })();
@@ -2614,6 +2511,11 @@ impl StageAudio {
             control.spend_plan_work(1)?;
             #[cfg(test)]
             point_suppression::work_trace::residency_spent();
+            #[cfg(test)]
+            point_suppression::ops::trace::host_residency_accepted(
+                control.work.borrow().cache_key_scopes > 0,
+                1,
+            );
         }
         Ok(frames)
     }
@@ -2849,7 +2751,7 @@ impl StageAudio {
             samples,
             dependencies,
             relative_depth,
-            suppressed: Vec::new(),
+            suppressed: SignalSuppressionMask::default(),
         })
     }
 
@@ -3023,7 +2925,7 @@ impl StageAudio {
         }
         control.check()?;
         apply_suppression(start, &mut samples, &policy.suppressed, |sample| sample.0)?;
-        let suppressed = merged_suppression(policy.suppressed);
+        let suppressed = SignalSuppressionMask::plain(merged_suppression(policy.suppressed));
         Ok(SignalBlock {
             samples,
             dependencies,
@@ -3185,10 +3087,13 @@ fn suppress_signal(
     Ok(merged_suppression(policy.suppressed))
 }
 
+#[cfg(test)]
 fn empty_bound_block(frames: u32) -> SignalBlock {
     SignalBlock {
         samples: vec![[0.0; 2]; frames as usize],
-        suppressed: vec![SignalSample(0)..SignalSample(i64::from(frames))],
+        suppressed: SignalSuppressionMask::plain(vec![
+            SignalSample(0)..SignalSample(i64::from(frames)),
+        ]),
         ..Default::default()
     }
 }

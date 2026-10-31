@@ -1136,11 +1136,23 @@ fn compare_certified_matrix(actual: &mut Value, direct: &Value) {
 
 #[test]
 fn false_recursive_kernel_preserves_complete_old_matrix_and_total_work() {
+    crate::stages::internal_mask_request::with_legacy_internal_masks(
+        false_recursive_kernel_preserves_complete_old_matrix_and_total_work_before_internal_masks,
+    );
+}
+
+fn false_recursive_kernel_preserves_complete_old_matrix_and_total_work_before_internal_masks() {
     compare_matrix::<false>();
 }
 
 #[test]
 fn metered_recursive_kernel_preserves_old_matrix_with_exact_new_index_fees() {
+    crate::stages::internal_mask_request::with_legacy_internal_masks(
+        metered_recursive_kernel_preserves_old_matrix_with_exact_new_index_fees_before_internal_masks,
+    );
+}
+
+fn metered_recursive_kernel_preserves_old_matrix_with_exact_new_index_fees_before_internal_masks() {
     compare_matrix::<true>();
 }
 
@@ -1153,7 +1165,7 @@ fn pending_arc_admits_exact_shell_once_and_clones_share_its_lease() {
     let mut renderer = StageAudio::new(plan);
     let value = WideBlock {
         samples: Vec::new(),
-        suppressed: Vec::new(),
+        suppressed: AudioSuppressionMask::default(),
         dependencies: Dependencies::new(),
         relative_depth: 0,
     };

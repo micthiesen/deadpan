@@ -2,7 +2,43 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: typed mask foundation, product goal active
+## Current state: internal native mask destinations, product goal active
+
+The [internal native destination checkpoint](../qualification/internal-mask-runtime-2026-10-31.md)
+keeps real Point/Bound, controlled transfer and direct recipient/cache masks
+charged after request/controller destruction. Signal and Audio labels stay
+separate; flag scratch and mapped/copied destinations are funded before
+allocation, and source/destination owners overlap. Original cache accounting
+excludes an owned mask's already-funded payload while preserving all other
+cache charges. Independent Plan policy and derived bus/equalizer allocations
+remain ordinary. This is not whole-policy or whole-preparation admission.
+
+All 21 Audio targets pass per variant: 1,082 Main and 1,076 isolated tests,
+19 ignored manual entrypoints, with Main's seven unfinished general Split tests
+filtered. Final libraries pass 501/495; all 14 relinked executables were rerun
+after lint fixes, and seven identical binaries retain earlier passes. Both
+external before regressions pass. All 30 immutable payloads remain exact.
+Current complete 744+10+4 bodies agree across builds: against the preceding
+native authority, 700 outputs stay exact and 44 were already failures but now
+report a different budget error. No successful output changes or is lost.
+
+Required strict checks, production workspace compilation, formatting, hygiene,
+independent reviews and preservation audits pass. The broad workspace all-target
+compile exposed two untouched native fixture API errors in both roots; the
+isolated copy also lacks a published encoded-manifest fixture. Their exact
+repairs are prepared separately. Main's 2,847 and the isolated copy's 2,519
+unowned initial inputs are preserved; publication uses the tested isolated
+source, including narrow common patches around three inherited Main differences.
+
+Next repair those stale test fixtures, qualify the separate narrow raw/Point
+interval observer, then retain the precise final SignalSample PointCeil policy
+mask lease before Plan folds it into the general guard. Prepare the native Box
+while the complete query remains charged; final handoff needs an exclusive
+ledger preflight and an immediate no-fail Vec/lease transfer. Keep actual old
+invalid attribution flags, caps and canonical weights unchanged. No requirement
+or Gate credit changes; general sound-bearing Split stays disabled.
+
+## Typed mask foundation (historical)
 
 The [typed-mask foundation](../qualification/internal-mask-foundation-2026-10-31.md)
 generalizes the active public owner over sealed ReferenceSample, SignalSample

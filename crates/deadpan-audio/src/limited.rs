@@ -10,7 +10,7 @@ use deadpan_core::{AudioSample, ProjectId, RevisionId};
 use deadpan_plan::RenderPlan;
 use serde::Serialize;
 
-use crate::stages::{Dependencies, PreparationBudget, PreparedBus};
+use crate::stages::{AudioSuppressionMask, Dependencies, PreparationBudget, PreparedBus};
 use crate::{
     AudioSourceProvider, LIMITER_ID, LIMITER_MAX_OUTPUT_FRAMES, LimitedTile, LimiterContext,
     LimiterError, StageAudio, StageAudioError,
@@ -44,7 +44,7 @@ pub struct VerifiedLimitedTile {
     pub peak: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct LimitedAudioBlock {
     pub schema_version: u32,
     pub stage: &'static str,
@@ -56,7 +56,7 @@ pub struct LimitedAudioBlock {
     pub samples: Vec<[f32; 2]>,
     /// Linked stereo gain applied to the original bus, without normalization.
     pub gain: Vec<f64>,
-    pub suppressed: Vec<Range<AudioSample>>,
+    pub suppressed: AudioSuppressionMask,
     pub verified_tiles: Vec<VerifiedLimitedTile>,
 }
 
@@ -69,7 +69,7 @@ impl LimitedAudioBlock {
 struct CachedTile {
     limited: LimitedTile,
     dependencies: Dependencies,
-    suppressed: Vec<Range<AudioSample>>,
+    suppressed: AudioSuppressionMask,
     _resident: deadpan_diagnostics::Resident,
 }
 
@@ -145,7 +145,7 @@ impl LimitedAudio {
         let requested = start..AudioSample(end);
         let mut samples = Vec::with_capacity(frames as usize);
         let mut gain = Vec::with_capacity(frames as usize);
-        let mut suppressed = Vec::new();
+        let mut suppressed = AudioSuppressionMask::default();
         let mut verified_tiles = Vec::new();
         let width =
             i64::try_from(LIMITER_MAX_OUTPUT_FRAMES).map_err(|_| LimitedAudioError::Range)?;
@@ -167,9 +167,11 @@ impl LimitedAudio {
                 .map_err(|_| LimitedAudioError::Range)?;
             samples.extend_from_slice(&tile.limited.samples[offset..offset + count]);
             gain.extend_from_slice(&tile.limited.gain[offset..offset + count]);
-            for range in &tile.suppressed {
-                append_suppression(&mut suppressed, range, &requested);
-            }
+            suppressed.append_clipped(
+                &tile.suppressed,
+                &requested,
+                &mut self.stages.masks_for_budget(&budget),
+            )?;
             verified_tiles.push(VerifiedLimitedTile {
                 samples: origin..tile_end,
                 peak: tile.limited.peak,
@@ -245,7 +247,7 @@ impl LimitedAudio {
             i64::try_from(LIMITER_MAX_OUTPUT_FRAMES).map_err(|_| LimitedAudioError::Range)?;
         let mut samples = Vec::with_capacity(frames);
         let mut dependencies = Dependencies::new();
-        let mut suppressed = Vec::new();
+        let mut suppressed = AudioSuppressionMask::default();
         let mut cursor = context.start;
         // Start at the exact required support. Rounding outward could admit
         // unrelated sources or effects that the requested limiter tile avoids.
@@ -266,9 +268,11 @@ impl LimitedAudio {
                     .iter()
                     .map(|(asset, fingerprint)| (asset.clone(), *fingerprint)),
             );
-            for range in &block.bus.block.suppressed {
-                append_suppression(&mut suppressed, range, &requested);
-            }
+            suppressed.append_clipped(
+                &block.bus.block.suppressed,
+                &requested,
+                &mut self.stages.masks_for_budget(budget),
+            )?;
             cursor = end;
         }
         let limited = LimitedTile::prepare(
@@ -352,23 +356,5 @@ impl LimitedAudio {
         }
         self.bus_cache.push(Arc::clone(&entry));
         Ok(entry)
-    }
-}
-
-fn append_suppression(
-    output: &mut Vec<Range<AudioSample>>,
-    range: &Range<AudioSample>,
-    requested: &Range<AudioSample>,
-) {
-    let clipped = range.start.max(requested.start)..range.end.min(requested.end);
-    if clipped.start >= clipped.end {
-        return;
-    }
-    if let Some(last) = output.last_mut()
-        && last.end >= clipped.start
-    {
-        last.end = last.end.max(clipped.end);
-    } else {
-        output.push(clipped);
     }
 }

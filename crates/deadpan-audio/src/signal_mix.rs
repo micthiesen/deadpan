@@ -152,7 +152,7 @@ impl StageAudio {
         Ok(SignalBlock {
             samples,
             dependencies,
-            suppressed: query.suppressed,
+            suppressed: SignalSuppressionMask::plain(query.suppressed),
             relative_depth,
         })
     }

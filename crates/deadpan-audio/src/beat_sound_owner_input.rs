@@ -10,7 +10,7 @@ use super::*;
 /// and event gain, before any owner treatment or Original/root-event mixing.
 /// Output remains f64 so later shared nonlinear processing need not round the
 /// contribution sum. This handle does not grant final project delivery.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct BeatSoundOwnerInputBlock {
     pub schema_version: u32,
     pub stage: &'static str,
@@ -19,7 +19,7 @@ pub struct BeatSoundOwnerInputBlock {
     pub owner: InstancePath,
     pub start: AudioSample,
     pub samples: Vec<[f64; 2]>,
-    pub suppressed: Vec<Range<AudioSample>>,
+    pub suppressed: AudioSuppressionMask,
 }
 
 struct OwnerRead {
@@ -111,7 +111,7 @@ impl StageAudio {
             let mut metadata = ReadBlock {
                 start,
                 samples: vec![[0.0; 2]; frames as usize],
-                suppressed: vec![start..end],
+                suppressed: AudioSuppressionMask::plain(vec![start..end]),
                 exhausted: Vec::new(),
                 dependencies: Dependencies::new(),
                 relative_depth: 0,

@@ -132,7 +132,7 @@ fn record(
             (block.samples, block.suppressed)
         };
         result.samples.extend(samples);
-        for range in suppressed {
+        for range in &suppressed {
             result.suppressed[range.start.0 as usize..range.end.0 as usize].fill(true);
         }
     }

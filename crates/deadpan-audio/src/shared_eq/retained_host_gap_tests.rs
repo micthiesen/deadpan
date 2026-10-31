@@ -107,6 +107,13 @@ fn foreign_retained_plan_wins_over_depth_and_range_before_constructor_or_source_
 
 #[test]
 fn real_cached_wav_payloads_are_evicted_by_retained_fade_admission_with_separate_receipts() {
+    crate::stages::internal_mask_request::with_legacy_internal_masks(
+        real_cached_wav_payloads_are_evicted_by_retained_fade_admission_with_separate_receipts_before_internal_masks,
+    );
+}
+
+fn real_cached_wav_payloads_are_evicted_by_retained_fade_admission_with_separate_receipts_before_internal_masks()
+ {
     for cache_lane in [false, true] {
         let (plan, mut provider) = retained_fixture();
         let mut renderer = StageAudio::new(Arc::clone(&plan));

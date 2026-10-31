@@ -410,7 +410,7 @@ fn record_authored(
             )
             .unwrap();
         result.samples.extend(block.samples);
-        for range in block.suppressed {
+        for range in &block.suppressed {
             result.suppressed[range.start.0 as usize..range.end.0 as usize].fill(true);
         }
     }

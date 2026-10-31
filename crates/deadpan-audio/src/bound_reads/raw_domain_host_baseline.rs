@@ -80,7 +80,7 @@ fn captured_body(variant: &str, source: &str, checkpoint: &str) -> Value {
     captured_body_with_point(variant, source, checkpoint, false)
 }
 
-fn captured_body_with_point(
+pub(super) fn captured_body_with_point(
     variant: &str,
     source: &str,
     checkpoint: &str,

@@ -26,14 +26,14 @@ fn signal_sample(at: SignalSample) -> i64 {
     clippy::iter_nth,
     reason = "The immutable witness records actual iterator helper behavior."
 )]
-fn mask<T: Copy>(value: &Vec<Range<T>>, at: fn(T) -> i64) -> Value {
+fn mask<T: Copy>(value: &[Range<T>], capacity: usize, at: fn(T) -> i64) -> Value {
     let range = |r: &Range<T>| [at(r.start), at(r.end)];
     let mut iterator = value.iter();
     let initial = iterator.size_hint();
     let first = iterator.next().map(range);
     let last = iterator.next_back().map(range);
-    json!({"len":value.len(),"capacity":value.capacity(),"is_empty":value.is_empty(),
-        "requested_storage":vector_layout::<Range<T>>(value.capacity()),
+    json!({"len":value.len(),"capacity":capacity,"is_empty":value.is_empty(),
+        "requested_storage":vector_layout::<Range<T>>(capacity),
         "values":value.iter().map(range).collect::<Vec<_>>(),
         "helpers":{"first":value.first().map(range),"last":value.last().map(range),
             "get_at_len":value.get(value.len()).map(range),
@@ -74,7 +74,7 @@ fn returned(value: &Returned) -> Value {
                 "f32_bits":samples.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
                 "sample_storage":vector_layout::<[f32;2]>(samples.capacity()),
                 "dependencies":dependencies(deps),"relative_depth":relative_depth,
-                "suppressed":mask(suppressed,signal_sample)})
+                "suppressed":mask(suppressed.as_slice(),suppressed.capacity(),signal_sample)})
         }
         Returned::Read(Ok(block)) => {
             let ReadBlock {
@@ -89,7 +89,7 @@ fn returned(value: &Returned) -> Value {
                 "f32_bits":samples.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
                 "sample_storage":vector_layout::<[f32;2]>(samples.capacity()),
                 "dependencies":dependencies(deps),"relative_depth":relative_depth,
-                "suppressed":mask(suppressed,sample),"exhausted":mask(exhausted,sample)})
+                "suppressed":mask(suppressed.as_slice(),suppressed.capacity(),sample),"exhausted":mask(exhausted.as_slice(),exhausted.capacity(),sample)})
         }
         Returned::Signal(Err(value)) => {
             json!({"status":"Error","kind":"SignalBlock","error":error(value)})
@@ -102,14 +102,16 @@ fn returned(value: &Returned) -> Value {
 fn consume_returned(value: Returned) -> Value {
     match value {
         Returned::Signal(Ok(SignalBlock { suppressed, .. })) => {
-            json!({"kind":"SignalBlock","suppressed":consume_mask(suppressed,signal_sample)})
+            json!({"kind":"SignalBlock","suppressed":consume_mask(suppressed.into_legacy_vector(),signal_sample)})
         }
         Returned::Read(Ok(ReadBlock {
             suppressed,
             exhausted,
             ..
-        })) => json!({"kind":"ReadBlock","suppressed":consume_mask(suppressed,sample),
-                "exhausted":consume_mask(exhausted,sample)}),
+        })) => {
+            json!({"kind":"ReadBlock","suppressed":consume_mask(suppressed.into_legacy_vector(),sample),
+                "exhausted":consume_mask(exhausted,sample)})
+        }
         Returned::Signal(Err(value)) | Returned::Read(Err(value)) => {
             json!({"status":"NoReturnedBlock","error":error(&value)})
         }
@@ -577,6 +579,9 @@ fn public_cases_owned() -> Vec<Value> {
 }
 
 fn matrix_owned() -> Value {
+    crate::stages::internal_mask_request::with_legacy_internal_masks(matrix_owned_legacy_body)
+}
+fn matrix_owned_legacy_body() -> Value {
     json!({"schema":"old-owned-suppression-output-ownership-v1","published_checkpoint":CHECKPOINT,
         "prior_native":{"path":"tests/fixtures/owned-suppression-native-baseline-v1/snapshot.json",
             "sha256":PRIOR_NATIVE_SHA256},

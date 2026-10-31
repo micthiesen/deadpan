@@ -106,7 +106,7 @@ impl Clone for Observer {
     }
 }
 
-struct Charge {
+pub(crate) struct Charge {
     handle: Handle,
     frames: u64,
 }
@@ -171,8 +171,36 @@ pub struct SuppressionMask<S: MaskSample> {
     value: Value<S>,
 }
 pub type PointSuppressionMask = SuppressionMask<ReferenceSample>;
+pub type SignalSuppressionMask = SuppressionMask<SignalSample>;
+pub type AudioSuppressionMask = SuppressionMask<AudioSample>;
+
+#[path = "point_suppression/ops.rs"]
+pub(crate) mod ops;
+pub(crate) use ops::{
+    FlagBuffer, MaskContext, MaskWorkPhase, RangeBuilder, begin_flags, begin_ranges,
+};
+
+#[path = "point_suppression/mutations.rs"]
+mod mutations;
+#[path = "point_suppression/projections.rs"]
+mod projections;
+
+pub(in crate::stages) fn internal_legacy() -> bool {
+    #[cfg(test)]
+    return super::internal_mask_request::legacy();
+    #[cfg(not(test))]
+    false
+}
 
 impl<S: MaskSample> SuppressionMask<S> {
+    #[cfg(test)]
+    pub(in crate::stages) fn into_legacy_vector(self) -> Vec<Range<S>> {
+        match self.value {
+            Value::Plain(ranges) => ranges,
+            Value::Owned(_) => panic!("a historical Vec replay cannot detach an owned mask"),
+        }
+    }
+
     pub fn as_slice(&self) -> &[Range<S>] {
         self.ranges()
     }
@@ -284,7 +312,7 @@ pub(super) fn with_legacy_point_suppression<T>(action: impl FnOnce() -> T) -> T 
         }
     }
     let _restore = Restore(LEGACY.with(|legacy| legacy.replace(true)));
-    action()
+    super::internal_mask_request::with_legacy_internal_masks(action)
 }
 
 #[derive(Clone, Copy)]
@@ -304,6 +332,52 @@ fn spend(control: WorkControl<'_>, phase: WorkPhase) -> Result<(), StageAudioErr
 }
 
 impl StageAudio {
+    pub(super) fn reserve_mask_storage(
+        &mut self,
+        frames: u64,
+        control: WorkControl<'_>,
+    ) -> Result<Charge, StageAudioError> {
+        control.check()?;
+        if self.owned_suppression.handle.is_none() {
+            let shell = shell_frames()?;
+            ops::spend_work(control, ops::MaskWorkPhase::Account, 1)?;
+            self.make_room(shell, false, control)?;
+            control.check()?;
+            self.owned_suppression.initialize_after_admission(shell);
+            #[cfg(test)]
+            ops::trace::shell_initialized(control.work.borrow().cache_key_scopes > 0, shell);
+        }
+        self.make_room(frames, false, control)?;
+        control.check()?;
+        let charge = self.owned_suppression.charge_after_admission(frames)?;
+        #[cfg(test)]
+        ops::trace::reservation_accepted(control.work.borrow().cache_key_scopes > 0, frames);
+        Ok(charge)
+    }
+
+    pub(super) fn map_point_suppression(
+        &mut self,
+        input: SuppressionMask<SignalSample>,
+        domain: &AudioPointDomain<'_>,
+        control: WorkControl<'_>,
+    ) -> Result<PointSuppressionMask, StageAudioError> {
+        match input.value {
+            Value::Plain(ranges) => self.admit_point_suppression(ranges, domain, control),
+            Value::Owned(owner) => SuppressionMask {
+                value: Value::Owned(owner),
+            }
+            .try_map(
+                |range| {
+                    Ok::<_, PlanError>(
+                        domain.reference_at_signal(range.start)?
+                            ..domain.reference_at_signal(range.end)?,
+                    )
+                },
+                &mut self.masks(control),
+            ),
+        }
+    }
+
     pub(super) fn admit_point_suppression(
         &mut self,
         input: Vec<Range<SignalSample>>,

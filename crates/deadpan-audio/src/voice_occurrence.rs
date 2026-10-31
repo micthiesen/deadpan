@@ -6,7 +6,7 @@ use deadpan_plan::AudioSourceOccurrence;
 /// Raw independently time-mapped PCM on the absolute project sample grid.
 /// Current Hold suppression is included; event edges, gain, allowances and
 /// mixing into the authored bus remain separate responsibilities.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct SourceOccurrenceBlock {
     pub schema_version: u32,
     pub stage: &'static str,
@@ -16,7 +16,7 @@ pub struct SourceOccurrenceBlock {
     pub allocation: Range<AudioSample>,
     pub start: AudioSample,
     pub samples: Vec<[f32; 2]>,
-    pub suppressed: Vec<Range<AudioSample>>,
+    pub suppressed: AudioSuppressionMask,
 }
 
 impl StageAudio {

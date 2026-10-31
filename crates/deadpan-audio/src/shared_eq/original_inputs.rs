@@ -298,7 +298,7 @@ fn resident(block: &ReadBlock) -> Option<u64> {
         .checked_add(
             block
                 .suppressed
-                .capacity()
+                .unaccounted_capacity()
                 .checked_add(block.exhausted.capacity())?
                 .checked_mul(std::mem::size_of::<Range<AudioSample>>())?,
         )?

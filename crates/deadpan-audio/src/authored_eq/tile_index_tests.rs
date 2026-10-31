@@ -21,7 +21,7 @@ fn empty_block() -> Arc<WideBlock> {
     // admission are covered by actual eq_tile publication tests.
     Arc::new(WideBlock {
         samples: Vec::new(),
-        suppressed: Vec::new(),
+        suppressed: AudioSuppressionMask::default(),
         dependencies: Dependencies::new(),
         relative_depth: 1,
     })

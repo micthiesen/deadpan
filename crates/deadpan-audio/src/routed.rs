@@ -6,7 +6,7 @@ use deadpan_plan::{AudioRoutedRoot, AudioRoutedSignal, AudioRoutedSignalInput, A
 
 /// One retained PointCeil sound route before creative edges and current
 /// consuming Hold gates. Suppression retains old provider policy and route gaps.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct RoutedSignalBlock {
     pub schema_version: u32,
     pub stage: &'static str,
@@ -15,12 +15,12 @@ pub struct RoutedSignalBlock {
     pub allocation: Range<SignalSample>,
     pub start: SignalSample,
     pub samples: Vec<[f32; 2]>,
-    pub suppressed: Vec<Range<SignalSample>>,
+    pub suppressed: SignalSuppressionMask,
 }
 
 /// One retained RoundEven sound route before creative edges and current
 /// consuming Hold gates. Its input retains the complete projected root recipe.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct RoutedRootBlock {
     pub schema_version: u32,
     pub stage: &'static str,
@@ -29,7 +29,7 @@ pub struct RoutedRootBlock {
     pub allocation: Range<AudioSample>,
     pub start: AudioSample,
     pub samples: Vec<[f32; 2]>,
-    pub suppressed: Vec<Range<AudioSample>>,
+    pub suppressed: AudioSuppressionMask,
 }
 
 pub(super) struct PreparedRoutedRootQuery<'plan> {
@@ -194,14 +194,14 @@ impl StageAudio {
             }
         }
         let mut samples = Vec::with_capacity(frames as usize);
-        let mut suppressed = Vec::new();
+        let mut suppressed = SignalSuppressionMask::default();
         for (destination, old) in spans {
             control.check()?;
             let count = u32::try_from(destination.end.0 - destination.start.0)
                 .map_err(|_| StageAudioError::Range)?;
             let Some(old) = old else {
                 samples.extend(vec![[0.0; 2]; count as usize]);
-                suppressed.push(destination);
+                suppressed.push(destination, &mut self.masks(control))?;
                 continue;
             };
             let block = match domain.input() {
@@ -223,12 +223,20 @@ impl StageAudio {
                     )?,
             };
             samples.extend(block.samples);
-            for range in block.suppressed {
-                suppressed.push(
-                    SignalSample(shift_label(range.start.0, old.start, destination.start.0)?)
-                        ..SignalSample(shift_label(range.end.0, old.start, destination.start.0)?),
-                );
-            }
+            suppressed.extend_try_map(
+                block.suppressed,
+                |range| {
+                    Ok::<_, StageAudioError>(
+                        SignalSample(shift_label(range.start.0, old.start, destination.start.0)?)
+                            ..SignalSample(shift_label(
+                                range.end.0,
+                                old.start,
+                                destination.start.0,
+                            )?),
+                    )
+                },
+                &mut self.masks(control),
+            )?;
         }
         control.check()?;
         Ok(RoutedSignalBlock {
@@ -239,7 +247,7 @@ impl StageAudio {
             allocation,
             start,
             samples,
-            suppressed: merged_suppression(suppressed),
+            suppressed: suppressed.merge(&self.masks(control))?,
         })
     }
 
@@ -356,7 +364,7 @@ impl StageAudio {
         let (mut dependencies, mut relative_depth) =
             self.admit_retained_sound_input(provider, prepared.domain.input(), control)?;
         let mut samples = Vec::with_capacity(prepared.frames as usize);
-        let mut suppressed = Vec::new();
+        let mut suppressed = AudioSuppressionMask::default();
         for span in &prepared.spans {
             control.check()?;
             let count = u32::try_from(span.destination.end.0 - span.destination.start.0)
@@ -364,7 +372,7 @@ impl StageAudio {
             let (old, input) = match span.delivery()? {
                 RootDelivery::Gap(range) => {
                     samples.resize(samples.len() + count as usize, [0.0; 2]);
-                    suppressed.push(range.clone());
+                    suppressed.push(range.clone(), &mut self.masks(control))?;
                     continue;
                 }
                 RootDelivery::Input { old, input } => (old, input),
@@ -378,9 +386,11 @@ impl StageAudio {
             samples.extend(block.samples);
             dependencies.extend(block.dependencies);
             relative_depth = relative_depth.max(block.relative_depth);
-            for range in block.suppressed {
-                suppressed.push(span.translate_policy(old, range)?);
-            }
+            suppressed.extend_try_map(
+                block.suppressed,
+                |range| span.translate_policy(old, range),
+                &mut self.masks(control),
+            )?;
         }
         control.check()?;
         Ok(ReadBlock {
@@ -388,7 +398,7 @@ impl StageAudio {
             samples,
             dependencies,
             relative_depth,
-            suppressed: merged_suppression(suppressed),
+            suppressed: suppressed.merge(&self.masks(control))?,
             exhausted: Vec::new(),
         })
     }
@@ -446,7 +456,7 @@ impl StageAudio {
             samples,
             dependencies,
             relative_depth: 0,
-            suppressed: merged_suppression(suppressed),
+            suppressed: AudioSuppressionMask::plain(merged_suppression(suppressed)),
             exhausted: Vec::new(),
         })
     }
@@ -488,7 +498,7 @@ impl StageAudio {
         Ok(SignalBlock {
             samples,
             dependencies: prepared.dependencies.clone(),
-            suppressed,
+            suppressed: SignalSuppressionMask::plain(suppressed),
             relative_depth: 1 + prepared.relative_depth,
         })
     }

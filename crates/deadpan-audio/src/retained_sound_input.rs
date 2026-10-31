@@ -9,7 +9,7 @@ use deadpan_plan::{AudioRoutedRoot, AudioRoutedRootInput};
 /// differ from the live route and project duration. Neither route gaps nor
 /// current consuming Hold gates erase this history. The input's own processing
 /// and policy remain authoritative; this handle grants no output permission.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct RetainedSoundInputBlock {
     pub schema_version: u32,
     pub stage: &'static str,
@@ -18,7 +18,7 @@ pub struct RetainedSoundInputBlock {
     pub allocation: Range<AudioSample>,
     pub start: AudioSample,
     pub samples: Vec<[f32; 2]>,
-    pub suppressed: Vec<Range<AudioSample>>,
+    pub suppressed: AudioSuppressionMask,
     pub exhausted: Vec<Range<AudioSample>>,
 }
 
@@ -338,7 +338,7 @@ impl StageAudio {
                 Ok(ReadBlock {
                     start: block.start,
                     samples: block.samples,
-                    suppressed: block.suppressed,
+                    suppressed: AudioSuppressionMask::plain(block.suppressed),
                     dependencies: Dependencies::new(),
                     relative_depth: 0,
                     exhausted: Vec::new(),

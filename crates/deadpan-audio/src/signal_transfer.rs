@@ -15,6 +15,12 @@ use crate::{
     ResampleRecipe, Resampler, StereoMatrix, check_cancel,
 };
 
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+#[path = "signal_transfer_controlled.rs"]
+mod controlled;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub(crate) use controlled::{ControlledRootBlock, ControlledTransferredBlock};
+
 #[derive(Debug, thiserror::Error)]
 pub enum SignalTransferError {
     #[error("signal transfer requires a valid bounded root support and output range")]
@@ -248,29 +254,47 @@ fn validate_root_block(
     start: AudioSample,
     frames: u32,
 ) -> Result<(), SignalTransferError> {
+    validate_root_slices::<SignalTransferError>(
+        block.start,
+        &block.samples,
+        &block.suppressed,
+        start,
+        frames,
+        || Ok(()),
+    )
+}
+
+fn validate_root_slices<E: From<SignalTransferError>>(
+    block_start: AudioSample,
+    samples: &[[f32; 2]],
+    suppressed: &[Range<AudioSample>],
+    start: AudioSample,
+    frames: u32,
+    mut inspect: impl FnMut() -> Result<(), E>,
+) -> Result<(), E> {
+    inspect()?;
     let end = start
         .0
         .checked_add(i64::from(frames))
         .ok_or(SignalTransferError::InvalidRootBlock)?;
-    if block.start != start
-        || block.samples.len() != frames as usize
-        || block.suppressed.len() > MAX_OUTPUT_FRAMES as usize
-        || block
-            .suppressed
-            .iter()
-            .any(|range| range.start < start || range.start >= range.end || range.end.0 > end)
+    if block_start != start
+        || samples.len() != frames as usize
+        || suppressed.len() > MAX_OUTPUT_FRAMES as usize
     {
-        return Err(SignalTransferError::InvalidRootBlock);
+        return Err(SignalTransferError::InvalidRootBlock.into());
     }
-    // Validate even samples that policy will suppress. Otherwise a malformed
-    // provider could hide invalid PCM behind a silence declaration.
-    if block
-        .samples
-        .iter()
-        .flatten()
-        .any(|sample| !sample.is_finite() || sample.abs() > MAX_INPUT_MAGNITUDE)
-    {
-        return Err(PreparationError::InvalidSamples.into());
+    for range in suppressed {
+        inspect()?;
+        if range.start < start || range.start >= range.end || range.end.0 > end {
+            return Err(SignalTransferError::InvalidRootBlock.into());
+        }
+    }
+    // Validate hidden PCM before policy can zero it.
+    for sample in samples.iter().flatten() {
+        inspect()?;
+        if !sample.is_finite() || sample.abs() > MAX_INPUT_MAGNITUDE {
+            return Err(SignalTransferError::from(PreparationError::InvalidSamples).into());
+        }
     }
     Ok(())
 }

@@ -127,6 +127,13 @@ fn real_retained_original_cache_hit_rechecks_wav_without_any_fresh_raw_construct
 
 #[test]
 fn actual_raw_constructor_evicts_real_unpinned_wav_cache_in_each_accounting_lane() {
+    crate::stages::internal_mask_request::with_legacy_internal_masks(
+        actual_raw_constructor_evicts_real_unpinned_wav_cache_in_each_accounting_lane_before_internal_masks,
+    );
+}
+
+fn actual_raw_constructor_evicts_real_unpinned_wav_cache_in_each_accounting_lane_before_internal_masks()
+ {
     for cache_lane in [false, true] {
         let (plan, mut provider) = retained_fixture();
         let mut renderer = StageAudio::new(Arc::clone(&plan));

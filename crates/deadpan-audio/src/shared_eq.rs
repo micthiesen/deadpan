@@ -336,7 +336,7 @@ impl StageAudio {
             let mut result = ReadBlock {
                 start,
                 samples: vec![[0.0; 2]; frames as usize],
-                suppressed: Vec::new(),
+                suppressed: AudioSuppressionMask::default(),
                 exhausted: Vec::new(),
                 dependencies: Dependencies::new(),
                 relative_depth: 0,
@@ -358,12 +358,15 @@ impl StageAudio {
                     &mut result.samples[offset..offset + count as usize],
                     block.samples,
                 )?;
-                result.suppressed.extend(block.suppressed);
+                result.suppressed.extend(
+                    AudioSuppressionMask::plain(block.suppressed),
+                    &mut self.masks(control),
+                )?;
                 result.dependencies.extend(block.dependencies);
                 result.relative_depth = result.relative_depth.max(block.relative_depth);
                 at += i64::from(count);
             }
-            result.suppressed = merged_suppression(result.suppressed);
+            result.suppressed = result.suppressed.merge(&self.masks(control))?;
             Ok(result)
         })();
         self.release_shared_graph(graph, reservation);

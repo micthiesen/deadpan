@@ -408,22 +408,26 @@ impl StageAudio {
                 if block.samples.len() != expected {
                     return Err(PlanError::InvalidPlan("incomplete beat sound PCM").into());
                 }
-                block.suppressed.extend(
+                block.suppressed.extend_iter(
                     occurrence
                         .fades
                         .iter()
                         .filter(|span| span.length == 0)
                         .map(|span| span.samples.clone()),
-                );
+                    &mut self.masks(control),
+                )?;
                 if original.start < occurrence.samples.start {
-                    block
-                        .suppressed
-                        .push(original.start..occurrence.samples.start);
+                    block.suppressed.push(
+                        original.start..occurrence.samples.start,
+                        &mut self.masks(control),
+                    )?;
                 }
                 if occurrence.samples.end < end {
-                    block.suppressed.push(occurrence.samples.end..end);
+                    block
+                        .suppressed
+                        .push(occurrence.samples.end..end, &mut self.masks(control))?;
                 }
-                block.suppressed = merged_suppression(block.suppressed);
+                block.suppressed = block.suppressed.merge(&self.masks(control))?;
                 let edges = occurrence.fades.into_iter().flat_map(|span| {
                     (0..span.samples.end.0 - span.samples.start.0).map(move |index| {
                         crate::edges::edge_gain(
@@ -446,8 +450,11 @@ impl StageAudio {
                         control,
                     )?;
                 }
-                original.suppressed =
-                    sound_events::intersect_suppression(&original.suppressed, &block.suppressed);
+                original.suppressed = AudioSuppressionMask::intersect(
+                    &original.suppressed,
+                    &block.suppressed,
+                    &mut self.masks(control),
+                )?;
                 original.relative_depth = original.relative_depth.max(block.relative_depth);
                 original.dependencies.extend(block.dependencies);
             }

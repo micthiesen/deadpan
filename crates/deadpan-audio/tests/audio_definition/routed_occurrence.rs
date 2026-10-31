@@ -182,7 +182,7 @@ fn routed_occurrence_keeps_nested_preserve_history_across_edits_and_shuffled_rea
                 count as u32,
             );
             assert_eq!(block.samples, expected[offset..offset + count]);
-            suppressed.extend(block.suppressed);
+            suppressed.extend(block.suppressed.iter().cloned());
         }
         assert_eq!(
             suppressed,
@@ -290,7 +290,7 @@ fn routed_occurrence_ntsc_transport_keeps_phase_and_cannot_revive_clipped_termin
             count as u32,
         );
         assert_eq!(actual.samples, expected[offset..offset + count]);
-        suppressed.extend(actual.suppressed);
+        suppressed.extend(actual.suppressed.iter().cloned());
     }
     assert_eq!(suppressed, vec![AudioSample(9609)..AudioSample(9610)]);
     for (offset, count) in [(6300, 107), (0, 256), (1590, 37), (3200, 201)] {

@@ -219,11 +219,10 @@ impl StageAudio {
                     samples: block.samples,
                     dependencies: block.dependencies,
                     relative_depth: block.relative_depth,
-                    suppressed: block
-                        .suppressed
-                        .into_iter()
-                        .map(|range| AudioSample(range.start.0)..AudioSample(range.end.0))
-                        .collect(),
+                    suppressed: block.suppressed.map(
+                        |range| AudioSample(range.start.0)..AudioSample(range.end.0),
+                        &mut self.masks(control),
+                    )?,
                     exhausted: Vec::new(),
                 })
             }
@@ -263,13 +262,14 @@ impl StageAudio {
             );
             let mut block =
                 self.read_prepared_root_sound(provider, input, original.start, control)?;
-            block.suppressed.extend(
+            block.suppressed.extend_iter(
                 fades
                     .iter()
                     .filter(|span| span.length == 0)
                     .map(|span| span.samples.clone()),
-            );
-            block.suppressed = merged_suppression(block.suppressed);
+                &mut self.masks(control),
+            )?;
+            block.suppressed = block.suppressed.merge(&self.masks(control))?;
             if block.samples.len() != original.samples.len() {
                 return Err(PlanError::InvalidPlan("incomplete authored sound PCM").into());
             }
@@ -291,7 +291,11 @@ impl StageAudio {
                     control,
                 )?;
             }
-            original.suppressed = intersect_suppression(&original.suppressed, &block.suppressed);
+            original.suppressed = AudioSuppressionMask::intersect(
+                &original.suppressed,
+                &block.suppressed,
+                &mut self.masks(control),
+            )?;
             original.dependencies.extend(block.dependencies);
         }
         self.render_beat_sounds(provider, &mut original, &mut mix, beat_voices, control)?;
@@ -335,24 +339,4 @@ pub(super) fn validate_gate_envelopes(
         return Err(PlanError::InvalidPlan("incomplete sound gate envelopes").into());
     }
     Ok(())
-}
-
-pub(super) fn intersect_suppression(
-    left: &[Range<AudioSample>],
-    right: &[Range<AudioSample>],
-) -> Vec<Range<AudioSample>> {
-    let mut result = Vec::new();
-    let (mut a, mut b) = (0, 0);
-    while a < left.len() && b < right.len() {
-        let range = left[a].start.max(right[b].start)..left[a].end.min(right[b].end);
-        if range.start < range.end {
-            result.push(range);
-        }
-        if left[a].end < right[b].end {
-            a += 1;
-        } else {
-            b += 1;
-        }
-    }
-    result
 }

@@ -591,6 +591,13 @@ fn observed_bound_point(cache: bool, legacy: bool) -> Value {
 
 #[test]
 fn point_content_public_bound_keeps_nested_actual_point_carriers_live_through_wav() {
+    crate::stages::internal_mask_request::with_legacy_internal_masks(
+        point_content_public_bound_keeps_nested_actual_point_carriers_live_through_wav_before_internal_masks,
+    );
+}
+
+fn point_content_public_bound_keeps_nested_actual_point_carriers_live_through_wav_before_internal_masks()
+ {
     for cache in [false, true] {
         let old = observed_bound_point(cache, true);
         let new = observed_bound_point(cache, false);

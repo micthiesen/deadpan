@@ -169,7 +169,7 @@ pub(super) fn populate(
                 }
                 // These are the exact successful outer read's policy masks,
                 // not zero PCM or recursively inherited child suppression.
-                for ranges in [&block.suppressed, &block.exhausted] {
+                for ranges in [block.suppressed.as_slice(), block.exhausted.as_slice()] {
                     policy_ranges::visit(
                         block.start,
                         frames,

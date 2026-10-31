@@ -390,7 +390,7 @@ impl<'plan> Context<'plan> {
 
 struct WideBlock {
     samples: Vec<[f64; 2]>,
-    suppressed: Vec<Range<AudioSample>>,
+    suppressed: AudioSuppressionMask,
     dependencies: Dependencies,
     relative_depth: usize,
 }
@@ -485,7 +485,7 @@ impl StageAudio {
                 depth,
             };
             let mut samples = vec![[0.0; 2]; frames as usize];
-            let mut suppressed = Vec::new();
+            let mut suppressed = AudioSuppressionMask::default();
             let mut dependencies = Dependencies::new();
             let mut relative_depth = 0;
             let mut cursor = start;
@@ -500,7 +500,7 @@ impl StageAudio {
                     &mut samples[offset..offset + count as usize],
                     block.samples,
                 )?;
-                suppressed.extend(block.suppressed);
+                suppressed.extend(block.suppressed, &mut self.masks(control))?;
                 dependencies.extend(block.dependencies);
                 relative_depth = relative_depth.max(block.relative_depth);
                 cursor.0 += i64::from(count);
@@ -508,7 +508,7 @@ impl StageAudio {
             Ok(ReadBlock {
                 start,
                 samples,
-                suppressed: merged_suppression(suppressed),
+                suppressed: suppressed.merge(&self.masks(control))?,
                 exhausted: Vec::new(),
                 dependencies,
                 relative_depth,
@@ -563,19 +563,25 @@ impl StageAudio {
         let result = (|| {
             let mut result = WideBlock {
                 samples: vec![[0.0; 2]; frames as usize],
-                suppressed: Vec::new(),
+                suppressed: AudioSuppressionMask::default(),
                 dependencies: Dependencies::new(),
                 relative_depth: 0,
             };
             if range.start >= range.end {
-                result.suppressed.push(start..end);
+                result
+                    .suppressed
+                    .push(start..end, &mut self.masks(control))?;
                 return Ok(result);
             }
             if start < range.start {
-                result.suppressed.push(start..range.start);
+                result
+                    .suppressed
+                    .push(start..range.start, &mut self.masks(control))?;
             }
             if range.end < end {
-                result.suppressed.push(range.end..end);
+                result
+                    .suppressed
+                    .push(range.end..end, &mut self.masks(control))?;
             }
             let owners = {
                 let mut admission = sound_context_admission::Admission::new(self, control);
@@ -616,8 +622,11 @@ impl StageAudio {
             };
             result.dependencies.extend(raw.dependencies);
             result.relative_depth = raw.relative_depth;
-            raw.suppressed.append(&mut raw.exhausted);
-            result.suppressed.extend(raw.suppressed);
+            raw.suppressed
+                .append_exhausted(&mut raw.exhausted, &mut self.masks(control))?;
+            result
+                .suppressed
+                .extend(raw.suppressed, &mut self.masks(control))?;
             for (span_index, span) in owners.query().spans().iter().enumerate() {
                 control.check()?;
                 let first = match program.stop {
@@ -625,7 +634,9 @@ impl StageAudio {
                         match span.owners().iter().position(|owner| stop.matches(owner)) {
                             Some(index) => index,
                             None => {
-                                result.suppressed.push(span.samples());
+                                result
+                                    .suppressed
+                                    .push(span.samples(), &mut self.masks(control))?;
                                 continue;
                             }
                         }
@@ -633,7 +644,9 @@ impl StageAudio {
                     None => 0,
                 };
                 if span.support() == AudioOwnerSupport::Inactive {
-                    result.suppressed.push(span.samples());
+                    result
+                        .suppressed
+                        .push(span.samples(), &mut self.masks(control))?;
                     continue;
                 }
                 let selected =
@@ -705,13 +718,15 @@ impl StageAudio {
                                     .map(|(asset, fingerprint)| (asset.clone(), *fingerprint)),
                             );
                             result.relative_depth = result.relative_depth.max(block.relative_depth);
-                            result
-                                .suppressed
-                                .extend(block.suppressed.iter().filter_map(|r| {
+                            result.suppressed.extend_borrowed_filter_map(
+                                &block.suppressed,
+                                |r| {
                                     let r = r.start.max(span.samples().start)
                                         ..r.end.min(span.samples().end);
                                     (r.start < r.end).then_some(r)
-                                }));
+                                },
+                                &mut self.masks(control),
+                            )?;
                             cached = Some((tile, block));
                         }
                         let (_, block) = cached
@@ -743,7 +758,7 @@ impl StageAudio {
                     result.samples[(sample - start.0) as usize] = gain.apply_wide(value)?;
                 }
             }
-            result.suppressed = merged_suppression(result.suppressed);
+            result.suppressed = result.suppressed.merge(&self.masks(control))?;
             for range in &result.suppressed {
                 for at in range.start.max(start).0..range.end.min(end).0 {
                     result.samples[(at - start.0) as usize] = [0.0; 2];
@@ -1000,7 +1015,7 @@ impl StageAudio {
             let result = (|| {
                 let mut left = vec![0.0; INPUT];
                 let mut right = vec![0.0; INPUT];
-                let mut suppressed = Vec::new();
+                let mut suppressed = AudioSuppressionMask::default();
                 let mut dependencies = Dependencies::new();
                 let mut relative_depth = 1;
                 let mut at = begin;
@@ -1024,11 +1039,15 @@ impl StageAudio {
                         left[(at - begin) as usize + index] = frame[0];
                         right[(at - begin) as usize + index] = frame[1];
                     }
-                    suppressed.extend(block.suppressed.into_iter().filter_map(|r| {
-                        let r = r.start.max(AudioSample(tile))
-                            ..r.end.min(AudioSample(tile + OUTPUT as i64));
-                        (r.start < r.end).then_some(r)
-                    }));
+                    suppressed.extend_filter_map(
+                        block.suppressed,
+                        |r| {
+                            let r = r.start.max(AudioSample(tile))
+                                ..r.end.min(AudioSample(tile + OUTPUT as i64));
+                            (r.start < r.end).then_some(r)
+                        },
+                        &mut self.masks(control),
+                    )?;
                     dependencies.extend(block.dependencies);
                     relative_depth = relative_depth.max(block.relative_depth + 1);
                     at += i64::from(count);
@@ -1047,7 +1066,7 @@ impl StageAudio {
                     .zip(out_right)
                     .map(|(l, r)| [l, r])
                     .collect();
-                let suppressed = merged_suppression(suppressed);
+                let suppressed = suppressed.merge(&self.masks(control))?;
                 for r in &suppressed {
                     for at in r.start.0..r.end.0 {
                         samples[(at - tile) as usize] = [0.0; 2];

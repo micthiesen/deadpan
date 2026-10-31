@@ -228,7 +228,7 @@ pub(super) fn render(plan: &Arc<RenderPlan>, at: i64, frames: u32) -> Value {
             "start": block.start.0,
             "pcm_bits": block.samples.iter().map(|frame|
                 [frame[0].to_bits(), frame[1].to_bits()]).collect::<Vec<_>>(),
-            "suppressed": block.suppressed.into_iter().map(range).collect::<Vec<_>>(),
+            "suppressed": block.suppressed.iter().cloned().map(range).collect::<Vec<_>>(),
             "exhausted": block.exhausted.into_iter().map(range).collect::<Vec<_>>(),
             "dependencies": block.dependencies, "relative_depth": block.relative_depth,
         }),

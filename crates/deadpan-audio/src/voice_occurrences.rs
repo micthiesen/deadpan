@@ -6,7 +6,7 @@ use deadpan_plan::AudioSourceOccurrences;
 
 /// Raw additive output before event effects or mastering. Each occurrence uses
 /// the same authored recipe but has its own complete processing history.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct SourceOccurrencesBlock {
     pub schema_version: u32,
     pub stage: &'static str,
@@ -17,7 +17,7 @@ pub struct SourceOccurrencesBlock {
     pub occurrences: Vec<InstancePath>,
     pub start: AudioSample,
     pub samples: Vec<[f32; 2]>,
-    pub suppressed: Vec<Range<AudioSample>>,
+    pub suppressed: AudioSuppressionMask,
 }
 
 struct PreparedOccurrence<'plan> {
@@ -98,7 +98,7 @@ impl StageAudio {
         control: WorkControl<'_>,
     ) -> Result<SourceOccurrencesBlock, StageAudioError> {
         let mut sum = vec![[0.0_f64; 2]; count(&samples)? as usize];
-        let mut suppressed = vec![samples.clone()];
+        let mut suppressed = AudioSuppressionMask::plain(vec![samples.clone()]);
         let mut occurrences = Vec::with_capacity(reads.len());
         for read in reads {
             control.spend_plan_work(count(&read.samples)? as usize)?;
@@ -126,13 +126,14 @@ impl StageAudio {
             }
             let mut silent = block.suppressed;
             if samples.start < read.samples.start {
-                silent.push(samples.start..read.samples.start);
+                silent.push(samples.start..read.samples.start, &mut self.masks(control))?;
             }
             if read.samples.end < samples.end {
-                silent.push(read.samples.end..samples.end);
+                silent.push(read.samples.end..samples.end, &mut self.masks(control))?;
             }
+            let silent = silent.merge(&self.masks(control))?;
             suppressed =
-                sound_events::intersect_suppression(&suppressed, &merged_suppression(silent));
+                AudioSuppressionMask::intersect(&suppressed, &silent, &mut self.masks(control))?;
             occurrences.push(read.instance);
         }
         // Empty, exhausted and wholly gated windows still depend on the source.

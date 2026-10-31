@@ -27,11 +27,11 @@ fn mask<T: Copy>(value: &[Range<T>], capacity: usize, at: fn(T) -> i64) -> Value
         "iter_size_hint":value.iter().size_hint(),
         "reverse":value.iter().rev().map(|range|[at(range.start),at(range.end)]).collect::<Vec<_>>()})
 }
-fn signal_mask(value: &Vec<Range<SignalSample>>) -> Value {
+fn signal_mask(value: &crate::stages::SignalSuppressionMask) -> Value {
     mask(value, value.capacity(), |at| at.0)
 }
-fn audio_mask(value: &Vec<Range<AudioSample>>) -> Value {
-    mask(value, value.capacity(), |at| at.0)
+fn audio_mask(value: &[Range<AudioSample>], capacity: usize) -> Value {
+    mask(value, capacity, |at| at.0)
 }
 enum Returned {
     Signal(Result<SignalBlock, StageAudioError>),
@@ -66,7 +66,7 @@ fn returned(value: &Returned) -> Value {
                 "f32_bits":samples.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
                 "sample_storage":layout::<[f32;2]>(samples.capacity()),
                 "dependencies":dependencies(deps),"relative_depth":relative_depth,
-                "suppressed":audio_mask(suppressed),"exhausted":audio_mask(exhausted)})
+                "suppressed":audio_mask(suppressed.as_slice(),suppressed.capacity()),"exhausted":audio_mask(exhausted.as_slice(),exhausted.capacity())})
         }
         Returned::Signal(Err(value)) => {
             json!({"status":"Error","kind":"SignalBlock","error":error(value)})
@@ -691,6 +691,9 @@ fn case_internal(case: Case) -> Value {
     row
 }
 fn matrix_internal() -> Value {
+    crate::stages::internal_mask_request::with_legacy_internal_masks(matrix_internal_legacy_body)
+}
+fn matrix_internal_legacy_body() -> Value {
     json!({"schema":"old-internal-suppression-paths-v1","published_checkpoint":CHECKPOINT,
         "prior_output_ownership_before":{"path":"tests/fixtures/owned-suppression-output-baseline-v1/snapshot.json","sha256":PRIOR_OUTPUT_SHA256},
         "actual_layouts":{"SignalBlock":structure::<SignalBlock>(),"ReadBlock":structure::<ReadBlock>(),
@@ -754,4 +757,39 @@ fn internal_suppression_paths_match_external_old_v1() {
         .expect("independent immutable OLD body");
     let body: Value = serde_json::from_slice(&std::fs::read(expected).unwrap()).unwrap();
     assert_eq!(matrix_internal(), strip_internal(body));
+}
+
+#[cfg(test)]
+#[path = "internal_transfer_entries.rs"]
+mod transfer_entries;
+
+#[path = "internal_mask_owned_tests.rs"]
+mod owned_native_tests;
+
+pub(super) fn current_owned_mask_observations() -> Value {
+    let cases = cases_internal().into_iter().map(|case| {
+        point_suppression::ops::trace::reset();
+        let mut row = case_internal(case);
+        row["native_mask_work_whole_case"] =
+            serde_json::to_value(point_suppression::ops::trace::snapshot()).unwrap();
+        point_suppression::ops::trace::disable();
+        row["scope"]["internal_masks"] = json!(
+            "actual active native destinations; independent Plan policy producers remain ordinary"
+        );
+        row["scope"]["native_mask_work"] = json!(
+            "whole case, including any public warmup and held result setup; not only the final internal request"
+        );
+        row
+    }).collect::<Vec<_>>();
+    assert_eq!(cases.len(), 10);
+    json!({
+        "schema":"active-internal-mask-paths-v1",
+        "actual_layouts":{
+            "SignalBlock":structure::<SignalBlock>(),
+            "ReadBlock":structure::<ReadBlock>(),
+            "PointDomainAudioBlock":structure::<PointDomainAudioBlock>()
+        },
+        "cases":cases,
+        "public_transfers":transfer_entries::current_owned_transfer_observations()
+    })
 }

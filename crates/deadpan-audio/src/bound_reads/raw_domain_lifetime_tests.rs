@@ -488,6 +488,12 @@ fn raw_bound_foreign_depth_range_and_cancel_priorities_precede_construction_and_
 
 #[test]
 fn genuine_frozen_silent_hold_bound_bypasses_raw_constructor_and_provider() {
+    crate::stages::internal_mask_request::with_legacy_internal_masks(
+        genuine_frozen_silent_hold_bound_bypasses_raw_constructor_and_provider_before_internal_masks,
+    );
+}
+
+fn genuine_frozen_silent_hold_bound_bypasses_raw_constructor_and_provider_before_internal_masks() {
     let frozen: Value = serde_json::from_str(include_str!(
         "../../../deadpan-plan/tests/fixtures/retained-fade-query-supplement-v1/snapshot.json"
     ))

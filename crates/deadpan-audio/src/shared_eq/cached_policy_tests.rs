@@ -56,12 +56,16 @@ fn control<'work>(
 }
 
 fn copy_block(block: &ReadBlock) -> ReadBlock {
+    assert!(
+        !block.suppressed.is_owned(),
+        "corrupt-cache fixtures use unaccounted masks"
+    );
     ReadBlock {
         start: block.start,
         samples: block.samples.clone(),
         dependencies: block.dependencies.clone(),
         relative_depth: block.relative_depth,
-        suppressed: block.suppressed.clone(),
+        suppressed: AudioSuppressionMask::plain(block.suppressed.as_slice().to_vec()),
         exhausted: block.exhausted.clone(),
     }
 }
@@ -205,7 +209,7 @@ fn cached_original_policy_rejects_mismatched_window_and_malformed_typed_masks() 
             if exhausted {
                 invalid.exhausted = masks;
             } else {
-                invalid.suppressed = masks;
+                invalid.suppressed = crate::AudioSuppressionMask::plain(masks);
             }
             let result = evaluate(
                 &mut renderer,
@@ -242,7 +246,7 @@ fn cached_original_policy_uses_mask_union_and_exhaustion_independently() {
         .unwrap();
     for include_suppressed in [false, true] {
         let mut block = copy_block(&raw);
-        block.suppressed = if include_suppressed {
+        block.suppressed = AudioSuppressionMask::plain(if include_suppressed {
             vec![
                 AudioSample(8)..AudioSample(16),
                 AudioSample(12)..AudioSample(24),
@@ -251,7 +255,7 @@ fn cached_original_policy_uses_mask_union_and_exhaustion_independently() {
             ]
         } else {
             Vec::new()
-        };
+        });
         block.exhausted = vec![AudioSample(40)..AudioSample(48)];
         // Literal expected union, independent of adapter traversal/merging.
         let allowed: Vec<_> = (0..64)
@@ -321,7 +325,9 @@ fn cached_original_policy_keeps_selection_and_actual_owner_support_separate() {
     // Narrow private-fixture perturbation: remove cached exclusions so only
     // current owner support can reject inactive spans. This is not a claim
     // that a modified derived block could enter the authenticated cache.
-    raw.suppressed.clear();
+    let mut suppressed = raw.suppressed.into_legacy_vector();
+    suppressed.clear();
+    raw.suppressed = AudioSuppressionMask::plain(suppressed);
     raw.exhausted.clear();
     for selected in [false, true] {
         let allowed: Vec<_> = (96..160)
@@ -371,7 +377,9 @@ fn identical_valid_mask_corruption_needs_an_independent_query_witness() {
         .read_controlled(&mut provider, AudioSample(0), 64, control, true, 0)
         .unwrap();
     assert!(corrupt.suppressed.is_empty() && corrupt.exhausted.is_empty());
-    corrupt.suppressed.push(AudioSample(16)..AudioSample(24));
+    let mut suppressed = corrupt.suppressed.into_legacy_vector();
+    suppressed.push(AudioSample(16)..AudioSample(24));
+    corrupt.suppressed = AudioSuppressionMask::plain(suppressed);
     corrupt.samples[16..24].fill([0.0; 2]);
     let observations: Vec<_> = (0..64).map(|at| !(16..24).contains(&at)).collect();
     // Both warm prediction and numeric producer observations now consume the

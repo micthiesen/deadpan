@@ -127,7 +127,7 @@ fn direct_signal_and_current_occurrence_forwarders_match_real_masks() {
     let actual = stage
         .read_prepared_beat_sound(&mut provider, current, samples, budget.control())
         .unwrap();
-    let mut expected = actual.suppressed;
+    let mut expected = actual.suppressed.as_slice().to_vec();
     expected.extend(actual.exhausted);
     assert_eq!(merged_suppression(predicted), merged_suppression(expected));
     assert_eq!(cold_work.borrow().source_checks, 0);

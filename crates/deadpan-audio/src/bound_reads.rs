@@ -1259,6 +1259,12 @@ fn bound_preserve_evaluates_changed_room_tone_without_old_silence() {
 
 #[test]
 fn bound_reads_share_cancellation_work_and_complete_cached_dependencies() {
+    crate::stages::internal_mask_request::with_legacy_internal_masks(
+        bound_reads_share_cancellation_work_and_complete_cached_dependencies_before_internal_masks,
+    );
+}
+
+fn bound_reads_share_cancellation_work_and_complete_cached_dependencies_before_internal_masks() {
     let rate = FrameRate::new(48_000, 1).unwrap();
     let (old, mut provider) = document(
         rate,

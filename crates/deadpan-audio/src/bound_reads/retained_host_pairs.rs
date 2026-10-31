@@ -25,6 +25,7 @@ fn reset() {
     original_request::flattened_work_trace::reset();
     trace::reset();
     raw_domain_host_baseline::reset_if_capturing();
+    native_mask_after::reset_if_capturing();
 }
 fn receipts() -> Value {
     let mut value = json!({"fade":trace::fade_snapshot(),"owners":trace::owners_snapshot(),
@@ -44,6 +45,9 @@ fn receipts() -> Value {
             "accepted_units_by_lane":units,"overflow":overflow,
         });
     }
+    if let Some(mask) = native_mask_after::receipt_if_capturing() {
+        value["native_mask_work"] = mask;
+    }
     value
 }
 fn integer(value: &Value) -> u64 {
@@ -56,6 +60,13 @@ fn lane_total(receipts: &Value, field: &str, lane: &str) -> u64 {
     integer(&receipts["fade"][lane][field]) + integer(&receipts["owners"][lane][field])
 }
 fn assert_receipts(receipts: &Value) {
+    if native_mask_after::active() {
+        for product in ["fade", "owners"] {
+            assert_eq!(receipts[product]["overflow"], false);
+            assert_eq!(receipts[product]["active_depth"], 0);
+        }
+        return;
+    }
     for product in ["fade", "owners"] {
         assert_eq!(receipts[product]["invalid"], false);
         assert_eq!(receipts[product]["overflow"], false);
@@ -587,6 +598,9 @@ fn current_body(variant: &str, source: &str) -> Value {
 
 #[path = "raw_domain_host_baseline.rs"]
 mod raw_domain_host_baseline;
+
+#[path = "native_mask_after.rs"]
+mod native_mask_after;
 
 #[test]
 #[ignore = "manual NEW native paired capture; same 744 frozen OLD requests, fresh create_new /tmp output"]
