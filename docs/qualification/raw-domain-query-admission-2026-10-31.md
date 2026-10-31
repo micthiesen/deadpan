@@ -58,14 +58,15 @@ are removed for full Main/isolated equality. All 23 oracle hashes stay exact.
 
 False and true public queries compare all 77 complete frozen outputs. False
 mode invokes no spend, reserve, merge or issuer callbacks. True mode preserves
-the frozen helper callback prefix; its explicit zero-unit public seal remains
-observable. Caller state and literal stored work remain unchanged.
+the frozen helper callback trace. Its public seal checks the issuer and result
+memory without adding a spend, reserve or merge callback. Caller state and
+literal stored work remain unchanged.
 
 Exact and one-short external work and requested-Layout-peak limits run on every
 operand. Every actual spend/reserve refusal, spend cancellation and
 spend/reserve/merge issuer rotation verifies the complete accepted prefix, exact
-typed error, final callback, no refund and released result leases. The public
-failure sweep includes zero-unit seals by callback ordinal.
+typed error, final callback, no refund and released result leases. Cancellation
+and failure sweeps use the helper's actual callback ordinals.
 
 Eight actual constructor phase brackets compare a live policy ledger with
 selected overlapping heap Layout lower bounds. These include temporary

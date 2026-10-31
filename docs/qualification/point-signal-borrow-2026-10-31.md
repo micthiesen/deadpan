@@ -18,8 +18,8 @@ The existing immutable 77-operand corpus includes 18 complete private Point/
 Structural signal payloads. The new test uses those actual operands and compares
 every borrowed signal field with both its containing Point snapshot and the
 frozen payload. All original Bound/input/caller values and setup outcomes remain
-exact. It retains the real public seal callback count and checks caller state
-and released leases. No oracle or expected body is regenerated.
+exact. It verifies the helper callback prefix and actual observed callback count,
+caller state and released leases. No oracle or expected body is regenerated.
 
 Both current optimized native captures replay all 744 requests and equal the
 published raw-domain canonical body after removing only capture variant and
