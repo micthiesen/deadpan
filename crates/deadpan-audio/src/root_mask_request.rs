@@ -13,5 +13,5 @@ pub(super) fn with_legacy_root_masks<T>(action: impl FnOnce() -> T) -> T {
         }
     }
     let _restore = Restore(LEGACY.with(|legacy| legacy.replace(true)));
-    action()
+    super::shared_mix_mask_request::with_legacy_shared_mix(action)
 }

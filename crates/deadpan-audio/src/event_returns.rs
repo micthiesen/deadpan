@@ -97,7 +97,7 @@ impl StageAudio {
         );
         let mut output = WideBlock {
             samples: vec![[0.0; 2]; request.frames as usize],
-            suppressed: Vec::new(),
+            suppressed: AudioSuppressionMask::default(),
             dependencies: Dependencies::new(),
             relative_depth: 0,
         };
@@ -409,7 +409,7 @@ impl StageAudio {
                     .zip(out_right)
                     .map(|(l, r)| [l, r])
                     .collect(),
-                suppressed: Vec::new(),
+                suppressed: AudioSuppressionMask::default(),
                 dependencies,
                 relative_depth,
             });
@@ -439,7 +439,7 @@ impl StageAudio {
         }
         let mut output = WideBlock {
             samples: vec![[0.0; 2]; frames as usize],
-            suppressed: Vec::new(),
+            suppressed: AudioSuppressionMask::default(),
             dependencies: Dependencies::new(),
             relative_depth: 0,
         };
@@ -513,7 +513,7 @@ impl StageAudio {
             .filter(|_| recipe.equalizer().is_some_and(|eq| !eq.is_unity()));
         let mut output = WideBlock {
             samples: vec![[0.0; 2]; frames as usize],
-            suppressed: Vec::new(),
+            suppressed: AudioSuppressionMask::default(),
             dependencies: Dependencies::new(),
             relative_depth: 0,
         };

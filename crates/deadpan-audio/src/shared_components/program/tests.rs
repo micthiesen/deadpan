@@ -332,7 +332,10 @@ fn constant_blocks_preserve_selected_contributions_and_aliases() {
                         .collect::<Vec<_>>(),
                     "send={send} selected={selected:?} alias={alias:?}"
                 );
-                assert_eq!(actual.suppressed, expected.suppressed);
+                assert_eq!(
+                    actual.suppressed.ordinary_for_test(),
+                    expected.suppressed.ordinary_for_test()
+                );
                 assert_eq!(calls, expected_calls);
             }
         }
@@ -361,7 +364,10 @@ fn constant_routes_match_live_clocks_through_shared_saturation_eq_wet_and_sends(
                             .map(|frame| frame.map(f64::to_bits))
                             .collect::<Vec<_>>()
                     );
-                    assert_eq!(actual.suppressed, expected.suppressed);
+                    assert_eq!(
+                        actual.suppressed.ordinary_for_test(),
+                        expected.suppressed.ordinary_for_test()
+                    );
                     assert_eq!(calls, expected_calls);
                 }
             }
@@ -411,7 +417,10 @@ fn inactive_routes_do_not_prepare_checkpoints_or_consume_gain_work() {
         })
         .unwrap();
     assert_eq!(block.samples, vec![[0.0; 2]; 4]);
-    assert_eq!(block.suppressed, vec![AudioSample(12)..AudioSample(16)]);
+    assert_eq!(
+        block.suppressed.ordinary_for_test(),
+        &[AudioSample(12)..AudioSample(16)]
+    );
 }
 
 #[test]
@@ -445,7 +454,7 @@ fn unity_block_omits_the_transfer_pass_under_the_unchanged_work_limit() {
         })
         .unwrap();
     assert_eq!(actual.samples, vec![[0.125, -0.375]; FRAMES as usize]);
-    assert!(actual.suppressed.is_empty());
+    assert!(actual.suppressed.ordinary_for_test().is_empty());
     assert!(work.borrow().plan_work <= MAX_PLAN_WORK_PER_READ);
 }
 

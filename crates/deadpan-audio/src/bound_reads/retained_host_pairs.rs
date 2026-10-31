@@ -51,6 +51,9 @@ fn receipts() -> Value {
     if let Some(intervals) = native_mask_after::interval_receipt_if_capturing() {
         value["native_query_intervals"] = intervals;
     }
+    if let Some(projections) = native_mask_after::projection_receipt_if_capturing() {
+        value["shared_mix_mask_producers"] = projections;
+    }
     value
 }
 fn integer(value: &Value) -> u64 {

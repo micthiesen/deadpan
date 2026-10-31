@@ -271,7 +271,7 @@ fn owner_driver_preserves_literal_block_and_sample_callback_orders_and_pcm() {
                         .collect::<Vec<_>>(),
                     vec![value.map(f64::to_bits); 2],
                 );
-                assert!(output.suppressed.is_empty());
+                assert!(output.suppressed.ordinary_for_test().is_empty());
             }
         }
     }

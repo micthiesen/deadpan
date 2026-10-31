@@ -252,8 +252,8 @@ fn multiple_outputs_match_independent_dynamic_oracle_for_aliases_sends_skip_and_
                                 "target={index} send={send} skip={skip} stop={stop} muted={muted} gain_first={gain_first} dynamic={batch_dynamic}"
                             );
                             assert_eq!(
-                                merged_suppression(suppressed[index].clone()),
-                                expected.suppressed
+                                merged_suppression(suppressed[index].clone()).as_slice(),
+                                expected.suppressed.ordinary_for_test()
                             );
                             assert_eq!(suppressed[index].capacity(), capacities[index]);
                             if let Some(expected) = &expected_calls {

@@ -694,9 +694,22 @@ and 42 internal/transfer output fields remain exact. Eight aggregate account
 fields honestly change None to shell3. An extra public Domain case retains
 fully charged capacity2 where the old second merge copied to capacity1;
 PCM/ranges stay exact. This is not universal capacity parity.
-Projected-provider policy, independent derived bus/equalizer masks, exhausted
-vectors, PCM/dependencies and whole preparation remain owed. Next isolate the
-non-separate SharedMix producer inside its live source reservation.
+The [SharedMix suppression checkpoint](qualification/shared-mix-mask-ownership-2026-10-31.md)
+now retains its actual non-separate permission grid through projection/disposal
+inside the existing source reservation and carries the opaque AudioSample
+destination through WideBlock. All 21 Audio targets pass, 1,125/1,119 tests,
+23 ignored manual captures; libraries pass 544/538. Actual three-chunk ownership,
+zero emission, partial-work cleanup, shallow layout, strict checks, formatting,
+hygiene and independent reviews pass. All 33 before payloads remain fixed.
+Four historical bodies reproduce exactly and three current 744+10+4 captures
+per build agree. All 744 complete outputs and 42 output fields remain exact;
+six lifetime fields retain the additional 519-frame payload until result drop.
+The 758 complete producer snapshots contain nine actual positive rows in three
+aggregate cases. Zero/failure proof is separate native assertion coverage;
+destination-admission refusal and whole preparation are not established.
+Separate Components, projected-provider policy, exhausted vectors and
+PCM/dependencies remain owed. Next close the production single-output Components
+producer with separately admitted flags, preserving actual suppression order.
 No existing requirement or Gate acceptance changes.
 
 The [typed-mask foundation](qualification/internal-mask-foundation-2026-10-31.md)

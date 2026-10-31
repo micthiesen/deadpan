@@ -16,7 +16,23 @@ impl MaskContext for Context<'_, '_> {
     }
 
     fn reserve(&mut self, frames: u64) -> Result<point_suppression::Charge, StageAudioError> {
-        self.renderer.reserve_mask_storage(frames, self.control)
+        #[cfg(test)]
+        super::shared_mix_mask_trace::reserve_before(
+            frames,
+            self.renderer.active_frames,
+            self.renderer.owned_suppression.live_frames(),
+            self.control,
+        );
+        let result = self.renderer.reserve_mask_storage(frames, self.control);
+        #[cfg(test)]
+        super::shared_mix_mask_trace::reserve_after(
+            frames,
+            result.is_ok(),
+            self.renderer.active_frames,
+            self.renderer.owned_suppression.live_frames(),
+            self.control,
+        );
+        result
     }
 }
 

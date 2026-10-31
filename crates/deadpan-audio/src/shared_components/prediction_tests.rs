@@ -55,8 +55,8 @@ fn independent_prediction_precedes_pcm_and_releases_exact_payload_after_observat
         .unwrap();
     assert_eq!(result.samples, vec![[0.0; 2]; 4]);
     assert_eq!(
-        result.suppressed,
-        vec![
+        result.suppressed.ordinary_for_test(),
+        &[
             AudioSample(-2)..AudioSample(-1),
             AudioSample(0)..AudioSample(1)
         ]

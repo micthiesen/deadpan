@@ -176,10 +176,10 @@ fn real_wav_prediction_is_independent_of_observed_rows_and_detects_adapter_fault
                         .map(|v| v.map(f64::from))
                         .collect::<Vec<_>>()
                 );
-                assert!(result.suppressed.is_empty());
+                assert!(result.suppressed.ordinary_for_test().is_empty());
             } else {
                 assert_eq!(result.samples, vec![[0.0; 2]; 64]);
-                assert_eq!(result.suppressed, vec![range]);
+                assert_eq!(result.suppressed.ordinary_for_test(), &[range]);
             }
         }
         renderer.active_frames -= reserved;

@@ -6,6 +6,7 @@ const CHECKPOINT: &str = "e8fcdb3cb02f9682bef53f6ba2709e8a5ad692d0";
 thread_local! {
     static CAPTURING: Cell<bool> = const { Cell::new(false) };
     static INTERVALS: Cell<bool> = const { Cell::new(false) };
+    static PROJECTIONS: Cell<bool> = const { Cell::new(false) };
 }
 struct Capture;
 impl Capture {
@@ -20,6 +21,9 @@ impl Drop for Capture {
             crate::stages::native_query_interval_trace::disable();
         }
         point_suppression::ops::trace::disable();
+        if PROJECTIONS.replace(false) {
+            crate::stages::shared_mix_mask_trace::disable();
+        }
         CAPTURING.set(false);
     }
 }
@@ -29,6 +33,9 @@ pub(super) fn active() -> bool {
 pub(super) fn reset_if_capturing() {
     if active() {
         point_suppression::ops::trace::reset();
+        if PROJECTIONS.get() {
+            crate::stages::shared_mix_mask_trace::reset_if_enabled();
+        }
         if INTERVALS.get() {
             crate::stages::native_query_interval_trace::reset();
         }
@@ -44,11 +51,22 @@ pub(super) fn interval_receipt_if_capturing() -> Option<Value> {
     })
 }
 
+pub(super) fn projection_receipt_if_capturing() -> Option<Value> {
+    PROJECTIONS
+        .get()
+        .then(crate::stages::shared_mix_mask_trace::snapshot)
+}
+
 #[test]
 #[ignore = "manual current internal mask qualification; fresh /tmp and pinned sources"]
 fn capture_active_internal_mask_after_v1() {
     crate::stages::point_policy_request::with_legacy_policy(|| {
-        capture_after("DEADPAN_INTERNAL_MASK_AFTER", false, false, false);
+        capture_after(
+            "DEADPAN_INTERNAL_MASK_AFTER",
+            false,
+            false,
+            Destination::BeforeRoot,
+        );
     });
 }
 
@@ -56,7 +74,12 @@ fn capture_active_internal_mask_after_v1() {
 #[ignore = "manual additive query intervals; fresh /tmp and pinned sources"]
 fn capture_active_query_intervals_v1() {
     crate::stages::point_policy_request::with_legacy_policy(|| {
-        capture_after("DEADPAN_QUERY_INTERVAL_AFTER", true, false, false);
+        capture_after(
+            "DEADPAN_QUERY_INTERVAL_AFTER",
+            true,
+            false,
+            Destination::BeforeRoot,
+        );
     });
 }
 
@@ -64,7 +87,12 @@ fn capture_active_query_intervals_v1() {
 #[ignore = "manual active Point policy handoff capture; pinned sources and fresh /tmp"]
 fn capture_active_point_policy_after_v1() {
     crate::stages::root_mask_request::with_legacy_root_masks(|| {
-        capture_after("DEADPAN_POINT_POLICY_AFTER", true, true, false);
+        capture_after(
+            "DEADPAN_POINT_POLICY_AFTER",
+            true,
+            true,
+            Destination::BeforeRoot,
+        );
     });
 }
 
@@ -72,10 +100,32 @@ fn capture_active_point_policy_after_v1() {
 #[ignore = "manual active Root mask destination capture; pinned sources and fresh /tmp"]
 fn capture_active_root_mask_after_v1() {
     assert!(!crate::stages::root_mask_request::legacy());
-    capture_after("DEADPAN_ROOT_MASK_AFTER", true, true, true);
+    crate::stages::shared_mix_mask_request::with_legacy_shared_mix(|| {
+        capture_after("DEADPAN_ROOT_MASK_AFTER", true, true, Destination::Root);
+    });
 }
 
-fn capture_after(prefix: &str, intervals: bool, policy: bool, root: bool) {
+#[test]
+#[ignore = "manual non-separate SharedMix mask capture; pinned sources and fresh /tmp"]
+fn capture_active_shared_mix_mask_after_v1() {
+    assert!(!crate::stages::shared_mix_mask_request::legacy());
+    assert!(!crate::stages::root_mask_request::legacy());
+    capture_after(
+        "DEADPAN_SHARED_MIX_MASK_AFTER",
+        true,
+        true,
+        Destination::SharedMix,
+    );
+}
+
+#[derive(Clone, Copy)]
+enum Destination {
+    BeforeRoot,
+    Root,
+    SharedMix,
+}
+
+fn capture_after(prefix: &str, intervals: bool, policy: bool, destination: Destination) {
     let output = std::env::var(format!("{prefix}_OUTPUT")).expect("fresh output path");
     let path = Path::new(&output);
     assert!(path.is_absolute());
@@ -95,7 +145,9 @@ fn capture_after(prefix: &str, intervals: bool, policy: bool, root: bool) {
     assert!(source.len() == 64 && source.bytes().all(|byte| byte.is_ascii_hexdigit()));
     assert_eq!(
         std::env::var(format!("{prefix}_PUBLISHED_CHECKPOINT")).unwrap(),
-        if root {
+        if matches!(destination, Destination::SharedMix) {
+            "6458e9b989172147e0844fcb251c89ce8c479aaf"
+        } else if matches!(destination, Destination::Root) {
             "44068bd971dee62e2ed8cbaffbb2f18922283f83"
         } else if policy {
             "eedbc58272bdd009a65239b7104ddb786a2554fc"
@@ -105,19 +157,26 @@ fn capture_after(prefix: &str, intervals: bool, policy: bool, root: bool) {
             CHECKPOINT
         }
     );
+    if matches!(destination, Destination::SharedMix) {
+        PROJECTIONS.set(true);
+        crate::stages::shared_mix_mask_trace::enable();
+    }
     let mut value = observed_body(&variant, &source, intervals, policy);
-    if root {
-        value["schema"] = json!("active-root-mask-after-v1");
-        value["root_mask_checkpoint"] = json!("44068bd971dee62e2ed8cbaffbb2f18922283f83");
-        value["root_mask_before"] = json!({
-            "path":"tests/fixtures/root-mask-emission-baseline-v1/snapshot.json",
-            "sha256":"afa6038a02c959c7192c09c08a89266c7d52151a5e59a4f69828fbdf67e7414e",
+    if !matches!(destination, Destination::BeforeRoot) {
+        root_checkpoint(&mut value);
+    }
+    if matches!(destination, Destination::SharedMix) {
+        value["schema"] = json!("active-shared-mix-mask-after-v1");
+        value["shared_mix_mask_checkpoint"] = json!("6458e9b989172147e0844fcb251c89ce8c479aaf");
+        value["shared_mix_mask_before"] = json!({
+            "path":"tests/fixtures/shared-mix-mask-baseline-v1/snapshot.json",
+            "sha256":"596d738a53f6ef4cbf7870d74b3025504f6289f735ea91f4a38ed45c6661f44a",
         });
         value["native_requests"]["scope"] = json!(
-            "744 actual current native requests with funded typed AudioSample Root output-mask emission. Existing query intervals remain separate; native mask work is whole invocation, not a synthesized query fee."
+            "744 actual current native requests with C Point, D Root and non-separate SharedMix mask destinations. Producer-local observations are independent of query claims; no collector fee is synthesized from residuals."
         );
         value["scope"] = json!(
-            "Actual native Root output suppression Vec, future/final Box and in-place merge stay charged while source queries remain live. C Point policy remains active. Projected-provider/derived policies, exhausted vectors, PCM/dependencies and whole preparation remain outside this claim."
+            "Non-separate SharedMix permission-derived AudioSample masks retain funded source grids through destination admission inside the live program reservation. Separate Components, projected PreserveTape masks, exhausted vectors, PCM/dependencies and whole preparation remain outside this claim."
         );
     }
     let file = OpenOptions::new()
@@ -130,6 +189,21 @@ fn capture_after(prefix: &str, intervals: bool, policy: bool, root: bool) {
     writer.write_all(b"\n").unwrap();
     writer.flush().unwrap();
     writer.get_ref().sync_all().unwrap();
+}
+
+fn root_checkpoint(value: &mut Value) {
+    value["schema"] = json!("active-root-mask-after-v1");
+    value["root_mask_checkpoint"] = json!("44068bd971dee62e2ed8cbaffbb2f18922283f83");
+    value["root_mask_before"] = json!({
+        "path":"tests/fixtures/root-mask-emission-baseline-v1/snapshot.json",
+        "sha256":"afa6038a02c959c7192c09c08a89266c7d52151a5e59a4f69828fbdf67e7414e",
+    });
+    value["native_requests"]["scope"] = json!(
+        "744 actual current native requests with funded typed AudioSample Root output-mask emission. Existing query intervals remain separate; native mask work is whole invocation, not a synthesized query fee."
+    );
+    value["scope"] = json!(
+        "Actual native Root output suppression Vec, future/final Box and in-place merge stay charged while source queries remain live. C Point policy remains active. Projected-provider/derived policies, exhausted vectors, PCM/dependencies and whole preparation remain outside this claim."
+    );
 }
 
 fn observed_body(variant: &str, source: &str, intervals: bool, policy: bool) -> Value {
@@ -205,6 +279,28 @@ fn active_internal_masks_before_point_policy_match_frozen_v1() {
     let mut actual = crate::stages::point_policy_request::with_legacy_policy(|| {
         observed_body("scoped-published", &"0".repeat(64), false, false)
     });
+    for field in ["variant", "source_sha256"] {
+        actual.as_object_mut().unwrap().remove(field);
+        actual["native_requests"]
+            .as_object_mut()
+            .unwrap()
+            .remove(field);
+    }
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn root_masks_before_shared_mix_match_frozen_v1() {
+    let bytes = include_bytes!("../../tests/fixtures/shared-mix-mask-baseline-v1/snapshot.json");
+    assert_eq!(
+        hex(Sha256::digest(bytes)),
+        "596d738a53f6ef4cbf7870d74b3025504f6289f735ea91f4a38ed45c6661f44a",
+    );
+    let expected: Value = serde_json::from_slice(bytes).unwrap();
+    let mut actual = crate::stages::shared_mix_mask_request::with_legacy_shared_mix(|| {
+        observed_body("scoped-published", &"0".repeat(64), true, true)
+    });
+    root_checkpoint(&mut actual);
     for field in ["variant", "source_sha256"] {
         actual.as_object_mut().unwrap().remove(field);
         actual["native_requests"]

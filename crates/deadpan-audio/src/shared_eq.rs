@@ -4,6 +4,8 @@
 //! the common saturation drive from all permitted inputs.
 
 use super::authored_eq::Context;
+#[cfg(test)]
+use super::shared_mix::MixedSuppression;
 use super::shared_mix::{
     AdmittedStop, Boundary, Contribution, OwnerKey, Permissions, SharedMix, Temporal,
 };
@@ -80,10 +82,49 @@ enum Voice {
 
 struct WideBlock {
     samples: Vec<[f64; 2]>,
-    suppressed: Vec<Range<AudioSample>>,
+    suppressed: AudioSuppressionMask,
     dependencies: Dependencies,
     relative_depth: usize,
 }
+
+#[cfg(test)]
+#[test]
+fn opaque_mask_keeps_the_private_wide_block_shallow_layout() {
+    struct ReconstructedPreEWideBlock {
+        samples: Vec<[f64; 2]>,
+        suppressed: Vec<Range<AudioSample>>,
+        dependencies: Dependencies,
+        relative_depth: usize,
+    }
+    let legacy = ReconstructedPreEWideBlock {
+        samples: Vec::new(),
+        suppressed: Vec::new(),
+        dependencies: Dependencies::new(),
+        relative_depth: 0,
+    };
+    let current = WideBlock {
+        samples: Vec::new(),
+        suppressed: AudioSuppressionMask::default(),
+        dependencies: Dependencies::new(),
+        relative_depth: 0,
+    };
+    assert_eq!(
+        std::mem::size_of_val(&current),
+        std::mem::size_of_val(&legacy)
+    );
+    assert_eq!(
+        std::mem::align_of_val(&current),
+        std::mem::align_of_val(&legacy)
+    );
+    let ReconstructedPreEWideBlock {
+        samples,
+        suppressed,
+        dependencies,
+        relative_depth,
+    } = legacy;
+    drop((samples, suppressed, dependencies, relative_depth));
+}
+
 struct Node<'plan, 'work> {
     parent: usize,
     context: Contexts<'plan>,
@@ -358,10 +399,9 @@ impl StageAudio {
                     &mut result.samples[offset..offset + count as usize],
                     block.samples,
                 )?;
-                result.suppressed.extend(
-                    AudioSuppressionMask::plain(block.suppressed),
-                    &mut self.masks(control),
-                )?;
+                result
+                    .suppressed
+                    .extend(block.suppressed, &mut self.masks(control))?;
                 result.dependencies.extend(block.dependencies);
                 result.relative_depth = result.relative_depth.max(block.relative_depth);
                 at += i64::from(count);
@@ -920,9 +960,48 @@ impl StageAudio {
             {
                 return Err(StageAudioError::Limit("nested stage depth"));
             }
+            // Keep the moved permission grid funded until projection drops it.
+            #[cfg(test)]
+            let pending_source = match &mixed.suppressed {
+                MixedSuppression::Pending { start, permissions } => Some(
+                    super::shared_mix_mask_trace::pending_source(*start, permissions),
+                ),
+                MixedSuppression::Ordinary(_) => None,
+            };
+            #[cfg(test)]
+            let receipt = pending_source.and_then(|source| {
+                super::shared_mix_mask_trace::begin(
+                    source,
+                    reservation,
+                    self.active_frames,
+                    self.owned_suppression.live_frames(),
+                    control,
+                )
+            });
+            let projection = {
+                #[cfg(test)]
+                {
+                    mixed.suppressed.finish(&mut self.masks(control), receipt)
+                }
+                #[cfg(not(test))]
+                {
+                    mixed.suppressed.finish(&mut self.masks(control))
+                }
+            };
+            #[cfg(test)]
+            if let Some(receipt) = receipt {
+                super::shared_mix_mask_trace::complete(
+                    receipt,
+                    &projection,
+                    self.active_frames,
+                    self.owned_suppression.live_frames(),
+                    control,
+                );
+            }
+            let suppressed = projection?;
             Ok(WideBlock {
                 samples: mixed.samples,
-                suppressed: mixed.suppressed,
+                suppressed,
                 dependencies,
                 relative_depth,
             })
@@ -1277,7 +1356,7 @@ impl StageAudio {
                 graph.resident += resident;
                 let block = Arc::new(WideBlock {
                     samples,
-                    suppressed: Vec::new(),
+                    suppressed: AudioSuppressionMask::default(),
                     dependencies,
                     relative_depth,
                 });

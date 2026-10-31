@@ -50,6 +50,10 @@ mod point_policy_request;
 mod root_mask_request;
 
 #[cfg(test)]
+#[path = "shared_mix_mask_request.rs"]
+mod shared_mix_mask_request;
+
+#[cfg(test)]
 use crate::RootSignalBlock;
 
 #[path = "raw_policy.rs"]
@@ -104,6 +108,9 @@ mod shared_components;
 mod shared_eq;
 #[path = "shared_mix.rs"]
 mod shared_mix;
+#[cfg(test)]
+#[path = "shared_mix_mask_trace.rs"]
+mod shared_mix_mask_trace;
 #[path = "sound_context_admission.rs"]
 mod sound_context_admission;
 

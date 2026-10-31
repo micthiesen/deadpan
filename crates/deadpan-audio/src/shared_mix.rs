@@ -3,6 +3,7 @@
 //! at the consuming sample. Nonlinear stages still process one shared sum.
 //! Linear input prefixes retain each contribution's own automation clock.
 
+use super::point_suppression::ops::{MaskContext, MaskWorkPhase, begin_ranges};
 use deadpan_core::AudioTreatmentStage;
 use deadpan_plan::AudioOwnerClock;
 
@@ -155,7 +156,88 @@ pub(super) struct SharedMix<'plan, 'stop> {
 
 pub(super) struct MixedBlock {
     pub(super) samples: Vec<[f64; 2]>,
-    pub(super) suppressed: Vec<Range<AudioSample>>,
+    pub(super) suppressed: MixedSuppression,
+}
+
+pub(super) enum MixedSuppression {
+    Ordinary(Vec<Range<AudioSample>>),
+    Pending {
+        start: AudioSample,
+        permissions: Vec<Permissions>,
+    },
+}
+
+impl MixedSuppression {
+    #[cfg(test)]
+    pub(super) fn ordinary_for_test(&self) -> &[Range<AudioSample>] {
+        match self {
+            Self::Ordinary(ranges) => ranges,
+            Self::Pending { .. } => panic!("component fixture must retain its ordinary producer"),
+        }
+    }
+
+    // The caller must retain the permission grid's existing source reservation
+    // until this finishes, including disposal on every failure.
+    pub(super) fn finish<C: MaskContext>(
+        self,
+        context: &mut C,
+        #[cfg(test)] receipt: Option<super::shared_mix_mask_trace::Receipt>,
+    ) -> Result<AudioSuppressionMask, StageAudioError> {
+        match self {
+            Self::Ordinary(ranges) => Ok(AudioSuppressionMask::plain(ranges)),
+            Self::Pending { start, permissions } => {
+                #[cfg(test)]
+                let source_pointer = permissions.as_ptr() as usize;
+                #[cfg(test)]
+                let source_len = permissions.len();
+                #[cfg(test)]
+                let source_capacity = permissions.capacity();
+                let result = (|| {
+                    let mut capacity = 0_usize;
+                    for mask in &permissions {
+                        context.check()?;
+                        // One bounded permission entry, at most 64 bitset words.
+                        context.spend(MaskWorkPhase::Scan, 1)?;
+                        if mask.is_empty() {
+                            capacity = capacity.checked_add(1).ok_or(StageAudioError::Range)?;
+                        }
+                    }
+                    if capacity == 0 {
+                        context.check()?;
+                        return Ok(AudioSuppressionMask::default());
+                    }
+
+                    let mut ranges = begin_ranges::<AudioSample, C>(context, capacity)?;
+                    #[cfg(test)]
+                    super::shared_mix_mask_trace::destination_storage(
+                        ranges.as_slice().as_ptr() as usize,
+                        ranges.capacity(),
+                    );
+                    for (index, mask) in permissions.iter().enumerate() {
+                        context.check()?;
+                        context.spend(MaskWorkPhase::Scan, 1)?;
+                        let at = AudioSample(start.0 + index as i64);
+                        let range = at..AudioSample(at.0 + 1);
+                        if mask.is_empty() {
+                            ranges.push(range, context)?;
+                        }
+                    }
+                    ranges.finish(context)?.merge(context)
+                })();
+                drop(permissions);
+                #[cfg(test)]
+                if let Some(receipt) = receipt {
+                    super::shared_mix_mask_trace::source_disposed(
+                        receipt,
+                        source_pointer,
+                        source_len,
+                        source_capacity,
+                    );
+                }
+                result
+            }
+        }
+    }
 }
 
 fn equalizer(layers: &[Layer<'_>]) -> Option<usize> {
@@ -659,18 +741,28 @@ impl<'plan, 'stop> SharedMix<'plan, 'stop> {
                 }
             }
         }
-        let suppressed = self
-            .permissions
-            .iter()
-            .enumerate()
-            .filter_map(|(index, mask)| {
-                let at = AudioSample(self.start.0 + index as i64);
-                mask.is_empty().then_some(at..AudioSample(at.0 + 1))
-            })
-            .collect();
+        #[cfg(test)]
+        if super::shared_mix_mask_request::legacy() {
+            let suppressed = self
+                .permissions
+                .iter()
+                .enumerate()
+                .filter_map(|(index, mask)| {
+                    let at = AudioSample(self.start.0 + index as i64);
+                    mask.is_empty().then_some(at..AudioSample(at.0 + 1))
+                })
+                .collect();
+            return Ok(MixedBlock {
+                samples: self.sum,
+                suppressed: MixedSuppression::Ordinary(merged_suppression(suppressed)),
+            });
+        }
         Ok(MixedBlock {
             samples: self.sum,
-            suppressed: merged_suppression(suppressed),
+            suppressed: MixedSuppression::Pending {
+                start: self.start,
+                permissions: self.permissions,
+            },
         })
     }
 }

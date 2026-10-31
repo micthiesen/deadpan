@@ -3,7 +3,9 @@
 //! every input. Its continuous limit at zero is the drive. EQ is linear and
 //! reads each contribution through the complete, jointly driven input prefix.
 
-use super::shared_mix::{Contribution, MixedBlock, OwnerKey, Permissions, Temporal};
+use super::shared_mix::{
+    Contribution, MixedBlock, MixedSuppression, OwnerKey, Permissions, Temporal,
+};
 use super::*;
 use deadpan_core::AudioTreatmentStage;
 use deadpan_plan::AudioOwnerClock;
@@ -391,7 +393,7 @@ impl<'plan> Components<'plan> {
         )?;
         Ok(MixedBlock {
             samples,
-            suppressed: merged_suppression(suppressed),
+            suppressed: MixedSuppression::Ordinary(merged_suppression(suppressed)),
         })
     }
 

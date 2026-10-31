@@ -769,10 +769,14 @@ mod owned_native_tests;
 pub(super) fn current_owned_mask_observations_with_intervals(intervals: bool) -> Value {
     let cases = cases_internal().into_iter().map(|case| {
         point_suppression::ops::trace::reset();
+        crate::stages::shared_mix_mask_trace::reset_if_enabled();
         if intervals {
             crate::stages::native_query_interval_trace::reset();
         }
         let mut row = case_internal(case);
+        if crate::stages::shared_mix_mask_trace::is_enabled() {
+            row["shared_mix_mask_producers"] = crate::stages::shared_mix_mask_trace::snapshot();
+        }
         row["native_mask_work_whole_case"] =
             serde_json::to_value(point_suppression::ops::trace::snapshot()).unwrap();
         if intervals {
@@ -803,5 +807,7 @@ pub(super) fn current_owned_mask_observations_with_intervals(intervals: bool) ->
     })
 }
 
+#[path = "internal_suppression_shared_mix_tests.rs"]
+mod internal_suppression_shared_mix_tests;
 #[path = "native_query_interval_tests.rs"]
 mod native_intervals;

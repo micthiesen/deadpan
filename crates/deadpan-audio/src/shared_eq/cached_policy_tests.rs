@@ -146,7 +146,11 @@ fn evaluate<'plan>(
         let result = mix.finish(control, |_, _, _, _, _| {
             panic!("fixture has no temporal owner effect")
         })?;
-        Ok((result.samples, result.suppressed))
+        let crate::stages::shared_mix::MixedSuppression::Ordinary(suppressed) = result.suppressed
+        else {
+            panic!("separate prediction fixture must retain its ordinary producer");
+        };
+        Ok((result.samples, suppressed))
     })();
     // Population may have partially written rows before rejecting a block;
     // the caller discards the complete mix rather than treating it as valid.

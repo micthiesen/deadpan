@@ -338,10 +338,14 @@ pub(super) fn current_owned_transfer_observations(intervals: bool) -> Value {
     .into_iter()
     .map(|(entry, anchor, name)| {
         point_suppression::ops::trace::reset();
+        crate::stages::shared_mix_mask_trace::reset_if_enabled();
         if intervals {
             crate::stages::native_query_interval_trace::reset();
         }
         let mut row = case(entry, anchor, name);
+        if crate::stages::shared_mix_mask_trace::is_enabled() {
+            row["shared_mix_mask_producers"] = crate::stages::shared_mix_mask_trace::snapshot();
+        }
         row["native_mask_work_whole_case"] =
             serde_json::to_value(point_suppression::ops::trace::snapshot()).unwrap();
         if intervals {
