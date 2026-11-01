@@ -1,0 +1,101 @@
+{
+  "verdict": "GO",
+  "inventory": {
+    "bytes": 272765,
+    "sha256": "5c034e8ddc71c1a4e42b4be52556490bf47f8a4b221f6a03362e6439a4907934"
+  },
+  "records": 674,
+  "unique_payloads": 487,
+  "named_expanded_bytes": 898874598,
+  "unique_stored_bytes": 56773685,
+  "all_named_and_stored_paths_unique_safe_and_complete": true,
+  "all_stored_and_expanded_hashes_independently_verified": true,
+  "acceptance_v2": {
+    "path": "final10-runtime-acceptance-v2.json",
+    "sha256": "7be57fa89d01be79dbe9c3b69bbcc3620066c97d9ec03e77f6b8d1d5e47f9753"
+  },
+  "v1_and_v2_literal_preserved": true,
+  "archived_reference_matches": 23,
+  "shipping20_scope_current_main_equal": true,
+  "immutable36_both_roots_equal": true,
+  "docs4": {
+    "docs/REQUIREMENTS.md": {
+      "bytes": 537505,
+      "sha256": "b33b341a421060e1529013a0c96798e3a32bd80eae0d7e8a3fd87cb654e41891"
+    },
+    "docs/spec/AGENT_HANDOFF.md": {
+      "bytes": 498825,
+      "sha256": "5b571726fe113a08c75084638c64ee8f98e6087ec79cd3cd2cc547fde48269fb"
+    },
+    "docs/design/projected-policy-source-admission.md": {
+      "bytes": 16079,
+      "sha256": "85694eb9fc364593f63b49131fba48daeb34c3d233bc0b25abc747764e176ab6"
+    },
+    "docs/qualification/provider-policy-child-kernel-2026-10-31.md": {
+      "bytes": 9484,
+      "sha256": "e73299792018172f50211c7aa9cdff3024207cb31846912045241f07885b7678"
+    }
+  },
+  "final_focused_tests": [
+    {
+      "variant": "main",
+      "receipt_sha256": "ad9445814a8fb85ed9d13acd443083954fa09e0a481c435b28665f3abb9096a9",
+      "passed": 16
+    },
+    {
+      "variant": "scoped",
+      "receipt_sha256": "3eeb237cda8e2612e9209a50256fc240dc9363362153e3ed3292bd6860862f52",
+      "passed": 16
+    }
+  ],
+  "literal_paired_canonical_records": [
+    "provider-pairs-native10-main-canonical.json",
+    "provider-pairs-native10-scoped-canonical.json",
+    "provider-pairs-native2-main-canonical.json",
+    "provider-pairs-native2-scoped-canonical.json",
+    "provider-pairs-native5-main-canonical.json",
+    "provider-pairs-native5-scoped-canonical.json",
+    "provider-pairs-native9-main-canonical.json",
+    "provider-pairs-native9-scoped-canonical.json"
+  ],
+  "bounded_historical_rust_paths": [
+    "baseline-before/scoped/crates/deadpan-plan/src/audio_projection.rs",
+    "baseline-before/scoped/crates/deadpan-plan/src/audio_signal.rs",
+    "baseline-before/scoped/crates/deadpan-plan/src/audio_source_voice.rs",
+    "baseline-before/scoped/crates/deadpan-plan/src/audio_tape.rs",
+    "before-failure-correction2/main.rs",
+    "before-failure-correction2/scoped.rs",
+    "before-live-cancellation4/main.rs",
+    "before-live-cancellation4/scoped.rs",
+    "before-metadata6/main-admission-tests.rs",
+    "before-metadata6/scoped-admission-tests.rs",
+    "before-metadata9/main.rs",
+    "before-metadata9/scoped.rs",
+    "before-owned-carrier10/main.rs",
+    "before-owned-carrier10/scoped.rs",
+    "shipping-source/crates/deadpan-plan/src/audio_owners.rs",
+    "shipping-source/crates/deadpan-plan/src/audio_owners/wide_gain_query_admission_tests.rs",
+    "shipping-source/crates/deadpan-plan/src/audio_point_policy_query.rs",
+    "shipping-source/crates/deadpan-plan/src/audio_policy_query.rs",
+    "shipping-source/crates/deadpan-plan/src/audio_projection.rs",
+    "shipping-source/crates/deadpan-plan/src/audio_provider_child_admission_tests.rs",
+    "shipping-source/crates/deadpan-plan/src/audio_provider_child_before.rs",
+    "shipping-source/crates/deadpan-plan/src/audio_provider_child_before_projection.rs",
+    "shipping-source/crates/deadpan-plan/src/audio_provider_child_before_tape.rs",
+    "shipping-source/crates/deadpan-plan/src/audio_provider_child_before_voice.rs",
+    "shipping-source/crates/deadpan-plan/src/audio_provider_child_failure_tests.rs",
+    "shipping-source/crates/deadpan-plan/src/audio_provider_child_metadata_tests.rs",
+    "shipping-source/crates/deadpan-plan/src/audio_provider_child_policy_probe.rs",
+    "shipping-source/crates/deadpan-plan/src/audio_provider_child_test_backend.rs",
+    "shipping-source/crates/deadpan-plan/src/audio_signal.rs",
+    "shipping-source/crates/deadpan-plan/src/audio_signal_processing_query.rs",
+    "shipping-source/crates/deadpan-plan/src/audio_source_voice.rs",
+    "shipping-source/crates/deadpan-plan/src/audio_tape.rs",
+    "shipping-source/crates/deadpan-plan/src/provider_child.rs"
+  ],
+  "limitations": [
+    "This audit independently verifies archive bytes, source/docs joins and final focused receipts. It relies on the archived independent paired-capture audit for exhaustive 4,080 equations/886 capacity classifications and 28 carried integration artifact joins.",
+    "No new build/test/native/Git execution by reviewer.",
+    "No final full-library rerun, native source/Tape admission, gap.after Some, non-Leaf carrier rejection, baseline37, whole-preparation or Gate credit is claimed."
+  ]
+}

@@ -5,6 +5,55 @@ use crate::plan::audio::processing_query as collection;
 use crate::plan::audio_bound::query::GuardedBound;
 use crate::plan::audio_owners::admission::Memory;
 
+#[path = "provider_child.rs"]
+mod provider_child;
+
+/// A borrowed structural view used only when an output Source voice applies
+/// current silent-Hold policy.
+pub(in crate::plan) struct SourceOutputHoldCarrier<'signal, 'plan> {
+    signal: &'signal AudioSignal<'plan>,
+}
+
+impl<'plan> AudioSignal<'plan> {
+    pub(in crate::plan) fn source_output_hold_carrier(
+        &self,
+    ) -> Option<SourceOutputHoldCarrier<'_, 'plan>> {
+        matches!(
+            self.provider,
+            SignalProvider::Source {
+                apply_holds: true,
+                ..
+            }
+        )
+        .then(|| SourceOutputHoldCarrier { signal: self })
+    }
+
+    pub(in crate::plan) fn provider_child_query<A: AudioSoundContextAdmission>(
+        &self,
+        samples: Range<SignalSample>,
+        limits: AudioQueryLimits,
+        rule: AudioBoundaryRule,
+        stops: (bool, bool),
+        budget: &mut QueryBudget<'_, A>,
+    ) -> SignalResult<'plan, A> {
+        provider_child::provider_child_query(self, samples, limits, rule, stops, budget)
+    }
+}
+
+impl<'signal, 'plan> SourceOutputHoldCarrier<'signal, 'plan> {
+    pub(in crate::plan) fn query<A: AudioSoundContextAdmission>(
+        self,
+        samples: Range<SignalSample>,
+        limits: AudioQueryLimits,
+        rule: AudioBoundaryRule,
+        budget: &mut QueryBudget<'_, A>,
+    ) -> SignalResult<'plan, A> {
+        let signal = self.signal;
+        let grid = signal.structural_grid(&samples, limits, rule)?;
+        signal.structural_query_admitted(samples, limits, grid, false, false, budget)
+    }
+}
+
 pub(in crate::plan) struct SignalBuffer<'plan, I, L> {
     pub(in crate::plan) query: AudioSignalQuery<'plan>,
     pub(in crate::plan) capacity: Memory<I, L>,

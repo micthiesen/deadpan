@@ -359,3 +359,7 @@ fn finish_signal<A: AudioSoundContextAdmission>(
 #[cfg(test)]
 #[path = "audio_point_policy_query_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "audio_provider_child_policy_probe.rs"]
+pub(in crate::plan) mod provider_child_probe;

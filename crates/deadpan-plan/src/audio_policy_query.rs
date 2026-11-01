@@ -537,7 +537,7 @@ fn signal_policy<A: AudioSoundContextAdmission>(
 ) -> QueryResult<Ranges<A>, A> {
     enter(budget, depth)?;
     let range = SignalSample(samples.start)..SignalSample(samples.end);
-    let current = signal.structural_child_query(
+    let current = signal.provider_child_query(
         range.clone(),
         child_limits(state, budget)?,
         rule,
@@ -546,7 +546,36 @@ fn signal_policy<A: AudioSoundContextAdmission>(
     )?;
     let bindings = signal.has_audio_bindings();
     let mut suppressed = signal_current(current, bindings, state, budget, endpoints)?;
-    // The closed Root/raw-Point factories are Structural; arbitrary voice providers keep ordinary policy.
+
+    // The current voice inventory is complete before its optional output-Hold
+    // carrier is queried. The carrier remains borrowed and never enters it.
+    let carrier = signal.source_output_hold_carrier();
+    if let Some(carrier) = carrier {
+        let holds = carrier.query(range.clone(), child_limits(state, budget)?, rule, budget)?;
+        // Validate the entire carrier query before charging or emitting any
+        // Hold rule, preserving the ordinary late structural-policy failure.
+        for span in &holds.query.spans {
+            budget.additional(1)?;
+            if !matches!(&span.content, AudioSignalContent::Leaf(_)) {
+                return Err(
+                    PlanError::InvalidPlan("Hold policy requires a structural signal").into(),
+                );
+            }
+        }
+        for span in &holds.query.spans {
+            if let AudioSignalContent::Leaf(content) = &span.content
+                && is_suppressed(content)
+            {
+                spend(budget, 1)?;
+                push_range(
+                    &mut suppressed,
+                    span.samples.start.0..span.samples.end.0,
+                    budget,
+                )?;
+            }
+        }
+    }
+
     if !bindings || samples.is_empty() {
         return Ok(suppressed);
     }
@@ -909,3 +938,6 @@ fn finish<A: AudioSoundContextAdmission>(
         forwarded: A::METERED,
     })
 }
+
+#[cfg(test)]
+pub(in crate::plan) use point::provider_child_probe;

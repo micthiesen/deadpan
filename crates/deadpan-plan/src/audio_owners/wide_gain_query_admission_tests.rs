@@ -576,3 +576,6 @@ mod fade_admission;
 
 #[path = "retained_fade_baseline.rs"]
 mod retained_fade_baseline;
+
+#[path = "../audio_provider_child_test_backend.rs"]
+pub(in crate::plan) mod provider_child_backend;

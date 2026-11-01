@@ -745,8 +745,22 @@ versus F, 855 across the 15 current pairs. Every value/delta is retained; all
 9,348 producer rows pass real Zero4/recorded Mark1 checks. No whole-current-body
 byte identity or partial-query debit is claimed. Ordinary policy source
 construction remains open; the [reviewed private provider kernel](design/projected-policy-source-admission.md)
-is next, with Tape/native integration separate. No coverage score, requirement
+is qualified below, with Tape/native integration separate. No coverage score, requirement
 or Gate acceptance changes.
+
+The [provider-aware child checkpoint](qualification/provider-policy-child-kernel-2026-10-31.md)
+admits private Source/Silence/Projected query construction and Source output's
+borrowed Hold carrier while retaining Structural dispatch and literal canonical
+fees. Baseline 36 is fixed; final paired bodies match across both copies and earlier
+captures, with 4,080 receipt equations, 886 recorded capacity differences and 36
+literal earlier-admission errors. All 29 Plan targets passed 750/737; final 16 affected
+tests pass each copy and 28 integration binaries remain byte-identical. Public
+metadata fixtures exercise repeated Source/Silence/Projected identities, definitions,
+late carrier-query failure and lease cleanup. Strict checks and independent audits
+pass. The isolated 2,625 named inputs are shipping authority; Main WIP is excluded.
+This is Plan protocol evidence, not a native allocation observer. Tape traversal,
+aggregate inventory/final Vec, native source policy and whole preparation remain
+open; Source `gap.after = Some(...)` remains unclaimed. No DP or Gate acceptance changes.
 
 The [typed-mask foundation](qualification/internal-mask-foundation-2026-10-31.md)
 keeps the public Reference owner active while sealing its generic storage to

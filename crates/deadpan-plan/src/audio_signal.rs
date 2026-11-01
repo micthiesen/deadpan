@@ -1235,3 +1235,7 @@ fn source_point(
     };
     Ok(source_point_from_local(source, *start, *duration, local)?)
 }
+
+#[cfg(test)]
+#[path = "audio_provider_child_before.rs"]
+mod provider_child_before;

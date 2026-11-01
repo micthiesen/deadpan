@@ -711,3 +711,7 @@ fn add_lookup(total: &mut LookupStats, next: LookupStats) -> Result<(), PlanErro
         .ok_or(PlanError::AudioQueryLimit("audio tape lookup count"))?;
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "audio_provider_child_before_tape.rs"]
+mod provider_child_before;

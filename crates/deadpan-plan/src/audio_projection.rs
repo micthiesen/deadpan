@@ -468,3 +468,7 @@ impl Serialize for AudioStageProjection<'_> {
         state.end()
     }
 }
+
+#[cfg(test)]
+#[path = "audio_provider_child_before_projection.rs"]
+mod provider_child_before;

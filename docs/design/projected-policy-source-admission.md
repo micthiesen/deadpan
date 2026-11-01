@@ -1,8 +1,8 @@
-# Next prerequisite: provider-aware admitted Signal policy children
+# Provider-aware Signal children and follow-on Tape admission
 
 Decision: build and qualify a private provider-aware, explicit-grid admitted Signal-policy child kernel first. Keep the public Tape policy reader and native routed path unchanged in that prerequisite. Existing Structural admitted policy helpers are useful internals, but the public Point factory is not a PreserveTape policy factory. Once child semantics are complete, a separate bounded change can admit the Tape traversal, combined inventory, and exact final Signal Vec and use the existing closed custody seam.
 
-This is a source-pinned prospective design, not implementation or runtime evidence. Scope is the source authority. It follows the [projected destination checkpoint](../qualification/projected-policy-destination-2026-10-31.md), whose published predecessor is `59874646dba6974da77e2cad08e9bc4822fd5afe`. Destination qualification does not establish source construction, whole preparation or product Gate acceptance.
+The [provider child checkpoint](../qualification/provider-policy-child-kernel-2026-10-31.md) now qualifies that private prerequisite for checked public operands, including reachable repeated and definition metadata. Its original decision and source pins below remain the historical design record. The follow-on Tape contract remains prospective: no Tape aggregate or native source admission follows from the child checkpoint. Scope is the source authority. The preceding [projected destination checkpoint](../qualification/projected-policy-destination-2026-10-31.md) funds the destination copy; neither checkpoint establishes whole preparation or product Gate acceptance.
 
 ## Current ownership gap
 

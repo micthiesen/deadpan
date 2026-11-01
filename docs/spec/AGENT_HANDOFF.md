@@ -2,7 +2,36 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: projected mask destination owned, product goal active
+## Current state: provider-aware Signal children admitted, product goal active
+
+The [private provider checkpoint](../qualification/provider-policy-child-kernel-2026-10-31.md)
+constructs Source, Silence and Projected query children under the existing budget,
+preserving explicit grids and canonical work. Structural dispatch remains literal.
+A sealed borrowed Source output carrier completes before emitted-Hold fees/ranges;
+its Original content and issuer data stay out of the independent voice inventory.
+
+Ordinary baseline36 was frozen before integration: 11 checked operands,
+340 requests, both grids, four stop modes and two endpoint modes. All 36 payloads
+remain fixed. Final paired bodies reproduce the audited 25,695,374-byte body exactly:
+4,080 equations, 1,352 adequate-work successes/688 errors, 886 literal capacity
+differences and 36 earlier low-limit errors. Values, capacities and work stay literal.
+
+All 29 Plan targets passed 750/737 with 31 ignored and no filters. The 28 integration
+binaries remain byte-identical in final10; all 16 affected final tests pass each copy.
+Five additional public-constructor tests cover repeated Source/Silence/Projected
+metadata, definition copies, real current-inventory-before-carrier failure and cleanup.
+They use unchanged ordinary references, not a regenerated before oracle.
+Strict checks and independent reviews pass. Scope's 2,625 named inputs are authority;
+Main's 2,933 and Scope's 2,605 other initial inputs remain exact. Main WIP is excluded.
+
+Next implement the [Tape factory contract](../design/projected-policy-source-admission.md):
+stored grid and endpoint mode, override traversal, aggregate inventory and exact
+final Signal Vec admission. Qualify that Plan layer before native preflight/PCM/custody
+integration. Graph construction, native source policy and whole preparation remain
+owed. Source `gap.after = Some(...)` and the non-Leaf carrier rejection stay unclaimed.
+General sound-bearing Split remains disabled; no requirement or Gate closes.
+
+## Preceding projected destination checkpoint
 
 The [projected destination checkpoint](../qualification/projected-policy-destination-2026-10-31.md)
 funds the actual completed PreserveTape Signal mask's destination copy while
@@ -31,11 +60,9 @@ Main's 2,932 and the isolated copy's 2,604 other initial named inputs stay exact
 The 10 owned paths match; the isolated copy's 2,614 named inputs are the shipping
 authority. Inherited Main WIP remains unpublished.
 
-Next implement the [private provider-aware Signal child kernel](../design/projected-policy-source-admission.md).
-Freeze ordinary checked provider evidence first. Preserve empty Projected work1
-success and Source input's exact-budget path; select an actual Source output
-carrier before requesting its child limit, and complete that query before Hold
-fees/ranges. Keep Tape/native integration separate until child parity is proven.
+The subsequent provider-aware checkpoint above qualifies the private child
+prerequisite. Its original [source-admission design](../design/projected-policy-source-admission.md)
+still governs the separate Tape/native work.
 Ordinary source queries/inventory/final Vec, graph construction, other providers,
 exhausted vectors and whole preparation remain owed. General sound-bearing
 Split stays disabled.

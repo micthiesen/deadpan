@@ -765,4 +765,4 @@ mod treatment_boundary_admission_tests;
 
 #[cfg(test)]
 #[path = "audio_owners/wide_gain_query_admission_tests.rs"]
-mod wide_gain_query_admission_tests;
+pub(in crate::plan) mod wide_gain_query_admission_tests;

@@ -21,6 +21,12 @@ pub(super) struct SourceVoiceProvider {
     recipe: AudioSourceVoiceRecipe,
 }
 
+impl SourceVoiceProvider {
+    pub(super) fn compiled_audio(&self) -> &CompiledSourceAudio {
+        &self.audio
+    }
+}
+
 /// Identity of one immutable voice recipe, retained by every derived view.
 /// Equal source metadata does not make separately constructed voices identical.
 #[derive(Debug, Clone)]
@@ -338,3 +344,7 @@ pub(super) fn checked_recipe(
         source: recipe.source.clone(),
     })
 }
+
+#[cfg(test)]
+#[path = "audio_provider_child_before_voice.rs"]
+mod provider_child_before;
