@@ -54,6 +54,10 @@ mod root_mask_request;
 mod shared_mix_mask_request;
 
 #[cfg(test)]
+#[path = "components_mask_request.rs"]
+mod components_mask_request;
+
+#[cfg(test)]
 use crate::RootSignalBlock;
 
 #[path = "raw_policy.rs"]
@@ -88,6 +92,9 @@ mod authored_gain;
 #[path = "authored_eq.rs"]
 mod authored_eq;
 #[cfg(test)]
+#[path = "components_mask_trace.rs"]
+mod components_mask_trace;
+#[cfg(test)]
 #[path = "native_query_interval_trace.rs"]
 mod native_query_interval_trace;
 #[cfg(test)]
@@ -113,6 +120,11 @@ mod shared_mix;
 mod shared_mix_mask_trace;
 #[path = "sound_context_admission.rs"]
 mod sound_context_admission;
+
+#[cfg(test)]
+pub(super) fn test_audio_mask_payload_frames(capacity: usize) -> Result<u64, StageAudioError> {
+    point_suppression::audio_payload_frames(capacity)
+}
 
 #[path = "point_suppression.rs"]
 pub(crate) mod point_suppression;

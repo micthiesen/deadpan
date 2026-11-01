@@ -110,11 +110,26 @@ fn capture_active_root_mask_after_v1() {
 fn capture_active_shared_mix_mask_after_v1() {
     assert!(!crate::stages::shared_mix_mask_request::legacy());
     assert!(!crate::stages::root_mask_request::legacy());
+    crate::stages::components_mask_request::with_legacy_components_masks(|| {
+        capture_after(
+            "DEADPAN_SHARED_MIX_MASK_AFTER",
+            true,
+            true,
+            Destination::SharedMix,
+        );
+    });
+}
+
+#[test]
+#[ignore = "manual single-output Components mask capture; pinned sources and fresh /tmp"]
+fn capture_active_components_mask_after_v1() {
+    assert!(!crate::stages::components_mask_request::legacy());
+    assert!(!crate::stages::shared_mix_mask_request::legacy());
     capture_after(
-        "DEADPAN_SHARED_MIX_MASK_AFTER",
+        "DEADPAN_COMPONENTS_MASK_AFTER",
         true,
         true,
-        Destination::SharedMix,
+        Destination::Components,
     );
 }
 
@@ -123,6 +138,7 @@ enum Destination {
     BeforeRoot,
     Root,
     SharedMix,
+    Components,
 }
 
 fn capture_after(prefix: &str, intervals: bool, policy: bool, destination: Destination) {
@@ -145,7 +161,9 @@ fn capture_after(prefix: &str, intervals: bool, policy: bool, destination: Desti
     assert!(source.len() == 64 && source.bytes().all(|byte| byte.is_ascii_hexdigit()));
     assert_eq!(
         std::env::var(format!("{prefix}_PUBLISHED_CHECKPOINT")).unwrap(),
-        if matches!(destination, Destination::SharedMix) {
+        if matches!(destination, Destination::Components) {
+            "69698b678fd8a75dd644993d7d2a9846986d6911"
+        } else if matches!(destination, Destination::SharedMix) {
             "6458e9b989172147e0844fcb251c89ce8c479aaf"
         } else if matches!(destination, Destination::Root) {
             "44068bd971dee62e2ed8cbaffbb2f18922283f83"
@@ -157,7 +175,10 @@ fn capture_after(prefix: &str, intervals: bool, policy: bool, destination: Desti
             CHECKPOINT
         }
     );
-    if matches!(destination, Destination::SharedMix) {
+    if matches!(
+        destination,
+        Destination::SharedMix | Destination::Components
+    ) {
         PROJECTIONS.set(true);
         crate::stages::shared_mix_mask_trace::enable();
     }
@@ -165,19 +186,27 @@ fn capture_after(prefix: &str, intervals: bool, policy: bool, destination: Desti
     if !matches!(destination, Destination::BeforeRoot) {
         root_checkpoint(&mut value);
     }
-    if matches!(destination, Destination::SharedMix) {
-        value["schema"] = json!("active-shared-mix-mask-after-v1");
-        value["shared_mix_mask_checkpoint"] = json!("6458e9b989172147e0844fcb251c89ce8c479aaf");
-        value["shared_mix_mask_before"] = json!({
-            "path":"tests/fixtures/shared-mix-mask-baseline-v1/snapshot.json",
-            "sha256":"596d738a53f6ef4cbf7870d74b3025504f6289f735ea91f4a38ed45c6661f44a",
+    if matches!(
+        destination,
+        Destination::SharedMix | Destination::Components
+    ) {
+        shared_mix_checkpoint(&mut value);
+    }
+    if matches!(destination, Destination::Components) {
+        value["schema"] = json!("active-components-mask-after-v1");
+        value["components_mask_checkpoint"] = json!("69698b678fd8a75dd644993d7d2a9846986d6911");
+        value["components_mask_before"] = json!({
+            "path":"tests/fixtures/components-mask-baseline-v1/snapshot.json",
+            "sha256":"9d6f3c67d9d611f46e75360006845a1b9419b30168a983db1ca9e4cf79c8be0a",
         });
         value["native_requests"]["scope"] = json!(
-            "744 actual current native requests with C Point, D Root and non-separate SharedMix mask destinations. Producer-local observations are independent of query claims; no collector fee is synthesized from residuals."
+            "744 actual current native requests with Point, Root, non-separate SharedMix and single-output Components destinations. Native work remains independent of query claims."
         );
         value["scope"] = json!(
-            "Non-separate SharedMix permission-derived AudioSample masks retain funded source grids through destination admission inside the live program reservation. Separate Components, projected PreserveTape masks, exhausted vectors, PCM/dependencies and whole preparation remain outside this claim."
+            "Production single-output Components records decisions in bounded inline words and admits its typed AudioSample destination after callbacks and depth validation inside its live source reservation. Ordinary multi-output, projected PreserveTape policy, exhausted vectors, PCM/dependencies and whole preparation remain outside this claim."
         );
+        value["components_producer_cases"] =
+            super::super::internal_suppression_baseline::components_producer_cases();
     }
     let file = OpenOptions::new()
         .create_new(true)
@@ -189,6 +218,21 @@ fn capture_after(prefix: &str, intervals: bool, policy: bool, destination: Desti
     writer.write_all(b"\n").unwrap();
     writer.flush().unwrap();
     writer.get_ref().sync_all().unwrap();
+}
+
+fn shared_mix_checkpoint(value: &mut Value) {
+    value["schema"] = json!("active-shared-mix-mask-after-v1");
+    value["shared_mix_mask_checkpoint"] = json!("6458e9b989172147e0844fcb251c89ce8c479aaf");
+    value["shared_mix_mask_before"] = json!({
+        "path":"tests/fixtures/shared-mix-mask-baseline-v1/snapshot.json",
+        "sha256":"596d738a53f6ef4cbf7870d74b3025504f6289f735ea91f4a38ed45c6661f44a",
+    });
+    value["native_requests"]["scope"] = json!(
+        "744 actual current native requests with C Point, D Root and non-separate SharedMix mask destinations. Producer-local observations are independent of query claims; no collector fee is synthesized from residuals."
+    );
+    value["scope"] = json!(
+        "Non-separate SharedMix permission-derived AudioSample masks retain funded source grids through destination admission inside the live program reservation. Separate Components, projected PreserveTape masks, exhausted vectors, PCM/dependencies and whole preparation remain outside this claim."
+    );
 }
 
 fn root_checkpoint(value: &mut Value) {
@@ -279,6 +323,31 @@ fn active_internal_masks_before_point_policy_match_frozen_v1() {
     let mut actual = crate::stages::point_policy_request::with_legacy_policy(|| {
         observed_body("scoped-published", &"0".repeat(64), false, false)
     });
+    for field in ["variant", "source_sha256"] {
+        actual.as_object_mut().unwrap().remove(field);
+        actual["native_requests"]
+            .as_object_mut()
+            .unwrap()
+            .remove(field);
+    }
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn shared_mix_before_components_match_frozen_v1() {
+    let bytes = include_bytes!("../../tests/fixtures/components-mask-baseline-v1/snapshot.json");
+    assert_eq!(
+        hex(Sha256::digest(bytes)),
+        "9d6f3c67d9d611f46e75360006845a1b9419b30168a983db1ca9e4cf79c8be0a",
+    );
+    let expected: Value = serde_json::from_slice(bytes).unwrap();
+    let mut actual = crate::stages::components_mask_request::with_legacy_components_masks(|| {
+        PROJECTIONS.set(true);
+        crate::stages::shared_mix_mask_trace::enable();
+        observed_body("scoped-published", &"0".repeat(64), true, true)
+    });
+    root_checkpoint(&mut actual);
+    shared_mix_checkpoint(&mut actual);
     for field in ["variant", "source_sha256"] {
         actual.as_object_mut().unwrap().remove(field);
         actual["native_requests"]

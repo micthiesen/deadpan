@@ -32,9 +32,13 @@ mod member_phases;
 mod completion;
 pub(super) use completion::CompletedPolicy;
 
+#[path = "shared_components/marks.rs"]
+mod marks;
+pub(super) use marks::ComponentMarks;
+
 #[path = "shared_components/outputs.rs"]
 mod outputs;
-pub(super) use outputs::{Output, OutputSamples, OutputSelection};
+pub(super) use outputs::{Output, OutputSamples, OutputSelection, OutputSuppression};
 
 /// Inspect every requested selector. A single-output call keeps its previous
 /// selection work; additional comparisons are admitted before inspecting them.
@@ -364,6 +368,7 @@ impl<'plan> Components<'plan> {
         Ok(())
     }
 
+    #[cfg(test)]
     pub(super) fn finish(
         self,
         output_voice: Option<usize>,
@@ -386,7 +391,7 @@ impl<'plan> Components<'plan> {
                     aliases: output_aliases,
                 },
                 samples: OutputSamples::Interleaved(&mut samples),
-                suppressed: Some(&mut suppressed),
+                suppressed: Some(OutputSuppression::Ranges(&mut suppressed)),
             }],
             control,
             equalize,
@@ -395,6 +400,49 @@ impl<'plan> Components<'plan> {
             samples,
             suppressed: MixedSuppression::Ordinary(merged_suppression(suppressed)),
         })
+    }
+
+    pub(super) fn finish_marks(
+        self,
+        output_voice: Option<usize>,
+        output_aliases: Permissions,
+        mut marks: ComponentMarks,
+        control: WorkControl<'_>,
+        equalize: impl FnMut(
+            &AudioOwnerClock<'plan>,
+            Temporal,
+            AudioSample,
+            Permissions,
+            Option<usize>,
+        ) -> Result<[f64; 2], StageAudioError>,
+    ) -> Result<MixedBlock, StageAudioError> {
+        let start = self.start;
+        let mut samples = vec![[0.0; 2]; self.frames];
+        let result = self.finish_into(
+            &mut [Output {
+                selection: OutputSelection {
+                    voice: output_voice,
+                    aliases: output_aliases,
+                },
+                samples: OutputSamples::Interleaved(&mut samples),
+                suppressed: Some(OutputSuppression::Marks(&mut marks)),
+            }],
+            control,
+            equalize,
+        );
+        match result {
+            Ok(()) => Ok(MixedBlock {
+                samples,
+                suppressed: MixedSuppression::PendingMarks { start, marks },
+            }),
+            Err(error) => {
+                #[cfg(test)]
+                super::components_mask_trace::inline_source_snapshot(&marks);
+                #[cfg(test)]
+                super::components_mask_trace::inline_source_closed();
+                Err(error)
+            }
+        }
     }
 
     /// Execute the common contribution driver once, then emit each requested
@@ -441,8 +489,12 @@ impl<'plan> Components<'plan> {
             .iter()
             .all(|route| route.event_gain.is_none() || route.program.is_some())
         {
+            #[cfg(test)]
+            super::components_mask_trace::driver("constant");
             return self.finish_constant_into(outputs, control, equalize);
         }
+        #[cfg(test)]
+        super::components_mask_trace::driver("dynamic");
         let owners = policy::ordered_owners(&self.owners);
         let mut gains = vec![authored_gain::GainSum::default(); self.routes.len()];
         for at in 0..self.frames {
@@ -517,7 +569,7 @@ impl<'plan> Components<'plan> {
                     .samples
                     .set(at, if self.send.is_some() { sent } else { sum });
                 if !permitted {
-                    output.mark_suppressed(sample);
+                    output.mark_suppressed(at, sample, control)?;
                 }
             } else {
                 // Final gains belong only to requested routes, but a route
@@ -553,7 +605,7 @@ impl<'plan> Components<'plan> {
                         .samples
                         .set(at, if self.send.is_some() { sent } else { sum });
                     if !permitted {
-                        output.mark_suppressed(sample);
+                        output.mark_suppressed(at, sample, control)?;
                     }
                 }
             }

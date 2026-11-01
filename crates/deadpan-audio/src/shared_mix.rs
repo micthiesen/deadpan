@@ -160,10 +160,21 @@ pub(super) struct MixedBlock {
 }
 
 pub(super) enum MixedSuppression {
+    #[cfg_attr(
+        not(test),
+        allow(
+            dead_code,
+            reason = "Retain the explicit ordinary carrier independently of owned production."
+        )
+    )]
     Ordinary(Vec<Range<AudioSample>>),
     Pending {
         start: AudioSample,
         permissions: Vec<Permissions>,
+    },
+    PendingMarks {
+        start: AudioSample,
+        marks: shared_components::ComponentMarks,
     },
 }
 
@@ -172,7 +183,9 @@ impl MixedSuppression {
     pub(super) fn ordinary_for_test(&self) -> &[Range<AudioSample>] {
         match self {
             Self::Ordinary(ranges) => ranges,
-            Self::Pending { .. } => panic!("component fixture must retain its ordinary producer"),
+            Self::Pending { .. } | Self::PendingMarks { .. } => {
+                panic!("component fixture must retain its ordinary producer")
+            }
         }
     }
 
@@ -185,6 +198,14 @@ impl MixedSuppression {
     ) -> Result<AudioSuppressionMask, StageAudioError> {
         match self {
             Self::Ordinary(ranges) => Ok(AudioSuppressionMask::plain(ranges)),
+            Self::PendingMarks { start, marks } => {
+                #[cfg(test)]
+                super::components_mask_trace::inline_source_snapshot(&marks);
+                let result = marks.finish(start, context);
+                #[cfg(test)]
+                super::components_mask_trace::inline_source_closed();
+                result
+            }
             Self::Pending { start, permissions } => {
                 #[cfg(test)]
                 let source_pointer = permissions.as_ptr() as usize;
@@ -510,6 +531,10 @@ impl<'plan, 'stop> SharedMix<'plan, 'stop> {
         self.separate
     }
 
+    pub(super) fn component_mask_frames(&self) -> Option<usize> {
+        self.separate.then_some(self.frames)
+    }
+
     pub(super) fn complete_policy(
         &self,
         complete: shared_eq::PopulationComplete,
@@ -688,10 +713,11 @@ impl<'plan, 'stop> SharedMix<'plan, 'stop> {
         Ok(())
     }
 
+    #[cfg(test)]
     pub(super) fn finish(
-        mut self,
+        self,
         control: WorkControl<'_>,
-        mut equalize: impl FnMut(
+        equalize: impl FnMut(
             &AudioOwnerClock<'plan>,
             Temporal,
             AudioSample,
@@ -703,6 +729,42 @@ impl<'plan, 'stop> SharedMix<'plan, 'stop> {
             return self.components.finish(
                 self.output_voice,
                 self.output_aliases,
+                control,
+                equalize,
+            );
+        }
+        self.finish_with_component_marks(control, None, equalize)
+    }
+
+    pub(super) fn finish_with_component_marks(
+        mut self,
+        control: WorkControl<'_>,
+        component_marks: Option<shared_components::ComponentMarks>,
+        mut equalize: impl FnMut(
+            &AudioOwnerClock<'plan>,
+            Temporal,
+            AudioSample,
+            Permissions,
+            Option<usize>,
+        ) -> Result<[f64; 2], StageAudioError>,
+    ) -> Result<MixedBlock, StageAudioError> {
+        if self.separate {
+            #[cfg(test)]
+            if super::components_mask_request::legacy() {
+                return self.components.finish(
+                    self.output_voice,
+                    self.output_aliases,
+                    control,
+                    equalize,
+                );
+            }
+            let marks = component_marks.ok_or(PlanError::InvalidPlan(
+                "component suppression destination absent",
+            ))?;
+            return self.components.finish_marks(
+                self.output_voice,
+                self.output_aliases,
+                marks,
                 control,
                 equalize,
             );

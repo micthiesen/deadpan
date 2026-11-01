@@ -195,7 +195,7 @@ fn multiple_outputs_match_independent_dynamic_oracle_for_aliases_sends_skip_and_
                             Output {
                                 selection: selections[0],
                                 samples: OutputSamples::Interleaved(&mut first),
-                                suppressed: Some(one),
+                                suppressed: Some(OutputSuppression::Ranges(one)),
                             },
                             Output {
                                 selection: selections[1],
@@ -203,17 +203,17 @@ fn multiple_outputs_match_independent_dynamic_oracle_for_aliases_sends_skip_and_
                                     left: &mut left,
                                     right: &mut right,
                                 },
-                                suppressed: Some(two),
+                                suppressed: Some(OutputSuppression::Ranges(two)),
                             },
                             Output {
                                 selection: selections[2],
                                 samples: OutputSamples::Interleaved(&mut all),
-                                suppressed: Some(three),
+                                suppressed: Some(OutputSuppression::Ranges(three)),
                             },
                             Output {
                                 selection: selections[3],
                                 samples: OutputSamples::Interleaved(&mut absent),
-                                suppressed: Some(four),
+                                suppressed: Some(OutputSuppression::Ranges(four)),
                             },
                         ];
                         let mut calls = Vec::new();
@@ -378,7 +378,7 @@ fn output_validation_precedes_callbacks_and_all_buffer_mutation() {
                     },
                     _ => OutputSamples::Interleaved(&mut valid),
                 },
-                suppressed: Some(&mut suppressed),
+                suppressed: Some(OutputSuppression::Ranges(&mut suppressed)),
             },
         ];
         let mut calls = 0;

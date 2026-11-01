@@ -707,10 +707,25 @@ six lifetime fields retain the additional 519-frame payload until result drop.
 The 758 complete producer snapshots contain nine actual positive rows in three
 aggregate cases. Zero/failure proof is separate native assertion coverage;
 destination-admission refusal and whole preparation are not established.
-Separate Components, projected-provider policy, exhausted vectors and
-PCM/dependencies remain owed. Next close the production single-output Components
-producer with separately admitted flags, preserving actual suppression order.
-No existing requirement or Gate acceptance changes.
+The subsequent [Components suppression checkpoint](qualification/components-mask-ownership-2026-10-31.md)
+records actual single-output decisions in four bounded inline words and funds
+the exact-raw-count AudioSample destination inside its live source reservation.
+Ordered emission removes the rejected flags prototype's nine default-budget
+regressions without changing caps, query fees or old requests. All 21 Audio
+targets pass, 1,136/1,130 tests with 24 ignored captures; libraries pass 555/549
+and Main's seven unfinished Split tests stay filtered. Real constant/dynamic/zero
+ownership, gain-only first-Mark refusal, seven boundary/account tests, strict
+checks, formatting, hygiene, rustdoc and independent final review pass.
+All 34 before payloads remain fixed and five historical bodies reproduce exactly.
+Six complete current captures retain exact classic 744 outputs and 42 result
+fields, and independently validate all four new producer cases. Their full hashes
+are retained separately: absolute plan-work checkpoints vary at 95 reviewed paths
+in two wet positive cases, with every value/delta literal and no output, capacity,
+error, account/lifetime or zero/refusal-case change. The 477 completed intervals
+reconcile; the claimless partial/five-unit residual remains unresolved.
+Ordinary multi-output Components, projected-provider policy, exhausted vectors,
+PCM/dependencies and whole preparation remain owed. No existing requirement or
+Gate acceptance changes.
 
 The [typed-mask foundation](qualification/internal-mask-foundation-2026-10-31.md)
 keeps the public Reference owner active while sealing its generic storage to

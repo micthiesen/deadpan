@@ -87,10 +87,22 @@ impl OutputSamples<'_> {
     }
 }
 
+pub(in crate::stages) enum OutputSuppression<'a> {
+    #[cfg_attr(
+        not(test),
+        allow(
+            dead_code,
+            reason = "The ordinary multi-output destination remains available."
+        )
+    )]
+    Ranges(&'a mut Vec<Range<AudioSample>>),
+    Marks(&'a mut ComponentMarks),
+}
+
 pub(in crate::stages) struct Output<'a> {
     pub(super) selection: OutputSelection,
     pub(super) samples: OutputSamples<'a>,
-    pub(super) suppressed: Option<&'a mut Vec<Range<AudioSample>>>,
+    pub(super) suppressed: Option<OutputSuppression<'a>>,
 }
 
 impl Output<'_> {
@@ -101,25 +113,59 @@ impl Output<'_> {
         if self.samples.frames() != Some(frames) {
             return Err(StageAudioError::Range);
         }
-        if let Some(suppressed) = &self.suppressed {
-            if !suppressed.is_empty() {
-                return Err(
-                    PlanError::InvalidPlan("contribution output suppression is not empty").into(),
-                );
+        match &self.suppressed {
+            Some(OutputSuppression::Ranges(suppressed)) => {
+                if !suppressed.is_empty() {
+                    return Err(PlanError::InvalidPlan(
+                        "contribution output suppression is not empty",
+                    )
+                    .into());
+                }
+                if multiple && suppressed.capacity() < frames {
+                    return Err(StageAudioError::Limit(
+                        "contribution output suppression capacity",
+                    ));
+                }
             }
-            if multiple && suppressed.capacity() < frames {
-                return Err(StageAudioError::Limit(
-                    "contribution output suppression capacity",
-                ));
+            Some(OutputSuppression::Marks(marks)) if marks.frames() != frames => {
+                return Err(StageAudioError::Range);
             }
+            Some(OutputSuppression::Marks(_)) | None => {}
         }
         Ok(())
     }
 
-    pub(super) fn mark_suppressed(&mut self, sample: AudioSample) {
-        if let Some(suppressed) = &mut self.suppressed {
-            suppressed.push(sample..AudioSample(sample.0 + 1));
+    pub(super) fn mark_suppressed(
+        &mut self,
+        at: usize,
+        sample: AudioSample,
+        control: WorkControl<'_>,
+    ) -> Result<(), StageAudioError> {
+        match &mut self.suppressed {
+            Some(OutputSuppression::Ranges(suppressed)) => {
+                suppressed.push(sample..AudioSample(sample.0 + 1));
+            }
+            Some(OutputSuppression::Marks(marks)) => {
+                #[cfg(test)]
+                super::super::components_mask_trace::mark_attempt(at, sample.0, control);
+                let checked = control.check();
+                #[cfg(test)]
+                let checked = checked.inspect_err(|error| {
+                    super::super::components_mask_trace::mark_refused(at, sample.0, error);
+                });
+                checked?;
+                let spent = marks.mark(at, control);
+                #[cfg(test)]
+                let spent = spent.inspect_err(|error| {
+                    super::super::components_mask_trace::mark_refused(at, sample.0, error);
+                });
+                spent?;
+                #[cfg(test)]
+                super::super::components_mask_trace::mark_written(at, sample.0, control);
+            }
+            None => {}
         }
+        Ok(())
     }
 }
 

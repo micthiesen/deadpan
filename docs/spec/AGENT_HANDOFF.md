@@ -2,40 +2,47 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: SharedMix suppression owned, product goal active
+## Current state: Components suppression owned, product goal active
+
+The [Components checkpoint](../qualification/components-mask-ownership-2026-10-31.md)
+records the actual single-output producer's decisions in four bounded inline
+words. Its existing source reservation survives callbacks/depth and overlaps
+exact-raw-count destination admission. Ordered run emission avoids the rejected
+flags prototype's default-budget regressions without changing caps or fees.
+
+All 21 Audio targets pass: 1,136 Main/1,130 isolated tests, libraries 555/549,
+24 ignored manual captures; Main's seven unfinished Split tests remain filtered.
+Actual constant/dynamic/zero ownership, gain-only first-Mark refusal, seven
+real-context boundary tests, strict checks, formatting, hygiene, rustdoc and
+independent final source/capture review pass. All 34 before payloads remain fixed;
+five historical complete bodies reproduce exactly in both copies.
+
+Six complete current bodies retain their distinct literal hashes. Their classic
+744 complete outputs and 42 internal/transfer output fields remain exact. Each
+of the four additive producer cases validates in every capture. Absolute plan-work
+checkpoints vary at 95 reviewed paths in the two wet positive cases; every value
+and delta remains literal. Outputs, capacities, errors, ownership/lifetimes and
+the zero/refusal cases stay exact. The 477 completed intervals reconcile; the
+existing claimless partial and five-unit residual remain unresolved. Do not claim
+whole-current-body byte identity, whole preparation, new requirement or Gate credit.
+
+Main's 2,920 and the isolated copy's 2,592 other initial named inputs remain exact.
+The isolated copy is the shipping authority; inherited Main WIP is unpublished.
+Next examine the projected PreserveTape policy destination copy as a separate
+prerequisite. Preserve its exact grid/endpoints and provider admission; its
+ordinary source query remains owed and cannot inherit the Point producer's
+assumptions. Ordinary multi-output Components, exhausted vectors and
+PCM/dependencies remain outside the current claim. General sound-bearing Split
+stays disabled.
+
+## Preceding SharedMix checkpoint
 
 The [SharedMix checkpoint](../qualification/shared-mix-mask-ownership-2026-10-31.md)
-keeps the actual non-separate permission grid funded through destination
-projection and physical disposal inside its existing reservation closure.
-WideBlock carries the opaque AudioSample owner directly into its recipient.
-Separate Components and projected PreserveTape policy remain ordinary.
-
-All 21 Audio targets pass in both copies, 1,125 Main/1,119 isolated tests,
-23 ignored manual captures. Libraries pass 544/538; Main's seven unfinished
-Split tests remain filtered. Actual three-chunk ownership, zero emission and
-partial-work failure tests, private shallow layout, strict checks, formatting,
-hygiene and independent source/observer/capture reviews pass. Rustdoc has zero
-executable examples.
-
-All 33 before payloads stay fixed. Four historical bodies reproduce exactly;
-three current 744+10+4 captures per build agree. All 744 complete outputs and
-42 internal/transfer output fields stay exact. Six lifetime fields retain the
-actual additional 519-frame result payload: aggregate 3 to 522 and held-public
-aggregate 10 to 529, with release back to the prior readings after result drop.
-The 758 producer snapshots are complete; nine positive rows cover three real
-chunks in three aggregate cases. Zero and partial failure are additional native
-assertion tests, not serialized rows. The 477 completed query intervals still
-reconcile; the real resident-quota partial remains partial.
-
-Main's 2,909 and the isolated copy's 2,581 other initial named inputs remain
-exact. The isolated source is the shipping authority; inherited Main WIP stays
-unpublished. Next close the production single-output Components producer.
-It has no final permission grid to move: separately admit flags scratch and
-record actual suppression decisions after finite validation and PCM writes.
-Keep its source, flags and destination funding overlapping through projection.
-Ordinary multi-output Components, projected policy, exhausted vectors,
-PCM/dependencies and whole preparation remain owed. No requirement or Gate
-credit changes; general sound-bearing Split stays disabled.
+retained the non-separate permission grid through projection/disposal inside the
+existing source reservation and carried the opaque owner through WideBlock.
+Its 33 before payloads and four historical bodies remain fixed. The subsequent
+Components checkpoint above closes the separate single-output producer; its
+failed experiments, actual limits and final evidence are recorded independently.
 
 ## Preceding Root destination checkpoint
 

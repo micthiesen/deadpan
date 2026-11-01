@@ -811,3 +811,10 @@ pub(super) fn current_owned_mask_observations_with_intervals(intervals: bool) ->
 mod internal_suppression_shared_mix_tests;
 #[path = "native_query_interval_tests.rs"]
 mod native_intervals;
+
+#[path = "components_mask_native_tests.rs"]
+mod components_mask_native_tests;
+
+pub(super) fn components_producer_cases() -> Value {
+    components_mask_native_tests::capture_cases()
+}

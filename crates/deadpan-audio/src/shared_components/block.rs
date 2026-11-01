@@ -155,7 +155,7 @@ impl<'plan> Components<'plan> {
                     .samples
                     .set(at, if self.send.is_some() { sent } else { sum });
                 if !permitted {
-                    output.mark_suppressed(AudioSample(self.start.0 + at as i64));
+                    output.mark_suppressed(at, AudioSample(self.start.0 + at as i64), control)?;
                 }
             }
         }
