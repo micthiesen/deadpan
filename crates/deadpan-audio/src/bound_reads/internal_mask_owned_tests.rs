@@ -317,6 +317,11 @@ fn active_source_only_point_empty_policy_has_no_account_or_native_mask_fees() {
 }
 #[test]
 fn active_held_private_point_and_genuine_bound_charge_limits_requests_and_recovers() {
+    crate::stages::stage_validation_policy_request::with_legacy_stage_validation_policy(
+        held_private_point_and_genuine_bound_charge_limits_requests_and_recovers_historical,
+    );
+}
+fn held_private_point_and_genuine_bound_charge_limits_requests_and_recovers_historical() {
     for bound in [false, true] {
         let _trace = NativeTrace::start();
         let plan = compile_checked(if bound {

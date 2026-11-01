@@ -47,24 +47,71 @@ impl StageAudio {
         depth: usize,
     ) -> Result<Option<SavedStage>, StageAudioError> {
         if self.persistent_cache.is_none() {
+            #[cfg(test)]
+            stage_validation_policy_before_trace::mark(self, control, "saved_key_disabled", || {
+                serde_json::json!({})
+            });
             return Ok(None);
         }
         let scope = control.cache_key_scope();
+        #[cfg(test)]
+        stage_validation_policy_before_trace::mark(self, control, "saved_key_scope_enter", || {
+            serde_json::json!({})
+        });
         let result = self.scan_saved_stage_key(input, output, recipe, provider, control, depth);
+        #[cfg(test)]
+        stage_validation_policy_before_trace::saved_result(
+            self,
+            control,
+            "saved_key_raw_result",
+            &result,
+        );
         drop(scope);
-        match result {
-            Err(StageAudioError::Limit(CACHE_KEY_WORK_LIMIT)) => {
-                if let Some(monitor) = &self.preparation_monitor {
-                    monitor.report_saved_audio(SavedAudioStatus {
-                        key: None,
-                        bytes: 0,
-                        event: SavedAudioEvent::BudgetSkipped,
-                        regenerated_from: None,
-                    });
+        #[cfg(test)]
+        stage_validation_policy_before_trace::mark(self, control, "saved_key_scope_exit", || {
+            serde_json::json!({})
+        });
+        #[cfg(not(test))]
+        {
+            match result {
+                Err(StageAudioError::Limit(CACHE_KEY_WORK_LIMIT)) => {
+                    if let Some(monitor) = &self.preparation_monitor {
+                        monitor.report_saved_audio(SavedAudioStatus {
+                            key: None,
+                            bytes: 0,
+                            event: SavedAudioEvent::BudgetSkipped,
+                            regenerated_from: None,
+                        });
+                    }
+                    Ok(None)
                 }
-                Ok(None)
+                other => other,
             }
-            other => other,
+        }
+        #[cfg(test)]
+        {
+            let mapped = match result {
+                Err(StageAudioError::Limit(CACHE_KEY_WORK_LIMIT)) => {
+                    if let Some(monitor) = &self.preparation_monitor {
+                        monitor.report_saved_audio(SavedAudioStatus {
+                            key: None,
+                            bytes: 0,
+                            event: SavedAudioEvent::BudgetSkipped,
+                            regenerated_from: None,
+                        });
+                    }
+                    Ok(None)
+                }
+                other => other,
+            };
+            #[cfg(test)]
+            stage_validation_policy_before_trace::saved_result(
+                self,
+                control,
+                "saved_key_mapped_result",
+                &mapped,
+            );
+            mapped
         }
     }
 
@@ -83,15 +130,54 @@ impl StageAudio {
                 total: recipe.input_frames(),
             })
         });
+        #[cfg(test)]
+        let _key_stream = stage_validation_policy_before_trace::key_stream();
         let mut hash = blake3::Hasher::new();
         hash.update(b"deadpan-canonical-pcm-input-key-1\0stereo-f32-le-48000\0");
+        #[cfg(test)]
+        stage_validation_policy_before_trace::key_update(
+            "domain",
+            b"deadpan-canonical-pcm-input-key-1\0stereo-f32-le-48000\0",
+        );
         hash.update(ENGINE_PIN.as_bytes());
+        #[cfg(test)]
+        stage_validation_policy_before_trace::key_update("engine_pin", ENGINE_PIN.as_bytes());
         hash.update(recipe.engine_id().as_bytes());
+        #[cfg(test)]
+        stage_validation_policy_before_trace::key_update(
+            "recipe_engine_id",
+            recipe.engine_id().as_bytes(),
+        );
         hash.update(&recipe.input_frames().to_le_bytes());
+        #[cfg(test)]
+        stage_validation_policy_before_trace::key_update(
+            "input_frames",
+            &recipe.input_frames().to_le_bytes(),
+        );
         hash.update(&recipe.output_frames().to_le_bytes());
+        #[cfg(test)]
+        stage_validation_policy_before_trace::key_update(
+            "output_frames",
+            &recipe.output_frames().to_le_bytes(),
+        );
         hash.update(&recipe.rate().numerator().to_le_bytes());
+        #[cfg(test)]
+        stage_validation_policy_before_trace::key_update(
+            "rate_numerator",
+            &recipe.rate().numerator().to_le_bytes(),
+        );
         hash.update(&recipe.rate().denominator().to_le_bytes());
+        #[cfg(test)]
+        stage_validation_policy_before_trace::key_update(
+            "rate_denominator",
+            &recipe.rate().denominator().to_le_bytes(),
+        );
         hash.update(&recipe.pitch_semitones().to_le_bytes());
+        #[cfg(test)]
+        stage_validation_policy_before_trace::key_update(
+            "pitch_semitones",
+            &recipe.pitch_semitones().to_le_bytes(),
+        );
         let mut dependencies = Dependencies::new();
         let mut relative_depth = 0;
         let mut cursor = 0;
@@ -112,6 +198,11 @@ impl StageAudio {
                     return Err(deadpan_dsp::DspError::InputPeak.into());
                 }
                 hash.update(&sample.to_le_bytes());
+                #[cfg(test)]
+                stage_validation_policy_before_trace::key_update(
+                    "input_pcm_sample",
+                    &sample.to_le_bytes(),
+                );
             }
             dependencies.extend(block.dependencies);
             relative_depth = relative_depth.max(block.relative_depth);
@@ -139,6 +230,11 @@ impl StageAudio {
             )?;
             for sample in mask {
                 hash.update(&[u8::from(sample[0] == 0.0)]);
+                #[cfg(test)]
+                stage_validation_policy_before_trace::key_update(
+                    "output_suppression_bit",
+                    &[u8::from(sample[0] == 0.0)],
+                );
             }
             cursor += count;
         }
@@ -147,15 +243,37 @@ impl StageAudio {
         for (asset, provenance) in &dependencies {
             let name = asset.as_str();
             hash.update(&(name.len() as u64).to_le_bytes());
+            #[cfg(test)]
+            stage_validation_policy_before_trace::key_update(
+                "dependency_name_length",
+                &(name.len() as u64).to_le_bytes(),
+            );
             hash.update(name.as_bytes());
+            #[cfg(test)]
+            stage_validation_policy_before_trace::key_update("dependency_name", name.as_bytes());
             hash.update(provenance);
+            #[cfg(test)]
+            stage_validation_policy_before_trace::key_update("dependency_provenance", provenance);
         }
         control.check()?;
-        Ok(Some(SavedStage {
-            key: CacheKey(*hash.finalize().as_bytes()),
-            dependencies,
-            relative_depth,
-        }))
+        #[cfg(not(test))]
+        {
+            Ok(Some(SavedStage {
+                key: CacheKey(*hash.finalize().as_bytes()),
+                dependencies,
+                relative_depth,
+            }))
+        }
+        #[cfg(test)]
+        {
+            let key = CacheKey(*hash.finalize().as_bytes());
+            stage_validation_policy_before_trace::key_finish(key.0);
+            Ok(Some(SavedStage {
+                key,
+                dependencies,
+                relative_depth,
+            }))
+        }
     }
 
     pub(super) fn restore_saved_stage(
@@ -256,6 +374,8 @@ fn hash_input_mapping(
     impl std::io::Write for HashWriter<'_> {
         fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
             self.0.update(bytes);
+            #[cfg(test)]
+            stage_validation_policy_before_trace::key_update("input_mapping_serde_chunk", bytes);
             Ok(bytes.len())
         }
         fn flush(&mut self) -> std::io::Result<()> {

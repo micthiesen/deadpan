@@ -25,6 +25,21 @@ use deadpan_plan::{
 };
 use serde::Serialize;
 
+#[cfg(test)]
+#[path = "stage_validation_policy_before_trace.rs"]
+mod stage_validation_policy_before_trace;
+
+#[path = "stage_validation_policy.rs"]
+mod stage_validation_policy;
+
+#[cfg(test)]
+#[path = "stage_validation_policy_request.rs"]
+mod stage_validation_policy_request;
+
+#[cfg(test)]
+#[path = "stage_validation_policy_native_trace.rs"]
+mod stage_validation_policy_native_trace;
+
 use crate::sequence::{original_sample, resolve_source, source_samples};
 use crate::{
     AudioSourceProvider, DomainSignalTransfer, DomainTransferDescriptor, MAX_OUTPUT_FRAMES,
@@ -2103,13 +2118,39 @@ impl StageAudio {
         control: WorkControl<'_>,
         depth: usize,
     ) -> Result<Arc<PreparedStage>, StageAudioError> {
+        #[cfg(test)]
+        let _validation_caller = stage_validation_policy_before_trace::enter(
+            self,
+            control,
+            "caller_current_stage",
+            || serde_json::json!({"depth":depth,"descriptor":stage.descriptor()}),
+        );
         control.check()?;
         if depth > self.limits.maximum_depth {
             return Err(StageAudioError::Limit("nested stage depth"));
         }
         let key = PreparedKey::Preserve(stage.descriptor().clone());
+        #[cfg(not(test))]
         if let Some(entry) = self.cached(&key, provider, control, depth)? {
             return Ok(entry);
+        }
+        #[cfg(test)]
+        {
+            let result = self.cached(&key, provider, control, depth);
+            stage_validation_policy_before_trace::mark(
+                self,
+                control,
+                "current_stage_cache_result",
+                || match &result {
+                    Ok(value) => serde_json::json!({"status":"Ok","hit":value.is_some()}),
+                    Err(error) => {
+                        serde_json::json!({"status":"Err","error":stage_validation_policy_before_trace::error(error)})
+                    }
+                },
+            );
+            if let Some(entry) = result? {
+                return Ok(entry);
+            }
         }
         let input_signal = stage.input_signal();
         let output_signal = stage.output_signal();
@@ -2127,7 +2168,20 @@ impl StageAudio {
             )?,
             i32::from(stage.descriptor().pitch.semitones()),
         );
+        #[cfg(not(test))]
         let reservation = self.reserve_stream(input_frames, output_frames, control)?;
+        #[cfg(test)]
+        let reservation = {
+            let result = self.reserve_stream(input_frames, output_frames, control);
+            let reservation = stage_validation_policy_before_trace::step(
+                self,
+                control,
+                "stream_reservation_result",
+                result,
+            )?;
+            stage_validation_policy_before_trace::reserved(self, control, &reservation);
+            reservation
+        };
         let result = recipe.map_err(StageAudioError::from).and_then(|recipe| {
             self.build_stage(
                 (&input_signal).into(),
@@ -2138,7 +2192,29 @@ impl StageAudio {
                 depth,
             )
         });
+        #[cfg(test)]
+        {
+            stage_validation_policy_before_trace::block_result(
+                self,
+                control,
+                "build_result_before_release",
+                &result,
+            );
+            stage_validation_policy_before_trace::mark(
+                self,
+                control,
+                "stream_release_before",
+                || {
+                    serde_json::json!({
+                "resident_frames":reservation.resident_frames,"disk_bytes":reservation.disk_bytes})
+                },
+            );
+        }
         self.release_stream(reservation);
+        #[cfg(test)]
+        stage_validation_policy_before_trace::mark(self, control, "stream_release_after", || {
+            serde_json::json!({})
+        });
         self.publish(key, result?, control)
     }
 
@@ -2653,6 +2729,20 @@ impl StageAudio {
         control: WorkControl<'_>,
         depth: usize,
     ) -> Result<PreparedBlock, StageAudioError> {
+        #[cfg(test)]
+        let _validation_build = stage_validation_policy_before_trace::enter(
+            self,
+            control,
+            "build_stage",
+            || {
+                serde_json::json!({
+                "depth":depth,"input":stage_validation_policy_before_trace::mode(input),
+                "output":stage_validation_policy_before_trace::mode(output),
+                "input_frames":recipe.input_frames(),"output_frames":recipe.output_frames(),
+                "rate":{"numerator":recipe.rate().numerator(),"denominator":recipe.rate().denominator()},
+                "pitch_semitones":recipe.pitch_semitones()})
+            },
+        );
         let WorkControl { cancelled, .. } = control;
         let progress = self.preparation_monitor.as_ref().map(|monitor| {
             monitor.enter(PreparationActivity::CheckingStretch {
@@ -2661,34 +2751,277 @@ impl StageAudio {
                 total: recipe.output_frames(),
             })
         });
+        #[cfg(test)]
+        stage_validation_policy_before_trace::mark(self, control, "progress_entered", || {
+            serde_json::json!({})
+        });
         // A policy may own no input-grid points but become audible after the
         // stretch. Validate the complete intrinsic output before source I/O.
+        #[cfg(test)]
+        let validation_scope = stage_validation_policy_before_trace::enter(
+            self,
+            control,
+            "validation",
+            || serde_json::json!({"depth":depth,"total":recipe.output_frames()}),
+        );
         let mut validated = 0_u32;
         while validated < recipe.output_frames() {
+            #[cfg(test)]
+            let _validation_chunk = stage_validation_policy_before_trace::enter(
+                self,
+                control,
+                "chunk",
+                || {
+                    serde_json::json!({
+                    "role":"output","output":stage_validation_policy_before_trace::mode(output),
+                    "range":{"start":validated,"end":(validated+MAX_OUTPUT_FRAMES).min(recipe.output_frames())},
+                    "depth":depth})
+                },
+            );
+            #[cfg(test)]
+            let _native_validation_scope = stage_validation_policy::scope(
+                control,
+                output,
+                SignalSample(i64::from(validated))
+                    ..SignalSample(i64::from(
+                        (validated + MAX_OUTPUT_FRAMES).min(recipe.output_frames()),
+                    )),
+                depth,
+            );
+            #[cfg(test)]
+            stage_validation_policy_native_trace::mark(
+                control,
+                stage_validation_policy_native_trace::Mark::CheckBefore,
+            );
+            #[cfg(not(test))]
             control.check()?;
+            #[cfg(test)]
+            {
+                let result = control.check();
+                stage_validation_policy_native_trace::result(
+                    control,
+                    "control_check_result",
+                    &result,
+                );
+                stage_validation_policy_before_trace::step(
+                    self,
+                    control,
+                    "control_check_result",
+                    result,
+                )?;
+                stage_validation_policy_native_trace::mark(
+                    control,
+                    stage_validation_policy_native_trace::Mark::CheckAccepted,
+                );
+            }
             let end = (validated + MAX_OUTPUT_FRAMES).min(recipe.output_frames());
-            let policy = output.policy(
+            #[cfg(not(test))]
+            let policy = self.stage_validation_policy(
+                output,
                 SignalSample(i64::from(validated))..SignalSample(i64::from(end)),
-                control.query_limits()?,
+                control,
             )?;
-            control.spend_plan_work(policy.work)?;
-            for content in &policy.contents {
+            #[cfg(test)]
+            let policy = {
+                let result = self.stage_validation_policy(
+                    output,
+                    SignalSample(i64::from(validated))..SignalSample(i64::from(end)),
+                    control,
+                );
+                stage_validation_policy_before_trace::step(self, control, "policy_result", result)?
+            };
+            #[cfg(test)]
+            stage_validation_policy_before_trace::policy(
+                self,
+                control,
+                "policy_constructed",
+                &policy,
+                0,
+            );
+            #[cfg(test)]
+            stage_validation_policy_native_trace::use_view(
+                control,
+                stage_validation_policy_native_trace::UsePhase::PolicyReady,
+                policy.view(),
+            );
+            if !policy.was_forwarded() {
+                #[cfg(not(test))]
+                control.spend_plan_work(policy.view().work)?;
+                #[cfg(test)]
+                {
+                    stage_validation_policy_native_trace::use_view(
+                        control,
+                        stage_validation_policy_native_trace::UsePhase::DebitBefore,
+                        policy.view(),
+                    );
+                    let result = control.spend_plan_work(policy.view().work);
+                    stage_validation_policy_native_trace::result(
+                        control,
+                        "policy_debit_result",
+                        &result,
+                    );
+                    stage_validation_policy_before_trace::step(
+                        self,
+                        control,
+                        "policy_debit_result",
+                        result,
+                    )?;
+                    stage_validation_policy_native_trace::use_view(
+                        control,
+                        stage_validation_policy_native_trace::UsePhase::Debited,
+                        policy.view(),
+                    );
+                }
+            }
+            #[cfg(test)]
+            stage_validation_policy_before_trace::policy(
+                self,
+                control,
+                if policy.was_forwarded() {
+                    "policy_forwarded"
+                } else {
+                    "policy_debited"
+                },
+                &policy,
+                0,
+            );
+            #[cfg(test)]
+            let mut completed_contents = 0;
+            for content in policy.view().contents {
+                #[cfg(test)]
+                stage_validation_policy_native_trace::use_view(
+                    control,
+                    stage_validation_policy_native_trace::UsePhase::ContentBefore(
+                        completed_contents,
+                    ),
+                    policy.view(),
+                );
+                #[cfg(test)]
+                stage_validation_policy_before_trace::policy(
+                    self,
+                    control,
+                    "content_before",
+                    &policy,
+                    completed_contents,
+                );
+                #[cfg(not(test))]
                 control.preflight_content(content, &self.plan)?;
+                #[cfg(test)]
+                {
+                    let result = control.preflight_content(content, &self.plan);
+                    stage_validation_policy_before_trace::step(
+                        self,
+                        control,
+                        "content_result",
+                        result,
+                    )?;
+                    completed_contents += 1;
+                    stage_validation_policy_before_trace::policy(
+                        self,
+                        control,
+                        "content_accepted",
+                        &policy,
+                        completed_contents,
+                    );
+                    stage_validation_policy_native_trace::use_view(
+                        control,
+                        stage_validation_policy_native_trace::UsePhase::ContentAccepted(
+                            completed_contents - 1,
+                        ),
+                        policy.view(),
+                    );
+                }
             }
             validated = end;
             if let Some(progress) = &progress {
+                #[cfg(test)]
+                stage_validation_policy_native_trace::use_view(
+                    control,
+                    stage_validation_policy_native_trace::UsePhase::ProgressBefore,
+                    policy.view(),
+                );
+                #[cfg(test)]
+                stage_validation_policy_before_trace::policy(
+                    self,
+                    control,
+                    "progress_report_before",
+                    &policy,
+                    completed_contents,
+                );
                 progress.report(PreparationActivity::CheckingStretch {
                     depth,
                     completed: validated,
                     total: recipe.output_frames(),
                 });
+                #[cfg(test)]
+                stage_validation_policy_before_trace::policy(
+                    self,
+                    control,
+                    "progress_report_after",
+                    &policy,
+                    completed_contents,
+                );
+                #[cfg(test)]
+                stage_validation_policy_native_trace::use_view(
+                    control,
+                    stage_validation_policy_native_trace::UsePhase::ProgressAfter,
+                    policy.view(),
+                );
+            }
+            #[cfg(test)]
+            {
+                stage_validation_policy_native_trace::use_view(
+                    control,
+                    stage_validation_policy_native_trace::UsePhase::IterationComplete,
+                    policy.view(),
+                );
+                stage_validation_policy_native_trace::mark(
+                    control,
+                    stage_validation_policy_native_trace::Mark::OwnerDropBefore,
+                );
+                drop(policy);
+                stage_validation_policy_native_trace::mark(
+                    control,
+                    stage_validation_policy_native_trace::Mark::OwnerDropped,
+                );
             }
         }
+        #[cfg(test)]
+        {
+            drop(validation_scope);
+            stage_validation_policy_before_trace::mark(
+                self,
+                control,
+                "validation_complete",
+                || serde_json::json!({"validated":validated}),
+            );
+        }
+        #[cfg(not(test))]
         let saved = self.saved_stage_key(input, output, recipe, provider, control, depth)?;
+        #[cfg(test)]
+        let saved = {
+            let result = self.saved_stage_key(input, output, recipe, provider, control, depth);
+            stage_validation_policy_before_trace::saved_result(
+                self,
+                control,
+                "saved_key_return",
+                &result,
+            );
+            result?
+        };
+        #[cfg(not(test))]
         if let Some(saved) = &saved
             && let Some(block) = self.restore_saved_stage(saved, recipe.output_frames(), control)?
         {
             return Ok(block);
+        }
+        #[cfg(test)]
+        if let Some(saved) = &saved {
+            let result = self.restore_saved_stage(saved, recipe.output_frames(), control);
+            stage_validation_policy_before_trace::restore_result(self, control, &result);
+            if let Some(block) = result? {
+                return Ok(block);
+            }
         }
         let mut dependencies = Dependencies::new();
         let mut relative_depth = 0;

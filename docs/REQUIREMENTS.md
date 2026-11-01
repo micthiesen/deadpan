@@ -778,6 +778,40 @@ excluded. The following native checkpoint qualifies its selected source-policy
 handoff. Input graph construction, PCM/dependencies and whole preparation remain
 open. No coverage score, requirement or Gate changes.
 
+The [initial stage-output validation checkpoint](qualification/stage-validation-policy-admission-2026-11-01.md)
+admits only build_stage's initial complete-output policy loop. Actual Signal
+and PreserveTape owners survive contents/progress and drop before later
+saved-key/DSP/child PCM. Tape output remains unreached; no mask handoff or
+canonical repricing follows.
+
+All 41 immutable payloads stay fixed, with explicit actual ENGINE_PIN/BLAKE3
+key relations for frozen baseline 41. Four fresh build2 after captures 4/5 repeat exactly per root;
+fresh cross-root inequality is confined to 274 derived engine/key nodes and
+8,156 scalar leaves (zero unclassified), never
+normalized. Twelve complete successful outputs and five complete errors match;
+only the separately measured old 2,048-cap request becomes a natural resident limit.
+All 966 request-ledger scopes reconcile, including positive Cache admission
+work, 31 Plan/38 Cache refusal targets and real cancellations. Positive Cache
+host/eviction and zero-Layout reserves are unclaimed. Public minima 2,345/2,348/2,355
+and unchanged 2,354 held refusal/drop/recovery are separate from ledger peaks.
+Strict4/build2 and all 50 actual artifact/copy joins pass; the original five
+focused tests/root and fresh historical focused2 pass. Matrix1 failed only the
+old B ownership boundary test/root; its six-line M-only wrapper preserves the
+literal 512 limit and full old body, with C/rawBound/L/J active. Fresh accounting
+and key replay give bounded GO. Five guarded Scope .orig engine salts will not
+ship; 2,673 is the guarded local count, not a committed-input claim.
+All 21 matrix2 targets/root pass: Main 1,157/Scope 1,151, libraries 576/570,
+37 ignored each, only Main's seven inherited Split filters. doc2/fmt2/hygiene2
+and final2 execution/source joins pass. All 16 owned paths match across roots;
+all 41 payloads stay fixed, with other initial Main 2,974/Scope 2,646 unchanged.
+The 2,668 nonbackup Scope guarded inputs form the prospective curated shipping
+set; Root verifies the inventory-linked archive before publishing without
+Main WIP or local backup salts. Ordinary Layouts are capacity-derived; requested
+Layout tokens belong only to native reserve hooks.
+Remaining read_signal/free suppression, placed Root/Mix policy,
+graph/PCM/dependencies and whole preparation stay open. No requirement or Gate
+status changes.
+
 The [native intrinsic-preflight checkpoint](qualification/intrinsic-preflight-policy-admission-2026-11-01.md)
 admits actual Signal/Tape/PreserveTape policies through content and recursive
 ordinary graph preflight, retaining query owners and forwarding work once.

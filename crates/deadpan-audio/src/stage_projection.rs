@@ -74,6 +74,13 @@ impl StageAudio {
         control: WorkControl<'_>,
         depth: usize,
     ) -> Result<Arc<PreparedBlock>, StageAudioError> {
+        #[cfg(test)]
+        let _validation_caller = stage_validation_policy_before_trace::enter(
+            self,
+            control,
+            "caller_projected",
+            || serde_json::json!({"depth":depth,"descriptor":projection.stage().descriptor()}),
+        );
         control.check()?;
         let identity = self.projection_cache_key(projection, control)?;
         let cached = control
@@ -83,6 +90,13 @@ impl StageAudio {
             .iter()
             .find(|(key, _)| *key == identity)
             .map(|(_, block)| Arc::clone(block));
+        #[cfg(test)]
+        stage_validation_policy_before_trace::mark(
+            self,
+            control,
+            "projected_memo_candidate",
+            || serde_json::json!({"hit":cached.is_some()}),
+        );
         if let Some(block) = cached {
             self.check_projected_depth(depth, block.relative_depth)?;
             for (asset, fingerprint) in &block.dependencies {
@@ -94,6 +108,13 @@ impl StageAudio {
                     );
                 }
             }
+            #[cfg(test)]
+            stage_validation_policy_before_trace::mark(
+                self,
+                control,
+                "projected_memo_return",
+                || serde_json::json!({"relative_depth":block.relative_depth}),
+            );
             return Ok(block);
         }
         self.preflight_projected(projection, control, depth)?;
@@ -116,7 +137,20 @@ impl StageAudio {
             )?,
             i32::from(projection.stage().descriptor().pitch.semitones()),
         )?;
+        #[cfg(not(test))]
         let reservation = self.reserve_stream(input_frames, output_frames, control)?;
+        #[cfg(test)]
+        let reservation = {
+            let result = self.reserve_stream(input_frames, output_frames, control);
+            let reservation = stage_validation_policy_before_trace::step(
+                self,
+                control,
+                "stream_reservation_result",
+                result,
+            )?;
+            stage_validation_policy_before_trace::reserved(self, control, &reservation);
+            reservation
+        };
         control
             .work
             .borrow_mut()
@@ -130,8 +164,24 @@ impl StageAudio {
             control,
             depth,
         );
+        #[cfg(test)]
+        stage_validation_policy_before_trace::block_result(
+            self,
+            control,
+            "build_result_before_release",
+            &result,
+        );
         control.work.borrow_mut().projected_active.pop();
+        #[cfg(test)]
+        stage_validation_policy_before_trace::mark(self, control, "stream_release_before", || {
+            serde_json::json!({
+            "resident_frames":reservation.resident_frames,"disk_bytes":reservation.disk_bytes})
+        });
         self.release_stream(reservation);
+        #[cfg(test)]
+        stage_validation_policy_before_trace::mark(self, control, "stream_release_after", || {
+            serde_json::json!({})
+        });
         let block = result?;
         let frames = block.samples.resident_frames();
         let disk = block.samples.disk_bytes();

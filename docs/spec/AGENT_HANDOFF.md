@@ -2,7 +2,59 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: intrinsic preflight policies admitted, product goal active
+## Current state: initial stage-output validation qualified, product goal active
+
+The [stage-validation checkpoint](../qualification/stage-validation-policy-admission-2026-11-01.md)
+admits ONLY the initial complete-output validation loop in build_stage.
+Actual Signal and PreserveTape output owners persist through contents/progress,
+then drop before saved-key/DSP/child PCM work. Tape output remains unreached.
+Query work forwards once; no final-mask handoff, cap or canonical-fee change.
+
+All 41 immutable payloads stay fixed. Frozen baseline 41 is literal Scope data with an
+explicit actual ENGINE_PIN/hash-stream/key/listing proof, not normalized replay.
+Four fresh build2 after captures 4/5 repeat exactly within each root. Fresh independent
+cross-root proof classifies 274 engine/key nodes and 8,156 scalar leaves with
+zero unclassified differences; build1's 8,318 count stays historical.
+Twelve complete successes and five complete errors match; only the separate
+old 2,048-cap request changes to a typed natural resident refusal.
+
+Actual request-ledger accounting covers 966 scopes, positive Plan and Cache
+Admission work, all 31 Plan/38 Cache callback refusals, four callback and two
+live-use cancellations. Twenty natural constructor make_room limits are reached.
+Cache host work and eviction remain zero. Owner lifetime is through the selected
+loop, not a parent M owner across child PCM.
+
+Public minima are 2345 plain, 2348 matched-dropped and 2355 held. At 2,354,
+real held refusal/drop/retry succeeds on the same controller/cap with fresh
+ReadWork per call; the separate J holder account changes 10 to 3. Request-ledger
+peaks 334 overall/297 boundary success are separate from public resident ceilings.
+
+Strict4/build2 pass, all 50 actual Cargo originals/copies match, and both
+historical focused2 tests pass. All five original M focused tests/root passed.
+Matrix1 failed only the B-lineage historical held Point/Bound <=512 test in both
+libraries; the other 40 targets passed. A six-line M-only wrapper preserves its
+whole old body/512 ceiling with C/rawBound/internal owners/L/J still active.
+Fresh accounting/full key replay and final2 execution joins give bounded GO.
+All 21 matrix2 targets/root pass: Main 1,157/Scope 1,151, libraries 576/570,
+37 ignored each; only Main stages has the seven inherited Split filters.
+doc2/fmt2/hygiene2 pass. Source-preservation2 keeps all 16 owned paths equal,
+all 41 payloads fixed, Main 2,974/Scope 2,646 other initial inputs unchanged.
+
+Current local guards cover Main 2,989/Scope 2,673 named inputs, including 700/693
+engine inputs. Five Scope .orig files are genuine engine salts but will not
+ship; 2,668 nonbackup guarded Scope inputs are the curated source proposal, not
+a claim all 2,673 files are committed. Old incomplete guards remain historical.
+Ordinary capacity Layouts are derived after construction; only native reserve
+hooks expose actual requested Layout tokens. Root verifies the content-addressed
+archive and curates Scope-origin publication without Main WIP; the qualification
+links its inventory without a self-referential hash or invented commit SHA.
+
+Next freeze the remaining read_signal/free suppression and placed Root policy
+paths as separate units. Mix own policy, graph/PCM/dependencies and whole
+preparation remain owed. General sound-bearing Split remains disabled in
+shipping; no DP/Gate status changes.
+
+## Preceding intrinsic preflight checkpoint
 
 The [native intrinsic-preflight checkpoint](../qualification/intrinsic-preflight-policy-admission-2026-11-01.md)
 admits actual Signal/Tape/PreserveTape policies through the existing native

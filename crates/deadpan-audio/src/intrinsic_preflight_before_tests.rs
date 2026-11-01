@@ -50,15 +50,18 @@ impl AudioSourceProvider for WitnessProvider<'_> {
         asset: &deadpan_core::AssetId,
         cancelled: &AtomicBool,
     ) -> Result<&crate::PreparedSource, PreparationError> {
-        self.events
-            .push(json!({"project":project,"revision":revision,"asset":asset,
+        let mut event = json!({"project":project,"revision":revision,"asset":asset,
             "cancelled":cancelled.load(Ordering::Relaxed),
             "accepted_before_callback":self.budget.map(work),"will_refuse":self.fail,
             "preflight_position_at_callback_entry":trace::position(),
             "position_scope":"provider callback entry relative to preflight observations; not decoder I/O",
             "prepared_index":self.inner.prepared.index(),
             "prepared_matrix":self.inner.prepared.matrix_layout(),
-            "prepared_provenance":self.inner.prepared.provenance()}));
+            "prepared_provenance":self.inner.prepared.provenance()});
+        if let Some(position) = stage_validation::provider_position() {
+            event["stage_validation_position_at_callback_entry"] = position;
+        }
+        self.events.push(event);
         if self.fail {
             return Err(PreparationError::SourceUnavailable(
                 "before40 explicit provider refusal".into(),
@@ -472,6 +475,25 @@ fn family() -> SetupResult<Value> {
         Some(value) => Ok(value),
         None => native_provider(&store, &record, receipt.snapshot()),
     };
+    if let Some(focused) = stage_validation::fixture_visit(
+        &plan,
+        &base,
+        asset,
+        &wire,
+        &mut reopen,
+        || {
+            Ok(json!({"original_record":record,"registration":outcome,
+                "receipt_id":receipt.id(),"receipt_original":receipt.original(),
+                "qualification_snapshot":receipt.snapshot(),
+                "qualification_snapshot_canonical_utf8":String::from_utf8(receipt.snapshot().to_json()?)?,
+                "registered_asset":asset,"registered_project":serde_json::to_value(&registered)?,
+                "checked_native_document_wire":wire,"native_provider":actual_native_contract,
+                "fixture_path":"native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav",
+                "qualification_scope":"actual persisted temporary registration; original qualifying native session and verified reopens"}))
+        },
+    )? {
+        return Ok(focused);
+    }
     if let Some(focused) = after::fixture_visit(&plan, &base, asset, &wire, &mut reopen, || {
         Ok(json!({"original_record":record,"registration":outcome,
                 "receipt_id":receipt.id(),"receipt_original":receipt.original(),
@@ -751,3 +773,6 @@ fn intrinsic_preflight_frozen_before_body_is_exact_historical() {
 
 #[path = "intrinsic_preflight_policy_after_tests.rs"]
 mod after;
+
+#[path = "stage_validation_before_tests.rs"]
+mod stage_validation;

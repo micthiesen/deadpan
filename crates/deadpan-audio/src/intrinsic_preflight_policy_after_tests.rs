@@ -1182,18 +1182,38 @@ fn focused(mode: Mode) -> Value {
 }
 #[test]
 fn intrinsic_preflight_actual_paired_work_and_nested_lifetime() {
+    crate::stages::stage_validation_policy_request::with_legacy_stage_validation_policy(
+        intrinsic_preflight_actual_paired_work_and_nested_lifetime_historical,
+    );
+}
+fn intrinsic_preflight_actual_paired_work_and_nested_lifetime_historical() {
     paired();
 }
 #[test]
 fn intrinsic_preflight_source_every_native_callback_refusal_and_priority() {
+    crate::stages::stage_validation_policy_request::with_legacy_stage_validation_policy(
+        intrinsic_preflight_source_every_native_callback_refusal_and_priority_historical,
+    );
+}
+fn intrinsic_preflight_source_every_native_callback_refusal_and_priority_historical() {
     focused(Mode::SourceFaults);
 }
 #[test]
 fn intrinsic_preflight_nested_signal_every_callback_and_live_cancellation() {
+    crate::stages::stage_validation_policy_request::with_legacy_stage_validation_policy(
+        intrinsic_preflight_nested_signal_every_callback_and_live_cancellation_historical,
+    );
+}
+fn intrinsic_preflight_nested_signal_every_callback_and_live_cancellation_historical() {
     focused(Mode::NestedFaults);
 }
 #[test]
 fn intrinsic_preflight_public_resident_boundary_and_real_held_owner_recovery() {
+    crate::stages::stage_validation_policy_request::with_legacy_stage_validation_policy(
+        intrinsic_preflight_public_resident_boundary_and_real_held_owner_recovery_historical,
+    );
+}
+fn intrinsic_preflight_public_resident_boundary_and_real_held_owner_recovery_historical() {
     focused(Mode::Boundaries);
 }
 fn capture_after_body() -> Value {
@@ -1209,6 +1229,11 @@ fn capture_after_body() -> Value {
 #[test]
 #[ignore = "manual fresh actual after capture, no generated expected fixture"]
 fn capture_intrinsic_preflight_policy_after_v1() {
+    crate::stages::stage_validation_policy_request::with_legacy_stage_validation_policy(
+        capture_intrinsic_preflight_policy_after_v1_historical,
+    );
+}
+fn capture_intrinsic_preflight_policy_after_v1_historical() {
     let output = std::env::var_os("DEADPAN_INTRINSIC_PREFLIGHT_AFTER_OUTPUT").unwrap();
     let output = Path::new(&output);
     assert!(output.is_absolute() && output.starts_with("/tmp"));

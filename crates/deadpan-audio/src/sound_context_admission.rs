@@ -3,6 +3,8 @@
 //! Wider renderer queries and the other Graph containers remain separate work.
 #[cfg(test)]
 use super::intrinsic_preflight_policy_native_trace as native_trace;
+#[cfg(test)]
+use super::stage_validation_policy_native_trace as validation_trace;
 use super::*;
 use deadpan_plan::AudioSoundContextAdmission;
 use std::alloc::Layout;
@@ -144,9 +146,13 @@ impl<'work> TileTransfer<'work> {
 impl Drop for Lease<'_> {
     fn drop(&mut self) {
         if self.frames != 0 {
+            #[cfg(test)]
+            let validation_release = validation_trace::release_begin(self.ledger, self.frames);
             self.ledger.borrow_mut().sound_context_frames -= self.frames;
             #[cfg(test)]
             native_trace::released(self.ledger, self.frames);
+            #[cfg(test)]
+            validation_trace::release_result(validation_release, self.ledger);
         }
     }
 }
@@ -174,6 +180,10 @@ impl<'work> AudioSoundContextAdmission for Admission<'_, 'work> {
     }
     fn spend(&mut self, amount: usize) -> Result<(), Self::Error> {
         #[cfg(test)]
+        let validation_attempt = validation_trace::spend_begin(self.control, amount);
+        #[cfg(test)]
+        validation_attempt.apply_cancellation(self.control);
+        #[cfg(test)]
         let attempt = native_trace::spend_begin(self.control, amount);
         #[cfg(test)]
         attempt.apply_cancellation(self.control);
@@ -183,14 +193,31 @@ impl<'work> AudioSoundContextAdmission for Admission<'_, 'work> {
                 "test-only intrinsic policy spend refusal",
             )));
             native_trace::spend_result(attempt, self.control, &result);
+            #[cfg(test)]
+            validation_trace::spend_result(validation_attempt, self.control, &result);
+            return result;
+        }
+        #[cfg(test)]
+        if validation_attempt.injected_refusal() {
+            let result = self.control.check().and(Err(StageAudioError::Limit(
+                "test-only stage validation policy spend refusal",
+            )));
+            native_trace::spend_result(attempt, self.control, &result);
+            validation_trace::spend_result(validation_attempt, self.control, &result);
             return result;
         }
         let result = self.control.spend_plan_work(amount);
         #[cfg(test)]
         native_trace::spend_result(attempt, self.control, &result);
+        #[cfg(test)]
+        validation_trace::spend_result(validation_attempt, self.control, &result);
         result
     }
     fn reserve(&mut self, layout: Layout) -> Result<Self::Lease, Self::Error> {
+        #[cfg(test)]
+        let validation_attempt = validation_trace::reserve_begin(self.control, layout);
+        #[cfg(test)]
+        validation_attempt.apply_cancellation(self.control);
         #[cfg(test)]
         let attempt = native_trace::reserve_begin(self.control, layout);
         #[cfg(test)]
@@ -201,6 +228,12 @@ impl<'work> AudioSoundContextAdmission for Admission<'_, 'work> {
             if attempt.injected_refusal() {
                 return Err(StageAudioError::Limit(
                     "test-only intrinsic policy reserve refusal",
+                ));
+            }
+            #[cfg(test)]
+            if validation_attempt.injected_refusal() {
+                return Err(StageAudioError::Limit(
+                    "test-only stage validation policy reserve refusal",
                 ));
             }
             let frames = u64::try_from(layout.size())
@@ -215,9 +248,23 @@ impl<'work> AudioSoundContextAdmission for Admission<'_, 'work> {
                 .ok_or(StageAudioError::Range)?;
             #[cfg(test)]
             let room = native_trace::room_begin(attempt, self.controller, self.control, frames);
+            #[cfg(test)]
+            let validation_room = validation_trace::room_begin(
+                validation_attempt,
+                self.controller,
+                self.control,
+                frames,
+            );
             let room_result = self.controller.make_room(frames, false, self.control);
             #[cfg(test)]
             native_trace::room_result(room, self.controller, self.control, &room_result);
+            #[cfg(test)]
+            validation_trace::room_result(
+                validation_room,
+                self.controller,
+                self.control,
+                &room_result,
+            );
             room_result?;
             self.control.work.borrow_mut().sound_context_frames = next;
             Ok(Lease {
@@ -231,15 +278,31 @@ impl<'work> AudioSoundContextAdmission for Admission<'_, 'work> {
             self.control,
             result.as_ref().map(|lease| lease.frames),
         );
+        #[cfg(test)]
+        validation_trace::reserve_result(
+            validation_attempt,
+            self.control,
+            result.as_ref().map(|lease| lease.frames),
+        );
         result
     }
     fn merge(&mut self, target: &mut Self::Lease, source: &mut Self::Lease) {
         // Both were checked against this stable ledger before this callback.
         // The ledger's admitted sum is bounded by the existing u32 frame cap.
+        #[cfg(test)]
+        let validation_merge =
+            validation_trace::merge_begin(self.control, target.frames, source.frames);
         target.frames += source.frames;
         source.frames = 0;
         #[cfg(test)]
         native_trace::merged(self.control);
+        #[cfg(test)]
+        validation_trace::merge_result(
+            validation_merge,
+            self.control,
+            target.frames,
+            source.frames,
+        );
     }
 }
 

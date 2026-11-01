@@ -4,6 +4,39 @@ Original decision: qualify the private explicit-grid Signal-policy child kernel 
 
 The [provider child checkpoint](../qualification/provider-policy-child-kernel-2026-10-31.md) qualifies the private child for checked public operands, including reachable repeated and definition metadata. The separate [Tape factory checkpoint](../qualification/tape-policy-factory-2026-10-31.md) now qualifies stored-grid traversal, child normalization, combined inventory and the independent exact final Signal Vec, with sealed Tape provenance through the existing custody protocol. Scope is source authority. The original decision and pins below remain historical; the Tape contract records its Plan boundary and the now-qualified selected native lifetime contract. The preceding [destination checkpoint](../qualification/projected-policy-destination-2026-10-31.md) funds the native destination copy. The [native source checkpoint](../qualification/native-tape-source-admission-2026-11-01.md) now qualifies actual query/inventory lifetime and exact final Signal Vec transfer for routed PreserveTape. Other preparation policies, graph/PCM/dependency construction, whole preparation and product Gates remain outside that unit.
 
+## Initial build_stage output validation
+
+The [stage-validation checkpoint](../qualification/stage-validation-policy-admission-2026-11-01.md)
+selects admitted factories only for the initial complete-output validation loop.
+Signal and PreserveTape outputs are actually reached; Tape remains an unexercised
+dispatch arm. The already-live stream reservation and real Cache nested scan
+remain distinct from selected query ownership. The query survives content checks
+and progress callbacks, then drops before saved-key/DSP/child PCM work. There
+is no final-mask handoff or parent selected-M owner retained across child PCM.
+
+Frozen baseline 41 stays physically literal. Current engine-key differences require actual
+ordered update bytes, Cargo ENGINE_PIN, BLAKE3/raw-result and rolewise listing
+proof; no normalized clone or forced pin. Complete captures, request-ledger
+accounting, Plan/Cache refusal prefixes, real cancellation and unchanged-cap
+resident recovery have bounded independent GO, rechecked by fresh build2
+accounting/key replay. Matrix1 exposed only the historical B ownership boundary;
+a six-line M-only entry wrapper preserves its whole old body/512 ceiling and
+other admission layers. Strict4/build2, all 21 matrix2 targets/root,
+doc2/fmt2/hygiene2 and final2 execution/source joins pass. Fresh cross-root
+proof classifies 8,156 scalar leaves under 274 nodes, with no normalization or
+unclassified difference. Ordinary capacity Layouts are post-construction
+calculations; only native hooks observe requested Layouts. Root verifies the
+linked archive before curated Scope-origin publication. Guarded local source
+counts include five real Scope .orig engine salts that will not ship; 2,668
+nonbackup guarded Scope inputs are prospective curated source, not all 2,673
+committed files.
+
+This closes that validation producer only. Ordinary read_signal policies,
+remaining free suppress_signal callers, placed Root/Mix policy, graph/PCM/
+dependency construction and whole preparation remain separate obligations.
+Private admitted capacities, failed local work splits, individual allocation
+origin and whole physical memory remain unexposed. No DP or Gate credit follows.
+
 ## Native intrinsic-preflight admission
 
 The [native preflight checkpoint](../qualification/intrinsic-preflight-policy-admission-2026-11-01.md)
@@ -102,7 +135,7 @@ For the later Tape+native unit add exact final pointer/len/cap custody proof, Bo
 
 ## Explicit gaps
 
-The Tape checkpoint closes the outer Plan factory prerequisite and changes no native acceptance. Native output-policy integration still leaves ordinary stage_projection input/output content preflight chunks, Tape/projection graph construction and remaps, other suppress_signal callers, PCM/dependency allocations and provider-owned storage outside its claim. The existing preparation phase and provider observation priority remain literal. No ordinary multi-output or Gate scope is added.
+The Tape checkpoint closes the outer Plan factory prerequisite; J and L separately qualify routed source custody and intrinsic input/output policy preflight. M qualifies only initial build_stage output validation; its archive must pass actual packaging/reference verification before publication. Remaining ordinary read_signal policy, other free suppress_signal callers, placed Root/Mix policy, Tape/projection graph construction and remaps, PCM/dependency allocations and provider-owned storage remain outside these claims. Existing phase/provider observation priority remains literal. No ordinary multi-output or Gate scope is added.
 
 The original source-pinned design, navigation, exact pins and independent review remain in the destination checkpoint's evidence archive. That original design phase performed no implementation, builds, native runs or fixture regeneration. Subsequent child and Tape executions are recorded in their separate qualification reports above.
 
