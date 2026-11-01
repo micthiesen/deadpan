@@ -758,9 +758,24 @@ tests pass each copy and 28 integration binaries remain byte-identical. Public
 metadata fixtures exercise repeated Source/Silence/Projected identities, definitions,
 late carrier-query failure and lease cleanup. Strict checks and independent audits
 pass. The isolated 2,625 named inputs are shipping authority; Main WIP is excluded.
-This is Plan protocol evidence, not a native allocation observer. Tape traversal,
-aggregate inventory/final Vec, native source policy and whole preparation remain
-open; Source `gap.after = Some(...)` remains unclaimed. No DP or Gate acceptance changes.
+The subsequent Tape checkpoint below closes its separate Plan traversal and
+aggregate inventory/final Vec prerequisite. Native source policy and whole
+preparation remain open; Source `gap.after = Some(...)` remains unclaimed.
+No DP or Gate acceptance changes.
+
+The [Tape policy factory](qualification/tape-policy-factory-2026-10-31.md) admits
+stored-grid traversal, per-child normalization, combined inventory and an exact
+independent final Signal Vec. Baseline37 freezes nine public Tapes/165 requests;
+four complete paired bodies match byte for byte with 660 equations, 222 adequate
+successes/108 errors, 160 literal capacity differences and 14 earlier errors.
+All 29 Plan targets pass Main765/Scope752, 34 ignored/no filters; final6 carries
+28 byte-identical integration binaries per copy and passes nine affected tests.
+Real Structural/intrinsic callback sweeps, exact peak/one-below limits, live
+cancellation, held output, late failure, positive and empty custody pass.
+Strict checks and independent acceptance pass; all 37 payloads stay fixed.
+The isolated 2,632 named inputs are shipping authority; inherited Main WIP is
+excluded. Native source integration, input graph construction, PCM/dependencies
+and whole preparation remain open. No coverage score, requirement or Gate changes.
 
 The [typed-mask foundation](qualification/internal-mask-foundation-2026-10-31.md)
 keeps the public Reference owner active while sealing its generic storage to

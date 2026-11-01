@@ -1,0 +1,53 @@
+{
+  "verdict": "GO",
+  "inventory": {
+    "bytes": 184877,
+    "sha256": "4ac8c0788ec7f191f62bdb2b3580281b7320c7922fe2c17f9b66d897f597cc0f"
+  },
+  "named_records": 463,
+  "unique_payloads": 335,
+  "named_expanded_bytes": 255099653,
+  "unique_stored_bytes": 34833891,
+  "every_stored_and_expanded_size_hash_verified": true,
+  "safe_unique_named_paths_deduplicated_references_and_exact_payload_set": true,
+  "selected_authority": {
+    "path": "final6-runtime-acceptance.json",
+    "sha256": "604161fa7f358068aa203c990f47f557ef99a31876d4932b6568ef7aca7d8801"
+  },
+  "authority_report_scripts_data_join_present_exact": true,
+  "shipping14_scope_current_main_owned_equal": true,
+  "all37_fixed_both_roots_exact": true,
+  "docs4_both_roots_exact": {
+    "docs/qualification/tape-policy-factory-2026-10-31.md": {
+      "bytes": 7784,
+      "sha256": "8ac2f863ca5baa7df524d8cf39c33b305788422c8726a7eba291ce34ef80c35f"
+    },
+    "docs/spec/AGENT_HANDOFF.md": {
+      "bytes": 500542,
+      "sha256": "b270facd13c7e269f75fd6df011e7bee3e3cbbdddf7f6cd0835309973366aef7"
+    },
+    "docs/REQUIREMENTS.md": {
+      "bytes": 538543,
+      "sha256": "eb0e1d78e53cfda0c747211a657344a1d7608426828e463866563ad13ab8b629"
+    },
+    "docs/design/projected-policy-source-admission.md": {
+      "bytes": 16231,
+      "sha256": "a9cee89dae24d84ee70e2bc3edcbb359ec90e26543705e44fb1aca51bd0b8bce"
+    }
+  },
+  "documentation_pin_manifest": {
+    "bytes": 606,
+    "sha256": "42ebd46f2dc42d92a5a8d417ab91145196dd5fb17672113d0979f895241d7f32"
+  },
+  "four_canonical_capture_records_literal_equal": true,
+  "documented_successful_protocol_peaks_rederived": {
+    "structural_three_runs": 1920,
+    "intrinsic_override_then_source": 4704
+  },
+  "lineage_prepublication_variant_disclosure_explicit": true,
+  "full6_library_native_graph_whole_preparation_gate_exclusions_explicit": true,
+  "limits": [
+    "Archive hashes/references/source/docs and documented peaks independently checked here. Exhaustive660equations/27502callbacks and actual artifact/receipt joins are the separately archived independent acceptance604161, not a newly executed runtime.",
+    "No Root/Scope/archive/inventory edits or build/test/native/Git execution by reviewer."
+  ]
+}

@@ -1,4 +1,4 @@
-//! PointCeil policy owns its final allocation independently of inventory guards.
+//! Signal policy owns its final allocation independently of inventory guards.
 use super::*;
 use crate::AudioPointDomain;
 
@@ -29,7 +29,7 @@ impl<I: Copy, L> SignalPolicyMaskRef<'_, I, L> {
     }
 }
 
-/// Trusted accounting backend for one exact Point policy allocation.
+/// Trusted accounting backend for one exact Signal policy allocation.
 ///
 /// As with AudioSoundContextAdmission::merge, implementations must uphold the
 /// publication contract. The source and native token constructors stay closed;
@@ -68,6 +68,32 @@ pub trait AudioSignalPolicyMaskHandoff: AudioSoundContextAdmission {
     ) -> Self::Mask;
 }
 
+#[derive(Clone, Copy)]
+enum PolicyOrigin {
+    Point,
+    Tape,
+}
+impl PolicyOrigin {
+    fn unmetered(self) -> &'static str {
+        match self {
+            Self::Point => "unmetered Point policy mask handoff",
+            Self::Tape => "unmetered Tape policy mask handoff",
+        }
+    }
+    fn capacity(self) -> &'static str {
+        match self {
+            Self::Point => "Point policy mask capacity lease",
+            Self::Tape => "Tape policy mask capacity lease",
+        }
+    }
+    fn work(self) -> &'static str {
+        match self {
+            Self::Point => "Point policy query work provenance mismatch",
+            Self::Tape => "Tape policy query work provenance mismatch",
+        }
+    }
+}
+
 struct FinalSignalMask<I, L> {
     ranges: Vec<Range<SignalSample>>,
     memory: Memory<I, L>,
@@ -77,8 +103,9 @@ struct SignalPolicyInventory<I, L> {
     _contents_capacity: Memory<I, L>,
 }
 
-/// Actual Point policy metadata and its separately transferable final mask.
+/// Actual Signal policy metadata and its separately transferable final mask.
 pub struct AdmittedSignalPolicyQuery<I, L> {
+    origin: PolicyOrigin,
     mask: FinalSignalMask<I, L>,
     inventory: GuardedBound<SignalPolicyInventory<I, L>, I, L>,
     lookup: LookupStats,
@@ -119,14 +146,14 @@ impl<I: Copy + Eq, L> AdmittedSignalPolicyQuery<I, L> {
         A: AudioSignalPolicyMaskHandoff<Issuer = I, Lease = L>,
     {
         if !A::METERED || !self.forwarded {
-            return Err(PlanError::InvalidPlan("unmetered Point policy mask handoff").into());
+            return Err(PlanError::InvalidPlan(self.origin.unmetered()).into());
         }
         if self.mask.memory.issuer != admission.issuer() {
             return Err(PlanError::AudioMetadataIssuerMismatch.into());
         }
         let capacity = self.mask.ranges.capacity();
         if (capacity == 0) != self.mask.memory.lease.is_none() {
-            return Err(PlanError::InvalidPlan("Point policy mask capacity lease").into());
+            return Err(PlanError::InvalidPlan(self.origin.capacity()).into());
         }
         let prepared = admission.prepare_signal_mask(SignalPolicyMaskRef {
             issuer: self.mask.memory.issuer,
@@ -134,6 +161,7 @@ impl<I: Copy + Eq, L> AdmittedSignalPolicyQuery<I, L> {
             lease: self.mask.memory.lease.as_ref(),
         })?;
         let Self {
+            origin: _,
             mask,
             inventory,
             lookup: _,
@@ -165,6 +193,7 @@ fn ordinary_signal<A: AudioSoundContextAdmission>(
     } = query;
     let issuer = admission.issuer();
     Ok(AdmittedSignalPolicyQuery {
+        origin: PolicyOrigin::Point,
         mask: FinalSignalMask {
             ranges: suppressed,
             memory: Memory::empty(issuer),
@@ -272,12 +301,10 @@ fn sort_signal_ranges<A: AudioSoundContextAdmission>(
     budget.check_memory(&ranges.memory)
 }
 
-fn finish_signal<A: AudioSoundContextAdmission>(
-    mut state: State<A>,
+pub(super) fn normalize_signal_ranges<A: AudioSoundContextAdmission>(
     mut ranges: Ranges<A>,
-    limits: AudioQueryLimits,
     budget: &mut QueryBudget<'_, A>,
-) -> QueryResult<AdmittedSignalPolicyQuery<A::Issuer, A::Lease>, A> {
+) -> QueryResult<Ranges<A>, A> {
     sort_signal_ranges(&mut ranges, budget)?;
     let mut input = Owned {
         value: ranges.value.into_iter(),
@@ -301,6 +328,45 @@ fn finish_signal<A: AudioSoundContextAdmission>(
         push_range(&mut merged, range, budget)?;
     }
     drop(input);
+    Ok(merged)
+}
+
+pub(super) fn ordinary_tape<A: AudioSoundContextAdmission>(
+    query: AudioPolicyQuery<SignalSample>,
+    admission: &A,
+) -> QueryResult<AdmittedSignalPolicyQuery<A::Issuer, A::Lease>, A> {
+    ordinary_signal(query, admission).map(|mut value| {
+        value.origin = PolicyOrigin::Tape;
+        value
+    })
+}
+
+pub(super) fn finish_tape<A: AudioSoundContextAdmission>(
+    state: State<A>,
+    ranges: Ranges<A>,
+    limits: AudioQueryLimits,
+    budget: &mut QueryBudget<'_, A>,
+) -> QueryResult<AdmittedSignalPolicyQuery<A::Issuer, A::Lease>, A> {
+    finish_signal_origin(state, ranges, limits, budget, PolicyOrigin::Tape)
+}
+
+fn finish_signal<A: AudioSoundContextAdmission>(
+    state: State<A>,
+    ranges: Ranges<A>,
+    limits: AudioQueryLimits,
+    budget: &mut QueryBudget<'_, A>,
+) -> QueryResult<AdmittedSignalPolicyQuery<A::Issuer, A::Lease>, A> {
+    finish_signal_origin(state, ranges, limits, budget, PolicyOrigin::Point)
+}
+
+fn finish_signal_origin<A: AudioSoundContextAdmission>(
+    mut state: State<A>,
+    ranges: Ranges<A>,
+    limits: AudioQueryLimits,
+    budget: &mut QueryBudget<'_, A>,
+    origin: PolicyOrigin,
+) -> QueryResult<AdmittedSignalPolicyQuery<A::Issuer, A::Lease>, A> {
+    let merged = normalize_signal_ranges(ranges, budget)?;
     let count = merged.value.len();
     let mut output = Owned {
         value: Vec::new(),
@@ -330,7 +396,7 @@ fn finish_signal<A: AudioSoundContextAdmission>(
         .checked_add(additional)
         .ok_or(TimeError::Overflow)?;
     if limits.maximum_work.checked_sub(budget.remaining) != Some(work) {
-        return Err(PlanError::InvalidPlan("Point policy query work provenance mismatch").into());
+        return Err(PlanError::InvalidPlan(origin.work()).into());
     }
     let lookup = budget.lookup;
     let mask = FinalSignalMask {
@@ -346,6 +412,7 @@ fn finish_signal<A: AudioSoundContextAdmission>(
             _contents_capacity: inventory.capacity,
         })?;
     Ok(AdmittedSignalPolicyQuery {
+        origin,
         mask,
         inventory,
         lookup,

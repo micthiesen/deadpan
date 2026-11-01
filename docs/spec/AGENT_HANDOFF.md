@@ -2,7 +2,36 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: provider-aware Signal children admitted, product goal active
+## Current state: Tape policy factory admitted, product goal active
+
+The [Tape factory checkpoint](../qualification/tape-policy-factory-2026-10-31.md)
+admits actual stored-grid traversal, child normalization, combined inventory and
+the separate exact final Signal Vec. Span limits remain per provider, overrides
+use after-Preserve, and canonical/additional work forwards once. Empty Tape policy
+and custody remain work/capacity zero. Point error wording remains literal.
+
+Ordinary baseline37 was frozen before production integration: nine public Tapes,
+165 requests and both endpoint modes. All 37 payloads remain fixed. Four complete
+paired bodies are byte-identical, 12,179,902 bytes/SHA `395b5ef04e911c5243d787fad3e484f0de8d05fd0ec70f8b2afd3b1484338980`.
+All 660 equations reconcile; 222 adequate successes/108 errors, 160 capacity
+differences and 14 earlier low-limit errors remain literal. Structural and
+intrinsic-override callback sweeps, measured peak/one-below limits, live cancellation,
+issuer rejection, held output, late failure and exact/empty custody pass.
+
+All 29 Plan targets passed Main765/Scope752, 34 ignored and zero filters/failures.
+Final6 retains all 28 integration binaries per copy byte for byte and passes nine
+affected tests each. Strict checks and independent acceptance pass; failed lint4
+and compile5 evidence stays retained. The isolated 2,632 named inputs are authority;
+Main's 2,946 and Scope's 2,618 other initial inputs remain exact. Main WIP is excluded.
+
+Next integrate native PreserveTape source policy using the [reviewed contract](../design/projected-policy-source-admission.md).
+Keep actual query inventory/guards alive through preflight, control, range checks,
+PCM zeroing and custody prepare/commit; retain PreparedBlock and avoid a second
+work debit. Keep other SignalInput callers and the legacy unforwarded lane scoped.
+Native source ownership, graph construction and whole preparation remain owed.
+General sound-bearing Split stays disabled; no requirement or Gate closes.
+
+## Preceding provider-aware Signal checkpoint
 
 The [private provider checkpoint](../qualification/provider-policy-child-kernel-2026-10-31.md)
 constructs Source, Silence and Projected query children under the existing budget,
@@ -24,12 +53,9 @@ They use unchanged ordinary references, not a regenerated before oracle.
 Strict checks and independent reviews pass. Scope's 2,625 named inputs are authority;
 Main's 2,933 and Scope's 2,605 other initial inputs remain exact. Main WIP is excluded.
 
-Next implement the [Tape factory contract](../design/projected-policy-source-admission.md):
-stored grid and endpoint mode, override traversal, aggregate inventory and exact
-final Signal Vec admission. Qualify that Plan layer before native preflight/PCM/custody
-integration. Graph construction, native source policy and whole preparation remain
-owed. Source `gap.after = Some(...)` and the non-Leaf carrier rejection stay unclaimed.
-General sound-bearing Split remains disabled; no requirement or Gate closes.
+The subsequent Tape checkpoint above closes the separate Plan factory contract.
+Graph construction, native source policy and whole preparation remain owed.
+Source `gap.after = Some(...)` and the non-Leaf carrier rejection stay unclaimed.
 
 ## Preceding projected destination checkpoint
 

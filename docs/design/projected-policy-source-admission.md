@@ -1,8 +1,8 @@
-# Provider-aware Signal children and follow-on Tape admission
+# Provider-aware Signal children, Tape admission and native follow-on
 
-Decision: build and qualify a private provider-aware, explicit-grid admitted Signal-policy child kernel first. Keep the public Tape policy reader and native routed path unchanged in that prerequisite. Existing Structural admitted policy helpers are useful internals, but the public Point factory is not a PreserveTape policy factory. Once child semantics are complete, a separate bounded change can admit the Tape traversal, combined inventory, and exact final Signal Vec and use the existing closed custody seam.
+Original decision: qualify the private explicit-grid Signal-policy child kernel before the separate Tape factory, retaining ordinary readers and native routing through those prerequisites. Point's grid-specific entry is not a PreserveTape factory. The child and Tape Plan layers are now qualified independently; native integration remains the next bounded change.
 
-The [provider child checkpoint](../qualification/provider-policy-child-kernel-2026-10-31.md) now qualifies that private prerequisite for checked public operands, including reachable repeated and definition metadata. Its original decision and source pins below remain the historical design record. The follow-on Tape contract remains prospective: no Tape aggregate or native source admission follows from the child checkpoint. Scope is the source authority. The preceding [projected destination checkpoint](../qualification/projected-policy-destination-2026-10-31.md) funds the destination copy; neither checkpoint establishes whole preparation or product Gate acceptance.
+The [provider child checkpoint](../qualification/provider-policy-child-kernel-2026-10-31.md) qualifies the private child for checked public operands, including reachable repeated and definition metadata. The separate [Tape factory checkpoint](../qualification/tape-policy-factory-2026-10-31.md) now qualifies stored-grid traversal, child normalization, combined inventory and the independent exact final Signal Vec, with sealed Tape provenance through the existing custody protocol. Scope is source authority. The original decision and pins below remain historical; the Tape contract records the implemented Plan boundary and the still-owed native lifetime contract. The preceding [destination checkpoint](../qualification/projected-policy-destination-2026-10-31.md) funds the native destination copy. Native source ownership, whole preparation and product Gates remain open.
 
 ## Current ownership gap
 
@@ -10,15 +10,15 @@ routed.rs:471 prepares and retains the actual PreparedBlock Arc, samples PCM, th
 
 PreparedBlock retains PCM/dependencies/depth, not the policy query. Its warm memo can remain live while source policy is recomputed. Tape/Signal graphs and projection operands are preexisting borrowed inputs. OwnedHeap visitation measures those already constructed operands; it is not evidence their construction was admitted.
 
-## Why Point reuse alone is insufficient
+## Original Point-only constraints
 
-audio_point_policy_query.rs:210 calls the admitted signal_policy at PointCeil, endpoints=true. audio_policy_query.rs:529 calls structural_child_query and explicitly limits its closed factories to Structural providers. It omits ordinary signal_policy's independent Source voice Hold-carrier branch.
+At the original source pins, audio_point_policy_query.rs:210 called signal_policy at PointCeil with endpoints=true, while audio_policy_query.rs:529 used only structural_child_query and omitted independent Source output Hold carriers. The provider-aware child checkpoint closes that provider limitation; the Tape checkpoint separately closes traversal and aggregate storage.
 
 Tape policy is different. audio_tape.rs:400 preserves the Tape's own grid boundary rule; after Preserve, direct run policy uses endpoints=false. A policy_override always recursively calls policy_after_preserve, even from ordinary tape.policy. Source voice input_signal() uses apply_holds=false; output_signal() uses apply_holds=true (audio_source_voice.rs:88-104). Projection scope validation checks the real owner/plan/definition/repeat relationship, not a Structural-only provider restriction. Rejecting accepted Source voices or silently substituting the root/Point signal would change the contract.
 
-The final AdmittedSignalPolicyQuery representation and into_suppression custody protocol can be reused after a genuine Tape factory exists: their exact typed Signal Vec, issuer and independent final lease do not depend on PointCeil. Reuse must be through a private constructor retaining all guards. Do not expose a general lease extractor or let callers fabricate provenance. Keep existing Point entry behavior/error strings intact; any new constructor must have its own truthful Tape provenance.
+The qualified Tape factory reuses AdmittedSignalPolicyQuery and into_suppression: their exact typed Signal Vec, issuer and independent final lease do not depend on PointCeil. Construction remains private and retains all guards. No general lease extractor or caller-fabricated provenance is exposed. Point entry behavior/error strings stay intact; Tape carries its own sealed provenance.
 
-## Smallest implementation boundary
+## Original child implementation contract
 
 Add an internal child operation accepting the actual borrowed AudioSignal, exact Signal range, explicit boundary rule and existing stop flags, plus the caller's real QueryBudget. It must return the existing guarded Signal query carrier and share the caller's issuer and accepted canonical/additional accounting. Reuse the Structural branch unchanged. Implement the other real provider branches from query_inner in order, rather than calling ordinary query_inner and charging its finished allocations afterward.
 
@@ -44,9 +44,9 @@ After finishing the current query and inventory, determine whether a Source outp
 
 Complete the carrier query before emitted-Hold fees or ranges. A sealed borrowed Source-output bridge may use the actual structural fields with false/false stop flags, avoiding an allocating provider clone. Restrict that bridge to `Source { apply_holds: true }`; keep the public Point/Structural entry unchanged.
 
-## Follow-on Tape factory contract
+## Qualified Tape factory and follow-on native contract
 
-A subsequent Tape policy factory can reuse the closed guarded range/inventory machinery and final typed Signal carrier. Required literal order from audio_tape.rs:408-489:
+The qualified Tape factory reuses the closed guarded range/inventory machinery and final typed Signal carrier. Required literal order from the original audio_tape.rs:408-489:
 - limits, sample_count, route-end boundary, full range validation precede traversal;
 - each actual run_for binary-search comparison is canonical1; fetch/coverage/nonadvance checks then the existing per-run canonical1 and zero-remaining-work refusal;
 - maximum_spans remains per logical provider query, not an aggregate inventory limit; aggregate canonical plus new additional work remains checked, and shared-budget forwarding never re-debits a child's already accepted work;
@@ -73,9 +73,9 @@ For the later Tape+native unit add exact final pointer/len/cap custody proof, Bo
 
 ## Explicit gaps
 
-The child prerequisite leaves outer Tape ownership unresolved and changes no native acceptance. Later output-policy integration still leaves ordinary stage_projection input/output content preflight chunks, Tape/projection graph construction and remaps, other suppress_signal callers, PCM/dependency allocations and provider-owned storage outside its claim. The existing preparation phase and provider observation priority remain literal. No ordinary multi-output or Gate scope is added.
+The Tape checkpoint closes the outer Plan factory prerequisite and changes no native acceptance. Native output-policy integration still leaves ordinary stage_projection input/output content preflight chunks, Tape/projection graph construction and remaps, other suppress_signal callers, PCM/dependency allocations and provider-owned storage outside its claim. The existing preparation phase and provider observation priority remain literal. No ordinary multi-output or Gate scope is added.
 
-The original source-pinned design, navigation, exact pins and independent review are retained in the destination checkpoint's evidence archive. No implementation, builds, native runs or fixture regeneration were performed for this design.
+The original source-pinned design, navigation, exact pins and independent review remain in the destination checkpoint's evidence archive. That original design phase performed no implementation, builds, native runs or fixture regeneration. Subsequent child and Tape executions are recorded in their separate qualification reports above.
 
 ## Source pins
 

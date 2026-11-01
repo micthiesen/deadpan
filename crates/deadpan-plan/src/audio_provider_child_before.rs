@@ -839,3 +839,6 @@ fn ordinary_provider_child_matches_external_before_v1() {
 
 #[path = "audio_provider_child_admission_tests.rs"]
 mod admission_tests;
+
+#[path = "audio_tape_policy_before_bridge.rs"]
+mod tape_policy_before_bridge;

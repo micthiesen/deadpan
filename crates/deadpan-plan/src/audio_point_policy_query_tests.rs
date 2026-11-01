@@ -1,4 +1,7 @@
 //! Plan protocol tests; this backend is not the native account/Box implementation.
+#[path = "audio_tape_policy_custody_tests.rs"]
+mod tape_custody;
+
 use super::*;
 use crate::{AudioDefinitionSelector, AudioRootPlacement};
 use deadpan_core::{NodeId, ProjectDocument};
@@ -571,6 +574,9 @@ fn prepare_refusal_releases_complete_source_and_inventory_without_commit() {
         backend.released();
     });
 }
+
+#[path = "audio_tape_policy_paired_tests.rs"]
+mod tape_policy_pairs;
 
 #[test]
 fn issuer_and_unmetered_handoff_reject_before_prepare() {

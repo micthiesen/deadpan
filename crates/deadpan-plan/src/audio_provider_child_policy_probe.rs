@@ -24,6 +24,7 @@ pub(in crate::plan) fn run<A: AudioSoundContextAdmission>(
 }
 pub(in crate::plan) fn snapshot<I: Copy + Eq, L>(value: &AdmittedSignalPolicyQuery<I, L>) -> Value {
     let AdmittedSignalPolicyQuery {
+        origin: _,
         mask,
         inventory,
         lookup,

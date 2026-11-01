@@ -141,7 +141,43 @@ impl crate::audio_allocated::OwnedHeap for PlacedRun<'_> {
     }
 }
 
+pub(crate) struct TapePolicyRun<'tape, 'plan> {
+    pub(crate) samples: Range<SignalSample>,
+    pub(crate) signal: &'tape AudioSignal<'plan>,
+    pub(crate) policy_override: Option<&'tape AudioSignalTape<'plan>>,
+}
+
 impl<'plan> AudioSignalTape<'plan> {
+    pub(crate) fn policy_run_count(&self) -> usize {
+        self.runs.len()
+    }
+
+    pub(crate) fn policy_run(&self, index: usize) -> Option<TapePolicyRun<'_, 'plan>> {
+        self.runs.get(index).map(|run| TapePolicyRun {
+            samples: run.samples.clone(),
+            signal: &run.signal,
+            policy_override: run.policy_override.as_deref(),
+        })
+    }
+
+    pub(crate) fn validate_policy_range(
+        &self,
+        samples: &Range<SignalSample>,
+        limits: AudioQueryLimits,
+    ) -> Result<(), PlanError> {
+        limits.validate()?;
+        let count = self.sample_count()?;
+        let route_end = self.grid.boundary(self.route.end)?;
+        if samples.start < self.sample_start()?
+            || samples.end < samples.start
+            || samples.end > route_end
+            || samples.end > count
+        {
+            return Err(PlanError::AudioRangeOutOfRange);
+        }
+        Ok(())
+    }
+
     /// Build a complete exact partition of `full_support` from current signals.
     /// All providers are remapped to the same intrinsic PointCeil grid.
     pub fn new(
@@ -715,3 +751,7 @@ fn add_lookup(total: &mut LookupStats, next: LookupStats) -> Result<(), PlanErro
 #[cfg(test)]
 #[path = "audio_provider_child_before_tape.rs"]
 mod provider_child_before;
+
+#[cfg(test)]
+#[path = "audio_tape_policy_before.rs"]
+pub(crate) mod policy_before;

@@ -941,3 +941,6 @@ fn finish<A: AudioSoundContextAdmission>(
 
 #[cfg(test)]
 pub(in crate::plan) use point::provider_child_probe;
+
+#[path = "audio_tape_policy_query.rs"]
+mod tape;

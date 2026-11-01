@@ -426,3 +426,7 @@ fn merge_audio_ranges(ranges: &mut Vec<Range<AudioSample>>) {
     }
     *ranges = merged;
 }
+
+#[cfg(test)]
+#[path = "audio_tape_policy_before_root.rs"]
+mod tape_policy_before;
