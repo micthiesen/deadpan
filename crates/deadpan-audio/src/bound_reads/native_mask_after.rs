@@ -125,11 +125,27 @@ fn capture_active_shared_mix_mask_after_v1() {
 fn capture_active_components_mask_after_v1() {
     assert!(!crate::stages::components_mask_request::legacy());
     assert!(!crate::stages::shared_mix_mask_request::legacy());
+    crate::stages::projected_signal_mask_request::with_legacy_projected_signal_masks(|| {
+        capture_after(
+            "DEADPAN_COMPONENTS_MASK_AFTER",
+            true,
+            true,
+            Destination::Components,
+        );
+    });
+}
+
+#[test]
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+#[ignore = "manual projected policy destination qualification; pinned sources and fresh /tmp"]
+fn capture_active_projected_mask_after_v1() {
+    assert!(!crate::stages::projected_signal_mask_request::legacy());
+    assert!(!crate::stages::components_mask_request::legacy());
     capture_after(
-        "DEADPAN_COMPONENTS_MASK_AFTER",
+        "DEADPAN_PROJECTED_MASK_AFTER",
         true,
         true,
-        Destination::Components,
+        Destination::Projected,
     );
 }
 
@@ -139,6 +155,7 @@ enum Destination {
     Root,
     SharedMix,
     Components,
+    Projected,
 }
 
 fn capture_after(prefix: &str, intervals: bool, policy: bool, destination: Destination) {
@@ -161,7 +178,9 @@ fn capture_after(prefix: &str, intervals: bool, policy: bool, destination: Desti
     assert!(source.len() == 64 && source.bytes().all(|byte| byte.is_ascii_hexdigit()));
     assert_eq!(
         std::env::var(format!("{prefix}_PUBLISHED_CHECKPOINT")).unwrap(),
-        if matches!(destination, Destination::Components) {
+        if matches!(destination, Destination::Projected) {
+            "59874646dba6974da77e2cad08e9bc4822fd5afe"
+        } else if matches!(destination, Destination::Components) {
             "69698b678fd8a75dd644993d7d2a9846986d6911"
         } else if matches!(destination, Destination::SharedMix) {
             "6458e9b989172147e0844fcb251c89ce8c479aaf"
@@ -177,7 +196,7 @@ fn capture_after(prefix: &str, intervals: bool, policy: bool, destination: Desti
     );
     if matches!(
         destination,
-        Destination::SharedMix | Destination::Components
+        Destination::SharedMix | Destination::Components | Destination::Projected
     ) {
         PROJECTIONS.set(true);
         crate::stages::shared_mix_mask_trace::enable();
@@ -188,11 +207,14 @@ fn capture_after(prefix: &str, intervals: bool, policy: bool, destination: Desti
     }
     if matches!(
         destination,
-        Destination::SharedMix | Destination::Components
+        Destination::SharedMix | Destination::Components | Destination::Projected
     ) {
         shared_mix_checkpoint(&mut value);
     }
-    if matches!(destination, Destination::Components) {
+    if matches!(
+        destination,
+        Destination::Components | Destination::Projected
+    ) {
         value["schema"] = json!("active-components-mask-after-v1");
         value["components_mask_checkpoint"] = json!("69698b678fd8a75dd644993d7d2a9846986d6911");
         value["components_mask_before"] = json!({
@@ -207,6 +229,34 @@ fn capture_after(prefix: &str, intervals: bool, policy: bool, destination: Desti
         );
         value["components_producer_cases"] =
             super::super::internal_suppression_baseline::components_producer_cases();
+    }
+    if matches!(destination, Destination::Projected) {
+        value["schema"] = json!("active-projected-policy-destination-after-v1");
+        value["projected_policy_checkpoint"] = json!("59874646dba6974da77e2cad08e9bc4822fd5afe");
+        value["projected_policy_before"] = json!({
+            "path": "tests/fixtures/projected-policy-destination-baseline-v1/corpus.json",
+            "sha256": "93912d8a589912b7ef41f0bd523db8da2a6cdec0d2ea5db1b6ba6f9941dffa51",
+        });
+        value["scope"] = json!(
+            "Projected PreserveTape Signal destinations copy the actual completed ordinary policy Vec into native owned storage while prepared PCM remains live. Public route mapping admits its separate destination. Ordinary policy queries and their source Vec, exhausted vectors and whole preparation remain outside this claim."
+        );
+        value["native_requests"]["scope"] = json!(
+            "744 actual active native requests with Point, Root, SharedMix, Components and projected Signal destination admission. Query claims and native work remain separate."
+        );
+        for row in value["internal_and_transfer_paths"]["cases"]
+            .as_array_mut()
+            .unwrap()
+        {
+            row["scope"]["internal_masks"] = json!(
+                "Native destinations, Point Signal policy custody and projected PreserveTape destination copies are admitted. Ordinary projected policy source queries and exhausted vectors remain outside this claim."
+            );
+        }
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        {
+            value["projected_policy_cases"] =
+                crate::stages::routed::routed_projected_mask_tests::capture_active_projected_cases(
+                );
+        }
     }
     let file = OpenOptions::new()
         .create_new(true)

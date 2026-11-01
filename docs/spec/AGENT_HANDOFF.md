@@ -2,7 +2,45 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: Components suppression owned, product goal active
+## Current state: projected mask destination owned, product goal active
+
+The [projected destination checkpoint](../qualification/projected-policy-destination-2026-10-31.md)
+funds the actual completed PreserveTape Signal mask's destination copy while
+its ordinary source Vec and prepared PCM remain live. Public route mapping
+then funds its separate destination. Ordinary source construction stays owed.
+
+All 21 Audio targets pass: 1,140 Main/1,134 isolated tests, libraries 559/553,
+27 ignored manual entrypoints; Main's seven unfinished Split tests stay filtered.
+Three actual-context boundary tests prove direct ownership, the exact isolated
+post-preparation ceiling, one-below cleanup, empty emission and held-output
+lifetime. A normal test compares every public case field and PCM bit with the
+frozen before corpus, allowing only the expected positive ownership flag.
+
+All 35 before payloads remain fixed. Five older complete bodies reproduce
+exactly; final-source SourceReady replays match the frozen native3 bytes.
+Six current complete bodies retain 744 exact native outputs and 42 result fields,
+four actual projected cases, 477 completed interval claims and 954 equations.
+The claimless partial and five-unit residual remain unresolved. Current bodies
+have distinct literal hashes: 304 work differences versus F and 855 across all
+15 G pairs occupy 80 freshly reviewed typed paths in Components dynamic_positive.
+Every value/delta remains literal. All 9,348 producer rows pass real Zero4 and
+recorded Mark1 checks. Strict checks, formatting, hygiene, rustdoc and independent
+source/capture reviews pass. No new requirement or Gate acceptance follows.
+
+Main's 2,932 and the isolated copy's 2,604 other initial named inputs stay exact.
+The 10 owned paths match; the isolated copy's 2,614 named inputs are the shipping
+authority. Inherited Main WIP remains unpublished.
+
+Next implement the [private provider-aware Signal child kernel](../design/projected-policy-source-admission.md).
+Freeze ordinary checked provider evidence first. Preserve empty Projected work1
+success and Source input's exact-budget path; select an actual Source output
+carrier before requesting its child limit, and complete that query before Hold
+fees/ranges. Keep Tape/native integration separate until child parity is proven.
+Ordinary source queries/inventory/final Vec, graph construction, other providers,
+exhausted vectors and whole preparation remain owed. General sound-bearing
+Split stays disabled.
+
+## Preceding Components checkpoint
 
 The [Components checkpoint](../qualification/components-mask-ownership-2026-10-31.md)
 records the actual single-output producer's decisions in four bounded inline
@@ -28,12 +66,11 @@ whole-current-body byte identity, whole preparation, new requirement or Gate cre
 
 Main's 2,920 and the isolated copy's 2,592 other initial named inputs remain exact.
 The isolated copy is the shipping authority; inherited Main WIP is unpublished.
-Next examine the projected PreserveTape policy destination copy as a separate
-prerequisite. Preserve its exact grid/endpoints and provider admission; its
-ordinary source query remains owed and cannot inherit the Point producer's
-assumptions. Ordinary multi-output Components, exhausted vectors and
-PCM/dependencies remain outside the current claim. General sound-bearing Split
-stays disabled.
+The subsequent projected destination checkpoint above closes that separate
+copy prerequisite. Its ordinary source query remains owed and cannot inherit
+the Point producer's assumptions. Ordinary multi-output Components, exhausted
+vectors and PCM/dependencies remain outside this earlier claim. General
+sound-bearing Split stays disabled.
 
 ## Preceding SharedMix checkpoint
 

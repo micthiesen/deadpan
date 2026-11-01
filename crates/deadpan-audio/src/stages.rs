@@ -58,6 +58,10 @@ mod shared_mix_mask_request;
 mod components_mask_request;
 
 #[cfg(test)]
+#[path = "projected_signal_mask_request.rs"]
+mod projected_signal_mask_request;
+
+#[cfg(test)]
 use crate::RootSignalBlock;
 
 #[path = "raw_policy.rs"]

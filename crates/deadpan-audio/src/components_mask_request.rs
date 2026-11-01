@@ -13,5 +13,5 @@ pub(super) fn with_legacy_components_masks<T>(action: impl FnOnce() -> T) -> T {
         }
     }
     let _restore = Restore(LEGACY.with(|legacy| legacy.replace(true)));
-    action()
+    super::projected_signal_mask_request::with_legacy_projected_signal_masks(action)
 }

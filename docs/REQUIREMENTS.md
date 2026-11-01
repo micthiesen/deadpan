@@ -727,6 +727,27 @@ Ordinary multi-output Components, projected-provider policy, exhausted vectors,
 PCM/dependencies and whole preparation remain owed. No existing requirement or
 Gate acceptance changes.
 
+The later [projected PreserveTape destination checkpoint](qualification/projected-policy-destination-2026-10-31.md)
+funds the completed ordinary Signal mask's native copy while its source Vec and
+prepared PCM stay live; public routing funds its own mapped destination.
+All 21 Audio targets pass, 1,140/1,134 tests, libraries 559/553 and 27 ignored
+manual entrypoints. Main's seven unfinished Split tests remain filtered.
+Three real-context tests prove exact isolated post-preparation capacity,
+one-below cleanup, empty no-account emission and held-mask lifetime. The public
+test preserves every case field and PCM bit except the intended positive owned
+flag. Strict checks, formatting, hygiene, rustdoc and independent reviews pass.
+All 35 before payloads remain fixed; five older bodies and final-source
+SourceReady replay reproduce exactly. Each of six current captures retains
+744 exact outputs, 42 result fields, four actual projected cases and 477
+completed interval claims/954 equations. Literal absolute work variation occupies
+80 freshly reviewed paths in Components dynamic_positive: 304 differences
+versus F, 855 across the 15 current pairs. Every value/delta is retained; all
+9,348 producer rows pass real Zero4/recorded Mark1 checks. No whole-current-body
+byte identity or partial-query debit is claimed. Ordinary policy source
+construction remains open; the [reviewed private provider kernel](design/projected-policy-source-admission.md)
+is next, with Tape/native integration separate. No coverage score, requirement
+or Gate acceptance changes.
+
 The [typed-mask foundation](qualification/internal-mask-foundation-2026-10-31.md)
 keeps the public Reference owner active while sealing its generic storage to
 Reference, Signal and Audio labels. Both libraries pass464/458 and preserve the

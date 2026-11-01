@@ -4,6 +4,13 @@
 use super::*;
 use deadpan_plan::{AudioRoutedRoot, AudioRoutedSignal, AudioRoutedSignalInput, AudioSampleGrid};
 
+#[cfg(test)]
+#[path = "projected_mask_before_trace.rs"]
+mod projected_mask_before_trace;
+#[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
+#[path = "routed_projected_mask_tests.rs"]
+pub(super) mod routed_projected_mask_tests;
+
 /// One retained PointCeil sound route before creative edges and current
 /// consuming Hold gates. Suppression retains old provider policy and route gaps.
 #[derive(Debug, PartialEq, Serialize)]
@@ -495,10 +502,21 @@ impl StageAudio {
             &self.plan,
             control,
         )?;
+        #[cfg(test)]
+        projected_mask_before_trace::record(self, control, start, frames, &prepared, &suppressed);
+        let suppressed = SignalSuppressionMask::plain(suppressed);
+        #[cfg(test)]
+        let suppressed = if super::projected_signal_mask_request::legacy() {
+            suppressed
+        } else {
+            suppressed.into_admitted(&mut self.masks(control))?
+        };
+        #[cfg(not(test))]
+        let suppressed = suppressed.into_admitted(&mut self.masks(control))?;
         Ok(SignalBlock {
             samples,
             dependencies: prepared.dependencies.clone(),
-            suppressed: SignalSuppressionMask::plain(suppressed),
+            suppressed,
             relative_depth: 1 + prepared.relative_depth,
         })
     }

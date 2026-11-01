@@ -299,6 +299,10 @@ pub(super) fn payload_frames(capacity: usize) -> Result<u64, StageAudioError> {
 pub(in crate::stages) fn audio_payload_frames(capacity: usize) -> Result<u64, StageAudioError> {
     payload_frames_for::<AudioSample>(capacity)
 }
+#[cfg(test)]
+pub(in crate::stages) fn signal_payload_frames(capacity: usize) -> Result<u64, StageAudioError> {
+    payload_frames_for::<SignalSample>(capacity)
+}
 fn payload_frames_for<S: MaskSample>(capacity: usize) -> Result<u64, StageAudioError> {
     let vector = Layout::array::<Range<S>>(capacity).map_err(|_| StageAudioError::Range)?;
     frames_for(vector)?

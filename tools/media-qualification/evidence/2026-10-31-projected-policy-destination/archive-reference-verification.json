@@ -1,0 +1,1004 @@
+{
+  "schema": "deadpan.projected-policy-destination.portable-archive-verification.v1",
+  "verdict": "GO",
+  "inventory": {
+    "path": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+    "bytes": 280663,
+    "sha256": "1dbba5792ccb9348ce4e3936d58a9d35fbd92e3ba7eebdb46f137df877f968d9",
+    "records": 669,
+    "expanded_bytes": 4230963553,
+    "stored_bytes": 406084360,
+    "all_records_stored_and_expanded_sha256_verified": true
+  },
+  "portable_corpus": {
+    "path": "crates/deadpan-audio/tests/fixtures/projected-policy-destination-baseline-v1/corpus.json",
+    "bytes": 115803,
+    "sha256": "93912d8a589912b7ef41f0bd523db8da2a6cdec0d2ea5db1b6ba6f9941dffa51",
+    "references": 99,
+    "existing_F_references": 44,
+    "G_artifact_references": 54,
+    "G_audit_authority_references": 1,
+    "all_references_resolved_stored_and_expanded": true
+  },
+  "referenced_inventory_pins": [
+    {
+      "path": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "bytes": 725314,
+      "sha256": "d2d474a50615ca667b35bcf1ee380d800082d25c16341ff33f25e80b45eb3867"
+    },
+    {
+      "path": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "bytes": 280663,
+      "sha256": "1dbba5792ccb9348ce4e3936d58a9d35fbd92e3ba7eebdb46f137df877f968d9"
+    }
+  ],
+  "shipping_source": [
+    {
+      "path": "crates/deadpan-audio/src/bound_reads/native_mask_after.rs",
+      "bytes": 19780,
+      "sha256": "3f8b5bbb81813ad07b194c21c53875ffe5691452aecffd5e506a5ab164c393fa"
+    },
+    {
+      "path": "crates/deadpan-audio/src/components_mask_request.rs",
+      "bytes": 645,
+      "sha256": "727039bd4a5ff11744034032e6b03fb7f598b99293a1f014d82d42eb7f158495"
+    },
+    {
+      "path": "crates/deadpan-audio/src/point_suppression.rs",
+      "bytes": 24055,
+      "sha256": "ba68878b2fe200c77abddb84c1b5443e994f2c97180bb088781ddc64739f59d1"
+    },
+    {
+      "path": "crates/deadpan-audio/src/projected_mask_before_trace.rs",
+      "bytes": 3760,
+      "sha256": "a088ef82214b1c3595fc911840e8c8153b7f16202643832357dc8adb59ffc328"
+    },
+    {
+      "path": "crates/deadpan-audio/src/projected_signal_mask_request.rs",
+      "bytes": 578,
+      "sha256": "3c9f28ab8a04e317d221fef32b35b87c312915a51425f98d30c28b00d9945c9a"
+    },
+    {
+      "path": "crates/deadpan-audio/src/routed.rs",
+      "bytes": 22285,
+      "sha256": "4d69e36d86973816c6dae24435f33a8de8f8e2dc29bf498f6d2d49cceb9e504f"
+    },
+    {
+      "path": "crates/deadpan-audio/src/routed_projected_mask_lifetime_tests.rs",
+      "bytes": 8736,
+      "sha256": "82cfe5de62e6b8c170a2ebae559361bccc7f52436d7debf2528c9e9a76701954"
+    },
+    {
+      "path": "crates/deadpan-audio/src/routed_projected_mask_tests.rs",
+      "bytes": 16934,
+      "sha256": "7fdce74f575b9d9fde4884bb4b52f1a0e156fb253566266611e85b64bce7dc4a"
+    },
+    {
+      "path": "crates/deadpan-audio/src/stages.rs",
+      "bytes": 167903,
+      "sha256": "4c7d47c425596f6a60c6431de15dd9c7536fcb7dd8fd14e252cb2619923b1ad9"
+    },
+    {
+      "path": "crates/deadpan-audio/tests/fixtures/projected-policy-destination-baseline-v1/corpus.json",
+      "bytes": 115803,
+      "sha256": "93912d8a589912b7ef41f0bd523db8da2a6cdec0d2ea5db1b6ba6f9941dffa51"
+    }
+  ],
+  "documentation": [
+    {
+      "path": "docs/REQUIREMENTS.md",
+      "bytes": 536399,
+      "sha256": "db3ea18424da825dfcc45915fa851e3bda9c23477035bdce5f5c568304064c9f"
+    },
+    {
+      "path": "docs/design/projected-policy-source-admission.md",
+      "bytes": 15827,
+      "sha256": "8c412e4b9ebde917a4ce9a98686e7afdcbf7590c6be49fdf42b750ecc13562f3"
+    },
+    {
+      "path": "docs/qualification/projected-policy-destination-2026-10-31.md",
+      "bytes": 9096,
+      "sha256": "91241c08dc2391d983251d7f839218f6e1a4adc4cce2d302019f350e2adbd74b"
+    },
+    {
+      "path": "docs/spec/AGENT_HANDOFF.md",
+      "bytes": 497045,
+      "sha256": "3b11bf3f6b0833f0ba67f740465ae865ba6faba4970035bb02e856a20839a1d8"
+    }
+  ],
+  "references": [
+    {
+      "corpus_node": "/components_final13/0/artifacts/run_json",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active-main.json",
+      "bytes": 1189032,
+      "sha256": "f126745fef03a39318ff55a83c522645582f842c75daf8f960d1116a80452112",
+      "stored_bytes": 313155,
+      "stored_sha256": "488574f6b70cdb78e05300286f4f4c7d20e916c29d03dd8e68f30900be571632"
+    },
+    {
+      "corpus_node": "/components_final13/0/artifacts/-body",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active-main-body.json",
+      "bytes": 136066228,
+      "sha256": "a78ae36963ba70515f6892bab0b5f9f7d98d34d553a16b2d8f2a506733112fe4",
+      "stored_bytes": 9703725,
+      "stored_sha256": "270e298c5c6047685c58bdd344139dc018e1f31242a6cbf5ae8cb38ae5ba29ed"
+    },
+    {
+      "corpus_node": "/components_final13/0/artifacts/-canonical",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active-main-canonical.json",
+      "bytes": 38529544,
+      "sha256": "5f2ddd4df01c0a012da87c23ab7953b3285787fddf8d2ce38850162df44b8c4e",
+      "stored_bytes": 5923277,
+      "stored_sha256": "bd4e55b8b09c604f9f1c4b34982be0eeff5a3a94658b49855a07e50b8c9da0f3"
+    },
+    {
+      "corpus_node": "/components_final13/0/artifacts/-proof",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active-main-proof.json",
+      "bytes": 420,
+      "sha256": "7d0b3d2e18f994e76e300876e3c1c17f0fa385ff486aff6c78a6b638816d8335",
+      "stored_bytes": 286,
+      "stored_sha256": "f94ceacefcc3c2f529ede50ec13ecff67fd427e1ff7816432a005996174c8d52"
+    },
+    {
+      "corpus_node": "/components_final13/0/artifacts/-source-manifest",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active-main-source-manifest.json",
+      "bytes": 431148,
+      "sha256": "71b4644f78f30c88711249052c48f985251bf62c276149107a4063b6f1065c12",
+      "stored_bytes": 152860,
+      "stored_sha256": "4b430167e7af27873bd3c83fa97ba3e6b293498fa0fbb6abec2416aed66ecab1"
+    },
+    {
+      "corpus_node": "/components_final13/0/artifacts/.stdout",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active-main.stdout",
+      "bytes": 237,
+      "sha256": "606371aab8f81a3b6e855f8c956ac5a524de30d401e470af2eca386f19383869",
+      "stored_bytes": 179,
+      "stored_sha256": "d536b67354adb3eb9a0721d5bdfae05a98a844f1fdbe9a87b45000f36be7f813"
+    },
+    {
+      "corpus_node": "/components_final13/0/artifacts/.stderr",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active-main.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "corpus_node": "/components_final13/1/artifacts/run_json",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active-scoped.json",
+      "bytes": 1157045,
+      "sha256": "6b43bde8f5919c82b6ef0a37486473ae2ad1ed5162ffd972ee27cef595538769",
+      "stored_bytes": 280688,
+      "stored_sha256": "172eb8501854bbffd14c667362c18f676c461e9925b67e2f9161a2f89cfabdd1"
+    },
+    {
+      "corpus_node": "/components_final13/1/artifacts/-body",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active-scoped-body.json",
+      "bytes": 136066232,
+      "sha256": "bf6723d382f69a054b80927d4a2c52875d560505334b837e2f22b7c2900a8897",
+      "stored_bytes": 9703700,
+      "stored_sha256": "b27092ae53155a6f2779a9bee4f6e114325ec0a3880a9399b73da56b60bfac16"
+    },
+    {
+      "corpus_node": "/components_final13/1/artifacts/-canonical",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active-scoped-canonical.json",
+      "bytes": 38529544,
+      "sha256": "7a18d4416386c617bc835bec033ee497fe06c725dde038ddc3c23eb313c8bcab",
+      "stored_bytes": 5923286,
+      "stored_sha256": "edd0b4736ecff60885d610b378691fff4cc8b235ba6548963fc93e2207fba3f8"
+    },
+    {
+      "corpus_node": "/components_final13/1/artifacts/-proof",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active-scoped-proof.json",
+      "bytes": 422,
+      "sha256": "52a2241bcda6e246a6cc863e15255df9b7f8d6267235e94167d32c3f2a2a00a3",
+      "stored_bytes": 286,
+      "stored_sha256": "4fcff6f0557ee4e4236f2bde31ed3cf39166a1799b287b5f0e518021723c8894"
+    },
+    {
+      "corpus_node": "/components_final13/1/artifacts/-source-manifest",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active-scoped-source-manifest.json",
+      "bytes": 380992,
+      "sha256": "b8588f2c0081ca0425518c45845cd6cfdcf73a2be6699e8e35cd3535e5642b6d",
+      "stored_bytes": 136770,
+      "stored_sha256": "c43efb981bea83ce53c827fcbbb063967361a6761e780533d09e34511ce55380"
+    },
+    {
+      "corpus_node": "/components_final13/1/artifacts/.stdout",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active-scoped.stdout",
+      "bytes": 237,
+      "sha256": "f78ccb84776552247792ef413c6949bfaa078c6cd97075cdb6aa6bc05fffdc16",
+      "stored_bytes": 179,
+      "stored_sha256": "3117eee2cda01efb272adbc2b7f54035e407f6387e915b751b5a14a8a986ace6"
+    },
+    {
+      "corpus_node": "/components_final13/1/artifacts/.stderr",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active-scoped.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "corpus_node": "/components_final13/2/artifacts/run_json",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active2-main.json",
+      "bytes": 1189035,
+      "sha256": "ac3a9e88b51c39252a111e56c62fad16e4ece0cad52ca039b25e35418595c77d",
+      "stored_bytes": 313154,
+      "stored_sha256": "7937f2a7a782490540f01ef96fdea8f78c0806f1b440c41629188cb309fec3b7"
+    },
+    {
+      "corpus_node": "/components_final13/2/artifacts/-body",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active2-main-body.json",
+      "bytes": 136066228,
+      "sha256": "e6762751802a11e8ef0967cb29d87b5399726ac0d498864398e9281fccfeda13",
+      "stored_bytes": 9703667,
+      "stored_sha256": "ea797568eefdff050cb97876f18459176007cc05593549d6a96ee1373cff346e"
+    },
+    {
+      "corpus_node": "/components_final13/2/artifacts/-canonical",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active2-main-canonical.json",
+      "bytes": 38529544,
+      "sha256": "4656ec16ebc20f8e570b4f924dbf0cefcc66bf8627e616809965f1d8422e3a74",
+      "stored_bytes": 5923298,
+      "stored_sha256": "876f57350d6f81f6c1b6fee4f73d861d377e8c4b53feab7b16338dd58869f8de"
+    },
+    {
+      "corpus_node": "/components_final13/2/artifacts/-proof",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active2-main-proof.json",
+      "bytes": 420,
+      "sha256": "c084c101510611e0fe13d13d60274f17318809e78de8a98f3d774fcb534f6cd1",
+      "stored_bytes": 286,
+      "stored_sha256": "30c8dbfb984d138e26b1443a0a09b8d978b03373c78368c398239d1b7fb970f1"
+    },
+    {
+      "corpus_node": "/components_final13/2/artifacts/-source-manifest",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active2-main-source-manifest.json",
+      "bytes": 431148,
+      "sha256": "71b4644f78f30c88711249052c48f985251bf62c276149107a4063b6f1065c12",
+      "stored_bytes": 152860,
+      "stored_sha256": "4b430167e7af27873bd3c83fa97ba3e6b293498fa0fbb6abec2416aed66ecab1"
+    },
+    {
+      "corpus_node": "/components_final13/2/artifacts/.stdout",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active2-main.stdout",
+      "bytes": 237,
+      "sha256": "606371aab8f81a3b6e855f8c956ac5a524de30d401e470af2eca386f19383869",
+      "stored_bytes": 179,
+      "stored_sha256": "d536b67354adb3eb9a0721d5bdfae05a98a844f1fdbe9a87b45000f36be7f813"
+    },
+    {
+      "corpus_node": "/components_final13/2/artifacts/.stderr",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active2-main.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "corpus_node": "/components_final13/3/artifacts/run_json",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active2-scoped.json",
+      "bytes": 1157048,
+      "sha256": "c8b329fe2f393e351dd354a550be2767f844950950ed754d67568f057ad3e185",
+      "stored_bytes": 280693,
+      "stored_sha256": "8cdd72447ee974def5bf89115628fb2fc2d4cc8feac8a82e27c08fd7cab9c891"
+    },
+    {
+      "corpus_node": "/components_final13/3/artifacts/-body",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active2-scoped-body.json",
+      "bytes": 136066232,
+      "sha256": "644165d2c18ab92e212d63760387460699c54e87266a69b68e4889131952c420",
+      "stored_bytes": 9703669,
+      "stored_sha256": "aa87145d811a742d707a8e7934971fb951d3c904f88c87b04b6af82c9bdc410f"
+    },
+    {
+      "corpus_node": "/components_final13/3/artifacts/-canonical",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active2-scoped-canonical.json",
+      "bytes": 38529544,
+      "sha256": "66f7130b55b4b4f96aada54bc67ec6a47539f5c032a6e021aff4139f4235099a",
+      "stored_bytes": 5923292,
+      "stored_sha256": "9fc1623f590b6b219195597aaf9666a6567da00889cd54ad42922a4322ec76ba"
+    },
+    {
+      "corpus_node": "/components_final13/3/artifacts/-proof",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active2-scoped-proof.json",
+      "bytes": 422,
+      "sha256": "c5c15e0a210be840cc6cdd30f05b1c8e6d70e59dfec6e58719cfc2a28063b8ad",
+      "stored_bytes": 284,
+      "stored_sha256": "0c8a40278508ba6ac87ad8019dcf4a7ed0fb266a1cd71fd1cd5b08131cf9f211"
+    },
+    {
+      "corpus_node": "/components_final13/3/artifacts/-source-manifest",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active2-scoped-source-manifest.json",
+      "bytes": 380992,
+      "sha256": "b8588f2c0081ca0425518c45845cd6cfdcf73a2be6699e8e35cd3535e5642b6d",
+      "stored_bytes": 136770,
+      "stored_sha256": "c43efb981bea83ce53c827fcbbb063967361a6761e780533d09e34511ce55380"
+    },
+    {
+      "corpus_node": "/components_final13/3/artifacts/.stdout",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active2-scoped.stdout",
+      "bytes": 237,
+      "sha256": "f9f4f0b5ef93211906c112a4d03296dab7eea3ab873ec55c829e1730d72d5632",
+      "stored_bytes": 179,
+      "stored_sha256": "e4a5f89710f8830f49535d562e6f1e2859e24747f0ccde7658a1112f11cfb620"
+    },
+    {
+      "corpus_node": "/components_final13/3/artifacts/.stderr",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active2-scoped.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "corpus_node": "/components_final13/4/artifacts/run_json",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active3-main.json",
+      "bytes": 1189035,
+      "sha256": "209dd6ac449d6c7fdee3e696996eb7e0a460dbc26069d1f345fdee4f382f1f00",
+      "stored_bytes": 313157,
+      "stored_sha256": "0d02773164299de0b3298c07ae08328f556c7e03e96b30269565f587a994e5e1"
+    },
+    {
+      "corpus_node": "/components_final13/4/artifacts/-body",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active3-main-body.json",
+      "bytes": 136066228,
+      "sha256": "b617e9099176b91885e708fc8490c24046d341d322ddaeeae6633f670548bdc2",
+      "stored_bytes": 9703698,
+      "stored_sha256": "e1ff864a16ee5d08e0619a3db80b5b2038a8dd9e0bb0cbab40d2837c3ae43e4d"
+    },
+    {
+      "corpus_node": "/components_final13/4/artifacts/-canonical",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active3-main-canonical.json",
+      "bytes": 38529544,
+      "sha256": "3cac845a1d7f509178a893e7383ec6418dfa734e3b1a319cf1e9573a190b995b",
+      "stored_bytes": 5923307,
+      "stored_sha256": "c30629f6d22277879f9db16ecc0346b869900694ccccb77c8b653ebbb5c9999b"
+    },
+    {
+      "corpus_node": "/components_final13/4/artifacts/-proof",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active3-main-proof.json",
+      "bytes": 420,
+      "sha256": "969e996b5b9655e6cacd83c22a3775481110fc9d1392ec8fe3fdc12d99adc43a",
+      "stored_bytes": 285,
+      "stored_sha256": "7856df1442ab5fff9b16a14de81435cb396d2e0f173a0fc38ff4044775fed28d"
+    },
+    {
+      "corpus_node": "/components_final13/4/artifacts/-source-manifest",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active3-main-source-manifest.json",
+      "bytes": 431148,
+      "sha256": "71b4644f78f30c88711249052c48f985251bf62c276149107a4063b6f1065c12",
+      "stored_bytes": 152860,
+      "stored_sha256": "4b430167e7af27873bd3c83fa97ba3e6b293498fa0fbb6abec2416aed66ecab1"
+    },
+    {
+      "corpus_node": "/components_final13/4/artifacts/.stdout",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active3-main.stdout",
+      "bytes": 237,
+      "sha256": "f4292df4bbc019291d8258bfa599de6ba138afc241e98f84b4a11c622cc39347",
+      "stored_bytes": 178,
+      "stored_sha256": "5aedf98e8ae0ca9a886494c30818fc2d0c51014eeaf4d4522add202612e75cf3"
+    },
+    {
+      "corpus_node": "/components_final13/4/artifacts/.stderr",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active3-main.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "corpus_node": "/components_final13/5/artifacts/run_json",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active3-scoped.json",
+      "bytes": 1157048,
+      "sha256": "2ce60ab199c202354f33930eeab94a56adde77f92b599441ad59579a9b1f29fe",
+      "stored_bytes": 280684,
+      "stored_sha256": "3821f7b9b9c59504992ef55797d32bce5975a8f2292cfc72b7ce48f2ef5ae459"
+    },
+    {
+      "corpus_node": "/components_final13/5/artifacts/-body",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active3-scoped-body.json",
+      "bytes": 136066232,
+      "sha256": "31df7b19d910052e8cbf81056501496e38598cf749deb449597b3d03df08e6ad",
+      "stored_bytes": 9703690,
+      "stored_sha256": "bba46d28280756e530780feb7b959d28cb0a57a574b432d83c89c73c2daf9a6c"
+    },
+    {
+      "corpus_node": "/components_final13/5/artifacts/-canonical",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active3-scoped-canonical.json",
+      "bytes": 38529544,
+      "sha256": "3eb16f318a76582887f66d6b1dc3232c542cbc0c9314783fb12fe9ba3ea249e8",
+      "stored_bytes": 5923313,
+      "stored_sha256": "ad438c9acfcf715c90e9dafaced474125022d00775b1b7ec7638d68b9abae908"
+    },
+    {
+      "corpus_node": "/components_final13/5/artifacts/-proof",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active3-scoped-proof.json",
+      "bytes": 422,
+      "sha256": "c15b647fdf3ae8b4fe63447361f027ed158338ef18001a266bb00408ee35de72",
+      "stored_bytes": 287,
+      "stored_sha256": "d4c747b1f88fa20c86c3f0bc43f65533b9447d95e114e3600f31daef7550de05"
+    },
+    {
+      "corpus_node": "/components_final13/5/artifacts/-source-manifest",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active3-scoped-source-manifest.json",
+      "bytes": 380992,
+      "sha256": "b8588f2c0081ca0425518c45845cd6cfdcf73a2be6699e8e35cd3535e5642b6d",
+      "stored_bytes": 136770,
+      "stored_sha256": "c43efb981bea83ce53c827fcbbb063967361a6761e780533d09e34511ce55380"
+    },
+    {
+      "corpus_node": "/components_final13/5/artifacts/.stdout",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active3-scoped.stdout",
+      "bytes": 237,
+      "sha256": "5933558a164f71ffdfa6ae3a39767cee31990c74ce31eaff1756ada199c9fb04",
+      "stored_bytes": 178,
+      "stored_sha256": "86d4986727e05b80ed9bad1988966c4355312d262640dd90f02336d17729f7ef"
+    },
+    {
+      "corpus_node": "/components_final13/5/artifacts/.stderr",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/components-final13-active3-scoped.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "corpus_node": "/components_after_publication/0/artifacts/run_receipt",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-main-1.json",
+      "bytes": 1189017,
+      "sha256": "439322b684ba2d5ac629528d54770b53085a8b236084b637be0dcd43437d4b8e",
+      "stored_bytes": 313164,
+      "stored_sha256": "cf74a4a171537b6a1a3965580aa6432ba202d4419bf0bafece46a216128d6356"
+    },
+    {
+      "corpus_node": "/components_after_publication/0/artifacts/stdout",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-main-1.stdout",
+      "bytes": 237,
+      "sha256": "fb15625707cc6bdbe443d523f5e587058595f9ea93e6f952a8c91941ab2c7eec",
+      "stored_bytes": 179,
+      "stored_sha256": "e0ec1f136a597bc7132038bb0795efba6d721cc018419b23fc86979917c8e700"
+    },
+    {
+      "corpus_node": "/components_after_publication/0/artifacts/stderr",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-main-1.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "corpus_node": "/components_after_publication/0/artifacts/body",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-main-1-body.json",
+      "bytes": 136066228,
+      "sha256": "b3802d5302db70f3a50a3f344ef5aeac9fd70c031fd52bd3493020297a960375",
+      "stored_bytes": 9703650,
+      "stored_sha256": "8441211c92ee0a86c04f955529cd15c900629b424e1f347d4a5474e41e5fd3cb"
+    },
+    {
+      "corpus_node": "/components_after_publication/0/artifacts/canonical",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-main-1-canonical.json",
+      "bytes": 38529544,
+      "sha256": "5a97dd0b44e85a21f35fac32c7931496cb242cfd52d182566dce1444ee5f13ff",
+      "stored_bytes": 5923294,
+      "stored_sha256": "ae933293bb77c4e4ca0f74acfe0ddb803a29a2c217ff4f0cbf5949e2b3de13b6"
+    },
+    {
+      "corpus_node": "/components_after_publication/0/artifacts/proof",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-main-1-proof.json",
+      "bytes": 420,
+      "sha256": "9818c9f303111f8d3c0839e518d75ad9582e3f7d1bcffcc656d37ff6ce5bbd7c",
+      "stored_bytes": 285,
+      "stored_sha256": "d75f48b911b85192ad1bb9ac1f0416a743f27efaf54f681cccd10bef59956b0f"
+    },
+    {
+      "corpus_node": "/components_after_publication/0/artifacts/source_manifest",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-main-1-source-manifest.json",
+      "bytes": 431148,
+      "sha256": "71b4644f78f30c88711249052c48f985251bf62c276149107a4063b6f1065c12",
+      "stored_bytes": 152860,
+      "stored_sha256": "4b430167e7af27873bd3c83fa97ba3e6b293498fa0fbb6abec2416aed66ecab1"
+    },
+    {
+      "corpus_node": "/components_after_publication/1/artifacts/run_receipt",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-scoped-1.json",
+      "bytes": 1157029,
+      "sha256": "0d2fe6352e6f70c52e6fb8eb97a82d947e5c5657c405f12d913fc2cc03135a4d",
+      "stored_bytes": 280697,
+      "stored_sha256": "0314bb28d964ef01bca66b22e7e8d16cf1242c791a917c42eaa25e437870a914"
+    },
+    {
+      "corpus_node": "/components_after_publication/1/artifacts/stdout",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-scoped-1.stdout",
+      "bytes": 237,
+      "sha256": "96681717595a0d544c70e7292932e162c169482eb3fe870a8c69e865cf6b7da0",
+      "stored_bytes": 179,
+      "stored_sha256": "dc8180fe8e3a001172fc0039243d77ba052b4a3db9a858cba1d28a5b86b2e045"
+    },
+    {
+      "corpus_node": "/components_after_publication/1/artifacts/stderr",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-scoped-1.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "corpus_node": "/components_after_publication/1/artifacts/body",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-scoped-1-body.json",
+      "bytes": 136066232,
+      "sha256": "bdc658c8a2734e2fbc05f76ceb4538e7f58ac9bab42bd57d0c545314bc188acf",
+      "stored_bytes": 9703653,
+      "stored_sha256": "2689d3ba6781ce075770888dd16ed892a99c6689b199498038d6a89cedc335ba"
+    },
+    {
+      "corpus_node": "/components_after_publication/1/artifacts/canonical",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-scoped-1-canonical.json",
+      "bytes": 38529544,
+      "sha256": "c025c2e79a1d1423a326508d5f01679dcba6be0244be54f6a9700df368c5e3a2",
+      "stored_bytes": 5923308,
+      "stored_sha256": "8c7200b44eeaeed32ca6f2d731c3a89fd804336893e082b9543c8ac0d002550a"
+    },
+    {
+      "corpus_node": "/components_after_publication/1/artifacts/proof",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-scoped-1-proof.json",
+      "bytes": 422,
+      "sha256": "40d51700ebfbc8dce2efbf2bc55f9fb5e13317f44408ea9efe8657839b499eb3",
+      "stored_bytes": 284,
+      "stored_sha256": "9e7b5450ba3c4edfdf83dbba3aa38cc3edcae41a1500031110eb79cfb17c41cf"
+    },
+    {
+      "corpus_node": "/components_after_publication/1/artifacts/source_manifest",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-scoped-1-source-manifest.json",
+      "bytes": 380992,
+      "sha256": "b8588f2c0081ca0425518c45845cd6cfdcf73a2be6699e8e35cd3535e5642b6d",
+      "stored_bytes": 136770,
+      "stored_sha256": "c43efb981bea83ce53c827fcbbb063967361a6761e780533d09e34511ce55380"
+    },
+    {
+      "corpus_node": "/components_after_publication/2/artifacts/run_receipt",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-main-2.json",
+      "bytes": 1189016,
+      "sha256": "de1843fcad25abd6293e3465959bcb57ebe7cf49c68a76469b48f0708ca187bd",
+      "stored_bytes": 313166,
+      "stored_sha256": "7c8c9650e636c1e0ce4ba53ef48e84925e432c0628e032f5aa8c1b3450d0ad34"
+    },
+    {
+      "corpus_node": "/components_after_publication/2/artifacts/stdout",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-main-2.stdout",
+      "bytes": 237,
+      "sha256": "dbdcc05e62bf78c6b6b3775f0bd6eb561cbe9c07e267a3b232e58934ad7d5fe2",
+      "stored_bytes": 179,
+      "stored_sha256": "80eef6b48c3f17397dc0d03abbe027f5eab2db885389acdfad19d8b77b1a5699"
+    },
+    {
+      "corpus_node": "/components_after_publication/2/artifacts/stderr",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-main-2.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "corpus_node": "/components_after_publication/2/artifacts/body",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-main-2-body.json",
+      "bytes": 136066228,
+      "sha256": "4c62c48afb6ec8689f0419f4932c62507ffa7d7fc5d79740e2598decef4068d3",
+      "stored_bytes": 9703676,
+      "stored_sha256": "f3a171881ac1b43091d45024dcb7c305eb0a8a16a6cd56ed7756d9ea044364ca"
+    },
+    {
+      "corpus_node": "/components_after_publication/2/artifacts/canonical",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-main-2-canonical.json",
+      "bytes": 38529544,
+      "sha256": "ccd2ce17fa9495c5e1968d5bddbcc33e9c963879ba3bcee022073a5ecefacab3",
+      "stored_bytes": 5923315,
+      "stored_sha256": "e14ae61cae3a259ba7231eee44cc7d1a0fcbeacd0b87f257cb17bdf57e1e4219"
+    },
+    {
+      "corpus_node": "/components_after_publication/2/artifacts/proof",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-main-2-proof.json",
+      "bytes": 420,
+      "sha256": "848198db8f07f536b6aca45c57c4fc1bf8c5d95f519186d75b16bd83130bb47f",
+      "stored_bytes": 287,
+      "stored_sha256": "f97d420dd16063af0716c5072f0e58c6b0491df91f8408e4faec4b970adc4f33"
+    },
+    {
+      "corpus_node": "/components_after_publication/2/artifacts/source_manifest",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-main-2-source-manifest.json",
+      "bytes": 431148,
+      "sha256": "71b4644f78f30c88711249052c48f985251bf62c276149107a4063b6f1065c12",
+      "stored_bytes": 152860,
+      "stored_sha256": "4b430167e7af27873bd3c83fa97ba3e6b293498fa0fbb6abec2416aed66ecab1"
+    },
+    {
+      "corpus_node": "/components_after_publication/3/artifacts/run_receipt",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-scoped-2.json",
+      "bytes": 1157029,
+      "sha256": "b17a64993824318a3a996e61e22a0bcd13e8a1bba920fed4129b7a64c3aac71f",
+      "stored_bytes": 280699,
+      "stored_sha256": "ffe9bec54630c68c06cd2090ad4e41b8df7da87db317778700fd18bdde7cf60a"
+    },
+    {
+      "corpus_node": "/components_after_publication/3/artifacts/stdout",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-scoped-2.stdout",
+      "bytes": 237,
+      "sha256": "8b617a15b5fc335b49be86aa7589712f802c7f24a8cd7c6f7008b3908eb9627f",
+      "stored_bytes": 179,
+      "stored_sha256": "efb942aeefcaa9bc61a00ba7a08f29cd40051d6abed42995733575473d55cbad"
+    },
+    {
+      "corpus_node": "/components_after_publication/3/artifacts/stderr",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-scoped-2.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "corpus_node": "/components_after_publication/3/artifacts/body",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-scoped-2-body.json",
+      "bytes": 136066232,
+      "sha256": "da0ce52e37044234d7a44f17e80c91feff9adc3de68a88ecab76f03043413e52",
+      "stored_bytes": 9703676,
+      "stored_sha256": "cb80548cb843bfbdfd583a7736f743315f0dbf8129770df4b637d95b0f64ba36"
+    },
+    {
+      "corpus_node": "/components_after_publication/3/artifacts/canonical",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-scoped-2-canonical.json",
+      "bytes": 38529544,
+      "sha256": "20cf4b57edbaf8e5b89f0f62b264ee6c3141ef4012a4b421ff692ad3f51c61d3",
+      "stored_bytes": 5923312,
+      "stored_sha256": "889fbd20b420e5b4244e39b994b931d30a155d5bd0cea271f79d63e5edcbe97e"
+    },
+    {
+      "corpus_node": "/components_after_publication/3/artifacts/proof",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-scoped-2-proof.json",
+      "bytes": 422,
+      "sha256": "f84c300d8f88776dd70592ffee0df0c23ba533e2de645a570d5472e656879ca0",
+      "stored_bytes": 285,
+      "stored_sha256": "18bb7765abb8441568596592ad9df829c43ba8bb03617256a5dedd8de4ab09d7"
+    },
+    {
+      "corpus_node": "/components_after_publication/3/artifacts/source_manifest",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-scoped-2-source-manifest.json",
+      "bytes": 380992,
+      "sha256": "b8588f2c0081ca0425518c45845cd6cfdcf73a2be6699e8e35cd3535e5642b6d",
+      "stored_bytes": 136770,
+      "stored_sha256": "c43efb981bea83ce53c827fcbbb063967361a6761e780533d09e34511ce55380"
+    },
+    {
+      "corpus_node": "/components_after_publication/4/artifacts/run_receipt",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-main-3.json",
+      "bytes": 1189017,
+      "sha256": "88665c5b9410dfd1e1010d00bfc6fb41e30271ecd0dee851226f71acdcdc7982",
+      "stored_bytes": 313170,
+      "stored_sha256": "473f32163f75f9296d67ceb92a7e7259ee5f08d3912f1ac2cc561631b03dc0d0"
+    },
+    {
+      "corpus_node": "/components_after_publication/4/artifacts/stdout",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-main-3.stdout",
+      "bytes": 237,
+      "sha256": "1fffdfe1c30a72eb08e753a01d47a979722545063caa6016bf89545b9a5bdfe1",
+      "stored_bytes": 179,
+      "stored_sha256": "a8768a3a5e68981400d42059f95f8bb5f5c1f8faca5479a7b647ec6913f2674b"
+    },
+    {
+      "corpus_node": "/components_after_publication/4/artifacts/stderr",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-main-3.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "corpus_node": "/components_after_publication/4/artifacts/body",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-main-3-body.json",
+      "bytes": 136066228,
+      "sha256": "13df8c3d8ec12b75b49233206140e951346c0d87722f942c983c9657ff23dee6",
+      "stored_bytes": 9703698,
+      "stored_sha256": "d92ee996aecd9263b12e43f708615ff9479d6bec94046779591cb6ccc3650c02"
+    },
+    {
+      "corpus_node": "/components_after_publication/4/artifacts/canonical",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-main-3-canonical.json",
+      "bytes": 38529544,
+      "sha256": "534808c76f8944055966361278b8757dca0ab4d46c2ca80c56963b045f76d458",
+      "stored_bytes": 5923324,
+      "stored_sha256": "42ddcd62a48b87f9212392efbce470327855e09639863fd3610971704abcc1fe"
+    },
+    {
+      "corpus_node": "/components_after_publication/4/artifacts/proof",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-main-3-proof.json",
+      "bytes": 420,
+      "sha256": "fce27f134f600769d9e1c7d1cdad6d564215e33ee30d98613bc6f0170643f750",
+      "stored_bytes": 286,
+      "stored_sha256": "ce1a4784f1563f4ef9b9363619b3de57a3e3d8da32ee6f9d402c1a7bbf3f2484"
+    },
+    {
+      "corpus_node": "/components_after_publication/4/artifacts/source_manifest",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-main-3-source-manifest.json",
+      "bytes": 431148,
+      "sha256": "71b4644f78f30c88711249052c48f985251bf62c276149107a4063b6f1065c12",
+      "stored_bytes": 152860,
+      "stored_sha256": "4b430167e7af27873bd3c83fa97ba3e6b293498fa0fbb6abec2416aed66ecab1"
+    },
+    {
+      "corpus_node": "/components_after_publication/5/artifacts/run_receipt",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-scoped-3.json",
+      "bytes": 1157030,
+      "sha256": "66aefa329458b521166dec8b550b74a1a80b45b49305e860ae8a422e73314e38",
+      "stored_bytes": 280701,
+      "stored_sha256": "857386046fdca90e2a9ec373fe2a8c691e619a6bd07d3cfdbe7c832d32953c9d"
+    },
+    {
+      "corpus_node": "/components_after_publication/5/artifacts/stdout",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-scoped-3.stdout",
+      "bytes": 237,
+      "sha256": "ba6ac76e53979e589f297f1b44412b94544e18558b3ad92f47d829ac06c457a1",
+      "stored_bytes": 179,
+      "stored_sha256": "903bdf5dc775ca6d5e30b2258ade7a7b05cd9ea364bede5ba8eb10896becc5f1"
+    },
+    {
+      "corpus_node": "/components_after_publication/5/artifacts/stderr",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-scoped-3.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "corpus_node": "/components_after_publication/5/artifacts/body",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-scoped-3-body.json",
+      "bytes": 136066232,
+      "sha256": "8b49401dab01187c4cfcabe76a14d4bd4d302b2c77149ecfe1d5116653d5694b",
+      "stored_bytes": 9703695,
+      "stored_sha256": "be0901f726a8c33f26c710df3306008b6e1ab2c2eb71dad912a41d9483bfba09"
+    },
+    {
+      "corpus_node": "/components_after_publication/5/artifacts/canonical",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-scoped-3-canonical.json",
+      "bytes": 38529544,
+      "sha256": "50067531d1520fb5e3ba82ec5252602d5c5b16ab44eda4daec8f056e2d2f505c",
+      "stored_bytes": 5923328,
+      "stored_sha256": "0302035e508692eb550bf8b0166b4960e60e5c96e5586bfe88c4ff51e0a7bacc"
+    },
+    {
+      "corpus_node": "/components_after_publication/5/artifacts/proof",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-scoped-3-proof.json",
+      "bytes": 422,
+      "sha256": "1c02eb1526a7e0ffb3595f6800f117a0b93b708f165b8548c6e47ef5eb54851d",
+      "stored_bytes": 284,
+      "stored_sha256": "d04c1508a248e48d326cfd397cd0403c5b52a0fb73ece5487c9fc5b346333ef9"
+    },
+    {
+      "corpus_node": "/components_after_publication/5/artifacts/source_manifest",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/published-f-before/projected-before-f-scoped-3-source-manifest.json",
+      "bytes": 380992,
+      "sha256": "b8588f2c0081ca0425518c45845cd6cfdcf73a2be6699e8e35cd3535e5642b6d",
+      "stored_bytes": 136770,
+      "stored_sha256": "c43efb981bea83ce53c827fcbbb063967361a6761e780533d09e34511ce55380"
+    },
+    {
+      "corpus_node": "/components_comparison/variable_work_contract/known_observation_refs/final13-all-current-differences.json",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/final13-all-current-differences.json",
+      "bytes": 73531,
+      "sha256": "d08fe65371136c6c954d50ca5afe0fab1264dba559fe4e5bfb88cc673ab0155b",
+      "stored_bytes": 2921,
+      "stored_sha256": "9edde25ce8aaefaefcd59d50bb546a392d6e795e20ec6bf91f12886c513a726b"
+    },
+    {
+      "corpus_node": "/components_comparison/variable_work_contract/known_observation_refs/pre13-cross-root-work-differences.json",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-components-mask-ownership/inventory.json",
+      "record": "qualification/pre13-cross-root-work-differences.json",
+      "bytes": 9135,
+      "sha256": "61fb47c569486e9cf282050437ea72ad44e88fb7645022fe23fbc362f7aada37",
+      "stored_bytes": 756,
+      "stored_sha256": "5e47e51fbfa728978bc09e7485ad0b64a693a9bf734db0a600f086bfb8384874"
+    },
+    {
+      "corpus_node": "/source_ready_captures/0/artifacts/.json",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/projected-before-native3-main.json",
+      "bytes": 1189637,
+      "sha256": "fb02a73f719138a114d7d9a0f958f212a05c3f9fa0fec30d8f51b0b867452f25",
+      "stored_bytes": 313245,
+      "stored_sha256": "b220e640cecb7233c6b14015b01a77861f7bbab5ab80eded8858774ca76252bb"
+    },
+    {
+      "corpus_node": "/source_ready_captures/0/artifacts/.stdout",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/projected-before-native3-main.stdout",
+      "bytes": 210,
+      "sha256": "fe7ac0c6978064ffc56ae1483191b5c463fe3bba235c836573a55eb0cd14c9af",
+      "stored_bytes": 154,
+      "stored_sha256": "682a35ce965c2912df0be2c5d8578612689bd97b42184b7d06001f98350d1030"
+    },
+    {
+      "corpus_node": "/source_ready_captures/0/artifacts/.stderr",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/projected-before-native3-main.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "corpus_node": "/source_ready_captures/0/artifacts/-body.json",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/projected-before-native3-main-body.json",
+      "bytes": 58670,
+      "sha256": "9e2349a6948302c51872cb4669637f256c8521e182e607b0885bd02e3d9767ad",
+      "stored_bytes": 6101,
+      "stored_sha256": "d08a0c1f4152e284a232c8464a52456b215fae203e8e25db960eec84050d34c1"
+    },
+    {
+      "corpus_node": "/source_ready_captures/0/artifacts/-canonical.json",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/projected-before-native3-main-canonical.json",
+      "bytes": 23896,
+      "sha256": "d77865693996e74e6d1bee6a33510fde658a70e1f8919fc4cff67aea243b5ee9",
+      "stored_bytes": 5081,
+      "stored_sha256": "0214f098c724991a5ba86f1db590f5c1275fd4e7bf34f2e4fcd440ba42d7a2ff"
+    },
+    {
+      "corpus_node": "/source_ready_captures/0/artifacts/-proof.json",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/projected-before-native3-main-proof.json",
+      "bytes": 421,
+      "sha256": "7f4e8b5508acf03eb4263355ed8fb628936fd46f0ba98ef4d524dc4c348f3ba9",
+      "stored_bytes": 253,
+      "stored_sha256": "89b616aba747f46d5cd5897f5a78f6d901c7b17414f5d5b91b290b2b1b86204e"
+    },
+    {
+      "corpus_node": "/source_ready_captures/1/artifacts/.json",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/projected-before-native3-scoped.json",
+      "bytes": 1157729,
+      "sha256": "96df1f4548e9751d6343084317c0511dcb06c13899c82a23eade5c563e200e16",
+      "stored_bytes": 280783,
+      "stored_sha256": "33745e76c461357441e1baee7c07c144b203c099f01b285a81b04a28c993b093"
+    },
+    {
+      "corpus_node": "/source_ready_captures/1/artifacts/.stdout",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/projected-before-native3-scoped.stdout",
+      "bytes": 210,
+      "sha256": "cd931eb600dbbf0f1780e704e4826c51afa3565aece8990c4456e89e6b183776",
+      "stored_bytes": 154,
+      "stored_sha256": "7f8c01a94db36dab1d424478a8c74c8480dadc6fde2447a427daee9b8e857ad9"
+    },
+    {
+      "corpus_node": "/source_ready_captures/1/artifacts/.stderr",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/projected-before-native3-scoped.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_bytes": 20,
+      "stored_sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+    },
+    {
+      "corpus_node": "/source_ready_captures/1/artifacts/-body.json",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/projected-before-native3-scoped-body.json",
+      "bytes": 58670,
+      "sha256": "9e2349a6948302c51872cb4669637f256c8521e182e607b0885bd02e3d9767ad",
+      "stored_bytes": 6101,
+      "stored_sha256": "d08a0c1f4152e284a232c8464a52456b215fae203e8e25db960eec84050d34c1"
+    },
+    {
+      "corpus_node": "/source_ready_captures/1/artifacts/-canonical.json",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/projected-before-native3-scoped-canonical.json",
+      "bytes": 23896,
+      "sha256": "d77865693996e74e6d1bee6a33510fde658a70e1f8919fc4cff67aea243b5ee9",
+      "stored_bytes": 5081,
+      "stored_sha256": "0214f098c724991a5ba86f1db590f5c1275fd4e7bf34f2e4fcd440ba42d7a2ff"
+    },
+    {
+      "corpus_node": "/source_ready_captures/1/artifacts/-proof.json",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/projected-before-native3-scoped-proof.json",
+      "bytes": 429,
+      "sha256": "ad97c954e41ae439f267ed564981af45b55ad28aaac794db708aa6b2c412b90a",
+      "stored_bytes": 256,
+      "stored_sha256": "10dfa39394b6e99e53a401ebd2d3ac8fa892000f7ef2a9c133f46dec8a50ecb3"
+    },
+    {
+      "corpus_node": "/audit_authority",
+      "inventory": "tools/media-qualification/evidence/2026-10-31-projected-policy-destination/inventory.json",
+      "record": "qualification/corpus-draft-v3/corpus-manifest-draft.json",
+      "bytes": 109504,
+      "sha256": "d27df01bee43ae1d883e9efb3c258121afdba36e5cee74fbf4e88242ad0cc84b",
+      "stored_bytes": 15013,
+      "stored_sha256": "543ebbf1cb4c26dac48fe6b7a214afc211e86f9f9a8946fd2aa0b857e07c7b49"
+    }
+  ],
+  "source_authority": "Exactly ten shipping-source records match current Scope and Main bytes. No raw Main source snapshot is admitted as shipping authority; qualification Main manifests/receipts remain evidence.",
+  "limits": "Read-only archive and reference verification. No rebuild, native execution, source mutation or publication. This sidecar is outside the inventory to avoid a self-hash cycle."
+}
