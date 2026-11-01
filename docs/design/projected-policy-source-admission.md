@@ -4,6 +4,39 @@ Original decision: qualify the private explicit-grid Signal-policy child kernel 
 
 The [provider child checkpoint](../qualification/provider-policy-child-kernel-2026-10-31.md) qualifies the private child for checked public operands, including reachable repeated and definition metadata. The separate [Tape factory checkpoint](../qualification/tape-policy-factory-2026-10-31.md) now qualifies stored-grid traversal, child normalization, combined inventory and the independent exact final Signal Vec, with sealed Tape provenance through the existing custody protocol. Scope is source authority. The original decision and pins below remain historical; the Tape contract records its Plan boundary and the now-qualified selected native lifetime contract. The preceding [destination checkpoint](../qualification/projected-policy-destination-2026-10-31.md) funds the native destination copy. The [native source checkpoint](../qualification/native-tape-source-admission-2026-11-01.md) now qualifies actual query/inventory lifetime and exact final Signal Vec transfer for routed PreserveTape. Other preparation policies, graph/PCM/dependency construction, whole preparation and product Gates remain outside that unit.
 
+## Ordinary read_signal policy producer
+
+The [read_signal checkpoint](../qualification/read-signal-policy-admission-2026-11-01.md)
+admits the ordinary Signal/Tape policy after the unchanged graph query/debit.
+Its returned owner retains native reservations through content/graph preflight,
+recursive child PCM, suppression and exact final Vec custody transfer. The
+mutable controller borrow ends before those uses. Forwarded work is charged
+once. Mix's early return stays unchanged. PreserveTape input dispatch remains
+unreached.
+
+Baseline 42 stays literal and all 42 payloads fixed. All 28 paired actions retain
+20 successes/eight errors, including actual success at the old 2,048 cap.
+Fresh build3 capture 1/2 repeats are byte-exact within each root. Independent
+key comparison classifies 113,974 leaves under 3,669 nodes, zero unexplained
+differences; separate guarded hash replay binds actual finishes and retained
+error prefixes without normalization. Actual native accounting covers 379
+captures/root, 313 exact positive Vec transfers and positive Plan/Cache host work.
+Refusal prefixes, typed cancellation, parent/child overlap and final retirement
+pass. Same-controller recovery at cap152 drops held account 10 to 3 and succeeds;
+a dedicated public capture retires 10 to 3 to 0. These are bounded ledger/resident
+predicates, not physical-memory peaks.
+
+Strict7/build3, frozen replay3, all four new normal tests/root, four complete
+writers and all 21 matrix3 Audio targets/root pass. Historical copy-lifetime
+tests retain whole bodies/caps behind N-only selectors; no account reset or
+counter seed is used. Runtime source guards and post-runtime documentation
+amendments stay distinct. The linked evidence inventory retains actual source,
+receipt, failure and audit authority; local .orig engine salts do not ship.
+
+This closes only the ordinary read_signal producer. Remaining free suppression,
+placed Root/Mix policy, graph/PCM/dependency construction and whole preparation
+remain separate obligations. No DP/Gate acceptance follows.
+
 ## Initial build_stage output validation
 
 The [stage-validation checkpoint](../qualification/stage-validation-policy-admission-2026-11-01.md)

@@ -2,7 +2,50 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: initial stage-output validation qualified, product goal active
+## Current state: ordinary read_signal policy qualified, product goal active
+
+The [read_signal checkpoint](../qualification/read-signal-policy-admission-2026-11-01.md)
+admits only the ordinary Signal/Tape policy producer in StageAudio::read_signal.
+The short mutable admission borrow ends before content/graph/child work, while
+the returned owner survives preflight, child PCM, suppression and exact final
+Vec transfer. Forwarded query work is charged once. Mix early return stays
+unchanged; PreserveTape input remains unreached.
+
+Baseline 42 froze before production selection; all 42 payloads remain fixed.
+All 28 paired actions retain 20 Ok/eight Err, including an unchanged successful
+old 2,048-cap request. Fresh build3 captures 1/2 repeat raw/canonical bytes in
+each root. Independent comparison derives 113,974 differing leaves under 3,669
+validated nodes, zero unclassified differences; actual keys, ordered update
+bytes, saved results, progress and duplicate-preserving listings are checked.
+Root's separately guarded BLAKE3 caller binds six complete payloads, two known
+vectors, 368 current aliases and 24 frozen/relation witnesses. Forty literal
+error prefixes per root/capture (160 across four repeats) have no invented finish.
+
+Independent native accounting covers 379 captures/root, 951 factories and
+313 exact positive final-Vec debits/626 frames. Actual selected host work is
+positive in both lanes: Plan 2,367, Cache 2,368. All 29 Plan/38 Cache callback
+refusals in the chosen measured factory per lane, typed callback/use cancellation, retained parent/child overlap and
+account retirement pass. Public minima are 143 plain/146 matched-dropped/
+153 held; at cap152, same-controller holder drop (account 10 to 3) and retry
+succeed. A separate public capture follows account 10 to 3 to 0 after Work,
+provider, controller and final output drop. Observed request peak764/account21/
+resident-predicate4699 are not physical memory or exact allocator peaks.
+
+Strict7/build3, frozen replay3, all four new normal tests/root and four complete
+writers pass. All 21 matrix3 targets/root pass: Main 1,162/Scope 1,156,
+libraries 581/575, 40 ignored each, only Main stages has the seven inherited
+Split filters. All 50 actual Cargo originals/copies match. The early three
+historical copy-boundary failures retain their original bodies/caps behind
+N-only entry wrappers. Failed strict type/lint receipts remain historical.
+Current runtime guards are Main3,000/Scope2,684; final documentation is a
+disclosed post-runtime amendment. Scope's five real .orig engine salts remain
+local and unpublished. Scope is shipping authority; Main WIP stays excluded.
+
+Next freeze remaining free suppression and placed Root policy independently.
+Mix policy, graph/PCM/dependencies and whole preparation remain owed. General
+sound-bearing Split stays disabled in shipping; no DP/Gate status changes.
+
+## Preceding initial stage-output validation checkpoint
 
 The [stage-validation checkpoint](../qualification/stage-validation-policy-admission-2026-11-01.md)
 admits ONLY the initial complete-output validation loop in build_stage.

@@ -2,6 +2,30 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Ordinary read_signal policy admission, 2026-11-01
+
+The [read_signal qualification](qualification/read-signal-policy-admission-2026-11-01.md)
+admits the actual ordinary Signal/Tape policy producer while retaining its native
+owner across content/graph preflight, child PCM, suppression and exact final Vec
+transfer. Mix early return and canonical fees/caps stay unchanged. PreserveTape
+input remains unreached. Baseline 42/all 42 immutable payloads stay fixed; all 28
+paired actions retain 20 successes/eight errors, including the old 2,048-cap success.
+
+Fresh build3 captures1/2 repeat raw/canonical bytes exactly per root. Independent
+comparison classifies 113,974 scalar leaves under 3,669 validated nodes with no
+unexplained differences. Guarded actual hash replay, exact native billing,
+313 positive Vec transfers, refusal/cancellation prefixes, parent/child overlap,
+account retirement and unchanged-cap152 holder-drop/retry pass within their
+stated boundaries. Strict7/build3, all four new normal tests/root, frozen replay3,
+four complete writers and all 21 matrix3 Audio targets/root pass. Historical
+copy-lifetime bodies/caps remain behind explicit N-only entry wrappers.
+
+This adds no coverage score, completed DP requirement or product Gate. Remaining
+free suppression, placed Root/Mix policy, graph/PCM/dependencies and whole
+preparation remain owed. General sound-bearing Split remains disabled in
+shipping Scope. The qualification links actual retained evidence and states
+unexposed allocator/RSS, positive-capacity empty and other witness limits.
+
 ## Progress reassessment, 2026-10-25
 
 [The requirements audit](PROGRESS_ASSESSMENT.md) replaces the inherited 89%

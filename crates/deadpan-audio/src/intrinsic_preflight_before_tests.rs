@@ -61,6 +61,9 @@ impl AudioSourceProvider for WitnessProvider<'_> {
         if let Some(position) = stage_validation::provider_position() {
             event["stage_validation_position_at_callback_entry"] = position;
         }
+        if let Some(position) = read_signal_policy::provider_position() {
+            event["read_signal_policy_position_at_callback_entry"] = position;
+        }
         self.events.push(event);
         if self.fail {
             return Err(PreparationError::SourceUnavailable(
@@ -475,6 +478,25 @@ fn family() -> SetupResult<Value> {
         Some(value) => Ok(value),
         None => native_provider(&store, &record, receipt.snapshot()),
     };
+    if let Some(focused) = read_signal_policy::fixture_visit(
+        &plan,
+        &base,
+        asset,
+        &wire,
+        &mut reopen,
+        || {
+            Ok(json!({"original_record":record,"registration":outcome,
+                "receipt_id":receipt.id(),"receipt_original":receipt.original(),
+                "qualification_snapshot":receipt.snapshot(),
+                "qualification_snapshot_canonical_utf8":String::from_utf8(receipt.snapshot().to_json()?)?,
+                "registered_asset":asset,"registered_project":serde_json::to_value(&registered)?,
+                "checked_native_document_wire":wire,"native_provider":actual_native_contract,
+                "fixture_path":"native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav",
+                "qualification_scope":"actual persisted temporary registration; original qualifying native session and verified reopens"}))
+        },
+    )? {
+        return Ok(focused);
+    }
     if let Some(focused) = stage_validation::fixture_visit(
         &plan,
         &base,
@@ -776,3 +798,6 @@ mod after;
 
 #[path = "stage_validation_before_tests.rs"]
 mod stage_validation;
+
+#[path = "read_signal_policy_before_tests.rs"]
+mod read_signal_policy;

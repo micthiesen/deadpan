@@ -1103,18 +1103,38 @@ fn focused(mode: Mode) -> Value {
 }
 #[test]
 fn stage_validation_actual_paired_work_and_content_progress_lifetime() {
+    crate::stages::read_signal_policy_request::with_legacy_read_signal_policy(
+        stage_validation_actual_paired_work_and_content_progress_lifetime_historical,
+    );
+}
+fn stage_validation_actual_paired_work_and_content_progress_lifetime_historical() {
     paired();
 }
 #[test]
 fn stage_validation_plan_every_callback_refusal_and_live_cancel() {
+    crate::stages::read_signal_policy_request::with_legacy_read_signal_policy(
+        stage_validation_plan_every_callback_refusal_and_live_cancel_historical,
+    );
+}
+fn stage_validation_plan_every_callback_refusal_and_live_cancel_historical() {
     focused(Mode::PlanFaults);
 }
 #[test]
 fn stage_validation_cache_every_callback_refusal_and_live_cancel() {
+    crate::stages::read_signal_policy_request::with_legacy_read_signal_policy(
+        stage_validation_cache_every_callback_refusal_and_live_cancel_historical,
+    );
+}
+fn stage_validation_cache_every_callback_refusal_and_live_cancel_historical() {
     focused(Mode::CacheFaults);
 }
 #[test]
 fn stage_validation_public_resident_boundary_and_real_prior_output_recovery() {
+    crate::stages::read_signal_policy_request::with_legacy_read_signal_policy(
+        stage_validation_public_resident_boundary_and_real_prior_output_recovery_historical,
+    );
+}
+fn stage_validation_public_resident_boundary_and_real_prior_output_recovery_historical() {
     focused(Mode::Residency);
 }
 fn capture_after_body() -> Value {
@@ -1126,6 +1146,11 @@ fn capture_after_body() -> Value {
 #[test]
 #[ignore = "manual fresh actual after capture; no expected after fixture"]
 fn capture_stage_validation_policy_after_v1() {
+    crate::stages::read_signal_policy_request::with_legacy_read_signal_policy(
+        capture_stage_validation_policy_after_v1_historical,
+    );
+}
+fn capture_stage_validation_policy_after_v1_historical() {
     let output = std::env::var_os("DEADPAN_STAGE_VALIDATION_AFTER_OUTPUT").unwrap();
     let output = Path::new(&output);
     assert!(output.is_absolute() && output.starts_with("/tmp"));

@@ -40,6 +40,12 @@ fn ops_snapshot() -> Value {
 
 #[test]
 fn warm_projected_copy_exact_payload_limit_is_owned_before_routed_map_and_outlives_work() {
+    crate::stages::read_signal_policy_request::with_legacy_read_signal_policy(
+        warm_projected_copy_exact_payload_limit_is_owned_before_routed_map_and_outlives_work_historical,
+    );
+}
+fn warm_projected_copy_exact_payload_limit_is_owned_before_routed_map_and_outlives_work_historical()
+{
     let (plan, mut provider) = checked_plan_with_silent_hold();
     let projection = projected(&plan);
     let mut renderer = StageAudio::new(Arc::clone(&plan));
@@ -117,6 +123,12 @@ fn warm_projected_copy_exact_payload_limit_is_owned_before_routed_map_and_outliv
 
 #[test]
 fn warm_projected_copy_one_frame_below_payload_limit_refuses_after_policy_and_cleans_up() {
+    crate::stages::read_signal_policy_request::with_legacy_read_signal_policy(
+        warm_projected_copy_one_frame_below_payload_limit_refuses_after_policy_and_cleans_up_historical,
+    );
+}
+fn warm_projected_copy_one_frame_below_payload_limit_refuses_after_policy_and_cleans_up_historical()
+{
     let (plan, mut provider) = checked_plan_with_silent_hold();
     let projection = projected(&plan);
     let mut renderer = StageAudio::new(Arc::clone(&plan));
@@ -178,6 +190,11 @@ fn warm_projected_copy_one_frame_below_payload_limit_refuses_after_policy_and_cl
 
 #[test]
 fn warm_empty_projected_mask_needs_no_destination_above_existing_prepared_residency() {
+    crate::stages::read_signal_policy_request::with_legacy_read_signal_policy(
+        warm_empty_projected_mask_needs_no_destination_above_existing_prepared_residency_historical,
+    );
+}
+fn warm_empty_projected_mask_needs_no_destination_above_existing_prepared_residency_historical() {
     let (plan, mut provider) = checked_plan_with_silent_hold();
     let projection = projected(&plan);
     let mut renderer = StageAudio::new(Arc::clone(&plan));

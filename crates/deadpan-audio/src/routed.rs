@@ -217,7 +217,40 @@ impl StageAudio {
                 suppressed.push(destination, &mut self.masks(control))?;
                 continue;
             };
+            #[cfg(test)]
+            let n_call = match domain.input() {
+                AudioRoutedSignalInput::Source(_) => Some(read_signal_policy_before_trace::call(
+                    self,
+                    read_signal_policy_before_trace::Caller::RoutedSource,
+                    SignalSample(old.start),
+                    count,
+                    0,
+                )),
+                AudioRoutedSignalInput::Projected(_) => None,
+            };
+            #[cfg(test)]
+            let n_native_call = match domain.input() {
+                AudioRoutedSignalInput::Source(_) => Some(read_signal_policy_native_trace::call(
+                    read_signal_policy_before_trace::Caller::RoutedSource,
+                    SignalSample(old.start),
+                    count,
+                    0,
+                )),
+                AudioRoutedSignalInput::Projected(_) => None,
+            };
+            #[cfg(test)]
+            let ticket = n_call
+                .as_ref()
+                .and_then(read_signal_policy_before_trace::CallScope::ticket);
+            #[cfg(test)]
+            let origin = TraceOrigin::new(
+                ticket,
+                n_native_call
+                    .as_ref()
+                    .and_then(read_signal_policy_native_trace::CallScope::ticket),
+            );
             let block = match domain.input() {
+                #[cfg(not(test))]
                 AudioRoutedSignalInput::Source(voice) => self.read_signal(
                     &voice.input_signal(),
                     provider,
@@ -226,6 +259,25 @@ impl StageAudio {
                     control,
                     0,
                 )?,
+                #[cfg(test)]
+                AudioRoutedSignalInput::Source(voice) => {
+                    let result = self.read_signal(
+                        &voice.input_signal(),
+                        provider,
+                        (SignalSample(old.start), count),
+                        control,
+                        0,
+                        origin,
+                    );
+                    read_signal_policy_before_trace::block_result(
+                        self,
+                        control,
+                        ticket,
+                        "routed_child_result",
+                        &result,
+                    );
+                    result?
+                }
                 AudioRoutedSignalInput::Projected(projection) => self
                     .read_projected_signal_controlled(
                         projection,
@@ -236,6 +288,7 @@ impl StageAudio {
                     )?,
             };
             samples.extend(block.samples);
+            #[cfg(not(test))]
             suppressed.extend_try_map(
                 block.suppressed,
                 |range| {
@@ -250,6 +303,49 @@ impl StageAudio {
                 },
                 &mut self.masks(control),
             )?;
+            #[cfg(test)]
+            {
+                read_signal_policy_before_trace::mask(
+                    self,
+                    control,
+                    ticket,
+                    "routed_child_before_map",
+                    &block.suppressed,
+                );
+                let result = suppressed.extend_try_map(
+                    block.suppressed,
+                    |range| {
+                        Ok::<_, StageAudioError>(
+                            SignalSample(shift_label(
+                                range.start.0,
+                                old.start,
+                                destination.start.0,
+                            )?)
+                                ..SignalSample(shift_label(
+                                    range.end.0,
+                                    old.start,
+                                    destination.start.0,
+                                )?),
+                        )
+                    },
+                    &mut self.masks(control),
+                );
+                read_signal_policy_before_trace::result(
+                    self,
+                    control,
+                    ticket,
+                    "routed_map_result",
+                    &result,
+                );
+                read_signal_policy_before_trace::mask(
+                    self,
+                    control,
+                    ticket,
+                    "routed_destination_mask",
+                    &suppressed,
+                );
+                result?;
+            }
         }
         control.check()?;
         Ok(RoutedSignalBlock {
@@ -600,7 +696,14 @@ impl StageAudio {
         projected_tape_source_trace::before_handoff(self, control, policy.view());
         #[cfg(test)]
         let _handoff_scope = projected_tape_source_trace::handoff_scope();
-        policy.into_suppression(self, control)
+        #[cfg(not(test))]
+        {
+            policy.into_suppression(self, control)
+        }
+        #[cfg(test)]
+        {
+            policy.into_suppression(self, control, None)
+        }
     }
 }
 

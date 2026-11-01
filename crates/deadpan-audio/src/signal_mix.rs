@@ -123,6 +123,8 @@ impl StageAudio {
                 provider,
                 control,
                 depth,
+                #[cfg(test)]
+                TraceOrigin::NONE,
             )?;
             if block.samples.len() != sum.len() {
                 return Err(PlanError::InvalidPlan("incomplete mix voice PCM").into());
