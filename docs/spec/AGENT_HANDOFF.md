@@ -2,7 +2,40 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: Tape policy factory admitted, product goal active
+## Current state: native Tape source custody admitted, product goal active
+
+The [native source checkpoint](../qualification/native-tape-source-admission-2026-11-01.md)
+keeps actual Tape policy inventory/guards alive through preflight, control, full
+range validation, PCM zeroing and exact final Vec native transfer. Prepared PCM
+stays live, query work forwards once, and the public route retains its separate
+destination. Other SignalInput/preparation policies and graph construction stay
+outside this unit.
+
+Ordinary baseline38 freezes actual public/warm boundaries and a real registered
+WAV Source family; all 38 payloads stay fixed. Four paired bodies remain exact
+across builds2/4 and both copies, SHA
+ea26580e6b4c027e726672dce54669353120e0314fe18e43446fcfe3e73a3bd8.
+Successful capacities and PCM remain literal. Two actual old-quota requests
+now refuse earlier; six result snapshots retain those failures. Natural Source
+input/output supply six successful reads; FitBeat preserves its setup rejection.
+
+Actual pointer/cap custody, live inventory, once-forwarded work, cancellation,
+foreign issuer refusal and held output pass. The full warm request minimum is
+1,065 resident frames, with actual refusal at 1,064. Fixed quota 1,068 proves held
+output refusal/drop/recovery without ledger edits. This is no callback peak claim.
+
+All 21 Audio targets are covered per copy: 14 fresh final4 executions and seven
+byte-identical build2 binaries. Main 1,147/Scope 1,141 pass; libraries 566/560,
+31 ignored each. Main's seven inherited Split tests alone remain filtered.
+Strict/fmt/doc/hygiene and independent acceptance pass. Scope's 2,640 inputs are
+authority; other initial Main 2,951/Scope 2,623 remain exact. Main WIP is excluded.
+
+Next inventory and admit the remaining actual preparation/preflight construction
+paths, freezing their ordinary behavior before changes. Other policy queries,
+graph/PCM/dependency construction and whole preparation remain owed. General
+sound-bearing Split stays disabled; no DP/Gate status changes.
+
+## Preceding Tape policy factory checkpoint
 
 The [Tape factory checkpoint](../qualification/tape-policy-factory-2026-10-31.md)
 admits actual stored-grid traversal, child normalization, combined inventory and
@@ -24,12 +57,10 @@ affected tests each. Strict checks and independent acceptance pass; failed lint4
 and compile5 evidence stays retained. The isolated 2,632 named inputs are authority;
 Main's 2,946 and Scope's 2,618 other initial inputs remain exact. Main WIP is excluded.
 
-Next integrate native PreserveTape source policy using the [reviewed contract](../design/projected-policy-source-admission.md).
-Keep actual query inventory/guards alive through preflight, control, range checks,
-PCM zeroing and custody prepare/commit; retain PreparedBlock and avoid a second
-work debit. Keep other SignalInput callers and the legacy unforwarded lane scoped.
-Native source ownership, graph construction and whole preparation remain owed.
-General sound-bearing Split stays disabled; no requirement or Gate closes.
+The subsequent native checkpoint above qualifies the selected source-policy
+lifetime contract. Other preparation policies, graph construction and whole
+preparation remain owed. General sound-bearing Split stays disabled; no
+requirement or Gate acceptance changes.
 
 ## Preceding provider-aware Signal checkpoint
 

@@ -60,14 +60,16 @@ fn warm_projected_copy_exact_payload_limit_is_owned_before_routed_map_and_outliv
     point_suppression::ops::trace::reset();
     let _trace_guard = TraceGuard;
 
-    let block = renderer
-        .read_projected_signal_controlled(
-            &projection,
-            &mut provider,
-            SignalSample(512),
-            256,
-            control,
-        )
+    let block =
+        super::super::projected_tape_source_request::with_legacy_projected_tape_source(|| {
+            renderer.read_projected_signal_controlled(
+                &projection,
+                &mut provider,
+                SignalSample(512),
+                256,
+                control,
+            )
+        })
         .unwrap();
     let receipt = super::super::projected_mask_before_trace::take();
     assert_eq!(receipt.dropped, 0);
@@ -133,13 +135,16 @@ fn warm_projected_copy_one_frame_below_payload_limit_refuses_after_policy_and_cl
     point_suppression::ops::trace::reset();
     let _trace_guard = TraceGuard;
 
-    let result = renderer.read_projected_signal_controlled(
-        &projection,
-        &mut provider,
-        SignalSample(512),
-        256,
-        control,
-    );
+    let result =
+        super::super::projected_tape_source_request::with_legacy_projected_tape_source(|| {
+            renderer.read_projected_signal_controlled(
+                &projection,
+                &mut provider,
+                SignalSample(512),
+                256,
+                control,
+            )
+        });
     assert!(matches!(
         result,
         Err(StageAudioError::Limit("resident PCM or stage cache"))
@@ -188,8 +193,16 @@ fn warm_empty_projected_mask_needs_no_destination_above_existing_prepared_reside
     point_suppression::ops::trace::reset();
     let _trace_guard = TraceGuard;
 
-    let block = renderer
-        .read_projected_signal_controlled(&projection, &mut provider, SignalSample(0), 256, control)
+    let block =
+        super::super::projected_tape_source_request::with_legacy_projected_tape_source(|| {
+            renderer.read_projected_signal_controlled(
+                &projection,
+                &mut provider,
+                SignalSample(0),
+                256,
+                control,
+            )
+        })
         .unwrap();
     let receipt = super::super::projected_mask_before_trace::take();
     assert_eq!(receipt.dropped, 0);

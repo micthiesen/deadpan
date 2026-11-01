@@ -976,6 +976,7 @@ dependencies = [
  "deadpan-dsp",
  "deadpan-media",
  "deadpan-plan",
+ "deadpan-store",
  "rustix 1.1.5",
  "serde",
  "serde_json",

@@ -257,10 +257,28 @@ impl StageAudio {
                 continue;
             }
             let policy = input.policy(cursor..end, control.query_limits()?)?;
+            #[cfg(test)]
+            native_tape_source_before_trace::record_preflight(
+                input,
+                control,
+                cursor,
+                end,
+                &policy,
+                "projection_input_policy_constructed",
+            );
             control.spend_plan_work(policy.work)?;
             for content in &policy.contents {
                 control.preflight_content(content, &self.plan)?;
             }
+            #[cfg(test)]
+            native_tape_source_before_trace::record_preflight(
+                input,
+                control,
+                cursor,
+                end,
+                &policy,
+                "projection_input_inventory_accepted",
+            );
             let query = input.query(cursor..end, control.query_limits()?)?;
             control.spend_plan_work(query.work)?;
             relative_depth =
@@ -271,10 +289,28 @@ impl StageAudio {
         while cursor < output_end {
             let end = SignalSample((cursor.0 + i64::from(MAX_OUTPUT_FRAMES)).min(output_end.0));
             let policy = output.policy(cursor..end, control.query_limits()?)?;
+            #[cfg(test)]
+            native_tape_source_before_trace::record_preflight(
+                output,
+                control,
+                cursor,
+                end,
+                &policy,
+                "projection_output_policy_constructed",
+            );
             control.spend_plan_work(policy.work)?;
             for content in &policy.contents {
                 control.preflight_content(content, &self.plan)?;
             }
+            #[cfg(test)]
+            native_tape_source_before_trace::record_preflight(
+                output,
+                control,
+                cursor,
+                end,
+                &policy,
+                "projection_output_inventory_accepted",
+            );
             cursor = end;
         }
         Ok(relative_depth)

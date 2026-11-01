@@ -774,8 +774,25 @@ Real Structural/intrinsic callback sweeps, exact peak/one-below limits, live
 cancellation, held output, late failure, positive and empty custody pass.
 Strict checks and independent acceptance pass; all 37 payloads stay fixed.
 The isolated 2,632 named inputs are shipping authority; inherited Main WIP is
-excluded. Native source integration, input graph construction, PCM/dependencies
-and whole preparation remain open. No coverage score, requirement or Gate changes.
+excluded. The following native checkpoint qualifies its selected source-policy
+handoff. Input graph construction, PCM/dependencies and whole preparation remain
+open. No coverage score, requirement or Gate changes.
+
+The [native PreserveTape source checkpoint](qualification/native-tape-source-admission-2026-11-01.md)
+keeps the actual admitted query/inventory alive through content/control/range/PCM
+use and exact final Signal Vec custody, with PreparedBlock retained and no second
+query debit or G source-copy work. Baseline38 preserves actual ordinary behavior
+and real registered WAV Source input/output reads; all 38 payloads stay fixed.
+Four paired bodies match exactly, including successful capacities. Two actual
+requests retain earlier resident refusals. Native pointer/lease custody,
+cancellation, issuer rejection, held output and measured 1,065/1,064 boundaries
+pass; one unchanged 1,068 quota proves held refusal/drop/recovery.
+Final4 covers all 21 Audio targets per copy using 14 fresh and 7 exact retained
+executables: Main 1,147/Scope 1,141 pass, 31 ignored each, only Main's 7 inherited
+Split tests filtered. Strict checks and independent acceptance pass. Scope 2,640
+named inputs are shipping authority; Main WIP stays excluded. Other preparation
+policies, graph/PCM/dependency construction and whole preparation remain open.
+No coverage score, requirement or Gate status changes.
 
 The [typed-mask foundation](qualification/internal-mask-foundation-2026-10-31.md)
 keeps the public Reference owner active while sealing its generic storage to

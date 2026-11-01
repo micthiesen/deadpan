@@ -33,6 +33,10 @@ use crate::{
     check_cancel,
 };
 
+#[cfg(test)]
+#[path = "native_tape_source_before_trace.rs"]
+mod native_tape_source_before_trace;
+
 #[path = "signal_input.rs"]
 mod signal_input;
 use signal_input::SignalInput;
@@ -3139,12 +3143,67 @@ fn suppress_signal(
             .ok_or(TimeError::Overflow)?,
     );
     let policy = signal.policy(start..end, control.query_limits()?)?;
+    #[cfg(test)]
+    native_tape_source_before_trace::record(
+        signal,
+        control,
+        start,
+        samples,
+        &policy,
+        "constructed_before_manual_debit",
+        0,
+    );
     control.spend_plan_work(policy.work)?;
+    #[cfg(test)]
+    native_tape_source_before_trace::record(
+        signal,
+        control,
+        start,
+        samples,
+        &policy,
+        "manual_debit_accepted",
+        0,
+    );
+    #[cfg(test)]
+    let mut completed_contents = 0;
     for content in &policy.contents {
         control.preflight_content(content, plan)?;
+        #[cfg(test)]
+        {
+            completed_contents += 1;
+            native_tape_source_before_trace::record(
+                signal,
+                control,
+                start,
+                samples,
+                &policy,
+                "content_preflight_accepted",
+                completed_contents,
+            );
+        }
     }
     control.check()?;
+    #[cfg(test)]
+    native_tape_source_before_trace::record(
+        signal,
+        control,
+        start,
+        samples,
+        &policy,
+        "control_check_accepted",
+        policy.contents.len(),
+    );
     apply_suppression(start, samples, &policy.suppressed, |sample| sample.0)?;
+    #[cfg(test)]
+    native_tape_source_before_trace::record(
+        signal,
+        control,
+        start,
+        samples,
+        &policy,
+        "ranges_validated_and_zeroed",
+        policy.contents.len(),
+    );
     Ok(merged_suppression(policy.suppressed))
 }
 

@@ -1,0 +1,203 @@
+{
+  "schema": "native-tape-source-archive-reference-verification-v1",
+  "verdict": "GO",
+  "inventory": {
+    "bytes": 255486,
+    "sha256": "0a726c2a5bcecea9f946a3c5f0d3527242b54ececdba0604613b34638f0f3974"
+  },
+  "archive_relative_root": "tools/media-qualification/evidence/2026-11-01-native-tape-source-admission",
+  "both_archive_copies_exact": true,
+  "named_records": 621,
+  "unique_gzip_objects": 447,
+  "named_expanded_bytes": 443978361,
+  "unique_stored_bytes": 55968485,
+  "stored_and_expanded_hashes_verified": true,
+  "dedup_references_consistent": true,
+  "payload_file_set_exact": true,
+  "acceptance": {
+    "bytes": 63154,
+    "sha256": "ae5e0c27c741cef1560a06fee17d053976a5af228bdc5f6dcc5bd76031321ac4"
+  },
+  "authoritative_resolved_receipt_capture_links": [
+    "native-tape-active-build4-main.json",
+    "native-tape-active-build4-scoped.json",
+    "native-tape-check4-main.json",
+    "native-tape-clippy4-scoped.json",
+    "native-tape-doc4-main.json",
+    "native-tape-doc4-scoped.json",
+    "native-tape-fmt4-main.json",
+    "native-tape-fmt4-scoped.json",
+    "native-tape-hygiene4-main.json",
+    "native-tape-hygiene4-scoped.json",
+    "native-tape-matrix2-main-limiter.json",
+    "native-tape-matrix2-main-loudness.json",
+    "native-tape-matrix2-main-reference-policy.json",
+    "native-tape-matrix2-main-resample.json",
+    "native-tape-matrix2-main-session.json",
+    "native-tape-matrix2-main-signal-transfer.json",
+    "native-tape-matrix2-main-true-peak.json",
+    "native-tape-matrix2-scoped-limiter.json",
+    "native-tape-matrix2-scoped-loudness.json",
+    "native-tape-matrix2-scoped-reference-policy.json",
+    "native-tape-matrix2-scoped-resample.json",
+    "native-tape-matrix2-scoped-session.json",
+    "native-tape-matrix2-scoped-signal-transfer.json",
+    "native-tape-matrix2-scoped-true-peak.json",
+    "native-tape-matrix4-main-audio-context.json",
+    "native-tape-matrix4-main-audio-definition.json",
+    "native-tape-matrix4-main-audio-domain.json",
+    "native-tape-matrix4-main-composite-insert.json",
+    "native-tape-matrix4-main-deadpan-audio.json",
+    "native-tape-matrix4-main-dormant-source.json",
+    "native-tape-matrix4-main-gap-bindings.json",
+    "native-tape-matrix4-main-gap-definition.json",
+    "native-tape-matrix4-main-reanchors.json",
+    "native-tape-matrix4-main-root-sound-trim.json",
+    "native-tape-matrix4-main-sequence.json",
+    "native-tape-matrix4-main-sound-events.json",
+    "native-tape-matrix4-main-stages.json",
+    "native-tape-matrix4-main-timing-representation.json",
+    "native-tape-matrix4-scoped-audio-context.json",
+    "native-tape-matrix4-scoped-audio-definition.json",
+    "native-tape-matrix4-scoped-audio-domain.json",
+    "native-tape-matrix4-scoped-composite-insert.json",
+    "native-tape-matrix4-scoped-deadpan-audio.json",
+    "native-tape-matrix4-scoped-dormant-source.json",
+    "native-tape-matrix4-scoped-gap-bindings.json",
+    "native-tape-matrix4-scoped-gap-definition.json",
+    "native-tape-matrix4-scoped-reanchors.json",
+    "native-tape-matrix4-scoped-root-sound-trim.json",
+    "native-tape-matrix4-scoped-sequence.json",
+    "native-tape-matrix4-scoped-sound-events.json",
+    "native-tape-matrix4-scoped-stages.json",
+    "native-tape-matrix4-scoped-timing-representation.json",
+    "native-tape-pairs4-main-body.json",
+    "native-tape-pairs4-main-canonical.json",
+    "native-tape-pairs4-main-proof.json",
+    "native-tape-pairs4-main-source-manifest.json",
+    "native-tape-pairs4-main.json",
+    "native-tape-pairs4-scoped-body.json",
+    "native-tape-pairs4-scoped-canonical.json",
+    "native-tape-pairs4-scoped-proof.json",
+    "native-tape-pairs4-scoped-source-manifest.json",
+    "native-tape-pairs4-scoped.json",
+    "native-tape-runtime4-main-body.json",
+    "native-tape-runtime4-main-canonical.json",
+    "native-tape-runtime4-main-proof.json",
+    "native-tape-runtime4-main-source-manifest.json",
+    "native-tape-runtime4-main.json",
+    "native-tape-runtime4-scoped-body.json",
+    "native-tape-runtime4-scoped-canonical.json",
+    "native-tape-runtime4-scoped-proof.json",
+    "native-tape-runtime4-scoped-source-manifest.json",
+    "native-tape-runtime4-scoped.json"
+  ],
+  "shipping_scope_sources": [
+    "shipping-source/Cargo.lock",
+    "shipping-source/crates/deadpan-audio/Cargo.toml",
+    "shipping-source/crates/deadpan-audio/src/native_tape_source_after_tests.rs",
+    "shipping-source/crates/deadpan-audio/src/native_tape_source_before_tests.rs",
+    "shipping-source/crates/deadpan-audio/src/native_tape_source_before_trace.rs",
+    "shipping-source/crates/deadpan-audio/src/native_tape_source_pairs.rs",
+    "shipping-source/crates/deadpan-audio/src/native_tape_source_qualified_before.rs",
+    "shipping-source/crates/deadpan-audio/src/projected_tape_source_request.rs",
+    "shipping-source/crates/deadpan-audio/src/projected_tape_source_trace.rs",
+    "shipping-source/crates/deadpan-audio/src/routed.rs",
+    "shipping-source/crates/deadpan-audio/src/routed_projected_mask_lifetime_tests.rs",
+    "shipping-source/crates/deadpan-audio/src/routed_projected_mask_tests.rs",
+    "shipping-source/crates/deadpan-audio/src/signal_policy_input.rs",
+    "shipping-source/crates/deadpan-audio/src/sound_context_admission/policy_mask_handoff.rs",
+    "shipping-source/crates/deadpan-audio/src/stage_projection.rs",
+    "shipping-source/crates/deadpan-audio/src/stages.rs",
+    "shipping-source/crates/deadpan-audio/tests/fixtures/native-tape-source-baseline-v1/corpus.json"
+  ],
+  "shipping17_match_accepted_and_current_scope": true,
+  "main_snapshot_paths_excluded": true,
+  "immutable_payloads_both_roots": 38,
+  "unowned_initial_preserved": {
+    "main": 2951,
+    "scoped": 2623
+  },
+  "documents": {
+    "docs/REQUIREMENTS.md": {
+      "before_archived": "documentation-before/docs/REQUIREMENTS.md",
+      "after": {
+        "bytes": 539777,
+        "sha256": "e047ae2e6af41f340368d5cbaca56c021a85ba1e9311a2ff0a24f45462ada996"
+      }
+    },
+    "docs/spec/AGENT_HANDOFF.md": {
+      "before_archived": "documentation-before/docs/spec/AGENT_HANDOFF.md",
+      "after": {
+        "bytes": 502288,
+        "sha256": "f52f6e6bce052b386062cf5c837470f3fe3dbcf073a811e7bdaff1e40aba99d8"
+      }
+    },
+    "docs/design/projected-policy-source-admission.md": {
+      "before_archived": "documentation-before/docs/design/projected-policy-source-admission.md",
+      "after": {
+        "bytes": 16507,
+        "sha256": "0f6ae3d050ebcf368ca158f7b80e8702dd75f4c645518733581f1a35ceab1af1"
+      }
+    },
+    "docs/qualification/native-tape-source-admission-2026-11-01.md": {
+      "before_archived": null,
+      "after": {
+        "bytes": 5595,
+        "sha256": "ff0c724924e945cfd5cb53bfeeeb557c1bebb2a0d8b8626fd81f9326d7c21f98"
+      }
+    }
+  },
+  "new_relative_links": [
+    {
+      "source": "docs/REQUIREMENTS.md",
+      "target": "qualification/native-tape-source-admission-2026-11-01.md",
+      "resolved": "docs/qualification/native-tape-source-admission-2026-11-01.md"
+    },
+    {
+      "source": "docs/spec/AGENT_HANDOFF.md",
+      "target": "../qualification/native-tape-source-admission-2026-11-01.md",
+      "resolved": "docs/qualification/native-tape-source-admission-2026-11-01.md"
+    },
+    {
+      "source": "docs/design/projected-policy-source-admission.md",
+      "target": "../qualification/provider-policy-child-kernel-2026-10-31.md",
+      "resolved": "docs/qualification/provider-policy-child-kernel-2026-10-31.md"
+    },
+    {
+      "source": "docs/design/projected-policy-source-admission.md",
+      "target": "../qualification/tape-policy-factory-2026-10-31.md",
+      "resolved": "docs/qualification/tape-policy-factory-2026-10-31.md"
+    },
+    {
+      "source": "docs/design/projected-policy-source-admission.md",
+      "target": "../qualification/projected-policy-destination-2026-10-31.md",
+      "resolved": "docs/qualification/projected-policy-destination-2026-10-31.md"
+    },
+    {
+      "source": "docs/design/projected-policy-source-admission.md",
+      "target": "../qualification/native-tape-source-admission-2026-11-01.md",
+      "resolved": "docs/qualification/native-tape-source-admission-2026-11-01.md"
+    },
+    {
+      "source": "docs/qualification/native-tape-source-admission-2026-11-01.md",
+      "target": "../../crates/deadpan-audio/tests/fixtures/native-tape-source-baseline-v1/corpus.json",
+      "resolved": "crates/deadpan-audio/tests/fixtures/native-tape-source-baseline-v1/corpus.json"
+    },
+    {
+      "source": "docs/qualification/native-tape-source-admission-2026-11-01.md",
+      "target": "../../tools/media-qualification/evidence/2026-11-01-native-tape-source-admission/inventory.json",
+      "resolved": "tools/media-qualification/evidence/2026-11-01-native-tape-source-admission/inventory.json"
+    }
+  ],
+  "supported_claims": [
+    "Native selected Tape query/inventory/final Vec custody only",
+    "actual14 fresh+7 physically exact retained targets per root",
+    "26 unchanged successful/23 unchanged error descriptors; two new request resident refusals represented by6snapshots",
+    "11Query/39Use/11Prepare-entry events, actual pointer/lease/custody and typed charges",
+    "1065measured success/1064refusal,1068held output block/drop/recover",
+    "38 fixed payloads, qualified natural Source6successful reads and literal FitBeat rejection",
+    "No whole-preparation/Gate claim; other ordinary preparation paths remain open"
+  ],
+  "reference_scope": "Inventory/store/acceptance-authoritative receipt/stream/capture/shipping-source and newly added relative Markdown links resolve. Historical absolute /tmp executable/source paths inside actual receipts remain provenance; binaries are not embedded and those paths are not presented as portable hyperlinks. Candidate manifests remain nonexecution source evidence."
+}

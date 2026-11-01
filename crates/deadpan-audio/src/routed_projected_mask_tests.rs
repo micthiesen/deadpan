@@ -358,7 +358,9 @@ fn capture_cases_with_mode(owned_mode: bool) -> Value {
 }
 
 pub(in crate::stages) fn capture_active_projected_cases() -> Value {
-    capture_cases_with_mode(true)
+    super::projected_tape_source_request::with_legacy_projected_tape_source(|| {
+        capture_cases_with_mode(true)
+    })
 }
 
 #[test]
@@ -462,3 +464,6 @@ fn capture_routed_projected_mask_before_g() {
 
 #[path = "routed_projected_mask_lifetime_tests.rs"]
 mod copy_lifetime;
+
+#[path = "native_tape_source_before_tests.rs"]
+mod native_tape_source_before;

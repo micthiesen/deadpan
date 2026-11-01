@@ -1,4 +1,4 @@
-//! Trusted Point-policy handoff implementation for the exact final Vec lease.
+//! Trusted Signal-policy handoff implementation for the exact final Vec lease.
 use super::*;
 use crate::stages::point_suppression::policy_handoff::PreparedPolicyMask as NativePreparedMask;
 use deadpan_plan::{AudioSignalPolicyMaskHandoff, SignalPolicyMaskRef};
@@ -56,6 +56,13 @@ impl<'work> AudioSignalPolicyMaskHandoff for Admission<'_, 'work> {
         &mut self,
         source: SignalPolicyMaskRef<'_, Self::Issuer, Self::Lease>,
     ) -> Result<Self::PreparedMask, Self::Error> {
+        #[cfg(test)]
+        crate::stages::routed::projected_tape_source_trace::prepare_mask(
+            self.controller,
+            self.control,
+            source.capacity(),
+            source.lease().map(Lease::frames),
+        );
         self.control.check()?;
         let current_issuer = issuer(self.control);
         if source.issuer() != current_issuer {

@@ -7,6 +7,12 @@ use deadpan_plan::{AudioRoutedRoot, AudioRoutedSignal, AudioRoutedSignalInput, A
 #[cfg(test)]
 #[path = "projected_mask_before_trace.rs"]
 mod projected_mask_before_trace;
+#[cfg(test)]
+#[path = "projected_tape_source_request.rs"]
+pub(in crate::stages) mod projected_tape_source_request;
+#[cfg(test)]
+#[path = "projected_tape_source_trace.rs"]
+pub(in crate::stages) mod projected_tape_source_trace;
 #[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
 #[path = "routed_projected_mask_tests.rs"]
 pub(super) mod routed_projected_mask_tests;
@@ -495,30 +501,106 @@ impl StageAudio {
             frames,
             control.cancelled,
         )?;
-        let suppressed = suppress_signal(
-            SignalInput::PreserveTape(projection.output_policy()),
-            start,
-            &mut samples,
-            &self.plan,
-            control,
-        )?;
         #[cfg(test)]
-        projected_mask_before_trace::record(self, control, start, frames, &prepared, &suppressed);
-        let suppressed = SignalSuppressionMask::plain(suppressed);
-        #[cfg(test)]
-        let suppressed = if super::projected_signal_mask_request::legacy() {
+        let legacy_source = projected_tape_source_request::legacy();
+        #[cfg(not(test))]
+        let legacy_source = false;
+        let suppressed = if legacy_source {
+            let suppressed = suppress_signal(
+                SignalInput::PreserveTape(projection.output_policy()),
+                start,
+                &mut samples,
+                &self.plan,
+                control,
+            )?;
+            #[cfg(test)]
+            projected_mask_before_trace::record(
+                self,
+                control,
+                start,
+                frames,
+                &prepared,
+                &suppressed,
+            );
+            let suppressed = SignalSuppressionMask::plain(suppressed);
+            #[cfg(test)]
+            let suppressed = if super::projected_signal_mask_request::legacy() {
+                suppressed
+            } else {
+                suppressed.into_admitted(&mut self.masks(control))?
+            };
+            #[cfg(not(test))]
+            let suppressed = suppressed.into_admitted(&mut self.masks(control))?;
             suppressed
         } else {
-            suppressed.into_admitted(&mut self.masks(control))?
+            self.suppress_projected_signal_admitted(projection, start, &mut samples, control)?
         };
-        #[cfg(not(test))]
-        let suppressed = suppressed.into_admitted(&mut self.masks(control))?;
         Ok(SignalBlock {
             samples,
             dependencies: prepared.dependencies.clone(),
             suppressed,
             relative_depth: 1 + prepared.relative_depth,
         })
+    }
+
+    fn suppress_projected_signal_admitted<'work>(
+        &mut self,
+        projection: &AudioStageProjection<'_>,
+        start: SignalSample,
+        samples: &mut [[f32; 2]],
+        control: WorkControl<'work>,
+    ) -> Result<SignalSuppressionMask, StageAudioError> {
+        let end = SignalSample(
+            start
+                .0
+                .checked_add(i64::try_from(samples.len()).map_err(|_| TimeError::Overflow)?)
+                .ok_or(TimeError::Overflow)?,
+        );
+        let limits = control.query_limits()?;
+        let policy = {
+            let mut admission = sound_context_admission::Admission::new(self, control);
+            projection.output_policy().policy_after_preserve_admitted(
+                start..end,
+                limits,
+                &mut admission,
+            )?
+        };
+        #[cfg(test)]
+        projected_tape_source_trace::query(self, control, &policy);
+        let policy = SignalPolicyInput::Admitted(policy);
+        if !policy.was_forwarded() {
+            control.spend_plan_work(policy.view().work)?;
+        }
+        for (completed_contents, content) in policy.view().contents.iter().enumerate() {
+            #[cfg(not(test))]
+            let _ = completed_contents;
+            control.preflight_content(content, &self.plan)?;
+            #[cfg(test)]
+            {
+                projected_tape_source_trace::observe(
+                    self,
+                    control,
+                    projected_tape_source_trace::Phase::ContentPreflight {
+                        completed: completed_contents + 1,
+                    },
+                    policy.view(),
+                );
+            }
+        }
+        control.check()?;
+        #[cfg(test)]
+        projected_tape_source_trace::observe(
+            self,
+            control,
+            projected_tape_source_trace::Phase::ControlChecked,
+            policy.view(),
+        );
+        apply_suppression(start, samples, policy.view().suppressed, |sample| sample.0)?;
+        #[cfg(test)]
+        projected_tape_source_trace::before_handoff(self, control, policy.view());
+        #[cfg(test)]
+        let _handoff_scope = projected_tape_source_trace::handoff_scope();
+        policy.into_suppression(self, control)
     }
 }
 

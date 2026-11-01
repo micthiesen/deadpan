@@ -1,4 +1,4 @@
-//! A borrowed policy view keeps the exact final Point lease alive through PCM use.
+//! A borrowed policy view keeps the exact final Signal lease alive through PCM use.
 use super::*;
 use deadpan_plan::{AdmittedSignalPolicyQuery, SignalPolicyView};
 
