@@ -4,17 +4,34 @@ Original decision: qualify the private explicit-grid Signal-policy child kernel 
 
 The [provider child checkpoint](../qualification/provider-policy-child-kernel-2026-10-31.md) qualifies the private child for checked public operands, including reachable repeated and definition metadata. The separate [Tape factory checkpoint](../qualification/tape-policy-factory-2026-10-31.md) now qualifies stored-grid traversal, child normalization, combined inventory and the independent exact final Signal Vec, with sealed Tape provenance through the existing custody protocol. Scope is source authority. The original decision and pins below remain historical; the Tape contract records its Plan boundary and the now-qualified selected native lifetime contract. The preceding [destination checkpoint](../qualification/projected-policy-destination-2026-10-31.md) funds the native destination copy. The [native source checkpoint](../qualification/native-tape-source-admission-2026-11-01.md) now qualifies actual query/inventory lifetime and exact final Signal Vec transfer for routed PreserveTape. Other preparation policies, graph/PCM/dependency construction, whole preparation and product Gates remain outside that unit.
 
+## Native intrinsic-preflight admission
+
+The [native preflight checkpoint](../qualification/intrinsic-preflight-policy-admission-2026-11-01.md)
+freezes actual ordinary40 behavior before selecting the admitted Signal/Tape/
+PreserveTape factories. A private closed query owner ends the controller's
+mutable admission borrow before content/graph recursion and retains its actual
+inventory/final allocation guards through those uses. Output policy remains
+independent. Returned forwarded work is not charged twice. This seam discards
+the owner rather than handing a final mask to native output.
+
+Actual native callbacks, host-work brackets, parent/child overlap, refusal
+prefixes, cleanup, real cancellation and unchanged-cap held recovery are
+qualified separately from logical equality. Private active slice capacities,
+failed local work splits, allocation origin and whole physical memory remain
+unexposed. Existing Mix policy and ordinary graph construction/debit remain
+separate. Other preparation/output policy paths, PCM/dependency storage and
+whole preparation remain owed; no product Gate follows from this unit.
+
 ## Standalone Signal prerequisite for intrinsic preflight
 
 The [Signal factory checkpoint](../qualification/signal-policy-factory-2026-11-01.md)
 qualifies public PointCeil policy and after-Preserve modes, whole-public empty
 work, provider error ordering, once-forwarded work, final Vec custody and literal
 resource/capacity differences. Point/Tape retain their sealed origins.
-Its 39 frozen payloads and Plan protocol results do not establish native
-preflight admission. Remaining stage_projection policies need actual ordinary
-capture and native lifetime/account evidence; input policy must remain live
-through subsequent graph query/recursive preflight in existing order.
-Mix remains separate.
+Its 39 frozen payloads and Plan protocol results supply the Plan prerequisite.
+The subsequent native checkpoint above supplies ordinary capture and native
+lifetime/account evidence for the selected stage_projection policy owners.
+Other preparation/output policies, graph construction and Mix remain separate.
 
 ## Historical ownership gap before native source admission
 

@@ -263,11 +263,23 @@ fn paired_body() -> Value {
 }
 #[test]
 fn admitted_tape_native_pairs_preserve_successful_payloads_and_literal_failures() {
+    crate::stages::intrinsic_preflight_policy_request::with_legacy_intrinsic_preflight_policy(
+        admitted_tape_native_pairs_preserve_successful_payloads_and_literal_failures_historical,
+    );
+}
+
+fn admitted_tape_native_pairs_preserve_successful_payloads_and_literal_failures_historical() {
     let _ = paired_body();
 }
 #[test]
 #[ignore = "manual fresh complete J native paired capture"]
 fn capture_native_tape_source_pairs_v1() {
+    crate::stages::intrinsic_preflight_policy_request::with_legacy_intrinsic_preflight_policy(
+        capture_native_tape_source_pairs_v1_historical,
+    );
+}
+
+fn capture_native_tape_source_pairs_v1_historical() {
     let path = std::env::var_os("DEADPAN_NATIVE_TAPE_SOURCE_PAIRS_OUTPUT")
         .expect("fresh absolute /tmp output");
     let path = Path::new(&path);

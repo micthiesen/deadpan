@@ -312,3 +312,6 @@ pub(super) fn capture_family() -> Value {
         }
     }
 }
+
+#[path = "intrinsic_preflight_before_tests.rs"]
+mod intrinsic_preflight_before;

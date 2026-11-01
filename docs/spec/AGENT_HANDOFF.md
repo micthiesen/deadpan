@@ -2,12 +2,45 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: Signal policy factory admitted, product goal active
+## Current state: intrinsic preflight policies admitted, product goal active
+
+The [native intrinsic-preflight checkpoint](../qualification/intrinsic-preflight-policy-admission-2026-11-01.md)
+admits actual Signal/Tape/PreserveTape policies through the existing native
+request ledger. Input owners remain live through content and recursive ordinary
+graph preflight; output owners remain through content checks. Query work forwards
+once. This is discard-only, without another final-mask handoff.
+
+Ordinary40 froze actual registered-WAV families before integration; all 40
+payloads remain exact. Both complete final8 captures match four earlier build7
+bodies, 167,157,951 bytes/SHA
+988c44a96821f86d4bb25e84b0bea197e30028b857e505c4aeb8dd0438838712.
+All 20 returned outputs and six failures match literally. Native work/host
+equations, actual parent/child ownership, 53 callback refusals and real
+cancellation/priority pass. Positive optional-cache callback work stays unclaimed.
+
+The initial held trial at resident cap 2,048 is unqualified and retained.
+Matched-state minima are 2,051 dropped/2,058 held. Fixed cap 2,057 proves actual
+held refusal/drop/recovery, account 10 to 3, same controller/cap and fresh work per
+call. Admitted-ledger peaks 384 paired/297 resident-request are separate from
+these full public resident ceilings and from physical memory.
+
+All 21 Audio targets/copy are covered: Main 1,152/Scope 1,146 pass, libraries 571/565,
+34 ignored each, only Main's seven inherited Split tests filtered. Strict8,
+fmt/doc/hygiene and independent acceptance pass. Failed strict7, build4,
+before-reporting corrections and controller initialization remain recorded.
+Scope's 2,653 inputs own shipping; inherited Main WIP stays excluded.
+
+Next freeze and admit the other actual preparation/output policy paths, then
+graph/PCM/dependency construction as separate units. Mix own policy and whole
+preparation remain outside this claim. General sound-bearing Split stays
+disabled in shipping; no DP/Gate status changes.
+
+## Preceding standalone Signal factory checkpoint
 
 The [Signal checkpoint](../qualification/signal-policy-factory-2026-11-01.md)
 adds both public PointCeil policy modes using the provider-aware kernel and exact
 final Signal Vec custody. Unmetered calls remain literal; Point/Tape stay intact.
-Native intrinsic preflight is the next integration unit.
+The subsequent native checkpoint above qualifies its bounded preflight integration.
 
 Baseline39 froze 16 Signals/207 requests before integration; all 39 payloads stay
 fixed. Both complete final4 bodies match, 14,621,432 bytes/SHA
@@ -25,11 +58,10 @@ zero filters. Failed3 serializer panics remain recorded. Strict/fmt/doc/hygiene
 and independent acceptance pass. Scope's 2,646 inputs own shipping; other initial
 Main2,964/Scope2,636 remain exact. Main WIP stays excluded.
 
-Next freeze ordinary intrinsic preparation/preflight policy behavior, then admit
-Signal/Tape/PreserveTape queries without another work debit. Keep policy inventory
-live through content and recursive graph preflight in existing order.
-Mix, graph/PCM/dependency construction and whole preparation stay separate.
-General sound-bearing Split remains disabled; no DP/Gate status changes.
+The subsequent native checkpoint above admits these selected intrinsic policies.
+Other preparation/output policies, graph/PCM/dependency construction and whole
+preparation remain owed. Mix own policy stays separate. General sound-bearing
+Split remains disabled in shipping; no DP/Gate changes.
 
 ## Preceding native Tape source checkpoint
 

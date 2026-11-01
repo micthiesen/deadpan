@@ -138,7 +138,7 @@ fn direct_signal_and_current_occurrence_forwarders_match_real_masks() {
 fn routed_exact_budget_partial_work_and_cancel_do_not_become_permissions() {
     let plan = Arc::new(qualified_plan(false));
     let domain = domain(&plan, false);
-    let stage = StageAudio::new(Arc::clone(&plan));
+    let mut stage = StageAudio::new(Arc::clone(&plan));
     let cancelled = AtomicBool::new(false);
     let budget = PreparationBudget::new(TIMEOUT, &cancelled).unwrap();
     let prepared = stage
@@ -216,7 +216,7 @@ fn projected_signed_root_is_unsupported_before_any_policy_observation() {
     )
     .unwrap();
     assert!(routed.samples().start.0 < 0);
-    let stage = StageAudio::new(Arc::clone(&plan));
+    let mut stage = StageAudio::new(Arc::clone(&plan));
     let cancelled = AtomicBool::new(false);
     let budget = PreparationBudget::new(TIMEOUT, &cancelled).unwrap();
     let prepared = stage

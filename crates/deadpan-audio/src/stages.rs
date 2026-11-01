@@ -34,6 +34,18 @@ use crate::{
 };
 
 #[cfg(test)]
+#[path = "intrinsic_preflight_policy_request.rs"]
+mod intrinsic_preflight_policy_request;
+
+#[cfg(test)]
+#[path = "intrinsic_preflight_before_trace.rs"]
+mod intrinsic_preflight_before_trace;
+
+#[cfg(test)]
+#[path = "intrinsic_preflight_policy_native_trace.rs"]
+mod intrinsic_preflight_policy_native_trace;
+
+#[cfg(test)]
 #[path = "native_tape_source_before_trace.rs"]
 mod native_tape_source_before_trace;
 
@@ -1858,7 +1870,7 @@ impl StageAudio {
     }
 
     fn preflight_root_queries(
-        &self,
+        &mut self,
         queries: &RootReadQueries<'_>,
         start: AudioSample,
         frames: u32,
@@ -1869,7 +1881,7 @@ impl StageAudio {
     }
 
     fn preflight_root_queries_borrowed(
-        &self,
+        &mut self,
         queries: RootReadQueriesRef<'_, '_>,
         start: AudioSample,
         frames: u32,

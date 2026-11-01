@@ -295,6 +295,12 @@ fn warm(start: i64, frames: u32, legacy: bool, ceiling: Option<u64>, stop: Stop)
 
 #[test]
 fn native_j_positive_and_empty_keep_exact_source_vec_and_forward_work_once() {
+    crate::stages::intrinsic_preflight_policy_request::with_legacy_intrinsic_preflight_policy(
+        native_j_positive_and_empty_keep_exact_source_vec_and_forward_work_once_historical,
+    );
+}
+
+fn native_j_positive_and_empty_keep_exact_source_vec_and_forward_work_once_historical() {
     for (start, frames) in [(512, 256), (0, 256), (640, 64)] {
         let old = warm(start, frames, true, None, Stop::None);
         let active = warm(start, frames, false, None, Stop::None);
@@ -345,6 +351,12 @@ fn native_j_positive_and_empty_keep_exact_source_vec_and_forward_work_once() {
 
 #[test]
 fn native_j_real_query_and_pre_handoff_cancellation_drop_actual_guards() {
+    crate::stages::intrinsic_preflight_policy_request::with_legacy_intrinsic_preflight_policy(
+        native_j_real_query_and_pre_handoff_cancellation_drop_actual_guards_historical,
+    );
+}
+
+fn native_j_real_query_and_pre_handoff_cancellation_drop_actual_guards_historical() {
     for stop in [Stop::Query, Stop::Handoff] {
         let lane = warm(512, 256, false, None, stop);
         assert!(!lane.success && lane.cancelled);
@@ -463,11 +475,23 @@ fn resident_boundary() -> Value {
 
 #[test]
 fn native_j_full_warm_request_has_exact_measured_resident_boundary() {
+    crate::stages::intrinsic_preflight_policy_request::with_legacy_intrinsic_preflight_policy(
+        native_j_full_warm_request_has_exact_measured_resident_boundary_historical,
+    );
+}
+
+fn native_j_full_warm_request_has_exact_measured_resident_boundary_historical() {
     resident_boundary();
 }
 
 #[test]
 fn native_j_qualified_wav_public_source_attempts_match_literal_legacy_results() {
+    crate::stages::intrinsic_preflight_policy_request::with_legacy_intrinsic_preflight_policy(
+        native_j_qualified_wav_public_source_attempts_match_literal_legacy_results_historical,
+    );
+}
+
+fn native_j_qualified_wav_public_source_attempts_match_literal_legacy_results_historical() {
     let old = replay::with_legacy_projected_tape_source(qualified_wav::capture_family);
     let (observations, _guard) = install(None, Stop::None);
     let active = qualified_wav::capture_family();
@@ -546,6 +570,12 @@ fn native_j_qualified_wav_public_source_attempts_match_literal_legacy_results() 
 
 #[test]
 fn native_j_actual_tape_query_refuses_foreign_native_request_issuer() {
+    crate::stages::intrinsic_preflight_policy_request::with_legacy_intrinsic_preflight_policy(
+        native_j_actual_tape_query_refuses_foreign_native_request_issuer_historical,
+    );
+}
+
+fn native_j_actual_tape_query_refuses_foreign_native_request_issuer_historical() {
     // Supplemental factory boundary: this does not substitute for the routed tests above.
     let (plan, mut provider) = checked_plan_with_silent_hold();
     let projection = projected(&plan);
@@ -596,6 +626,12 @@ fn native_j_actual_tape_query_refuses_foreign_native_request_issuer() {
 #[test]
 #[ignore = "manual fresh actual J routed runtime capture"]
 fn capture_native_tape_source_after_j() {
+    crate::stages::intrinsic_preflight_policy_request::with_legacy_intrinsic_preflight_policy(
+        capture_native_tape_source_after_j_historical,
+    );
+}
+
+fn capture_native_tape_source_after_j_historical() {
     let output = std::env::var_os("DEADPAN_NATIVE_TAPE_SOURCE_AFTER_OUTPUT").unwrap();
     let output = Path::new(&output);
     assert!(output.is_absolute() && output.starts_with("/tmp"));

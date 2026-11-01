@@ -1,6 +1,8 @@
 //! Request-local admission for current-sound and actual Original metadata.
 //! Query/capture/probe, caller copies and node storage share the request ledger.
 //! Wider renderer queries and the other Graph containers remain separate work.
+#[cfg(test)]
+use super::intrinsic_preflight_policy_native_trace as native_trace;
 use super::*;
 use deadpan_plan::AudioSoundContextAdmission;
 use std::alloc::Layout;
@@ -143,6 +145,8 @@ impl Drop for Lease<'_> {
     fn drop(&mut self) {
         if self.frames != 0 {
             self.ledger.borrow_mut().sound_context_frames -= self.frames;
+            #[cfg(test)]
+            native_trace::released(self.ledger, self.frames);
         }
     }
 }
@@ -169,32 +173,73 @@ impl<'work> AudioSoundContextAdmission for Admission<'_, 'work> {
         issuer(self.control)
     }
     fn spend(&mut self, amount: usize) -> Result<(), Self::Error> {
-        self.control.spend_plan_work(amount)
+        #[cfg(test)]
+        let attempt = native_trace::spend_begin(self.control, amount);
+        #[cfg(test)]
+        attempt.apply_cancellation(self.control);
+        #[cfg(test)]
+        if attempt.injected_refusal() {
+            let result = self.control.check().and(Err(StageAudioError::Limit(
+                "test-only intrinsic policy spend refusal",
+            )));
+            native_trace::spend_result(attempt, self.control, &result);
+            return result;
+        }
+        let result = self.control.spend_plan_work(amount);
+        #[cfg(test)]
+        native_trace::spend_result(attempt, self.control, &result);
+        result
     }
     fn reserve(&mut self, layout: Layout) -> Result<Self::Lease, Self::Error> {
-        self.control.check()?;
-        let frames = u64::try_from(layout.size())
-            .map_err(|_| StageAudioError::Range)?
-            .div_ceil(std::mem::size_of::<[f32; 2]>() as u64);
-        let next = self
-            .control
-            .work
-            .borrow()
-            .sound_context_frames
-            .checked_add(frames)
-            .ok_or(StageAudioError::Range)?;
-        self.controller.make_room(frames, false, self.control)?;
-        self.control.work.borrow_mut().sound_context_frames = next;
-        Ok(Lease {
-            ledger: self.control.work,
-            frames,
-        })
+        #[cfg(test)]
+        let attempt = native_trace::reserve_begin(self.control, layout);
+        #[cfg(test)]
+        attempt.apply_cancellation(self.control);
+        let result = (|| {
+            self.control.check()?;
+            #[cfg(test)]
+            if attempt.injected_refusal() {
+                return Err(StageAudioError::Limit(
+                    "test-only intrinsic policy reserve refusal",
+                ));
+            }
+            let frames = u64::try_from(layout.size())
+                .map_err(|_| StageAudioError::Range)?
+                .div_ceil(std::mem::size_of::<[f32; 2]>() as u64);
+            let next = self
+                .control
+                .work
+                .borrow()
+                .sound_context_frames
+                .checked_add(frames)
+                .ok_or(StageAudioError::Range)?;
+            #[cfg(test)]
+            let room = native_trace::room_begin(attempt, self.controller, self.control, frames);
+            let room_result = self.controller.make_room(frames, false, self.control);
+            #[cfg(test)]
+            native_trace::room_result(room, self.controller, self.control, &room_result);
+            room_result?;
+            self.control.work.borrow_mut().sound_context_frames = next;
+            Ok(Lease {
+                ledger: self.control.work,
+                frames,
+            })
+        })();
+        #[cfg(test)]
+        native_trace::reserve_result(
+            attempt,
+            self.control,
+            result.as_ref().map(|lease| lease.frames),
+        );
+        result
     }
     fn merge(&mut self, target: &mut Self::Lease, source: &mut Self::Lease) {
         // Both were checked against this stable ledger before this callback.
         // The ledger's admitted sum is bounded by the existing u32 frame cap.
         target.frames += source.frames;
         source.frames = 0;
+        #[cfg(test)]
+        native_trace::merged(self.control);
     }
 }
 

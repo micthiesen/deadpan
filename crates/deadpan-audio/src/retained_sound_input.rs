@@ -188,7 +188,7 @@ impl StageAudio {
     }
 
     pub(super) fn preflight_retained_sound_input(
-        &self,
+        &mut self,
         input: &AudioRoutedRootInput<'_>,
         control: WorkControl<'_>,
     ) -> Result<(), StageAudioError> {
@@ -213,7 +213,7 @@ impl StageAudio {
     }
 
     pub(super) fn prepare_retained_sound_query<'plan>(
-        &self,
+        &mut self,
         input: &AudioRoutedRootInput<'plan>,
         start: AudioSample,
         frames: u32,

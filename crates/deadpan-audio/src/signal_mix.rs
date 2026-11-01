@@ -51,7 +51,7 @@ impl StageAudio {
     }
 
     pub(super) fn preflight_mix_query(
-        &self,
+        &mut self,
         query: &AudioMixQuery<'_>,
         control: WorkControl<'_>,
         depth: usize,

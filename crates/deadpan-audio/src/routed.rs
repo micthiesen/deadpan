@@ -299,7 +299,7 @@ impl StageAudio {
     }
 
     pub(super) fn preflight_routed_root<'plan>(
-        &self,
+        &mut self,
         domain: &AudioRoutedRoot<'plan>,
         start: AudioSample,
         frames: u32,

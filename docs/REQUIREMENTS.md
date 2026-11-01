@@ -778,6 +778,22 @@ excluded. The following native checkpoint qualifies its selected source-policy
 handoff. Input graph construction, PCM/dependencies and whole preparation remain
 open. No coverage score, requirement or Gate changes.
 
+The [native intrinsic-preflight checkpoint](qualification/intrinsic-preflight-policy-admission-2026-11-01.md)
+admits actual Signal/Tape/PreserveTape policies through content and recursive
+ordinary graph preflight, retaining query owners and forwarding work once.
+Frozen40 and all prior payloads remain exact. Both final8 captures match four
+build7 bodies; all 20 returned outputs/six failures match literally.
+Native work/host equations, parent/child ownership, 53 callback refusals,
+real cancellation/priority and fixed 2,057 held refusal/drop/recovery pass.
+The failed first held trial remains unqualified. Ledger peaks and full resident
+thresholds stay separate; positive optional-cache callback work is unclaimed.
+All 21 Audio targets/copy are covered: Main 1,152/Scope 1,146 pass, 34 ignored each,
+only Main's seven inherited Split filters. Strict8/fmt/doc/hygiene and
+independent acceptance pass. Failed strict7/build4/controller initialization
+remain retained. Scope 2,653 inputs own shipping; Main WIP stays excluded.
+Other preparation/output policies, graph/PCM/dependencies, Mix own policy and
+whole preparation remain open. No requirement or Gate status changes.
+
 The [Signal factory checkpoint](qualification/signal-policy-factory-2026-11-01.md)
 adds both public PointCeil policy modes with independent final Vec custody.
 Baseline39 freezes 16 Signals/207 requests; all 39 payloads stay fixed. Complete
