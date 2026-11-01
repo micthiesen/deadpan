@@ -1,0 +1,15 @@
+# K Signal policy factory archive and documentation review
+
+Archive verdict: GO for publication. No remaining material finding or incomplete requested check.
+
+Both Main and Scope inventory bytes are identical: tools/media-qualification/evidence/2026-11-01-signal-policy-factory/inventory.json, 174,031 bytes, SHA-256 061e342f4d7d9eb2ad0116ed583227e6f055c946e3b0419e7ad656d682c0cdfb. All 427 named records, 299 unique gzip payloads, dedup references and exact payload-file sets verify in both copies. Stored bytes total 31,054,694; named expanded bytes total 198,627,764. Every compressed and expanded size/SHA-256 matches the inventory.
+
+The inventory's acceptance path resolves to the exact final4 GO authority, SHA 440998f874cb1d850df4454efeb161a7d691a4a30711ab305f4f589993159abd, and its actual readable report matches the authority's report pin. All 238 required acceptance evidence references and all 178 stream references from 89 archived guarded execution receipts resolve with exact bytes/hashes. Required final4 builds/captures/fresh libraries, 56 passing retained integrations and eight final checks remain present. Historical matrix3 failures remain failed in their actual receipts. Candidates and drafts are clearly non-execution evidence.
+
+All ten shipping-source records equal current Scope and the accepted source, and match Main's owned bytes. The three production kernel files retain reviewed pins. Archive Rust paths exclude Main snapshot directories and Main-specific source copies; shipping authority is Scope. Main source hashmaps retain provenance without publishing inherited WIP source bodies. All 39 immutable fixtures physically verify in both repositories, and final accepted source maps remain exact at Main2,974/Scope2,646 inputs.
+
+All four final documents equal their current pins in both copies. Their counts, literal capacity/resource differences, Plan-only boundary, retained failures, 28 retained integrations plus fresh complete libraries, and open native/whole-preparation/Gate gaps match independent runtime acceptance. The qualification correctly says Repeat-gap-after Some coverage remains unclaimed, replacing the draft's unsupported global unreachability wording. The other three documents equal their archived reviewed drafts. All five new relative Markdown links resolve in both copies, including baseline39 and the actual evidence inventory.
+
+Final docs are verified against separate current pins. Their historical draft bytes remain archived honestly. This post-build review and verification JSON stay outside inventory for plain adjacent publication, avoiding a self-hash cycle.
+
+Actual executables are identified by verified artifact/receipt hashes; the archive does not promise portable rerunning of binaries from its contents. This review adds no new runtime, native Account/Box/preflight/media, whole-preparation or product/Gate claim. Reviewer performed read/hash/decompress/analysis only, with no repository/archive mutation, Cargo/test/native execution or Git.

@@ -944,3 +944,6 @@ pub(in crate::plan) use point::provider_child_probe;
 
 #[path = "audio_tape_policy_query.rs"]
 mod tape;
+
+#[path = "audio_signal_policy_query.rs"]
+mod signal;

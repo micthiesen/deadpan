@@ -72,24 +72,28 @@ pub trait AudioSignalPolicyMaskHandoff: AudioSoundContextAdmission {
 enum PolicyOrigin {
     Point,
     Tape,
+    Signal,
 }
 impl PolicyOrigin {
     fn unmetered(self) -> &'static str {
         match self {
             Self::Point => "unmetered Point policy mask handoff",
             Self::Tape => "unmetered Tape policy mask handoff",
+            Self::Signal => "unmetered Signal policy mask handoff",
         }
     }
     fn capacity(self) -> &'static str {
         match self {
             Self::Point => "Point policy mask capacity lease",
             Self::Tape => "Tape policy mask capacity lease",
+            Self::Signal => "Signal policy mask capacity lease",
         }
     }
     fn work(self) -> &'static str {
         match self {
             Self::Point => "Point policy query work provenance mismatch",
             Self::Tape => "Tape policy query work provenance mismatch",
+            Self::Signal => "Signal policy query work provenance mismatch",
         }
     }
 }
@@ -348,6 +352,28 @@ pub(super) fn finish_tape<A: AudioSoundContextAdmission>(
     budget: &mut QueryBudget<'_, A>,
 ) -> QueryResult<AdmittedSignalPolicyQuery<A::Issuer, A::Lease>, A> {
     finish_signal_origin(state, ranges, limits, budget, PolicyOrigin::Tape)
+}
+
+pub(super) fn ordinary_standalone_signal<A: AudioSoundContextAdmission>(
+    query: AudioPolicyQuery<SignalSample>,
+    admission: &A,
+) -> QueryResult<AdmittedSignalPolicyQuery<A::Issuer, A::Lease>, A> {
+    if A::METERED {
+        return Err(PlanError::InvalidPlan("Signal policy accounting mode mismatch").into());
+    }
+    ordinary_signal(query, admission).map(|mut value| {
+        value.origin = PolicyOrigin::Signal;
+        value
+    })
+}
+
+pub(super) fn finish_standalone_signal<A: AudioSoundContextAdmission>(
+    state: State<A>,
+    ranges: Ranges<A>,
+    limits: AudioQueryLimits,
+    budget: &mut QueryBudget<'_, A>,
+) -> QueryResult<AdmittedSignalPolicyQuery<A::Issuer, A::Lease>, A> {
+    finish_signal_origin(state, ranges, limits, budget, PolicyOrigin::Signal)
 }
 
 fn finish_signal<A: AudioSoundContextAdmission>(

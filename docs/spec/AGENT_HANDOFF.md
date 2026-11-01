@@ -2,7 +2,36 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: native Tape source custody admitted, product goal active
+## Current state: Signal policy factory admitted, product goal active
+
+The [Signal checkpoint](../qualification/signal-policy-factory-2026-11-01.md)
+adds both public PointCeil policy modes using the provider-aware kernel and exact
+final Signal Vec custody. Unmetered calls remain literal; Point/Tape stay intact.
+Native intrinsic preflight is the next integration unit.
+
+Baseline39 froze 16 Signals/207 requests before integration; all 39 payloads stay
+fixed. Both complete final4 bodies match, 14,621,432 bytes/SHA
+ce28e66d38e8354c97e7b802219f4d87f31f5b185d338e316796a8ddf99c8077.
+All 380 successful work equations reconcile. Literal capacities differ in 220
+successful pairs; 18 earlier refusals plus 18 changed earlier error reasons
+remain typed resource limits. No capacity/work/error normalization.
+
+Actual callback refusals, measured Plan peak boundaries, cancellation, issuer
+rejection, positive/empty protocol custody and held result pass. This is Plan
+protocol evidence without new native Account/media claims.
+All 29 Plan targets/root are covered: fresh final4 libraries plus all 28 exact
+passing matrix3 integration binaries. Main770/Scope757 pass, 37 ignored each,
+zero filters. Failed3 serializer panics remain recorded. Strict/fmt/doc/hygiene
+and independent acceptance pass. Scope's 2,646 inputs own shipping; other initial
+Main2,964/Scope2,636 remain exact. Main WIP stays excluded.
+
+Next freeze ordinary intrinsic preparation/preflight policy behavior, then admit
+Signal/Tape/PreserveTape queries without another work debit. Keep policy inventory
+live through content and recursive graph preflight in existing order.
+Mix, graph/PCM/dependency construction and whole preparation stay separate.
+General sound-bearing Split remains disabled; no DP/Gate status changes.
+
+## Preceding native Tape source checkpoint
 
 The [native source checkpoint](../qualification/native-tape-source-admission-2026-11-01.md)
 keeps actual Tape policy inventory/guards alive through preflight, control, full
@@ -30,10 +59,9 @@ byte-identical build2 binaries. Main 1,147/Scope 1,141 pass; libraries 566/560,
 Strict/fmt/doc/hygiene and independent acceptance pass. Scope's 2,640 inputs are
 authority; other initial Main 2,951/Scope 2,623 remain exact. Main WIP is excluded.
 
-Next inventory and admit the remaining actual preparation/preflight construction
-paths, freezing their ordinary behavior before changes. Other policy queries,
-graph/PCM/dependency construction and whole preparation remain owed. General
-sound-bearing Split stays disabled; no DP/Gate status changes.
+The subsequent Signal checkpoint qualifies its standalone Plan prerequisite.
+Native preflight policies, graph/PCM/dependency construction and whole preparation
+remain owed. General sound-bearing Split stays disabled; no DP/Gate changes.
 
 ## Preceding Tape policy factory checkpoint
 

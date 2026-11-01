@@ -778,6 +778,20 @@ excluded. The following native checkpoint qualifies its selected source-policy
 handoff. Input graph construction, PCM/dependencies and whole preparation remain
 open. No coverage score, requirement or Gate changes.
 
+The [Signal factory checkpoint](qualification/signal-policy-factory-2026-11-01.md)
+adds both public PointCeil policy modes with independent final Vec custody.
+Baseline39 freezes 16 Signals/207 requests; all 39 payloads stay fixed. Complete
+final4 bodies match; 380 successful work equations reconcile. Literal capacity
+differences and 36 earlier resource-limit observations stay recorded.
+Callback refusals, measured Plan peak boundaries, cancellation, issuer rejection,
+positive/empty protocol custody and held result pass without a new native Account
+claim. All 29 Plan targets/root are covered: Main770/Scope757 pass, 37 ignored
+each, zero filters. Failed3 serializer panics, the two-test reporting correction
+and complete final4 library reruns remain explicit. Strict checks and independent
+acceptance pass. Scope2,646 named inputs own shipping; Main WIP stays excluded.
+Native preflight policies, graph/PCM/dependency construction and whole preparation
+remain open. No requirement or Gate status changes.
+
 The [native PreserveTape source checkpoint](qualification/native-tape-source-admission-2026-11-01.md)
 keeps the actual admitted query/inventory alive through content/control/range/PCM
 use and exact final Signal Vec custody, with PreparedBlock retained and no second

@@ -712,3 +712,6 @@ fn borrowed_protocol_prepare_refusal_keeps_source_until_shared_borrow_ends() {
         backend.released();
     });
 }
+
+#[path = "audio_signal_policy_custody_tests.rs"]
+mod signal_custody;

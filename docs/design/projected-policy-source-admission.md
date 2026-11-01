@@ -4,6 +4,18 @@ Original decision: qualify the private explicit-grid Signal-policy child kernel 
 
 The [provider child checkpoint](../qualification/provider-policy-child-kernel-2026-10-31.md) qualifies the private child for checked public operands, including reachable repeated and definition metadata. The separate [Tape factory checkpoint](../qualification/tape-policy-factory-2026-10-31.md) now qualifies stored-grid traversal, child normalization, combined inventory and the independent exact final Signal Vec, with sealed Tape provenance through the existing custody protocol. Scope is source authority. The original decision and pins below remain historical; the Tape contract records its Plan boundary and the now-qualified selected native lifetime contract. The preceding [destination checkpoint](../qualification/projected-policy-destination-2026-10-31.md) funds the native destination copy. The [native source checkpoint](../qualification/native-tape-source-admission-2026-11-01.md) now qualifies actual query/inventory lifetime and exact final Signal Vec transfer for routed PreserveTape. Other preparation policies, graph/PCM/dependency construction, whole preparation and product Gates remain outside that unit.
 
+## Standalone Signal prerequisite for intrinsic preflight
+
+The [Signal factory checkpoint](../qualification/signal-policy-factory-2026-11-01.md)
+qualifies public PointCeil policy and after-Preserve modes, whole-public empty
+work, provider error ordering, once-forwarded work, final Vec custody and literal
+resource/capacity differences. Point/Tape retain their sealed origins.
+Its 39 frozen payloads and Plan protocol results do not establish native
+preflight admission. Remaining stage_projection policies need actual ordinary
+capture and native lifetime/account evidence; input policy must remain live
+through subsequent graph query/recursive preflight in existing order.
+Mix remains separate.
+
 ## Historical ownership gap before native source admission
 
 The pre-J routed.rs:471 prepares and retains the actual PreparedBlock Arc, samples PCM, then calls suppress_signal with PreserveTape(projection.output_policy()). stages.rs:3128 constructs an ordinary AudioPolicyQuery, manually debits its work, preflights every content, checks control, validates and zeros the mask, and creates a fresh merged ordinary Vec. G then admits a destination copy with the real mask context. The policy query and its inventory have already dropped when G begins. G therefore proves ownership of that destination, not admission of the source policy inventory, query headers/spans, recursive work buffers, or original final Vec.

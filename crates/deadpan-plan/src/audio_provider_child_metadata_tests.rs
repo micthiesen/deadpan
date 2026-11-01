@@ -454,3 +454,6 @@ fn owned_source_output_rejects_its_carrier_after_current_inventory() {
     });
     assert!(exercised);
 }
+
+#[path = "audio_signal_policy_before.rs"]
+mod signal_policy_before;
