@@ -1737,18 +1737,38 @@ fn all_body() -> Value {
 }
 #[test]
 fn read_signal_policy_current_paired_values_work_and_real_lifetimes() {
+    crate::stages::stage_block_policy_request::with_legacy_stage_block_policy(
+        read_signal_policy_current_paired_values_work_and_real_lifetimes_historical,
+    );
+}
+fn read_signal_policy_current_paired_values_work_and_real_lifetimes_historical() {
     paired();
 }
 #[test]
 fn read_signal_policy_real_plan_callbacks_parent_child_cancel_and_provider_cleanup() {
+    crate::stages::stage_block_policy_request::with_legacy_stage_block_policy(
+        read_signal_policy_real_plan_callbacks_parent_child_cancel_and_provider_cleanup_historical,
+    );
+}
+fn read_signal_policy_real_plan_callbacks_parent_child_cancel_and_provider_cleanup_historical() {
     focused(Mode::PlanFaults);
 }
 #[test]
 fn read_signal_policy_real_cache_callback_refusals() {
+    crate::stages::stage_block_policy_request::with_legacy_stage_block_policy(
+        read_signal_policy_real_cache_callback_refusals_historical,
+    );
+}
+fn read_signal_policy_real_cache_callback_refusals_historical() {
     focused(Mode::CacheFaults);
 }
 #[test]
 fn read_signal_policy_public_resident_boundary_and_actual_holder_recovery() {
+    crate::stages::stage_block_policy_request::with_legacy_stage_block_policy(
+        read_signal_policy_public_resident_boundary_and_actual_holder_recovery_historical,
+    );
+}
+fn read_signal_policy_public_resident_boundary_and_actual_holder_recovery_historical() {
     let value = focused(Mode::Residency);
     assert!(
         !value["result"]["natural_constructor_refusals"]
@@ -1761,6 +1781,11 @@ fn read_signal_policy_public_resident_boundary_and_actual_holder_recovery() {
 #[test]
 #[ignore = "manual fresh full actual N AFTER qualification; no expected body"]
 fn capture_read_signal_policy_after_v1() {
+    crate::stages::stage_block_policy_request::with_legacy_stage_block_policy(
+        capture_read_signal_policy_after_v1_historical,
+    );
+}
+fn capture_read_signal_policy_after_v1_historical() {
     let output = std::env::var_os("DEADPAN_READ_SIGNAL_POLICY_AFTER_OUTPUT").unwrap();
     let output = Path::new(&output);
     assert!(output.is_absolute() && output.starts_with("/tmp"));

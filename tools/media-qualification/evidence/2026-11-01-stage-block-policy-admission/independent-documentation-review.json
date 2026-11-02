@@ -1,0 +1,139 @@
+{
+  "schema": "O-four-doc-final-runtime-independent-review-v3",
+  "verdict": "GO_BOUNDED_RUNTIME_DOCUMENTATION_SUBJECT_TO_ACTUAL_ARCHIVE_RELEASE_GATES",
+  "findings": [],
+  "candidate_seal": {
+    "path": "/tmp/deadpan-stage-block-policy-documentation-candidate-v3-2026-11-01/seal.json",
+    "bytes": 6098,
+    "sha256": "fa0863142e7347851514ed9b788c38cc39ccba8a3ed2efa982d4b5a251f69722"
+  },
+  "all_sealed_file_and26_snapshot_authority_pins_exact": true,
+  "four_patches_independently_reconstructed": [
+    {
+      "path": "docs/REQUIREMENTS.md",
+      "patch": {
+        "path": "/tmp/deadpan-stage-block-policy-documentation-candidate-v3-2026-11-01/patches/docs/REQUIREMENTS.md.patch",
+        "bytes": 2255,
+        "sha256": "05ed9f39097ac5b82a20b05315af6c9dceb94f67535495dd894c9a62c6e6c988"
+      },
+      "proposed": {
+        "path": "/tmp/deadpan-stage-block-policy-documentation-candidate-v3-2026-11-01/proposed/docs/REQUIREMENTS.md",
+        "bytes": 547683,
+        "sha256": "de369e3691313bd0672dc84490d1778da5b37a9a59645cfe0574771d3b4ccfc2"
+      },
+      "whole_historical_body_exact": true
+    },
+    {
+      "path": "docs/design/projected-policy-source-admission.md",
+      "patch": {
+        "path": "/tmp/deadpan-stage-block-policy-documentation-candidate-v3-2026-11-01/patches/docs/design/projected-policy-source-admission.md.patch",
+        "bytes": 4425,
+        "sha256": "b26f3b01f80c1c53f56b1639df5f111c3d32235b26172bea109dfcd236cd3000"
+      },
+      "proposed": {
+        "path": "/tmp/deadpan-stage-block-policy-documentation-candidate-v3-2026-11-01/proposed/docs/design/projected-policy-source-admission.md",
+        "bytes": 25402,
+        "sha256": "1f9a462b012dab21f6d1f9a7a955724e849ef17f06b436381643fd83af753e2f"
+      },
+      "whole_historical_body_exact": true
+    },
+    {
+      "path": "docs/qualification/stage-block-policy-admission-2026-11-01.md",
+      "patch": {
+        "path": "/tmp/deadpan-stage-block-policy-documentation-candidate-v3-2026-11-01/patches/docs/qualification/stage-block-policy-admission-2026-11-01.md.patch",
+        "bytes": 14070,
+        "sha256": "f351c11be1c507e97a47dc4926b8b5ffffda52e91c1a802be035f36d881f618d"
+      },
+      "proposed": {
+        "path": "/tmp/deadpan-stage-block-policy-documentation-candidate-v3-2026-11-01/proposed/docs/qualification/stage-block-policy-admission-2026-11-01.md",
+        "bytes": 13735,
+        "sha256": "f3f5ad9736d6cda8ea530ec681112155ccc3a172ee7983ccdd6905d72b7e8b88"
+      },
+      "whole_historical_body_exact": false
+    },
+    {
+      "path": "docs/spec/AGENT_HANDOFF.md",
+      "patch": {
+        "path": "/tmp/deadpan-stage-block-policy-documentation-candidate-v3-2026-11-01/patches/docs/spec/AGENT_HANDOFF.md.patch",
+        "bytes": 3531,
+        "sha256": "e569439df032668c4d6fd4bbf78850b73b947e2facfce05cd0af8a6623e472f2"
+      },
+      "proposed": {
+        "path": "/tmp/deadpan-stage-block-policy-documentation-candidate-v3-2026-11-01/proposed/docs/spec/AGENT_HANDOFF.md",
+        "bytes": 514860,
+        "sha256": "233cfc6b704d033ff6a53b0f6debdc48c552293e926359a5fbcf105d4a34f149"
+      },
+      "whole_historical_body_exact": true
+    }
+  ],
+  "historical_bodies_preserved_without_normalization": true,
+  "authored_links": [
+    {
+      "source": "docs/spec/AGENT_HANDOFF.md",
+      "link": "../qualification/stage-block-policy-admission-2026-11-01.md",
+      "exists_now": true,
+      "required_before_publication": false
+    },
+    {
+      "source": "docs/REQUIREMENTS.md",
+      "link": "qualification/stage-block-policy-admission-2026-11-01.md",
+      "exists_now": true,
+      "required_before_publication": false
+    },
+    {
+      "source": "docs/design/projected-policy-source-admission.md",
+      "link": "../qualification/stage-block-policy-admission-2026-11-01.md",
+      "exists_now": true,
+      "required_before_publication": false
+    },
+    {
+      "source": "docs/qualification/stage-block-policy-admission-2026-11-01.md",
+      "link": "../../crates/deadpan-audio/tests/fixtures/stage-block-policy-baseline-v1/corpus.json",
+      "exists_now": true,
+      "required_before_publication": false
+    },
+    {
+      "source": "docs/qualification/stage-block-policy-admission-2026-11-01.md",
+      "link": "../../tools/media-qualification/evidence/2026-11-01-stage-block-policy-admission/inventory.json",
+      "exists_now": false,
+      "required_before_publication": true
+    }
+  ],
+  "numeric_authorities": [
+    {
+      "path": "/tmp/deadpan-stage-block-policy-admission-2026-11-01/after-matrix3-results.json",
+      "bytes": 14177,
+      "sha256": "66df160787544271fbb0829b71db7d1df57a119478bfcf7e6ffba573b612b2e5"
+    },
+    {
+      "path": "/tmp/deadpan-stage-block-policy-after-independent-2026-11-01/after-final-independent-audit.json",
+      "bytes": 13844,
+      "sha256": "12449d1ae1e9999e445d6009bd005299064ad1b0b6bf807fd9a7ccab7f311fcb"
+    },
+    {
+      "path": "/tmp/deadpan-stage-block-policy-admission-2026-11-01/final-runtime-acceptance-v2.json",
+      "bytes": 7453,
+      "sha256": "d4f230ad42877af2b8b9c7af7577c256b833efc812967ef473e7712f8fe297a5"
+    },
+    {
+      "path": "/tmp/deadpan-stage-block-policy-after-execution-audit-2026-11-01/all-four-captures.json",
+      "bytes": 15328,
+      "sha256": "331651b1bef826d82113a2e53f8da7a0da87e04ae6c0962278a90383467e4569"
+    }
+  ],
+  "reviewed_claims": [
+    "Actual21target/root1173/1179pass,592/598unit,42ignored/root,onlyMain7filter and one-test focused/frozen/paired/writer results agree.",
+    "Four body/canonical/case-byte tables,1214cases/capture,4856logical aliases and stated24756changed nodes/724009scalar leaves match exact authority records; no additional whole semantic total is invented.",
+    "Current six-payload/two-vector/eight-execution,3648complete/1248prefix/4860unit/eightfrozen witness claims match final semantic/request authorities.",
+    "Source17,3012/2696inputs,43fixed payloads, owner lifetime/discard-only/noOaccount/once-forwarded scope and public/private resident distinctions remain accurate.",
+    "Failed67/77/38 history, interrupted memory probes and diagnostic4Cache sample remain separate from final runtime and production memory.",
+    "Tape/Source/empty inventory, natural work quota, positive eviction, physical capacities/RSS/wholepreparation and product Gates remain unqualified.",
+    "The sole absent new link is explicitly required archive inventory. It and actual archive-build/gate/mirror/curated-source supplements must exist and pass independent review before publication. No archive count, build, mirror or publication is claimed as already complete."
+  ],
+  "runtime_acceptance_independent_review": {
+    "path": "/tmp/deadpan-stage-block-policy-runtime-acceptance-review-2026-11-01/review.json",
+    "bytes": 8930,
+    "sha256": "e6b6f0158531dd92467d6a565aaefb10f178dc7f1b146bd9baddc60af7990e9f"
+  },
+  "scope": "Only new qualification and changed anchors/full historical reversal. No duplicated huge raw/native/key audit, actual docs/source/evidence edit, compiler/native/helper/Git execution, archive or publication acceptance."
+}

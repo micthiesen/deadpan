@@ -1,0 +1,321 @@
+{
+  "schema": "O-final-input-universe-source-review-v1",
+  "verdict": "GO_SOURCE_CONFIG_RECOVERABILITY_ONLY",
+  "findings": [],
+  "configuration": {
+    "path": "/tmp/deadpan-O-publication-finalization-2026-11-01/configuration.json",
+    "bytes": 18151,
+    "sha256": "c03a0bd515fa34a25bd4208b5fbc3541e904ade76372c1049491d67056592713"
+  },
+  "base_revision": "52ac739bb447262223ba6f0e50563de3d4faab04",
+  "actual_selected_directories": 70,
+  "explicit_records": 22,
+  "selected_records_before_this_review_output": 6342,
+  "expected_future_freeze_self_record": {
+    "name": "support/directory-freeze.json",
+    "path": "/tmp/deadpan-O-publication-finalization-2026-11-01/directory-freeze.json"
+  },
+  "all_four_whole_journal_memberships": [
+    {
+      "variant": "main",
+      "repeat": 1,
+      "body_record": "evidence/deadpan-stage-block-policy-admission-2026-11-01/stage-block-policy-after-capture1-main-body.json",
+      "cases": 1214,
+      "case_bytes": 5795102835,
+      "COMPLETE": {
+        "path": "/tmp/deadpan-stage-block-policy-admission-2026-11-01/stage-block-policy-after-capture1-main-body.json.journal/COMPLETE.json",
+        "bytes": 334953,
+        "sha256": "75d845873f75ae29820588053c13e64f66a9f103d06f0774384427626f0ac547"
+      }
+    },
+    {
+      "variant": "main",
+      "repeat": 2,
+      "body_record": "evidence/deadpan-stage-block-policy-admission-2026-11-01/stage-block-policy-after-capture2-main-body.json",
+      "cases": 1214,
+      "case_bytes": 5795102835,
+      "COMPLETE": {
+        "path": "/tmp/deadpan-stage-block-policy-admission-2026-11-01/stage-block-policy-after-capture2-main-body.json.journal/COMPLETE.json",
+        "bytes": 334953,
+        "sha256": "75d845873f75ae29820588053c13e64f66a9f103d06f0774384427626f0ac547"
+      }
+    },
+    {
+      "variant": "scoped",
+      "repeat": 1,
+      "body_record": "evidence/deadpan-stage-block-policy-admission-2026-11-01/stage-block-policy-after-capture1-scoped-body.json",
+      "cases": 1214,
+      "case_bytes": 5795048944,
+      "COMPLETE": {
+        "path": "/tmp/deadpan-stage-block-policy-admission-2026-11-01/stage-block-policy-after-capture1-scoped-body.json.journal/COMPLETE.json",
+        "bytes": 334948,
+        "sha256": "31d6054b884d1ea80bc49d0e0d649b963000dc9ebf1365dafe28c5aeea19cd9c"
+      }
+    },
+    {
+      "variant": "scoped",
+      "repeat": 2,
+      "body_record": "evidence/deadpan-stage-block-policy-admission-2026-11-01/stage-block-policy-after-capture2-scoped-body.json",
+      "cases": 1214,
+      "case_bytes": 5795048944,
+      "COMPLETE": {
+        "path": "/tmp/deadpan-stage-block-policy-admission-2026-11-01/stage-block-policy-after-capture2-scoped-body.json.journal/COMPLETE.json",
+        "bytes": 334948,
+        "sha256": "31d6054b884d1ea80bc49d0e0d649b963000dc9ebf1365dafe28c5aeea19cd9c"
+      }
+    }
+  ],
+  "selected_diff_files": [
+    "/tmp/deadpan-stage-block-policy-after-batches-candidate-2026-11-01/change.diff",
+    "/tmp/deadpan-stage-block-policy-after-batches-formatted1-2026-11-01/change.diff",
+    "/tmp/deadpan-stage-block-policy-after-diagnostic-messages1-2026-11-01/change.diff",
+    "/tmp/deadpan-stage-block-policy-after-driver-corrections1-2026-11-01/change.diff",
+    "/tmp/deadpan-stage-block-policy-after-typefix1-2026-11-01/change.diff",
+    "/tmp/deadpan-stage-block-policy-core-candidate-v1-2026-11-01/n-after-legacy-wrappers.diff",
+    "/tmp/deadpan-stage-block-policy-core-candidate-v1-2026-11-01/stages-caller-module.diff",
+    "/tmp/deadpan-stage-block-policy-core-trace-candidate-v1-2026-11-01/patches/crates/deadpan-audio/src/stage_block_policy.diff",
+    "/tmp/deadpan-stage-block-policy-core-trace-candidate-v1-2026-11-01/patches/crates/deadpan-audio/src/stages.diff",
+    "/tmp/deadpan-stage-block-policy-core-trace-candidate-v2-2026-11-01/patches/crates/deadpan-audio/src/stage_block_policy.diff",
+    "/tmp/deadpan-stage-block-policy-core-trace-candidate-v2-2026-11-01/patches/crates/deadpan-audio/src/stages.diff"
+  ],
+  "extensionless_native_exclusions": 258,
+  "generic_main_directory_observation": "Only crossroot1/main with2derived.bin files20,390B; full Main crypto descriptor sits outside and is selected. Complete payload bytes recover from actual input_hex.",
+  "acceptance": {
+    "path": "/tmp/deadpan-stage-block-policy-admission-2026-11-01/final-runtime-acceptance-v2.json",
+    "bytes": 7453,
+    "sha256": "d4f230ad42877af2b8b9c7af7577c256b833efc812967ef473e7712f8fe297a5"
+  },
+  "shipping_scope_files": {
+    "crates/deadpan-audio/src/stages.rs": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/crates/deadpan-audio/src/stages.rs",
+      "bytes": 260362,
+      "sha256": "60f0f91bafe9402ea483ed607e6e0fc01c5ec145c18a8b8d6dd0c90018dc8c72"
+    },
+    "crates/deadpan-audio/src/stage_cache.rs": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/crates/deadpan-audio/src/stage_cache.rs",
+      "bytes": 24455,
+      "sha256": "df36a0d29c7dd63e4988c1b822636a5203ff3c53826330985c33488165486769"
+    },
+    "crates/deadpan-audio/src/routed.rs": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/crates/deadpan-audio/src/routed.rs",
+      "bytes": 30492,
+      "sha256": "1b3cf0405b74a1f9703eda6003e179f97a541db9c12a250b44c45ae431a7a7dc"
+    },
+    "crates/deadpan-audio/src/stage_block_policy_before_trace.rs": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/crates/deadpan-audio/src/stage_block_policy_before_trace.rs",
+      "bytes": 23837,
+      "sha256": "0bdff2097deb35a85538eb9ea0619176073c51224a58b613ffb505efc89de901"
+    },
+    "crates/deadpan-audio/src/read_signal_policy_before_tests.rs": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/crates/deadpan-audio/src/read_signal_policy_before_tests.rs",
+      "bytes": 54310,
+      "sha256": "b032580c51ccb54ace7a2de61c5dc53f6af547c22139d6e1285dc2702051e5cb"
+    },
+    "crates/deadpan-audio/src/stage_block_policy_before_tests.rs": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/crates/deadpan-audio/src/stage_block_policy_before_tests.rs",
+      "bytes": 50682,
+      "sha256": "482c45c8674cfd5e604ebe919adea153497b7c08abbd0e701906749099bb4a4d"
+    },
+    "crates/deadpan-audio/src/stage_block_policy_key_replay.rs": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/crates/deadpan-audio/src/stage_block_policy_key_replay.rs",
+      "bytes": 46530,
+      "sha256": "ad4c3ddee5b2aff1b919f31543fcc502ee72b0e46da47f44c5ffccdfd141f658"
+    },
+    "crates/deadpan-audio/src/stage_block_policy.rs": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/crates/deadpan-audio/src/stage_block_policy.rs",
+      "bytes": 5893,
+      "sha256": "0c65abad3b0fbf01910f510f418a2993dec63fefd615a1d14da56e5f4db7c782"
+    },
+    "crates/deadpan-audio/src/stage_block_policy_request.rs": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/crates/deadpan-audio/src/stage_block_policy_request.rs",
+      "bytes": 612,
+      "sha256": "4eb1c1163c6f68ce284dc712193a3793e36f6ef17555cb9f8067158c3656c7bf"
+    },
+    "crates/deadpan-audio/src/read_signal_policy_after_tests.rs": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/crates/deadpan-audio/src/read_signal_policy_after_tests.rs",
+      "bytes": 71140,
+      "sha256": "c4a11d670211137ebb9b29070a5fad25660d98926f84f879822cb52c44ff7caf"
+    },
+    "crates/deadpan-audio/src/sound_context_admission.rs": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/crates/deadpan-audio/src/sound_context_admission.rs",
+      "bytes": 16642,
+      "sha256": "d5a4b7705fb578a30db2dc832e922035874441728d79c74556497e81f5ffdf0e"
+    },
+    "crates/deadpan-audio/src/stage_block_policy_native_trace.rs": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/crates/deadpan-audio/src/stage_block_policy_native_trace.rs",
+      "bytes": 37278,
+      "sha256": "81adb591e2f5f8de4f4d66d2af89d136e178b978f80e8101e685f84e26a259df"
+    },
+    "crates/deadpan-audio/src/stage_block_policy_after_tests.rs": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/crates/deadpan-audio/src/stage_block_policy_after_tests.rs",
+      "bytes": 97533,
+      "sha256": "9a7beced3d13e813460a9ecdfd8cf41625cf78a19d4312944ef652b9b2705bf3"
+    },
+    "crates/deadpan-audio/src/stage_block_policy_resident_diagnostic.rs": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/crates/deadpan-audio/src/stage_block_policy_resident_diagnostic.rs",
+      "bytes": 2513,
+      "sha256": "58926f2bd5c6a71cc4f635d61e64311cffcf69994d84c8aed38c0797b0963b1d"
+    },
+    "crates/deadpan-audio/src/stage_block_policy_projected_diagnostic.rs": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/crates/deadpan-audio/src/stage_block_policy_projected_diagnostic.rs",
+      "bytes": 5049,
+      "sha256": "563daa8aa3fb316cb7409074160c2f8adf5891d20fcf90dbd865e78c89548bea"
+    },
+    "crates/deadpan-audio/src/stage_block_policy_evidence_journal.rs": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/crates/deadpan-audio/src/stage_block_policy_evidence_journal.rs",
+      "bytes": 13281,
+      "sha256": "c805a8f3bde9b8dab21f8a6d326bfeb630c6b3ea3cf6bce0f96f68165ea4e2e9"
+    },
+    "crates/deadpan-audio/src/stage_block_policy_projected_residency.rs": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/crates/deadpan-audio/src/stage_block_policy_projected_residency.rs",
+      "bytes": 9160,
+      "sha256": "8e79cbfff4932e8a80294e0daf7e5eb3c56e8adb54d1f70beab087cd0ffdb251"
+    },
+    "docs/spec/AGENT_HANDOFF.md": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/docs/spec/AGENT_HANDOFF.md",
+      "bytes": 514860,
+      "sha256": "233cfc6b704d033ff6a53b0f6debdc48c552293e926359a5fbcf105d4a34f149"
+    },
+    "docs/REQUIREMENTS.md": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/docs/REQUIREMENTS.md",
+      "bytes": 547683,
+      "sha256": "de369e3691313bd0672dc84490d1778da5b37a9a59645cfe0574771d3b4ccfc2"
+    },
+    "docs/design/projected-policy-source-admission.md": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/docs/design/projected-policy-source-admission.md",
+      "bytes": 25402,
+      "sha256": "1f9a462b012dab21f6d1f9a7a955724e849ef17f06b436381643fd83af753e2f"
+    },
+    "docs/qualification/stage-block-policy-admission-2026-11-01.md": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/docs/qualification/stage-block-policy-admission-2026-11-01.md",
+      "bytes": 13735,
+      "sha256": "f3f5ad9736d6cda8ea530ec681112155ccc3a172ee7983ccdd6905d72b7e8b88"
+    },
+    "crates/deadpan-audio/tests/fixtures/stage-block-policy-baseline-v1/corpus.json": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/crates/deadpan-audio/tests/fixtures/stage-block-policy-baseline-v1/corpus.json",
+      "bytes": 6796606,
+      "sha256": "58eedb3de7187e20b3b3a61ba08d75cbc490fa32307985cc1e9facdfa3c924a2"
+    },
+    "crates/deadpan-audio/tests/fixtures/stage-block-policy-baseline-v1/README.md": {
+      "path": "/tmp/deadpan-query-groundwork-2026-10-26/scoped/crates/deadpan-audio/tests/fixtures/stage-block-policy-baseline-v1/README.md",
+      "bytes": 2277,
+      "sha256": "f869e5bdcf243f0474e26730df524228d944c98d01010d10c1a6cd1ce65888ff"
+    }
+  },
+  "support": {
+    "support/blake3_stream.rs": {
+      "path": "/tmp/deadpan-stage-validation-policy-admission-2026-11-01/blake3_stream.rs",
+      "bytes": 388,
+      "sha256": "33984edc24e605cd2a6ea60653ab6ea183018a28de1b162a8584605a6974d21d"
+    },
+    "support/N-key-proof-tool-known-vectors.json": {
+      "path": "/tmp/deadpan-read-signal-policy-admission-2026-11-01/key-proof-tool-known-vectors.json",
+      "bytes": 1169,
+      "sha256": "2ad7c6cf474b03c98eaff82cba507dbda254768406adc4f28ea4e5bb87849304"
+    },
+    "support/build_archive.py": {
+      "path": "/private/tmp/deadpan-O-publication-finalization-2026-11-01/build_archive.py",
+      "bytes": 13987,
+      "sha256": "1a38ea4964764b5a157373b1094e69f41533dc21ee9baad23fbe3f9a5409e243"
+    },
+    "support/build_archive.py.before-review-amendment.py": {
+      "path": "/private/tmp/deadpan-O-publication-finalization-2026-11-01/build_archive.py.before-review-amendment.py",
+      "bytes": 13978,
+      "sha256": "24dc99b1e28a2430393d57626edd2fbd70f4848c1afab2b32e11faede0eed4e7"
+    },
+    "support/review-amendments.json": {
+      "path": "/private/tmp/deadpan-O-publication-finalization-2026-11-01/review-amendments.json",
+      "bytes": 1869,
+      "sha256": "e73b4a81c91cd9c767203a3541a50567fc6dd30d6ffff724920d8060be5000ad"
+    },
+    "support/archive_suffix_check.py": {
+      "path": "/private/tmp/deadpan-O-publication-finalization-2026-11-01/archive_suffix_check.py",
+      "bytes": 1543,
+      "sha256": "ddc84589fd0c2e4dda597aa1e63115c7abc0642f730ef4f9a9d5f8d2392a2d2f"
+    },
+    "support/freeze_inputs.py": {
+      "path": "/private/tmp/deadpan-O-publication-finalization-2026-11-01/freeze_inputs.py",
+      "bytes": 2418,
+      "sha256": "009918d4418d40ef3c3cca707d2178d2f772511dcf2c8a3b54d515cac600efe8"
+    },
+    "support/prepare_acceptance.py": {
+      "path": "/private/tmp/deadpan-O-publication-finalization-2026-11-01/prepare_acceptance.py",
+      "bytes": 4822,
+      "sha256": "f0b28632a1ba88d249009fd83f4adf1661c3da0d391acfa748f10f22a656a233"
+    },
+    "support/prepare_configuration.py": {
+      "path": "/private/tmp/deadpan-O-publication-finalization-2026-11-01/prepare_configuration.py",
+      "bytes": 5646,
+      "sha256": "b3cae84c36ba2d978be4e6286c658517bdd071e9ee4ce1e20781de60519313d0"
+    },
+    "support/configuration.json": {
+      "path": "/private/tmp/deadpan-O-publication-finalization-2026-11-01/configuration.json",
+      "bytes": 18151,
+      "sha256": "c03a0bd515fa34a25bd4208b5fbc3541e904ade76372c1049491d67056592713"
+    },
+    "support/input-exclusions-and-recoverability.json": {
+      "path": "/private/tmp/deadpan-O-publication-finalization-2026-11-01/input-exclusions-and-recoverability.json",
+      "bytes": 87516,
+      "sha256": "49ef72fe32f0be82ce9b88a3010a81de5c546ca8c6d0a9ae0ea58c351e99646a"
+    },
+    "support/mirror_archive.py": {
+      "path": "/tmp/deadpan-O-publication-finalization-2026-11-01/mirror_archive.py",
+      "bytes": 3265,
+      "sha256": "9740cb58bed7696878f2e037cdf65c4702be4524bce35e06e53a7c79515982d5"
+    },
+    "support/prepare_publication.py": {
+      "path": "/tmp/deadpan-O-publication-finalization-2026-11-01/prepare_publication.py",
+      "bytes": 4620,
+      "sha256": "5a56219abdd8c1a70df316eb1859bc9cade56d38892c34dbd57bd39747e180b7"
+    },
+    "support/verify_git_tree.py": {
+      "path": "/tmp/deadpan-O-publication-finalization-2026-11-01/verify_git_tree.py",
+      "bytes": 1681,
+      "sha256": "7a548e464590def43e0e751da846e4207ff50d3ab90d8fb7450dcf1e149a17f7"
+    },
+    "support/configuration-before-publication-binding.json": {
+      "path": "/tmp/deadpan-O-publication-finalization-2026-11-01/configuration-before-publication-binding.json",
+      "bytes": 17519,
+      "sha256": "c057da2f7f6d3016f4dc2ba160fa98828bf0fb78f5d7d90f58f63b3caec28394"
+    }
+  },
+  "publication_helpers": [
+    {
+      "path": "/tmp/deadpan-O-publication-finalization-2026-11-01/mirror_archive.py",
+      "bytes": 3265,
+      "sha256": "9740cb58bed7696878f2e037cdf65c4702be4524bce35e06e53a7c79515982d5"
+    },
+    {
+      "path": "/tmp/deadpan-O-publication-finalization-2026-11-01/prepare_publication.py",
+      "bytes": 4620,
+      "sha256": "5a56219abdd8c1a70df316eb1859bc9cade56d38892c34dbd57bd39747e180b7"
+    },
+    {
+      "path": "/tmp/deadpan-O-publication-finalization-2026-11-01/verify_git_tree.py",
+      "bytes": 1681,
+      "sha256": "7a548e464590def43e0e751da846e4207ff50d3ab90d8fb7450dcf1e149a17f7"
+    }
+  ],
+  "builder_suffix_amendment": {
+    "path": "/tmp/deadpan-stage-block-policy-final-input-review-2026-11-01/builder-suffix-amendment-review.json",
+    "bytes": 1583,
+    "sha256": "e733b267f601732112173d262c2adb8d308f250a444a48ad06f81c5a6e655d9c"
+  },
+  "base_recoverability": {
+    "path": "/tmp/deadpan-stage-block-policy-final-input-review-2026-11-01/base-recoverability.json",
+    "bytes": 4635,
+    "sha256": "3a0b278c78ccd81e6c1a13c27b8c39bff5bca304d39865a160bf45ee20e31236"
+  },
+  "execution_physical_authority": {
+    "path": "/tmp/deadpan-stage-block-policy-after-execution-audit-2026-11-01/all-four-captures.json",
+    "bytes": 15328,
+    "sha256": "331651b1bef826d82113a2e53f8da7a0da87e04ae6c0962278a90383467e4569"
+  },
+  "limitations": [
+    "No archive has been generated or accepted by this review; actual stored/expanded hashes, final membership freeze and final gate remain owed.",
+    "Selected directory membership is fixed by config; record count will include the final review itself when Root freezes after all writers stop.",
+    "No exact native-binary or ENGINE_PIN reconstruction without5excluded.orig salt bytes/MainWIP/host toolchain.",
+    "No publication helper, Git, compiler or native/helper executed by reviewer.",
+    "Final gate must carry exact inventory/documentation/fixture/report pins before reviewed helpers run."
+  ]
+}

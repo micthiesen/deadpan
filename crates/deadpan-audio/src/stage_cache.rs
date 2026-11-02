@@ -188,6 +188,17 @@ impl StageAudio {
         control: WorkControl<'_>,
         depth: usize,
     ) -> Result<Option<SavedStage>, StageAudioError> {
+        #[cfg(test)]
+        let _o_scan = stage_block_policy_before_trace::context_scope(
+            self,
+            control,
+            "scan_saved_stage_key",
+            || {
+                serde_json::json!({"depth":depth,"recipe":stage_block_policy_before_trace::recipe_value(recipe),
+                "input":stage_block_policy_before_trace::input_value(input,&self.plan),
+                "output":stage_block_policy_before_trace::input_value(output,&self.plan)})
+            },
+        );
         let progress = self.preparation_monitor.as_ref().map(|m| {
             m.enter(PreparationActivity::CheckingSavedAudio {
                 completed: 0,
@@ -360,13 +371,38 @@ impl StageAudio {
             control.check()?;
             let count = (recipe.output_frames() - cursor).min(MAX_OUTPUT_FRAMES);
             let mut mask = vec![[1.0; 2]; count as usize];
+            #[cfg(test)]
+            let o_call = stage_block_policy_before_trace::call(
+                self,
+                control,
+                stage_block_policy_before_trace::Caller::SavedKeyOutputBits,
+                || {
+                    serde_json::json!({"depth":depth,"recipe":stage_block_policy_before_trace::recipe_value(recipe),
+                        "block_start":cursor,"block_len":mask.len(),"caller_block_capacity":mask.capacity(),
+                        "caller_block_storage":stage_block_policy_before_trace::layout::<[f32;2]>(mask.capacity())})
+                },
+            );
             suppress_signal(
                 output,
                 SignalSample(i64::from(cursor)),
                 &mut mask,
                 &self.plan,
                 control,
+                #[cfg(test)]
+                stage_block_policy_before_trace::HelperContext {
+                    caller: stage_block_policy_before_trace::Caller::SavedKeyOutputBits,
+                    renderer: self,
+                    ticket: o_call.ticket,
+                },
             )?;
+            #[cfg(test)]
+            stage_block_policy_before_trace::mark(
+                self,
+                control,
+                o_call.ticket,
+                "returned_vec_discarded_before_output_bits",
+                || serde_json::json!({"pcm_bits":stage_block_policy_before_trace::pcm_value(&mask)}),
+            );
             for sample in mask {
                 hash.update(&[u8::from(sample[0] == 0.0)]);
                 #[cfg(test)]

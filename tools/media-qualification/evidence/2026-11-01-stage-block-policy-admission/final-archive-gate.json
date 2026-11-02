@@ -1,0 +1,105 @@
+{
+  "schema": "O-final-archive-docs-source-gate-v1",
+  "verdict": "GO_ARCHIVE_DOCS_SOURCE",
+  "inventory": {
+    "bytes": 3075802,
+    "sha256": "36117542efb6d8fd738fa1ac36ef7ff218c3fb2c9937a2c744f6322319301e39"
+  },
+  "documentation": {
+    "docs/spec/AGENT_HANDOFF.md": {
+      "bytes": 514860,
+      "sha256": "233cfc6b704d033ff6a53b0f6debdc48c552293e926359a5fbcf105d4a34f149"
+    },
+    "docs/REQUIREMENTS.md": {
+      "bytes": 547683,
+      "sha256": "de369e3691313bd0672dc84490d1778da5b37a9a59645cfe0574771d3b4ccfc2"
+    },
+    "docs/design/projected-policy-source-admission.md": {
+      "bytes": 25402,
+      "sha256": "1f9a462b012dab21f6d1f9a7a955724e849ef17f06b436381643fd83af753e2f"
+    },
+    "docs/qualification/stage-block-policy-admission-2026-11-01.md": {
+      "bytes": 13735,
+      "sha256": "f3f5ad9736d6cda8ea530ec681112155ccc3a172ee7983ccdd6905d72b7e8b88"
+    }
+  },
+  "fixtures": {
+    "crates/deadpan-audio/tests/fixtures/stage-block-policy-baseline-v1/corpus.json": {
+      "bytes": 6796606,
+      "sha256": "58eedb3de7187e20b3b3a61ba08d75cbc490fa32307985cc1e9facdfa3c924a2"
+    },
+    "crates/deadpan-audio/tests/fixtures/stage-block-policy-baseline-v1/README.md": {
+      "bytes": 2277,
+      "sha256": "f869e5bdcf243f0474e26730df524228d944c98d01010d10c1a6cd1ce65888ff"
+    }
+  },
+  "reports": [
+    {
+      "source": "/tmp/deadpan-O-final-archive-audit-2026-11-01/actual-audit.json",
+      "destination": "independent-archive-audit.json",
+      "bytes": 12804,
+      "sha256": "f081ec20855cc987ba1bbe97d4439f24449a71ec2f3b2b27a1b40cceb2ce074c"
+    },
+    {
+      "source": "/tmp/deadpan-O-final-archive-audit-2026-11-01/audit_archive.py",
+      "destination": "independent-archive-auditor.py",
+      "bytes": 36571,
+      "sha256": "1e9c18a4d858cbd281d4b2a115ee96b458013025e51bd92eb066064ad22ac302"
+    },
+    {
+      "source": "/tmp/deadpan-stage-block-policy-runtime-acceptance-review-2026-11-01/review.json",
+      "destination": "independent-runtime-review.json",
+      "bytes": 8930,
+      "sha256": "e6b6f0158531dd92467d6a565aaefb10f178dc7f1b146bd9baddc60af7990e9f"
+    },
+    {
+      "source": "/tmp/deadpan-stage-block-policy-documentation-review-2026-11-01/v3-final-runtime/review.json",
+      "destination": "independent-documentation-review.json",
+      "bytes": 7100,
+      "sha256": "50acbe165cabd32b5c7add79df7fa243889c702300720f80dff896ead520d077"
+    },
+    {
+      "source": "/tmp/deadpan-stage-block-policy-final-input-review-2026-11-01/final-input-review.json",
+      "destination": "independent-input-review.json",
+      "bytes": 17121,
+      "sha256": "59a9aa2865862892b4905db915f18831e9984b8ad27cb8b84d7a9c292282e06d"
+    },
+    {
+      "source": "/private/tmp/deadpan-O-publication-finalization-2026-11-01/packaging-execution-proof.json",
+      "destination": "packaging-execution-proof.json",
+      "bytes": 2238,
+      "sha256": "d657368b39e9d087c670d21567a29f5ab0bbc27e565075b28efe48df3a0d0ed4"
+    },
+    {
+      "source": "/private/tmp/deadpan-O-publication-finalization-2026-11-01/prepare_gate.py",
+      "destination": "prepare-archive-gate.py",
+      "bytes": 3063,
+      "sha256": "2e6474fc162d87e3337b873aa33f44844179a1768a22bb4a731905ceafc61c84"
+    },
+    {
+      "source": "/private/tmp/deadpan-O-publication-finalization-2026-11-01/freeze.stdout",
+      "destination": "packaging-freeze.stdout",
+      "bytes": 197,
+      "sha256": "8cb47c2c679089a74b7f7d8fad232a42fa48c0c1ce1c8c1cf6483392ab3508e3"
+    },
+    {
+      "source": "/private/tmp/deadpan-O-publication-finalization-2026-11-01/freeze.stderr",
+      "destination": "packaging-freeze.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/deadpan-O-publication-finalization-2026-11-01/build.stdout",
+      "destination": "packaging-build.stdout",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "/private/tmp/deadpan-O-publication-finalization-2026-11-01/build.stderr",
+      "destination": "packaging-build.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "scope": "Qualified O source, runtime evidence, documentation and independently verified archive only. Actual mirror, curated Git staging/commit and remote publication require separate proofs. No product Gate completion."
+}

@@ -4,6 +4,52 @@ Original decision: qualify the private explicit-grid Signal-policy child kernel 
 
 The [provider child checkpoint](../qualification/provider-policy-child-kernel-2026-10-31.md) qualifies the private child for checked public operands, including reachable repeated and definition metadata. The separate [Tape factory checkpoint](../qualification/tape-policy-factory-2026-10-31.md) now qualifies stored-grid traversal, child normalization, combined inventory and the independent exact final Signal Vec, with sealed Tape provenance through the existing custody protocol. Scope is source authority. The original decision and pins below remain historical; the Tape contract records its Plan boundary and the now-qualified selected native lifetime contract. The preceding [destination checkpoint](../qualification/projected-policy-destination-2026-10-31.md) funds the native destination copy. The [native source checkpoint](../qualification/native-tape-source-admission-2026-11-01.md) now qualifies actual query/inventory lifetime and exact final Signal Vec transfer for routed PreserveTape. Other preparation policies, graph/PCM/dependency construction, whole preparation and product Gates remain outside that unit.
 
+## Post-DSP build_stage block policy
+
+The [stage-block checkpoint](../qualification/stage-block-policy-admission-2026-11-01.md)
+selects build_stage's existing post-DSP policy before writer push. The mutable
+admission borrow ends before contents/control/PCM use; the same admitted owner
+and borrowed slices survive those uses. The owner then drops and restores
+the entry query ledger. O discards ownership with zero mask/account handoff
+and never re-debits forwarded query work.
+
+Origin is explicit BuildStageBlock. SavedKeyOutputBits remains ordinary and
+RoutedLegacy is historical cfg-test code. N/M/L/J stay active; O-only legacy
+entries preserve old bodies/caps. Signal and PreserveTape are reached, while
+Tape remains an unexercised selected arm.
+
+Baseline 43/all 43 payloads stay literal and all 17 owned paths match.
+Strict9/build3, all 50 physical original/copy pairs, paired3, residency3 and
+frozen43 replay3 pass. All 21 matrix3 targets/root pass: Scope 1,173/Main 1,179,
+libraries 592/598, 42 ignored each and only Main stages' seven inherited filters.
+Four complete series3 writers repeat raw/canonical bodies and full journals
+within each root, each preserving 1,214 cases and their original multiplicity.
+
+Public held-N refusal occurs before O, so its same-cap drop/retry recovery is
+whole-request evidence. A separate private prepare_projected proof reaches
+natural selected-O refusal at 2347/demand 2348 and query cleanup 105-to-0. It adds
+no public equivalence, public minimum or same-cap O recovery claim.
+
+Root and independent execution/physical/provenance checks pass all four
+captures, preserving 4,856 logical aliases. The complete typed data audit
+classifies all 1,215 crossroot raw units: 24,756 changed nodes/724,009 scalar
+leaves, zero unclassified differences and no findings. Eight actual Root crypto
+calls pass; final independent semantic/key/native adjudication has bounded GO.
+Six complete payloads and two known vectors bind 3,648 current complete aliases,
+1,248 literal prefix-only aliases and eight frozen43 witnesses. No unfinished
+prefix receives a digest or invented finish; replay uses the same locked
+primitive through a separate caller.
+
+Release authority also requires independently verified archive membership,
+stored/expanded bytes, references, build/gate/mirror supplements and curated
+Scope source. Runtime qualification does not certify archive or publication.
+
+Historical guard/residency failures and interrupted memory probes stay
+retained. Journals preserve full raw cases; the diagnostic Cache test's
+sampled RSS is not a production bound. Placed Root, Mix policy, graph/PCM/
+dependencies and whole preparation remain separate obligations. No DP or
+Gate credit follows.
+
 ## Ordinary read_signal policy producer
 
 The [read_signal checkpoint](../qualification/read-signal-policy-admission-2026-11-01.md)

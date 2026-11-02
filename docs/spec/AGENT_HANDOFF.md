@@ -2,7 +2,53 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current state: ordinary read_signal policy qualified, product goal active
+## Current state: stage-block policy qualified, product goal active
+
+The [stage-block checkpoint](../qualification/stage-block-policy-admission-2026-11-01.md)
+covers only build_stage's post-DSP policy before writer push. Actual Signal
+and PreserveTape queries retain their admitted owner through content/control
+checks and PCM suppression, then drop and restore the entry query ledger
+before the writer. O has no mask/account handoff. Forwarded work is charged
+once. Saved-key output-bit scanning stays ordinary; Tape has no reached
+selected O witness. N/M/L/J remain current.
+
+Baseline 43/all 43 immutable payloads stay fixed; all 17 owned source paths
+match across roots. Strict9/full build3 pass with all 50 physical
+Cargo-original/copy pairs checked. Paired3, residency3 and frozen43 replay3
+each pass one test/root. All 21 matrix3 targets/root pass: Scope 1,173/Main 1,179,
+libraries 592/598, 42 ignored each, zero Scope filters; Main stages alone retains
+the seven inherited general_split_sound:: filters.
+
+All four fresh series3 manual writers pass one actual test each. Each retains
+1,214 full journal cases: 1,176 callback and 38 live-use. Raw/canonical bodies
+and full companion pins repeat exactly within each root. Root and independent
+execution/physical/provenance checks pass all four, including every one of
+4,856 logical aliases: 4,704 callback and 152 live-use.
+The complete typed data audit has no findings: all 1,215 crossroot raw units
+classify 24,756 changed nodes/724,009 scalar leaves with zero unclassified
+differences. Eight actual Root crypto calls pass and the final independent
+semantic/key/native audit has bounded GO.
+
+The public held-N failure precedes O and establishes whole-request drop/retry
+recovery; matched control and retry reach O. The separate checked private
+projected witness reaches a natural cap 2347/demand 2348 O refusal and query
+cleanup 105-to-0, without public-equivalence or same-cap O-recovery credit.
+
+The complete crypto proof binds six payloads, two known vectors, 3,648 current
+complete aliases, 1,248 literal error-prefix aliases and eight frozen43
+witnesses. Prefixes receive no invented finish. This uses a separate caller
+of the same locked BLAKE3 primitive.
+
+Release authority additionally requires the independently verified archive
+inventory, build/gate/mirror supplements and exact curated Scope source
+described by the qualification. Runtime GO does not certify packaging or
+publication.
+The full product goal remains active. Placed Root, Mix policy, graph/PCM/
+dependencies and whole preparation remain owed; no DP, coverage or Gate change.
+Historical failures and the separate diagnostic Cache test RSS sample remain
+documented. Preceding checkpoint measurements below remain historical.
+
+## Preceding ordinary read_signal policy checkpoint
 
 The [read_signal checkpoint](../qualification/read-signal-policy-admission-2026-11-01.md)
 admits only the ordinary Signal/Tape policy producer in StageAudio::read_signal.

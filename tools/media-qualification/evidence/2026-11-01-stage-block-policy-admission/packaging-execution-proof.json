@@ -1,0 +1,54 @@
+{
+  "schema": "O-root-packaging-execution-proof-v1",
+  "freeze_observed_process_exit": 0,
+  "build_observed_process_exit": 0,
+  "timing": "No process-duration claim; exits observed through Root PTY completion results.",
+  "configuration": {
+    "path": "/tmp/deadpan-O-publication-finalization-2026-11-01/configuration.json",
+    "bytes": 18151,
+    "sha256": "c03a0bd515fa34a25bd4208b5fbc3541e904ade76372c1049491d67056592713"
+  },
+  "freeze": {
+    "path": "/tmp/deadpan-O-publication-finalization-2026-11-01/directory-freeze.json",
+    "bytes": 2583497,
+    "sha256": "e937de26011633cde553441ecd1e8efcb71657f29a7d4e7dfe0bfc25fb97c4f3"
+  },
+  "builder": {
+    "path": "/tmp/deadpan-O-publication-finalization-2026-11-01/build_archive.py",
+    "bytes": 13987,
+    "sha256": "1a38ea4964764b5a157373b1094e69f41533dc21ee9baad23fbe3f9a5409e243"
+  },
+  "freezer": {
+    "path": "/tmp/deadpan-O-publication-finalization-2026-11-01/freeze_inputs.py",
+    "bytes": 2418,
+    "sha256": "009918d4418d40ef3c3cca707d2178d2f772511dcf2c8a3b54d515cac600efe8"
+  },
+  "build_proof": {
+    "path": "/tmp/deadpan-O-publication-finalization-2026-11-01/archive-build-proof.json",
+    "bytes": 1861,
+    "sha256": "2fbd0ffb1f62e038043ffbef0689970924cd828bdca361e93ba96489fba8fc99"
+  },
+  "streams": {
+    "freeze.stdout": {
+      "path": "/tmp/deadpan-O-publication-finalization-2026-11-01/freeze.stdout",
+      "bytes": 197,
+      "sha256": "8cb47c2c679089a74b7f7d8fad232a42fa48c0c1ce1c8c1cf6483392ab3508e3"
+    },
+    "freeze.stderr": {
+      "path": "/tmp/deadpan-O-publication-finalization-2026-11-01/freeze.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "build.stdout": {
+      "path": "/tmp/deadpan-O-publication-finalization-2026-11-01/build.stdout",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "build.stderr": {
+      "path": "/tmp/deadpan-O-publication-finalization-2026-11-01/build.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "scope": "Actual Root packaging execution only; independent archive and publication still separate."
+}

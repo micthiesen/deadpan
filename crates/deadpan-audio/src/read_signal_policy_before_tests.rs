@@ -20,6 +20,9 @@ fn focus() -> Focus {
     Focus(FOCUSED_N.with(|value| value.replace(true)))
 }
 pub(super) fn provider_position() -> Option<Value> {
+    if stage_block_policy::active() {
+        return stage_block_policy::provider_position();
+    }
     if after::active() {
         return after::provider_position();
     }
@@ -39,10 +42,14 @@ fn mask_observations() -> MaskObservations {
     MaskObservations
 }
 enum ActionCapture {
+    StageBlock(stage_block_policy::Action),
     Ordinary(before_trace::CaptureGuard),
     After(after::Action),
 }
 fn begin_capture(name: &str, entry: &'static str) -> ActionCapture {
+    if let Some(action) = stage_block_policy::begin_action(name, entry) {
+        return ActionCapture::StageBlock(action);
+    }
     match after::begin_action(name, entry) {
         Some(value) => ActionCapture::After(value),
         None => ActionCapture::Ordinary(before_trace::begin()),
@@ -50,6 +57,7 @@ fn begin_capture(name: &str, entry: &'static str) -> ActionCapture {
 }
 fn finish_capture(capture: ActionCapture) -> Value {
     let guard = match capture {
+        ActionCapture::StageBlock(action) => return stage_block_policy::end_action(action),
         ActionCapture::Ordinary(guard) => guard,
         ActionCapture::After(action) => return after::end_action(action),
     };
@@ -1197,6 +1205,9 @@ pub(super) fn fixture_visit(
     reopen: &mut impl FnMut() -> SetupResult<NativeProvider>,
     provenance: impl FnOnce() -> SetupResult<Value>,
 ) -> SetupResult<Option<Value>> {
+    if stage_block_policy::active() {
+        return stage_block_policy::fixture_visit(plan, base, asset, wire, reopen, provenance);
+    }
     if after::active() {
         return after::fixture_visit(plan, base, asset, wire, reopen, provenance);
     }
@@ -1304,3 +1315,6 @@ mod key_replay;
 
 #[path = "read_signal_policy_after_tests.rs"]
 mod after;
+
+#[path = "stage_block_policy_before_tests.rs"]
+mod stage_block_policy;

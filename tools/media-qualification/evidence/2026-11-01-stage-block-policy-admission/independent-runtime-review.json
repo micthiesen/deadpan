@@ -1,0 +1,183 @@
+{
+  "schema": "O-runtime-acceptance-independent-review-v2",
+  "verdict": "GO_BOUNDED_RUNTIME_ACCEPTANCE_ONLY",
+  "findings": [],
+  "acceptance": {
+    "path": "/tmp/deadpan-stage-block-policy-admission-2026-11-01/final-runtime-acceptance-v2.json",
+    "bytes": 7453,
+    "sha256": "d4f230ad42877af2b8b9c7af7577c256b833efc812967ef473e7712f8fe297a5"
+  },
+  "preparer_source": {
+    "path": "/tmp/deadpan-O-publication-finalization-2026-11-01/prepare_acceptance.py",
+    "bytes": 4822,
+    "sha256": "f0b28632a1ba88d249009fd83f4adf1661c3da0d391acfa748f10f22a656a233"
+  },
+  "all_twenty_authority_pins_rechecked": {
+    "before_data_keys_operations": {
+      "path": "/tmp/deadpan-stage-block-policy-before-independent-2026-11-01/before43-independent-audit.json",
+      "bytes": 22273,
+      "sha256": "10e6b5f5b89fd4522eed035e1c3bc48be867c7fa639456e07b47f7a570e1295c"
+    },
+    "before_execution": {
+      "path": "/tmp/deadpan-stage-block-policy-before-execution-audit-2026-11-01/audit.json",
+      "bytes": 58558,
+      "sha256": "62a22d1d53f2b867f5b258661a8fa2fd9a2dadb0df228dfb0703e0ba5769711e"
+    },
+    "core_source_review": {
+      "path": "/tmp/deadpan-stage-block-policy-core-review-2026-11-01/review.json",
+      "bytes": 9029,
+      "sha256": "7e3dcaf8c7a59e635bd6633ceab9752dfd11b723fff273bd83a353373a91b09c"
+    },
+    "final_driver_source_review": {
+      "path": "/tmp/deadpan-stage-block-policy-after-driver-review-2026-11-01/review.json",
+      "bytes": 4184,
+      "sha256": "96e95bd66764af059b607fb3ce0b589afe5617442e11848a696aea0bb57a5f1f"
+    },
+    "formal_private_source_review": {
+      "path": "/tmp/deadpan-stage-block-policy-residency-proof-review-2026-11-01/review.json",
+      "bytes": 4240,
+      "sha256": "8679420cdce5445a0dfa0db8e8a82217201f586af89cc4bfef8cdb13d95ae070"
+    },
+    "actual_private_and_frozen_review": {
+      "path": "/tmp/deadpan-stage-block-policy-residency-proof-review-2026-11-01/runtime3/review.json",
+      "bytes": 7876,
+      "sha256": "9fbd77827dd4bb8b061ccbac88b9b3745b5b8a55ff3d9d506e56f241f241e37f"
+    },
+    "after_semantics_keys_work_lifetime": {
+      "path": "/tmp/deadpan-stage-block-policy-after-independent-2026-11-01/after-final-independent-audit.json",
+      "bytes": 13844,
+      "sha256": "12449d1ae1e9999e445d6009bd005299064ad1b0b6bf807fd9a7ccab7f311fcb"
+    },
+    "after_execution": {
+      "path": "/tmp/deadpan-stage-block-policy-after-execution-audit-2026-11-01/audit.json",
+      "bytes": 50359,
+      "sha256": "e8023c8a3e0816a7ac1cf950fd8f49956e37480872b17bfd7ab639f584b9f26c"
+    },
+    "all_four_physical_execution": {
+      "path": "/tmp/deadpan-stage-block-policy-after-execution-audit-2026-11-01/all-four-captures.json",
+      "bytes": 15328,
+      "sha256": "331651b1bef826d82113a2e53f8da7a0da87e04ae6c0962278a90383467e4569"
+    },
+    "current_source_and_frozen43": {
+      "path": "/tmp/deadpan-stage-block-policy-admission-2026-11-01/final-source-and-oracle-proof.json",
+      "bytes": 13578,
+      "sha256": "75b0d35fa21b986795f4aeda500b05d37bfbd60415bfacf992eae907c8e29c5b"
+    },
+    "strict": {
+      "path": "/tmp/deadpan-stage-block-policy-admission-2026-11-01/after-strict9-results.json",
+      "bytes": 217,
+      "sha256": "d37c363d058d71e7ba1ea28faa3cb40b823682853ec6925d578b473139346b88"
+    },
+    "build": {
+      "path": "/tmp/deadpan-stage-block-policy-admission-2026-11-01/after-build3-results.json",
+      "bytes": 215,
+      "sha256": "7cbf906991037cf92a8e025d848b66d81859987143aff9f23d2af9b2c30a00be"
+    },
+    "physical_artifacts": {
+      "path": "/tmp/deadpan-stage-block-policy-admission-2026-11-01/after-build3-physical-artifact-proof.json",
+      "bytes": 21417,
+      "sha256": "9927a54a42f045511bc64f11b764160a8db51a66061a828ee28a2af20e9daf48"
+    },
+    "private_residency": {
+      "path": "/tmp/deadpan-stage-block-policy-admission-2026-11-01/after-residency3-results.json",
+      "bytes": 685,
+      "sha256": "ac28862cd819976306d74ef25c8c65a72f62068bb326aaac3524a8f011aa64af"
+    },
+    "frozen43_replay": {
+      "path": "/tmp/deadpan-stage-block-policy-admission-2026-11-01/after-frozen43-3-results.json",
+      "bytes": 997,
+      "sha256": "473ffdd572aa64ede7ddef5dcb2e76e92b6a8bf44477dd920cc88011758f418b"
+    },
+    "paired": {
+      "path": "/tmp/deadpan-stage-block-policy-admission-2026-11-01/after-paired3-results.json",
+      "bytes": 1025,
+      "sha256": "8fef53382b971f60ceeee612797f2bacdac7ddaa2b6580f959ef8875135f61fd"
+    },
+    "matrix": {
+      "path": "/tmp/deadpan-stage-block-policy-admission-2026-11-01/after-matrix3-results.json",
+      "bytes": 14177,
+      "sha256": "66df160787544271fbb0829b71db7d1df57a119478bfcf7e6ffba573b612b2e5"
+    },
+    "four_captures": {
+      "path": "/tmp/deadpan-stage-block-policy-admission-2026-11-01/after-capture-series3-results.json",
+      "bytes": 6384,
+      "sha256": "f90b7a0194a2d0098458d35dbac7dc353a42727b8210d70edfd4a5eba250fbb1"
+    },
+    "actual_crypto": {
+      "path": "/tmp/deadpan-stage-block-policy-admission-2026-11-01/after-crypto-replay1.json",
+      "bytes": 133830,
+      "sha256": "bbfe1105f02859f18cc2b21b1c5fabfda827d4fa644e05b8231b69e2bd0f5877"
+    },
+    "guarded_crypto": {
+      "path": "/tmp/deadpan-stage-block-policy-admission-2026-11-01/stage-block-policy-after-crypto-replay1.json",
+      "bytes": 935758,
+      "sha256": "0551432152dc996641c2b916200e43b3c634b1396a0f830f60dc567388702481"
+    }
+  },
+  "matrix_recomputed_exact": {
+    "scope": {
+      "targets": 21,
+      "passed": 1173,
+      "failed": 0,
+      "ignored": 42,
+      "filtered": 0
+    },
+    "main": {
+      "targets": 21,
+      "passed": 1179,
+      "failed": 0,
+      "ignored": 42,
+      "filtered": 7
+    },
+    "only_filter": "Main integration stages: general_split_sound::"
+  },
+  "current_source_and_oracles": {
+    "owned_paths": 17,
+    "main_guarded_inputs": 3012,
+    "scoped_guarded_inputs": 2696,
+    "immutable_oracles": 43
+  },
+  "source_reviews_scope": [
+    {
+      "authority": "core_source_review",
+      "pin": {
+        "path": "/tmp/deadpan-stage-block-policy-core-review-2026-11-01/review.json",
+        "bytes": 9029,
+        "sha256": "7e3dcaf8c7a59e635bd6633ceab9752dfd11b723fff273bd83a353373a91b09c"
+      },
+      "scope": "Historical source-only reviewed stage and bounded amendments; not asserted byte-identical to every final source. Final build3/current source proof is the later source authority."
+    },
+    {
+      "authority": "final_driver_source_review",
+      "pin": {
+        "path": "/tmp/deadpan-stage-block-policy-after-driver-review-2026-11-01/review.json",
+        "bytes": 4184,
+        "sha256": "96e95bd66764af059b607fb3ce0b589afe5617442e11848a696aea0bb57a5f1f"
+      },
+      "scope": "Historical source-only reviewed stage and bounded amendments; not asserted byte-identical to every final source. Final build3/current source proof is the later source authority."
+    },
+    {
+      "authority": "formal_private_source_review",
+      "pin": {
+        "path": "/tmp/deadpan-stage-block-policy-residency-proof-review-2026-11-01/review.json",
+        "bytes": 4240,
+        "sha256": "8679420cdce5445a0dfa0db8e8a82217201f586af89cc4bfef8cdb13d95ae070"
+      },
+      "scope": "Historical source-only reviewed stage and bounded amendments; not asserted byte-identical to every final source. Final build3/current source proof is the later source authority."
+    }
+  ],
+  "guard_and_crypto_independent_receipt_join": {
+    "path": "/tmp/deadpan-stage-block-policy-after-crypto-runner-review-2026-11-01/actual-replay-review.json",
+    "bytes": 4616,
+    "sha256": "7c2e83483060709927544c9bfd16825bd48194546af46a5c2547512009a147d9"
+  },
+  "scope_attribution_fix": "Initial297c runtime statement remains preserved. V2d4f230ad explicitly attributes semantic/hash-only limits and separately composes runtime authorities.",
+  "adjudication": [
+    "Actual source/core/driver/private reviews retain their stated historical/source-only limits; runtime sources are independently frozen and joined by final-source proof/build3/execution authorities.",
+    "Matrix totals,50 physical pairs,17 equal owned paths,3012/2696 guarded inputs,43 immutable payloads,4 actual captures and8 actual helper invocations match their authority records.",
+    "Public held-N whole-request recovery remains separate from private2347 selected O refusal against2348 demand.",
+    "Unreached Tape/Source/empty inventory, natural work-quota exhaustion, physical allocation/RSS/whole-preparation and product Gate exclusions remain explicit.",
+    "Runtime acceptance does not accept archive/docs/publication; those remain separate actual supplements."
+  ],
+  "limitations": "Bounded acceptance composition review; no repeated huge capture/data audit and no native/helper/compiler/Git/Root/source/oracle edits. Does not establish final documentation, archive/mirror/reference integrity, curated publication or full-goal completion."
+}

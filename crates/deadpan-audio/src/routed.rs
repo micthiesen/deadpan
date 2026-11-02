@@ -590,6 +590,9 @@ impl StageAudio {
             ExactRatio::ONE.checked_div(samples_per_frame(rate)?)?,
             rate,
         )?;
+        #[cfg(test)]
+        let o_resample_recipe = stage_block_policy_before_trace::position()
+            .map(|_| serde_json::to_value(&recipe).expect("resample recipe serializes"));
         let mut samples = sample_prepared(
             &prepared.samples,
             recipe,
@@ -602,13 +605,39 @@ impl StageAudio {
         #[cfg(not(test))]
         let legacy_source = false;
         let suppressed = if legacy_source {
+            #[cfg(test)]
+            let o_call = stage_block_policy_before_trace::call(
+                self,
+                control,
+                stage_block_policy_before_trace::Caller::RoutedLegacy,
+                || {
+                    serde_json::json!({"start":start,"frames":frames,
+                        "recipe_kind":"ResampleRecipe","recipe":o_resample_recipe,
+                        "caller_block_len":samples.len(),"caller_block_capacity":samples.capacity(),
+                        "caller_block_storage":stage_block_policy_before_trace::layout::<[f32;2]>(samples.capacity())})
+                },
+            );
             let suppressed = suppress_signal(
                 SignalInput::PreserveTape(projection.output_policy()),
                 start,
                 &mut samples,
                 &self.plan,
                 control,
+                #[cfg(test)]
+                stage_block_policy_before_trace::HelperContext {
+                    caller: stage_block_policy_before_trace::Caller::RoutedLegacy,
+                    renderer: self,
+                    ticket: o_call.ticket,
+                },
             )?;
+            #[cfg(test)]
+            stage_block_policy_before_trace::mark(
+                self,
+                control,
+                o_call.ticket,
+                "returned_vec_retained_by_routed_legacy",
+                || stage_block_policy_before_trace::vec_value(&suppressed),
+            );
             #[cfg(test)]
             projected_mask_before_trace::record(
                 self,

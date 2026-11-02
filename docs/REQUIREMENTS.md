@@ -2,6 +2,38 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Post-DSP stage-block policy admission, 2026-11-01
+
+The [stage-block qualification](qualification/stage-block-policy-admission-2026-11-01.md)
+selects only build_stage's post-DSP block caller. Its Signal/PreserveTape owner
+survives contents, control and PCM suppression, then drops before writer push.
+O forwards work once and performs no mask/account handoff. Saved-key output-bit
+scanning stays ordinary; Tape, placed Root, Mix and whole graph/PCM/dependency
+preparation are outside the reached O proof.
+
+All 43 payloads remain fixed and all 17 owned paths match. Strict9/build3,
+all 50 physical artifact pairs, paired3, residency3 and frozen43 replay3 pass.
+All 21 matrix3 targets/root pass: Scope 1,173/Main 1,179, libraries 592/598,
+42 ignored each, zero Scope filters and only seven inherited Main stages
+general_split_sound:: filters.
+
+Four actual manual writers each pass and retain 1,214 full cases. Same-root
+raw/canonical bodies and companion pins repeat exactly. Root and independent
+execution/physical/provenance checks pass all four, preserving all 4,856 logical
+case aliases. The complete typed
+data audit also has no findings across all 1,215 crossroot raw units:
+24,756 changed nodes/724,009 scalar leaves, zero unclassified differences.
+
+Eight actual Root crypto calls and the final independent semantic/key/native
+audit now have bounded GO, binding complete streams and literal unfinished
+prefixes. Public whole-request held-N recovery remains distinct from private
+cap 2347 O refusal and cleanup.
+
+Release requires the separately verified inventory, archive-build/gate/mirror
+supplements and exact curated Scope source. This qualification adds no
+acceptance-score increase, DP completion or product Gate. Earlier failures
+and historical entries remain intact.
+
 ## Ordinary read_signal policy admission, 2026-11-01
 
 The [read_signal qualification](qualification/read-signal-policy-admission-2026-11-01.md)

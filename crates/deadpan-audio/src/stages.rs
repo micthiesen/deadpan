@@ -41,6 +41,17 @@ mod read_signal_policy_before_trace;
 #[path = "read_signal_policy.rs"]
 mod read_signal_policy;
 
+#[path = "stage_block_policy.rs"]
+mod stage_block_policy;
+
+#[cfg(test)]
+#[path = "stage_block_policy_native_trace.rs"]
+mod stage_block_policy_native_trace;
+
+#[cfg(test)]
+#[path = "stage_block_policy_request.rs"]
+mod stage_block_policy_request;
+
 #[cfg(test)]
 #[path = "read_signal_policy_request.rs"]
 mod read_signal_policy_request;
@@ -180,6 +191,10 @@ mod sound_context_admission;
 pub(super) fn test_audio_mask_payload_frames(capacity: usize) -> Result<u64, StageAudioError> {
     point_suppression::audio_payload_frames(capacity)
 }
+
+#[cfg(test)]
+#[path = "stage_block_policy_before_trace.rs"]
+mod stage_block_policy_before_trace;
 
 #[path = "point_suppression.rs"]
 pub(crate) mod point_suppression;
@@ -2476,6 +2491,13 @@ impl StageAudio {
         output_frames: u32,
         control: WorkControl<'_>,
     ) -> Result<StreamReservation, StageAudioError> {
+        #[cfg(test)]
+        let _o_reservation = stage_block_policy_before_trace::context_scope(
+            self,
+            control,
+            "reserve_stream",
+            || serde_json::json!({"input_frames":input_frames,"output_frames":output_frames}),
+        );
         let window = u64::from(input_frames).min(deadpan_dsp::MAX_STREAM_WINDOW_FRAMES as u64);
         let disk = output_frames > self.limits.maximum_memory_stage_frames;
         let reservation = StreamReservation {
@@ -2491,6 +2513,15 @@ impl StageAudio {
                 0
             },
         };
+        #[cfg(test)]
+        stage_block_policy_before_trace::mark(
+            self,
+            control,
+            None,
+            "stream_reservation_before",
+            || serde_json::json!({"resident_frames":reservation.resident_frames,"disk_bytes":reservation.disk_bytes}),
+        );
+        #[cfg(not(test))]
         self.reserve_budget(
             input_frames,
             output_frames,
@@ -2498,12 +2529,47 @@ impl StageAudio {
             reservation.disk_bytes,
             control,
         )?;
+        #[cfg(test)]
+        {
+            let result = self.reserve_budget(
+                input_frames,
+                output_frames,
+                reservation.resident_frames,
+                reservation.disk_bytes,
+                control,
+            );
+            stage_block_policy_before_trace::result(
+                self,
+                control,
+                None,
+                "stream_reservation_result",
+                &result,
+            );
+            result?;
+            stage_block_policy_before_trace::mark(
+                self,
+                control,
+                None,
+                "stream_reservation_accepted",
+                || serde_json::json!({"resident_frames":reservation.resident_frames,"disk_bytes":reservation.disk_bytes}),
+            );
+        }
         Ok(reservation)
     }
 
     fn release_stream(&mut self, reservation: StreamReservation) {
+        #[cfg(test)]
+        stage_block_policy_before_trace::controller_mark(self, "stream_release_before", || {
+            serde_json::json!({"resident_frames":reservation.resident_frames,"disk_bytes":reservation.disk_bytes,
+                "work_snapshot":"unavailable: release_stream has no WorkControl argument"})
+        });
         self.active_frames -= reservation.resident_frames;
         self.active_disk_bytes -= reservation.disk_bytes;
+        #[cfg(test)]
+        stage_block_policy_before_trace::controller_mark(self, "stream_release_after", || {
+            serde_json::json!({"resident_frames":reservation.resident_frames,"disk_bytes":reservation.disk_bytes,
+                "work_snapshot":"unavailable: release_stream has no WorkControl argument"})
+        });
     }
 
     fn reserve_budget(
@@ -2954,6 +3020,17 @@ impl StageAudio {
                 "pitch_semitones":recipe.pitch_semitones()})
             },
         );
+        #[cfg(test)]
+        let _o_build = stage_block_policy_before_trace::context_scope(
+            self,
+            control,
+            "build_stage",
+            || {
+                serde_json::json!({"depth":depth,"recipe":stage_block_policy_before_trace::recipe_value(recipe),
+                "input":stage_block_policy_before_trace::input_value(input,&self.plan),
+                "output":stage_block_policy_before_trace::input_value(output,&self.plan)})
+            },
+        );
         let WorkControl { cancelled, .. } = control;
         let progress = self.preparation_monitor.as_ref().map(|monitor| {
             monitor.enter(PreparationActivity::CheckingStretch {
@@ -3345,14 +3422,126 @@ impl StageAudio {
                 .zip(&right[..read])
                 .map(|(&l, &r)| [l, r])
                 .collect::<Vec<_>>();
-            suppress_signal(
+            #[cfg(test)]
+            let o_call = stage_block_policy_before_trace::call(
+                self,
+                control,
+                stage_block_policy_before_trace::Caller::BuildStageBlock,
+                || {
+                    serde_json::json!({"depth":depth,"recipe":stage_block_policy_before_trace::recipe_value(recipe),
+                        "input":stage_block_policy_before_trace::input_value(input,&self.plan),
+                        "output":stage_block_policy_before_trace::input_value(output,&self.plan),
+                        "actual_dsp_input_range":range,"actual_read":read,"requested_frames":frames,
+                        "block_start":samples.len(),"block_len":block.len(),"caller_block_capacity":block.capacity(),
+                        "caller_block_storage":stage_block_policy_before_trace::layout::<[f32;2]>(block.capacity()),
+                        "pcm_before":stage_block_policy_before_trace::pcm_value(&block),
+                        "dependencies":dependencies,"relative_depth":relative_depth})
+                },
+            );
+            #[cfg(test)]
+            let o_native_call = (!stage_block_policy_request::legacy()).then(|| {
+                stage_block_policy_native_trace::call(
+                    self,
+                    control,
+                    output,
+                    SignalSample(samples.len() as i64),
+                    block.len(),
+                )
+            });
+            #[cfg(test)]
+            let o_native_ticket = o_native_call.as_ref().and_then(|call| call.ticket);
+            #[cfg(not(test))]
+            self.suppress_stage_block(
                 output,
                 SignalSample(samples.len() as i64),
                 &mut block,
-                &self.plan,
                 control,
             )?;
+            #[cfg(test)]
+            if stage_block_policy_request::legacy() {
+                suppress_signal(
+                    output,
+                    SignalSample(samples.len() as i64),
+                    &mut block,
+                    &self.plan,
+                    control,
+                    #[cfg(test)]
+                    stage_block_policy_before_trace::HelperContext {
+                        caller: stage_block_policy_before_trace::Caller::BuildStageBlock,
+                        renderer: self,
+                        ticket: o_call.ticket,
+                    },
+                )?;
+                #[cfg(test)]
+                stage_block_policy_before_trace::mark(
+                    self,
+                    control,
+                    o_call.ticket,
+                    "returned_vec_discarded_before_push",
+                    || {
+                        serde_json::json!({"pcm_after":stage_block_policy_before_trace::pcm_value(&block),
+                        "writer_len_before":samples.len()})
+                    },
+                );
+            } else {
+                self.suppress_stage_block(
+                    output,
+                    SignalSample(samples.len() as i64),
+                    &mut block,
+                    control,
+                    o_native_ticket,
+                )?;
+            }
+            #[cfg(not(test))]
             samples.push(&block, control)?;
+            #[cfg(test)]
+            {
+                let _push =
+                    stage_block_policy_before_trace::phase(o_call.ticket, "writer_push", None);
+                stage_block_policy_native_trace::mark(
+                    control,
+                    o_native_ticket,
+                    "writer_push_before",
+                    || {
+                        serde_json::json!({"writer_len":samples.len(),"block_len":block.len(),"block_capacity":block.capacity(),
+                        "pcm_bits":stage_block_policy_before_trace::pcm_value(&block)})
+                    },
+                );
+                let result = samples.push(&block, control);
+                stage_block_policy_native_trace::result(
+                    control,
+                    o_native_ticket,
+                    "writer_push_result",
+                    &result,
+                );
+                stage_block_policy_native_trace::mark(
+                    control,
+                    o_native_ticket,
+                    "writer_push_after",
+                    || {
+                        serde_json::json!({"writer_len":samples.len(),"block_len":block.len(),"block_capacity":block.capacity(),
+                        "pcm_bits":stage_block_policy_before_trace::pcm_value(&block)})
+                    },
+                );
+                stage_block_policy_before_trace::result(
+                    self,
+                    control,
+                    o_call.ticket,
+                    "writer_push_result",
+                    &result,
+                );
+                stage_block_policy_before_trace::mark(
+                    self,
+                    control,
+                    o_call.ticket,
+                    "writer_after_push",
+                    || {
+                        serde_json::json!({"writer_len_after":samples.len(),
+                        "pcm_after":stage_block_policy_before_trace::pcm_value(&block)})
+                    },
+                );
+                result?;
+            }
         }
         // Explicit-rate output can end before retained input does. Preserve
         // full input admission and finite/peak validation without keeping it.
@@ -4846,6 +5035,7 @@ fn is_silent_hold(content: &AudioContent) -> bool {
     )
 }
 
+#[cfg(not(test))]
 fn suppress_signal(
     signal: SignalInput<'_, '_>,
     start: SignalSample,
@@ -4922,6 +5112,278 @@ fn suppress_signal(
         policy.contents.len(),
     );
     Ok(merged_suppression(policy.suppressed))
+}
+
+#[cfg(test)]
+fn suppress_signal(
+    signal: SignalInput<'_, '_>,
+    start: SignalSample,
+    samples: &mut [[f32; 2]],
+    plan: &RenderPlan,
+    control: WorkControl<'_>,
+    context: stage_block_policy_before_trace::HelperContext<'_>,
+) -> Result<Vec<Range<SignalSample>>, StageAudioError> {
+    let stage_block_policy_before_trace::HelperContext {
+        caller,
+        renderer,
+        ticket,
+    } = context;
+    stage_block_policy_before_trace::mark(renderer, control, ticket, "helper_enter", || {
+        serde_json::json!({"caller":caller,"start":start,"samples_len":samples.len(),
+            "samples_capacity":"borrowed slice; unexposed",
+            "input":stage_block_policy_before_trace::input_value(signal,plan),
+            "pcm_bits":stage_block_policy_before_trace::pcm_value(samples)})
+    });
+    let result = (|| {
+        let end_result: Result<SignalSample, StageAudioError> = (|| {
+            Ok(SignalSample(
+                start
+                    .0
+                    .checked_add(i64::try_from(samples.len()).map_err(|_| TimeError::Overflow)?)
+                    .ok_or(TimeError::Overflow)?,
+            ))
+        })();
+        stage_block_policy_before_trace::mark(renderer, control, ticket, "range_result", || {
+            match &end_result {
+                Ok(end) => serde_json::json!({"status":"Ok","range":start..*end}),
+                Err(error) => {
+                    serde_json::json!({"status":"Err","error":stage_block_policy_before_trace::error(error)})
+                }
+            }
+        });
+        let end = end_result?;
+        let limits_result = {
+            let _phase = stage_block_policy_before_trace::phase(ticket, "query_limits", None);
+            control.query_limits()
+        };
+        stage_block_policy_before_trace::mark(
+            renderer,
+            control,
+            ticket,
+            "query_limits_result",
+            || match &limits_result {
+                Ok(limits) => {
+                    serde_json::json!({"status":"Ok","maximum_work":limits.maximum_work,"maximum_spans":limits.maximum_spans})
+                }
+                Err(error) => {
+                    serde_json::json!({"status":"Err","error":stage_block_policy_before_trace::error(error)})
+                }
+            },
+        );
+        let limits = limits_result?;
+        let _query = stage_block_policy_before_trace::invocation(ticket, caller);
+        let policy_result = {
+            let _phase = stage_block_policy_before_trace::phase(ticket, "policy_query", None);
+            signal.policy(start..end, limits)
+        };
+        stage_block_policy_before_trace::mark(
+            renderer,
+            control,
+            ticket,
+            "policy_query_result",
+            || match &policy_result {
+                Ok(policy) => {
+                    serde_json::json!({"status":"Ok","policy":stage_block_policy_before_trace::policy_value(policy)})
+                }
+                Err(error) => {
+                    serde_json::json!({"status":"Err","error":stage_block_policy_before_trace::plan_error(error),
+            "local_work":"not exposed on construction failure"})
+                }
+            },
+        );
+        let policy = policy_result?;
+        #[cfg(test)]
+        native_tape_source_before_trace::record(
+            signal,
+            control,
+            start,
+            samples,
+            &policy,
+            "constructed_before_manual_debit",
+            0,
+        );
+        stage_block_policy_before_trace::mark(
+            renderer,
+            control,
+            ticket,
+            "manual_debit_before",
+            || serde_json::json!({"amount":policy.work,"policy":stage_block_policy_before_trace::policy_value(&policy)}),
+        );
+        let debit_result = {
+            let _phase = stage_block_policy_before_trace::phase(ticket, "manual_debit", None);
+            control.spend_plan_work(policy.work)
+        };
+        stage_block_policy_before_trace::result(
+            renderer,
+            control,
+            ticket,
+            "manual_debit_result",
+            &debit_result,
+        );
+        debit_result?;
+        #[cfg(test)]
+        native_tape_source_before_trace::record(
+            signal,
+            control,
+            start,
+            samples,
+            &policy,
+            "manual_debit_accepted",
+            0,
+        );
+        #[cfg(test)]
+        let mut completed_contents = 0;
+        for content in &policy.contents {
+            stage_block_policy_before_trace::mark(
+                renderer,
+                control,
+                ticket,
+                "content_preflight_before",
+                || {
+                    serde_json::json!({"index":completed_contents,"content":content,
+                "policy":stage_block_policy_before_trace::policy_value(&policy)})
+                },
+            );
+            let content_result = {
+                let _phase = stage_block_policy_before_trace::phase(
+                    ticket,
+                    "content_preflight",
+                    Some(completed_contents),
+                );
+                control.preflight_content(content, plan)
+            };
+            stage_block_policy_before_trace::result(
+                renderer,
+                control,
+                ticket,
+                "content_preflight_result",
+                &content_result,
+            );
+            content_result?;
+            stage_block_policy_before_trace::mark(
+                renderer,
+                control,
+                ticket,
+                "content_preflight_accepted",
+                || {
+                    serde_json::json!({"index":completed_contents,"completed_contents":completed_contents+1,
+                "policy":stage_block_policy_before_trace::policy_value(&policy)})
+                },
+            );
+            #[cfg(test)]
+            {
+                completed_contents += 1;
+                native_tape_source_before_trace::record(
+                    signal,
+                    control,
+                    start,
+                    samples,
+                    &policy,
+                    "content_preflight_accepted",
+                    completed_contents,
+                );
+            }
+        }
+        stage_block_policy_before_trace::mark(
+            renderer,
+            control,
+            ticket,
+            "control_check_before",
+            || serde_json::json!({"policy":stage_block_policy_before_trace::policy_value(&policy)}),
+        );
+        let check_result = {
+            let _phase = stage_block_policy_before_trace::phase(ticket, "control_check", None);
+            control.check()
+        };
+        stage_block_policy_before_trace::result(
+            renderer,
+            control,
+            ticket,
+            "control_check_result",
+            &check_result,
+        );
+        check_result?;
+        #[cfg(test)]
+        native_tape_source_before_trace::record(
+            signal,
+            control,
+            start,
+            samples,
+            &policy,
+            "control_check_accepted",
+            policy.contents.len(),
+        );
+        stage_block_policy_before_trace::mark(
+            renderer,
+            control,
+            ticket,
+            "apply_suppression_before",
+            || {
+                serde_json::json!({"policy":stage_block_policy_before_trace::policy_value(&policy),
+            "pcm_bits":stage_block_policy_before_trace::pcm_value(samples)})
+            },
+        );
+        let apply_result = {
+            let _phase = stage_block_policy_before_trace::phase(ticket, "apply_suppression", None);
+            apply_suppression(start, samples, &policy.suppressed, |sample| sample.0)
+        };
+        stage_block_policy_before_trace::result(
+            renderer,
+            control,
+            ticket,
+            "apply_suppression_result",
+            &apply_result,
+        );
+        stage_block_policy_before_trace::mark(
+            renderer,
+            control,
+            ticket,
+            "apply_suppression_pcm_after",
+            || {
+                serde_json::json!({"policy":stage_block_policy_before_trace::policy_value(&policy),
+            "pcm_bits":stage_block_policy_before_trace::pcm_value(samples)})
+            },
+        );
+        apply_result?;
+        #[cfg(test)]
+        native_tape_source_before_trace::record(
+            signal,
+            control,
+            start,
+            samples,
+            &policy,
+            "ranges_validated_and_zeroed",
+            policy.contents.len(),
+        );
+        stage_block_policy_before_trace::mark(
+            renderer,
+            control,
+            ticket,
+            "merge_before",
+            || serde_json::json!({"source_policy":stage_block_policy_before_trace::policy_value(&policy)}),
+        );
+        let merged = {
+            let _phase = stage_block_policy_before_trace::phase(ticket, "merged_suppression", None);
+            merged_suppression(policy.suppressed)
+        };
+        stage_block_policy_before_trace::mark(
+            renderer,
+            control,
+            ticket,
+            "merged_return_vec",
+            || stage_block_policy_before_trace::vec_value(&merged),
+        );
+        Ok(merged)
+    })();
+    stage_block_policy_before_trace::result(renderer, control, ticket, "helper_result", &result);
+    stage_block_policy_before_trace::mark(
+        renderer,
+        control,
+        ticket,
+        "helper_final_pcm",
+        || serde_json::json!({"pcm_bits":stage_block_policy_before_trace::pcm_value(samples)}),
+    );
+    result
 }
 
 #[cfg(test)]

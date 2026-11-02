@@ -6,6 +6,8 @@ use super::intrinsic_preflight_policy_native_trace as native_trace;
 #[cfg(test)]
 use super::read_signal_policy_native_trace as read_signal_trace;
 #[cfg(test)]
+use super::stage_block_policy_native_trace as stage_block_trace;
+#[cfg(test)]
 use super::stage_validation_policy_native_trace as validation_trace;
 use super::*;
 use deadpan_plan::AudioSoundContextAdmission;
@@ -152,6 +154,8 @@ impl Drop for Lease<'_> {
             let read_signal_release = read_signal_trace::release_begin(self.ledger, self.frames);
             #[cfg(test)]
             let validation_release = validation_trace::release_begin(self.ledger, self.frames);
+            #[cfg(test)]
+            let stage_block_release = stage_block_trace::release_begin(self.ledger, self.frames);
             self.ledger.borrow_mut().sound_context_frames -= self.frames;
             #[cfg(test)]
             native_trace::released(self.ledger, self.frames);
@@ -159,6 +163,8 @@ impl Drop for Lease<'_> {
             validation_trace::release_result(validation_release, self.ledger);
             #[cfg(test)]
             read_signal_trace::release_result(read_signal_release, self.ledger);
+            #[cfg(test)]
+            stage_block_trace::release_result(stage_block_release, self.ledger);
         }
     }
 }
@@ -198,6 +204,10 @@ impl<'work> AudioSoundContextAdmission for Admission<'_, 'work> {
         #[cfg(test)]
         attempt.apply_cancellation(self.control);
         #[cfg(test)]
+        let stage_block_attempt = stage_block_trace::spend_begin(self.control, amount);
+        #[cfg(test)]
+        stage_block_attempt.apply_cancellation(self.control);
+        #[cfg(test)]
         if attempt.injected_refusal() {
             let result = self.control.check().and(Err(StageAudioError::Limit(
                 "test-only intrinsic policy spend refusal",
@@ -207,6 +217,7 @@ impl<'work> AudioSoundContextAdmission for Admission<'_, 'work> {
             validation_trace::spend_result(validation_attempt, self.control, &result);
             #[cfg(test)]
             read_signal_trace::spend_result(read_signal_attempt, self.control, &result);
+            stage_block_trace::spend_result(stage_block_attempt, self.control, &result);
             return result;
         }
         #[cfg(test)]
@@ -218,6 +229,7 @@ impl<'work> AudioSoundContextAdmission for Admission<'_, 'work> {
             validation_trace::spend_result(validation_attempt, self.control, &result);
             #[cfg(test)]
             read_signal_trace::spend_result(read_signal_attempt, self.control, &result);
+            stage_block_trace::spend_result(stage_block_attempt, self.control, &result);
             return result;
         }
         #[cfg(test)]
@@ -228,15 +240,27 @@ impl<'work> AudioSoundContextAdmission for Admission<'_, 'work> {
             native_trace::spend_result(attempt, self.control, &result);
             validation_trace::spend_result(validation_attempt, self.control, &result);
             read_signal_trace::spend_result(read_signal_attempt, self.control, &result);
+            stage_block_trace::spend_result(stage_block_attempt, self.control, &result);
             return result;
         }
+        #[cfg(not(test))]
         let result = self.control.spend_plan_work(amount);
+        #[cfg(test)]
+        let result = if stage_block_attempt.injected_refusal() {
+            self.control.check().and(Err(StageAudioError::Limit(
+                "test-only stage block policy spend refusal",
+            )))
+        } else {
+            self.control.spend_plan_work(amount)
+        };
         #[cfg(test)]
         native_trace::spend_result(attempt, self.control, &result);
         #[cfg(test)]
         validation_trace::spend_result(validation_attempt, self.control, &result);
         #[cfg(test)]
         read_signal_trace::spend_result(read_signal_attempt, self.control, &result);
+        #[cfg(test)]
+        stage_block_trace::spend_result(stage_block_attempt, self.control, &result);
         result
     }
     fn reserve(&mut self, layout: Layout) -> Result<Self::Lease, Self::Error> {
@@ -252,6 +276,10 @@ impl<'work> AudioSoundContextAdmission for Admission<'_, 'work> {
         let attempt = native_trace::reserve_begin(self.control, layout);
         #[cfg(test)]
         attempt.apply_cancellation(self.control);
+        #[cfg(test)]
+        let stage_block_attempt = stage_block_trace::reserve_begin(self.control, layout);
+        #[cfg(test)]
+        stage_block_attempt.apply_cancellation(self.control);
         let result = (|| {
             self.control.check()?;
             #[cfg(test)]
@@ -270,6 +298,12 @@ impl<'work> AudioSoundContextAdmission for Admission<'_, 'work> {
             if read_signal_attempt.injected_refusal() {
                 return Err(StageAudioError::Limit(
                     "test-only read signal policy reserve refusal",
+                ));
+            }
+            #[cfg(test)]
+            if stage_block_attempt.injected_refusal() {
+                return Err(StageAudioError::Limit(
+                    "test-only stage block policy reserve refusal",
                 ));
             }
             let frames = u64::try_from(layout.size())
@@ -298,6 +332,13 @@ impl<'work> AudioSoundContextAdmission for Admission<'_, 'work> {
                 self.control,
                 frames,
             );
+            #[cfg(test)]
+            let stage_block_room = stage_block_trace::room_begin(
+                stage_block_attempt,
+                self.controller,
+                self.control,
+                frames,
+            );
             let room_result = self.controller.make_room(frames, false, self.control);
             #[cfg(test)]
             native_trace::room_result(room, self.controller, self.control, &room_result);
@@ -311,6 +352,13 @@ impl<'work> AudioSoundContextAdmission for Admission<'_, 'work> {
             #[cfg(test)]
             read_signal_trace::room_result(
                 read_signal_room,
+                self.controller,
+                self.control,
+                &room_result,
+            );
+            #[cfg(test)]
+            stage_block_trace::room_result(
+                stage_block_room,
                 self.controller,
                 self.control,
                 &room_result,
@@ -340,6 +388,12 @@ impl<'work> AudioSoundContextAdmission for Admission<'_, 'work> {
             self.control,
             result.as_ref().map(|lease| lease.frames),
         );
+        #[cfg(test)]
+        stage_block_trace::reserve_result(
+            stage_block_attempt,
+            self.control,
+            result.as_ref().map(|lease| lease.frames),
+        );
         result
     }
     fn merge(&mut self, target: &mut Self::Lease, source: &mut Self::Lease) {
@@ -351,6 +405,9 @@ impl<'work> AudioSoundContextAdmission for Admission<'_, 'work> {
         #[cfg(test)]
         let read_signal_merge =
             read_signal_trace::merge_begin(self.control, target.frames, source.frames);
+        #[cfg(test)]
+        let stage_block_merge =
+            stage_block_trace::merge_begin(self.control, target.frames, source.frames);
         target.frames += source.frames;
         source.frames = 0;
         #[cfg(test)]
@@ -365,6 +422,13 @@ impl<'work> AudioSoundContextAdmission for Admission<'_, 'work> {
         #[cfg(test)]
         read_signal_trace::merge_result(
             read_signal_merge,
+            self.control,
+            target.frames,
+            source.frames,
+        );
+        #[cfg(test)]
+        stage_block_trace::merge_result(
+            stage_block_merge,
             self.control,
             target.frames,
             source.frames,
