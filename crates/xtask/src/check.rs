@@ -1,7 +1,8 @@
 //! `cargo xtask check`: the fast tier. Format, lint and test only the
 //! workspace packages whose files changed since a base revision (default
 //! `origin/main`, including uncommitted and untracked files). Dependents,
-//! replays and preview/export runs belong to the milestone gate.
+//! replays, preview/export runs and the tests in `.config/slow-tests.txt`
+//! belong to the milestone gate; `--all` includes those tests here.
 
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
@@ -12,6 +13,7 @@ use crate::target_hygiene::Result;
 struct Options {
     base: String,
     tests: bool,
+    all: bool,
     filter: Option<String>,
 }
 
@@ -19,6 +21,7 @@ fn options(arguments: &[String]) -> Result<Options> {
     let mut options = Options {
         base: "origin/main".into(),
         tests: true,
+        all: false,
         filter: None,
     };
     let mut arguments = arguments.iter();
@@ -28,6 +31,7 @@ fn options(arguments: &[String]) -> Result<Options> {
                 options.base = arguments.next().ok_or("--since needs a revision")?.clone();
             }
             "--no-test" => options.tests = false,
+            "--all" => options.all = true,
             "-E" | "--filter" => {
                 options.filter = Some(
                     arguments
@@ -38,7 +42,7 @@ fn options(arguments: &[String]) -> Result<Options> {
             }
             other => {
                 return Err(format!(
-                    "unknown check argument {other}; usage: cargo xtask check [--since REV] [--no-test] [--filter EXPR]"
+                    "unknown check argument {other}; usage: cargo xtask check [--since REV] [--no-test] [--all] [--filter EXPR]"
                 ));
             }
         }
@@ -182,14 +186,61 @@ pub fn run(arguments: &[String]) -> Result<()> {
                 .into(),
         );
     }
-    let mut tests = vec!["nextest", "run"];
-    tests.extend(&package_arguments);
-    tests.extend(["--locked", "--no-fail-fast"]);
-    if cli {
-        tests.extend(["--features", super::SYNTHETIC_WORKER]);
+    // An explicit filter names what to run, so it also reaches slow tests.
+    let filter = match (&options.filter, options.all) {
+        (Some(filter), _) => Some(filter.clone()),
+        (None, true) => None,
+        (None, false) => skip_slow_tests(&root)?,
+    };
+    let (unoptimized, optimized): (Vec<_>, Vec<_>) = selected
+        .iter()
+        .map(String::as_str)
+        .partition(|name| super::UNOPTIMIZED_TEST_PACKAGES.contains(name));
+    let mut failed = None;
+    for (packages, opt_level) in [(optimized, super::TEST_OPT_LEVEL), (unoptimized, "0")] {
+        if packages.is_empty() {
+            continue;
+        }
+        let mut tests = vec!["nextest", "run"];
+        for name in &packages {
+            tests.extend(["-p", name]);
+        }
+        tests.extend(["--locked", "--no-fail-fast"]);
+        if packages.contains(&"deadpan-cli") {
+            tests.extend(["--features", super::SYNTHETIC_WORKER]);
+        }
+        if let Some(filter) = &filter {
+            tests.extend(["-E", filter.as_str()]);
+        }
+        if let Err(error) = super::run_at(&tests, opt_level) {
+            failed.get_or_insert(error);
+        }
     }
-    if let Some(filter) = &options.filter {
-        tests.extend(["-E", filter.as_str()]);
+    failed.map_or(Ok(()), Err)
+}
+
+/// A nextest filter excluding the listed slow tests, or `None` if the list is
+/// empty. The list holds `<binary id> <test name>` lines.
+fn skip_slow_tests(root: &Path) -> Result<Option<String>> {
+    let path = root.join(".config/slow-tests.txt");
+    let list = std::fs::read_to_string(&path)
+        .map_err(|error| format!("failed to read {}: {error}", path.display()))?;
+    let mut excluded = Vec::new();
+    for line in list
+        .lines()
+        .filter(|line| !line.is_empty() && !line.starts_with('#'))
+    {
+        let (binary, test) = line
+            .split_once(' ')
+            .ok_or_else(|| format!("{}: malformed line {line:?}", path.display()))?;
+        excluded.push(format!("(binary_id(={binary}) & test(={test}))"));
     }
-    super::run(&tests)
+    if excluded.is_empty() {
+        return Ok(None);
+    }
+    println!(
+        "check: leaving {} slow tests to the gate (--all runs them)",
+        excluded.len()
+    );
+    Ok(Some(format!("not ({})", excluded.join(" | "))))
 }

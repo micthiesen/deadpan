@@ -112,14 +112,22 @@ cargo test --workspace --locked --no-fail-fast
 ```
 
 `cargo xtask check`, `cargo xtask gate` and CI set
-`CARGO_PROFILE_DEV_OPT_LEVEL=2`: tests run optimized code with the dev
+`CARGO_PROFILE_DEV_OPT_LEVEL=1`: tests run optimized code with the dev
 profile's debug assertions (including the store failpoints behind them) and
 overflow checks. Audio stage preparation, limiting, wet effects, CLI
 inspection and export bound their work with wall-clock deadlines that
 unoptimized Rust misses, especially on CI's three-core runner; the DSP C++ is
-already built at `-O2` in every profile. When running such tests directly,
-use the same variable, for example
-`CARGO_PROFILE_DEV_OPT_LEVEL=2 cargo test -p deadpan-audio --locked --test stages`.
+already built at `-O2` and third-party Rust crates at level 2 in every profile.
+When running such tests directly, use the same variable, for example
+`CARGO_PROFILE_DEV_OPT_LEVEL=1 cargo test -p deadpan-audio --locked --test stages`.
+The exception is `deadpan-core`, `deadpan-plan` and `deadpan-store`: `xtask`
+tests them unoptimized in a separate run, because they pass that way and their
+test targets dominate an optimized build. Level 1 runs about 10% slower than
+level 2 and builds several times faster. The dev profile turns LTO off, since
+thin-local LTO is slow and left undefined `.llvm.<hash>` symbols in incremental
+optimized builds.
+`cargo xtask check` leaves the tests listed in `.config/slow-tests.txt` (each
+over 10 seconds) to the gate; `--all` or a `--filter` naming one runs them.
 Unprefixed `cargo test` remains unoptimized for quick iteration. For repeated
 pure Core library body edits, use the preferred
 [Blaze loop](BUILD_FEEDBACK.md#routine-loop); its isolated target, environment

@@ -65,9 +65,14 @@ all = { level = "warn", priority = -1 }
 # each test binary, so full debug info multiplies codegen, disk and link work.
 [profile.dev]
 debug = "line-tables-only"
+# The default thin-local LTO costs most of an optimized test build, and with
+# incremental compilation it left undefined `.llvm.<hash>` symbols at link time.
+lto = "off"
 
+# Third-party crates rebuild only when pinned, so optimizing them is a one-off.
 [profile.dev.package."*"]
 debug = false
+opt-level = 2
 
 [profile.release]
 codegen-units = 1

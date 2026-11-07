@@ -153,6 +153,8 @@ media, project data or credentials enter their arguments. The generation
 service's test-only `generation/scripted_tests.rs` backend also launches `/bin/sleep 600` through the
 owned process adapter to test worker death and cancellation; it performs no
 network operation and is excluded from the production launch allowlist.
+The transcription range cache's test module launches `mkfifo` to place a FIFO
+at its lock path; it runs only under `cfg(test)` and performs no network operation.
 The subprocess source allowlist records the neutral system-observation module.
 Production inference still uses its existing restricted worker boundary.
 

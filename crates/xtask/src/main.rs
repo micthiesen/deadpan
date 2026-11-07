@@ -67,12 +67,19 @@ fn main() -> ExitCode {
 /// only keeps those targets from being skipped if that unification goes away.
 const SYNTHETIC_WORKER: &str = "deadpan-cli/synthetic-worker";
 
-/// Check and gate builds optimize the dev profile, which keeps its debug
-/// assertions (and the store failpoints behind them) and overflow checks.
 /// Audio preparation, limiting, wet effects and exports bound their work with
-/// wall-clock deadlines that unoptimized builds miss. CI sets the same value in
-/// `.github/workflows/ci.yml`; ordinary `cargo test -p` stays unoptimized.
-const TEST_OPT_LEVEL: &str = "2";
+/// wall-clock deadlines that unoptimized builds miss, so their tests optimize
+/// the dev profile, which keeps debug assertions (and the store failpoints
+/// behind them) and overflow checks. Level 2 measured about 10% faster at run
+/// time than level 1 and several times slower to build. CI sets the same value
+/// in `.github/workflows/ci.yml`; ordinary `cargo test -p` stays unoptimized.
+const TEST_OPT_LEVEL: &str = "1";
+
+/// These packages' tests pass unoptimized, and their test targets are by far
+/// the most expensive to optimize: `deadpan-core`'s library test alone took ten
+/// minutes at level 2. Testing them apart keeps those targets out of the
+/// optimized build, which then needs only their plain libraries.
+const UNOPTIMIZED_TEST_PACKAGES: [&str; 3] = ["deadpan-core", "deadpan-plan", "deadpan-store"];
 
 /// Formatting, lints and tests for the workspace and the replay harness
 /// feature set. Tests use nextest when installed, then doc tests.
@@ -103,34 +110,37 @@ fn gate() -> target_hygiene::Result<()> {
         "warnings",
     ])?;
     if nextest_available() {
-        run(&[
-            "nextest",
-            "run",
-            "--workspace",
-            "--features",
-            SYNTHETIC_WORKER,
-            "--locked",
-            "--no-fail-fast",
-        ])?;
-        run(&[
-            "nextest",
-            "run",
-            "-p",
-            "deadpan-app",
-            "--features",
-            "ui-harness",
-            "--locked",
-            "--no-fail-fast",
-        ])?;
-        run(&[
-            "test",
-            "--workspace",
-            "--features",
-            SYNTHETIC_WORKER,
-            "--locked",
-            "--doc",
-            "--no-fail-fast",
-        ])
+        let mut optimized = vec!["nextest", "run", "--workspace"];
+        for package in UNOPTIMIZED_TEST_PACKAGES {
+            optimized.extend(["--exclude", package]);
+        }
+        optimized.extend(["--features", SYNTHETIC_WORKER, "--locked", "--no-fail-fast"]);
+        // Every stage runs even after a failure, so one failed target does
+        // not hide the results of the independent ones after it.
+        let stages = [
+            run(&optimized),
+            run_at(&unoptimized_tests(), "0"),
+            run(&[
+                "nextest",
+                "run",
+                "-p",
+                "deadpan-app",
+                "--features",
+                "ui-harness",
+                "--locked",
+                "--no-fail-fast",
+            ]),
+            run(&[
+                "test",
+                "--workspace",
+                "--features",
+                SYNTHETIC_WORKER,
+                "--locked",
+                "--doc",
+                "--no-fail-fast",
+            ]),
+        ];
+        stages.into_iter().collect()
     } else {
         run(&[
             "test",
@@ -152,6 +162,15 @@ fn gate() -> target_hygiene::Result<()> {
     }
 }
 
+fn unoptimized_tests() -> Vec<&'static str> {
+    let mut tests = vec!["nextest", "run"];
+    for package in UNOPTIMIZED_TEST_PACKAGES {
+        tests.extend(["-p", package]);
+    }
+    tests.extend(["--locked", "--no-fail-fast"]);
+    tests
+}
+
 fn nextest_available() -> bool {
     Command::new("cargo")
         .args(["nextest", "--version"])
@@ -160,6 +179,10 @@ fn nextest_available() -> bool {
 }
 
 fn run(arguments: &[&str]) -> target_hygiene::Result<()> {
+    run_at(arguments, TEST_OPT_LEVEL)
+}
+
+fn run_at(arguments: &[&str], opt_level: &str) -> target_hygiene::Result<()> {
     let status = Command::new("cargo")
         .args(arguments)
         // Synthetic-worker tests fail instead of skipping when their ffmpeg
@@ -168,7 +191,7 @@ fn run(arguments: &[&str]) -> target_hygiene::Result<()> {
         // Encoded Render, VideoToolbox and GPU exactness checks fail instead of
         // skipping on a virtual machine (crates/deadpan-cli/tests/support/physical_mac.rs).
         .env("DEADPAN_REQUIRE_PHYSICAL_MAC", "1")
-        .env("CARGO_PROFILE_DEV_OPT_LEVEL", TEST_OPT_LEVEL)
+        .env("CARGO_PROFILE_DEV_OPT_LEVEL", opt_level)
         .status()
         .map_err(|error| format!("failed to start cargo: {error}"))?;
     if status.success() {

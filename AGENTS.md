@@ -1635,11 +1635,15 @@ choose the cheapest one that covers the change:
    Tests with wall-clock preparation deadlines (audio stages, limiting, wet
    effects, CLI inspection and export) need the optimized test build that
    check, gate and CI use: prefix the command with
-   `CARGO_PROFILE_DEV_OPT_LEVEL=2`. Debug assertions and overflow checks stay
+   `CARGO_PROFILE_DEV_OPT_LEVEL=1`. Debug assertions and overflow checks stay
    on, and Cargo compiles the two levels separately within `target/debug`.
+   Core, Plan and Store tests run unoptimized everywhere in xtask; do not
+   optimize them, because their test targets dominate an optimized build.
 2. Before each commit (minutes): `cargo xtask check`, which formats, lints with
    `-D warnings` and runs nextest for only the packages changed since
-   `origin/main` (`--since REV`, `--no-test`, `--filter EXPR`). Add one named
+   `origin/main`, leaving `.config/slow-tests.txt` to the gate (`--since REV`,
+   `--no-test`, `--all`, `--filter EXPR`). Add a test over 10 seconds to that
+   list. Add one named
    replay (`cargo xtask replays --scenario <name>`) only when that scenario's
    UI path changed, and one `DEADPAN_PREVIEW_EXPORT_ONLY=<fixture>` release
    export only when export behavior changed.
