@@ -797,6 +797,20 @@ pub static SPECS: &[Spec] = &[
         headless: eq("split_edit instruction", HOLDS),
         help: "With the cursor on a cut between two source beats, move the sound's cut while the picture still cuts at the cursor: :jcut starts the next beat's sound early, :lcut lets this beat's sound run on under the next picture. The edit's duration stays the same. Both beats need enough source beyond the cut. One Undo.",
     },
+    Spec {
+        id: "audio-shift",
+        name: "Shift sound",
+        section: Section::Structure,
+        keys: &[],
+        commands: &[verb(
+            "audio-shift",
+            ":audio-shift +5f [overflow=trim] [extend=hold]",
+        )],
+        contexts: C::EDIT,
+        replay: Replay::RecordedAndDot,
+        headless: eq("audio_shift instruction", HOLDS),
+        help: "Slide all sound from the Edit cursor to the end of its group by whole frames, across cuts, while every picture stays. +5f leaves 5 frames of silence at the cursor; -3f also covers the 3 frames before it. Sound pushed past the group's end needs overflow=trim to cut it or extend=hold to hold the last picture for the shift. One Undo.",
+    },
     // REPEAT & SPEED
     Spec {
         id: "repeat",

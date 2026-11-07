@@ -223,6 +223,13 @@ pub enum Action {
         trim: bool,
         extend: bool,
     },
+    /// `:audio-shift +5f [overflow=trim|extend=hold]`: slide the sound from
+    /// the Edit cursor to the end of its group, across cuts, by whole frames.
+    AudioShift {
+        frames: i64,
+        trim: bool,
+        extend: bool,
+    },
     /// `:jcut D` / `:lcut D`: move the sound's cut at the cursor's seam
     /// earlier or later by `D` while the picture still cuts at the cursor.
     SplitEdit {

@@ -11,7 +11,7 @@ tests prove each mode router acts on exactly them. Native shortcuts
 (menus, ⌘ chords, panel controls) are described, not router-verified.
 Headless status links to [PARITY](PARITY.md).
 
-215 actions, 139 command verbs.
+216 actions, 140 command verbs.
 
 ## Start & View
 
@@ -98,6 +98,7 @@ Headless status links to [PARITY](PARITY.md).
 | **Explode a Repeat** (`structure.explode`)<br>Turn the selected Repeat into an ordinary group of independent plays: every picture, sample, gap, play override and escalation step stays exactly as it was; gaps become pauses and escalated plays become groups carrying their gain and scale. Clear every Visual range first. One Undo restores the Repeat. | none (`structure.explode`) | `:explode` | Your edit | recorded; . repeats | [Equivalent](PARITY.md#structural-edits): `explode instruction` |
 | **Duplicate after itself** (`structure.duplicate`)<br>Copy the current Visual range, or else the selected beat, immediately after itself as a new "Copied contents" group with fresh identities, shared media and its own marks, sounds and overrides. The copy becomes the selected beat. Registers are unchanged. | none (`structure.duplicate`) | `:duplicate` | Your edit (Normal and Visual) | recorded; . repeats | [Equivalent](PARITY.md#structural-edits): `duplicate instruction` |
 | **J-cut / L-cut** (`split-edit`)<br>With the cursor on a cut between two source beats, move the sound's cut while the picture still cuts at the cursor: :jcut starts the next beat's sound early, :lcut lets this beat's sound run on under the next picture. The edit's duration stays the same. Both beats need enough source beyond the cut. One Undo. | - | `:jcut 6f`, `:lcut 200ms` | Your edit | recorded; . repeats | [Equivalent](PARITY.md#holds-pauses-and-punctuation): `split_edit instruction` |
+| **Shift sound** (`audio-shift`)<br>Slide all sound from the Edit cursor to the end of its group by whole frames, across cuts, while every picture stays. +5f leaves 5 frames of silence at the cursor; -3f also covers the 3 frames before it. Sound pushed past the group's end needs overflow=trim to cut it or extend=hold to hold the last picture for the shift. One Undo. | - | `:audio-shift +5f [overflow=trim] [extend=hold]` | Your edit | recorded; . repeats | [Equivalent](PARITY.md#holds-pauses-and-punctuation): `audio_shift instruction` |
 
 ## Repeat & Speed
 

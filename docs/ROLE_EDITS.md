@@ -126,9 +126,32 @@ preview/export fixture, where the click is heard again exactly 5 and 10 frames
 later, and still after a later ripple delete moves everything 3 frames
 earlier, in the export and preview.
 
+## Audio shift
+
+`:audio-shift +5f` (or `-3f`) slides all sound from the Edit cursor to the end
+of its group by whole frames, across cuts, while every picture stays. The
+instruction is `AudioShift { frames, trim, extend }`
+([audio_shift.rs](../crates/deadpan-core/src/semantic/planner/audio_shift.rs)).
+Each beat's own sound over the affected frames becomes a mute range, and plays
+again as a root sound event of the same Original audio through that beat's
+exact mapping, moved by the shift, so the slide is continuous across cuts and
+follows later root-clock edits. A forward shift leaves silence at the cursor; a
+backward shift also mutes the frames it slides over and refuses before the
+group's start. Sound pushed past the group's end refuses with its count unless
+`overflow=trim` cuts it there or `extend=hold` holds the last picture for the
+shift and permits the sound over that pause. A pause with its own sound in the
+stretch, a group, a fitted mapping or a Visual selection refuses. The owner chose
+this continuous behavior on 2026-11-07.
+
+Evidence: `an_audio_shift_slides_sound_across_cuts_and_keeps_every_picture`
+(exact root frames and Original phase of each moved sound, mutes, unchanged
+pictures, the extension and its allowance, and four refusals) and the
+`split-edits` replay (refusal, a shift across the cut, Undo). The moved sounds
+use the same root sound path whose emitted output the `role-repeat` fixture
+verifies; a separate `audio-shift` preview/export fixture has not been run.
+
 ## Remaining
 
-An explicit `audio-shift` command that ripples sound independently of picture,
 fit/hold policies for video-only repeats, inter-play holds for
 audio-only repeats, copying a range together with its repeats (refused today),
 split edits

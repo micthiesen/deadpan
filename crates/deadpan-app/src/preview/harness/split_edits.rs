@@ -480,5 +480,55 @@ fn role_repeats(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"sounds":1,"frames":90}),
         json!({"sounds":sound_count(d),"frames":d.app().sequence_length(),"error":d.app().error}),
     )?;
-    undo(d)
+    undo(d)?;
+    d.check(
+        "The role repeats are undone, leaving the two beats",
+        sound_count(d) == 0 && lengths(d) == [40, 50],
+        json!({"sounds":0,"beats":[40, 50]}),
+        json!({"sounds":sound_count(d),"beats":lengths(d)}),
+    )?;
+    audio_shifts(d)
+}
+
+/// §6.5 `audio-shift`: the sound after the cursor slides across the cut while
+/// every picture stays.
+fn audio_shifts(d: &mut Driver<'_>) -> Result<(), String> {
+    let pictures_before = pictures(d, &[30, 39, 40, 41, 85, 89])?;
+    at(d, 30)?;
+    let before = d.revision();
+    d.command("audio-shift +4f")?;
+    d.wait_for("The refused shift's reply", |app| {
+        !app.service.is_busy() && !app.macros.is_pending() && app.error.is_some()
+    })?;
+    d.settled()?;
+    d.check(
+        "A shift that would push sound past the end refuses and names its overflow policies",
+        d.revision() == before
+            && sound_count(d) == 0
+            && d.app()
+                .error
+                .as_deref()
+                .is_some_and(|error| error.contains("overflow=trim")),
+        json!({"edited":false,"error":"…overflow=trim…"}),
+        json!({"error":d.app().error,"sounds":sound_count(d)}),
+    )?;
+    edit(d, "audio-shift +4f overflow=trim")?;
+    let pictures_after = pictures(d, &[30, 39, 40, 41, 85, 89])?;
+    d.check(
+        ":audio-shift +4f slides both beats' sound after the cursor as placed sounds and keeps every picture and the length",
+        sound_count(d) == 2
+            && pictures_after == pictures_before
+            && lengths(d) == [40, 50]
+            && d.app().sequence_length() == 90,
+        json!({"sounds":2,"pictures_unchanged":true,"beats":[40, 50]}),
+        json!({"sounds":sound_count(d),"pictures":pictures_after,"beats":lengths(d),"error":d.app().error}),
+    )?;
+    d.capture("Sound shifted across the cut")?;
+    undo(d)?;
+    d.check(
+        "One Undo restores the unshifted sound",
+        sound_count(d) == 0,
+        json!({"sounds":0}),
+        json!({"sounds":sound_count(d)}),
+    )
 }

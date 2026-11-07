@@ -691,6 +691,7 @@ impl Service {
                                 ..
                             } => "Repeat sound",
                             SemanticInstruction::RoleRepeat { .. } => "Repeat picture",
+                            SemanticInstruction::AudioShift { .. } => "Shift sound",
                             SemanticInstruction::DeleteRole {
                                 role: deadpan_core::MediaRole::Audio,
                             } => "Delete sound",

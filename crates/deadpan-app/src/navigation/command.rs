@@ -683,6 +683,9 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         return super::hold_effects::parse_reverse(&arguments, bounce)
             .map(|length| Entry::Action(Action::Reverse { length, bounce }));
     }
+    if verb == "audio-shift" {
+        return audio_shift(words);
+    }
     if verb == "jcut" || verb == "lcut" {
         let arguments: Vec<&str> = words.collect();
         let kind = if verb == "jcut" {
@@ -1134,6 +1137,35 @@ fn role_repeat<'a>(words: impl Iterator<Item = &'a str>) -> Result<Entry, String
         plays: plays.unwrap_or(std::num::NonZeroU32::new(2).expect("constant plays")),
         trim: trim.unwrap_or(false),
         extend: extend.unwrap_or(false),
+    }))
+}
+
+const AUDIO_SHIFT_USAGE: &str = "Use :audio-shift +5f or -3f, with overflow=trim or extend=hold when sound would pass the group's end.";
+
+/// `:audio-shift ±Nf [overflow=trim|extend=hold]`.
+fn audio_shift<'a>(words: impl Iterator<Item = &'a str>) -> Result<Entry, String> {
+    let mut frames = None;
+    let mut trim = false;
+    let mut extend = false;
+    for word in words {
+        match word.split_once('=') {
+            Some(("overflow", "trim")) if !trim && !extend => trim = true,
+            Some(("extend", "hold")) if !trim && !extend => extend = true,
+            None if frames.is_none() => {
+                let digits = word.strip_suffix('f').ok_or(AUDIO_SHIFT_USAGE)?;
+                let value = digits.parse::<i64>().map_err(|_| AUDIO_SHIFT_USAGE)?;
+                if value == 0 {
+                    return Err("A zero audio shift moves nothing.".into());
+                }
+                frames = Some(value);
+            }
+            _ => return Err(AUDIO_SHIFT_USAGE.into()),
+        }
+    }
+    Ok(Entry::Action(Action::AudioShift {
+        frames: frames.ok_or(AUDIO_SHIFT_USAGE)?,
+        trim,
+        extend,
     }))
 }
 
@@ -1700,6 +1732,35 @@ mod tests {
             "repeat 3 role=audio extend=hold overflow=trim",
             "repeat 0 role=audio",
             "repeat 3 role=audio overflow=wrap",
+        ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+    }
+
+    #[test]
+    fn audio_shifts_take_signed_frames_and_one_overflow_policy() {
+        assert_eq!(
+            parse(":audio-shift +5f overflow=trim"),
+            Ok(Entry::Action(Action::AudioShift {
+                frames: 5,
+                trim: true,
+                extend: false,
+            }))
+        );
+        assert_eq!(
+            parse(":audio-shift -3f"),
+            Ok(Entry::Action(Action::AudioShift {
+                frames: -3,
+                trim: false,
+                extend: false,
+            }))
+        );
+        for input in [
+            "audio-shift",
+            "audio-shift 5",
+            "audio-shift 0f",
+            "audio-shift 5f overflow=trim extend=hold",
+            "audio-shift 5f 3f",
         ] {
             assert!(parse(input).is_err(), "{input}");
         }

@@ -750,6 +750,7 @@ impl DeadpanApp {
                     | Action::Repeat { .. }
                     | Action::EscalatingRepeat
                     | Action::RoleRepeat { .. }
+                    | Action::AudioShift { .. }
                     | Action::GainStep(_)
                     | Action::Mute
                     | Action::Framing(_)
@@ -892,6 +893,7 @@ impl DeadpanApp {
                 | Action::Reverse { .. }
                 | Action::SplitEdit { .. }
                 | Action::RoleRepeat { .. }
+                    | Action::AudioShift { .. }
                 | Action::Tail { .. }
                 | Action::Lift
                 | Action::Bleep { .. }
@@ -965,6 +967,7 @@ impl DeadpanApp {
                 | Action::Reverse { .. }
                 | Action::SplitEdit { .. }
                 | Action::RoleRepeat { .. }
+                | Action::AudioShift { .. }
                 | Action::Tail { .. }
                 | Action::Lift
                 | Action::Bleep { .. }

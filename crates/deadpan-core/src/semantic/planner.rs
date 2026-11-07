@@ -39,6 +39,7 @@ pub use selected_hold_duration::SemanticSelectedHoldDurationContext;
 mod shared_hold_duration;
 pub use pause::copied_moment_audio;
 pub use shared_hold_duration::SemanticSharedHoldDurationContext;
+mod audio_shift;
 mod marks;
 mod original;
 mod repeat;
@@ -1157,6 +1158,13 @@ where
                 } => {
                     self.role_repeat(index, *role, plays.get(), *trim, *extend)?;
                 }
+                SemanticInstruction::AudioShift {
+                    frames,
+                    trim,
+                    extend,
+                } => {
+                    self.audio_shift(index, *frames, *trim, *extend)?;
+                }
                 SemanticInstruction::SetRepeat {
                     plays,
                     gaps,
@@ -1379,6 +1387,8 @@ where
                 SemanticInstruction::SetAudioEdges { .. } => 5,
                 // A Roll and a cutaway.
                 SemanticInstruction::SplitEdit { .. } => 2,
+                // At least one mute and one shifted sound.
+                SemanticInstruction::AudioShift { .. } => 2,
                 // A mute and one sound per later play, or one cutaway; an
                 // extension adds a pause and one allowance per play.
                 SemanticInstruction::RoleRepeat { plays, extend, .. } => {

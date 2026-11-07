@@ -389,6 +389,19 @@ pub enum SemanticInstruction {
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         extend: bool,
     },
+    /// Slide all sound from the Edit cursor to the end of its group by
+    /// `frames` (`:audio-shift +5f`, specification §6.5), across cuts, while
+    /// every picture stays put. Each beat's own sound there is muted and plays
+    /// again as a root sound event of the same Original audio, shifted. Sound
+    /// pushed past the group's end refuses unless `trim` cuts it there or
+    /// `extend` holds the last picture for exactly the shift.
+    AudioShift {
+        frames: i64,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        trim: bool,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        extend: bool,
+    },
     /// Set the selected direct-child Repeat's total count. Visual selection is
     /// incompatible with this node parameter edit, including an empty range.
     SetRepeatPlays {
@@ -876,7 +889,18 @@ impl SemanticProgram {
                     "a recorded pause sound is silence or room tone",
                 ));
             }
+            if let SemanticInstruction::AudioShift { frames: 0, .. } = instruction {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "a zero audio shift moves nothing",
+                ));
+            }
             if let SemanticInstruction::RoleRepeat {
+                trim: true,
+                extend: true,
+                ..
+            }
+            | SemanticInstruction::AudioShift {
                 trim: true,
                 extend: true,
                 ..

@@ -176,6 +176,25 @@ impl DeadpanApp {
         );
     }
 
+    /// `:audio-shift`: one recorded slide of the sound after the Edit cursor.
+    pub(super) fn audio_shift(
+        &mut self,
+        frames: i64,
+        trim: bool,
+        extend: bool,
+        target: Result<macros::Capture, String>,
+    ) {
+        self.cancel_repeats("an audio shift was requested");
+        self.apply_recorded_instruction(
+            target,
+            Ok(SemanticInstruction::AudioShift {
+                frames,
+                trim,
+                extend,
+            }),
+        );
+    }
+
     pub(super) fn apply_tail(
         &mut self,
         target: Result<macros::Capture, String>,

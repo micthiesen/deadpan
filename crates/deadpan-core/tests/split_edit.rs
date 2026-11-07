@@ -725,3 +725,156 @@ fn audio_repeats_follow_root_edits_and_refuse_captures_that_would_leave_them_beh
     .unwrap();
     assert_eq!(heard(&split), heard(&after));
 }
+
+fn plan_shift(
+    document: &ProjectDocument,
+    cursor: i64,
+    frames: i64,
+    trim: bool,
+    extend: bool,
+) -> Result<SemanticPlan, EditError> {
+    plan_semantic_with_speech(
+        document,
+        &SemanticContext {
+            original: None,
+            scoped: None,
+            hold_duration: None,
+            shared_hold_duration: None,
+            mixed_hold_duration: None,
+            selected_hold_duration: None,
+            parent: id("root"),
+            cursor: ProjectFrame(cursor),
+            selected_child: None,
+            visual_selection: None,
+        },
+        &SemanticProgram::new(vec![SemanticInstruction::AudioShift {
+            frames,
+            trim,
+            extend,
+        }])?,
+        SemanticRegisterBank {
+            entries: &BTreeMap::new(),
+            version: 1,
+        },
+        RevisionId::new("outer").unwrap(),
+        |request| match request {
+            SemanticAllocationRequest::Sound { step_index } => Ok(SemanticAllocation::Sound {
+                new_revision: RevisionId::new(format!("leaf-{step_index}")).unwrap(),
+                id: SoundId::new(format!("shift-{step_index}")).unwrap(),
+            }),
+            SemanticAllocationRequest::InsertPause {
+                step_index,
+                required_split_ids,
+            } => Ok(SemanticAllocation::InsertPause {
+                new_revision: RevisionId::new(format!("leaf-{step_index}")).unwrap(),
+                id: id(&format!("held-{step_index}")),
+                split: SplitIdentities {
+                    nodes: (0..required_split_ids)
+                        .map(|n| id(&format!("held-split-{step_index}-{n}")))
+                        .collect(),
+                },
+            }),
+            other => allocate(other),
+        },
+        |_, _| panic!("no register is read"),
+        |_| Err(speech_unavailable()),
+        |_, _| {
+            Ok(PauseProvider {
+                video: HoldVideo::Background,
+                picture_context: None,
+                audio: HoldAudio::Silence,
+            })
+        },
+    )
+}
+
+/// Each shifted sound as (first root frame, end root frame, Original frame at
+/// its first root frame), in onset order.
+fn shifted(document: &ProjectDocument) -> Vec<(i64, i64, i64)> {
+    let mut heard: Vec<_> = document
+        .sounds()
+        .values()
+        .map(|event| {
+            let selected = event
+                .mapping
+                .selection_frames_with_offset(
+                    FrameDuration::ZERO,
+                    event.offset,
+                    FrameRate::new(30, 1).unwrap(),
+                )
+                .unwrap();
+            let SourceAudioMapping::SelectedPlacement {
+                start, selection, ..
+            } = event.mapping
+            else {
+                panic!("a shifted sound keeps its selected placement")
+            };
+            let original = selection.start.checked_sub(start).unwrap();
+            (
+                selected.start.floor() as i64,
+                selected.end.floor() as i64,
+                original.floor() as i64,
+            )
+        })
+        .collect();
+    heard.sort();
+    heard
+}
+
+fn mutes(document: &ProjectDocument, node: &str) -> Vec<(i64, i64)> {
+    document.nodes()[&id(node)]
+        .audio_treatments
+        .clip_gain()
+        .map(|clip| {
+            clip.mute_ranges()
+                .iter()
+                .map(|range| (range.start().floor() as i64, range.end().floor() as i64))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+#[test]
+fn an_audio_shift_slides_sound_across_cuts_and_keeps_every_picture() {
+    let before = with_sound();
+    let pictures_before = pictures(&before);
+
+    // Forward: sound from Edit 15 plays 3 frames later, across the cut at 20.
+    // Edit 15 is Original 25 in "left"; Edit 20 is Original 50 in "right".
+    let error = plan_shift(&before, 15, 3, false, false).unwrap_err();
+    assert!(error.message.contains("overflow=trim"), "{error:?}");
+    let forward = plan_shift(&before, 15, 3, true, false).unwrap().document;
+    assert_eq!(forward.duration().unwrap(), before.duration().unwrap());
+    assert_eq!(pictures(&forward), pictures_before);
+    assert_eq!(mutes(&forward, "left"), vec![(15, 20)]);
+    assert_eq!(mutes(&forward, "right"), vec![(0, 20)]);
+    assert_eq!(shifted(&forward), vec![(18, 23, 25), (23, 40, 50)]);
+
+    // Backward: the sound slides 4 frames earlier over Edit 11..15, which is
+    // muted too; nothing passes the end.
+    let backward = plan_shift(&before, 15, -4, false, false).unwrap().document;
+    assert_eq!(pictures(&backward), pictures_before);
+    assert_eq!(mutes(&backward, "left"), vec![(11, 20)]);
+    assert_eq!(shifted(&backward), vec![(11, 16, 25), (16, 36, 50)]);
+
+    // extend=hold holds the last picture for exactly the shift and lets the
+    // sound that reaches it play over the pause.
+    let held = plan_shift(&before, 15, 3, false, true).unwrap().document;
+    assert_eq!(
+        held.duration().unwrap().frames(),
+        before.duration().unwrap().frames() + 3
+    );
+    assert_eq!(shifted(&held), vec![(18, 23, 25), (23, 43, 50)]);
+    let allowed: Vec<_> = held.sound_allowances().iter().collect();
+    assert_eq!(allowed.len(), 1, "{allowed:?}");
+
+    for (cursor, frames, trim, extend, message) in [
+        (15, 0, true, false, "zero audio shift"),
+        (15, 3, true, true, "one overflow policy"),
+        (2, -4, false, false, "before this group starts"),
+        (40, 2, true, false, "at the end of its group"),
+    ] {
+        let error = plan_shift(&before, cursor, frames, trim, extend).unwrap_err();
+        assert!(error.message.contains(message), "{message}: {error:?}");
+    }
+}

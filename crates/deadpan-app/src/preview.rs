@@ -2196,6 +2196,11 @@ impl DeadpanApp {
             } => self.bleep_selection(frequency_hz, level_millidecibels),
             Action::Reverse { length, bounce } => self.apply_reverse(length, bounce),
             Action::SplitEdit { kind, length } => self.apply_split_edit(kind, length),
+            Action::AudioShift {
+                frames,
+                trim,
+                extend,
+            } => self.audio_shift(frames, trim, extend, self.capture_macro_target()),
             Action::RoleRepeat {
                 role,
                 plays,

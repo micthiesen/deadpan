@@ -488,6 +488,11 @@ pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> O
             return Some(format!("Pause length set to {}", pause_text(*length)));
         }
         I::SetAudio { change } => return Some(audio_change_text(*change)),
+        I::AudioShift { frames, .. } => {
+            return Some(format!(
+                "Slid the sound after the cursor {frames:+} frames; pictures stay"
+            ));
+        }
         I::RoleRepeat { role, plays, .. } => {
             return Some(match role {
                 deadpan_core::MediaRole::Audio => {
