@@ -69,68 +69,6 @@ pub(crate) fn refuse_treated_sound_in_processor(
     Ok(())
 }
 
-/// A pause inside a speed change divides that processor, but a sound below it
-/// reaches the processor as one continuous voice. Measured output changed on
-/// both sides of the pause, so this refuses until that path exists.
-pub(crate) fn refuse_pause_in_sound_processor(
-    document: &ProjectDocument,
-    at: ProjectFrame,
-) -> Result<(), EditError> {
-    let durations = document.durations_shared()?;
-    let mut node = document.root().clone();
-    let mut local = at.0;
-    loop {
-        match &document.nodes[&node].kind {
-            NodeKind::Sequence { children } => {
-                let mut start = 0;
-                let mut inside = None;
-                for child in children {
-                    let end = start + durations[child].frames();
-                    if local > start && local < end {
-                        inside = Some((child.clone(), local - start));
-                        break;
-                    }
-                    start = end;
-                }
-                let Some((child, offset)) = inside else {
-                    return Ok(());
-                };
-                node = child;
-                local = offset;
-            }
-            NodeKind::Retime { child, purpose, .. } if *purpose == RetimePurpose::Partition => {
-                node = child.clone();
-            }
-            NodeKind::Retime { .. } | NodeKind::Repeat { .. } => {
-                return refuse_processed_sound(document, &node);
-            }
-            _ => return Ok(()),
-        }
-    }
-}
-
-fn refuse_processed_sound(document: &ProjectDocument, root: &NodeId) -> Result<(), EditError> {
-    let mut pending = vec![(root.clone(), false)];
-    while let Some((node, below)) = pending.pop() {
-        if below && document.beat_sounds.contains_key(&node) {
-            return Err(EditError::new(
-                EditErrorCode::InvalidCommand,
-                "a pause cannot divide a speed change with attached sound",
-            ));
-        }
-        let processes = matches!(
-            document.nodes[&node].kind,
-            NodeKind::Retime { purpose, .. } if purpose != RetimePurpose::Partition
-        );
-        pending.extend(
-            document
-                .children(&node)
-                .map(|child| (child.clone(), below || processes)),
-        );
-    }
-    Ok(())
-}
-
 pub(crate) fn apply(
     document: &ProjectDocument,
     target: &NodeId,

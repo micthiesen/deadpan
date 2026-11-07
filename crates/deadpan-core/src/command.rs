@@ -1392,9 +1392,6 @@ fn apply_with_durations_captured(
     if let Command::Split { node, .. } = &request.command {
         crate::split::refuse_treated_sound_in_processor(document, node)?;
     }
-    if let Command::InsertTime { at, .. } = &request.command {
-        crate::split::refuse_pause_in_sound_processor(document, *at)?;
-    }
     let mut beat_sound_edit = crate::sound_clock::edit::SoundClockEditCapture::prepare(
         document,
         &request.command,

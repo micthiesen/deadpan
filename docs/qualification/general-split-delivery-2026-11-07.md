@@ -61,11 +61,19 @@ evidence pins exact accounting at them; integration tests use shipped values.
   a speed change. Its treatment needs the sound in its nonlinear sum, while the
   processor above needs one continuous voice, and no read path does both yet. This
   remains open implementation work, not an accepted limitation.
-- A pause that divides a speed change with attached sound refuses. Measured
-  output changed on both sides of the pause, by up to 0.26 before it even without
-  treatments, so the previously accepted edit was wrong. This also remains open.
 - Split of the project root with a root-owned sound keeps its refusal. Editing
   never cuts the root itself.
+
+## Correction: pauses inside a speed change
+
+`56d59e2a6` also refused a pause that divides a speed change with attached sound,
+reporting output changed on both sides. That measurement was wrong: it compared
+everything after the pause with one constant shift, but a pause at a frame whose
+boundary rounds differently moves the stage by 1,602 samples and the following
+beat by 1,601. Measured per region, outside edge fades, the result is exact for
+dry, gain, saturation, EQ and wet treatments at three positions, with a silent
+pause. The following commit removes the refusal and keeps that comparison as
+`a_pause_inside_a_speed_change_resumes_a_treated_attached_sound_exactly`.
 
 ## Not established
 
