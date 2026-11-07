@@ -58,9 +58,16 @@ evidence pins exact accounting at them; integration tests use shipped values.
 ## Refusals
 
 - A beat with both its own treatment and an attached sound cannot be Split inside
-  a speed change. Its treatment needs the sound in its nonlinear sum, while the
-  processor above needs one continuous voice, and no read path does both yet. This
-  remains open implementation work, not an accepted limitation.
+  a speed change. This remains open implementation work, not an accepted
+  limitation. Measured per treatment with the refusal disabled: pointwise gain is
+  exact in Source, Sequence and Repeat owners; EQ fails around the cut, saturation
+  in one piece and wet sends in the other. Every read uses a context-free voice
+  list, so a treated piece takes its sound by ownership, and the per-occurrence
+  dedupe gives it to only one piece. Keeping every copy instead doubles the sound,
+  because `audio_owner_occurrences` sets Preserve influence to the whole stage and
+  a piece's Partition does not narrow it. Narrowing it there was tried and made
+  dry sounds fail too: influence also bounds the copy's processing input. The fix
+  needs separate input context and output window per processed piece.
 - Split of the project root with a root-owned sound keeps its refusal. Editing
   never cuts the root itself.
 
