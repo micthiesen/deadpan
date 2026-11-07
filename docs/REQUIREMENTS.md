@@ -2,6 +2,29 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Creative surface additions, 2026-11-07
+
+Section 8 coverage moves from 85 to 90 of 95 rows implemented; the five
+remaining rows are dot-repeat of one-play edits, audio/video-only repeat
+remainders, per-play temporal edits, variable-rate stretch and general
+occurrence macros.
+
+- `:audio-shift +5f [overflow=trim|extend=hold]` (§6.5) slides sound from the
+  Edit cursor across cuts as root sound events while pictures stay; the owner
+  chose a continuous slide ([role edits](ROLE_EDITS.md#audio-shift)).
+- Role-only deletes span cuts, and a video delete removes the topmost picture
+  layer, trimming a covering cutaway before blanking the beat. Section 6.5 was
+  revised under the owner's delegation ([provenance](SPEC_PROVENANCE.md)).
+- `:repeat … speed-step=0.25` completes escalation's speed progression as
+  editable per-play Retime overrides ([escalation](REPEAT_ESCALATION.md#speed-progression)).
+- The command line completes arguments from each verb's registry usage schema,
+  checks typed units before Enter and names the default target (§6.4).
+- Tails and Framing were reclassified against the spec's actual wording.
+
+Evidence is core planner tests, `split-edits` and `palette` replays with
+inspected captures, and `cargo xtask check`. No DP requirement or gate closes:
+each touched requirement still has other open criteria.
+
 ## General Split delivery, 2026-11-07
 
 The [delivery qualification](qualification/general-split-delivery-2026-11-07.md)
