@@ -6340,7 +6340,23 @@ fn help_spec_row_with(
 fn command_completion_text(command: &str) -> Option<(String, String)> {
     let matches = navigation::command::completions(command);
     if matches.is_empty() {
-        return None;
+        // Once arguments follow a known verb, its registry usage schema names
+        // the next typed argument, any value that does not fit, and the target.
+        let guide = navigation::command::schema::guide(command)?;
+        let shown = match &guide.problem {
+            Some(problem) => format!("{problem}  ·  {}", guide.shown),
+            None => format!("{}  ·  acts on {}", guide.shown, guide.target),
+        };
+        let full = format!(
+            "{}{}. Acts on {}.",
+            guide
+                .problem
+                .map(|problem| format!("{problem}. "))
+                .unwrap_or_default(),
+            guide.shown,
+            guide.target
+        );
+        return Some((shown, full));
     }
     let mut shown = matches
         .iter()
@@ -6452,7 +6468,18 @@ fn target_size(size: egui::Vec2, pixels_per_point: f32) -> (u32, u32) {
 mod tests {
     #[test]
     fn completion_row_truncates_to_four_and_names_every_match_accessibly() {
-        assert_eq!(super::command_completion_text("caption hi"), None);
+        let (shown, full) = super::command_completion_text("caption hi ").unwrap();
+        assert_eq!(
+            shown,
+            "at=top|center  delay=duration in s, ms or f  ·  \
+             acts on the Visual selection, else the Edit cursor"
+        );
+        assert!(full.ends_with("Acts on the Visual selection, else the Edit cursor."));
+        let (shown, _) = super::command_completion_text(":hold 1.5x ").unwrap();
+        assert!(
+            shown.starts_with("1.5x is not a duration in s, ms or f"),
+            "{shown}"
+        );
         let (shown, full) = super::command_completion_text(":cap").unwrap();
         assert_eq!(shown, ":caption TEXT [at=top|center] [delay=4f]");
         assert!(full.ends_with(":caption TEXT [at=top|center] [delay=4f]"));

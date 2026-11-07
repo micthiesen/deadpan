@@ -7,6 +7,7 @@ use super::{Action, BeatEdit, duration::DurationInput};
 mod equalizer;
 pub(crate) mod generate;
 pub(crate) mod interpretation;
+pub mod schema;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ScopeChoice {

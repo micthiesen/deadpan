@@ -215,6 +215,44 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"command":d.app().command,"usage":usage}),
     )?;
     d.capture("Palette prefilled :hold")?;
+
+    // Once its verb is complete, the registry usage schema checks typed units
+    // and completes options before Enter, and names what the command acts on.
+    d.events("Type a duration without a unit", vec![text("1.5x ")])?;
+    d.step("Argument problem paints", true)?;
+    let problem = super::scenarios::text_paint_visibility(d, "1.5x is not a duration");
+    d.check(
+        "A value that does not fit its typed unit is named before Enter",
+        d.app().command == "hold 1.5x "
+            && problem.iter().any(|part| part["fully_visible"] == true)
+            && d.revision() == revision,
+        json!({"command":"hold 1.5x ","problem_painted":true}),
+        json!({"command":d.app().command,"problem":problem}),
+    )?;
+    for _ in 0.."1.5x ".len() {
+        d.key(Key::Backspace)?;
+    }
+    d.events(
+        "Type a duration and an option prefix",
+        vec![text("1.5s vi")],
+    )?;
+    d.step("Option completion paints", true)?;
+    let option = super::scenarios::text_paint_visibility(d, "video=");
+    d.events("Choose the option and a value prefix", vec![text("deo=bl")])?;
+    d.step("Value completion paints", true)?;
+    let value = super::scenarios::text_paint_visibility(d, "video=black");
+    let target = super::scenarios::text_paint_visibility(d, "acts on the Edit cursor");
+    d.check(
+        "Options and choice values complete from the schema, with the default target",
+        d.app().command == "hold 1.5s video=bl"
+            && option.iter().any(|part| part["fully_visible"] == true)
+            && value.iter().any(|part| part["fully_visible"] == true)
+            && target.iter().any(|part| part["fully_visible"] == true)
+            && d.revision() == revision,
+        json!({"option":"video=","value":"video=black","target":"the Edit cursor"}),
+        json!({"command":d.app().command,"option":option,"value":value,"target":target}),
+    )?;
+    d.capture("Command line schema completion")?;
     d.key(Key::Escape)?;
     d.wait_for("Command entry closes", |app| !app.command_open)?;
 
