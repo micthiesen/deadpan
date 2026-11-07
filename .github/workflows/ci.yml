@@ -74,7 +74,21 @@ jobs:
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
       - name: Test
         if: ${{ !cancelled() }}
-        run: cargo test --workspace --locked --no-fail-fast
+        # A hung test must leave time for the independent steps below.
+        timeout-minutes: 180
+        run: >-
+          cargo test --workspace --exclude deadpan-core --exclude deadpan-plan
+          --exclude deadpan-store --locked --no-fail-fast
+      - name: Test unoptimized packages
+        if: ${{ !cancelled() }}
+        timeout-minutes: 90
+        # As in `cargo xtask gate`: these pass unoptimized, and their test
+        # targets dominate an optimized build.
+        env:
+          CARGO_PROFILE_DEV_OPT_LEVEL: "0"
+        run: >-
+          cargo test -p deadpan-core -p deadpan-plan -p deadpan-store --locked
+          --no-fail-fast
       - name: UI feedback and shortcut contracts
         if: ${{ !cancelled() }}
         run: |

@@ -238,6 +238,11 @@ fn hardware_obeys_geometry_frame_and_cancellation_limits() {
     .err()
     .unwrap();
     assert!(matches!(error, SourceDecodeError::Native { code, .. } if code == "resource_limit"));
+    // Native limits are cooperative, so `control`'s deadline cannot stop a
+    // paravirtualized VideoToolbox session that has stopped answering.
+    if physical_mac::skip_without_physical_mac("VideoToolbox session limits") {
+        return;
+    }
     let mut decoder = SourceDecoder::open(
         fixture("cfr-bframes.mp4"),
         DecodeLimits {
