@@ -894,6 +894,10 @@ pub struct StageAudio {
     limits: StageLimits,
     cache: Vec<Arc<PreparedStage>>,
     original_inputs: BTreeMap<u64, shared_eq::original_inputs::Cached>,
+    /// Resident frames and disk bytes of the two caches. Admission runs
+    /// constantly and summing them took a third of a heavy read, so every
+    /// mutation of either cache must clear this.
+    cache_totals: std::cell::Cell<Option<(u64, u64)>>,
     next_original_input: u64,
     original_input_scope: Arc<()>,
     sound_processing_plans: BTreeMap<AudioTimingId, Arc<RenderPlan>>,
@@ -940,6 +944,7 @@ impl StageAudio {
             limits: StageLimits::default(),
             cache: Vec::new(),
             original_inputs: BTreeMap::new(),
+            cache_totals: std::cell::Cell::new(None),
             next_original_input: 0,
             original_input_scope: Arc::new(()),
             sound_processing_plans: BTreeMap::new(),
@@ -1004,19 +1009,31 @@ impl StageAudio {
     /// Retained stage and request-local Original PCM; source halos and active
     /// work are separate. Both caches share the same resident ceiling.
     pub fn cached_resident_frames(&self) -> u64 {
-        self.cache
-            .iter()
-            .map(|entry| entry.block.samples.resident_frames())
-            .chain(self.original_inputs.values().map(|entry| entry.resident))
-            .sum()
+        self.cache_totals().0
     }
 
     /// Private files pinned by this controller's prepared stages.
     pub fn cached_disk_bytes(&self) -> u64 {
-        self.cache
+        self.cache_totals().1
+    }
+
+    fn cache_totals(&self) -> (u64, u64) {
+        if let Some(totals) = self.cache_totals.get() {
+            return totals;
+        }
+        let resident = self
+            .cache
+            .iter()
+            .map(|entry| entry.block.samples.resident_frames())
+            .chain(self.original_inputs.values().map(|entry| entry.resident))
+            .sum();
+        let disk = self
+            .cache
             .iter()
             .map(|entry| entry.block.samples.disk_bytes())
-            .sum()
+            .sum();
+        self.cache_totals.set(Some((resident, disk)));
+        (resident, disk)
     }
 
     pub fn read(
@@ -2510,6 +2527,7 @@ impl StageAudio {
             {
                 return Err(StageAudioError::Limit("nested stage depth"));
             }
+            self.cache_totals.set(None);
             let entry = self.cache.remove(index);
             let mut valid = true;
             for (asset, fingerprint) in &entry.block.dependencies {
@@ -2518,6 +2536,7 @@ impl StageAudio {
                 valid &= control.observe(asset, source)? == *fingerprint;
             }
             if valid {
+                self.cache_totals.set(None);
                 self.cache.push(Arc::clone(&entry));
                 return Ok(Some(entry));
             }
@@ -2681,6 +2700,7 @@ impl StageAudio {
             key,
             block,
         });
+        self.cache_totals.set(None);
         self.cache.push(Arc::clone(&entry));
         Ok(entry)
     }
@@ -3004,11 +3024,7 @@ impl StageAudio {
     ) -> Result<(), StageAudioError> {
         loop {
             let resident = self.cached_resident_frames();
-            let disk = self
-                .cache
-                .iter()
-                .map(|entry| entry.block.samples.disk_bytes())
-                .sum::<u64>()
+            let disk = self.cached_disk_bytes()
                 + self.active_disk_bytes
                 + control.work.borrow().projected_disk_bytes
                 + disk_bytes;
@@ -3051,6 +3067,7 @@ impl StageAudio {
                         "resident PCM or stage cache"
                     },
                 ))?;
+            self.cache_totals.set(None);
             self.cache.remove(index);
         }
     }

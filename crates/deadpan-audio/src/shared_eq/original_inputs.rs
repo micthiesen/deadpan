@@ -453,10 +453,12 @@ impl StageAudio {
     }
 
     fn remove_original_input(&mut self, key: &u64) {
+        self.cache_totals.set(None);
         self.original_inputs.remove(key);
         // BTreeMap can retain an empty root after its last removal. Release
         // that allocation before cached residency reports no payloads.
         if self.original_inputs.is_empty() {
+            self.cache_totals.set(None);
             self.original_inputs = BTreeMap::new();
         }
     }
@@ -658,6 +660,7 @@ impl StageAudio {
             },
             control,
         )?;
+        self.cache_totals.set(None);
         self.original_inputs.insert(
             key,
             Cached {
