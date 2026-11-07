@@ -930,3 +930,131 @@ fn an_audio_shift_slides_sound_across_cuts_and_keeps_every_picture() {
         assert!(error.message.contains(message), "{message}: {error:?}");
     }
 }
+
+fn plan_role_on(
+    document: &ProjectDocument,
+    role: MediaRole,
+    anchor: i64,
+    head: i64,
+) -> Result<SemanticPlan, EditError> {
+    plan_semantic(
+        document,
+        &SemanticContext {
+            original: None,
+            scoped: None,
+            hold_duration: None,
+            shared_hold_duration: None,
+            mixed_hold_duration: None,
+            selected_hold_duration: None,
+            parent: id("root"),
+            cursor: ProjectFrame(head),
+            selected_child: None,
+            visual_selection: Some(SemanticVisualSelection::Time {
+                anchor: ProjectFrame(anchor),
+                head: ProjectFrame(head),
+                extending: false,
+            }),
+        },
+        &SemanticProgram::new(vec![SemanticInstruction::DeleteRole { role }]).unwrap(),
+        SemanticRegisterBank {
+            entries: &BTreeMap::new(),
+            version: 1,
+        },
+        RevisionId::new(format!("{}-next", document.revision_id())).unwrap(),
+        allocate,
+        |_, _| panic!("no register is read"),
+    )
+}
+
+/// "right" (Edit 20..40, Original 50..69) with a hold cutaway of Original
+/// 80..90 over its local frames 2..12.
+fn with_cutaway(fit: CutawayFit) -> ProjectDocument {
+    let mut document = document();
+    let time_base = SourceTimeBase::new(1, 30).unwrap();
+    let point = |ticks: i64| SourcePoint {
+        ticks: ExactRatio::integer(ticks),
+        time_base,
+    };
+    let cutaway = Cutaway {
+        range: FrameRange::new(ProjectFrame(2), ProjectFrame(12)).unwrap(),
+        asset: AssetId::new("original").unwrap(),
+        selection: ExactSourceSpan::new(point(80), point(90)).unwrap(),
+        fit,
+        removed: false,
+    };
+    let mut wire = serde_json::to_value(&document).unwrap();
+    wire["nodes"]["right"]["cutaways"] = serde_json::to_value(vec![cutaway]).unwrap();
+    document = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    document
+}
+
+#[test]
+fn a_video_delete_removes_the_top_picture_layer_first() {
+    let before = with_cutaway(CutawayFit::Hold);
+    let shown_before = pictures(&before);
+    assert_eq!(
+        shown_before[22..32],
+        [80, 81, 82, 83, 84, 85, 86, 87, 88, 89]
+    );
+
+    // Inside the cutaway: its part is trimmed and the beat's own pictures show
+    // again (Original 54..57); both outer pieces show exactly what they did.
+    let inner = plan_role_on(&before, MediaRole::Video, 24, 28)
+        .unwrap()
+        .document;
+    let mut expected = shown_before.clone();
+    expected[24..28].copy_from_slice(&[54, 55, 56, 57]);
+    assert_eq!(pictures(&inner), expected);
+    assert!(
+        inner.nodes()[&id("right")]
+            .cutaways
+            .iter()
+            .all(|cutaway| !cutaway.removed)
+    );
+    assert_eq!(inner.duration().unwrap(), before.duration().unwrap());
+
+    // Across the cutaway's start: the uncovered frames lose the beat's picture
+    // to the background, the covered ones show the beat, the rest is kept.
+    let across = plan_role_on(&before, MediaRole::Video, 20, 26)
+        .unwrap()
+        .document;
+    let cutaways = &across.nodes()[&id("right")].cutaways;
+    assert_eq!(
+        cutaways
+            .iter()
+            .map(|cutaway| (
+                cutaway.range.start().0,
+                cutaway.range.end().0,
+                cutaway.removed
+            ))
+            .collect::<Vec<_>>(),
+        vec![(0, 2, true), (6, 12, false)]
+    );
+    let shown = pictures_without_removed(&across);
+    assert_eq!(
+        shown[20..32],
+        [50, 51, 52, 53, 54, 55, 84, 85, 86, 87, 88, 89]
+    );
+
+    // The beat's own picture is now on top there; deleting again reaches the
+    // background, and an already removed range refuses.
+    let twice = plan_role_on(&inner, MediaRole::Video, 24, 28)
+        .unwrap()
+        .document;
+    assert!(
+        twice.nodes()[&id("right")]
+            .cutaways
+            .iter()
+            .any(|cutaway| cutaway.removed && cutaway.range.start().0 == 4)
+    );
+    assert!(plan_role_on(&twice, MediaRole::Video, 24, 28).is_err());
+
+    // A looping cutaway cannot start mid-cycle, but loses its end exactly.
+    let looping = with_cutaway(CutawayFit::Loop);
+    assert!(plan_role_on(&looping, MediaRole::Video, 24, 28).is_err());
+    let tail = plan_role_on(&looping, MediaRole::Video, 28, 32)
+        .unwrap()
+        .document;
+    assert_eq!(pictures(&tail)[22..28], pictures(&looping)[22..28]);
+    assert_eq!(pictures(&tail)[28..32], [58, 59, 60, 61]);
+}

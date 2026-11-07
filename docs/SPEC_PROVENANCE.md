@@ -78,6 +78,18 @@ that rule and the requirement to preserve outside-range paths/follows and
 explicit one-play authority. This does not claim the implementation or DP-06
 acceptance is complete; [Requirements](REQUIREMENTS.md) tracks the remaining work.
 
+On 2026-11-07 the product owner delegated spec interpretation: the current
+specification was drafted without careful review, so the implementing agent
+resolves its ambiguities and revises it, reporting each decision. Section 6.5
+was revised under that authority. `:audio-shift` slides sound continuously
+across cuts (the owner's own choice). A video-only delete removes the topmost
+picture layer, trimming a covering cutaway before blanking the beat, and acts
+on each beat's part of a range across cuts; Deadpan has no layer beneath a
+beat's picture, so "an underlying attachment" became the beat under a cutaway.
+A video-only repeat keeps `overflow=trim` as its explicit policy: a repeat never
+runs short of its interval, so a hold had nothing to hold, and a fitted speed
+change would need a new picture primitive for little creative value.
+
 | File | Bytes | SHA-256 |
 | --- | ---: | --- |
 | [AGENT_HANDOFF.md](spec/archive/1.0/AGENT_HANDOFF.md) | 4,340 | `464f689e1eb5ad6b2905286e516259f07dc83fea8ebb2b0330663976b905ae6c` |

@@ -237,27 +237,13 @@ where
                     let start = local.start + offset;
                     let end = local.end + offset;
                     let rate = self.current.presentation_basis().frame_rate;
-                    let (asset, selection, _) = source_pictures(source, start..end, rate)?;
-                    let selection = clamp_to_video(&self.current, &asset, selection)?;
-                    let local_range = FrameRange::new(ProjectFrame(start), ProjectFrame(end))
-                        .map_err(crate::DocumentError::from)?;
-                    let mut cutaways = self.current.nodes()[&host].cutaways.clone();
-                    if cutaways.iter().any(|cutaway| {
-                        cutaway.range.start() < local_range.end()
-                            && local_range.start() < cutaway.range.end()
-                    }) {
-                        return Err(invalid(
-                            "a cutaway already covers part of this range; clear it first",
-                        ));
-                    }
-                    cutaways.push(Cutaway {
-                        range: local_range,
-                        asset,
-                        selection,
-                        fit: CutawayFit::Hold,
-                        removed: true,
-                    });
-                    cutaways.sort_by_key(|cutaway| cutaway.range.start());
+                    let cutaways = remove_top_pictures(
+                        &self.current,
+                        source,
+                        &self.current.nodes()[&host].cutaways,
+                        start..end,
+                        rate,
+                    )?;
                     Command::SetCutaways {
                         node: host,
                         cutaways,
@@ -382,6 +368,125 @@ where
                 .map_err(crate::audio_gain::invalid)?,
         })
     }
+}
+
+/// Remove the topmost picture over host-physical frames `range`: a cutaway's
+/// part there is trimmed so the beat's own picture shows again, and wherever no
+/// cutaway covers the range the beat's picture becomes a removed-picture
+/// cutaway showing the background. A later piece of a trimmed cutaway keeps
+/// its pictures exactly; a looping or bouncing one cannot start mid-cycle.
+fn remove_top_pictures(
+    document: &ProjectDocument,
+    source: &SourceNode,
+    existing: &[Cutaway],
+    range: std::ops::Range<i64>,
+    rate: crate::FrameRate,
+) -> Result<Vec<Cutaway>, EditError> {
+    let mut kept = Vec::new();
+    let mut covered = Vec::new();
+    for cutaway in existing {
+        let (low, high) = (cutaway.range.start().0, cutaway.range.end().0);
+        if high <= range.start || range.end <= low {
+            kept.push(cutaway.clone());
+            continue;
+        }
+        if cutaway.removed {
+            return Err(invalid(
+                "this picture is already removed over part of the range",
+            ));
+        }
+        covered.push(low.max(range.start)..high.min(range.end));
+        if low < range.start {
+            let mut before = cutaway.clone();
+            before.range = FrameRange::new(ProjectFrame(low), ProjectFrame(range.start))
+                .map_err(crate::DocumentError::from)?;
+            kept.push(before);
+        }
+        if range.end < high {
+            let skipped = range.end - low;
+            let after_range = FrameRange::new(ProjectFrame(range.end), ProjectFrame(high))
+                .map_err(crate::DocumentError::from)?;
+            match cutaway.fit {
+                CutawayFit::Hold | CutawayFit::Gap => {
+                    match later_selection(cutaway.selection, skipped, rate)? {
+                        Some(selection) => kept.push(Cutaway {
+                            range: after_range,
+                            selection,
+                            ..cutaway.clone()
+                        }),
+                        // A gap cutaway already shows the beat past its pictures.
+                        None if cutaway.fit == CutawayFit::Gap => {}
+                        None => {
+                            return Err(invalid(
+                                "the cutaway holds its last picture after this range; delete to its end instead",
+                            ));
+                        }
+                    }
+                }
+                CutawayFit::Loop | CutawayFit::Bounce => {
+                    return Err(invalid(
+                        "a looping cutaway cannot start mid-cycle; delete its picture to its end instead",
+                    ));
+                }
+            }
+        }
+    }
+    // Parts of the range no cutaway covers lose the beat's own picture.
+    covered.sort_by_key(|part| part.start);
+    let mut cursor = range.start;
+    let mut bare = Vec::new();
+    for part in covered
+        .iter()
+        .chain(std::iter::once(&(range.end..range.end)))
+    {
+        if cursor < part.start {
+            bare.push(cursor..part.start);
+        }
+        cursor = cursor.max(part.end);
+    }
+    for part in bare {
+        let (asset, selection, _) = source_pictures(source, part.clone(), rate)?;
+        let selection = clamp_to_video(document, &asset, selection)?;
+        kept.push(Cutaway {
+            range: FrameRange::new(ProjectFrame(part.start), ProjectFrame(part.end))
+                .map_err(crate::DocumentError::from)?,
+            asset,
+            selection,
+            fit: CutawayFit::Hold,
+            removed: true,
+        });
+    }
+    kept.sort_by_key(|cutaway| cutaway.range.start());
+    Ok(kept)
+}
+
+/// `selection` starting `frames` project frames later at its natural rate,
+/// or `None` when that passes its end.
+fn later_selection(
+    selection: ExactSourceSpan,
+    frames: i64,
+    rate: crate::FrameRate,
+) -> Result<Option<ExactSourceSpan>, EditError> {
+    let base = selection.start().time_base;
+    let per_frame = ExactRatio::new(
+        i128::from(rate.denominator()) * i128::from(base.denominator()),
+        i128::from(rate.numerator()) * i128::from(base.numerator()),
+    )
+    .map_err(crate::DocumentError::from)?;
+    let ticks = ExactRatio::integer(frames)
+        .checked_mul(per_frame)
+        .and_then(|offset| offset.checked_add(selection.start().ticks))
+        .map_err(crate::DocumentError::from)?;
+    if !ticks.compare(selection.end().ticks).is_lt() {
+        return Ok(None);
+    }
+    let start = SourcePoint {
+        ticks,
+        time_base: base,
+    };
+    Ok(Some(
+        ExactSourceSpan::new(start, selection.end()).map_err(crate::DocumentError::from)?,
+    ))
 }
 
 /// `selection` within its asset's measured video, so a range that reaches

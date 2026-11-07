@@ -59,9 +59,15 @@ instruction is `DeleteRole { role }`.
 - **Audio**: the range becomes a mute range of that beat's
   [clip gain](AUDIO_GAIN.md), in the beat's own output frames (the same exact
   silence as `,m`). Picture, time and placed sounds are unchanged.
-- **Video**: the range becomes a removed-picture cutaway on the beat's Source
-  (through unity Partitions): `Cutaway.removed` makes the shared picture plan
-  show the project background there. Its `asset` and `selection` record which
+- **Video**: the topmost picture goes. Where a cutaway covers the range, that
+  part of the cutaway is trimmed so the beat's own picture shows again; a later
+  piece of a `hold` or `gap` cutaway starts its selection correspondingly later
+  so it shows exactly the same pictures, while a `loop` or `bounce` cutaway
+  refuses a mid-cycle start (delete to its end instead). Elsewhere the range
+  becomes a removed-picture cutaway on the beat's Source (through unity
+  Partitions): `Cutaway.removed` makes the shared picture plan show the project
+  background there. A second delete therefore reaches the background; a range
+  already removed refuses. Its `asset` and `selection` record which
   Original pictures were removed, clamped to the measured video; nothing is
   shown from them. Sound, time and word/pause/shot projections are unchanged.
   A pause's picture is its whole content, so `role=video` on a Hold refuses
@@ -154,8 +160,6 @@ verifies; a separate `audio-shift` preview/export fixture has not been run.
 
 ## Remaining
 
-fit/hold policies for video-only repeats, inter-play holds for
-audio-only repeats, copying a range together with its repeats (refused today),
+Inter-play holds for audio-only repeats, copying a range together with its repeats (refused today),
 split edits
-across group boundaries or onto Holds, role scope for yank/repeat/paste, and a
-removed picture that exposes an underlying attachment instead of the background.
+across group boundaries or onto Holds, role scope for yank/repeat/paste.
