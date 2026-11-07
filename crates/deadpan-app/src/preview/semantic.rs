@@ -375,8 +375,12 @@ pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> O
             plays,
             gaps,
             escalation,
+            speed,
         } => {
             let mut parts = Vec::new();
+            if speed.is_some() {
+                parts.push("a speed per play".to_owned());
+            }
             if let Some(plays) = plays {
                 parts.push(format!("{plays} plays"));
             }

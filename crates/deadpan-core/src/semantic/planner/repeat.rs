@@ -496,3 +496,154 @@ where
         Ok(())
     }
 }
+
+impl<F, R, S, P> Planner<'_, F, R, S, P>
+where
+    F: FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
+    R: FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
+    S: crate::SemanticSpeechProvider,
+    P: FnMut(&ProjectDocument, super::PauseSite) -> Result<super::PauseProvider, EditError>,
+{
+    /// Give each later play of the selected Repeat its own speed change, as a
+    /// sparse one-play Retime override, so every play stays editable.
+    pub(super) fn speed_plays(
+        &mut self,
+        trace_index: usize,
+        speed: crate::SpeedStep,
+    ) -> Result<(), EditError> {
+        let repeat = self
+            .context
+            .selected_child
+            .clone()
+            .ok_or_else(|| invalid("select a Repeat before giving its plays speeds"))?;
+        // One Repeat step addresses a play only below ordinary groups.
+        let mut ancestor = Some(self.context.parent.clone());
+        while let Some(node) = ancestor {
+            if !matches!(self.current.nodes()[&node].kind, NodeKind::Sequence { .. }) {
+                return Err(invalid(
+                    "per-play speeds need ordinary groups above the Repeat; leave the contents first",
+                ));
+            }
+            ancestor = self.current.parent_of(&node);
+        }
+        let NodeKind::Repeat {
+            child, iterations, ..
+        } = &self.current.nodes()[&repeat].kind
+        else {
+            return Err(EditError::new(
+                EditErrorCode::WrongNodeKind,
+                "per-play speeds require a Repeat",
+            ));
+        };
+        let (child, plays) = (child.clone(), iterations.len());
+        if plays < 2 {
+            return Err(invalid("one play has no later plays to speed up"));
+        }
+        let length = crate::ExactRatio::integer(self.current.durations_shared()?[&child].frames());
+        let mut subtree = 0usize;
+        let mut pending = vec![child.clone()];
+        while let Some(node) = pending.pop() {
+            subtree += 1;
+            pending.extend(self.current.children(&node).cloned());
+        }
+        let factor = crate::ExactRatio::ONE
+            .checked_add(speed.step)
+            .map_err(crate::DocumentError::from)?;
+        let mut rate = crate::ExactRatio::ONE;
+        for ordinal in 1..plays {
+            rate = if speed.multiply {
+                rate.checked_mul(factor)
+            } else {
+                rate.checked_add(speed.step)
+            }
+            .map_err(crate::DocumentError::from)?;
+            if !rate.compare(crate::ExactRatio::ZERO).is_gt() {
+                return Err(invalid(&format!(
+                    "play {} would run at zero or negative speed",
+                    ordinal + 1
+                )));
+            }
+            let frames = length
+                .checked_div(rate)
+                .and_then(crate::ExactRatio::round_even)
+                .map_err(crate::DocumentError::from)?
+                .max(1);
+            let duration = crate::FrameDuration::new(
+                i64::try_from(frames).map_err(|_| invalid("a play's length overflows"))?,
+            )
+            .map_err(crate::DocumentError::from)?;
+            let NodeKind::Repeat { iterations, .. } = &self.current.nodes()[&repeat].kind else {
+                return Err(invalid("the Repeat changed while its plays were sped up"));
+            };
+            let iteration = iterations
+                .at(ordinal)
+                .ok_or_else(|| invalid("a play disappeared while its speed was set"))?;
+            if self
+                .current
+                .overrides()
+                .get(&repeat)
+                .is_some_and(|plays| plays.get(&iteration).is_some())
+            {
+                return Err(invalid(&format!(
+                    "play {} already has its own content; open it with :scope play {} to change it",
+                    ordinal + 1,
+                    ordinal + 1
+                )));
+            }
+            self.charge_step(false)?;
+            let SemanticAllocation::Isolation {
+                new_revision,
+                identities,
+            } = (self.allocate)(SemanticAllocationRequest::Isolation {
+                step_index: self.steps.len(),
+                nodes: subtree + 1,
+                marks: 0,
+            })?
+            else {
+                return Err(invalid("a per-play speed requires an Isolation allocation"));
+            };
+            self.reserve_revision(&new_revision)?;
+            for node in &identities.nodes {
+                self.reserve_node(node)?;
+            }
+            let mut nodes = identities.nodes;
+            let wrapper = nodes
+                .pop()
+                .ok_or_else(|| invalid("a per-play speed needs its wrapper identity"))?;
+            self.commit_leaf(LeafEdit::new(
+                new_revision,
+                Command::EditOccurrence {
+                    instance: crate::InstancePath {
+                        node: child.clone(),
+                        repeats: vec![crate::RepeatInstance {
+                            node: repeat.clone(),
+                            iteration,
+                        }],
+                    },
+                    edit: crate::OccurrenceEdit::WrapRetime {
+                        id: wrapper,
+                        duration,
+                        pitch: if speed.preserve_pitch {
+                            crate::PitchPolicy::Preserve
+                        } else {
+                            crate::PitchPolicy::FollowSpeed
+                        },
+                    },
+                    identities: crate::OccurrenceIdentities {
+                        nodes,
+                        marks: identities.marks,
+                    },
+                },
+            )?)?;
+        }
+        self.context.selected_child = Some(repeat.clone());
+        let slot = self.child_indices[&repeat];
+        let start = slot
+            .checked_sub(1)
+            .map_or(self.bounds.0, |previous| self.child_ends[previous].1);
+        self.trace[trace_index].resolved_range = Some(
+            FrameRange::new(start, self.child_ends[slot].1).map_err(crate::DocumentError::from)?,
+        );
+        Ok(())
+    }
+}

@@ -468,6 +468,11 @@ impl DeadpanApp {
                 plays: input.plays.and_then(NonZeroU32::new),
                 gaps,
                 escalation,
+                speed: input.speed_step.map(|step| deadpan_core::SpeedStep {
+                    step,
+                    multiply: input.progression == Some(deadpan_core::ZoomProgression::Multiply),
+                    preserve_pitch: input.speed_preserves_pitch,
+                }),
             })
         })();
         self.apply_recorded_instruction(target, instruction);

@@ -580,6 +580,7 @@ impl GagRecipe {
                     plays: None,
                     gaps: Some(Self::gaps(*plays, *gap, *shorten, *variation)?),
                     escalation: None,
+                    speed: None,
                 },
             ],
             Self::NothingHappens {

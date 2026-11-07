@@ -466,6 +466,7 @@ fn repeat_gaps_set_the_default_and_refuse_more_gaps_than_plays_allow() {
         plays: None,
         gaps: Some(values.iter().map(|value| frames_length(*value)).collect()),
         escalation: None,
+        speed: None,
     };
     let planned = plan_pauses(&document, start.clone(), vec![wrap.clone(), gaps(&[5])]).unwrap();
     assert_eq!(planned.document.duration().unwrap().frames(), 9 + 10 + 4);
@@ -772,6 +773,7 @@ fn one_repeat_change_wraps_or_sets_plays_gaps_and_escalation_together() {
             plays: plays.map(|plays| NonZeroU32::new(plays).unwrap()),
             gaps: gaps.map(|gaps| gaps.iter().map(|value| frames_length(*value)).collect()),
             escalation,
+            speed: None,
         };
     // A plain beat is wrapped, then gapped and escalated: three leaves.
     let planned = plan_pauses(
@@ -867,6 +869,7 @@ fn restating_a_repeats_gaps_spends_no_revision() {
             plays: Some(NonZeroU32::new(3).unwrap()),
             gaps: Some(vec![frames_length(4)]),
             escalation: None,
+            speed: None,
         }],
     )
     .unwrap();
@@ -1648,4 +1651,90 @@ fn interior_pause_and_audio_setter_match_legacy_leaf_patches_with_bound_audio_an
     assert_eq!(replay.edit.inverse.apply(&replay.document).unwrap(), entry);
     assert_eq!(document, entry);
     assert_eq!(document.to_json().unwrap(), entry_wire);
+}
+
+#[test]
+fn a_speed_step_gives_each_later_play_its_own_speed_change() {
+    let document = tree(&["a", "b"], vec![("a", hold(12)), ("b", hold(4))]);
+    let mut start = context("root", 0);
+    start.selected_child = Some(node("a"));
+    let change = |step: crate::ExactRatio, multiply: bool| SemanticInstruction::SetRepeat {
+        plays: Some(NonZeroU32::new(3).unwrap()),
+        gaps: None,
+        escalation: None,
+        speed: Some(crate::SpeedStep {
+            step,
+            multiply,
+            preserve_pitch: false,
+        }),
+    };
+    let plays = |planned: &SemanticPlan| -> Vec<i64> {
+        let repeat = planned.context.selected_child.clone().unwrap();
+        let NodeKind::Repeat { iterations, .. } = &planned.document.nodes()[&repeat].kind else {
+            panic!("a Repeat")
+        };
+        let durations = planned.document.durations_shared().unwrap();
+        (0..3)
+            .map(|index| {
+                let iteration = iterations.at(index).unwrap();
+                let node = planned
+                    .document
+                    .overrides()
+                    .get(&repeat)
+                    .and_then(|plays| plays.get(&iteration))
+                    .cloned()
+                    .unwrap_or_else(|| node("a"));
+                durations[&node].frames()
+            })
+            .collect()
+    };
+    // Adding 1/2 per play: speeds 1, 1.5 and 2.
+    let added = plan_pauses(
+        &document,
+        start.clone(),
+        vec![change(crate::ExactRatio::new(1, 2).unwrap(), false)],
+    )
+    .unwrap();
+    assert_eq!(plays(&added), vec![12, 8, 6]);
+    assert_eq!(added.document.duration().unwrap().frames(), 12 + 8 + 6 + 4);
+    let repeat = added.context.selected_child.clone().unwrap();
+    for override_root in added.document.overrides()[&repeat]
+        .iter()
+        .map(|(_, root)| root)
+    {
+        assert!(matches!(
+            &added.document.nodes()[override_root].kind,
+            NodeKind::Retime {
+                pitch: crate::PitchPolicy::FollowSpeed,
+                ..
+            }
+        ));
+    }
+    // Multiplying by 2 per play: speeds 1, 2 and 4.
+    let multiplied = plan_pauses(
+        &document,
+        start.clone(),
+        vec![change(crate::ExactRatio::integer(1), true)],
+    )
+    .unwrap();
+    assert_eq!(plays(&multiplied), vec![12, 6, 3]);
+    // Slowing to a stop refuses; a play that already has its own content too.
+    assert!(
+        plan_pauses(
+            &document,
+            start.clone(),
+            vec![change(crate::ExactRatio::new(-1, 2).unwrap(), false)],
+        )
+        .is_err()
+    );
+    let mut on_repeat = context("root", 0);
+    on_repeat.selected_child = Some(repeat);
+    assert!(
+        plan_pauses(
+            &added.document,
+            on_repeat,
+            vec![change(crate::ExactRatio::new(1, 2).unwrap(), false)],
+        )
+        .is_err()
+    );
 }

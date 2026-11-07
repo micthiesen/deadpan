@@ -6,7 +6,7 @@ use deadpan_core::{ExactRatio, FrameRate, GainDb, PauseLength, ZoomProgression, 
 
 use super::duration::DurationInput;
 
-pub const USAGE: &str = "Use :repeat 3 gap=120ms gain-step=3dB zoom-step=0.08 on a selected beat or Repeat. gap= sets every gap (gap=0 removes them all); gap-step=-40ms makes each later gap 40 ms shorter. progression=multiply compounds the zoom; zoom-target=current zooms toward the target on the picture and zoom-target=center back to the middle; gain-step=0dB or zoom-step=0 removes that step.";
+pub const USAGE: &str = "Use :repeat 3 gap=120ms gain-step=3dB zoom-step=0.08 speed-step=0.25 on a selected beat or Repeat. gap= sets every gap (gap=0 removes them all); gap-step=-40ms makes each later gap 40 ms shorter. progression=multiply compounds the zoom; zoom-target=current zooms toward the target on the picture and zoom-target=center back to the middle; gain-step=0dB or zoom-step=0 removes that step.";
 
 /// The most gaps one `gap-step` ladder authors, matching the core bound.
 const MAX_GAPS: u32 = deadpan_core::MAX_SEMANTIC_REPEAT_GAPS as u32;
@@ -96,6 +96,10 @@ pub struct EscalationInput {
     pub progression: Option<ZoomProgression>,
     /// Where the zoom moves: toward a saved target or the picture center.
     pub zoom_target: Option<ZoomTarget>,
+    /// `speed-step=`: each later play as its own speed change.
+    pub speed_step: Option<ExactRatio>,
+    /// `speed-pitch=preserve`; tape-style otherwise.
+    pub speed_preserves_pitch: bool,
 }
 
 /// `zoom-target=`: the escalating zoom's direction.
@@ -223,7 +227,10 @@ pub fn parse(arguments: &[&str]) -> Result<Option<EscalationInput>, String> {
         zoom_step: None,
         progression: None,
         zoom_target: None,
+        speed_step: None,
+        speed_preserves_pitch: false,
     };
+    let mut speed_pitch = None;
     let mut zoom_step = None;
     let mut progression = None;
     let mut gap = None;
@@ -253,6 +260,20 @@ pub fn parse(arguments: &[&str]) -> Result<Option<EscalationInput>, String> {
                     }
                 });
             }
+            "speed-step" if input.speed_step.is_none() => {
+                let step = decimal(value)?;
+                if step == ExactRatio::ZERO {
+                    return Err("speed-step=0 changes no play's speed.".into());
+                }
+                input.speed_step = Some(step);
+            }
+            "speed-pitch" if speed_pitch.is_none() => {
+                speed_pitch = Some(match value {
+                    "preserve" => true,
+                    "tape" => false,
+                    _ => return Err("speed-pitch is preserve or tape.".into()),
+                });
+            }
             "gap" if gap.is_none() => {
                 gap = Some(if value == "0" {
                     DurationInput::Frames(deadpan_core::FrameDuration::ZERO)
@@ -267,13 +288,18 @@ pub fn parse(arguments: &[&str]) -> Result<Option<EscalationInput>, String> {
                 };
                 gap_step = Some((shorter, DurationInput::parse(amount)?));
             }
-            "gain-step" | "zoom-step" | "zoom-target" | "progression" | "gap" | "gap-step" => {
+            "gain-step" | "zoom-step" | "zoom-target" | "progression" | "gap" | "gap-step"
+            | "speed-step" | "speed-pitch" => {
                 return Err(format!("{key} is given twice."));
             }
             _ => return Err(format!("Unknown :repeat parameter {key}. {USAGE}")),
         }
     }
     input.progression = progression;
+    if speed_pitch.is_some() && input.speed_step.is_none() {
+        return Err("speed-pitch applies to speed-step=.".into());
+    }
+    input.speed_preserves_pitch = speed_pitch.unwrap_or(false);
     input.gap = match (gap, gap_step) {
         (Some(first), step) => Some(GapInput { first, step }),
         (None, Some(_)) => {
@@ -349,6 +375,32 @@ fn decimal(value: &str) -> Result<ExactRatio, String> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_speed_step_and_its_pitch_parse_with_the_other_steps() {
+        let input = super::parse(&[
+            "3",
+            "speed-step=0.25",
+            "speed-pitch=preserve",
+            "gain-step=3dB",
+        ])
+        .unwrap()
+        .unwrap();
+        assert_eq!(
+            input.speed_step,
+            Some(deadpan_core::ExactRatio::new(1, 4).unwrap())
+        );
+        assert!(input.speed_preserves_pitch);
+        assert_eq!(input.plays, Some(3));
+        for bad in [
+            &["3", "speed-step=0"][..],
+            &["3", "speed-pitch=preserve"],
+            &["3", "speed-step=0.25", "speed-step=0.5"],
+            &["3", "speed-step=0.25", "speed-pitch=chipmunk"],
+        ] {
+            assert!(super::parse(bad).is_err(), "{bad:?}");
+        }
+    }
+
     use super::*;
 
     #[test]

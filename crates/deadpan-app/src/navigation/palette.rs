@@ -535,7 +535,7 @@ mod tests {
         );
         assert_eq!(
             Bindings::default().palette_binding(BindingId::FrameNext, EditSelection::None),
-            pressed.map(PaletteBinding::Action)
+            pressed.map(|action| PaletteBinding::Action(Box::new(action)))
         );
         // A personal map's path is the one entered.
         let mut personal = Bindings::from_json(

@@ -168,6 +168,20 @@ impl SemanticSelector {
     }
 }
 
+/// `:repeat … speed-step=`: play `k` (from 1) runs at `1 + step·(k−1)`, or
+/// `(1 + step)^(k−1)` multiplied, as its own sparse Retime override, so each
+/// play stays an ordinary editable occurrence. Durations round once per play.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SpeedStep {
+    pub step: crate::ExactRatio,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub multiply: bool,
+    /// Keep pitch while the speed changes; tape-style by default.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub preserve_pitch: bool,
+}
+
 /// The supported macro vocabulary. Selectors resolve against each preceding
 /// staged document and its checked ordinary Sequence navigation context.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -421,6 +435,9 @@ pub enum SemanticInstruction {
         gaps: Option<Vec<PauseLength>>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         escalation: Option<crate::RepeatEscalation>,
+        /// Each later play as its own speed change (`speed-step=0.25`).
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        speed: Option<SpeedStep>,
     },
     /// Give the selected direct-child Hold room tone from the exact audio of
     /// the Original moment held in `register`.
@@ -921,9 +938,10 @@ impl SemanticProgram {
                 plays,
                 gaps,
                 escalation,
+                speed,
             } = instruction
             {
-                if plays.is_none() && gaps.is_none() && escalation.is_none() {
+                if plays.is_none() && gaps.is_none() && escalation.is_none() && speed.is_none() {
                     return Err(EditError::new(
                         EditErrorCode::InvalidCommand,
                         "a Repeat change needs plays, gaps or escalation",

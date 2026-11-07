@@ -1169,8 +1169,12 @@ where
                     plays,
                     gaps,
                     escalation,
+                    speed,
                 } => {
                     self.set_repeat(index, *plays, gaps.as_deref(), escalation.clone())?;
+                    if let Some(speed) = speed {
+                        self.speed_plays(index, *speed)?;
+                    }
                 }
                 SemanticInstruction::SetRoomTone { register } => {
                     self.set_room_tone(index, *register)?;
@@ -1401,6 +1405,7 @@ where
                     plays,
                     gaps,
                     escalation,
+                    ..
                 } => {
                     usize::from(plays.is_some())
                         + usize::from(gaps.is_some())

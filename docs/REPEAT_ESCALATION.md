@@ -104,9 +104,24 @@ are one Undo, macros record it and dot-repeat reapplies it.
   steps, the third play's 1.16 scale, unchanged duration, the inspector rows,
   the refused mismatched count and Undo.
 
+## Speed progression
+
+`:repeat 3 speed-step=0.25` plays each later play faster: play k runs at
+1 + 0.25·(k−1), or, with `progression=multiply`, (1 + 0.25)^(k−1). Unlike gain
+and zoom, speed changes timing, so it is not a live escalation value: each
+later play becomes its own sparse Repeat override wrapped in a Retime
+(`SpeedStep` in `SetRepeat`, `speed_plays` in
+[repeat.rs](../crates/deadpan-core/src/semantic/planner/repeat.rs)), like
+`gap-step` authoring independent gap Holds. Every play therefore stays an
+ordinary editable occurrence. Pitch follows speed (tape) unless
+`speed-pitch=preserve`. Each play's length rounds once from its exact rate; a
+step reaching zero or negative speed refuses, as does a play that already has
+its own content. Plays added later by a new count play at normal speed.
+Evidence: `a_speed_step_gives_each_later_play_its_own_speed_change`.
+
 ## Remaining
 
-Per-play speed progression and choosing among
+Choosing among
 several targets on one picture by name from `:repeat` (use Camera's picker to
 make one target current). Gap progression, macro recording and setting count,
 gaps and steps in one undoable command are implemented through `SetRepeat`.

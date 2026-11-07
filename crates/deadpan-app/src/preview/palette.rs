@@ -88,6 +88,7 @@ impl DeadpanApp {
     ) {
         match self.bindings.palette_binding(binding, selection) {
             Some(PaletteBinding::Action(action)) => {
+                let action = *action;
                 if matches!(action, Action::Operator { .. }) {
                     self.begin_operator();
                 }

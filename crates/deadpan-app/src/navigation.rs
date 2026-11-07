@@ -337,7 +337,7 @@ pub enum Action {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PaletteBinding {
     /// The action the binding's path resolves to.
-    Action(Action),
+    Action(Box<Action>),
     /// A prefix family (operator, Repeat, mark, register, macro) that waits
     /// for its next key.
     Prefix,
@@ -647,7 +647,7 @@ impl Bindings {
     ) -> Option<PaletteBinding> {
         let (rule, _) = self.map.palette(id, selection, self.domain)?;
         Some(match rule {
-            Some(rule) => PaletteBinding::Action(rule.resolve(None)),
+            Some(rule) => PaletteBinding::Action(Box::new(rule.resolve(None))),
             None => PaletteBinding::Prefix,
         })
     }
