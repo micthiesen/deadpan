@@ -126,7 +126,7 @@ impl DeadpanApp {
     }
 
     /// `:delete role=audio|video` or a Visual `d` under a chosen role: one
-    /// recorded role-only delete inside one beat.
+    /// recorded role-only delete over the Visual range, across cuts.
     pub(super) fn delete_role(
         &mut self,
         role: deadpan_core::MediaRole,
@@ -134,7 +134,7 @@ impl DeadpanApp {
     ) {
         if self.edit_selection() == navigation::EditSelection::None {
             self.error = Some(format!(
-                "Select a range inside one beat with v first, then delete its {}.",
+                "Select a range with v first, then delete its {}.",
                 if role == deadpan_core::MediaRole::Audio {
                     "sound"
                 } else {

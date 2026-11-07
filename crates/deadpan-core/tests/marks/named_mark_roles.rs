@@ -152,7 +152,7 @@ fn plan_role_named(
 }
 
 #[test]
-fn named_mark_range_composes_with_single_child_role_edits_and_refuses_cross_child_ranges() {
+fn named_mark_range_composes_with_role_edits_and_role_repeats_refuse_cross_child_ranges() {
     let before = role_named_fixture(false);
     before.validate().unwrap();
     assert_eq!(before.duration().unwrap(), duration(8));
@@ -292,21 +292,38 @@ fn named_mark_range_composes_with_single_child_role_edits_and_refuses_cross_chil
         before
     );
 
-    // Both role operations refuse a named range spanning two direct children
-    // before requesting any identity/revision allocation or publishing a step.
+    // A role delete over a named range spanning two direct children acts on
+    // each child's own part, one parameter edit per child.
     let cross_child = role_named_fixture(true);
     cross_child.validate().unwrap();
-    for operation in [
-        SemanticInstruction::DeleteRole {
+    let (across, allocations) = plan_role_named(
+        &cross_child,
+        program(SemanticInstruction::DeleteRole {
             role: MediaRole::Audio,
-        },
-        SemanticInstruction::RoleRepeat {
+        }),
+        "delete-across",
+    )
+    .unwrap();
+    assert_eq!(
+        allocations,
+        vec![
+            SemanticAllocationRequest::ParameterEdit { step_index: 0 },
+            SemanticAllocationRequest::ParameterEdit { step_index: 1 },
+        ]
+    );
+    assert_eq!(
+        across.document.duration().unwrap(),
+        cross_child.duration().unwrap()
+    );
+    // A role repeat still refuses it before requesting any identity/revision
+    // allocation or publishing a step.
+    {
+        let operation = SemanticInstruction::RoleRepeat {
             role: MediaRole::Audio,
             plays: std::num::NonZeroU32::new(2).unwrap(),
             trim: true,
             extend: false,
-        },
-    ] {
+        };
         let snapshot = cross_child.to_json().unwrap();
         let bank = BTreeMap::new();
         let mut allocations = Vec::new();

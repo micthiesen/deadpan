@@ -319,29 +319,31 @@ fn roles(d: &mut Driver<'_>) -> Result<(), String> {
     d.capture("Video role delete shows the background")?;
     undo(d)?;
 
-    // :delete role= acts once; a range across a cut is refused.
+    // :delete role= acts once, and across the cut at 40 on each beat's part.
     d.command("select role=linked")?;
     at(d, 36)?;
     d.key(Key::V)?;
     d.chord(&[Key::Num8, Key::L])?;
-    let before = d.revision();
-    d.command("delete role=audio")?;
-    d.wait_for("The refused role delete reply", |app| {
-        !app.macros.is_pending() && !app.service.is_busy()
-    })?;
-    d.settled()?;
+    edit(d, "delete role=audio")?;
+    let second = d.app().workspace.as_ref().and_then(|workspace| {
+        let row = d.app().beat_rows.get(1)?;
+        workspace.document.nodes()[&row.id]
+            .audio_treatments
+            .clip_gain()
+            .map(|clip| {
+                clip.mute_ranges()
+                    .iter()
+                    .map(|range| (range.start().floor() as i64, range.end().floor() as i64))
+                    .collect::<Vec<_>>()
+            })
+    });
     d.check(
-        "A role-only delete across a cut is refused with guidance and no edit",
-        d.revision() == before
-            && [d.app().error.as_deref(), d.app().message.as_deref()]
-                .into_iter()
-                .flatten()
-                .any(|text| text.contains("inside one beat")),
-        json!("refused"),
-        json!({"error":d.app().error,"message":d.app().message}),
+        "A role-only delete across a cut silences each beat's own part and moves nothing",
+        mute_ranges(d) == [(36, 40)] && second == Some(vec![(0, 4)]) && lengths(d) == [40, 50],
+        json!({"first":[[36, 40]],"second":[[0, 4]],"beats":[40, 50]}),
+        json!({"first":mute_ranges(d),"second":second,"beats":lengths(d),"error":d.app().error}),
     )?;
-    d.key(Key::Escape)?;
-    d.settled()?;
+    undo(d)?;
     at(d, 41)?;
     d.key(Key::V)?;
     d.chord(&[Key::Num4, Key::L])?;

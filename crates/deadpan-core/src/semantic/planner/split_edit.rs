@@ -209,75 +209,74 @@ where
         trace_index: usize,
         role: crate::MediaRole,
     ) -> Result<(), EditError> {
-        let name = match role {
-            crate::MediaRole::Audio => "audio",
-            crate::MediaRole::Video => "picture",
-            crate::MediaRole::Linked => {
-                return Err(invalid(
-                    "a linked delete removes time; use d, or choose role=audio or role=video",
-                ));
-            }
-        };
-        let (child, child_start, _, range) =
-            self.range_in_child(&format!("a role-only delete stays inside one beat; select a range inside one beat to delete its {name}"))?;
-        let local = (range.start().0 - child_start.0)..(range.end().0 - child_start.0);
-        let command = match role {
-            crate::MediaRole::Audio => self.muted(&child, local.clone())?,
-            crate::MediaRole::Video | crate::MediaRole::Linked => {
-                let (host, offset) =
-                    crate::cutaway_host(&self.current, &child).ok_or_else(|| {
-                        EditError::new(
-                            EditErrorCode::WrongNodeKind,
-                            "delete the picture inside a source beat; open a group with Enter first",
-                        )
-                    })?;
-                let NodeKind::Source { source } = &self.current.nodes()[&host].kind else {
-                    return Err(EditError::new(
-                        EditErrorCode::WrongNodeKind,
-                        "a pause's picture is its whole content; use :lift to blank it with its sound",
-                    ));
-                };
-                let start = local.start + offset;
-                let end = local.end + offset;
-                let rate = self.current.presentation_basis().frame_rate;
-                let (asset, selection, _) = source_pictures(source, start..end, rate)?;
-                let selection = clamp_to_video(&self.current, &asset, selection)?;
-                let range = FrameRange::new(ProjectFrame(start), ProjectFrame(end))
-                    .map_err(crate::DocumentError::from)?;
-                let mut cutaways = self.current.nodes()[&host].cutaways.clone();
-                if cutaways.iter().any(|cutaway| {
-                    cutaway.range.start() < range.end() && range.start() < cutaway.range.end()
-                }) {
-                    return Err(invalid(
-                        "a cutaway already covers part of this range; clear it first",
-                    ));
-                }
-                cutaways.push(Cutaway {
-                    range,
-                    asset,
-                    selection,
-                    fit: CutawayFit::Hold,
-                    removed: true,
-                });
-                cutaways.sort_by_key(|cutaway| cutaway.range.start());
-                Command::SetCutaways {
-                    node: host,
-                    cutaways,
-                }
-            }
-        };
-        self.charge_step(false)?;
-        let SemanticAllocation::ParameterEdit { new_revision } =
-            (self.allocate)(SemanticAllocationRequest::ParameterEdit {
-                step_index: self.steps.len(),
-            })?
-        else {
+        if role == crate::MediaRole::Linked {
             return Err(invalid(
-                "a role-only delete requires a parameter allocation",
+                "a linked delete removes time; use d, or choose role=audio or role=video",
             ));
-        };
-        self.reserve_revision(&new_revision)?;
-        self.commit_leaf(LeafEdit::new(new_revision, command)?)?;
+        }
+        let range = self.visual_range()?;
+        // A range across cuts deletes the role in each beat it meets, as one
+        // transaction; no beat moves.
+        for (child, local) in self.range_segments(range)? {
+            let command = match role {
+                crate::MediaRole::Audio => self.muted(&child, local.clone())?,
+                crate::MediaRole::Video | crate::MediaRole::Linked => {
+                    let (host, offset) =
+                        crate::cutaway_host(&self.current, &child).ok_or_else(|| {
+                            EditError::new(
+                                EditErrorCode::WrongNodeKind,
+                                "delete the picture inside a source beat; open a group with Enter first",
+                            )
+                        })?;
+                    let NodeKind::Source { source } = &self.current.nodes()[&host].kind else {
+                        return Err(EditError::new(
+                            EditErrorCode::WrongNodeKind,
+                            "a pause's picture is its whole content; use :lift to blank it with its sound",
+                        ));
+                    };
+                    let start = local.start + offset;
+                    let end = local.end + offset;
+                    let rate = self.current.presentation_basis().frame_rate;
+                    let (asset, selection, _) = source_pictures(source, start..end, rate)?;
+                    let selection = clamp_to_video(&self.current, &asset, selection)?;
+                    let local_range = FrameRange::new(ProjectFrame(start), ProjectFrame(end))
+                        .map_err(crate::DocumentError::from)?;
+                    let mut cutaways = self.current.nodes()[&host].cutaways.clone();
+                    if cutaways.iter().any(|cutaway| {
+                        cutaway.range.start() < local_range.end()
+                            && local_range.start() < cutaway.range.end()
+                    }) {
+                        return Err(invalid(
+                            "a cutaway already covers part of this range; clear it first",
+                        ));
+                    }
+                    cutaways.push(Cutaway {
+                        range: local_range,
+                        asset,
+                        selection,
+                        fit: CutawayFit::Hold,
+                        removed: true,
+                    });
+                    cutaways.sort_by_key(|cutaway| cutaway.range.start());
+                    Command::SetCutaways {
+                        node: host,
+                        cutaways,
+                    }
+                }
+            };
+            self.charge_step(false)?;
+            let SemanticAllocation::ParameterEdit { new_revision } =
+                (self.allocate)(SemanticAllocationRequest::ParameterEdit {
+                    step_index: self.steps.len(),
+                })?
+            else {
+                return Err(invalid(
+                    "a role-only delete requires a parameter allocation",
+                ));
+            };
+            self.reserve_revision(&new_revision)?;
+            self.commit_leaf(LeafEdit::new(new_revision, command)?)?;
+        }
         self.context.visual_selection = None;
         self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
         self.trace[trace_index].resolved_range = Some(range);
@@ -292,6 +291,38 @@ where
     S: crate::SemanticSpeechProvider,
     P: FnMut(&ProjectDocument, super::PauseSite) -> Result<super::PauseProvider, EditError>,
 {
+    /// The nonempty Visual time range.
+    pub(super) fn visual_range(&self) -> Result<FrameRange, EditError> {
+        let target = self.resolve_selector(&crate::SemanticSelector::VisualSelection)?;
+        let SliceCaptureSelection::Range { range } = target.selection()?.clone() else {
+            return Err(invalid(
+                "a role edit acts on a Visual time range, not a group object",
+            ));
+        };
+        Ok(range)
+    }
+
+    /// Each direct child `range` meets, with the part it covers in that
+    /// child's own frames.
+    pub(super) fn range_segments(
+        &self,
+        range: FrameRange,
+    ) -> Result<Vec<(NodeId, std::ops::Range<i64>)>, EditError> {
+        let mut segments = Vec::new();
+        let mut start = self.bounds.0.0;
+        for (child, end) in &self.child_ends {
+            let (low, high) = (range.start().0.max(start), range.end().0.min(end.0));
+            if low < high {
+                segments.push((child.clone(), (low - start)..(high - start)));
+            }
+            start = end.0;
+        }
+        if segments.is_empty() {
+            return Err(invalid("the range lies outside this group"));
+        }
+        Ok(segments)
+    }
+
     /// The nonempty Visual time range and the one direct child containing
     /// it, with the child's absolute start and end.
     pub(super) fn range_in_child(

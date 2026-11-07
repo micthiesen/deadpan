@@ -262,7 +262,7 @@ fn plan_role(role: MediaRole, anchor: i64, head: i64) -> Result<SemanticPlan, Ed
 }
 
 #[test]
-fn role_only_deletes_keep_time_and_the_other_role_inside_one_beat() {
+fn role_only_deletes_keep_time_and_the_other_role_within_and_across_beats() {
     let before = document();
     // Audio: a mute range of the beat over Edit [24, 30) = right-local [4, 10).
     let audio = plan_role(MediaRole::Audio, 24, 30).unwrap();
@@ -304,8 +304,60 @@ fn role_only_deletes_keep_time_and_the_other_role_inside_one_beat() {
         assert_eq!(replay.document, planned.document);
         assert_eq!(replay.edit.inverse.apply(&replay.document).unwrap(), before);
     }
-    // Across a cut, linked, or empty: refused.
-    assert!(plan_role(MediaRole::Audio, 15, 25).is_err());
+    // Across the cut at 20, each beat loses that role over its own part, in
+    // one transaction; time and the other role stay.
+    let across = plan_role(MediaRole::Audio, 15, 25).unwrap();
+    for (node, expected) in [("left", (15, 20)), ("right", (0, 5))] {
+        let ranges = across.document.nodes()[&id(node)]
+            .audio_treatments
+            .clip_gain()
+            .unwrap()
+            .mute_ranges()
+            .to_vec();
+        assert_eq!(
+            ranges
+                .iter()
+                .map(|range| (range.start(), range.end()))
+                .collect::<Vec<_>>(),
+            vec![(
+                ExactRatio::integer(expected.0),
+                ExactRatio::integer(expected.1)
+            )],
+            "{node}"
+        );
+    }
+    let blank = plan_role(MediaRole::Video, 25, 15).unwrap();
+    for (node, expected, original) in [("left", (15, 20), (25, 30)), ("right", (0, 5), (50, 55))] {
+        let cutaways = &blank.document.nodes()[&id(node)].cutaways;
+        assert_eq!(cutaways.len(), 1, "{node}");
+        assert!(cutaways[0].removed);
+        assert_eq!(
+            (cutaways[0].range.start().0, cutaways[0].range.end().0),
+            expected
+        );
+        assert_eq!(
+            (
+                cutaways[0].selection.start().ticks,
+                cutaways[0].selection.end().ticks
+            ),
+            (
+                ExactRatio::integer(original.0),
+                ExactRatio::integer(original.1)
+            )
+        );
+    }
+    assert_eq!(pictures(&before), pictures_without_removed(&blank.document));
+    for planned in [&across, &blank] {
+        assert_eq!(
+            planned.document.duration().unwrap(),
+            before.duration().unwrap()
+        );
+        let replay =
+            replay_compound::<EditError>(&before, planned.request.as_ref().unwrap(), |_| Ok(()))
+                .unwrap();
+        assert_eq!(replay.edit.inverse.apply(&replay.document).unwrap(), before);
+    }
+    // Linked or empty: refused.
     assert!(plan_role(MediaRole::Linked, 24, 30).is_err());
     assert!(plan_role(MediaRole::Video, 24, 24).is_err());
 }

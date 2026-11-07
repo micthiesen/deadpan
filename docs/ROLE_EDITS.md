@@ -47,7 +47,8 @@ of the split edit, and compare the export with the preview.
 ## Role-only deletes
 
 `:delete role=audio` and `:delete role=video` act on the Edit Visual time
-range, which must lie inside one direct child of the current Sequence.
+range in the current Sequence. A range across cuts acts on each direct child's
+own part in one transaction and one Undo.
 `:select role=audio|video|linked` chooses the role a Visual `d` deletes (and
 Visual `r` repeats); the status line shows AUDIO ROLE or VIDEO ROLE until
 `role=linked`. The choice belongs to one project session and group in Your
@@ -66,12 +67,13 @@ instruction is `DeleteRole { role }`.
   A pause's picture is its whole content, so `role=video` on a Hold refuses
   with guidance to use `:lift`.
 
-Neither role-only delete moves later content. A range across a cut, an empty
-range, `role=linked` with `:delete` and an overlapping cutaway refuse.
+Neither role-only delete moves later content. An empty range, `role=linked`
+with `:delete`, an overlapping cutaway and, for video, a pause in the range
+refuse.
 Recording stores the instruction; `.` applies it to a new Visual range.
 
-Evidence: `role_only_deletes_keep_time_and_the_other_role_inside_one_beat`
-(core), `a_removed_picture_cutaway_shows_the_background_and_keeps_every_other_picture`
+Evidence: `role_only_deletes_keep_time_and_the_other_role_within_and_across_beats`
+(core, including both roles across a cut), `a_removed_picture_cutaway_shows_the_background_and_keeps_every_other_picture`
 (plan), the `split-edits` replay (status line, both roles through `d`, the
 refusal across a cut, `:delete role=video` once) and the `role-delete`
 preview/export fixture (silenced click, background pictures, unchanged time).
