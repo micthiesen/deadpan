@@ -106,6 +106,7 @@ fn prove(
                 BTreeSet::new()
             },
             splits,
+            &[],
         ),
         budget,
     )
@@ -195,6 +196,7 @@ fn transparent_partition_refinement_retains_full_leaf_and_old_partition_path() {
             (
                 &BTreeSet::new(),
                 &[witness("left", &[("left", "owner"), ("middle", "third")])],
+                &[],
             ),
             MAX_DOCUMENT_NODES,
         )
@@ -232,7 +234,8 @@ fn introduced_split_scope_rejects_missing_owner_pairs_without_panicking() {
                     &crate::SoundClockRepeatMap::default(),
                     (
                         &BTreeSet::from([id("g")]),
-                        &[witness("owner", &[("left", "owner"), ("right", "copy")])]
+                        &[witness("owner", &[("left", "owner"), ("right", "copy")])],
+                        &[],
                     ),
                     MAX_DOCUMENT_NODES,
                 )
@@ -281,7 +284,7 @@ fn malformed_forests_wrong_aliases_and_exterior_relations_refuse() {
             (&id("owner"), &id("owner")),
             (&id("owner"), &id("owner")),
             &crate::SoundClockRepeatMap::default(),
-            (&BTreeSet::new(), &[valid]),
+            (&BTreeSet::new(), &[valid], &[]),
             MAX_DOCUMENT_NODES
         )
         .is_err()

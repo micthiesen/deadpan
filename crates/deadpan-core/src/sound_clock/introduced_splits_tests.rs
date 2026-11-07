@@ -76,7 +76,7 @@ fn split_admission_rejects_partial_or_duplicate_piece_identities() {
 }
 
 #[test]
-fn split_reference_rejects_duplicate_historical_records() {
+fn split_reference_rejects_duplicate_live_records() {
     let splits = vec![split(), split()];
     assert!(reference().with_introduced_splits(splits.clone()).is_err());
     let mut wire = serde_json::to_value(reference()).unwrap();
@@ -85,7 +85,25 @@ fn split_reference_rejects_duplicate_historical_records() {
     assert!(
         error
             .to_string()
-            .contains("duplicate historical sound clock Split")
+            .contains("duplicate live sound clock Split identity")
+    );
+}
+
+#[test]
+fn split_reference_retains_distinct_live_copies_of_one_historical_forest() {
+    let original = split();
+    let mut copied = original.clone();
+    for (index, piece) in copied.pieces.iter_mut().enumerate() {
+        piece.partition = id(&format!("copy-partition-{index}"));
+        piece.full_owner = id(&format!("copy-owner-{index}"));
+    }
+    let reference = reference()
+        .with_introduced_splits(vec![original, copied])
+        .unwrap();
+    assert_eq!(
+        serde_json::from_value::<SoundClockReference>(serde_json::to_value(&reference).unwrap())
+            .unwrap(),
+        reference
     );
 }
 

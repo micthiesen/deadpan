@@ -360,6 +360,8 @@ pub(crate) fn validate_command_with_grouping(
                 | Command::Delete { .. }
         )
         || matches!(command, Command::Split { node, .. } if node != document.root())
+        || matches!(command, Command::EditOccurrence { instance, edit: OccurrenceEdit::Split { .. }, .. }
+            if &instance.node != document.root())
     {
         return Ok(());
     }

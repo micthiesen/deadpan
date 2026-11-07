@@ -12,6 +12,8 @@ fn graph<'plan, 'work>(plan: &'plan RenderPlan, original_only: bool) -> Graph<'p
         event_filters: BTreeMap::new(),
         voices: BTreeMap::new(),
         permission_families: BTreeMap::new(),
+        selected_family_count: 0,
+        canonical_families: FamilyRegistry::default(),
         sends: None,
         skip: Vec::new(),
         original_only,

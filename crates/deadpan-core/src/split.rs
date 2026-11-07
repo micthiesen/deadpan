@@ -29,6 +29,108 @@ impl SplitIdentities {
     }
 }
 
+/// A treated piece needs its sound inside its own nonlinear sum, while a
+/// processor above must still receive that sound as one continuous voice. No
+/// read path does both yet, so this refuses rather than changing the output.
+pub(crate) fn refuse_treated_sound_in_processor(
+    document: &ProjectDocument,
+    target: &NodeId,
+) -> Result<(), EditError> {
+    let mut ancestor = document.parent_of(target);
+    let mut processed = false;
+    while let Some(node) = ancestor {
+        processed |= matches!(
+            document.nodes[&node].kind,
+            NodeKind::Retime { purpose, .. } if purpose != RetimePurpose::Partition
+        );
+        ancestor = document.parent_of(&node);
+    }
+    if !processed {
+        return Ok(());
+    }
+    // A treatment affects a sound only at or above the sound's own owner.
+    let mut pending = vec![(target.clone(), false)];
+    let mut refused = false;
+    while let Some((node, above)) = pending.pop() {
+        let treated = above || !document.nodes[&node].audio_treatments.is_empty();
+        refused |= treated && document.beat_sounds.contains_key(&node);
+        pending.extend(
+            document
+                .children(&node)
+                .map(|child| (child.clone(), treated)),
+        );
+    }
+    if refused {
+        return Err(EditError::new(
+            EditErrorCode::InvalidCommand,
+            "split cannot divide a treated beat with attached sound inside a speed change",
+        ));
+    }
+    Ok(())
+}
+
+/// A pause inside a speed change divides that processor, but a sound below it
+/// reaches the processor as one continuous voice. Measured output changed on
+/// both sides of the pause, so this refuses until that path exists.
+pub(crate) fn refuse_pause_in_sound_processor(
+    document: &ProjectDocument,
+    at: ProjectFrame,
+) -> Result<(), EditError> {
+    let durations = document.durations_shared()?;
+    let mut node = document.root().clone();
+    let mut local = at.0;
+    loop {
+        match &document.nodes[&node].kind {
+            NodeKind::Sequence { children } => {
+                let mut start = 0;
+                let mut inside = None;
+                for child in children {
+                    let end = start + durations[child].frames();
+                    if local > start && local < end {
+                        inside = Some((child.clone(), local - start));
+                        break;
+                    }
+                    start = end;
+                }
+                let Some((child, offset)) = inside else {
+                    return Ok(());
+                };
+                node = child;
+                local = offset;
+            }
+            NodeKind::Retime { child, purpose, .. } if *purpose == RetimePurpose::Partition => {
+                node = child.clone();
+            }
+            NodeKind::Retime { .. } | NodeKind::Repeat { .. } => {
+                return refuse_processed_sound(document, &node);
+            }
+            _ => return Ok(()),
+        }
+    }
+}
+
+fn refuse_processed_sound(document: &ProjectDocument, root: &NodeId) -> Result<(), EditError> {
+    let mut pending = vec![(root.clone(), false)];
+    while let Some((node, below)) = pending.pop() {
+        if below && document.beat_sounds.contains_key(&node) {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "a pause cannot divide a speed change with attached sound",
+            ));
+        }
+        let processes = matches!(
+            document.nodes[&node].kind,
+            NodeKind::Retime { purpose, .. } if purpose != RetimePurpose::Partition
+        );
+        pending.extend(
+            document
+                .children(&node)
+                .map(|child| (child.clone(), below || processes)),
+        );
+    }
+    Ok(())
+}
+
 pub(crate) fn apply(
     document: &ProjectDocument,
     target: &NodeId,
@@ -141,6 +243,12 @@ pub(crate) fn apply_validated(
     for old in order {
         copied.insert(old, supplied.next().expect("preflighted subtree").clone());
     }
+    let wrapper = container.then(|| {
+        supplied
+            .next()
+            .expect("preflighted parent container")
+            .clone()
+    });
     let mut right_bindings = copied.clone();
     if refinement.is_some() {
         right_bindings.insert(target.clone(), right.clone());
@@ -164,7 +272,14 @@ pub(crate) fn apply_validated(
         allowances.split(&copied)?;
     }
     if let Some(sounds) = edit_context.sound_clocks {
-        sounds.split(&copied, document, target, (&left, &right), context)?;
+        sounds.split(
+            &copied,
+            document,
+            target,
+            (&left, &right),
+            context,
+            wrapper.as_ref(),
+        )?;
     }
     if root {
         result.nodes.insert(left_context.clone(), original.clone());
@@ -200,10 +315,7 @@ pub(crate) fn apply_validated(
             BeatNode::sequence(&original.label, vec![left, right]),
         );
     } else if container {
-        let wrapper = supplied
-            .next()
-            .expect("preflighted parent container")
-            .clone();
+        let wrapper = wrapper.expect("preflighted parent container");
         result.nodes.insert(
             wrapper.clone(),
             BeatNode::sequence(&original.label, vec![left, right]),

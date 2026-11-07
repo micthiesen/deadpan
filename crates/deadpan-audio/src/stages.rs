@@ -196,6 +196,10 @@ pub(super) fn test_audio_mask_payload_frames(capacity: usize) -> Result<u64, Sta
 #[path = "stage_block_policy_before_trace.rs"]
 mod stage_block_policy_before_trace;
 
+#[cfg(test)]
+#[path = "saved_key_output_policy_before_trace.rs"]
+mod saved_key_output_policy_before_trace;
+
 #[path = "point_suppression.rs"]
 pub(crate) mod point_suppression;
 pub use point_suppression::{AudioSuppressionMask, PointSuppressionMask, SignalSuppressionMask};
@@ -280,10 +284,10 @@ impl Default for StageLimits {
         Self {
             maximum_input_frames: 86_400_000,
             maximum_output_frames: 86_400_000,
-            maximum_resident_frames: 16 * 1024 * 1024,
+            maximum_resident_frames: DEFAULT_RESIDENT_FRAMES,
             maximum_cached_stages: 64,
             maximum_depth: 32,
-            maximum_prepared_stages: 64,
+            maximum_prepared_stages: DEFAULT_PREPARED_STAGES,
             maximum_prepared_frames: 128 * 1024 * 1024,
             maximum_memory_stage_frames: 1024 * 1024,
             maximum_disk_bytes: 1024 * 1024 * 1024,
@@ -656,9 +660,31 @@ struct ReadWork {
     // Live current-sound metadata, including temporary constructor storage.
     sound_context_frames: u64,
     projected_disk_bytes: u64,
+    clock_remaining: Option<Duration>,
+    checks_since_clock: u32,
 }
 
+// Frozen unit-test evidence pins exact accounting at the original budgets. The
+// shipped values below come from the measured general Split matrix: 224 million
+// plan units, 21 million resident frames and about 1,200 prepared stages.
+// Resident frames are the memory bound, here 256 MiB of stereo f32; the other
+// counts bound work, and the shared deadline bounds its time.
+#[cfg(test)]
 const MAX_PLAN_WORK_PER_READ: usize = 16 * 1024 * 1024;
+#[cfg(not(test))]
+const MAX_PLAN_WORK_PER_READ: usize = 1 << 30;
+#[cfg(test)]
+const MAX_SOURCE_CHECKS_PER_READ: u32 = 1_048_576;
+#[cfg(not(test))]
+const MAX_SOURCE_CHECKS_PER_READ: u32 = 16_777_216;
+#[cfg(test)]
+const DEFAULT_RESIDENT_FRAMES: u32 = 16 * 1024 * 1024;
+#[cfg(not(test))]
+const DEFAULT_RESIDENT_FRAMES: u32 = 32 * 1024 * 1024;
+#[cfg(test)]
+const DEFAULT_PREPARED_STAGES: u32 = 64;
+#[cfg(not(test))]
+const DEFAULT_PREPARED_STAGES: u32 = 4096;
 const CACHE_KEY_WORK_LIMIT: &str = "saved audio key work per read";
 
 struct CacheKeyScope<'a>(&'a RefCell<ReadWork>);
@@ -668,6 +694,11 @@ impl Drop for CacheKeyScope<'_> {
     }
 }
 const MAX_SOURCE_DEPENDENCIES: usize = 1024;
+// Unit tests inject expiry between individual checks to pin refusal order.
+#[cfg(test)]
+const CHECKS_PER_CLOCK_READ: u32 = 1;
+#[cfg(not(test))]
+const CHECKS_PER_CLOCK_READ: u32 = 256;
 
 /// One consumer request owns this budget across bus halos and cache checks.
 /// Downstream preparation must use the same deadline, never renew it per tile.
@@ -721,6 +752,33 @@ impl WorkControl<'_> {
         CacheKeyScope(self.work)
     }
     fn check(self) -> Result<Duration, StageAudioError> {
+        check_cancel(self.cancelled)?;
+        // Reading the clock on every check was the hottest single call in
+        // preparation. Cancellation stays exact; a deadline is noticed within
+        // `CHECKS_PER_CLOCK_READ` checks. A caller holding the work borrow
+        // simply reads the clock.
+        let mut work = self.work.try_borrow_mut().ok();
+        if let Some(work) = work.as_mut()
+            && let Some(remaining) = work.clock_remaining
+            && work.checks_since_clock + 1 < CHECKS_PER_CLOCK_READ
+        {
+            work.checks_since_clock += 1;
+            return Ok(remaining);
+        }
+        let remaining = self
+            .deadline
+            .checked_duration_since(Instant::now())
+            .filter(|remaining| !remaining.is_zero())
+            .ok_or(StageAudioError::Timeout)?;
+        if let Some(work) = work.as_mut() {
+            work.clock_remaining = Some(remaining);
+            work.checks_since_clock = 0;
+        }
+        Ok(remaining)
+    }
+
+    /// The exact remaining time, for a value handed to bounded work.
+    fn remaining(self) -> Result<Duration, StageAudioError> {
         check_cancel(self.cancelled)?;
         self.deadline
             .checked_duration_since(Instant::now())
@@ -812,7 +870,7 @@ impl WorkControl<'_> {
         let fingerprint = source.provenance();
         let mut work = self.work.borrow_mut();
         work.source_checks += 1;
-        if work.source_checks > 1_048_576 {
+        if work.source_checks > MAX_SOURCE_CHECKS_PER_READ {
             return Err(StageAudioError::Limit("source provenance checks"));
         }
         if let Some(previous) = work.observed.get(asset) {
@@ -903,13 +961,13 @@ impl StageAudio {
             || limits.maximum_output_frames == 0
             || limits.maximum_output_frames > 86_400_000
             || limits.maximum_resident_frames == 0
-            || limits.maximum_resident_frames > 16 * 1024 * 1024
+            || limits.maximum_resident_frames > DEFAULT_RESIDENT_FRAMES
             || limits.maximum_cached_stages == 0
             || limits.maximum_cached_stages > 64
             || limits.maximum_depth == 0
             || limits.maximum_depth > 32
             || limits.maximum_prepared_stages == 0
-            || limits.maximum_prepared_stages > 64
+            || limits.maximum_prepared_stages > DEFAULT_PREPARED_STAGES
             || limits.maximum_prepared_frames == 0
             || limits.maximum_prepared_frames > 128 * 1024 * 1024
             || limits.maximum_memory_stage_frames > 16 * 1024 * 1024
@@ -2199,7 +2257,7 @@ impl StageAudio {
                         recipe,
                         span.samples.start,
                         count(&span.samples)?,
-                        control.check()?,
+                        control.remaining()?,
                         cancelled,
                     )?
                 }
@@ -4193,7 +4251,7 @@ impl StageAudio {
                             recipe,
                             start,
                             count,
-                            control.check()?,
+                            control.remaining()?,
                             cancelled,
                         )?
                     }
@@ -4956,7 +5014,7 @@ fn read_hold_source(
                     source_recipe.clone(),
                     AudioSample(input.len() as i64),
                     frames,
-                    control.check()?,
+                    control.remaining()?,
                     control.cancelled,
                 )?
                 .samples,

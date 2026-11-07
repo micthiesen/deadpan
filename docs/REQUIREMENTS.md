@@ -2,6 +2,18 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## General Split delivery, 2026-11-07
+
+The [delivery qualification](qualification/general-split-delivery-2026-11-07.md)
+finishes the general Split PCM matrix: every owner kind under Sequence, Repeat
+and Retime parents, selected and nested selected plays, compared exactly. The
+preparation-work failures recorded since 2026-10-26 were hiding a real defect:
+a swallowed proof failure processed Split pieces separately, audibly changing
+root EQ and wet sends under a Repeat. Plan work per read, resident frames and
+prepared stages now follow measured peaks. A treated sound owner inside a speed
+change refuses Split and remains open. Native receipts, emitted media and
+listening are not established. No requirement or gate closes from this.
+
 ## Post-DSP stage-block policy admission, 2026-11-01
 
 The [stage-block qualification](qualification/stage-block-policy-admission-2026-11-01.md)

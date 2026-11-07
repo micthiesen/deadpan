@@ -8,6 +8,9 @@ slow-timeout = { period = "60s", terminate-after = 5 }
 # host keep each other from staying full, so they run one at a time.
 [test-groups]
 disk-images = { max-threads = 1 }
+# Each read keeps the product's 60 second limit, which fails if many of these
+# complete-PCM comparisons compete for the same cores.
+split-matrix = { max-threads = 4 }
 
 [[profile.default.overrides]]
 filter = """
@@ -31,3 +34,11 @@ priority = 100
 [[profile.default.overrides]]
 filter = "binary(preview_export)"
 slow-timeout = { period = "60s", terminate-after = 10 }
+
+# Each compares complete PCM before and after Split across every parent kind.
+[[profile.default.overrides]]
+filter = "binary(stages) & test(general_split_sound)"
+slow-timeout = { period = "60s", terminate-after = 40 }
+priority = 90
+test-group = "split-matrix"
+threads-required = 6

@@ -108,6 +108,10 @@ fn position_value(c: &Capture) -> Value {
 pub(super) fn position() -> Option<Value> {
     CAPTURE.with(|slot| slot.borrow().as_ref().map(position_value))
 }
+pub(super) fn take_owned(guard: &CaptureGuard) -> Value {
+    let owns = CAPTURE.with(|slot| slot.borrow().as_ref().is_some_and(|c| c.epoch == guard.0));
+    if owns { take() } else { Value::Null }
+}
 pub(super) fn take() -> Value {
     CAPTURE.with(|slot| slot.borrow_mut().take().map_or(Value::Null, |mut c| {
         if !c.stack.is_empty() { c.invalid = true; }
@@ -579,7 +583,7 @@ fn saved_event(e: crate::SavedAudioEvent) -> &'static str {
     }
 }
 
-fn snapshots(renderer: &StageAudio, control: Option<WorkControl<'_>>) -> Value {
+pub(super) fn snapshots(renderer: &StageAudio, control: Option<WorkControl<'_>>) -> Value {
     let l = renderer.limits;
     json!({"work":control.map(work),"controller":{
         "active_frames":renderer.active_frames,"active_disk_bytes":renderer.active_disk_bytes,

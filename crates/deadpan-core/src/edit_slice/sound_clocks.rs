@@ -45,6 +45,7 @@ pub(super) fn capture(
             if let Some(previous) = previous {
                 for reference in previous.clocks() {
                     charge(&mut work, reference.split_work_count())?;
+                    charge(&mut work, reference.isolation_work_count())?;
                 }
                 if scope == root
                     && matches!(document.nodes().get(&root).map(|node| &node.kind),
@@ -72,6 +73,7 @@ pub(super) fn capture(
                     // the proof key or the narrowed reference.
                     charge(&mut work, reference.introduced_groups().len())?;
                     charge(&mut work, reference.split_work_count())?;
+                    charge(&mut work, reference.isolation_work_count())?;
                     let historical = &document.audio_bindings.timings[reference.timing()];
                     let key = (
                         reference.timing().clone(),
@@ -80,6 +82,7 @@ pub(super) fn capture(
                         reference.repeats().clone(),
                         reference.introduced_groups().clone(),
                         reference.introduced_splits().to_vec(),
+                        reference.introduced_isolations().to_vec(),
                         (reference.introduced_groups().contains(previous.scope())
                             || historical.sound_uses_output_owner_proof(
                                 &live,
@@ -94,7 +97,7 @@ pub(super) fn capture(
                             (reference.scope(), previous.scope()),
                             (reference.owner(), &owner),
                             reference.repeats(),
-                            (reference.introduced_groups(), reference.introduced_splits()),
+                            reference.relations(),
                             budget(work)?,
                         )?;
                         work = work
@@ -129,6 +132,7 @@ pub(super) fn capture(
                     // Retain only complete witnesses inside the selected scope;
                     // the narrower scope is independently proved below.
                     charge(&mut work, reference.split_work_count())?;
+                    charge(&mut work, reference.isolation_work_count())?;
                     let splits = reference
                         .introduced_splits()
                         .iter()
@@ -137,6 +141,15 @@ pub(super) fn capture(
                                 subtrees[&scope].contains(&piece.partition)
                                     && subtrees[&scope].contains(&piece.full_owner)
                             })
+                        })
+                        .cloned()
+                        .collect::<Vec<_>>();
+                    let isolations = reference
+                        .introduced_isolations()
+                        .iter()
+                        .filter(|relation| {
+                            subtrees[&scope].contains(&relation.live_repeat)
+                                && subtrees[&scope].contains(&relation.live_root)
                         })
                         .cloned()
                         .collect::<Vec<_>>();
@@ -151,6 +164,7 @@ pub(super) fn capture(
                             reference.repeats().clone(),
                             groups.clone(),
                             splits.clone(),
+                            isolations.clone(),
                             (groups.contains(&scope)
                                 || historical.sound_uses_output_owner_proof(
                                     &live,
@@ -166,7 +180,7 @@ pub(super) fn capture(
                                     (&historical_scope, &scope),
                                     (reference.owner(), &owner),
                                     reference.repeats(),
-                                    (&groups, &splits),
+                                    (&groups, &splits, &isolations),
                                     budget(work)?,
                                 )?;
                             charge(&mut work, narrowed.work())?;
@@ -187,7 +201,8 @@ pub(super) fn capture(
                         )
                         .with_repeats(reference.repeats().clone())
                         .with_introduced_groups(groups)?
-                        .with_introduced_splits(splits)?,
+                        .with_introduced_splits(splits)?
+                        .with_introduced_isolations(isolations)?,
                     );
                     if installed.insert(reference.timing().clone()) {
                         install(state, reference.timing(), historical)?;

@@ -1193,6 +1193,13 @@ for qualified limits and rejected grammars.
 
 The setup workflow's TypeScript/Bun/mitools/Biome defaults do not apply to this Rust-native product. The maintained Rust sibling `beastie` supplies the initial workspace conventions; consult maintained siblings for evolving personal tooling patterns. [Dependency decisions](docs/DEPENDENCIES.md) records the pins and qualification boundaries. Do not introduce Bun, Node, Python, or shell setup as an end-user requirement. Future model workers use an app-managed private runtime selected through measurement.
 
+Sound Split delivery: never swallow a proof failure into separate processing; a
+missing proof must refuse or be reported. Derive Repeat ancestry from both trees
+(`sound_clock_context_repeats`). Below a processor, each historical occurrence
+sounds once. Compare complete recordings, never the first mismatch. Per-read
+limits follow measured peaks; resident frames are the memory bound. Unit tests keep the
+original budgets their frozen evidence pins. See [Split delivery](docs/qualification/general-split-delivery-2026-11-07.md).
+
 `SetRepeatGaps` follows the `SetRepeatPlays` retained-clock pattern: capture
 unbound clocks, reanchor the suffix once when duration changes and every
 interior entry after the first play (moved plays keep their own clocks), transform

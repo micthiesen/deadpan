@@ -10,10 +10,17 @@ use std::fmt;
 use serde::de::{self, MapAccess, SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::{AudioTimingId, DocumentError, DocumentErrorCode, MAX_DOCUMENT_DEPTH, NodeId, SoundId};
+use crate::{
+    AudioTimingId, DocumentError, DocumentErrorCode, IterationId, MAX_DOCUMENT_DEPTH, NodeId,
+    SoundId,
+};
 
 pub(crate) mod edit;
 pub(crate) mod grouping;
+mod retime;
+pub use retime::{
+    SoundRetimeCohort, SoundRetimeCohortKind, SoundRetimeStage, SoundRetimeTransition,
+};
 
 pub const MAX_SOUND_CLOCKS: usize = 1024;
 pub const MAX_SOUND_CLOCK_BYTES: usize = 1024 * 1024;
@@ -207,14 +214,16 @@ fn validate_splits(splits: &[SoundClockSplit]) -> Result<usize, DocumentError> {
     if splits.len() > crate::MAX_DOCUMENT_NODES {
         return Err(limit("sound clock Split relation limit"));
     }
-    let mut historical = BTreeSet::new();
+    let mut live = BTreeSet::new();
     let mut pieces = 0usize;
     for split in splits {
         // Public identity fields are convenient for explicit lifecycle remaps;
         // recheck them at every reference admission.
         SoundClockSplit::validate_pieces(&split.pieces)?;
-        if !historical.insert(&split.historical_node) {
-            return Err(invalid("duplicate historical sound clock Split"));
+        for piece in &split.pieces {
+            if !live.insert(&piece.partition) || !live.insert(&piece.full_owner) {
+                return Err(invalid("duplicate live sound clock Split identity"));
+            }
         }
         pieces = pieces
             .checked_add(split.pieces.len())
@@ -238,14 +247,20 @@ fn introduced_splits<'de, D: Deserializer<'de>>(
         }
         fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
             let mut splits = Vec::new();
-            let mut historical = BTreeSet::new();
+            let mut live = BTreeSet::new();
             let mut pieces = 0usize;
             while let Some(split) = seq.next_element::<SoundClockSplit>()? {
                 if splits.len() == crate::MAX_DOCUMENT_NODES {
                     return Err(de::Error::custom("sound clock Split relation limit"));
                 }
-                if !historical.insert(split.historical_node.clone()) {
-                    return Err(de::Error::custom("duplicate historical sound clock Split"));
+                for piece in &split.pieces {
+                    if !live.insert(piece.partition.clone())
+                        || !live.insert(piece.full_owner.clone())
+                    {
+                        return Err(de::Error::custom(
+                            "duplicate live sound clock Split identity",
+                        ));
+                    }
                 }
                 pieces = pieces
                     .checked_add(split.pieces.len())
@@ -257,6 +272,80 @@ fn introduced_splits<'de, D: Deserializer<'de>>(
         }
     }
     decoder.deserialize_seq(Splits)
+}
+
+/// Explicit provenance for one historical effective Repeat play cloned into a
+/// live owned branch. Admission checks identity shape only; complete recursive
+/// layout correspondence must separately prove the branch's semantic safety.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SoundClockIsolation {
+    pub live_repeat: NodeId,
+    pub historical_repeat: NodeId,
+    pub iteration: IterationId,
+    pub live_root: NodeId,
+}
+
+#[derive(Default)]
+struct IsolationIdentities {
+    plays: BTreeSet<(NodeId, IterationId)>,
+    roots: BTreeSet<NodeId>,
+}
+
+impl IsolationIdentities {
+    fn insert(&mut self, isolation: &SoundClockIsolation) -> Result<(), DocumentError> {
+        if isolation.live_repeat == isolation.live_root {
+            return Err(invalid("sound clock isolation has a self edge"));
+        }
+        if !self
+            .plays
+            .insert((isolation.live_repeat.clone(), isolation.iteration.clone()))
+        {
+            return Err(invalid("duplicate sound clock isolation play"));
+        }
+        if !self.roots.insert(isolation.live_root.clone()) {
+            return Err(invalid("duplicate sound clock isolation root"));
+        }
+        Ok(())
+    }
+}
+
+fn validate_isolations(isolations: &[SoundClockIsolation]) -> Result<(), DocumentError> {
+    if isolations.len() > crate::MAX_DOCUMENT_NODES {
+        return Err(limit("sound clock isolation relation limit"));
+    }
+    let mut identities = IsolationIdentities::default();
+    for isolation in isolations {
+        identities.insert(isolation)?;
+    }
+    Ok(())
+}
+
+fn introduced_isolations<'de, D: Deserializer<'de>>(
+    decoder: D,
+) -> Result<Vec<SoundClockIsolation>, D::Error> {
+    struct Isolations;
+    impl<'de> Visitor<'de> for Isolations {
+        type Value = Vec<SoundClockIsolation>;
+
+        fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.write_str("bounded unique sound clock Repeat isolations")
+        }
+
+        fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+            let mut isolations = Vec::new();
+            let mut identities = IsolationIdentities::default();
+            while let Some(isolation) = seq.next_element::<SoundClockIsolation>()? {
+                if isolations.len() == crate::MAX_DOCUMENT_NODES {
+                    return Err(de::Error::custom("sound clock isolation relation limit"));
+                }
+                identities.insert(&isolation).map_err(de::Error::custom)?;
+                isolations.push(isolation);
+            }
+            Ok(isolations)
+        }
+    }
+    decoder.deserialize_seq(Isolations)
 }
 
 /// One historical owner's clock in a frozen processing scope.
@@ -282,6 +371,12 @@ pub struct SoundClockReference {
         deserialize_with = "introduced_splits"
     )]
     introduced_splits: Vec<SoundClockSplit>,
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        deserialize_with = "introduced_isolations"
+    )]
+    introduced_isolations: Vec<SoundClockIsolation>,
 }
 
 impl SoundClockReference {
@@ -293,6 +388,7 @@ impl SoundClockReference {
             repeats: SoundClockRepeatMap::default(),
             introduced_groups: BTreeSet::new(),
             introduced_splits: Vec::new(),
+            introduced_isolations: Vec::new(),
         }
     }
 
@@ -349,6 +445,37 @@ impl SoundClockReference {
         self.introduced_splits.iter().fold(0usize, |work, split| {
             work.saturating_add(split.work_count())
         })
+    }
+
+    pub fn with_introduced_isolations(
+        mut self,
+        isolations: Vec<SoundClockIsolation>,
+    ) -> Result<Self, DocumentError> {
+        validate_isolations(&isolations)?;
+        self.introduced_isolations = isolations;
+        Ok(self)
+    }
+
+    pub fn introduced_isolations(&self) -> &[SoundClockIsolation] {
+        &self.introduced_isolations
+    }
+
+    pub fn isolation_work_count(&self) -> usize {
+        self.introduced_isolations.len()
+    }
+
+    pub fn relations(
+        &self,
+    ) -> (
+        &BTreeSet<NodeId>,
+        &[SoundClockSplit],
+        &[SoundClockIsolation],
+    ) {
+        (
+            &self.introduced_groups,
+            &self.introduced_splits,
+            &self.introduced_isolations,
+        )
     }
 }
 
@@ -595,3 +722,6 @@ mod introduced_groups_tests;
 
 #[cfg(test)]
 mod introduced_splits_tests;
+
+#[cfg(test)]
+mod introduced_isolations_tests;

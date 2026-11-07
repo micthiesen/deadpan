@@ -1,4 +1,4 @@
-//! Exact, explicitly certified replacement of one clock leaf by Split pieces.
+//! Exact, explicitly certified replacement of one complete clock by Split pieces.
 
 use super::*;
 
@@ -17,11 +17,10 @@ impl<'a> SplitProofState<'a> {
     ) -> Result<Self, DocumentError> {
         spend(work, splits.len(), maximum)?;
         let mut by_first = BTreeMap::new();
-        let mut historical = BTreeSet::new();
         let mut live = BTreeSet::new();
         for split in splits {
             spend(work, split.pieces.len(), maximum)?;
-            if split.pieces.len() < 2 || !historical.insert(split.historical_node.clone()) {
+            if split.pieces.len() < 2 {
                 return Err(invalid("invalid sound clock Split relation"));
             }
             for piece in &split.pieces {
@@ -50,6 +49,42 @@ impl<'a> SplitProofState<'a> {
             .is_some_and(|split| {
                 &split.historical_node == historical && split.pieces.len() == children.len()
             })
+    }
+
+    /// A wrapper below a non-Sequence processor is admitted only as the
+    /// container of this exact Split forest. An unrelated recorded Split must
+    /// not make arbitrary new groups transparent beneath Repeat or Retime.
+    pub fn wrapped_forest(
+        &self,
+        historical: &NodeId,
+        live: &NodeId,
+        current: &FrozenAudioLayout,
+        groups: &BTreeSet<NodeId>,
+        work: &mut usize,
+        maximum: usize,
+    ) -> Result<bool, DocumentError> {
+        let mut wrapper = live;
+        for _ in 0..MAX_DOCUMENT_DEPTH {
+            spend(work, 1, maximum)?;
+            if !groups.contains(wrapper) {
+                return Ok(false);
+            }
+            let Some(FrozenAudioNode {
+                kind: FrozenAudioKind::Sequence { children },
+                ..
+            }) = current.nodes.get(wrapper)
+            else {
+                return Ok(false);
+            };
+            if self.root_forest(historical, children) {
+                return Ok(true);
+            }
+            let [child] = children.as_slice() else {
+                return Ok(false);
+            };
+            wrapper = child;
+        }
+        Err(limit("sound clock Split wrapper depth exceeds limit"))
     }
 }
 
@@ -173,13 +208,6 @@ impl SequenceRelations<'_, '_> {
                 }
                 let old = &self.historical.nodes[historical_child];
                 let (full, range) = match &old.kind {
-                    FrozenAudioKind::Source { .. } | FrozenAudioKind::Hold { .. } => (
-                        historical_child,
-                        FrameRange::new(
-                            crate::ProjectFrame(0),
-                            crate::ProjectFrame(old.duration.frames()),
-                        )?,
-                    ),
                     FrozenAudioKind::Retime {
                         child,
                         mapping,
@@ -190,19 +218,17 @@ impl SequenceRelations<'_, '_> {
                         && !self
                             .historical
                             .derived_clocks
-                            .contains_key(historical_child)
-                        && matches!(
-                            self.historical.nodes[child].kind,
-                            FrozenAudioKind::Source { .. } | FrozenAudioKind::Hold { .. }
-                        ) =>
+                            .contains_key(historical_child) =>
                     {
                         (child, *mapping)
                     }
-                    _ => {
-                        return Err(invalid(
-                            "sound clock Split target is not a complete leaf or transparent Partition",
-                        ));
-                    }
+                    _ => (
+                        historical_child,
+                        FrameRange::new(
+                            crate::ProjectFrame(0),
+                            crate::ProjectFrame(old.duration.frames()),
+                        )?,
+                    ),
                 };
                 if self.historical.derived_clocks.contains_key(full) {
                     return Err(invalid("sound clock Split full owner has a derived clock"));
@@ -250,7 +276,6 @@ impl SequenceRelations<'_, '_> {
                         || pitch.processes(true)
                         || self.current.derived_clocks.contains_key(&piece.partition)
                         || self.current.derived_clocks.contains_key(child)
-                        || self.current.nodes.get(child) != self.historical.nodes.get(full)
                         || self
                             .current
                             .index
@@ -288,7 +313,12 @@ impl SequenceRelations<'_, '_> {
                         live_depth: piece_depth + 1,
                     });
                 }
-                if next != range.end() || !self.splits.visited.insert(historical_child.clone()) {
+                if next != range.end()
+                    || !self
+                        .splits
+                        .visited
+                        .insert(split.pieces[0].partition.clone())
+                {
                     return Err(invalid(
                         "sound clock Split does not cover its historical interval",
                     ));

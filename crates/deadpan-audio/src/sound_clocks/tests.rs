@@ -302,6 +302,75 @@ fn one_sound_reuses_its_first_clock_plan_for_long_journal_and_retry() {
 }
 
 #[test]
+fn empty_current_support_does_not_retrieve_a_long_sound_clock_journal() {
+    const CLOCKS: usize = 80;
+    let original = document(&["asset-a"], CLOCKS);
+    let mut wire = serde_json::to_value(original).unwrap();
+    wire["nodes"]["prefix"] = serde_json::to_value(BeatNode::hold(
+        "Unrelated silent prefix",
+        HoldRecipe {
+            duration: FrameDuration::new(1).unwrap(),
+            video: HoldVideo::Background,
+            picture_context: None,
+            audio: HoldAudio::Silence,
+        },
+    ))
+    .unwrap();
+    wire["nodes"]["root"]["kind"]["children"] = serde_json::json!(["prefix", "owner"]);
+    let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let plan = RenderPlan::compile(&document).unwrap();
+    let event = &plan.beat_sounds()[&id("owner")][&SoundId::new("sound-0").unwrap()];
+    let cancelled = AtomicBool::new(false);
+    let probe = RefCell::new(ReadWork::default());
+    let batch = current_occurrence_supports(
+        &plan,
+        None,
+        &id("owner"),
+        event,
+        AudioSample(0)..AudioSample(1),
+        CLOCKS,
+        control(&cancelled, &probe),
+    )
+    .unwrap();
+    assert!(batch.supports().is_empty());
+    // The clock count is a single lookup. Its immutable asset inventory was
+    // built with the plan, not reconstructed from all 80 clocks on this read.
+    let required = 1 + probe.borrow().plan_work;
+    let work = RefCell::new(ReadWork {
+        plan_work: MAX_PLAN_WORK_PER_READ - required,
+        ..Default::default()
+    });
+    let mut stage = StageAudio::new(Arc::new(plan.clone()));
+    let prepared = stage
+        .prepare_sound_processing_plans(
+            &plan,
+            AudioSample(0)..AudioSample(1),
+            control(&cancelled, &work),
+        )
+        .unwrap();
+    assert!(prepared.is_empty());
+    assert!(stage.sound_processing_plans.is_empty());
+    assert_eq!(work.borrow().plan_work, MAX_PLAN_WORK_PER_READ);
+
+    // The same allowance cannot waive the real occurrence, alias and retained
+    // plan work once the sound's current owner actually contributes.
+    let work = RefCell::new(ReadWork {
+        plan_work: MAX_PLAN_WORK_PER_READ - required,
+        ..Default::default()
+    });
+    assert!(
+        stage
+            .prepare_sound_processing_plans(
+                &plan,
+                AudioSample(1602)..AudioSample(1603),
+                control(&cancelled, &work),
+            )
+            .is_err()
+    );
+    assert!(stage.sound_processing_plans.is_empty());
+}
+
+#[test]
 fn distinct_first_clocks_keep_each_sound_asset_contract_separate() {
     let document = document(&["asset-a", "asset-b"], 80);
     let plan = RenderPlan::compile(&document).unwrap();
@@ -352,6 +421,60 @@ fn distinct_first_clocks_keep_each_sound_asset_contract_separate() {
             BTreeSet::from([AssetId::new((*asset_name).to_owned()).unwrap()]),
         );
     }
+}
+
+#[test]
+fn shared_first_clock_retains_every_event_asset_across_cached_reads() {
+    let original = document(&["asset-b", "asset-a", "asset-b"], 3);
+    let state = original.audio_bindings();
+    let first = state.sound_clocks()[&id("owner")][&SoundId::new("sound-0").unwrap()].clone();
+    let clocks = first
+        .clocks()
+        .iter()
+        .map(|reference| AudioTimingRecord {
+            id: reference.timing().clone(),
+            layout: state.timings()[reference.timing()].clone(),
+        })
+        .collect();
+    let bindings = AudioBindingState::new_with_sound_clocks(
+        clocks,
+        BTreeMap::new(),
+        BTreeMap::new(),
+        BTreeMap::from([(
+            id("owner"),
+            (0..3)
+                .map(|index| {
+                    (
+                        SoundId::new(format!("sound-{index}")).unwrap(),
+                        first.clone(),
+                    )
+                })
+                .collect(),
+        )]),
+    )
+    .unwrap();
+    let mut wire = serde_json::to_value(original).unwrap();
+    wire["audio_bindings"] = serde_json::to_value(bindings).unwrap();
+    let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let plan = RenderPlan::compile(&document).unwrap();
+    let mut stage = StageAudio::new(Arc::new(plan.clone()));
+    let prepared = prepare(&mut stage, &plan).unwrap();
+    assert_eq!(prepared.len(), 1);
+    let retained = prepared.values().next().unwrap();
+    assert_eq!(
+        retained
+            .audio_context_assets()
+            .unwrap()
+            .keys()
+            .cloned()
+            .collect::<Vec<_>>(),
+        vec![
+            AssetId::new("asset-a").unwrap(),
+            AssetId::new("asset-b").unwrap()
+        ]
+    );
+    let repeated = prepare(&mut stage, &plan).unwrap();
+    assert!(Arc::ptr_eq(retained, repeated.values().next().unwrap()));
 }
 
 #[test]

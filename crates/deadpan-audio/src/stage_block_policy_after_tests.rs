@@ -9,6 +9,9 @@ use std::collections::{BTreeMap, BTreeSet};
 #[path = "stage_block_policy_evidence_journal.rs"]
 mod journal;
 
+#[path = "saved_key_output_policy_before_tests.rs"]
+mod saved_key_output_policy;
+
 fn object<const N: usize>(fields: [(&str, Value); N]) -> Value {
     Value::Object(
         fields
@@ -95,7 +98,7 @@ pub(in super::super) struct Action {
     entry: &'static str,
     o: native::CaptureGuard,
     n: n_native::CaptureGuard,
-    keys: before_trace::CaptureGuard,
+    keys: saved_key_output_policy::KeysCapture,
 }
 pub(super) fn begin_action(name: &str, entry: &'static str) -> Option<Action> {
     let fault = COLLECTION.with(|v| {
@@ -105,10 +108,11 @@ pub(super) fn begin_action(name: &str, entry: &'static str) -> Option<Action> {
             std::mem::replace(&mut v.next, Fault::None)
         })
     })?;
+    saved_key_output_policy::action_begin(name, entry);
     Some(Action {
         name: name.into(),
         entry,
-        keys: before_trace::begin_keys(),
+        keys: saved_key_output_policy::begin_keys(),
         n: n_native::begin(n_native::Fault::None),
         o: native::begin(fault),
     })
@@ -134,17 +138,18 @@ pub(super) fn provider_position() -> Option<Value> {
 pub(super) fn end_action(action: Action) -> Value {
     let o = native::take();
     let n = n_native::take();
-    let keys = before_trace::take_keys();
+    let keys = saved_key_output_policy::take_keys(&action.keys);
     drop(action.o);
     drop(action.n);
     drop(action.keys);
     valid(&o, &n);
-    super::key_replay::valid_keys(&keys);
+    saved_key_output_policy::valid_action_keys(&keys);
     COLLECTION.with(|v| {
         let mut v = v.borrow_mut();
         let v = v.as_mut().unwrap();
         let ordinal = v.rows.len() + 1;
         let provider = v.provider.take().unwrap();
+        saved_key_output_policy::action_end(ordinal);
         v.rows.push(
             json!({"ordinal":ordinal,"action":action.name,"entry":action.entry,
             "native":o,"ambient_N":n,"keys":keys,"provider_entries":provider}),
@@ -2279,6 +2284,9 @@ pub(super) fn fixture_visit(
         fixture["faults"] = json!(
             "unchanged seven real early controls; selected AFTER callback faults run separately"
         );
+        if saved_key_output_policy::active() {
+            fixture = saved_key_output_policy::augment(fixture, plan, base, asset, wire, reopen);
+        }
         return Ok(Some(fixture));
     }
     if mode == Mode::Residency {

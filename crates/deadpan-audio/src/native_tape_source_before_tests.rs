@@ -148,6 +148,8 @@ fn prepared(value: &PreparedBlock) -> Value {
 fn work(value: &RefCell<ReadWork>) -> Value {
     let value = value.borrow();
     let ReadWork {
+        clock_remaining: _,
+        checks_since_clock: _,
         prepared_stages,
         prepared_frames,
         source_checks,

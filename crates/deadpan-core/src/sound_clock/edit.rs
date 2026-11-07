@@ -48,6 +48,9 @@ pub(crate) fn timing(command: &Command) -> Option<&AudioTimingId> {
 /// sound clocks (an owner scope that changes still refuses at restore).
 pub(crate) fn transports(command: &Command) -> bool {
     timing(command).is_some()
+        // This wrapper is prepared into isolation followed by an ordinary
+        // Split before capture; it must pass the outer admission too.
+        || matches!(command, Command::EditOccurrence { edit: crate::OccurrenceEdit::Split { .. }, .. })
         || matches!(
             command,
             Command::Split { .. }
@@ -86,12 +89,16 @@ pub(crate) struct SoundClockEditCapture {
     introduced: Option<NodeId>,
     /// Exact Split provenance, independent of labels or equal-shaped nodes.
     owners: BTreeMap<NodeId, NodeId>,
+    node_aliases: BTreeMap<NodeId, NodeId>,
+    copied_nodes: BTreeMap<NodeId, NodeId>,
     /// External Repeat placements also acquire aliases when their full input
     /// is cloned behind a Split delivery Partition.
     repeat_aliases: BTreeMap<NodeId, NodeId>,
     split_owners: BTreeSet<NodeId>,
     plain_split: bool,
     clock_splits: Vec<CapturedSoundSplit>,
+    clock_groups: BTreeSet<NodeId>,
+    split_roots: BTreeMap<NodeId, NodeId>,
     // Only the containing processor's output can ignore this changed input.
     // Outside Hold moves retain their existing full-scope capture semantics.
     resized_hold: Option<NodeId>,
@@ -135,7 +142,9 @@ impl SoundClockEditCapture {
             return Err(invalid("sound clock capture identity already exists"));
         }
         let before = FrozenAudioLayout::capture(document)?;
-        if document.beat_sounds.contains_key(document.root()) {
+        if document.beat_sounds.contains_key(document.root())
+            && !matches!(command, Command::Split { node, .. } if node != document.root())
+        {
             return Err(invalid("root-owned beat sounds cannot yet be transported"));
         }
         let journals = document.audio_bindings.sound_clocks.clone();
@@ -174,6 +183,12 @@ impl SoundClockEditCapture {
                 .keys()
                 .map(|id| (id.clone(), id.clone()))
                 .collect(),
+            node_aliases: document
+                .nodes
+                .keys()
+                .map(|id| (id.clone(), id.clone()))
+                .collect(),
+            copied_nodes: BTreeMap::new(),
             repeat_aliases: document
                 .nodes
                 .iter()
@@ -183,6 +198,8 @@ impl SoundClockEditCapture {
             split_owners: BTreeSet::new(),
             plain_split: matches!(command, Command::Split { .. }),
             clock_splits: Vec::new(),
+            clock_groups: BTreeSet::new(),
+            split_roots: BTreeMap::new(),
             resized_hold: match command {
                 Command::SetHoldDuration { node, duration }
                     if document.nodes.get(node).is_some_and(|node| {
@@ -206,20 +223,14 @@ impl SoundClockEditCapture {
         target: &NodeId,
         partitions: (&NodeId, &NodeId),
         full_owner: &NodeId,
+        wrapper: Option<&NodeId>,
     ) -> Result<(), EditError> {
         // Only an explicit Split preserves this complete delivery forest.
         // Helper Splits retain their existing owner aliases, but their outer
         // edit may remove, separate or wrap pieces before restore.
         let eligible = self.plain_split
-            && matches!(
-                document.nodes[full_owner].kind,
-                NodeKind::Source { .. } | NodeKind::Hold { .. }
-            )
-            && document.parent_of(target).is_some_and(|parent| {
-                matches!(document.nodes[&parent].kind, NodeKind::Sequence { .. })
-            })
+            && target != document.root()
             && match &document.nodes[target].kind {
-                NodeKind::Source { .. } | NodeKind::Hold { .. } => target == full_owner,
                 NodeKind::Retime {
                     child,
                     duration,
@@ -229,7 +240,7 @@ impl SoundClockEditCapture {
                 } => {
                     child == full_owner && *duration == mapping.duration() && !pitch.processes(true)
                 }
-                _ => false,
+                _ => target == full_owner,
             };
         if eligible {
             let right_owner = mapping
@@ -251,6 +262,10 @@ impl SoundClockEditCapture {
                     },
                 ],
             });
+            if let Some(wrapper) = wrapper {
+                self.clock_groups.insert(wrapper.clone());
+                self.split_roots.insert(target.clone(), wrapper.clone());
+            }
         }
         let repeat_copies: Vec<_> = mapping
             .iter()
@@ -260,6 +275,21 @@ impl SoundClockEditCapture {
                     .map(|original| (new.clone(), original.clone()))
             })
             .collect();
+        if self.plain_split {
+            for (old, new) in mapping {
+                let original = self
+                    .node_aliases
+                    .get(old)
+                    .ok_or_else(|| invalid("split context has no historical alias"))?
+                    .clone();
+                if self.node_aliases.insert(new.clone(), original).is_some() {
+                    return Err(invalid("split context alias already exists"));
+                }
+                if self.copied_nodes.insert(old.clone(), new.clone()).is_some() {
+                    return Err(invalid("split context has more than one direct copy"));
+                }
+            }
+        }
         if self
             .repeat_aliases
             .len()
@@ -322,6 +352,28 @@ impl SoundClockEditCapture {
         let mut moved = BTreeMap::new();
         let mut historical = BTreeMap::new();
         let mut work = 0usize;
+        if self.events.contains_key(self.before.root()) {
+            if self.journals.contains_key(self.before.root()) {
+                return Err(invalid(
+                    "root-owned sound journals cannot yet be transported",
+                ));
+            }
+            let splits = transported_splits(
+                &[],
+                &self.clock_splits,
+                |target| Some(target.clone()),
+                &current,
+                current.root(),
+                &mut work,
+            )?;
+            let proof = self.before.sound_split_root_correspondence(
+                &current,
+                &self.clock_groups,
+                &splits,
+                budget(work)?,
+            )?;
+            charge(&mut work, proof.work())?;
+        }
         let output_owner = if let Some(hold) = &self.resized_hold {
             let (scope, used) = self.before.sound_processing_scope(hold, budget(work)?)?;
             work = work.checked_add(used).ok_or_else(exhausted)?;
@@ -330,7 +382,8 @@ impl SoundClockEditCapture {
             None
         };
         for (owner, original) in self.owners {
-            let split = self.split_owners.contains(&owner);
+            let owner_split = self.split_owners.contains(&owner);
+            let split = owner_split || self.plain_split;
             let output_owner_edit = output_owner.as_ref() == Some(&original);
             let events = &self.events[&original];
             if !document.nodes.contains_key(&owner) {
@@ -340,6 +393,10 @@ impl SoundClockEditCapture {
                 return Err(invalid(
                     "sound owner disappeared without whole-owner deletion",
                 ));
+            }
+            if &original == self.before.root() {
+                document.beat_sounds.insert(owner, events.clone());
+                continue;
             }
             let (top, used) =
                 self.before
@@ -404,25 +461,26 @@ impl SoundClockEditCapture {
                 };
                 let broad_split_scope = if split && !self.clock_splits.is_empty() {
                     let scope = previous.map_or(&top, SoundClockJournal::scope);
-                    if matches!(
-                        self.before.nodes()[scope].kind,
-                        crate::FrozenAudioKind::Sequence { .. }
-                    ) && current.nodes().contains_key(scope)
-                    {
-                        let (ordinary, used) =
-                            self.before.ordinary_sound_ancestry(scope, budget(work)?)?;
-                        charge(&mut work, used)?;
-                        ordinary.then(|| scope.clone())
-                    } else {
-                        None
+                    let mut candidate = &owner;
+                    loop {
+                        charge(&mut work, 1)?;
+                        if self.node_aliases.get(candidate) == Some(scope) {
+                            break Some((scope.clone(), candidate.clone()));
+                        }
+                        if candidate == current.root() {
+                            break None;
+                        }
+                        candidate = current
+                            .sound_parent(candidate)
+                            .ok_or_else(|| invalid("split owner is outside its root"))?;
                     }
                 } else {
                     None
                 };
                 let (old_scope, live_scope) = if let Some(scopes) = output_scopes {
                     scopes
-                } else if let Some(scope) = broad_split_scope {
-                    (scope.clone(), scope)
+                } else if let Some(scopes) = broad_split_scope {
+                    scopes
                 } else if split {
                     let (old, used) = self
                         .before
@@ -473,7 +531,8 @@ impl SoundClockEditCapture {
                     }
                 };
                 if previous.is_some_and(|previous| {
-                    (&old_scope != previous.scope() || &live_scope != previous.scope())
+                    (&old_scope != previous.scope()
+                        || self.node_aliases.get(&live_scope) != Some(previous.scope()))
                         && previous
                             .clocks()
                             .iter()
@@ -526,10 +585,19 @@ impl SoundClockEditCapture {
                     &live_scope,
                     &mut work,
                 )?;
+                let mut before_groups = BTreeSet::new();
+                for group in &self.clock_groups {
+                    let (inside, used) =
+                        current.sound_scope_contains(&live_scope, group, budget(work)?)?;
+                    charge(&mut work, used)?;
+                    if inside {
+                        before_groups.insert(group.clone());
+                    }
+                }
                 let key = (
                     old_scope.clone(),
                     live_scope.clone(),
-                    split,
+                    owner_split,
                     (output_owner_edit
                         && !split
                         && self.before.sound_uses_output_owner_proof(
@@ -563,7 +631,7 @@ impl SoundClockEditCapture {
                                 (&old_scope, &live_scope),
                                 (&original, &owner),
                                 &before_map,
-                                (&BTreeSet::new(), &before_splits),
+                                (&before_groups, &before_splits, &[]),
                                 budget(work)?,
                             )?
                     } else if output_owner_edit && !split {
@@ -585,7 +653,7 @@ impl SoundClockEditCapture {
                         )?
                     };
                     work = work.checked_add(proof.work()).ok_or_else(exhausted)?;
-                    let changed = if split {
+                    let changed = if owner_split {
                         // Even an unmoved left fragment introduces a delivery
                         // crop. Retain the old allocation for processing input.
                         true
@@ -621,6 +689,7 @@ impl SoundClockEditCapture {
                         // size before cloning it even on a cache hit.
                         charge(&mut work, reference.introduced_groups().len())?;
                         charge(&mut work, reference.split_work_count())?;
+                        charge(&mut work, reference.isolation_work_count())?;
                         let key = (
                             reference.timing().clone(),
                             reference.scope().clone(),
@@ -628,6 +697,7 @@ impl SoundClockEditCapture {
                             reference.repeats().clone(),
                             reference.introduced_groups().clone(),
                             reference.introduced_splits().to_vec(),
+                            reference.introduced_isolations().to_vec(),
                             (reference.introduced_groups().contains(previous.scope())
                                 || layout.sound_uses_output_owner_proof(
                                     &self.before,
@@ -643,7 +713,7 @@ impl SoundClockEditCapture {
                                     (reference.scope(), previous.scope()),
                                     (reference.owner(), &original),
                                     reference.repeats(),
-                                    (reference.introduced_groups(), reference.introduced_splits()),
+                                    reference.relations(),
                                     budget(work)?,
                                 )?;
                             work = work
@@ -651,6 +721,7 @@ impl SoundClockEditCapture {
                                 .ok_or_else(exhausted)?;
                             charge(&mut work, reference.introduced_groups().len())?;
                             charge(&mut work, reference.split_work_count())?;
+                            charge(&mut work, reference.isolation_work_count())?;
                             historical.insert(key.clone(), historical_proof);
                         }
                         let historical_proof = historical
@@ -676,7 +747,7 @@ impl SoundClockEditCapture {
                                 "sound clock cannot narrow outside its captured scope",
                             ));
                         };
-                        let mut introduced_groups = BTreeSet::new();
+                        let mut introduced_groups = before_groups.clone();
                         if !reference.introduced_groups().is_empty() {
                             for (live_node, before_node) in proof.node_pairs() {
                                 charge(&mut work, 1)?;
@@ -685,8 +756,17 @@ impl SoundClockEditCapture {
                                 }
                             }
                         }
+                        let prior_splits = if old_scope != live_scope {
+                            remapped_splits(reference.introduced_splits(), &proof, &mut work)?
+                        } else {
+                            copied_splits(
+                                reference.introduced_splits(),
+                                &self.copied_nodes,
+                                &mut work,
+                            )?
+                        };
                         let introduced_splits = transported_splits(
-                            reference.introduced_splits(),
+                            &prior_splits,
                             &self.clock_splits,
                             |target| historical_proof.historical_node(target).cloned(),
                             &current,
@@ -730,7 +810,16 @@ impl SoundClockEditCapture {
                         )
                         .with_repeats(repeats)
                         .with_introduced_groups(introduced_groups)?
-                        .with_introduced_splits(introduced_splits)?;
+                        .with_introduced_splits(introduced_splits)?
+                        .with_introduced_isolations(
+                            transported_isolations(
+                                reference.introduced_isolations(),
+                                &self.copied_nodes,
+                                &self.split_roots,
+                                old_scope != live_scope,
+                                &mut work,
+                            )?,
+                        )?;
                         // A narrowing through an unpaired group must establish
                         // its real unary path. The prior complete-scope proof
                         // alone cannot grant that new root relation.
@@ -742,10 +831,7 @@ impl SoundClockEditCapture {
                                 (transported.scope(), &live_scope),
                                 (transported.owner(), &owner),
                                 transported.repeats(),
-                                (
-                                    transported.introduced_groups(),
-                                    transported.introduced_splits(),
-                                ),
+                                transported.relations(),
                                 budget(work)?,
                             )?;
                             charge(&mut work, narrowed.work())?;
@@ -761,6 +847,7 @@ impl SoundClockEditCapture {
                             original.clone(),
                         )
                         .with_repeats(before_map)
+                        .with_introduced_groups(before_groups)?
                         .with_introduced_splits(before_splits)?,
                     );
                 }
@@ -795,6 +882,135 @@ fn introduced_plays<'a>(
         unreachable!("admitted Repeat ancestry")
     };
     iterations
+}
+
+fn transported_isolations(
+    previous: &[crate::SoundClockIsolation],
+    copies: &BTreeMap<NodeId, NodeId>,
+    roots: &BTreeMap<NodeId, NodeId>,
+    renamed_scope: bool,
+    work: &mut usize,
+) -> Result<Vec<crate::SoundClockIsolation>, EditError> {
+    let mut result = Vec::new();
+    for relation in previous {
+        charge(work, 1)?;
+        let mut original = relation.clone();
+        if let Some(root) = roots.get(&original.live_root) {
+            original.live_root = root.clone();
+        }
+        if !renamed_scope {
+            result.push(original);
+        }
+        if let Some(repeat) = copies.get(&relation.live_repeat) {
+            let root = copies
+                .get(&relation.live_root)
+                .ok_or_else(|| invalid("Split copies an incomplete sound isolation"))?;
+            let mut copied = relation.clone();
+            copied.live_repeat = repeat.clone();
+            copied.live_root = roots.get(root).unwrap_or(root).clone();
+            result.push(copied);
+        } else if renamed_scope {
+            return Err(invalid("Split loses a retained sound isolation"));
+        }
+    }
+    Ok(result)
+}
+
+/// A complete copied scope gets its own physical forest. Obtain every new name
+/// from the proven subtree pairing, never from labels or matching recipes.
+fn remapped_splits(
+    previous: &[crate::SoundClockSplit],
+    proof: &crate::SoundClockCorrespondence,
+    work: &mut usize,
+) -> Result<Vec<crate::SoundClockSplit>, EditError> {
+    if previous.is_empty() {
+        return Ok(Vec::new());
+    }
+    let mut aliases = BTreeMap::new();
+    for (live, old) in proof.node_pairs() {
+        charge(work, 1)?;
+        if aliases.insert(old.clone(), live.clone()).is_some() {
+            return Err(invalid(
+                "sound clock forest copy is not one complete context",
+            ));
+        }
+    }
+    previous
+        .iter()
+        .map(|split| {
+            charge(work, split.work_count())?;
+            let pieces = split
+                .pieces
+                .iter()
+                .map(|piece| {
+                    Ok(crate::SoundClockSplitPiece {
+                        partition: aliases
+                            .get(&piece.partition)
+                            .ok_or_else(|| invalid("copied sound clock forest lost a Partition"))?
+                            .clone(),
+                        full_owner: aliases
+                            .get(&piece.full_owner)
+                            .ok_or_else(|| {
+                                invalid("copied sound clock forest lost a complete owner")
+                            })?
+                            .clone(),
+                    })
+                })
+                .collect::<Result<Vec<_>, EditError>>()?;
+            Ok(crate::SoundClockSplit::new(
+                split.historical_node.clone(),
+                pieces,
+            )?)
+        })
+        .collect()
+}
+
+/// A Split inside a retained wider processing scope copies its complete nested
+/// forests as well. The historical name may repeat; every live forest remains
+/// distinct and must be reached by the enclosing complete-context proof.
+fn copied_splits(
+    previous: &[crate::SoundClockSplit],
+    copies: &BTreeMap<NodeId, NodeId>,
+    work: &mut usize,
+) -> Result<Vec<crate::SoundClockSplit>, EditError> {
+    let mut result = previous.to_vec();
+    for split in previous {
+        charge(work, split.work_count())?;
+        let copied = split
+            .pieces
+            .iter()
+            .filter(|piece| copies.contains_key(&piece.partition))
+            .count();
+        if copied == 0 {
+            continue;
+        }
+        if copied != split.pieces.len() {
+            return Err(invalid(
+                "Split copies an incomplete retained sound clock forest",
+            ));
+        }
+        if result.len() >= MAX_DOCUMENT_NODES {
+            return Err(exhausted());
+        }
+        let pieces = split
+            .pieces
+            .iter()
+            .map(|piece| {
+                Ok(crate::SoundClockSplitPiece {
+                    partition: copies[&piece.partition].clone(),
+                    full_owner: copies
+                        .get(&piece.full_owner)
+                        .ok_or_else(|| invalid("copied sound clock forest lost a complete owner"))?
+                        .clone(),
+                })
+            })
+            .collect::<Result<Vec<_>, EditError>>()?;
+        result.push(crate::SoundClockSplit::new(
+            split.historical_node.clone(),
+            pieces,
+        )?);
+    }
+    Ok(result)
 }
 
 /// Compose only the native Split's exact Partition IDs. A relation outside a

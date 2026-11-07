@@ -545,7 +545,7 @@ impl StageAudio {
                         recipe,
                         span.samples.start,
                         count,
-                        control.check()?,
+                        control.remaining()?,
                         control.cancelled,
                     )?);
                 }

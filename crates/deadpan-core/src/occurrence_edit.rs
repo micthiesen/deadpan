@@ -9,11 +9,13 @@ use crate::{
     AssetId, AssetRecord, AudioSample, Command, DocumentError, DocumentErrorCode, EditError,
     EditErrorCode, FrameDuration, GeneratedArtifact, HoldAudio, HoldRecipe, HoldVideo,
     InstancePath, IterationId, MAX_DOCUMENT_MARKS, MAX_DOCUMENT_NODES, MarkId, NodeId, NodeKind,
-    PlayOverride, PlayOverrides, ProjectDocument, RevisionId, SourceAudioMapping,
+    PlayOverride, PlayOverrides, ProjectDocument, RepeatInstance, RevisionId, SourceAudioMapping,
     SourceVideoMapping, Subtree, WrapAnchorPolicy,
 };
 
 mod hold_duration;
+mod sound_isolation;
+pub(crate) mod split;
 
 /// A bounded pool supplied by the host. Unused identities do not enter the document.
 /// Nodes are consumed in structural preorder, marks in their current ID order.
@@ -401,7 +403,7 @@ pub(crate) fn apply_captured(
         // owned/occurrence marks before the actual operation changes any time.
         let marks =
             crate::marks::clone_occurrence_marks(&result, &step, &mapping, || identities.mark())?;
-        clone_nodes(&mut result, &mapping, allocation)?;
+        clone_nodes_for_play(&mut result, &mapping, allocation, &step)?;
         if let Some(allowances) = context.allowances.as_deref_mut() {
             allowances.isolate(&target.repeats[..=index], &mapping)?;
         }
@@ -481,12 +483,38 @@ pub(crate) fn clone_nodes(
     mapping: &BTreeMap<NodeId, NodeId>,
     allocation: &RevisionId,
 ) -> Result<(), EditError> {
+    clone_nodes_inner(document, mapping, allocation, false)
+}
+
+pub(crate) fn clone_nodes_for_play(
+    document: &mut ProjectDocument,
+    mapping: &BTreeMap<NodeId, NodeId>,
+    allocation: &RevisionId,
+    selected: &RepeatInstance,
+) -> Result<(), EditError> {
+    sound_isolation::prepare(document, mapping, selected)?;
+    clone_nodes_inner(document, mapping, allocation, true)
+}
+
+fn clone_nodes_inner(
+    document: &mut ProjectDocument,
+    mapping: &BTreeMap<NodeId, NodeId>,
+    allocation: &RevisionId,
+    shared_sound_scope: bool,
+) -> Result<(), EditError> {
     let mut sound_clocks = Vec::new();
     let mut sound_group_work = 0usize;
     for (owner, copy) in mapping {
         if let Some(events) = document.audio_bindings.sound_clocks.get(owner) {
             let mut cloned = BTreeMap::new();
             for (sound, journal) in events {
+                if !mapping.contains_key(journal.scope()) && shared_sound_scope {
+                    // The preparation above records the exact owned branch in
+                    // every reference sharing this ancestor processor. Keep
+                    // that whole processor shared, with no per-copy DSP stage.
+                    cloned.insert(sound.clone(), journal.clone());
+                    continue;
+                }
                 let scope = mapping.get(journal.scope()).ok_or_else(|| {
                     invalid("sound clock isolation requires its complete processing scope")
                 })?;
@@ -583,7 +611,25 @@ pub(crate) fn clone_nodes(
                             .clone()
                             .with_repeats(repeats)
                             .with_introduced_groups(groups)?
-                            .with_introduced_splits(splits)?)
+                            .with_introduced_splits(splits)?
+                            .with_introduced_isolations(
+                                reference
+                                    .introduced_isolations()
+                                    .iter()
+                                    .map(|relation| {
+                                        let mut copy = relation.clone();
+                                        copy.live_repeat = mapping
+                                            .get(&copy.live_repeat)
+                                            .unwrap_or(&copy.live_repeat)
+                                            .clone();
+                                        copy.live_root = mapping
+                                            .get(&copy.live_root)
+                                            .unwrap_or(&copy.live_root)
+                                            .clone();
+                                        copy
+                                    })
+                                    .collect(),
+                            )?)
                     })
                     .collect::<Result<Vec<_>, EditError>>()?;
                 cloned.insert(

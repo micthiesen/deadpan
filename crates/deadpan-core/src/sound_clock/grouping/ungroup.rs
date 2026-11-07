@@ -67,6 +67,7 @@ pub(super) fn prepare(
         for reference in journal.clocks() {
             charge(&mut work, reference.introduced_groups().len())?;
             charge(&mut work, reference.split_work_count())?;
+            charge(&mut work, reference.isolation_work_count())?;
             charge(&mut work, reference.repeats().steps().len())?;
             if containing.contains(journal.scope())
                 && (journal.scope() == removed || !reference.introduced_groups().contains(removed))
@@ -134,6 +135,7 @@ pub(super) fn prepare(
                 }
                 charge(&mut work, reference.introduced_groups().len())?;
                 charge(&mut work, reference.split_work_count())?;
+                charge(&mut work, reference.isolation_work_count())?;
                 let key = (
                     reference.timing().clone(),
                     reference.scope().clone(),
@@ -148,6 +150,7 @@ pub(super) fn prepare(
                     reference.repeats().clone(),
                     reference.introduced_groups().clone(),
                     reference.introduced_splits().to_vec(),
+                    reference.introduced_isolations().to_vec(),
                 );
                 if !proofs.contains_key(&key) {
                     let old = layout.sound_owner_clock_correspondence_with_relations(
@@ -155,7 +158,7 @@ pub(super) fn prepare(
                         (reference.scope(), journal.scope()),
                         (reference.owner(), owner),
                         reference.repeats(),
-                        (reference.introduced_groups(), reference.introduced_splits()),
+                        reference.relations(),
                         remaining(work)?,
                     )?;
                     charge(&mut work, old.work())?;
@@ -164,7 +167,11 @@ pub(super) fn prepare(
                         (reference.scope(), journal.scope()),
                         (reference.owner(), owner),
                         reference.repeats(),
-                        (&groups, reference.introduced_splits()),
+                        (
+                            &groups,
+                            reference.introduced_splits(),
+                            reference.introduced_isolations(),
+                        ),
                         remaining(work)?,
                     )?;
                     charge(&mut work, new.work())?;
@@ -191,6 +198,7 @@ pub(super) fn prepare(
                     drop(new_pairs);
                     charge(&mut work, reference.introduced_groups().len())?;
                     charge(&mut work, reference.split_work_count())?;
+                    charge(&mut work, reference.isolation_work_count())?;
                     proofs.insert(key.clone(), (old, new));
                 }
                 let (old, new) = &proofs[&key];
@@ -207,7 +215,8 @@ pub(super) fn prepare(
                     )
                     .with_repeats(reference.repeats().clone())
                     .with_introduced_groups(groups)?
-                    .with_introduced_splits(reference.introduced_splits().to_vec())?,
+                    .with_introduced_splits(reference.introduced_splits().to_vec())?
+                    .with_introduced_isolations(reference.introduced_isolations().to_vec())?,
                 );
             }
             *journal = SoundClockJournal::new(journal.scope().clone(), references)?;

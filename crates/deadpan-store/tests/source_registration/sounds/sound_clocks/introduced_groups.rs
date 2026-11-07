@@ -8,6 +8,9 @@ use deadpan_core::{
 use deadpan_media::audio_index::AudioLayoutInterpretation;
 use std::collections::BTreeSet;
 
+#[path = "general_splits.rs"]
+mod general_splits;
+
 fn node(name: &str) -> NodeId {
     NodeId::new(name).unwrap()
 }
@@ -60,6 +63,23 @@ fn hold(duration: i64, audio: HoldAudio) -> BeatNode {
 // The existing group_endpoints/fixed_retime_output fixture admission path:
 // register the actual video and independent 44.1kHz WAV, never a made-up receipt.
 pub(super) fn setup(parent: &Path, source_owner: bool) -> Result<(PathBuf, ProjectStore)> {
+    setup_with_clock(parent, source_owner, true)
+}
+
+fn setup_with_clock(
+    parent: &Path,
+    source_owner: bool,
+    capture_prefix: bool,
+) -> Result<(PathBuf, ProjectStore)> {
+    setup_with_clock_owner(parent, source_owner, capture_prefix, false)
+}
+
+fn setup_with_clock_owner(
+    parent: &Path,
+    source_owner: bool,
+    capture_prefix: bool,
+    retimed_owner: bool,
+) -> Result<(PathBuf, ProjectStore)> {
     let (path, mut store) = project(parent)?;
     let original = retain(&mut store, "cfr-bframes.mp4")?;
     let decoded = decode(&store, &original)?;
@@ -153,6 +173,18 @@ pub(super) fn setup(parent: &Path, source_owner: bool) -> Result<(PathBuf, Proje
             },
         ))?;
     }
+    if retimed_owner {
+        store.commit(&edit(
+            &store.snapshot()?,
+            "retime-owner",
+            Command::WrapRetime {
+                node: node("owner"),
+                id: node("retimed-owner"),
+                duration: frames(9),
+                pitch: deadpan_core::PitchPolicy::FollowSpeed,
+            },
+        ))?;
+    }
     let source = SourceAudio {
         asset: id("event"),
         span: span(3100, 16000, 44100)?,
@@ -196,6 +228,9 @@ pub(super) fn setup(parent: &Path, source_owner: bool) -> Result<(PathBuf, Proje
             treatments: treatment([4500, -2500, 1500]),
         },
     ))?;
+    if !capture_prefix {
+        return Ok((path, store));
+    }
     let NodeKind::Hold { recipe } = hold(1, HoldAudio::Silence).kind else {
         unreachable!()
     };

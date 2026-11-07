@@ -68,6 +68,9 @@ mod disk_cache;
 #[path = "stages/progress.rs"]
 mod progress;
 
+#[path = "stages/general_split_sound.rs"]
+mod general_split_sound;
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }

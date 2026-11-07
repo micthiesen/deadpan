@@ -264,6 +264,9 @@ impl RenderPlan {
             has_audio_editorial_edges: false,
             audio_bindings: Default::default(),
             sound_clock_layout: Some(std::sync::Arc::new(layout.clone())),
+            sound_clock_correspondences: BTreeMap::new(),
+            sound_processing_assets: BTreeMap::new(),
+            sound_delivery_forests: BTreeMap::new(),
             parents,
             definition_index: None,
         })
@@ -477,6 +480,9 @@ impl RenderPlan {
                 .any(|node| !node.editorial_edges.is_empty()),
             audio_bindings: Default::default(),
             sound_clock_layout: Some(std::sync::Arc::new(layout.clone())),
+            sound_clock_correspondences: BTreeMap::new(),
+            sound_processing_assets: BTreeMap::new(),
+            sound_delivery_forests: BTreeMap::new(),
             // Context schema 1 cannot carry bindings. Definition exclusions
             // are therefore immaterial in these retained legacy operands.
             parents: vec![None; layout.nodes().len()],

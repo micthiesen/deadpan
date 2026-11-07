@@ -91,6 +91,7 @@ impl Inventory {
                     for reference in journal.clocks() {
                         result.charge(reference.introduced_groups().len())?;
                         result.charge(reference.split_work_count())?;
+                        result.charge(reference.isolation_work_count())?;
                         for step in reference.repeats().steps() {
                             if let crate::SoundClockRepeatStep::Introduced { live_repeat, plays } =
                                 step
@@ -110,6 +111,7 @@ impl Inventory {
                             reference.repeats().clone(),
                             reference.introduced_groups().clone(),
                             reference.introduced_splits().to_vec(),
+                            reference.introduced_isolations().to_vec(),
                             (reference.introduced_groups().contains(journal.scope())
                                 || historical.sound_uses_output_owner_proof(
                                     &live,
@@ -129,7 +131,7 @@ impl Inventory {
                                     (reference.scope(), journal.scope()),
                                     (reference.owner(), owner),
                                     reference.repeats(),
-                                    (reference.introduced_groups(), reference.introduced_splits()),
+                                    reference.relations(),
                                     remaining.min(MAX_DOCUMENT_NODES),
                                 )?;
                             result.charge(proof.work())?;
@@ -960,6 +962,26 @@ pub(super) fn prepare(
                                                 })
                                                 .collect::<Result<Vec<_>, EditError>>()?,
                                         )?)
+                                    })
+                                    .collect::<Result<Vec<_>, EditError>>()?,
+                            )?
+                            .with_introduced_isolations(
+                                reference
+                                    .introduced_isolations()
+                                    .iter()
+                                    .map(|relation| {
+                                        Ok(crate::SoundClockIsolation {
+                                            live_repeat: rename.live(&relation.live_repeat)?,
+                                            historical_repeat: rename.historical(
+                                                reference.timing(),
+                                                &relation.historical_repeat,
+                                            )?,
+                                            iteration: rename.play(
+                                                RepeatKey::Live(relation.live_repeat.clone()),
+                                                &relation.iteration,
+                                            )?,
+                                            live_root: rename.live(&relation.live_root)?,
+                                        })
                                     })
                                     .collect::<Result<Vec<_>, EditError>>()?,
                             )?)

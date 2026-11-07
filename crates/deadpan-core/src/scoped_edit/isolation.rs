@@ -553,7 +553,12 @@ fn apply_isolation(
                 })
             },
         )?;
-        crate::occurrence_edit::clone_nodes(&mut result, &mapping.nodes, context.allocation)?;
+        crate::occurrence_edit::clone_nodes_for_play(
+            &mut result,
+            &mapping.nodes,
+            context.allocation,
+            &mapping.selected,
+        )?;
         if let Some(allowances) = context.allowances.as_deref_mut() {
             allowances.isolate_scoped(&mapping.prefix, &mapping.nodes)?;
         }

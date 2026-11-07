@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::f64::consts::PI;
 use std::ops::Range;
 use std::sync::atomic::AtomicBool;
@@ -245,26 +246,42 @@ impl Resampler {
         let step = self.recipe.source_step.numerator() as f64
             / self.recipe.source_step.denominator() as f64;
         let cutoff = 0.95 / step.max(1.0);
+        let mut kernels = KernelPhases::default();
+        let mut positions = PositionWalk::new(&self.recipe, start)?;
         for offset in 0..frames {
             check_cancel(cancelled)?;
-            let (floor, fraction) = self
-                .recipe
-                .position(AudioSample(start.0 + i64::from(offset)))?;
+            let (floor, fraction) = match &mut positions {
+                Some(walk) => walk.next()?,
+                None => self
+                    .recipe
+                    .position(AudioSample(start.0 + i64::from(offset)))?,
+            };
             let value = if self.identity() {
                 sample(&required, &mixed, i128::from(floor))
             } else {
+                let (weights, dc) = kernels.at(fraction, radius, cutoff);
                 let mut sum = [0.0; 2];
-                let mut dc = 0.0;
-                for tap in (-radius + 1)..=radius {
-                    if (tap + radius - 1) % 256 == 0 {
-                        check_cancel(cancelled)?;
+                let first = i128::from(floor) - i128::from(radius) + 1;
+                let last = i128::from(floor) + i128::from(radius);
+                match &required {
+                    Some(range)
+                        if first >= i128::from(range.start) && last < i128::from(range.end) =>
+                    {
+                        let start = (first - i128::from(range.start)) as usize;
+                        let taps = &mixed[start..start + weights.len()];
+                        for (weight, source) in weights.iter().zip(taps) {
+                            sum[0] += weight * source[0];
+                            sum[1] += weight * source[1];
+                        }
                     }
-                    let distance = tap as f64 - fraction;
-                    let weight = kernel(distance, radius as f64, cutoff);
-                    dc += weight;
-                    let source = sample(&required, &mixed, i128::from(floor) + i128::from(tap));
-                    sum[0] += weight * source[0];
-                    sum[1] += weight * source[1];
+                    _ => {
+                        for (tap, weight) in ((-radius + 1)..=radius).zip(weights) {
+                            let source =
+                                sample(&required, &mixed, i128::from(floor) + i128::from(tap));
+                            sum[0] += weight * source[0];
+                            sum[1] += weight * source[1];
+                        }
+                    }
                 }
                 // Full-kernel DC calibration, including zero-extended taps.
                 // This is independent of source amplitude and selected length.
@@ -319,6 +336,111 @@ fn sample(required: &Option<Range<i64>>, mixed: &[[f64; 2]], at: i128) -> [f64; 
     }
 }
 
+/// Exact source positions of consecutive outputs in integers. `ExactRatio`
+/// arithmetic per sample otherwise spent much of a render in 128-bit division.
+struct PositionWalk {
+    floor: i64,
+    remainder: i64,
+    step: i64,
+    denominator: i64,
+}
+
+impl PositionWalk {
+    /// `None` when a remainder or denominator may not convert to `f64`
+    /// exactly, where dividing the reduced ratio could round differently.
+    fn new(recipe: &ResampleRecipe, start: AudioSample) -> Result<Option<Self>, PreparationError> {
+        const EXACT_F64: i128 = 1 << 53;
+        let position = recipe.source_at(start)?;
+        let (step, step_denominator) = (
+            recipe.source_step.numerator(),
+            recipe.source_step.denominator(),
+        );
+        let origin = recipe.source_origin.denominator();
+        let Some(denominator) = origin
+            .checked_mul(step_denominator / gcd(origin, step_denominator))
+            .filter(|denominator| *denominator < EXACT_F64)
+        else {
+            return Ok(None);
+        };
+        let scale = denominator / position.denominator();
+        let remainder = position.numerator().rem_euclid(position.denominator()) * scale;
+        let step = step
+            .checked_mul(denominator / step_denominator)
+            .filter(|step| *step < i128::from(i64::MAX) / 2);
+        let (Some(step), Ok(floor)) = (step, i64::try_from(position.floor())) else {
+            return Ok(None);
+        };
+        Ok(Some(Self {
+            floor,
+            remainder: remainder as i64,
+            step: step as i64,
+            denominator: denominator as i64,
+        }))
+    }
+
+    fn next(&mut self) -> Result<(i64, f64), PreparationError> {
+        let current = (self.floor, self.remainder as f64 / self.denominator as f64);
+        let total = self.remainder + self.step;
+        self.floor = self
+            .floor
+            .checked_add(total / self.denominator)
+            .ok_or(TimeError::Overflow)?;
+        self.remainder = total % self.denominator;
+        Ok(current)
+    }
+}
+
+fn gcd(mut left: i128, mut right: i128) -> i128 {
+    while right != 0 {
+        (left, right) = (right, left % right);
+    }
+    left
+}
+
+/// Bounds one render's retained weights to 8 MiB.
+const MAX_KERNEL_WEIGHTS: usize = 1 << 20;
+
+/// Weights already evaluated in one render, keyed by exact fractional phase. A
+/// rational rate repeats few phases, and trigonometry otherwise dominated
+/// resampling. Equal inputs give the same bits, so sums are unchanged.
+#[derive(Default)]
+struct KernelPhases {
+    phases: HashMap<u64, (Vec<f64>, f64)>,
+    uncached: (Vec<f64>, f64),
+}
+
+impl KernelPhases {
+    fn at(&mut self, fraction: f64, radius: i64, cutoff: f64) -> (&[f64], f64) {
+        let key = fraction.to_bits();
+        let taps = 2 * radius.unsigned_abs() as usize;
+        let retain = (self.phases.len() + 1) * taps <= MAX_KERNEL_WEIGHTS;
+        if retain && !self.phases.contains_key(&key) {
+            self.phases
+                .insert(key, kernel_weights(fraction, radius, cutoff));
+        }
+        let (weights, dc) = match self.phases.get(&key) {
+            Some(entry) => entry,
+            None => {
+                self.uncached = kernel_weights(fraction, radius, cutoff);
+                &self.uncached
+            }
+        };
+        (weights, *dc)
+    }
+}
+
+fn kernel_weights(fraction: f64, radius: i64, cutoff: f64) -> (Vec<f64>, f64) {
+    let mut dc = 0.0;
+    let weights = ((-radius + 1)..=radius)
+        .map(|tap| {
+            let weight = kernel(tap as f64 - fraction, radius as f64, cutoff);
+            dc += weight;
+            weight
+        })
+        .collect();
+    (weights, dc)
+}
+
 fn kernel(distance: f64, radius: f64, cutoff: f64) -> f64 {
     if distance.abs() >= radius {
         return 0.0;
@@ -335,4 +457,69 @@ fn kernel(distance: f64, radius: f64, cutoff: f64) -> f64 {
         phase.sin() / phase
     };
     cutoff * sinc * window
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn bits(weights: &[f64], dc: f64) -> (Vec<u64>, u64) {
+        (
+            weights.iter().map(|weight| weight.to_bits()).collect(),
+            dc.to_bits(),
+        )
+    }
+
+    #[test]
+    fn position_walk_matches_exact_positions_for_every_output() {
+        for (origin, step) in [
+            (
+                ExactRatio::new(7, 3).unwrap(),
+                ExactRatio::new(147, 160).unwrap(),
+            ),
+            (
+                ExactRatio::new(-5, 7).unwrap(),
+                ExactRatio::new(160, 147).unwrap(),
+            ),
+            (
+                ExactRatio::integer(1_000_000),
+                ExactRatio::new(1, 64).unwrap(),
+            ),
+            (ExactRatio::new(1, 2).unwrap(), ExactRatio::integer(64)),
+        ] {
+            let recipe = ResampleRecipe {
+                selection: i64::MIN / 2..i64::MAX / 2,
+                source_origin: origin,
+                output_origin: AudioSample(-20),
+                source_step: step,
+                output_range: AudioSample(-20)..AudioSample(5_000),
+            };
+            let start = AudioSample(-11);
+            let mut walk = PositionWalk::new(&recipe, start).unwrap().unwrap();
+            for output in start.0..start.0 + 4_096 {
+                let (floor, fraction) = recipe.position(AudioSample(output)).unwrap();
+                let (walked, walked_fraction) = walk.next().unwrap();
+                assert_eq!(walked, floor);
+                assert_eq!(walked_fraction.to_bits(), fraction.to_bits());
+            }
+        }
+    }
+
+    #[test]
+    fn cached_kernel_phases_keep_exact_bits_before_and_after_the_bound() {
+        let radius = 8192;
+        let taps = 2 * radius as usize;
+        let mut kernels = KernelPhases::default();
+        let capacity = MAX_KERNEL_WEIGHTS / taps;
+        for phase in 0..capacity + 3 {
+            let fraction = phase as f64 / 1024.0;
+            let (weights, dc) = kernel_weights(fraction, radius, 0.5);
+            let expected = bits(&weights, dc);
+            for _ in 0..2 {
+                let (weights, dc) = kernels.at(fraction, radius, 0.5);
+                assert_eq!(bits(weights, dc), expected);
+            }
+        }
+        assert_eq!(kernels.phases.len(), capacity);
+    }
 }

@@ -4,6 +4,7 @@ mod grouping;
 mod neutral_ungroup;
 mod repeats;
 mod split_forests;
+mod split_sound_composites;
 
 fn timing(name: &str) -> AudioTimingId {
     AudioTimingId {

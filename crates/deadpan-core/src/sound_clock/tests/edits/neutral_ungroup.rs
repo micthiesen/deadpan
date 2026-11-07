@@ -302,7 +302,7 @@ fn neutral_ungroup_refuses_a_genuine_later_group_pair_and_captured_copy() {
                 (reference.scope(), copied.scope()),
                 (reference.owner(), copied_owner),
                 reference.repeats(),
-                (reference.introduced_groups(), reference.introduced_splits()),
+                reference.relations(),
                 MAX_DOCUMENT_NODES,
             )
             .unwrap();

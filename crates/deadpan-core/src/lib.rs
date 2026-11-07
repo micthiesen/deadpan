@@ -154,8 +154,10 @@ pub use scoped_edit::{
 pub use semantic::*;
 pub use sound_allowance::*;
 pub use sound_clock::{
-    MAX_SOUND_CLOCK_BYTES, MAX_SOUND_CLOCKS, SoundClockJournal, SoundClockReference,
-    SoundClockRepeatMap, SoundClockRepeatStep, SoundClockSplit, SoundClockSplitPiece,
+    MAX_SOUND_CLOCK_BYTES, MAX_SOUND_CLOCKS, SoundClockIsolation, SoundClockJournal,
+    SoundClockReference, SoundClockRepeatMap, SoundClockRepeatStep, SoundClockSplit,
+    SoundClockSplitPiece, SoundRetimeCohort, SoundRetimeCohortKind, SoundRetimeStage,
+    SoundRetimeTransition,
 };
 pub use sound_events::*;
 pub use sound_route::*;

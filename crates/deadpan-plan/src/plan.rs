@@ -71,6 +71,10 @@ mod audio_intrinsic_preparation;
 pub use audio_intrinsic_preparation::AudioIntrinsicPreparation;
 #[path = "audio_preserve_input.rs"]
 mod audio_preserve_input;
+#[path = "sound_clock_cache.rs"]
+mod sound_clock_cache;
+#[path = "sound_delivery_forest.rs"]
+mod sound_delivery_forest;
 pub use audio_bound::{AdmittedAudioBoundDomain, AudioBound, AudioBoundDomain};
 #[path = "audio_policy.rs"]
 mod audio_policy;
@@ -163,7 +167,9 @@ pub struct PlanInspection {
 }
 
 /// A validated, owned snapshot. There are no mutation methods or media handles.
-/// Storage is O(authored nodes + child edges + compact iteration runs + catalog assets).
+/// Structural indexes scale with authored nodes, child edges, compact iteration
+/// runs and catalog assets. Retained clocks and their shared correspondence
+/// proofs have separate aggregate admission bounds and never expand plays.
 #[derive(Debug, Clone)]
 pub struct RenderPlan {
     metadata: PlanMetadata,
@@ -191,6 +197,11 @@ pub struct RenderPlan {
     // A checked structural snapshot used as the live side of sound-clock
     // correspondence proofs. Historical clocks live in `audio_bindings`.
     sound_clock_layout: Option<Arc<deadpan_core::FrozenAudioLayout>>,
+    sound_clock_correspondences: sound_clock_cache::Correspondences,
+    /// Qualified sound assets referenced by each retained processing timing.
+    /// This union is compiled once and shares sound-clock admission work.
+    sound_processing_assets: BTreeMap<deadpan_core::AudioTimingId, BTreeSet<AssetId>>,
+    sound_delivery_forests: sound_delivery_forest::Members,
     parents: Vec<Option<usize>>,
     definition_index: Option<Arc<DefinitionIndex>>,
 }
@@ -209,7 +220,8 @@ pub struct AudioSoundClockScope<'plan> {
     historical_owner: &'plan NodeId,
     historical_layout: &'plan deadpan_core::FrozenAudioLayout,
     introduced_splits: &'plan [deadpan_core::SoundClockSplit],
-    correspondence: deadpan_core::SoundClockCorrespondence,
+    correspondence: Arc<deadpan_core::SoundClockCorrespondence>,
+    query_work: usize,
     recipe: crate::AudioSourceVoiceRecipe,
 }
 
@@ -257,7 +269,16 @@ impl<'plan> AudioSoundClockScope<'plan> {
         self.historical_owner
     }
 
+    /// Work to retrieve and construct this scope from its already compiled
+    /// immutable proof. Callers charge this on each query and occurrence
+    /// remapping separately; proof construction was charged at compilation.
     pub fn proof_work(&self) -> usize {
+        self.query_work
+    }
+
+    /// Structural work already charged when this immutable plan compiled its
+    /// shared proof. Reusing the proof does not repeat that traversal.
+    pub fn proof_construction_work(&self) -> usize {
         self.correspondence.work()
     }
 
@@ -265,6 +286,14 @@ impl<'plan> AudioSoundClockScope<'plan> {
     /// Split forest, rather than only an ordinary one-to-one correspondence.
     pub fn has_split_alias(&self) -> bool {
         self.correspondence.split_alias(&self.live_owner).is_some()
+    }
+
+    /// Whether a checked current delivery forest can supply a family candidate.
+    /// The concrete context and stable Repeat path must still be resolved.
+    pub fn has_delivery_forest(&self) -> bool {
+        self.live_plan
+            .sound_delivery_forests
+            .contains_key(&(self.live_owner.clone(), self.live_sound.clone()))
     }
 
     pub fn remap_instance(&self, live: &InstancePath) -> Result<InstancePath, PlanError> {
@@ -1083,6 +1112,9 @@ impl RenderPlan {
                     document,
                 )?))
             },
+            sound_clock_correspondences: BTreeMap::new(),
+            sound_processing_assets: BTreeMap::new(),
+            sound_delivery_forests: BTreeMap::new(),
             audio_assets: document.assets().clone(),
             sounds: document.sounds().clone(),
             beat_sounds: document.beat_sounds().clone(),
@@ -1132,6 +1164,11 @@ impl RenderPlan {
                 .values()
                 .any(|node| !node.audio_editorial_edges.is_empty()),
         };
+        let (correspondences, sound_processing_assets, remaining) =
+            sound_clock_cache::compile(&plan)?;
+        plan.sound_clock_correspondences = correspondences;
+        plan.sound_processing_assets = sound_processing_assets;
+        plan.sound_delivery_forests = sound_delivery_forest::compile(&plan, remaining)?;
         plan.compiled_sounds = plan.compile_root_sounds()?;
         Ok(plan)
     }
@@ -1142,6 +1179,23 @@ impl RenderPlan {
 
     pub fn sounds(&self) -> &BTreeMap<deadpan_core::SoundId, deadpan_core::SoundEvent> {
         &self.sounds
+    }
+
+    /// The immutable union of sound assets whose journals reference this
+    /// historical timing. Media admission remains the caller's responsibility.
+    pub fn sound_processing_assets(
+        &self,
+        timing: &deadpan_core::AudioTimingId,
+    ) -> Option<&BTreeSet<AssetId>> {
+        self.sound_processing_assets.get(timing)
+    }
+
+    /// The frozen layout owned by this exact timing, when one is retained.
+    pub fn sound_processing_layout(
+        &self,
+        timing: &deadpan_core::AudioTimingId,
+    ) -> Option<&deadpan_core::FrozenAudioLayout> {
+        self.audio_bindings.timings().get(timing)
     }
 
     pub fn beat_sounds(
@@ -1171,6 +1225,16 @@ impl RenderPlan {
     /// A source provider must explicitly compare each with its host receipt.
     pub fn audio_context_assets(&self) -> Option<&BTreeMap<AssetId, deadpan_core::AssetRecord>> {
         self.audio_context.then_some(&self.audio_assets)
+    }
+
+    /// Number of already validated historical clocks, without constructing
+    /// scope handles for an event whose current occurrence batch may be empty.
+    pub fn beat_sound_clock_count(&self, owner: &NodeId, sound: &deadpan_core::SoundId) -> usize {
+        self.audio_bindings
+            .sound_clocks()
+            .get(owner)
+            .and_then(|sounds| sounds.get(sound))
+            .map_or(0, |journal| journal.clocks().len())
     }
 
     /// Frozen layouts retained for one beat-owned sound, in chronological
@@ -1211,8 +1275,9 @@ impl RenderPlan {
     }
 
     /// Validated historical processing-scope aliases for one live BeatSound.
-    /// Proof construction is bounded by `maximum_work`; concrete instance
-    /// remapping is separately charged by the caller for each occurrence.
+    /// Correspondences were proved during compilation of this exact immutable
+    /// plan. `maximum_work` bounds retrieval and owned scope construction;
+    /// concrete instance remapping is separately charged for each occurrence.
     pub fn beat_sound_clock_scopes<'a>(
         &'a self,
         owner: &NodeId,
@@ -1227,12 +1292,21 @@ impl RenderPlan {
         else {
             return Ok(Vec::new());
         };
-        let current_layout = self
-            .sound_clock_layout
-            .as_deref()
+        let correspondences = self
+            .sound_clock_correspondences
+            .get(owner)
+            .and_then(|sounds| sounds.get(sound))
             .ok_or(PlanError::InvalidPlan(
-                "beat sound clock has no live frozen layout",
+                "beat sound clock has no compiled correspondences",
             ))?;
+        if correspondences.len() != journal.clocks().len() {
+            return Err(PlanError::InvalidPlan(
+                "compiled sound clock correspondence count changed",
+            ));
+        }
+        if maximum_work == 0 || maximum_work > deadpan_core::MAX_DOCUMENT_NODES {
+            return Err(PlanError::AudioQueryLimit("sound clock scope work"));
+        }
         let mut scopes = Vec::with_capacity(journal.clocks().len());
         let event = self
             .beat_sounds
@@ -1248,6 +1322,13 @@ impl RenderPlan {
         };
         let mut remaining_work = maximum_work;
         for (journal_ordinal, reference) in journal.clocks().iter().enumerate() {
+            // Count the inventory lookups once, then the per-reference layout
+            // and alias lookups, owned IDs/recipe and shared proof clone. No
+            // historical tree is traversed or copied during retrieval.
+            let query_work = 8 + usize::from(journal_ordinal == 0) * 4;
+            remaining_work = remaining_work
+                .checked_sub(query_work)
+                .ok_or(PlanError::AudioQueryLimit("sound clock scope work"))?;
             let historical_layout = self
                 .audio_bindings
                 .timings()
@@ -1255,18 +1336,7 @@ impl RenderPlan {
                 .ok_or(PlanError::InvalidPlan(
                     "beat sound clock refers to a missing frozen layout",
                 ))?;
-            let correspondence = historical_layout
-                .sound_owner_clock_correspondence_with_relations(
-                    current_layout,
-                    (reference.scope(), journal.scope()),
-                    (reference.owner(), owner),
-                    reference.repeats(),
-                    (reference.introduced_groups(), reference.introduced_splits()),
-                    remaining_work,
-                )?;
-            remaining_work = remaining_work.checked_sub(correspondence.work()).ok_or(
-                PlanError::AudioQueryLimit("sound clock correspondence work"),
-            )?;
+            let correspondence = Arc::clone(&correspondences[journal_ordinal]);
             if correspondence.historical_node(owner) != Some(reference.owner()) {
                 return Err(PlanError::InvalidPlan(
                     "beat sound clock owner is outside its proven scope",
@@ -1283,6 +1353,7 @@ impl RenderPlan {
                 historical_layout,
                 introduced_splits: reference.introduced_splits(),
                 correspondence,
+                query_work,
                 recipe: recipe.clone(),
             });
         }

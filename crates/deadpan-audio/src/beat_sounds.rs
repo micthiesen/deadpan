@@ -110,10 +110,32 @@ impl StageAudio {
         context: Option<&deadpan_plan::AudioSoundOwnerContext<'plan>>,
     ) -> Result<Vec<PreparedBeatSound<'plan, 'history>>, StageAudioError> {
         let mut prepared = Vec::new();
+        let mut delivered_occurrences = BTreeSet::new();
         for (owner, events) in plan.beat_sounds() {
             for (sound, event) in events {
                 control.check()?;
                 control.admit_dependency(&event.source.asset)?;
+                control.spend_plan_work(1)?;
+                let batch = super::sound_clocks::current_occurrences(
+                    plan,
+                    context,
+                    owner,
+                    event,
+                    samples.clone(),
+                    plan.beat_sound_clock_count(owner, sound),
+                    control,
+                )?;
+                if batch.voices().is_empty() {
+                    // The downstream reader admits every authored source even
+                    // when this window has no concrete occurrence to render.
+                    prepared.push(PreparedBeatSound {
+                        event,
+                        owner,
+                        id: sound,
+                        occurrences: Vec::new(),
+                    });
+                    continue;
+                }
                 let scopes = plan.beat_sound_clock_scopes(
                     owner,
                     sound,
@@ -123,18 +145,19 @@ impl StageAudio {
                     control.spend_plan_work(scope.proof_work())?;
                 }
                 let mut bindings = BTreeMap::new();
-                let batch = super::sound_clocks::current_occurrences(
-                    plan,
-                    context,
-                    owner,
-                    event,
-                    samples.clone(),
-                    scopes.len(),
-                    control,
-                )?;
                 let mut occurrences = Vec::with_capacity(batch.voices().len());
                 for voice in batch.voices() {
                     control.check()?;
+                    let (delivered, work) =
+                        voice.delivered_occurrence(sound, context, control.query_limits()?)?;
+                    control.spend_plan_work(work)?;
+                    let delivered = delivered.map(|delivered| (sound, delivered));
+                    if delivered
+                        .as_ref()
+                        .is_some_and(|key| delivered_occurrences.contains(key))
+                    {
+                        continue;
+                    }
                     let permission_family = if let Some(context) = context {
                         let (family, work) = voice.split_permission_family(
                             &scopes,
@@ -332,6 +355,9 @@ impl StageAudio {
                             )
                         };
                     sound_events::validate_gate_envelopes(&fades.spans, interval.clone())?;
+                    // Claimed only now: a copy skipped above for this window
+                    // must leave its siblings free to deliver the occurrence.
+                    delivered_occurrences.extend(delivered);
                     occurrences.push(PreparedOccurrence {
                         voice: voice.clone(),
                         permission_family,

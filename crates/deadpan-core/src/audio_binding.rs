@@ -1443,6 +1443,7 @@ impl AudioBindingState {
                 for reference in journal.clocks() {
                     work.spend(reference.introduced_groups().len())?;
                     work.spend(reference.split_work_count())?;
+                    work.spend(reference.isolation_work_count())?;
                     let timing = reference.timing();
                     if !self.timings.contains_key(timing) {
                         return Err(invalid("sound clock timing identity is missing"));
@@ -1603,6 +1604,7 @@ impl AudioBindingState {
                         // shared correspondence avoids another tree traversal.
                         work.spend(reference.introduced_groups().len())?;
                         work.spend(reference.split_work_count())?;
+                        work.spend(reference.isolation_work_count())?;
                         let key = (
                             timing.clone(),
                             reference.scope().clone(),
@@ -1610,6 +1612,7 @@ impl AudioBindingState {
                             reference.repeats().clone(),
                             reference.introduced_groups().clone(),
                             reference.introduced_splits().to_vec(),
+                            reference.introduced_isolations().to_vec(),
                             (reference.introduced_groups().contains(journal.scope())
                                 || self.timings[timing].sound_uses_output_owner_proof(
                                     &live,
@@ -1625,7 +1628,7 @@ impl AudioBindingState {
                                     (reference.scope(), journal.scope()),
                                     (reference.owner(), owner),
                                     reference.repeats(),
-                                    (reference.introduced_groups(), reference.introduced_splits()),
+                                    reference.relations(),
                                     work.remaining()?,
                                 )?;
                             work.spend(proof.work())?;

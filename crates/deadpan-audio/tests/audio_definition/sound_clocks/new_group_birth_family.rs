@@ -116,12 +116,14 @@ fn run_authority(directory: &std::path::Path) -> Trial<serde_json::Value> {
         "no equal genuine Split family or unsplit unexpectedly has family",
     )?;
     let root = context(&plan, after.root())?;
-    let root_none = owners
+    // Root delivery can alias certified complementary pieces. Its token stays
+    // distinct from G's retained-input authority and each partial leaf context.
+    let root_families = owners
         .iter()
-        .map(|owner| family(&plan, &root, owner).map(|v| v.0.is_none()))
-        .collect::<Trial<Vec<_>>>()?
-        .into_iter()
-        .all(|none| none);
+        .map(|owner| some_family(&plan, &root, owner))
+        .collect::<Trial<Vec<_>>>()?;
+    let root_delivery_equal = root_families[0] == root_families[1];
+    let root_separate_from_g = root_families.iter().all(|root| root != &a && root != &b);
     let left = context(&plan, &owners[0])?;
     let right = context(&plan, &owners[1])?;
     let left_family = family(&plan, &left, &owners[0])?.0;
@@ -130,6 +132,10 @@ fn run_authority(directory: &std::path::Path) -> Trial<serde_json::Value> {
         (Some(a), Some(b)) => a != b,
         _ => true,
     };
+    let root_separate_from_leaves = [&left_family, &right_family]
+        .into_iter()
+        .flatten()
+        .all(|leaf| root_families.iter().all(|root| root != leaf));
     let event = &after.beat_sounds()[&owners[0]][&sound_id("effect")];
     let voice = g
         .source_voice_occurrence(
@@ -348,7 +354,9 @@ fn run_authority(directory: &std::path::Path) -> Trial<serde_json::Value> {
     let whole_copy_local = copied_a == copied_b && copied_a != original_token;
     let passed = equal
         && unsplit_none
-        && root_none
+        && root_delivery_equal
+        && root_separate_from_g
+        && root_separate_from_leaves
         && leaves_do_not_match
         && label_family_continuity
         && trim_family_continuity
@@ -358,7 +366,9 @@ fn run_authority(directory: &std::path::Path) -> Trial<serde_json::Value> {
         && negatives.iter().all(|row| row["rejected"] == true);
     Ok(
         serde_json::json!({"passed":passed,"same_G_equal":equal,"unsplit_none":unsplit_none,
-        "root_none":root_none,"leaf_contexts_not_equal":leaves_do_not_match,
+        "root_delivery_equal":root_delivery_equal,"root_separate_from_G":root_separate_from_g,
+        "root_separate_from_leaves":root_separate_from_leaves,
+        "leaf_contexts_not_equal":leaves_do_not_match,
         "label_family_continuity":label_family_continuity,
         "trim_family_continuity":trim_family_continuity,
         "live_policy_keeps_journals":live_policy_keeps_journals,

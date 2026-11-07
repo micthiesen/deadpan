@@ -1353,6 +1353,24 @@ fn apply_with_durations_captured(
         )?;
         return Ok((transaction, result, validation));
     }
+    if let Some(prepared) = crate::occurrence_edit::split::prepare(document, request)? {
+        if let Some(steps) = isolation.as_deref_mut() {
+            steps.extend(prepared.isolation);
+        }
+        let resolved = CommandRequest {
+            command: prepared.command,
+            ..request.clone()
+        };
+        let (_, result, _) =
+            apply_with_durations_captured(&prepared.document, &resolved, None, isolation)?;
+        let (transaction, validation) = net_transaction_with_durations(
+            document,
+            &result,
+            description(&request.command),
+            previous,
+        )?;
+        return Ok((transaction, result, validation));
+    }
     if let Some(prepared) = crate::insert_time::occurrence::prepare(document, request)? {
         if let Some(steps) = isolation.as_deref_mut() {
             steps.extend(prepared.isolation);
@@ -1370,6 +1388,12 @@ fn apply_with_durations_captured(
             previous,
         )?;
         return Ok((transaction, result, validation));
+    }
+    if let Command::Split { node, .. } = &request.command {
+        crate::split::refuse_treated_sound_in_processor(document, node)?;
+    }
+    if let Command::InsertTime { at, .. } = &request.command {
+        crate::split::refuse_pause_in_sound_processor(document, *at)?;
     }
     let mut beat_sound_edit = crate::sound_clock::edit::SoundClockEditCapture::prepare(
         document,

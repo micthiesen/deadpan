@@ -1,9 +1,7 @@
 //! Retained independent processing layouts share one preparation controller.
 
 use super::*;
-use deadpan_core::{
-    ExactFrameRange, FrozenAudioLayout, SoundRippleMap, SoundRippleNode, SoundRoute,
-};
+use deadpan_core::{ExactFrameRange, SoundRippleMap, SoundRippleNode, SoundRoute};
 use deadpan_plan::{
     AudioBoundaryRule, AudioRoutedRoot, AudioSampleGrid, AudioSoundRoute, AudioSourceOccurrence,
     AudioSourceVoiceRecipe,
@@ -29,21 +27,31 @@ impl StageAudio {
         context: Option<&deadpan_plan::AudioSoundOwnerContext<'_>>,
     ) -> Result<SoundProcessingPlans, StageAudioError> {
         // Births can make a different reference first for different occurrences.
-        // Compile only first clocks needed by this bounded query. Asset sets are
-        // complete across the event inventory so a cached plan remains valid on
-        // a later query that encounters another event sharing the same clock.
-        let mut definitions: BTreeMap<_, (&FrozenAudioLayout, BTreeSet<AssetId>)> = BTreeMap::new();
+        // Compile only first clocks needed by this bounded query. The immutable
+        // plan retains complete asset inventories across every event sharing a
+        // clock, so later queries can safely reuse the same processing plan.
         let mut needed = BTreeSet::new();
         for (owner, events) in plan.beat_sounds() {
             for (sound, event) in events {
-                let clocks = plan.beat_sound_clock_layouts(owner, sound)?;
-                control.spend_plan_work(clocks.len().max(1))?;
-                for (clock, layout) in clocks {
-                    definitions
-                        .entry(clock.clone())
-                        .or_insert_with(|| (layout, BTreeSet::new()))
-                        .1
-                        .insert(event.source.asset.clone());
+                control.spend_plan_work(1)?;
+                let clock_count = plan.beat_sound_clock_count(owner, sound);
+                if clock_count == 0 {
+                    continue;
+                }
+                let batch = current_occurrence_supports(
+                    plan,
+                    context,
+                    owner,
+                    event,
+                    samples.clone(),
+                    clock_count,
+                    control,
+                )?;
+                // The immutable plan already proved every clock. Empty
+                // current support needs no historical alias or processing
+                // plan; repeated EQ/return halo queries often reach that case.
+                if batch.supports().is_empty() {
+                    continue;
                 }
                 let scopes = plan.beat_sound_clock_scopes(
                     owner,
@@ -53,18 +61,6 @@ impl StageAudio {
                 for scope in &scopes {
                     control.spend_plan_work(scope.proof_work())?;
                 }
-                if scopes.is_empty() {
-                    continue;
-                }
-                let batch = current_occurrence_supports(
-                    plan,
-                    context,
-                    owner,
-                    event,
-                    samples.clone(),
-                    scopes.len(),
-                    control,
-                )?;
                 for voice in batch.supports() {
                     for scope in &scopes {
                         let (instance, work) = scope.try_remap_instance_with_work(
@@ -82,8 +78,14 @@ impl StageAudio {
         }
         let mut selected_assets = 0usize;
         for clock in &needed {
+            control.spend_plan_work(1)?;
+            let assets = plan
+                .sound_processing_assets(clock)
+                .ok_or(PlanError::InvalidPlan(
+                    "sound processing asset inventory absent",
+                ))?;
             selected_assets = selected_assets
-                .checked_add(definitions[clock].1.len())
+                .checked_add(assets.len())
                 .ok_or(StageAudioError::Limit("sound processing assets per read"))?;
             if selected_assets > deadpan_core::MAX_DOCUMENT_SOUNDS {
                 return Err(StageAudioError::Limit("sound processing assets per read"));
@@ -94,14 +96,19 @@ impl StageAudio {
         self.sound_processing_plans
             .retain(|clock, _| needed.contains(clock));
         let mut prepared = BTreeMap::new();
-        for (clock, (layout, assets)) in definitions {
-            if !needed.contains(&clock) {
-                continue;
-            }
+        for clock in needed {
             if !self.sound_processing_plans.contains_key(&clock) {
+                let layout = plan
+                    .sound_processing_layout(&clock)
+                    .ok_or(PlanError::InvalidPlan("sound processing layout absent"))?;
+                let assets = plan
+                    .sound_processing_assets(&clock)
+                    .ok_or(PlanError::InvalidPlan(
+                        "sound processing asset inventory absent",
+                    ))?;
                 control
-                    .spend_plan_work(RenderPlan::sound_processing_layout_work(layout, &assets)?)?;
-                let retained = plan.compile_sound_processing_layout(layout, &assets)?;
+                    .spend_plan_work(RenderPlan::sound_processing_layout_work(layout, assets)?)?;
+                let retained = plan.compile_sound_processing_layout(layout, assets)?;
                 control.check()?;
                 self.sound_processing_plans
                     .insert(clock.clone(), Arc::new(retained));
