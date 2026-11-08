@@ -140,6 +140,43 @@ impl Engine {
                 base: request.base,
                 samples: request.samples,
                 limits: request.limits,
+                view: None,
+            },
+        )?;
+        state
+            .warming
+            .interrupt("Audio warming yielded to visible waveform analysis");
+        drop(state);
+        self.shared.wake.notify_all();
+        self.shared.repaint();
+        Ok(ticket)
+    }
+
+    /// Latest-only analysis of one exact source range as its audition plays it
+    /// (`AudioRange`), on the same idle lane and reply slot as Edit windows.
+    /// The committed snapshot must contain the range's qualified source.
+    pub fn request_range_waveform(
+        &self,
+        snapshot: Arc<Snapshot>,
+        range: Arc<crate::AudioRange>,
+        limits: WaveformLimits,
+    ) -> Result<WaveformTicket, WaveformRequestError> {
+        if snapshot.content != ContentIdentity::Committed {
+            return Err(WaveformRequestError::Proposed);
+        }
+        snapshot.validate_admission().map_err(invalid_admission)?;
+        let samples = AudioSample(0)..range.duration_samples();
+        let mut state = self.shared.lock();
+        if state.shutdown() {
+            return Err(WaveformRequestError::Shutdown);
+        }
+        let ticket = state.waveform.request_target(
+            snapshot.clone(),
+            Target::Edit {
+                base: snapshot,
+                samples,
+                limits,
+                view: Some(range),
             },
         )?;
         state

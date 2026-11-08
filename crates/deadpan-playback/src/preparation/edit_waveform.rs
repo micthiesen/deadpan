@@ -47,6 +47,7 @@ fn measure_inner(
         base,
         samples,
         limits,
+        view,
     } = &job.target
     else {
         unreachable!("Edit waveform job")
@@ -70,8 +71,12 @@ fn measure_inner(
         .map_err(|error| format!("Edit waveform media admission expired: {error}"))?;
     // Release the prior exclusive cache before compiling/admitting this context.
     *retained = None;
-    let plan =
-        Arc::new(RenderPlan::compile(&job.snapshot.document).map_err(|error| error.to_string())?);
+    // A source range measures the same one-Source view its audition plays.
+    let document = match view {
+        Some(range) => Arc::new(range.document(&job.snapshot)?),
+        None => job.snapshot.document.clone(),
+    };
+    let plan = Arc::new(RenderPlan::compile(&document).map_err(|error| error.to_string())?);
     if samples.end > plan.audio_duration().map_err(|error| error.to_string())? {
         return Err("Edit waveform range is outside its captured project".into());
     }

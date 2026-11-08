@@ -71,6 +71,9 @@ pub(crate) enum Target {
         base: Arc<Snapshot>,
         samples: std::ops::Range<deadpan_core::AudioSample>,
         limits: deadpan_audio::WaveformLimits,
+        /// Measure this exact source range's audition view of the committed
+        /// snapshot instead of its timeline.
+        view: Option<Arc<crate::AudioRange>>,
     },
 }
 

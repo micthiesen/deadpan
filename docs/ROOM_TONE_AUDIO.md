@@ -152,8 +152,17 @@ The [native workflow qualification](qualification/native-room-tone-2026-09-27.md
 records source-range PCM, transaction and stale-reply tests, keyboard/IME replay,
 the design comparison, and the limits of the offscreen evidence.
 
-Listening across a representative ambience corpus, waveform display and native
-Repeat-gap/fragment occurrence controls remain required. Export of room tone is
+The sheet shows the prepared range's measured stereo waveform (since
+2026-11-07): the playback engine measures the same one-Source view the source
+audition plays (`Engine::request_range_waveform`, on the idle analysis lane
+shared with Edit waveforms) and the sheet draws its peaks with the preview
+position, so quiet words show before Apply. Editing a sample field or closing
+the sheet cancels the measurement. Evidence:
+`a_source_range_waveform_measures_its_audition_view` and the `room-tone`
+replay frame "Room-tone range waveform".
+
+Listening across a representative ambience corpus and native Repeat-gap/fragment
+occurrence controls remain required. Export of room tone is
 verified by the `nothing-happens` fixture
 ([preview-export-2026-10-04](qualification/preview-export-2026-10-04.md)), and
 gain envelopes and tails exist ([AUDIO_GAIN.md](AUDIO_GAIN.md),

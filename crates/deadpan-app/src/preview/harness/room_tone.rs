@@ -137,6 +137,26 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"samples":[start,end],"duration_samples":12000,"revision":silent_revision}),
         d.snapshot(),
     )?;
+    d.wait_for("The prepared range's waveform is measured", |app| {
+        app.room_tone
+            .as_ref()
+            .is_some_and(|draft| draft.waveform_for_check().0.as_deref() == Some("Complete"))
+    })?;
+    let waveform = d
+        .app()
+        .room_tone
+        .as_ref()
+        .map(|draft| draft.waveform_for_check());
+    d.check(
+        "The sheet measures the prepared range's own waveform, as its audition plays it",
+        waveform
+            .as_ref()
+            .is_some_and(|(_, end, error)| *end == Some(12_000) && error.is_none())
+            && d.widgets().to_string().contains("Room tone range waveform"),
+        json!({"status":"Complete","measured_end":12000}),
+        json!(waveform),
+    )?;
+    d.capture("Room-tone range waveform")?;
     let chosen = prepared(d)?.source.clone();
     ime(d, IN, &start.to_string(), &silent_revision)?;
     d.click("Prepare range")?;

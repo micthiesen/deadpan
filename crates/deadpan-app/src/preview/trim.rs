@@ -466,7 +466,10 @@ impl DeadpanApp {
         {
             self.junction_pictures.receive(reply);
         }
-        if let Some(update) = self.playback.poll_edit_waveform()
+        // Only an open Trim consumes Edit waveform replies; the room-tone
+        // sheet shares the engine's one reply slot.
+        if self.trim.is_some()
+            && let Some(update) = self.playback.poll_edit_waveform()
             && let Some(draft) = &mut self.trim
         {
             draft.waveform.receive(update);

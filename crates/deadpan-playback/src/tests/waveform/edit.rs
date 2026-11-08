@@ -364,3 +364,58 @@ fn window_analysis_releases_cache_before_playback_and_keeps_partial_labels_absol
         .unwrap();
     assert!(release < playback);
 }
+
+/// A room-tone source range measures the same one-Source view its audition
+/// plays, over exactly its own samples, without opening output.
+#[test]
+fn a_source_range_waveform_measures_its_audition_view() {
+    let permit = resources::pcm();
+    let directory = tempfile::tempdir().unwrap();
+    let mut store =
+        ProjectStore::create(&directory.path().join("range-waveform.deadpan"), &empty()).unwrap();
+    register_media(&mut store, "cfr-bframes.mp4", true);
+    let base = snapshot(&store, 131);
+    let asset = AssetId::new("original").unwrap();
+    let full = base.document.assets()[&asset].audio.unwrap();
+    let time_base = full.start().time_base;
+    let point = |ticks: i64| SourceTimestamp { ticks, time_base };
+    // The fixture's audible event sits near the start of its second second.
+    let selected = SourceSpan::new(
+        point(full.start().ticks + 47_000),
+        point(full.start().ticks + 49_000),
+    )
+    .unwrap();
+    let range = Arc::new(
+        AudioRange::new(
+            base.document.presentation_basis().frame_rate,
+            asset.clone(),
+            base.sources[&asset].receipt.clone(),
+            selected,
+        )
+        .unwrap(),
+    );
+    let (engine, devices) = engine(&permit);
+    let update = edit_terminal(
+        &engine,
+        engine
+            .request_range_waveform(base.clone(), range.clone(), WaveformLimits::default())
+            .unwrap(),
+    );
+    assert_eq!(
+        update.status,
+        WaveformStatus::Complete,
+        "{:?}",
+        update.error
+    );
+    assert_eq!(update.samples, AudioSample(0)..range.duration_samples());
+    assert_eq!(update.examined_samples, 2_000);
+    let peaks = update.waveform.as_ref().unwrap();
+    assert_eq!(peaks.measured_end(), range.duration_samples());
+    let loudest = (0..peaks.level(0).unwrap().len())
+        .filter_map(|index| peaks.level(0).unwrap().get(index))
+        .map(|extrema| extrema.maximum()[0].max(-extrema.minimum()[0]))
+        .fold(0.0_f32, f32::max);
+    assert!(loudest > 0.01, "the selected range is audible: {loudest}");
+    // Analysis never opened an output device.
+    assert!(devices.lock().unwrap().is_empty());
+}

@@ -65,9 +65,32 @@ pub(super) struct Draft {
     key: Option<SheetAction>,
     focus_pending: bool,
     pub(super) cursor: u64,
+    waveform: RangeWaveform,
+}
+
+/// The prepared range's measured stereo waveform, as its audition plays it.
+#[derive(Default)]
+struct RangeWaveform {
+    ticket: Option<deadpan_playback::WaveformTicket>,
+    data: Option<Arc<deadpan_audio::EditWaveform>>,
+    status: Option<deadpan_playback::WaveformStatus>,
+    error: Option<String>,
 }
 
 impl Draft {
+    /// Waveform status and measured end, for replay checks.
+    #[cfg(feature = "ui-harness")]
+    pub(super) fn waveform_for_check(&self) -> (Option<String>, Option<i64>, Option<String>) {
+        (
+            self.waveform.status.map(|status| format!("{status:?}")),
+            self.waveform
+                .data
+                .as_ref()
+                .map(|data| data.measured_end().0),
+            self.waveform.error.clone(),
+        )
+    }
+
     fn receive_failure(&mut self, failure: RoomToneFailure) {
         if self.pending == Some(failure.ticket)
             && self.target.session == failure.session
@@ -328,6 +351,7 @@ impl DeadpanApp {
             key: None,
             focus_pending: true,
             cursor: 0,
+            waveform: RangeWaveform::default(),
         });
         self.prepare_room_tone(selection);
         context.request_repaint();
@@ -383,9 +407,73 @@ impl DeadpanApp {
             ));
             draft.prepared = Some(prepared);
             draft.error = None;
+            self.request_room_tone_waveform();
         } else if let Some(failure) = failure {
             draft.receive_failure(failure);
         }
+    }
+
+    /// Measure the prepared range off the UI, on the playback engine's idle
+    /// analysis lane, exactly as its source audition plays it.
+    fn request_room_tone_waveform(&mut self) {
+        self.cancel_room_tone_waveform();
+        let Some(snapshot) = self
+            .workspace
+            .as_ref()
+            .map(|workspace| Arc::new(workspace.playback_snapshot()))
+        else {
+            return;
+        };
+        let Some(draft) = self.room_tone.as_mut() else {
+            return;
+        };
+        let Some(prepared) = &draft.prepared else {
+            return;
+        };
+        match self.playback.request_range_waveform(
+            snapshot,
+            prepared.audition.clone(),
+            deadpan_audio::WaveformLimits::default(),
+        ) {
+            Ok(ticket) => draft.waveform.ticket = Some(ticket),
+            Err(error) => draft.waveform.error = Some(error.to_string()),
+        }
+    }
+
+    fn cancel_room_tone_waveform(&mut self) {
+        if let Some(draft) = self.room_tone.as_mut() {
+            if let Some(ticket) = draft.waveform.ticket.take() {
+                self.playback.cancel_waveform(ticket);
+            }
+            draft.waveform = RangeWaveform::default();
+        }
+    }
+
+    /// The sheet is modal, so no other Edit waveform consumer is open.
+    fn receive_room_tone_waveform(&mut self) {
+        let Some(ticket) = self
+            .room_tone
+            .as_ref()
+            .and_then(|draft| draft.waveform.ticket)
+        else {
+            return;
+        };
+        let Some(update) = self.playback.poll_edit_waveform() else {
+            return;
+        };
+        let Some(draft) = self.room_tone.as_mut() else {
+            return;
+        };
+        if update.ticket != ticket {
+            return;
+        }
+        if update.waveform.is_some()
+            || update.status == deadpan_playback::WaveformStatus::Unavailable
+        {
+            draft.waveform.data = update.waveform;
+        }
+        draft.waveform.status = Some(update.status);
+        draft.waveform.error = update.error;
     }
 
     pub(super) fn reconcile_room_tone(&mut self, context: &egui::Context) {
@@ -398,6 +486,7 @@ impl DeadpanApp {
     }
 
     pub(super) fn close_room_tone(&mut self, context: &egui::Context) {
+        self.cancel_room_tone_waveform();
         self.stop_playback();
         self.room_tone = None;
         self.bindings.clear();
@@ -509,6 +598,7 @@ impl DeadpanApp {
     }
 
     pub(super) fn room_tone_sheet(&mut self, context: &egui::Context) {
+        self.receive_room_tone_waveform();
         let Some(mut draft) = self.room_tone.take() else {
             return;
         };
@@ -576,6 +666,9 @@ impl DeadpanApp {
                     let total = draft.prepared.as_ref().map_or(0, |p| p.audition.duration_samples().0.max(0) as u64);
                     let status = self.transport.as_ref().map_or("Stopped", |run| if run.phase == deadpan_playback::Phase::Preparing { "Preparing" } else { "Playing" });
                     ui.monospace(format!("Source preview · {status} · {} / {}", playback::sound_time(draft.cursor), playback::sound_time(total)));
+                    if draft.prepared.is_some() && !changed {
+                        range_waveform(ui, &draft.waveform, draft.cursor, total);
+                    }
                     ui.weak("Source preview has no lead-in or follow-through. After Apply, audition the pause to hear its crossfaded loop.");
                 });
                 ui.separator();
@@ -587,6 +680,10 @@ impl DeadpanApp {
                 ui.weak("Tab / Shift+Tab moves through controls. Escape discards the draft.");
             });
         if changed {
+            if let Some(ticket) = draft.waveform.ticket.take() {
+                self.playback.cancel_waveform(ticket);
+            }
+            draft.waveform = RangeWaveform::default();
             draft.prepared = None;
             draft.pending = None;
             draft.error = None;
@@ -786,6 +883,85 @@ fn hold_request(target: Target, audio: HoldAudio) -> ProjectRequest {
     }
 }
 
+/// The prepared range's stereo peaks with the source preview position: what
+/// the user is choosing, so quiet words show before Apply.
+fn range_waveform(ui: &mut egui::Ui, waveform: &RangeWaveform, cursor: u64, total: u64) {
+    use deadpan_playback::WaveformStatus;
+    const LABEL: &str = "Room tone range waveform · stereo · before limiter";
+    let (rect, response) =
+        ui.allocate_exact_size(egui::vec2(ui.available_width(), 64.0), egui::Sense::hover());
+    response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Image, true, LABEL));
+    let painter = ui.painter_at(rect);
+    painter.rect_filled(rect, 4.0, egui::Color32::from_rgb(28, 31, 38));
+    let lanes = [
+        egui::Rect::from_min_max(rect.min, egui::pos2(rect.right(), rect.center().y - 1.0)),
+        egui::Rect::from_min_max(egui::pos2(rect.left(), rect.center().y + 1.0), rect.max),
+    ];
+    let y = |lane: egui::Rect, amplitude: f32| {
+        lane.center().y - amplitude.clamp(-1.0, 1.0) * (lane.height() / 2.0 - 1.0)
+    };
+    for lane in lanes {
+        painter.line_segment(
+            [
+                egui::pos2(lane.left(), lane.center().y),
+                egui::pos2(lane.right(), lane.center().y),
+            ],
+            egui::Stroke::new(1.0, egui::Color32::from_gray(55)),
+        );
+    }
+    let x = |sample: i64| {
+        rect.left() + rect.width() * (sample as f32 / total.max(1) as f32).clamp(0.0, 1.0)
+    };
+    if let Some(data) = &waveform.data {
+        let mut level = 0;
+        while level + 1 < data.level_count()
+            && data
+                .level(level)
+                .is_some_and(|bins| bins.len() > rect.width().max(1.0) as usize)
+        {
+            level += 1;
+        }
+        for (index, extrema) in data.level(level).unwrap_or_default().iter().enumerate() {
+            let Some(samples) = data.bin_samples(level, index) else {
+                continue;
+            };
+            let (x0, x1) = (
+                x(samples.start.0),
+                x(samples.end.0).max(x(samples.start.0) + 0.7),
+            );
+            for (channel, lane) in lanes.iter().enumerate() {
+                let top = y(*lane, extrema.maximum()[channel]);
+                let bottom = y(*lane, extrema.minimum()[channel]).max(top + 0.7);
+                painter.rect_filled(
+                    egui::Rect::from_min_max(egui::pos2(x0, top), egui::pos2(x1, bottom)),
+                    0.0,
+                    egui::Color32::from_rgb(151, 146, 184),
+                );
+            }
+        }
+    }
+    let state = match (waveform.status, &waveform.error) {
+        (_, Some(error)) => Some(error.as_str()),
+        (Some(WaveformStatus::Complete), None) => None,
+        (Some(WaveformStatus::Measuring), None) => Some("Measuring…"),
+        _ => Some("Waiting for idle audio"),
+    };
+    if let Some(state) = state {
+        painter.text(
+            rect.center(),
+            egui::Align2::CENTER_CENTER,
+            state,
+            egui::FontId::proportional(11.0),
+            egui::Color32::from_gray(177),
+        );
+    }
+    let at = x(i64::try_from(cursor).unwrap_or(i64::MAX));
+    painter.line_segment(
+        [egui::pos2(at, rect.top()), egui::pos2(at, rect.bottom())],
+        egui::Stroke::new(1.5, style::SAVED),
+    );
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -829,6 +1005,7 @@ mod tests {
             key: None,
             focus_pending: false,
             cursor: 0,
+            waveform: RangeWaveform::default(),
         }
     }
 

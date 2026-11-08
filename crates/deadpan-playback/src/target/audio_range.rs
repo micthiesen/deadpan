@@ -149,7 +149,7 @@ impl AudioRange {
         self.end
     }
 
-    pub(super) fn document(&self, snapshot: &Snapshot) -> Result<ProjectDocument, String> {
+    pub(crate) fn document(&self, snapshot: &Snapshot) -> Result<ProjectDocument, String> {
         let entry = snapshot
             .sources
             .get(&self.asset)
