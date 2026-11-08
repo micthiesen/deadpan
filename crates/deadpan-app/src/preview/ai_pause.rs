@@ -384,6 +384,37 @@ impl VariantReveal {
     }
 }
 
+impl super::DeadpanApp {
+    /// §9.2 AI state badges for directly shown pauses: generating while a
+    /// job targets the pause, ready while a candidate waits for acceptance.
+    /// The card keeps naming the committed picture provider.
+    pub(super) fn ai_badges(&self) -> std::collections::BTreeMap<NodeId, String> {
+        let mut badges = std::collections::BTreeMap::new();
+        let Some(update) = &self.ai.update else {
+            return badges;
+        };
+        for candidate in update.candidates.values() {
+            if candidate.target.repeats.is_empty() {
+                let count = candidate.variants.len();
+                badges.insert(
+                    candidate.target.node.clone(),
+                    if count == 1 {
+                        "AI ready".to_owned()
+                    } else {
+                        format!("AI ready ×{count}")
+                    },
+                );
+            }
+        }
+        for job in update.job.iter().chain(update.others.iter()) {
+            if job.running() && job.target.repeats.is_empty() {
+                badges.insert(job.target.node.clone(), "AI generating".to_owned());
+            }
+        }
+        badges
+    }
+}
+
 #[derive(Default)]
 pub(super) struct State {
     update: Option<Update>,

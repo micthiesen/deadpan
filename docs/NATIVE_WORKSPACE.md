@@ -444,4 +444,6 @@ object in every view, with a tick where each later play begins, from its exact
 compiled layout (play lengths, per-play overrides and gaps), up to 256 plays
 (`repeat_play_ticks_follow_each_later_play_start`). A pause card names its
 picture and sound policies with its duration, for example "Pause · freeze ·
-room tone".
+room tone". A pause with AI work carries a separate badge, "AI generating"
+while a job targets it or "AI ready ×N" while Ready variants wait, and its
+card still names the committed picture (the `ai-variants` replay checks both).

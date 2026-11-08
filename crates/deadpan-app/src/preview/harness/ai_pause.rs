@@ -867,6 +867,12 @@ pub(super) fn variants(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"variants":2,"thumbnails":2,"chosen":2,"revision":paused}),
         json!({"job":format!("{job:?}"),"chosen":chosen(d),"revision":d.revision()}),
     )?;
+    d.check(
+        "The pause card carries a separate AI ready badge and still names its committed picture",
+        widgets.contains("AI ready ×2 on") && widgets.contains("Pause · "),
+        json!({"badge":"AI ready ×2","card":"Pause · …"}),
+        json!({"badge":widgets.contains("AI ready ×2 on"),"card":widgets.contains("Pause · ")}),
+    )?;
     let timing_label = d
         .harness
         .root()

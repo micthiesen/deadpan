@@ -72,6 +72,8 @@ pub(super) struct Markers {
     pub analysis: std::sync::Arc<super::transcript::AnalysisMarks>,
     /// Local starts of each shown Repeat's later plays (§9.2 iteration ticks).
     pub repeats: std::collections::BTreeMap<NodeId, Vec<i64>>,
+    /// AI candidate state of a shown pause, apart from its committed provider.
+    pub ai: std::collections::BTreeMap<NodeId, String>,
 }
 
 pub(super) fn original(
@@ -159,6 +161,34 @@ pub(super) fn strip(
             );
             let response = beat_card(ui, rect, beat, index, selected == Some(&beat.id), thumbnail);
             paint_analysis(ui, rect, beat, &markers);
+            if let Some(state) = markers.ai.get(&beat.id) {
+                let font = egui::FontId::proportional(10.5);
+                let text = ui
+                    .painter()
+                    .layout_no_wrap(state.clone(), font, style::TEXT);
+                let badge = egui::Rect::from_min_size(
+                    egui::pos2(rect.right() - text.size().x - 14.0, rect.top() + 6.0),
+                    text.size() + egui::vec2(8.0, 4.0),
+                );
+                ui.painter().rect_filled(badge, 4.0, style::SELECTED);
+                ui.painter().rect_stroke(
+                    badge,
+                    4.0,
+                    egui::Stroke::new(1.0, style::LAVENDER),
+                    egui::StrokeKind::Inside,
+                );
+                ui.painter()
+                    .galley(badge.min + egui::vec2(4.0, 2.0), text, style::TEXT);
+                let response = ui.interact(
+                    badge,
+                    ui.make_persistent_id(("ai-badge", &beat.id)),
+                    egui::Sense::hover(),
+                );
+                let label = format!("{} on {}", state, beat.label);
+                response.widget_info(|| {
+                    egui::WidgetInfo::labeled(egui::WidgetType::Label, true, &label)
+                });
+            }
             if let Some(starts) = markers.repeats.get(&beat.id)
                 && beat.frames > 0
             {
