@@ -3495,6 +3495,7 @@ impl DeadpanApp {
                 }),
             ),
             Ok(navigation::command::Entry::Proxies(command)) => self.proxy_command(command),
+            Ok(navigation::command::Entry::IsolateGap) => self.isolate_gap(),
             Ok(navigation::command::Entry::Timeline { timing, detail }) => {
                 self.timeline_command(match (timing, detail) {
                     (_, true) => timing::TimelineMode::Detail,

@@ -59,6 +59,14 @@ whose plays `]r` then steps independently. `Backspace` keeps each outer play
 choice. The inspector's Previous/Next buttons and the footer teach the keys.
 Stepping is read-only, like `:scope`, and Macros do not record it.
 
+`:isolate-gap` (since 2026-11-08), with This play chosen on a Repeat that sits
+directly in the current group, gives that play its own copy of the default gap
+after it (core `IsolateGap`: same timing and sound clocks, one Undo). `j`/`k`
+then reach the gap inside the play, where duration, room tone, freeze or AI
+pictures change only it. Nested Repeats refuse for now. Evidence: the
+`scoped-plays` replay check ":isolate-gap in play 2 gives only that play its own
+gap pause".
+
 ## Framing a range in This play
 
 Choose This play at every enclosing Repeat, select a visible child, then use

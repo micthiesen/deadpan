@@ -1331,7 +1331,8 @@ impl Service {
             | ProjectEdit::Delete { node }
             | ProjectEdit::RevertGeneratedHold { node }
             | ProjectEdit::HoldDuration { node, .. }
-            | ProjectEdit::HoldAudio { node, .. } => node,
+            | ProjectEdit::HoldAudio { node, .. }
+            | ProjectEdit::IsolateGap { node, .. } => node,
         };
         let view = scope.resolve(workspace)?;
         let children = view.children;
@@ -1464,6 +1465,22 @@ impl Service {
             | ProjectEdit::DeleteRange { .. } => {
                 unreachable!("range operation handled above")
             }
+            ProjectEdit::IsolateGap {
+                node: repeat,
+                iteration,
+            } => (
+                Command::IsolateGap {
+                    node: repeat,
+                    iteration,
+                    id: node(),
+                    timing: deadpan_core::AudioTimingId {
+                        allocation: new_revision.clone(),
+                        ordinal: 0,
+                    },
+                },
+                selected,
+                "This play's gap is now its own pause and saved",
+            ),
             ProjectEdit::Split { node: target, at } => {
                 let mut pending = vec![target.clone()];
                 let mut count = 3_usize;

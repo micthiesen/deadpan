@@ -978,6 +978,12 @@ pub enum ProjectEdit {
         at: ProjectFrame,
         duration: FrameDuration,
     },
+    /// `:isolate-gap`: give one play of a Repeat in the current group its own
+    /// copy of the default gap, which then edits independently.
+    IsolateGap {
+        node: NodeId,
+        iteration: deadpan_core::IterationId,
+    },
     /// A silent pause with black picture (black-frame punctuation).
     #[cfg_attr(not(test), allow(dead_code, reason = "service tests only"))]
     InsertBlack {

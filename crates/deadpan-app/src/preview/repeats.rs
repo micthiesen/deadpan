@@ -710,3 +710,61 @@ pub(super) fn repeat_count_instruction(
 
 #[cfg(test)]
 mod tests;
+
+impl super::DeadpanApp {
+    /// `:isolate-gap` in a This play scope: the chosen play of a Repeat in the
+    /// current group gets its own copy of the default gap, which `j`/`k` then
+    /// reach inside the play and which edits like any pause.
+    pub(super) fn isolate_gap(&mut self) {
+        let result = (|| {
+            let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
+            let target = self
+                .scoped
+                .as_ref()
+                .map(|state| state.selected_target().clone())
+                .ok_or("Open a Repeat's contents and choose This play first (Enter, then ]r).")?;
+            let [step] = target.repeats.as_slice() else {
+                return Err(
+                    "Isolate a gap of a Repeat directly in this group; nested Repeats are not supported yet."
+                        .to_owned(),
+                );
+            };
+            let deadpan_core::RepeatEditBranch::Play { iteration } = &step.branch else {
+                return Err("Choose This play (]r) to isolate that play's gap.".to_owned());
+            };
+            let deadpan_core::NodeKind::Repeat { gap, .. } =
+                &workspace.document.nodes()[&step.repeat].kind
+            else {
+                return Err("The scoped owner is not a Repeat.".to_owned());
+            };
+            if gap
+                .as_ref()
+                .is_none_or(|recipe| recipe.duration.frames() == 0)
+            {
+                return Err(
+                    "This Repeat has no gap between plays; add one with :repeat gap=.".to_owned(),
+                );
+            }
+            Ok((
+                workspace.session,
+                workspace.document.revision_id().clone(),
+                ProjectEdit::IsolateGap {
+                    node: step.repeat.clone(),
+                    iteration: iteration.clone(),
+                },
+            ))
+        })();
+        match result {
+            Ok((session, revision, edit)) => {
+                self.submit(ProjectRequest::Edit {
+                    expected_session: session,
+                    expected_revision: revision,
+                    scope: self.sequence_scope.clone(),
+                    cursor: ProjectFrame(self.sequence_cursor as i64),
+                    edit,
+                });
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
+}

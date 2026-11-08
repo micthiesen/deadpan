@@ -491,5 +491,49 @@ fn scoped_speed(d: &mut Driver<'_>) -> Result<(), String> {
         plays(d)? == before,
         json!(before),
         json!(plays(d)?),
-    )
+    )?;
+    isolate_gap(d, &repeat)
+}
+
+/// `:isolate-gap` in play 2 gives that play alone its own gap pause.
+fn isolate_gap(d: &mut Driver<'_>, repeat: &NodeId) -> Result<(), String> {
+    while d.app().scoped.is_some() {
+        d.key(Key::Escape)?;
+        idle(d)?;
+    }
+    d.chord(&[Key::G, Key::G])?;
+    idle(d)?;
+    let before = d.revision();
+    d.command("repeat 3 gap=6f")?;
+    d.changed(&before)?;
+    idle(d)?;
+    d.key(Key::Enter)?;
+    d.command("scope play 2")?;
+    idle(d)?;
+    let before = d.revision();
+    d.command("isolate-gap")?;
+    d.changed(&before)?;
+    idle(d)?;
+    let document = document(d)?;
+    let NodeKind::Repeat { iterations, .. } = &document.nodes()[repeat].kind else {
+        return Err("Expected the Repeat".into());
+    };
+    let second = iterations.at(1).ok_or("The Repeat has no second play")?;
+    let gaps = document.gap_overrides().get(repeat);
+    let owned = gaps.map_or(0, |plays| plays.len());
+    let second_owned = gaps.and_then(|plays| plays.get(&second)).cloned();
+    let second = format!("{second:?}");
+    d.check(
+        ":isolate-gap in play 2 gives only that play its own gap pause",
+        owned == 1 && second_owned.is_some() && d.app().error.is_none(),
+        json!({"owned_gaps":[second]}),
+        json!({"owned_gaps":owned,"second":second_owned,"error":d.app().error}),
+    )?;
+    for _ in 0..2 {
+        let edited = d.revision();
+        d.key(Key::U)?;
+        d.changed(&edited)?;
+        idle(d)?;
+    }
+    Ok(())
 }

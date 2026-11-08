@@ -143,6 +143,8 @@ pub enum Entry {
     Monitor(u16),
     /// `:proxies on|off|retry`: automatic seek proxies.
     Proxies(ProxyCommand),
+    /// `:isolate-gap`: this play's own copy of its Repeat's default gap.
+    IsolateGap,
     /// `:timeline story|timing`: cards per beat, or beats at their length
     /// over the Edit waveform.
     Timeline {
@@ -1006,6 +1008,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
                 _ => Err("Use :timeline story, :timeline timing or :timeline detail.".into()),
             };
         }
+        "isolate-gap" if argument.is_none() => return Ok(Entry::IsolateGap),
         "proxies" => {
             return match argument {
                 Some("on") => Ok(Entry::Proxies(ProxyCommand::On)),
