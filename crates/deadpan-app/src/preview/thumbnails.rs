@@ -23,6 +23,8 @@ pub(super) enum Slot {
     /// A Ready AI variant, keyed by its attempt. Its picture is immutable, so
     /// its key's revision is the request's origin and edits never re-decode it.
     Candidate(deadpan_jobs::AttemptId),
+    /// A named moment's first Original picture, keyed by its moment ID.
+    Moment(String),
 }
 
 /// The exact committed picture a thumbnail shows.
@@ -322,7 +324,7 @@ impl Thumbnails {
                     thumbnail: Arc::clone(thumbnail),
                 }
             }
-            Slot::Original | Slot::Beat(_) => {
+            Slot::Original | Slot::Beat(_) | Slot::Moment(_) => {
                 if key.session != workspace.session
                     || &key.revision != workspace.document.revision_id()
                 {

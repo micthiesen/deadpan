@@ -102,6 +102,9 @@ pub(super) fn matches(moment: &Moment, filter: &str) -> bool {
     })
 }
 
+/// Rows that show a thumbnail; the card cache holds 48 pictures in all.
+const MAX_THUMBNAILED: usize = 12;
+
 fn subsequence(needle: &str, haystack: &str) -> bool {
     let mut haystack = haystack.chars();
     needle
@@ -544,11 +547,34 @@ impl DeadpanApp {
         }
         let reveal = std::mem::take(&mut self.moments.reveal);
         let mut opened = None;
+        // The first picture of the first rows, sharing the bounded card cache.
+        let asset = self.workspace.as_ref().and_then(|workspace| {
+            match workspace.single_source.as_ref()? {
+                SingleSourceState::Ready { asset, .. } => Some(asset.clone()),
+                _ => None,
+            }
+        });
+        let pictures: Vec<_> = visible
+            .iter()
+            .take(MAX_THUMBNAILED)
+            .map(|moment| {
+                let workspace = self.workspace.as_ref()?;
+                self.thumbnails.show(super::thumbnails::Key {
+                    session: workspace.session,
+                    revision: workspace.document.revision_id().clone(),
+                    slot: super::thumbnails::Slot::Moment(moment.id.as_str().to_owned()),
+                    view: ProjectView::Source {
+                        asset: asset.clone()?,
+                        frame: deadpan_core::SourceFrameId(moment.start),
+                    },
+                })
+            })
+            .collect();
         egui::ScrollArea::vertical()
             .id_salt("moment-list")
             .max_height(156.0)
             .show(ui, |ui| {
-                for moment in &visible {
+                for (row, moment) in visible.iter().enumerate() {
                     let range = moment.start..moment.end;
                     let length = duration_text(
                         index.as_deref().and_then(|index| seconds(index, &range)),
@@ -583,11 +609,25 @@ impl DeadpanApp {
                     );
                     let response = ui
                         .push_id(moment.id.as_str(), |ui| {
-                            ui.add(
-                                egui::Button::selectable(selected, (job, egui::Atom::grow()))
-                                    .min_size(egui::vec2(ui.available_width(), 0.0))
-                                    .wrap(),
-                            )
+                            ui.horizontal(|ui| {
+                                if row < MAX_THUMBNAILED {
+                                    let (rect, _) = ui.allocate_exact_size(
+                                        egui::vec2(48.0, 27.0),
+                                        egui::Sense::hover(),
+                                    );
+                                    super::cards::paint_thumbnail(
+                                        ui,
+                                        rect,
+                                        pictures.get(row).cloned().flatten(),
+                                    );
+                                }
+                                ui.add(
+                                    egui::Button::selectable(selected, (job, egui::Atom::grow()))
+                                        .min_size(egui::vec2(ui.available_width(), 0.0))
+                                        .wrap(),
+                                )
+                            })
+                            .inner
                         })
                         .inner;
                     accessibility::name(&response, &format!("Moment {}, {detail}", moment.name));

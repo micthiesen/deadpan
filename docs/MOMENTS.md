@@ -84,8 +84,9 @@ command entry opens. Failures appear in the status line; nothing is written.
 
 ## Limits
 
-- Moments have no thumbnails yet; the Original card remains the only picture
-  in the rail.
+- The first twelve listed moments show their first Original picture as a
+  thumbnail, through the same bounded 48-picture card cache as the beats;
+  later rows show none until the filter narrows them.
 - Moments name picture ordinals only; their audio follows the ordinary
   Original moment derivation when copied.
 - Macros do not record moment commands, and moments cannot be pasted by name;
