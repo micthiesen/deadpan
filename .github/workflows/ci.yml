@@ -84,9 +84,11 @@ jobs:
         timeout-minutes: 120
         # Each read has a 60 s deadline; contention with the rest of the
         # stages binary on a virtual Mac exceeded it (run 42434393483).
-        run: >-
-          cargo test -p deadpan-audio --test stages --locked general_split_sound
-          -- --test-threads=2
+        # The nested-play case's limiter read alone exceeded 60 s beside one
+        # other case (run 42492910881), so it runs last, by itself.
+        run: |
+          cargo test -p deadpan-audio --test stages --locked general_split_sound -- --test-threads=2 --skip nested_selected_play_split
+          cargo test -p deadpan-audio --test stages --locked nested_selected_play_split -- --test-threads=1
       - name: Test unoptimized packages
         if: ${{ !cancelled() }}
         timeout-minutes: 90
