@@ -145,6 +145,8 @@ pub enum Entry {
     Proxies(ProxyCommand),
     /// `:isolate-gap`: this play's own copy of its Repeat's default gap.
     IsolateGap,
+    /// `:ramp FROM TO`: a stepped speed ramp of the selected beat.
+    Ramp(super::retime::RampInput),
     /// `:timeline story|timing`: cards per beat, or beats at their length
     /// over the Edit waveform.
     Timeline {
@@ -827,6 +829,9 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     }
     if verb.eq_ignore_ascii_case("eq") {
         return equalizer::parse(words);
+    }
+    if verb == "ramp" {
+        return super::retime::parse_ramp(words).map(Entry::Ramp);
     }
     let argument = words.next();
     if words.next().is_some() {

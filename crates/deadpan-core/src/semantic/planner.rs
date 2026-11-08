@@ -1166,6 +1166,14 @@ where
                 } => {
                     self.audio_shift(index, *frames, *trim, *extend)?;
                 }
+                SemanticInstruction::Ramp {
+                    from,
+                    to,
+                    steps,
+                    pitch,
+                } => {
+                    self.ramp(index, *from, *to, *steps, *pitch)?;
+                }
                 SemanticInstruction::SetRepeat {
                     plays,
                     gaps,
@@ -1394,6 +1402,10 @@ where
                 SemanticInstruction::SplitEdit { .. } => 2,
                 // At least one mute and one shifted sound.
                 SemanticInstruction::AudioShift { .. } => 2,
+                // A split and a speed change per part.
+                SemanticInstruction::Ramp { steps, .. } => usize::try_from(*steps)
+                    .unwrap_or(usize::MAX)
+                    .saturating_mul(2),
                 // A mute and one sound per later play, or one cutaway; an
                 // extension adds a pause and one allowance per play.
                 SemanticInstruction::RoleRepeat { plays, extend, .. } => {

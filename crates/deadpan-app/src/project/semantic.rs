@@ -78,6 +78,7 @@ impl RepeatableEdit {
                 | SemanticInstruction::DeleteRole { .. }
                 | SemanticInstruction::RoleRepeat { .. }
                 | SemanticInstruction::AudioShift { .. }
+                | SemanticInstruction::Ramp { .. }
                 | SemanticInstruction::InsertReverse { .. }
                 | SemanticInstruction::Tail { .. }
                 | SemanticInstruction::InsertPause { .. }

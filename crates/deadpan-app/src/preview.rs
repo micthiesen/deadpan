@@ -3496,6 +3496,19 @@ impl DeadpanApp {
             ),
             Ok(navigation::command::Entry::Proxies(command)) => self.proxy_command(command),
             Ok(navigation::command::Entry::IsolateGap) => self.isolate_gap(),
+            Ok(navigation::command::Entry::Ramp(input)) => {
+                self.bindings.clear();
+                self.cancel_repeats("a speed ramp was requested");
+                self.apply_recorded_instruction(
+                    self.capture_macro_target(),
+                    Ok(deadpan_core::SemanticInstruction::Ramp {
+                        from: input.from,
+                        to: input.to,
+                        steps: input.steps,
+                        pitch: input.pitch,
+                    }),
+                );
+            }
             Ok(navigation::command::Entry::Timeline { timing, detail }) => {
                 self.timeline_command(match (timing, detail) {
                     (_, true) => timing::TimelineMode::Detail,

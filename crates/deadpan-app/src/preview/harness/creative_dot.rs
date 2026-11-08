@@ -147,6 +147,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     }
     let baseline = document(d)?;
     speed(d)?;
+    ramp(d)?;
     pause(d)?;
     gain(d)?;
     captions(d)?;
@@ -217,6 +218,35 @@ fn speed(d: &mut Driver<'_>) -> Result<(), String> {
         d.app().sequence_length() == 120,
         json!({"frames":120}),
         json!({"frames":d.app().sequence_length()}),
+    )
+}
+
+/// `:ramp 1 2 steps=4` on the first beat, then `.` on the next: each 40-frame
+/// beat becomes four 10-frame parts at 1.125, 1.375, 1.625 and 1.875 times,
+/// 9 + 7 + 6 + 5 = 27 frames.
+fn ramp(d: &mut Driver<'_>) -> Result<(), String> {
+    at(d, 0)?;
+    edit(d, "ramp 1 2 steps=4 pitch=tape")?;
+    d.check(
+        ":ramp splits the beat into four speed changes that speed up across it",
+        d.app().sequence_length() == 107 && d.app().beat_rows.len() == 6,
+        json!({"frames":107,"beats":6}),
+        json!({"frames":d.app().sequence_length(),"beats":d.app().beat_rows.len(),"error":d.app().error}),
+    )?;
+    at(d, 27)?;
+    dot(d, "Dot ramps the next beat the same way")?;
+    d.check(
+        "Dot repeats the ramp on the next beat from its own length",
+        d.app().sequence_length() == 94 && d.app().beat_rows.len() == 9,
+        json!({"frames":94,"beats":9}),
+        json!({"frames":d.app().sequence_length(),"beats":d.app().beat_rows.len(),"error":d.app().error}),
+    )?;
+    undo(d, 2)?;
+    d.check(
+        "Two undos remove both ramps",
+        d.app().sequence_length() == 120 && d.app().beat_rows.len() == 3,
+        json!({"frames":120,"beats":3}),
+        json!({"frames":d.app().sequence_length(),"beats":d.app().beat_rows.len()}),
     )
 }
 

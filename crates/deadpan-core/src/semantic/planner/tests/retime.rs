@@ -675,3 +675,66 @@ fn a_split_seam_has_no_edge_while_a_cut_between_fragments_marks_both_sides() {
     assert_eq!(undone, cut);
     assert_eq!(applied.forward.apply(&undone).unwrap(), redone);
 }
+
+#[test]
+fn a_ramp_splits_a_beat_into_equal_parts_each_at_its_interpolated_speed() {
+    let document = tree(&["a", "b"], vec![("a", hold(3)), ("b", hold(12))]);
+    // Three 4-frame parts at 4/3, 2 and 8/3 times: 3, 2 and 1.5 → 2 frames.
+    let planned = plan(
+        &document,
+        selected("b", 3),
+        vec![SemanticInstruction::Ramp {
+            from: ExactRatio::ONE,
+            to: ExactRatio::integer(3),
+            steps: 3,
+            pitch: PitchPolicy::Preserve,
+        }],
+        &BTreeMap::new(),
+    )
+    .unwrap();
+    assert_eq!(planned.document.duration().unwrap().frames(), 3 + 3 + 2 + 2);
+    let NodeKind::Sequence { children } = &planned.document.nodes()[&node("root")].kind else {
+        panic!("root stays a Sequence")
+    };
+    assert_eq!(children.len(), 4);
+    let durations = planned.document.durations().unwrap();
+    let parts: Vec<_> = children[1..]
+        .iter()
+        .map(|id| match &planned.document.nodes()[id].kind {
+            NodeKind::Retime {
+                duration, mapping, ..
+            } => (duration.frames(), mapping.end().0 - mapping.start().0),
+            other => panic!("each part is a speed change: {other:?}"),
+        })
+        .collect();
+    assert_eq!(parts, [(3, 4), (2, 4), (2, 4)]);
+    assert_eq!(durations[&children[1]].frames(), 3);
+    replays_and_reverts(&document, &planned);
+
+    for (from, to, steps, message) in [(1, 3, 1, "2 to 32 steps"), (0, 3, 2, "positive")] {
+        let error = crate::SemanticProgram::new(vec![SemanticInstruction::Ramp {
+            from: ExactRatio::integer(from),
+            to: ExactRatio::integer(to),
+            steps,
+            pitch: PitchPolicy::Preserve,
+        }])
+        .unwrap_err();
+        assert!(error.message.contains(message), "{error:?}");
+    }
+    let error = plan(
+        &document,
+        selected("a", 0),
+        vec![SemanticInstruction::Ramp {
+            from: ExactRatio::ONE,
+            to: ExactRatio::integer(2),
+            steps: 4,
+            pitch: PitchPolicy::Preserve,
+        }],
+        &BTreeMap::new(),
+    )
+    .unwrap_err();
+    assert!(
+        error.message.contains("needs at least 4 frames"),
+        "{error:?}"
+    );
+}

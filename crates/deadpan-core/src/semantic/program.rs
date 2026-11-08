@@ -11,6 +11,8 @@ use crate::{
 
 pub const MAX_SEMANTIC_PROGRAM_INSTRUCTIONS: usize = 1024;
 pub const MAX_SEMANTIC_PROGRAM_BYTES: usize = 128 * 1024;
+/// The most parts one speed ramp splits a beat into.
+pub const MAX_RAMP_STEPS: u32 = 32;
 pub const MAX_SEMANTIC_INSTRUCTION_FUEL: usize = 4096;
 pub const MAX_SEMANTIC_CALL_DEPTH: usize = 16;
 /// Bound on the gaps one `SetRepeat` instruction authors.
@@ -409,6 +411,17 @@ pub enum SemanticInstruction {
     /// again as a root sound event of the same Original audio, shifted. Sound
     /// pushed past the group's end refuses unless `trim` cuts it there or
     /// `extend` holds the last picture for exactly the shift.
+    /// `:ramp FROM TO`: a stepped speed ramp (variable rate). The selected
+    /// direct child splits into `steps` equal parts at exact frame
+    /// boundaries, and each part becomes its own speed change at the rate
+    /// interpolated at its middle, from `from` to `to`, in one Undo.
+    Ramp {
+        from: crate::ExactRatio,
+        to: crate::ExactRatio,
+        steps: u32,
+        #[serde(default = "preserve_pitch", skip_serializing_if = "is_preserve_pitch")]
+        pitch: crate::PitchPolicy,
+    },
     AudioShift {
         frames: i64,
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -905,6 +918,23 @@ impl SemanticProgram {
                     EditErrorCode::InvalidCommand,
                     "a recorded pause sound is silence or room tone",
                 ));
+            }
+            if let SemanticInstruction::Ramp {
+                from, to, steps, ..
+            } = instruction
+            {
+                if !from.compare_integer(0).is_gt() || !to.compare_integer(0).is_gt() {
+                    return Err(EditError::new(
+                        EditErrorCode::InvalidCommand,
+                        "ramp speeds must be positive",
+                    ));
+                }
+                if !(2..=MAX_RAMP_STEPS).contains(steps) {
+                    return Err(EditError::new(
+                        EditErrorCode::InvalidCommand,
+                        format!("a ramp has 2 to {MAX_RAMP_STEPS} steps"),
+                    ));
+                }
             }
             if let SemanticInstruction::AudioShift { frames: 0, .. } = instruction {
                 return Err(EditError::new(

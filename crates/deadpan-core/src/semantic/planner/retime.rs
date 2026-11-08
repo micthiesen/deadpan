@@ -109,6 +109,72 @@ where
         self.apply_retime(trace_index, selected, start, resolved, pitch)
     }
 
+    /// `:ramp`: split the selected direct child into `steps` equal parts at
+    /// exact frame boundaries (rounded half-even once each), then give each
+    /// part its own speed change at the rate interpolated at its middle.
+    pub(super) fn ramp(
+        &mut self,
+        trace_index: usize,
+        from: ExactRatio,
+        to: ExactRatio,
+        steps: u32,
+        pitch: PitchPolicy,
+    ) -> Result<(), EditError> {
+        if self.context.scoped.is_some() {
+            return Err(invalid(
+                "a speed ramp acts on a beat in a group; leave the Repeat's contents first",
+            ));
+        }
+        let (selected, start, end) = self.selected_direct_child("speed ramp")?;
+        let length = end.0 - start.0;
+        if length < i64::from(steps) {
+            return Err(invalid(&format!(
+                "a {steps}-step ramp needs at least {steps} frames; this beat has {length}"
+            )));
+        }
+        let overflow = |_| EditError::new(EditErrorCode::TimingOverflow, "ramp overflows");
+        // Split left to right; each split selects its right fragment.
+        let mut pieces = Vec::with_capacity(steps as usize);
+        let mut piece = selected;
+        for index in 1..steps {
+            let boundary =
+                ExactRatio::new(i128::from(length) * i128::from(index), i128::from(steps))
+                    .and_then(ExactRatio::round_even)
+                    .map_err(overflow)?;
+            let boundary =
+                start.0 + i64::try_from(boundary).map_err(|_| invalid("ramp boundary"))?;
+            self.context.cursor = ProjectFrame(boundary);
+            self.context.selected_child = Some(piece.clone());
+            self.split(trace_index)?;
+            let left = self
+                .child_ends
+                .iter()
+                .map(|(id, _)| id.clone())
+                .zip(self.child_ends.iter().skip(1).map(|(id, _)| id.clone()))
+                .find(|(_, right)| Some(right) == self.context.selected_child.as_ref())
+                .map(|(left, _)| left)
+                .ok_or_else(|| invalid("the ramp's split left no left part"))?;
+            pieces.push(left);
+            piece = self
+                .context
+                .selected_child
+                .clone()
+                .ok_or_else(|| invalid("the ramp's split selected no part"))?;
+        }
+        pieces.push(piece);
+        let span = to.checked_sub(from).map_err(overflow)?;
+        for (index, piece) in pieces.into_iter().enumerate() {
+            let middle =
+                ExactRatio::new(2 * index as i128 + 1, 2 * i128::from(steps)).map_err(overflow)?;
+            let speed = from
+                .checked_add(span.checked_mul(middle).map_err(overflow)?)
+                .map_err(overflow)?;
+            self.context.selected_child = Some(piece);
+            self.retime(trace_index, speed, pitch, true)?;
+        }
+        Ok(())
+    }
+
     pub(super) fn pitch(&mut self, trace_index: usize, semitones: i8) -> Result<(), EditError> {
         let (selected, start, end) = self.selected_direct_child("pitch")?;
         let pitch = PitchPolicy::shifted(semitones)?;

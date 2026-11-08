@@ -209,3 +209,21 @@ non-destructive Original context. Replay requires actual Metal; its existence
 does not establish that those steps ran. See the
 [qualification record](qualification/retime-editing-2026-09-27.md) for executed
 tests, review findings and unavailable native evidence.
+
+## Speed ramps
+
+`:ramp FROM TO [steps=N] pitch=tape|preserve` (semantic `Ramp`, since
+2026-11-08) splits the selected direct child into `N` equal parts (2 to 32,
+default 8) at boundaries rounded half-even once each, then wraps each part in
+its own ordinary Edit Retime at the speed interpolated at the part's middle,
+`FROM + (TO - FROM)·(2k + 1)/(2N)`, resolved exactly as `:retime` resolves it.
+The whole ramp is one Compound and one Undo; macros record it and `.` repeats
+it on another beat from that beat's own length. Each part stays an ordinary
+speed change that can be adjusted afterwards.
+
+The rate is piecewise constant: each part is its own processing stage, so
+Preserve parts start a fresh stretch context at each seam. A single stage whose
+rate varies continuously (and its time/pitch DSP) remains open. Evidence:
+`a_ramp_splits_a_beat_into_equal_parts_each_at_its_interpolated_speed` (core,
+including Compound replay and inverse), `ramps_take_two_speeds_optional_steps_and_an_explicit_pitch`
+and the `creative-dot` replay's three ramp checks.

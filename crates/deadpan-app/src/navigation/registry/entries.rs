@@ -943,6 +943,17 @@ pub static SPECS: &[Spec] = &[
         help: "Wrap the selected beat or Visual range in three plays, each 3 dB louder and 0.08 closer than the last, as one Undo. Adjust it with :repeat 3 gap= gain-step= zoom-step=.",
     },
     Spec {
+        id: "ramp",
+        name: "Ramp speed",
+        section: Section::Repeat,
+        keys: &[],
+        commands: &[verb("ramp", ":ramp 1 0.25 pitch=tape")],
+        contexts: C::EDIT,
+        replay: Replay::RecordedAndDot,
+        headless: eq("ramp instruction", REP),
+        help: "Ramp the selected beat's speed from the first value to the second: it splits into equal parts (steps=8 by default, 2 to 32) and each part plays at the speed interpolated at its middle, each its own speed change you can adjust afterwards. pitch=tape lets pitch follow speed; pitch=preserve keeps it. The rate steps between parts; a continuously varying stretch is not available yet. One Undo.",
+    },
+    Spec {
         id: "retime",
         name: "Change speed",
         section: Section::Repeat,
