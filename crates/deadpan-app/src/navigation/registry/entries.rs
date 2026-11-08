@@ -243,6 +243,17 @@ pub static SPECS: &[Spec] = &[
         help: "Turn automatic seek proxies for 4K Originals off or on (:proxies on), or try a failed one again (:proxies retry). Exact pictures and export always use the Original.",
     },
     Spec {
+        id: "timeline",
+        name: "Timeline scale",
+        section: Section::Start,
+        keys: &[],
+        commands: &[verb("timeline", ":timeline story|timing")],
+        contexts: C::EDITOR,
+        replay: Replay::Ignored,
+        headless: gui("none (a view of the same sequence)", NAV),
+        help: "Show the current group as one card per beat (:timeline story) or as beats at their exact length over the measured Edit mix waveform (:timeline timing), up to a minute around the Edit cursor. Both views select, move the cursor and open beats the same way; the sequence is unchanged.",
+    },
+    Spec {
         id: "undo",
         name: "Undo / redo",
         section: Section::Start,

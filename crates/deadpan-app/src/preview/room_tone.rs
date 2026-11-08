@@ -893,53 +893,14 @@ fn range_waveform(ui: &mut egui::Ui, waveform: &RangeWaveform, cursor: u64, tota
     response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Image, true, LABEL));
     let painter = ui.painter_at(rect);
     painter.rect_filled(rect, 4.0, egui::Color32::from_rgb(28, 31, 38));
-    let lanes = [
-        egui::Rect::from_min_max(rect.min, egui::pos2(rect.right(), rect.center().y - 1.0)),
-        egui::Rect::from_min_max(egui::pos2(rect.left(), rect.center().y + 1.0), rect.max),
-    ];
-    let y = |lane: egui::Rect, amplitude: f32| {
-        lane.center().y - amplitude.clamp(-1.0, 1.0) * (lane.height() / 2.0 - 1.0)
-    };
-    for lane in lanes {
-        painter.line_segment(
-            [
-                egui::pos2(lane.left(), lane.center().y),
-                egui::pos2(lane.right(), lane.center().y),
-            ],
-            egui::Stroke::new(1.0, egui::Color32::from_gray(55)),
-        );
+    if let Some(data) = &waveform.data {
+        super::timing::paint_peaks(&painter, rect, data, |sample| {
+            rect.left() + rect.width() * (sample as f32 / total.max(1) as f32).clamp(0.0, 1.0)
+        });
     }
     let x = |sample: i64| {
         rect.left() + rect.width() * (sample as f32 / total.max(1) as f32).clamp(0.0, 1.0)
     };
-    if let Some(data) = &waveform.data {
-        let mut level = 0;
-        while level + 1 < data.level_count()
-            && data
-                .level(level)
-                .is_some_and(|bins| bins.len() > rect.width().max(1.0) as usize)
-        {
-            level += 1;
-        }
-        for (index, extrema) in data.level(level).unwrap_or_default().iter().enumerate() {
-            let Some(samples) = data.bin_samples(level, index) else {
-                continue;
-            };
-            let (x0, x1) = (
-                x(samples.start.0),
-                x(samples.end.0).max(x(samples.start.0) + 0.7),
-            );
-            for (channel, lane) in lanes.iter().enumerate() {
-                let top = y(*lane, extrema.maximum()[channel]);
-                let bottom = y(*lane, extrema.minimum()[channel]).max(top + 0.7);
-                painter.rect_filled(
-                    egui::Rect::from_min_max(egui::pos2(x0, top), egui::pos2(x1, bottom)),
-                    0.0,
-                    egui::Color32::from_rgb(151, 146, 184),
-                );
-            }
-        }
-    }
     let state = match (waveform.status, &waveform.error) {
         (_, Some(error)) => Some(error.as_str()),
         (Some(WaveformStatus::Complete), None) => None,

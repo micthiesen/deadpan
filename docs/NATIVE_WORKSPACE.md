@@ -420,3 +420,18 @@ records Repeat, Delete, Hold-duration, completion-selection and focus evidence.
 The [single-Original qualification](qualification/single-original-2026-09-23.md)
 records the revised creation flow, protected baseline, separate sound catalog,
 design comparison and current verification limits.
+
+## Timeline scales
+
+The beats panel shows the current group at two of specification §9.2's scales.
+The story view (default) is one card per beat. `:timeline timing` draws the
+same beats at their exact length on a frame scale over the measured Edit mix
+waveform (stereo min/max peaks from the playback engine's idle Edit-window
+analysis, before the limiter), with the Edit cursor and any selected range; a
+click moves the Edit cursor to that frame and selects its beat. The view shows
+the whole group up to one minute, else the minute around the Edit cursor; the
+measurement follows the shown window and revision. Trim and the room-tone sheet
+share the engine's one Edit-waveform slot and take precedence while open.
+`:timeline story` returns to the cards. Evidence: the `split-edits` replay
+("Timing view" frame and its three checks). The detail view (envelopes and
+attachments in the timeline) and keyboard zoom between scales remain open.

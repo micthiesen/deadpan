@@ -79,6 +79,7 @@ mod storage;
 mod style;
 mod targets;
 mod thumbnails;
+mod timing;
 mod transcript;
 mod trim;
 mod youtube;
@@ -186,6 +187,7 @@ pub struct DeadpanApp {
     source_interpretation_target: Option<Result<source_interpretation::Target, String>>,
     hold_command_target: Option<room_tone::CommandTarget>,
     room_tone: Option<room_tone::Draft>,
+    timing: timing::Timing,
     /// `:correct`: the transcript and pause correction sheet.
     correction: Option<corrections::Draft>,
     refinement: refinement::State,
@@ -401,6 +403,7 @@ impl DeadpanApp {
             source_interpretation_target: None,
             hold_command_target: None,
             room_tone: None,
+            timing: timing::Timing::default(),
             correction: None,
             refinement: refinement::State::default(),
             gain_command_target: None,
@@ -3456,6 +3459,13 @@ impl DeadpanApp {
                 }),
             ),
             Ok(navigation::command::Entry::Proxies(command)) => self.proxy_command(command),
+            Ok(navigation::command::Entry::Timeline { timing }) => {
+                self.timeline_command(if timing {
+                    timing::TimelineMode::Timing
+                } else {
+                    timing::TimelineMode::Story
+                })
+            }
             Ok(navigation::command::Entry::Monitor(tenths)) => {
                 self.pause_playback();
                 self.monitor_gain = f32::from(tenths) / 1000.0;
@@ -4589,6 +4599,28 @@ impl DeadpanApp {
             };
             let analysis = self.edit_analysis_marks();
             let markers = cards::Markers { cursor: marker, frame: self.sequence_cursor, range: self.selected_edit_range().map(|range| range.start().0 as u64..range.end().0 as u64), members: self.selected_node_set().ok().flatten().map_or_else(Vec::new, |set|set.members), ranges: self.selected_range_set().ok().flatten().map_or_else(Vec::new, |set|set.ranges), analysis };
+            if self.timing.mode == timing::TimelineMode::Timing {
+                let range = markers.range.clone();
+                if let Some(frame) =
+                    self.timing_strip(ui, layout.card_height + 20.0, &beats, selected.as_ref(), range)
+                {
+                    self.bindings.clear();
+                    if let Some(beat) = beats
+                        .iter()
+                        .find(|beat| beat.start <= frame && frame < beat.start + beat.frames)
+                    {
+                        self.selected_beat = Some(beat.id.clone());
+                    }
+                    self.selected_event = None;
+                    self.sequence_cursor = frame;
+                    self.view.set(View::Sequence, &mut self.message);
+                    self.edit_range.move_to(self.sequence_cursor);
+                    self.focus_scoped_pane(Pane::Sequence);
+                    self.request_picture(true);
+                    ui.memory_mut(|m| m.request_focus(pane_id(Pane::Sequence)));
+                }
+                return;
+            }
             let reveal = std::mem::take(&mut self.reveal_beat);
             let identity = self.workspace.as_ref().map(|workspace| (workspace.session, workspace.document.revision_id().clone()));
             let thumbnails = &mut self.thumbnails;
@@ -5674,6 +5706,7 @@ impl eframe::App for DeadpanApp {
             self.reconcile_render(&context);
             self.receive_gain_waveform();
             self.receive_trim_media();
+            self.receive_timing_waveform();
             self.reconcile_models(&context);
             self.reconcile_diagnostics(&context);
             self.reconcile_storage(&context);

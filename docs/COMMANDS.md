@@ -11,7 +11,7 @@ tests prove each mode router acts on exactly them. Native shortcuts
 (menus, ⌘ chords, panel controls) are described, not router-verified.
 Headless status links to [PARITY](PARITY.md).
 
-218 actions, 140 command verbs.
+219 actions, 141 command verbs.
 
 ## Start & View
 
@@ -32,6 +32,7 @@ Headless status links to [PARITY](PARITY.md).
 | **Loop lead-in and follow-through** (`audition.context`)<br>Set loop lead-in and follow-through. Use 0ms for an exact selection. Seconds, milliseconds and project frames are accepted. | - | `:audition-context lead=500ms follow=750ms` | Every editor context | not recorded | [GUI-only](PARITY.md#navigation-view-and-audition): `none needed` |
 | **Monitor volume** (`monitor`)<br>Set monitor volume without changing the project or export gain. 0 mutes; 12.5% restores the initial level. Pause before changing it. | - | `:monitor 25%` | Every editor context | not recorded | [GUI-only](PARITY.md#navigation-view-and-audition): `none needed` |
 | **Seek proxies** (`proxies`)<br>Turn automatic seek proxies for 4K Originals off or on (:proxies on), or try a failed one again (:proxies retry). Exact pictures and export always use the Original. | - | `:proxies on\|off\|retry` | Every editor context | not recorded | [GUI-only](PARITY.md#audio-and-gain): `none (personal app setting)` |
+| **Timeline scale** (`timeline`)<br>Show the current group as one card per beat (:timeline story) or as beats at their exact length over the measured Edit mix waveform (:timeline timing), up to a minute around the Edit cursor. Both views select, move the cursor and open beats the same way; the sequence is unchanged. | - | `:timeline story\|timing` | Every editor context | not recorded | [GUI-only](PARITY.md#navigation-view-and-audition): `none (a view of the same sequence)` |
 | **Undo / redo** (`undo`)<br>Undo / redo one saved edit. Native ⌘Z / ⌘⇧Z also work. Undo never crosses the project's full-Original starting point. | `u` (`undo`), `Ctrl R · ⌘Z / ⌘⇧Z` (native) | `:undo`, `:redo` | Every editor context | not recorded | [Equivalent](PARITY.md#marks-and-history): `project undo\|redo <p> --expected <rev> [--dry-run]` |
 | **Command line** (`command`)<br>Enter a command / apply / cancel. Typing a verb's first letters lists matching commands and their usage. Text fields keep native editing and IME. | `:` (`command`), `Enter / Esc` (native) | - | Every editor context | not recorded | [GUI-only](PARITY.md#navigation-view-and-audition): `every verb has a headless form listed with its action` |
 | **Leave, clear or cancel** (`escape`)<br>Clear the Visual selection, cancel a pending key or register choice, close entry, or leave an AI preview. It never cancels committed edits or AI generation. | `Esc` (`escape`) | - | Every editor context | not recorded | [GUI-only](PARITY.md#navigation-view-and-audition): `none needed` |

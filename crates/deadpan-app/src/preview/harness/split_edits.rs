@@ -510,7 +510,63 @@ fn role_repeats(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"sounds":0,"beats":[40, 50]}),
         json!({"sounds":sound_count(d),"beats":lengths(d)}),
     )?;
-    audio_shifts(d)
+    audio_shifts(d)?;
+    timing_view(d)
+}
+
+/// §9.2 timing view: beats at their length over the measured Edit mix.
+fn timing_view(d: &mut Driver<'_>) -> Result<(), String> {
+    d.command("timeline timing")?;
+    d.wait_for("The timing view's Edit waveform is measured", |app| {
+        app.timing.state_for_check()["status"] == "Complete"
+    })?;
+    let strip = d
+        .harness
+        .root()
+        .children_recursive()
+        .find(|node| {
+            node.accesskit_node()
+                .label()
+                .is_some_and(|label| label.starts_with("Timing view"))
+        })
+        .map(|node| {
+            (
+                node.rect(),
+                node.accesskit_node().label().unwrap_or_default(),
+            )
+        })
+        .ok_or("The timing view is not drawn")?;
+    let state = d.app().timing.state_for_check();
+    d.check(
+        "The timing view draws every beat over the whole sequence's measured Edit waveform",
+        strip.1.contains("Edit frames 0–90")
+            && strip.1.contains("2 beats")
+            && strip.1.contains("measured")
+            && state["samples"][1].as_i64().is_some_and(|end| end > 0)
+            && state["measured_end"] == state["samples"][1],
+        json!({"frames":"0–90","beats":2,"waveform":"measured"}),
+        json!({"label":strip.1,"state":state}),
+    )?;
+    d.capture("Timing view")?;
+    // Three quarters along the strip is Edit frame 67, inside the second beat.
+    let at = strip.0.left() + strip.0.width() * 0.75;
+    d.click_at("Timing view", egui::pos2(at, strip.0.center().y))?;
+    d.settled()?;
+    d.check(
+        "Clicking the timing view moves the Edit cursor to that frame and selects its beat",
+        (66..=68).contains(&d.app().sequence_cursor)
+            && d.app().selected_beat.as_ref() == d.app().beat_rows.get(1).map(|row| &row.id),
+        json!({"cursor":67,"beat":2}),
+        json!({"cursor":d.app().sequence_cursor,"selected":d.app().selected_beat}),
+    )?;
+    d.command("timeline story")?;
+    d.settled()?;
+    d.check(
+        "Story view returns the cards",
+        d.app().timing.state_for_check()["mode"] == "Story",
+        json!("Story"),
+        d.app().timing.state_for_check()["mode"].clone(),
+    )
 }
 
 /// §6.5 `audio-shift`: the sound after the cursor slides across the cut while

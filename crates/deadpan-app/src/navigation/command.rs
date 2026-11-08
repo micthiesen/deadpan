@@ -130,6 +130,11 @@ pub enum Entry {
     Monitor(u16),
     /// `:proxies on|off|retry`: automatic seek proxies.
     Proxies(ProxyCommand),
+    /// `:timeline story|timing`: cards per beat, or beats at their length
+    /// over the Edit waveform.
+    Timeline {
+        timing: bool,
+    },
     AuditionContext {
         lead: DurationInput,
         follow: DurationInput,
@@ -967,6 +972,13 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         }
         "gain-mute" if argument.is_none() => return Ok(Entry::GainMute),
         "monitor" => return monitor(argument).map(Entry::Monitor),
+        "timeline" => {
+            return match argument {
+                Some("story") => Ok(Entry::Timeline { timing: false }),
+                Some("timing") => Ok(Entry::Timeline { timing: true }),
+                _ => Err("Use :timeline story or :timeline timing.".into()),
+            };
+        }
         "proxies" => {
             return match argument {
                 Some("on") => Ok(Entry::Proxies(ProxyCommand::On)),
