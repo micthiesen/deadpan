@@ -1439,7 +1439,7 @@ mod tests {
                 engine: "selection-test".into(),
             },
             proposal_sha256: "c".repeat(64),
-            correction_rule: deadpan_store::TranscriptSelectionCorrectionRule::V1,
+            correction_rule: deadpan_store::TranscriptSelectionCorrectionRule::V2,
             corrections: deadpan_store::TranscriptSelectionCorrections::Present {
                 version: 1,
                 sha256: "d".repeat(64),

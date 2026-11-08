@@ -514,6 +514,12 @@ impl DeadpanApp {
                 Some((Item::Word(index), _, _)) => self.correct_join(workspace, index),
                 _ => draft.message = Some("Select a word to join with the next one.".into()),
             },
+            CorrectionKey::Sentence => match selected {
+                Some((Item::Word(index), _, _)) => self.correct_sentence(workspace, index),
+                _ => {
+                    draft.message = Some("Select a word to start or join a sentence there.".into())
+                }
+            },
             // Removing needs a selected item and no open draft, so a key
             // meant for a field or an edge never deletes.
             CorrectionKey::Remove if draft.unsaved() => {
@@ -615,6 +621,33 @@ impl DeadpanApp {
         let at = (true, u64::from(first.start_cs) * CENTISECOND_SAMPLES);
         let result = self.base_corrections(workspace).and_then(|base| {
             base.merge_words(&transcript.current(), index)
+                .map_err(|error| error.to_string())
+        });
+        self.submit_corrected(workspace, result, label, Some(at));
+    }
+
+    /// Toggle whether a sentence starts at the word.
+    fn correct_sentence(&mut self, workspace: &Workspace, index: usize) {
+        let Some(transcript) = workspace.transcript.as_ref() else {
+            return;
+        };
+        let words = transcript.transcript.words();
+        let Some(word) = words.get(index) else {
+            return;
+        };
+        if index == 0 {
+            self.correction_message("The first word always starts a sentence.");
+            return;
+        }
+        let starts = word.segment == words[index - 1].segment;
+        let label = if starts {
+            format!("start a sentence at “{}”", word.text)
+        } else {
+            format!("join “{}” to the sentence before", word.text)
+        };
+        let at = (true, u64::from(word.start_cs) * CENTISECOND_SAMPLES);
+        let result = self.base_corrections(workspace).and_then(|base| {
+            base.set_sentence_start(&transcript.current(), index, starts)
                 .map_err(|error| error.to_string())
         });
         self.submit_corrected(workspace, result, label, Some(at));
@@ -937,9 +970,16 @@ impl DeadpanApp {
                     let detail = match item {
                         Item::Word(index) => words.and_then(|words| {
                             let word = words.transcript.words().get(index)?;
+                            let starts = index == 0
+                                || words
+                                    .transcript
+                                    .words()
+                                    .get(index - 1)
+                                    .is_some_and(|previous| previous.segment != word.segment);
                             Some(format!(
-                                "Word “{}” · {} · {}",
+                                "Word “{}”{} · {} · {}",
                                 word.text,
+                                if starts { " · starts a sentence" } else { "" },
                                 span(clock, start, end),
                                 if words.corrected(index) {
                                     let heard: Vec<&str> = words
@@ -1038,6 +1078,7 @@ impl DeadpanApp {
                         ("Previous / next", "h l", true, CorrectionKey::Next),
                         ("Edit text", "c", word && !busy, CorrectionKey::EditText),
                         ("Join with next", "Shift+J", word && !busy, CorrectionKey::Join),
+                        ("Sentence starts here", "s", word && !busy, CorrectionKey::Sentence),
                         ("Remove", "x", draft.item.is_some() && !busy, CorrectionKey::Remove),
                         ("Start edge", "b", draft.item.is_some(), CorrectionKey::StartEdge),
                         ("End edge", "e", draft.item.is_some(), CorrectionKey::EndEdge),
@@ -1169,7 +1210,17 @@ fn stream_view(
                 if corrected {
                     format.underline = egui::Stroke::new(1.0, style::LAVENDER);
                 }
-                (word.text.clone(), format)
+                // ¶ marks a word that starts a sentence (s toggles it).
+                let sentence = *index > 0
+                    && words
+                        .and_then(|words| words.transcript.words().get(*index - 1))
+                        .is_some_and(|previous| previous.segment != word.segment);
+                let text = if sentence {
+                    format!("¶ {}", word.text)
+                } else {
+                    word.text.clone()
+                };
+                (text, format)
             }
             Item::Pause(index) => {
                 let corrected = pauses

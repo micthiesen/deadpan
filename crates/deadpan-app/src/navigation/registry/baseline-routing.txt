@@ -5849,7 +5849,9 @@ corrections R mac-cmd-only false false false false -> Redo
 camera R mac-cmd-only false false false false -> None
 corrections R mac-cmd-only false true false false -> Redo
 camera R mac-cmd-only false false false true -> None
+corrections S none false false false false -> Sentence
 splice S none false true false false -> Removal
+corrections S none false true false false -> Sentence
 camera S ctrl false false false false -> None
 camera S ctrl false false false true -> None
 camera S command false false false false -> None

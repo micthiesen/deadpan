@@ -19,6 +19,10 @@
 //! 4. Corrections apply only to analyses of the same Original audio clock
 //!    (origin and sample rate); a region beyond the analysed audio is skipped
 //!    and counted.
+//! 5. A sentence decision at centisecond `t` starts (or joins) the sentence of
+//!    the first word beginning exactly at `t`; sentences are then numbered in
+//!    order. A decision with no such word is skipped and counted, and the
+//!    first word always starts a sentence.
 //!
 //! Every edit is made against the corrected analysis a person sees and turned
 //! into one new region: the hull of the changed items, grown until no other
@@ -35,7 +39,9 @@ use crate::{
 };
 
 /// The versioned rule implemented by [`Corrections`].
-pub const CORRECTION_RULE: &str = "deadpan-corrections-1";
+pub const CORRECTION_RULE: &str = "deadpan-corrections-2";
+/// The previous rule, without sentence decisions; still read.
+const CORRECTION_RULE_1: &str = "deadpan-corrections-1";
 /// The versioned rule implemented by [`measured_edges`].
 pub const EDGE_RULE: &str = "deadpan-edges-1";
 pub const MAX_CORRECTION_REGIONS: usize = 20_000;
@@ -85,6 +91,15 @@ pub struct WordCorrection {
     pub words: Vec<CorrectedWord>,
 }
 
+/// A person's decision that the word beginning at `at_cs` starts a new
+/// sentence (`starts`) or continues the sentence before it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SentenceCorrection {
+    pub at_cs: u32,
+    pub starts: bool,
+}
+
 /// Pauses a person set for one stretch of the analysis clock.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -101,6 +116,7 @@ pub struct Corrections {
     clock: CorrectionClock,
     words: Vec<WordCorrection>,
     pauses: Vec<PauseCorrection>,
+    sentences: Vec<SentenceCorrection>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -110,16 +126,20 @@ struct CorrectionsRecord {
     clock: CorrectionClock,
     words: Vec<WordCorrection>,
     pauses: Vec<PauseCorrection>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    sentences: Vec<SentenceCorrection>,
 }
 
 impl TryFrom<CorrectionsRecord> for Corrections {
     type Error = CorrectionError;
 
     fn try_from(record: CorrectionsRecord) -> Result<Self, Self::Error> {
-        if record.rule != CORRECTION_RULE {
+        if record.rule != CORRECTION_RULE
+            && !(record.rule == CORRECTION_RULE_1 && record.sentences.is_empty())
+        {
             return Err(CorrectionError::Invalid("unknown correction rule"));
         }
-        Self::new(record.clock, record.words, record.pauses)
+        Self::new(record.clock, record.words, record.pauses)?.with_sentences(record.sentences)
     }
 }
 
@@ -130,6 +150,7 @@ impl From<Corrections> for CorrectionsRecord {
             clock: corrections.clock,
             words: corrections.words,
             pauses: corrections.pauses,
+            sentences: corrections.sentences,
         }
     }
 }
@@ -274,7 +295,29 @@ impl Corrections {
             clock,
             words,
             pauses,
+            sentences: Vec::new(),
         })
+    }
+
+    /// These corrections with exactly `sentences` as their sentence decisions,
+    /// strictly ordered by time.
+    pub fn with_sentences(
+        mut self,
+        sentences: Vec<SentenceCorrection>,
+    ) -> Result<Self, CorrectionError> {
+        if sentences.len() > MAX_CORRECTION_REGIONS {
+            return Err(CorrectionError::Limit("sentence decision count"));
+        }
+        if sentences
+            .windows(2)
+            .any(|pair| pair[0].at_cs >= pair[1].at_cs)
+        {
+            return Err(CorrectionError::Invalid(
+                "sentence decisions repeat or are unordered",
+            ));
+        }
+        self.sentences = sentences;
+        Ok(self)
     }
 
     pub fn empty(clock: CorrectionClock) -> Self {
@@ -282,7 +325,12 @@ impl Corrections {
             clock,
             words: Vec::new(),
             pauses: Vec::new(),
+            sentences: Vec::new(),
         }
+    }
+
+    pub fn sentence_decisions(&self) -> &[SentenceCorrection] {
+        &self.sentences
     }
 
     pub fn clock(&self) -> CorrectionClock {
@@ -298,7 +346,7 @@ impl Corrections {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.words.is_empty() && self.pauses.is_empty()
+        self.words.is_empty() && self.pauses.is_empty() && self.sentences.is_empty()
     }
 
     /// The clock of a transcript, for its first correction.
@@ -356,10 +404,20 @@ impl Corrections {
                     .cloned()
                     .collect()
             });
+        let sentences = transcript
+            .filter(|transcript| same(transcript.audio().origin, transcript.audio().sample_rate))
+            .map_or_else(Vec::new, |transcript| {
+                self.sentences
+                    .iter()
+                    .filter(|sentence| sentence.at_cs < transcript.audio().duration_cs)
+                    .copied()
+                    .collect()
+            });
         Self {
             clock,
             words,
             pauses,
+            sentences,
         }
     }
 
@@ -371,7 +429,7 @@ impl Corrections {
         let audio = proposal.audio();
         if !self.same_clock(audio.origin, audio.sample_rate) {
             let mut result = CorrectedTranscript::recognized(proposal.clone());
-            result.skipped = self.words.len();
+            result.skipped = self.words.len() + self.sentences.len();
             return Ok(result);
         }
         let regions: Vec<(usize, &WordCorrection)> = self
@@ -434,6 +492,7 @@ impl Corrections {
             words.push(recognized[word].clone());
             origins.push(WordOrigin::Recognized(word));
         }
+        let skipped = skipped + self.decide_sentences(&mut words);
         Ok(CorrectedTranscript {
             transcript: Transcript::new(audio, words)?
                 .with_recognized_again(proposal.recognized_again().to_vec())?,
@@ -512,6 +571,71 @@ impl Corrections {
             corrected,
             skipped,
         }
+    }
+
+    /// Apply the sentence decisions (rule 5) to `words`, renumbering their
+    /// sentences only when a decision applies. Returns the decisions skipped.
+    fn decide_sentences(&self, words: &mut [Word]) -> usize {
+        if self.sentences.is_empty() || words.is_empty() {
+            return self.sentences.len();
+        }
+        let mut starts: Vec<bool> = words
+            .iter()
+            .enumerate()
+            .map(|(index, word)| index == 0 || word.segment != words[index - 1].segment)
+            .collect();
+        let mut skipped = 0;
+        for decision in &self.sentences {
+            match words
+                .iter()
+                .position(|word| word.start_cs == decision.at_cs)
+            {
+                Some(index) if index > 0 => starts[index] = decision.starts,
+                _ => skipped += 1,
+            }
+        }
+        if skipped < self.sentences.len() {
+            let mut segment = words[0].segment;
+            for (index, word) in words.iter_mut().enumerate() {
+                if index > 0 && starts[index] {
+                    segment = segment.saturating_add(1);
+                }
+                word.segment = segment;
+            }
+        }
+        skipped
+    }
+
+    /// Start (or join) a sentence at the corrected transcript's word `word`.
+    /// The word is pinned as its own correction region, so its start, which
+    /// anchors the decision, survives transcribing again.
+    pub fn set_sentence_start(
+        &self,
+        current: &CorrectedTranscript,
+        word: usize,
+        starts: bool,
+    ) -> Result<Self, CorrectionError> {
+        let visible = current.transcript.words();
+        let Some(target) = visible.get(word) else {
+            return Err(CorrectionError::Invalid("word index"));
+        };
+        if word == 0 {
+            return Err(CorrectionError::Refused(
+                "the first word always starts a sentence",
+            ));
+        }
+        if (target.segment != visible[word - 1].segment) == starts {
+            return Err(CorrectionError::Invalid("nothing changes"));
+        }
+        let at_cs = target.start_cs;
+        let mut result =
+            self.replace_words(current, word..word + 1, vec![corrected_word(target)])?;
+        let mut sentences = self.sentences.clone();
+        sentences.retain(|decision| decision.at_cs != at_cs);
+        let at = sentences.partition_point(|decision| decision.at_cs < at_cs);
+        sentences.insert(at, SentenceCorrection { at_cs, starts });
+        result = result.with_sentences(sentences)?;
+        Ok(result)
     }
 
     /// Replace the corrected transcript's words `range` with `words`, as one
@@ -627,7 +751,7 @@ impl Corrections {
             .collect();
         let at = regions.partition_point(|existing| existing.start_cs < start);
         regions.insert(at, region);
-        Self::new(self.clock, regions, self.pauses.clone())
+        Self::new(self.clock, regions, self.pauses.clone())?.with_sentences(self.sentences.clone())
     }
 
     /// Replace the corrected pauses `range` with `pauses`, as one new region.
@@ -708,7 +832,7 @@ impl Corrections {
             .collect();
         let at = regions.partition_point(|existing| existing.start < start);
         regions.insert(at, region);
-        Self::new(self.clock, self.words.clone(), regions)
+        Self::new(self.clock, self.words.clone(), regions)?.with_sentences(self.sentences.clone())
     }
 
     /// Set a corrected word's text. Several words split its time in proportion

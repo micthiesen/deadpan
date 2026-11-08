@@ -94,6 +94,31 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.capture("Split word")?;
 
+    // s toggles a sentence boundary at the selected word.
+    let before = segments(d);
+    select(d, Item::Word(2))?;
+    d.key(Key::S)?;
+    wait_saved(d, "sentence")?;
+    let after = segments(d);
+    let changed = (2..after.len()).all(|i| before.get(i).zip(after.get(i)).is_some())
+        && after[..2] == before[..2]
+        && (after[2] != after[1]) != (before[2] != before[1]);
+    d.check(
+        "s toggles a sentence boundary at the selected word as one correction",
+        changed && d.revision() == revision && d.widgets().to_string().contains("¶"),
+        json!({"before":before,"boundary_at_word_2":"toggled","marker":"¶"}),
+        json!({"after":after,"revision":d.revision()}),
+    )?;
+    d.capture("Sentence boundary toggled")?;
+    d.key(Key::U)?;
+    wait_saved(d, "sentence undo")?;
+    d.check(
+        "One correction Undo restores the sentences",
+        segments(d) == before,
+        json!(before),
+        json!(segments(d)),
+    )?;
+
     // Move gamma's start 30 ms earlier as one draft, then apply it.
     select(d, Item::Word(3))?;
     d.key(Key::B)?;
@@ -319,4 +344,20 @@ fn painted_pause_bands(d: &Driver<'_>) -> usize {
             matches!(&clipped.shape, egui::Shape::Rect(rect) if rect.fill == crate::preview::style::PAUSE_BAND)
         })
         .count()
+}
+
+fn segments(d: &Driver<'_>) -> Vec<u32> {
+    d.app()
+        .workspace
+        .as_ref()
+        .and_then(|workspace| workspace.transcript.as_ref())
+        .map(|transcript| {
+            transcript
+                .transcript
+                .words()
+                .iter()
+                .map(|word| word.segment)
+                .collect()
+        })
+        .unwrap_or_default()
 }

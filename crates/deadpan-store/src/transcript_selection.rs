@@ -19,8 +19,8 @@ pub enum TranscriptSelectionFormat {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TranscriptSelectionCorrectionRule {
-    #[serde(rename = "deadpan-corrections-1")]
-    V1,
+    #[serde(rename = "deadpan-corrections-2")]
+    V2,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -226,7 +226,7 @@ fn read_selection(
             &proposal,
             crate::MAX_TRANSCRIPT_JSON_BYTES,
         )?,
-        correction_rule: TranscriptSelectionCorrectionRule::V1,
+        correction_rule: TranscriptSelectionCorrectionRule::V2,
         corrections: state,
     };
     Ok(TranscriptSelectionSnapshot {

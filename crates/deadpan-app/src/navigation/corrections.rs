@@ -24,6 +24,9 @@ pub enum CorrectionKey {
     EditText,
     /// Join the selected word with the next (J).
     Join,
+    /// Start a sentence at the selected word, or join it to the sentence
+    /// before (s toggles).
+    Sentence,
     /// Remove the selected word or pause (x only: Delete and Backspace are
     /// text-editing keys and never delete here).
     Remove,
@@ -101,6 +104,7 @@ pub fn route_key(
         }),
         Key::C if plain => Some(CorrectionKey::EditText),
         Key::J if shift => Some(CorrectionKey::Join),
+        Key::S if plain => Some(CorrectionKey::Sentence),
         Key::X if plain => Some(CorrectionKey::Remove),
         Key::D if shift => Some(CorrectionKey::Discard),
         Key::P if plain => Some(CorrectionKey::AddPause),
@@ -155,6 +159,10 @@ mod tests {
             Some(CorrectionKey::Join)
         );
         assert_eq!(route(Key::J, Modifiers::NONE, false), None);
+        assert_eq!(
+            route(Key::S, Modifiers::NONE, false),
+            Some(CorrectionKey::Sentence)
+        );
         assert_eq!(
             route(Key::X, Modifiers::NONE, false),
             Some(CorrectionKey::Remove)

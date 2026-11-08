@@ -701,7 +701,7 @@ fn one_leaf_replay_transcript_guard_is_current_authority_before_preparation() ->
             engine: "cached-guard".into(),
         },
         proposal_sha256: "d".repeat(64),
-        correction_rule: TranscriptSelectionCorrectionRule::V1,
+        correction_rule: TranscriptSelectionCorrectionRule::V2,
         corrections: TranscriptSelectionCorrections::Absent,
     };
     let before = cells(&path)?;
@@ -958,7 +958,7 @@ fn unavailable_transcript_authority_refuses_before_host_preparation() -> Result 
             engine: "guard-test".into(),
         },
         proposal_sha256: "d".repeat(64),
-        correction_rule: TranscriptSelectionCorrectionRule::V1,
+        correction_rule: TranscriptSelectionCorrectionRule::V2,
         corrections: TranscriptSelectionCorrections::Absent,
     };
     let before = cells(&path)?;

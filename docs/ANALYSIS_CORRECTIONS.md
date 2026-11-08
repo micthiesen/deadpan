@@ -23,7 +23,8 @@ Corrections are regions of the analysis clock (the Original audio sample where
 the analysis PCM begins, and the Original's audio sample rate). A word region
 `[start, end)` in centiseconds owns its words; a pause region in 16 kHz
 analysis samples owns the pause time inside it. Applying them to a proposal
-(`deadpan-corrections-1`):
+(`deadpan-corrections-2`; stored rule 1 values, which have no sentence
+decisions, still read):
 
 1. A recognized word conflicts with a word region when it overlaps it; a
    zero-length word occupies its one centisecond. Every conflicting recognized
@@ -40,6 +41,11 @@ analysis samples owns the pause time inside it. Applying them to a proposal
 4. Corrections apply only to analyses with the same analysis clock. A region
    beyond the analysed audio, or every region of another clock, is skipped and
    counted; nothing is reinterpreted.
+5. A sentence decision at centisecond `t` starts (or joins) the sentence of the
+   first word beginning exactly at `t`, and sentences are then numbered in
+   order. Setting one pins its word as a word region, so its start, the
+   decision's anchor, survives transcribing again. A decision with no such
+   word is skipped and counted; the first word always starts a sentence.
 
 Every operation is computed against the corrected analysis a person sees and
 stored as one region: the hull of the changed items, grown until no other
@@ -149,8 +155,10 @@ closer than a pixel.
 
 ## Remaining
 
-General audition of the selected word or pause directly from the sheet and
-correcting sentence boundaries remain. [Local English word refinement](WORD_REFINEMENT.md)
+General audition of the selected word or pause directly from the sheet
+remains. Sentence boundaries are corrected with `s` in the sheet (a `¶`
+marks each sentence start) or the headless `set_sentence_start` change;
+sentence motions and objects follow them. [Local English word refinement](WORD_REFINEMENT.md)
 now provides a measured waveform, comparison-context audition, manual adjustment
 and explicit proposal acceptance. Existing manual pins and removed-word regions
 survive; one correction Undo restores the prior state.

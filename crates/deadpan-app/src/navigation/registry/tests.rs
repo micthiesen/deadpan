@@ -356,6 +356,7 @@ fn owner_of(mode: Mode, key: Key, modifiers: Modifiers, flags: [bool; 4]) -> Opt
                 K::StartEdge | K::EndEdge => "corrections.edge",
                 K::EditText | K::Apply => "corrections.edit",
                 K::Join => "corrections.join",
+                K::Sentence => "corrections.sentence",
                 K::Remove => "corrections.remove",
                 K::Discard => "corrections.discard",
                 K::AddPause => "corrections.pause",

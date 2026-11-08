@@ -2449,6 +2449,17 @@ pub static SPECS: &[Spec] = &[
         help: "Join the word with the next one.",
     },
     Spec {
+        id: "corrections.sentence",
+        name: "Start or join a sentence",
+        section: Section::Corrections,
+        keys: &[mode(Mode::Corrections, "s", &[chord(Key::S, Plain)])],
+        commands: &[],
+        contexts: C::CORRECTIONS,
+        replay: Replay::Ignored,
+        headless: eq("corrections set_sentence_start", ANALYSIS),
+        help: "Toggle a sentence boundary at the selected word: start a new sentence there, or join it to the sentence before. Sentence motions (W, B) and objects (is, as) follow it; the word is pinned so the boundary survives transcribing again.",
+    },
+    Spec {
         id: "corrections.remove",
         name: "Remove a word or pause",
         section: Section::Corrections,

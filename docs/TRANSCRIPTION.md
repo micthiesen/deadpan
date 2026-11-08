@@ -356,7 +356,8 @@ every word per query.
 ## Remaining
 
 Original operators with word motions, background scheduling by visible range,
-broader sentence correction and accuracy on conversational and noisy speech.
+and accuracy on conversational and noisy speech. Sentence boundaries can be
+corrected (`s` in `:correct`; see [analysis corrections](ANALYSIS_CORRECTIONS.md)).
 The local English phoneme pass is implemented as an explicit approximate
 proposal; its stricter experimental quality targets remain failed. The
 recognizer failure check is calibrated only on read English audiobook speech:

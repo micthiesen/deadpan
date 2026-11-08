@@ -170,7 +170,7 @@ fn transcript_commands_report_absence_usage_and_unavailable_sources() -> Result 
         json!({
             "protocol": 1,
             "transcripts": [],
-            "correction_rule": "deadpan-corrections-1",
+            "correction_rule": "deadpan-corrections-2",
             "corrections_version": null,
             "corrections_error": null,
         })

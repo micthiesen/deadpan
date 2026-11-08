@@ -501,3 +501,77 @@ proptest! {
         }
     }
 }
+
+fn segments(transcript: &Transcript) -> Vec<u32> {
+    transcript.words().iter().map(|word| word.segment).collect()
+}
+
+#[test]
+fn sentence_decisions_split_and_join_sentences_and_survive_transcribing_again() {
+    let recognized = empty().apply_to_transcript(&proposal()).unwrap();
+    assert_eq!(segments(&recognized.transcript), [0, 0, 1, 1, 1]);
+    // Start a sentence at "day" (word 3).
+    let split = empty().set_sentence_start(&recognized, 3, true).unwrap();
+    assert_eq!(
+        split.sentence_decisions(),
+        [SentenceCorrection {
+            at_cs: 112,
+            starts: true
+        }]
+    );
+    let shown = split.apply_to_transcript(&proposal()).unwrap();
+    assert_eq!(segments(&shown.transcript), [0, 0, 1, 2, 2]);
+    assert_eq!(texts(&shown.transcript), texts(&proposal()));
+    assert_eq!(shown.skipped, 0);
+    // Join "to" (word 2) into the first sentence, keeping the split at "day".
+    let joined = split.set_sentence_start(&shown, 2, false).unwrap();
+    let shown = joined.apply_to_transcript(&proposal()).unwrap();
+    assert_eq!(segments(&shown.transcript), [0, 0, 0, 1, 1]);
+    // Unchanged decisions and the first word refuse.
+    assert!(joined.set_sentence_start(&shown, 3, true).is_err());
+    assert!(joined.set_sentence_start(&shown, 0, false).is_err());
+    // A new transcription with other sentence numbers keeps the decisions:
+    // their words are pinned and the decisions renumber every sentence.
+    let again = Transcript::new(
+        audio(1_000),
+        vec![
+            word("We", 11, 30, 4),
+            word("gonna", 35, 80, 5),
+            word("to", 92, 110, 5),
+            word("day", 113, 150, 5),
+            word("now.", 160, 200, 6),
+        ],
+    )
+    .unwrap();
+    let shown = joined.apply_to_transcript(&again).unwrap();
+    assert_eq!(segments(&shown.transcript), [4, 5, 5, 6, 7]);
+    assert_eq!(shown.skipped, 0);
+    // Rule 2 serializes the decisions; rule 1 still reads without them.
+    let json = serde_json::to_string(&joined).unwrap();
+    assert!(json.contains("deadpan-corrections-2") && json.contains("\"sentences\""));
+    assert_eq!(serde_json::from_str::<Corrections>(&json).unwrap(), joined);
+    assert!(
+        serde_json::from_str::<Corrections>(
+            &json.replace("deadpan-corrections-2", "deadpan-corrections-1")
+        )
+        .is_err()
+    );
+    let plain = serde_json::to_string(&empty())
+        .unwrap()
+        .replace("deadpan-corrections-2", "deadpan-corrections-1");
+    assert_eq!(
+        serde_json::from_str::<Corrections>(&plain).unwrap(),
+        empty()
+    );
+    // A decision whose word moved away is skipped and counted, not discarded.
+    let moved = empty()
+        .with_sentences(vec![SentenceCorrection {
+            at_cs: 111,
+            starts: true,
+        }])
+        .unwrap();
+    let shown = moved.apply_to_transcript(&proposal()).unwrap();
+    assert_eq!(segments(&shown.transcript), [0, 0, 1, 1, 1]);
+    assert_eq!(shown.skipped, 1);
+    assert_eq!(moved.sentence_decisions().len(), 1);
+}

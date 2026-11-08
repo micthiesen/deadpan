@@ -68,6 +68,13 @@ pub enum Change {
         start_cs: u32,
         end_cs: u32,
     },
+    /// Start a new sentence at the word (`starts`), or join it to the
+    /// sentence before it.
+    SetSentenceStart {
+        word: usize,
+        expected_text: String,
+        starts: bool,
+    },
     /// A pause after the word: its gap to the next word, or 200 ms.
     AddPauseAfter {
         word: usize,
@@ -314,6 +321,23 @@ impl Loaded {
                 let corrections = self
                     .base()?
                     .merge_words(&self.words()?.corrected, *word)
+                    .map_err(refused)?;
+                apply(corrections, label)
+            }
+            Change::SetSentenceStart {
+                word,
+                expected_text,
+                starts,
+            } => {
+                let name = self.word(*word, expected_text)?.text.clone();
+                let label = if *starts {
+                    format!("start a sentence at “{name}”")
+                } else {
+                    format!("join “{name}” to the sentence before")
+                };
+                let corrections = self
+                    .base()?
+                    .set_sentence_start(&self.words()?.corrected, *word, *starts)
                     .map_err(refused)?;
                 apply(corrections, label)
             }
