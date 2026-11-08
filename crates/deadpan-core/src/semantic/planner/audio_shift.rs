@@ -513,6 +513,154 @@ where
         }
     }
 
+    /// `:repeat N role=video` over a range spanning several beats: each
+    /// later play shows the range's pictures again, one natural-rate cutaway
+    /// per beat stretch, over the range's last beat while its sound
+    /// continues. Plays past that beat refuse unless `trim` cuts them there.
+    pub(super) fn video_repeat_across(
+        &mut self,
+        trace_index: usize,
+        range: FrameRange,
+        plays: u32,
+        trim: bool,
+        extend: bool,
+    ) -> Result<(), EditError> {
+        let (a, b) = (range.start().0, range.end().0);
+        let group_end = self
+            .child_ends
+            .last()
+            .map_or(self.bounds.0.0, |(_, end)| end.0);
+        if a < self.bounds.0.0 || b > group_end {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "the range reaches outside this group",
+            ));
+        }
+        let length = b - a;
+        let rate = self.current.presentation_basis().frame_rate;
+        let mut segments = Vec::new();
+        let mut last = None;
+        let mut start = self.bounds.0.0;
+        for (child, end) in self.child_ends.clone() {
+            let end = end.0;
+            let frames = start.max(a)..end.min(b);
+            if frames.start < frames.end {
+                let host = crate::cutaway_host(&self.current, &child)
+                    .filter(|(host, _)| {
+                        matches!(self.current.nodes()[host].kind, NodeKind::Source { .. })
+                    })
+                    .ok_or_else(|| {
+                        EditError::new(
+                            EditErrorCode::WrongNodeKind,
+                            "a video-only repeat replays Original source pictures; the range meets a pause or group",
+                        )
+                    })?;
+                let (host, offset) = host;
+                let physical = (frames.start - start + offset)..(frames.end - start + offset);
+                if self.current.nodes()[&host].cutaways.iter().any(|cutaway| {
+                    cutaway.range.start().0 < physical.end && physical.start < cutaway.range.end().0
+                }) {
+                    return Err(invalid(
+                        "a cutaway covers part of the range; its repeats would show the beat beneath it, so select around it",
+                    ));
+                }
+                self.push_segment(&mut segments, child.clone(), start, frames);
+                last = Some((child.clone(), start, end));
+            }
+            start = end;
+        }
+        let (last, last_start, last_end) =
+            last.ok_or_else(|| invalid("the range lies outside this group"))?;
+        let wanted = i64::from(plays)
+            .checked_mul(length)
+            .and_then(|total| a.checked_add(total))
+            .ok_or_else(|| EditError::new(EditErrorCode::TimingOverflow, "repeat overflows"))?;
+        let end = if wanted <= last_end {
+            wanted
+        } else if extend {
+            return Err(invalid(
+                "extend=hold adds a pause for repeated sound; a video-only repeat covers its beat, so use overflow=trim",
+            ));
+        } else if trim {
+            last_end
+        } else {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                format!(
+                    "{plays} plays need {} more frames than the range's last beat has; add overflow=trim to cut the repeats at that beat's end",
+                    wanted - last_end
+                ),
+            ));
+        };
+        if b >= end {
+            return Err(invalid(
+                "the range ends at its beat; nothing is left to repeat over",
+            ));
+        }
+        let (last_host, last_offset) = crate::cutaway_host(&self.current, &last)
+            .ok_or_else(|| invalid("the range's last beat has no picture host"))?;
+        let mut cutaways = self.current.nodes()[&last_host].cutaways.clone();
+        let existing = cutaways.len();
+        for play in 1..i64::from(plays) {
+            let shift = play * length;
+            for segment in &segments {
+                let heard = segment.frames.start..segment.frames.end.min(end - shift);
+                if heard.start >= heard.end {
+                    continue;
+                }
+                let (host, offset) = crate::cutaway_host(&self.current, &segment.child)
+                    .ok_or_else(|| invalid("a beat in the range has no picture host"))?;
+                let NodeKind::Source { source } = &self.current.nodes()[&host].kind else {
+                    return Err(invalid(
+                        "a video-only repeat replays Original source pictures",
+                    ));
+                };
+                let physical = (heard.start - segment.child_start + offset)
+                    ..(heard.end - segment.child_start + offset);
+                let (asset, selection, natural) =
+                    super::split_edit::source_pictures(source, physical, rate)?;
+                if !natural {
+                    return Err(invalid(
+                        "a video-only repeat plays pictures at their natural speed; a beat in the range is retimed",
+                    ));
+                }
+                let selection =
+                    super::split_edit::clamp_to_video(&self.current, &asset, selection)?;
+                let target = FrameRange::new(
+                    ProjectFrame(heard.start + shift - last_start + last_offset),
+                    ProjectFrame(heard.end + shift - last_start + last_offset),
+                )
+                .map_err(crate::DocumentError::from)?;
+                if cutaways[..existing].iter().any(|cutaway| {
+                    cutaway.range.start() < target.end() && target.start() < cutaway.range.end()
+                }) {
+                    return Err(invalid(
+                        "a cutaway already covers part of these repeats; clear it first",
+                    ));
+                }
+                cutaways.push(crate::Cutaway {
+                    range: target,
+                    asset,
+                    selection,
+                    fit: crate::CutawayFit::Loop,
+                    removed: false,
+                });
+            }
+        }
+        cutaways.sort_by_key(|cutaway| cutaway.range.start());
+        self.parameter_edit(Command::SetCutaways {
+            node: last_host,
+            cutaways,
+        })?;
+        self.context.visual_selection = None;
+        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
+        self.trace[trace_index].resolved_range = Some(
+            FrameRange::new(range.start(), ProjectFrame(end))
+                .map_err(crate::DocumentError::from)?,
+        );
+        Ok(())
+    }
+
     fn parameter_edit(&mut self, command: Command) -> Result<(), EditError> {
         self.charge_step(false)?;
         let SemanticAllocation::ParameterEdit { new_revision } =

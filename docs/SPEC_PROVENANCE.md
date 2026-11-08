@@ -92,7 +92,8 @@ change would need a new picture primitive for little creative value.
 An audio-only repeat may span cuts: a syllable or phrase rarely respects a
 beat boundary, and the repeated sound is the same root-sound construction as
 `:audio-shift`. Sound already muted inside the range refuses, because playing
-it again would contradict an earlier explicit edit.
+it again would contradict an earlier explicit edit. Video-only repeats span
+cuts the same way, one cutaway per beat stretch.
 
 | File | Bytes | SHA-256 |
 | --- | ---: | --- |

@@ -125,7 +125,12 @@ frames are root frames.
   `an_audio_repeat_spans_cuts_and_plays_each_beats_sound_again`.
 - **Video**: one looping cutaway over the later plays shows the range's
   pictures, at their natural rate (a retimed picture refuses); the beat's sound
-  continues.
+  continues. A range across cuts places one natural-rate cutaway per beat
+  stretch and play on the range's last beat (contiguous Split fragments merge),
+  so each play shows the same pictures in order. A pause or group in the range,
+  or a cutaway already covering part of it (its repeats would show the beat
+  beneath), refuses. Evidence:
+  `a_video_repeat_spans_cuts_and_shows_each_beats_pictures_again`.
 
 Repeats that would pass the beat's end refuse with the missing frame count
 unless `overflow=trim` cuts them at the end or, for sound, `extend=hold` holds

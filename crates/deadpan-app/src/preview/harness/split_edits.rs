@@ -449,6 +449,27 @@ fn role_repeats(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"pictures":shown,"sounds":sound_count(d),"error":d.app().error}),
     )?;
     undo(d)?;
+    // Across the cut at 40: Edit [36, 44) plays again over [44, 52).
+    let frames: Vec<i64> = (36..52).collect();
+    let before_pictures = pictures(d, &frames)?;
+    at(d, 36)?;
+    d.key(Key::V)?;
+    d.chord(&[Key::Num8, Key::L])?;
+    let before = d.revision();
+    d.key(Key::R)?;
+    d.changed(&before)?;
+    d.settled()?;
+    let shown = pictures(d, &frames)?;
+    d.check(
+        "A video-only repeat across the cut shows both beats' pictures again over the second beat",
+        shown[8..] == before_pictures[..8]
+            && shown[..8] == before_pictures[..8]
+            && sound_count(d) == 0
+            && lengths(d) == [40, 50],
+        json!({"pictures":[&before_pictures[..8], &before_pictures[..8]],"sounds":0}),
+        json!({"pictures":shown,"sounds":sound_count(d),"error":d.app().error}),
+    )?;
+    undo(d)?;
     d.command("select role=linked")?;
 
     // Past the beat's end: refused unless trimmed there.

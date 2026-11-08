@@ -152,7 +152,7 @@ fn plan_role_named(
 }
 
 #[test]
-fn named_mark_range_composes_with_role_edits_and_role_repeats_refuse_cross_child_ranges() {
+fn named_mark_range_composes_with_role_edits_and_role_repeats_across_children() {
     let before = role_named_fixture(false);
     before.validate().unwrap();
     assert_eq!(before.duration().unwrap(), duration(8));
@@ -315,8 +315,9 @@ fn named_mark_range_composes_with_role_edits_and_role_repeats_refuse_cross_child
         across.document.duration().unwrap(),
         cross_child.duration().unwrap()
     );
-    // A video-only repeat still refuses it before requesting any
-    // identity/revision allocation or publishing a step (sound may span beats).
+    // A video-only repeat over the same range shows its pictures again over
+    // the last beat: two plays need [2, 22), trimmed at that beat's end, so
+    // Edit 12..16 shows Original 2..6 in one cutaway and one parameter edit.
     {
         let operation = SemanticInstruction::RoleRepeat {
             role: MediaRole::Video,
@@ -324,10 +325,9 @@ fn named_mark_range_composes_with_role_edits_and_role_repeats_refuse_cross_child
             trim: true,
             extend: false,
         };
-        let snapshot = cross_child.to_json().unwrap();
         let bank = BTreeMap::new();
         let mut allocations = Vec::new();
-        let error = plan_semantic(
+        let plan = plan_semantic(
             &cross_child,
             &role_named_context(),
             &program(operation),
@@ -342,11 +342,20 @@ fn named_mark_range_composes_with_role_edits_and_role_repeats_refuse_cross_child
             },
             |_, _| panic!("role named-range Edit selectors never resolve Original registers"),
         )
-        .unwrap_err();
-        assert_eq!(error.code, EditErrorCode::SelectionUnavailable);
-        assert!(error.message.contains("one beat"));
-        assert!(allocations.is_empty());
-        assert!(bank.is_empty());
-        assert_eq!(cross_child.to_json().unwrap(), snapshot);
+        .unwrap();
+        assert_eq!(
+            allocations,
+            vec![SemanticAllocationRequest::ParameterEdit { step_index: 0 }]
+        );
+        assert_eq!(plan.trace[1].resolved_range, Some(frame_range(2, 16)));
+        let cutaways = &plan.document.nodes()[&node("second")].cutaways;
+        assert_eq!(cutaways.len(), 1);
+        assert_eq!(cutaways[0].range, frame_range(4, 8));
+        assert_eq!(cutaways[0].selection.start().ticks, ExactRatio::integer(2));
+        assert_eq!(cutaways[0].selection.end().ticks, ExactRatio::integer(6));
+        assert_eq!(
+            plan.document.duration().unwrap(),
+            cross_child.duration().unwrap()
+        );
     }
 }

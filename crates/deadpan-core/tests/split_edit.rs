@@ -1029,10 +1029,45 @@ fn an_audio_repeat_spans_cuts_and_plays_each_beats_sound_again() {
         .unwrap()
         .document;
     assert_eq!(shifted(&merged), vec![(28, 32, 26), (32, 40, 50)]);
+}
 
-    // A video-only repeat still stays inside one beat.
-    let error = plan_repeat_over(&before, MediaRole::Video, 2, true, false, 16, 24).unwrap_err();
-    assert!(error.message.contains("one beat"), "{error:?}");
+#[test]
+fn a_video_repeat_spans_cuts_and_shows_each_beats_pictures_again() {
+    let before = with_sound();
+    let shown_before = pictures(&before);
+    // Edit [16, 24) shows Original 26..30 then 50..54; three plays fill
+    // [16, 40) with cutaways on "right" while every sound stays.
+    let video = plan_repeat_over(&before, MediaRole::Video, 3, false, false, 16, 24).unwrap();
+    let after = &video.document;
+    assert_eq!(after.duration().unwrap(), before.duration().unwrap());
+    let play: Vec<i64> = shown_before[16..24].to_vec();
+    let mut expected = shown_before.clone();
+    expected[24..32].copy_from_slice(&play);
+    expected[32..40].copy_from_slice(&play);
+    assert_eq!(pictures(after), expected);
+    assert_eq!(after.sounds(), before.sounds());
+    assert_eq!(
+        after.nodes()[&id("right")].audio_treatments,
+        before.nodes()[&id("right")].audio_treatments
+    );
+    let replay =
+        replay_compound::<EditError>(&before, video.request.as_ref().unwrap(), |_| Ok(())).unwrap();
+    assert_eq!(&replay.document, after);
+    assert_eq!(replay.edit.inverse.apply(&replay.document).unwrap(), before);
+
+    // A fourth play passes the last beat: refuse or trim; extend is for sound.
+    let error = plan_repeat_over(&before, MediaRole::Video, 4, false, false, 16, 24).unwrap_err();
+    assert!(error.message.contains("overflow=trim"), "{error:?}");
+    let trimmed = plan_repeat_over(&before, MediaRole::Video, 4, true, false, 16, 24)
+        .unwrap()
+        .document;
+    assert_eq!(pictures(&trimmed), expected);
+    assert!(plan_repeat_over(&before, MediaRole::Video, 4, false, true, 16, 24).is_err());
+
+    // A range meeting a cutaway would repeat the beat beneath it: refuse.
+    let covered = with_cutaway(CutawayFit::Hold);
+    let error = plan_repeat_over(&covered, MediaRole::Video, 2, true, false, 16, 24).unwrap_err();
+    assert!(error.message.contains("cutaway"), "{error:?}");
 }
 
 fn plan_role_on(
