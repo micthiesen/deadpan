@@ -9,7 +9,9 @@ inserts it.
 A moment is `{ id, name, tags, start, end }` on the project's single Original:
 
 - `id`: a stable 1–128 character ASCII identity (letters, digits, `-`, `_`),
-  reserved permanently. A deleted moment's ID is never reused.
+  reserved permanently. A deleted moment's ID is never reused; a project can
+  use at most 65,536 IDs, so a create/delete loop cannot grow the digested
+  reservations without bound.
 - `name`: 1–128 UTF-8 bytes, no surrounding whitespace, line breaks or control
   characters; unique within the project.
 - `tags`: at most 16 tags of 1–32 UTF-8 bytes each, lowercase, without
