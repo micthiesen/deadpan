@@ -78,7 +78,15 @@ jobs:
         timeout-minutes: 180
         run: >-
           cargo test --workspace --exclude deadpan-core --exclude deadpan-plan
-          --exclude deadpan-store --locked --no-fail-fast
+          --exclude deadpan-store --locked --no-fail-fast -- --skip general_split_sound
+      - name: Test Split sound delivery
+        if: ${{ !cancelled() }}
+        timeout-minutes: 120
+        # Each read has a 60 s deadline; contention with the rest of the
+        # stages binary on a virtual Mac exceeded it (run 42434393483).
+        run: >-
+          cargo test -p deadpan-audio --test stages --locked general_split_sound
+          -- --test-threads=2
       - name: Test unoptimized packages
         if: ${{ !cancelled() }}
         timeout-minutes: 90

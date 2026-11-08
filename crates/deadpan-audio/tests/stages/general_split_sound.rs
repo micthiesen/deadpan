@@ -3,10 +3,10 @@
 use super::*;
 use deadpan_audio::LimitedAudio;
 
-// A hang guard, not a performance bound: the work budgets bound each read,
-// and CI's virtual Macs run these matrix cases concurrently, where one read
-// took over 60 s (run 42434393483).
-const PREPARE_TIMEOUT: Duration = Duration::from_secs(600);
+// The read APIs' maximum deadline. CI runs these cases in their own step
+// with two threads, because under the whole binary's parallel load on a
+// virtual Mac one read took over 60 s (run 42434393483).
+const PREPARE_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[derive(Clone, Copy, Debug)]
 enum Shape {
