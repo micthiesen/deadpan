@@ -2460,6 +2460,21 @@ pub static SPECS: &[Spec] = &[
         help: "Toggle a sentence boundary at the selected word: start a new sentence there, or join it to the sentence before. Sentence motions (W, B) and objects (is, as) follow it; the word is pinned so the boundary survives transcribing again.",
     },
     Spec {
+        id: "corrections.audition",
+        name: "Hear the selected word or pause",
+        section: Section::Corrections,
+        keys: &[mode(
+            Mode::Corrections,
+            "Space",
+            &[chord(Key::Space, Plain)],
+        )],
+        commands: &[],
+        contexts: C::CORRECTIONS,
+        replay: Replay::Ignored,
+        headless: gui("live audition through the output device", ANALYSIS),
+        help: "Play exactly the selected word's or pause's own Original audio, or stop it. It is a source preview: no lead-in, no loop, and neither cursor moves.",
+    },
+    Spec {
         id: "corrections.remove",
         name: "Remove a word or pause",
         section: Section::Corrections,

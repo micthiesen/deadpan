@@ -94,6 +94,34 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.capture("Split word")?;
 
+    // Space hears exactly the selected word's own Original audio.
+    select(d, Item::Word(1))?;
+    let (_, start_cs, end_cs) = texts(d)[1].clone();
+    d.key(Key::Space)?;
+    d.settled()?;
+    let heard = d
+        .app()
+        .transport
+        .as_ref()
+        .and_then(|run| match run.domain() {
+            crate::transport::Domain::AudioRange(range) => Some(range.duration_samples().0),
+            _ => None,
+        });
+    d.check(
+        "Space plays exactly the selected word's Original audio as a source preview",
+        heard == Some(i64::from(end_cs - start_cs) * 480) && d.revision() == revision,
+        json!({"samples":i64::from(end_cs - start_cs) * 480}),
+        json!({"samples":heard}),
+    )?;
+    d.key(Key::Space)?;
+    d.settled()?;
+    d.check(
+        "A second Space stops it",
+        d.app().transport.is_none(),
+        json!({"playing":false}),
+        json!({"playing":d.app().transport.is_some()}),
+    )?;
+
     // s toggles a sentence boundary at the selected word.
     let before = segments(d);
     select(d, Item::Word(2))?;

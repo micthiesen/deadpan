@@ -155,8 +155,10 @@ closer than a pixel.
 
 ## Remaining
 
-General audition of the selected word or pause directly from the sheet
-remains. Sentence boundaries are corrected with `s` in the sheet (a `¶`
+`Space` in the sheet plays exactly the selected word's or pause's own
+Original audio (its analysis samples mapped outward to whole Original
+samples) as a source preview, and stops it; nothing moves either cursor.
+Sentence boundaries are corrected with `s` in the sheet (a `¶`
 marks each sentence start) or the headless `set_sentence_start` change;
 sentence motions and objects follow them. [Local English word refinement](WORD_REFINEMENT.md)
 now provides a measured waveform, comparison-context audition, manual adjustment

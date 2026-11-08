@@ -532,6 +532,10 @@ impl DeadpanApp {
                 None => draft.message = Some("Select a word or pause to remove.".into()),
             },
             CorrectionKey::Discard => self.discard_corrections(workspace),
+            CorrectionKey::Audition => match selected {
+                Some((_, start, end)) => self.correction_audition(workspace, start, end),
+                None => draft.message = Some("Select a word or pause to hear it.".into()),
+            },
             CorrectionKey::AddPause => match selected {
                 Some((Item::Word(index), _, _)) => self.correct_add_pause(workspace, index),
                 _ => {
@@ -624,6 +628,82 @@ impl DeadpanApp {
                 .map_err(|error| error.to_string())
         });
         self.submit_corrected(workspace, result, label, Some(at));
+    }
+
+    /// Play (or stop) exactly the selected item's Original audio: its analysis
+    /// samples mapped outward to whole Original samples, as a source preview
+    /// with no lead-in, loop or edit cursor movement.
+    fn correction_audition(&mut self, workspace: &Workspace, start: u64, end: u64) {
+        if self.transport.is_some() {
+            self.receive_playback();
+            self.stop_playback();
+            return;
+        }
+        let range = (|| -> Result<deadpan_playback::AudioRange, String> {
+            let clock = clock(workspace).ok_or("There is no analysis to hear.")?;
+            let Some(SingleSourceState::Ready { asset, .. }) = &workspace.single_source else {
+                return Err("The Original is not ready.".into());
+            };
+            let source = workspace
+                .sources
+                .get(asset)
+                .ok_or("The Original's qualification is unavailable.")?;
+            let audio = workspace.document.assets()[asset]
+                .audio
+                .ok_or("The Original has no qualified audio.")?;
+            let rate = u128::from(clock.sample_rate);
+            let analysis = u128::from(deadpan_analysis::ANALYSIS_SAMPLE_RATE);
+            let end = end.max(start + CENTISECOND_SAMPLES);
+            let at = |sample: u128| -> Result<i64, String> {
+                i64::try_from(sample)
+                    .ok()
+                    .and_then(|offset| clock.origin.checked_add(offset))
+                    .ok_or_else(|| "The audition range overflows.".into())
+            };
+            let from = at(u128::from(start) * rate / analysis)?.max(audio.start().ticks);
+            let to = at((u128::from(end) * rate).div_ceil(analysis))?.min(audio.end().ticks);
+            if from >= to {
+                return Err("The selected item has no Original audio.".into());
+            }
+            let time_base = audio.start().time_base;
+            let span = deadpan_core::SourceSpan::new(
+                deadpan_core::SourceTimestamp {
+                    ticks: from,
+                    time_base,
+                },
+                deadpan_core::SourceTimestamp {
+                    ticks: to,
+                    time_base,
+                },
+            )
+            .map_err(|error| error.to_string())?;
+            deadpan_playback::AudioRange::new(
+                workspace.document.presentation_basis().frame_rate,
+                asset.clone(),
+                source.receipt.clone(),
+                span,
+            )
+        })();
+        let range = match range {
+            Ok(range) => Arc::new(range),
+            Err(error) => {
+                self.correction_message(&error);
+                return;
+            }
+        };
+        let Ok(window) = deadpan_playback::Window::new(
+            deadpan_core::AudioSample(0),
+            range.duration_samples(),
+            false,
+        ) else {
+            self.correction_message("The selected item is too short to hear.");
+            return;
+        };
+        self.start_domain_playback(
+            crate::transport::Domain::AudioRange(range),
+            window,
+            deadpan_core::AudioSample(0),
+        );
     }
 
     /// Toggle whether a sentence starts at the word.
@@ -1079,6 +1159,7 @@ impl DeadpanApp {
                         ("Edit text", "c", word && !busy, CorrectionKey::EditText),
                         ("Join with next", "Shift+J", word && !busy, CorrectionKey::Join),
                         ("Sentence starts here", "s", word && !busy, CorrectionKey::Sentence),
+                        ("Play / stop", "Space", draft.item.is_some(), CorrectionKey::Audition),
                         ("Remove", "x", draft.item.is_some() && !busy, CorrectionKey::Remove),
                         ("Start edge", "b", draft.item.is_some(), CorrectionKey::StartEdge),
                         ("End edge", "e", draft.item.is_some(), CorrectionKey::EndEdge),

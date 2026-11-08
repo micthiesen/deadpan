@@ -4587,10 +4587,12 @@ camera Paste alt-mac-cmd false false false false -> None
 camera Paste alt-mac-cmd false false false true -> None
 camera Paste mac-cmd-only false false false false -> None
 camera Paste mac-cmd-only false false false true -> None
+corrections Space none false false false false -> Audition
 room-tone Space none false true false false -> Play
 gain Space none false true false false -> Play
 splice Space none false true false false -> Play
 trim Space none false true false false -> Play
+corrections Space none false true false false -> Audition
 room-tone Space shift false false false false -> Loop
 room-tone Space shift false true false false -> Loop
 splice Space shift false true false false -> Loop

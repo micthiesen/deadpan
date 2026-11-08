@@ -11,7 +11,7 @@ tests prove each mode router acts on exactly them. Native shortcuts
 (menus, ⌘ chords, panel controls) are described, not router-verified.
 Headless status links to [PARITY](PARITY.md).
 
-217 actions, 140 command verbs.
+218 actions, 140 command verbs.
 
 ## Start & View
 
@@ -309,6 +309,7 @@ Headless status links to [PARITY](PARITY.md).
 | **Edit a word** (`corrections.edit`)<br>Edit the word's text: a space splits it, empty removes it. In the field, Enter applies and Esc discards. | `c / Enter` (fixed) | - | Corrections | not recorded | [Equivalent](PARITY.md#analysis-and-corrections): `corrections edit_word` |
 | **Join with the next word** (`corrections.join`)<br>Join the word with the next one. | `J` (fixed) | - | Corrections | not recorded | [Equivalent](PARITY.md#analysis-and-corrections): `corrections join_words` |
 | **Start or join a sentence** (`corrections.sentence`)<br>Toggle a sentence boundary at the selected word: start a new sentence there, or join it to the sentence before. Sentence motions (W, B) and objects (is, as) follow it; the word is pinned so the boundary survives transcribing again. | `s` (fixed) | - | Corrections | not recorded | [Equivalent](PARITY.md#analysis-and-corrections): `corrections set_sentence_start` |
+| **Hear the selected word or pause** (`corrections.audition`)<br>Play exactly the selected word's or pause's own Original audio, or stop it. It is a source preview: no lead-in, no loop, and neither cursor moves. | `Space` (fixed) | - | Corrections | not recorded | [GUI-only](PARITY.md#analysis-and-corrections): `live audition through the output device` |
 | **Remove a word or pause** (`corrections.remove`)<br>Remove the selected word or pause. | `x` (fixed) | - | Corrections | not recorded | [Equivalent](PARITY.md#analysis-and-corrections): `corrections remove_word / remove_pause` |
 | **Add a pause after a word** (`corrections.pause`)<br>Add a pause after the selected word. | `p` (fixed) | - | Corrections | not recorded | [Equivalent](PARITY.md#analysis-and-corrections): `corrections add_pause_after` |
 | **Discard stale corrections** (`corrections.discard`)<br>Discard corrections that are unreadable or no longer apply. | `D` (fixed) | - | Corrections | not recorded | [Equivalent](PARITY.md#analysis-and-corrections): `corrections discard_unreadable / drop_inapplicable` |

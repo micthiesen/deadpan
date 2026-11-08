@@ -35,6 +35,8 @@ pub enum CorrectionKey {
     Discard,
     /// Add a pause after the selected word (p).
     AddPause,
+    /// Play or stop the selected word's or pause's own Original audio (Space).
+    Audition,
     /// Apply the edited text or moved edge (Enter).
     Apply,
     Undo,
@@ -108,6 +110,7 @@ pub fn route_key(
         Key::X if plain => Some(CorrectionKey::Remove),
         Key::D if shift => Some(CorrectionKey::Discard),
         Key::P if plain => Some(CorrectionKey::AddPause),
+        Key::Space if plain => Some(CorrectionKey::Audition),
         Key::U if plain => Some(CorrectionKey::Undo),
         Key::U if shift => Some(CorrectionKey::Redo),
         Key::R if command && !modifiers.shift => Some(CorrectionKey::Redo),
@@ -162,6 +165,10 @@ mod tests {
         assert_eq!(
             route(Key::S, Modifiers::NONE, false),
             Some(CorrectionKey::Sentence)
+        );
+        assert_eq!(
+            route(Key::Space, Modifiers::NONE, false),
+            Some(CorrectionKey::Audition)
         );
         assert_eq!(
             route(Key::X, Modifiers::NONE, false),
