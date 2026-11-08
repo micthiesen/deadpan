@@ -442,4 +442,6 @@ not drawn there. `:timeline story` returns to the cards. Evidence: the
 checks). `,w` steps story → timing → detail → story. A Repeat stays one
 object in every view, with a tick where each later play begins, from its exact
 compiled layout (play lengths, per-play overrides and gaps), up to 256 plays
-(`repeat_play_ticks_follow_each_later_play_start`).
+(`repeat_play_ticks_follow_each_later_play_start`). A pause card names its
+picture and sound policies with its duration, for example "Pause · freeze ·
+room tone".

@@ -6060,7 +6060,24 @@ struct BeatRow {
 fn beat_kind(kind: &NodeKind) -> String {
     match kind {
         NodeKind::Source { .. } => "Source".into(),
-        NodeKind::Hold { .. } => "Hold".into(),
+        NodeKind::Hold { recipe } => format!(
+            "Pause · {} · {}",
+            match &recipe.video {
+                deadpan_core::HoldVideo::Background => "black",
+                deadpan_core::HoldVideo::Freeze { .. } => "freeze",
+                deadpan_core::HoldVideo::Accepted { .. }
+                | deadpan_core::HoldVideo::Generated { .. } => "AI pictures",
+                deadpan_core::HoldVideo::Reverse { .. } => "reversed",
+                deadpan_core::HoldVideo::Play { .. } => "replayed",
+            },
+            match &recipe.audio {
+                deadpan_core::HoldAudio::Silence => "silence",
+                deadpan_core::HoldAudio::RoomTone { .. } => "room tone",
+                deadpan_core::HoldAudio::Tail { .. } => "tail",
+                deadpan_core::HoldAudio::Reverse { .. } => "reversed sound",
+                deadpan_core::HoldAudio::Tone { .. } => "tone",
+            }
+        ),
         NodeKind::Repeat { iterations, .. } => format!(
             "Repeat · {} total {}",
             iterations.len(),
