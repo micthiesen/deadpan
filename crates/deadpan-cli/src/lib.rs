@@ -69,6 +69,7 @@ pub mod speech;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod storage;
 pub mod system_conditions;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 mod takes;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod tracking;
@@ -644,7 +645,9 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         ["project", "takes", rest @ ..] => takes::run_list(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["project", "take", rest @ ..] => takes::run(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["project", "moments", rest @ ..] => moments::run_list(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["project", "moment", rest @ ..] => moments::run(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["project", "backup", rest @ ..] => backups::run_create(rest),

@@ -12,6 +12,9 @@ use sha2::{Digest, Sha256};
 use crate::{ProjectStore, StoreError};
 
 pub const MAX_MOMENTS: usize = 1024;
+/// Permanent ID reservations, which every catalog read digests: bounds a
+/// script that creates and deletes moments in a loop.
+pub const MAX_MOMENT_IDS: i64 = 65_536;
 pub const MAX_MOMENT_NAME_BYTES: usize = 128;
 pub const MAX_MOMENT_TAGS: usize = 16;
 pub const MAX_MOMENT_TAG_BYTES: usize = 32;
@@ -310,6 +313,13 @@ fn prepare(
             )?;
             if used {
                 return Err(invalid("this moment ID has already been used"));
+            }
+            let reserved: i64 =
+                connection.query_row("SELECT count(*) FROM moment_ids", [], |row| row.get(0))?;
+            if reserved >= MAX_MOMENT_IDS {
+                return Err(invalid(
+                    "this project has used 65,536 moment identities; no more can be created",
+                ));
             }
             check_range(*start, *end)?;
             let pictures = original_pictures(connection)?;

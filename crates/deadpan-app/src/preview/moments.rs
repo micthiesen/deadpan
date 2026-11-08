@@ -471,6 +471,9 @@ impl DeadpanApp {
             self.error = Some("This moment ends after the Original's measured pictures.".into());
             return;
         }
+        // Bind the selection to the shown Original first, so the next
+        // reconcile keeps it rather than clearing a stale identity.
+        self.reconcile_moment();
         self.moment.select(moment.start..moment.end);
         self.source_cursor = moment.start;
         self.request_picture(false);
