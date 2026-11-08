@@ -250,6 +250,10 @@ pub enum Backend {
     /// explicit scripted origin and invent no Vision runtime or revision.
     #[cfg(any(test, feature = "ui-harness"))]
     ScriptedProposals(Arc<ProposalScript>),
+    /// The real Vision worker at an explicit path: a test build places
+    /// `deadpan-track` in the target directory, not beside the test binary.
+    #[cfg(test)]
+    Installed(std::path::PathBuf),
 }
 
 #[cfg(any(test, feature = "ui-harness"))]

@@ -40,6 +40,10 @@ fn project(runs: Vec<Script>) -> Fixture {
 }
 
 fn project_with(backend: Backend) -> Fixture {
+    project_from(backend, fixture("cfr-bframes.mp4"))
+}
+
+fn project_from(backend: Backend, original: std::path::PathBuf) -> Fixture {
     let scratch = tempfile::tempdir().unwrap();
     let service = ProjectService::start_with_tracking(
         Arc::new(|| {}),
@@ -51,7 +55,7 @@ fn project_with(backend: Backend) -> Fixture {
     service
         .submit(ProjectRequest::CreateFromSource {
             ownership: OriginalOwnership::Managed,
-            path: fixture("cfr-bframes.mp4"),
+            path: original,
         })
         .unwrap();
     let initialized = wait(&service, |update| {
@@ -61,7 +65,7 @@ fn project_with(backend: Backend) -> Fixture {
     });
     let workspace = initialized.workspace.unwrap();
     let Some(SingleSourceState::Ready { asset, .. }) = &workspace.single_source else {
-        panic!("original not initialized")
+        panic!("original not initialized: {:?}", initialized.import)
     };
     let asset = asset.clone();
     let pictures = workspace.sources[&asset]
@@ -654,5 +658,102 @@ fn a_target_in_use_refuses_deletion_and_an_unused_one_deletes_in_one_undo() {
             .document
             .targets()
             .contains_key(&id)
+    );
+}
+
+/// `deadpan-track` from the workspace build (target/<profile>/), beside the
+/// directory holding this test binary. Skips when absent unless
+/// `DEADPAN_REQUIRE_SYNTHETIC_WORKER=1` (set by `cargo xtask gate`).
+fn installed_tracker() -> Option<std::path::PathBuf> {
+    let executable = std::env::current_exe().ok()?;
+    let worker = executable.parent()?.parent()?.join("deadpan-track");
+    if worker.is_file() {
+        return Some(worker);
+    }
+    assert!(
+        std::env::var_os("DEADPAN_REQUIRE_SYNTHETIC_WORKER").is_none_or(|value| value != "1"),
+        "the real tracking worker is missing: {}",
+        worker.display()
+    );
+    eprintln!("skipping: build deadpan-track to run {}", worker.display());
+    None
+}
+
+/// The app's real-worker path: the project service launches the installed
+/// Vision worker on the verified Original and saves its path, which follows
+/// the moving square (40 + 5n, 40 + 1.5n coded px, 36 px wide) inside the
+/// fixture's exact clean aperture [20.25, 10.25, 279.5, 159.5].
+#[test]
+fn the_installed_tracker_follows_the_square_through_the_app_service() {
+    let Some(worker) = installed_tracker() else {
+        return;
+    };
+    let fixture = project_from(
+        Backend::Installed(worker),
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../native/deadpan-track/tests/fixtures/moving-square-aperture.mp4")
+            .canonicalize()
+            .unwrap(),
+    );
+    let truth = |picture: usize| {
+        let (x, y) = (40.0 + 5.0 * picture as f64, 40.0 + 1.5 * picture as f64);
+        (
+            (x.round() + 18.0 - 20.25) / 279.5,
+            (y.round() + 18.0 - 10.25) / 159.5,
+        )
+    };
+    let (x, y) = truth(2);
+    let mut target = drawn(&fixture, 2);
+    target.region = TargetRegion {
+        center: [(x * 1e6).round() as u32, (y * 1e6).round() as u32],
+        size: [128_801, 225_705],
+    }
+    .into();
+    let saved = save(&fixture, &fixture.workspace, "square", target);
+    let workspace = saved.workspace.unwrap();
+    let started = targets(
+        &fixture.service,
+        track(
+            &workspace,
+            2,
+            "square",
+            TrackMode::Track {
+                through_shots: true,
+            },
+        ),
+    );
+    assert_eq!(refusal(&started), None);
+    let (outcome, update) = concluded(&fixture.service, 2);
+    let Outcome::Saved { samples, .. } = outcome else {
+        panic!("expected a saved path from the real worker, got {outcome:?}")
+    };
+    assert!(samples > 0);
+    let tracked = update.workspace.unwrap();
+    let target = &tracked.document.targets()[&TargetId::new("square").unwrap()];
+    let provenance = target.provenance.clone().unwrap();
+    assert_ne!(provenance.engine, SCRIPTED_ENGINE);
+    // Before the cut at picture 30, tracked samples stay on the square.
+    let mut checked = 0;
+    for (picture, pts) in fixture.pictures.iter().enumerate().take(30).skip(3) {
+        let Some(sample) = target.samples.iter().find(|sample| sample.at == *pts) else {
+            continue;
+        };
+        if sample.state != TrackState::Tracked {
+            continue;
+        }
+        let (x, y) = truth(picture);
+        let [cx, cy] = sample.region.center();
+        let error = ((f64::from(cx) / 1e6 - x) * 279.5).hypot((f64::from(cy) / 1e6 - y) * 159.5);
+        assert!(error < 8.0, "picture {picture} is {error:.1} px off");
+        checked += 1;
+    }
+    eprintln!(
+        "engine {} · {checked} tracked samples checked of {}",
+        provenance.engine,
+        target.samples.len()
+    );
+    assert!(
+        checked >= 8,
+        "only {checked} tracked samples before the cut"
     );
 }

@@ -471,6 +471,11 @@ impl Service {
                 }
                 Worker::Scripted(script)
             }
+            #[cfg(test)]
+            Backend::Installed(executable) => Worker::Real(TrackingRuntime {
+                executable: executable.clone(),
+                environment: Default::default(),
+            }),
             // Only picture analysis is scripted; tracking uses the installed worker.
             #[cfg(any(test, feature = "ui-harness"))]
             Backend::ScriptedProposals(_) => match TrackingRuntime::beside_current_executable() {

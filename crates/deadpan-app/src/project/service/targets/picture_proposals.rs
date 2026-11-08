@@ -133,6 +133,8 @@ impl Service {
             Backend::Environment => installed(),
             #[cfg(any(test, feature = "ui-harness"))]
             Backend::Scripted(_) => installed(),
+            #[cfg(test)]
+            Backend::Installed(_) => installed(),
             #[cfg(any(test, feature = "ui-harness"))]
             Backend::ScriptedProposals(script) => match script.next() {
                 #[cfg(feature = "ui-harness")]

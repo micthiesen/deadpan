@@ -413,6 +413,16 @@ correction through the production keys.
 
 ## Evidence
 
+The app's own path runs the real worker too:
+`the_installed_tracker_follows_the_square_through_the_app_service`
+(`crates/deadpan-app/src/project/tests/targets.rs`) imports
+`moving-square-aperture.mp4` as the Original through the native project
+service, saves a drawn rectangle on picture 2 and tracks it with the installed
+`deadpan-track` (from the workspace build; `cargo xtask gate` requires it). The
+saved target carries the Apple Vision engine, not the scripted one, and at
+least eight Tracked samples before the cut lie within 8 px of the generator's
+truth in the clean aperture (2026-11-07: 13 of 14 saved samples checked).
+
 [`native/deadpan-track/tests/worker.rs`](../native/deadpan-track/tests/worker.rs)
 runs the real worker under the supervisor on a deterministic **synthetic**
 fixture,
@@ -499,8 +509,6 @@ mostly the unoptimized BGRA copy. The upscale is a measurement input only
   quality on people, faces, motion blur, lighting changes or partial occlusion.
 * Rotated and anamorphic coverage is synthetic; real rotated phone footage and
   anamorphic camera originals were not run.
-* The app's real-worker path (`deadpan-track` beside the app binary) is not
-  exercised by app tests or replay, which use the scripted seam.
 * Incremental scheduling by visible cursor neighbourhood (Section 11.4) remains
   open. It needs a non-manual continuation seed and an `extend` policy operation
   equal to one run, reverse decoding for pictures before the selection, an
