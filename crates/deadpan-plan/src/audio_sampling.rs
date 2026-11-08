@@ -202,6 +202,36 @@ macro_rules! sample_domain {
         }
 
         impl AudioSampleMap<$sample> {
+            /// Whether both maps give every sample the same local position:
+            /// with equal steps `s`, `a1 + (x - n1)s = a2 + (x - n2)s` for all
+            /// `x` exactly when `a1 - a2 = (n1 - n2)s`. Cross-multiplied in
+            /// i128 without reduction; None when a product overflows, so the
+            /// caller falls back to exact positions.
+            pub fn same_positions(&self, other: &Self) -> Option<bool> {
+                if self.local_frames_per_sample != other.local_frames_per_sample {
+                    return Some(false);
+                }
+                let (p1, q1) = (
+                    self.local_at_anchor.numerator(),
+                    self.local_at_anchor.denominator(),
+                );
+                let (p2, q2) = (
+                    other.local_at_anchor.numerator(),
+                    other.local_at_anchor.denominator(),
+                );
+                let (r, t) = (
+                    self.local_frames_per_sample.numerator(),
+                    self.local_frames_per_sample.denominator(),
+                );
+                let shift = i128::from(self.anchor.0) - i128::from(other.anchor.0);
+                let left = p1
+                    .checked_mul(q2)?
+                    .checked_sub(p2.checked_mul(q1)?)?
+                    .checked_mul(t)?;
+                let right = shift.checked_mul(r)?.checked_mul(q1)?.checked_mul(q2)?;
+                Some(left == right)
+            }
+
             pub fn local_at(&self, sample: $sample) -> Result<ExactRatio, TimeError> {
                 self.local_at_offset(i128::from(sample.0) - i128::from(self.anchor.0))
             }

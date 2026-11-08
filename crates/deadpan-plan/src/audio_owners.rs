@@ -204,10 +204,19 @@ impl<'plan> AudioTreatmentBoundary<'plan> {
     /// each query and is not part of its input identity. Child occurrence IDs
     /// still distinguish plays. This alone cannot identify a raw context.
     pub fn matches_clock_at(&self, candidate: &AudioOwnerClock<'_>, at: AudioSample) -> bool {
+        // Affine maps with equal steps agree at one sample exactly when they
+        // agree at all; shared EQ asks this per sample, so decide it without
+        // exact (reducing) arithmetic where the products fit, and require the
+        // position at `at` to exist as before.
         self.matches(candidate)
-            && self.owner.sampling.local_frames_per_sample()
-                == candidate.sampling.local_frames_per_sample()
-            && matches!((self.owner.sampling.local_at(at), candidate.sampling.local_at(at)), (Ok(a), Ok(b)) if a == b)
+            && match self.owner.sampling.same_positions(&candidate.sampling) {
+                Some(same) => same && self.owner.sampling.local_at(at).is_ok(),
+                None => {
+                    self.owner.sampling.local_frames_per_sample()
+                        == candidate.sampling.local_frames_per_sample()
+                        && matches!((self.owner.sampling.local_at(at), candidate.sampling.local_at(at)), (Ok(a), Ok(b)) if a == b)
+                }
+            }
     }
 }
 

@@ -769,10 +769,16 @@ fn nested_selected_play_split_keeps_root_and_child_sounds_on_their_exact_clocks(
                 },
             },
         );
+        // A cold limiter read here takes 15-25 s on this Mac and exceeded the
+        // reads' 60 s cap on CI's virtual Mac even alone (run 42492910881);
+        // `check`/`gate` require a physical Mac, so the master is still checked.
+        let master = !super::physical_mac::skip_without_physical_mac(
+            "the nested selected play's limiter comparison",
+        );
         assert_preserved(
             &before,
             &after,
-            true,
+            master,
             &format!("nested selected play root_sound={root_sound}"),
         );
     }

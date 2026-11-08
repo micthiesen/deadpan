@@ -25,6 +25,8 @@ const TIMEOUT: Duration = Duration::from_secs(10);
 
 #[path = "stages/hold_effects.rs"]
 mod hold_effects;
+#[path = "../../deadpan-cli/tests/support/physical_mac.rs"]
+mod physical_mac;
 
 #[path = "stages/scoped_hold_audio.rs"]
 mod scoped_hold_audio;
