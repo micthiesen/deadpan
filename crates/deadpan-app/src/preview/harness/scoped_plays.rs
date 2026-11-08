@@ -440,12 +440,54 @@ fn scoped_speed(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"after":after,"scoped":d.app().scoped.is_some(),"error":d.app().error}),
     )?;
     d.capture("One play sped up inside its contents")?;
+    d.command("scope play 3")?;
+    idle(d)?;
+    let hint = d.app().repeat_hint();
+    let edited = d.revision();
+    d.events(
+        "Dot repeats the speed change on play 3",
+        vec![
+            egui::Event::Key {
+                key: Key::Period,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            },
+            egui::Event::Text(".".into()),
+            egui::Event::Key {
+                key: Key::Period,
+                physical_key: None,
+                pressed: false,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            },
+        ],
+    )?;
+    d.changed(&edited)?;
+    idle(d)?;
+    let dotted = plays(d)?;
+    d.check(
+        "Dot inside play 3 halves that play from its own input",
+        dotted[0] == before[0]
+            && dotted[1] == before[1] / 2
+            && dotted[2] == before[2] / 2
+            && hint
+                .as_deref()
+                .is_some_and(|hint| hint.starts_with("repeat: speed")),
+        json!({"plays":[before[0], before[1] / 2, before[2] / 2],"hint":"repeat: speed"}),
+        json!({"plays":dotted,"hint":hint,"error":d.app().error}),
+    )?;
+    let edited = d.revision();
+    d.key(Key::U)?;
+    d.changed(&edited)?;
+    idle(d)?;
     let edited = d.revision();
     d.key(Key::U)?;
     d.changed(&edited)?;
     idle(d)?;
     d.check(
-        "One Undo restores every play's length",
+        "Two Undos restore every play's length",
         plays(d)? == before,
         json!(before),
         json!(plays(d)?),

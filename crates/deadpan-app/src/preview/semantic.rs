@@ -53,11 +53,14 @@ impl super::DeadpanApp {
                         | deadpan_core::SemanticInstruction::SetHoldDuration { .. }
                         | deadpan_core::SemanticInstruction::SetHoldAudio { .. }
                         | deadpan_core::SemanticInstruction::SetRoomTone { .. }
+                        | deadpan_core::SemanticInstruction::Retime { .. }
                 )
             )
             && !scoped_audio
         {
-            return Some("repeat unavailable: use an audio, pause or framing edit first".into());
+            return Some(
+                "repeat unavailable: use an audio, speed, pause or framing edit first".into(),
+            );
         }
         let selected_repeat = matches!(edit.operation, RepeatableEdit::SetRepeatPlays { .. })
             && self.workspace.as_ref().is_some_and(|workspace| {
