@@ -315,11 +315,11 @@ fn named_mark_range_composes_with_role_edits_and_role_repeats_refuse_cross_child
         across.document.duration().unwrap(),
         cross_child.duration().unwrap()
     );
-    // A role repeat still refuses it before requesting any identity/revision
-    // allocation or publishing a step.
+    // A video-only repeat still refuses it before requesting any
+    // identity/revision allocation or publishing a step (sound may span beats).
     {
         let operation = SemanticInstruction::RoleRepeat {
-            role: MediaRole::Audio,
+            role: MediaRole::Video,
             plays: std::num::NonZeroU32::new(2).unwrap(),
             trim: true,
             extend: false,

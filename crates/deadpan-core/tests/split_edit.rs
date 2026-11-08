@@ -422,6 +422,18 @@ fn plan_repeat_with(
     trim: bool,
     extend: bool,
 ) -> Result<SemanticPlan, EditError> {
+    plan_repeat_over(document, role, plays, trim, extend, 24, 30)
+}
+
+fn plan_repeat_over(
+    document: &ProjectDocument,
+    role: MediaRole,
+    plays: u32,
+    trim: bool,
+    extend: bool,
+    anchor: i64,
+    head: i64,
+) -> Result<SemanticPlan, EditError> {
     plan_semantic_with_speech(
         document,
         &SemanticContext {
@@ -432,11 +444,11 @@ fn plan_repeat_with(
             mixed_hold_duration: None,
             selected_hold_duration: None,
             parent: id("root"),
-            cursor: ProjectFrame(30),
+            cursor: ProjectFrame(head),
             selected_child: None,
             visual_selection: Some(SemanticVisualSelection::Time {
-                anchor: ProjectFrame(24),
-                head: ProjectFrame(30),
+                anchor: ProjectFrame(anchor),
+                head: ProjectFrame(head),
                 extending: false,
             }),
         },
@@ -929,6 +941,98 @@ fn an_audio_shift_slides_sound_across_cuts_and_keeps_every_picture() {
         let error = plan_shift(&before, cursor, frames, trim, extend).unwrap_err();
         assert!(error.message.contains(message), "{message}: {error:?}");
     }
+}
+
+#[test]
+fn an_audio_repeat_spans_cuts_and_plays_each_beats_sound_again() {
+    let before = with_sound();
+    let pictures_before = pictures(&before);
+    // Edit [16, 24) is Original 26..30 in "left" and 50..54 in "right"; three
+    // plays fill [16, 40), exactly to the end of "right".
+    let audio = plan_repeat_over(&before, MediaRole::Audio, 3, false, false, 16, 24).unwrap();
+    let after = &audio.document;
+    assert_eq!(after.duration().unwrap(), before.duration().unwrap());
+    assert_eq!(pictures(after), pictures_before);
+    assert_eq!(mutes(after, "left"), Vec::<(i64, i64)>::new());
+    assert_eq!(mutes(after, "right"), vec![(4, 20)]);
+    assert_eq!(
+        shifted(after),
+        vec![(24, 28, 26), (28, 32, 50), (32, 36, 26), (36, 40, 50)]
+    );
+    assert!(
+        after
+            .sounds()
+            .values()
+            .any(|event| event.label.starts_with("Repeat 3 of 3"))
+    );
+    let replay =
+        replay_compound::<EditError>(&before, audio.request.as_ref().unwrap(), |_| Ok(())).unwrap();
+    assert_eq!(&replay.document, after);
+    assert_eq!(replay.edit.inverse.apply(&replay.document).unwrap(), before);
+
+    // A fourth play passes the last beat: refuse, trim it away, or hold.
+    let error = plan_repeat_over(&before, MediaRole::Audio, 4, false, false, 16, 24).unwrap_err();
+    assert!(error.message.contains("overflow=trim"), "{error:?}");
+    let trimmed = plan_repeat_over(&before, MediaRole::Audio, 4, true, false, 16, 24)
+        .unwrap()
+        .document;
+    assert_eq!(shifted(&trimmed), shifted(after));
+    let held = plan_repeat_over(&before, MediaRole::Audio, 4, false, true, 16, 24)
+        .unwrap()
+        .document;
+    assert_eq!(
+        held.duration().unwrap().frames(),
+        before.duration().unwrap().frames() + 8
+    );
+    assert_eq!(
+        shifted(&held),
+        vec![
+            (24, 28, 26),
+            (28, 32, 50),
+            (32, 36, 26),
+            (36, 40, 50),
+            (40, 44, 26),
+            (44, 48, 50)
+        ]
+    );
+    assert_eq!(held.sound_allowances().iter().count(), 2);
+
+    // Sound already muted in the range would sound again: refuse.
+    let mut wire = serde_json::to_value(after).unwrap();
+    wire["revision_id"] = json!("muted");
+    let muted = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let error = plan_repeat_over(&muted, MediaRole::Audio, 2, true, false, 16, 26).unwrap_err();
+    assert!(error.message.contains("muted"), "{error:?}");
+
+    // Split fragments of "right" continue one sound: each play has one event
+    // for them, so no fade dips at the Split seam.
+    let split = apply(
+        &before,
+        &CommandRequest {
+            project_id: before.project_id().clone(),
+            expected_revision: before.revision_id().clone(),
+            new_revision: RevisionId::new("split").unwrap(),
+            command: Command::Split {
+                node: id("right"),
+                at: frames(5),
+                identities: SplitIdentities {
+                    nodes: (0..8).map(|n| id(&format!("split-{n}"))).collect(),
+                },
+            },
+        },
+    )
+    .unwrap()
+    .forward
+    .apply(&before)
+    .unwrap();
+    let merged = plan_repeat_over(&split, MediaRole::Audio, 2, false, false, 16, 28)
+        .unwrap()
+        .document;
+    assert_eq!(shifted(&merged), vec![(28, 32, 26), (32, 40, 50)]);
+
+    // A video-only repeat still stays inside one beat.
+    let error = plan_repeat_over(&before, MediaRole::Video, 2, true, false, 16, 24).unwrap_err();
+    assert!(error.message.contains("one beat"), "{error:?}");
 }
 
 fn plan_role_on(

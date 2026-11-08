@@ -1099,7 +1099,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     Ok(Entry::Action(action))
 }
 
-const ROLE_REPEAT_USAGE: &str = "Use :repeat 3 role=audio or :repeat 3 role=video over a Visual range inside one beat; add overflow=trim to cut repeats at the beat's end, or extend=hold to hold its last picture for repeated sound.";
+const ROLE_REPEAT_USAGE: &str = "Use :repeat 3 role=audio or :repeat 3 role=video over a Visual range (sound may span beats; pictures stay inside one beat); add overflow=trim to cut repeats at the last beat's end, or extend=hold to hold its last picture for repeated sound.";
 
 /// `:repeat [N] role=audio|video [overflow=trim|extend=hold]`.
 fn role_repeat<'a>(words: impl Iterator<Item = &'a str>) -> Result<Entry, String> {

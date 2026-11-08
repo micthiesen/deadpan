@@ -148,7 +148,7 @@ impl DeadpanApp {
     }
 
     /// `:repeat N role=audio|video`: one recorded role repeat of the Visual
-    /// range inside one beat.
+    /// range.
     pub(super) fn role_repeat(
         &mut self,
         role: deadpan_core::MediaRole,
@@ -158,10 +158,8 @@ impl DeadpanApp {
         target: Result<macros::Capture, String>,
     ) {
         if self.edit_selection() == navigation::EditSelection::None {
-            self.error = Some(
-                "Select a range inside one beat with v first, then repeat its sound or picture."
-                    .into(),
-            );
+            self.error =
+                Some("Select a range with v first, then repeat its sound or picture.".into());
             return;
         }
         self.cancel_repeats("a role repeat was requested");

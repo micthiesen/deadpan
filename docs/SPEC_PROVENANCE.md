@@ -89,6 +89,10 @@ beat's picture, so "an underlying attachment" became the beat under a cutaway.
 A video-only repeat keeps `overflow=trim` as its explicit policy: a repeat never
 runs short of its interval, so a hold had nothing to hold, and a fitted speed
 change would need a new picture primitive for little creative value.
+An audio-only repeat may span cuts: a syllable or phrase rarely respects a
+beat boundary, and the repeated sound is the same root-sound construction as
+`:audio-shift`. Sound already muted inside the range refuses, because playing
+it again would contradict an earlier explicit edit.
 
 | File | Bytes | SHA-256 |
 | --- | ---: | --- |

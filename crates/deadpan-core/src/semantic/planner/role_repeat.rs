@@ -52,6 +52,11 @@ where
             }
             ancestor = self.current.parent_of(&node);
         }
+        if role == crate::MediaRole::Audio
+            && let Some(range) = self.range_across_children()?
+        {
+            return self.audio_repeat_across(trace_index, range, plays, trim, extend);
+        }
         let (child, child_start, child_end, range) = self.range_in_child(
             "a role repeat stays inside one beat; select a range inside one beat",
         )?;

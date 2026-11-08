@@ -13,7 +13,7 @@ use crate::{ExactFrameRange, ExactRatio, InstancePath, SourceAudioMapping, Sourc
 use std::num::NonZeroU32;
 
 /// One beat's sounding stretch, in absolute Edit frames.
-struct Segment {
+pub(super) struct Segment {
     child: NodeId,
     child_start: i64,
     frames: std::ops::Range<i64>,
@@ -100,11 +100,7 @@ where
                     _ => {
                         muted.push((child.clone(), (low - start)..(end - start)));
                         if sounding.start < sounding.end {
-                            segments.push(Segment {
-                                child: child.clone(),
-                                child_start: start,
-                                frames: sounding,
-                            });
+                            self.push_segment(&mut segments, child.clone(), start, sounding);
                         }
                     }
                 }
@@ -154,7 +150,12 @@ where
             if heard.start >= heard.end {
                 continue;
             }
-            let id = self.shifted_sound(&segment, heard.clone(), shift)?;
+            let id = self.shifted_sound(
+                &segment,
+                heard.clone(),
+                shift,
+                &format!("Shifted {shift:+}f"),
+            )?;
             if let Some(pause) = &pause
                 && heard.end + shift > group_end
             {
@@ -185,18 +186,19 @@ where
         segment: &Segment,
         heard: std::ops::Range<i64>,
         shift: i64,
+        prefix: &str,
     ) -> Result<crate::SoundId, EditError> {
         let (host, offset) =
             crate::cutaway_host(&self.current, &segment.child).ok_or_else(|| {
                 EditError::new(
                     EditErrorCode::WrongNodeKind,
-                    "an audio shift crosses a group; shift inside it, or from after it",
+                    "moved sound crosses a group; work inside it, or from after it",
                 )
             })?;
         let NodeKind::Source { source } = &self.current.nodes()[&host].kind else {
             return Err(EditError::new(
                 EditErrorCode::WrongNodeKind,
-                "an audio shift moves the sound of Original source beats",
+                "only the sound of Original source beats can move",
             ));
         };
         let source = source.clone();
@@ -206,9 +208,7 @@ where
             .filter(|_| source.link == crate::LinkRelation::Linked)
             .ok_or_else(|| invalid("a beat in the shifted stretch has no linked sound"))?;
         if !matches!(source.video, SourceVideo::Stream { .. }) {
-            return Err(invalid(
-                "an audio shift moves the sound of Original source beats",
-            ));
+            return Err(invalid("only the sound of Original source beats can move"));
         }
         let rate = self.current.presentation_basis().frame_rate;
         let mapping_shift = source
@@ -263,7 +263,7 @@ where
         let label = self.current.nodes()[&segment.child].label.clone();
         let event = crate::SoundEvent {
             owner: self.current.root().clone(),
-            label: format!("Shifted {shift:+}f · {label}"),
+            label: format!("{prefix} · {label}"),
             source: audio,
             mapping: SourceAudioMapping::SelectedPlacement {
                 start: moved(start)?,
@@ -299,6 +299,218 @@ where
             },
         )?)?;
         Ok(id)
+    }
+
+    /// The Visual time range when it spans more than one direct child.
+    pub(super) fn range_across_children(&self) -> Result<Option<FrameRange>, EditError> {
+        let target = self.resolve_selector(&crate::SemanticSelector::VisualSelection)?;
+        let SliceCaptureSelection::Range { range } = target.selection()?.clone() else {
+            return Ok(None);
+        };
+        let first_end = self
+            .child_ends
+            .iter()
+            .find(|(_, end)| *end > range.start())
+            .map(|(_, end)| *end);
+        Ok(first_end.filter(|end| range.end() > *end).map(|_| range))
+    }
+
+    /// `:repeat N role=audio` over a range spanning several beats: every
+    /// later play sounds each beat's own stretch of the range again as root
+    /// sound events, like `:audio-shift` by whole multiples of the range.
+    /// The plays run over the last beat the range touches, whose own sound
+    /// is muted there; overflow past that beat refuses unless `trim` cuts it
+    /// or `extend` holds that beat's last picture for exactly the overflow.
+    pub(super) fn audio_repeat_across(
+        &mut self,
+        trace_index: usize,
+        range: FrameRange,
+        plays: u32,
+        trim: bool,
+        extend: bool,
+    ) -> Result<(), EditError> {
+        let (a, b) = (range.start().0, range.end().0);
+        let group_end = self
+            .child_ends
+            .last()
+            .map_or(self.bounds.0.0, |(_, end)| end.0);
+        if a < self.bounds.0.0 || b > group_end {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "the range reaches outside this group",
+            ));
+        }
+        let length = b - a;
+        let mut segments = Vec::new();
+        let mut last = None;
+        let mut start = self.bounds.0.0;
+        for (child, end) in self.child_ends.clone() {
+            let end = end.0;
+            let frames = start.max(a)..end.min(b);
+            if frames.start < frames.end {
+                match &self.current.nodes()[&child].kind {
+                    NodeKind::Hold { recipe }
+                        if matches!(recipe.audio, crate::HoldAudio::Silence) => {}
+                    NodeKind::Hold { .. } => {
+                        return Err(invalid(
+                            "a pause with its own sound lies in the range; make it silent or select around it",
+                        ));
+                    }
+                    _ => {
+                        let local = (frames.start - start)..(frames.end - start);
+                        if self.current.nodes()[&child]
+                            .audio_treatments
+                            .clip_gain()
+                            .is_some_and(|clip| {
+                                clip.mute_ranges().iter().any(|mute| {
+                                    mute.start().compare(ExactRatio::integer(local.end)).is_lt()
+                                        && ExactRatio::integer(local.start)
+                                            .compare(mute.end())
+                                            .is_lt()
+                                })
+                            })
+                        {
+                            return Err(invalid(
+                                "part of the range's sound is muted; its repeats would sound it again, so select around the mute",
+                            ));
+                        }
+                        self.push_segment(&mut segments, child.clone(), start, frames);
+                    }
+                }
+                last = Some((child.clone(), start, end));
+            }
+            start = end;
+        }
+        let (last, last_start, last_end) =
+            last.ok_or_else(|| invalid("the range lies outside this group"))?;
+        if segments.is_empty() {
+            return Err(invalid("the selected range has no sound to repeat"));
+        }
+        if matches!(self.current.nodes()[&last].kind, NodeKind::Hold { .. }) {
+            return Err(invalid(
+                "the range ends in a pause; its repeats would sound over silence, so end the range in a beat",
+            ));
+        }
+        let wanted = i64::from(plays)
+            .checked_mul(length)
+            .and_then(|total| a.checked_add(total))
+            .ok_or_else(|| EditError::new(EditErrorCode::TimingOverflow, "repeat overflows"))?;
+        let overflow = (wanted - last_end).max(0);
+        let end = if overflow == 0 || extend {
+            wanted
+        } else if trim {
+            last_end
+        } else {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                format!(
+                    "{plays} plays need {overflow} more frames than the range's last beat has; add extend=hold to hold its last picture or overflow=trim to cut the repeats at that beat's end"
+                ),
+            ));
+        };
+        if b >= end {
+            return Err(invalid(
+                "the range ends at its beat; nothing is left to repeat over",
+            ));
+        }
+        self.parameter_edit(
+            self.muted(&last, (b - last_start)..(end.min(last_end) - last_start))?,
+        )?;
+        let pause = if overflow > 0 && extend {
+            let restore = (self.context.cursor, self.context.visual_selection.take());
+            self.context.cursor = ProjectFrame(last_end);
+            let inserted = self.insert_pause(
+                trace_index,
+                crate::PauseLength::Frames {
+                    frames: u32::try_from(overflow)
+                        .ok()
+                        .and_then(NonZeroU32::new)
+                        .ok_or_else(|| invalid("the extension is too long"))?,
+                },
+                false,
+            );
+            (self.context.cursor, self.context.visual_selection) = restore;
+            inserted?;
+            Some(
+                self.context
+                    .selected_child
+                    .clone()
+                    .filter(|node| matches!(self.current.nodes()[node].kind, NodeKind::Hold { .. }))
+                    .ok_or_else(|| invalid("the extension pause is not selectable"))?,
+            )
+        } else {
+            None
+        };
+        for play in 1..i64::from(plays) {
+            let shift = play * length;
+            for segment in &segments {
+                let heard = segment.frames.start..segment.frames.end.min(end - shift);
+                if heard.start >= heard.end {
+                    continue;
+                }
+                let id = self.shifted_sound(
+                    segment,
+                    heard.clone(),
+                    shift,
+                    &format!("Repeat {} of {plays}", play + 1),
+                )?;
+                if let Some(pause) = &pause
+                    && heard.end + shift > last_end
+                {
+                    self.parameter_edit(Command::SetSoundAllowance {
+                        sound: id,
+                        issuer: crate::SoundHoldIssuer::Node {
+                            instance: InstancePath {
+                                node: pause.clone(),
+                                repeats: Vec::new(),
+                            },
+                        },
+                        allowed: true,
+                    })?;
+                }
+            }
+        }
+        self.context.visual_selection = None;
+        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
+        self.trace[trace_index].resolved_range = Some(
+            FrameRange::new(range.start(), ProjectFrame(end))
+                .map_err(crate::DocumentError::from)?,
+        );
+        Ok(())
+    }
+
+    /// Append one beat's sounding stretch, extending the previous segment
+    /// when it continues the same Source sound (Split fragments), so one
+    /// event spans the seam and no fade dips there.
+    fn push_segment(
+        &self,
+        segments: &mut Vec<Segment>,
+        child: NodeId,
+        child_start: i64,
+        frames: std::ops::Range<i64>,
+    ) {
+        let source = |host: &NodeId| match &self.current.nodes()[host].kind {
+            NodeKind::Source { source } => Some(source),
+            _ => None,
+        };
+        let continues = segments.last().is_some_and(|previous| {
+            previous.frames.end == frames.start
+                && crate::cutaway_host(&self.current, &child)
+                    .zip(crate::cutaway_host(&self.current, &previous.child))
+                    .is_some_and(|((host, offset), (previous_host, previous_offset))| {
+                        source(&host).is_some()
+                            && source(&host) == source(&previous_host)
+                            && previous_offset - previous.child_start == offset - child_start
+                    })
+        });
+        match segments.last_mut() {
+            Some(previous) if continues => previous.frames.end = frames.end,
+            _ => segments.push(Segment {
+                child,
+                child_start,
+                frames,
+            }),
+        }
     }
 
     fn parameter_edit(&mut self, command: Command) -> Result<(), EditError> {

@@ -110,6 +110,19 @@ frames are root frames.
   producing a silent copy; delete the repeat in Placed sounds or Undo first.
   Placed catalog sounds (audio-only assets) are unaffected by this refusal.
   Store admission rechecks the Original's receipt.
+  A sound range may span several beats (since 2026-11-07): each beat's own
+  stretch of the range plays again as its own root sound event, exactly as
+  `:audio-shift` builds them, translated by whole multiples of the range, so a
+  play keeps every cut inside the range. The later plays run over the range's
+  last beat, whose sound is muted under them; the overflow policies below apply
+  to that beat. Silent pauses inside the range repeat as silence; a pause with
+  its own sound refuses, as does a range ending in a pause, a range whose sound
+  is already muted (its repeats would sound it again) or a range outside the
+  group. Contiguous Split fragments of one Source become one event per play,
+  so no edge fade dips at a pure Split seam; `:audio-shift` merges them the
+  same way. Other beat treatments (gain, envelopes) are not copied onto the
+  repeated events. Evidence:
+  `an_audio_repeat_spans_cuts_and_plays_each_beats_sound_again`.
 - **Video**: one looping cutaway over the later plays shows the range's
   pictures, at their natural rate (a retimed picture refuses); the beat's sound
   continues.
