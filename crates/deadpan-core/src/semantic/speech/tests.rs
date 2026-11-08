@@ -308,3 +308,28 @@ fn shot_motions_and_objects_follow_shot_occurrences() {
         "{missing:?}"
     );
 }
+
+#[test]
+fn around_shot_adds_the_blended_pictures_of_dissolves_at_its_edges() {
+    // A dissolve 24..36 splits at 30; a fade in 60..66 lies inside shot 2.
+    let timeline = SpeechTimeline::without_words("no transcript")
+        .with_shots(vec![shot(0, 30, 0), shot(30, 60, 1), shot(60, 100, 2)])
+        .unwrap()
+        .with_transitions(vec![range(24, 36), range(60, 66)])
+        .unwrap();
+    let object =
+        |at: i64, object| timeline.object_range(ProjectFrame(at), BOUNDS, object, thirty());
+    assert_eq!(object(10, SpeechObject::InnerShot).unwrap(), range(0, 30));
+    assert_eq!(object(10, SpeechObject::AroundShot).unwrap(), range(0, 36));
+    assert_eq!(object(40, SpeechObject::AroundShot).unwrap(), range(24, 60));
+    assert_eq!(
+        object(70, SpeechObject::AroundShot).unwrap(),
+        range(60, 100),
+        "a fade belongs only to the shot it fades"
+    );
+    assert!(
+        SpeechTimeline::without_words("no transcript")
+            .with_transitions(vec![range(5, 9), range(8, 12)])
+            .is_err()
+    );
+}

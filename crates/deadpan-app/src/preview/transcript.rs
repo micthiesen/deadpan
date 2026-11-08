@@ -1425,6 +1425,10 @@ impl DeadpanApp {
             &[(deadpan_core::ExactRatio, deadpan_core::ExactRatio)],
         ) -> Result<Vec<deadpan_core::FrameRange>, deadpan_core::EditError>,
         shots: impl FnOnce(&[usize]) -> Result<Vec<deadpan_core::ShotRun>, deadpan_core::EditError>,
+        transitions: impl FnOnce(
+            &[std::ops::Range<usize>],
+        )
+            -> Result<Vec<deadpan_core::FrameRange>, deadpan_core::EditError>,
     ) -> Result<Arc<deadpan_core::SpeechTimeline>, String> {
         // A failure places only its own analysis; the others stay usable.
         // Corrections that failed or no longer apply refuse word and pause
@@ -1458,10 +1462,26 @@ impl DeadpanApp {
         };
         let timeline = match &inputs.shots {
             Some(analysis) => match shots(&analysis.analysis.boundaries()) {
-                Ok(runs) => timeline
-                    .clone()
-                    .with_shots(runs)
-                    .unwrap_or_else(|error| timeline.without_shots(error.message)),
+                Ok(runs) => {
+                    let with_shots = timeline
+                        .clone()
+                        .with_shots(runs)
+                        .unwrap_or_else(|error| timeline.without_shots(error.message));
+                    // Transitions only widen aS; without them it equals iS.
+                    let ranges: Vec<_> = analysis
+                        .analysis
+                        .transitions()
+                        .into_iter()
+                        .map(|transition| transition.range)
+                        .collect();
+                    match transitions(&ranges) {
+                        Ok(projected) => with_shots
+                            .clone()
+                            .with_transitions(projected)
+                            .unwrap_or(with_shots),
+                        Err(_) => with_shots,
+                    }
+                }
                 Err(error) => timeline.without_shots(error.message),
             },
             None => timeline.without_shots(self.shots_not_ready()),
@@ -1496,6 +1516,14 @@ impl DeadpanApp {
             |pauses| deadpan_cli::speech::project_pauses(&workspace.plan, &asset, index, pauses),
             |boundaries| {
                 deadpan_cli::speech::project_shots(&workspace.plan, &asset, index, boundaries)
+            },
+            |transitions| {
+                deadpan_cli::speech::project_transitions(
+                    &workspace.plan,
+                    &asset,
+                    index,
+                    transitions,
+                )
             },
         )?;
         self.transcription.edit_speech = Some((key, Arc::clone(&speech)));
@@ -1548,6 +1576,9 @@ impl DeadpanApp {
             |transcript| deadpan_cli::speech::original_speech(index, transcript),
             |pauses| deadpan_cli::speech::original_pauses(index, pauses),
             |boundaries| deadpan_cli::speech::original_shots(index.frames().len(), boundaries),
+            |transitions| {
+                deadpan_cli::speech::original_transitions(index.frames().len(), transitions)
+            },
         )?;
         self.transcription.source_speech = Some((key, Arc::clone(&speech)));
         Ok(speech)

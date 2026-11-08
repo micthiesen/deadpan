@@ -347,8 +347,15 @@ Original and Your edit, and `iS`/`aS` select the shot occurrence at the Edit
 cursor; both compose after `d`, `y` and `r` and record in macros. A gradual
 transition contributes one boundary, so the motions and objects see it like a
 cut: half of a dissolve's blended pictures belong to each shot, a fade out's
-to the shot it leaves and a fade in's to the shot it enters. `aS` still equals
-`iS`; including a transition's blended pictures in `aS` is not implemented.
+to the shot it leaves and a fade in's to the shot it enters. `aS` adds the
+blended pictures of a gradual transition that straddles either edge of the
+shot (a dissolve), so it takes the neighbouring shot's half as well; a fade lies
+wholly inside the shot it fades and adds nothing to its neighbour, and at a
+hard cut `aS` equals `iS` (since 2026-11-08). Transition pictures reach the Edit
+clock like shots (`project_transitions`). Evidence:
+`around_shot_adds_the_blended_pictures_of_dissolves_at_its_edges` (core) and
+`original_transitions_keep_their_pictures_and_clip_to_the_original`; the Edit
+projection has no real-media test with a detected dissolve.
 
 Shots reach the Edit clock by the same projection as words and pauses
 ([`deadpan_cli::speech`](../crates/deadpan-cli/src/speech.rs)): a frame
@@ -369,8 +376,7 @@ misread; transition extents are estimates (Caminandes 2's 14-picture dissolve
 was reported as 7 pictures, with the boundary one picture from the true
 middle). The gradual rule is qualified on one animated short and synthesized
 clips only, with three true transitions. The six-picture spacing is a picture
-count rather than a duration (250 ms at 24 fps, 50 ms at 120 fps). `aS` does
-not include transition pictures. The scan copies the Original into its own
+count rather than a duration (250 ms at 24 fps, 50 ms at 120 fps). The scan copies the Original into its own
 verified snapshot and decodes at normal priority beside preview and audio;
 reusing the preview's snapshot and lowering the scan's priority remain open.
 A failed scan is not retried automatically when the project is reopened in

@@ -282,6 +282,78 @@ pub fn project_shots(
     Ok(runs)
 }
 
+/// Gradual transitions' blended pictures on the Edit clock: frames showing an
+/// Original picture inside a transition, contiguous while the picture
+/// advances within one transition. `transitions` are sorted, disjoint
+/// half-open picture ranges.
+pub fn project_transitions(
+    plan: &RenderPlan,
+    asset: &AssetId,
+    index: &SourceFrameIndex,
+    transitions: &[std::ops::Range<usize>],
+) -> Result<Vec<FrameRange>, EditError> {
+    let mut ranges: Vec<FrameRange> = Vec::new();
+    let mut previous: Option<(usize, usize, i64)> = None;
+    for frame in 0..plan.duration().frames() {
+        let sample = plan
+            .provider_picture(ProjectFrame(frame))
+            .map_err(|error| failed(&error.to_string()))?;
+        let inside = match &sample.picture {
+            Picture::Source { asset: shown, .. } if shown == asset => {
+                let selected = sample
+                    .picture
+                    .select_source_frame(index)
+                    .map_err(|error| failed(&error.to_string()))?;
+                let picture = usize::try_from(selected.identity.0)
+                    .map_err(|_| failed("source picture ordinal"))?;
+                let at = transitions.partition_point(|range| range.end <= picture);
+                transitions
+                    .get(at)
+                    .filter(|range| range.contains(&picture))
+                    .map(|_| (at, picture))
+            }
+            _ => None,
+        };
+        match (inside, previous) {
+            (Some((at, picture)), Some((last, before, start)))
+                if at == last && picture >= before =>
+            {
+                previous = Some((at, picture, start));
+            }
+            (now, _) => {
+                if let Some((_, _, start)) = previous {
+                    ranges.push(frame_range(start, frame)?);
+                }
+                previous = now.map(|(at, picture)| (at, picture, frame));
+            }
+        }
+    }
+    if let Some((_, _, start)) = previous {
+        ranges.push(frame_range(start, plan.duration().frames())?);
+    }
+    Ok(ranges)
+}
+
+/// Gradual transitions over the Original's own pictures.
+pub fn original_transitions(
+    pictures: usize,
+    transitions: &[std::ops::Range<usize>],
+) -> Result<Vec<FrameRange>, EditError> {
+    transitions
+        .iter()
+        .filter_map(|range| {
+            let end = range.end.min(pictures);
+            (range.start < end).then_some(range.start..end)
+        })
+        .map(|range| {
+            frame_range(
+                i64::try_from(range.start).map_err(|_| failed("picture ordinal"))?,
+                i64::try_from(range.end).map_err(|_| failed("picture ordinal"))?,
+            )
+        })
+        .collect()
+}
+
 /// Shots over the Original's own pictures, numbered by picture ordinal.
 pub fn original_shots(pictures: usize, boundaries: &[usize]) -> Result<Vec<ShotRun>, EditError> {
     let starts =
@@ -524,6 +596,8 @@ pub struct StoredSpeech {
     pub pauses_problem: Option<String>,
     /// Original pictures that begin a shot after the first.
     pub shots: Option<Vec<usize>>,
+    /// Blended pictures of gradual transitions, sorted and disjoint.
+    pub transitions: Vec<std::ops::Range<usize>>,
 }
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -586,14 +660,21 @@ impl StoredSpeech {
                 pause_seconds(&activity, &pauses.pauses)
             })
             .transpose()?;
-        let shots = crate::shots::stored_shots(
+        let analysis = crate::shots::stored_shots(
             store,
             &content,
             qualified.stream_index(),
             index.frames().len(),
             document.source_interpretations().get(&asset).copied(),
-        )
-        .map(|(_, analysis)| analysis.boundaries());
+        );
+        let shots = analysis.as_ref().map(|(_, analysis)| analysis.boundaries());
+        let transitions = analysis.map_or_else(Vec::new, |(_, analysis)| {
+            analysis
+                .transitions()
+                .into_iter()
+                .map(|transition| transition.range)
+                .collect()
+        });
         Ok(Self {
             asset,
             index,
@@ -603,6 +684,7 @@ impl StoredSpeech {
             pauses,
             pauses_problem,
             shots,
+            transitions,
         })
     }
 
@@ -628,7 +710,17 @@ impl StoredSpeech {
         };
         Ok(Arc::new(match &self.shots {
             Some(boundaries) => {
-                timeline.with_shots(project_shots(&plan, &self.asset, &self.index, boundaries)?)?
+                let shots = timeline.with_shots(project_shots(
+                    &plan,
+                    &self.asset,
+                    &self.index,
+                    boundaries,
+                )?)?;
+                // Transitions only widen aS; without them it equals iS.
+                match project_transitions(&plan, &self.asset, &self.index, &self.transitions) {
+                    Ok(projected) => shots.clone().with_transitions(projected).unwrap_or(shots),
+                    Err(_) => shots,
+                }
             }
             None => timeline.without_shots(
                 "shots are not ready: the Original's pictures have not been analysed",
@@ -804,6 +896,17 @@ mod tests {
             [(range(0, 4), 0), (range(4, 7), 1), (range(7, 10), 2)]
         );
         assert_eq!(original_shots(3, &[]).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn original_transitions_keep_their_pictures_and_clip_to_the_original() {
+        let range = |start, end| FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap();
+        assert_eq!(
+            original_transitions(10, &[2..5, 8..12]).unwrap(),
+            [range(2, 5), range(8, 10)]
+        );
+        let beyond = vec![10..12, 12..14];
+        assert!(original_transitions(10, &beyond).unwrap().is_empty());
     }
 
     #[test]

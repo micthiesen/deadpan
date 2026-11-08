@@ -44,6 +44,9 @@ pub struct SpeechTimeline {
     pauses: Result<Vec<FrameRange>, String>,
     /// Visible shot occurrences, or why they are unavailable.
     shots: Result<Vec<ShotRun>, String>,
+    /// Visible pictures of gradual transitions (dissolves and fades), which
+    /// `aS` adds to the shot whose edge they meet.
+    transitions: Vec<FrameRange>,
 }
 
 /// One contiguous visible occurrence of a detected Original shot.
@@ -61,6 +64,7 @@ impl Default for SpeechTimeline {
             words_missing: None,
             pauses: Err(PAUSES_NOT_DETECTED.into()),
             shots: Err(SHOTS_NOT_DETECTED.into()),
+            transitions: Vec::new(),
         }
     }
 }
@@ -90,8 +94,8 @@ pub enum SpeechObject {
     /// `iS`: a detected shot.
     #[serde(deserialize_with = "super::program::deserialize_empty")]
     InnerShot,
-    /// `aS`: a shot with its transition handles. Detected boundaries are hard
-    /// cuts with no transition frames, so this equals `iS`.
+    /// `aS`: a shot with the blended pictures of the gradual transitions at
+    /// its edges; at a hard cut it equals `iS`.
     #[serde(deserialize_with = "super::program::deserialize_empty")]
     AroundShot,
 }
@@ -152,6 +156,18 @@ impl SpeechTimeline {
     pub fn with_shots(mut self, shots: Vec<ShotRun>) -> Result<Self, EditError> {
         check_ranges(shots.iter().map(|run| run.range), shots.len(), "shot runs")?;
         self.shots = Ok(shots);
+        Ok(self)
+    }
+
+    /// Add the visible pictures of gradual transitions: nonempty, sorted and
+    /// disjoint.
+    pub fn with_transitions(mut self, transitions: Vec<FrameRange>) -> Result<Self, EditError> {
+        check_ranges(
+            transitions.iter().copied(),
+            transitions.len(),
+            "transitions",
+        )?;
+        self.transitions = transitions;
         Ok(self)
     }
 
@@ -326,6 +342,23 @@ impl SpeechTimeline {
                     SpeechUnit::Shot => "the cursor is not in a shot of the Original",
                 })
             })?;
+        if object == SpeechObject::AroundShot {
+            // A transition straddling either edge (a dissolve whose boundary
+            // splits its blended pictures) adds the neighbouring shot's half
+            // too. A fade lies wholly inside the shot it fades, so it adds
+            // nothing to the shot beside it.
+            let mut range = (unit.start(), unit.end());
+            for transition in clip(&self.transitions, bounds) {
+                if transition.start() < unit.start() && unit.start() < transition.end() {
+                    range.0 = range.0.min(transition.start());
+                }
+                if transition.start() < unit.end() && unit.end() < transition.end() {
+                    range.1 = range.1.max(transition.end());
+                }
+            }
+            return FrameRange::new(range.0, range.1)
+                .map_err(|error| DocumentError::from(error).into());
+        }
         if !object.around() || object.unit() == SpeechUnit::Shot {
             return Ok(unit);
         }

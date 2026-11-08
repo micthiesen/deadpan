@@ -207,7 +207,7 @@ fn binding_name(binding: BindingId, fallback: &'static str) -> &'static str {
         InnerPause => "Select pause",
         AroundPause => "Select pause with surrounding speech",
         InnerShot => "Select shot",
-        AroundShot => "Select whole shot (same hard-cut boundaries)",
+        AroundShot => "Select shot with its dissolves",
         RepeatOperator => "Repeat a motion",
         RepeatRange => "Repeat selected range",
         GainUp => "Increase gain",
