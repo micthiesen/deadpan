@@ -3,7 +3,10 @@
 use super::*;
 use deadpan_audio::LimitedAudio;
 
-const PREPARE_TIMEOUT: Duration = Duration::from_secs(60);
+// A hang guard, not a performance bound: the work budgets bound each read,
+// and CI's virtual Macs run these matrix cases concurrently, where one read
+// took over 60 s (run 42434393483).
+const PREPARE_TIMEOUT: Duration = Duration::from_secs(600);
 
 #[derive(Clone, Copy, Debug)]
 enum Shape {
