@@ -179,11 +179,11 @@ fn speed(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.key(Key::J)?;
     d.settled()?;
-    let footer = scenarios::text_paint_visibility(d, "repeat: speed 2/1");
+    let footer = scenarios::text_paint_visibility(d, "repeat: speed 2×");
     d.check(
         "The footer names the repeatable speed change",
         !footer.is_empty(),
-        json!("repeat: speed 2/1× · preserve pitch"),
+        json!("repeat: speed 2× · preserve pitch"),
         json!({"painted":footer,"message":d.app().message}),
     )?;
     dot(d, "Dot repeats the speed change")?;

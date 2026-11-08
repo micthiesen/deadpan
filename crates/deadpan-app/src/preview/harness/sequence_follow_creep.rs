@@ -114,28 +114,37 @@ fn undo_to(d: &mut Driver<'_>, group: &NodeId, expected: &Option<Framing>) -> Re
     )
 }
 
-fn refused(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
+/// Ranged creep keeps following (since 2026-10-25): a Visual range writes one
+/// ranged Keep transition that a single Undo removes.
+fn ranged(
+    d: &mut Driver<'_>,
+    owner: &NodeId,
+    fixed: &Option<Framing>,
+    label: &str,
+) -> Result<(), String> {
     let revision = d.revision();
-    let document = d
-        .app()
-        .workspace
-        .as_ref()
-        .ok_or("No workspace")?
-        .document
-        .clone();
     d.command("creep from=1.1 to=2.2 curve=linear")?;
     idle(d)?;
+    let crept = framing(d, owner);
     d.check(
         label,
-        d.revision() == revision
-            && d.app()
-                .workspace
-                .as_ref()
-                .is_some_and(|workspace| workspace.document == document)
-            && d.app().error.is_some(),
-        json!({"revision":revision,"write":false}),
-        json!({"revision":d.revision(),"error":d.app().error}),
-    )
+        d.revision() != revision
+            && d.app().error.is_none()
+            && matches!(
+                &crept,
+                Some(Framing {
+                    value: FramingValue::Follow {
+                        scale_transition: Some(_),
+                        ..
+                    },
+                    ..
+                })
+            ),
+        json!({"write":true,"follow":"kept","transition":"ranged"}),
+        json!({"framing":crept,"error":d.app().error}),
+    )?;
+    d.key(Key::Escape)?;
+    undo_to(d, owner, fixed)
 }
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
@@ -249,11 +258,12 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
             && children.iter().all(|id| framing(d,id).is_none()), json!(fixed), json!(framing(d,&group)))?;
 
     d.chord(&[Key::V, Key::Num4, Key::L])?;
-    refused(
+    ranged(
         d,
-        "A Visual subrange refuses whole-Sequence Follow creep without a write",
+        &group,
+        &fixed,
+        "A Visual subrange applies a ranged Follow creep to the whole Sequence",
     )?;
-    d.key(Key::Escape)?;
     at(d, 0)?;
     let baseline = d
         .app()

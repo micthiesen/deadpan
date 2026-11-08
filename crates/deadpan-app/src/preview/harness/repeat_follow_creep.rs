@@ -118,6 +118,39 @@ fn undo_to(d: &mut Driver<'_>, repeat: &NodeId, expected: &Option<Framing>) -> R
     )
 }
 
+/// Ranged creep keeps following (since 2026-10-25): a Visual range writes one
+/// ranged Keep transition that a single Undo removes.
+fn ranged(
+    d: &mut Driver<'_>,
+    owner: &NodeId,
+    fixed: &Option<Framing>,
+    label: &str,
+) -> Result<(), String> {
+    let revision = d.revision();
+    d.command("creep from=1.1 to=2.2 curve=linear")?;
+    idle(d)?;
+    let crept = framing(d, owner);
+    d.check(
+        label,
+        d.revision() != revision
+            && d.app().error.is_none()
+            && matches!(
+                &crept,
+                Some(Framing {
+                    value: FramingValue::Follow {
+                        scale_transition: Some(_),
+                        ..
+                    },
+                    ..
+                })
+            ),
+        json!({"write":true,"follow":"kept","transition":"ranged"}),
+        json!({"framing":crept,"error":d.app().error}),
+    )?;
+    d.key(Key::Escape)?;
+    undo_to(d, owner, fixed)
+}
+
 fn refused(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
     let revision = d.revision();
     let document = d
@@ -318,11 +351,12 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         }
         keys.push(Key::L);
         d.chord(&keys)?;
-        refused(
+        ranged(
             d,
-            "A Visual range, including the complete Repeat extent, refuses Keep Follow creep",
+            &repeat,
+            &fixed,
+            "A Visual range, including the complete Repeat extent, applies ranged Keep creep",
         )?;
-        d.key(Key::Escape)?;
     }
     at(d, 0)?;
     edit(d, "wrap-repeat 2")?;

@@ -117,6 +117,39 @@ fn undo_to(d: &mut Driver<'_>, retime: &NodeId, expected: &Option<Framing>) -> R
     )
 }
 
+/// Ranged creep keeps following (since 2026-10-25): a Visual range writes one
+/// ranged Keep transition that a single Undo removes.
+fn ranged(
+    d: &mut Driver<'_>,
+    owner: &NodeId,
+    fixed: &Option<Framing>,
+    label: &str,
+) -> Result<(), String> {
+    let revision = d.revision();
+    d.command("creep from=1.1 to=2.2 curve=linear")?;
+    idle(d)?;
+    let crept = framing(d, owner);
+    d.check(
+        label,
+        d.revision() != revision
+            && d.app().error.is_none()
+            && matches!(
+                &crept,
+                Some(Framing {
+                    value: FramingValue::Follow {
+                        scale_transition: Some(_),
+                        ..
+                    },
+                    ..
+                })
+            ),
+        json!({"write":true,"follow":"kept","transition":"ranged"}),
+        json!({"framing":crept,"error":d.app().error}),
+    )?;
+    d.key(Key::Escape)?;
+    undo_to(d, owner, fixed)
+}
+
 fn refused(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
     let revision = d.revision();
     let selection = d.app().edit_range.semantic()?;
@@ -296,17 +329,18 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d.settled()?;
         let selection = d.app().edit_range.semantic()?;
         d.check(
-            "The refusal captures the intended full, interior or reverse Retime Visual range",
+            "The creep captures the intended full, interior or reverse Retime Visual range",
             matches!(&selection,Some(deadpan_core::SemanticVisualSelection::Time {anchor,head,..})
                 if anchor.0==i64::from(start)&&head.0==i64::from(end)),
             json!({"anchor":start,"head":end}),
             json!(selection),
         )?;
-        refused(
+        ranged(
             d,
-            "A full, interior or reverse Visual range refuses whole-Retime Keep creep",
+            &retime,
+            &fixed,
+            "A full, interior or reverse Visual range applies ranged whole-Retime Keep creep",
         )?;
-        d.key(Key::Escape)?;
     }
     at(d, 0)?;
     edit(d, "wrap-repeat 2")?;
