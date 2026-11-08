@@ -1,6 +1,7 @@
 //! Real authenticated socket requests against the native owning service.
 
 mod macros;
+mod moments;
 mod operations;
 mod preparation;
 mod takes;

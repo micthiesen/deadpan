@@ -22,6 +22,10 @@ impl Service {
                     operation: project::takes::Operation::List,
                     ..
                 })
+                | ProjectRequest::Moments(project::moments::Request {
+                    operation: project::moments::Operation::List,
+                    ..
+                })
                 | ProjectRequest::Backup(
                     project::backups::Request::LoadSettings { .. }
                         | project::backups::Request::SaveSettings { .. }
@@ -74,6 +78,13 @@ impl Service {
             }
             ProjectRequest::Takes(request) => {
                 self.takes = Some(project::takes::Update {
+                    ticket: request.ticket,
+                    session: request.session,
+                    result: Err(reason.clone()),
+                });
+            }
+            ProjectRequest::Moments(request) => {
+                self.moments = Some(project::moments::Update {
                     ticket: request.ticket,
                     session: request.session,
                     result: Err(reason.clone()),

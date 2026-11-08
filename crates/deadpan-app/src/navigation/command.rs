@@ -69,6 +69,19 @@ pub enum Entry {
     Help,
     Renders,
     Takes,
+    /// `:moments [filter]`: focus the named-moment filter in the Original rail.
+    Moments(Option<String>),
+    /// `:moment NAME [tags=a,b]`: name the selected Original moment.
+    MomentSave {
+        name: deadpan_store::moments::MomentName,
+        tags: deadpan_store::moments::MomentTags,
+    },
+    /// `:moment-rename NAME`: rename the selected named moment.
+    MomentRename(deadpan_store::moments::MomentName),
+    /// `:moment-tags a,b` or `none`: replace the selected moment's tags.
+    MomentTags(deadpan_store::moments::MomentTags),
+    /// `:moment-delete`: remove the selected moment's name and tags.
+    MomentDelete,
     /// `:relink`: locate a missing Original by choosing its file.
     Relink,
     /// `:sound-relink`: locate the catalog sound captured on command entry.
@@ -364,6 +377,9 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     }
     if verb.eq_ignore_ascii_case("caption") {
         return super::caption::parse(&input[verb.len()..]).map(Entry::Caption);
+    }
+    if verb.to_ascii_lowercase().starts_with("moment") {
+        return moment(&verb.to_ascii_lowercase(), &input[verb.len()..]);
     }
     let verb = verb.to_ascii_lowercase();
     if verb == "scope" {
@@ -1120,6 +1136,69 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         return Err("This command takes no arguments.".into());
     }
     Ok(Entry::Action(action))
+}
+
+const MOMENT_TAGS_USAGE: &str =
+    "Give tags as tags=reaction,breath: up to 16 lowercase words without spaces.";
+
+/// Named Original moments. Names keep their case and single inner spaces.
+fn moment(verb: &str, rest: &str) -> Result<Entry, String> {
+    use deadpan_store::moments::{MomentName, MomentTags};
+    let words: Vec<&str> = rest.split_whitespace().collect();
+    let name = |words: &[&str], usage: &str| {
+        let text = words.join(" ");
+        if text.is_empty() {
+            return Err(usage.to_owned());
+        }
+        MomentName::new(text).map_err(|_| {
+            "A moment name is 1–128 bytes of text without line breaks or control characters."
+                .to_owned()
+        })
+    };
+    let tags = |list: &str| {
+        MomentTags::from_input(list.split(',').filter(|tag| !tag.trim().is_empty()))
+            .map_err(|_| MOMENT_TAGS_USAGE.to_owned())
+    };
+    match verb {
+        "moments" => Ok(Entry::Moments((!words.is_empty()).then(|| words.join(" ")))),
+        "moment" => {
+            let mut chosen = None;
+            let mut rest = Vec::new();
+            for word in words {
+                match word.split_once('=') {
+                    Some((key, list)) if key.eq_ignore_ascii_case("tags") => {
+                        if chosen.is_some() {
+                            return Err("Give tags= once, separated by commas.".into());
+                        }
+                        chosen = Some(tags(list)?);
+                    }
+                    _ => rest.push(word),
+                }
+            }
+            Ok(Entry::MomentSave {
+                name: name(
+                    &rest,
+                    "Name the selected Original moment: :moment Big laugh tags=reaction",
+                )?,
+                tags: chosen.unwrap_or_default(),
+            })
+        }
+        "moment-rename" => {
+            name(&words, "Give the new name: :moment-rename Big laugh").map(Entry::MomentRename)
+        }
+        "moment-tags" => match words.as_slice() {
+            ["none"] => Ok(Entry::MomentTags(MomentTags::default())),
+            [list] => tags(list.strip_prefix("tags=").unwrap_or(list)).map(Entry::MomentTags),
+            _ => {
+                Err("Use :moment-tags reaction,breath, or :moment-tags none to clear them.".into())
+            }
+        },
+        "moment-delete" if words.is_empty() => Ok(Entry::MomentDelete),
+        "moment-delete" => Err("This command takes no arguments.".into()),
+        _ => Err(format!(
+            "Unknown command: {verb}. Use :help for available commands."
+        )),
+    }
 }
 
 const ROLE_REPEAT_USAGE: &str = "Use :repeat 3 role=audio or :repeat 3 role=video over a Visual range, which may span beats; add overflow=trim to cut repeats at the last beat's end, or extend=hold to hold its last picture for repeated sound.";
@@ -2313,5 +2392,59 @@ mod tests {
             .unwrap()
         );
         assert!(parse(&oversized).is_err());
+    }
+}
+
+#[cfg(test)]
+mod moment_tests {
+    use super::*;
+    use deadpan_store::moments::{MomentName, MomentTags};
+
+    #[test]
+    fn moment_commands_keep_names_and_normalize_tags() {
+        assert_eq!(
+            parse(":moment  Big   laugh tags=Reaction,breath,reaction"),
+            Ok(Entry::MomentSave {
+                name: MomentName::new("Big laugh").unwrap(),
+                tags: MomentTags::from_input(["breath", "reaction"]).unwrap(),
+            })
+        );
+        assert_eq!(
+            parse(":moment Stare"),
+            Ok(Entry::MomentSave {
+                name: MomentName::new("Stare").unwrap(),
+                tags: MomentTags::default(),
+            })
+        );
+        assert!(
+            parse(":moment tags=reaction").is_err(),
+            "a name is required"
+        );
+        assert!(parse(":moment Stare tags=a tags=b").is_err());
+        assert!(parse(":moment Stare tags=a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q").is_err());
+        assert_eq!(
+            parse(":moment-rename Long stare"),
+            Ok(Entry::MomentRename(MomentName::new("Long stare").unwrap()))
+        );
+        assert!(parse(":moment-rename").is_err());
+        assert_eq!(
+            parse(":moment-tags detail,Detail"),
+            Ok(Entry::MomentTags(
+                MomentTags::from_input(["detail"]).unwrap()
+            ))
+        );
+        assert_eq!(
+            parse(":moment-tags none"),
+            Ok(Entry::MomentTags(MomentTags::default()))
+        );
+        assert!(parse(":moment-tags").is_err());
+        assert!(parse(":moment-tags a b").is_err());
+        assert_eq!(parse(":moment-delete"), Ok(Entry::MomentDelete));
+        assert!(parse(":moment-delete now").is_err());
+        assert_eq!(parse(":moments"), Ok(Entry::Moments(None)));
+        assert_eq!(
+            parse(":moments tag:reaction laugh"),
+            Ok(Entry::Moments(Some("tag:reaction laugh".into())))
+        );
     }
 }

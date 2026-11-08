@@ -4,6 +4,8 @@ use std::path::PathBuf;
 pub enum StoreError {
     #[error("Named takes are invalid: {0}")]
     Takes(String),
+    #[error("Named moments are invalid: {0}")]
+    Moments(String),
     #[error("Project registers are invalid: {0}")]
     Registers(String),
     #[error("Publication journal is invalid: {0}")]
@@ -135,6 +137,7 @@ impl StoreError {
     pub fn code(&self) -> &'static str {
         match self {
             Self::Takes(_) => "TakesInvalid",
+            Self::Moments(_) => "MomentsInvalid",
             Self::Registers(_) => "RegistersInvalid",
             Self::Publication(_) => "PublicationInvalid",
             Self::RenderJob(_) => "RenderJobInvalid",

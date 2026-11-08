@@ -30,7 +30,7 @@ pub(super) struct StorageWatch {
 type SaveMarks = (Option<usize>, [Option<u64>; 4], Option<Option<u64>>);
 
 impl StorageWatch {
-    /// A changed take catalog is a durable save without a document revision.
+    /// A changed take or moment catalog is a durable save without a document revision.
     /// Reads, dry runs and no-ops must never acknowledge a storage failure.
     pub(super) fn record_take_save(&mut self) {
         self.take_saved = true;

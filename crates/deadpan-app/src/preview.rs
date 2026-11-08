@@ -28,6 +28,7 @@ mod ai_pause;
 mod backups;
 mod camera;
 mod damaged;
+mod moments;
 mod takes;
 #[cfg(test)]
 pub(crate) use camera::dispatch_debug as camera_dispatch_debug;
@@ -88,7 +89,13 @@ const SEARCH_ID: &str = "source-search";
 const COMMAND_ID: &str = "command-input";
 const TRANSCRIPT_SEARCH_ID: &str = "transcript-search";
 /// Focused text fields that own keyboard input instead of editor bindings.
-const TEXT_INPUT_IDS: [&str; 4] = [SEARCH_ID, COMMAND_ID, TRANSCRIPT_SEARCH_ID, youtube::URL_ID];
+const TEXT_INPUT_IDS: [&str; 5] = [
+    SEARCH_ID,
+    COMMAND_ID,
+    TRANSCRIPT_SEARCH_ID,
+    youtube::URL_ID,
+    moments::FILTER_ID,
+];
 const MAX_TARGET_PIXELS: f64 = 1920.0 * 1080.0;
 const SOURCE_INSERT_HINT: &str = "The Original stays intact. Switch to Your edit (:sequence) to reshape it, or reuse the full Original with :insert.";
 
@@ -294,6 +301,8 @@ pub struct DeadpanApp {
     /// `:storage`: project and cache usage, cleanup and portable copies.
     storage: storage::State,
     takes: takes::State,
+    /// Named Original moments in the Original rail.
+    moments: moments::State,
     damaged: damaged::State,
     /// `:jobs`: background jobs, queued state, cancel and interrupted AI.
     jobs: jobs::State,
@@ -493,6 +502,7 @@ impl DeadpanApp {
             diagnostics: diagnostics::State::default(),
             storage: storage::State::default(),
             takes: takes::State::default(),
+            moments: moments::State::default(),
             damaged: damaged::State::default(),
             jobs: jobs::State::default(),
             gag_presets: crate::gag_presets::GagPresets::native(),
@@ -990,6 +1000,7 @@ impl DeadpanApp {
             self.render_job = update.render;
             self.receive_render_history(update.render_history);
             self.receive_takes(update.takes, update.take_catalog, update.error.as_deref());
+            self.receive_moments(update.moments, update.moment_catalog);
             self.receive_damaged(update.damaged);
             self.receive_recovery(
                 update.opened.take(),
@@ -1865,6 +1876,7 @@ impl DeadpanApp {
         self.ai.command = Some(self.ai_capture());
         self.targets.command = Some(self.capture_track());
         self.zoom_command_target = Some(self.capture_zoom());
+        self.moments.command = Some(self.capture_moment_command());
         self.sound_command_target = self.capture_sound_command(&command);
         self.cancel_repeats("command entry was opened");
         self.pause_playback();
@@ -2804,6 +2816,22 @@ impl DeadpanApp {
                     self.bindings.clear();
                     continue; // The focused volume slider owns its arrows.
                 }
+                // The moment filter keeps typing focus while ↑/↓ choose a
+                // moment and Enter selects it in the Original.
+                if matches!(
+                    key,
+                    egui::Key::ArrowUp | egui::Key::ArrowDown | egui::Key::Enter
+                ) && !ime
+                    && modifiers == egui::Modifiers::NONE
+                    && context.memory(|m| m.has_focus(egui::Id::new(moments::FILTER_ID)))
+                    && self.moment_filter_key(key, context)
+                {
+                    self.bindings.clear();
+                    context.input_mut(|input| {
+                        input.consume_key(modifiers, key);
+                    });
+                    continue;
+                }
                 // Find words behaves as a find bar: Enter and Shift+Enter step
                 // through matches and keep the field focused.
                 if key == egui::Key::Enter
@@ -3428,6 +3456,13 @@ impl DeadpanApp {
             }
             Ok(navigation::command::Entry::Renders) => self.render.history.requested = true,
             Ok(navigation::command::Entry::Takes) => self.takes.requested = true,
+            Ok(navigation::command::Entry::Moments(filter)) => self.focus_moments(filter, context),
+            Ok(navigation::command::Entry::MomentSave { name, tags }) => {
+                self.save_moment(name, tags)
+            }
+            Ok(navigation::command::Entry::MomentRename(name)) => self.rename_moment(name),
+            Ok(navigation::command::Entry::MomentTags(tags)) => self.retag_moment(tags),
+            Ok(navigation::command::Entry::MomentDelete) => self.delete_moment(),
             Ok(navigation::command::Entry::Models) => self.open_models(None, context),
             Ok(navigation::command::Entry::Diagnostics) => self.open_diagnostics(context),
             Ok(navigation::command::Entry::Storage) => self.open_storage(context),
@@ -4418,6 +4453,7 @@ impl DeadpanApp {
                         if ui.add(style::row_action(ui, "Browse", ":source")).clicked()
                             && let Some(asset) = self.workspace.as_ref().and_then(|workspace| original_asset(workspace)).cloned() { self.select_source(asset); }
                         if ui.add_enabled(!self.service.is_busy(), style::row_action(ui, "Reuse all", self.editor_key(EditorKey::Insert))).on_hover_text(format!("Append the entire Original after the selected beat in the current group. Select a range in Original with {}, move with {}, then copy with {}.", self.editor_key(EditorKey::Visual), self.editor_pair(EditorKey::FramePrevious, EditorKey::FrameNext, "/"), self.bindings.key_label(EditorKey::Copy))).clicked() { self.insert(); }
+                        self.moments_section(ui);
                     } else if self.workspace.is_none() {
                         ui.weak("One video. Start intact, then make it strange.");
                         ui.add_space(8.0);
@@ -5952,6 +5988,7 @@ impl eframe::App for DeadpanApp {
                 self.dispatch_render_history(&context);
                 self.dispatch_takes(&context);
             }
+            self.dispatch_moments();
             self.dispatch_ai_audition();
             self.reconcile_audio_warming(&context);
             self.schedule_playback_picture();

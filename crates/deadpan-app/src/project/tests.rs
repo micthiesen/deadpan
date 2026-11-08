@@ -23,6 +23,7 @@ mod jobs;
 mod macros;
 mod marks;
 mod moment;
+mod moments;
 mod pause;
 mod readonly;
 mod recovery;

@@ -537,6 +537,19 @@ impl Service {
                 }
                 "Updated named takes from the command line."
             }
+            Short::Moment { .. } => {
+                if output["outcome"]["changed"] != true {
+                    return;
+                }
+                self.storage_watch.record_take_save();
+                match serde_json::from_value(output["outcome"]["catalog"].clone()) {
+                    Ok(catalog) => self.moment_catalog = Some(catalog),
+                    Err(error) => self.set_error(Some(format!(
+                        "Moment saved, but its catalog reply could not be read: {error}"
+                    ))),
+                }
+                "Updated named moments from the command line."
+            }
             Short::GenerationVariant {
                 request,
                 attempt,

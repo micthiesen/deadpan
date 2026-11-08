@@ -92,6 +92,8 @@ and write nothing. Headless requests carry an explicit `parent`, `cursor`,
 | `,i`, `:insert` (reuse whole Original) | `project insert-original <p> --parent <id> --index <N> --expected <rev> [--dry-run]`: the app's registration (same content, asset, label and qualified streams, fresh node) admitted through `register-source`'s path, which reuses the qualification; live `Prepare` when open | R, D | Equivalent |
 | `:recipe-save a` (`yank` around group) / `:recipe a` (`paste`) | `yank` with `around_group` / `paste` instructions | R, D | Equivalent |
 | `:recipe-inspect a` | `macro inspect <p> --register a` returns the edited register's `outline` | - | Equivalent (read) |
+| `:moment NAME [tags=…]`, `:moment-rename`, `:moment-tags`, `:moment-delete` ([named moments](MOMENTS.md)) | `project moment <p> --json <request> [--dry-run]` with `create`, `rename`, `retag` or `delete`; live `Moment` when open | R (catalog version), D | Equivalent |
+| `:moments`, the MOMENTS list and filter; Enter selects a moment in Original | `project moments <p>` lists the same catalog; filtering and selecting are navigation and write nothing | - | Equivalent (read) |
 
 ## Structural edits
 
@@ -272,7 +274,7 @@ and write nothing. Headless requests carry an explicit `parent`, `cursor`,
 
 ## Counts
 
-Counting each row once (118 rows): Equivalent 92, GUI-only 26, Partial 0,
+Counting each row once (120 rows): Equivalent 94, GUI-only 26, Partial 0,
 Gap 0. Navigation rows whose motions also exist as instructions count as
 GUI-only. The [command reference](COMMANDS.md) carries the same status per
 registry action.

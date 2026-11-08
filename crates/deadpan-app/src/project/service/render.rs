@@ -82,6 +82,10 @@ impl Service {
             self.takes_command(request);
             return true;
         }
+        if let ProjectRequest::Moments(request) = request {
+            self.moments_command(request);
+            return true;
+        }
         if let ProjectRequest::RenderHistory(request) = request {
             self.render_history_command(request);
             return true;

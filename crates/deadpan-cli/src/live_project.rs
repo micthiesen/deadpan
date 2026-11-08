@@ -113,6 +113,13 @@ pub enum ShortOperation {
         request: Box<deadpan_store::takes::Request>,
         dry_run: bool,
     },
+    /// Named Original moments, observed at one catalog version.
+    #[serde(deserialize_with = "deserialize_empty")]
+    MomentCatalog,
+    Moment {
+        request: Box<deadpan_store::moments::Request>,
+        dry_run: bool,
+    },
     AdoptPrimaryGeometry {
         adoption: PrimaryGeometryAdoption,
         dry_run: bool,
@@ -192,6 +199,8 @@ impl ShortOperation {
                 Self::Edit { dry_run: true, .. }
                     | Self::TakeCatalog
                     | Self::Take { dry_run: true, .. }
+                    | Self::MomentCatalog
+                    | Self::Moment { dry_run: true, .. }
                     | Self::GenerationPreparations { .. }
                     | Self::GenerationPreparation { .. }
                     | Self::History { dry_run: true, .. }
@@ -609,6 +618,28 @@ pub fn execute_short(
             (
                 serde_json::json!({"protocol":1,"committed":!dry_run,"outcome":outcome}),
                 committed,
+            )
+        }
+        ShortOperation::MomentCatalog => (
+            serde_json::json!({"protocol":1,"moments":store.moment_catalog().map_err(LiveError::store)?}),
+            None,
+        ),
+        ShortOperation::Moment { request, dry_run } => {
+            if &request.project_id != project {
+                return Err(LiveError::new(
+                    "HostProjectChanged",
+                    "Moment request and host project identities differ",
+                ));
+            }
+            let outcome = if *dry_run {
+                store.preview_moment(request)
+            } else {
+                store.apply_moment(request)
+            }
+            .map_err(LiveError::store)?;
+            (
+                serde_json::json!({"protocol":1,"committed":!dry_run,"outcome":outcome}),
+                None,
             )
         }
         ShortOperation::AdoptPrimaryGeometry { adoption, dry_run } => {

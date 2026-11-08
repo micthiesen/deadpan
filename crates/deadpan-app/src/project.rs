@@ -25,6 +25,7 @@ pub mod gain;
 pub mod generation;
 pub mod macros;
 pub mod marks;
+pub mod moments;
 mod pause;
 pub mod refinement;
 pub mod registers;
@@ -519,6 +520,9 @@ pub struct ProjectUpdate {
     pub render_history: Option<render_history::Update>,
     pub takes: Option<takes::Update>,
     pub take_catalog: Option<deadpan_store::takes::TakeCatalog>,
+    /// Named Original moments, independent of authored revisions.
+    pub moments: Option<moments::Update>,
+    pub moment_catalog: Option<deadpan_store::moments::MomentCatalog>,
     pub damaged: Option<damaged::Update>,
     /// Background transcript saves report here, never through the editor's
     /// command error, which the next dispatch clears.
@@ -1106,6 +1110,7 @@ pub enum ProjectRequest {
     Render(ProjectRenderRequest),
     RenderHistory(render_history::Request),
     Takes(takes::Request),
+    Moments(moments::Request),
     Damaged(damaged::Request),
     /// Source first: native projects are always allocated in Documents/Deadpan.
     CreateFromSource {

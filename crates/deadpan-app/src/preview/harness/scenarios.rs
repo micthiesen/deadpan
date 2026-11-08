@@ -85,6 +85,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "storage" => super::storage::run(d),
         "backups" => super::backups::run(d),
         "takes" => super::takes::run(d),
+        "moments" => super::moments::run(d),
         "damaged-recovery" => super::damaged::run(d),
         "jobs" => super::jobs::run(d),
         "full-session" => super::full_session::run(d),

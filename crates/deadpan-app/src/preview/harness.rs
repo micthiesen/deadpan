@@ -46,6 +46,7 @@ mod macros;
 mod marks;
 mod model_packs;
 mod moment;
+mod moments;
 mod nested_pause;
 mod original_layout;
 mod original_playback;

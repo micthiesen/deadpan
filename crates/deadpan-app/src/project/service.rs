@@ -39,6 +39,7 @@ mod headless;
 mod macros;
 mod marks;
 mod moment;
+mod moments;
 mod readonly;
 mod recovery;
 mod registers;
@@ -133,6 +134,8 @@ struct Service {
     render_history: Option<super::render_history::Update>,
     takes: Option<super::takes::Update>,
     take_catalog: Option<deadpan_store::takes::TakeCatalog>,
+    moments: Option<super::moments::Update>,
+    moment_catalog: Option<deadpan_store::moments::MomentCatalog>,
     damaged: damaged::State,
     pending_session_change: Option<render::PendingSessionChange>,
     /// The last head revision checked for a due keyframe while idle.
@@ -234,6 +237,8 @@ pub(super) fn run(
         render_history: None,
         takes: None,
         take_catalog: None,
+        moments: None,
+        moment_catalog: None,
         damaged: damaged::State::default(),
         pending_session_change: None,
         keyframe_checked: None,
@@ -463,6 +468,8 @@ impl Service {
             render_history: self.render_history.clone(),
             takes: self.takes.clone(),
             take_catalog: self.take_catalog.clone(),
+            moments: self.moments.clone(),
+            moment_catalog: self.moment_catalog.clone(),
             damaged: self.damaged.update.clone(),
             transcript_save: self.transcript_save.clone(),
             activity_save: self.activity_save.clone(),
@@ -531,6 +538,10 @@ impl Service {
         let request = match request {
             ProjectRequest::Takes(request) => {
                 self.takes_command(request);
+                return Ok(());
+            }
+            ProjectRequest::Moments(request) => {
+                self.moments_command(request);
                 return Ok(());
             }
             ProjectRequest::Marks(request) => {
@@ -678,6 +689,7 @@ impl Service {
                 interpretation,
             } => self.interpret_source(expected_session, expected_revision, asset, interpretation),
             ProjectRequest::Takes(_) => unreachable!("takes use independent feedback"),
+            ProjectRequest::Moments(_) => unreachable!("moments use independent feedback"),
             ProjectRequest::Damaged(_) => {
                 unreachable!("damaged recovery uses independent feedback")
             }

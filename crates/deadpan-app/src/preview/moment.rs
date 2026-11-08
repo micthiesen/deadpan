@@ -90,6 +90,12 @@ impl Selection {
         self.bounds = None;
     }
 
+    /// A finished selection of exactly `range`, as a named moment recalls it.
+    pub(super) fn select(&mut self, range: Range<u64>) {
+        self.bounds = Some((range.start, range.end));
+        self.active = false;
+    }
+
     fn copy(&mut self) -> Result<Copied, String> {
         let identity = self
             .identity

@@ -68,6 +68,7 @@ pub use analysis_corrections::{
     CorrectionChange, CorrectionsKey, MAX_CORRECTION_UNDO, MAX_CORRECTIONS_JSON_BYTES,
     StoredCorrections, UnreadableCorrection,
 };
+pub mod moments;
 mod speech_activity;
 pub mod takes;
 pub use speech_activity::{MAX_SPEECH_ACTIVITY, SpeechActivityKey};
@@ -959,6 +960,7 @@ impl ProjectStore {
         validation::validate_history(&checkpoint, validation::HistoryMode::Full)?;
         registers::validate_store(&checkpoint)?;
         takes::validate_store(&checkpoint)?;
+        moments::validate_store(&checkpoint)?;
         drop(checkpoint);
         temporary.as_file().sync_all()?;
         let (_, path) = temporary.keep().map_err(|error| error.error)?;
@@ -1023,6 +1025,7 @@ fn validate_database(
     compound::check_stored_sizes(&transaction)?;
     registers::check_stored_sizes(&transaction)?;
     takes::check_stored_sizes(&transaction)?;
+    moments::check_stored_sizes(&transaction)?;
     generation::check_stored_sizes(&transaction)?;
     generation_preparations::check_stored_sizes(&transaction)?;
     generation_intents::check_sizes(&transaction)?;
@@ -1073,6 +1076,7 @@ fn validate_database(
     single_source::validate_store(&transaction, audit.verified)?;
     registers::validate_store(&transaction)?;
     takes::validate_store(&transaction)?;
+    moments::validate_store(&transaction)?;
     Ok(audit)
 }
 

@@ -127,6 +127,7 @@ pub(crate) fn carry_forward(live: &Connection, copy: &mut Connection) -> Result<
         }
     }
     crate::takes::carry_forward(live, &transaction)?;
+    crate::moments::carry_forward(live, &transaction)?;
     transaction.commit()?;
     Ok(())
 }
