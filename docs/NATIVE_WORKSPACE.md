@@ -435,7 +435,8 @@ share the engine's one Edit-waveform slot and take precedence while open.
 `:timeline detail` adds a lane between the beats and the waveform with each
 beat's attachments at their exact frames: cutaways (and video-only removals),
 captions, gain envelopes, mute ranges, and every placed root sound, stacked in
-up to three rows. `:timeline story` returns to the cards. Evidence: the
-`split-edits` replay ("Timing view" and "Detail view" frames and their four
-checks). Attachments of beats nested inside a shown group's children, and a
-single key to step between the scales, remain open.
+up to three rows. Beats nested in ordinary groups contribute theirs at their
+own starts; Repeat and speed-change contents keep their own clocks and are
+not drawn there. `:timeline story` returns to the cards. Evidence: the
+`split-edits` replay ("Timing view" and "Detail view" frames and their five
+checks). A single key to step between the scales remains open.

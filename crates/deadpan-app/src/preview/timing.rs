@@ -45,11 +45,36 @@ pub(super) fn attachments(
     beats: &[BeatRow],
 ) -> Vec<Attachment> {
     let mut found = Vec::new();
-    for beat in beats {
-        let Some(node) = document.nodes().get(&beat.id) else {
+    // Beats and, through ordinary groups, every nested child at its own
+    // start; Repeat and speed-change contents have their own clocks and stay
+    // out of this lane.
+    let durations = document.durations_shared().ok();
+    let mut visit: Vec<(deadpan_core::NodeId, u64)> = beats
+        .iter()
+        .map(|beat| (beat.id.clone(), beat.start))
+        .collect();
+    let mut index = 0;
+    while index < visit.len() {
+        let (id, start) = visit[index].clone();
+        index += 1;
+        if let (Some(durations), Some(deadpan_core::NodeKind::Sequence { children })) = (
+            durations.as_ref(),
+            document.nodes().get(&id).map(|node| &node.kind),
+        ) {
+            let mut at = start;
+            for child in children {
+                visit.push((child.clone(), at));
+                at += durations
+                    .get(child)
+                    .map_or(0, |duration| u64::try_from(duration.frames()).unwrap_or(0));
+            }
+        }
+    }
+    for (id, start) in &visit {
+        let Some(node) = document.nodes().get(id) else {
             continue;
         };
-        let at = beat.start as f64;
+        let at = *start as f64;
         if let Some(clip) = node.audio_treatments.clip_gain() {
             for mute in clip.mute_ranges() {
                 found.push(Attachment {
@@ -69,7 +94,7 @@ pub(super) fn attachments(
                 });
             }
         }
-        if let Some((host, offset)) = deadpan_core::cutaway_host(document, &beat.id)
+        if let Some((host, offset)) = deadpan_core::cutaway_host(document, id)
             && let Some(host) = document.nodes().get(&host)
         {
             let local = |frame: i64| at + (frame - offset) as f64;

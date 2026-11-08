@@ -588,6 +588,30 @@ fn timing_view(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"label":label}),
     )?;
     d.capture("Detail view")?;
+    // Inside an ordinary group the nested beat's mute still shows.
+    d.key(Key::Escape)?;
+    d.chord(&[Key::G, Key::G])?;
+    let before = d.revision();
+    d.command("group name=\"Muted part\"")?;
+    d.changed(&before)?;
+    d.settled()?;
+    let grouped = d
+        .harness
+        .root()
+        .children_recursive()
+        .find_map(|node| {
+            node.accesskit_node()
+                .label()
+                .filter(|label| label.starts_with("Detail view"))
+        })
+        .unwrap_or_default();
+    d.check(
+        "The detail view shows attachments of beats nested in an ordinary group",
+        grouped.contains("1 attachments") && grouped.contains("2 beats"),
+        json!({"beats":2,"attachments":1}),
+        json!({"label":grouped}),
+    )?;
+    undo(d)?;
     undo(d)?;
     d.command("timeline story")?;
     d.settled()?;
