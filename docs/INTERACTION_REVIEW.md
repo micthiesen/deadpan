@@ -222,9 +222,11 @@ previous code:
 - **Populated-sound compact Your edit** uses the compact viewer: 145 to 201
   points.
 
-Still open: the sound event inspector's fixed 104-point label column makes
-long values wrap at 960 points, and `audio-warming` still times out waiting
-for its real PCM horizon on both the baseline and final binaries.
+Both items left open here were closed on 2026-11-07. Inspector label columns
+now yield to about a third of a narrow panel (at least 56 points), so the
+sound event inspector's Start, Duration and Gain values stay on one line at
+960 points (`sound-placement` frame "Placed sounds and exact inspector at
+960x640"). `audio-warming` passes (25 checks) in the full replay run.
 
 ## Keys palette (2026-10-15)
 

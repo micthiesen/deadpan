@@ -165,6 +165,10 @@ pub(super) fn value_grid<'a>(
 /// One read-only label/value row with a fixed label column. Numbers keep
 /// monospace digits; words use the body face, which fits narrow panes.
 pub(super) fn value_row(ui: &mut egui::Ui, label: &str, value: &str, column: f32) {
+    // A narrow panel keeps the value its width: the label column (whose text
+    // truncates) yields to about a third of the row, and stays shared by
+    // every row in the panel, so rows remain aligned.
+    let column = column.min((ui.available_width() * 0.32).max(56.0));
     ui.horizontal_top(|ui| {
         ui.spacing_mut().item_spacing.x = 12.0;
         ui.allocate_ui_with_layout(
