@@ -341,12 +341,19 @@ fn a_full_cache_volume_fails_proxy_builds_truthfully_and_recovers() -> Result {
             .into());
         }
     });
+    // With a 48 KiB reserve either side can meet the full volume first: the
+    // worker's movie write, or the host's own write on the shared output
+    // descriptor when APFS releases space late under load. Both must report
+    // the volume as full; the checks below are the truthful outcome.
     assert!(
-        matches!(
-            &error,
-            ProxyBuildError::Conversion(ConversionError::Worker { .. })
-        ),
-        "the worker's own write is refused: {error}"
+        match &error {
+            ProxyBuildError::Conversion(ConversionError::Worker { .. }) => true,
+            ProxyBuildError::Conversion(ConversionError::Io(io)) => {
+                io.kind() == std::io::ErrorKind::StorageFull
+            }
+            _ => false,
+        },
+        "the write on the full volume is refused: {error}"
     );
     assert!(error.is_disk_full(), "{error}");
     assert!(error.is_environmental(), "never remembered: {error}");

@@ -42,3 +42,13 @@ slow-timeout = { period = "60s", terminate-after = 40 }
 priority = 90
 test-group = "split-matrix"
 threads-required = 6
+
+# Proxy builds hold a VideoToolbox session; the test lock serialises them
+# with each other but not with the encoded-render tests in other binaries.
+# Under that contention VideoToolbox has once returned a picture the proxy
+# verifier correctly refuses ("not an in-order intra picture", 2026-11-08).
+# One retry keeps that hardware contention from failing a valid run; a
+# second failure is a real result.
+[[profile.default.overrides]]
+filter = "binary(proxy_resume)"
+retries = 1
