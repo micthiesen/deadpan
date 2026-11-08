@@ -923,6 +923,7 @@ where
                         | SemanticInstruction::SetHoldDuration { .. }
                         | SemanticInstruction::SetHoldAudio { .. }
                         | SemanticInstruction::SetRoomTone { .. }
+                        | SemanticInstruction::Retime { .. }
                         | SemanticInstruction::Call { .. }
                 )
                 && !matches!(
@@ -931,7 +932,7 @@ where
                 )
             {
                 return Err(invalid(
-                    "single-play macro authority supports only Zoom, whole-owner gain, mute, saturation, balance and EQ, freeze or black pause intent, Hold duration or sound and named calls",
+                    "single-play macro authority supports only Zoom, whole-owner gain, mute, saturation, balance and EQ, speed changes, freeze or black pause intent, Hold duration or sound and named calls",
                 ));
             }
             if matches!(

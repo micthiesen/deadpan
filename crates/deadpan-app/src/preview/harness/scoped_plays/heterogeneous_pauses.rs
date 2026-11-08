@@ -123,7 +123,7 @@ fn exercise(d: &mut Driver<'_>, path: &Path) -> Result<(), String> {
         d,
         "2 captured pauses · shown: outer · play 1/2 › inner · play 1/2",
     )?;
-    painted(d, "Insert pause")?;
+    painted(d, "Insert pause  ,h")?;
     scenarios::footer_anchored(
         d,
         "Independently captured pause scopes keep the compact footer",

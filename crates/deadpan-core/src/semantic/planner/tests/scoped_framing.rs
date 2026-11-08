@@ -1249,3 +1249,64 @@ fn scoped_context_wire_is_strict_and_never_part_of_saved_zoom_intent() {
     assert!(!text.contains("presentation"));
     assert!(!text.contains("iteration"));
 }
+
+#[test]
+fn a_speed_change_in_one_play_isolates_only_that_play_and_can_be_updated_there() {
+    let document = fixture();
+    let retime = |speed: ExactRatio, wrap: bool| SemanticInstruction::Retime {
+        speed,
+        pitch: crate::PitchPolicy::FollowSpeed,
+        wrap,
+    };
+    // Outer play 1, inner play 1: "a" (4 frames) at double speed is 2 frames.
+    let wrapped = resolve(
+        &document,
+        &entry(),
+        vec![retime(ExactRatio::integer(2), false)],
+        &BTreeMap::new(),
+        |request| allocator("speed", request),
+    )
+    .unwrap();
+    let total = |document: &ProjectDocument| document.duration().unwrap().frames();
+    assert_eq!(total(&wrapped.document), total(&document) - 2);
+    let scoped = wrapped.context.scoped.clone().unwrap();
+    let wrapper = scoped.target.node.clone();
+    assert!(matches!(
+        &wrapped.document.nodes()[&wrapper].kind,
+        NodeKind::Retime { duration, .. } if duration.frames() == 2
+    ));
+    // The shared "a" and every other play are untouched.
+    assert_eq!(
+        wrapped.document.nodes()[&node("a")],
+        document.nodes()[&node("a")]
+    );
+    let replay =
+        crate::replay_compound::<EditError>(&document, wrapped.request.as_ref().unwrap(), |_| {
+            Ok(())
+        })
+        .unwrap();
+    assert_eq!(replay.document, wrapped.document);
+    assert_eq!(
+        replay.edit.inverse.apply(&replay.document).unwrap(),
+        document
+    );
+
+    // The Retime is now this play's own: a new speed updates it in place.
+    let updated = resolve(
+        &wrapped.document,
+        &wrapped.context,
+        vec![retime(ExactRatio::new(4, 3).unwrap(), false)],
+        &BTreeMap::new(),
+        |request| allocator("again", request),
+    )
+    .unwrap();
+    assert_eq!(
+        updated.context.scoped.as_ref().unwrap().target.node,
+        wrapper
+    );
+    assert!(matches!(
+        &updated.document.nodes()[&wrapper].kind,
+        NodeKind::Retime { duration, .. } if duration.frames() == 3
+    ));
+    assert_eq!(total(&updated.document), total(&document) - 1);
+}

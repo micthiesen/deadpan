@@ -101,7 +101,7 @@ fn restore_inspector_scroll(d: &mut Driver<'_>) -> Result<(), String> {
     settled(d)?;
     scroll_inspector_top(d, "Nested beat inspector pane")?;
     resize(d, 960.0, 640.0)?;
-    painted(d, "Insert pause")?;
+    painted(d, "Insert pause  ,h")?;
     d.key(Key::Escape)?;
     settled(d)?;
     resize(d, 1280.0, 820.0)?;

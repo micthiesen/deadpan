@@ -951,9 +951,9 @@ impl Driver<'_> {
         let frame_budget = if self.report.name == "ai-playback-interference" {
             24_000
         } else if self.report.name == "scoped-plays" {
-            // Both mixed directions, their isolation histories and dormant
-            // authoring extend the measured 6,742-frame shared-duration trace.
-            9000
+            // Every module, including the fixed-window duration recording and
+            // pause sections, measured 11,640 frames on 2026-11-07.
+            14_000
         } else {
             6000
         };

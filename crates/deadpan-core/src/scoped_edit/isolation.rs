@@ -520,6 +520,17 @@ pub(crate) fn temporal_requirements(
     isolation_plan(document, validate_target(document, target)?).map(|plan| plan.requirements)
 }
 
+/// Where `target` will be once `identities` isolate it, without editing.
+pub(crate) fn isolated_target(
+    document: &ProjectDocument,
+    target: &ScopedNodeTarget,
+    identities: &OccurrenceIdentities,
+) -> Result<ScopedNodeTarget, EditError> {
+    isolation_plan(document, validate_target(document, target)?)?
+        .resolve(document, target, identities)
+        .map(|resolved| resolved.target)
+}
+
 pub(crate) fn isolate_temporal(
     document: &ProjectDocument,
     target: &ScopedNodeTarget,

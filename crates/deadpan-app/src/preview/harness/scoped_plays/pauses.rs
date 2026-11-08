@@ -55,7 +55,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"added_frames":15,"scope":"This play 2","cursor":cursor,"freeze":"preceding measured picture"}), d.snapshot())?;
     resize(d, 960.0, 640.0)?;
     painted(d, "This play 2/3")?;
-    painted(d, "Insert pause")?;
+    painted(d, "Insert pause  ,h")?;
     scenarios::footer_anchored(d, "Scoped pause controls retain the compact footer")?;
     d.capture("The inserted Hold remains selected within This play")?;
     resize(d, 1280.0, 820.0)?;
@@ -166,7 +166,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     resize(d, 960.0, 640.0)?;
     painted(d, "Plays 1, 2 edited together  :scope plays")?;
-    painted(d, "Insert pause")?;
+    painted(d, "Insert pause  ,h")?;
     scenarios::footer_anchored(d, "Selected-play pause keeps the compact footer")?;
     d.capture("The new pauses remain selected across both chosen plays")?;
     resize(d, 1280.0, 820.0)?;
@@ -426,7 +426,7 @@ fn mixed(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     resize(d, 960.0, 640.0)?;
     painted(d, "This play 2/3")?;
-    painted(d, "Insert pause")?;
+    painted(d, "Insert pause  ,h")?;
     scenarios::footer_anchored(d, "Mixed Repeat choices keep the compact footer")?;
     d.capture("Outer All plays and inner This play remain distinct after pause insertion")?;
     resize(d, 1280.0, 820.0)?;

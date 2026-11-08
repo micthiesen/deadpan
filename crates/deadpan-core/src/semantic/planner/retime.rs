@@ -101,6 +101,9 @@ where
         pitch: PitchPolicy,
         wrap: bool,
     ) -> Result<(), EditError> {
+        if self.context.scoped.is_some() {
+            return self.scoped_retime(trace_index, speed, pitch, wrap);
+        }
         let (selected, start, end) = self.selected_direct_child("speed")?;
         let resolved = self.resolve_speed(&selected, start, end, speed, pitch, wrap)?;
         self.apply_retime(trace_index, selected, start, resolved, pitch)
@@ -126,6 +129,131 @@ where
         };
         let resolved = self.resolve_speed(&selected, start, end, speed, pitch, false)?;
         self.apply_retime(trace_index, selected, start, resolved, pitch)
+    }
+
+    /// A speed change of the one visible play in a Repeat's contents, as a
+    /// sparse occurrence override. A first change wraps the play's beat; once
+    /// that Retime is the play's own, later changes update it in place.
+    fn scoped_retime(
+        &mut self,
+        trace_index: usize,
+        speed: ExactRatio,
+        pitch: PitchPolicy,
+        wrap: bool,
+    ) -> Result<(), EditError> {
+        let scoped = self
+            .context
+            .scoped
+            .clone()
+            .ok_or_else(|| invalid("a one-play speed change needs scoped contents"))?;
+        super::framing::validate_scoped_context(&self.current, &self.context)?;
+        let node = scoped.presentation.node.clone();
+        let length = self.current.durations_shared()?[&node].frames();
+        let resolved = self.resolve_speed(
+            &node,
+            ProjectFrame(0),
+            ProjectFrame(length),
+            speed,
+            pitch,
+            wrap,
+        )?;
+        if resolved.update
+            && matches!(&self.current.nodes()[&node].kind,
+                NodeKind::Retime { duration, pitch: current, .. }
+                    if *duration == resolved.duration && *current == pitch)
+        {
+            return Err(invalid(
+                "the beat already has that speed and pitch; no edit was made",
+            ));
+        }
+        let probe = if resolved.update {
+            crate::OccurrenceEdit::SetRetime {
+                duration: resolved.duration,
+                pitch,
+            }
+        } else {
+            crate::OccurrenceEdit::WrapRetime {
+                id: node.clone(),
+                duration: resolved.duration,
+                pitch,
+            }
+        };
+        let requirements = self
+            .current
+            .occurrence_retime_requirements(&scoped.presentation, &probe)?;
+        if resolved.update && requirements.nodes > 0 {
+            // Isolation would rename the Retime, losing its exact address.
+            return Err(invalid(
+                "this speed change is shared by every play; use :wrap-retime to give this play its own",
+            ));
+        }
+        self.charge_step(false)?;
+        let SemanticAllocation::Isolation {
+            new_revision,
+            identities,
+        } = (self.allocate)(SemanticAllocationRequest::Isolation {
+            step_index: self.steps.len(),
+            nodes: requirements.nodes + usize::from(!resolved.update),
+            marks: requirements.marks,
+        })?
+        else {
+            return Err(invalid(
+                "a one-play speed change requires an Isolation allocation",
+            ));
+        };
+        self.reserve_revision(&new_revision)?;
+        for node in &identities.nodes {
+            self.reserve_node(node)?;
+        }
+        for mark in &identities.marks {
+            if !self.marks.insert(mark.clone()) {
+                return Err(identity(
+                    "macro reuses an authored or allocated mark identity",
+                ));
+            }
+        }
+        let mut nodes = identities.nodes;
+        let (edit, result) = if resolved.update {
+            (probe, node)
+        } else {
+            let wrapper = nodes
+                .pop()
+                .ok_or_else(|| invalid("a one-play speed change needs its wrapper identity"))?;
+            (
+                crate::OccurrenceEdit::WrapRetime {
+                    id: wrapper.clone(),
+                    duration: resolved.duration,
+                    pitch,
+                },
+                wrapper,
+            )
+        };
+        let identities = crate::OccurrenceIdentities {
+            nodes,
+            marks: identities.marks,
+        };
+        let (target, presentation) =
+            self.current
+                .isolated_occurrence(&scoped.presentation, &identities, result.clone())?;
+        self.commit_leaf(LeafEdit::new(
+            new_revision,
+            Command::EditOccurrence {
+                instance: scoped.presentation.clone(),
+                edit,
+                identities,
+            },
+        )?)?;
+        let mapped = SemanticScopedContext {
+            root: scoped.root,
+            target,
+            presentation,
+        };
+        self.context.scoped = Some(mapped);
+        super::framing::validate_scoped_context(&self.current, &self.context)?;
+        self.trace[trace_index].resolved_parent = self.current.parent_of(&result);
+        self.trace[trace_index].resolved_selection =
+            Some(SliceCaptureSelection::Child { node: result });
+        Ok(())
     }
 
     fn apply_retime(

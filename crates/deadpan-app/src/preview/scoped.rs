@@ -10,7 +10,7 @@ pub(super) mod model;
 #[cfg(test)]
 mod range_tests;
 
-const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Repeat pauses follow each level's All plays, This play or selected plays choice. Pause length follows each level's All plays or This play choice for one Hold; AI pauses require one play at every level. Other timing edits and range copying require the parent.";
+const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Repeat pauses follow each level's All plays, This play or selected plays choice. Pause length follows each level's All plays or This play choice for one Hold; AI pauses and speed changes (:retime) require one play at every level. Other timing edits and range copying require the parent.";
 const FRAMING_RANGE_ONLY: &str = "This play's Edit range is for :zoom or :creep. Clear the range with Escape before other beat edits.";
 
 impl DeadpanApp {
@@ -871,6 +871,7 @@ fn scoped_structural_action(action: &Action) -> bool {
                 | BeatEdit::InsertBlack(_)
                 | BeatEdit::InsertAiHold(_)
                 | BeatEdit::HoldDuration(_)
+                | BeatEdit::Retime(_)
         )
     ) {
         return false;

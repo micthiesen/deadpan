@@ -261,6 +261,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     pauses::run(d)?;
     analysis_navigation::run(d)?;
     heterogeneous_pauses::run(d)?;
+    scoped_speed(d)?;
     d.report.skipped.push("This replay uses real native widgets, project service and Metal with scripted keyboard delivery. Its final Escape check simulates playback preparation; physical keyboard/IME and acoustic playback are separate checks.".into());
     Ok(())
 }
@@ -385,5 +386,68 @@ fn painted(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
         !parts.is_empty() && parts.iter().all(|part| part["fully_visible"] == true),
         json!("text fits its paint clip without later opaque overlap"),
         json!(parts),
+    )
+}
+
+/// `:retime` inside one play's contents isolates and changes only that play.
+fn scoped_speed(d: &mut Driver<'_>) -> Result<(), String> {
+    while d.app().scoped.is_some() {
+        d.key(Key::Escape)?;
+        idle(d)?;
+    }
+    d.chord(&[Key::G, Key::G])?;
+    idle(d)?;
+    let repeat = d.app().selected_beat.clone().ok_or("No beat selected")?;
+    let plays = |d: &Driver<'_>| -> Result<Vec<i64>, String> {
+        let document = document(d)?;
+        let NodeKind::Repeat {
+            child, iterations, ..
+        } = &document.nodes()[&repeat].kind
+        else {
+            return Err("Expected the first beat to be the Repeat".into());
+        };
+        let durations = document
+            .durations_shared()
+            .map_err(|error| error.to_string())?;
+        Ok((0..iterations.len())
+            .map(|index| {
+                let iteration = iterations.at(index).expect("a play");
+                let root = document
+                    .overrides()
+                    .get(&repeat)
+                    .and_then(|plays| plays.get(&iteration))
+                    .unwrap_or(child);
+                durations[root].frames()
+            })
+            .collect())
+    };
+    let before = plays(d)?;
+    let revision = d.revision();
+    d.key(Key::Enter)?;
+    d.command("scope play 2")?;
+    idle(d)?;
+    d.command("retime 2 pitch=tape")?;
+    d.changed(&revision)?;
+    idle(d)?;
+    let after = plays(d)?;
+    d.check(
+        ":retime 2 inside play 2 halves only that play and keeps its contents open",
+        after[0] == before[0]
+            && after[2] == before[2]
+            && after[1] == before[1] / 2
+            && d.app().scoped.is_some(),
+        json!({"before":before,"play_two":before[1] / 2,"scope":"play 2"}),
+        json!({"after":after,"scoped":d.app().scoped.is_some(),"error":d.app().error}),
+    )?;
+    d.capture("One play sped up inside its contents")?;
+    let edited = d.revision();
+    d.key(Key::U)?;
+    d.changed(&edited)?;
+    idle(d)?;
+    d.check(
+        "One Undo restores every play's length",
+        plays(d)? == before,
+        json!(before),
+        json!(plays(d)?),
     )
 }

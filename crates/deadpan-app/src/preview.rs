@@ -1651,6 +1651,17 @@ impl DeadpanApp {
             );
             return;
         }
+        // A speed change inside one play's contents isolates that play; other
+        // structural edits there stay refused.
+        if matches!(edit, BeatEdit::Retime(_)) && self.scoped.is_some() {
+            self.bindings.clear();
+            self.cancel_repeats("a one-play speed change was requested");
+            self.apply_recorded_instruction(
+                self.capture_macro_target(),
+                self.semantic_beat_edit(&edit).expect("speed instruction"),
+            );
+            return;
+        }
         if self.refuse_scoped_structure() {
             return;
         }

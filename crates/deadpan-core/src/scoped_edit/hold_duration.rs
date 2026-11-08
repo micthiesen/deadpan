@@ -53,6 +53,67 @@ impl ProjectDocument {
         isolation::temporal_requirements(self, &target)
     }
 
+    /// Exact outside-in isolation needs for a speed change of one visible
+    /// Repeat occurrence (`WrapRetime` or `SetRetime`). Attached sounds keep
+    /// their existing refusal; isolation names are counted before allocation.
+    pub fn occurrence_retime_requirements(
+        &self,
+        instance: &InstancePath,
+        edit: &OccurrenceEdit,
+    ) -> Result<ScopedEditRequirements, EditError> {
+        if !matches!(
+            edit,
+            OccurrenceEdit::WrapRetime { .. } | OccurrenceEdit::SetRetime { .. }
+        ) {
+            return Err(invalid("a one-play speed change wraps or updates a Retime"));
+        }
+        let target = target(instance);
+        if target.repeats.is_empty() {
+            return Err(invalid(
+                "a one-play speed change needs explicit Repeat ancestry",
+            ));
+        }
+        if !target.matches_instance(self, instance)? {
+            return Err(invalid(
+                "the speed change's presentation differs from its target",
+            ));
+        }
+        fixed_occurrence_preflight(self, instance)?;
+        crate::sound_events::validate_command(
+            self,
+            &Command::EditOccurrence {
+                instance: instance.clone(),
+                edit: edit.clone(),
+                identities: OccurrenceIdentities::default(),
+            },
+        )?;
+        isolation::temporal_requirements(self, &target)
+    }
+
+    /// The visible occurrence `instance` addresses after `identities` isolate
+    /// it, with `node` in place of its target.
+    pub(crate) fn isolated_occurrence(
+        &self,
+        instance: &InstancePath,
+        identities: &OccurrenceIdentities,
+        node: NodeId,
+    ) -> Result<(ScopedNodeTarget, InstancePath), EditError> {
+        let mut mapped = isolation::isolated_target(self, &target(instance), identities)?;
+        mapped.node = node.clone();
+        let repeats = mapped
+            .repeats
+            .iter()
+            .map(|step| match &step.branch {
+                RepeatEditBranch::Play { iteration } => Ok(crate::RepeatInstance {
+                    node: step.repeat.clone(),
+                    iteration: iteration.clone(),
+                }),
+                _ => Err(invalid("an isolated occurrence keeps explicit plays")),
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok((mapped, InstancePath { node, repeats }))
+    }
+
     /// Duration-only authority for one visible body Hold through explicit Plays,
     /// with one fixed unclocked Edit Retime below the innermost Repeat.
     /// This grants no authority for gaps, mixed choices or multiple targets.

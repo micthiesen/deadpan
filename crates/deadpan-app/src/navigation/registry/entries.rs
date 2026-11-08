@@ -874,7 +874,7 @@ pub static SPECS: &[Spec] = &[
             verb("retime", ":retime 0.75 pitch=preserve"),
             verb("wrap-retime", ":wrap-retime 0.5"),
         ],
-        contexts: C::EDIT,
+        contexts: C::EDIT.or(C::CONTENTS),
         replay: Replay::RecordedAndDot,
         headless: eq("retime instruction; wrap_retime / set_retime commands", REP),
         help: "Slow the selected beat to 0.75× input speed; pitch=tape lets pitch follow speed. Exact fractions such as 3/4 work too. The command shows its resolved duration before Enter. :retime updates an existing ordinary Retime, preserving its child and input range; :wrap-retime always adds an enclosing speed stage. Split fragments are wrapped without changing their retained clocks.",

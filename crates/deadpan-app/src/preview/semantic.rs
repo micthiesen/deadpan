@@ -478,11 +478,7 @@ pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> O
                 }
             };
             let wrap = if *wrap { " · new Retime" } else { "" };
-            return Some(format!(
-                "Speed {}/{}× · {pitch}{wrap}",
-                speed.numerator(),
-                speed.denominator()
-            ));
+            return Some(format!("Speed {}× · {pitch}{wrap}", speed_text(*speed)));
         }
         I::Pitch { semitones: 0 } => return Some("Pitch shift removed".into()),
         I::Pitch { semitones } => {
@@ -804,5 +800,36 @@ mod tests {
         assert!(mirror.snapshot().is_none());
         mirror.receive(Some(saved), None);
         assert!(mirror.snapshot().is_none());
+    }
+}
+
+/// A speed as typed: `2`, `0.75`, or `2/3` when no short decimal is exact.
+fn speed_text(speed: deadpan_core::ExactRatio) -> String {
+    let (numerator, denominator) = (speed.numerator(), speed.denominator());
+    if denominator == 1 {
+        return numerator.to_string();
+    }
+    for places in 1..=4u32 {
+        let scale = 10i128.pow(places);
+        if (numerator * scale) % denominator == 0 {
+            let scaled = numerator * scale / denominator;
+            let whole = scaled / scale;
+            let fraction = (scaled % scale).abs();
+            let sign = if scaled < 0 && whole == 0 { "-" } else { "" };
+            return format!("{sign}{whole}.{fraction:0width$}", width = places as usize);
+        }
+    }
+    format!("{numerator}/{denominator}")
+}
+
+#[cfg(test)]
+mod speed_text_tests {
+    #[test]
+    fn speeds_read_as_typed() {
+        let ratio = |n, d| deadpan_core::ExactRatio::new(n, d).unwrap();
+        assert_eq!(super::speed_text(ratio(2, 1)), "2");
+        assert_eq!(super::speed_text(ratio(3, 4)), "0.75");
+        assert_eq!(super::speed_text(ratio(5, 4)), "1.25");
+        assert_eq!(super::speed_text(ratio(2, 3)), "2/3");
     }
 }

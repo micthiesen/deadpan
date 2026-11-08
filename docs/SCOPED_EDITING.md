@@ -7,8 +7,11 @@ Enter also opens Hold duration inside fixed Edit Retime windows without Repeat
 ancestry, with All plays explicit at every enclosing Repeat, or in the narrow
 This play case of explicit Repeat bodies containing one fixed, unclocked Edit
 Retime. Derived pause clocks retain their timing guard.
-Pause insertion follows the explicit choice at each enclosing Repeat. Other
-temporal edits still use the ordinary Sequence timeline.
+Pause insertion follows the explicit choice at each enclosing Repeat. With This
+play at every Repeat level, `:retime` changes the selected beat's speed in that
+play only: a first change isolates the play and wraps the beat in its own
+Retime, and later changes update that Retime in place. All plays refuses it.
+Other temporal edits still use the ordinary Sequence timeline.
 
 Choose `:scope all` to edit a Repeat's shared definition or `:scope play N` to
 edit one stable play by its current one-based number. These choices apply at the
@@ -342,7 +345,7 @@ for test, rendered and native evidence, source provenance and remaining limits.
 Implicit default gaps have no authored node, so neither `j` nor `]r` selects
 them; they need their own recipe controls. Multi-play selection is chosen only
 by command; the inspector shows it but has no pointer control for it. This boundary does not implement occurrence-local cuts, replacement, Repeat
-count changes, Retime changes, implicit gap recipe editing, general semantic
+count changes, All-plays Retime changes, implicit gap recipe editing, general semantic
 recording of scoped navigation or arbitrary occurrence edits, or complete
 definition previews. Those remain part of the
 normative specification. No full-product requirement or gate is complete.

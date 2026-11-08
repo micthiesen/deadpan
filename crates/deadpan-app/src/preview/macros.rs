@@ -1776,11 +1776,12 @@ impl DeadpanApp {
                         | SemanticInstruction::SetHoldDuration { .. }
                         | SemanticInstruction::SetHoldAudio { .. }
                         | SemanticInstruction::SetRoomTone { .. }
+                        | SemanticInstruction::Retime { .. }
                         | SemanticInstruction::Call { .. }
                 )
                 && !matches!(&instruction, SemanticInstruction::SetAudio { change } if gain::scoped_audio_change(change))
             {
-                return Err("This play supports whole-beat gain, mute, saturation, balance and EQ, freeze and black pauses, pause lengths, silence and room tone, Zoom, Creep and named calls only. Return to the parent for other macro edits.".into());
+                return Err("This play supports whole-beat gain, mute, saturation, balance and EQ, speed changes, freeze and black pauses, pause lengths, silence and room tone, Zoom, Creep and named calls only. Return to the parent for other macro edits.".into());
             }
             if !captured.matches(self)
                 || self

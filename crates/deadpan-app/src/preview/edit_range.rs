@@ -546,10 +546,12 @@ impl DeadpanApp {
     fn edit_range_identity(&self) -> Option<Identity> {
         let workspace = self.workspace.as_ref()?;
         let scope = self.sequence_scope.resolve(workspace).ok()?;
-        let scoped = match self.scoped_target().ok()? {
-            Some(target) => Some(scoped_identity(&target)?),
-            None => None,
-        };
+        // Contents without one-play authority (an inspected fixed speed change,
+        // or All plays) still identify the edit; only its play scope is absent.
+        let scoped = self
+            .scoped_target()
+            .ok()?
+            .and_then(|target| scoped_identity(&target));
         Some(Identity {
             session: workspace.session,
             project: workspace.document.project_id().clone(),
