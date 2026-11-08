@@ -134,6 +134,7 @@ pub enum Entry {
     /// over the Edit waveform.
     Timeline {
         timing: bool,
+        detail: bool,
     },
     AuditionContext {
         lead: DurationInput,
@@ -974,9 +975,19 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "monitor" => return monitor(argument).map(Entry::Monitor),
         "timeline" => {
             return match argument {
-                Some("story") => Ok(Entry::Timeline { timing: false }),
-                Some("timing") => Ok(Entry::Timeline { timing: true }),
-                _ => Err("Use :timeline story or :timeline timing.".into()),
+                Some("story") => Ok(Entry::Timeline {
+                    timing: false,
+                    detail: false,
+                }),
+                Some("timing") => Ok(Entry::Timeline {
+                    timing: true,
+                    detail: false,
+                }),
+                Some("detail") => Ok(Entry::Timeline {
+                    timing: true,
+                    detail: true,
+                }),
+                _ => Err("Use :timeline story, :timeline timing or :timeline detail.".into()),
             };
         }
         "proxies" => {

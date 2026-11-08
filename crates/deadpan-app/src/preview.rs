@@ -3459,11 +3459,11 @@ impl DeadpanApp {
                 }),
             ),
             Ok(navigation::command::Entry::Proxies(command)) => self.proxy_command(command),
-            Ok(navigation::command::Entry::Timeline { timing }) => {
-                self.timeline_command(if timing {
-                    timing::TimelineMode::Timing
-                } else {
-                    timing::TimelineMode::Story
+            Ok(navigation::command::Entry::Timeline { timing, detail }) => {
+                self.timeline_command(match (timing, detail) {
+                    (_, true) => timing::TimelineMode::Detail,
+                    (true, false) => timing::TimelineMode::Timing,
+                    (false, false) => timing::TimelineMode::Story,
                 })
             }
             Ok(navigation::command::Entry::Monitor(tenths)) => {
@@ -4599,7 +4599,7 @@ impl DeadpanApp {
             };
             let analysis = self.edit_analysis_marks();
             let markers = cards::Markers { cursor: marker, frame: self.sequence_cursor, range: self.selected_edit_range().map(|range| range.start().0 as u64..range.end().0 as u64), members: self.selected_node_set().ok().flatten().map_or_else(Vec::new, |set|set.members), ranges: self.selected_range_set().ok().flatten().map_or_else(Vec::new, |set|set.ranges), analysis };
-            if self.timing.mode == timing::TimelineMode::Timing {
+            if self.timing.mode != timing::TimelineMode::Story {
                 let range = markers.range.clone();
                 if let Some(frame) =
                     self.timing_strip(ui, layout.card_height + 20.0, &beats, selected.as_ref(), range)

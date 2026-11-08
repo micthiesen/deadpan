@@ -247,11 +247,11 @@ pub static SPECS: &[Spec] = &[
         name: "Timeline scale",
         section: Section::Start,
         keys: &[],
-        commands: &[verb("timeline", ":timeline story|timing")],
+        commands: &[verb("timeline", ":timeline story|timing|detail")],
         contexts: C::EDITOR,
         replay: Replay::Ignored,
         headless: gui("none (a view of the same sequence)", NAV),
-        help: "Show the current group as one card per beat (:timeline story) or as beats at their exact length over the measured Edit mix waveform (:timeline timing), up to a minute around the Edit cursor. Both views select, move the cursor and open beats the same way; the sequence is unchanged.",
+        help: "Show the current group as one card per beat (:timeline story) or as beats at their exact length over the measured Edit mix waveform (:timeline timing), up to a minute around the Edit cursor; :timeline detail adds a lane of each beat's cutaways, captions, gain envelopes and mutes and the placed sounds. Both views select, move the cursor and open beats the same way; the sequence is unchanged.",
     },
     Spec {
         id: "undo",

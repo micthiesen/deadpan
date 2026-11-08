@@ -423,7 +423,7 @@ design comparison and current verification limits.
 
 ## Timeline scales
 
-The beats panel shows the current group at two of specification §9.2's scales.
+The beats panel shows the current group at specification §9.2's three scales.
 The story view (default) is one card per beat. `:timeline timing` draws the
 same beats at their exact length on a frame scale over the measured Edit mix
 waveform (stereo min/max peaks from the playback engine's idle Edit-window
@@ -432,6 +432,10 @@ click moves the Edit cursor to that frame and selects its beat. The view shows
 the whole group up to one minute, else the minute around the Edit cursor; the
 measurement follows the shown window and revision. Trim and the room-tone sheet
 share the engine's one Edit-waveform slot and take precedence while open.
-`:timeline story` returns to the cards. Evidence: the `split-edits` replay
-("Timing view" frame and its three checks). The detail view (envelopes and
-attachments in the timeline) and keyboard zoom between scales remain open.
+`:timeline detail` adds a lane between the beats and the waveform with each
+beat's attachments at their exact frames: cutaways (and video-only removals),
+captions, gain envelopes, mute ranges, and every placed root sound, stacked in
+up to three rows. `:timeline story` returns to the cards. Evidence: the
+`split-edits` replay ("Timing view" and "Detail view" frames and their four
+checks). Attachments of beats nested inside a shown group's children, and a
+single key to step between the scales, remain open.

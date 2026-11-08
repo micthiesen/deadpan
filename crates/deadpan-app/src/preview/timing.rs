@@ -1,7 +1,8 @@
 //! Timing view (specification §9.2): the current group's beats drawn at their
 //! exact length over the measured Edit mix waveform. It is the same sequence
-//! as the story view's cards, at a frame scale; `:timeline story|timing`
-//! switches between them. The waveform comes from the playback engine's idle
+//! as the story view's cards, at a frame scale; the detail view adds a lane of
+//! each beat's attachments (cutaways, captions, gain envelopes, mutes and
+//! placed sounds). `:timeline story|timing|detail` switches between them. The waveform comes from the playback engine's idle
 //! Edit-window analysis, at most one minute around the cursor at a time.
 
 use std::ops::Range;
@@ -22,6 +23,97 @@ pub(super) enum TimelineMode {
     #[default]
     Story,
     Timing,
+    Detail,
+}
+
+/// One attachment drawn in the detail lane, in absolute Edit frames.
+#[derive(Debug, Clone, PartialEq)]
+pub(super) struct Attachment {
+    pub(super) frames: (f64, f64),
+    pub(super) kind: &'static str,
+    pub(super) label: String,
+}
+
+fn ratio(value: deadpan_core::ExactRatio) -> f64 {
+    value.numerator() as f64 / value.denominator() as f64
+}
+
+/// The attachments of `beats` (direct children of the shown group) and every
+/// placed root sound, in absolute Edit frames.
+pub(super) fn attachments(
+    document: &deadpan_core::ProjectDocument,
+    beats: &[BeatRow],
+) -> Vec<Attachment> {
+    let mut found = Vec::new();
+    for beat in beats {
+        let Some(node) = document.nodes().get(&beat.id) else {
+            continue;
+        };
+        let at = beat.start as f64;
+        if let Some(clip) = node.audio_treatments.clip_gain() {
+            for mute in clip.mute_ranges() {
+                found.push(Attachment {
+                    frames: (at + ratio(mute.start()), at + ratio(mute.end())),
+                    kind: "mute",
+                    label: "Muted".into(),
+                });
+            }
+            for envelope in clip.envelopes() {
+                found.push(Attachment {
+                    frames: (
+                        at + ratio(envelope.range().start()),
+                        at + ratio(envelope.range().end()),
+                    ),
+                    kind: "envelope",
+                    label: format!("Gain envelope · {} points", envelope.segments().len() + 1),
+                });
+            }
+        }
+        if let Some((host, offset)) = deadpan_core::cutaway_host(document, &beat.id)
+            && let Some(host) = document.nodes().get(&host)
+        {
+            let local = |frame: i64| at + (frame - offset) as f64;
+            for cutaway in &host.cutaways {
+                found.push(Attachment {
+                    frames: (local(cutaway.range.start().0), local(cutaway.range.end().0)),
+                    kind: if cutaway.removed {
+                        "removed"
+                    } else {
+                        "cutaway"
+                    },
+                    label: if cutaway.removed {
+                        "Picture removed".into()
+                    } else {
+                        "Cutaway".into()
+                    },
+                });
+            }
+            for caption in &host.captions {
+                found.push(Attachment {
+                    frames: (local(caption.range.start().0), local(caption.range.end().0)),
+                    kind: "caption",
+                    label: format!("“{}”", caption.text),
+                });
+            }
+        }
+    }
+    let rate = document.presentation_basis().frame_rate;
+    for event in document.sounds().values() {
+        if let Ok(selected) = event.mapping.selection_frames_with_offset(
+            deadpan_core::FrameDuration::ZERO,
+            event.offset,
+            rate,
+        ) {
+            found.push(Attachment {
+                frames: (ratio(selected.start), ratio(selected.end)),
+                kind: "sound",
+                label: event.label.clone(),
+            });
+        }
+    }
+    found.retain(|attachment| attachment.frames.0 < attachment.frames.1);
+    found.sort_by(|a, b| a.frames.0.total_cmp(&b.frames.0));
+    found
 }
 
 #[derive(Default)]
@@ -58,6 +150,9 @@ impl DeadpanApp {
             TimelineMode::Story => "Story view: one card per beat.".into(),
             TimelineMode::Timing => {
                 "Timing view: beats at their length over the Edit waveform.".into()
+            }
+            TimelineMode::Detail => {
+                "Detail view: beats, their attachments and the Edit waveform.".into()
             }
         });
     }
@@ -140,7 +235,7 @@ impl DeadpanApp {
     }
 
     pub(super) fn receive_timing_waveform(&mut self) {
-        if self.timing.mode != TimelineMode::Timing
+        if self.timing.mode == TimelineMode::Story
             || self.trim.is_some()
             || self.room_tone.is_some()
         {
@@ -180,12 +275,75 @@ impl DeadpanApp {
         let x = |frame: i64| rect.left() + rect.width() * (frame - frames.start) as f32 / span;
         let painter = ui.painter_at(rect);
         painter.rect_filled(rect, 4.0, style::PANEL);
+        let detail = self.timing.mode == TimelineMode::Detail;
         let beats_lane = egui::Rect::from_min_max(
             rect.min,
-            egui::pos2(rect.right(), rect.top() + rect.height() * 0.42),
+            egui::pos2(
+                rect.right(),
+                rect.top() + rect.height() * if detail { 0.32 } else { 0.42 },
+            ),
         );
-        let wave_lane =
-            egui::Rect::from_min_max(egui::pos2(rect.left(), beats_lane.bottom() + 4.0), rect.max);
+        let attachment_lane = egui::Rect::from_min_max(
+            egui::pos2(rect.left(), beats_lane.bottom() + 2.0),
+            egui::pos2(
+                rect.right(),
+                beats_lane.bottom() + if detail { rect.height() * 0.3 } else { 0.0 },
+            ),
+        );
+        let wave_lane = egui::Rect::from_min_max(
+            egui::pos2(rect.left(), attachment_lane.bottom() + 4.0),
+            rect.max,
+        );
+        let attached = match (detail, self.workspace.as_ref()) {
+            (true, Some(workspace)) => attachments(&workspace.document, beats),
+            _ => Vec::new(),
+        };
+        // Overlapping attachments stack in up to three rows.
+        let rows = 3.0;
+        let row_height = (attachment_lane.height() / rows).max(1.0);
+        let mut row_ends = [f64::MIN; 3];
+        for attachment in &attached {
+            let (start, end) = attachment.frames;
+            if end <= frames.start as f64 || start >= frames.end as f64 {
+                continue;
+            }
+            let row = row_ends
+                .iter()
+                .position(|until| *until <= start)
+                .unwrap_or(2);
+            row_ends[row] = end;
+            let fx = |frame: f64| {
+                rect.left()
+                    + rect.width()
+                        * ((frame - frames.start as f64) / span as f64).clamp(0.0, 1.0) as f32
+            };
+            let bar = egui::Rect::from_min_max(
+                egui::pos2(
+                    fx(start),
+                    attachment_lane.top() + row as f32 * row_height + 1.0,
+                ),
+                egui::pos2(
+                    fx(end).max(fx(start) + 2.0),
+                    attachment_lane.top() + (row as f32 + 1.0) * row_height - 1.0,
+                ),
+            );
+            let color = match attachment.kind {
+                "mute" => egui::Color32::from_rgb(0x8f, 0x3b, 0x45),
+                "envelope" => egui::Color32::from_rgb(0x5b, 0x4d, 0x8c),
+                "cutaway" => egui::Color32::from_rgb(0x2f, 0x5d, 0x7c),
+                "removed" => egui::Color32::from_rgb(0x44, 0x44, 0x44),
+                "caption" => egui::Color32::from_rgb(0x6b, 0x5b, 0x2e),
+                _ => egui::Color32::from_rgb(0x2f, 0x6b, 0x4f),
+            };
+            painter.rect_filled(bar, 2.0, color);
+            painter.with_clip_rect(bar.shrink(1.0)).text(
+                bar.left_center() + egui::vec2(3.0, 0.0),
+                egui::Align2::LEFT_CENTER,
+                &attachment.label,
+                egui::FontId::proportional(10.0),
+                style::TEXT,
+            );
+        }
         for beat in beats {
             let (Ok(start), Ok(end)) = (
                 i64::try_from(beat.start),
@@ -279,10 +437,16 @@ impl DeadpanApp {
             );
         }
         let label = format!(
-            "Timing view · Edit frames {}–{} · {} beats · Edit mix waveform {}",
+            "{} view · Edit frames {}–{} · {} beats{} · Edit mix waveform {}",
+            if detail { "Detail" } else { "Timing" },
             frames.start,
             frames.end,
             beats.len(),
+            if detail {
+                format!(" · {} attachments", attached.len())
+            } else {
+                String::new()
+            },
             match self.timing.status {
                 Some(WaveformStatus::Complete) => "measured",
                 Some(WaveformStatus::Unavailable) => "unavailable",

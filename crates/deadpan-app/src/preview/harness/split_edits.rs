@@ -549,8 +549,11 @@ fn timing_view(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.capture("Timing view")?;
     // Three quarters along the strip is Edit frame 67, inside the second beat.
-    let at = strip.0.left() + strip.0.width() * 0.75;
-    d.click_at("Timing view", egui::pos2(at, strip.0.center().y))?;
+    let three_quarters = strip.0.left() + strip.0.width() * 0.75;
+    d.click_at(
+        "Timing view",
+        egui::pos2(three_quarters, strip.0.center().y),
+    )?;
     d.settled()?;
     d.check(
         "Clicking the timing view moves the Edit cursor to that frame and selects its beat",
@@ -559,6 +562,33 @@ fn timing_view(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"cursor":67,"beat":2}),
         json!({"cursor":d.app().sequence_cursor,"selected":d.app().selected_beat}),
     )?;
+    // Detail view: an audio-only delete over Edit 10..15 shows as a mute.
+    at(d, 10)?;
+    d.key(Key::V)?;
+    d.chord(&[Key::Num5, Key::L])?;
+    edit(d, "delete role=audio")?;
+    d.command("timeline detail")?;
+    d.wait_for("The detail view's Edit waveform is measured", |app| {
+        app.timing.state_for_check()["status"] == "Complete"
+    })?;
+    let label = d
+        .harness
+        .root()
+        .children_recursive()
+        .find_map(|node| {
+            node.accesskit_node()
+                .label()
+                .filter(|label| label.starts_with("Detail view"))
+        })
+        .unwrap_or_default();
+    d.check(
+        "The detail view adds each beat's attachments, here the audio-only delete's mute",
+        label.contains("1 attachments") && label.contains("measured"),
+        json!({"attachments":1}),
+        json!({"label":label}),
+    )?;
+    d.capture("Detail view")?;
+    undo(d)?;
     d.command("timeline story")?;
     d.settled()?;
     d.check(
