@@ -439,4 +439,7 @@ up to three rows. Beats nested in ordinary groups contribute theirs at their
 own starts; Repeat and speed-change contents keep their own clocks and are
 not drawn there. `:timeline story` returns to the cards. Evidence: the
 `split-edits` replay ("Timing view" and "Detail view" frames and their six
-checks). `,w` steps story → timing → detail → story.
+checks). `,w` steps story → timing → detail → story. A Repeat stays one
+object in every view, with a tick where each later play begins, from its exact
+compiled layout (play lengths, per-play overrides and gaps), up to 256 plays
+(`repeat_play_ticks_follow_each_later_play_start`).

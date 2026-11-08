@@ -70,6 +70,8 @@ pub(super) struct Markers {
     pub ranges: Vec<deadpan_core::FrameRange>,
     /// Pause bands and shot starts on the Edit clock, sorted.
     pub analysis: std::sync::Arc<super::transcript::AnalysisMarks>,
+    /// Local starts of each shown Repeat's later plays (§9.2 iteration ticks).
+    pub repeats: std::collections::BTreeMap<NodeId, Vec<i64>>,
 }
 
 pub(super) fn original(
@@ -157,6 +159,22 @@ pub(super) fn strip(
             );
             let response = beat_card(ui, rect, beat, index, selected == Some(&beat.id), thumbnail);
             paint_analysis(ui, rect, beat, &markers);
+            if let Some(starts) = markers.repeats.get(&beat.id)
+                && beat.frames > 0
+            {
+                // One bracketed object: ticks along its bottom edge mark where
+                // each later play begins.
+                for local in starts {
+                    let tick = rect.left() + rect.width() * (*local as f32 / beat.frames as f32);
+                    ui.painter().line_segment(
+                        [
+                            egui::pos2(tick, rect.bottom() - 9.0),
+                            egui::pos2(tick, rect.bottom() - 2.0),
+                        ],
+                        egui::Stroke::new(1.5, style::LAVENDER),
+                    );
+                }
+            }
             let selected_ranges = markers
                 .range
                 .iter()

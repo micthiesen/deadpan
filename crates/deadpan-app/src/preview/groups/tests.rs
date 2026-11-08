@@ -273,3 +273,17 @@ fn explode_and_duplicate_parse_record_and_repeat_as_semantic_intent() {
         SemanticInstruction::Explode
     );
 }
+
+#[test]
+fn repeat_play_ticks_follow_each_later_play_start() {
+    let document = with_repeat();
+    let beat = document.durations().unwrap()[&node("beat")].frames();
+    assert_eq!(
+        crate::preview::timing::repeat_play_starts(&document, &node("repeat")),
+        Some(vec![beat, 2 * beat])
+    );
+    assert_eq!(
+        crate::preview::timing::repeat_play_starts(&document, &node("group")),
+        None
+    );
+}

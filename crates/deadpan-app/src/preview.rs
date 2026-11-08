@@ -4599,7 +4599,7 @@ impl DeadpanApp {
                 None
             };
             let analysis = self.edit_analysis_marks();
-            let markers = cards::Markers { cursor: marker, frame: self.sequence_cursor, range: self.selected_edit_range().map(|range| range.start().0 as u64..range.end().0 as u64), members: self.selected_node_set().ok().flatten().map_or_else(Vec::new, |set|set.members), ranges: self.selected_range_set().ok().flatten().map_or_else(Vec::new, |set|set.ranges), analysis };
+            let markers = cards::Markers { cursor: marker, frame: self.sequence_cursor, range: self.selected_edit_range().map(|range| range.start().0 as u64..range.end().0 as u64), members: self.selected_node_set().ok().flatten().map_or_else(Vec::new, |set|set.members), ranges: self.selected_range_set().ok().flatten().map_or_else(Vec::new, |set|set.ranges), analysis, repeats: self.workspace.as_ref().map(|workspace| beats.iter().filter_map(|beat| Some((beat.id.clone(), timing::repeat_play_starts(&workspace.document, &beat.id)?))).collect()).unwrap_or_default() };
             if self.timing.mode != timing::TimelineMode::Story {
                 let range = markers.range.clone();
                 if let Some(frame) =

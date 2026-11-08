@@ -34,6 +34,44 @@ pub(super) struct Attachment {
     pub(super) label: String,
 }
 
+/// The most play boundaries drawn on one Repeat.
+const MAX_PLAY_TICKS: u32 = 256;
+
+/// Local starts of a Repeat's later plays (`§9.2` iteration ticks), from its
+/// exact compiled layout: play durations, overrides and gaps included. None
+/// for other beats.
+pub(super) fn repeat_play_starts(
+    document: &deadpan_core::ProjectDocument,
+    id: &deadpan_core::NodeId,
+) -> Option<Vec<i64>> {
+    let deadpan_core::NodeKind::Repeat {
+        child,
+        iterations,
+        gap,
+        ..
+    } = &document.nodes().get(id)?.kind
+    else {
+        return None;
+    };
+    let durations = document.durations_shared().ok()?;
+    let layout = deadpan_core::RepeatLayout::compile_with_gap_overrides(
+        iterations,
+        child,
+        document.overrides().get(id),
+        gap.as_ref()
+            .map_or(deadpan_core::FrameDuration::ZERO, |recipe| recipe.duration),
+        document.gap_overrides().get(id),
+        &durations,
+    )
+    .ok()?;
+    Some(
+        (1..iterations.len().min(MAX_PLAY_TICKS))
+            .filter_map(|index| layout.play(&iterations.at(index)?))
+            .map(|play| play.start)
+            .collect(),
+    )
+}
+
 fn ratio(value: deadpan_core::ExactRatio) -> f64 {
     value.numerator() as f64 / value.denominator() as f64
 }
@@ -412,6 +450,22 @@ impl DeadpanApp {
                     egui::Stroke::new(1.5, style::LAVENDER),
                     egui::StrokeKind::Inside,
                 );
+            }
+            if let Some(workspace) = self.workspace.as_ref()
+                && let Some(starts) = repeat_play_starts(&workspace.document, &beat.id)
+            {
+                for local in starts {
+                    let frame = start + local;
+                    if frame > frames.start && frame < frames.end {
+                        painter.line_segment(
+                            [
+                                egui::pos2(x(frame), block.top() + 2.0),
+                                egui::pos2(x(frame), block.bottom() - 2.0),
+                            ],
+                            egui::Stroke::new(1.0, style::LAVENDER),
+                        );
+                    }
+                }
             }
             painter.with_clip_rect(block.shrink(3.0)).text(
                 block.left_center() + egui::vec2(5.0, 0.0),
