@@ -438,5 +438,5 @@ captions, gain envelopes, mute ranges, and every placed root sound, stacked in
 up to three rows. Beats nested in ordinary groups contribute theirs at their
 own starts; Repeat and speed-change contents keep their own clocks and are
 not drawn there. `:timeline story` returns to the cards. Evidence: the
-`split-edits` replay ("Timing view" and "Detail view" frames and their five
-checks). A single key to step between the scales remains open.
+`split-edits` replay ("Timing view" and "Detail view" frames and their six
+checks). `,w` steps story → timing → detail → story.

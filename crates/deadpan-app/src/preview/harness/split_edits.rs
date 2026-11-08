@@ -613,6 +613,21 @@ fn timing_view(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     undo(d)?;
     undo(d)?;
+    // ,w steps detail → story → timing.
+    d.chord(&[Key::Comma, Key::W])?;
+    d.settled()?;
+    let after_detail = d.app().timing.state_for_check()["mode"].clone();
+    d.chord(&[Key::Comma, Key::W])?;
+    d.settled()?;
+    d.check(
+        ",w steps the timeline from detail to story to timing",
+        after_detail == "Story" && d.app().timing.state_for_check()["mode"] == "Timing",
+        json!(["Story", "Timing"]),
+        json!([
+            after_detail,
+            d.app().timing.state_for_check()["mode"].clone()
+        ]),
+    )?;
     d.command("timeline story")?;
     d.settled()?;
     d.check(

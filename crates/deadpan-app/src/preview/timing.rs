@@ -182,6 +182,15 @@ impl DeadpanApp {
         });
     }
 
+    /// `,w`: story → timing → detail → story.
+    pub(super) fn cycle_timeline(&mut self) {
+        self.timeline_command(match self.timing.mode {
+            TimelineMode::Story => TimelineMode::Timing,
+            TimelineMode::Timing => TimelineMode::Detail,
+            TimelineMode::Detail => TimelineMode::Story,
+        });
+    }
+
     fn cancel_timing_waveform(&mut self) {
         if let Some(ticket) = self.timing.ticket.take() {
             self.playback.cancel_waveform(ticket);

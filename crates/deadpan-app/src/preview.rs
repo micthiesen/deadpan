@@ -2203,6 +2203,7 @@ impl DeadpanApp {
             Action::Mute => self.mute_key(),
             Action::CutawayPicker => self.pick_cutaway(context),
             Action::TailPicker => self.pick_tail(context),
+            Action::CycleTimeline => self.cycle_timeline(),
             Action::Lift => self.lift_selection(),
             Action::Bleep {
                 frequency_hz,

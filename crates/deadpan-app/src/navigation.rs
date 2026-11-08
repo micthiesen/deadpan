@@ -209,6 +209,8 @@ pub enum Action {
     /// `,t`: open `:tail` with its length ready to change, for the selected
     /// pause or a new tail pause at the cursor.
     TailPicker,
+    /// `,w`: step the timeline through its story, timing and detail views.
+    CycleTimeline,
     /// `:reverse D` / `:ping-pong D`: a pause that plays the `D` before the
     /// cursor backwards; `bounce` leaves out the picture at the turn.
     Reverse {

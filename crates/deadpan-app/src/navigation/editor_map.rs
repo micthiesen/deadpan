@@ -118,6 +118,7 @@ pub enum BindingId {
     CutawayPicker,
     Tail,
     Bleep,
+    Timeline,
     Camera,
     PunchIn,
     Creep,
@@ -138,7 +139,7 @@ pub enum BindingId {
 }
 
 impl BindingId {
-    pub const ALL: [Self; 83] = [
+    pub const ALL: [Self; 84] = [
         Self::FramePrevious,
         Self::FrameNext,
         Self::BeatPrevious,
@@ -205,6 +206,7 @@ impl BindingId {
         Self::CutawayPicker,
         Self::Tail,
         Self::Bleep,
+        Self::Timeline,
         Self::Camera,
         Self::PunchIn,
         Self::Creep,
@@ -291,6 +293,7 @@ impl BindingId {
             Self::CutawayPicker => "cutaway.pick",
             Self::Tail => "tail",
             Self::Bleep => "bleep",
+            Self::Timeline => "timeline",
             Self::Camera => "camera",
             Self::PunchIn => "punch_in",
             Self::Creep => "creep",
@@ -722,6 +725,7 @@ impl Rule {
             Action::CutawayPicker => I::CutawayPicker,
             Action::TailPicker => I::Tail,
             Action::Bleep { .. } => I::Bleep,
+            Action::CycleTimeline => I::Timeline,
             Action::Framing(FramingAction::EnterCamera) => I::Camera,
             Action::Framing(FramingAction::PunchIn) => I::PunchIn,
             Action::Framing(FramingAction::Creep) => I::Creep,
@@ -1434,7 +1438,11 @@ fn enabled(id: BindingId, visual: bool, domain: RoutingDomain) -> bool {
     }
     if matches!(
         id,
-        BindingId::Mute | BindingId::CutawayPicker | BindingId::Tail | BindingId::Bleep
+        BindingId::Mute
+            | BindingId::CutawayPicker
+            | BindingId::Tail
+            | BindingId::Bleep
+            | BindingId::Timeline
     ) {
         return domain == RoutingDomain::Edit;
     }
@@ -2303,6 +2311,12 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
             Action::CutawayPicker,
             C::Refuse("Pick one cutaway register, without a count."),
             "reaction cutaway",
+        ),
+        (
+            Key::W,
+            Action::CycleTimeline,
+            C::Refuse("Step the timeline view once, without a count."),
+            "timeline view",
         ),
         (
             Key::T,

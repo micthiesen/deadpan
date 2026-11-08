@@ -35,6 +35,12 @@ The final [point-target replays](qualification/point-targets-2026-10-24.md) pass
 the same live-source audit in points, targets, faces and zoom without a new
 modified global chord.
 
+`,w` (2026-11-08) steps the timeline through its story, timing and detail
+views, in Your edit only. It uses a free letter under the existing comma
+prefix, adds no modified chord, and the `split-edits` replay's production-router
+audit passes 21,885,504 cases against all 62 pinned Kestrel reservations
+without conflict.
+
 `:eq` adds a captured EQ editor and complete typed recipes without a new key
 chord. The 2026-10-12 EQ, Gain and audio-treatment release replays pass
 21,884,016 routing cases each against all 62 pinned Kestrel reservations.
