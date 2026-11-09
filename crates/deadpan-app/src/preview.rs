@@ -4131,7 +4131,9 @@ impl DeadpanApp {
                         let visual = !original && !scoped && self.edit_selection() != navigation::EditSelection::None;
                         hints.push(("Esc".into(), if visual && !self.macros.is_pending() { "clear selection".into() } else { "cancel recording".into() }));
                         self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "save macro");
-                        if scoped {
+                        if scoped && self.scoped_shared_gap().is_some() {
+                            self.shared_gap_hints(&mut hints, true);
+                        } else if scoped {
                             if !self.has_scoped_visual_selection() {
                             self.add_editor_hint(&mut hints, EditorKey::Hold, "pause");
                             self.add_editor_hint(&mut hints, EditorKey::Mute, "mute / unmute");
@@ -4169,6 +4171,8 @@ impl DeadpanApp {
                         self.add_editor_pair_hint(&mut hints, EditorKey::GainUp, EditorKey::GainDown, " / ", "gain 3 dB");
                         self.add_editor_hint(&mut hints, EditorKey::CutBeat, "remove");
                         self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
+                    } else if self.view == View::Sequence && self.scoped_shared_gap().is_some() {
+                        self.shared_gap_hints(&mut hints, false);
                     } else if self.view == View::Sequence && self.scoped.is_some() {
                         let ranged = self.has_scoped_visual_selection();
                         self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " / ", "picture frame");
@@ -5666,6 +5670,8 @@ impl DeadpanApp {
             C::PLACED
         } else if self.view == View::Source {
             C::ORIGINAL
+        } else if self.scoped_shared_gap().is_some() {
+            C::SHARED_GAP
         } else if self.scoped.is_some() {
             C::CONTENTS
         } else if self.edit_selection() != navigation::EditSelection::None {

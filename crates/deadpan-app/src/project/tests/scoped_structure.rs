@@ -7,6 +7,8 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use super::*;
 use crate::project::macros::{Id, Operation};
 use crate::project::scoped::Target;
+mod play_gap_replay;
+
 use deadpan_core::{
     InstancePath, IterationId, PauseLength, RepeatEditBranch, RepeatEditStep, RepeatInstance,
     ScopedNodeTarget, SemanticContext, SemanticInstruction, SemanticScopedContext,
@@ -742,6 +744,12 @@ fn dot_repeats_a_one_play_edit_in_the_play_chosen_now() {
 /// root = [rep, z]; rep plays body = [x, y] three times with a shared 4-frame
 /// gap: 20 + 4 + 20 + 4 + 20, then z.
 fn open_gapped(path: &Path) -> (ProjectService, Arc<Workspace>) {
+    open_gapped_plays(path, 3)
+}
+
+/// root = [rep, z]; rep plays body = [x, y] `plays` times with a shared
+/// 4-frame default gap.
+fn open_gapped_plays(path: &Path, plays: u32) -> (ProjectService, Arc<Workspace>) {
     {
         let mut store = seed_holds(path, &["x", "y", "z"]);
         seed_command(
@@ -760,7 +768,7 @@ fn open_gapped(path: &Path) -> (ProjectService, Arc<Workspace>) {
             Command::WrapRepeat {
                 node: node("body"),
                 id: node("rep"),
-                plays: 3,
+                plays,
                 gap: Some(hold(4)),
                 anchor_policy: Default::default(),
             },

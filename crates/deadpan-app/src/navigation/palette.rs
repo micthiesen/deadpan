@@ -471,6 +471,11 @@ mod tests {
             (Contexts::CATALOG, RoutingDomain::Sound, EditSelection::None),
             (Contexts::PLACED, RoutingDomain::Sound, EditSelection::None),
             (Contexts::CONTENTS, RoutingDomain::Edit, EditSelection::None),
+            (
+                Contexts::SHARED_GAP,
+                RoutingDomain::Edit,
+                EditSelection::None,
+            ),
         ];
         for spec in registry::SPECS {
             for (here, domain, selection) in contexts {

@@ -283,6 +283,32 @@ impl DeadpanApp {
         hints.push((self.editor_key(id), description.to_owned()));
     }
 
+    /// A hint for the registry action `id`, only where that action applies
+    /// in the current context (the one Help marks as here).
+    pub(super) fn add_registry_hint(
+        &self,
+        hints: &mut Hints,
+        id: &str,
+        key: impl Into<String>,
+        description: &str,
+    ) {
+        let here = self.help_context();
+        debug_assert!(registry::by_id(id).is_some(), "unknown action {id}");
+        if registry::by_id(id).is_some_and(|spec| spec.contexts.intersects(here)) {
+            hints.push((key.into(), description.to_owned()));
+        }
+    }
+
+    /// A hint teaching the registry action `id` by its first command verb,
+    /// only where that action applies in the current context.
+    pub(super) fn add_registry_command_hint(&self, hints: &mut Hints, id: &str, description: &str) {
+        let verb = registry::by_id(id).and_then(|spec| spec.commands.first());
+        debug_assert!(verb.is_some(), "action {id} has no command");
+        if let Some(verb) = verb {
+            self.add_registry_hint(hints, id, format!(":{}", verb.verb), description);
+        }
+    }
+
     pub(super) fn add_editor_pair_hint(
         &self,
         hints: &mut Hints,

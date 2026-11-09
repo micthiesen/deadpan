@@ -17,6 +17,22 @@ impl super::DeadpanApp {
             .snapshot()?
             .edit_for(self.workspace.as_ref()?)
             .ok()?;
+        // The shared gap row takes only its own length and sound edits.
+        if self.scoped_shared_gap().is_some()
+            && !matches!(
+                edit.operation,
+                RepeatableEdit::Parameter(
+                    deadpan_core::SemanticInstruction::SetPlayGap { .. }
+                        | deadpan_core::SemanticInstruction::SetHoldDuration { .. }
+                        | deadpan_core::SemanticInstruction::SetHoldAudio { .. }
+                )
+            )
+        {
+            return Some(format!(
+                "repeat unavailable: {} selects the play's contents",
+                self.editor_key(crate::navigation::BindingId::BeatPrevious)
+            ));
+        }
         if self.scoped.as_ref().is_some_and(|state| {
             state.selected_target().repeats.is_empty()
                 || state

@@ -111,11 +111,27 @@ contents with `k`; the row addresses the play's contents only as the
 authority for these gap edits. A render preview of an unapplied gap
 room-tone draft refuses, since it cannot isolate the gap.
 
+The row has its own registry context, Shared gap row
+(`Contexts::SHARED_GAP`), which Help marks as here while it is selected
+(since 2026-11-09). Only actions registered for it say "Works here" in the
+Keys sheet, and the footer teaches only those: Enter (change length),
+`:room-tone`, `:hold-silence`, `:isolate-gap`, `k`/`j`, dot, undo, play
+stepping, the parent, macros and `:scope`. Each footer hint names its
+registry action and appears only where that action applies, so gain, mute,
+Camera, punch-in, split, delete and repeat are never taught on the row. Dot
+after any edit other than a gap or pause length or sound reads "repeat
+unavailable".
+
 Evidence: core `semantic::planner::tests::scoped_framing::scoped_play_gap`
 (nested and top-level isolation, bound clocks retained, exact Undo,
 refusals), service `project::tests::scoped_structure::a_shared_gap_length_in_one_play_becomes_its_own_pause_in_one_undo`
-and the `scoped-plays` replay checks from "j in play 2 reaches the shared gap
-after it as its own row" through "One Undo restores the shared gap exactly".
+and `project::tests::scoped_structure::play_gap_replay` (a saved Macro
+recorded in play 2 runs in play 3, and dot repeats the change in plays 3 and
+1, each changing only that play's gap with one Undo per run), and the
+`scoped-plays` replay checks from "j in play 2 reaches the shared gap after it
+as its own row" through "One Undo restores the shared gap exactly", including
+the gap row footer, `.` on play 1's gap row, the refused `:hold-silence` on
+the silent shared gap and `:room-tone` on play 1's gap row.
 
 ## Splitting, deleting and repeating a beat in This play
 

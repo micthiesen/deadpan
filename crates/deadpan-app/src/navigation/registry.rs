@@ -54,22 +54,27 @@ impl Contexts {
     pub const YOUTUBE: Self = Self(1 << 18);
     /// No project is open (the start window).
     pub const NO_PROJECT: Self = Self(1 << 19);
+    /// The shared default gap row after one play in Repeat contents. It
+    /// takes only gap edits and navigation, so contents actions do not apply.
+    pub const SHARED_GAP: Self = Self(1 << 20);
     pub const YOUR_EDIT: Self = Self::EDIT.or(Self::VISUAL);
     pub const TIMELINE: Self = Self::ORIGINAL.or(Self::YOUR_EDIT);
     /// Every editor context: the command line, Help and native menus.
     pub const EDITOR: Self = Self::TIMELINE
         .or(Self::CATALOG)
         .or(Self::PLACED)
-        .or(Self::CONTENTS);
+        .or(Self::CONTENTS)
+        .or(Self::SHARED_GAP);
     pub const ANYWHERE: Self = Self::EDITOR.or(Self::NO_PROJECT);
 
-    const NAMES: [(Self, &'static str); 20] = [
+    const NAMES: [(Self, &'static str); 21] = [
         (Self::ORIGINAL, "Original"),
         (Self::EDIT, "Your edit"),
         (Self::VISUAL, "Visual"),
         (Self::CATALOG, "Sound catalog"),
         (Self::PLACED, "Placed sounds"),
         (Self::CONTENTS, "Repeat contents"),
+        (Self::SHARED_GAP, "Shared gap row"),
         (Self::CAMERA, "Camera"),
         (Self::TRIM, "Trim"),
         (Self::SLIP, "Slip"),

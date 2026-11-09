@@ -1010,6 +1010,65 @@ impl DeadpanApp {
 }
 
 impl DeadpanApp {
+    /// Footer keys for the shared gap row. Each names its registry action and
+    /// shows only where that action applies, so contents edits that refuse
+    /// on this row (gain, Camera, split and the rest) are never taught here.
+    pub(super) fn shared_gap_hints(&self, hints: &mut key_labels::Hints, recording: bool) {
+        hints.tier(key_labels::Tier::Core);
+        self.add_registry_hint(
+            hints,
+            "inspector.edit",
+            self.editor_key(EditorKey::EnterGroup),
+            "change length",
+        );
+        self.add_registry_command_hint(hints, "room-tone", "room tone");
+        self.add_registry_command_hint(hints, "hold.silence", "silence");
+        self.add_registry_command_hint(hints, "isolate-gap", "own copy only");
+        self.add_registry_hint(
+            hints,
+            "beat",
+            self.editor_pair(EditorKey::BeatPrevious, EditorKey::BeatNext, " / "),
+            "contents / gap",
+        );
+        if let Some(label) = self.repeat_hint() {
+            self.add_registry_hint(
+                hints,
+                "edit.repeat-last",
+                self.editor_key(EditorKey::RepeatLast),
+                &label,
+            );
+        }
+        self.add_registry_hint(hints, "undo", self.editor_key(EditorKey::Undo), "undo");
+        hints.tier(key_labels::Tier::Context);
+        self.add_registry_hint(
+            hints,
+            "play.step",
+            self.editor_pair(EditorKey::PlayNext, EditorKey::PlayPrevious, " "),
+            "Repeat play",
+        );
+        self.add_registry_hint(
+            hints,
+            "group.leave",
+            self.editor_key(EditorKey::LeaveGroup),
+            "parent",
+        );
+        if !recording {
+            self.add_registry_hint(
+                hints,
+                "macro.record",
+                self.editor_key(EditorKey::MacroRecord),
+                "+ letter: record macro",
+            );
+            self.add_registry_hint(
+                hints,
+                "macro.execute",
+                self.editor_key(EditorKey::MacroExecute),
+                "+ letter: run macro",
+            );
+        }
+        self.add_registry_command_hint(hints, "scope", "all / play N / plays 2-3");
+    }
+
     /// The Repeat's shared default gap after the chosen play. It has no node
     /// of its own; length and sound changes give this play its own copy.
     fn shared_gap_inspector(
