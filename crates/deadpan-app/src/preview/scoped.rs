@@ -289,7 +289,8 @@ impl DeadpanApp {
 
     /// While the shared gap row is selected, its target is the play's
     /// contents, so only the gap edits (`SetPlayGap`, through semantic Apply)
-    /// and `:isolate-gap` may act. Every other captured edit refuses here.
+    /// and `:isolate-gap` may act, besides target saves, renames and deletes.
+    /// Every other captured edit refuses here.
     pub(super) fn shared_gap_refusal(&self, request: &ProjectRequest) -> Option<&'static str> {
         self.scoped_shared_gap()?;
         match request {
@@ -297,6 +298,12 @@ impl DeadpanApp {
                 edit: ProjectEdit::IsolateGap { .. },
                 ..
             } => None,
+            // Saving, renaming or deleting a saved target does not depend on
+            // the selected beat; tracking and framing toward one do.
+            ProjectRequest::Target(
+                crate::project::targets::Operation::Save { .. }
+                | crate::project::targets::Operation::Delete { .. },
+            ) => None,
             ProjectRequest::Edit { .. }
             | ProjectRequest::Generation(_)
             | ProjectRequest::Target(_) => Some(SHARED_GAP_ONLY),
