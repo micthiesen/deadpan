@@ -104,6 +104,8 @@ pub enum ProposalOutcome {
     Unavailable(String),
     Failed(String),
     Cancelled,
+    /// System sleep stopped it; nothing was proposed. Detecting again retries.
+    Interrupted,
 }
 
 /// Explicitly distinguish deterministic replay data from worker provenance.
@@ -189,6 +191,8 @@ pub enum Outcome {
     Unavailable(String),
     Failed(String),
     Cancelled,
+    /// System sleep stopped it; nothing was saved. Only `:track` retries.
+    Interrupted,
 }
 
 /// The latest tracking job of this session, live or concluded.

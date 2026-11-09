@@ -15,6 +15,9 @@
 //! failed build is remembered for that Original and recipe until
 //! `:proxies retry`. A cancelled or interrupted build keeps its completed
 //! ranges, so `:proxies retry` or the next opening encodes only the rest.
+//! System sleep stops the worker (it is not suspended across sleep with a
+//! VideoToolbox session open); after wake the build resumes automatically
+//! from its completed ranges.
 //! The Original card says what the job is doing and why.
 
 use std::path::PathBuf;
@@ -52,6 +55,8 @@ pub(super) enum ProxyState {
     Unavailable(String),
     /// This build, or a remembered earlier one, failed.
     Failed(String),
+    /// Sleep stopped the build; it resumes from its completed ranges once awake.
+    Interrupted,
 }
 
 enum Event {
@@ -182,6 +187,15 @@ impl ProxyJob {
         }
     }
 
+    /// Transparent retry: once awake and drained, the next build reuses
+    /// every completed range. A failure or Jobs-panel cancellation is not
+    /// retried here.
+    fn resume_after_wake(&mut self, lifecycle: &crate::jobs::Lifecycle) {
+        if self.state == ProxyState::Interrupted && self.events.is_none() && lifecycle.is_awake() {
+            self.state = ProxyState::Unchecked;
+        }
+    }
+
     /// Replay-visible state name.
     #[cfg(feature = "ui-harness")]
     pub(super) fn state_name(&self) -> &'static str {
@@ -195,6 +209,7 @@ impl ProxyJob {
             ProxyState::Disabled => "disabled",
             ProxyState::Unavailable(_) => "unavailable",
             ProxyState::Failed(_) => "failed",
+            ProxyState::Interrupted => "interrupted",
         }
     }
 
@@ -202,7 +217,7 @@ impl ProxyJob {
     pub(super) fn detail(&self) -> Option<&'static str> {
         match self.state {
             ProxyState::Building => Some("preparing seek proxy"),
-            ProxyState::Paused(_) => Some("seek proxy paused"),
+            ProxyState::Paused(_) | ProxyState::Interrupted => Some("seek proxy paused"),
             ProxyState::Failed(_) => Some("seek proxy failed"),
             ProxyState::Ineligible(_) => Some("no seek proxy"),
             _ => None,
@@ -224,6 +239,9 @@ impl ProxyJob {
             ProxyState::Ineligible(reason) => Some(format!(
                 "Seeking uses the Original: {reason}."
             )),
+            ProxyState::Interrupted => Some(
+                "Preparing the seek proxy stopped while the Mac slept. It continues from its completed ranges after wake.".into(),
+            ),
             _ => None,
         }
     }
@@ -329,6 +347,12 @@ impl DeadpanApp {
             }
             context.request_repaint();
         }
+        self.proxies
+            .resume_after_wake(&self.service.jobs().lifecycle());
+        if self.proxies.state == ProxyState::Interrupted {
+            // Nothing else may repaint an idle window after wake.
+            context.request_repaint_after(Duration::from_secs(1));
+        }
         if self.proxies.state != ProxyState::Unchecked || self.proxies.events.is_some() {
             return;
         }
@@ -363,6 +387,8 @@ impl DeadpanApp {
             .copied();
         let (sender, receiver) = mpsc::channel();
         let cancel = Arc::new(AtomicBool::new(false));
+        let run =
+            crate::jobs::RunCapture::new(self.service.jobs().lifecycle(), Arc::clone(&cancel));
         self.proxies.cancel = Arc::clone(&cancel);
         self.proxies.events = Some(receiver);
         self.proxies.state = ProxyState::Building;
@@ -381,18 +407,21 @@ impl DeadpanApp {
                     let _ = sender.send(event);
                     repaint.request_repaint();
                 };
-                let state = build(
-                    &cache,
-                    &registered,
-                    interpretation,
-                    &originals,
-                    worker.as_deref(),
-                    &cancel,
-                    &busy,
-                    &handle,
-                    &send,
-                );
-                send(Event::Done(state));
+                // The watcher stops the worker group at sleep without UI frames.
+                let state = run.run(|| {
+                    build(
+                        &cache,
+                        &registered,
+                        interpretation,
+                        &originals,
+                        worker.as_deref(),
+                        &cancel,
+                        &busy,
+                        &handle,
+                        &send,
+                    )
+                });
+                send(Event::Done(interrupted(run.stop(), state)));
             });
         match spawned {
             Ok(thread) => self.proxies.threads.push(thread),
@@ -401,6 +430,18 @@ impl DeadpanApp {
                 self.proxies.state = ProxyState::Failed(error.to_string());
             }
         }
+    }
+}
+
+/// A build that crossed sleep reports Interrupted whatever it returned, so
+/// its own cancellation is never read as the Jobs panel's. A published
+/// proxy stays published: it was verified before sleep was observed, and the
+/// next build finds it intact.
+fn interrupted(stop: Option<crate::jobs::Stop>, state: ProxyState) -> ProxyState {
+    match (stop, state) {
+        (_, ProxyState::Ready) => ProxyState::Ready,
+        (Some(crate::jobs::Stop::Interrupted), _) => ProxyState::Interrupted,
+        (_, state) => state,
     }
 }
 
@@ -543,6 +584,97 @@ fn build(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sleep_stops_a_running_build_and_wake_resumes_it_without_a_failure() {
+        let lifecycle = crate::jobs::Lifecycle::default();
+        let cancel = Arc::new(AtomicBool::new(false));
+        let run = crate::jobs::RunCapture::new(lifecycle.clone(), Arc::clone(&cancel));
+        // A build stops only through its cancellation flag, as the worker does.
+        let state = run.run(|| {
+            lifecycle.will_sleep();
+            let deadline = std::time::Instant::now() + Duration::from_secs(2);
+            while !cancel.load(Ordering::Acquire) {
+                assert!(std::time::Instant::now() < deadline, "build not stopped");
+                std::thread::park_timeout(Duration::from_millis(5));
+            }
+            ProxyState::Unchecked
+        });
+        let state = interrupted(run.stop(), state);
+        assert_eq!(state, ProxyState::Interrupted);
+        let (sender, receiver) = mpsc::channel();
+        let mut job = ProxyJob {
+            session: Some(1),
+            key: None,
+            state: ProxyState::Building,
+            events: Some(receiver),
+            cancel: Arc::clone(&cancel),
+            busy: Arc::default(),
+            threads: vec![],
+            cache: None,
+            cache_error: None,
+            settings: None,
+            automatic: true,
+        };
+        sender.send(Event::Done(state)).unwrap();
+        let Ok(Event::Done(done)) = job.events.as_ref().unwrap().try_recv() else {
+            panic!("no completion")
+        };
+        job.events = None;
+        job.state = done;
+        job.resume_after_wake(&lifecycle);
+        assert_eq!(job.state, ProxyState::Interrupted, "asleep: no rebuild");
+        assert_eq!(job.detail(), Some("seek proxy paused"));
+        lifecycle.did_wake();
+        job.resume_after_wake(&lifecycle);
+        assert_eq!(
+            job.state,
+            ProxyState::Unchecked,
+            "wake rebuilds from the completed ranges, never a remembered failure"
+        );
+        let fresh = crate::jobs::RunCapture::new(lifecycle, Arc::new(AtomicBool::new(false)));
+        assert_eq!(fresh.stop(), None);
+    }
+
+    #[test]
+    fn sleep_keeps_a_verified_proxy_and_never_masks_cancellation_or_failure() {
+        use crate::jobs::Stop;
+        assert_eq!(
+            interrupted(Some(Stop::Interrupted), ProxyState::Ready),
+            ProxyState::Ready
+        );
+        assert_eq!(
+            interrupted(Some(Stop::Interrupted), ProxyState::Failed("x".into())),
+            ProxyState::Interrupted
+        );
+        assert_eq!(
+            interrupted(Some(Stop::Cancelled), ProxyState::Unchecked),
+            ProxyState::Unchecked,
+            "a Jobs-panel cancellation keeps its own outcome"
+        );
+        assert_eq!(
+            interrupted(None, ProxyState::Failed("x".into())),
+            ProxyState::Failed("x".into())
+        );
+        let mut job = ProxyJob {
+            state: ProxyState::Failed("x".into()),
+            ..ProxyJob {
+                session: None,
+                key: None,
+                state: ProxyState::Unchecked,
+                events: None,
+                cancel: Arc::default(),
+                busy: Arc::default(),
+                threads: vec![],
+                cache: None,
+                cache_error: None,
+                settings: None,
+                automatic: true,
+            }
+        };
+        job.resume_after_wake(&crate::jobs::Lifecycle::default());
+        assert_eq!(job.state, ProxyState::Failed("x".into()));
+    }
 
     #[test]
     fn interpretation_change_cancels_previous_build_and_rejects_late_events() {

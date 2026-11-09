@@ -560,6 +560,13 @@ impl DeadpanApp {
                 format!("Tracking {} failed: {reason}", job.label),
             ),
             Some(Outcome::Unavailable(reason)) => (style::WARNING, reason.clone()),
+            Some(Outcome::Interrupted) => (
+                style::WARNING,
+                format!(
+                    "Tracking {} stopped when the Mac slept; the target is unchanged. Track it again with :track.",
+                    job.label
+                ),
+            ),
             None => return,
         };
         ui.label(egui::RichText::new(text).size(12.0).color(color));

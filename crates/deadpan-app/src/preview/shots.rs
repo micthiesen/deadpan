@@ -21,8 +21,13 @@ use deadpan_store::{AccessMode, ProjectStore, ShotAnalysisKey};
 use super::*;
 
 enum Event {
-    Progress { percent: u8, cache_failed: bool },
+    Progress {
+        percent: u8,
+        cache_failed: bool,
+    },
     Done(Result<(ShotAnalysisKey, ShotAnalysis), String>),
+    /// System sleep stopped the scan; its completed ranges stay cached.
+    Interrupted,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -35,6 +40,8 @@ enum Status {
     Saving(u64),
     Failed(String),
     Ready,
+    /// Sleep stopped the scan. It resumes from its cached ranges once awake.
+    Interrupted,
 }
 
 #[derive(Default)]
@@ -44,6 +51,8 @@ pub(super) struct ShotJob {
     status: Status,
     events: Option<mpsc::Receiver<Event>>,
     cancel: Arc<AtomicBool>,
+    /// The running scan's sleep epoch, kept until its result is submitted.
+    run: Option<crate::jobs::RunCapture>,
     /// Latest visible Original ordinal, never a project-frame estimate.
     cursor: Arc<AtomicU64>,
     /// The running scan, and cancelled scans of earlier sessions that may
@@ -99,6 +108,35 @@ impl ShotJob {
         }
     }
 
+    /// A scan that crossed sleep publishes nothing: drop its pending events
+    /// and any buffered result. Its cached ranges remain for the resumed scan.
+    fn interrupt(&mut self) {
+        self.events = None;
+        self.unsaved = None;
+        self.scanning = None;
+        self.run = None;
+        self.status = Status::Interrupted;
+    }
+
+    /// A finished result still waiting for the busy service is rejected when
+    /// its run crossed sleep.
+    fn reject_interrupted_result(&mut self) {
+        if self.unsaved.is_some()
+            && self.run.as_ref().and_then(crate::jobs::RunCapture::stop)
+                == Some(crate::jobs::Stop::Interrupted)
+        {
+            self.interrupt();
+        }
+    }
+
+    /// Wake resumes an interrupted scan transparently from its cached
+    /// ranges; this is not a retry of a failure, so nothing is remembered.
+    fn resume_after_wake(&mut self, lifecycle: &crate::jobs::Lifecycle) {
+        if self.status == Status::Interrupted && lifecycle.is_awake() {
+            self.status = Status::Unchecked;
+        }
+    }
+
     /// Cancel and wait briefly, so no decoder outlives the process's exit.
     pub(super) fn shutdown(&mut self) {
         self.cancel.store(true, Ordering::Release);
@@ -122,7 +160,22 @@ impl ShotJob {
             Status::Saving(_) => "saving",
             Status::Failed(_) => "failed",
             Status::Ready => "ready",
+            Status::Interrupted => "interrupted",
         }
+    }
+}
+
+/// The watcher stops the copy and decode at sleep without UI frames. A
+/// scan that crossed sleep reports only its interruption, never its result.
+fn scan_until_sleep(
+    run: &crate::jobs::RunCapture,
+    work: impl FnOnce() -> Result<(ShotAnalysisKey, ShotAnalysis), String>,
+) -> Event {
+    let result = run.run(work);
+    if run.stop() == Some(crate::jobs::Stop::Interrupted) {
+        Event::Interrupted
+    } else {
+        Event::Done(result)
     }
 }
 
@@ -250,6 +303,7 @@ impl DeadpanApp {
                     self.shots.status = Status::Scanning(percent);
                     self.shots.cache_failed = cache_failed;
                 }
+                Event::Interrupted => self.shots.interrupt(),
                 Event::Done(result) => {
                     self.shots.events = None;
                     match result {
@@ -268,6 +322,13 @@ impl DeadpanApp {
                 }
             }
             context.request_repaint();
+        }
+        self.shots.reject_interrupted_result();
+        self.shots
+            .resume_after_wake(&self.service.jobs().lifecycle());
+        if self.shots.status == Status::Interrupted {
+            // Nothing else may repaint an idle window after wake.
+            context.request_repaint_after(Duration::from_secs(1));
         }
         self.save_shots(session, context);
         let Some(workspace) = self.workspace.as_ref() else {
@@ -304,6 +365,9 @@ impl DeadpanApp {
         self.shots.scanning = Some(package.clone());
         let (sender, receiver) = mpsc::channel();
         let cancel = Arc::new(AtomicBool::new(false));
+        let run =
+            crate::jobs::RunCapture::new(self.service.jobs().lifecycle(), Arc::clone(&cancel));
+        self.shots.run = Some(run.clone());
         self.shots.cancel = Arc::clone(&cancel);
         self.shots.events = Some(receiver);
         self.shots.status = Status::Scanning(0);
@@ -317,18 +381,20 @@ impl DeadpanApp {
         let spawned = std::thread::Builder::new()
             .name("deadpan-shots".into())
             .spawn(move || {
-                let result = scan(
-                    &package,
-                    interpretation,
-                    &cancel,
-                    &handle,
-                    &cursor,
-                    |event| {
-                        let _ = sender.send(event);
-                        repaint.request_repaint();
-                    },
-                );
-                let _ = sender.send(Event::Done(result));
+                let done = scan_until_sleep(&run, || {
+                    scan(
+                        &package,
+                        interpretation,
+                        &cancel,
+                        &handle,
+                        &cursor,
+                        |event| {
+                            let _ = sender.send(event);
+                            repaint.request_repaint();
+                        },
+                    )
+                });
+                let _ = sender.send(done);
                 repaint.request_repaint();
             });
         match spawned {
@@ -412,6 +478,7 @@ impl DeadpanApp {
                 None => format!("{frames} decoded video frames"),
             },
             Status::Failed(_) => format!("{frames} decoded video frames"),
+            Status::Interrupted => format!("{frames} frames · shots resume after sleep"),
         }
     }
 
@@ -467,6 +534,98 @@ fn shot_picture_ordinal(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn analysis() -> (ShotAnalysisKey, ShotAnalysis) {
+        let key = ShotAnalysisKey {
+            content: "a".repeat(64),
+            video_stream: 0,
+            signature_version: deadpan_analysis::SIGNATURE_VERSION.into(),
+            interpretation: None,
+        };
+        let changes = (0..4).map(|picture| if picture == 0 { [0; 3] } else { [1; 3] });
+        (key, ShotAnalysis::from_changes(changes.collect()).unwrap())
+    }
+
+    #[test]
+    fn sleep_stops_a_running_scan_and_wake_resumes_it_from_cached_ranges() {
+        let lifecycle = crate::jobs::Lifecycle::default();
+        let cancel = Arc::new(AtomicBool::new(false));
+        let run = crate::jobs::RunCapture::new(lifecycle.clone(), Arc::clone(&cancel));
+        let (sender, receiver) = mpsc::channel();
+        let mut job = ShotJob {
+            session: Some(1),
+            status: Status::Scanning(40),
+            events: Some(receiver),
+            cancel: Arc::clone(&cancel),
+            run: Some(run.clone()),
+            scanning: Some("package".into()),
+            ..ShotJob::default()
+        };
+        // The scan stops only through its cancellation flag, as decoding does,
+        // and would otherwise have produced a complete analysis.
+        let event = scan_until_sleep(&run, || {
+            lifecycle.will_sleep();
+            let deadline = std::time::Instant::now() + Duration::from_secs(2);
+            while !cancel.load(Ordering::Acquire) {
+                assert!(std::time::Instant::now() < deadline, "scan not stopped");
+                std::thread::park_timeout(Duration::from_millis(5));
+            }
+            Ok(analysis())
+        });
+        assert!(matches!(event, Event::Interrupted));
+        sender.send(event).unwrap();
+        let Ok(Event::Interrupted) = job.events.as_ref().unwrap().try_recv() else {
+            panic!("no interruption")
+        };
+        job.interrupt();
+        assert_eq!(job.status, Status::Interrupted);
+        assert!(job.unsaved.is_none() && job.events.is_none());
+        assert!(job.failed.is_empty(), "sleep is not a remembered failure");
+        job.resume_after_wake(&lifecycle);
+        assert_eq!(job.status, Status::Interrupted, "asleep: no new scan");
+        lifecycle.did_wake();
+        job.resume_after_wake(&lifecycle);
+        assert_eq!(job.status, Status::Unchecked, "wake resumes automatically");
+    }
+
+    #[test]
+    fn a_buffered_result_from_a_run_that_crossed_sleep_is_never_saved() {
+        for (slept, expected) in [(true, Status::Interrupted), (false, Status::Scanning(100))] {
+            let lifecycle = crate::jobs::Lifecycle::default();
+            let cancel = Arc::new(AtomicBool::new(false));
+            let run = crate::jobs::RunCapture::new(lifecycle.clone(), Arc::clone(&cancel));
+            // The scan finished before the notification was observed.
+            let event = scan_until_sleep(&run, || Ok(analysis()));
+            let Event::Done(Ok((key, analysis))) = event else {
+                panic!("a scan that did not cross sleep keeps its result")
+            };
+            let mut job = ShotJob {
+                session: Some(1),
+                status: Status::Scanning(100),
+                run: Some(run),
+                unsaved: Some((key, Arc::new(analysis))),
+                ..ShotJob::default()
+            };
+            if slept {
+                lifecycle.will_sleep();
+                lifecycle.did_wake();
+            }
+            job.reject_interrupted_result();
+            assert_eq!(job.status, expected);
+            assert_eq!(job.unsaved.is_some(), !slept);
+        }
+    }
+
+    #[test]
+    fn cancellation_before_sleep_stays_a_failure_with_try_again() {
+        let lifecycle = crate::jobs::Lifecycle::default();
+        let cancel = Arc::new(AtomicBool::new(true));
+        let run = crate::jobs::RunCapture::new(lifecycle.clone(), cancel);
+        lifecycle.will_sleep();
+        lifecycle.did_wake();
+        let event = scan_until_sleep(&run, || Err("shot detection was cancelled".into()));
+        assert!(matches!(event, Event::Done(Err(_))));
+    }
 
     #[test]
     fn visible_priority_uses_exact_pts_on_the_original_index_and_rejects_other_assets() {

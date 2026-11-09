@@ -1237,8 +1237,9 @@ before waiting. Yield only at real safe boundaries (`checkpoint`, or
 mid-step. Panel cancellation sets the job's own cancel flag and sends its
 existing cancel request; a cancelled runner keeps its slot until it drains.
 Shutdown releases waiters before each job's own shutdown joins it. New job
-kinds get a fixed priority, resource and yield rule in `JobKind::rules` and a
-row in [jobs](docs/JOBS.md).
+kinds get a fixed priority, resource and yield rule in `JobKind::rules`, a
+sleep policy through `jobs::RunCapture` (never a second sleep observer) and
+rows in [jobs](docs/JOBS.md#policy-per-kind).
 
 Keyboard routing precedes widget drawing. Use persistent `egui::Popup` state for
 menu ownership; the current-pass `Context::any_popup_open` is empty at that point.

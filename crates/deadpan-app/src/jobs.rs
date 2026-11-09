@@ -43,7 +43,7 @@ use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
 mod lifecycle;
-pub use lifecycle::Lifecycle;
+pub use lifecycle::{Lifecycle, RunCapture, Stop};
 
 /// How often a waiting job rechecks its own cancel flag. Coordinator events
 /// (admission, cancellation, foreground changes, shutdown) wake it at once.
@@ -214,10 +214,18 @@ pub struct Rules {
 }
 
 impl JobKind {
+    /// Sleep stops these at their next boundary and never readmits the
+    /// captured run. Proxies are absent: their own monitor stops the worker
+    /// and the next build resumes after wake (docs/JOBS.md, Sleep).
     fn interrupted_by_sleep(self) -> bool {
         matches!(
             self,
-            Self::AiPause | Self::Transcription | Self::SpeechActivity
+            Self::AiPause
+                | Self::Transcription
+                | Self::SpeechActivity
+                | Self::Tracking
+                | Self::PictureProposals
+                | Self::Shots
         )
     }
     #[cfg(test)]
@@ -1543,6 +1551,36 @@ mod tests {
             assert!(fresh.admitted());
             drop(queued);
             assert_eq!(fresh.checkpoint(None), Ok(()));
+        }
+    }
+
+    #[test]
+    fn sleep_stops_shots_and_requested_analysis_but_leaves_proxies_to_their_monitor() {
+        let jobs = Jobs::new();
+        let shots = jobs.register(spec(JobKind::Shots));
+        let queued = jobs.register(spec(JobKind::Shots));
+        let tracking = jobs.register(spec(JobKind::Tracking));
+        let faces = jobs.register(spec(JobKind::PictureProposals));
+        let proxy = jobs.register(spec(JobKind::Proxy));
+        assert!(shots.admitted() && !queued.admitted());
+        jobs.lifecycle().will_sleep();
+        jobs.lifecycle().did_wake();
+        for handle in [&shots, &tracking, &faces] {
+            assert_eq!(handle.checkpoint(None), Err(Stopped::Interrupted));
+        }
+        assert_eq!(queued.wait_admitted(None), Err(Stopped::Interrupted));
+        assert!(!jobs.run_anyway(queued.id()));
+        drop((tracking, faces));
+        // The proxy monitor stops its own worker; the board never holds it.
+        assert_eq!(proxy.pause_reason(), None);
+        let resumed = jobs.register(spec(JobKind::Shots));
+        assert!(!resumed.admitted(), "the interrupted scan keeps its slot");
+        drop(shots);
+        assert!(resumed.admitted());
+        drop(queued);
+        assert_eq!(resumed.checkpoint(None), Ok(()));
+        for kind in [JobKind::Tracking, JobKind::PictureProposals] {
+            assert_eq!(jobs.register(spec(kind)).checkpoint(None), Ok(()));
         }
     }
 

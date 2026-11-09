@@ -27,6 +27,8 @@ const FINDING_PROPOSALS: &str = "Finding targets in the displayed picture…";
 
 pub(in crate::project::service) struct Running {
     cancelled: Arc<AtomicBool>,
+    /// The sleep epoch at command entry; a run that crosses sleep proposes nothing.
+    capture: crate::jobs::RunCapture,
     finished: Receiver<ProposalOutcome>,
     thread: Option<JoinHandle<()>>,
 }
@@ -167,6 +169,9 @@ impl Service {
             }
         };
         let cancelled = Arc::new(AtomicBool::new(false));
+        let capture =
+            crate::jobs::RunCapture::new(self.shared.job_board.lifecycle(), cancelled.clone());
+        let thread_capture = capture.clone();
         let (finished, receive) = mpsc::sync_channel(1);
         let thread_cancelled = cancelled.clone();
         let handle = self.shared.job_board.register(
@@ -179,18 +184,21 @@ impl Service {
             .spawn(move || {
                 // Registered until the detector has returned.
                 let _handle = handle;
-                job_thread(
-                    detector,
-                    package,
-                    request,
-                    revision,
-                    thread_cancelled,
-                    finished,
-                )
+                thread_capture.run(|| {
+                    job_thread(
+                        detector,
+                        package,
+                        request,
+                        revision,
+                        thread_cancelled,
+                        finished,
+                    );
+                });
             })
             .map_err(|error| format!("Could not start picture analysis: {error}"))?;
         self.targets.proposals_running = Some(Running {
             cancelled,
+            capture,
             finished: receive,
             thread: Some(thread),
         });
@@ -219,10 +227,11 @@ impl Service {
         if let Some(thread) = running.thread.take() {
             let _ = thread.join();
         }
-        let result = if running.cancelled.load(Ordering::Acquire) {
-            ProposalOutcome::Cancelled
-        } else {
-            result
+        // Buffered proposals from a run that crossed sleep are never shown.
+        let result = match running.capture.stop() {
+            Some(crate::jobs::Stop::Cancelled) => ProposalOutcome::Cancelled,
+            Some(crate::jobs::Stop::Interrupted) => ProposalOutcome::Interrupted,
+            None => result,
         };
         if let Some(job) = &mut self.targets.proposals
             && job.outcome.is_none()
@@ -247,6 +256,10 @@ impl Service {
                     ProposalOutcome::Failed(reason) => format!("Picture analysis failed: {reason}"),
                     ProposalOutcome::Cancelled => {
                         "Picture analysis cancelled. No edit was made.".into()
+                    }
+                    ProposalOutcome::Interrupted => {
+                        "Picture analysis stopped when the Mac slept. No edit was made; find targets again to retry."
+                            .into()
                     }
                 });
             }

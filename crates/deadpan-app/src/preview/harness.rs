@@ -954,6 +954,11 @@ impl Driver<'_> {
     fn step(&mut self, input: &str, capture: bool) -> Result<(), String> {
         let frame_budget = if self.report.name == "ai-playback-interference" {
             24_000
+        } else if self.report.name == "targets" {
+            // Background tracking, its sleep interruption and explicit retry,
+            // and a correction repaint while their workers run: 6,040 and
+            // 6,445 frames measured on 2026-11-09.
+            8000
         } else if self.report.name == "scoped-plays" {
             // Every module, including the fixed-window duration recording and
             // pause sections, measured 11,640 frames on 2026-11-07.

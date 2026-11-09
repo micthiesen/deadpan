@@ -1983,6 +1983,12 @@ impl DeadpanApp {
                 ProposalOutcome::Cancelled => {
                     return Err("Finding targets was cancelled; no edit was made.".into());
                 }
+                ProposalOutcome::Interrupted => {
+                    return Err(
+                        "Finding targets stopped when the Mac slept; enter the command again. No edit was made."
+                            .into(),
+                    );
+                }
             };
             admit_zoom_context(Some(&pending.context), &self.capture_zoom()).map_err(|_| {
                 "The beat, range, cursor or revision changed while targets were being found; enter the command again. No edit was made.".to_owned()

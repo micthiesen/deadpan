@@ -46,6 +46,8 @@ enum Event {
 
 struct Running {
     cancelled: Arc<AtomicBool>,
+    /// The sleep epoch at command entry; it decides interruption and guards the save.
+    capture: crate::jobs::RunCapture,
     events: Receiver<Event>,
     thread: Option<JoinHandle<()>>,
 }
@@ -490,6 +492,9 @@ impl Service {
             },
         };
         let cancelled = Arc::new(AtomicBool::new(false));
+        let capture =
+            crate::jobs::RunCapture::new(self.shared.job_board.lifecycle(), cancelled.clone());
+        let thread_capture = capture.clone();
         let (events, receive) = mpsc::sync_channel(EVENT_CAPACITY);
         let thread_cancelled = cancelled.clone();
         let handle = self.shared.job_board.register(
@@ -500,20 +505,24 @@ impl Service {
         let thread = std::thread::Builder::new()
             .name("deadpan-track".into())
             .spawn(move || {
-                job_thread(
-                    worker,
-                    package,
-                    request,
-                    revision,
-                    correct_at,
-                    thread_cancelled,
-                    events,
-                    &handle,
-                );
+                // The watcher cancels the worker at sleep without UI frames.
+                thread_capture.run(|| {
+                    job_thread(
+                        worker,
+                        package,
+                        request,
+                        revision,
+                        correct_at,
+                        thread_cancelled,
+                        events,
+                        &handle,
+                    );
+                });
             })
             .map_err(|error| format!("Could not start tracking: {error}"))?;
         self.targets.running = Some(Running {
             cancelled,
+            capture,
             events: receive,
             thread: Some(thread),
         });
@@ -593,13 +602,16 @@ impl Service {
         if let Some(thread) = running.thread.take() {
             let _ = thread.join();
         }
-        let cancelled = running.cancelled.load(Ordering::Acquire);
-        let outcome = match result {
-            _ if cancelled => Outcome::Cancelled,
-            Err(Failure::Cancelled) => Outcome::Cancelled,
-            Err(Failure::Unavailable(reason)) => Outcome::Unavailable(reason),
-            Err(Failure::Failed(reason)) => Outcome::Failed(reason),
-            Ok(finished) => match self.save_tracked(finished) {
+        // A run that crossed sleep never publishes, even a finished path.
+        // The watcher's own cancellation makes the worker report Cancelled.
+        let outcome = match (running.capture.stop(), result) {
+            (Some(crate::jobs::Stop::Interrupted), _) => Outcome::Interrupted,
+            (Some(crate::jobs::Stop::Cancelled), _) | (None, Err(Failure::Cancelled)) => {
+                Outcome::Cancelled
+            }
+            (None, Err(Failure::Unavailable(reason))) => Outcome::Unavailable(reason),
+            (None, Err(Failure::Failed(reason))) => Outcome::Failed(reason),
+            (None, Ok(finished)) => match self.save_tracked(finished, &running.capture) {
                 Ok(outcome) => outcome,
                 Err(error) => Outcome::Failed(error),
             },
@@ -608,7 +620,11 @@ impl Service {
     }
 
     /// Save a finished path expecting the revision tracking started from.
-    fn save_tracked(&mut self, finished: Finished) -> Result<Outcome> {
+    fn save_tracked(
+        &mut self,
+        finished: Finished,
+        capture: &crate::jobs::RunCapture,
+    ) -> Result<Outcome> {
         let job = self
             .targets
             .job
@@ -640,6 +656,11 @@ impl Service {
         }
         .map_err(|error| error.to_string())?;
         let samples = target.samples.len();
+        // The final guard orders the commit against sleep: a notification
+        // after this observation does not retract the saved target.
+        if capture.stop() == Some(crate::jobs::Stop::Interrupted) {
+            return Ok(Outcome::Interrupted);
+        }
         let revision = self.commit_target(&job.revision, &job.target, target)?;
         Ok(Outcome::Saved {
             revision,
@@ -666,6 +687,9 @@ impl Service {
                 format!("Tracking {label} was cancelled; the target is unchanged.")
             }
             Outcome::Failed(_) => format!("Tracking {label} failed; the target is unchanged."),
+            Outcome::Interrupted => format!(
+                "Tracking {label} stopped when the Mac slept; the target is unchanged. Track it again with :track."
+            ),
             Outcome::Unavailable(_) => {
                 format!("{label} cannot be tracked here; the inspector says why.")
             }

@@ -29,6 +29,48 @@ pub(super) fn backend() -> Backend {
     }])))
 }
 
+/// Sleep stops the running tracker without saving; wake alone never
+/// restarts it, and Shift-T in Camera starts a fresh run.
+fn tracking_sleep(d: &mut Driver<'_>, revision: &str) -> Result<(), String> {
+    d.report.skipped.push(
+        "Tracking sleep/wake is injected through the Jobs lifecycle atomics; native notification delivery and physical sleep are owner checks.".into(),
+    );
+    let lifecycle = d.app().service.jobs().lifecycle();
+    lifecycle.will_sleep();
+    lifecycle.did_wake();
+    d.wait_for("Tracking interrupted by sleep", |app| {
+        app.targets
+            .job()
+            .is_some_and(|job| job.outcome == Some(Outcome::Interrupted))
+    })?;
+    d.settled()?;
+    d.step("Tracking interrupted by sleep", false)?;
+    let widgets = widget_text(d);
+    let untracked = target(d, "target-1").is_some_and(|target| target.samples.is_empty());
+    let painted = scenarios::text_paint_visibility(
+        d,
+        "Tracking Target 1 stopped when the Mac slept; the target is unchanged. Track it again with :track.",
+    );
+    d.check(
+        "Sleep stops tracking without saving, names the explicit retry and wake does not restart it",
+        untracked
+            && d.revision() == revision
+            && d.app().targets.running().is_none()
+            && d.app().camera.is_some()
+            && widgets.contains("stopped when the Mac slept")
+            && !painted.is_empty()
+            && painted.iter().all(|paint| paint["fully_visible"] == true),
+        json!({"untracked":true,"revision":revision,"running":false,"warning":"fully visible"}),
+        json!({"untracked":untracked,"revision":d.revision(),"running":d.app().targets.running().is_some(),"warning":painted}),
+    )?;
+    d.capture("Tracking interrupted by sleep")?;
+    d.key_modified(Key::T, Modifiers::SHIFT)?;
+    d.wait_for("Tracking started again explicitly", |app| {
+        app.targets.running().is_some()
+    })?;
+    Ok(())
+}
+
 fn camera(d: &Driver<'_>) -> Value {
     d.app()
         .camera
@@ -299,6 +341,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"tracking":widgets.contains("Tracking Target 1"),"cancel":widgets.contains("Cancel tracking")}),
     )?;
     d.capture("Tracking in the background")?;
+    tracking_sleep(d, followed_revision.as_str())?;
     d.wait_for("Tracking saved and Camera continued", |app| {
         app.targets.job().is_some_and(|job| !job.running())
             && app.camera.as_ref().is_some_and(|camera| {

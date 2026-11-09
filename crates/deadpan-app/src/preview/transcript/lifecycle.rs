@@ -1,118 +1,19 @@
 //! A recognition run retains its sleep epoch through worker drain and publication.
 
+#[cfg(test)]
 use super::*;
 
 #[cfg(test)]
 mod real;
 #[cfg(test)]
 mod real_activity;
+pub(super) use crate::jobs::{RunCapture, Stop};
+#[cfg(test)]
 use std::sync::Mutex;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum Stop {
-    Cancelled,
-    Interrupted,
-}
-
-#[derive(Clone)]
-pub(super) struct RunCapture {
-    lifecycle: crate::jobs::Lifecycle,
-    pub epoch: u64,
-    cancel: Arc<AtomicBool>,
-    cause: Arc<Mutex<Option<Stop>>>,
-}
-
-impl RunCapture {
-    pub fn new(lifecycle: crate::jobs::Lifecycle, cancel: Arc<AtomicBool>) -> Self {
-        let epoch = lifecycle.snapshot();
-        Self {
-            lifecycle,
-            epoch,
-            cancel,
-            cause: Arc::new(Mutex::new(None)),
-        }
-    }
-
-    /// Cancellation already requested when interruption is observed takes
-    /// precedence. This does not claim chronological ordering of racing events.
-    /// Retain our own cause so the flag we set is never read as user cancellation.
-    pub fn stop(&self) -> Option<Stop> {
-        let mut cause = self.cause.lock().unwrap_or_else(|error| error.into_inner());
-        if cause.is_none() {
-            if self.cancel.load(Ordering::Acquire) {
-                *cause = Some(Stop::Cancelled);
-            } else if self.lifecycle.interrupted_since(self.epoch) {
-                *cause = Some(Stop::Interrupted);
-                self.cancel.store(true, Ordering::Release);
-            }
-        }
-        *cause
-    }
-
-    /// The scoped watcher can cancel native inference without waiting for a
-    /// UI repaint or a progress callback. It ends when this worker returns.
-    pub fn run<T>(&self, work: impl FnOnce() -> T) -> T {
-        let done = AtomicBool::new(false);
-        std::thread::scope(|scope| {
-            scope.spawn(|| {
-                while !done.load(Ordering::Acquire) {
-                    if self.stop().is_some() {
-                        break;
-                    }
-                    std::thread::park_timeout(Duration::from_millis(20));
-                }
-            });
-            struct Finish<'a>(&'a AtomicBool);
-            impl Drop for Finish<'_> {
-                fn drop(&mut self) {
-                    self.0.store(true, Ordering::Release);
-                }
-            }
-            let _finish = Finish(&done);
-            work()
-        })
-    }
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn sleeping_native_work_is_cancelled_without_ui_or_progress_callbacks() {
-        let lifecycle = crate::jobs::Lifecycle::default();
-        let cancel = Arc::new(AtomicBool::new(false));
-        let run = RunCapture::new(lifecycle.clone(), cancel.clone());
-        run.run(|| {
-            lifecycle.will_sleep();
-            lifecycle.did_wake();
-            let deadline = std::time::Instant::now() + Duration::from_secs(2);
-            while !cancel.load(Ordering::Acquire) {
-                assert!(
-                    std::time::Instant::now() < deadline,
-                    "native worker cancellation was not signalled"
-                );
-                std::thread::park_timeout(Duration::from_millis(5));
-            }
-        });
-        assert_eq!(run.stop(), Some(Stop::Interrupted));
-        assert_eq!(
-            run.stop(),
-            Some(Stop::Interrupted),
-            "own cancellation flag cannot change the cause"
-        );
-    }
-
-    #[test]
-    fn cancellation_already_requested_takes_precedence_over_coalesced_sleep() {
-        let lifecycle = crate::jobs::Lifecycle::default();
-        let cancel = Arc::new(AtomicBool::new(false));
-        let run = RunCapture::new(lifecycle.clone(), cancel.clone());
-        cancel.store(true, Ordering::Release);
-        lifecycle.will_sleep();
-        lifecycle.did_wake();
-        assert_eq!(run.stop(), Some(Stop::Cancelled));
-    }
 
     fn result() -> (TranscriptKey, Transcript) {
         (

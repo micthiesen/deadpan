@@ -484,3 +484,59 @@ fn cancel_matches_proposal_session_and_ticket_and_completed_cancel_is_idempotent
     assert_eq!(unrelated.targets.unwrap().proposals.unwrap().ticket, 6);
     assert_eq!(stored(&fixture.workspace), before);
 }
+
+#[test]
+fn sleep_interrupts_detection_without_showing_proposals_and_detecting_again_retries() {
+    let fixture = scripted([
+        ProposalRun::Proposals {
+            selection: ProposalSelection::Both,
+            faces: Some(vec![face(0.1)]),
+            salient_regions: Some(vec![region(0.2)]),
+            delay: Duration::from_secs(30),
+        },
+        run(
+            ProposalSelection::Both,
+            Some(vec![face(0.3)]),
+            Some(vec![region(0.6)]),
+        ),
+    ]);
+    let before = stored(&fixture.workspace);
+    let started = detect(&fixture, &fixture.workspace, 1, ProposalSelection::Both);
+    assert_eq!(refusal(&started), None);
+    let lifecycle = fixture.service.jobs().lifecycle();
+    lifecycle.will_sleep();
+    lifecycle.did_wake();
+    let (job, finished) = done(&fixture.service, started, 1);
+    assert_eq!(job.outcome, Some(ProposalOutcome::Interrupted));
+    assert!(
+        finished
+            .message
+            .as_deref()
+            .is_some_and(|message| message.contains("slept")),
+        "{:?}",
+        finished.message
+    );
+    assert_eq!(stored(&fixture.workspace), before);
+    let retried = detect(&fixture, &fixture.workspace, 2, ProposalSelection::Both);
+    assert_eq!(refusal(&retried), None);
+    let (job, _) = done(&fixture.service, retried, 2);
+    assert_found(&job, Some(vec![face(0.3)]), Some(vec![region(0.6)]));
+    assert_eq!(stored(&fixture.workspace), before);
+}
+
+#[test]
+fn detection_started_while_asleep_proposes_nothing() {
+    let fixture = scripted([run(
+        ProposalSelection::Both,
+        Some(vec![face(0.3)]),
+        Some(vec![region(0.6)]),
+    )]);
+    let before = stored(&fixture.workspace);
+    // The worker finishes at once with proposals; they are still withheld.
+    fixture.service.jobs().lifecycle().will_sleep();
+    let started = detect(&fixture, &fixture.workspace, 1, ProposalSelection::Both);
+    assert_eq!(refusal(&started), None);
+    let (job, _) = done(&fixture.service, started, 1);
+    assert_eq!(job.outcome, Some(ProposalOutcome::Interrupted));
+    assert_eq!(stored(&fixture.workspace), before);
+}

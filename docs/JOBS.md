@@ -210,7 +210,7 @@ its transport.
   ([preview proxies](PROXIES.md#resuming)).
 - **Shots.** A cancelled shot scan shows Try again.
 
-## Sleep and model work
+## Sleep
 
 Native workspace sleep and wake notifications advance an atomic lifecycle
 epoch. The callback does not take the coordinator or project-writer lock.
@@ -252,6 +252,42 @@ cancel a later detector. Its results and queued saves use the same publication
 guards, and its retry waits for wake and worker drain. Other job kinds retain
 their existing lifecycle contracts. See [transcription sleep qualification](qualification/transcription-sleep-2026-10-17.md)
 and [standalone detection qualification](qualification/activity-sleep-2026-10-17.md).
+
+### Policy per kind
+
+Every worker that sleep stops reads the same lifecycle epoch; there is no
+second sleep observer. Recognition, pause detection, tracking, target
+proposals, shot detection and proxies capture it at command entry in a
+`jobs::RunCapture`, whose scoped watcher polls every 20 ms and signals the
+job's existing cancellation flag without UI frames or progress callbacks. A cancellation already requested keeps its
+outcome. Kinds in `JobKind::interrupted_by_sleep` also stop at their
+coordinator boundaries (`checkpoint`, `wait_admitted`) and cannot be run
+anyway. The policy follows the kind of work:
+
+| Kind | At sleep | After wake | Durable state |
+| --- | --- | --- | --- |
+| AI pause | Interrupted, queued or running | Explicit Retry (R) only | Attempt durably Interrupted; Ready variants and accepted providers kept |
+| Transcription, Recognize again | Interrupted, queued or running | Explicit Try again only | Stored transcript and corrections kept; guarded saves |
+| Pause detection | Interrupted, queued or running | Explicit Try again only | Stored words and corrections kept; guarded saves |
+| Word refinement | Interrupted at its next check | Request refinement again | Nothing accepted; its save carries the captured epoch |
+| Tracking | Interrupted; the Vision worker is torn down | Explicit `:track` (or Shift-T in Camera) only | Target and history unchanged; the save checks the epoch immediately before its commit |
+| Target proposals (faces, regions) | Interrupted; the worker is torn down | Detect again explicitly | No edit; proposals from a run that crossed sleep are never shown |
+| Shot detection | Interrupted, queued or running | Resumes automatically from its cached ranges | Completed ranges stay in the private range cache; a result from a run that crossed sleep, even one buffered for saving, is discarded and recomputed |
+| Seek proxy | The worker group is stopped, not suspended across sleep with a VideoToolbox session open | Rebuilds automatically, reusing completed ranges | Completed ranges kept; a proxy already verified and published stays; sleep is never remembered as a failure |
+| Render | Unchanged | Not restarted | Its own durable job; a sleep-induced encoder fault fails truthfully and final-file verification refuses a damaged movie; Retry is explicit |
+| YouTube import, model install | Unchanged | Not restarted | A dropped connection fails or resumes through their own retry paths |
+| Portable copy, backups, storage cleanup | Unchanged | Continue | Local file work with no model, GPU or device session; the process simply resumes |
+| Thumbnails, waveforms, playback warming | Not registered jobs | Requested again by the UI | Request-bound caches; playback itself stops at sleep and never resumes silently |
+
+Model and requested analysis workers wait for an explicit retry because a
+fresh run may be unwanted after wake and none of them can resume
+mid-inference. Shot detection and proxies resume because their completed
+ranges are valid checkpoints of cheap, rebuildable work (§18.5): restarting
+costs only the unfinished ranges. Their results publish nothing to project
+history. Shot saves are not epoch-guarded inside SQLite: the analysis is a
+deterministic, content-keyed function of the immutable Original, and the
+policy above only keeps a run that crossed sleep from publishing.
+See [worker sleep qualification](qualification/worker-sleep-2026-11-09.md).
 
 ## Jobs panel
 
@@ -418,6 +454,29 @@ The list survives acknowledging the recovery report.
     transcription queues and a shot scan yields. The attempt ends durably
     `Failed`, the waiting generation runs, and every edit commits within a
     five-second budget.
+- **Sleep per kind** ([worker sleep qualification](qualification/worker-sleep-2026-11-09.md)):
+  - `jobs::tests::sleep_stops_shots_and_requested_analysis_but_leaves_proxies_to_their_monitor`:
+    running and queued scans, tracking and target proposals stop at their
+    boundaries, Run anyway is refused, the interrupted scan keeps its slot
+    until it drains, fresh registrations run, and the proxy is never held
+  - `project::tests::targets::sleep`: real service tracking with the
+    scripted worker stops as Interrupted, saves nothing, leaves history
+    unchanged, keeps editing immediate, is not restarted by wake and saves
+    on an explicit `:track`; a prior cancellation stays Cancelled; a run
+    started while asleep stops at once
+  - `project::tests::targets::picture_proposals::sleep_*` and
+    `detection_started_while_asleep_proposes_nothing`: no proposals from a
+    run that crossed sleep, no edit, and detecting again finds them
+  - `preview::shots::tests`: the watcher stops a running scan, its result
+    and any result buffered for saving are discarded, sleep is not
+    remembered as a failure, and only wake resumes it; a prior cancellation
+    stays a failure with Try again
+  - `preview::proxies::tests`: the watcher stops a running build, wake
+    rebuilds it, a verified proxy stays, and cancellations or failures are
+    never retried automatically
+  - replay `targets` injects sleep during background tracking from Camera,
+    checks the fully painted message and unchanged target, then retries
+    with Shift-T
 - **What the stubs do not exercise.** The real transcription, shot and proxy
   threads are not run here (they need the model pack and full decodes).
   Their coordinator calls are small and covered by their own replays
@@ -451,8 +510,8 @@ These are not implemented or not qualified:
 - **Running inference during playback.** AI picture generation has cooperative
   scheduling; physical playback interference and the other model workers remain
   unqualified.
-- **Sleep.** AI pause generation has the policy above. Sleep policy for other
-  model jobs and physical sleep/wake qualification remain outstanding.
+- **Sleep.** Every registered job kind has the policy above. Physical
+  sleep/wake and native notification delivery remain owner checks.
 - **Historical estimates.** Remaining time uses only the current run's
   measured rate.
 - **Physical quit paths.** ⌘Q and Dock Quit through the native guard are

@@ -325,6 +325,9 @@ impl DeadpanApp {
                     return Err(reason);
                 }
                 ProposalOutcome::Cancelled => return Err("Detection was cancelled.".into()),
+                ProposalOutcome::Interrupted => {
+                    return Err("Detection stopped when the Mac slept; start it again.".into());
+                }
             };
             let picture = self.presentation.picture().ok_or("The picture changed.")?;
             let frame = picture
