@@ -3880,12 +3880,12 @@ Physical original-visual "y" -> copy repeatable=false interrupt=false [None,None
 #305 = Some("h copies backward in frames · Left copies backward in frames · l copies forward in frames · Right copies forward in frames · w copies to the next word · b copies back to a word start · e copies to the word end · W copies to the next sentence · B copies back to a sentence start · ] … · [ … · j copies toward next beats · Down copies toward next beats · k copies toward previous beats · Up copies toward previous beats · Esc cancels") | Some("h · Left · l · Right · w · b · e · W · B · ] · [ · j · Down · k · Up · Esc")
 #306 = Some("An operator count must be positive; no action was taken.") | Some("An operator count must be positive; no action was taken.")
 #307 = Operator { cut: false, selector: Motion { motion: Scope { end: true } } }
-#308 = Invalid("A group-boundary operator does not accept a count.")
+#308 = Invalid("gg and G move to a start or end and do not accept a count.")
 #309 = Invalid("An operator count must be positive; no action was taken.")
 #310 = Invalid("Use one count before the operator or before its motion, not both.")
 #311 = Operator { cut: false, selector: Motion { motion: Scope { end: false } } }
 #312 = Some("g copies to group start · Esc cancels") | Some("g · Esc")
-#313 = Some("A group-boundary operator does not accept a count.") | Some("A group-boundary operator does not accept a count.")
+#313 = Some("gg and G move to a start or end and do not accept a count.") | Some("gg and G move to a start or end and do not accept a count.")
 #314 = Operator { cut: false, selector: Motion { motion: Beats { forward: false, count: 1 } } }
 #315 = Operator { cut: false, selector: Motion { motion: Beats { forward: false, count: 3 } } }
 #316 = Operator { cut: false, selector: Motion { motion: Beats { forward: false, count: 2 } } }

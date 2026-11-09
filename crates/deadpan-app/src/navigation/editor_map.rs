@@ -478,7 +478,7 @@ impl Rule {
                         motion: M::Scope { .. },
                     } if count.is_some() => {
                         return Action::Invalid(
-                            "A group-boundary operator does not accept a count.",
+                            "gg and G move to a start or end and do not accept a count.",
                         );
                     }
                     S::Motion {
