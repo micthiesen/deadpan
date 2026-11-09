@@ -436,8 +436,12 @@ share the engine's one Edit-waveform slot and take precedence while open.
 beat's attachments at their exact frames: cutaways (and video-only removals),
 captions, gain envelopes, mute ranges, and every placed root sound, stacked in
 up to three rows. Beats nested in ordinary groups contribute theirs at their
-own starts; Repeat and speed-change contents keep their own clocks and are
-not drawn there. `:timeline story` returns to the cards. Evidence: the
+own starts. Inside a Repeat, each play (up to 256) draws its own contents, the
+shared definition or that play's override, at the play's exact start, and a
+caption with `reveal` appears only from its first play on; speed-change
+contents are drawn on the Edit clock, scaled by output over input duration
+(`detail_lane_draws_repeat_contents_in_each_revealed_play`,
+`detail_lane_scales_speed_change_contents_to_the_edit_clock`). `:timeline story` returns to the cards. Evidence: the
 `split-edits` replay ("Timing view" and "Detail view" frames and their six
 checks). `,w` steps story → timing → detail → story. A Repeat stays one
 object in every view, with a tick where each later play begins, from its exact

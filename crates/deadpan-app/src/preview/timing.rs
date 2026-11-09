@@ -36,6 +36,8 @@ pub(super) struct Attachment {
 
 /// The most play boundaries drawn on one Repeat.
 const MAX_PLAY_TICKS: u32 = 256;
+/// Bounds the attachment walk through nested plays and groups.
+const MAX_VISITED: usize = 20_000;
 
 /// Local starts of a Repeat's later plays (`§9.2` iteration ticks), from its
 /// exact compiled layout: play durations, overrides and gaps included. None
@@ -76,47 +78,104 @@ fn ratio(value: deadpan_core::ExactRatio) -> f64 {
     value.numerator() as f64 / value.denominator() as f64
 }
 
-/// The attachments of `beats` (direct children of the shown group) and every
-/// placed root sound, in absolute Edit frames.
+/// The attachments of `beats` (direct children of the shown group), of their
+/// contents in every Repeat play and speed change, and every placed root
+/// sound, in absolute Edit frames.
 pub(super) fn attachments(
     document: &deadpan_core::ProjectDocument,
     beats: &[BeatRow],
 ) -> Vec<Attachment> {
     let mut found = Vec::new();
-    // Beats and, through ordinary groups, every nested child at its own
-    // start; Repeat and speed-change contents have their own clocks and stay
-    // out of this lane.
+    // Beats and every nested child at its own start. Each entry carries the
+    // Edit frames one local frame occupies: a speed change scales its
+    // contents, and each play of a Repeat draws its own definition (the
+    // shared child or that play's override) at the play's exact start.
     let durations = document.durations_shared().ok();
-    let mut visit: Vec<(deadpan_core::NodeId, u64)> = beats
+    // The fourth value is the zero-based play of the innermost enclosing
+    // Repeat, which decides a caption's `reveal`.
+    let mut visit: Vec<(deadpan_core::NodeId, f64, f64, Option<u32>)> = beats
         .iter()
-        .map(|beat| (beat.id.clone(), beat.start))
+        .map(|beat| (beat.id.clone(), beat.start as f64, 1.0, None))
         .collect();
+    let frames = |id: &deadpan_core::NodeId| {
+        durations
+            .as_ref()
+            .and_then(|durations| durations.get(id))
+            .map_or(0.0, |duration| duration.frames() as f64)
+    };
     let mut index = 0;
-    while index < visit.len() {
-        let (id, start) = visit[index].clone();
+    while index < visit.len() && visit.len() <= MAX_VISITED {
+        let (id, start, scale, within) = visit[index].clone();
         index += 1;
-        if let (Some(durations), Some(deadpan_core::NodeKind::Sequence { children })) = (
-            durations.as_ref(),
-            document.nodes().get(&id).map(|node| &node.kind),
-        ) {
-            let mut at = start;
-            for child in children {
-                visit.push((child.clone(), at));
-                at += durations
-                    .get(child)
-                    .map_or(0, |duration| u64::try_from(duration.frames()).unwrap_or(0));
+        match document.nodes().get(&id).map(|node| &node.kind) {
+            Some(deadpan_core::NodeKind::Sequence { children }) => {
+                let mut at = start;
+                for child in children {
+                    visit.push((child.clone(), at, scale, within));
+                    at += frames(child) * scale;
+                }
             }
+            Some(deadpan_core::NodeKind::Retime { child, .. }) => {
+                let input = frames(child);
+                if input > 0.0 {
+                    visit.push((child.clone(), start, scale * frames(&id) / input, within));
+                }
+            }
+            Some(deadpan_core::NodeKind::Repeat {
+                child,
+                iterations,
+                gap,
+                ..
+            }) => {
+                let Some(durations) = durations.as_ref() else {
+                    continue;
+                };
+                let Ok(layout) = deadpan_core::RepeatLayout::compile_with_gap_overrides(
+                    iterations,
+                    child,
+                    document.overrides().get(&id),
+                    gap.as_ref()
+                        .map_or(deadpan_core::FrameDuration::ZERO, |recipe| recipe.duration),
+                    document.gap_overrides().get(&id),
+                    durations,
+                ) else {
+                    continue;
+                };
+                for (number, play) in (0..iterations.len().min(MAX_PLAY_TICKS))
+                    .filter_map(|n| Some((n, iterations.at(n)?)))
+                {
+                    let Some(placed) = layout.play(&play) else {
+                        continue;
+                    };
+                    let root = document
+                        .overrides()
+                        .get(&id)
+                        .and_then(|plays| plays.get(&play))
+                        .unwrap_or(child)
+                        .clone();
+                    visit.push((
+                        root,
+                        start + placed.start as f64 * scale,
+                        scale,
+                        Some(number),
+                    ));
+                }
+            }
+            _ => {}
         }
     }
-    for (id, start) in &visit {
+    for (id, start, scale, within) in &visit {
         let Some(node) = document.nodes().get(id) else {
             continue;
         };
-        let at = *start as f64;
+        let (at, scale) = (*start, *scale);
         if let Some(clip) = node.audio_treatments.clip_gain() {
             for mute in clip.mute_ranges() {
                 found.push(Attachment {
-                    frames: (at + ratio(mute.start()), at + ratio(mute.end())),
+                    frames: (
+                        at + ratio(mute.start()) * scale,
+                        at + ratio(mute.end()) * scale,
+                    ),
                     kind: "mute",
                     label: "Muted".into(),
                 });
@@ -124,8 +183,8 @@ pub(super) fn attachments(
             for envelope in clip.envelopes() {
                 found.push(Attachment {
                     frames: (
-                        at + ratio(envelope.range().start()),
-                        at + ratio(envelope.range().end()),
+                        at + ratio(envelope.range().start()) * scale,
+                        at + ratio(envelope.range().end()) * scale,
                     ),
                     kind: "envelope",
                     label: format!("Gain envelope · {} points", envelope.segments().len() + 1),
@@ -135,7 +194,7 @@ pub(super) fn attachments(
         if let Some((host, offset)) = deadpan_core::cutaway_host(document, id)
             && let Some(host) = document.nodes().get(&host)
         {
-            let local = |frame: i64| at + (frame - offset) as f64;
+            let local = |frame: i64| at + (frame - offset) as f64 * scale;
             for cutaway in &host.cutaways {
                 found.push(Attachment {
                     frames: (local(cutaway.range.start().0), local(cutaway.range.end().0)),
@@ -151,7 +210,11 @@ pub(super) fn attachments(
                     },
                 });
             }
-            for caption in &host.captions {
+            for caption in host.captions.iter().filter(|caption| {
+                caption
+                    .reveal
+                    .is_none_or(|reveal| within.unwrap_or(0) + 1 >= reveal.get())
+            }) {
                 found.push(Attachment {
                     frames: (local(caption.range.start().0), local(caption.range.end().0)),
                     kind: "caption",

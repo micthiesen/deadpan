@@ -287,3 +287,114 @@ fn repeat_play_ticks_follow_each_later_play_start() {
         None
     );
 }
+
+#[test]
+fn detail_lane_draws_repeat_contents_in_each_revealed_play() {
+    let repeated = with_repeat();
+    let caption = deadpan_core::Caption {
+        range: deadpan_core::FrameRange::new(
+            deadpan_core::ProjectFrame(0),
+            deadpan_core::ProjectFrame(1),
+        )
+        .unwrap(),
+        text: "again".into(),
+        placement: Default::default(),
+        reveal: std::num::NonZeroU32::new(2),
+    };
+    let document = apply(
+        &repeated,
+        &CommandRequest {
+            project_id: repeated.project_id().clone(),
+            expected_revision: repeated.revision_id().clone(),
+            new_revision: RevisionId::new("captioned").unwrap(),
+            command: Command::SetCaptions {
+                node: node("beat"),
+                captions: vec![caption],
+            },
+        },
+    )
+    .unwrap()
+    .forward
+    .apply(&repeated)
+    .unwrap();
+    let beat = document.durations().unwrap()[&node("beat")].frames() as f64;
+    let rows = [crate::preview::BeatRow {
+        id: node("repeat"),
+        label: "Repeat".into(),
+        kind: "Repeat".into(),
+        start: 10,
+        frames: 3 * beat as u64,
+    }];
+    let captions: Vec<_> = crate::preview::timing::attachments(&document, &rows)
+        .into_iter()
+        .filter(|attachment| attachment.kind == "caption")
+        .map(|attachment| attachment.frames)
+        .collect();
+    // Revealed from the second play: none in the first, one in each later.
+    assert_eq!(
+        captions,
+        vec![
+            (10.0 + beat, 11.0 + beat),
+            (10.0 + 2.0 * beat, 11.0 + 2.0 * beat)
+        ]
+    );
+}
+
+#[test]
+fn detail_lane_scales_speed_change_contents_to_the_edit_clock() {
+    let document = fixture();
+    let beat = document.durations().unwrap()[&node("beat")];
+    let request = |document: &ProjectDocument, revision: &str, command| CommandRequest {
+        project_id: document.project_id().clone(),
+        expected_revision: document.revision_id().clone(),
+        new_revision: RevisionId::new(revision).unwrap(),
+        command,
+    };
+    let step = |document: &ProjectDocument, revision: &str, command| {
+        apply(document, &request(document, revision, command))
+            .unwrap()
+            .forward
+            .apply(document)
+            .unwrap()
+    };
+    let captioned = step(
+        &document,
+        "captioned",
+        Command::SetCaptions {
+            node: node("beat"),
+            captions: vec![deadpan_core::Caption {
+                range: deadpan_core::FrameRange::new(
+                    deadpan_core::ProjectFrame(0),
+                    deadpan_core::ProjectFrame(1),
+                )
+                .unwrap(),
+                text: "slow".into(),
+                placement: Default::default(),
+                reveal: None,
+            }],
+        },
+    );
+    let slowed = step(
+        &captioned,
+        "slowed",
+        Command::WrapRetime {
+            node: node("beat"),
+            id: node("slow"),
+            duration: FrameDuration::new(beat.frames() * 2).unwrap(),
+            pitch: deadpan_core::PitchPolicy::FollowSpeed,
+        },
+    );
+    let rows = [crate::preview::BeatRow {
+        id: node("slow"),
+        label: "Slow".into(),
+        kind: "Retime".into(),
+        start: 4,
+        frames: (beat.frames() * 2) as u64,
+    }];
+    let captions: Vec<_> = crate::preview::timing::attachments(&slowed, &rows)
+        .into_iter()
+        .filter(|attachment| attachment.kind == "caption")
+        .map(|attachment| attachment.frames)
+        .collect();
+    assert_eq!(captions, vec![(4.0, 6.0)]);
+}
