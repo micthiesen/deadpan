@@ -896,7 +896,10 @@ register target. Only supported Apply installs intent; named Run does not. See
 Native creative parameter edits commit as one semantic Apply even outside a
 recording: pauses and pause length, speed/pitch, beat and Edit-range gain steps,
 mute, audio lag, whole-beat zoom/creep, cutaways and captions, `:edge` and
-`:gag-set`. Keep their native and recorded results identical and keep direct
+`:gag-set`, and one-play `s`, `dd`, `rr`, `:repeat N` and `:repeat gap=`
+(`Split`, register-free `DeleteBeat`, `Repeat`, `SetRepeatPlays`, `SetRepeat`
+resolved in the invocation's explicit play as one `EditOccurrence`). Keep
+their native and recorded results identical and keep direct
 `ProjectEdit` paths only for one-play scopes, ranged/face zoom and clears. Capture
 targets on command entry and derive parameters from that capture. Ranged and
 whole-beat gain steps are distinct instructions, and unity clip gain is

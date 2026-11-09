@@ -555,6 +555,12 @@ pub enum SemanticInstruction {
     /// must lie strictly inside it. The right fragment becomes selected and
     /// the cursor stays on the new boundary.
     Split,
+    /// Remove the selected beat from the current single-play scope without
+    /// copying it to a register (`dd` or `:delete` inside This play); the rest
+    /// of that play closes up. Ordinary groups cut into a register instead,
+    /// so this refuses without single-play authority.
+    #[serde(deserialize_with = "deserialize_empty")]
+    DeleteBeat,
     CutFrames {
         operation: FrameCut,
         register: RegisterName,

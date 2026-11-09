@@ -156,6 +156,18 @@ revision. The service observes the saved head again and rejects stale versions,
 changed operations or an unrefreshed workspace before writing. A superseded UI
 copy confirmation cannot erase a successful cut's semantic intent.
 
+## One-play structural edits
+
+Inside Repeat contents with This play chosen at every level, `s`, `dd`, `rr`,
+`:repeat N` and `:repeat [N] gap=` commit as semantic Apply (`Split`,
+`DeleteBeat`, `Repeat`, `SetRepeatPlays`, `SetRepeat` with plays and gaps
+only). Their receipts install dot intent like other parameter edits; `.`
+resolves the selected beat and its explicit play chain afresh, so it repeats
+the edit in the play chosen now. All plays, mixed choices or no inspector
+refuse readably. `:repeat` plays and gaps changes without escalation or speed
+steps are also dot-repeatable at top level; escalation can name a captured
+target, so changes that include it still clear dot intent.
+
 ## Native interaction
 
 The configurable binding ID is `edit.repeat-last`, default `.`. The footer

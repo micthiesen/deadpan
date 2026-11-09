@@ -6,6 +6,48 @@ use super::*;
 use crate::{OccurrenceEdit, RepeatInstance};
 
 impl ProjectDocument {
+    /// The exact whole-frame project interval of one visible occurrence, shared
+    /// by native and semantic structural edits. A beat cropped or retimed in
+    /// that play has no whole-frame interval and refuses.
+    pub fn occurrence_structure_interval(
+        &self,
+        instance: &InstancePath,
+    ) -> Result<(crate::ProjectFrame, crate::ProjectFrame), EditError> {
+        use crate::{Anchor, AnchorIndex, AnchorTarget, BoundaryAnchor, ExactRatio, InsertionBias};
+        let length = self
+            .durations_shared()?
+            .get(&instance.node)
+            .ok_or_else(|| invalid("the selected beat no longer exists"))?
+            .frames();
+        let index = AnchorIndex::new(self).map_err(|error| invalid(&error.to_string()))?;
+        let boundary = |position: i64, bias| {
+            index
+                .resolve_target(&AnchorTarget {
+                    boundary: BoundaryAnchor {
+                        coordinate: Anchor::Occurrence {
+                            instance: instance.clone(),
+                            position: ExactRatio::integer(position),
+                        },
+                        bias,
+                    },
+                    occurrence: None,
+                })
+                .map_err(|error| invalid(&error.to_string()))
+        };
+        let start = boundary(0, InsertionBias::Right)?;
+        let end = boundary(length, InsertionBias::Left)?;
+        if start.exact_frame.denominator() != 1
+            || end.exact_frame.denominator() != 1
+            || end.frame.0 - start.frame.0 != length
+        {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "this beat plays inside a speed change or crop in this play; splitting, deleting or repeating it there is not supported yet",
+            ));
+        }
+        Ok((start.frame, end.frame))
+    }
+
     /// Isolation needs for one Split, ripple deletion, Repeat wrap or Repeat
     /// count or gap change of a beat in explicit plays at every enclosing Repeat.
     /// Unsupported scopes, including sound-bearing documents, refuse before

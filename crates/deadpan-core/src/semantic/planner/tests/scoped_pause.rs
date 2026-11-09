@@ -253,7 +253,7 @@ fn scoped_pause_rejects_mixed_authority_ai_and_unsupported_late_calls_atomically
             },
             bounce: false,
         },
-        SemanticInstruction::Split,
+        SemanticInstruction::Ungroup,
     ] {
         let bank = BTreeMap::from([(name('a'), macro_value(vec![forbidden]))]);
         let mut allocations = 0;

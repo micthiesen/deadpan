@@ -122,13 +122,25 @@ These keys refuse, with the earlier structural message, for All plays or
 several selected plays at any level. Deletion, Repeat, count and gap changes also
 refuse a play's whole contents (there is no group to close up; split it or press Enter first),
 a beat inside a speed change or crop in the play, and documents with placed
-sounds or beat sounds ("remove the sound events before editing time"). They
-refuse while a macro records and are not recorded or repeated with dot. Evidence: the `scoped-plays`
+sounds or beat sounds ("remove the sound events before editing time").
+
+These keys commit through semantic Apply, so a recording macro records them and
+dot repeats them. The saved intent is `Split`, `DeleteBeat` (delete without a
+register), `Repeat` on the selected beat, `SetRepeatPlays` or `SetRepeat` with
+plays and gaps only; it names no beat, node or play. Each invocation resolves
+the beat and the explicit play chain chosen then and authors the same single
+`EditOccurrence` the native key does, with the same continuation. A macro
+recorded in play 2 therefore edits play 3 when run there, and leaves play 2 as
+recorded. Without This play at every level the instruction refuses ("choose
+This play") and saves nothing. Evidence: the `scoped-plays`
 replay checks "s inside play 2 splits only that play and selects the right
 fragment", "rr inside play 2 repeats the right fragment there only", "dd inside
 play 2 deletes the left fragment there only", ":repeat 3 on the Repeat inside
 play 2 sets its plays there only", ":repeat 4 gap=6f on the Repeat inside play
-2 sets its plays and gaps there only" and the five Undos;
+2 sets its plays and gaps there only", the five Undos, "Recording s and dd
+inside play 2 edits that play only and saves only Split and DeleteBeat" and
+"@a in play 3 splits and deletes at the new play's cursor and leaves play 2 as
+recorded";
 `project::tests::scoped_structure` and core
 `insert_time::occurrence_structure` cover nested plays, retained clocks and
 refusals.

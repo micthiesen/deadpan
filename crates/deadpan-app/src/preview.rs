@@ -3097,7 +3097,10 @@ impl DeadpanApp {
             let captured = scoped_target
                 .clone()
                 .unwrap_or_else(|| self.scoped_target());
-            self.scoped_structure(edit, captured);
+            // A recording takes the command as its own edit, as at top level.
+            if self.macro_command_allowed(&command) {
+                self.scoped_structure(edit, captured);
+            }
             return;
         }
         if self.scoped_command_blocked(&command) {

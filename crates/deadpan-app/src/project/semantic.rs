@@ -97,6 +97,7 @@ impl RepeatableEdit {
                 | SemanticInstruction::SetHoldAudio { .. }
                 | SemanticInstruction::SetRoomTone { .. }
                 | SemanticInstruction::Split
+                | SemanticInstruction::DeleteBeat
                 | SemanticInstruction::Trim { .. }
                 | SemanticInstruction::Slip { .. }
         )
@@ -169,7 +170,18 @@ impl LastEdit {
     }
 
     pub fn from_instruction(instruction: &SemanticInstruction) -> Option<Self> {
-        if RepeatableEdit::parameter(instruction) {
+        // Plays and gaps alone resolve afresh at the selected beat, including
+        // one in the play chosen at invocation. Escalation can name a captured
+        // target, so those changes are not repeated.
+        let plays_and_gaps = matches!(
+            instruction,
+            SemanticInstruction::SetRepeat {
+                escalation: None,
+                speed: None,
+                ..
+            }
+        );
+        if RepeatableEdit::parameter(instruction) || plays_and_gaps {
             return Some(Self {
                 operation: RepeatableEdit::Parameter(instruction.clone()),
                 register: None,

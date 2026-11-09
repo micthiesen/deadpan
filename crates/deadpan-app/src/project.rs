@@ -948,25 +948,6 @@ pub enum ProjectSoundEdit {
     },
 }
 
-/// A structural edit of one beat in one explicit Repeat play.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ScopedStructure {
-    /// Split at the captured Edit cursor, selecting the right fragment.
-    Split,
-    /// Remove the beat from this play; the rest of the play closes up.
-    Delete,
-    /// Wrap the beat in a new Repeat with this many total plays.
-    Repeat { plays: u32 },
-    /// Set the selected Repeat's total plays in this play.
-    SetPlays { plays: u32 },
-    /// Set the selected Repeat's gaps, and optionally its total plays first,
-    /// in this play.
-    SetGaps {
-        plays: Option<u32>,
-        gap: crate::navigation::escalation::GapInput,
-    },
-}
-
 /// Ordinary node operations edit direct children of the captured Sequence scope.
 /// Scoped value edits carry their independently validated branch target.
 /// InsertTime remains project-boundary based and resolves its actual owner.
@@ -981,13 +962,6 @@ pub enum ProjectEdit {
         duration: FrameDuration,
         black: bool,
         ai: bool,
-    },
-    /// `s`, `dd`, `rr` and `:repeat N [gap=]` on a beat inside Repeat contents with
-    /// This play chosen at every enclosing Repeat: one `EditOccurrence` changes that
-    /// occurrence only, isolating its plays outside-in.
-    ScopedStructure {
-        target: Box<scoped::Target>,
-        edit: ScopedStructure,
     },
     SetAudioTreatments {
         node: NodeId,

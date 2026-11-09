@@ -423,7 +423,28 @@ a non-recording queued scoped action may continue; it revokes the delayed
 inspector continuation without retargeting or discarding the saved edit.
 Recording still waits for each action, and scope navigation cancels it.
 
-### One-play Hold length
+### One-play splits, deletions and Repeats
+
+With This play explicit at every enclosing Repeat, `s`, `dd`/`:delete`,
+`rr`/`:wrap-repeat`, `:repeat N` and `:repeat [N] gap= [gap-step=]` commit
+through semantic Apply and record as `Split`, `DeleteBeat`, `Repeat { selector:
+selected_beat }`, `SetRepeatPlays` and `SetRepeat` with plays and gaps only.
+`DeleteBeat` is the register-free deletion of one play's beat; outside a
+single-play scope it refuses, because `dd` in a group cuts into a register.
+The saved program names no node, play, presentation or cursor.
+
+The planner resolves the invocation's current scoped presentation and builds
+exactly the native `EditOccurrence` (Split at the cursor inside the beat,
+DeleteRipple, RepeatChild, SetRepeatPlays or SetRepeatGaps). It sizes isolation
+before allocating one exact node and mark pool plus the Split, wrapper or gap
+Hold names, resolves gap pictures through `PauseSite::RepeatGap` at the last
+picture of the Repeat's first play in that occurrence, and carries the mapped
+target into the next instruction. Split keeps the cursor; the other edits
+continue at the changed beat's start. Escalation, speed steps, Visual or other
+selectors, unchanged plays and gaps, cropped or retimed occurrences and
+sound-bearing documents refuse the whole run atomically. Direct Apply supplies
+dot intent, so `.` repeats the edit in the play chosen at the dot.
+
 
 With This play explicit at every Repeat level, `:hold-duration Nf` records
 `SetHoldDuration { length }` and supplies dot intent when the target path uses

@@ -368,7 +368,7 @@ fn scoped_hold_duration_exact_pools_late_failure_and_saved_intent_leave_no_parti
         );
         assert!(result.is_err(), "case{bad}");
     }
-    let bank = BTreeMap::from([(name('a'), macro_value(vec![SemanticInstruction::Split]))]);
+    let bank = BTreeMap::from([(name('a'), macro_value(vec![SemanticInstruction::Ungroup]))]);
     let result = plan(
         &before,
         &entry(),

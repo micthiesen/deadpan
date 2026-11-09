@@ -54,12 +54,25 @@ impl super::DeadpanApp {
                         | deadpan_core::SemanticInstruction::SetHoldAudio { .. }
                         | deadpan_core::SemanticInstruction::SetRoomTone { .. }
                         | deadpan_core::SemanticInstruction::Retime { .. }
-                )
+                        | deadpan_core::SemanticInstruction::Split
+                        | deadpan_core::SemanticInstruction::DeleteBeat
+                        | deadpan_core::SemanticInstruction::SetRepeat {
+                            escalation: None,
+                            speed: None,
+                            ..
+                        }
+                ) | RepeatableEdit::SetRepeatPlays { .. }
+                    | RepeatableEdit::Repeat {
+                        selector: SemanticSelector::SelectedBeat,
+                        escalation: None,
+                        ..
+                    }
             )
             && !scoped_audio
         {
             return Some(
-                "repeat unavailable: use an audio, speed, pause or framing edit first".into(),
+                "repeat unavailable: use an audio, speed, pause, framing, split, delete or Repeat edit first"
+                    .into(),
             );
         }
         let selected_repeat = matches!(edit.operation, RepeatableEdit::SetRepeatPlays { .. })
@@ -531,6 +544,11 @@ pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> O
         }
         I::Explode => {
             return Some("Exploded the Repeat into independent plays; Undo restores it".into());
+        }
+        I::Split => return Some("Split the beat".into()),
+        I::DeleteBeat => return Some("Deleted the beat (not copied to a register)".into()),
+        I::SetRepeatPlays { plays } => {
+            return Some(format!("Repeat set to {plays} total plays"));
         }
         I::Duplicate { selector } => ("Duplicated", selector),
         _ => return None,

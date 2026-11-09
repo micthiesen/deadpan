@@ -13,6 +13,25 @@ mod range_tests;
 const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Repeat pauses follow each level's All plays, This play or selected plays choice. Pause length follows each level's All plays or This play choice for one Hold; AI pauses, speed changes (:retime) and s, dd, rr, :repeat N and :repeat gap= on a beat require one play at every level. Other timing edits and range copying require the parent.";
 const FRAMING_RANGE_ONLY: &str = "This play's Edit range is for :zoom or :creep. Clear the range with Escape before other beat edits.";
 
+/// A structural edit of one beat in one explicit Repeat play.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum ScopedStructure {
+    /// Split at the captured Edit cursor, selecting the right fragment.
+    Split,
+    /// Remove the beat from this play; the rest of the play closes up.
+    Delete,
+    /// Wrap the beat in a new Repeat with this many total plays.
+    Repeat { plays: u32 },
+    /// Set the selected Repeat's total plays in this play.
+    SetPlays { plays: u32 },
+    /// Set the selected Repeat's gaps, and optionally its total plays first,
+    /// in this play.
+    SetGaps {
+        plays: Option<u32>,
+        gap: crate::navigation::escalation::GapInput,
+    },
+}
+
 impl DeadpanApp {
     pub(super) fn focus_scoped_pane(&mut self, pane: Pane) {
         if self.pane != pane {
@@ -82,11 +101,7 @@ impl DeadpanApp {
 
     /// `s`, `dd`/`:delete`, `rr`/`:wrap-repeat`, `:repeat N` and `:repeat
     /// [N] gap=…` on the selected beat. Other operator forms keep the ordinary structural refusal.
-    pub(super) fn scoped_structure_kind(
-        &self,
-        action: &Action,
-    ) -> Option<crate::project::ScopedStructure> {
-        use crate::project::ScopedStructure;
+    pub(super) fn scoped_structure_kind(&self, action: &Action) -> Option<ScopedStructure> {
         let selected = deadpan_core::SemanticSelector::SelectedBeat;
         match action {
             Action::Edit(BeatEdit::Split) => Some(ScopedStructure::Split),
@@ -121,23 +136,62 @@ impl DeadpanApp {
         }
     }
 
-    /// Submit one structural edit of the selected beat in its explicit play,
-    /// captured when the key or command was entered.
+    /// The semantic intent of a one-play structural edit. It names no beat or
+    /// play, so a macro or dot resolves both again at its own invocation.
+    fn scoped_structure_instruction(
+        &self,
+        edit: ScopedStructure,
+    ) -> Result<deadpan_core::SemanticInstruction, String> {
+        use deadpan_core::SemanticInstruction as I;
+        let count = |plays: u32| {
+            std::num::NonZeroU32::new(plays).ok_or("A Repeat needs at least one total play.")
+        };
+        Ok(match edit {
+            ScopedStructure::Split => I::Split,
+            ScopedStructure::Delete => I::DeleteBeat,
+            ScopedStructure::Repeat { plays } => I::Repeat {
+                selector: deadpan_core::SemanticSelector::SelectedBeat,
+                plays: count(plays)?,
+                escalation: None,
+            },
+            ScopedStructure::SetPlays { plays } => I::SetRepeatPlays {
+                plays: count(plays)?,
+            },
+            ScopedStructure::SetGaps { plays, gap } => {
+                let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
+                let current = self
+                    .inspected_node()
+                    .and_then(|node| workspace.document.nodes().get(node))
+                    .and_then(|node| match &node.kind {
+                        NodeKind::Repeat { iterations, .. } => Some(iterations.len()),
+                        _ => None,
+                    });
+                // A plain beat refuses in the planner; its ladder length is moot.
+                let total = plays.or(current).unwrap_or(1);
+                I::SetRepeat {
+                    plays: plays.map(count).transpose()?,
+                    gaps: Some(
+                        gap.lengths(total, workspace.document.presentation_basis().frame_rate)?,
+                    ),
+                    escalation: None,
+                    speed: None,
+                }
+            }
+        })
+    }
+
+    /// Apply one structural edit of the selected beat in its explicit play,
+    /// captured when the key or command was entered, as one semantic edit:
+    /// a recording macro records it and dot repeats it in the play chosen then.
     pub(super) fn scoped_structure(
         &mut self,
-        edit: crate::project::ScopedStructure,
+        edit: ScopedStructure,
         captured: Result<Option<Target>, String>,
     ) {
         self.bindings.clear();
         let request = (|| {
             if self.has_scoped_visual_selection() {
                 return Err(FRAMING_RANGE_ONLY.to_owned());
-            }
-            if self.macros.recording() || self.macros.is_pending() {
-                return Err(
-                    "Finish the macro before splitting, deleting or repeating a beat in this play."
-                        .to_owned(),
-                );
             }
             let target = captured?
                 .ok_or("Open a Repeat's contents and choose This play first (Enter, then ]r).")?;
@@ -151,21 +205,13 @@ impl DeadpanApp {
                 // All plays and several selected plays keep their refusal.
                 return Err(STRUCTURE_UNAVAILABLE.to_owned());
             }
-            Ok(ProjectRequest::Edit {
-                expected_session: target.session,
-                expected_revision: target.revision.clone(),
-                scope: target.scope.clone(),
-                cursor: target.cursor,
-                edit: ProjectEdit::ScopedStructure {
-                    target: Box::new(target),
-                    edit,
-                },
-            })
+            let instruction = self.scoped_structure_instruction(edit)?;
+            Ok((self.capture_macro_target()?, instruction))
         })();
         match request {
-            Ok(request) => {
+            Ok((capture, instruction)) => {
                 self.cancel_repeats("a one-play structural edit was requested");
-                self.submit(request);
+                self.apply_recorded_instruction(Ok(capture), Ok(instruction));
             }
             Err(error) => self.error = Some(error),
         }

@@ -392,6 +392,20 @@ fn scoped_macro_receipt(
         (Some(before), Some(after)) => {
             let mut expected = context.clone();
             expected.scoped = Some(after.clone());
+            // One-play structural edits continue at the changed beat's start
+            // (Split keeps its boundary); the planner owns that exact frame.
+            if plan.trace.iter().any(|row| {
+                matches!(
+                    row.instruction,
+                    SemanticInstruction::Split
+                        | SemanticInstruction::DeleteBeat
+                        | SemanticInstruction::Repeat { .. }
+                        | SemanticInstruction::SetRepeatPlays { .. }
+                        | SemanticInstruction::SetRepeat { .. }
+                )
+            }) {
+                expected.cursor = plan.context.cursor;
+            }
             // A fixed window continues at its first visible sampled picture;
             // ordinary occurrence edits retain their intrinsic Hold start.
             // Keep every other ordinary context field strict.
@@ -642,6 +656,7 @@ impl Service {
                             SemanticInstruction::Repeat { .. } => "Wrap Repeat",
                             SemanticInstruction::SetRepeatPlays { .. } => "Set Repeat plays",
                             SemanticInstruction::SetRepeat { .. } => "Change Repeat",
+                            SemanticInstruction::DeleteBeat => "Delete beat in this play",
                             SemanticInstruction::SetRoomTone { .. } => "Set room tone",
                             SemanticInstruction::SetHoldAudio { .. } => "Change pause sound",
                             SemanticInstruction::SetCutaway { .. } => "Place cutaway",

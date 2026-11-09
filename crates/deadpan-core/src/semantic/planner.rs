@@ -34,6 +34,7 @@ mod mixed_hold_duration;
 pub use mixed_hold_duration::SemanticMixedHoldDurationContext;
 mod pause;
 mod scoped_gain;
+mod scoped_structure;
 mod selected_hold_duration;
 pub use selected_hold_duration::SemanticSelectedHoldDurationContext;
 mod shared_hold_duration;
@@ -924,6 +925,19 @@ where
                         | SemanticInstruction::SetHoldAudio { .. }
                         | SemanticInstruction::SetRoomTone { .. }
                         | SemanticInstruction::Retime { .. }
+                        | SemanticInstruction::Split
+                        | SemanticInstruction::DeleteBeat
+                        | SemanticInstruction::SetRepeatPlays { .. }
+                        | SemanticInstruction::Repeat {
+                            selector: SemanticSelector::SelectedBeat,
+                            escalation: None,
+                            ..
+                        }
+                        | SemanticInstruction::SetRepeat {
+                            escalation: None,
+                            speed: None,
+                            ..
+                        }
                         | SemanticInstruction::Call { .. }
                 )
                 && !matches!(
@@ -932,7 +946,7 @@ where
                 )
             {
                 return Err(invalid(
-                    "single-play macro authority supports only Zoom, whole-owner gain, mute, saturation, balance and EQ, speed changes, freeze or black pause intent, Hold duration or sound and named calls",
+                    "single-play macro authority supports only Zoom, whole-owner gain, mute, saturation, balance and EQ, speed changes, freeze or black pause intent, Hold duration or sound, splitting, deleting or repeating the beat, Repeat plays and gaps, and named calls",
                 ));
             }
             if matches!(
@@ -1137,10 +1151,24 @@ where
                     plays,
                     escalation,
                 } => {
-                    self.repeat(index, selector, plays.get(), escalation.clone())?;
+                    if self.context.scoped.is_some() {
+                        self.scoped_structure(
+                            index,
+                            scoped_structure::ScopedStructure::Repeat { plays: plays.get() },
+                        )?;
+                    } else {
+                        self.repeat(index, selector, plays.get(), escalation.clone())?;
+                    }
                 }
                 SemanticInstruction::SetRepeatPlays { plays } => {
-                    self.set_repeat_plays(index, plays.get())?;
+                    if self.context.scoped.is_some() {
+                        self.scoped_structure(
+                            index,
+                            scoped_structure::ScopedStructure::SetPlays { plays: plays.get() },
+                        )?;
+                    } else {
+                        self.set_repeat_plays(index, plays.get())?;
+                    }
                 }
                 SemanticInstruction::SetAudio { change } => {
                     self.set_audio(index, *change)?;
@@ -1173,6 +1201,15 @@ where
                     pitch,
                 } => {
                     self.ramp(index, *from, *to, *steps, *pitch)?;
+                }
+                SemanticInstruction::SetRepeat {
+                    plays,
+                    gaps,
+                    escalation,
+                    speed,
+                } if self.context.scoped.is_some() => {
+                    debug_assert!(escalation.is_none() && speed.is_none());
+                    self.scoped_set_repeat(index, *plays, gaps.as_deref())?;
                 }
                 SemanticInstruction::SetRepeat {
                     plays,
@@ -1272,8 +1309,20 @@ where
                 SemanticInstruction::SetHoldDuration { length } => {
                     self.set_hold_duration(index, *length)?;
                 }
+                SemanticInstruction::Split if self.context.scoped.is_some() => {
+                    self.scoped_structure(index, scoped_structure::ScopedStructure::Split)?;
+                }
                 SemanticInstruction::Split => {
                     self.split(index)?;
+                }
+                SemanticInstruction::DeleteBeat => {
+                    if self.context.scoped.is_none() {
+                        return Err(EditError::new(
+                            EditErrorCode::SelectionUnavailable,
+                            "deleting a beat without a register edits one Repeat play; choose This play at every Repeat level, or use dd to cut a beat in a group",
+                        ));
+                    }
+                    self.scoped_structure(index, scoped_structure::ScopedStructure::Delete)?;
                 }
                 SemanticInstruction::Trim { intent } => {
                     self.trim(index, *intent)?;
@@ -1439,6 +1488,7 @@ where
                         | SemanticInstruction::Pitch { .. }
                         | SemanticInstruction::SetHoldDuration { .. }
                         | SemanticInstruction::Split
+                        | SemanticInstruction::DeleteBeat
                         | SemanticInstruction::Trim { .. }
                         | SemanticInstruction::Slip { .. }
                         | SemanticInstruction::SetMark { .. }

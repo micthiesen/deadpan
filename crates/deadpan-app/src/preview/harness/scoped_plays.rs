@@ -700,7 +700,7 @@ fn play_structure(d: &mut Driver<'_>, repeat: &NodeId) -> Result<(), String> {
         json!({"plays":[before[0], 3 * right, before[2]],"selected":"same Repeat","total_plays":3}),
         json!({"plays":lengths,"selected":selected,"total_plays":counted,"error":d.app().error}),
     )?;
-    painted(d, "3 total plays in this play only")?;
+    painted(d, "Repeat set to 3 total plays in this play")?;
     d.capture("Play 2 split, its right part repeated three times and its left part deleted")?;
     // :repeat 4 gap=6f grows the same Repeat and adds its gaps in play 2 only.
     let edited = d.revision();
@@ -738,7 +738,7 @@ fn play_structure(d: &mut Driver<'_>, repeat: &NodeId) -> Result<(), String> {
         json!({"plays":[before[0], 4 * right + 18, before[2]],"selected":"same Repeat","total_plays":4,"gap":6}),
         json!({"plays":lengths,"selected":selected,"total_plays":counted,"gap":gap,"error":d.app().error}),
     )?;
-    painted(d, "gaps set in this play only")?;
+    painted(d, "Repeat set: 4 plays; gaps 6f in this play")?;
     d.capture("The Repeat inside play 2 plays four times with 6f gaps")?;
     for _ in 0..5 {
         let edited = d.revision();
@@ -752,6 +752,126 @@ fn play_structure(d: &mut Driver<'_>, repeat: &NodeId) -> Result<(), String> {
             && document(d)?.nodes() == original.nodes()
             && document(d)?.overrides() == original.overrides(),
         json!({"plays":before,"nodes_and_overrides":"as before s"}),
+        json!({"plays":play_lengths(d, repeat)?}),
+    )?;
+    play_structure_macro(d, repeat, &before, &original, &shared_node)
+}
+
+/// `s` and `dd` recorded inside play 2 save only their intent; `@a` in play 3
+/// splits and deletes there the same way, leaving play 2 as recorded.
+fn play_structure_macro(
+    d: &mut Driver<'_>,
+    repeat: &NodeId,
+    before: &[i64],
+    original: &ProjectDocument,
+    shared_node: &deadpan_core::BeatNode,
+) -> Result<(), String> {
+    let shared = match &original.nodes()[repeat].kind {
+        NodeKind::Repeat { child, .. } => child.clone(),
+        _ => return Err("Expected the Repeat".into()),
+    };
+    let enter_play = |d: &mut Driver<'_>, play: u32| -> Result<(), String> {
+        while d.app().scoped.is_some() {
+            d.key(Key::Escape)?;
+            idle(d)?;
+        }
+        d.chord(&[Key::G, Key::G])?;
+        idle(d)?;
+        d.key(Key::Enter)?;
+        d.command(&format!("scope play {play}"))?;
+        idle(d)?;
+        for _ in 0..10 {
+            d.key(Key::L)?;
+        }
+        idle(d)
+    };
+    enter_play(d, 2)?;
+    d.chord(&[Key::Q, Key::A])?;
+    let edited = d.revision();
+    d.key(Key::S)?;
+    d.changed(&edited)?;
+    idle(d)?;
+    let edited = d.revision();
+    d.key(Key::D)?;
+    d.key(Key::D)?;
+    d.changed(&edited)?;
+    idle(d)?;
+    let recording =
+        d.app().macros.recording_name() == Some('a') && d.app().macros.instruction_count() == 2;
+    d.key(Key::Q)?;
+    d.wait_for("The recorded play-structure macro is saved", |app| {
+        !app.service.is_busy()
+            && !app.macros.is_pending()
+            && app.copied.entries().any(|(register, _)| register == 'a')
+    })?;
+    idle(d)?;
+    let program = d
+        .app()
+        .copied
+        .entries()
+        .find_map(|(register, value)| match value {
+            crate::preview::copied::Content::Macro(program) if register == 'a' => {
+                Some(program.instructions().to_vec())
+            }
+            _ => None,
+        });
+    let recorded = play_lengths(d, repeat)?;
+    d.check(
+        "Recording s and dd inside play 2 edits that play only and saves only Split and DeleteBeat",
+        recording
+            && program
+                == Some(vec![
+                    deadpan_core::SemanticInstruction::Split,
+                    deadpan_core::SemanticInstruction::DeleteBeat,
+                ])
+            && recorded == [before[0], 10, before[2]]
+            && document(d)?.nodes()[&shared] == *shared_node
+            && d.app().error.is_none(),
+        json!({"program":["split","delete_beat"],"plays":[before[0], 10, before[2]]}),
+        json!({"recording":recording,"program":program,"plays":recorded,"error":d.app().error}),
+    )?;
+    let played = document(d)?.clone();
+    enter_play(d, 3)?;
+    let edited = d.revision();
+    super::macros::execute(d, 'a', None)?;
+    d.changed(&edited)?;
+    d.wait_for("The play-structure macro receipt is admitted", |app| {
+        !app.service.is_busy() && !app.macros.is_pending()
+    })?;
+    idle(d)?;
+    let lengths = play_lengths(d, repeat)?;
+    let second = |document: &ProjectDocument| {
+        let NodeKind::Repeat { iterations, .. } = &document.nodes()[repeat].kind else {
+            return None;
+        };
+        let play = iterations.at(1)?;
+        let root = document.overrides().get(repeat)?.get(&play)?;
+        Some(document.children(root).cloned().collect::<Vec<_>>())
+    };
+    let selected = d.app().scoped_target()?;
+    d.check(
+        "@a in play 3 splits and deletes at the new play's cursor and leaves play 2 as recorded",
+        lengths == [before[0], 10, 10]
+            && second(document(d)?) == second(&played)
+            && document(d)?.nodes()[&shared] == *shared_node
+            && selected.is_some_and(|target| target.has_single_play_authority())
+            && d.app().sequence_cursor == u64::try_from(before[0] + 10 + 10).unwrap_or(0)
+            && d.app().error.is_none(),
+        json!({"plays":[before[0], 10, 10],"play_2":"unchanged","Edit":before[0] + 20}),
+        json!({"plays":lengths,"Edit":d.app().sequence_cursor,"error":d.app().error}),
+    )?;
+    painted(d, "This play 3/3")?;
+    d.capture("The recorded split and delete replay in play 3 at its own cursor")?;
+    for _ in 0..3 {
+        let edited = d.revision();
+        d.key(Key::U)?;
+        d.changed(&edited)?;
+        idle(d)?;
+    }
+    d.check(
+        "Three Undos remove the replay and the recorded edits",
+        play_lengths(d, repeat)? == before && document(d)?.overrides() == original.overrides(),
+        json!({"plays":before}),
         json!({"plays":play_lengths(d, repeat)?}),
     )
 }
