@@ -161,6 +161,10 @@ pub struct Fixture {
     pub captions: Vec<(u64, Vec<&'static str>)>,
     /// Independently derived waveform properties of limited-bus windows.
     pub signals: Vec<Signal>,
+    /// Extra `verify-export` arguments for the all-recipes run, such as
+    /// sample windows where the default ones would start in a periodic tone
+    /// whose offset is unobservable.
+    pub verify_args: Vec<String>,
 }
 
 /// One left-channel window of the limited audition bus and what it must show.
@@ -768,6 +772,7 @@ impl Project {
             notes,
             captions: Vec::new(),
             signals: Vec::new(),
+            verify_args: Vec::new(),
         })
     }
 }

@@ -252,5 +252,13 @@ pub fn build(dir: &Path) -> Result<Fixture> {
             }),
         })
         .collect();
+    // The default windows start in the exact 1 kHz tone, whose offset is
+    // unobservable; the dedicated test's six contiguous windows each include
+    // aperiodic sound and cover every presented sample.
+    let windows: Vec<String> = (0..SAMPLES)
+        .step_by(19_220)
+        .map(|start| format!("{start}:{}", (start + 19_220).min(SAMPLES)))
+        .collect();
+    fixture.verify_args = vec!["--samples".into(), windows.join(",")];
     Ok(fixture)
 }

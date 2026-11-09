@@ -2713,7 +2713,8 @@ fn every_recipe_export_matches_its_committed_preview() -> Result {
         }
         let movie = render(&fixture, &root.join("exports"))?;
         let rendered = started.elapsed();
-        let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
+        let arguments: Vec<&str> = fixture.verify_args.iter().map(String::as_str).collect();
+        let (report, passed) = verify(&fixture, &movie, &fixture.revision, &arguments)?;
         check_provenance(&fixture, &report)?;
         let mut row = summary_row(&fixture, &report);
         row["render_seconds"] = json!(rendered.as_secs_f64());
