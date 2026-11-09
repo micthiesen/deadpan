@@ -79,14 +79,6 @@ jobs:
         run: >-
           cargo test --workspace --exclude deadpan-core --exclude deadpan-plan
           --exclude deadpan-store --locked --no-fail-fast -- --skip general_split_sound
-      - name: Test Split sound delivery
-        if: ${{ !cancelled() }}
-        timeout-minutes: 120
-        # Each read has a 60 s deadline; contention with the rest of the
-        # stages binary on a virtual Mac exceeded it (run 42434393483).
-        run: >-
-          cargo test -p deadpan-audio --test stages --locked general_split_sound
-          -- --test-threads=2
       - name: Test unoptimized packages
         if: ${{ !cancelled() }}
         timeout-minutes: 90
@@ -117,3 +109,67 @@ jobs:
       - name: Native media harness tests
         if: ${{ !cancelled() }}
         run: python3 -m unittest discover -s tools/media-qualification/host -p 'test_*.py' -v
+
+  split-sound:
+    name: Split sound delivery
+    # About two hours of cold limited reads on a virtual Mac. Its own runner
+    # keeps it from delaying every later check of the workspace job.
+    runs-on: macos-26
+    timeout-minutes: 240
+    env:
+      # Optimized dev-profile code keeps debug assertions and overflow checks.
+      # Audio preparation and export tests bound their work with wall-clock
+      # deadlines that unoptimized builds miss; `cargo xtask check` and
+      # `cargo xtask gate` use the same level.
+      CARGO_PROFILE_DEV_OPT_LEVEL: "1"
+      # Every run builds from scratch; incremental state only costs time.
+      CARGO_INCREMENTAL: "0"
+      # As in `cargo xtask gate`: synthetic-worker tests fail rather than skip
+      # when their development ffmpeg is missing.
+      DEADPAN_REQUIRE_SYNTHETIC_WORKER: "1"
+      # Unlike the gate, CI leaves DEADPAN_REQUIRE_PHYSICAL_MAC unset: this
+      # runner is a virtual machine, so encoded Render, VideoToolbox and GPU
+      # exactness checks skip here and run on a physical Mac
+      # (docs/DEVELOPMENT.md).
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the pinned toolchain
+        run: rustup toolchain install 1.97.1 --profile minimal --component rustfmt --component clippy
+      - name: Build pinned LGPL FFmpeg
+        run: |
+          if ! command -v gpg >/dev/null; then
+            brew install gnupg
+          fi
+          for tool in meson ninja; do
+            if ! command -v "$tool" >/dev/null; then
+              brew install "$tool"
+            fi
+          done
+          python3 tools/media-qualification/compatible/build.py \
+            --work "$RUNNER_TEMP/deadpan-ffmpeg" \
+            --output "$RUNNER_TEMP/deadpan-ffmpeg-build.json"
+          echo "DEADPAN_FFMPEG_PREFIX=$RUNNER_TEMP/deadpan-ffmpeg/prefix" >> "$GITHUB_ENV"
+      - name: Prepare pinned ONNX Runtime
+        run: |
+          python3 -m unittest discover -s tools/tests -p 'test_prepare_ort.py' -v
+          python3 tools/prepare-ort.py --prefix "$RUNNER_TEMP/deadpan-ort/prefix" \
+            > "$RUNNER_TEMP/deadpan-ort-build.json"
+          echo "DEADPAN_ORT_PREFIX=$RUNNER_TEMP/deadpan-ort/prefix" >> "$GITHUB_ENV"
+      - name: Install test tools
+        # Fixture and synthetic-worker tests run Homebrew's ffmpeg (with
+        # libx264), separate from the pinned LGPL build the product uses. The
+        # offline privacy audit resolves every platform's dependencies.
+        run: |
+          if [ ! -x /opt/homebrew/bin/ffmpeg ]; then
+            brew install ffmpeg
+          fi
+          cargo fetch --locked
+      - name: Test Split sound delivery
+        timeout-minutes: 180
+        # Each read has a 60 s deadline; contention with the rest of the
+        # stages binary on a virtual Mac exceeded it (run 42434393483).
+        run: >-
+          cargo test -p deadpan-audio --test stages --locked general_split_sound
+          -- --test-threads=2
