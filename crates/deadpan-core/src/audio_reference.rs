@@ -35,7 +35,7 @@ use crate::{
 /// Repeat. Current authored documents have per-Repeat limits instead.
 pub const MAX_FROZEN_AUDIO_RUNS: usize = 100_000;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct ExactFrameRange {
     pub start: ExactRatio,

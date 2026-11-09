@@ -8,7 +8,7 @@ use crate::plan::CompiledSourceAudio;
 /// Complete natural-rate source recipe. Placement and selection are in the
 /// owner's local frame clock; offset is independently signed 48 kHz time.
 /// This is a borrowed preparation operand, not a persisted sound event.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AudioSourceVoiceRecipe {
     pub source: SourceAudio,
     pub mapping: SourceAudioMapping,
@@ -290,8 +290,22 @@ impl<'plan> AudioSignal<'plan> {
     }
 }
 
-/// Validate a recipe without allocating its provider or signal graph.
+/// Validate a recipe without allocating its provider or signal graph. The
+/// audio reader asks this per block for the same recipes, so successful
+/// results are cached on the plan (the check is pure in recipe and plan).
 pub(super) fn checked_recipe(
+    plan: &RenderPlan,
+    recipe: &AudioSourceVoiceRecipe,
+) -> Result<CompiledSourceAudio, PlanError> {
+    if let Some(audio) = plan.source_recipes.get(recipe) {
+        return Ok(audio);
+    }
+    let audio = checked_recipe_uncached(plan, recipe)?;
+    plan.source_recipes.insert(recipe, &audio);
+    Ok(audio)
+}
+
+fn checked_recipe_uncached(
     plan: &RenderPlan,
     recipe: &AudioSourceVoiceRecipe,
 ) -> Result<CompiledSourceAudio, PlanError> {

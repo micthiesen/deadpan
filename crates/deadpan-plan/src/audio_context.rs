@@ -269,6 +269,7 @@ impl RenderPlan {
             sound_delivery_forests: BTreeMap::new(),
             parents,
             definition_index: None,
+            source_recipes: crate::plan::RecipeCache::default(),
         })
     }
 
@@ -487,6 +488,7 @@ impl RenderPlan {
             // are therefore immaterial in these retained legacy operands.
             parents: vec![None; layout.nodes().len()],
             definition_index: None,
+            source_recipes: crate::plan::RecipeCache::default(),
         })
     }
 }

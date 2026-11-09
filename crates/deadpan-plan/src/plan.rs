@@ -204,6 +204,68 @@ pub struct RenderPlan {
     sound_delivery_forests: sound_delivery_forest::Members,
     parents: Vec<Option<usize>>,
     definition_index: Option<Arc<DefinitionIndex>>,
+    /// Checked source-voice recipes, which the audio reader asks for per
+    /// sample block; see [`RecipeCache`].
+    source_recipes: RecipeCache,
+}
+
+/// Results of `checked_recipe` and of a recipe's selection, pure functions of
+/// the recipe and this plan. A clone starts empty, so a later change to a
+/// cloned plan never reads a stale entry. Bounded: each map clears when full.
+#[derive(Debug, Default)]
+pub(crate) struct RecipeCache(std::sync::Mutex<RecipeEntries>);
+
+#[derive(Debug, Default)]
+struct RecipeEntries {
+    checked: std::collections::HashMap<crate::AudioSourceVoiceRecipe, CompiledSourceAudio>,
+    selections:
+        std::collections::HashMap<crate::AudioSourceVoiceRecipe, deadpan_core::ExactFrameRange>,
+}
+
+impl Clone for RecipeCache {
+    fn clone(&self) -> Self {
+        Self::default()
+    }
+}
+
+impl RecipeCache {
+    const MAX_ENTRIES: usize = 4096;
+
+    fn get(&self, recipe: &crate::AudioSourceVoiceRecipe) -> Option<CompiledSourceAudio> {
+        self.0.lock().ok()?.checked.get(recipe).cloned()
+    }
+
+    fn insert(&self, recipe: &crate::AudioSourceVoiceRecipe, audio: &CompiledSourceAudio) {
+        if let Ok(mut entries) = self.0.lock() {
+            if entries.checked.len() >= Self::MAX_ENTRIES {
+                entries.checked.clear();
+            }
+            entries.checked.insert(recipe.clone(), audio.clone());
+        }
+    }
+
+    fn selection(
+        &self,
+        recipe: &crate::AudioSourceVoiceRecipe,
+        compute: impl FnOnce() -> Result<deadpan_core::ExactFrameRange, PlanError>,
+    ) -> Result<deadpan_core::ExactFrameRange, PlanError> {
+        if let Some(found) = self
+            .0
+            .lock()
+            .ok()
+            .and_then(|entries| entries.selections.get(recipe).copied())
+        {
+            return Ok(found);
+        }
+        let selection = compute()?;
+        if let Ok(mut entries) = self.0.lock() {
+            if entries.selections.len() >= Self::MAX_ENTRIES {
+                entries.selections.clear();
+            }
+            entries.selections.insert(recipe.clone(), selection);
+        }
+        Ok(selection)
+    }
 }
 
 /// One journal reference paired with the live sound owner's clock dependencies.
@@ -1104,6 +1166,7 @@ impl RenderPlan {
             root,
             parents,
             definition_index,
+            source_recipes: RecipeCache::default(),
             audio_bindings: document.audio_bindings().clone(),
             sound_clock_layout: if document.audio_bindings().sound_clocks().is_empty() {
                 None

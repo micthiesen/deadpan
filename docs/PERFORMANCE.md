@@ -460,3 +460,19 @@ ownership, and closes it. A CLI process
 reports only its own work: `doctor --project` adds `diagnostics` after its probes
 (revision reads and their SQLite pages, the CLI's own footprint, no writes,
 no GPU or worker activity).
+
+## Cold mastered reads after Split (2026-11-08)
+
+The nested selected-play Split delivery test reads complete authored,
+edge-faded and limited PCM before and after a Split. Its cold 4,096-sample
+limited reads took 15-25 s on this Mac and exceeded the reads' 60 s cap on CI's
+virtual Mac even alone, so on a hypervisor guest that one limiter comparison
+is skipped (`check`/`gate` still run it here). A `sample` profile showed a third
+of the active time in exact rational arithmetic repeated per block: shared EQ
+comparing owner clocks, and source-voice recipe and selection checks. Owner
+clocks with equal steps are now compared by i128 cross-multiplication (exact
+fallback on overflow), and the plan caches checked recipes and selections per
+recipe (a cloned plan starts empty). The whole test went from 467 s to 377 s
+(opt level 1, this Mac, one thread, otherwise idle). The resampler is now the
+largest single cost; the remaining per-sample lookups and the resampler are
+open DP-24 work.

@@ -178,7 +178,7 @@ pub enum ColorPolicy {
 }
 
 /// A half-open interval in one original stream's timestamp clock.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[serde(try_from = "SourceSpanWire")]
 pub struct SourceSpan {
     start: SourceTimestamp,
@@ -254,7 +254,7 @@ pub enum SourceVideo {
     Blank,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct SourceAudio {
     pub asset: AssetId,

@@ -11,7 +11,7 @@ use crate::{
 /// The selected original audio span maps linearly over this destination extent.
 /// Its start adds the Source node's signed mix-clock `audio_offset`. Enclosing
 /// structural retimes compose with this mapping without intermediate rounding.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Hash)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum SourceAudioMapping {
     /// Preserve the historical behavior of fitting audio to the entire beat.

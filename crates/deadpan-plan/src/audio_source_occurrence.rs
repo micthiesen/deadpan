@@ -418,7 +418,9 @@ fn validate_owner_selection(
     recipe: &AudioSourceVoiceRecipe,
 ) -> Result<(), PlanError> {
     let duration = plan.nodes[host].extent;
-    let selected = voice_selection(recipe, plan.metadata.presentation_basis.frame_rate)?;
+    let selected = plan.source_recipes.selection(recipe, || {
+        voice_selection(recipe, plan.metadata.presentation_basis.frame_rate)
+    })?;
     if selected.start.compare_integer(0).is_lt()
         || !selected
             .end
