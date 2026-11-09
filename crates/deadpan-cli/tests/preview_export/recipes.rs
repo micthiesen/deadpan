@@ -1112,6 +1112,46 @@ pub fn retime_half(dir: &Path) -> Result<Fixture> {
     )
 }
 
+/// `:ramp 1 3 steps=3 pitch=tape` on Edit [12, 24) (Original 24..36) through
+/// the headless semantic path: three 4-frame parts at 4/3, 2 and 8/3 times
+/// last 3, 2 and 2 frames. Each part samples its input at output frame
+/// centers, so Edit 12..19 show Original 24, 26, 27 | 29, 31 | 33, 35, and the
+/// rest follows from Original 36 at Edit 19.
+pub fn ramp(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "ramp")?;
+    project.shorten()?;
+    project.split_root(12)?;
+    let document = project.split_root(24)?;
+    let target = root_child_at(&document, 12)?.0;
+    let ratio = |numerator: &str| json!({"numerator": numerator, "denominator": "1"});
+    let saved = project.run_semantic(
+        json!([{"type":"ramp","from":ratio("1"),"to":ratio("3"),"steps":3,"pitch":"follow_speed"}]),
+        12,
+        Some(&target),
+    )?;
+    if saved.duration()?.frames() != BASE_FRAMES as i64 - 5 {
+        return Err(format!("unexpected ramp duration: {}", saved.duration()?.frames()).into());
+    }
+    let expectations = vec![
+        (0, base(0)),
+        (11, base(11)),
+        (12, original(24)),
+        (13, original(26)),
+        (14, original(27)),
+        (15, original(29)),
+        (16, original(31)),
+        (17, original(33)),
+        (18, original(35)),
+        (19, original(36)),
+        (24, original(41)),
+    ];
+    project.finish(
+        vec!["Stretch / pitch", "Retime"],
+        expectations,
+        vec!["stepped variable rate: each part is its own speed change".to_owned()],
+    )
+}
+
 /// One continuous four-minute Preserve stage, crossing the former output cap.
 /// Repeats stay inside the processor, so its state must not reset per play.
 pub fn disk_preserve(dir: &Path) -> Result<Fixture> {
@@ -3650,7 +3690,8 @@ pub fn partition_with_skips(
     partitions: usize,
 ) -> Result<(Vec<Fixture>, Vec<Skipped>)> {
     assert!(partitions > 0 && partition < partitions);
-    let builders: [(&str, Builder); 41] = [
+    let builders: [(&str, Builder); 42] = [
+        ("ramp", ramp),
         ("triumphant-sting", triumphant_sting),
         ("micro-loop", micro_loop),
         ("gag-set", gag_set),
