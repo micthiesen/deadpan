@@ -17,6 +17,11 @@ mod device;
 pub use device::*;
 
 #[cfg(target_os = "macos")]
+mod activity;
+#[cfg(target_os = "macos")]
+pub use activity::*;
+
+#[cfg(target_os = "macos")]
 mod lifecycle;
 #[cfg(target_os = "macos")]
 pub use lifecycle::*;

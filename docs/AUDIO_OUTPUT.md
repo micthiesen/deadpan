@@ -92,6 +92,15 @@ generation and stream first; it never extrapolates across silence or a seek.
 CPAL's playback timestamp is a latency estimate, not evidence of acoustic
 delivery. Display scheduling and an application audio master clock remain open.
 
+While callbacks run, `DeviceOutput` holds a `PlaybackActivity`: an
+`NSProcessInfo` user-interactive activity begun by `start_device` and ended by
+`pause_device` or drop. It keeps App Nap from coalescing the playback
+controller's 2 ms delivery checks and queue refills while the app plays behind
+other windows, and defers idle system sleep during playback. Measured
+throttling in an agent shell is in
+[performance-2026-11-09](qualification/performance-2026-11-09.md#1080p60-playback-drops);
+the effect on an app under App Nap is an owner check.
+
 ## Verification and limits
 
 Ordinary tests do not open audio devices:

@@ -61,6 +61,9 @@ pub struct DeviceOutput {
     dropped_reports: Arc<AtomicU64>,
     errors: Arc<AtomicU64>,
     info: DeviceInfo,
+    /// Held while callbacks run so App Nap cannot coalesce the controller's
+    /// delivery checks and refills (see `activity`).
+    activity: Option<crate::PlaybackActivity>,
 }
 
 impl DeviceOutput {
@@ -138,6 +141,7 @@ impl DeviceOutput {
             reports: consumer,
             report_capacity: capacity,
             dropped_reports,
+            activity: None,
             errors,
             info,
         };
@@ -189,6 +193,8 @@ impl DeviceOutput {
             self.feed.fault_signal().raise();
             return Err(error.into());
         }
+        self.activity
+            .get_or_insert_with(crate::PlaybackActivity::begin);
         Ok(())
     }
 
@@ -198,6 +204,7 @@ impl DeviceOutput {
         // A faulted/exhausted feed cannot allocate another generation, but the
         // hardware still must stop. Invalidation errors cannot skip that call.
         let invalidate = self.feed.pause();
+        self.activity = None;
         if let Err(error) = self.stream.pause() {
             self.feed.fault_signal().raise();
             return Err(error.into());

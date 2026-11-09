@@ -72,8 +72,13 @@ measurements above are a separate batch and are not pooled with production.
 [Specification Section 25](spec/DEADPAN_SPEC.md#25-performance-requirements-and-instrumentation)
 sets engineering targets. This page maps each target to the measurement that
 evaluates it, describes the reproducible suite, and lists the diagnostics the
-code exposes. Results live in dated qualification records; the current one is
-[performance-2026-10-04](qualification/performance-2026-10-04.md), with seek
+code exposes. Results live in dated qualification records. The latest full
+run is [performance-2026-11-09](qualification/performance-2026-11-09.md): every
+edit, Hold, UI input, navigation and 1080p60 warm-seek target passes with a
+p95 on the generated fixtures; 4K warm seek of the Original still fails
+(proxy passes), and its 1080p60 playback FAIL measures a throttled agent-shell
+launch context (2 ms waits took 13 to 18 ms), not decoding. The earlier record
+is [performance-2026-10-04](qualification/performance-2026-10-04.md), with seek
 superseded by [seek-2026-10-05](qualification/seek-2026-10-05.md) and preview
 proxy seeks in [proxy-2026-10-05](qualification/proxy-2026-10-05.md), and edit
 latency, storage and open time superseded by

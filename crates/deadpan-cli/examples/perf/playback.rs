@@ -152,6 +152,11 @@ pub fn run(options: &Options) -> Result<Value> {
     let mut tiers = Tiers::default();
     let mut presented_at: Vec<f64> = Vec::new();
     let mut lag_frames = Vec::new();
+    // Heard-clock advance between consecutive Playing updates, and the wall
+    // time between them: shows whether device reports arrive in bursts.
+    let mut heard_steps = Vec::new();
+    let mut heard_step_ms = Vec::new();
+    let mut last_heard_update: Option<(i64, Instant)> = None;
     // An update polled after a picture, handled at the top of the loop so
     // no phase change or terminal state is lost.
     let mut pending = None;
@@ -221,6 +226,18 @@ pub fn run(options: &Options) -> Result<Value> {
                 Phase::Playing => {
                     if first_sound_ms.is_none() && update.sample.is_some() {
                         first_sound_ms = Some(ms(requested));
+                    }
+                    if let Some(sample) = update.sample {
+                        let now = Instant::now();
+                        if let Some((previous, at)) = last_heard_update
+                            && sample.0 != previous
+                        {
+                            heard_steps.push((sample.0 - previous) as f64);
+                            heard_step_ms.push(now.duration_since(at).as_secs_f64() * 1000.0);
+                        }
+                        if last_heard_update.is_none_or(|(previous, _)| previous != sample.0) {
+                            last_heard_update = Some((sample.0, now));
+                        }
                     }
                     heard = update.sample.or(heard);
                 }
@@ -405,6 +422,8 @@ pub fn run(options: &Options) -> Result<Value> {
             "decode_and_gpu_ms": summary(&picture_ms),
             "presentation_interval_ms": summary(&intervals),
             "lag_frames_at_completion": summary(&lag_frames),
+            "heard_step_samples": summary(&heard_steps),
+            "heard_step_wall_ms": summary(&heard_step_ms),
             "tiers": tiers.report(),
             "exact_on_stop_ms": exact_on_stop,
             "proxy": pictures.proxy_report.clone(),
