@@ -172,9 +172,11 @@ this continuous behavior on 2026-11-07.
 Evidence: `an_audio_shift_slides_sound_across_cuts_and_keeps_every_picture`
 (exact root frames and Original phase of each moved sound, mutes, unchanged
 pictures, the extension and its allowance, and four refusals) and the
-`split-edits` replay (refusal, a shift across the cut, Undo). The moved sounds
-use the same root sound path whose emitted output the `role-repeat` fixture
-verifies; a separate `audio-shift` preview/export fixture has not been run.
+`split-edits` replay (refusal, a shift across the cut, Undo). The `audio-shift`
+preview/export fixture (focused release run, 2026-11-08) shifts sound across a
+real cut by 5 frames with `overflow=trim`: the click is silent at its old
+sample and heard exactly 8,008 samples later, with every picture unchanged and
+zero-offset audio.
 
 ## Remaining
 

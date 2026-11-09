@@ -3441,6 +3441,42 @@ pub fn video_repeat_across(dir: &Path) -> Result<Fixture> {
     )
 }
 
+/// `:audio-shift +5f overflow=trim` at Edit 12, after the same real cut as
+/// `role_repeat_across`: all sound from Edit 12 to the group's end slides 5
+/// frames (exactly 8,008 samples) later across the cut while every picture
+/// stays. The click moves from Edit sample 25,578 to 33,586; the last 5
+/// frames of sound are cut at the group's end.
+pub fn audio_shift(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "audio-shift")?;
+    project.shorten()?;
+    project.delete_range(15, 17)?;
+    let saved = project.run_semantic(
+        json!([{"type":"audio_shift","frames":5,"trim":true}]),
+        12,
+        None,
+    )?;
+    if saved.duration()?.frames() != BASE_FRAMES as i64 - 2 || saved.sounds().is_empty() {
+        return Err(format!(
+            "unexpected audio shift: {} frames, {} root sounds",
+            saved.duration()?.frames(),
+            saved.sounds().len()
+        )
+        .into());
+    }
+    let shown = |frame: u64| original(BASE_START + frame + if frame >= 15 { 2 } else { 0 });
+    let expectations = [0u64, 11, 12, 14, 15, 20, 27]
+        .into_iter()
+        .map(|frame| (frame, shown(frame)))
+        .collect();
+    let mut fixture = project.finish(
+        vec!["Audio-only / video-only repeat (§6.5)"],
+        expectations,
+        Vec::new(),
+    )?;
+    fixture.audio = vec![(25_578, false), (33_586, true)];
+    Ok(fixture)
+}
+
 /// A development `ffmpeg` CLI with `libx264`/`libx264rgb`
 /// (`DEADPAN_BRIDGE_FFMPEG`, else Homebrew's). Tests only: it generates the
 /// large fixture and encodes synthetic AI footage; Deadpan never links it.
@@ -3772,7 +3808,8 @@ pub fn partition_with_skips(
     partitions: usize,
 ) -> Result<(Vec<Fixture>, Vec<Skipped>)> {
     assert!(partitions > 0 && partition < partitions);
-    let builders: [(&str, Builder); 44] = [
+    let builders: [(&str, Builder); 45] = [
+        ("audio-shift", audio_shift),
         ("ramp", ramp),
         ("role-repeat-across", role_repeat_across),
         ("video-repeat-across", video_repeat_across),
