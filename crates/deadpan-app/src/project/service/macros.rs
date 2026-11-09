@@ -402,6 +402,7 @@ fn scoped_macro_receipt(
                         | SemanticInstruction::Repeat { .. }
                         | SemanticInstruction::SetRepeatPlays { .. }
                         | SemanticInstruction::SetRepeat { .. }
+                        | SemanticInstruction::SetPlayGap { .. }
                 )
             }) {
                 expected.cursor = plan.context.cursor;
@@ -409,11 +410,13 @@ fn scoped_macro_receipt(
             // A fixed window continues at its first visible sampled picture;
             // ordinary occurrence edits retain their intrinsic Hold start.
             // Keep every other ordinary context field strict.
-            if plan
-                .trace
-                .iter()
-                .any(|row| matches!(row.instruction, SemanticInstruction::SetHoldDuration { .. }))
-            {
+            if plan.trace.iter().any(|row| {
+                matches!(
+                    row.instruction,
+                    SemanticInstruction::SetHoldDuration { .. }
+                        | SemanticInstruction::SetPlayGap { .. }
+                )
+            }) {
                 let fixed = crate::project::scoped::fixed_duration_visibility(
                     &plan.document,
                     &context.parent,

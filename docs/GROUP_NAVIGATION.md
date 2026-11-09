@@ -73,8 +73,9 @@ at compact and large sizes, including a long path. The contributed
 [UI harness](UI_FEEDBACK.md) extends `nested-pause` through navigation, Hold
 duration, history, Camera and endpoint refusal using production inputs.
 
-Repeat/Retime contents now have scoped value navigation. Temporal occurrence
-editing, implicit gap controls, group creation/ungroup, role-only edits and
+Repeat/Retime contents now have scoped value navigation and a row for the
+shared gap after a chosen play ([scoped editing](SCOPED_EDITING.md#the-shared-gap-after-a-play)).
+Temporal occurrence editing, group creation/ungroup, role-only edits and
 the full editing workflow remain required. This
 increment does not make any full-product requirement or gate complete.
 The [qualification record](qualification/group-navigation-2026-09-26.md) separates

@@ -317,7 +317,7 @@ fn fully_overridden_default_stays_editable_without_inventing_a_play() {
 }
 
 #[test]
-fn owned_gap_rows_include_dormant_final_gap_but_never_implicit_recipes() {
+fn owned_gap_rows_include_dormant_final_gap_and_a_shared_gap_row() {
     let document = fixture(
         "repeat",
         vec![
@@ -336,13 +336,29 @@ fn owned_gap_rows_include_dormant_final_gap_but_never_implicit_recipes() {
     state.select_in(1).unwrap();
     assert_eq!(state.selected.node, node("first-gap"));
     assert_eq!(presentation(&state).frames, 2..5);
+    assert!(!state.rows.iter().any(|row| row.shared_gap));
     state.switch_play_in(2).unwrap();
+    // The shared default gap after play 2 has no node; its row addresses the
+    // play's contents and reads as that gap.
+    assert_eq!(state.rows.len(), 2);
+    assert!(state.rows[1].shared_gap && !state.rows[0].shared_gap);
+    assert_eq!(state.rows[1].label, "Gap after play 2 · 1f");
+    assert_eq!(state.rows[1].target, state.rows[0].target);
+    state.select_in(1).unwrap();
+    assert!(state.shared_gap_selected());
+    assert_eq!(state.selected.node, node("body"));
+    assert_eq!(state.shared_gap().unwrap().1, 2);
     assert_eq!(
-        state.rows.len(),
-        1,
-        "implicit gap recipe has no authored row"
+        state.hold_parameter_in().as_deref(),
+        Some("hold-duration 1f")
     );
+    state.select_in(0).unwrap();
+    assert!(!state.shared_gap_selected());
     state.switch_play_in(3).unwrap();
+    assert!(
+        !state.rows.iter().any(|row| row.shared_gap),
+        "no gap after the last play"
+    );
     state.select_in(1).unwrap();
     state.selected.validate(&state.index.document).unwrap();
     assert_eq!(state.selected.node, node("last-gap"));

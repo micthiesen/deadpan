@@ -752,7 +752,7 @@ where
 
     /// A value edit retains the captured absolute cursor and ordinary selection.
     /// Isolation supplies the final Hold address for later staged instructions.
-    fn set_scoped_hold_audio(
+    pub(super) fn set_scoped_hold_audio(
         &mut self,
         trace_index: usize,
         audio: HoldAudio,

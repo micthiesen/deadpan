@@ -38,6 +38,10 @@ pub(in crate::preview) struct Row {
     pub label: String,
     pub kind: &'static str,
     pub selected: bool,
+    /// The Repeat's shared default gap after the chosen play. It has no
+    /// authored node: `target` is the play's contents, which the gap edits
+    /// address (`SetPlayGap`), and every other edit refuses while it is selected.
+    pub shared_gap: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -101,6 +105,9 @@ impl State {
     }
 
     fn hold_parameter_in(&self) -> Option<String> {
+        if let Some(gap) = self.shared_gap_recipe() {
+            return Some(format!("hold-duration {}f", gap.duration.frames()));
+        }
         if !self.hold_duration_available() {
             return None;
         }
@@ -120,7 +127,9 @@ impl State {
     }
 
     pub fn edit_scope_hint(&self) -> &'static str {
-        if self.selected.repeats.is_empty() {
+        if self.shared_gap_selected() {
+            "The other plays share this gap. A length or sound change gives this play its own copy in the same edit; one Undo restores the shared gap."
+        } else if self.selected.repeats.is_empty() {
             "Changes apply to this beat inside the Retime."
         } else if self.has_selected_plays() {
             "Changes apply to the selected plays."
@@ -780,6 +789,89 @@ impl State {
         self.levels.last().expect("inspector has a level").selected
     }
 
+    /// Whether the selected row is the shared default gap after this play.
+    pub fn shared_gap_selected(&self) -> bool {
+        self.rows
+            .get(self.selected())
+            .is_some_and(|row| row.shared_gap)
+    }
+
+    /// The selected shared gap's recipe, its one-based preceding play and
+    /// the Repeat that owns it.
+    pub fn shared_gap(&self) -> Option<(deadpan_core::HoldRecipe, u32, NodeId)> {
+        if !self.shared_gap_selected() {
+            return None;
+        }
+        let gap = self.shared_gap_recipe()?.clone();
+        let level = self.levels.last()?;
+        let RepeatEditBranch::Play { iteration } = &level.branch else {
+            return None;
+        };
+        let NodeKind::Repeat { iterations, .. } =
+            &self.index.document.nodes().get(&level.owner.node)?.kind
+        else {
+            return None;
+        };
+        Some((
+            gap,
+            iterations.position(iteration)?.checked_add(1)?,
+            level.owner.node.clone(),
+        ))
+    }
+
+    fn shared_gap_recipe(&self) -> Option<&deadpan_core::HoldRecipe> {
+        if !self.shared_gap_selected() {
+            return None;
+        }
+        let level = self.levels.last()?;
+        match &self.index.document.nodes().get(&level.owner.node)?.kind {
+            NodeKind::Repeat { gap, .. } => gap.as_ref(),
+            _ => None,
+        }
+    }
+
+    /// The default gap after the browsed play is rendered, shared and
+    /// reachable as its own row: This play at every Repeat level, no play set,
+    /// not the last play, no owned branch and a positive default gap.
+    fn shared_gap_row(&self) -> Option<String> {
+        let level = self.levels.last()?;
+        let RepeatEditBranch::Play { iteration } = &level.branch else {
+            return None;
+        };
+        if self.levels.iter().any(|level| !level.also.is_empty())
+            || level
+                .owner
+                .repeats
+                .iter()
+                .any(|step| step.branch == RepeatEditBranch::Default)
+        {
+            return None;
+        }
+        let NodeKind::Repeat {
+            iterations, gap, ..
+        } = &self.index.document.nodes().get(&level.owner.node)?.kind
+        else {
+            return None;
+        };
+        let gap = gap.as_ref().filter(|gap| gap.duration.frames() > 0)?;
+        let play = iterations.position(iteration)?;
+        if play.checked_add(1)? >= iterations.len()
+            || self
+                .index
+                .document
+                .gap_overrides()
+                .get(&level.owner.node)
+                .is_some_and(|entries| entries.get(iteration).is_some())
+        {
+            return None;
+        }
+        Some(format!(
+            "Gap after play {} · {}f",
+            play + 1,
+            gap.duration.frames()
+        ))
+    }
+
     pub fn target(&self, workspace: &Workspace, cursor: ProjectFrame) -> Result<Target, String> {
         self.check(workspace)?;
         if cursor.0 < 0 || cursor.0 > self.index.plan.duration().frames() {
@@ -1157,13 +1249,20 @@ impl State {
     }
     fn refresh_selected(&mut self) -> Result<(), String> {
         let targets = self.row_targets()?;
-        self.selected = targets
-            .get(self.selected())
-            .ok_or("Inspector level has no selected row")?
-            .clone();
+        let shared_gap = self.shared_gap_row();
+        // The shared gap row addresses the play's contents, its first row.
+        let gap_row = shared_gap.as_ref().map(|_| targets.len());
+        self.selected = if Some(self.selected()) == gap_row {
+            targets.first()
+        } else {
+            targets.get(self.selected())
+        }
+        .ok_or("Inspector level has no selected row")?
+        .clone();
         self.selected
             .validate(&self.index.document)
             .map_err(|error| error.to_string())?;
+        let gap = shared_gap.zip(targets.first().cloned());
         self.rows = Arc::new(
             targets
                 .into_iter()
@@ -1175,8 +1274,16 @@ impl State {
                         label: node.label.clone(),
                         kind: kind(&node.kind),
                         selected: index == self.selected(),
+                        shared_gap: false,
                     }
                 })
+                .chain(gap.map(|(label, target)| Row {
+                    target,
+                    label,
+                    kind: "shared gap",
+                    selected: Some(self.selected()) == gap_row,
+                    shared_gap: true,
+                }))
                 .collect(),
         );
         self.projection = self.project(&self.selected)?;

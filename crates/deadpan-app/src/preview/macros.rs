@@ -53,6 +53,9 @@ pub(super) struct Capture {
     event_focused: bool,
     original_selection: Option<moment::Selection>,
     scoped: Option<crate::project::scoped::Target>,
+    /// The inspector's shared gap row was selected: `scoped` addresses the
+    /// play's contents and pause edits become `SetPlayGap`.
+    shared_gap: bool,
 }
 
 impl Capture {
@@ -275,6 +278,7 @@ impl Capture {
             && app.sound_focused() == self.sound_focused
             && app.event_focused() == self.event_focused
             && app.scoped_target().as_ref() == Ok(&self.scoped)
+            && app.scoped_shared_gap().is_some() == self.shared_gap
             && self.context.original.as_ref().is_none_or(|original| {
                 app.source_cursor == original.ordinal.0
                     && app.selected_source.as_ref() == Some(&original.asset)
@@ -679,6 +683,7 @@ impl DeadpanApp {
             sound_focused: self.sound_focused(),
             event_focused: self.event_focused(),
             original_selection: None,
+            shared_gap: scoped.is_some() && self.scoped_shared_gap().is_some(),
             scoped,
         })
     }
@@ -1763,6 +1768,11 @@ impl DeadpanApp {
             }
             let captured = target?;
             let instruction = instruction?;
+            let instruction = if captured.shared_gap {
+                shared_gap_instruction(instruction)?
+            } else {
+                instruction
+            };
             if matches!(instruction, SemanticInstruction::SetHoldDuration { .. }) {
                 captured.check_fixed_duration()?;
             }
@@ -1782,6 +1792,7 @@ impl DeadpanApp {
                         | SemanticInstruction::SetHoldDuration { .. }
                         | SemanticInstruction::SetHoldAudio { .. }
                         | SemanticInstruction::SetRoomTone { .. }
+                        | SemanticInstruction::SetPlayGap { .. }
                         | SemanticInstruction::Retime { .. }
                         | SemanticInstruction::Split
                         | SemanticInstruction::DeleteBeat
@@ -1800,7 +1811,7 @@ impl DeadpanApp {
                 )
                 && !matches!(&instruction, SemanticInstruction::SetAudio { change } if gain::scoped_audio_change(change))
             {
-                return Err("This play supports whole-beat gain, mute, saturation, balance and EQ, speed changes, freeze and black pauses, pause lengths, silence and room tone, splitting, deleting and repeating a beat, Repeat plays and gaps, Zoom, Creep and named calls only. Return to the parent for other macro edits.".into());
+                return Err("This play supports whole-beat gain, mute, saturation, balance and EQ, speed changes, freeze and black pauses, pause and gap lengths, silence and room tone, splitting, deleting and repeating a beat, Repeat plays and gaps, Zoom, Creep and named calls only. Return to the parent for other macro edits.".into());
             }
             if !captured.matches(self)
                 || self
@@ -2306,3 +2317,18 @@ fn completion_visible(
 
 #[cfg(test)]
 mod tests;
+
+/// On the shared gap row, a pause length or sound edit addresses that gap:
+/// the planner gives this play its own copy and edits it in one transaction.
+fn shared_gap_instruction(instruction: SemanticInstruction) -> Result<SemanticInstruction, String> {
+    Ok(match instruction {
+        SemanticInstruction::SetHoldDuration { length } => SemanticInstruction::SetPlayGap {
+            change: deadpan_core::PlayGapChange::Length { length },
+        },
+        SemanticInstruction::SetHoldAudio { audio } => SemanticInstruction::SetPlayGap {
+            change: deadpan_core::PlayGapChange::Audio { audio },
+        },
+        instruction @ SemanticInstruction::SetPlayGap { .. } => instruction,
+        _ => return Err(super::scoped::SHARED_GAP_ONLY.into()),
+    })
+}

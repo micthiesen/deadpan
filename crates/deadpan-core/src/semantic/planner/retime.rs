@@ -685,7 +685,7 @@ where
         Ok(())
     }
 
-    fn set_scoped_hold_duration(
+    pub(super) fn set_scoped_hold_duration(
         &mut self,
         trace_index: usize,
         length: crate::PauseLength,

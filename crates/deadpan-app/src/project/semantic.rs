@@ -96,6 +96,7 @@ impl RepeatableEdit {
                 | SemanticInstruction::SetHoldDuration { .. }
                 | SemanticInstruction::SetHoldAudio { .. }
                 | SemanticInstruction::SetRoomTone { .. }
+                | SemanticInstruction::SetPlayGap { .. }
                 | SemanticInstruction::Split
                 | SemanticInstruction::DeleteBeat
                 | SemanticInstruction::Trim { .. }

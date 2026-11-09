@@ -33,6 +33,7 @@ pub use hold_duration::{HoldDurationVisibility, SemanticHoldDurationContext};
 mod mixed_hold_duration;
 pub use mixed_hold_duration::SemanticMixedHoldDurationContext;
 mod pause;
+mod play_gap;
 mod scoped_gain;
 mod scoped_structure;
 mod selected_hold_duration;
@@ -924,6 +925,7 @@ where
                         | SemanticInstruction::SetHoldDuration { .. }
                         | SemanticInstruction::SetHoldAudio { .. }
                         | SemanticInstruction::SetRoomTone { .. }
+                        | SemanticInstruction::SetPlayGap { .. }
                         | SemanticInstruction::Retime { .. }
                         | SemanticInstruction::Split
                         | SemanticInstruction::DeleteBeat
@@ -1309,6 +1311,9 @@ where
                 SemanticInstruction::SetHoldDuration { length } => {
                     self.set_hold_duration(index, *length)?;
                 }
+                SemanticInstruction::SetPlayGap { change } => {
+                    self.set_play_gap(index, change.clone())?;
+                }
                 SemanticInstruction::Split if self.context.scoped.is_some() => {
                     self.scoped_structure(index, scoped_structure::ScopedStructure::Split)?;
                 }
@@ -1449,6 +1454,8 @@ where
                 SemanticInstruction::SetAudioEdges { .. } => 5,
                 // A Roll and a cutaway.
                 SemanticInstruction::SplitEdit { .. } => 2,
+                // Gap isolation and the pause edit.
+                SemanticInstruction::SetPlayGap { .. } => 2,
                 // At least one mute and one shifted sound.
                 SemanticInstruction::AudioShift { .. } => 2,
                 // A split and a speed change per part.

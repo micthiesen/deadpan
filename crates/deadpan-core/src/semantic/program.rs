@@ -80,6 +80,19 @@ pub enum PauseLength {
     },
 }
 
+/// What [`SemanticInstruction::SetPlayGap`] changes in one play's gap.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum PlayGapChange {
+    Length {
+        length: PauseLength,
+    },
+    /// Silence or room tone from an exact Original sample span.
+    Audio {
+        audio: crate::HoldAudio,
+    },
+}
+
 impl PauseLength {
     pub fn resolve(self, rate: crate::FrameRate) -> Result<crate::FrameDuration, EditError> {
         let frames = match self {
@@ -523,6 +536,13 @@ pub enum SemanticInstruction {
     SetHoldDuration {
         length: PauseLength,
     },
+    /// Change the shared default gap after the current play of the nearest
+    /// Repeat, inside one chosen play at every Repeat level (the inspector's
+    /// shared-gap row). The same transaction first gives this play its own
+    /// copy of that gap (`IsolateGap`), so other plays keep the default.
+    SetPlayGap {
+        change: PlayGapChange,
+    },
     /// Place the complete audio-only catalog sound `asset` at the Edit cursor
     /// (`,s`) as a root sound event at natural rate, exactly as the native
     /// key does. It must end inside the edit.
@@ -916,7 +936,10 @@ impl SemanticProgram {
             {
                 super::native_mark_id(*letter)?;
             }
-            if let SemanticInstruction::SetHoldAudio { audio } = instruction
+            if let SemanticInstruction::SetHoldAudio { audio }
+            | SemanticInstruction::SetPlayGap {
+                change: PlayGapChange::Audio { audio },
+            } = instruction
                 && !matches!(
                     audio,
                     crate::HoldAudio::Silence | crate::HoldAudio::RoomTone { .. }

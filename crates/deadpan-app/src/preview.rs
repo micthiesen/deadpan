@@ -535,6 +535,10 @@ impl DeadpanApp {
         if !self.macro_request_allowed(&request) {
             return false;
         }
+        if let Some(error) = self.shared_gap_refusal(&request) {
+            self.error = Some(error.into());
+            return false;
+        }
         self.cancel_camera();
         self.stop_playback();
         self.bindings.clear();

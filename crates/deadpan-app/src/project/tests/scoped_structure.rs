@@ -738,3 +738,118 @@ fn dot_repeats_a_one_play_edit_in_the_play_chosen_now() {
             .is_none()
     );
 }
+
+/// root = [rep, z]; rep plays body = [x, y] three times with a shared 4-frame
+/// gap: 20 + 4 + 20 + 4 + 20, then z.
+fn open_gapped(path: &Path) -> (ProjectService, Arc<Workspace>) {
+    {
+        let mut store = seed_holds(path, &["x", "y", "z"]);
+        seed_command(
+            &mut store,
+            Command::Group {
+                parent: node("root"),
+                start: 0,
+                end: 2,
+                id: node("body"),
+                label: "Body".into(),
+            },
+            "group",
+        );
+        seed_command(
+            &mut store,
+            Command::WrapRepeat {
+                node: node("body"),
+                id: node("rep"),
+                plays: 3,
+                gap: Some(hold(4)),
+                anchor_policy: Default::default(),
+            },
+            "rep-plays",
+        );
+    }
+    let service = ProjectService::new(Arc::new(|| {})).unwrap();
+    let workspace = command(&service, ProjectRequest::Open(path.to_path_buf()))
+        .workspace
+        .unwrap();
+    (service, workspace)
+}
+
+#[test]
+fn a_shared_gap_length_in_one_play_becomes_its_own_pause_in_one_undo() {
+    let scratch = tempfile::tempdir().unwrap();
+    let (service, opened) = open_gapped(&scratch.path().join("play-gap.deadpan"));
+    let before = (*opened.document).clone();
+    assert_eq!(before.duration().unwrap().frames(), 78);
+    // The shared gap row addresses play 2's contents, which start at 24.
+    let update = structure(
+        &service,
+        &target(&opened, "body", &[("rep", 1)], 24),
+        SemanticInstruction::SetPlayGap {
+            change: deadpan_core::PlayGapChange::Length {
+                length: PauseLength::Frames { frames: count(10) },
+            },
+        },
+    );
+    saved(&update);
+    let document = &update.workspace.as_ref().unwrap().document;
+    assert_eq!(document.duration().unwrap().frames(), 84);
+    let gap = document.gap_overrides()[&node("rep")]
+        .get(&play("rep", 1))
+        .unwrap()
+        .clone();
+    let NodeKind::Hold { recipe } = &document.nodes()[&gap].kind else {
+        panic!("this play's gap is its own pause");
+    };
+    assert_eq!(recipe.duration.frames(), 10);
+    // Plays 1 and 3 keep the shared 4-frame gap and the shared body.
+    assert_eq!(document.gap_overrides()[&node("rep")].len(), 1);
+    assert_eq!(document.nodes()[&node("rep")], before.nodes()[&node("rep")]);
+    assert!(document.overrides().is_empty());
+    // The inspector continues on the new gap row at its first frame.
+    let committed = update.committed.as_ref().unwrap();
+    let receipt = committed.scoped.as_ref().unwrap();
+    assert_eq!(receipt.target.node, gap);
+    assert_eq!(
+        receipt.target.repeats,
+        vec![RepeatEditStep {
+            repeat: node("rep"),
+            branch: RepeatEditBranch::Play {
+                iteration: play("rep", 1)
+            },
+        }]
+    );
+    assert_eq!(committed.cursor, Some(ProjectFrame(44)));
+    // One Undo restores the shared gap exactly.
+    let restored = undo(&service, document);
+    assert_eq!(restored.nodes(), before.nodes());
+    assert_eq!(restored.gap_overrides(), before.gap_overrides());
+    assert_eq!(restored.audio_bindings(), before.audio_bindings());
+    assert_eq!(restored.duration().unwrap().frames(), 78);
+}
+
+#[test]
+fn shared_gap_edits_refuse_the_last_play_and_unchanged_values_without_saving() {
+    let scratch = tempfile::tempdir().unwrap();
+    let (service, opened) = open_gapped(&scratch.path().join("play-gap-refusals.deadpan"));
+    let last = structure(
+        &service,
+        &target(&opened, "body", &[("rep", 2)], 48),
+        SemanticInstruction::SetPlayGap {
+            change: deadpan_core::PlayGapChange::Length {
+                length: PauseLength::Frames { frames: count(10) },
+            },
+        },
+    );
+    assert!(refusal(&last).unwrap().contains("last play has no gap"));
+    let silent = structure(
+        &service,
+        &target(&opened, "body", &[("rep", 0)], 0),
+        SemanticInstruction::SetPlayGap {
+            change: deadpan_core::PlayGapChange::Audio {
+                audio: deadpan_core::HoldAudio::Silence,
+            },
+        },
+    );
+    assert!(refusal(&silent).unwrap().contains("already has that sound"));
+    assert!(last.committed.is_none() && silent.committed.is_none());
+}

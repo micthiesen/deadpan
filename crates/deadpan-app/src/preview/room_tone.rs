@@ -23,10 +23,16 @@ struct Target {
     /// a fragment or Repeat gap differs from the recipe's owner.
     pause: deadpan_core::PauseSoundTarget,
     scoped: Option<crate::project::scoped::Target>,
+    /// The inspector's shared gap row: the one-based play this Repeat gap
+    /// follows. Apply gives that play its own copy (`SetPlayGap`).
+    play_gap: Option<u32>,
 }
 
 impl Target {
     fn heading(&self) -> &'static str {
+        if self.play_gap.is_some() {
+            return "Room tone for this play's gap";
+        }
         match &self.pause {
             deadpan_core::PauseSoundTarget::Hold {
                 fragment: false, ..
@@ -39,6 +45,9 @@ impl Target {
     }
 
     fn scope_note(&self) -> &'static str {
+        if self.play_gap.is_some() {
+            return "Apply gives this play its own copy of the shared gap with this sound; the other plays keep the shared gap. One edit, one undo.";
+        }
         match &self.pause {
             deadpan_core::PauseSoundTarget::Hold {
                 fragment: false, ..
@@ -172,6 +181,12 @@ impl DeadpanApp {
             .as_ref()
             .ok_or("Room tone preview is no longer open.")?;
         self.check_hold_target(&draft.target)?;
+        if draft.target.play_gap.is_some() {
+            return Err(
+                "Apply this play's gap sound first, then render; a render preview cannot isolate the gap."
+                    .into(),
+            );
+        }
         if !draft.ready() {
             return Err(draft
                 .error
@@ -226,6 +241,22 @@ impl DeadpanApp {
                 .nodes()
                 .get(node)
                 .ok_or("The pause is unavailable.")?;
+            if let Some((recipe, play, repeat)) = scoped.as_ref().and(self.scoped_shared_gap()) {
+                return Ok(Target {
+                    session: workspace.session,
+                    revision: workspace.document.revision_id().clone(),
+                    scope: self.sequence_scope.clone(),
+                    node: node.clone(),
+                    cursor: ProjectFrame(
+                        i64::try_from(self.sequence_cursor).map_err(|e| e.to_string())?,
+                    ),
+                    label: format!("Gap after play {play}"),
+                    frames: recipe.duration.frames(),
+                    pause: deadpan_core::PauseSoundTarget::RepeatGap { node: repeat },
+                    scoped,
+                    play_gap: Some(play),
+                });
+            }
             let pause = if scoped.is_some() {
                 // One play's pause sound goes through occurrence isolation,
                 // which edits authored Holds only.
@@ -260,6 +291,7 @@ impl DeadpanApp {
                 frames: recipe.duration.frames(),
                 pause,
                 scoped,
+                play_gap: None,
             })
         })();
         let copied = self.copied.copied_audio_selection();
@@ -884,7 +916,9 @@ impl DeadpanApp {
             if gap { "GAP SOUND" } else { "PAUSE SOUND" },
             false,
         ));
-        if gap {
+        if self.scoped_shared_gap().is_some() {
+            ui.weak("Shared with the other plays. A change gives this play its own copy.");
+        } else if gap {
             ui.weak("Default gaps between plays. A gap with its own pause keeps its sound.");
         }
         if let Some(workspace) = &self.workspace
@@ -936,6 +970,9 @@ impl DeadpanApp {
     pub(super) fn inspected_pause_sound(&self) -> Option<deadpan_core::PauseSoundTarget> {
         let workspace = self.workspace.as_ref()?;
         let node = self.inspected_node()?;
+        if let Some((_, _, repeat)) = self.scoped_shared_gap() {
+            return Some(deadpan_core::PauseSoundTarget::RepeatGap { node: repeat });
+        }
         if self.scoped.is_some() {
             return matches!(
                 workspace.document.nodes().get(node)?.kind,
@@ -1021,6 +1058,7 @@ mod tests {
                     fragment: false,
                 },
                 scoped: None,
+                play_gap: None,
             },
             prepared: None,
             pending: Some(20),

@@ -73,6 +73,50 @@ Repeat refuses with a hint. Evidence: the `scoped-plays` replay check
 ":isolate-gap in play 2 gives only that play its own gap pause" and
 `project::tests::isolate_gap::nested_isolate_gap_copies_only_the_chosen_outer_play`.
 
+## The shared gap after a play
+
+A Repeat's default gap is an implicit Hold recipe: it plays after every play
+without its own gap pause and has no authored node. With This play chosen at
+every Repeat level (since 2026-11-09), the play's rows end with a row for it,
+such as "Gap after play 2 · 6f · shared gap", whenever that gap renders: the
+play is not the last, the Repeat has a positive default gap and the play has
+no gap pause of its own. `j`/`k` reach it like any row. It is not offered for
+All plays (`:repeat gap=` and a selected Repeat's `:room-tone` edit the shared
+recipe) or for several selected plays.
+
+The row's inspector names the shared length and sound. Its edits change only
+that play's gap, isolating it in the same transaction:
+
+- `Enter` (Change length…) opens `:hold-duration` with the shared length.
+- `:room-tone` opens the room-tone sheet for the gap; Apply sets it.
+- `:hold-silence` (Use silence) makes it silent.
+- `:isolate-gap` (Own copy only) isolates it unchanged.
+
+The first three commit one semantic `SetPlayGap { change }` instruction
+(`Length` or `Audio`). The planner adds one Compound leaf `IsolateGap` (or,
+below enclosing plays, `EditOccurrence { IsolateGap }` sized by
+`occurrence_gap_requirements`) and then the ordinary one-play pause length or
+pause sound leaf on the new Hold, so retained timing follows the existing
+isolated-gap path: the copy binds the old default-gap clock and the length
+change reanchors later owners on their pre-edit entries. One Undo restores the
+shared gap. The inspector then selects the new gap pause with the cursor at
+its first frame. Macros record `SetPlayGap` and dot repeats it after the play
+chosen at invocation.
+
+Refusals name their reason without saving: an unchanged length or sound, the
+last play, a play that already owns its gap ("select it with j") and a Repeat
+without a gap. While the row is selected, every other edit (gain, Camera,
+pauses, structure, AI pictures) refuses with a hint to select the play's
+contents with `k`; the row addresses the play's contents only as the
+authority for these gap edits. A render preview of an unapplied gap
+room-tone draft refuses, since it cannot isolate the gap.
+
+Evidence: core `semantic::planner::tests::scoped_framing::scoped_play_gap`
+(nested and top-level isolation, bound clocks retained, exact Undo,
+refusals), service `project::tests::scoped_structure::a_shared_gap_length_in_one_play_becomes_its_own_pause_in_one_undo`
+and the `scoped-plays` replay checks from "j in play 2 reaches the shared gap
+after it as its own row" through "One Undo restores the shared gap exactly".
+
 ## Splitting, deleting and repeating a beat in This play
 
 With This play chosen at every enclosing Repeat (since 2026-11-08), `s` or
@@ -430,10 +474,11 @@ for test, rendered and native evidence, source provenance and remaining limits.
 
 ## Remaining work
 
-Implicit default gaps have no authored node, so neither `j` nor `]r` selects
-them; they need their own recipe controls. Multi-play selection is chosen only
+Shared gap rows exist only with This play at every level; a shared gap
+inside several selected plays, and its Camera, gain, picture provider or AI
+pictures before isolation, remain unavailable. Multi-play selection is chosen only
 by command; the inspector shows it but has no pointer control for it. This boundary does not implement occurrence-local cuts, replacement, Repeat
-count changes, All-plays Retime changes, implicit gap recipe editing, general semantic
+count changes, All-plays Retime changes, general semantic
 recording of scoped navigation or arbitrary occurrence edits, or complete
 definition previews. Those remain part of the
 normative specification. No full-product requirement or gate is complete.

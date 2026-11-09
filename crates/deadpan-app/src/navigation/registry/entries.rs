@@ -251,7 +251,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::CONTENTS,
         replay: Replay::Ignored,
         headless: eq("command isolate_gap", REP),
-        help: "Inside a Repeat's contents with This play chosen (]r), give that play its own copy of the default gap after it. Its timing and sound clocks stay the same; j/k then reach the gap inside the play, where duration, room tone, freeze or AI pictures edit only it. Inside nested Repeats, choose This play in every enclosing Repeat too; only that occurrence changes. One Undo.",
+        help: "Inside a Repeat's contents with This play chosen (]r), give that play its own copy of the default gap after it. Its timing and sound clocks stay the same; j/k then reach the gap inside the play, where duration, room tone, freeze or AI pictures edit only it. Inside nested Repeats, choose This play in every enclosing Repeat too; only that occurrence changes. One Undo. Changing the shared gap's length or sound from its own row isolates it in the same edit, so this command is only needed for an unchanged copy.",
     },
     Spec {
         id: "timeline",
@@ -1005,7 +1005,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::EDIT.or(C::CONTENTS),
         replay: Replay::RecordedAndDot,
         headless: eq("set_hold_duration instruction", HOLDS),
-        help: "Set a selected Hold to exactly 11 project frames. A visible ordinary Hold inside fixed Edit Retimes keeps those windows unchanged and continues at its first visible sampled frame. Inside Repeat contents, pause length follows each level's All plays, This play or selected plays choice: shared defaults keep their owned plays, while selected plays become independent when needed. Several selected Holds in bodies or explicit owned gaps change together with one Undo, retaining the other levels' explicit choices. An unused default or final owned gap remains editable without inventing a visible play; a dormant primary keeps the cursor while live counterparts may move time. Retime ancestors, implicit default gaps and attached sounds remain unavailable inside Repeats. A single dormant gap with This play at every level remains unavailable. Enter opens its length. Records and dot-repeats at the new invocation.",
+        help: "Set a selected Hold to exactly 11 project frames. A visible ordinary Hold inside fixed Edit Retimes keeps those windows unchanged and continues at its first visible sampled frame. Inside Repeat contents, pause length follows each level's All plays, This play or selected plays choice: shared defaults keep their owned plays, while selected plays become independent when needed. Several selected Holds in bodies or explicit owned gaps change together with one Undo, retaining the other levels' explicit choices. An unused default or final owned gap remains editable without inventing a visible play; a dormant primary keeps the cursor while live counterparts may move time. With This play at every level, {beat.next} from a play's contents reaches the shared default gap after it; Enter there sets that play's gap length, giving the play its own copy of the gap in the same edit (set_play_gap instruction) while the other plays keep the shared gap. Retime ancestors and attached sounds remain unavailable inside Repeats. A single dormant gap with This play at every level remains unavailable. Enter opens its length. Records and dot-repeats at the new invocation.",
     },
     Spec {
         id: "hold.silence",
@@ -1016,7 +1016,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::EDIT.or(C::CONTENTS),
         replay: Replay::Recorded,
         headless: eq("command set_hold_audio or set_repeat_gap_audio", HOLDS),
-        help: "Restore the selected pause to silence in one undoable edit: an ordinary pause, one split pause fragment, or a selected Repeat's default gap (every gap without its own pause). Explicit per-sound permissions remain separate.",
+        help: "Restore the selected pause to silence in one undoable edit: an ordinary pause, one split pause fragment, or a selected Repeat's default gap (every gap without its own pause). On the shared gap row after one play in Repeat contents, only that play's gap becomes silent, as its own copy; the other plays keep the shared gap. Explicit per-sound permissions remain separate.",
     },
     Spec {
         id: "room-tone",
@@ -1030,7 +1030,7 @@ pub static SPECS: &[Spec] = &[
             "the sheet prepares and auditions; set_room_tone applies a yank_original range",
             HOLDS,
         ),
-        help: "Select a pause after copying a quiet Original range with {visual}, {frame.previous}/{frame.next}, {copy}. A split pause fragment changes only that fragment; a selected Repeat with a gap changes its default gap, heard in every gap without its own pause, and leaves explicit gap pauses alone. The sheet shows exact source samples; reopening starts from the saved range, and Use copied Original range explicitly replaces it. Picture and duration stay unchanged.",
+        help: "Select a pause after copying a quiet Original range with {visual}, {frame.previous}/{frame.next}, {copy}. A split pause fragment changes only that fragment; a selected Repeat with a gap changes its default gap, heard in every gap without its own pause, and leaves explicit gap pauses alone. On the shared gap row after one play in Repeat contents, Apply gives only that play's gap its own copy with this room tone. The sheet shows exact source samples; reopening starts from the saved range, and Use copied Original range explicitly replaces it. Picture and duration stay unchanged.",
     },
     Spec {
         id: "reverse",

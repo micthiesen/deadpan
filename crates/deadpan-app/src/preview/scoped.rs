@@ -11,6 +11,8 @@ pub(super) mod model;
 mod range_tests;
 
 const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Repeat pauses follow each level's All plays, This play or selected plays choice. Pause length follows each level's All plays or This play choice for one Hold; AI pauses, speed changes (:retime) and s, dd, rr, :repeat N and :repeat gap= on a beat require one play at every level. Other timing edits and range copying require the parent.";
+/// The shared gap row edits only that gap; `j`/`k` reach the play's contents.
+pub(super) const SHARED_GAP_ONLY: &str = "The shared gap after this play takes a length (Enter), room tone (:room-tone), silence (:hold-silence) or its own copy (:isolate-gap). Select the play's contents with k for other edits.";
 const FRAMING_RANGE_ONLY: &str = "This play's Edit range is for :zoom or :creep. Clear the range with Escape before other beat edits.";
 
 /// A structural edit of one beat in one explicit Repeat play.
@@ -273,6 +275,33 @@ impl DeadpanApp {
                 Ok(target)
             })
             .transpose()
+    }
+
+    /// The inspector's shared default gap row is selected: its recipe, the
+    /// one-based play it follows and its Repeat.
+    pub(super) fn scoped_shared_gap(&self) -> Option<(deadpan_core::HoldRecipe, u32, NodeId)> {
+        let state = self.scoped.as_ref()?;
+        state
+            .matches_workspace(self.workspace.as_ref()?)
+            .then(|| state.shared_gap())
+            .flatten()
+    }
+
+    /// While the shared gap row is selected, its target is the play's
+    /// contents, so only the gap edits (`SetPlayGap`, through semantic Apply)
+    /// and `:isolate-gap` may act. Every other captured edit refuses here.
+    pub(super) fn shared_gap_refusal(&self, request: &ProjectRequest) -> Option<&'static str> {
+        self.scoped_shared_gap()?;
+        match request {
+            ProjectRequest::Edit {
+                edit: ProjectEdit::IsolateGap { .. },
+                ..
+            } => None,
+            ProjectRequest::Edit { .. }
+            | ProjectRequest::Generation(_)
+            | ProjectRequest::Target(_) => Some(SHARED_GAP_ONLY),
+            _ => None,
+        }
     }
 
     pub(super) fn scoped_presentation(&self) -> Result<Option<model::Presentation>, String> {
@@ -874,6 +903,10 @@ impl DeadpanApp {
     }
 
     pub(super) fn scoped_inspector(&mut self, ui: &mut egui::Ui) {
+        if let Some((recipe, play, _)) = self.scoped_shared_gap() {
+            self.shared_gap_inspector(ui, &recipe, play);
+            return;
+        }
         let Some(workspace) = &self.workspace else {
             return;
         };
@@ -972,6 +1005,107 @@ impl DeadpanApp {
                     ui.small(format!("{} children · {} enter · {} parent", self.editor_pair(EditorKey::BeatPrevious, EditorKey::BeatNext, "/"), self.editor_key(EditorKey::EnterGroup), self.editor_key(EditorKey::LeaveGroup)));
                     ui.small(STRUCTURE_UNAVAILABLE);
                 });
+            });
+    }
+}
+
+impl DeadpanApp {
+    /// The Repeat's shared default gap after the chosen play. It has no node
+    /// of its own; length and sound changes give this play its own copy.
+    fn shared_gap_inspector(
+        &mut self,
+        ui: &mut egui::Ui,
+        recipe: &deadpan_core::HoldRecipe,
+        play: u32,
+    ) {
+        let Some(workspace) = &self.workspace else {
+            return;
+        };
+        let Some(state) = &self.scoped else {
+            return;
+        };
+        let scope = state.scope_label(workspace).unwrap_or_else(|error| error);
+        let scope_hint = state.edit_scope_hint();
+        let sound = match &recipe.audio {
+            deadpan_core::HoldAudio::Silence => "silence",
+            deadpan_core::HoldAudio::RoomTone { .. } => "room tone",
+            deadpan_core::HoldAudio::Tail { .. } => "effect tail",
+            deadpan_core::HoldAudio::Reverse { .. } => "reversed sound",
+            deadpan_core::HoldAudio::Tone { .. } => "tone",
+        };
+        let summary = format!("Shared gap · {} f · {sound}", recipe.duration.frames());
+        let layout = self.workspace_layout(ui);
+        egui::Panel::right("workspace-inspector")
+            .resizable(false)
+            .default_size(layout.inspector)
+            .min_size(layout.inspector)
+            .max_size(layout.inspector)
+            .frame(style::panel())
+            .show(ui, |ui| {
+                let heading = pane_heading(ui, "INSPECTOR", self.pane == Pane::Inspector);
+                if pane_focus(
+                    ui,
+                    Pane::Inspector,
+                    heading.rect,
+                    "Nested beat inspector pane",
+                )
+                .has_focus()
+                {
+                    self.focus_scoped_pane(Pane::Inspector);
+                }
+                ui.separator();
+                style::side_scroll(
+                    ui,
+                    egui::ScrollArea::vertical()
+                        .id_salt("scoped-inspector-details")
+                        .animated(false),
+                    |ui| {
+                        style::ink_padded_label(
+                            ui,
+                            style::semibold(format!("Gap after play {play}")).size(16.0),
+                            None,
+                        );
+                        ui.colored_label(style::LAVENDER, scope);
+                        ui.label(summary);
+                        ui.small(scope_hint);
+                        let ready = !self.service.is_busy() && !self.dialogs.is_open();
+                        ui.add_space(4.0);
+                        if ui
+                            .add_enabled(
+                                ready,
+                                style::row_action(
+                                    ui,
+                                    "Change length…",
+                                    self.editor_key(EditorKey::EnterGroup),
+                                )
+                                .fill(style::SELECTED),
+                            )
+                            .clicked()
+                        {
+                            self.open_inspector_parameter(ui.ctx());
+                        }
+                        if ui
+                            .add_enabled(
+                                ready,
+                                style::row_action(ui, "Own copy only", ":isolate-gap"),
+                            )
+                            .on_hover_text(
+                                "Give this play its own copy of the gap without changing it.",
+                            )
+                            .clicked()
+                        {
+                            self.isolate_gap();
+                        }
+                        self.hold_audio_controls(ui, ready);
+                        ui.add_space(4.0);
+                        ui.small(format!(
+                            "{} contents · {} plays",
+                            self.editor_pair(EditorKey::BeatPrevious, EditorKey::BeatNext, "/"),
+                            self.editor_pair(EditorKey::PlayPrevious, EditorKey::PlayNext, "/")
+                        ));
+                        ui.small(SHARED_GAP_ONLY);
+                    },
+                );
             });
     }
 }

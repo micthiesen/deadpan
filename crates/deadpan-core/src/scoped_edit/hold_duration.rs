@@ -74,6 +74,52 @@ impl ProjectDocument {
         isolation::temporal_requirements(self, &target(instance))
     }
 
+    /// The scoped address and concrete occurrence of the Hold `id` that
+    /// `IsolateGap` (with no enclosing plays) or `EditOccurrence { IsolateGap }`
+    /// with `identities` gives the gap after `iteration` of the Repeat at
+    /// `instance`. Outer plays copied by isolation are followed by identity;
+    /// the stable play itself keeps its iteration.
+    pub fn occurrence_gap_selection(
+        &self,
+        instance: &InstancePath,
+        iteration: &IterationId,
+        id: &NodeId,
+        identities: &OccurrenceIdentities,
+    ) -> Result<(ScopedNodeTarget, InstancePath), EditError> {
+        let mut mapped = if instance.repeats.is_empty() {
+            target(instance)
+        } else {
+            isolation::resolve_temporal(self, &target(instance), identities)?.0
+        };
+        mapped.repeats.push(RepeatEditStep {
+            repeat: mapped.node.clone(),
+            branch: RepeatEditBranch::Play {
+                iteration: iteration.clone(),
+            },
+        });
+        let repeats = mapped
+            .repeats
+            .iter()
+            .map(|step| match &step.branch {
+                RepeatEditBranch::Play { iteration } => Ok(crate::RepeatInstance {
+                    node: step.repeat.clone(),
+                    iteration: iteration.clone(),
+                }),
+                RepeatEditBranch::Default => Err(invalid("an isolated gap keeps explicit plays")),
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok((
+            ScopedNodeTarget {
+                node: id.clone(),
+                repeats: mapped.repeats,
+            },
+            InstancePath {
+                node: id.clone(),
+                repeats,
+            },
+        ))
+    }
+
     /// Exact outside-in isolation needs for a speed change of one visible
     /// Repeat occurrence (`WrapRetime` or `SetRetime`). Attached sounds keep
     /// their existing refusal; isolation names are counted before allocation.

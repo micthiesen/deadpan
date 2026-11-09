@@ -1380,8 +1380,11 @@ An exact mark-only `Saved` receipt rebases the current inspector from its captur
 old revision to the saved revision, preserving navigation made after mark entry.
 Require matching session, project and both revisions; stale receipts cannot
 authorize an unrelated rebase. Mark jumps revoke scoped navigation after
-successful admission. Temporal edits, implicit gap recipes and occurrence macros
-remain open. See
+successful admission. The shared default gap after a This-play play is a
+nodeless row addressing the play's contents: only its length and sound edits
+(semantic `SetPlayGap`: `IsolateGap` then the one-play pause edit, one
+Compound) and `:isolate-gap` may act; `submit` refuses every other edit while
+it is selected. Temporal edits and occurrence macros remain open. See
 [scoped editing](docs/SCOPED_EDITING.md).
 
 `Explode` converts a Repeat in place: overrides stay, the first default play

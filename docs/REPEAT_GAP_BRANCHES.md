@@ -23,6 +23,12 @@ It binds only the Repeat's own implicit gap clock under its timing identity;
 every other implicit owner keeps its clock, so isolating one gap is a local
 change rather than a project-wide binding.
 
+`SetPlayGap` (the scoped inspector's shared gap row, since 2026-11-09) stages
+`IsolateGap`, or its occurrence form, and then the ordinary one-play length or
+sound edit of the new Hold in one Compound, so a play's implicit gap changes
+without a separate isolation step. See
+[the shared gap after a play](SCOPED_EDITING.md#the-shared-gap-after-a-play).
+
 `SetRepeatGaps { node, gap, branches, timing }` sets the default gap and
 replaces the gaps after named plays with fresh independent Holds in one
 retained-clock transaction, like `SetRepeatPlays`: it captures unbound clocks,

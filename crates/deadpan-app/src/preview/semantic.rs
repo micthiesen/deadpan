@@ -53,6 +53,7 @@ impl super::DeadpanApp {
                         | deadpan_core::SemanticInstruction::SetHoldDuration { .. }
                         | deadpan_core::SemanticInstruction::SetHoldAudio { .. }
                         | deadpan_core::SemanticInstruction::SetRoomTone { .. }
+                        | deadpan_core::SemanticInstruction::SetPlayGap { .. }
                         | deadpan_core::SemanticInstruction::Retime { .. }
                         | deadpan_core::SemanticInstruction::Split
                         | deadpan_core::SemanticInstruction::DeleteBeat
@@ -295,7 +296,7 @@ pub(super) fn applied_summary(
             selected.also.len() + 1
         ));
     }
-    if context.scoped.is_some() {
+    if context.scoped.is_some() && !matches!(instruction, I::SetPlayGap { .. }) {
         return Some(format!("{text} in this play"));
     }
     let Some(deadpan_core::SemanticVisualSelection::Time { anchor, head, .. }) =
@@ -422,6 +423,20 @@ pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> O
             return Some(format!("Repeat set: {}", parts.join("; ")));
         }
         I::SetRoomTone { .. } => return Some("Room tone applied".into()),
+        I::SetPlayGap { change } => {
+            return Some(match change {
+                deadpan_core::PlayGapChange::Length { length } => format!(
+                    "This play's gap is now its own pause of {}",
+                    pause_text(*length)
+                ),
+                deadpan_core::PlayGapChange::Audio {
+                    audio: deadpan_core::HoldAudio::Silence,
+                } => "This play's gap is now its own silent pause".into(),
+                deadpan_core::PlayGapChange::Audio { .. } => {
+                    "This play's gap is now its own pause with room tone".into()
+                }
+            });
+        }
         I::SetHoldAudio { audio } => {
             return match audio {
                 deadpan_core::HoldAudio::Silence => Some("Pause sound set to silence".into()),

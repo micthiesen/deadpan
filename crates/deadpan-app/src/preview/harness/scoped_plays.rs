@@ -21,6 +21,7 @@ pub(super) mod owned_gap_duration;
 mod pause_macros;
 mod pauses;
 pub(super) mod selected_fixed_duration;
+mod shared_gap;
 mod shared_hold_duration;
 pub(super) mod this_play_fixed_duration;
 
@@ -535,6 +536,7 @@ fn isolate_gap(d: &mut Driver<'_>, repeat: &NodeId) -> Result<(), String> {
         d.changed(&edited)?;
         idle(d)?;
     }
+    shared_gap::run(d, repeat)?;
     play_structure(d, repeat)
 }
 
