@@ -29,5 +29,9 @@ now declares those six windows (`Fixture::verify_args`) for the all-recipes
 run too; a focused all-recipes rerun of `scoped-audio-chain` passes with six
 `verified_zero` windows. The full suite was not rerun after that change.
 
-Not covered here: the synthetic-worker AI fixtures (run with the feature),
-HDR (`preview_export_hdr`), and any physical display or listening judgement.
+The four AI fixtures were then run in a focused release build with
+`--features synthetic-worker` (the synthetic worker replaces only the model):
+`generated-pause` (42 frames), `generated-repeat` (60), `generated-reframe`
+(42) and `generated-prefix` (37) all passed with no failures.
+
+Not covered here: HDR (`preview_export_hdr`), and any physical display or listening judgement.
