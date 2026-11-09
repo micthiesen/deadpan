@@ -14,6 +14,7 @@ mod hold_duration;
 mod isolation;
 mod mixed_hold_duration;
 mod proof;
+mod structure;
 pub use hold_duration::{PreparedOccurrenceHoldDuration, prepare_occurrence_hold_duration};
 pub(crate) use hold_duration::{
     duration_target_dormant, fixed_occurrence_preflight,

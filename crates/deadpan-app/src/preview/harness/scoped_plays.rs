@@ -535,5 +535,155 @@ fn isolate_gap(d: &mut Driver<'_>, repeat: &NodeId) -> Result<(), String> {
         d.changed(&edited)?;
         idle(d)?;
     }
-    Ok(())
+    play_structure(d, repeat)
+}
+
+/// Each play's length, from its own branch or the shared definition.
+fn play_lengths(d: &Driver<'_>, repeat: &NodeId) -> Result<Vec<i64>, String> {
+    let document = document(d)?;
+    let NodeKind::Repeat {
+        child, iterations, ..
+    } = &document.nodes()[repeat].kind
+    else {
+        return Err("Expected the Repeat".into());
+    };
+    let durations = document
+        .durations_shared()
+        .map_err(|error| error.to_string())?;
+    Ok((0..iterations.len())
+        .filter_map(|index| iterations.at(index))
+        .map(|iteration| {
+            let root = document
+                .overrides()
+                .get(repeat)
+                .and_then(|plays| plays.get(&iteration))
+                .unwrap_or(child);
+            durations[root].frames()
+        })
+        .collect())
+}
+
+/// `s`, `rr` and `dd` inside play 2 change only that play, keep the
+/// inspector on the result, and undo in three steps.
+fn play_structure(d: &mut Driver<'_>, repeat: &NodeId) -> Result<(), String> {
+    while d.app().scoped.is_some() {
+        d.key(Key::Escape)?;
+        idle(d)?;
+    }
+    d.chord(&[Key::G, Key::G])?;
+    idle(d)?;
+    let NodeKind::Repeat { child: shared, .. } = &document(d)?.nodes()[repeat].kind else {
+        return Err("Expected the Repeat".into());
+    };
+    let shared = shared.clone();
+    let shared_node = document(d)?.nodes()[&shared].clone();
+    let before = play_lengths(d, repeat)?;
+    let original = document(d)?.clone();
+    d.key(Key::Enter)?;
+    d.command("scope play 2")?;
+    idle(d)?;
+    for _ in 0..10 {
+        d.key(Key::L)?;
+    }
+    idle(d)?;
+    let start = d.app().sequence_cursor;
+    let edited = d.revision();
+    d.key(Key::S)?;
+    d.changed(&edited)?;
+    idle(d)?;
+    let owned = {
+        let document = document(d)?;
+        let NodeKind::Repeat { iterations, .. } = &document.nodes()[repeat].kind else {
+            return Err("Expected the Repeat".into());
+        };
+        let second = iterations.at(1).ok_or("The Repeat has no second play")?;
+        document
+            .overrides()
+            .get(repeat)
+            .and_then(|plays| plays.get(&second))
+            .cloned()
+    };
+    let fragments: Vec<NodeId> = owned
+        .as_ref()
+        .map(|root| document(d).map(|doc| doc.children(root).cloned().collect()))
+        .transpose()?
+        .unwrap_or_default();
+    let selected = d.app().scoped_target()?.map(|target| target.target.node);
+    d.check(
+        "s inside play 2 splits only that play and selects the right fragment",
+        fragments.len() == 2
+            && selected.as_ref() == fragments.get(1)
+            && document(d)?.nodes()[&shared] == shared_node
+            && play_lengths(d, repeat)? == before
+            && d.app().error.is_none(),
+        json!({"fragments":2,"selected":"right","plays":before}),
+        json!({"fragments":fragments,"selected":selected,"plays":play_lengths(d, repeat)?,"error":d.app().error}),
+    )?;
+    let edited = d.revision();
+    d.key(Key::R)?;
+    d.key(Key::R)?;
+    d.changed(&edited)?;
+    idle(d)?;
+    let lengths = play_lengths(d, repeat)?;
+    let right = before[1] - 10;
+    let selected = d.app().scoped_target()?.map(|target| target.target.node);
+    let wrapped = selected.as_ref().is_some_and(|node| {
+        document(d).is_ok_and(|doc| {
+            matches!(
+                doc.nodes().get(node).map(|beat| &beat.kind),
+                Some(NodeKind::Repeat { .. })
+            )
+        })
+    });
+    d.check(
+        "rr inside play 2 repeats the right fragment there only and selects the new Repeat",
+        lengths[1] == before[1] + right
+            && lengths[0] == before[0]
+            && lengths[2] == before[2]
+            && wrapped
+            && d.app().error.is_none(),
+        json!({"plays":[before[0], before[1] + right, before[2]],"selected":"new Repeat"}),
+        json!({"plays":lengths,"selected":selected,"error":d.app().error}),
+    )?;
+    d.key(Key::K)?;
+    idle(d)?;
+    let edited = d.revision();
+    d.key(Key::D)?;
+    d.key(Key::D)?;
+    d.changed(&edited)?;
+    idle(d)?;
+    let lengths = play_lengths(d, repeat)?;
+    let remaining: Vec<NodeId> = owned
+        .as_ref()
+        .map(|root| document(d).map(|doc| doc.children(root).cloned().collect()))
+        .transpose()?
+        .unwrap_or_default();
+    d.check(
+        "dd inside play 2 deletes the left fragment there only and the play closes up",
+        lengths[1] == 2 * right
+            && lengths[0] == before[0]
+            && lengths[2] == before[2]
+            && remaining.len() == 1
+            && d.app().scoped.is_some()
+            && d.app().sequence_cursor == start - 10
+            && document(d)?.nodes()[&shared] == shared_node
+            && d.app().error.is_none(),
+        json!({"plays":[before[0], 2 * right, before[2]],"children":1,"Edit":start - 10}),
+        json!({"plays":lengths,"children":remaining.len(),"Edit":d.app().sequence_cursor,"error":d.app().error}),
+    )?;
+    d.capture("Play 2 split, its right part repeated and its left part deleted")?;
+    for _ in 0..3 {
+        let edited = d.revision();
+        d.key(Key::U)?;
+        d.changed(&edited)?;
+        idle(d)?;
+    }
+    d.check(
+        "Three Undos restore every play and play 2's earlier branch exactly",
+        play_lengths(d, repeat)? == before
+            && document(d)?.nodes() == original.nodes()
+            && document(d)?.overrides() == original.overrides(),
+        json!({"plays":before,"nodes_and_overrides":"as before s"}),
+        json!({"plays":play_lengths(d, repeat)?}),
+    )
 }

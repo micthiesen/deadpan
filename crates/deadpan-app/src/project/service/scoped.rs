@@ -192,6 +192,43 @@ pub(super) fn prepare(
     Ok(Prepared { request, receipt })
 }
 
+/// The occurrence's exact root interval. A speed change or crop between the
+/// play and the beat would make its local clock differ from the Edit clock.
+fn occurrence_interval(
+    document: &deadpan_core::ProjectDocument,
+    instance: &deadpan_core::InstancePath,
+) -> Result<(i64, i64)> {
+    let durations = document.durations().map_err(display)?;
+    let length = durations
+        .get(&instance.node)
+        .ok_or("The selected beat no longer exists.")?
+        .frames();
+    let index = deadpan_core::AnchorIndex::new(document).map_err(display)?;
+    let boundary = |position: i64, bias| {
+        index
+            .resolve_target(&deadpan_core::AnchorTarget {
+                boundary: deadpan_core::BoundaryAnchor {
+                    coordinate: deadpan_core::Anchor::Occurrence {
+                        instance: instance.clone(),
+                        position: deadpan_core::ExactRatio::integer(position),
+                    },
+                    bias,
+                },
+                occurrence: None,
+            })
+            .map_err(display)
+    };
+    let start = boundary(0, deadpan_core::InsertionBias::Right)?;
+    let end = boundary(length, deadpan_core::InsertionBias::Left)?;
+    if start.exact_frame.denominator() != 1
+        || end.exact_frame.denominator() != 1
+        || end.frame.0 - start.frame.0 != length
+    {
+        return Err("This beat plays inside a speed change or crop in this play; splitting, deleting or repeating it there is not supported yet.".into());
+    }
+    Ok((start.frame.0, end.frame.0))
+}
+
 impl Service {
     pub(super) fn insert_scoped_pause(
         &mut self,
@@ -276,6 +313,148 @@ impl Service {
         } else {
             "Pause inserted in This play and saved".into()
         };
+        self.refresh_saved(&saved)?;
+        self.message = Some(saved);
+        Ok(())
+    }
+
+    /// Split, delete or repeat one beat in the captured explicit play. The
+    /// inspector continues on the right fragment, the new Repeat, or the
+    /// deleted beat's neighbor, in the same play.
+    pub(super) fn edit_scoped_structure(
+        &mut self,
+        target: Target,
+        edit: crate::project::ScopedStructure,
+    ) -> Result<()> {
+        use crate::project::ScopedStructure;
+        self.check_scoped_head(&target)?;
+        let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
+        target.validate(workspace)?;
+        if !target.also.is_empty() {
+            return Err("Several selected plays take values and pauses only. Choose one play with :scope play N to split, delete or repeat a beat in it.".into());
+        }
+        if target.target.repeats.is_empty() || !target.has_single_play_authority() {
+            return Err("Splitting, deleting or repeating a beat inside Repeat contents needs This play (]r) at every enclosing Repeat. All plays keeps the shared definition; edit it from the parent.".into());
+        }
+        let document = &workspace.document;
+        let instance = deadpan_core::InstancePath {
+            node: target.target.node.clone(),
+            repeats: target
+                .target
+                .repeats
+                .iter()
+                .map(|step| match &step.branch {
+                    deadpan_core::RepeatEditBranch::Play { iteration } => {
+                        Ok(deadpan_core::RepeatInstance {
+                            node: step.repeat.clone(),
+                            iteration: iteration.clone(),
+                        })
+                    }
+                    deadpan_core::RepeatEditBranch::Default => {
+                        Err("A one-play edit lost its explicit play.".to_owned())
+                    }
+                })
+                .collect::<Result<Vec<_>>>()?,
+        };
+        if target
+            .presentation
+            .as_ref()
+            .is_some_and(|shown| shown != &instance)
+        {
+            return Err(
+                "The shown play differs from the selected beat; choose the play again.".into(),
+            );
+        }
+        let (start, end) = occurrence_interval(document, &instance)?;
+        let new_revision = revision();
+        let timing = deadpan_core::AudioTimingId {
+            allocation: new_revision.clone(),
+            ordinal: 0,
+        };
+        let (edit, cursor, saved) = match edit {
+            ScopedStructure::Split => {
+                if target.cursor.0 <= start || target.cursor.0 >= end {
+                    return Err("Move inside the selected beat to split it; existing boundaries need no split.".into());
+                }
+                // The split pool covers the beat's subtree, both Partitions,
+                // a root context and a container; unused names are dropped.
+                let mut count = 3_usize;
+                let mut pending = vec![instance.node.clone()];
+                while let Some(id) = pending.pop() {
+                    count = count
+                        .checked_add(1)
+                        .filter(|count| *count <= deadpan_core::MAX_DOCUMENT_NODES)
+                        .ok_or("Split exceeds the document node limit")?;
+                    pending.extend(document.children(&id).cloned());
+                }
+                (
+                    deadpan_core::OccurrenceEdit::Split {
+                        at: deadpan_core::FrameDuration::new(target.cursor.0 - start)
+                            .map_err(display)?,
+                        identities: deadpan_core::SplitIdentities {
+                            nodes: (0..count).map(|_| node()).collect(),
+                        },
+                    },
+                    target.cursor,
+                    "Beat split in this play only and saved".to_owned(),
+                )
+            }
+            ScopedStructure::Delete => (
+                deadpan_core::OccurrenceEdit::DeleteRipple { timing },
+                deadpan_core::ProjectFrame(start),
+                "Beat deleted from this play only and saved (not copied to a register)".to_owned(),
+            ),
+            ScopedStructure::Repeat { plays } => {
+                if plays == 0 {
+                    return Err("A Repeat needs at least one total play.".into());
+                }
+                (
+                    deadpan_core::OccurrenceEdit::RepeatChild {
+                        id: node(),
+                        plays,
+                        timing,
+                    },
+                    deadpan_core::ProjectFrame(start),
+                    format!("Beat repeated {plays} times in this play only and saved"),
+                )
+            }
+        };
+        let needs = document
+            .occurrence_structure_requirements(&instance, &edit)
+            .map_err(display)?;
+        let identities = pool(needs.nodes, needs.marks);
+        let (selected, presentation) = document
+            .occurrence_structure_selection(&instance, &edit, &identities)
+            .map_err(display)?;
+        let request = CommandRequest {
+            project_id: target.project.clone(),
+            expected_revision: target.revision.clone(),
+            new_revision: new_revision.clone(),
+            command: Command::EditOccurrence {
+                instance,
+                edit,
+                identities,
+            },
+        };
+        let receipt = Commit {
+            before: target.clone(),
+            revision: new_revision,
+            target: selected,
+            presentation: Some(presentation),
+            also: None,
+        };
+        let outcome = self.writer()?.commit(&request).map_err(display)?;
+        self.capture_preparation_notices(&outcome.generation_preparation_notices);
+        self.committed = Some(CommittedEdit {
+            revision: outcome.revision_id,
+            selected_node: Some(target.root),
+            preserve_cursor: true,
+            cursor: Some(cursor),
+            scope: target.scope,
+            sound: None,
+            range_selection: None,
+            scoped: Some(receipt),
+        });
         self.refresh_saved(&saved)?;
         self.message = Some(saved);
         Ok(())

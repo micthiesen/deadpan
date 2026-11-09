@@ -38,6 +38,7 @@ mod room_tone;
 mod saved_receipts;
 mod scope;
 mod scoped;
+mod scoped_structure;
 mod semantic;
 mod shots;
 mod slip;

@@ -520,6 +520,24 @@ pub(crate) fn temporal_requirements(
     isolation_plan(document, validate_target(document, target)?).map(|plan| plan.requirements)
 }
 
+/// The mapped target and the per-step copies once `identities` isolate it.
+pub(super) fn resolve_temporal(
+    document: &ProjectDocument,
+    target: &ScopedNodeTarget,
+    identities: &OccurrenceIdentities,
+) -> Result<(ScopedNodeTarget, Vec<BTreeMap<NodeId, NodeId>>), EditError> {
+    let resolved = isolation_plan(document, validate_target(document, target)?)?
+        .resolve(document, target, identities)?;
+    Ok((
+        resolved.target,
+        resolved
+            .mappings
+            .into_iter()
+            .map(|mapping| mapping.nodes)
+            .collect(),
+    ))
+}
+
 /// Where `target` will be once `identities` isolate it, without editing.
 pub(crate) fn isolated_target(
     document: &ProjectDocument,

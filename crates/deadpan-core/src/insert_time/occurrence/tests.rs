@@ -518,3 +518,93 @@ fn an_all_plays_pause_moves_root_sounds_by_every_default_occurrence() {
     assert!(!after.sound_routes().is_empty());
     assert_eq!(after.sound_routes(), reference.sound_routes());
 }
+
+#[test]
+fn one_play_deletion_and_repeat_refuse_root_sounds_with_a_readable_message() {
+    let mut before = fixture(true);
+    let clock = SourceTimeBase::new(1, 48_000).unwrap();
+    let span = SourceSpan::new(
+        SourceTimestamp {
+            ticks: 0,
+            time_base: clock,
+        },
+        SourceTimestamp {
+            ticks: 20_000,
+            time_base: clock,
+        },
+    )
+    .unwrap();
+    let asset = AssetId::new("sound").unwrap();
+    before.assets.insert(
+        asset.clone(),
+        AssetRecord {
+            label: "sound".into(),
+            content_hash: "a".repeat(64),
+            video: None,
+            audio: Some(span),
+            still_image: false,
+            frame_count: None,
+            source_qualification: Some(SourceQualificationId::new("b".repeat(64)).unwrap()),
+        },
+    );
+    before.sounds.insert(
+        SoundId::new("sound").unwrap(),
+        SoundEvent {
+            owner: id("root"),
+            label: "sound".into(),
+            source: SourceAudio { asset, span },
+            mapping: SourceAudioMapping::natural_rate(span, before.presentation_basis().frame_rate)
+                .unwrap(),
+            offset: AudioSample(0),
+            treatments: AudioTreatments::default(),
+            start_edge: AudioEdgePolicy::Hard,
+            end_edge: AudioEdgePolicy::Hard,
+            overflow: SoundOverflowPolicy::Reject,
+        },
+    );
+    before.validate().unwrap();
+    let NodeKind::Repeat { iterations, .. } = &before.nodes()[&id("outer")].kind else {
+        panic!()
+    };
+    let instance = InstancePath {
+        node: id("b"),
+        repeats: vec![RepeatInstance {
+            node: id("outer"),
+            iteration: iterations.at(1).unwrap(),
+        }],
+    };
+    let timing = AudioTimingId {
+        allocation: revision("refused"),
+        ordinal: 0,
+    };
+    for edit in [
+        OccurrenceEdit::DeleteRipple {
+            timing: timing.clone(),
+        },
+        OccurrenceEdit::RepeatChild {
+            id: id("refused-repeat"),
+            plays: 2,
+            timing: timing.clone(),
+        },
+    ] {
+        let error = before
+            .occurrence_structure_requirements(&instance, &edit)
+            .unwrap_err();
+        assert!(error.message.contains("remove the sound events"), "{error}");
+        let request = CommandRequest {
+            project_id: before.project_id().clone(),
+            expected_revision: before.revision_id().clone(),
+            new_revision: revision("refused"),
+            command: Command::EditOccurrence {
+                instance: instance.clone(),
+                edit,
+                identities: OccurrenceIdentities {
+                    nodes: (0..3).map(|n| id(&format!("refused-{n}"))).collect(),
+                    marks: vec![],
+                },
+            },
+        };
+        let error = crate::apply(&before, &request).unwrap_err();
+        assert!(error.message.contains("remove the sound events"), "{error}");
+    }
+}

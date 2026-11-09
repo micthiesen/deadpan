@@ -10,7 +10,7 @@ pub(super) mod model;
 #[cfg(test)]
 mod range_tests;
 
-const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Repeat pauses follow each level's All plays, This play or selected plays choice. Pause length follows each level's All plays or This play choice for one Hold; AI pauses and speed changes (:retime) require one play at every level. Other timing edits and range copying require the parent.";
+const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Repeat pauses follow each level's All plays, This play or selected plays choice. Pause length follows each level's All plays or This play choice for one Hold; AI pauses, speed changes (:retime) and s, dd and rr on a beat require one play at every level. Other timing edits and range copying require the parent.";
 const FRAMING_RANGE_ONLY: &str = "This play's Edit range is for :zoom or :creep. Clear the range with Escape before other beat edits.";
 
 impl DeadpanApp {
@@ -74,6 +74,94 @@ impl DeadpanApp {
         })();
         match request {
             Ok(request) => {
+                self.submit(request);
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
+
+    /// `s`, `dd`/`:delete` and `rr`/`:wrap-repeat` on the selected beat. Other
+    /// operator forms keep the ordinary structural refusal.
+    pub(super) fn scoped_structure_kind(
+        &self,
+        action: &Action,
+    ) -> Option<crate::project::ScopedStructure> {
+        use crate::project::ScopedStructure;
+        let selected = deadpan_core::SemanticSelector::SelectedBeat;
+        match action {
+            Action::Edit(BeatEdit::Split) => Some(ScopedStructure::Split),
+            Action::Edit(BeatEdit::Delete) => Some(ScopedStructure::Delete),
+            Action::Operator {
+                cut: true,
+                selector,
+            } if selector == &selected => Some(ScopedStructure::Delete),
+            Action::Repeat { selector, plays } if selector == &selected => {
+                Some(ScopedStructure::Repeat { plays: plays.get() })
+            }
+            Action::Edit(BeatEdit::WrapRepeat(plays)) => {
+                Some(ScopedStructure::Repeat { plays: *plays })
+            }
+            // `:repeat N` on a Repeat sets its count, which stays a parent edit.
+            Action::Edit(BeatEdit::Repeat(plays))
+                if self.inspected_node().is_some_and(|node| {
+                    self.workspace.as_ref().is_some_and(|workspace| {
+                        !matches!(
+                            workspace.document.nodes().get(node).map(|beat| &beat.kind),
+                            Some(NodeKind::Repeat { .. })
+                        )
+                    })
+                }) =>
+            {
+                Some(ScopedStructure::Repeat { plays: *plays })
+            }
+            _ => None,
+        }
+    }
+
+    /// Submit one structural edit of the selected beat in its explicit play,
+    /// captured when the key or command was entered.
+    pub(super) fn scoped_structure(
+        &mut self,
+        edit: crate::project::ScopedStructure,
+        captured: Result<Option<Target>, String>,
+    ) {
+        self.bindings.clear();
+        let request = (|| {
+            if self.has_scoped_visual_selection() {
+                return Err(FRAMING_RANGE_ONLY.to_owned());
+            }
+            if self.macros.recording() || self.macros.is_pending() {
+                return Err(
+                    "Finish the macro before splitting, deleting or repeating a beat in this play."
+                        .to_owned(),
+                );
+            }
+            let target = captured?
+                .ok_or("Open a Repeat's contents and choose This play first (Enter, then ]r).")?;
+            if self.view != View::Sequence || self.scoped_target()?.as_ref() != Some(&target) {
+                return Err(
+                    "The selected play changed. Enter the command again; no edit was made."
+                        .to_owned(),
+                );
+            }
+            if !target.has_single_play_authority() {
+                // All plays and several selected plays keep their refusal.
+                return Err(STRUCTURE_UNAVAILABLE.to_owned());
+            }
+            Ok(ProjectRequest::Edit {
+                expected_session: target.session,
+                expected_revision: target.revision.clone(),
+                scope: target.scope.clone(),
+                cursor: target.cursor,
+                edit: ProjectEdit::ScopedStructure {
+                    target: Box::new(target),
+                    edit,
+                },
+            })
+        })();
+        match request {
+            Ok(request) => {
+                self.cancel_repeats("a one-play structural edit was requested");
                 self.submit(request);
             }
             Err(error) => self.error = Some(error),
@@ -470,6 +558,21 @@ impl DeadpanApp {
             }
             // The ordinary handler owns the Time selection and macro policy.
             return false;
+        }
+        // The first d or r waits for its second key, which may name a beat
+        // edit this play supports.
+        if action == Action::OfferInsert
+            && self
+                .scoped_target()
+                .ok()
+                .flatten()
+                .is_some_and(|target| target.has_single_play_authority())
+        {
+            return true;
+        }
+        if let Some(edit) = self.scoped_structure_kind(&action) {
+            self.scoped_structure(edit, self.scoped_target());
+            return true;
         }
         if scoped_structural_action(&action) {
             self.error = Some(STRUCTURE_UNAVAILABLE.into());

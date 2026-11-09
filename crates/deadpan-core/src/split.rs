@@ -69,6 +69,20 @@ pub(crate) fn refuse_treated_sound_in_processor(
     Ok(())
 }
 
+/// Whether splitting `node` refines an existing neutral Partition, which
+/// keeps the left identity and consumes the right Partition ID first.
+pub(crate) fn refines(node: &BeatNode) -> bool {
+    matches!(
+        node.kind,
+        NodeKind::Retime {
+            purpose: RetimePurpose::Partition,
+            ..
+        }
+    ) && node.framing.is_none()
+        && node.audio_treatments.is_empty()
+        && node.audio_editorial_edges.is_empty()
+}
+
 pub(crate) fn apply(
     document: &ProjectDocument,
     target: &NodeId,
@@ -134,17 +148,7 @@ pub(crate) fn apply_validated(
     let container = parent
         .is_some_and(|parent| !matches!(document.nodes[parent].kind, NodeKind::Sequence { .. }));
     let refinement = match &original.kind {
-        NodeKind::Retime {
-            child,
-            mapping,
-            purpose: RetimePurpose::Partition,
-            ..
-        } if original.framing.is_none()
-            && original.audio_treatments.is_empty()
-            && original.audio_editorial_edges.is_empty() =>
-        {
-            Some((child, *mapping))
-        }
+        NodeKind::Retime { child, mapping, .. } if refines(original) => Some((child, *mapping)),
         _ => None,
     };
     let context = refinement.map_or(target, |(child, _)| child);

@@ -3085,6 +3085,21 @@ impl DeadpanApp {
         self.bindings.clear();
         self.command_open = false;
         self.command_focus_pending = false;
+        if self.scoped.is_some()
+            && self.view == View::Sequence
+            && !matches!(self.pane, Pane::Sources | Pane::Sounds)
+            && sound_target.is_none()
+            && !self.sound_focused()
+            && !self.event_focused()
+            && let Ok(navigation::command::Entry::Action(action)) = &command
+            && let Some(edit) = self.scoped_structure_kind(action)
+        {
+            let captured = scoped_target
+                .clone()
+                .unwrap_or_else(|| self.scoped_target());
+            self.scoped_structure(edit, captured);
+            return;
+        }
         if self.scoped_command_blocked(&command) {
             return;
         }
@@ -4173,6 +4188,12 @@ impl DeadpanApp {
                         self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: run macro");
                         hints.push((":scope".into(), "all / play N / plays 2-3".into()));
                         self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
+                        if self.scoped_target().ok().flatten().is_some_and(|target| target.has_single_play_authority()) {
+                            hints.tier(key_labels::Tier::More);
+                            self.add_editor_hint(&mut hints, EditorKey::Split, "split in this play");
+                            self.add_editor_hint(&mut hints, EditorKey::CutBeat, "delete in this play");
+                            self.add_editor_hint(&mut hints, EditorKey::Repeat, "repeat in this play");
+                        }
                         }
                     } else if self.view == View::Sequence && self.edit_range.has_set() {
                         hints.tier(key_labels::Tier::Core);

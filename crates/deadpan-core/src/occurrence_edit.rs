@@ -14,6 +14,7 @@ use crate::{
 };
 
 mod hold_duration;
+pub(crate) mod ripple;
 mod sound_isolation;
 pub(crate) mod split;
 
@@ -40,6 +41,18 @@ pub enum OccurrenceEdit {
         subtree: Subtree,
     },
     Delete,
+    /// Remove the beat from this occurrence only. Everything after it moves
+    /// earlier on its own retained clock; the beat needs a Sequence parent.
+    DeleteRipple {
+        timing: crate::AudioTimingId,
+    },
+    /// Wrap the beat in a new Repeat in this occurrence only. Its first play
+    /// keeps the old sample phase; later owners keep their own clocks.
+    RepeatChild {
+        id: NodeId,
+        plays: u32,
+        timing: crate::AudioTimingId,
+    },
     Group {
         start: usize,
         end: usize,
@@ -148,7 +161,14 @@ impl OccurrenceEdit {
                 index: *index,
                 subtree: subtree.clone(),
             },
-            Self::Delete => Command::Delete { node },
+            Self::Delete | Self::DeleteRipple { .. } => Command::Delete { node },
+            Self::RepeatChild { id, plays, .. } => Command::WrapRepeat {
+                node,
+                id: id.clone(),
+                plays: *plays,
+                gap: None,
+                anchor_policy: WrapAnchorPolicy::First,
+            },
             Self::Group {
                 start,
                 end,
@@ -433,6 +453,15 @@ pub(crate) fn apply_captured(
     result.validate_isolated_context()?;
     if let OccurrenceEdit::SetHoldDuration { duration } = edit {
         result = hold_duration::prepare(&result, &target, *duration, allocation)?;
+    }
+    match edit {
+        OccurrenceEdit::DeleteRipple { timing } => {
+            return ripple::delete(&result, &target, timing, allocation);
+        }
+        OccurrenceEdit::RepeatChild { id, plays, timing } => {
+            return ripple::wrap_repeat(document, &result, &target, id, *plays, timing, allocation);
+        }
+        _ => {}
     }
     let command = edit.command(target.node);
     if let Command::IsolateGap {

@@ -267,6 +267,7 @@ fn occurrence<'a>(edit: &'a OccurrenceEdit, nodes: &mut Vec<&'a NodeId>) {
         | OccurrenceEdit::SetGapOverride { subtree, .. } => nodes.extend(subtree.nodes.keys()),
         OccurrenceEdit::Group { id, .. }
         | OccurrenceEdit::WrapRepeat { id, .. }
+        | OccurrenceEdit::RepeatChild { id, .. }
         | OccurrenceEdit::WrapRetime { id, .. }
         | OccurrenceEdit::IsolateGap { id, .. } => nodes.push(id),
         _ => {}

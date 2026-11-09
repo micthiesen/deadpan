@@ -730,7 +730,7 @@ pub static SPECS: &[Spec] = &[
             "cut instruction; delete_ripple / delete_range commands",
             STRUCT,
         ),
-        help: "Without a Visual selection, {cut.beat} cuts one whole beat, including an empty group, and selects the following sibling. :delete captures the exact range or beat when command entry opens; stale or missing targets fail; :delete role=audio|video deletes one role over the Visual range once. A saved cut replaces the copy register; {paste.after}/{paste.before} or :splice places that copy. Undo restores the removed content and retains the copy, including after reopening. In Placed sounds it removes only the selected sound.",
+        help: "Without a Visual selection, {cut.beat} cuts one whole beat, including an empty group, and selects the following sibling. :delete captures the exact range or beat when command entry opens; stale or missing targets fail; :delete role=audio|video deletes one role over the Visual range once. A saved cut replaces the copy register; {paste.after}/{paste.before} or :splice places that copy. Undo restores the removed content and retains the copy, including after reopening. In Placed sounds it removes only the selected sound. Inside a Repeat's contents with This play chosen at every enclosing Repeat, {cut.beat} or :delete removes the beat from that play only (not copied to a register); the rest of the play closes up and other plays keep the shared definition.",
     },
     Spec {
         id: "cut.range",
@@ -817,7 +817,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::EDIT,
         replay: Replay::RecordedAndDot,
         headless: eq("split instruction; command split", STRUCT),
-        help: "Split linked picture and sound at the cursor inside the selected beat. The right fragment stays selected; duration and output stay unchanged. Macros record it and . splits again at the cursor, in one Undo.",
+        help: "Split linked picture and sound at the cursor inside the selected beat. The right fragment stays selected; duration and output stay unchanged. Macros record it and . splits again at the cursor, in one Undo. Inside a Repeat's contents with This play chosen at every enclosing Repeat, it splits the beat in that play only.",
     },
     Spec {
         id: "group.create",
@@ -901,7 +901,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::EDIT,
         replay: Replay::RecordedAndDot,
         headless: eq("command wrap_repeat or repeat instruction", REP),
-        help: "Wrap the selected beat in two total plays; 3{repeat!} makes three. Rapid wraps wait in order, up to 16 pending; each has its own undo. Escape, navigation or another action cancels the waiting wraps. :wrap-repeat N always adds an enclosing Repeat around the captured Visual range or selected beat, including nesting.",
+        help: "Wrap the selected beat in two total plays; 3{repeat!} makes three. Rapid wraps wait in order, up to 16 pending; each has its own undo. Escape, navigation or another action cancels the waiting wraps. :wrap-repeat N always adds an enclosing Repeat around the captured Visual range or selected beat, including nesting. Inside a Repeat's contents with This play chosen at every enclosing Repeat, {repeat} and :wrap-repeat N repeat the selected beat in that play only.",
     },
     Spec {
         id: "repeat.operator",

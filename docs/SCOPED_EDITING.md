@@ -11,7 +11,8 @@ Pause insertion follows the explicit choice at each enclosing Repeat. With This
 play at every Repeat level, `:retime` changes the selected beat's speed in that
 play only: a first change isolates the play and wraps the beat in its own
 Retime, and later changes update that Retime in place. All plays refuses it.
-Other temporal edits still use the ordinary Sequence timeline.
+`s`, `dd` and `rr` change the selected beat in This play only (below). Other
+temporal edits still use the ordinary Sequence timeline.
 
 Choose `:scope all` to edit a Repeat's shared definition or `:scope play N` to
 edit one stable play by its current one-based number. These choices apply at the
@@ -71,6 +72,43 @@ other occurrences keep the shared default. An All plays choice at any enclosing
 Repeat refuses with a hint. Evidence: the `scoped-plays` replay check
 ":isolate-gap in play 2 gives only that play its own gap pause" and
 `project::tests::isolate_gap::nested_isolate_gap_copies_only_the_chosen_outer_play`.
+
+## Splitting, deleting and repeating a beat in This play
+
+With This play chosen at every enclosing Repeat (since 2026-11-08), `s` or
+`:split`, `dd` or `:delete`, and `rr`, `3rr`, `:wrap-repeat N` or `:repeat N`
+(on a beat that is not itself a Repeat) change the selected beat in that one
+occurrence. The service sends one `EditOccurrence`, sized by
+`ProjectDocument::occurrence_structure_requirements`, that copies each chosen
+play outside-in and then applies `Split`, `DeleteRipple` or `RepeatChild` to the
+copy, so other plays keep the shared definition. One Undo restores everything.
+
+- `s` splits at the Edit cursor. A play whose whole contents are one beat gains
+  a group holding both fragments. The inspector selects the right fragment.
+- `dd` removes the beat from that play and the rest of the play closes up. It
+  is not copied to a register. The inspector selects the following beat, else
+  the preceding one, else the emptied group, with the cursor at the old start.
+- `rr` wraps the beat in a new Repeat in that play; the inspector selects it.
+
+Deletion and Repeat keep timing exact: every physical owner after the change
+(the rest of the play, later plays and gaps of each enclosing Repeat, and
+everything after the outermost one) keeps its own pre-edit sample entry, and a
+wrapped beat's first play keeps its old phase. Shared owners keep their earlier
+occurrences unchanged. Core tests check the retained entries at 30000/1001 fps,
+where a one-frame move is not a whole number of samples.
+
+These keys refuse, with the earlier structural message, for All plays or
+several selected plays at any level. Deletion and Repeat also refuse a play's
+whole contents (there is no group to close up; split it or press Enter first),
+a beat inside a speed change or crop in the play, and documents with placed
+sounds or beat sounds ("remove the sound events before editing time"). They
+refuse while a macro records and are not recorded or repeated with dot. Evidence: the `scoped-plays`
+replay checks "s inside play 2 splits only that play and selects the right
+fragment", "rr inside play 2 repeats the right fragment there only", "dd inside
+play 2 deletes the left fragment there only" and the three Undos;
+`project::tests::scoped_structure` and core
+`insert_time::occurrence_structure` cover nested plays, retained clocks and
+refusals.
 
 ## Framing a range in This play
 
@@ -150,9 +188,11 @@ one concrete play at every level; Retime ancestors refuse this occurrence path
 ([pause insertion](INSERT_TIME.md)). Freeze
 capture also refuses a boundary whose preceding picture does not pass through
 the selected insertion parent; black pauses need no sampled picture.
-Mixed owned-gap Hold resizing, Repeat/Retime timing combinations, copy/paste
-and general macros inside these contents remain required work;
-their native actions refuse without editing the retained outer beat.
+Mixed owned-gap Hold resizing, Repeat/Retime timing combinations, other
+timing edits (Trim, Slip, motions and ranges), copy/paste and general macros
+inside these contents remain required work; their native actions refuse
+without editing the retained outer beat. Split, beat deletion and Repeat wraps
+in This play are described above.
 
 Freeze/black pauses, existing Hold duration and sound, and whole-owner or
 supported ranged Zoom and Creep with Keep or OriginalCenter intent support

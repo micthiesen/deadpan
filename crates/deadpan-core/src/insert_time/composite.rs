@@ -223,7 +223,7 @@ pub(crate) fn shifted_owners(
     shifted_owners_with_repeats(document, parent, slot, false)
 }
 
-pub(super) fn occurrence_shifted_owners(
+pub(crate) fn occurrence_shifted_owners(
     document: &ProjectDocument,
     parent: &NodeId,
     slot: usize,

@@ -491,6 +491,8 @@ fn preserves_sound_clocks(command: &Command) -> bool {
             OccurrenceEdit::Split { .. }
             | OccurrenceEdit::Insert { .. }
             | OccurrenceEdit::Delete
+            | OccurrenceEdit::DeleteRipple { .. }
+            | OccurrenceEdit::RepeatChild { .. }
             | OccurrenceEdit::Group { .. }
             | OccurrenceEdit::Ungroup
             | OccurrenceEdit::WrapRepeat { .. }

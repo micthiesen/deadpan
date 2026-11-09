@@ -1267,6 +1267,16 @@ impl Service {
             )?;
             return self.insert_scoped_pause(*target, duration, black, ai);
         }
+        if let ProjectEdit::ScopedStructure { target, edit } = edit {
+            target.validate_request(
+                workspace,
+                expected_session,
+                &expected_revision,
+                &scope,
+                cursor,
+            )?;
+            return self.edit_scoped_structure(*target, edit);
+        }
         if let ProjectEdit::DeleteRange { parent, range } = edit {
             return self.delete_range(expected_revision, scope, parent, range);
         }
@@ -1315,6 +1325,7 @@ impl Service {
         let target = match &edit {
             ProjectEdit::Scoped { .. }
             | ProjectEdit::ScopedPause { .. }
+            | ProjectEdit::ScopedStructure { .. }
             | ProjectEdit::InsertTime { .. }
             | ProjectEdit::InsertBlack { .. }
             | ProjectEdit::DeleteRange { .. } => {
@@ -1462,6 +1473,7 @@ impl Service {
             }
             ProjectEdit::Scoped { .. }
             | ProjectEdit::ScopedPause { .. }
+            | ProjectEdit::ScopedStructure { .. }
             | ProjectEdit::InsertTime { .. }
             | ProjectEdit::InsertBlack { .. }
             | ProjectEdit::DeleteRange { .. } => {
