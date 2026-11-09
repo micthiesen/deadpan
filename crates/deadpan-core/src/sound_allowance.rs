@@ -230,16 +230,21 @@ impl SoundAllowanceEdit {
     /// Only the explicit audio setter retires permissions made obsolete by its
     /// resolved Hold target. Occurrence callers invoke this after isolation has
     /// remapped addresses; unrelated plays and default gaps remain untouched.
+    /// A default-gap setter retires only that Repeat's default-gap issuers;
+    /// explicit gap branches are ordinary Holds with their own permissions.
     pub(crate) fn apply_hold_audio_command(&mut self, command: &Command) {
-        let Command::SetHoldAudio { node, audio } = command else {
-            return;
+        let (node, audio, gap) = match command {
+            Command::SetHoldAudio { node, audio } => (node, audio, false),
+            Command::SetRepeatGapAudio { node, audio } => (node, audio, true),
+            _ => return,
         };
         if matches!(audio, HoldAudio::Silence) {
             return;
         }
         self.values.retain(|_, allowances| {
-            allowances.0.retain(|issuer| {
-                !matches!(issuer, SoundHoldIssuer::Node { instance } if &instance.node == node)
+            allowances.0.retain(|issuer| match issuer {
+                SoundHoldIssuer::Node { instance } => gap || &instance.node != node,
+                SoundHoldIssuer::RepeatGap { instance, .. } => !gap || &instance.node != node,
             });
             !allowances.is_empty()
         });

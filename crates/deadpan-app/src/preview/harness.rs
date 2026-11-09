@@ -611,6 +611,8 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                     sound_placement::run(&mut driver)
                 } else if name == "room-tone" {
                     room_tone::run(&mut driver)
+                } else if name == "room-tone-gaps" {
+                    room_tone::gaps(&mut driver)
                 } else if name == "gain" {
                     gain::run(&mut driver)
                 } else if name == "ai-pause" {

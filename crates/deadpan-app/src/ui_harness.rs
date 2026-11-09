@@ -87,6 +87,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "sound-playback",
     "sound-placement",
     "room-tone",
+    "room-tone-gaps",
     "gain",
     "ai-pause",
     "ai-variants",

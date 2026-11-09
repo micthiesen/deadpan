@@ -1015,8 +1015,8 @@ pub static SPECS: &[Spec] = &[
         commands: &[verb("hold-silence", ":hold-silence")],
         contexts: C::EDIT.or(C::CONTENTS),
         replay: Replay::Recorded,
-        headless: eq("command set_hold_audio", HOLDS),
-        help: "Restore the selected ordinary pause to silence in one undoable edit. Explicit per-sound permissions remain separate.",
+        headless: eq("command set_hold_audio or set_repeat_gap_audio", HOLDS),
+        help: "Restore the selected pause to silence in one undoable edit: an ordinary pause, one split pause fragment, or a selected Repeat's default gap (every gap without its own pause). Explicit per-sound permissions remain separate.",
     },
     Spec {
         id: "room-tone",
@@ -1030,7 +1030,7 @@ pub static SPECS: &[Spec] = &[
             "the sheet prepares and auditions; set_room_tone applies a yank_original range",
             HOLDS,
         ),
-        help: "Select a pause after copying a quiet Original range with {visual}, {frame.previous}/{frame.next}, {copy}. The sheet shows exact source samples; reopening starts from the saved range, and Use copied Original range explicitly replaces it. Picture and duration stay unchanged.",
+        help: "Select a pause after copying a quiet Original range with {visual}, {frame.previous}/{frame.next}, {copy}. A split pause fragment changes only that fragment; a selected Repeat with a gap changes its default gap, heard in every gap without its own pause, and leaves explicit gap pauses alone. The sheet shows exact source samples; reopening starts from the saved range, and Use copied Original range explicitly replaces it. Picture and duration stay unchanged.",
     },
     Spec {
         id: "reverse",
@@ -2427,7 +2427,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::ROOM_TONE,
         replay: Replay::Recorded,
         headless: eq(
-            "command set_hold_audio, or set_room_tone instruction",
+            "command set_hold_audio or set_repeat_gap_audio, or set_room_tone instruction",
             HOLDS,
         ),
         help: "Apply the prepared range to the pause as one undoable edit. Tab / Shift+Tab move through controls.",

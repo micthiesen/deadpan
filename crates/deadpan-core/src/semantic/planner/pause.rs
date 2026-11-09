@@ -636,12 +636,12 @@ where
                 "the pause must be a direct child of the current Sequence",
             ));
         }
-        if !matches!(self.current.nodes()[&selected].kind, NodeKind::Hold { .. }) {
-            return Err(EditError::new(
+        let target = self.current.pause_sound_target(&selected).ok_or_else(|| {
+            EditError::new(
                 EditErrorCode::WrongNodeKind,
-                "a pause sound applies to a pause (Hold)",
-            ));
-        }
+                "a pause sound applies to a pause, a split pause fragment or a Repeat's gap",
+            )
+        })?;
         self.charge_step(false)?;
         let SemanticAllocation::ParameterEdit { new_revision } =
             (self.allocate)(SemanticAllocationRequest::ParameterEdit {
@@ -651,13 +651,7 @@ where
             return Err(invalid("a pause sound requires a parameter allocation"));
         };
         self.reserve_revision(&new_revision)?;
-        self.commit_leaf(LeafEdit::new(
-            new_revision,
-            Command::SetHoldAudio {
-                node: selected.clone(),
-                audio,
-            },
-        )?)?;
+        self.commit_leaf(LeafEdit::new(new_revision, target.command(audio))?)?;
         self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
         self.trace[trace_index].resolved_selection =
             Some(SliceCaptureSelection::Child { node: selected });
@@ -694,12 +688,27 @@ where
                 "the pause must be a direct child of the current Sequence",
             ));
         }
-        if !matches!(self.current.nodes()[&selected].kind, NodeKind::Hold { .. }) {
-            return Err(EditError::new(
-                EditErrorCode::WrongNodeKind,
-                "room tone applies to a pause (Hold)",
-            ));
-        }
+        // A single play's pause stays an ordinary Hold; outside one play a
+        // split fragment or a Repeat's default gap is a pause sound too.
+        let target = if scoped.is_some() {
+            if !matches!(self.current.nodes()[&selected].kind, NodeKind::Hold { .. }) {
+                return Err(EditError::new(
+                    EditErrorCode::WrongNodeKind,
+                    "room tone inside one play applies to a pause (Hold)",
+                ));
+            }
+            crate::PauseSoundTarget::Hold {
+                node: selected.clone(),
+                fragment: false,
+            }
+        } else {
+            self.current.pause_sound_target(&selected).ok_or_else(|| {
+                EditError::new(
+                    EditErrorCode::WrongNodeKind,
+                    "room tone applies to a pause, a split pause fragment or a Repeat's gap",
+                )
+            })?
+        };
         let value = if let Some(value) = self.writes.get(&register) {
             value.clone()
         } else {
@@ -732,10 +741,7 @@ where
         self.reserve_revision(&new_revision)?;
         let edit = LeafEdit::new(
             new_revision,
-            Command::SetHoldAudio {
-                node: selected.clone(),
-                audio: HoldAudio::RoomTone { source: audio },
-            },
+            target.command(HoldAudio::RoomTone { source: audio }),
         )?;
         self.commit_leaf(edit)?;
         self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());

@@ -559,3 +559,176 @@ fn native_hold_audio_rejects_nonholds_wrong_scope_and_stale_session_without_reta
         ),
     );
 }
+
+/// A selected Repeat changes its default gap recipe and a selected split
+/// fragment changes only its own Hold, through the same captured edit.
+#[test]
+fn native_room_tone_applies_to_a_repeat_default_gap_and_one_split_fragment() {
+    let scratch = tempfile::tempdir().unwrap();
+    let service = ProjectService::start(
+        Arc::new(|| {}),
+        Some(ProjectLibrary::from_documents(scratch.path().join("Documents")).unwrap()),
+    )
+    .unwrap();
+    let initial = initialize(&service);
+    let first = edited(
+        &service,
+        &initial,
+        ProjectEdit::InsertTime {
+            at: ProjectFrame(0),
+            duration: FrameDuration::new(6).unwrap(),
+        },
+    );
+    let repeated = first.committed.unwrap().selected_node.unwrap();
+    let second = edited(
+        &service,
+        &first.workspace.unwrap(),
+        ProjectEdit::InsertTime {
+            at: ProjectFrame(0),
+            duration: FrameDuration::new(4).unwrap(),
+        },
+    );
+    let split = second.committed.unwrap().selected_node.unwrap();
+    let cut = edited(
+        &service,
+        &second.workspace.unwrap(),
+        ProjectEdit::Split {
+            node: split,
+            at: FrameDuration::new(2).unwrap(),
+        },
+    );
+    let fragment = cut.committed.unwrap().selected_node.unwrap();
+    let path = cut.workspace.unwrap().path.clone();
+    command(&service, ProjectRequest::Close);
+    {
+        let mut store = ProjectStore::open(&path, AccessMode::ReadWrite).unwrap();
+        let root = store.snapshot().unwrap().root().clone();
+        let timing = |name: &str| deadpan_core::AudioTimingId {
+            allocation: RevisionId::new(name).unwrap(),
+            ordinal: 0,
+        };
+        seed_command(
+            &mut store,
+            Command::RepeatSelection {
+                parent: root,
+                selection: deadpan_core::SliceCaptureSelection::Child {
+                    node: repeated.clone(),
+                },
+                plays: 3,
+                identities: deadpan_core::RepeatSelectionIdentities {
+                    repeat: node("repeat"),
+                    group: None,
+                    split: deadpan_core::SplitIdentities::default(),
+                },
+                timing: timing("wrap"),
+            },
+            "wrap",
+        );
+        seed_command(
+            &mut store,
+            Command::SetRepeatGaps {
+                node: node("repeat"),
+                gap: Some(hold(2)),
+                branches: Vec::new(),
+                timing: timing("gaps"),
+            },
+            "gaps",
+        );
+    }
+    let before = command(&service, ProjectRequest::Open(path))
+        .workspace
+        .unwrap();
+    let prepared = prepare(&service, &before);
+    let room = HoldAudio::RoomTone {
+        source: prepared.source.clone(),
+    };
+
+    let gapped = command(
+        &service,
+        edit_request(
+            &before,
+            ProjectEdit::HoldAudio {
+                node: node("repeat"),
+                audio: room.clone(),
+            },
+        ),
+    );
+    assert!(gapped.error.is_none(), "{:?}", gapped.error);
+    let commit = gapped.committed.unwrap();
+    assert!(commit.preserve_cursor);
+    assert_eq!(commit.selected_node, Some(node("repeat")));
+    let after = gapped.workspace.unwrap();
+    let mut expected = before.document.nodes().clone();
+    let NodeKind::Repeat { gap: Some(gap), .. } =
+        &mut expected.get_mut(&node("repeat")).unwrap().kind
+    else {
+        panic!("Repeat with a gap")
+    };
+    gap.audio = room.clone();
+    assert_eq!(
+        after.document.nodes(),
+        &expected,
+        "only the gap's audio changes"
+    );
+    assert_eq!(
+        after.document.audio_bindings(),
+        before.document.audio_bindings(),
+        "retained gap clocks are unchanged"
+    );
+    assert_eq!(after.plan.duration(), before.plan.duration());
+
+    let target = after.document.pause_sound_target(&fragment).unwrap();
+    let deadpan_core::PauseSoundTarget::Hold {
+        node: fragment_hold,
+        fragment: true,
+    } = &target
+    else {
+        panic!("a split fragment names its Hold: {target:?}")
+    };
+    let fragmented = command(
+        &service,
+        edit_request(
+            &after,
+            ProjectEdit::HoldAudio {
+                node: fragment.clone(),
+                audio: room.clone(),
+            },
+        ),
+    );
+    assert!(fragmented.error.is_none(), "{:?}", fragmented.error);
+    assert_eq!(
+        fragmented.committed.unwrap().selected_node,
+        Some(fragment.clone())
+    );
+    let final_workspace = fragmented.workspace.unwrap();
+    let mut expected = after.document.nodes().clone();
+    let NodeKind::Hold { recipe } = &mut expected.get_mut(fragment_hold).unwrap().kind else {
+        panic!("Hold")
+    };
+    recipe.audio = room;
+    assert_eq!(
+        final_workspace.document.nodes(),
+        &expected,
+        "the other fragment keeps its silence"
+    );
+
+    // Two undo steps restore the exact prior nodes.
+    let undone = command(
+        &service,
+        ProjectRequest::Undo {
+            expected_revision: final_workspace.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(undone.document.nodes(), after.document.nodes());
+    let undone = command(
+        &service,
+        ProjectRequest::Undo {
+            expected_revision: undone.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(undone.document.nodes(), before.document.nodes());
+}

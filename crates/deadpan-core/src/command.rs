@@ -433,6 +433,13 @@ define_commands! {
         node: NodeId,
         audio: HoldAudio,
     },
+    /// Replace the audio of a Repeat's default gap recipe, heard in every gap
+    /// without an explicit branch. Gap duration, picture, plays, explicit
+    /// branches and every retained gap clock are unchanged.
+    SetRepeatGapAudio {
+        node: NodeId,
+        audio: HoldAudio,
+    },
     /// Changes picture rate and endpoint behavior without changing beat or audio time.
     /// An actual mapping change clears the common editorial window; a
     /// value-identical assignment retains it.
@@ -2753,6 +2760,21 @@ pub(crate) fn reduce(
         Command::SetHoldAudio { node, audio } => {
             hold_mut(document, node)?.audio = audio.clone();
         }
+        Command::SetRepeatGapAudio { node, audio } => {
+            let NodeKind::Repeat { gap, .. } = &mut node_mut(document, node)?.kind else {
+                return Err(EditError::new(
+                    EditErrorCode::WrongNodeKind,
+                    "a default gap sound belongs to a Repeat",
+                ));
+            };
+            let gap = gap.as_mut().ok_or_else(|| {
+                EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "this Repeat has no gap between its plays",
+                )
+            })?;
+            gap.audio = audio.clone();
+        }
         Command::SetHoldProvider { node, video } => {
             if matches!(video, HoldVideo::Generated { .. }) {
                 return Err(EditError::new(
@@ -3662,6 +3684,7 @@ fn description(command: &Command) -> &'static str {
             "Change hold duration"
         }
         Command::SetHoldAudio { .. } => "Change hold audio",
+        Command::SetRepeatGapAudio { .. } => "Change Repeat gap audio",
         Command::SetSourceAudioMapping { .. } => "Change source audio mapping",
         Command::SetSourceVideoMapping { .. } => "Change source video mapping",
         Command::SlipSource { .. } => "Slip source material",

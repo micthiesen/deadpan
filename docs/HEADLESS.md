@@ -275,6 +275,15 @@ to a Hold changed away from Silence are removed atomically; Undo restores them.
 The command's existing Tail vocabulary does not imply implemented tail DSP.
 See [room-tone authoring](ROOM_TONE_AUDIO.md#authored-policy-changes).
 
+`set_repeat_gap_audio` takes the same `node` (a Repeat) and `audio` and changes
+that Repeat's default gap recipe, heard in every gap without its own branch
+Hold. Gap duration and picture, plays, branches and retained gap clocks stay
+unchanged; only that Repeat's default-gap sound permissions are retired. A
+split Hold fragment is an ordinary `set_hold_audio` on the Hold inside its
+Partitions. The `set_hold_audio` and `set_room_tone` macro instructions resolve
+either target from the selected child. See
+[Repeat gaps and fragments](ROOM_TONE_AUDIO.md#repeat-gaps-and-split-fragments).
+
 ### Sound permissions
 
 `set_sound_allowance` takes `sound`, a concrete `issuer`, and boolean `allowed`.

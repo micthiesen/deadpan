@@ -236,6 +236,7 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
         | Command::MovePlays { .. }
         | Command::SetHoldDuration { .. }
         | Command::SetHoldAudio { .. }
+        | Command::SetRepeatGapAudio { .. }
         | Command::SetSourceAudioMapping { .. }
         | Command::SetSourceVideoMapping { .. }
         | Command::SetHoldProvider { .. }

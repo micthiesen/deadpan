@@ -2156,6 +2156,91 @@ pub fn repeat_gaps_steps(dir: &Path) -> Result<Fixture> {
     Ok(fixture)
 }
 
+/// `:repeat 3 gap=200ms` on Edit [12, 24), then the room-tone sheet's
+/// recorded instruction on the selected Repeat: its default gap loops the
+/// Original moment [28, 31), exactly as in `nothing-happens`, through the
+/// headless semantic path and store admission. 12 + 3·12 + 2·6 + 6 = 66
+/// frames; gaps hold Original 35.
+pub fn repeat_gap_room_tone(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "repeat-gap-room-tone")?;
+    project.shorten()?;
+    project.split_root(12)?;
+    let document = project.split_root(24)?;
+    let beat = root_child_at(&document, 12)?.0;
+    let saved = project.run_semantic(
+        json!([{"type":"set_repeat","plays":3,
+            "gaps":[{"unit":"milliseconds","milliseconds":200}]}]),
+        12,
+        Some(&beat),
+    )?;
+    let (repeat, _) = root_child_at(&saved, 12)?;
+    {
+        let mut store = ProjectStore::open(&project.package, AccessMode::ReadWrite)?;
+        let document = store.snapshot()?;
+        let record = &document.assets()[&project.asset];
+        store.save_register(
+            document.project_id(),
+            document.revision_id(),
+            RegisterName::new('r')?,
+            RegisterValue::Original {
+                revision: document.revision_id().clone(),
+                asset: project.asset.clone(),
+                qualification: record
+                    .source_qualification
+                    .clone()
+                    .ok_or("the Original is qualified")?,
+                ordinals: 28..31,
+            },
+        )?;
+    }
+    let toned = project.run_semantic(
+        json!([{"type":"set_room_tone","register":"r"}]),
+        12,
+        Some(&repeat),
+    )?;
+    let NodeKind::Repeat { gap: Some(gap), .. } = &toned.nodes()[&repeat].kind else {
+        return Err("the Repeat keeps its gap".into());
+    };
+    if gap.duration.frames() != 6 || !matches!(gap.audio, HoldAudio::RoomTone { .. }) {
+        return Err(format!("unexpected default gap {gap:?}").into());
+    }
+    let mut expectations = vec![(0, base(0)), (11, base(11))];
+    for (start, gapped) in [(12u64, true), (30, true), (48, false)] {
+        expectations.extend([
+            (start, original(24)),
+            (start + 6, original(30)),
+            (start + 11, original(35)),
+        ]);
+        if gapped {
+            expectations.extend([(start + 12, original(35)), (start + 17, original(35))]);
+        }
+    }
+    expectations.extend([(60, original(36)), (65, original(41))]);
+    let mut fixture = project.finish(
+        vec!["Room tone", "Repeat operator"],
+        expectations,
+        Vec::new(),
+    )?;
+    // Plays keep the Original's click 9,562 samples in, at B(12), B(30) and
+    // B(48). Each gap loops the moment's samples [44,845, 49,649) from its
+    // own origin, B(24) = 38,438.4 and B(42) = 67,267.2: the click 3,155
+    // samples in, again 4,708 later (see `nothing-happens`). Between them
+    // the loop is quiet.
+    fixture.audio = vec![
+        (28_672, true),
+        (36_352, false),
+        (41_493, true),
+        (43_520, false),
+        (46_201, true),
+        (57_600, true),
+        (70_322, true),
+        (72_448, false),
+        (75_030, true),
+        (86_336, true),
+    ];
+    Ok(fixture)
+}
+
 /// `:gag nothing-happens register=r tone=12f silence=12f` at Edit 15,
 /// through the headless semantic path (planner, pause-picture resolver,
 /// `copied_moment_audio` and store admission). Register `r` holds the
@@ -3813,7 +3898,7 @@ pub fn partition_with_skips(
     partitions: usize,
 ) -> Result<(Vec<Fixture>, Vec<Skipped>)> {
     assert!(partitions > 0 && partition < partitions);
-    let builders: [(&str, Builder); 45] = [
+    let builders: [(&str, Builder); 46] = [
         ("audio-shift", audio_shift),
         ("ramp", ramp),
         ("role-repeat-across", role_repeat_across),
@@ -3843,6 +3928,7 @@ pub fn partition_with_skips(
         ("one-more-time", one_more_time),
         ("repeat-gaps-steps", repeat_gaps_steps),
         ("nothing-happens", nothing_happens),
+        ("repeat-gap-room-tone", repeat_gap_room_tone),
         ("audio-lag", audio_lag),
         ("bed-drop", bed_drop),
         ("mute-range", mute_range),

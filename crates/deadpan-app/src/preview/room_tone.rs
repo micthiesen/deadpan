@@ -19,10 +19,39 @@ struct Target {
     cursor: ProjectFrame,
     label: String,
     frames: i64,
+    /// Which recipe the edit changes: `node` is the selected beat, which for
+    /// a fragment or Repeat gap differs from the recipe's owner.
+    pause: deadpan_core::PauseSoundTarget,
     scoped: Option<crate::project::scoped::Target>,
 }
 
 impl Target {
+    fn heading(&self) -> &'static str {
+        match &self.pause {
+            deadpan_core::PauseSoundTarget::Hold {
+                fragment: false, ..
+            } => "Room tone for pause",
+            deadpan_core::PauseSoundTarget::Hold { fragment: true, .. } => {
+                "Room tone for pause fragment"
+            }
+            deadpan_core::PauseSoundTarget::RepeatGap { .. } => "Room tone for Repeat gaps",
+        }
+    }
+
+    fn scope_note(&self) -> &'static str {
+        match &self.pause {
+            deadpan_core::PauseSoundTarget::Hold {
+                fragment: false, ..
+            } => "Apply changes only this pause's sound. One edit, one undo.",
+            deadpan_core::PauseSoundTarget::Hold { fragment: true, .. } => {
+                "Apply changes only this fragment's sound; the rest of the split pause keeps its own. One edit, one undo."
+            }
+            deadpan_core::PauseSoundTarget::RepeatGap { .. } => {
+                "Apply changes every gap without its own pause; gaps with their own pause keep their sound. One edit, one undo."
+            }
+        }
+    }
+
     fn edit(&self, audio: HoldAudio) -> ProjectEdit {
         match &self.scoped {
             Some(target) => ProjectEdit::Scoped {
@@ -155,10 +184,8 @@ impl DeadpanApp {
         if self
             .workspace
             .as_ref()
-            .and_then(|workspace| workspace.document.nodes().get(&draft.target.node))
-            .is_some_and(
-                |node| matches!(&node.kind, NodeKind::Hold { recipe } if recipe.audio == audio),
-            )
+            .and_then(|workspace| draft.target.pause.recipe(&workspace.document))
+            .is_some_and(|recipe| recipe.audio == audio)
         {
             return Ok(None);
         }
@@ -199,9 +226,28 @@ impl DeadpanApp {
                 .nodes()
                 .get(node)
                 .ok_or("The pause is unavailable.")?;
-            let NodeKind::Hold { recipe } = &beat.kind else {
-                return Err("Select an ordinary Hold. Repeat gaps and fragments need their own occurrence controls.".into());
+            let pause = if scoped.is_some() {
+                // One play's pause sound goes through occurrence isolation,
+                // which edits authored Holds only.
+                if !matches!(beat.kind, NodeKind::Hold { .. }) {
+                    return Err("Inside one Repeat play, select an ordinary pause. Split fragments and Repeat gaps take room tone from Your edit, outside Repeat contents.".into());
+                }
+                deadpan_core::PauseSoundTarget::Hold {
+                    node: node.clone(),
+                    fragment: false,
+                }
+            } else {
+                workspace.document.pause_sound_target(node).ok_or_else(|| {
+                    if let NodeKind::Repeat { iterations, .. } = &beat.kind {
+                        format!("This Repeat has no gap between plays. Add one first, for example :repeat {} gap=500ms.", iterations.len())
+                    } else {
+                        "Select a pause, a split pause fragment or a Repeat with a gap between plays.".to_owned()
+                    }
+                })?
             };
+            let recipe = pause
+                .recipe(&workspace.document)
+                .ok_or("The pause is unavailable.")?;
             Ok(Target {
                 session: workspace.session,
                 revision: workspace.document.revision_id().clone(),
@@ -212,6 +258,7 @@ impl DeadpanApp {
                 ),
                 label: beat.label.clone(),
                 frames: recipe.duration.frames(),
+                pause,
                 scoped,
             })
         })();
@@ -219,10 +266,7 @@ impl DeadpanApp {
         let selection = (|| {
             let target = target.as_ref().ok()?;
             let workspace = self.workspace.as_ref()?;
-            let NodeKind::Hold { recipe } = &workspace.document.nodes().get(&target.node)?.kind
-            else {
-                return None;
-            };
+            let recipe = target.pause.recipe(&workspace.document)?;
             let HoldAudio::RoomTone { source } = &recipe.audio else {
                 return None;
             };
@@ -619,10 +663,10 @@ impl DeadpanApp {
         egui::Modal::new(egui::Id::new("room-tone-sheet"))
             .frame(egui::Frame::popup(&context.style_of(egui::Theme::Dark)).inner_margin(24).corner_radius(10))
             .show(context, |ui| {
-                super::accessibility::dialog(ui, "Room tone for pause");
+                super::accessibility::dialog(ui, draft.target.heading());
                 ui.set_width(width);
                 let heading = ui.horizontal(|ui| {
-                    ui.heading("Room tone for pause");
+                    ui.heading(draft.target.heading());
                     ui.colored_label(style::LAVENDER, "DRAFT");
                 }).response;
                 let focus = ui.interact(heading.rect, egui::Id::new(FOCUS_ID), egui::Sense::focusable_noninteractive());
@@ -672,7 +716,7 @@ impl DeadpanApp {
                     ui.weak("Source preview has no lead-in or follow-through. After Apply, audition the pause to hear its crossfaded loop.");
                 });
                 ui.separator();
-                ui.weak("Apply changes only this pause's sound. One edit, one undo.");
+                ui.weak(draft.target.scope_note());
                 ui.horizontal_wrapped(|ui| {
                     if ui.add_enabled(ready && !changed && !busy, style::action("Apply room tone", crate::navigation::registry::mode_label("room-tone.apply")).fill(style::SELECTED)).clicked() { action = Some(SheetAction::Apply); }
                     if ui.add(style::action("Cancel", crate::navigation::registry::mode_label("room-tone.cancel"))).clicked() { action = Some(SheetAction::Cancel); }
@@ -831,12 +875,22 @@ impl DeadpanApp {
 
     pub(super) fn hold_audio_controls(&mut self, ui: &mut egui::Ui, ready: bool) {
         ui.add_space(8.0);
-        ui.label(style::section_title("PAUSE SOUND", false));
+        let pause = self.inspected_pause_sound();
+        let gap = matches!(
+            pause,
+            Some(deadpan_core::PauseSoundTarget::RepeatGap { .. })
+        );
+        ui.label(style::section_title(
+            if gap { "GAP SOUND" } else { "PAUSE SOUND" },
+            false,
+        ));
+        if gap {
+            ui.weak("Default gaps between plays. A gap with its own pause keeps its sound.");
+        }
         if let Some(workspace) = &self.workspace
-            && let Some(node) = self
-                .inspected_node()
-                .and_then(|id| workspace.document.nodes().get(id))
-            && let NodeKind::Hold { recipe } = &node.kind
+            && let Some(recipe) = pause
+                .as_ref()
+                .and_then(|pause| pause.recipe(&workspace.document))
             && let HoldAudio::RoomTone { source } = &recipe.audio
         {
             let label = workspace
@@ -851,7 +905,11 @@ impl DeadpanApp {
                 source.span.end().ticks,
                 source.span.start().time_base.denominator()
             ));
-            ui.weak("Crossfades stay inside this pause.");
+            ui.weak(if gap {
+                "Each gap loops from its own start; crossfades stay inside it."
+            } else {
+                "Crossfades stay inside this pause."
+            });
         }
         if ui
             .add_enabled(ready, style::row_action(ui, "Room tone…", ":room-tone"))
@@ -869,6 +927,26 @@ impl DeadpanApp {
             "Copy a quiet Original range with {}. Silence retains explicit sound permissions.",
             self.editor_copy_recipe()
         ));
+    }
+}
+
+impl DeadpanApp {
+    /// The pause sound the inspected beat names. Inside one Repeat play only
+    /// an ordinary Hold qualifies.
+    pub(super) fn inspected_pause_sound(&self) -> Option<deadpan_core::PauseSoundTarget> {
+        let workspace = self.workspace.as_ref()?;
+        let node = self.inspected_node()?;
+        if self.scoped.is_some() {
+            return matches!(
+                workspace.document.nodes().get(node)?.kind,
+                NodeKind::Hold { .. }
+            )
+            .then(|| deadpan_core::PauseSoundTarget::Hold {
+                node: node.clone(),
+                fragment: false,
+            });
+        }
+        workspace.document.pause_sound_target(node)
     }
 }
 
@@ -938,6 +1016,10 @@ mod tests {
                 cursor: ProjectFrame(11),
                 label: "Pause".into(),
                 frames: 11,
+                pause: deadpan_core::PauseSoundTarget::Hold {
+                    node: NodeId::new("pause").unwrap(),
+                    fragment: false,
+                },
                 scoped: None,
             },
             prepared: None,

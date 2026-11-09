@@ -1307,3 +1307,222 @@ fn stale_target(d: &mut Driver<'_>, target: &NodeId) -> Result<(), String> {
     )?;
     Ok(())
 }
+
+/// `room-tone-gaps`: the same sheet and keys author a Repeat's default gap
+/// and one split pause fragment, each in one undoable edit.
+pub(super) fn gaps(d: &mut Driver<'_>) -> Result<(), String> {
+    d.report.skipped.push("Committed audition and listening are covered by the room-tone replay and real-PCM tests; this replay checks targets, sheet text and saved documents.".into());
+    // A quiet Original range to loop, copied exactly as in `room-tone`.
+    d.command("source")?;
+    d.chord(&[
+        Key::G,
+        Key::G,
+        Key::Num1,
+        Key::Num0,
+        Key::L,
+        Key::V,
+        Key::Num1,
+        Key::Num0,
+        Key::L,
+        Key::Y,
+    ])?;
+    d.wait_for("Original copy is saved", |app| {
+        !app.service.is_busy() && !app.copied.is_pending()
+    })?;
+    let expected = copied_source(d)?;
+    let room = HoldAudio::RoomTone {
+        source: expected.clone(),
+    };
+    d.command("sequence")?;
+    d.settled()?;
+
+    // A pause repeated three times: a 6-frame default gap and, after the
+    // second play, an explicit 4-frame gap pause from the ladder.
+    d.chord(&[Key::G, Key::G, Key::Num1, Key::Num7, Key::L])?;
+    let before = d.revision();
+    d.command("hold 11f")?;
+    d.changed(&before)?;
+    let before = d.revision();
+    d.command("repeat 3 gap=6f gap-step=-2f")?;
+    d.changed(&before)?;
+    d.settled()?;
+    let repeat = d.app().selected_beat.clone().ok_or("No Repeat selected")?;
+    let silent_nodes = document(d)?.nodes().clone();
+    let silent_bindings = document(d)?.audio_bindings().clone();
+    let silent_revision = d.revision();
+    let (gap, branches) = match &silent_nodes.get(&repeat).ok_or("Repeat is absent")?.kind {
+        NodeKind::Repeat { gap: Some(gap), .. } => (
+            gap.clone(),
+            document(d)?
+                .gap_overrides()
+                .get(&repeat)
+                .map(|entries| {
+                    entries
+                        .iter()
+                        .map(|(_, root)| root.clone())
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default(),
+        ),
+        _ => return Err("The selected beat is not a Repeat with a gap".into()),
+    };
+    d.check(
+        "A selected Repeat with a silent 6-frame default gap and one explicit 4-frame gap pause",
+        gap.duration.frames() == 6 && gap.audio == HoldAudio::Silence && branches.len() == 1,
+        json!({"repeat":repeat,"gap_frames":6,"branches":1}),
+        json!({"gap":gap,"branches":branches}),
+    )?;
+    let painted = scenarios::text_paint_visibility(d, "GAP SOUND");
+    d.check(
+        "The Repeat's inspector offers the pause's room-tone action and command",
+        !painted.is_empty()
+            && !scenarios::text_paint_visibility(d, "Room tone…").is_empty()
+            && !scenarios::text_paint_visibility(d, ":room-tone").is_empty(),
+        json!(["GAP SOUND", "Room tone…", ":room-tone"]),
+        json!(painted),
+    )?;
+    d.capture("Repeat gap sound in the inspector")?;
+    open(d)?;
+    let heading = scenarios::text_paint_visibility(d, "Room tone for Repeat gaps");
+    d.check(
+        "The sheet names the default gaps it changes and prepares the copied samples",
+        !heading.is_empty()
+            && !scenarios::text_paint_visibility(d, "every gap without its own pause").is_empty()
+            && prepared(d)?.source == expected
+            && d.revision() == silent_revision,
+        json!({"heading":"Room tone for Repeat gaps","source":expected}),
+        json!(heading),
+    )?;
+    d.capture("Room tone for Repeat gaps")?;
+    d.key(Key::Enter)?;
+    d.changed(&silent_revision)?;
+    let applied = d.revision();
+    let mut expected_nodes = silent_nodes.clone();
+    if let NodeKind::Repeat { gap: Some(gap), .. } =
+        &mut expected_nodes.get_mut(&repeat).ok_or("Repeat")?.kind
+    {
+        gap.audio = room.clone();
+    }
+    d.check(
+        "Enter changes only the default gap's sound; durations, explicit gap pause and clocks stay",
+        d.app().room_tone.is_none()
+            && document(d)?.nodes() == &expected_nodes
+            && document(d)?.audio_bindings() == &silent_bindings
+            && d.app().selected_beat.as_ref() == Some(&repeat),
+        json!({"gap_audio":"room tone","branches_unchanged":branches}),
+        d.snapshot(),
+    )?;
+    d.capture("Repeat gap room tone applied")?;
+    d.key(Key::U)?;
+    d.changed(&applied)?;
+    d.check(
+        "One undo restores the silent default gap exactly",
+        document(d)?.nodes() == &silent_nodes,
+        json!("silent gap"),
+        d.snapshot(),
+    )?;
+    let undone = d.revision();
+    d.key_modified(Key::R, Modifiers::CTRL)?;
+    d.changed(&undone)?;
+    d.check(
+        "Redo restores the gap's room tone",
+        document(d)?.nodes() == &expected_nodes,
+        json!("room-tone gap"),
+        d.snapshot(),
+    )?;
+
+    // A 12-frame pause split at its fifth frame: room tone on the right
+    // fragment only.
+    d.chord(&[Key::G, Key::G])?;
+    let before = d.revision();
+    d.command("hold 12f")?;
+    d.changed(&before)?;
+    d.chord(&[Key::G, Key::G, Key::Num5, Key::L])?;
+    let before = d.revision();
+    d.key(Key::S)?;
+    d.changed(&before)?;
+    d.settled()?;
+    let fragment = d
+        .app()
+        .selected_beat
+        .clone()
+        .ok_or("No fragment selected")?;
+    let split_nodes = document(d)?.nodes().clone();
+    let split_revision = d.revision();
+    let siblings = document(d)?
+        .children(document(d)?.root())
+        .cloned()
+        .collect::<Vec<_>>();
+    let position = siblings
+        .iter()
+        .position(|node| node == &fragment)
+        .ok_or("The fragment is not a direct child")?;
+    let left = siblings
+        .get(position.checked_sub(1).ok_or("No left fragment")?)
+        .ok_or("No left fragment")?
+        .clone();
+    let target = document(d)?.pause_sound_target(&fragment);
+    let left_target = document(d)?.pause_sound_target(&left);
+    let (
+        Some(deadpan_core::PauseSoundTarget::Hold {
+            node: hold_node,
+            fragment: true,
+        }),
+        Some(left_target),
+    ) = (target.clone(), left_target)
+    else {
+        return Err(format!(
+            "Split did not leave two pause fragments: {target:?}"
+        ));
+    };
+    let left_recipe = left_target.recipe(document(d)?).cloned();
+    d.check(
+        "Split leaves two pause fragments, each over its own Hold, and selects the right one",
+        hold_node != *left_target.node() && hold(d, &hold_node)?.audio == HoldAudio::Silence,
+        json!({"fragment":fragment,"hold":hold_node}),
+        json!({"left":left,"siblings":siblings}),
+    )?;
+    let painted = scenarios::text_paint_visibility(d, "PAUSE SOUND");
+    d.check(
+        "The fragment's inspector offers the pause's room-tone action",
+        !painted.is_empty() && !scenarios::text_paint_visibility(d, "Room tone…").is_empty(),
+        json!(["PAUSE SOUND", "Room tone…"]),
+        json!(painted),
+    )?;
+    open(d)?;
+    d.check(
+        "The sheet names the fragment and prepares the same copied samples",
+        !scenarios::text_paint_visibility(d, "Room tone for pause fragment").is_empty()
+            && prepared(d)?.source == expected
+            && d.revision() == split_revision,
+        json!({"heading":"Room tone for pause fragment","source":expected}),
+        d.snapshot(),
+    )?;
+    d.capture("Room tone for pause fragment")?;
+    d.key(Key::Enter)?;
+    d.changed(&split_revision)?;
+    let mut expected_nodes = split_nodes.clone();
+    if let NodeKind::Hold { recipe } = &mut expected_nodes.get_mut(&hold_node).ok_or("Hold")?.kind {
+        recipe.audio = room.clone();
+    }
+    d.check(
+        "Enter gives only the right fragment's Hold room tone; the left fragment stays silent",
+        d.app().room_tone.is_none()
+            && document(d)?.nodes() == &expected_nodes
+            && left_target.recipe(document(d)?).cloned() == left_recipe
+            && d.app().selected_beat.as_ref() == Some(&fragment),
+        json!({"fragment":fragment,"hold":hold_node}),
+        d.snapshot(),
+    )?;
+    d.capture("Pause fragment room tone applied")?;
+    let applied = d.revision();
+    d.key(Key::U)?;
+    d.changed(&applied)?;
+    d.check(
+        "One undo restores the fragment's silence",
+        document(d)?.nodes() == &split_nodes,
+        json!("silent fragment"),
+        d.snapshot(),
+    )?;
+    Ok(())
+}

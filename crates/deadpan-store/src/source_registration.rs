@@ -1328,6 +1328,7 @@ pub(crate) fn validate_hold_audio_source(
 ) -> Result<(), StoreError> {
     let audio = match &request.command {
         Command::SetHoldAudio { audio, .. }
+        | Command::SetRepeatGapAudio { audio, .. }
         | Command::EditOccurrence {
             edit: deadpan_core::OccurrenceEdit::SetHoldAudio { audio },
             ..

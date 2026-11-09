@@ -450,6 +450,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::SetSourceVideoMapping { .. }
         | Command::SetSourceAudioMapping { .. }
         | Command::SetHoldAudio { .. }
+        | Command::SetRepeatGapAudio { .. }
         | Command::SetHoldProvider { .. }
         | Command::SetHoldPictureContext { .. }
         | Command::AcceptGeneratedHold { .. }

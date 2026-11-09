@@ -1038,6 +1038,8 @@ pub enum ProjectEdit {
         node: NodeId,
         duration: FrameDuration,
     },
+    /// `node` is the selected direct child: a Hold, a split Hold fragment or
+    /// a Repeat whose default gap changes (`ProjectDocument::pause_sound_target`).
     HoldAudio {
         node: NodeId,
         audio: HoldAudio,

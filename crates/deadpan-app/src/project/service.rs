@@ -1633,14 +1633,19 @@ impl Service {
                 "Hold duration updated and saved",
             ),
             ProjectEdit::HoldAudio { node, audio } => {
-                if !matches!(document.nodes()[&node].kind, NodeKind::Hold { .. }) {
-                    return Err("Select an ordinary Hold to change its sound policy".into());
-                }
-                (
-                    Command::SetHoldAudio { node, audio },
-                    selected,
-                    "Hold sound updated and saved",
-                )
+                let pause = document.pause_sound_target(&node).ok_or(
+                    "Select a pause, a split pause fragment or a Repeat with a gap to change its sound",
+                )?;
+                let message = match pause {
+                    deadpan_core::PauseSoundTarget::RepeatGap { .. } => {
+                        "Repeat gap sound updated and saved"
+                    }
+                    deadpan_core::PauseSoundTarget::Hold { fragment: true, .. } => {
+                        "Pause fragment sound updated and saved"
+                    }
+                    deadpan_core::PauseSoundTarget::Hold { .. } => "Hold sound updated and saved",
+                };
+                (pause.command(audio), selected, message)
             }
             ProjectEdit::RevertGeneratedHold { node } => (
                 Command::RevertGeneratedHold { node },

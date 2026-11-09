@@ -66,6 +66,7 @@ mod move_range;
 mod occurrence;
 mod occurrence_edit;
 mod output_color;
+mod pause_sound;
 mod picture_context;
 mod preserve_input;
 mod register;
@@ -135,6 +136,7 @@ pub use move_range::{MoveRangeDestination, SequenceRangeMove};
 pub use occurrence::*;
 pub use occurrence_edit::{OccurrenceEdit, OccurrenceIdentities};
 pub use output_color::*;
+pub use pause_sound::PauseSoundTarget;
 pub use picture_context::*;
 pub use preserve_input::{
     MAX_DOCUMENT_PRESERVE_INPUT_RUNS, MAX_PRESERVE_INPUT_RUNS, PreserveInputProjection,

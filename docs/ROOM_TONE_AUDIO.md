@@ -7,7 +7,8 @@ revision-bound qualification and an explicit speaker interpretation. The current
 engineering command path can insert that Hold as an ordinary subtree or change
 an existing Hold with the atomic `SetHoldAudio` command. The native workflow
 uses copied Original moments, exact sample fields, source audition and explicit
-application to an ordinary selected Hold. The
+application to a selected pause: an ordinary Hold, one split Hold fragment or a
+Repeat's default gap ([below](#repeat-gaps-and-split-fragments)). The
 [room-tone board](design/boards/room-tone-board-v2.png) is its visual target.
 
 ```sh
@@ -106,8 +107,8 @@ Failed preparation publishes no partial PCM or cache entry.
 ## Native selection and audition
 
 Copy a quiet Original range with `:source`, `v`, `h/l`, `y`. Return with
-`:sequence`, select an ordinary Hold, then use `:room-tone` or its inspector
-button. The sheet shows the source, rate, included In sample, excluded Out
+`:sequence`, select a pause (an ordinary Hold, a split fragment or a Repeat with
+a gap), then use `:room-tone` or its inspector button. The sheet shows the source, rate, included In sample, excluded Out
 sample and actual seconds. The service converts measured picture PTS directly
 to source samples, rounding In upward and Out downward, intersecting available
 audio and rejecting empty results. It never converts through project frames.
@@ -161,13 +162,48 @@ the sheet cancels the measurement. Evidence:
 `a_source_range_waveform_measures_its_audition_view` and the `room-tone`
 replay frame "Room-tone range waveform".
 
-Listening across a representative ambience corpus and native Repeat-gap/fragment
-occurrence controls remain required. Export of room tone is
+Listening across a representative ambience corpus remains required, as does
+room tone for a gap or fragment inside one chosen Repeat play (only ordinary
+Holds there). Export of room tone is
 verified by the `nothing-happens` fixture
 ([preview-export-2026-10-04](qualification/preview-export-2026-10-04.md)), and
 gain envelopes and tails exist ([AUDIO_GAIN.md](AUDIO_GAIN.md),
 [REVERSE_AND_TAILS.md](REVERSE_AND_TAILS.md)); the full voice graph remains
 open. No requirement or release gate is complete because a setter exists.
+
+## Repeat gaps and split fragments
+
+A pause's sound has three authored shapes, resolved from the selected direct
+child by `ProjectDocument::pause_sound_target` for the native sheet, the
+service, the semantic planner and headless callers alike:
+
+- An ordinary Hold: `SetHoldAudio` on it.
+- A Split fragment: transparent Partitions over that fragment's own copy of
+  the Hold. `SetHoldAudio` changes only that Hold; sibling fragments keep their
+  sound. The Partition selects the visible window, so the loop keeps the full
+  Hold's phase from its own origin.
+- A Repeat with a positive default gap: core `SetRepeatGapAudio { node, audio }`
+  changes the gap recipe's audio, heard in every gap without an explicit branch.
+  Gap duration and picture, plays, explicit branches (ordinary owned Holds,
+  edited as pauses inside the Repeat) and every retained gap and suffix clock
+  stay unchanged; each gap still loops from its own origin. Changing away from
+  Silence retires only that Repeat's default-gap sound permissions in the same
+  reversible patch. Store admission checks the source exactly as for a Hold.
+
+The inspector shows the same `Room tone…` (`:room-tone`) and `Use silence`
+(`:hold-silence`) rows under PAUSE SOUND for a fragment and GAP SOUND for a
+Repeat. The sheet's heading and Apply note name what changes ("Room tone for
+Repeat gaps", "Room tone for pause fragment"). A Repeat without a gap refuses
+with the `:repeat N gap=` command that adds one. Inside one chosen Repeat play
+only ordinary Holds are targets; a fragment or gap there refuses readably.
+
+Evidence: core `pause_sound` tests (gap audio changes, durations, bindings,
+branches and permissions; refusals; fragment isolation; exact Undo), the
+service test `native_room_tone_applies_to_a_repeat_default_gap_and_one_split_fragment`,
+the `room-tone-gaps` replay (real keys open the sheet on a Repeat and on a split
+pause fragment, apply, undo and redo) and the `repeat-gap-room-tone`
+preview/export fixture, whose two default gaps each play the looped click of
+the copied moment.
 
 ## Recording
 

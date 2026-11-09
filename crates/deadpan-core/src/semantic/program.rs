@@ -452,13 +452,15 @@ pub enum SemanticInstruction {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         speed: Option<SpeedStep>,
     },
-    /// Give the selected direct-child Hold room tone from the exact audio of
-    /// the Original moment held in `register`.
+    /// Give the selected direct-child pause room tone from the exact audio of
+    /// the Original moment held in `register`. A pause is a Hold, a split
+    /// Hold fragment or a Repeat's default gap ([`crate::PauseSoundTarget`]).
     SetRoomTone {
         register: RegisterName,
     },
-    /// Give the selected direct-child Hold silence (`:hold-silence`) or room
-    /// tone from an exact Original sample span (the room-tone sheet's Apply).
+    /// Give the selected direct-child pause (as for `SetRoomTone`) silence
+    /// (`:hold-silence`) or room tone from an exact Original sample span (the
+    /// room-tone sheet's Apply).
     /// Other pause sounds have their own instructions.
     SetHoldAudio {
         audio: crate::HoldAudio,

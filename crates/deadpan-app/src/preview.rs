@@ -5173,6 +5173,10 @@ impl DeadpanApp {
                         );
                         if data.kind == "Hold" {
                             self.ai_inspector(ui, ready);
+                        }
+                        // Split fragments and Repeats with a gap carry a
+                        // pause sound too, with the same room-tone action.
+                        if self.inspected_pause_sound().is_some() {
                             self.hold_audio_controls(ui, ready);
                         }
                         self.gain_inspector(ui, ready);
