@@ -182,6 +182,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
 
     // A crash copy: the attempt was live, so reopening interrupts it.
     reopen(d, &retry_copy)?;
+    opening_checks_finish(d)?;
     d.command("jobs")?;
     d.step("Interrupted attempt listed", true)?;
     let widgets = widget_text(d);
@@ -239,6 +240,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
 
     // Another crash copy: Discard removes the entry for good.
     reopen(d, &discard_copy)?;
+    opening_checks_finish(d)?;
     d.command("jobs")?;
     d.wait_for("Interrupted attempt listed again", |app| {
         !app.ai_interrupted().is_empty()
@@ -723,4 +725,15 @@ fn conditions_and_quit(d: &mut Driver<'_>) -> Result<(), String> {
             .is_some_and(|job| job.outcome == Some(Outcome::Cancelled))
     })?;
     d.settled()
+}
+
+/// Opening also checks the Original's seek proxy as a short background job.
+/// Row keys act on the selected row, so wait until only interrupted
+/// attempts remain listed.
+fn opening_checks_finish(d: &mut Driver<'_>) -> Result<(), String> {
+    d.wait_for("Opening's background checks finish", |app| {
+        !app.job_rows()
+            .iter()
+            .any(|row| matches!(row, super::super::jobs::Row::Job(_)))
+    })
 }
