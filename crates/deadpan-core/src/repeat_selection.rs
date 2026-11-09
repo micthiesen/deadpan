@@ -417,6 +417,37 @@ fn gaps_plan(
         .parent_of(node)
         .ok_or_else(|| unavailable("Repeat needs a Sequence parent"))?;
     let (slot, range) = child_range(document, &parent, node)?;
+    validate_gap_request(document, node, gap, branches)?;
+    // Only the structural duration matters here. Sound relations transform in
+    // the enclosing transaction, so they must not constrain the trial tree.
+    let mut trial = document.clone();
+    trial.sounds.clear();
+    trial.sound_routes.clear();
+    trial.sound_allowances.clear();
+    reduce_gaps(&mut trial, node, gap, branches, allocation)?;
+    crate::audio_binding_lifecycle::prune(&mut trial);
+    let output_duration = trial.durations()?[node];
+    checked_total(document, range.duration(), output_duration)?;
+    Ok((
+        PlaysPlan {
+            parent,
+            slot,
+            range,
+            output_duration,
+        },
+        trial,
+    ))
+}
+
+/// Admit a complete gap set for `node`'s current plays: distinct branches after
+/// plays that are followed by a rendered gap, fresh identities and positive
+/// durations. A final play's dormant gap is not a target.
+pub(crate) fn validate_gap_request(
+    document: &ProjectDocument,
+    node: &NodeId,
+    gap: Option<&HoldRecipe>,
+    branches: &[RepeatGapHold],
+) -> Result<(), EditError> {
     let NodeKind::Repeat { iterations, .. } = &document.nodes()[node].kind else {
         return Err(EditError::new(
             EditErrorCode::WrongNodeKind,
@@ -460,29 +491,11 @@ fn gaps_plan(
             "a default gap needs a positive duration; omit it to remove the gap",
         ));
     }
-    // Only the structural duration matters here. Sound relations transform in
-    // the enclosing transaction, so they must not constrain the trial tree.
-    let mut trial = document.clone();
-    trial.sounds.clear();
-    trial.sound_routes.clear();
-    trial.sound_allowances.clear();
-    reduce_gaps(&mut trial, node, gap, branches, allocation)?;
-    crate::audio_binding_lifecycle::prune(&mut trial);
-    let output_duration = trial.durations()?[node];
-    checked_total(document, range.duration(), output_duration)?;
-    Ok((
-        PlaysPlan {
-            parent,
-            slot,
-            range,
-            output_duration,
-        },
-        trial,
-    ))
+    Ok(())
 }
 
 /// The plain structural change: the default gap, then each independent Hold.
-fn reduce_gaps(
+pub(crate) fn reduce_gaps(
     document: &mut ProjectDocument,
     node: &NodeId,
     gap: Option<&HoldRecipe>,
@@ -549,7 +562,7 @@ fn reduce_gaps(
 }
 
 /// Absolute end of `repeat`'s first play, which no gap change can move.
-fn first_play_end(
+pub(crate) fn first_play_end(
     document: &ProjectDocument,
     repeat: &NodeId,
     start: ProjectFrame,

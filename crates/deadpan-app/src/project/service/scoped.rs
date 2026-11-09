@@ -194,6 +194,126 @@ pub(super) fn prepare(
 
 /// The occurrence's exact root interval. A speed change or crop between the
 /// play and the beat would make its local clock differ from the Edit clock.
+/// `:repeat [N] gap=…` on the Repeat shown in one play: the count first, then
+/// the complete gap set, as at top level. Each gap holds the last picture of
+/// the Repeat's first play in this occurrence, with the composition below the
+/// Repeat captured; later gaps become fresh independent Holds.
+fn gap_edit(
+    workspace: &Workspace,
+    instance: &deadpan_core::InstancePath,
+    start: i64,
+    plays: Option<u32>,
+    gap: crate::navigation::escalation::GapInput,
+    revision: &RevisionId,
+    timing: deadpan_core::AudioTimingId,
+) -> Result<deadpan_core::OccurrenceEdit> {
+    let document = &workspace.document;
+    let repeat = &instance.node;
+    let Some(deadpan_core::NodeKind::Repeat {
+        child,
+        iterations,
+        gap: current,
+        ..
+    }) = document.nodes().get(repeat).map(|node| &node.kind)
+    else {
+        return Err("Select a Repeat to set its gaps in this play. Wrap a beat first with :repeat N, then set its gaps.".into());
+    };
+    let plays = plays.unwrap_or(iterations.len());
+    if plays == 0 {
+        return Err("A Repeat needs at least one total play.".into());
+    }
+    let rate = document.presentation_basis().frame_rate;
+    let durations = gap
+        .lengths(plays, rate)?
+        .into_iter()
+        .map(|length| length.resolve(rate).map_err(display))
+        .collect::<Result<Vec<_>>>()?;
+    let rendered = plays.saturating_sub(1).max(1);
+    if u32::try_from(durations.len()).map_or(true, |count| count > rendered) {
+        return Err(format!(
+            "This Repeat has {rendered} gap{} between its plays.",
+            if rendered == 1 { "" } else { "s" }
+        ));
+    }
+    let provider = if durations.is_empty() {
+        None
+    } else {
+        let lengths = document.durations().map_err(display)?;
+        let layout = deadpan_core::RepeatLayout::compile_with_gap_overrides(
+            iterations,
+            child,
+            document.overrides().get(repeat),
+            current
+                .as_ref()
+                .map_or(deadpan_core::FrameDuration::ZERO, |gap| gap.duration),
+            document.gap_overrides().get(repeat),
+            &lengths,
+        )
+        .map_err(display)?;
+        let first = iterations.at(0).ok_or("The Repeat has no plays.")?;
+        let play = layout
+            .play(&first)
+            .ok_or("The Repeat's first play is missing.")?;
+        if play.duration == deadpan_core::FrameDuration::ZERO {
+            return Err(
+                "The Repeat's first play is empty, so a gap has no picture to hold.".into(),
+            );
+        }
+        let frame = start
+            .checked_add(play.start)
+            .and_then(|value| value.checked_add(play.duration.frames() - 1))
+            .ok_or("The Repeat's first play overflows.")?;
+        Some(deadpan_cli::pause::gap_provider(
+            document,
+            &workspace.plan,
+            repeat,
+            deadpan_core::ProjectFrame(frame),
+            &mut |asset| {
+                workspace
+                    .sources
+                    .get(asset)
+                    .and_then(|source| source.video_index.clone())
+                    .ok_or_else(|| {
+                        "A gap needs the registered original's measured video index.".into()
+                    })
+            },
+        )?)
+    };
+    let recipe = |duration| {
+        let provider = provider.clone().expect("gaps resolve a picture");
+        deadpan_core::HoldRecipe {
+            duration,
+            video: provider.video,
+            audio: deadpan_core::HoldAudio::Silence,
+            picture_context: provider.picture_context,
+        }
+    };
+    // Play identities after the count, exactly as the core reducer names them.
+    let order = iterations
+        .resized(plays, revision.clone())
+        .map_err(display)?;
+    let branches = durations
+        .iter()
+        .skip(1)
+        .enumerate()
+        .map(|(index, duration)| {
+            Ok(deadpan_core::RepeatGapHold {
+                after: order
+                    .at(u32::try_from(index + 1).map_err(display)?)
+                    .ok_or("A gap follows a missing play.")?,
+                id: node(),
+                hold: recipe(*duration),
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+    Ok(deadpan_core::OccurrenceEdit::SetRepeatGaps {
+        plays,
+        gap: durations.first().copied().map(recipe),
+        branches,
+        timing,
+    })
+}
+
 fn occurrence_interval(
     document: &deadpan_core::ProjectDocument,
     instance: &deadpan_core::InstancePath,
@@ -423,6 +543,19 @@ impl Service {
                 deadpan_core::OccurrenceEdit::SetRepeatPlays { plays, timing },
                 deadpan_core::ProjectFrame(start),
                 format!("Repeat set to {plays} total plays in this play only and saved"),
+            ),
+            ScopedStructure::SetGaps { plays, gap } => (
+                gap_edit(
+                    workspace,
+                    &instance,
+                    start,
+                    plays,
+                    gap,
+                    &new_revision,
+                    timing,
+                )?,
+                deadpan_core::ProjectFrame(start),
+                "Repeat gaps set in this play only and saved".to_owned(),
             ),
         };
         let needs = document

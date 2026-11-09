@@ -393,3 +393,100 @@ fn setting_plays_in_one_play_recounts_that_repeat_only_and_undoes() {
     assert!(restored.overrides().is_empty());
     assert_eq!(restored.duration().unwrap().frames(), 100);
 }
+
+fn frames(count: i64) -> crate::navigation::duration::DurationInput {
+    crate::navigation::duration::DurationInput::Frames(FrameDuration::new(count).unwrap())
+}
+
+#[test]
+fn setting_gaps_in_one_play_changes_that_repeat_only_and_undoes() {
+    let scratch = tempfile::tempdir().unwrap();
+    let (service, opened) = open_counted(&scratch.path().join("gaps.deadpan"));
+    let before = (*opened.document).clone();
+    let shared = plays_of(&before, &node("xr"));
+    let chosen = target(&opened, "xr", &[("rep", 1)], 35);
+    // `:repeat 3 gap=5f gap-step=-2f`: three plays of x with a 5f gap and
+    // a 3f Hold after the second play, so xr grows from 20 to 38 frames.
+    let gaps = ScopedStructure::SetGaps {
+        plays: Some(3),
+        gap: crate::navigation::escalation::GapInput {
+            first: frames(5),
+            step: Some((true, frames(2))),
+        },
+    };
+    let update = structure(&service, &chosen, gaps);
+    assert!(update.error.is_none(), "{:?}", update.error);
+    let document = &update.workspace.as_ref().unwrap().document;
+    assert_eq!(document.duration().unwrap().frames(), 118);
+    // Plays 1 and 3 keep the shared, gapless two-play definition.
+    assert_eq!(plays_of(document, &node("xr")), shared);
+    let NodeKind::Repeat { gap, .. } = &document.nodes()[&node("xr")].kind else {
+        panic!("Repeat")
+    };
+    assert!(gap.is_none());
+    assert!(document.gap_overrides().get(&node("xr")).is_none());
+    let copy = owned(document, &node("rep"), &play("rep", 1));
+    let changed = children(document, &copy)[0].clone();
+    let NodeKind::Repeat { gap, .. } = &document.nodes()[&changed].kind else {
+        panic!("Repeat")
+    };
+    assert_eq!(
+        gap.as_ref().unwrap().duration,
+        FrameDuration::new(5).unwrap()
+    );
+    let plays = plays_of(document, &changed);
+    assert_eq!(plays.len(), 3);
+    assert_eq!(plays[..2], shared[..]);
+    // The later gap is a fresh independent Hold after the second play.
+    let branches = &document.gap_overrides()[&changed];
+    assert_eq!(branches.len(), 1);
+    let (after, hold) = branches.iter().next().unwrap();
+    assert_eq!(after, &shared[1]);
+    assert!(!before.nodes().contains_key(hold));
+    assert!(matches!(
+        &document.nodes()[hold].kind,
+        NodeKind::Hold { recipe } if recipe.duration == FrameDuration::new(3).unwrap()
+    ));
+    let committed = update.committed.as_ref().unwrap();
+    let receipt = committed.scoped.as_ref().unwrap();
+    assert_eq!(receipt.target.node, changed);
+    assert_eq!(committed.cursor, Some(ProjectFrame(30)));
+    assert!(
+        update
+            .message
+            .as_deref()
+            .is_some_and(|message| message.contains("gaps set in this play only")),
+        "{:?}",
+        update.message
+    );
+    // Asking again for the same plays and gaps saves nothing.
+    let mut next = target(&update.workspace.clone().unwrap(), "xr", &[("rep", 1)], 35);
+    next.target = receipt.target.clone();
+    next.presentation = receipt.presentation.clone();
+    let same = structure(&service, &next, gaps);
+    assert!(
+        same.error
+            .as_deref()
+            .is_some_and(|error| error.contains("already has these plays and gaps")),
+        "{:?}",
+        same.error
+    );
+    // A plain beat has no gaps to set in this play.
+    let plain = structure(
+        &service,
+        &target(&update.workspace.clone().unwrap(), "y", &[("rep", 0)], 25),
+        gaps,
+    );
+    assert!(
+        plain
+            .error
+            .as_deref()
+            .is_some_and(|error| error.contains("Wrap a beat first")),
+        "{:?}",
+        plain.error
+    );
+    let restored = undo(&service, document);
+    assert_eq!(restored.nodes(), before.nodes());
+    assert!(restored.overrides().is_empty());
+    assert_eq!(restored.duration().unwrap().frames(), 100);
+}

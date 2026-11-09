@@ -421,3 +421,167 @@ fn setting_the_same_plays_in_one_play_refuses_without_an_edit() {
         .unwrap_err();
     assert!(error.message.contains("selected Repeat"), "{error}");
 }
+
+fn gap_edit(
+    name: &str,
+    plays: u32,
+    gap: Option<i64>,
+    branches: &[(u32, &str, i64)],
+) -> OccurrenceEdit {
+    // Play IDs after the count: surviving inner plays, then this revision's.
+    let order = IterationOrder::new(revision("inner-plays"), 2)
+        .unwrap()
+        .resized(plays, revision(name))
+        .unwrap();
+    OccurrenceEdit::SetRepeatGaps {
+        plays,
+        gap: gap.map(recipe),
+        branches: branches
+            .iter()
+            .map(|(after, node, frames)| RepeatGapHold {
+                after: order.at(*after).unwrap(),
+                id: id(node),
+                hold: recipe(*frames),
+            })
+            .collect(),
+        timing: timing(name),
+    }
+}
+
+#[test]
+fn setting_gaps_in_one_play_adds_fresh_holds_there_and_keeps_later_clocks() {
+    deadpan_core::with_reference_timing_representation(|| {
+        let before = nested();
+        let shared = plays_of(&before, &id("inner"));
+        // Three plays of b with a 2f default gap and a 1f Hold after play 2:
+        // inner grows from 2 to 6 frames, so the tail moves from 12 to 16.
+        let (request, target, presentation) = occurrence(
+            &before,
+            "gaps",
+            second_play("inner"),
+            gap_edit("gaps", 3, Some(2), &[(1, "gap-hold", 1)]),
+        );
+        let after = edit(&before, request);
+        assert_eq!(after.duration().unwrap(), duration(18));
+        // The shared definition keeps two gapless plays in plays 1 and 3.
+        let NodeKind::Repeat { gap, .. } = &after.nodes()[&id("inner")].kind else {
+            panic!("Repeat")
+        };
+        assert_eq!(gap, &None);
+        assert!(after.gap_overrides().get(&id("inner")).is_none());
+        assert_eq!(plays_of(&after, &id("inner")), shared);
+        assert_eq!(play_root(&after, 0), id("body"));
+        assert_eq!(play_root(&after, 2), id("body"));
+        let owned = kids(&after, &play_root(&after, 1));
+        let inner = owned[1].clone();
+        assert_eq!(target.node, inner);
+        assert_eq!(presentation.node, inner);
+        assert!(target.matches_instance(&after, &presentation).unwrap());
+        let NodeKind::Repeat { gap, child, .. } = &after.nodes()[&inner].kind else {
+            panic!("Repeat")
+        };
+        assert_eq!(gap, &Some(recipe(2)));
+        let child = child.clone();
+        let counted = plays_of(&after, &inner);
+        assert_eq!(counted[..2], shared[..]);
+        assert_eq!(counted[2].allocation, revision("gaps"));
+        // The named gap is a fresh independent Hold after the second play.
+        let branches: Vec<_> = after.gap_overrides()[&inner]
+            .iter()
+            .map(|(after_play, root)| (after_play.clone(), root.clone()))
+            .collect();
+        assert_eq!(branches, vec![(shared[1].clone(), id("gap-hold"))]);
+        assert!(matches!(
+            &after.nodes()[&id("gap-hold")].kind,
+            NodeKind::Hold { recipe: hold } if *hold == recipe(1)
+        ));
+        // At 30000/1001 each moved owner keeps its old entry: the tail at
+        // 12 (B = 19219), c at 7 (B = 11211), play 3 at 8 (B = 12813) and
+        // b's second play in this occurrence, moved from 6 to 8 (B = 9610).
+        assert_eq!(
+            reference_at_anchor(&after, &id("tail")),
+            ExactRatio::integer(19219)
+        );
+        assert_eq!(
+            anchored(&after, &in_play(&owned[2], 1)),
+            ExactRatio::integer(11211)
+        );
+        assert_eq!(
+            anchored(&after, &in_play(&id("a"), 2)),
+            ExactRatio::integer(12813)
+        );
+        let mut second_b = in_play(&child, 1);
+        second_b.repeats.push(RepeatInstance {
+            node: inner.clone(),
+            iteration: shared[1].clone(),
+        });
+        assert_eq!(anchored(&after, &second_b), ExactRatio::integer(9610));
+
+        // A gap-only change keeps the count and replaces the gap set: the
+        // named Hold ends and the default shortens to 1f.
+        let (request, ..) = occurrence(
+            &after,
+            "shorter",
+            InstancePath {
+                node: inner.clone(),
+                repeats: second_play("inner").repeats,
+            },
+            OccurrenceEdit::SetRepeatGaps {
+                plays: 3,
+                gap: Some(recipe(1)),
+                branches: vec![],
+                timing: timing("shorter"),
+            },
+        );
+        let shorter = edit(&after, request);
+        assert_eq!(shorter.duration().unwrap(), duration(17));
+        assert!(!shorter.nodes().contains_key(&id("gap-hold")));
+        assert!(shorter.gap_overrides().get(&inner).is_none());
+        assert_eq!(plays_of(&shorter, &inner), counted);
+        assert_eq!(plays_of(&shorter, &id("inner")), shared);
+    })
+}
+
+#[test]
+fn setting_the_same_gaps_in_one_play_refuses_without_an_edit() {
+    let before = nested();
+    let same = OccurrenceEdit::SetRepeatGaps {
+        plays: 2,
+        gap: None,
+        branches: vec![],
+        timing: timing("same"),
+    };
+    let error = before
+        .occurrence_structure_requirements(&second_play("inner"), &same)
+        .unwrap_err();
+    assert!(
+        error.message.contains("already has these plays and gaps"),
+        "{error}"
+    );
+    let request = request(
+        &before,
+        "same",
+        Command::EditOccurrence {
+            instance: second_play("inner"),
+            edit: same,
+            identities: OccurrenceIdentities {
+                nodes: (0..8).map(|n| id(&format!("same-{n}"))).collect(),
+                marks: vec![],
+            },
+        },
+    );
+    let error = apply(&before, &request).unwrap_err();
+    assert!(
+        error.message.contains("already has these plays and gaps"),
+        "{error}"
+    );
+    // A gap after the last play is dormant and cannot be named.
+    let (request, ..) = occurrence(
+        &before,
+        "last",
+        second_play("inner"),
+        gap_edit("last", 3, Some(1), &[(2, "late", 1)]),
+    );
+    let error = apply(&before, &request).unwrap_err();
+    assert!(error.message.contains("not the last"), "{error}");
+}

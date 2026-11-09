@@ -270,6 +270,9 @@ fn occurrence<'a>(edit: &'a OccurrenceEdit, nodes: &mut Vec<&'a NodeId>) {
         | OccurrenceEdit::RepeatChild { id, .. }
         | OccurrenceEdit::WrapRetime { id, .. }
         | OccurrenceEdit::IsolateGap { id, .. } => nodes.push(id),
+        OccurrenceEdit::SetRepeatGaps { branches, .. } => {
+            nodes.extend(branches.iter().map(|branch| &branch.id));
+        }
         _ => {}
     }
 }

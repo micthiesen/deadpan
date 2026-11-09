@@ -563,8 +563,8 @@ fn play_lengths(d: &Driver<'_>, repeat: &NodeId) -> Result<Vec<i64>, String> {
         .collect())
 }
 
-/// `s`, `rr`, `dd` and `:repeat N` inside play 2 change only that play, keep
-/// the inspector on the result, and undo in four steps.
+/// `s`, `rr`, `dd`, `:repeat N` and `:repeat N gap=` inside play 2 change only
+/// that play, keep the inspector on the result, and undo in five steps.
 fn play_structure(d: &mut Driver<'_>, repeat: &NodeId) -> Result<(), String> {
     while d.app().scoped.is_some() {
         d.key(Key::Escape)?;
@@ -702,14 +702,52 @@ fn play_structure(d: &mut Driver<'_>, repeat: &NodeId) -> Result<(), String> {
     )?;
     painted(d, "3 total plays in this play only")?;
     d.capture("Play 2 split, its right part repeated three times and its left part deleted")?;
-    for _ in 0..4 {
+    // :repeat 4 gap=6f grows the same Repeat and adds its gaps in play 2 only.
+    let edited = d.revision();
+    d.command("repeat 4 gap=6f")?;
+    d.changed(&edited)?;
+    idle(d)?;
+    let lengths = play_lengths(d, repeat)?;
+    let selected = d.app().scoped_target()?.map(|target| target.target.node);
+    let (counted, gap) = selected
+        .as_ref()
+        .and_then(|node| {
+            document(d)
+                .ok()
+                .and_then(|doc| match &doc.nodes().get(node)?.kind {
+                    NodeKind::Repeat {
+                        iterations, gap, ..
+                    } => Some((
+                        Some(iterations.len()),
+                        gap.as_ref().map(|gap| gap.duration.frames()),
+                    )),
+                    _ => None,
+                })
+        })
+        .unwrap_or((None, None));
+    d.check(
+        ":repeat 4 gap=6f on the Repeat inside play 2 sets its plays and gaps there only",
+        lengths[1] == 4 * right + 18
+            && lengths[0] == before[0]
+            && lengths[2] == before[2]
+            && selected == recounted
+            && counted == Some(4)
+            && gap == Some(6)
+            && document(d)?.nodes()[&shared] == shared_node
+            && d.app().error.is_none(),
+        json!({"plays":[before[0], 4 * right + 18, before[2]],"selected":"same Repeat","total_plays":4,"gap":6}),
+        json!({"plays":lengths,"selected":selected,"total_plays":counted,"gap":gap,"error":d.app().error}),
+    )?;
+    painted(d, "gaps set in this play only")?;
+    d.capture("The Repeat inside play 2 plays four times with 6f gaps")?;
+    for _ in 0..5 {
         let edited = d.revision();
         d.key(Key::U)?;
         d.changed(&edited)?;
         idle(d)?;
     }
     d.check(
-        "Four Undos restore every play and play 2's earlier branch exactly",
+        "Five Undos restore every play and play 2's earlier branch exactly",
         play_lengths(d, repeat)? == before
             && document(d)?.nodes() == original.nodes()
             && document(d)?.overrides() == original.overrides(),

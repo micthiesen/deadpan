@@ -275,6 +275,123 @@ pub(crate) fn set_repeat_plays(
     Ok(result)
 }
 
+/// Change an existing Repeat's total plays and complete gap set in its play
+/// only, as the root `SetRepeatPlays` then `SetRepeatGaps` would: surviving
+/// plays keep their identities, named gaps become fresh independent Holds and
+/// unnamed branches end. Later plays and gaps inside the Repeat and everything
+/// after it keep their own pre-edit clocks.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn set_repeat_gaps(
+    original: &ProjectDocument,
+    document: &ProjectDocument,
+    instance: &InstancePath,
+    plays: u32,
+    gap: Option<&crate::HoldRecipe>,
+    branches: &[crate::RepeatGapHold],
+    timing: &AudioTimingId,
+    allocation: &crate::RevisionId,
+) -> Result<ProjectDocument, EditError> {
+    let node = &instance.node;
+    let current = repeat_plays(document, node, plays)?;
+    if gaps_unchanged(document, node, plays, gap, branches) {
+        return Err(unchanged_gaps());
+    }
+    validate_timing(document, timing, allocation)?;
+    if original.nodes().values().any(|node| {
+        matches!(&node.kind, NodeKind::Repeat { iterations, .. }
+            if iterations.segments().any(|(existing, _, _)| existing == allocation))
+    }) {
+        return Err(EditError::new(
+            EditErrorCode::IdentityConflict,
+            "Repeat reuses an existing allocation",
+        ));
+    }
+    if !document.sound_allowances.is_empty() {
+        return Err(invalid(
+            "one-play Repeat gaps cannot yet carry sound allowances; remove the sound events first",
+        ));
+    }
+    let site = site(document, instance)?;
+    // The structural change alone, on a trial copy: the count first, so the
+    // named gaps follow the plays that will exist.
+    let reduce = |target: &mut ProjectDocument| -> Result<(), EditError> {
+        if plays != current {
+            let NodeKind::Repeat { gap: old, .. } = &target.nodes()[node].kind else {
+                unreachable!("admitted Repeat")
+            };
+            let command = Command::SetRepeat {
+                node: node.clone(),
+                plays,
+                gap: old.clone(),
+            };
+            crate::command::reduce(target, &command, allocation)?;
+        }
+        crate::repeat_selection::validate_gap_request(target, node, gap, branches)?;
+        crate::repeat_selection::reduce_gaps(target, node, gap, branches, allocation)
+    };
+    let mut trial = document.clone();
+    reduce(&mut trial)?;
+    crate::audio_binding_lifecycle::prune(&mut trial);
+    let duration = trial.durations()?[node].frames();
+    let total = document.duration()?.frames();
+    let mut working = document.clone();
+    working.audio_bindings = crate::capture_unbound_audio_bindings(document, timing.clone())?;
+    // Later plays and gaps move with the gaps before them; each keeps its
+    // own pre-edit clock, captured once before the tree changes.
+    let first_end =
+        crate::repeat_selection::first_play_end(document, node, ProjectFrame(site.start))?;
+    if first_end.0 < site.end {
+        let interior = next_timing(&working, timing)?;
+        working = composite::prepare_owners(
+            &working,
+            &composite::repeat_interior_owners(&working, node)?,
+            first_end,
+            site.end,
+            &interior,
+        )?;
+    }
+    if duration != site.end - site.start && site.end < total {
+        let suffix = next_timing(&working, timing)?;
+        let affected = composite::occurrence_shifted_owners(&working, &site.parent, site.slot + 1)?;
+        working =
+            composite::prepare_owners(&working, &affected, ProjectFrame(site.end), total, &suffix)?;
+    }
+    let mut result = working.clone();
+    reduce(&mut result)?;
+    crate::audio_binding_lifecycle::prune(&mut result);
+    let command = Command::SetRepeat {
+        node: node.clone(),
+        plays,
+        gap: gap.cloned(),
+    };
+    crate::audio_lineage::reconcile(&working, &mut result, &command)?;
+    result.marks = crate::marks::transform_marks(&working, &result, &command)?;
+    crate::audio_binding_lifecycle::prune(&mut result);
+    result.validate()?;
+    Ok(result)
+}
+
+/// Whether the request leaves the Repeat's count and every gap as they are.
+pub(crate) fn gaps_unchanged(
+    document: &ProjectDocument,
+    node: &NodeId,
+    plays: u32,
+    gap: Option<&crate::HoldRecipe>,
+    branches: &[crate::RepeatGapHold],
+) -> bool {
+    let requested: Vec<_> = branches
+        .iter()
+        .map(|branch| (branch.after.clone(), branch.hold.clone()))
+        .collect();
+    matches!(&document.nodes()[node].kind,
+        NodeKind::Repeat { iterations, .. } if iterations.len() == plays)
+        && document.repeat_gaps_unchanged(node, gap, &requested)
+}
+
+pub(crate) fn unchanged_gaps() -> EditError {
+    unavailable("the Repeat already has these plays and gaps in this play; no edit was made")
+}
+
 /// The selected Repeat's current total plays, refusing other beats.
 pub(crate) fn repeat_plays(
     document: &ProjectDocument,

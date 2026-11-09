@@ -959,6 +959,12 @@ pub enum ScopedStructure {
     Repeat { plays: u32 },
     /// Set the selected Repeat's total plays in this play.
     SetPlays { plays: u32 },
+    /// Set the selected Repeat's gaps, and optionally its total plays first,
+    /// in this play.
+    SetGaps {
+        plays: Option<u32>,
+        gap: crate::navigation::escalation::GapInput,
+    },
 }
 
 /// Ordinary node operations edit direct children of the captured Sequence scope.
@@ -976,7 +982,7 @@ pub enum ProjectEdit {
         black: bool,
         ai: bool,
     },
-    /// `s`, `dd`, `rr` and `:repeat N` on a beat inside Repeat contents with
+    /// `s`, `dd`, `rr` and `:repeat N [gap=]` on a beat inside Repeat contents with
     /// This play chosen at every enclosing Repeat: one `EditOccurrence` changes that
     /// occurrence only, isolating its plays outside-in.
     ScopedStructure {

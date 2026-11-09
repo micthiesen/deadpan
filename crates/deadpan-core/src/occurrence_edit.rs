@@ -61,6 +61,18 @@ pub enum OccurrenceEdit {
         plays: u32,
         timing: crate::AudioTimingId,
     },
+    /// Change an existing Repeat's total plays and complete gap set in this
+    /// occurrence only: the count first, then the default gap and fresh
+    /// independent Holds after the named plays; other branches end. Later
+    /// plays, gaps and owners keep their own clocks. The Repeat needs a
+    /// Sequence parent.
+    SetRepeatGaps {
+        plays: u32,
+        gap: Option<HoldRecipe>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        branches: Vec<crate::RepeatGapHold>,
+        timing: crate::AudioTimingId,
+    },
     Group {
         start: usize,
         end: usize,
@@ -173,6 +185,17 @@ impl OccurrenceEdit {
             Self::SetRepeatPlays { plays, timing } => Command::SetRepeatPlays {
                 node,
                 plays: *plays,
+                timing: timing.clone(),
+            },
+            Self::SetRepeatGaps {
+                gap,
+                branches,
+                timing,
+                ..
+            } => Command::SetRepeatGaps {
+                node,
+                gap: gap.clone(),
+                branches: branches.clone(),
                 timing: timing.clone(),
             },
             Self::RepeatChild { id, plays, .. } => Command::WrapRepeat {
@@ -477,6 +500,23 @@ pub(crate) fn apply_captured(
         OccurrenceEdit::SetRepeatPlays { plays, timing } => {
             return ripple::set_repeat_plays(
                 document, &result, &target, *plays, timing, allocation,
+            );
+        }
+        OccurrenceEdit::SetRepeatGaps {
+            plays,
+            gap,
+            branches,
+            timing,
+        } => {
+            return ripple::set_repeat_gaps(
+                document,
+                &result,
+                &target,
+                *plays,
+                gap.as_ref(),
+                branches,
+                timing,
+                allocation,
             );
         }
         _ => {}
