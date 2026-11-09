@@ -834,7 +834,7 @@ Native operator prefixes capture session, revision, bank version, ordinary scope
 cursor, selected child, Visual state, pane and chosen register. A changed context
 invalidates the capture permanently, including after returning to the same
 position. Single operations and recorded operations share `Operation::Apply` and
-the same saved-receipt handling. Original range `y` stays immediate and immutable.
+the same saved-receipt handling. Original range `y` stays immediate and immutable. The Original operator (`y3l` without a selected moment) captures the Original cursor, asset and qualification and copies through the copied-moment request, outside the semantic planner; Original macros do not record it.
 
 Context tracks the selected direct child and Visual endpoints separately from
 the absolute cursor. An extending selection's head must equal the cursor;

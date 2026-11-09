@@ -680,7 +680,7 @@ pub static SPECS: &[Spec] = &[
             "yank / yank_selection instructions; Original moments: macro yank_original",
             SEL,
         ),
-        help: "Copy the selected Original moment or Edit range into the selected register. Without an Edit selection use {copy.beat}, including for an empty group. Edit copies retain their captured revision through later edits and Undo. Copying leaves edit history unchanged.",
+        help: "Copy the selected Original moment or Edit range into the selected register. Without an Original selection {yank.operator} waits for a motion; without an Edit selection use {copy.beat}, including for an empty group. Edit copies retain their captured revision through later edits and Undo. Copying leaves edit history unchanged.",
     },
     Spec {
         id: "copy.beat",
@@ -699,10 +699,13 @@ pub static SPECS: &[Spec] = &[
         section: Section::CopyCut,
         keys: &[Keys::Editor(B::YankOperator)],
         commands: &[],
-        contexts: C::EDIT,
+        contexts: C::EDIT.or(C::ORIGINAL),
         replay: Replay::Recorded,
-        headless: eq("yank instruction", SEL),
-        help: "{yank.operator} + motion or object copies from the Edit cursor to a frame, beat, word, pause, shot or group boundary. One positive count goes before the operator or the motion, such as 5{yank.operator!}{frame.next!}; two counts refuse. A copy preserves the cursor and beat. An empty interval refuses. Pending input keeps its captured context and never times out.",
+        headless: eq(
+            "yank instruction; Original moments: macro yank_original",
+            SEL,
+        ),
+        help: "{yank.operator} + motion or object copies from the Edit cursor to a frame, beat, word, pause, shot or group boundary. One positive count goes before the operator or the motion, such as 5{yank.operator!}{frame.next!}; two counts refuse. A copy preserves the cursor and beat. An empty interval refuses. Pending input keeps its captured context and never times out. In the Original without a selected moment, {yank.operator} + a frame, word, sentence, pause, shot or start/end motion, or a word, sentence, pause or shot object, copies that half-open Original moment to the selected register, as a Visual copy does: {yank.operator!}3{frame.next!}, {yank.operator!}{pause.next!}. The Original cursor stays and no selection remains. Original Macros do not record it.",
     },
     Spec {
         id: "cut.operator",

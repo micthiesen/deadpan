@@ -4274,7 +4274,7 @@ impl DeadpanApp {
                         hints.tier(key_labels::Tier::Core);
                         if self.focused_workflow() && !self.beat_rows.is_empty() { self.add_editor_pair_hint(&mut hints, EditorKey::BeatNext, EditorKey::BeatPrevious, " ", "edit beat"); }
                         self.add_editor_hint(&mut hints, EditorKey::Visual, if self.moment.active { "finish selection" } else { "select moment" });
-                        self.add_editor_hint(&mut hints, EditorKey::Copy, "copy moment");
+                        if self.moment_routing_selection() == navigation::EditSelection::None { self.add_editor_hint(&mut hints, EditorKey::YankOperator, "+ motion: copy"); } else { self.add_editor_hint(&mut hints, EditorKey::Copy, "copy moment"); }
                         self.add_editor_hint(&mut hints, EditorKey::RegisterSelect, "register");
                         hints.push((":sequence".into(), if self.focused_workflow() { "Your edit" } else { "Sequence" }.into()));
                         if self.workspace.is_some() && self.selected_source.is_some() { self.add_editor_hint(&mut hints, EditorKey::Insert, if self.focused_workflow() { "reuse all" } else { "insert source" }); }

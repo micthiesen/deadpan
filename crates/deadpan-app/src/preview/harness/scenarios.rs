@@ -22,6 +22,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "edit-latency" => super::edit_latency::run(d),
         "nested-pause" => super::nested_pause::run(d),
         "original-moment" => super::moment::run(d),
+        "original-operator" => super::original_operator::run(d),
         "transcript" => super::transcript::run(d),
         "corrections" => super::corrections::run(d),
         "word-refinement" => super::word_refinement::run(d),

@@ -1315,7 +1315,12 @@ failure. Macro values carry no media provenance; copying and calling preserve
 their type distinctions. See [semantic macros](docs/SEMANTIC_MACROS.md).
 
 Normal Edit `y`/`d` motion prefixes and `yy`/`dd` use typed semantic selectors;
-Original and Visual `y` stay immediate. Capture context and register at the first
+Edit Visual `y` and Original `y` over a selected moment stay immediate. Without
+a moment selection, Original `y` is an operator over frame, word, sentence,
+pause, shot and start/end motions and speech/shot objects (never beats or
+groups): it copies the half-open interval from the captured Original cursor
+through the same copied-moment request as Visual `y`, keeps the cursor and
+leaves no selection; empty intervals refuse. Capture context and register at the first
 operator ancestor, including absence, and latch invalidation across movement
 away and back. One distance count may precede the operator or its motion; never
 multiply two counts or reinterpret a refused suffix as new navigation. Motions

@@ -24,7 +24,8 @@ new complete occurrences when invoked.
 In Normal Edit, `"ayy` copies the selected beat to **a**, and `"ay5l` copies
 the next five frames without moving the cursor. `"ad5l` cuts that interval.
 With a Visual range selected, `"ay` copies it immediately. Original ranges
-also use immediate `y` after selection.
+also use immediate `y` after selection; without one, `"ay3l` copies the next
+three Original frames to **a** without moving the Original cursor.
 
 ## Selection and lifetime
 

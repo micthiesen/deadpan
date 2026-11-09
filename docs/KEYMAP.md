@@ -72,10 +72,10 @@ The 16-key bound also applies to each composed operator-plus-motion path.
 | `group.enter`, `group.leave` | Group navigation; exact event position in Placed sounds |
 | `group.create`, `group.ungroup` | Name a selected beat/range with `,g`; neutral Ungroup has a command alias and no shipped key path |
 | `structure.explode`, `structure.duplicate` | `:explode` turns the selected Repeat into an ordinary group of its plays; `:duplicate` copies the Visual range, or else the selected beat, after itself. Command aliases only, no shipped key path or count; both are recordable and dot-repeatable |
-| `visual`, `copy` | Select time; immediate Original or Visual copy |
+| `visual`, `copy` | Select time; immediate copy of a selected Original moment or Visual range |
 | `object.inner_group`, `object.around_group` | `ig` / `ag`: Visual group contents / whole group; also compose after `y`, `d`, `r` |
 | `object.inner_beat`, `object.around_beat` | `ib` / `ab`: same beat picture range, excluding / including owned captions, cutaways, sounds and marks; also compose after `y`, `d`, `r`. Inner Repeat keeps captions, cutaways and marks on play 1; beat-owned sounds currently prevent either Repeat form |
-| `copy.beat`, `yank.operator`, `cut.operator` | Whole-beat copy and typed motion prefixes in Normal Edit |
+| `copy.beat`, `yank.operator`, `cut.operator` | Whole-beat copy and typed motion prefixes in Normal Edit; `yank.operator` also copies Original moments to a motion when no moment is selected |
 | `paste.after`, `paste.before` | Paste, or replace a captured Time range or group Object |
 | `split`, `cut.frames`, `cut.beat`, `cut.range` | Structural edits; range cut is Visual, beat cut is Normal |
 | `edit.repeat-last` | Repeat a picture cut, Repeat wrap/count change, Group, Ungroup, Explode or Duplicate at the current eligible target; default `.`, no count or held activation |

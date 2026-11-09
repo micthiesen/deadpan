@@ -822,6 +822,7 @@ pub(super) struct Compiled {
     normal: EditorTrie,
     visual: EditorTrie,
     original: EditorTrie,
+    original_visual: EditorTrie,
     definitions: Vec<Definition>,
     pub mode: KeyMode,
 }
@@ -936,18 +937,23 @@ impl Compiled {
         let normal = compile_mode(&definitions, false, RoutingDomain::Edit)?;
         let visual = compile_mode(&definitions, true, RoutingDomain::Edit)?;
         let original = compile_mode(&definitions, false, RoutingDomain::Original)?;
+        let original_visual = compile_mode(&definitions, true, RoutingDomain::Original)?;
         Ok(Self {
             normal,
             visual,
             original,
+            original_visual,
             definitions,
             mode,
         })
     }
 
     pub fn map(&self, selection: EditSelection, domain: RoutingDomain) -> &EditorTrie {
-        if domain != RoutingDomain::Edit {
+        if domain == RoutingDomain::Original && selection == EditSelection::None {
             &self.original
+        } else if domain != RoutingDomain::Edit {
+            // Sound focus has no moment selection and keeps the immediate copy.
+            &self.original_visual
         } else if selection == EditSelection::None {
             &self.normal
         } else {
@@ -1280,7 +1286,12 @@ impl Compiled {
     #[cfg(any(test, feature = "ui-harness"))]
     pub fn prefix_paths(&self) -> Vec<Vec<Stroke>> {
         let mut prefixes = Vec::new();
-        for trie in [&self.normal, &self.visual, &self.original] {
+        for trie in [
+            &self.normal,
+            &self.visual,
+            &self.original,
+            &self.original_visual,
+        ] {
             for path in branch_paths(trie) {
                 if !prefixes.contains(&path) {
                     prefixes.push(path);
@@ -1395,6 +1406,18 @@ fn speech_object_text(object: deadpan_core::SpeechObject) -> &'static str {
 }
 
 fn enabled(id: BindingId, visual: bool, domain: RoutingDomain) -> bool {
+    if domain != RoutingDomain::Edit {
+        // The Original without a moment selection replaces the immediate copy
+        // with the yank operator. Original Visual and Sound keep `y` immediate
+        // and otherwise share one grammar.
+        let operator = domain == RoutingDomain::Original && !visual;
+        match id {
+            BindingId::YankOperator => return operator,
+            BindingId::Copy => return !operator,
+            _ => {}
+        }
+    }
+    let visual = visual && domain == RoutingDomain::Edit;
     if matches!(
         id,
         BindingId::InnerGroup
@@ -1472,6 +1495,17 @@ fn compile_mode(
                 });
                 if kind.is_operator() {
                     for motion in definitions {
+                        // The Original has no beats or groups; its operator
+                        // composes only with frame, speech, analysis and end
+                        // boundaries.
+                        if domain != RoutingDomain::Edit
+                            && matches!(
+                                motion.rule.action,
+                                Action::Beat { .. } | Action::SelectObject(_)
+                            )
+                        {
+                            continue;
+                        }
                         let selector = match motion.rule.action.clone() {
                             Action::SelectObject(object) => {
                                 deadpan_core::SemanticSelector::TextObject { object }
@@ -1561,6 +1595,15 @@ fn compile_mode(
                                     },
                                     short: match kind {
                                         PrefixKind::Operator { cut } => match selector {
+                                            deadpan_core::SemanticSelector::Motion {
+                                                motion: deadpan_core::SemanticMotion::Scope { end },
+                                            } if domain != RoutingDomain::Edit => {
+                                                if end {
+                                                    "copies to the Original end"
+                                                } else {
+                                                    "copies to the Original start"
+                                                }
+                                            }
                                             deadpan_core::SemanticSelector::Motion { motion } => {
                                                 operator_description(cut, motion)
                                             }

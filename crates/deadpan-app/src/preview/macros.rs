@@ -243,6 +243,11 @@ impl Capture {
         })
     }
 
+    /// Whether this capture names the Original cursor rather than Your edit.
+    pub(super) fn captures_original(&self) -> bool {
+        self.context.original.is_some()
+    }
+
     pub(super) fn matches(&self, app: &DeadpanApp) -> bool {
         self.matches_without_selection(app) && app.selected_beat == self.context.selected_child
     }

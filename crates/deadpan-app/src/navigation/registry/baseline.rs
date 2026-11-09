@@ -197,6 +197,11 @@ fn editor_section(out: &mut String, mode: KeyMode, compiled: &Compiled, table: &
         (EditSelection::None, RoutingDomain::Edit, "normal"),
         (EditSelection::Range, RoutingDomain::Edit, "visual"),
         (EditSelection::None, RoutingDomain::Original, "original"),
+        (
+            EditSelection::Range,
+            RoutingDomain::Original,
+            "original-visual",
+        ),
     ] {
         let mut pending: Vec<Vec<Stroke>> = vec![Vec::new()];
         let mut lines = Vec::new();

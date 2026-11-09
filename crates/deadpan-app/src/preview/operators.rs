@@ -43,6 +43,23 @@ impl DeadpanApp {
             self.error = Some("Start the operator again to capture its context.".into());
             return;
         };
+        // An Original capture names the Original cursor. Its copy uses the
+        // copied-moment path, not the Edit planner.
+        let original = captured.target.as_ref().map_or(
+            self.view == View::Source,
+            macros::Capture::captures_original,
+        );
+        if original {
+            if cut {
+                self.error = Some(
+                    "The Original is never cut. Copy with y + motion, then paste in Your edit."
+                        .into(),
+                );
+                return;
+            }
+            self.yank_original_operator(selector, captured.target, captured.register);
+            return;
+        }
         let instruction = captured
             .register
             .map_or(Ok(RegisterName::unnamed()), RegisterName::new)

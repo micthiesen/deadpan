@@ -126,6 +126,16 @@ source PCM through both ordinary and retained audio clocks.
 In Original, `v` starts a temporal selection at the current boundary. Move with
 `h/l`, counted motions or `gg/G`; `v` finishes the range and `y` copies it.
 `Esc` clears the selection without clearing the copy. The Out frame is excluded.
+Without a selected moment, `y` waits for a motion or object instead, as in Your
+edit: `y3l`, `3yh`, `yw`, `yB`, `y]p`, `y[s`, `yG` and `ygg` copy the half-open
+range between the Original cursor and that boundary, and `yiw`, `yas`, `yip` or
+`yiS` copy the word, sentence, pause or shot under the cursor (around forms add
+the same at most 80 ms handles as Your edit, measured at the project rate).
+One positive count goes before the operator or the motion; two counts and empty
+intervals refuse. The copy uses the same request, measured-PTS mapping and
+register as Visual `y`; the cursor stays and no selection remains. The Original
+has no beats or groups, so `j/k`, `ib/ab` and `ig/ag` do not complete it, and
+it has no cut or Repeat operator. Original macros do not record copies.
 The lavender range bar represents measured elapsed source time, including VFR;
 its pointer snaps to measured presentation boundaries. The inspector shows both
 ordinal boundaries and measured elapsed seconds. Original selection and copying
@@ -141,7 +151,7 @@ it; ordinary edits and undo preserve it. The independent Edit range is bound to
 its revision and ordinary Sequence scope. `:splice` previews an explicit
 Replace selection choice with fixed removed bounds and locally refined Original
 endpoints. See [visual placement](SLICE_PLACEMENT.md). Named/persistent registers,
-the general Normal-mode yank operator, multiple-node registers and replacement
+multiple-node registers and replacement
 inside Repeat/Retime occurrences are
 still required.
 

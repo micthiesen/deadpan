@@ -183,6 +183,9 @@ fn original_visual_and_sound_preserve_their_immediate_copy_and_delete_routes() {
             EditSelection::Empty,
             EditSelection::Range,
         ] {
+            if domain == RoutingDomain::Original && selection == EditSelection::None {
+                continue; // The Original operator below.
+            }
             let mut bindings = Bindings::default();
             bindings.set_routing_domain(domain);
             assert_eq!(
@@ -228,7 +231,165 @@ fn original_visual_and_sound_preserve_their_immediate_copy_and_delete_routes() {
         press(&mut bindings, Key::Y),
         Some(Action::Invalid(_))
     ));
-    assert_eq!(press(&mut bindings, Key::Y), Some(Action::CopyMoment));
+    assert_eq!(press(&mut bindings, Key::Y), None);
+    assert!(bindings.operator_pending());
+    assert_eq!(press(&mut bindings, Key::L), Some(frames(false, true, 1)));
+}
+
+fn original() -> Bindings {
+    let mut bindings = Bindings::default();
+    bindings.set_routing_domain(RoutingDomain::Original);
+    bindings
+}
+
+fn chord(bindings: &mut Bindings, keys: &[(Key, bool)]) -> Option<Action> {
+    let mut last = None;
+    for &(key, shift) in keys {
+        let modifiers = if shift {
+            Modifiers::SHIFT
+        } else {
+            Modifiers::NONE
+        };
+        last = bindings.key(key, modifiers, false, false);
+    }
+    last
+}
+
+#[test]
+fn original_yank_without_a_moment_selection_composes_original_motions_and_objects() {
+    use deadpan_core::SpeechObject;
+    let motion = |motion| Action::Operator {
+        cut: false,
+        selector: Selector::Motion { motion },
+    };
+    let one = NonZeroU32::new(1).unwrap();
+    let cases: Vec<(Vec<(Key, bool)>, Action)> = vec![
+        (
+            vec![(Key::Y, false), (Key::L, false)],
+            frames(false, true, 1),
+        ),
+        (
+            vec![(Key::Y, false), (Key::H, false)],
+            frames(false, false, 1),
+        ),
+        (
+            vec![(Key::Num3, false), (Key::Y, false), (Key::L, false)],
+            frames(false, true, 3),
+        ),
+        (
+            vec![(Key::Y, false), (Key::Num3, false), (Key::L, false)],
+            frames(false, true, 3),
+        ),
+        (
+            vec![(Key::Y, false), (Key::W, false)],
+            motion(Motion::Words {
+                forward: true,
+                count: one,
+                end: false,
+            }),
+        ),
+        (
+            vec![(Key::Y, false), (Key::E, false)],
+            motion(Motion::Words {
+                forward: true,
+                count: one,
+                end: true,
+            }),
+        ),
+        (
+            vec![(Key::Y, false), (Key::B, true)],
+            motion(Motion::Sentences {
+                forward: false,
+                count: one,
+            }),
+        ),
+        (
+            vec![(Key::Y, false), (Key::CloseBracket, false), (Key::P, false)],
+            motion(Motion::Pauses {
+                forward: true,
+                count: one,
+            }),
+        ),
+        (
+            vec![(Key::Y, false), (Key::OpenBracket, false), (Key::S, false)],
+            motion(Motion::Shots {
+                forward: false,
+                count: one,
+            }),
+        ),
+        (
+            vec![(Key::Y, false), (Key::G, true)],
+            motion(Motion::Scope { end: true }),
+        ),
+        (
+            vec![(Key::Y, false), (Key::G, false), (Key::G, false)],
+            motion(Motion::Scope { end: false }),
+        ),
+        (
+            vec![(Key::Y, false), (Key::I, false), (Key::W, false)],
+            Action::Operator {
+                cut: false,
+                selector: Selector::Speech {
+                    object: SpeechObject::InnerWord,
+                },
+            },
+        ),
+        (
+            vec![(Key::Y, false), (Key::A, false), (Key::S, true)],
+            Action::Operator {
+                cut: false,
+                selector: Selector::Speech {
+                    object: SpeechObject::AroundShot,
+                },
+            },
+        ),
+    ];
+    for (keys, expected) in cases {
+        let mut bindings = original();
+        assert_eq!(chord(&mut bindings, &keys), Some(expected), "{keys:?}");
+        assert!(bindings.pending().is_empty());
+    }
+    // Two counts refuse, as in Your edit.
+    let mut bindings = original();
+    assert!(matches!(
+        chord(
+            &mut bindings,
+            &[
+                (Key::Num2, false),
+                (Key::Y, false),
+                (Key::Num3, false),
+                (Key::L, false)
+            ]
+        ),
+        Some(Action::Invalid(_))
+    ));
+    // The Original has no beats, groups or yy; these never complete a copy.
+    for keys in [
+        vec![(Key::Y, false), (Key::J, false)],
+        vec![(Key::Y, false), (Key::I, false), (Key::G, false)],
+        vec![(Key::Y, false), (Key::A, false), (Key::B, false)],
+        vec![(Key::Y, false), (Key::Y, false)],
+    ] {
+        let mut bindings = original();
+        assert!(
+            !matches!(
+                chord(&mut bindings, &keys),
+                Some(Action::Operator { .. } | Action::CopyMoment)
+            ),
+            "{keys:?}"
+        );
+    }
+    // Cut and Repeat operators stay Edit-only.
+    let mut bindings = original();
+    press(&mut bindings, Key::D);
+    assert!(!bindings.operator_pending());
+    // The pending prefix teaches its Original next keys.
+    let mut bindings = original();
+    press(&mut bindings, Key::Y);
+    let hint = bindings.pending_hint().unwrap();
+    assert!(hint.contains("copies forward in frames"), "{hint}");
+    assert!(hint.contains("copies to the Original end"), "{hint}");
+    assert!(!hint.contains("group") && !hint.contains("beat"), "{hint}");
 }
 
 #[test]

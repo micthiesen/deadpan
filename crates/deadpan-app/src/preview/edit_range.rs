@@ -1045,6 +1045,8 @@ impl DeadpanApp {
             && !self.event_focused()
         {
             self.edit_selection()
+        } else if self.routed_domain() == navigation::RoutingDomain::Original {
+            self.moment_routing_selection()
         } else {
             navigation::EditSelection::None
         }

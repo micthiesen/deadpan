@@ -1512,17 +1512,28 @@ mod tests {
                 Action::PasteMoment { before: true },
             ),
         ] {
+            // A selected moment keeps `y` immediate; without one it is the
+            // Original yank operator.
             let mut original = Bindings::default();
             original.set_routing_domain(RoutingDomain::Original);
-            assert_eq!(original.key(key, modifiers, false, false), Some(action));
+            assert_eq!(
+                original.key_with_selection(key, modifiers, false, false, EditSelection::Range),
+                Some(action)
+            );
             assert_eq!(Bindings::default().key(key, modifiers, true, false), None);
             assert_eq!(Bindings::default().key(key, modifiers, false, true), None);
             assert!(!allows_key_repeat(key, modifiers));
             let mut pending = Bindings::default();
             pending.set_routing_domain(RoutingDomain::Original);
-            pending.key(Key::Num3, Modifiers::NONE, false, false);
+            pending.key_with_selection(
+                Key::Num3,
+                Modifiers::NONE,
+                false,
+                false,
+                EditSelection::Range,
+            );
             assert!(matches!(
-                pending.key(key, modifiers, false, false),
+                pending.key_with_selection(key, modifiers, false, false, EditSelection::Range),
                 Some(Action::Invalid(_))
             ));
             assert!(pending.pending().is_empty());

@@ -31,6 +31,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "large-first-pause",
     "nested-pause",
     "original-moment",
+    "original-operator",
     "transcript",
     "corrections",
     "word-refinement",

@@ -109,6 +109,108 @@ impl Selection {
     }
 }
 
+fn operator_needs_analysis(selector: &deadpan_core::SemanticSelector) -> bool {
+    use deadpan_core::{SemanticMotion as M, SemanticSelector as S};
+    !matches!(
+        selector,
+        S::Motion {
+            motion: M::Frames { .. } | M::Scope { .. }
+        }
+    )
+}
+
+/// The nonempty half-open Original interval between `cursor` and the motion's
+/// boundary, or the object at the cursor, in Original picture ordinals.
+/// `speech` is the Original's analysis, required by everything except frame
+/// and end motions. `rate` caps around-object handles at 80 ms.
+fn operator_range(
+    selector: &deadpan_core::SemanticSelector,
+    cursor: u64,
+    length: u64,
+    speech: Option<&deadpan_core::SpeechTimeline>,
+    rate: deadpan_core::FrameRate,
+) -> Result<Range<u64>, String> {
+    use deadpan_core::{
+        ProjectFrame, SemanticMotion as M, SemanticSelector as S, SpeechMotion, SpeechUnit,
+    };
+    let cursor = cursor.min(length);
+    let frame = |value: u64| {
+        i64::try_from(value)
+            .map(ProjectFrame)
+            .map_err(|error| error.to_string())
+    };
+    let bounds = (frame(0)?, frame(length)?);
+    let speech = || speech.ok_or_else(|| "The Original's analysis is not ready.".to_owned());
+    let boundary =
+        |target: ProjectFrame| u64::try_from(target.0).map_err(|error| error.to_string());
+    let words = |motion: SpeechMotion| -> Result<u64, String> {
+        let speech = speech()?;
+        speech
+            .require(SpeechUnit::Word)
+            .map_err(|error| error.message)?;
+        boundary(speech.motion_target(frame(cursor)?, bounds, motion))
+    };
+    let (start, end) = match selector {
+        S::Speech { object } => {
+            let range = speech()?
+                .object_range(frame(cursor)?, bounds, *object, rate)
+                .map_err(|error| error.message)?;
+            (boundary(range.start())?, boundary(range.end())?)
+        }
+        S::Motion { motion } => {
+            let target = match *motion {
+                M::Frames { forward, count } => {
+                    navigation::boundary_step(cursor, length, forward, count.get())
+                }
+                M::Scope { end } => {
+                    if end {
+                        length
+                    } else {
+                        0
+                    }
+                }
+                M::Words {
+                    forward,
+                    count,
+                    end,
+                } => words(SpeechMotion {
+                    forward,
+                    count: count.get(),
+                    sentence: false,
+                    end,
+                })?,
+                M::Sentences { forward, count } => words(SpeechMotion {
+                    forward,
+                    count: count.get(),
+                    sentence: true,
+                    end: false,
+                })?,
+                M::Pauses { forward, count } => boundary(
+                    speech()?
+                        .pause_target(frame(cursor)?, bounds, forward, count.get())
+                        .map_err(|error| error.message)?,
+                )?,
+                M::Shots { forward, count } => boundary(
+                    speech()?
+                        .shot_target(frame(cursor)?, bounds, forward, count.get())
+                        .map_err(|error| error.message)?,
+                )?,
+                M::Beats { .. } => {
+                    return Err("The Original has no beats. Copy to a frame, word, sentence, pause, shot or end boundary.".into());
+                }
+            };
+            (cursor.min(target), cursor.max(target))
+        }
+        _ => {
+            return Err("The Original has no beats or groups. Copy to a frame, word, sentence, pause, shot or end boundary, or a word, sentence, pause or shot object.".into());
+        }
+    };
+    if start >= end {
+        return Err("The motion selects no Original time; nothing was copied.".into());
+    }
+    Ok(start..end)
+}
+
 /// Paste without a selected beat is defined only for an empty current group.
 fn paste_slot(rows: &[BeatRow], selected: Option<&NodeId>, before: bool) -> Result<usize, String> {
     if rows.is_empty() {
@@ -280,6 +382,78 @@ impl DeadpanApp {
                 return;
             }
         };
+        self.submit_original_copy(copied, destination);
+    }
+
+    /// Whether `y` finds an Original Visual selection to copy at once. An
+    /// active, even empty, or finished nonempty moment keeps `y` immediate;
+    /// otherwise `y` waits for a motion or object.
+    pub(super) fn moment_routing_selection(&self) -> navigation::EditSelection {
+        if self.moment.range().is_some() {
+            navigation::EditSelection::Range
+        } else if self.moment.active {
+            navigation::EditSelection::Empty
+        } else {
+            navigation::EditSelection::None
+        }
+    }
+
+    /// `y` + motion or object in the Original: copy the half-open interval from
+    /// the captured Original cursor to the motion's boundary, or the object's
+    /// range, through the same copied-moment path as Visual `y`. The cursor
+    /// stays put and no selection remains.
+    pub(super) fn yank_original_operator(
+        &mut self,
+        selector: deadpan_core::SemanticSelector,
+        target: Result<macros::Capture, String>,
+        destination: Option<char>,
+    ) {
+        self.bindings.clear();
+        self.reconcile_moment();
+        let result = (|| {
+            target?;
+            if self.view != View::Source {
+                return Err("Copy to a motion in Original (:source)".to_owned());
+            }
+            if self.moment_routing_selection() != navigation::EditSelection::None {
+                return Err("Copy the Original selection with y, or clear it with Esc before copying to a motion.".into());
+            }
+            let identity = self
+                .moment
+                .identity
+                .clone()
+                .ok_or("Choose a registered Original first")?;
+            let speech = if operator_needs_analysis(&selector) {
+                if !self.viewing_original() {
+                    return Err("Word, sentence, pause and shot boundaries follow the Original's analysis; view the Original to use them.".into());
+                }
+                Some(self.source_analysis()?)
+            } else {
+                None
+            };
+            let rate = self
+                .workspace
+                .as_ref()
+                .ok_or("Open a project before copying.")?
+                .document
+                .presentation_basis()
+                .frame_rate;
+            let ordinals = operator_range(
+                &selector,
+                self.source_cursor,
+                self.source_length(),
+                speech.as_deref(),
+                rate,
+            )?;
+            Ok(Copied { identity, ordinals })
+        })();
+        match result {
+            Ok(copied) => self.submit_original_copy(copied, destination),
+            Err(error) => self.error = Some(error),
+        }
+    }
+
+    fn submit_original_copy(&mut self, copied: Copied, destination: Option<char>) {
         let Some(serial) = self.next_serial() else {
             return;
         };
@@ -711,6 +885,108 @@ fn range_label(range: Option<&Range<u64>>, active: bool, bindings: &Bindings) ->
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn original_operator_ranges_are_half_open_from_the_cursor_and_refuse_empty_time() {
+        use deadpan_core::{
+            FrameRange, FrameRate, ProjectFrame, SemanticMotion as M, SemanticSelector as S,
+            SpeechObject, SpeechRun, SpeechTimeline,
+        };
+        use std::num::NonZeroU32;
+        let range = |start, end| FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap();
+        // Words [10,20) and [30,40) in one sentence, a pause [20,30).
+        let speech = SpeechTimeline::new(vec![
+            SpeechRun {
+                range: range(10, 20),
+                word: 0,
+                sentence: 0,
+            },
+            SpeechRun {
+                range: range(30, 40),
+                word: 1,
+                sentence: 0,
+            },
+        ])
+        .unwrap()
+        .with_pauses(vec![range(20, 30)])
+        .unwrap();
+        let rate = FrameRate::new(25, 1).unwrap();
+        let count = |n| NonZeroU32::new(n).unwrap();
+        let motion = |motion| S::Motion { motion };
+        let run = |selector: &S, cursor, speech: Option<&SpeechTimeline>| {
+            operator_range(selector, cursor, 100, speech, rate)
+        };
+        let frames = |forward, n| {
+            motion(M::Frames {
+                forward,
+                count: count(n),
+            })
+        };
+        assert_eq!(run(&frames(true, 3), 10, None), Ok(10..13));
+        assert_eq!(run(&frames(false, 3), 10, None), Ok(7..10));
+        // Counts clamp at the Original's ends; an empty result refuses.
+        assert_eq!(run(&frames(true, 500), 98, None), Ok(98..100));
+        assert!(run(&frames(true, 1), 100, None).is_err());
+        assert!(run(&frames(false, 1), 0, None).is_err());
+        assert_eq!(run(&motion(M::Scope { end: true }), 40, None), Ok(40..100));
+        assert_eq!(run(&motion(M::Scope { end: false }), 40, None), Ok(0..40));
+        assert!(run(&motion(M::Scope { end: false }), 0, None).is_err());
+        let words = |forward, end| {
+            motion(M::Words {
+                forward,
+                count: count(1),
+                end,
+            })
+        };
+        assert_eq!(run(&words(true, false), 12, Some(&speech)), Ok(12..30));
+        assert_eq!(run(&words(true, true), 12, Some(&speech)), Ok(12..20));
+        assert_eq!(run(&words(false, false), 35, Some(&speech)), Ok(30..35));
+        let pause = motion(M::Pauses {
+            forward: true,
+            count: count(1),
+        });
+        assert_eq!(run(&pause, 12, Some(&speech)), Ok(12..20));
+        // Analysis motions need the Original's analysis.
+        assert!(run(&pause, 12, None).is_err());
+        let object = |object| S::Speech { object };
+        assert_eq!(
+            run(&object(SpeechObject::InnerWord), 15, Some(&speech)),
+            Ok(10..20)
+        );
+        assert_eq!(
+            run(&object(SpeechObject::InnerPause), 25, Some(&speech)),
+            Ok(20..30)
+        );
+        // Around handles take half of each adjoining gap, at most 80 ms (2 frames).
+        assert_eq!(
+            run(&object(SpeechObject::AroundWord), 15, Some(&speech)),
+            Ok(8..22)
+        );
+        assert!(run(&object(SpeechObject::InnerWord), 25, Some(&speech)).is_err());
+        // The Original has no beats or groups.
+        assert!(
+            run(
+                &motion(M::Beats {
+                    forward: true,
+                    count: count(1)
+                }),
+                10,
+                None
+            )
+            .is_err()
+        );
+        assert!(run(&S::SelectedBeat, 10, None).is_err());
+        assert!(
+            run(
+                &S::TextObject {
+                    object: deadpan_core::SemanticTextObject::InnerGroup
+                },
+                10,
+                None
+            )
+            .is_err()
+        );
+    }
 
     fn identity(session: u64) -> Identity {
         Identity {

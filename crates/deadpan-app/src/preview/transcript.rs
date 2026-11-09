@@ -891,7 +891,7 @@ impl DeadpanApp {
     }
 
     /// The Original is the viewed source.
-    fn viewing_original(&self) -> bool {
+    pub(super) fn viewing_original(&self) -> bool {
         let original = self
             .workspace
             .as_ref()

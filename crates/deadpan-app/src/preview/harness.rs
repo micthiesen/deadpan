@@ -49,6 +49,7 @@ mod moment;
 mod moments;
 mod nested_pause;
 mod original_layout;
+mod original_operator;
 mod original_playback;
 mod palette;
 mod points;
