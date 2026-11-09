@@ -32,9 +32,15 @@ pub(crate) fn site(document: &ProjectDocument, instance: &InstancePath) -> Resul
         .cloned()
         .ok_or_else(|| unavailable("a one-play timing edit needs a beat inside the play"))?;
     let NodeKind::Sequence { children } = &document.nodes()[&parent].kind else {
-        return Err(unavailable(
-            "this beat is the play's whole contents; split it first, or press Enter to edit a beat in its group",
-        ));
+        let message = if matches!(
+            document.nodes()[&instance.node].kind,
+            NodeKind::Repeat { .. }
+        ) {
+            "this Repeat is the play's whole contents, so there is nothing around it to move; change it from the parent (Backspace) for every play"
+        } else {
+            "this beat is the play's whole contents; split it first, or press Enter to edit a beat in its group"
+        };
+        return Err(unavailable(message));
     };
     let slot = children
         .iter()
