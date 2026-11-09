@@ -3359,6 +3359,88 @@ pub fn role_repeat(dir: &Path) -> Result<Fixture> {
     Ok(fixture)
 }
 
+/// `:repeat 2 role=audio overflow=trim` over Edit [12, 22), across a real cut:
+/// a ripple delete of Edit [15, 17) first removes Original 27..28, so the
+/// range is Original 24..26 then 29..35 from two beats. Each beat's own sound
+/// plays again 10 frames (exactly 16,016 samples) later, cut at the last
+/// beat's end (Edit 28). The click (Original sample 48,000, now at Edit sample
+/// 25,578 after the 3,203-sample delete) sounds again at 41,594 over the muted
+/// repeat stretch; pictures are unchanged.
+pub fn role_repeat_across(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "role-repeat-across")?;
+    project.shorten()?;
+    project.delete_range(15, 17)?;
+    let saved = project.run_semantic(
+        json!([
+            {"type":"begin_selection"},
+            {"type":"move_frames","forward":true,"count":10},
+            {"type":"role_repeat","role":"audio","plays":2,"trim":true}
+        ]),
+        12,
+        None,
+    )?;
+    if saved.duration()?.frames() != BASE_FRAMES as i64 - 2 || saved.sounds().len() != 2 {
+        return Err(format!(
+            "unexpected cross-cut audio repeat: {} frames, {} root sounds",
+            saved.duration()?.frames(),
+            saved.sounds().len()
+        )
+        .into());
+    }
+    let shown = |frame: u64| original(BASE_START + frame + if frame >= 15 { 2 } else { 0 });
+    let expectations = [0u64, 12, 14, 15, 21, 22, 27]
+        .into_iter()
+        .map(|frame| (frame, shown(frame)))
+        .collect();
+    let mut fixture = project.finish(
+        vec!["Audio-only / video-only repeat (§6.5)"],
+        expectations,
+        Vec::new(),
+    )?;
+    fixture.audio = vec![(25_578, true), (41_594, true), (35_000, false)];
+    Ok(fixture)
+}
+
+/// `:repeat 2 role=video` over Edit [12, 18), across the same real cut (Edit
+/// [15, 17) deleted first): Edit 18..24 show the range's pictures again,
+/// Original 24, 25, 26 from the first beat and 29, 30, 31 from the second, in
+/// cutaways on the second beat, while every sound continues.
+pub fn video_repeat_across(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "video-repeat-across")?;
+    project.shorten()?;
+    project.delete_range(15, 17)?;
+    let saved = project.run_semantic(
+        json!([
+            {"type":"begin_selection"},
+            {"type":"move_frames","forward":true,"count":6},
+            {"type":"role_repeat","role":"video","plays":2}
+        ]),
+        12,
+        None,
+    )?;
+    if saved.duration()?.frames() != BASE_FRAMES as i64 - 2 || !saved.sounds().is_empty() {
+        return Err("unexpected cross-cut video repeat".into());
+    }
+    let mut expectations: Vec<(u64, Expected)> = vec![
+        (0, base(0)),
+        (12, original(24)),
+        (17, original(31)),
+        (24, original(38)),
+        (27, original(41)),
+    ];
+    expectations.extend(
+        [24u64, 25, 26, 29, 30, 31]
+            .into_iter()
+            .enumerate()
+            .map(|(n, ordinal)| (18 + n as u64, original(ordinal))),
+    );
+    project.finish(
+        vec!["Audio-only / video-only repeat (§6.5)"],
+        expectations,
+        Vec::new(),
+    )
+}
+
 /// A development `ffmpeg` CLI with `libx264`/`libx264rgb`
 /// (`DEADPAN_BRIDGE_FFMPEG`, else Homebrew's). Tests only: it generates the
 /// large fixture and encodes synthetic AI footage; Deadpan never links it.
@@ -3690,8 +3772,10 @@ pub fn partition_with_skips(
     partitions: usize,
 ) -> Result<(Vec<Fixture>, Vec<Skipped>)> {
     assert!(partitions > 0 && partition < partitions);
-    let builders: [(&str, Builder); 42] = [
+    let builders: [(&str, Builder); 44] = [
         ("ramp", ramp),
+        ("role-repeat-across", role_repeat_across),
+        ("video-repeat-across", video_repeat_across),
         ("triumphant-sting", triumphant_sting),
         ("micro-loop", micro_loop),
         ("gag-set", gag_set),
