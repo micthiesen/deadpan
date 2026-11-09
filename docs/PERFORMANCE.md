@@ -483,7 +483,10 @@ trigonometry at 44.1 to 48 kHz. Each preparation thread now keeps the last
 40 consecutive blocks at opt level 1 the resampler went from 27.1 ms to
 2.0 ms with bit-identical output
 (`resample::tests::thread_kernel_phases_keep_rendered_bits_across_blocks`
-asserts the identity). The remaining cost is spread over exact rational
+asserts the identity). The nested Split test itself still takes 375 s
+(2026-11-08, same conditions): its resampling time is the 256-tap
+convolution, not phase setup, so the cache helps sources whose rate differs
+from 48 kHz rather than this test. The remaining cost is spread over exact rational
 arithmetic and `BTreeMap<NodeId, _>` lookups in many plan queries, with no
 single dominant caller; that and continuous variable-rate DSP remain open
 DP-24 work.
