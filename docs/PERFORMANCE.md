@@ -473,6 +473,17 @@ comparing owner clocks, and source-voice recipe and selection checks. Owner
 clocks with equal steps are now compared by i128 cross-multiplication (exact
 fallback on overflow), and the plan caches checked recipes and selections per
 recipe (a cloned plan starts empty). The whole test went from 467 s to 377 s
-(opt level 1, this Mac, one thread, otherwise idle). The resampler is now the
-largest single cost; the remaining per-sample lookups and the resampler are
-open DP-24 work.
+(opt level 1, this Mac, one thread, otherwise idle). The resampler was then
+the largest single cost (a quarter of active samples). Its windowed-sinc
+weights for each fractional phase were cached only within one `render`, and
+sources are read in blocks of at most 256 outputs, each with a fresh
+`Resampler`, so every block recomputed up to 160 phases of 256 taps of
+trigonometry at 44.1 to 48 kHz. Each preparation thread now keeps the last
+(radius, cutoff) phase set between renders, bounded to 2 MiB of weights. On
+40 consecutive blocks at opt level 1 the resampler went from 27.1 ms to
+2.0 ms with bit-identical output
+(`resample::tests::thread_kernel_phases_keep_rendered_bits_across_blocks`
+asserts the identity). The remaining cost is spread over exact rational
+arithmetic and `BTreeMap<NodeId, _>` lookups in many plan queries, with no
+single dominant caller; that and continuous variable-rate DSP remain open
+DP-24 work.

@@ -241,12 +241,39 @@ impl Resampler {
         check_cancel(cancelled)?;
         let required = self.required_source_range(start, frames)?;
         let mixed = self.mix_window(&required, window, cancelled)?;
-        let mut samples = Vec::with_capacity(frames as usize);
         let radius = self.radius()?;
         let step = self.recipe.source_step.numerator() as f64
             / self.recipe.source_step.denominator() as f64;
         let cutoff = 0.95 / step.max(1.0);
-        let mut kernels = KernelPhases::default();
+        let kernel_key = (radius, cutoff.to_bits());
+        let mut kernels = KernelPhases::take_for_thread(kernel_key);
+        let result = self.render_samples(
+            start,
+            frames,
+            &required,
+            &mixed,
+            radius,
+            cutoff,
+            &mut kernels,
+            cancelled,
+        );
+        kernels.return_to_thread(kernel_key);
+        result
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn render_samples(
+        &self,
+        start: AudioSample,
+        frames: u32,
+        required: &Option<Range<i64>>,
+        mixed: &[[f64; 2]],
+        radius: i64,
+        cutoff: f64,
+        kernels: &mut KernelPhases,
+        cancelled: &AtomicBool,
+    ) -> Result<StereoBlock, PreparationError> {
+        let mut samples = Vec::with_capacity(frames as usize);
         let mut positions = PositionWalk::new(&self.recipe, start)?;
         for offset in 0..frames {
             check_cancel(cancelled)?;
@@ -257,13 +284,13 @@ impl Resampler {
                     .position(AudioSample(start.0 + i64::from(offset)))?,
             };
             let value = if self.identity() {
-                sample(&required, &mixed, i128::from(floor))
+                sample(required, mixed, i128::from(floor))
             } else {
                 let (weights, dc) = kernels.at(fraction, radius, cutoff);
                 let mut sum = [0.0; 2];
                 let first = i128::from(floor) - i128::from(radius) + 1;
                 let last = i128::from(floor) + i128::from(radius);
-                match &required {
+                match required {
                     Some(range)
                         if first >= i128::from(range.start) && last < i128::from(range.end) =>
                     {
@@ -277,7 +304,7 @@ impl Resampler {
                     _ => {
                         for (tap, weight) in ((-radius + 1)..=radius).zip(weights) {
                             let source =
-                                sample(&required, &mixed, i128::from(floor) + i128::from(tap));
+                                sample(required, mixed, i128::from(floor) + i128::from(tap));
                             sum[0] += weight * source[0];
                             sum[1] += weight * source[1];
                         }
@@ -400,20 +427,59 @@ fn gcd(mut left: i128, mut right: i128) -> i128 {
 /// Bounds one render's retained weights to 8 MiB.
 const MAX_KERNEL_WEIGHTS: usize = 1 << 20;
 
-/// Weights already evaluated in one render, keyed by exact fractional phase. A
-/// rational rate repeats few phases, and trigonometry otherwise dominated
-/// resampling. Equal inputs give the same bits, so sums are unchanged.
-#[derive(Default)]
+/// Bounds the weights one preparation thread keeps between renders to 2 MiB,
+/// enough for every phase of common rates (160 at 44.1 to 48 kHz).
+const THREAD_KERNEL_WEIGHTS: usize = 1 << 18;
+
+thread_local! {
+    /// The last (radius, cutoff) phase set used on this thread. A source
+    /// reads in blocks of at most 256 outputs, each with a fresh `Resampler`;
+    /// rebuilding every phase per block cost more than the convolution.
+    static THREAD_KERNELS: std::cell::RefCell<Option<((i64, u64), KernelPhases)>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// Weights already evaluated, keyed by exact fractional phase. A rational
+/// rate repeats few phases, and trigonometry otherwise dominated resampling.
+/// Equal inputs give the same bits, so sums are unchanged.
 struct KernelPhases {
     phases: HashMap<u64, (Vec<f64>, f64)>,
     uncached: (Vec<f64>, f64),
+    limit: usize,
+}
+
+impl Default for KernelPhases {
+    fn default() -> Self {
+        Self::with_limit(MAX_KERNEL_WEIGHTS)
+    }
 }
 
 impl KernelPhases {
+    fn with_limit(limit: usize) -> Self {
+        Self {
+            phases: HashMap::new(),
+            uncached: (Vec::new(), 0.0),
+            limit,
+        }
+    }
+
+    /// This thread's retained phases for `key`, or a fresh bounded set.
+    fn take_for_thread(key: (i64, u64)) -> Self {
+        THREAD_KERNELS
+            .with(|cell| cell.borrow_mut().take())
+            .filter(|(retained, _)| *retained == key)
+            .map(|(_, kernels)| kernels)
+            .unwrap_or_else(|| Self::with_limit(THREAD_KERNEL_WEIGHTS))
+    }
+
+    fn return_to_thread(self, key: (i64, u64)) {
+        THREAD_KERNELS.with(|cell| *cell.borrow_mut() = Some((key, self)));
+    }
+
     fn at(&mut self, fraction: f64, radius: i64, cutoff: f64) -> (&[f64], f64) {
         let key = fraction.to_bits();
         let taps = 2 * radius.unsigned_abs() as usize;
-        let retain = (self.phases.len() + 1) * taps <= MAX_KERNEL_WEIGHTS;
+        let retain = (self.phases.len() + 1) * taps <= self.limit;
         if retain && !self.phases.contains_key(&key) {
             self.phases
                 .insert(key, kernel_weights(fraction, radius, cutoff));
@@ -503,6 +569,58 @@ mod tests {
                 assert_eq!(walked_fraction.to_bits(), fraction.to_bits());
             }
         }
+    }
+
+    #[test]
+    fn thread_kernel_phases_keep_rendered_bits_across_blocks() {
+        use deadpan_media::audio_index::AudioChannelLayout;
+        // 44.1 kHz stereo read at 48 kHz: 160 distinct phases.
+        let step = ExactRatio::new(147, 160).unwrap();
+        let recipe = ResampleRecipe::new(
+            0..200_000,
+            ExactRatio::new(1, 3).unwrap(),
+            AudioSample(0),
+            step,
+            AudioSample(0)..AudioSample(180_000),
+        )
+        .unwrap();
+        let matrix = StereoMatrix::new(AudioChannelLayout::Native {
+            channels: 2,
+            mask: 0b11,
+        })
+        .unwrap();
+        let cancelled = AtomicBool::new(false);
+        let render = |start: i64, fresh: bool| {
+            if fresh {
+                THREAD_KERNELS.with(|cell| cell.borrow_mut().take());
+            }
+            let sampler = Resampler::new(recipe.clone(), matrix.clone());
+            let range = sampler
+                .required_source_range(AudioSample(start), 256)
+                .unwrap()
+                .unwrap();
+            let samples = (range.start..range.end)
+                .flat_map(|at| {
+                    let at = at as f32;
+                    [(at * 0.001).sin(), (at * 0.0007).cos()]
+                })
+                .collect();
+            let window = PcmWindow {
+                start: range.start,
+                samples,
+            };
+            sampler
+                .render(AudioSample(start), 256, Some(window), &cancelled)
+                .unwrap()
+                .samples
+                .into_iter()
+                .flat_map(|frame| frame.map(f32::to_bits))
+                .collect::<Vec<_>>()
+        };
+        let blocks = (0..40).map(|block| 1_000 + block * 256);
+        let fresh: Vec<_> = blocks.clone().map(|start| render(start, true)).collect();
+        let retained: Vec<_> = blocks.map(|start| render(start, false)).collect();
+        assert_eq!(fresh, retained);
     }
 
     #[test]
