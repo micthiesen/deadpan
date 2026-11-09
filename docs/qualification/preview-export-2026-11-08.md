@@ -34,4 +34,9 @@ The four AI fixtures were then run in a focused release build with
 `generated-pause` (42 frames), `generated-repeat` (60), `generated-reframe`
 (42) and `generated-prefix` (37) all passed with no failures.
 
-Not covered here: HDR (`preview_export_hdr`), and any physical display or listening judgement.
+`cargo test --release --locked -p deadpan-cli --test preview_export_hdr` passed
+all six HDR tests (automatic output truth table, captions at graphics white,
+SDR Original, PQ project with SDR video tone-mapped, worker and public Render
+matching their committed previews).
+
+Not covered here: any physical display or listening judgement.
