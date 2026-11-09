@@ -166,6 +166,7 @@ pub(super) fn run(d: &mut Driver<'_>, routed: &SoundId, catalog_label: &str) -> 
             !app.service.is_busy()
         })?;
         if !captured {
+            scenarios::reveal_in_rail(d, "Browse  :source")?;
             d.click("Browse  :source")?;
         }
         d.key(Key::Colon)?;

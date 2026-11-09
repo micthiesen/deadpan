@@ -39,6 +39,10 @@ pub(super) struct State {
     /// Focus the filter when it is next drawn; command entry closes after
     /// this frame's drawing and would otherwise take focus back.
     focus_filter: bool,
+    /// The service's latest published catalog. Opening a project publishes
+    /// it with the workspace, so a new session needs no List round trip,
+    /// whose reply would also republish and overwrite the footer message.
+    published: Option<MomentCatalog>,
 }
 
 impl State {
@@ -182,6 +186,9 @@ impl DeadpanApp {
                 Err(error) => self.moments.unavailable = Some(error),
             }
         }
+        if catalog.is_some() {
+            self.moments.published.clone_from(&catalog);
+        }
         // Command-line writes publish the catalog without a native ticket.
         if let Some(catalog) = catalog
             && self.moments.catalog.as_ref().is_some_and(|current| {
@@ -215,13 +222,24 @@ impl DeadpanApp {
         let session = self.workspace.as_ref().map(|workspace| workspace.session);
         if self.moments.session != session {
             let filter = std::mem::take(&mut self.moments.filter);
+            let project = self
+                .workspace
+                .as_ref()
+                .map(|workspace| workspace.document.project_id().clone());
+            let published = self.moments.published.take();
+            let opened = published
+                .clone()
+                .filter(|catalog| project.as_ref() == Some(&catalog.project_id));
             self.moments = State {
                 session,
                 filter,
+                published,
                 ..Default::default()
             };
-            if session.is_some() {
-                self.queue_moments(Operation::List, None);
+            match opened {
+                Some(catalog) => self.moments.catalog = Some(catalog),
+                None if session.is_some() => self.queue_moments(Operation::List, None),
+                None => {}
             }
         }
         if self.service.is_busy() {
@@ -403,6 +421,17 @@ impl DeadpanApp {
         if let Some(filter) = filter {
             self.moments.filter = filter;
         }
+        if self.moments.filter.is_empty()
+            && self
+                .moments
+                .catalog
+                .as_ref()
+                .is_some_and(|catalog| catalog.entries.is_empty())
+        {
+            self.message =
+                Some("No moments yet. Select time in Original, then :moment NAME saves it.".into());
+            return;
+        }
         self.focus_scoped_pane(Pane::Sources);
         self.moments.reveal = true;
         let mut text = egui::text_edit::TextEditState::default();
@@ -503,6 +532,19 @@ impl DeadpanApp {
     fn moments_rows(&mut self, ui: &mut egui::Ui) {
         ui.add_space(12.0);
         ui.label(style::section_title("MOMENTS", false));
+        // An empty catalog has nothing to filter; one line keeps the rail's
+        // later sections (transcript offer, sounds) above the fold.
+        if self
+            .moments
+            .catalog
+            .as_ref()
+            .is_some_and(|catalog| catalog.entries.is_empty())
+            && self.moments.filter.is_empty()
+        {
+            self.moments.focus_filter = false;
+            ui.weak("None yet · :moment NAME");
+            return;
+        }
         let hint = "Filter moments  :moments";
         let filter = ui.add(
             egui::TextEdit::singleline(&mut self.moments.filter)
@@ -539,7 +581,7 @@ impl DeadpanApp {
                 .as_ref()
                 .is_some_and(|catalog| catalog.entries.is_empty());
             ui.weak(if empty {
-                "No moments yet. Select time in Original, then :moment NAME."
+                "None yet · :moment NAME"
             } else {
                 "No matching moments."
             });

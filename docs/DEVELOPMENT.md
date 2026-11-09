@@ -111,8 +111,9 @@ cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo test --workspace --locked --no-fail-fast
 ```
 
-`cargo xtask check`, `cargo xtask gate` and CI set
-`CARGO_PROFILE_DEV_OPT_LEVEL=1`: tests run optimized code with the dev
+`cargo xtask check`, `cargo xtask gate`, `cargo xtask replays` and CI set
+`CARGO_PROFILE_DEV_OPT_LEVEL=1` (replays wait on real decoding and idle audio
+preparation against wall-clock limits, and reuse the same libraries): tests run optimized code with the dev
 profile's debug assertions (including the store failpoints behind them) and
 overflow checks. Audio stage preparation, limiting, wet effects, CLI
 inspection and export bound their work with wall-clock deadlines that

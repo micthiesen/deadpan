@@ -228,6 +228,20 @@ sound event inspector's Start, Duration and Gain values stay on one line at
 960 points (`sound-placement` frame "Placed sounds and exact inspector at
 960x640"). `audio-warming` passes (25 checks) in the full replay run.
 
+On 2026-11-08 the label column became content-aware instead: a label keeps
+its full width unless that would wrap a value that fits on one line beside
+the narrowest column, so the ranged Follow inspector's "Scale before" no
+longer elides at 1280 points (`zoom`). The same full run found the new
+MOMENTS section had pushed the transcript model offer below the Original
+rail's fold at 1280x820. An empty moment catalog now shows one line
+("None yet · :moment NAME") instead of an unusable filter field, and an
+empty sound catalog omits its find field until `/` focuses it or a query
+exists; Add sound sits directly under the heading. Both the transcript offer
+(`transcript`, `source-interpretation`) and Add sound (`full-session`) fit
+again. Opening a project also publishes its moment catalog with the
+workspace, so the rail no longer sends a List request whose reply
+republished the open message over YouTube import's "Created …" result.
+
 ## Keys palette (2026-10-15)
 
 The Keys sheet's search now runs actions (specification §8 and §7.5: open

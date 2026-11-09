@@ -1784,6 +1784,13 @@ impl Service {
         self.backup_before_session_change();
         self.cancel();
         self.host = host;
+        // The rail adopts this instead of listing it after the open.
+        self.moment_catalog = prepared
+            .store
+            .newer_schema()
+            .is_none()
+            .then(|| prepared.store.moment_catalog().ok())
+            .flatten();
         self.store = Some(prepared.store);
         self.session = prepared.workspace.session;
         self.workspace = Some(Arc::new(prepared.workspace));

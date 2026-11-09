@@ -35,6 +35,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
             .iter()
             .map(|row| row.0.clone())
             .collect::<Vec<_>>();
+        scenarios::reveal_in_rail(d, "Add sound…  ⌘I")?;
         d.click("Add sound…  ⌘I")?;
         d.wait_for(
             "Sound registration commits a qualified catalog descriptor",
@@ -462,6 +463,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
 
     d.click("Play sound  Space")?;
     d.app_mut().feedback.hold_preview = true;
+    scenarios::reveal_in_rail(d, "Browse  :source")?;
     d.click("Browse  :source")?;
     d.check(
         "Returning to Original stops sound and preserves both retained editing positions",
@@ -496,6 +498,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.command("sequence")?;
     d.settled()?;
+    scenarios::reveal_in_rail(d, "Browse  :source")?;
     d.click("Browse  :source")?;
     d.settled()?;
     d.check(
@@ -565,6 +568,7 @@ fn inject(d: &mut Driver<'_>, update: Update, label: &str) -> Result<(), String>
 /// guidance naming the applicable choice, and changes nothing.
 fn unlabelled_wav_needs_a_choice(d: &mut Driver<'_>) -> Result<(), String> {
     let revision = d.revision();
+    scenarios::reveal_in_rail(d, "Add sound…  ⌘I")?;
     d.click("Add sound…  ⌘I")?;
     d.wait_for(
         "An unlabelled WAV is refused without a speaker choice",

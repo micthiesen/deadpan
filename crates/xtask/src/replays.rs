@@ -207,6 +207,10 @@ fn build() -> Result<Vec<(String, PathBuf)>, String> {
     }
     let output = Command::new("cargo")
         .args(arguments)
+        // Scenarios wait on real decode and audio preparation against wall
+        // clock limits, like the deadline tests check and gate optimize.
+        // This also reuses the libraries those builds already compiled.
+        .env("CARGO_PROFILE_DEV_OPT_LEVEL", super::TEST_OPT_LEVEL)
         .stderr(Stdio::inherit())
         .output()
         .map_err(|error| format!("failed to start cargo: {error}"))?;

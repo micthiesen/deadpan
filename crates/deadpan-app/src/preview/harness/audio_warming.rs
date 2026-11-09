@@ -76,6 +76,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         Some(crate::project::AudioLayoutInterpretation::StereoLeftRight),
     )?;
     scenarios::reveal_original_rail(d, "Add sound…  ⌘I", true)?;
+    scenarios::reveal_in_rail(d, "Add sound…  ⌘I")?;
     d.click("Add sound…  ⌘I")?;
     d.wait_for("Idle warming sound is registered", |app| {
         app.sound_rows.len() == 1 && !app.service.is_busy() && !app.importing()

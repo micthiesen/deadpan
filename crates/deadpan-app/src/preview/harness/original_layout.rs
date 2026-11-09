@@ -58,6 +58,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d,
         Some(crate::project::AudioLayoutInterpretation::StereoLeftRight),
     )?;
+    scenarios::reveal_in_rail(d, "Add sound…  ⌘I")?;
     d.click("Add sound…  ⌘I")?;
     d.wait_for("Real sound is qualified in the catalog", |app| {
         app.sound_rows.len() == 1 && !app.service.is_busy() && !app.importing()

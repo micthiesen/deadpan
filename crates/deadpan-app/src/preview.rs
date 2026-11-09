@@ -4496,6 +4496,11 @@ impl DeadpanApp {
                     if matches!(profile, Some(SingleSourceState::Ready { .. })) {
                         ui.add_space(12.0);
                         ui.label(style::section_title("SOUND EFFECTS", false));
+                        // An empty catalog shows only Add sound below, so the
+                        // rail's transcript offer stays above the fold. `/`
+                        // still reveals the field by focusing it.
+                        let searching = ui.memory(|m| m.has_focus(egui::Id::new(SEARCH_ID)));
+                        if !self.sound_rows.is_empty() || !self.source_search.is_empty() || searching {
                         let search_hint = format!("Find sound  {}", self.editor_key(EditorKey::Search));
                         let search = ui.add(egui::TextEdit::singleline(&mut self.source_search).id(egui::Id::new(SEARCH_ID)).hint_text(search_hint).desired_width(f32::INFINITY));
                         accessibility::name(&search, "Find sound");
@@ -4520,6 +4525,7 @@ impl DeadpanApp {
                             }
                         });
                         if reveal { ui.scroll_to_rect(catalog.inner_rect, Some(egui::Align::Max)); }
+                        }
                     }
                     let available = self.workspace.is_some() && !matches!(profile, Some(SingleSourceState::AwaitingSource { .. })) && !self.service.is_busy() && !self.dialogs.is_open() && !self.importing();
                     if self.workspace.is_some() && !matches!(profile, Some(SingleSourceState::AwaitingSource { .. })) {

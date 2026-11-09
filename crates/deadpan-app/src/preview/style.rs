@@ -154,12 +154,45 @@ pub(super) fn value_grid<'a>(
         })
         .fold(0.0, f32::max)
         .ceil();
+    // Labels keep their full width unless that would wrap a value which fits
+    // on one line beside the narrowest column. Values that wrap anyway do
+    // not shrink the labels.
+    let available = ui.available_width();
+    let floor = (available * 0.32).max(56.0);
+    let values = rows
+        .iter()
+        .map(|(_, value)| ui.fonts_mut(|fonts| value_text_width(fonts, value)))
+        .filter(|width| *width <= available - floor - VALUE_GAP)
+        .fold(0.0, f32::max);
+    let column = column.min((available - values - VALUE_GAP).max(floor));
     ui.push_id(id, |ui| {
         ui.spacing_mut().item_spacing.y = 6.0;
         for (label, value) in rows {
-            value_row(ui, label, value, column);
+            value_row_in_column(ui, label, value, column);
         }
     });
+}
+
+const VALUE_GAP: f32 = 12.0;
+
+fn value_is_numeric(value: &str) -> bool {
+    value
+        .chars()
+        .next()
+        .is_some_and(|first| first.is_ascii_digit() || matches!(first, '+' | '-' | '−'))
+}
+
+fn value_text_width(fonts: &mut egui::epaint::FontsView<'_>, value: &str) -> f32 {
+    let font = if value_is_numeric(value) {
+        FontId::monospace(11.5)
+    } else {
+        FontId::proportional(12.5)
+    };
+    fonts
+        .layout_no_wrap(value.to_owned(), font, TEXT)
+        .size()
+        .x
+        .ceil()
 }
 
 /// One read-only label/value row with a fixed label column. Numbers keep
@@ -169,8 +202,12 @@ pub(super) fn value_row(ui: &mut egui::Ui, label: &str, value: &str, column: f32
     // truncates) yields to about a third of the row, and stays shared by
     // every row in the panel, so rows remain aligned.
     let column = column.min((ui.available_width() * 0.32).max(56.0));
+    value_row_in_column(ui, label, value, column);
+}
+
+fn value_row_in_column(ui: &mut egui::Ui, label: &str, value: &str, column: f32) {
     ui.horizontal_top(|ui| {
-        ui.spacing_mut().item_spacing.x = 12.0;
+        ui.spacing_mut().item_spacing.x = VALUE_GAP;
         ui.allocate_ui_with_layout(
             egui::vec2(column, 18.0),
             egui::Layout::left_to_right(egui::Align::Center),
@@ -179,11 +216,7 @@ pub(super) fn value_row(ui: &mut egui::Ui, label: &str, value: &str, column: f32
                 ui.add(egui::Label::new(RichText::new(label).size(12.0).weak()).truncate());
             },
         );
-        let numeric = value
-            .chars()
-            .next()
-            .is_some_and(|first| first.is_ascii_digit() || matches!(first, '+' | '-' | '−'));
-        let text = if numeric {
+        let text = if value_is_numeric(value) {
             RichText::new(value).monospace().size(11.5)
         } else {
             RichText::new(value).size(12.5)

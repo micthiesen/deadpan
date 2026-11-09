@@ -1690,8 +1690,9 @@ pub(super) fn rows_clear_of_scrollbar(
             role == "ScrollBar"
                 && rect.height() > rect.width()
                 && rows.as_ref().is_some_and(|rows| {
-                    rows.iter()
-                        .any(|row| row.y_range().intersects(rect.y_range()))
+                    rows.iter().any(|row| {
+                        row.y_range().intersects(rect.y_range()) && rect.left() >= row.left()
+                    })
                 })
         })
         .map(|(_, _, rect)| *rect)
@@ -1827,6 +1828,53 @@ pub(super) fn reveal_original_rail(
         json!(text_paint_visibility(d, needle)),
         json!(super::sound_placement::control_hits(d, &[needle])),
     ))
+}
+
+/// Wheel the Original rail until `label`'s text is painted fully visible,
+/// as a user scrolls a short rail before clicking a control below or above
+/// the fold.
+pub(super) fn reveal_in_rail(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
+    // Action rows paint their name and key separately; the name's paint
+    // must be unclipped.
+    let name = label.split("  ").next().unwrap_or(label);
+    let visible = |d: &Driver<'_>| {
+        let paint = text_paint_visibility(d, name);
+        !paint.is_empty() && paint.iter().all(|item| item["fully_visible"] == true)
+    };
+    for attempt in 0..16 {
+        if visible(d) {
+            return Ok(());
+        }
+        let heading = d.rect("Original and sounds pane")?;
+        // Scroll up when the control lies above the rail's heading,
+        // otherwise down.
+        let above = d
+            .rect(label)
+            .is_ok_and(|rect| rect.center().y < heading.bottom());
+        let point = egui::pos2(heading.center().x, d.harness.ctx.content_rect().center().y);
+        d.events(
+            &format!("Wheel the rail to {label}, attempt {attempt}"),
+            vec![
+                egui::Event::PointerMoved(point),
+                egui::Event::MouseWheel {
+                    unit: egui::MouseWheelUnit::Point,
+                    delta: egui::vec2(0.0, if above { 80.0 } else { -80.0 }),
+                    phase: egui::TouchPhase::Move,
+                    modifiers: egui::Modifiers::NONE,
+                },
+            ],
+        )?;
+        for _ in 0..8 {
+            d.step("Rail scroll settles", false)?;
+        }
+    }
+    if visible(d) {
+        Ok(())
+    } else {
+        Err(format!(
+            "{label:?} could not be scrolled into view in the Original rail"
+        ))
+    }
 }
 
 pub(super) fn reveal_inspector_button(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
@@ -2080,15 +2128,21 @@ pub(super) fn choose_sound_interpretation(
         }
     };
     let current = text(d.app().sound_interpretation);
-    let opened = combo(d, &current).is_none() && d.rect("Unlabelled channels").is_err();
-    if opened {
-        d.click("Sound import options")?;
-        d.settled()?;
-    }
-    // The expanded disclosure can extend below a short rail; wheel it into view.
-    for attempt in 0..6 {
+    let mut opened = false;
+    let mut pending_open = combo(d, &current).is_none() && d.rect("Unlabelled channels").is_err();
+    // The disclosure and its expanded choices can sit below a short rail:
+    // wheel its header into view, open it, then wheel to the choice.
+    for attempt in 0..12 {
         if combo(d, &current).is_some() {
             break;
+        }
+        if pending_open {
+            reveal_in_rail(d, "Sound import options")?;
+            d.click("Sound import options")?;
+            d.settled()?;
+            pending_open = false;
+            opened = true;
+            continue;
         }
         let heading = d.rect("Original and sounds pane")?;
         let point = egui::pos2(heading.center().x, d.harness.ctx.content_rect().center().y);
@@ -2148,9 +2202,12 @@ pub(super) fn choose_sound_interpretation(
     d.settled()?;
     // Leave the rail as it was so later layout checks see their usual state.
     if opened {
+        reveal_in_rail(d, "Sound import options")?;
         d.click("Sound import options")?;
         d.settled()?;
     }
+    // Every caller adds the sound next; leave its button in view.
+    reveal_in_rail(d, "Add sound…  ⌘I")?;
     d.check(
         "The sound interpretation is chosen explicitly through the import options",
         d.app().sound_interpretation == choice,
