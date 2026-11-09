@@ -53,6 +53,27 @@ impl ProjectDocument {
         isolation::temporal_requirements(self, &target)
     }
 
+    /// Exact outside-in isolation needs before one play of a nested Repeat
+    /// (`instance.node`) gets its own gap through `EditOccurrence`.
+    pub fn occurrence_gap_requirements(
+        &self,
+        instance: &InstancePath,
+    ) -> Result<ScopedEditRequirements, EditError> {
+        if instance.repeats.is_empty() {
+            return Err(invalid(
+                "an occurrence gap needs its enclosing Repeat plays",
+            ));
+        }
+        instance.validate(self)?;
+        if !matches!(self.nodes()[&instance.node].kind, NodeKind::Repeat { .. }) {
+            return Err(EditError::new(
+                EditErrorCode::WrongNodeKind,
+                "a gap belongs to a Repeat",
+            ));
+        }
+        isolation::temporal_requirements(self, &target(instance))
+    }
+
     /// Exact outside-in isolation needs for a speed change of one visible
     /// Repeat occurrence (`WrapRetime` or `SetRetime`). Attached sounds keep
     /// their existing refusal; isolation names are counted before allocation.

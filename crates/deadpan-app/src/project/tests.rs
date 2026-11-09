@@ -19,6 +19,7 @@ mod edited_slice;
 mod gain;
 mod generation;
 mod headless;
+mod isolate_gap;
 mod jobs;
 mod macros;
 mod marks;

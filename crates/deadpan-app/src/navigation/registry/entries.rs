@@ -251,7 +251,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::CONTENTS,
         replay: Replay::Ignored,
         headless: eq("command isolate_gap", REP),
-        help: "Inside a Repeat's contents with This play chosen (]r), give that play its own copy of the default gap after it. Its timing and sound clocks stay the same; j/k then reach the gap inside the play, where duration, room tone, freeze or AI pictures edit only it. The Repeat must sit directly in the current group. One Undo.",
+        help: "Inside a Repeat's contents with This play chosen (]r), give that play its own copy of the default gap after it. Its timing and sound clocks stay the same; j/k then reach the gap inside the play, where duration, room tone, freeze or AI pictures edit only it. Inside nested Repeats, choose This play in every enclosing Repeat too; only that occurrence changes. One Undo.",
     },
     Spec {
         id: "timeline",

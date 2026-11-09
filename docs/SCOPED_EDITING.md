@@ -59,13 +59,18 @@ whose plays `]r` then steps independently. `Backspace` keeps each outer play
 choice. The inspector's Previous/Next buttons and the footer teach the keys.
 Stepping is read-only, like `:scope`, and Macros do not record it.
 
-`:isolate-gap` (since 2026-11-08), with This play chosen on a Repeat that sits
-directly in the current group, gives that play its own copy of the default gap
-after it (core `IsolateGap`: same timing and sound clocks, one Undo). `j`/`k`
-then reach the gap inside the play, where duration, room tone, freeze or AI
-pictures change only it. Nested Repeats refuse for now. Evidence: the
-`scoped-plays` replay check ":isolate-gap in play 2 gives only that play its own
-gap pause".
+`:isolate-gap` (since 2026-11-08), with This play chosen on a Repeat, gives
+that play its own copy of the default gap after it (core `IsolateGap`: same
+timing and sound clocks, one Undo). `j`/`k` then reach the gap inside the play,
+where duration, room tone, freeze or AI pictures change only it. For a Repeat
+nested inside others, every enclosing Repeat must also have This play chosen;
+the service then sends one `EditOccurrence { edit: IsolateGap }`, which copies
+each chosen enclosing play outside-in (sized by
+`ProjectDocument::occurrence_gap_requirements`) before isolating the gap, so
+other occurrences keep the shared default. An All plays choice at any enclosing
+Repeat refuses with a hint. Evidence: the `scoped-plays` replay check
+":isolate-gap in play 2 gives only that play its own gap pause" and
+`project::tests::isolate_gap::nested_isolate_gap_copies_only_the_chosen_outer_play`.
 
 ## Framing a range in This play
 

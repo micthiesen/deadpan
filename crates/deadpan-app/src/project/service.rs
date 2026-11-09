@@ -1331,8 +1331,10 @@ impl Service {
             | ProjectEdit::Delete { node }
             | ProjectEdit::RevertGeneratedHold { node }
             | ProjectEdit::HoldDuration { node, .. }
-            | ProjectEdit::HoldAudio { node, .. }
-            | ProjectEdit::IsolateGap { node, .. } => node,
+            | ProjectEdit::HoldAudio { node, .. } => node,
+            ProjectEdit::IsolateGap { node, outer, .. } => {
+                outer.first().map_or(node, |step| &step.node)
+            }
         };
         let view = scope.resolve(workspace)?;
         let children = view.children;
@@ -1468,19 +1470,53 @@ impl Service {
             ProjectEdit::IsolateGap {
                 node: repeat,
                 iteration,
-            } => (
-                Command::IsolateGap {
-                    node: repeat,
-                    iteration,
-                    id: node(),
-                    timing: deadpan_core::AudioTimingId {
-                        allocation: new_revision.clone(),
-                        ordinal: 0,
-                    },
-                },
-                selected,
-                "This play's gap is now its own pause and saved",
-            ),
+                outer,
+            } => {
+                let timing = deadpan_core::AudioTimingId {
+                    allocation: new_revision.clone(),
+                    ordinal: 0,
+                };
+                let command = if outer.is_empty() {
+                    Command::IsolateGap {
+                        node: repeat,
+                        iteration,
+                        id: node(),
+                        timing,
+                    }
+                } else {
+                    // Copy each enclosing chosen play first, so only this
+                    // occurrence of the nested Repeat changes.
+                    let instance = deadpan_core::InstancePath {
+                        node: repeat,
+                        repeats: outer,
+                    };
+                    let needs = document
+                        .occurrence_gap_requirements(&instance)
+                        .map_err(display)?;
+                    Command::EditOccurrence {
+                        instance,
+                        edit: deadpan_core::OccurrenceEdit::IsolateGap {
+                            iteration,
+                            id: node(),
+                            timing,
+                        },
+                        identities: deadpan_core::OccurrenceIdentities {
+                            nodes: (0..needs.nodes).map(|_| node()).collect(),
+                            marks: (0..needs.marks)
+                                .map(|_| {
+                                    deadpan_core::MarkId::new(uuid::Uuid::new_v4().to_string())
+                                        .expect("UUID is a valid mark identity")
+                                })
+                                .collect(),
+                        },
+                    }
+                };
+                (
+                    command,
+                    selected,
+                    "This play's gap is now its own pause and saved",
+                )
+            }
             ProjectEdit::Split { node: target, at } => {
                 let mut pending = vec![target.clone()];
                 let mut count = 3_usize;

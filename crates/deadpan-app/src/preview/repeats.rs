@@ -712,9 +712,10 @@ pub(super) fn repeat_count_instruction(
 mod tests;
 
 impl super::DeadpanApp {
-    /// `:isolate-gap` in a This play scope: the chosen play of a Repeat in the
-    /// current group gets its own copy of the default gap, which `j`/`k` then
-    /// reach inside the play and which edits like any pause.
+    /// `:isolate-gap` in a This play scope: the chosen play of a Repeat gets
+    /// its own copy of the default gap, which `j`/`k` then reach inside the
+    /// play and which edits like any pause. Inside nested Repeats, every
+    /// enclosing Repeat must name its play as well.
     pub(super) fn isolate_gap(&mut self) {
         let result = (|| {
             let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
@@ -723,15 +724,32 @@ impl super::DeadpanApp {
                 .as_ref()
                 .map(|state| state.selected_target().clone())
                 .ok_or("Open a Repeat's contents and choose This play first (Enter, then ]r).")?;
-            let [step] = target.repeats.as_slice() else {
+            let Some((step, enclosing)) = target.repeats.split_last() else {
                 return Err(
-                    "Isolate a gap of a Repeat directly in this group; nested Repeats are not supported yet."
+                    "Open a Repeat's contents and choose This play first (Enter, then ]r)."
                         .to_owned(),
                 );
             };
             let deadpan_core::RepeatEditBranch::Play { iteration } = &step.branch else {
                 return Err("Choose This play (]r) to isolate that play's gap.".to_owned());
             };
+            // A nested Repeat's gap belongs to one occurrence only when every
+            // enclosing Repeat names its play too.
+            let outer = enclosing
+                .iter()
+                .map(|outer| match &outer.branch {
+                    deadpan_core::RepeatEditBranch::Play { iteration } => {
+                        Ok(deadpan_core::RepeatInstance {
+                            node: outer.repeat.clone(),
+                            iteration: iteration.clone(),
+                        })
+                    }
+                    deadpan_core::RepeatEditBranch::Default => Err(
+                        "Choose This play (]r) in every enclosing Repeat to isolate one occurrence's gap."
+                            .to_owned(),
+                    ),
+                })
+                .collect::<Result<Vec<_>, _>>()?;
             let deadpan_core::NodeKind::Repeat { gap, .. } =
                 &workspace.document.nodes()[&step.repeat].kind
             else {
@@ -751,6 +769,7 @@ impl super::DeadpanApp {
                 ProjectEdit::IsolateGap {
                     node: step.repeat.clone(),
                     iteration: iteration.clone(),
+                    outer,
                 },
             ))
         })();
