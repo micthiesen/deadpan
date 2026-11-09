@@ -320,8 +320,10 @@ fn a_moving_cursor_waits_the_full_rest_before_refining() {
     std::thread::sleep(REFINE_DELAY * 2);
     while worker.take_reply().is_some() {}
     // Backward from the Original decoder's position, so each needs a seek.
+    let mut submitted = Instant::now();
     for (offset, frame) in [(1, 3), (2, 1)] {
         let seek = request(&workspace, sequence(frame), serial + offset);
+        submitted = Instant::now();
         worker.submit(seek.ticket, seek.work);
         assert_eq!(
             await_reply(&worker).picture.unwrap().tier,
@@ -330,7 +332,9 @@ fn a_moving_cursor_waits_the_full_rest_before_refining() {
     }
     let proxied = Instant::now();
     std::thread::sleep(ISOLATED_REFINE_DELAY * 2);
-    if proxied.elapsed() < REFINE_DELAY {
+    // The worker's rest starts no earlier than the last submission; timing
+    // from the received reply could miss a slow decode on a loaded runner.
+    if submitted.elapsed() < REFINE_DELAY {
         assert!(
             worker.take_reply().is_none(),
             "a scrubbing seek must not refine after the isolated rest"
