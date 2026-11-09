@@ -245,7 +245,7 @@ fn headless_scoped_zoom_macro_rebinds_nested_plays_and_maps_calls_with_one_durab
                     register: RegisterName::new('z')?,
                     count: count(1),
                 },
-                I::Split,
+                I::Ungroup,
             ])?,
         ),
         false,
