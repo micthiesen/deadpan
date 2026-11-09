@@ -53,6 +53,14 @@ pub enum OccurrenceEdit {
         plays: u32,
         timing: crate::AudioTimingId,
     },
+    /// Change an existing Repeat's total plays in this occurrence only.
+    /// Surviving stable plays and gaps stay; new plays take this revision's
+    /// allocation, and later owners keep their own clocks. The Repeat needs a
+    /// Sequence parent.
+    SetRepeatPlays {
+        plays: u32,
+        timing: crate::AudioTimingId,
+    },
     Group {
         start: usize,
         end: usize,
@@ -162,6 +170,11 @@ impl OccurrenceEdit {
                 subtree: subtree.clone(),
             },
             Self::Delete | Self::DeleteRipple { .. } => Command::Delete { node },
+            Self::SetRepeatPlays { plays, timing } => Command::SetRepeatPlays {
+                node,
+                plays: *plays,
+                timing: timing.clone(),
+            },
             Self::RepeatChild { id, plays, .. } => Command::WrapRepeat {
                 node,
                 id: id.clone(),
@@ -460,6 +473,11 @@ pub(crate) fn apply_captured(
         }
         OccurrenceEdit::RepeatChild { id, plays, timing } => {
             return ripple::wrap_repeat(document, &result, &target, id, *plays, timing, allocation);
+        }
+        OccurrenceEdit::SetRepeatPlays { plays, timing } => {
+            return ripple::set_repeat_plays(
+                document, &result, &target, *plays, timing, allocation,
+            );
         }
         _ => {}
     }

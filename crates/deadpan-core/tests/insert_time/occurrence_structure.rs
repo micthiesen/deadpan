@@ -278,3 +278,146 @@ fn one_play_edits_refuse_the_whole_play_default_paths_and_sounds_readably() {
             .is_err()
     );
 }
+
+/// root = [rep, tail]; rep plays body = [a, inner, c] three times, and inner
+/// plays b twice. Plays start at frames 0, 4 and 8; the tail at 12.
+fn nested() -> ProjectDocument {
+    let mut inner = BeatNode::sequence("Inner", vec![]);
+    inner.kind = NodeKind::Repeat {
+        child: id("b"),
+        iterations: IterationOrder::new(revision("inner-plays"), 2).unwrap(),
+        gap: None,
+        escalation: None,
+    };
+    tree(
+        &["rep", "tail"],
+        vec![
+            ("rep", repeat("body")),
+            (
+                "body",
+                BeatNode::sequence("Body", vec![id("a"), id("inner"), id("c")]),
+            ),
+            ("a", source(1)),
+            ("inner", inner),
+            ("b", source(1)),
+            ("c", source(1)),
+            ("tail", source(2)),
+        ],
+    )
+}
+
+fn plays_of(document: &ProjectDocument, node: &NodeId) -> Vec<IterationId> {
+    let NodeKind::Repeat { iterations, .. } = &document.nodes()[node].kind else {
+        panic!("Repeat")
+    };
+    (0..iterations.len())
+        .map(|index| iterations.at(index).unwrap())
+        .collect()
+}
+
+fn in_play(node: &NodeId, ordinal: u32) -> InstancePath {
+    InstancePath {
+        node: node.clone(),
+        repeats: vec![RepeatInstance {
+            node: id("rep"),
+            iteration: IterationId {
+                allocation: revision("plays"),
+                ordinal,
+            },
+        }],
+    }
+}
+
+#[test]
+fn setting_plays_in_one_play_changes_only_that_occurrence_and_keeps_later_clocks() {
+    deadpan_core::with_reference_timing_representation(|| {
+        let before = nested();
+        let shared = plays_of(&before, &id("inner"));
+        for (plays, total) in [(3, 15), (1, 13)] {
+            let name = format!("set-{plays}");
+            let (request, target, presentation) = occurrence(
+                &before,
+                &name,
+                second_play("inner"),
+                OccurrenceEdit::SetRepeatPlays {
+                    plays,
+                    timing: timing(&name),
+                },
+            );
+            let after = edit(&before, request);
+            assert_eq!(after.duration().unwrap(), duration(total));
+            // The shared definition still plays b twice in plays 1 and 3.
+            assert_eq!(plays_of(&after, &id("inner")), shared);
+            assert_eq!(play_root(&after, 0), id("body"));
+            assert_eq!(play_root(&after, 2), id("body"));
+            let owned = kids(&after, &play_root(&after, 1));
+            assert_eq!(target.node, owned[1]);
+            assert_eq!(presentation.node, owned[1]);
+            assert!(target.matches_instance(&after, &presentation).unwrap());
+            let counted = plays_of(&after, &owned[1]);
+            assert_eq!(counted.len(), plays as usize);
+            // Surviving plays keep their stable identities; growth takes
+            // this revision's allocation.
+            assert_eq!(
+                counted[..counted.len().min(2)],
+                shared[..counted.len().min(2)]
+            );
+            if plays == 3 {
+                assert_eq!(counted[2].allocation, revision(&name));
+            }
+            // At 30000/1001 a one-frame shift is not whole samples. The tail
+            // started at frame 12 (B = 19219), c at 7 in play 2 (B = 11211)
+            // and play 3 at 8 (B = 12813); each keeps its old entry.
+            assert_eq!(
+                reference_at_anchor(&after, &id("tail")),
+                ExactRatio::integer(19219)
+            );
+            assert_eq!(
+                anchored(&after, &in_play(&owned[2], 1)),
+                ExactRatio::integer(11211)
+            );
+            assert_eq!(
+                anchored(&after, &in_play(&id("a"), 2)),
+                ExactRatio::integer(12813)
+            );
+        }
+    })
+}
+
+#[test]
+fn setting_the_same_plays_in_one_play_refuses_without_an_edit() {
+    let before = nested();
+    let edit_value = OccurrenceEdit::SetRepeatPlays {
+        plays: 2,
+        timing: timing("same"),
+    };
+    let error = before
+        .occurrence_structure_requirements(&second_play("inner"), &edit_value)
+        .unwrap_err();
+    assert!(error.message.contains("already plays 2 times"), "{error}");
+    let request = request(
+        &before,
+        "same",
+        Command::EditOccurrence {
+            instance: second_play("inner"),
+            edit: edit_value,
+            identities: OccurrenceIdentities {
+                nodes: (0..8).map(|n| id(&format!("same-{n}"))).collect(),
+                marks: vec![],
+            },
+        },
+    );
+    let error = apply(&before, &request).unwrap_err();
+    assert!(error.message.contains("already plays 2 times"), "{error}");
+    // A beat that is not a Repeat has no count to set.
+    let error = before
+        .occurrence_structure_requirements(
+            &second_play("a"),
+            &OccurrenceEdit::SetRepeatPlays {
+                plays: 3,
+                timing: timing("beat"),
+            },
+        )
+        .unwrap_err();
+    assert!(error.message.contains("selected Repeat"), "{error}");
+}

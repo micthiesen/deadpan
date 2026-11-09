@@ -957,6 +957,8 @@ pub enum ScopedStructure {
     Delete,
     /// Wrap the beat in a new Repeat with this many total plays.
     Repeat { plays: u32 },
+    /// Set the selected Repeat's total plays in this play.
+    SetPlays { plays: u32 },
 }
 
 /// Ordinary node operations edit direct children of the captured Sequence scope.
@@ -974,8 +976,8 @@ pub enum ProjectEdit {
         black: bool,
         ai: bool,
     },
-    /// `s`, `dd` and `rr` on a beat inside Repeat contents with This play
-    /// chosen at every enclosing Repeat: one `EditOccurrence` changes that
+    /// `s`, `dd`, `rr` and `:repeat N` on a beat inside Repeat contents with
+    /// This play chosen at every enclosing Repeat: one `EditOccurrence` changes that
     /// occurrence only, isolating its plays outside-in.
     ScopedStructure {
         target: Box<scoped::Target>,

@@ -207,6 +207,92 @@ pub(crate) fn wrap_repeat(
     Ok(result)
 }
 
+/// Change an existing Repeat's total plays in its play only. Surviving plays
+/// keep their stable identities and positions; new plays take this revision's
+/// allocation. Everything after the Repeat keeps its own clock, as for the
+/// root setter.
+pub(crate) fn set_repeat_plays(
+    original: &ProjectDocument,
+    document: &ProjectDocument,
+    instance: &InstancePath,
+    plays: u32,
+    timing: &AudioTimingId,
+    allocation: &crate::RevisionId,
+) -> Result<ProjectDocument, EditError> {
+    let current = repeat_plays(document, &instance.node, plays)?;
+    if current == plays {
+        return Err(unchanged(plays));
+    }
+    validate_timing(document, timing, allocation)?;
+    // Growth names plays with this revision's allocation; isolation copies
+    // only reuse existing play orders.
+    if original.nodes().values().any(|node| {
+        matches!(&node.kind, NodeKind::Repeat { iterations, .. }
+            if iterations.segments().any(|(existing, _, _)| existing == allocation))
+    }) {
+        return Err(EditError::new(
+            EditErrorCode::IdentityConflict,
+            "Repeat reuses an existing allocation",
+        ));
+    }
+    if !document.sound_allowances.is_empty() {
+        return Err(invalid(
+            "a one-play Repeat count cannot yet carry sound allowances; remove the sound events first",
+        ));
+    }
+    let site = site(document, instance)?;
+    let NodeKind::Repeat { gap, .. } = &document.nodes()[&instance.node].kind else {
+        unreachable!("admitted Repeat")
+    };
+    let gap = gap.clone();
+    let command = Command::SetRepeat {
+        node: instance.node.clone(),
+        plays,
+        gap,
+    };
+    let total = document.duration()?.frames();
+    let mut working = document.clone();
+    working.audio_bindings = crate::capture_unbound_audio_bindings(document, timing.clone())?;
+    // A Repeat child has positive duration, so any new count moves the end.
+    if site.end < total {
+        let suffix = next_timing(&working, timing)?;
+        let affected = composite::occurrence_shifted_owners(&working, &site.parent, site.slot + 1)?;
+        working =
+            composite::prepare_owners(&working, &affected, ProjectFrame(site.end), total, &suffix)?;
+    }
+    let mut result = working.clone();
+    crate::command::reduce(&mut result, &command, allocation)?;
+    crate::audio_lineage::reconcile(&working, &mut result, &command)?;
+    result.marks = crate::marks::transform_marks(&working, &result, &command)?;
+    crate::audio_binding_lifecycle::prune(&mut result);
+    result.validate()?;
+    Ok(result)
+}
+
+/// The selected Repeat's current total plays, refusing other beats.
+pub(crate) fn repeat_plays(
+    document: &ProjectDocument,
+    node: &NodeId,
+    plays: u32,
+) -> Result<u32, EditError> {
+    if plays == 0 {
+        return Err(invalid("Repeat total plays must be positive"));
+    }
+    match &document.nodes()[node].kind {
+        NodeKind::Repeat { iterations, .. } => Ok(iterations.len()),
+        _ => Err(EditError::new(
+            EditErrorCode::WrongNodeKind,
+            "setting total plays in one play needs a selected Repeat",
+        )),
+    }
+}
+
+pub(crate) fn unchanged(plays: u32) -> EditError {
+    unavailable(&format!(
+        "the Repeat already plays {plays} times in this play; no edit was made"
+    ))
+}
+
 fn validate_timing(
     document: &ProjectDocument,
     timing: &AudioTimingId,

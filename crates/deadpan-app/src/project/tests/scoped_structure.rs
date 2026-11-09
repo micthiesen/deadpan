@@ -282,3 +282,114 @@ fn shared_choices_and_whole_play_contents_refuse_without_editing() {
     );
     assert!(update.error.is_none(), "{:?}", update.error);
 }
+
+/// root = [rep, z]; rep plays body = [xr, y] three times and xr plays x twice
+/// (10 frames each), so each rep play is 30 frames.
+fn open_counted(path: &Path) -> (ProjectService, Arc<Workspace>) {
+    {
+        let mut store = seed_holds(path, &["x", "y", "z"]);
+        seed_command(
+            &mut store,
+            Command::Group {
+                parent: node("root"),
+                start: 0,
+                end: 2,
+                id: node("body"),
+                label: "Body".into(),
+            },
+            "group",
+        );
+        for (child, id, plays) in [("x", "xr", 2), ("body", "rep", 3)] {
+            seed_command(
+                &mut store,
+                Command::WrapRepeat {
+                    node: node(child),
+                    id: node(id),
+                    plays,
+                    gap: None,
+                    anchor_policy: Default::default(),
+                },
+                &format!("{id}-plays"),
+            );
+        }
+    }
+    let service = ProjectService::new(Arc::new(|| {})).unwrap();
+    let workspace = command(&service, ProjectRequest::Open(path.to_path_buf()))
+        .workspace
+        .unwrap();
+    (service, workspace)
+}
+
+fn plays_of(document: &ProjectDocument, repeat: &NodeId) -> Vec<IterationId> {
+    let NodeKind::Repeat { iterations, .. } = &document.nodes()[repeat].kind else {
+        panic!("Repeat")
+    };
+    (0..iterations.len())
+        .map(|index| iterations.at(index).unwrap())
+        .collect()
+}
+
+#[test]
+fn setting_plays_in_one_play_recounts_that_repeat_only_and_undoes() {
+    let scratch = tempfile::tempdir().unwrap();
+    let (service, opened) = open_counted(&scratch.path().join("count.deadpan"));
+    let before = (*opened.document).clone();
+    assert_eq!(before.duration().unwrap().frames(), 100);
+    let shared = plays_of(&before, &node("xr"));
+    // Play 2 of rep runs from 30 to 60; xr fills its first 20 frames.
+    let chosen = target(&opened, "xr", &[("rep", 1)], 35);
+    let same = structure(&service, &chosen, ScopedStructure::SetPlays { plays: 2 });
+    assert!(
+        same.error
+            .as_deref()
+            .is_some_and(|error| error.contains("already plays 2 times")),
+        "{:?}",
+        same.error
+    );
+    let update = structure(&service, &chosen, ScopedStructure::SetPlays { plays: 3 });
+    assert!(update.error.is_none(), "{:?}", update.error);
+    let document = &update.workspace.as_ref().unwrap().document;
+    assert_eq!(document.duration().unwrap().frames(), 110);
+    // Plays 1 and 3 keep the shared definition with two plays of x.
+    assert_eq!(plays_of(document, &node("xr")), shared);
+    assert_eq!(
+        children(document, &node("body")),
+        vec![node("xr"), node("y")]
+    );
+    let overrides = &document.overrides()[&node("rep")];
+    assert_eq!(overrides.len(), 1);
+    let copy = owned(document, &node("rep"), &play("rep", 1));
+    let counted = children(document, &copy)[0].clone();
+    let plays = plays_of(document, &counted);
+    assert_eq!(plays.len(), 3);
+    assert_eq!(plays[..2], shared[..]);
+    // The inspector continues on the recounted Repeat at its start.
+    let committed = update.committed.as_ref().unwrap();
+    let receipt = committed.scoped.as_ref().unwrap();
+    assert_eq!(receipt.target.node, counted);
+    assert_eq!(committed.cursor, Some(ProjectFrame(30)));
+    assert!(
+        update
+            .message
+            .as_deref()
+            .is_some_and(|message| message.contains("3 total plays in this play only")),
+        "{:?}",
+        update.message
+    );
+    // The same play shrinks to one play of x.
+    let mut next = target(&update.workspace.clone().unwrap(), "xr", &[("rep", 1)], 35);
+    next.target = receipt.target.clone();
+    next.presentation = receipt.presentation.clone();
+    let shrunk = structure(&service, &next, ScopedStructure::SetPlays { plays: 1 });
+    assert!(shrunk.error.is_none(), "{:?}", shrunk.error);
+    let shrunk_document = &shrunk.workspace.as_ref().unwrap().document;
+    assert_eq!(shrunk_document.duration().unwrap().frames(), 90);
+    assert_eq!(plays_of(shrunk_document, &counted), shared[..1]);
+    assert_eq!(plays_of(shrunk_document, &node("xr")), shared);
+    let restored = undo(&service, shrunk_document);
+    assert_eq!(restored.nodes(), document.nodes());
+    let restored = undo(&service, &restored);
+    assert_eq!(restored.nodes(), before.nodes());
+    assert!(restored.overrides().is_empty());
+    assert_eq!(restored.duration().unwrap().frames(), 100);
+}

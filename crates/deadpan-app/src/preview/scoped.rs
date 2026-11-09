@@ -10,7 +10,7 @@ pub(super) mod model;
 #[cfg(test)]
 mod range_tests;
 
-const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Repeat pauses follow each level's All plays, This play or selected plays choice. Pause length follows each level's All plays or This play choice for one Hold; AI pauses, speed changes (:retime) and s, dd and rr on a beat require one play at every level. Other timing edits and range copying require the parent.";
+const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Repeat pauses follow each level's All plays, This play or selected plays choice. Pause length follows each level's All plays or This play choice for one Hold; AI pauses, speed changes (:retime) and s, dd, rr and :repeat N on a beat require one play at every level. Other timing edits and range copying require the parent.";
 const FRAMING_RANGE_ONLY: &str = "This play's Edit range is for :zoom or :creep. Clear the range with Escape before other beat edits.";
 
 impl DeadpanApp {
@@ -80,8 +80,8 @@ impl DeadpanApp {
         }
     }
 
-    /// `s`, `dd`/`:delete` and `rr`/`:wrap-repeat` on the selected beat. Other
-    /// operator forms keep the ordinary structural refusal.
+    /// `s`, `dd`/`:delete`, `rr`/`:wrap-repeat` and `:repeat N` on the selected
+    /// beat. Other operator forms keep the ordinary structural refusal.
     pub(super) fn scoped_structure_kind(
         &self,
         action: &Action,
@@ -101,18 +101,21 @@ impl DeadpanApp {
             Action::Edit(BeatEdit::WrapRepeat(plays)) => {
                 Some(ScopedStructure::Repeat { plays: *plays })
             }
-            // `:repeat N` on a Repeat sets its count, which stays a parent edit.
-            Action::Edit(BeatEdit::Repeat(plays))
-                if self.inspected_node().is_some_and(|node| {
+            // `:repeat N` sets a selected Repeat's count and wraps any other beat.
+            Action::Edit(BeatEdit::Repeat(plays)) => {
+                let repeat = self.inspected_node().is_some_and(|node| {
                     self.workspace.as_ref().is_some_and(|workspace| {
-                        !matches!(
+                        matches!(
                             workspace.document.nodes().get(node).map(|beat| &beat.kind),
                             Some(NodeKind::Repeat { .. })
                         )
                     })
-                }) =>
-            {
-                Some(ScopedStructure::Repeat { plays: *plays })
+                });
+                Some(if repeat {
+                    ScopedStructure::SetPlays { plays: *plays }
+                } else {
+                    ScopedStructure::Repeat { plays: *plays }
+                })
             }
             _ => None,
         }

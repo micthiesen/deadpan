@@ -11,8 +11,8 @@ Pause insertion follows the explicit choice at each enclosing Repeat. With This
 play at every Repeat level, `:retime` changes the selected beat's speed in that
 play only: a first change isolates the play and wraps the beat in its own
 Retime, and later changes update that Retime in place. All plays refuses it.
-`s`, `dd` and `rr` change the selected beat in This play only (below). Other
-temporal edits still use the ordinary Sequence timeline.
+`s`, `dd`, `rr` and `:repeat N` change the selected beat in This play only
+(below). Other temporal edits still use the ordinary Sequence timeline.
 
 Choose `:scope all` to edit a Repeat's shared definition or `:scope play N` to
 edit one stable play by its current one-based number. These choices apply at the
@@ -89,8 +89,17 @@ copy, so other plays keep the shared definition. One Undo restores everything.
   is not copied to a register. The inspector selects the following beat, else
   the preceding one, else the emptied group, with the cursor at the old start.
 - `rr` wraps the beat in a new Repeat in that play; the inspector selects it.
+- `:repeat N` on a selected Repeat (since 2026-11-09) sends `SetRepeatPlays`
+  and changes that Repeat's total plays in this occurrence only, as the root
+  setter does: surviving plays keep their stable identities and gaps, removed
+  plays end, and new plays take the edit's revision allocation. The inspector
+  keeps the recounted Repeat selected with the cursor at its start. A count
+  equal to the current one refuses ("already plays N times in this play")
+  without isolating or saving anything. `gap=` and the step parameters still
+  refuse inside Repeat contents; set them from the parent.
 
-Deletion and Repeat keep timing exact: every physical owner after the change
+Deletion, Repeat and count changes keep timing exact: every physical owner
+after the change
 (the rest of the play, later plays and gaps of each enclosing Repeat, and
 everything after the outermost one) keeps its own pre-edit sample entry, and a
 wrapped beat's first play keeps its old phase. Shared owners keep their earlier
@@ -98,14 +107,15 @@ occurrences unchanged. Core tests check the retained entries at 30000/1001 fps,
 where a one-frame move is not a whole number of samples.
 
 These keys refuse, with the earlier structural message, for All plays or
-several selected plays at any level. Deletion and Repeat also refuse a play's
-whole contents (there is no group to close up; split it or press Enter first),
+several selected plays at any level. Deletion, Repeat and count changes also
+refuse a play's whole contents (there is no group to close up; split it or press Enter first),
 a beat inside a speed change or crop in the play, and documents with placed
 sounds or beat sounds ("remove the sound events before editing time"). They
 refuse while a macro records and are not recorded or repeated with dot. Evidence: the `scoped-plays`
 replay checks "s inside play 2 splits only that play and selects the right
 fragment", "rr inside play 2 repeats the right fragment there only", "dd inside
-play 2 deletes the left fragment there only" and the three Undos;
+play 2 deletes the left fragment there only", ":repeat 3 on the Repeat inside
+play 2 sets its plays there only" and the four Undos;
 `project::tests::scoped_structure` and core
 `insert_time::occurrence_structure` cover nested plays, retained clocks and
 refusals.
@@ -191,8 +201,8 @@ the selected insertion parent; black pauses need no sampled picture.
 Mixed owned-gap Hold resizing, Repeat/Retime timing combinations, other
 timing edits (Trim, Slip, motions and ranges), copy/paste and general macros
 inside these contents remain required work; their native actions refuse
-without editing the retained outer beat. Split, beat deletion and Repeat wraps
-in This play are described above.
+without editing the retained outer beat. Split, beat deletion, Repeat wraps and
+Repeat count changes in This play are described above.
 
 Freeze/black pauses, existing Hold duration and sound, and whole-owner or
 supported ranged Zoom and Creep with Keep or OriginalCenter intent support

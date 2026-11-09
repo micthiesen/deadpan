@@ -1,14 +1,15 @@
 //! Structural edits of one visible Repeat occurrence (`EditOccurrence` Split,
-//! DeleteRipple and RepeatChild): exact isolation needs before allocation and
-//! the selection that follows the committed result.
+//! DeleteRipple, RepeatChild and SetRepeatPlays): exact isolation needs before
+//! allocation and the selection that follows the committed result.
 
 use super::*;
 use crate::{OccurrenceEdit, RepeatInstance};
 
 impl ProjectDocument {
-    /// Isolation needs for one Split, ripple deletion or Repeat wrap of a beat
-    /// in explicit plays at every enclosing Repeat. Unsupported scopes,
-    /// including sound-bearing documents, refuse before names are allocated.
+    /// Isolation needs for one Split, ripple deletion, Repeat wrap or Repeat
+    /// count change of a beat in explicit plays at every enclosing Repeat.
+    /// Unsupported scopes, including sound-bearing documents, refuse before
+    /// names are allocated.
     pub fn occurrence_structure_requirements(
         &self,
         instance: &InstancePath,
@@ -33,9 +34,16 @@ impl ProjectDocument {
             OccurrenceEdit::DeleteRipple { .. } | OccurrenceEdit::RepeatChild { .. } => {
                 crate::occurrence_edit::ripple::site(self, instance)?;
             }
+            OccurrenceEdit::SetRepeatPlays { plays, .. } => {
+                use crate::occurrence_edit::ripple;
+                if ripple::repeat_plays(self, &instance.node, *plays)? == *plays {
+                    return Err(ripple::unchanged(*plays));
+                }
+                ripple::site(self, instance)?;
+            }
             _ => {
                 return Err(invalid(
-                    "a one-play structural edit splits, deletes or repeats a beat",
+                    "a one-play structural edit splits, deletes or repeats a beat, or sets a Repeat's plays",
                 ));
             }
         }
@@ -51,9 +59,10 @@ impl ProjectDocument {
     }
 
     /// The scoped selection after `edit` applies with exactly the isolation
-    /// `identities` sized above: Split's right fragment, the new Repeat, or a
-    /// deleted beat's following sibling, else its preceding one, else its
-    /// now empty group. Returns the authoring address and its presentation.
+    /// `identities` sized above: Split's right fragment, the new or recounted
+    /// Repeat, or a deleted beat's following sibling, else its preceding one,
+    /// else its now empty group. Returns the authoring address and its
+    /// presentation.
     pub fn occurrence_structure_selection(
         &self,
         instance: &InstancePath,
@@ -76,6 +85,7 @@ impl ProjectDocument {
                     .ok_or_else(|| invalid("split needs more node identities"))?
             }
             OccurrenceEdit::RepeatChild { id, .. } => id.clone(),
+            OccurrenceEdit::SetRepeatPlays { .. } => map(&instance.node),
             OccurrenceEdit::DeleteRipple { .. } => {
                 let parent = self
                     .parent_of(&instance.node)
@@ -94,7 +104,7 @@ impl ProjectDocument {
             }
             _ => {
                 return Err(invalid(
-                    "a one-play structural edit splits, deletes or repeats a beat",
+                    "a one-play structural edit splits, deletes or repeats a beat, or sets a Repeat's plays",
                 ));
             }
         };

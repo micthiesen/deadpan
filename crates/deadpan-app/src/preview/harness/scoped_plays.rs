@@ -563,8 +563,8 @@ fn play_lengths(d: &Driver<'_>, repeat: &NodeId) -> Result<Vec<i64>, String> {
         .collect())
 }
 
-/// `s`, `rr` and `dd` inside play 2 change only that play, keep the
-/// inspector on the result, and undo in three steps.
+/// `s`, `rr`, `dd` and `:repeat N` inside play 2 change only that play, keep
+/// the inspector on the result, and undo in four steps.
 fn play_structure(d: &mut Driver<'_>, repeat: &NodeId) -> Result<(), String> {
     while d.app().scoped.is_some() {
         d.key(Key::Escape)?;
@@ -671,15 +671,45 @@ fn play_structure(d: &mut Driver<'_>, repeat: &NodeId) -> Result<(), String> {
         json!({"plays":[before[0], 2 * right, before[2]],"children":1,"Edit":start - 10}),
         json!({"plays":lengths,"children":remaining.len(),"Edit":d.app().sequence_cursor,"error":d.app().error}),
     )?;
-    d.capture("Play 2 split, its right part repeated and its left part deleted")?;
-    for _ in 0..3 {
+    // The deleted beat's neighbour is the new Repeat; :repeat recounts it
+    // in this play only.
+    let recounted = d.app().scoped_target()?.map(|target| target.target.node);
+    let edited = d.revision();
+    d.command("repeat 3")?;
+    d.changed(&edited)?;
+    idle(d)?;
+    let lengths = play_lengths(d, repeat)?;
+    let selected = d.app().scoped_target()?.map(|target| target.target.node);
+    let counted = selected.as_ref().and_then(|node| {
+        document(d)
+            .ok()
+            .and_then(|doc| match &doc.nodes().get(node)?.kind {
+                NodeKind::Repeat { iterations, .. } => Some(iterations.len()),
+                _ => None,
+            })
+    });
+    d.check(
+        ":repeat 3 on the Repeat inside play 2 sets its plays there only and keeps it selected",
+        lengths[1] == 3 * right
+            && lengths[0] == before[0]
+            && lengths[2] == before[2]
+            && selected == recounted
+            && counted == Some(3)
+            && document(d)?.nodes()[&shared] == shared_node
+            && d.app().error.is_none(),
+        json!({"plays":[before[0], 3 * right, before[2]],"selected":"same Repeat","total_plays":3}),
+        json!({"plays":lengths,"selected":selected,"total_plays":counted,"error":d.app().error}),
+    )?;
+    painted(d, "3 total plays in this play only")?;
+    d.capture("Play 2 split, its right part repeated three times and its left part deleted")?;
+    for _ in 0..4 {
         let edited = d.revision();
         d.key(Key::U)?;
         d.changed(&edited)?;
         idle(d)?;
     }
     d.check(
-        "Three Undos restore every play and play 2's earlier branch exactly",
+        "Four Undos restore every play and play 2's earlier branch exactly",
         play_lengths(d, repeat)? == before
             && document(d)?.nodes() == original.nodes()
             && document(d)?.overrides() == original.overrides(),

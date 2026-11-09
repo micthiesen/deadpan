@@ -318,9 +318,10 @@ impl Service {
         Ok(())
     }
 
-    /// Split, delete or repeat one beat in the captured explicit play. The
-    /// inspector continues on the right fragment, the new Repeat, or the
-    /// deleted beat's neighbor, in the same play.
+    /// Split, delete or repeat one beat, or set a Repeat's plays, in the
+    /// captured explicit play. The inspector continues on the right fragment,
+    /// the new or recounted Repeat, or the deleted beat's neighbor, in the
+    /// same play.
     pub(super) fn edit_scoped_structure(
         &mut self,
         target: Target,
@@ -418,6 +419,11 @@ impl Service {
                     format!("Beat repeated {plays} times in this play only and saved"),
                 )
             }
+            ScopedStructure::SetPlays { plays } => (
+                deadpan_core::OccurrenceEdit::SetRepeatPlays { plays, timing },
+                deadpan_core::ProjectFrame(start),
+                format!("Repeat set to {plays} total plays in this play only and saved"),
+            ),
         };
         let needs = document
             .occurrence_structure_requirements(&instance, &edit)
