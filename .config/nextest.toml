@@ -50,7 +50,7 @@ threads-required = 6
 # One retry keeps that hardware contention from failing a valid run; a
 # second failure is a real result.
 [[profile.default.overrides]]
-filter = "binary(proxy_resume)"
+filter = "binary(proxy_resume) | binary(proxy_disk_full)"
 retries = 1
 
 # The same hardware encoder can, under a loaded gate, emit one picture out of
