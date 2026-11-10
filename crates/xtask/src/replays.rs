@@ -344,7 +344,26 @@ fn replay(executable: &Path, output: &Path, name: &str) -> Outcome {
                 .push(format!("failed to start replay: {error}"));
         }
     }
+    if let Some(failure) = over_budget(seconds) {
+        outcome.status = "FAIL";
+        outcome.failures.push(failure);
+    }
     outcome
+}
+
+/// Scenarios take under a minute each; a pass far beyond that is a
+/// performance regression the checks themselves cannot see (a per-card
+/// whole-document validation once made `large-project` take 3,015 s while
+/// every check passed).
+const MAX_SCENARIO_SECONDS: f64 = 300.0;
+
+fn over_budget(seconds: f64) -> Option<String> {
+    (seconds > MAX_SCENARIO_SECONDS).then(|| {
+        format!(
+            "took {seconds:.0} s, over the {MAX_SCENARIO_SECONDS:.0} s scenario ceiling: \
+             look for a performance regression"
+        )
+    })
 }
 
 impl Outcome {
@@ -612,5 +631,7 @@ mod tests {
         let clean = json!({"failed": false, "scenarios": [{"checks": [{"passed": true}], "findings": [], "timings": []}]});
         assert_eq!(Outcome::from_report("x", 0.0, Some(&clean)).status, "PASS");
         assert_eq!(Outcome::from_report("x", 0.0, None).status, "FAIL");
+        assert!(over_budget(59.0).is_none());
+        assert!(over_budget(3_015.0).is_some_and(|failure| failure.contains("3015 s")));
     }
 }
