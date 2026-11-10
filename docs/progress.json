@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-10T10:00:32Z",
+  "updated_at": "2026-11-10T14:20:53Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Remaining partial requirements: pitch-preserving ramps, saturation/EQ group distribution, range and trim edits inside plays, full effect/mastering graph, plan reuse for sounds, qualification corpora and release acceptance.",
+  "focus": "Remaining partial requirements: saturation/EQ group distribution, range and trim edits inside plays, placement into nested occurrences, full effect/mastering graph, plan reuse for sounds, analysis and tracking qualification corpora, and release acceptance.",
   "features": [
     {
       "id": "editing",
@@ -1567,6 +1567,15 @@
       "revision": "25d52b4e9",
       "retrospective": false,
       "summary": "Continuous tape-pitch speed ramps; Ungroup of framed, gained and edged groups without output change; historical job estimates; bleep across cuts, J/L cuts beside pauses and groups, Trim and Slip after audio lag; full gate, 104 replays and all 74 preview/export fixtures pass (2026-11-10)"
+    },
+    {
+      "date": "2026-11-10",
+      "percent": 87,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 10,
+      "revision": "1937f07e1",
+      "retrospective": false,
+      "summary": "Pitch-preserving continuous ramps; reverse and ping-pong across cuts, pauses, groups and speed changes; declared argument schemas for all 148 command verbs with Tab completion, live conflicts and acts-on lines; full gate, 105 replays and all 74 preview/export fixtures pass"
     }
   ],
   "assessment": {
@@ -2100,14 +2109,14 @@
           {
             "id": "DP-06.7",
             "deliverable": "Schema-driven typed argument grammar and completion show default selector, units and parameters",
-            "score": 0.5,
+            "score": 1,
             "evidence": [
               "docs/KEYMAP.md action registry",
               "docs/SECTION8_COVERAGE.md Shared command/help registry",
               "docs/KEYMAP.md#command-arguments",
               "docs/COMMANDS.md#command-arguments"
             ],
-            "remaining": "Every registry verb (148) declares its arguments; declarative schemas drive completion, Tab insertion and cycling, inline validation including declared cross-parameter rules, default-selector display and the generated reference. Completion inside JSON selector values and mark ids, :track's trailing through-shots word, and physical-keyboard, native IME and VoiceOver acceptance of Tab completion remain open.",
+            "remaining": "Completion does not reach inside JSON selector values or mark ids; physical keyboard, native IME and VoiceOver checks of Tab completion are To verify (owner).",
             "normative": "6.4"
           }
         ]
@@ -2381,13 +2390,13 @@
           {
             "id": "DP-09.5",
             "deliverable": "Saturation, independent pitch, tape/Preserve, reverse and variable-rate processing use canonical DSP",
-            "score": 0.5,
+            "score": 1,
             "evidence": [
               "docs/AUDIO_DSP.md",
               "docs/RETIME_EDITING.md",
               "docs/REVERSE_AND_TAILS.md"
             ],
-            "remaining": "Continuous ramps over composite beats refuse (tape-pitch ramps on one Original beat resample per sample since 2026-11-09; pitch-preserving ones drive the canonical stretcher on the exact quadratic block schedule since 2026-11-10, within 1/8x to 8x); composite and speed-transformed passages reverse as a live Rewind of the evaluated pictures and processed Original sound since 2026-11-10 (a captured, edit-independent form and reversing placed sounds remain); listening qualification of ramped stretch transients is owner work. Existing fixed pitch, saturation and Preserve/Tape paths are verified.",
+            "remaining": "Continuous ramps cover one Original beat; composite reversals are live rather than captured; reverse inside a speed change and passages over 20 s refuse; listening checks are To verify (owner).",
             "normative": "8.3,10.5"
           },
           {
