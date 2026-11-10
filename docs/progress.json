@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-10T20:41:22Z",
+  "updated_at": "2026-11-10T23:15:50Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Remaining partial requirements: saturation/EQ group distribution, range, trim and speed-change edits inside plays, full effect/mastering graph, plan reuse for sounds, analysis and tracking qualification corpora, and release acceptance.",
+  "focus": "Remaining partial requirements: occurrence range, trim and speed-change edits, full effect/mastering graph, plan reuse for sounds, analysis and tracking qualification corpora, and release acceptance (Gates A to G).",
   "features": [
     {
       "id": "editing",
@@ -1585,6 +1585,15 @@
       "revision": "d2796c357",
       "retrospective": false,
       "summary": "Sample-accurate waveform ranges for mute and gain (:wave); recovery and failure matrix with all 51 local cells tested and two store fixes; stings visible, detachable and split-safe; :splice inside one Repeat play; full gate (one timing test fixed), 106 replays and all 76 preview/export fixtures pass"
+    },
+    {
+      "date": "2026-11-10",
+      "percent": 88,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 10,
+      "revision": "473760481",
+      "retrospective": false,
+      "summary": "Ungroup inside Repeat plays and All plays, captions and cutaways split exactly onto a group's beats, mix effects refuse by stated rule; incremental cursor-first tracking ranges with a private resumable cache; attached-sound badges no longer quadratic; replays fail scenarios over 300 s; full gate, 106 replays and all 76 preview/export fixtures pass"
     }
   ],
   "assessment": {
@@ -1795,14 +1804,14 @@
           {
             "id": "DP-03.3",
             "deliverable": "Sequence composition, split/group/ungroup and reversible transformations preserve child output and ownership",
-            "score": 0.5,
+            "score": 1,
             "evidence": [
               "docs/STRUCTURAL_SELECTIONS.md",
               "docs/AUDIO_GAIN.md owner clocks",
               "docs/REQUIREMENTS.md DP-08 remainder",
               "docs/GROUP_EDITING.md effect distribution"
             ],
-            "remaining": "Ungroup distributes group framing, clip gain and edge choices exactly (wrapping children where needed), also in one Repeat play or All plays; captions and cutaways over a group live on its hosts. Groups with saturation, EQ, balance or sends refuse by the section 6.3 rule (no per-child equivalent). Treated groups inside retained independent sound scopes and some other sound-bearing structural combinations still refuse.",
+            "remaining": "By rule (spec §6.3), groups whose effects act on the combined mix (saturation, EQ, balance, sends) refuse Ungroup with the effect named; a mixed This play/All plays Ungroup refuses.",
             "normative": "5.1,5.4,6.3"
           },
           {
@@ -2605,13 +2614,13 @@
           {
             "id": "DP-11.6",
             "deliverable": "Tracking schedules incremental cursor-priority ranges with versioned private results",
-            "score": 0.5,
+            "score": 1,
             "evidence": [
               "docs/TRACKING.md Remaining",
               "docs/qualification/tracking-evidence-2026-10-15.md incremental scheduling",
               "docs/TRACKING.md Incremental ranges"
             ],
-            "remaining": "Implemented: cursor-priority stride-aligned ranges per manual keyframe, continuation seeds, private versioned range cache with resume after cancel/sleep, partial previews with complete-only saves, playback/render yield. Remaining: no reverse decoding, so pictures before the initial selection are never tracked; per-range worker launches re-hash the whole attempt copy.",
+            "remaining": "Pictures before the drawn selection are never tracked (Vision tracks forward only); the CLI track command still runs one pass; each range relaunches the worker.",
             "normative": "11.4"
           }
         ]
