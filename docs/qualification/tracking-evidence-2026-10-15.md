@@ -108,27 +108,27 @@ on the rotated fixture beside the held writer:
 - After the owner closes, `project undo` steps back through the replacement
   and then the first remote save.
 
-## Incremental scheduling (not implemented)
+## Incremental scheduling (implemented 2026-11-10)
 
-Specification §11.4 asks for analysis by source ranges, starting with the
-visible cursor neighbourhood. This does not fit cleanly in
-`deadpan-cli`/`deadpan-analysis` without app changes:
+This section recorded why §11.4 incremental scheduling was not implemented on
+2026-10-15. It now is; [incremental ranges](../TRACKING.md#incremental-ranges)
+records the design. Each point raised here was resolved as follows:
 
-- Vision's tracker state lives in one worker process. Splitting a range into
-  chunks re-seeds Vision from a tracked box, not a manual one. That changes
-  results and accumulates drift. The policy (`TrackedPath::track`) also treats
-  every seed as a manual keyframe. A chunked run needs a continuation seed that
-  is neither manual nor a correction, carries the previous chunk's
-  lost/held state, and has an `extend` operation proven equal to the
-  single-run policy on its own observations.
-- Tracking only runs forward from the selected picture. A neighbourhood that
-  lies before the selection needs reverse-order decoding in the worker
-  protocol (seek per GOP, decode, reverse).
-- Progressive results need an operational, in-memory partial path shown in
-  Camera, then one `SetTarget` at the end. Saving each chunk would add one
-  undo step per chunk and make later chunks stale against the head.
-- Prioritizing by cursor belongs to the app's job coordinator (`JobKind::rules`)
-  and the preview's cursor, both in `deadpan-app`.
+- Continuation seeds: a later range is seeded with the tracker's last reported
+  region rather than a manual keyframe, and the unchanged policy runs over the
+  concatenated observations of the completed prefix, so no separate `extend`
+  operation exists. Over identical observations the result equals one run
+  exactly; with the real worker it equals one run within tracking tolerance
+  (`incremental_ranges_match_one_run_and_resume_from_the_private_cache` in
+  `native/deadpan-track/tests/worker.rs`: first range identical, later
+  confident centres within 0.5 px, all within the existing 8 px of truth).
+- Pictures before the selection: not tracked. The neighbourhood before the
+  cursor is reached forward from an earlier keyframe (the selection or a
+  correction) instead of by reverse decoding.
+- Progressive results: an in-memory partial target per job, one final
+  `SetTarget`.
+- Priority: the app reads the visible Original picture before each range;
+  tracking waits out playback and renders between ranges.
 
 ## Not covered
 

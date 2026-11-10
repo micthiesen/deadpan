@@ -860,7 +860,9 @@ fn segment(
     Ok(samples)
 }
 
+mod schedule;
 mod target;
+pub use schedule::*;
 pub use target::*;
 
 #[cfg(test)]

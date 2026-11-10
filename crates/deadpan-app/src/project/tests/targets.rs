@@ -28,6 +28,9 @@ fn script(ending: ScriptEnding, steps: u8, interval: u64) -> Script {
         steps,
         step_interval: Duration::from_millis(interval),
         ending,
+        range_pictures: None,
+        ranges_before_ending: None,
+        tracked_ranges: Default::default(),
     }
 }
 
@@ -576,6 +579,7 @@ fn a_worker_failure_reports_its_reason_and_saves_nothing() {
 
 mod faces;
 mod picture_proposals;
+mod ranges;
 mod sleep;
 
 #[test]

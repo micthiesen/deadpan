@@ -49,6 +49,9 @@ fn track_script(ending: TrackEnding, steps: u8, interval: u64) -> TrackScript {
         steps,
         step_interval: Duration::from_millis(interval),
         ending,
+        range_pictures: None,
+        ranges_before_ending: None,
+        tracked_ranges: Default::default(),
     }
 }
 

@@ -597,12 +597,15 @@ fn animation_parameters(
 /// `framing` at `layer`: the operation itself, then each outer follow, which
 /// sees the subject where inner operations put it. Resolution matches the
 /// committed plan, including the pause provider's retained input geometry.
+/// `partial` is a running tracking job's completed coverage of one target,
+/// which previews follow in place of the saved target where it reaches.
 fn layer_poses(
     document: &deadpan_core::ProjectDocument,
     picture: &crate::worker::Picture,
     layer: usize,
     framing: Option<&Framing>,
     local_position: ExactRatio,
+    partial: Option<(&TargetId, &AttentionTarget)>,
 ) -> Result<Vec<(InstancePath, bool, Option<FramingPose>)>, String> {
     let mut poses: Vec<Option<FramingPose>> =
         picture.framing.iter().map(|layer| layer.pose).collect();
@@ -620,15 +623,21 @@ fn layer_poses(
             .follow_point
             .as_ref()
             .and_then(|(asset, point)| {
-                deadpan_plan::follow_pose_in_context(
-                    document.targets().get(target)?,
-                    asset,
-                    *point,
-                    canvas,
-                    picture.picture_context.as_deref(),
-                    inner.iter().copied(),
-                    scale,
-                )
+                let pose = |followed| {
+                    deadpan_plan::follow_pose_in_context(
+                        followed,
+                        asset,
+                        *point,
+                        canvas,
+                        picture.picture_context.as_deref(),
+                        inner.iter().copied(),
+                        scale,
+                    )
+                };
+                partial
+                    .filter(|(id, _)| *id == target)
+                    .and_then(|(_, partial)| pose(partial))
+                    .or_else(|| pose(document.targets().get(target)?))
             })
             .and_then(|pose| centering.apply(pose).ok())
             .unwrap_or(fallback)
@@ -2231,6 +2240,7 @@ impl DeadpanApp {
                 session.layer,
                 framing.as_ref(),
                 session.local_position,
+                self.tracking_partial(),
             )
             .ok()
         });
@@ -2505,6 +2515,28 @@ impl DeadpanApp {
         self.camera_effect(effect, context);
     }
 
+    /// The running tracking job's partial target, if it has one.
+    fn tracking_partial(&self) -> Option<(&TargetId, &AttentionTarget)> {
+        let job = self.targets.running()?;
+        Some((&job.target, job.partial(&job.target)?))
+    }
+
+    /// Re-resolve an open Camera's follows after tracking completed another
+    /// range, keeping the draft's pose.
+    pub(super) fn refresh_camera_follow(&mut self) {
+        let Some(pose) = self
+            .camera
+            .as_ref()
+            .filter(|camera| camera.follow.is_some())
+            .map(|camera| camera.draft.pose())
+        else {
+            return;
+        };
+        if let Err(error) = self.camera_preview(pose, false) {
+            self.error = Some(error);
+        }
+    }
+
     /// Show `pose` on the retained picture, re-resolving outer follows.
     fn camera_preview(&mut self, pose: FramingPose, reset: bool) -> Result<(), String> {
         let camera = self.camera.as_ref().ok_or("Camera is closed.")?;
@@ -2520,6 +2552,7 @@ impl DeadpanApp {
             camera.layer,
             framing.as_ref(),
             camera.local_position,
+            self.tracking_partial(),
         )?;
         let centered = if camera.follow.is_some()
             && let Some((_, _, Some(shown))) = poses.first()
@@ -2861,6 +2894,9 @@ impl DeadpanApp {
                     camera.layer,
                     framing.as_ref(),
                     camera.local_position,
+                    self.targets
+                        .running()
+                        .and_then(|job| Some((&job.target, job.partial(&job.target)?))),
                 )?
                 .first()
                 .and_then(|(_, _, pose)| *pose)
@@ -3062,15 +3098,10 @@ impl DeadpanApp {
                         .as_region()
                         .ok_or("The correction has no rectangle.")?;
                     if target.samples.is_empty() {
-                        // Nothing tracked to invalidate. Later pictures of an
-                        // untracked target are corrected by tracking it first,
-                        // so a manual keyframe never blocks `T` or `:track`.
-                        if at != target.span.start().ticks {
-                            return Err(format!(
-                                "{} is not tracked yet. Track it with T first, or correct it at its first picture.",
-                                target.label
-                            ));
-                        }
+                        // Nothing tracked to invalidate. A manual keyframe on
+                        // an untracked rectangle seeds its own tracking
+                        // segment: `T` and `:track` keep it and schedule the
+                        // ranges nearest the cursor first.
                         let target = corrected(target, at, region);
                         let ticket = self
                             .submit_target(Operation::Save {
@@ -4264,7 +4295,7 @@ mod tests {
                 },
             },
         };
-        let poses = layer_poses(&document, &picture, 0, Some(&framing), local).unwrap();
+        let poses = layer_poses(&document, &picture, 0, Some(&framing), local, None).unwrap();
         assert_eq!(
             poses,
             vec![(

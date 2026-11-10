@@ -193,8 +193,10 @@ Camera picks, draws, follows and corrects targets ([framing](FRAMING.md#native-i
   at a later picture, invalidating samples only until the next correction
   or span end. It never launches tracking. Tracking a point refuses before
   work or history changes, because a point has no tracking rectangle.
-  An untracked rectangle can be corrected at its span start; later corrections
-  require tracking first. A correction of a tracked rectangle re-tracks only
+  An untracked rectangle can be corrected at any picture of its span; each
+  correction is saved as a manual keyframe that `T` later tracks forward from
+  ([incremental ranges](TRACKING.md#incremental-ranges)). A correction of a
+  tracked rectangle re-tracks only
   the correction's range
   ([tracking](TRACKING.md#in-the-app)).
 

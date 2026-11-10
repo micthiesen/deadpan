@@ -13,6 +13,8 @@ native app drives the same host code ([in the app](#in-the-app)).
 | Piece | Responsibility |
 | --- | --- |
 | [`deadpan_analysis::tracking`](../crates/deadpan-analysis/src/tracking.rs) | Pure, serde-serializable `TrackedPath` / `TrackSample` / `TrackState`, `NormalizedRect` with rotation mapping, the versioned `deadpan-track-1` policy, shot-boundary range ends, all-or-nothing corrections and range-local re-tracking. No I/O. |
+| [`deadpan_analysis::tracking` ranges](../crates/deadpan-analysis/src/tracking/schedule.rs) | Pure `RangePlan`: one segment per manual keyframe, bounded stride-aligned ranges, continuation seeds, nearest-ready-range-to-the-cursor order and assembly of the completed prefix with the unchanged policy ([incremental ranges](#incremental-ranges)). |
+| [`deadpan_cli::tracking::incremental`](../crates/deadpan-cli/src/tracking/incremental.rs) | `track_ranges`: one supervised worker run per range, the private versioned range cache, per-range coverage and partial paths. |
 | [`deadpan_analysis::tracking` mapping](../crates/deadpan-analysis/src/tracking/target.rs) | `TrackedPath::to_target` and `retrack_target`: the exact mapping to a core `AttentionTarget`, compaction to its bounds, provenance. |
 | [`deadpan_jobs::tracking`](../crates/deadpan-jobs/src/tracking.rs) | Versioned, strictly framed worker protocol and the `TrackingProtocol` adapter for the shared `SupervisedProcess`. |
 | [`deadpan-track`](../native/deadpan-track/) | Process-isolated worker: pinned descriptor-only FFmpeg decoding and Vision tracking; `picture-proposals` runs selected face/objectness requests over one exact picture, buffer and handler ([proposal mode](#face-detection-mode)). |
@@ -377,37 +379,112 @@ threads ([service](../crates/deadpan-app/src/project/service/targets.rs)).
   `:track-cancel` cancels. Without `through-shots` a stored shot analysis is
   required (the app detects shots automatically); without one the job reports
   that tracking cannot stop at cuts and saves nothing. `:track` refuses a target
-  that already has samples or corrections: correct it instead. Saved points
+  that already has samples: correct it instead. Manual corrections of an
+  untracked rectangle are kept and each seeds its own segment. Saved points
   refuse before media preparation, worker launch or writes: tracking requires
   a rectangle. Draw a region target to track a subject, or correct the point
   manually with `c`.
 - Each command captures session and head revision at entry. The job thread
   opens the package read-only, runs `prepare_tracking` (refusing a head that
-  differs from the captured one), then `track` with the installed
+  differs from the captured one), then `track_ranges` with the installed
   `deadpan-track` worker (`TrackingRuntime::beside_current_executable`; a
-  missing worker is reported as unavailable). Progress is the worker's
-  percentage. The writer then maps the path with `to_target` (keeping the
+  missing worker is reported as unavailable), range by range nearest the
+  visible Original picture ([incremental ranges](#incremental-ranges)).
+  Progress is the percentage of analysed pictures over all ranges. Once every
+  range is complete the writer maps the path with `to_target` (keeping the
   target's label) and commits `SetTarget` expecting the captured revision, so
   any edit made while tracking refuses the save, as `track --save` does.
 - Corrections: `c` in Camera on a tracked target opens its rectangle at the
   displayed picture; Enter runs a job over exactly `correction_range(at)`
   (no shot stop) and saves `retrack_target` expecting the entry head. Earlier
-  pictures keep their positions. An untracked rectangle's initial selection
-  can be corrected at its span start; later corrections require tracking first.
-  Point corrections save directly without tracking and retain point geometry.
+  pictures keep their positions. On an untracked rectangle `c` saves a manual
+  correction directly at any picture (at the span start it replaces the
+  initial selection); `T` then tracks every segment. Point corrections save
+  directly without tracking and retain point geometry.
 - One job runs at a time; a second start is refused. Cancellation is explicit
   and cooperative. Closing, opening another project and shutdown cancel the job
   and wait until it has drained before releasing the project. Outcomes
   (saved positions, cancelled, failed with the reason, unavailable) appear in
-  the inspector; the footer shows progress. Camera stays open while tracking and
-  continues on the saved revision.
+  the inspector; the footer shows progress and `range n of N`. Camera stays
+  open while tracking and continues on the saved revision.
+
+## Incremental ranges
+
+Specification §11.4 asks for analysis by source ranges, nearest the visible
+cursor first, with private versioned results. Tracking implements it as
+follows ([`RangePlan`](../crates/deadpan-analysis/src/tracking/schedule.rs),
+[`track_ranges`](../crates/deadpan-cli/src/tracking/incremental.rs)).
+
+- **Segments and ranges.** Vision's tracker is causal, so the tracked pictures
+  split into one segment per manual keyframe (the initial selection and each
+  correction), and each segment into ranges of at most `TRACK_RANGE_PICTURES`
+  (240) pictures, rounded up to whole strides so analysed pictures stay on the
+  keyframe's stride grid. Each range is one supervised worker run over the
+  same verified attempt copy.
+- **Continuation.** A segment's first range is seeded by its keyframe. A later
+  range is seeded on the previous range's last analysed picture with the
+  tracker's last reported region in that range (its own seed when Vision
+  reported none), which is what the single run would have fed Vision next; the
+  seed picture's own report belongs to the previous range and is dropped. Vision
+  is not bit-reproducible and is re-created at each seam, so a ranged path
+  equals one run only within tracking tolerance. On the moving-square fixture
+  with seven-picture ranges, the first range was identical and every later
+  confident centre was within 0.5 px of the one-shot run (2026-11-10, Apple M5
+  Max, macOS 26.5.2).
+- **The policy is unchanged.** `RangePlan::assemble` applies
+  `deadpan-track-1` to the concatenated observations of the completed prefix
+  (later keyframes through `correct_and_retrack`), so over the same
+  observations it equals one run exactly (property-tested for strides 1 to 3
+  and widths 1 to 50).
+- **Order.** Before every range the job reads the visible Original picture
+  (the app's Original cursor, or the Edit cursor through the plan, as shot
+  detection does) and runs the incomplete ready range nearest it; a range is
+  ready when it starts a segment or its predecessor is complete. Ties prefer
+  the range at or after the cursor. Within a segment that reaches the cursor
+  forward from its keyframe. The neighbourhood before the cursor in an earlier
+  segment, the reverse neighbourhood, is reached forward from that segment's
+  earlier keyframe; there is no reverse decoding, so pictures before the
+  initial selection (outside the target's span) are not tracked.
+- **Private versioned results.** Each completed range's raw observations go to
+  the private, rebuildable `AnalysisRanges` cache shared with transcription and
+  shot detection, keyed by BLAKE3 over the implementation
+  (`deadpan-track-ranges-1`), rule, worker protocol, the Original's content
+  identity, the expected stream (index, geometry, time base, rotation and
+  interpretation), the stride, the segment's keyframe, every owned picture PTS
+  and the exact seed. No target ID, label, revision or other authored state
+  enters the key. A record is used only when its key and analysed PTS match
+  exactly. Cache read or write failures cost only resumability.
+- **Partial results.** After every range the job reports `range n of N`, the
+  completed spans and, for a first tracking, the target mapped from the
+  complete prefix that starts at the selection (its span ends at the first
+  incomplete range). The viewer overlay and Camera's follow use that partial
+  target where it reaches and the saved target beyond it. Nothing is saved
+  until every range is complete; the save is the single `SetTarget` described
+  above, and a partial target never outlives its job. Corrections report
+  coverage without a partial target.
+- **Resumption.** Cancellation, sleep and failures keep completed ranges in the
+  cache. Nothing restarts by itself; the next `:track` (or Shift-T) reuses them
+  and tracks only the rest. A changed selection or correction changes the
+  keyframe, so only the affected segment is tracked again.
+- **App priority.** Tracking remains `Requested` work admitted at once, and
+  shot detection and proxies keep yielding to it. Between ranges it waits out
+  playback and renders at `JobHandle::checkpoint` ([jobs](JOBS.md#yield-rules)).
+  A worker run is never paused mid-range.
+
+The CLI `track` and `track-correct` commands still run one worker over their
+whole range; `track_ranges` is the library entry point the app uses.
 
 Test seam: with `test` or `ui-harness`, `targets::Backend::Scripted` replaces
-only the Vision worker with deterministic confident observations moving at a
-fixed speed. Range resolution against the stored shots, the verified copy, the
+only the Vision worker, one range at a time, with deterministic confident
+observations moving at a fixed speed from each run's seed. Its scripts choose
+the range width and a private cache directory, never the user's. Range resolution against the stored shots, the verified copy, the
 policy, compaction and the revision-guarded save stay real. Service tests cover
 the shot requirement, stops at a stored cut, the entry-head guard, single-range
-corrections, a second start, worker failure, cancellation and close draining.
+corrections, a second start, worker failure, cancellation and close draining;
+`project::tests::targets::ranges` covers partial coverage that previews but
+never saves, resumption from cached ranges after cancellation and after sleep
+(only the remaining ranges are tracked), and a correction's segment tracked
+first when the cursor is beside it.
 The `targets` replay drives creation, picking, following, tracking and
 correction through the production keys.
 
@@ -509,12 +586,12 @@ mostly the unoptimized BGRA copy. The upscale is a measurement input only
   quality on people, faces, motion blur, lighting changes or partial occlusion.
 * Rotated and anamorphic coverage is synthetic; real rotated phone footage and
   anamorphic camera originals were not run.
-* Incremental scheduling by visible cursor neighbourhood (Section 11.4) remains
-  open. It needs a non-manual continuation seed and an `extend` policy operation
-  equal to one run, reverse decoding for pictures before the selection, an
-  in-memory progressive path with one final `SetTarget`, and cursor priority in
-  the app's job coordinator
-  ([details](qualification/tracking-evidence-2026-10-15.md#incremental-scheduling-not-implemented)).
+* Pictures before the initial selection are never tracked: the target's span
+  starts at the selection, and there is no reverse decoding.
+* Every range launches a worker that re-hashes the whole attempt copy before
+  decoding; the 240-picture default keeps that small beside tracking for
+  ordinary Originals, but very large files pay it per range. A fully cached
+  resume still copies the Original into a fresh attempt workspace.
 * Each attempt copies the whole Original into its workspace.
 * `deadpan-jobs` depends on `deadpan-analysis` for `NormalizedRect` in the
   protocol; moving the wire type was optional and not done.

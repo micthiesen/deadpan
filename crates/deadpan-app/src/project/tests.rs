@@ -765,6 +765,7 @@ fn shutdown_finishes_an_admitted_command_before_releasing_the_store() {
         delivered: Mutex::new(ContinuationKey::default()),
         wake: Arc::new(|| {}),
         job_board: crate::jobs::Jobs::new(),
+        tracking_cursor: Arc::new(std::sync::atomic::AtomicI64::new(i64::MIN)),
     });
     let (requests, receive) = mpsc::sync_channel(REQUEST_LANES);
     let service = ProjectService {
@@ -856,6 +857,7 @@ fn held_shared() -> Arc<Shared> {
         delivered: Mutex::new(ContinuationKey::default()),
         wake: Arc::new(|| {}),
         job_board: crate::jobs::Jobs::new(),
+        tracking_cursor: Arc::new(std::sync::atomic::AtomicI64::new(i64::MIN)),
     })
 }
 
@@ -1223,6 +1225,7 @@ impl Harness {
             delivered: Mutex::new(ContinuationKey::default()),
             wake: Arc::new(|| {}),
             job_board: crate::jobs::Jobs::new(),
+            tracking_cursor: Arc::new(std::sync::atomic::AtomicI64::new(i64::MIN)),
         });
         let (requests, receive) = mpsc::sync_channel(REQUEST_LANES);
         let (sender, jobs) = mpsc::sync_channel(1);

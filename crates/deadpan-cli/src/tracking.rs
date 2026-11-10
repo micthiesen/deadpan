@@ -1217,5 +1217,7 @@ pub fn target_rect_at(target: &AttentionTarget, at: i64) -> Option<NormalizedRec
     rect_from_target(region.as_region()?)
 }
 
+pub mod incremental;
+
 #[cfg(test)]
 mod point_tests;

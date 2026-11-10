@@ -574,3 +574,108 @@ fn a_saved_target_reloads_follows_in_the_plan_and_corrects_only_its_range() {
     let (cx, cy) = center_pixels(&target_rect_at(&corrected, 1_000).unwrap());
     assert!((cx - (x + SQUARE / 2.0)).abs() < 0.01 && (cy - (y + SQUARE / 2.0)).abs() < 0.01);
 }
+
+#[test]
+fn incremental_ranges_match_one_run_and_resume_from_the_private_cache() {
+    use deadpan_cli::tracking::incremental::{RangeOptions, track_ranges, worker_runs};
+    use std::sync::atomic::{AtomicI64, AtomicUsize, Ordering};
+    let scratch = tempfile::tempdir().unwrap();
+    let package = project(scratch.path(), true);
+    let store = ProjectStore::open(&package, AccessMode::ReadOnly).unwrap();
+    let cancelled = AtomicBool::new(false);
+    let deadline = Instant::now() + Duration::from_secs(300);
+    let prepared = prepare_tracking(&store, &request(true, 1), &cancelled, deadline).unwrap();
+    let whole = track(
+        &runtime(),
+        &prepared,
+        TrackPolicy::default(),
+        "whole",
+        &cancelled,
+        deadline,
+        |_| {},
+    )
+    .unwrap()
+    .path;
+    let options = RangeOptions {
+        cache_directory: Some(scratch.path().join("ranges")),
+        range_pictures: 7,
+    };
+    let keyframes = [Keyframe {
+        pts: prepared.start_pts(),
+        region: whole.keyframes()[0].region,
+    }];
+    let cursor = AtomicI64::new(prepared.pictures()[20]);
+    let runtime = runtime();
+    let runs = AtomicUsize::new(0);
+    let incremental = |attempt: &str, stop_after: Option<usize>| {
+        let mut worker = worker_runs(&runtime, &prepared, attempt, &cancelled, deadline);
+        let mut counted = |pictures: &[i64], end, seed, progress: &mut dyn FnMut(u8)| {
+            if stop_after.is_some_and(|limit| runs.load(Ordering::SeqCst) >= limit) {
+                return Err(TrackingError::Cancelled);
+            }
+            runs.fetch_add(1, Ordering::SeqCst);
+            worker(pictures, end, seed, progress)
+        };
+        let mut partial_ends = Vec::new();
+        let result = track_ranges(
+            &prepared,
+            &keyframes,
+            TrackPolicy::default(),
+            &options,
+            &cursor,
+            &mut counted,
+            &cancelled,
+            deadline,
+            || Ok(()),
+            |_| {},
+            |progress| partial_ends.push(progress.partial.map(|path| path.end_pts())),
+        );
+        (result, partial_ends)
+    };
+    // Cancelled after two ranges: nothing is returned, two ranges are kept.
+    let (stopped, partial_ends) = incremental("first", Some(2));
+    assert!(matches!(stopped, Err(TrackingError::Cancelled)));
+    assert_eq!(runs.load(Ordering::SeqCst), 2);
+    // Partial coverage grew range by range from the selection.
+    assert_eq!(
+        partial_ends,
+        [Some(prepared.pictures()[7]), Some(prepared.pictures()[14])]
+    );
+    let (resumed, _) = incremental("second", None);
+    let resumed = resumed.unwrap();
+    // 30 pictures in ranges of 7: five ranges, two restored from the cache.
+    assert_eq!((resumed.ranges, resumed.cached_ranges), (5, 2));
+    assert_eq!(runs.load(Ordering::SeqCst), 5);
+    let path = resumed.path;
+    assert_eq!(path.stop(), whole.stop());
+    assert_eq!(path.end_pts(), whole.end_pts());
+    assert_eq!(path.samples().len(), whole.samples().len());
+    // Re-seeding Vision at each range continues the same subject: confident
+    // pictures agree with the one-shot run and the truth within the existing
+    // 8 px tolerance, and the unoccluded approach stays tracked.
+    for (picture, (ranged, single)) in path.samples().iter().zip(whole.samples()).enumerate() {
+        let (x, y) = center_pixels(&ranged.region);
+        let (sx, sy) = center_pixels(&single.region);
+        let (tx, ty) = truth(picture);
+        eprintln!(
+            "{picture:2} ranged {:?} ({x:6.1}, {y:6.1}) single {:?} ({sx:6.1}, {sy:6.1})",
+            ranged.state, single.state
+        );
+        if matches!(ranged.state, TrackState::Tracked | TrackState::Interpolated) {
+            assert!((x - tx).hypot(y - ty) < 8.0, "picture {picture}");
+        }
+        if matches!(ranged.state, TrackState::Tracked) && single.state == TrackState::Tracked {
+            assert!((x - sx).hypot(y - sy) < 8.0, "picture {picture}");
+        }
+    }
+    assert!(
+        path.samples()[1..12]
+            .iter()
+            .all(|sample| sample.state == TrackState::Tracked)
+    );
+    // A complete cache replays without the worker and gives the same path.
+    let (replayed, _) = incremental("third", Some(5));
+    let replayed = replayed.unwrap();
+    assert_eq!(replayed.cached_ranges, 5);
+    assert_eq!(replayed.path, path);
+}

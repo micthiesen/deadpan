@@ -255,7 +255,7 @@ impl DeadpanApp {
     /// Resolve the actual visible Original picture, including freezes,
     /// repeated plays, retimes and cutaways. Generated/blank pictures supply
     /// no invented source coordinate and retain the last meaningful priority.
-    fn visible_shot_cursor(&self) -> Option<u64> {
+    pub(super) fn visible_shot_cursor(&self) -> Option<u64> {
         let workspace = self.workspace.as_ref()?;
         let asset = original_asset(workspace)?;
         let index = workspace.sources.get(asset)?.video_index.as_deref()?;

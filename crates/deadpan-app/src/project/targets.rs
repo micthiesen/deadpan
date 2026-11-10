@@ -15,7 +15,6 @@
 //! accepts one. Camera saves the chosen target independently; the explicit
 //! `:zoom … target=face:N` or `target=region:N` saves it with framing in one edit.
 
-#[cfg(any(test, feature = "ui-harness"))]
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -162,7 +161,7 @@ pub enum TrackMode {
 pub enum Phase {
     /// Resolving the range and copying the verified Original.
     Preparing,
-    /// The worker's monotonic percentage.
+    /// The worker's monotonic percentage over all ranges.
     Tracking(u8),
     /// Cancellation was requested; waiting for the worker to stop.
     Cancelling,
@@ -207,6 +206,8 @@ pub struct Job {
     pub revision: RevisionId,
     pub started: Instant,
     pub phase: Phase,
+    /// Completed ranges so far; `None` until the first range completes.
+    pub coverage: Option<Coverage>,
     /// None while the job runs.
     pub outcome: Option<Outcome>,
 }
@@ -215,6 +216,30 @@ impl Job {
     pub fn running(&self) -> bool {
         self.outcome.is_none()
     }
+
+    /// The partial target to show for `id` while this job runs.
+    pub fn partial(&self, id: &TargetId) -> Option<&AttentionTarget> {
+        (self.running() && &self.target == id)
+            .then_some(self.coverage.as_ref()?.partial.as_deref()?)
+    }
+}
+
+/// Completed tracking ranges, reported after each one. Nothing here is saved:
+/// the job saves once, when every range is complete.
+#[derive(Clone, Debug)]
+pub struct Coverage {
+    pub completed: usize,
+    pub total: usize,
+    /// Ranges restored from the private range cache.
+    pub cached: usize,
+    /// Completed ranges as half-open source PTS spans.
+    pub spans: Vec<(i64, i64)>,
+    /// The tracked target over the completed prefix from its first picture,
+    /// as it would be saved; previews may follow it. `None` for corrections
+    /// and before the first range.
+    pub partial: Option<Arc<AttentionTarget>>,
+    /// Increases with every report.
+    pub version: u64,
 }
 
 /// The latest durable target save of this session, from a direct save or a
@@ -300,12 +325,26 @@ impl ProposalScript {
 /// Scripted runs in order, one per start; the last one repeats.
 #[cfg(any(test, feature = "ui-harness"))]
 #[derive(Debug)]
-pub struct ScriptQueue(std::sync::Mutex<std::collections::VecDeque<Script>>);
+pub struct ScriptQueue(
+    std::sync::Mutex<std::collections::VecDeque<Script>>,
+    Option<std::path::PathBuf>,
+);
 
 #[cfg(any(test, feature = "ui-harness"))]
 impl ScriptQueue {
     pub fn new(runs: impl IntoIterator<Item = Script>) -> Self {
-        Self(std::sync::Mutex::new(runs.into_iter().collect()))
+        Self(std::sync::Mutex::new(runs.into_iter().collect()), None)
+    }
+
+    /// Keep completed ranges in this private directory, never the user's.
+    #[cfg_attr(not(test), allow(dead_code, reason = "service tests only"))]
+    pub fn with_cache(mut self, directory: std::path::PathBuf) -> Self {
+        self.1 = Some(directory);
+        self
+    }
+
+    pub fn cache(&self) -> Option<&std::path::Path> {
+        self.1.as_deref()
     }
 
     pub fn next(&self) -> Option<Script> {
@@ -327,6 +366,13 @@ pub struct Script {
     pub steps: u8,
     pub step_interval: std::time::Duration,
     pub ending: ScriptEnding,
+    /// Pictures per tracking range; `None` keeps the production width.
+    pub range_pictures: Option<usize>,
+    /// Ranges this script tracks before its ending applies to the next one;
+    /// `None` tracks every range.
+    pub ranges_before_ending: Option<usize>,
+    /// Counts tracked (not cached) ranges across every run of this script.
+    pub tracked_ranges: Arc<std::sync::atomic::AtomicUsize>,
 }
 
 #[cfg(any(test, feature = "ui-harness"))]

@@ -170,13 +170,19 @@ impl DeadpanApp {
         let Some((asset, point)) = &picture.follow_point else {
             return Vec::new();
         };
+        let running = self.targets.running();
         workspace
             .document
             .targets()
             .iter()
             .filter(|(_, target)| &target.asset == asset)
             .filter_map(|(id, target)| {
-                let (region, source) = target.region_at(*point)?;
+                // A running job's completed ranges show where they reach;
+                // beyond them the saved target still applies.
+                let (region, source) = running
+                    .and_then(|job| job.partial(id))
+                    .and_then(|partial| partial.region_at(*point))
+                    .or_else(|| target.region_at(*point))?;
                 Some(Shown {
                     id: id.clone(),
                     label: target.label.clone(),
@@ -298,7 +304,16 @@ impl DeadpanApp {
     /// Admit the service's target state; show a refusal of our command.
     pub(super) fn receive_targets(&mut self, update: Option<Update>) {
         let session = self.workspace.as_ref().map(|workspace| workspace.session);
+        let seen = self.partial_version();
         self.targets.update = update.filter(|update| Some(update.session) == session);
+        if self.targets.running().is_some()
+            && let Some(pts) = self.visible_original_pts()
+        {
+            self.service.set_tracking_cursor(pts);
+        }
+        if self.partial_version() != seen {
+            self.refresh_camera_follow();
+        }
         let Some((answered, refusal)) = self.targets.reply().cloned() else {
             self.finish_camera_proposals();
             self.finish_proposal_zoom();
@@ -321,6 +336,20 @@ impl DeadpanApp {
         }
         self.finish_camera_proposals();
         self.finish_proposal_zoom();
+    }
+
+    /// The running job's coverage report, to notice new ranges.
+    fn partial_version(&self) -> Option<u64> {
+        Some(self.targets.running()?.coverage.as_ref()?.version)
+    }
+
+    /// The PTS of the Original picture on screen, as tracking schedules by.
+    fn visible_original_pts(&self) -> Option<i64> {
+        let ordinal = self.visible_shot_cursor()?;
+        let workspace = self.workspace.as_ref()?;
+        let asset = original_asset(workspace)?;
+        let index = workspace.sources.get(asset)?.video_index.as_deref()?;
+        Some(index.frames().get(usize::try_from(ordinal).ok()?)?.pts)
     }
 
     /// The context `:track` acts on, captured at command entry.
@@ -489,8 +518,8 @@ impl DeadpanApp {
 
     /// Tracking status for the inspector and footer.
     pub(super) fn tracking_line(job: &Job) -> String {
-        format!(
-            "{} {} · {} · {}",
+        let mut line = format!(
+            "{} {} · {}",
             if job.correction {
                 "Re-tracking"
             } else {
@@ -498,8 +527,53 @@ impl DeadpanApp {
             },
             job.label,
             job.phase.label(),
-            elapsed(job)
-        )
+        );
+        if let Some(coverage) = &job.coverage {
+            line.push_str(&format!(
+                " · range {} of {}",
+                coverage.completed, coverage.total
+            ));
+            if coverage.cached > 0 {
+                line.push_str(&format!(" ({} reused)", coverage.cached));
+            }
+        }
+        line.push_str(&format!(" · {}", elapsed(job)));
+        line
+    }
+
+    /// One line on what a running job's completed ranges already give.
+    fn coverage_line(&self, job: &Job) -> Option<String> {
+        let coverage = job.coverage.as_ref()?;
+        let partial = job.partial(&job.target);
+        let rate = self.workspace.as_ref().and_then(|workspace| {
+            let target = workspace.document.targets().get(&job.target)?;
+            let video = workspace.document.assets().get(&target.asset)?.video?;
+            Some(video.start().time_base)
+        });
+        let seconds = |ticks: i64| {
+            rate.map_or_else(
+                || ticks.to_string(),
+                |base| {
+                    format!(
+                        "{:.1} s",
+                        ticks as f64 * f64::from(base.numerator()) / f64::from(base.denominator())
+                    )
+                },
+            )
+        };
+        let spans = coverage
+            .spans
+            .iter()
+            .map(|(start, end)| format!("{}–{}", seconds(*start), seconds(*end)))
+            .collect::<Vec<_>>()
+            .join(", ");
+        Some(match partial {
+            Some(target) => format!(
+                "Tracked so far: {spans}. Camera follows the {} positions already found; nothing is saved until every range is done.",
+                target.samples.len()
+            ),
+            None => format!("Tracked so far: {spans}. Nothing is saved until every range is done."),
+        })
     }
 
     /// A status row while a tracking job runs.
@@ -534,6 +608,9 @@ impl DeadpanApp {
                         .fill(style::LAVENDER),
                 );
             }
+            if let Some(line) = self.coverage_line(&job) {
+                ui.label(egui::RichText::new(line).size(12.0).weak());
+            }
             if ui
                 .add_enabled(
                     !self.service.is_busy(),
@@ -553,7 +630,10 @@ impl DeadpanApp {
             ),
             Some(Outcome::Cancelled) => (
                 style::muted(ui),
-                format!("Tracking {} cancelled", job.label),
+                format!(
+                    "Tracking {} cancelled · :track resumes from its completed ranges",
+                    job.label
+                ),
             ),
             Some(Outcome::Failed(reason)) => (
                 style::ERROR,
@@ -563,7 +643,7 @@ impl DeadpanApp {
             Some(Outcome::Interrupted) => (
                 style::WARNING,
                 format!(
-                    "Tracking {} stopped when the Mac slept; the target is unchanged. Track it again with :track.",
+                    "Tracking {} stopped when the Mac slept; the target is unchanged. :track resumes from its completed ranges.",
                     job.label
                 ),
             ),

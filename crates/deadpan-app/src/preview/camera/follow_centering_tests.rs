@@ -183,7 +183,8 @@ fn child_camera_reprojects_targeted_escalations_and_follow_in_plan_order() {
                 let picture = picture(&before);
                 let local = picture.framing[0].local_position;
                 saw_fraction |= local.denominator() != 1;
-                let updates = layer_poses(&document, &picture, 0, Some(&framing), local).unwrap();
+                let updates =
+                    layer_poses(&document, &picture, 0, Some(&framing), local, None).unwrap();
                 let mut actual = picture.framing.clone();
                 for (instance, escalation, pose) in updates {
                     actual

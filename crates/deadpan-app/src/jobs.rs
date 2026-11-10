@@ -254,8 +254,19 @@ impl JobKind {
         };
         let (priority, resource, yields) = match self {
             Self::Render => (Priority::Render, None, NONE),
-            // The person asked and is waiting; Vision runs per picture.
-            Self::Tracking | Self::PictureProposals => (Priority::Requested, None, NONE),
+            // The person asked and is waiting. Tracking waits out playback
+            // and renders between its ranges; one picture's proposals are
+            // too short to pause.
+            Self::Tracking => (
+                Priority::Requested,
+                None,
+                Yields {
+                    playback: true,
+                    render: true,
+                    ..NONE
+                },
+            ),
+            Self::PictureProposals => (Priority::Requested, None, NONE),
             Self::AiPause => (
                 Priority::Requested,
                 Some(Resource::Inference),
@@ -1757,6 +1768,32 @@ mod tests {
             drop(queued);
             assert_eq!(fresh.checkpoint(None), Ok(()));
         }
+    }
+
+    #[test]
+    fn tracking_waits_out_playback_between_ranges_and_still_holds_scans() {
+        let jobs = Jobs::new();
+        let tracking = jobs.register(spec(JobKind::Tracking));
+        let shots = jobs.register(spec(JobKind::Shots));
+        let faces = jobs.register(spec(JobKind::PictureProposals));
+        assert!(
+            tracking.admitted(),
+            "requested tracking is admitted at once"
+        );
+        jobs.set_foreground(Foreground { playback: true });
+        assert_eq!(
+            tracking.pause_reason().as_deref(),
+            Some("the edit is playing")
+        );
+        // One picture's proposals are too short to pause.
+        assert_eq!(faces.pause_reason(), None);
+        drop(faces);
+        jobs.set_foreground(Foreground { playback: false });
+        assert_eq!(tracking.checkpoint(None), Ok(()));
+        // Background scans keep yielding to tracking while it runs.
+        assert_eq!(shots.pause_reason().as_deref(), Some("tracking is running"));
+        drop(tracking);
+        assert_eq!(shots.pause_reason(), None);
     }
 
     #[test]

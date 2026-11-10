@@ -146,7 +146,8 @@ is preempted mid-step, and GPU kernels are not interrupted.
 | Shot detection | the edit plays, a render runs, tracking or face detection runs | Between pictures (`JobHandle::checkpoint` in the scan's progress callback). Its ten-second checkpoints still save. |
 | Seek proxy | the edit plays, a render runs, an AI model runs (generation or transcription), tracking or face detection runs | The existing monitor suspends the worker's process group (SIGSTOP/SIGCONT). It now combines `JobHandle::pause_reason` with the UI's busy signal and the power guard. |
 | AI generation | playback or a render | Cooperative stage, denoising-step and decoded-chunk boundaries in the MLX adapter, after synchronizing dispatched GPU work. |
-| Transcription, pause detection, tracking, faces, render | nothing | These workers do not implement cooperative scheduling holds. |
+| Tracking | the edit plays or a render runs | Between ranges (`JobHandle::checkpoint` before each worker run, [incremental ranges](TRACKING.md#incremental-ranges)); a worker run is never paused mid-range. Shot detection and proxies still yield to it, so automatic analysis runs after it. |
+| Transcription, pause detection, faces, render | nothing | These workers do not implement cooperative scheduling holds. |
 
 AI scheduling controls are identity/token-bound and monotonically sequenced.
 The host bounds and coalesces pending changes; cancellation remains available
@@ -270,7 +271,7 @@ anyway. The policy follows the kind of work:
 | Transcription, Recognize again | Interrupted, queued or running | Explicit Try again only | Stored transcript and corrections kept; guarded saves |
 | Pause detection | Interrupted, queued or running | Explicit Try again only | Stored words and corrections kept; guarded saves |
 | Word refinement | Interrupted at its next check | Request refinement again | Nothing accepted; its save carries the captured epoch |
-| Tracking | Interrupted; the Vision worker is torn down | Explicit `:track` (or Shift-T in Camera) only | Target and history unchanged; the save checks the epoch immediately before its commit |
+| Tracking | Interrupted; the Vision worker is torn down | Explicit `:track` (or Shift-T in Camera) only; it resumes from the completed ranges | Target and history unchanged; completed ranges stay in the private range cache; the save checks the epoch immediately before its commit |
 | Target proposals (faces, regions) | Interrupted; the worker is torn down | Detect again explicitly | No edit; proposals from a run that crossed sleep are never shown |
 | Shot detection | Interrupted, queued or running | Resumes automatically from its cached ranges | Completed ranges stay in the private range cache; a result from a run that crossed sleep, even one buffered for saving, is discarded and recomputed |
 | Seek proxy | The worker group is stopped, not suspended across sleep with a VideoToolbox session open | Rebuilds automatically, reusing completed ranges | Completed ranges kept; a proxy already verified and published stays; sleep is never remembered as a failure |
@@ -528,6 +529,10 @@ The list survives acknowledging the recovery report.
     unchanged, keeps editing immediate, is not restarted by wake and saves
     on an explicit `:track`; a prior cancellation stays Cancelled; a run
     started while asleep stops at once
+  - `project::tests::targets::ranges::sleep_keeps_completed_ranges_for_the_next_explicit_track`:
+    the explicit `:track` after sleep reuses the completed range and tracks
+    only the rest; `jobs::tests::tracking_waits_out_playback_between_ranges_and_still_holds_scans`
+    covers tracking's playback yield
   - `project::tests::targets::picture_proposals::sleep_*` and
     `detection_started_while_asleep_proposes_nothing`: no proposals from a
     run that crossed sleep, no edit, and detecting again finds them

@@ -19,13 +19,17 @@ use crate::project::targets::{Backend, Outcome, Script, ScriptEnding, ScriptQueu
 
 mod pointer;
 
-/// Every start tracks a subject moving right, slowly enough to show progress.
+/// Every start tracks a subject moving right in sixteen-picture ranges, slowly
+/// enough to show coverage growing range by range.
 pub(super) fn backend() -> Backend {
     Backend::Scripted(Arc::new(ScriptQueue::new([Script {
         unavailable: None,
-        steps: 12,
+        steps: 2,
         step_interval: Duration::from_millis(40),
         ending: ScriptEnding::Moving { step: 0.003 },
+        range_pictures: Some(16),
+        ranges_before_ending: None,
+        tracked_ranges: Default::default(),
     }])))
 }
 
@@ -49,7 +53,7 @@ fn tracking_sleep(d: &mut Driver<'_>, revision: &str) -> Result<(), String> {
     let untracked = target(d, "target-1").is_some_and(|target| target.samples.is_empty());
     let painted = scenarios::text_paint_visibility(
         d,
-        "Tracking Target 1 stopped when the Mac slept; the target is unchanged. Track it again with :track.",
+        "Tracking Target 1 stopped when the Mac slept; the target is unchanged. :track resumes from its completed ranges.",
     );
     d.check(
         "Sleep stops tracking without saving, names the explicit retry and wake does not restart it",
@@ -341,6 +345,47 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"tracking":widgets.contains("Tracking Target 1"),"cancel":widgets.contains("Cancel tracking")}),
     )?;
     d.capture("Tracking in the background")?;
+    d.wait_for("Two tracking ranges completed", |app| {
+        app.targets.running().is_some_and(|job| {
+            job.coverage
+                .as_ref()
+                .is_some_and(|coverage| coverage.completed >= 2)
+        })
+    })?;
+    d.step("Tracking coverage grows range by range", false)?;
+    let widgets = widget_text(d);
+    let (completed, total, partial_end) = d
+        .app()
+        .targets
+        .running()
+        .and_then(|job| job.coverage.as_ref())
+        .map_or((0, 0, None), |coverage| {
+            (
+                coverage.completed,
+                coverage.total,
+                coverage
+                    .partial
+                    .as_ref()
+                    .map(|partial| partial.span.end().ticks),
+            )
+        });
+    let unsaved = target(d, "target-1").is_some_and(|target| target.samples.is_empty());
+    let range_line = format!("range {completed} of {total}");
+    d.check(
+        "Completed ranges show per-range progress and a partial path Camera can follow, while nothing is saved",
+        completed >= 2
+            && total > completed
+            && widgets.contains(&range_line)
+            && widgets.contains("Tracked so far")
+            && widgets.contains("nothing is saved until every range is done")
+            && partial_end.is_some_and(|end| end < saved.span.end().ticks)
+            && unsaved
+            && d.revision() == followed_revision
+            && camera(d)["follow"] == "target-1",
+        json!({"progress":"range n of N","partial":"ends before the span","saved":"unchanged"}),
+        json!({"completed":completed,"total":total,"partial_end":partial_end,"unsaved":unsaved,"revision":d.revision(),"line":widgets.contains(&range_line)}),
+    )?;
+    d.capture("Tracking coverage grows range by range")?;
     tracking_sleep(d, followed_revision.as_str())?;
     d.wait_for("Tracking saved and Camera continued", |app| {
         app.targets.job().is_some_and(|job| !job.running())

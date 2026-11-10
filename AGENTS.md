@@ -118,7 +118,11 @@ Current crates:
   corrected analyses; never discard unreadable corrections silently. See
   [analysis corrections](docs/ANALYSIS_CORRECTIONS.md).
 - `native/deadpan-transcribe`: process-isolated whisper.cpp worker. Its only `unsafe` is the documented abort-callback adapter; never use whisper-rs's `set_abort_callback_safe`, which aborts every encode.
-- `native/deadpan-track`: process-isolated Apple Vision selected-target tracking worker over the verified Original through `deadpan-source`. `unsafe` stays in its documented `vision.rs` adapter; tracking policy and the path-to-target mapping are pure in `deadpan-analysis`; tracking never edits, and only `track --save`/`track-correct` commit a reversible `SetTarget`. See [tracking](docs/TRACKING.md).
+- `native/deadpan-track`: process-isolated Apple Vision selected-target tracking worker over the verified Original through `deadpan-source`. `unsafe` stays in its documented `vision.rs` adapter; tracking policy and the path-to-target mapping are pure in `deadpan-analysis`; tracking never edits, and only `track --save`/`track-correct` commit a reversible `SetTarget`. The app tracks by
+  `RangePlan` ranges (one segment per manual keyframe, nearest the visible
+  Original picture first), caches raw range observations privately without
+  authored state, previews the complete prefix and saves only complete paths.
+  See [tracking](docs/TRACKING.md#incremental-ranges).
 
 [Architecture](docs/ARCHITECTURE.md) records Section 24's full boundary map. Add crates only when an implemented responsibility needs isolation. Do not create empty crates or feature controls that pretend to work.
 

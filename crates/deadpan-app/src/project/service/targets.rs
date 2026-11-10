@@ -8,13 +8,16 @@
 use std::sync::mpsc::{self, Receiver, SyncSender};
 use std::time::Instant;
 
-use deadpan_analysis::{TrackPolicy, TrackedPath, rect_from_target, retrack_target};
+#[cfg(any(test, feature = "ui-harness"))]
+use deadpan_analysis::NormalizedRect;
+use deadpan_analysis::{Keyframe, TrackPolicy, TrackedPath, rect_from_target, retrack_target};
+use deadpan_cli::tracking::incremental::{RangeOptions, track_ranges, worker_runs};
 use deadpan_cli::tracking::{self, TrackRequest, TrackingError, TrackingRuntime};
 use deadpan_core::{SourceTimeBase, TargetId};
 
 use super::*;
 use crate::project::targets::{
-    Backend, Job, Operation, Outcome, Phase, ProposalJob, Saved, TrackMode, Update,
+    Backend, Coverage, Job, Operation, Outcome, Phase, ProposalJob, Saved, TrackMode, Update,
 };
 
 mod picture_proposals;
@@ -41,7 +44,14 @@ struct Finished {
 
 enum Event {
     Progress(u8),
-    Finished(Box<std::result::Result<Finished, Failure>>),
+    /// Cumulative coverage after a range; a dropped report is superseded by
+    /// the next one or the result.
+    Range(Box<Coverage>),
+    /// The result and the last coverage, which a dropped report cannot lose.
+    Finished(
+        Box<std::result::Result<Finished, Failure>>,
+        Option<Box<Coverage>>,
+    ),
 }
 
 struct Running {
@@ -394,6 +404,30 @@ impl Service {
         let initial_region = target.region.as_region().copied().ok_or(
             "Point targets have no tracking rectangle. Draw a region target to track; point positions can be corrected manually.",
         )?;
+        // Manual corrections of an untracked rectangle seed their own
+        // segments; tracking keeps them as keyframes.
+        let mut later = Vec::new();
+        let mut initial = rect_from_target(&initial_region)
+            .ok_or("The target's rectangle lies outside the picture.")?;
+        if matches!(mode, TrackMode::Track { .. }) {
+            for correction in &target.corrections {
+                let region = correction
+                    .region
+                    .as_region()
+                    .and_then(rect_from_target)
+                    .ok_or("A correction's rectangle lies outside the picture.")?;
+                if correction.at == target.span.start().ticks {
+                    // A correction at the first picture wins over the
+                    // initial selection there.
+                    initial = region;
+                } else {
+                    later.push(Keyframe {
+                        pts: correction.at,
+                        region,
+                    });
+                }
+            }
+        }
         let (from_pts, to_pts, region, stop_at_shots, correct_at) = match mode {
             TrackMode::Track { through_shots } => {
                 if !target.samples.is_empty() {
@@ -402,17 +436,10 @@ impl Service {
                         target.label
                     ));
                 }
-                if !target.corrections.is_empty() {
-                    // Only headless corrections reach an untracked target.
-                    return Err(format!(
-                        "{} has manual corrections that tracking from its first picture would replace. Remove them with Undo or track it headlessly with track --replace.",
-                        target.label
-                    ));
-                }
                 (
                     target.span.start().ticks,
                     target.span.end().ticks,
-                    initial_region,
+                    initial,
                     !through_shots,
                     None,
                 )
@@ -421,11 +448,11 @@ impl Service {
                 let (_, end) = target
                     .correction_range(at)
                     .ok_or_else(|| format!("{} does not cover this picture.", target.label))?;
+                let region = rect_from_target(&region)
+                    .ok_or("The target's rectangle lies outside the picture.")?;
                 (at, end.ticks, region, false, Some(at))
             }
         };
-        let region =
-            rect_from_target(&region).ok_or("The target's rectangle lies outside the picture.")?;
         let request = TrackRequest {
             asset: Some(target.asset.clone()),
             from_pts,
@@ -443,9 +470,19 @@ impl Service {
             revision: revision.clone(),
             started: Instant::now(),
             phase: Phase::Preparing,
+            coverage: None,
             outcome: None,
         };
         let package = workspace.path.clone();
+        #[cfg_attr(
+            not(any(test, feature = "ui-harness")),
+            allow(unused_mut, reason = "test backends choose private caches")
+        )]
+        let mut options = RangeOptions {
+            cache_directory: deadpan_cli::storage::UserStorage::current()
+                .map(|storage| storage.caches.join("AnalysisRanges")),
+            ..RangeOptions::default()
+        };
         let worker = match &self.targets.backend {
             Backend::Environment => match TrackingRuntime::beside_current_executable() {
                 Ok(runtime) if runtime.executable.is_file() => Worker::Real(runtime),
@@ -466,6 +503,11 @@ impl Service {
             #[cfg(any(test, feature = "ui-harness"))]
             Backend::Scripted(queue) => {
                 let script = queue.next().ok_or("The scripted tracker has no runs.")?;
+                // Tests and replays never touch the user's caches.
+                options.cache_directory = queue.cache().map(std::path::Path::to_path_buf);
+                if let Some(width) = script.range_pictures {
+                    options.range_pictures = width;
+                }
                 if let Some(error) = &script.unavailable {
                     self.targets.job = Some(job);
                     self.conclude_tracking(Outcome::Unavailable(error.clone()));
@@ -474,14 +516,20 @@ impl Service {
                 Worker::Scripted(script)
             }
             #[cfg(test)]
-            Backend::Installed(executable) => Worker::Real(TrackingRuntime {
-                executable: executable.clone(),
-                environment: Default::default(),
-            }),
+            Backend::Installed(executable) => {
+                options.cache_directory = None;
+                Worker::Real(TrackingRuntime {
+                    executable: executable.clone(),
+                    environment: Default::default(),
+                })
+            }
             // Only picture analysis is scripted; tracking uses the installed worker.
             #[cfg(any(test, feature = "ui-harness"))]
             Backend::ScriptedProposals(_) => match TrackingRuntime::beside_current_executable() {
-                Ok(runtime) if runtime.executable.is_file() => Worker::Real(runtime),
+                Ok(runtime) if runtime.executable.is_file() => {
+                    options.cache_directory = None;
+                    Worker::Real(runtime)
+                }
                 _ => {
                     self.targets.job = Some(job);
                     self.conclude_tracking(Outcome::Unavailable(
@@ -497,6 +545,8 @@ impl Service {
         let thread_capture = capture.clone();
         let (events, receive) = mpsc::sync_channel(EVENT_CAPACITY);
         let thread_cancelled = cancelled.clone();
+        let cursor = self.shared.tracking_cursor.clone();
+        let identity = (job.target.clone(), job.label.clone());
         let handle = self.shared.job_board.register(
             crate::jobs::JobSpec::new(crate::jobs::JobKind::Tracking, Some(session))
                 .detail(job.label.clone())
@@ -510,9 +560,15 @@ impl Service {
                     job_thread(
                         worker,
                         package,
-                        request,
+                        Plan {
+                            request,
+                            later,
+                            options,
+                            identity,
+                        },
                         revision,
                         correct_at,
+                        &cursor,
                         thread_cancelled,
                         events,
                         &handle,
@@ -579,7 +635,18 @@ impl Service {
                         job.phase = Phase::Tracking(percent.min(100));
                     }
                 }
-                Ok(Event::Finished(result)) => {
+                Ok(Event::Range(coverage)) => {
+                    changed = true;
+                    if let Some(job) = &mut self.targets.job
+                        && job.running()
+                    {
+                        job.coverage = Some(*coverage);
+                    }
+                }
+                Ok(Event::Finished(result, coverage)) => {
+                    if let (Some(job), Some(coverage)) = (&mut self.targets.job, coverage) {
+                        job.coverage = Some(*coverage);
+                    }
                     self.tracking_finished(*result);
                     return true;
                 }
@@ -683,12 +750,12 @@ impl Service {
                     "Tracked {label}: {samples} positions saved. Undo restores the previous target."
                 )
             }
-            Outcome::Cancelled => {
-                format!("Tracking {label} was cancelled; the target is unchanged.")
-            }
+            Outcome::Cancelled => format!(
+                "Tracking {label} was cancelled; the target is unchanged. :track resumes from its completed ranges."
+            ),
             Outcome::Failed(_) => format!("Tracking {label} failed; the target is unchanged."),
             Outcome::Interrupted => format!(
-                "Tracking {label} stopped when the Mac slept; the target is unchanged. Track it again with :track."
+                "Tracking {label} stopped when the Mac slept; the target is unchanged. :track resumes from its completed ranges."
             ),
             Outcome::Unavailable(_) => {
                 format!("{label} cannot be tracked here; the inspector says why.")
@@ -697,23 +764,45 @@ impl Service {
         if let Some(job) = &mut self.targets.job
             && job.outcome.is_none()
         {
+            // An unsaved partial path must not outlive its job.
+            if let Some(coverage) = &mut job.coverage {
+                coverage.partial = None;
+            }
             job.outcome = Some(outcome);
         }
     }
+}
+
+/// What the job thread tracks.
+struct Plan {
+    request: TrackRequest,
+    /// Manual keyframes after the first, in order.
+    later: Vec<Keyframe>,
+    options: RangeOptions,
+    /// The target's ID and label, for its partial preview.
+    identity: (TargetId, String),
 }
 
 #[allow(clippy::too_many_arguments)]
 fn job_thread(
     worker: Worker,
     package: PathBuf,
-    request: TrackRequest,
+    plan: Plan,
     revision: RevisionId,
     correct_at: Option<i64>,
+    cursor: &std::sync::atomic::AtomicI64,
     cancelled: Arc<AtomicBool>,
     events: SyncSender<Event>,
     handle: &crate::jobs::JobHandle,
 ) {
     handle.set_progress("Preparing pictures", None);
+    let Plan {
+        request,
+        later,
+        options,
+        identity: (id, label),
+    } = plan;
+    let mut last_coverage = None;
     let result = (|| -> std::result::Result<Finished, Failure> {
         let deadline = Instant::now() + DEADLINE;
         // Read-only throughout; the writer saves the result.
@@ -736,101 +825,190 @@ fn job_thread(
                     .into(),
             ));
         }
-        let progress = |percent: u8| {
+        if later
+            .iter()
+            .any(|keyframe| keyframe.pts >= prepared.end_pts())
+        {
+            return Err(Failure::Failed(
+                "A correction lies beyond where tracking stops (a cut or the picture limit), so saving would drop it. Track through cuts or remove that correction."
+                    .into(),
+            ));
+        }
+        let mut keyframes = vec![Keyframe {
+            pts: prepared.start_pts(),
+            region: request.region,
+        }];
+        keyframes.extend(later);
+        let budget = tracking::sample_budget(&prepared.head, &id);
+        let mut version = 0_u64;
+        let last = &mut last_coverage;
+        let percent = |percent: u8| {
             handle.set_progress("Tracking", Some(f32::from(percent.min(100)) / 100.0));
             // Display-only; a full queue drops one report, never the worker.
             let _ = events.try_send(Event::Progress(percent));
         };
-        let (path, engine) = match &worker {
+        let progress = |range: deadpan_cli::tracking::incremental::RangeProgress<'_>| {
+            version += 1;
+            // Only a first tracking previews a target; a correction's range
+            // replaces part of a saved one.
+            let partial = range
+                .partial
+                .filter(|_| correct_at.is_none())
+                .and_then(|path| {
+                    path.to_target(
+                        label.clone(),
+                        prepared.asset.clone(),
+                        prepared.time_base,
+                        prepared.exact_display_aspect,
+                        range.engine.unwrap_or_default(),
+                        budget,
+                    )
+                    .ok()
+                })
+                .map(|(target, _)| Arc::new(target));
+            let coverage = Coverage {
+                completed: range.completed,
+                total: range.total,
+                cached: range.cached,
+                spans: range.coverage,
+                partial,
+                version,
+            };
+            *last = Some(coverage.clone());
+            let _ = events.try_send(Event::Range(Box::new(coverage)));
+        };
+        // Tracking yields to playback and renders between ranges.
+        let boundary = || {
+            handle
+                .checkpoint(Some(&cancelled))
+                .map_err(|_| TrackingError::Cancelled)
+        };
+        let finished = match &worker {
             Worker::Real(runtime) => {
                 let attempt = uuid::Uuid::new_v4().simple().to_string();
-                let result = tracking::track(
-                    runtime,
+                let mut runs = worker_runs(runtime, &prepared, &attempt, &cancelled, deadline);
+                track_ranges(
                     &prepared,
+                    &keyframes,
                     TrackPolicy::default(),
-                    &attempt,
+                    &options,
+                    cursor,
+                    &mut runs,
                     &cancelled,
                     deadline,
+                    boundary,
+                    percent,
                     progress,
                 )
-                .map_err(failure)?;
-                let engine = tracking::engine_label(&result.runtime);
-                (result.path, engine)
             }
             #[cfg(any(test, feature = "ui-harness"))]
             Worker::Scripted(script) => {
-                scripted(script, &prepared, request.region, &cancelled, progress)?
+                if let Some(error) = script_failure(script) {
+                    return Err(error);
+                }
+                let mut runs = scripted(script, &cancelled);
+                track_ranges(
+                    &prepared,
+                    &keyframes,
+                    TrackPolicy::default(),
+                    &options,
+                    cursor,
+                    &mut runs,
+                    &cancelled,
+                    deadline,
+                    boundary,
+                    percent,
+                    progress,
+                )
             }
-        };
+        }
+        .map_err(failure)?;
         Ok(Finished {
-            path,
-            engine,
+            path: finished.path,
+            engine: finished.engine,
             asset: prepared.asset.clone(),
             time_base: prepared.time_base,
             display_aspect: prepared.exact_display_aspect,
         })
     })();
     // The writer drains every loop iteration; a stopped writer disconnects.
-    let _ = events.send(Event::Finished(Box::new(result)));
+    let _ = events.send(Event::Finished(
+        Box::new(result),
+        last_coverage.map(Box::new),
+    ));
 }
 
-/// The deterministic replacement for the Vision worker: real range, real
-/// policy, synthetic confident observations.
+/// A scripted ending that fails before any range.
 #[cfg(any(test, feature = "ui-harness"))]
-fn scripted(
-    script: &crate::project::targets::Script,
-    prepared: &tracking::PreparedTrack,
-    region: deadpan_analysis::NormalizedRect,
-    cancelled: &AtomicBool,
-    mut progress: impl FnMut(u8),
-) -> std::result::Result<(TrackedPath, String), Failure> {
-    use crate::project::targets::{SCRIPTED_ENGINE, ScriptEnding};
-    let steps = script.steps.max(1);
-    for step in 1..=steps {
-        if cancelled.load(Ordering::Acquire) {
-            return Err(Failure::Cancelled);
-        }
-        std::thread::sleep(script.step_interval);
-        progress(u8::try_from(u32::from(step) * 99 / u32::from(steps)).unwrap_or(99));
+fn script_failure(script: &crate::project::targets::Script) -> Option<Failure> {
+    use crate::project::targets::ScriptEnding;
+    match (&script.ending, script.ranges_before_ending) {
+        (ScriptEnding::Fail(reason), None) => Some(Failure::Failed(reason.clone())),
+        _ => None,
     }
-    match &script.ending {
-        ScriptEnding::WaitForCancel => {
-            while !cancelled.load(Ordering::Acquire) {
-                std::thread::sleep(Duration::from_millis(5));
+}
+
+/// The deterministic replacement for the Vision worker, one range at a time:
+/// real range plan, cache and policy; synthetic confident observations moving
+/// from each run's seed. After `ranges_before_ending` tracked ranges (or at
+/// once) a non-moving ending applies to the next range.
+#[cfg(any(test, feature = "ui-harness"))]
+fn scripted<'a>(
+    script: &'a crate::project::targets::Script,
+    cancelled: &'a AtomicBool,
+) -> impl FnMut(
+    &[i64],
+    i64,
+    Keyframe,
+    &mut dyn FnMut(u8),
+) -> deadpan_cli::tracking::incremental::RangeRun
++ 'a {
+    use crate::project::targets::{SCRIPTED_ENGINE, ScriptEnding};
+    let mut tracked = 0_usize;
+    move |pictures, _end, seed, progress| {
+        let ending_now = match script.ranges_before_ending {
+            Some(limit) => tracked >= limit,
+            None => !matches!(script.ending, ScriptEnding::Moving { .. }),
+        };
+        let steps = script.steps.max(1);
+        for step in 1..=steps {
+            if cancelled.load(Ordering::Acquire) {
+                return Err(TrackingError::Cancelled);
             }
-            Err(Failure::Cancelled)
+            std::thread::sleep(script.step_interval);
+            progress(u8::try_from(u32::from(step) * 99 / u32::from(steps)).unwrap_or(99));
         }
-        ScriptEnding::Fail(reason) => Err(Failure::Failed(reason.clone())),
-        ScriptEnding::Moving { step } => {
-            let observations: Vec<_> = prepared
-                .analysed()
-                .enumerate()
-                .map(|(index, pts)| deadpan_analysis::RawObservation {
-                    pts,
-                    region: deadpan_analysis::NormalizedRect::clipped(
-                        region.x() + step * index as f64,
-                        region.y(),
-                        region.width(),
-                        region.height(),
-                    ),
-                    confidence: 0.9,
-                })
-                .collect();
-            let path = TrackedPath::track(
-                TrackPolicy::default(),
-                prepared.display_aspect,
-                prepared.pictures(),
-                prepared.end_pts(),
-                prepared.stop(),
-                deadpan_analysis::Keyframe {
-                    pts: prepared.start_pts(),
-                    region,
-                },
-                &observations,
-            )
-            .map_err(|error| Failure::Failed(error.to_string()))?;
-            progress(100);
-            Ok((path, SCRIPTED_ENGINE.into()))
-        }
+        let step = match &script.ending {
+            ScriptEnding::Moving { step } => *step,
+            _ if !ending_now => 0.002,
+            ScriptEnding::WaitForCancel => {
+                while !cancelled.load(Ordering::Acquire) {
+                    std::thread::sleep(Duration::from_millis(5));
+                }
+                return Err(TrackingError::Cancelled);
+            }
+            ScriptEnding::Fail(reason) => return Err(TrackingError::Worker(reason.clone())),
+        };
+        tracked += 1;
+        script
+            .tracked_ranges
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        // Stride 1: every picture from the seed is analysed.
+        let observations = pictures
+            .iter()
+            .enumerate()
+            .map(|(index, &pts)| deadpan_analysis::RawObservation {
+                pts,
+                region: NormalizedRect::clipped(
+                    seed.region.x() + step * index as f64,
+                    seed.region.y(),
+                    seed.region.width(),
+                    seed.region.height(),
+                ),
+                confidence: 0.9,
+            })
+            .collect();
+        progress(100);
+        Ok((observations, SCRIPTED_ENGINE.into()))
     }
 }

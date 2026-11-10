@@ -2608,9 +2608,10 @@
             "score": 0.5,
             "evidence": [
               "docs/TRACKING.md Remaining",
-              "docs/qualification/tracking-evidence-2026-10-15.md incremental scheduling not implemented"
+              "docs/qualification/tracking-evidence-2026-10-15.md incremental scheduling",
+              "docs/TRACKING.md Incremental ranges"
             ],
-            "remaining": "Private, versioned, cancellable worker exists; progressive continuation/reverse neighborhood scheduling and app priority remain unimplemented.",
+            "remaining": "Implemented: cursor-priority stride-aligned ranges per manual keyframe, continuation seeds, private versioned range cache with resume after cancel/sleep, partial previews with complete-only saves, playback/render yield. Remaining: no reverse decoding, so pictures before the initial selection are never tracked; per-range worker launches re-hash the whole attempt copy.",
             "normative": "11.4"
           }
         ]

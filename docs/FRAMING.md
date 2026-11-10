@@ -214,7 +214,8 @@ video when no shot analysis is stored. A point correction replaces its initial
 center at the span start or saves a manual correction at a later picture,
 invalidating samples only until the next correction or span end. Tracking a
 point refuses before work or writes. An untracked rectangle can be corrected
-at its span start; later corrections require tracking first. A correction of a
+at any picture; each correction is a keyframe tracking later starts a segment
+from. A correction of a
 tracked rectangle re-tracks only its range in the background.
 
 Target saves keep Camera open: a revision created by this Camera's own target

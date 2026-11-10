@@ -1370,6 +1370,9 @@ struct Shared {
     wake: Arc<dyn Fn() + Send + Sync>,
     /// The app's background job coordinator, shared with the UI's jobs.
     job_board: crate::jobs::Jobs,
+    /// The PTS of the Original picture the UI shows, or `i64::MIN`. Tracking
+    /// schedules its next range nearest it.
+    tracking_cursor: Arc<std::sync::atomic::AtomicI64>,
 }
 
 impl Shared {
@@ -1495,6 +1498,7 @@ impl ProjectService {
             delivered: Mutex::new(ContinuationKey::default()),
             wake,
             job_board: crate::jobs::Jobs::new(),
+            tracking_cursor: Arc::new(std::sync::atomic::AtomicI64::new(i64::MIN)),
         });
         let (requests, receive) = mpsc::sync_channel(REQUEST_LANES);
         let (jobs, results, worker) = worker::spawn()?;
@@ -1544,6 +1548,13 @@ impl ProjectService {
     /// The background job coordinator every job of this app registers with.
     pub fn jobs(&self) -> &crate::jobs::Jobs {
         &self.shared.job_board
+    }
+
+    /// Report the visible Original picture's PTS for tracking's range order.
+    pub fn set_tracking_cursor(&self, pts: i64) {
+        self.shared
+            .tracking_cursor
+            .store(pts, std::sync::atomic::Ordering::Release);
     }
 
     pub fn take_update(&self) -> Option<ProjectUpdate> {
