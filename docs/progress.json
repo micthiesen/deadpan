@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-10T00:51:00Z",
+  "updated_at": "2026-11-10T05:08:16Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Remaining partial requirements: occurrence copy/paste and range edits, nested processing-stage pauses, variable-rate speed, full effect/mastering graph, render-plan fragment reuse, qualification corpora and release acceptance.",
+  "focus": "Remaining partial requirements: range and trim edits inside plays, variable-rate speed, full effect/mastering graph, plan reuse for sounds and whole-plan passes, qualification corpora and release acceptance.",
   "features": [
     {
       "id": "editing",
@@ -1549,6 +1549,15 @@
       "revision": "76ea290e8",
       "retrospective": false,
       "summary": "One-play structural, plays, gaps and shared-gap edits with macros and dot; room tone on Repeat gaps and fragments; sleep policy for every worker; detail lane inside Repeats and speed changes; measured edit and Hold budgets pass (2026-11-09 perf run); App Nap guard for playback; Original y operators; nested gap isolation; resampler phase cache; optimized replays"
+    },
+    {
+      "date": "2026-11-10",
+      "percent": 86,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 10,
+      "revision": "01bd3517f",
+      "retrospective": false,
+      "summary": "Incremental render-plan fragment reuse with a full-compile oracle (10,000-beat refresh 4.1 to 2.4 ms); copy, cut and paste inside one Repeat play; editable speed-step progression; pauses beneath nested processing stages; shared gap row footer and dot; message serial fixes lost status messages; full gate and replays pass"
     }
   ],
   "assessment": {
@@ -2957,11 +2966,12 @@
           {
             "id": "DP-16.4",
             "deliverable": "Incremental render-plan fragment cache and ancestor-only recompilation",
-            "score": 0,
+            "score": 0.5,
             "evidence": [
               "docs/spec/DEADPAN_SPEC.md:905-909",
               "docs/ARCHITECTURE.md:209",
-              "docs/REQUIREMENTS.md DP-03 and Gate B"
+              "docs/REQUIREMENTS.md DP-03 and Gate B",
+              "docs/qualification/incremental-plan-2026-11-10.md"
             ],
             "remaining": "Node fragments are reused from the previous plan with ancestor-only recompilation (Sequences above a resized child re-derive prefix entries), equal to a full compile under the test oracle (docs/qualification/incremental-plan-2026-11-10.md); 10,000-beat refresh 4.0 to 2.4 ms p50. Open: whole-plan passes (parents, definition index, sound-clock caches, plan-wide flags) still recompile in full; reuse is against one previous plan by identity and value equality, not a content-hash cache across revisions; attachment and root-sound fragments, per-node audio caches and non-workspace hosts (store generation, macros) still compile from scratch.",
             "confidence": "high"
