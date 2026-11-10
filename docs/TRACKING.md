@@ -431,6 +431,17 @@ follows ([`RangePlan`](../crates/deadpan-analysis/src/tracking/schedule.rs),
   with seven-picture ranges, the first range was identical and every later
   confident centre was within 0.5 px of the one-shot run (2026-11-10, Apple M5
   Max, macOS 26.5.2).
+- **Loss carries across seams.** One Vision run keeps a lost subject lost:
+  behind an occluder its confidence falls and does not recover. A re-created
+  tracker instead reports fresh, high confidence on whatever lies in its seed
+  region, usually background. So when a range ends below the policy's minimum
+  confidence (or with no report), every observation of the next range is
+  limited to that seam confidence (`continuation_confidence`,
+  `limit_confidence`), and the segment stays lost until a manual keyframe.
+  A confident seam limits nothing. The cache keeps the worker's own reports;
+  the limit is applied on every use. Before this rule, the moving square
+  hidden by the pillar was saved as `tracked` 51 px away on background at
+  picture 22 with four-picture ranges.
 - **The policy is unchanged.** `RangePlan::assemble` applies
   `deadpan-track-1` to the concatenated observations of the completed prefix
   (later keyframes through `correct_and_retrack`), so over the same
@@ -489,6 +500,31 @@ The `targets` replay drives creation, picking, following, tracking and
 correction through the production keys.
 
 ## Evidence
+
+The complete native lifecycle runs on the real worker in
+`the_real_worker_tracks_cancels_resumes_corrects_and_undoes_through_the_app_service`
+(`crates/deadpan-app/src/project/tests/targets/installed.rs`). It imports
+`moving-square-aperture.mp4` through the native project service (the Matroska
+`moving-square-cut.mkv` cannot be an Original: its millisecond timestamps have
+no admissible cadence), stores the cut at picture 30, saves a rectangle on
+the square at picture 2 and tracks it with the workspace's `deadpan-track`
+in four-picture ranges with a private range cache: seven ranges. After the
+first range it checks the partial preview carries the Vision engine, waits
+until a worker process is running, cancels, and checks that no worker process
+of the test remains, that one or two completed ranges are kept and that
+nothing was saved. `:track` again reuses exactly those ranges, tracks the rest
+and saves once; every `tracked` sample before the cut is within 8 px of the
+generator's truth in the clean aperture, and the square is `lost` from the
+pillar on. A correction on the truth at picture 10 re-tracks its own segment
+across ranges, keeping the samples before it; Undo restores the tracked
+path, then the untracked rectangle. Six consecutive runs (2026-11-10, Apple
+M5 Max, macOS 26.5.2, debug build): first range 125 to 221 ms, cancelled with
+1 or 2 of 7 ranges complete and a worker running at cancellation, resume 0.58
+to 0.81 s, correction 0.59 to 0.73 s, maximum error 7.63 px over 13 tracked
+samples (picture 15, confidence 0.35, as the square reaches the pillar) and
+1.31 px over 5 re-tracked samples. The keyboard routing to these service
+operations is covered by the scripted `targets` replay; the replay itself
+does not run Vision.
 
 The app's own path runs the real worker too:
 `the_installed_tracker_follows_the_square_through_the_app_service`

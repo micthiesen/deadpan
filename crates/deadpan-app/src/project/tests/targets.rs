@@ -578,6 +578,7 @@ fn a_worker_failure_reports_its_reason_and_saves_nothing() {
 }
 
 mod faces;
+mod installed;
 mod picture_proposals;
 mod ranges;
 mod sleep;
@@ -694,7 +695,7 @@ fn the_installed_tracker_follows_the_square_through_the_app_service() {
         return;
     };
     let fixture = project_from(
-        Backend::Installed(worker),
+        Backend::Installed(crate::project::targets::Installed::new(worker)),
         std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("../../native/deadpan-track/tests/fixtures/moving-square-aperture.mp4")
             .canonicalize()

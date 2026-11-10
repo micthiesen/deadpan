@@ -302,6 +302,34 @@ fn continuations_use_the_last_reported_region() {
     assert_eq!(continuation_region(seed, &reports[1..]), seed);
 }
 
+#[test]
+fn a_continuation_from_a_lost_seam_cannot_regain_confidence() {
+    let observation = |confidence: f32, region: bool| RawObservation {
+        pts: 0,
+        region: region.then(|| rect(0.2)),
+        confidence,
+    };
+    let minimum = TrackPolicy::default().min_confidence;
+    // Confident at the seam: the fresh tracker's reports stand.
+    assert_eq!(
+        continuation_confidence(&[observation(0.1, true), observation(0.8, true)], minimum),
+        None
+    );
+    assert_eq!(continuation_confidence(&[], minimum), None);
+    // Lost at the seam (low confidence or no report): limited to the seam.
+    let lost = continuation_confidence(&[observation(0.9, true), observation(0.1, true)], minimum);
+    assert_eq!(lost, Some(0.1));
+    assert_eq!(
+        continuation_confidence(&[observation(0.9, true), observation(0.9, false)], minimum),
+        Some(0.0)
+    );
+    let mut fresh = [observation(0.95, true), observation(0.05, true)];
+    limit_confidence(&mut fresh, lost);
+    assert_eq!(fresh.map(|observation| observation.confidence), [0.1, 0.05]);
+    limit_confidence(&mut fresh, None);
+    assert_eq!(fresh[0].confidence, 0.1);
+}
+
 proptest! {
     #[test]
     fn every_order_visits_each_range_once_after_its_seed(

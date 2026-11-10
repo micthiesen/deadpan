@@ -19,7 +19,7 @@ use std::time::Instant;
 
 use deadpan_analysis::{
     Keyframe, PlannedRange, RangePlan, RawObservation, TRACK_RULE, TrackPolicy, TrackedPath,
-    continuation_region,
+    continuation_confidence, continuation_region, limit_confidence,
 };
 use deadpan_jobs::tracking::{self as protocol, ExpectedStream};
 use serde::{Deserialize, Serialize};
@@ -306,6 +306,20 @@ pub fn track_ranges(
             (reported, label)
         };
         done_analysed += owned_analysed.len();
+        // The cache keeps the worker's reports; the limit follows the
+        // (limited) predecessor, so it is applied on every use.
+        let mut owned = owned;
+        if range.continues() {
+            limit_confidence(
+                &mut owned,
+                continuation_confidence(
+                    observations[index - 1]
+                        .as_deref()
+                        .expect("a ready range's predecessor completed"),
+                    policy.min_confidence,
+                ),
+            );
+        }
         observations[index] = Some(owned);
         seeds[index] = Some(seed);
         completed[index] = true;

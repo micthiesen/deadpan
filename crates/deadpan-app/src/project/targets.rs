@@ -282,7 +282,30 @@ pub enum Backend {
     /// The real Vision worker at an explicit path: a test build places
     /// `deadpan-track` in the target directory, not beside the test binary.
     #[cfg(test)]
-    Installed(std::path::PathBuf),
+    Installed(Installed),
+}
+
+/// The real worker for service tests, with the range width and private range
+/// cache a test chooses (never the user's caches).
+#[cfg(test)]
+#[derive(Clone, Debug)]
+pub struct Installed {
+    pub executable: std::path::PathBuf,
+    /// Pictures per tracking range; `None` keeps the production width.
+    pub range_pictures: Option<usize>,
+    /// `None` keeps no completed ranges.
+    pub cache: Option<std::path::PathBuf>,
+}
+
+#[cfg(test)]
+impl Installed {
+    pub fn new(executable: std::path::PathBuf) -> Self {
+        Self {
+            executable,
+            range_pictures: None,
+            cache: None,
+        }
+    }
 }
 
 #[cfg(any(test, feature = "ui-harness"))]

@@ -2391,7 +2391,7 @@
               "docs/REVERSE_AND_TAILS.md",
               "docs/qualification/tail-sends-2026-10-12.md"
             ],
-            "remaining": "Custom Hold policy and broader incoming-tail/loop interactions remain incomplete; tails inside speed changes refuse.",
+            "remaining": "Tails inside speed changes refuse by definition (their ring is at the edit rate; the shared stage would stretch or re-pitch it), with the fix in the message; listening qualification of tails and custom pause sounds is an owner check.",
             "normative": "8.3,10.4"
           },
           {
@@ -2606,9 +2606,10 @@
             "score": 0.5,
             "evidence": [
               "docs/TRACKING.md In the app/Remaining",
-              "crates/deadpan-app/src/project/service/targets.rs"
+              "crates/deadpan-app/src/project/service/targets.rs",
+              "crates/deadpan-app/src/project/tests/targets/installed.rs"
             ],
-            "remaining": "Service/routing tested with scripted Vision seam; real worker is tested separately, but actual app-to-real-worker path remains unexercised locally.",
+            "remaining": "The native service lifecycle (track in ranges, cancel with worker teardown, resume from kept ranges, correct, save within 8 px of truth, Undo) now runs on the real deadpan-track worker (crates/deadpan-app/src/project/tests/targets/installed.rs); key routing to it is covered only by the scripted targets replay, so a painted replay driving the real worker and physical keyboard/IME delivery remain unexercised.",
             "normative": "7.6,11.3"
           },
           {

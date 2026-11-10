@@ -516,10 +516,13 @@ impl Service {
                 Worker::Scripted(script)
             }
             #[cfg(test)]
-            Backend::Installed(executable) => {
-                options.cache_directory = None;
+            Backend::Installed(installed) => {
+                options.cache_directory.clone_from(&installed.cache);
+                if let Some(width) = installed.range_pictures {
+                    options.range_pictures = width;
+                }
                 Worker::Real(TrackingRuntime {
-                    executable: executable.clone(),
+                    executable: installed.executable.clone(),
                     environment: Default::default(),
                 })
             }

@@ -285,5 +285,34 @@ pub fn continuation_region(
         .unwrap_or(previous_seed)
 }
 
+/// The highest confidence a continuation range may report, given the previous
+/// range's (already limited) observations: unlimited when the tracker was
+/// confident at the seam, otherwise its confidence there.
+///
+/// One Vision run carries its loss forward: once the subject is behind an
+/// occluder its confidence stays low even after the subject reappears. A
+/// continuation re-creates the tracker, which then reports fresh, high
+/// confidence on whatever lies in the seed region, typically background. A
+/// continuation from a lost seam therefore cannot become more certain than
+/// the seam was; a manual keyframe (a correction) starts a new segment.
+pub fn continuation_confidence(previous: &[RawObservation], min_confidence: f32) -> Option<f32> {
+    let last = previous.last()?;
+    let confidence = if last.region.is_some() {
+        last.confidence
+    } else {
+        0.0
+    };
+    (confidence < min_confidence).then_some(confidence)
+}
+
+/// Limit every observation of a continuation range to `limit`.
+pub fn limit_confidence(observations: &mut [RawObservation], limit: Option<f32>) {
+    if let Some(limit) = limit {
+        for observation in observations {
+            observation.confidence = observation.confidence.min(limit);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests;
