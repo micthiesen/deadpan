@@ -2103,9 +2103,11 @@
             "score": 0.5,
             "evidence": [
               "docs/KEYMAP.md action registry",
-              "docs/SECTION8_COVERAGE.md Shared command/help registry"
+              "docs/SECTION8_COVERAGE.md Shared command/help registry",
+              "docs/KEYMAP.md#command-arguments",
+              "docs/COMMANDS.md#command-arguments"
             ],
-            "remaining": "Shared registry and bounded typed parsers exist, but full schema-driven argument grammar/default-selector completion is explicitly open.",
+            "remaining": "Declarative schemas drive completion, inline validation, default-selector display and the generated reference for 123 verbs; 25 verbs (selectors, moments, equalizer, envelope, generation, sends, tail, bleep, audio-shift and placed-sound values) keep usage-inferred checks with recorded reasons. Tab completion is not offered.",
             "normative": "6.4"
           }
         ]

@@ -19,6 +19,7 @@ mod audio_treatments;
 mod audio_warming;
 mod backups;
 mod captions;
+mod command_arguments;
 mod corrections;
 mod creative_dot;
 mod cutaway;

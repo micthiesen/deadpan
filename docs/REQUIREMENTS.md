@@ -2,6 +2,26 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Typed command arguments, 2026-11-10
+
+Command-line arguments now come from declarative schemas
+([KEYMAP](KEYMAP.md#command-arguments), [reference](COMMANDS.md#command-arguments)).
+53 verbs with arguments (including `:hold`, `:hold-duration`, `:retime`,
+`:ramp`, `:repeat`, `:gain`, `:zoom`, `:creep`, `:caption`, `:audio-lag`,
+`:slip`, `:trim`, `:edge`, `:gag`, `:gag-set`, `:macro` and `:scope`) and 70
+without (including `:split` and `:room-tone`) declare typed positional and
+`key=value` parameters with units, defaults and the selector they act on. While
+typing, the command line names an invalid value or unknown parameter, shows the
+next parameter with its type, unit and default, offers choices and the
+project's registers, macros, recipes, marks, targets and gags, and says what the
+command acts on now. Value checks use the execution parsers; tests prove each
+schema's examples, parameters, choices and invalid values agree with the parser,
+and that every registry verb has a schema or a recorded reason (25 keep
+usage-inferred checks). The generated reference prints each usage line and
+parameter table. The `command-arguments` replay passes 12 checks with real
+typing; its four captures were inspected at full size. DP-06 stays partial for
+its other rows; no requirement or gate is newly complete.
+
 ## Repeat speed progression, 2026-11-09
 
 `:repeat 3 speed-step=10%` now keeps its per-play speeds editable as one

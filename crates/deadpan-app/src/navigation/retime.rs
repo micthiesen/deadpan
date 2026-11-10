@@ -17,21 +17,7 @@ pub fn parse<'a>(
     let invalid = || {
         "Use :retime 0.75 pitch=preserve or :retime 3/4 pitch=tape. Speed must be positive; choose a pitch policy explicitly.".to_owned()
     };
-    let value = words.next().ok_or_else(invalid)?;
-    let speed = if let Some((numerator, denominator)) = value.split_once('/') {
-        let integer = |text: &str| {
-            if text.is_empty() || !text.bytes().all(|byte| byte.is_ascii_digit()) {
-                return Err(invalid());
-            }
-            text.parse::<i128>().map_err(|_| invalid())
-        };
-        ExactRatio::new(integer(numerator)?, integer(denominator)?).map_err(|_| invalid())?
-    } else {
-        super::duration::decimal(value).map_err(|_| invalid())?
-    };
-    if !speed.compare_integer(0).is_gt() {
-        return Err(invalid());
-    }
+    let speed = speed(words.next().ok_or_else(invalid)?).ok_or_else(invalid)?;
     let pitch = match words.next() {
         Some("pitch=preserve") => PitchPolicy::Preserve,
         Some("pitch=tape") => PitchPolicy::FollowSpeed,
@@ -45,6 +31,22 @@ pub fn parse<'a>(
         return Err(invalid());
     }
     Ok(RetimeInput { speed, pitch, wrap })
+}
+
+/// A positive exact speed: a decimal such as `0.75` or a fraction `3/4`.
+pub fn speed(value: &str) -> Option<ExactRatio> {
+    let speed = if let Some((numerator, denominator)) = value.split_once('/') {
+        let integer = |text: &str| {
+            if text.is_empty() || !text.bytes().all(|byte| byte.is_ascii_digit()) {
+                return None;
+            }
+            text.parse::<i128>().ok()
+        };
+        ExactRatio::new(integer(numerator)?, integer(denominator)?).ok()?
+    } else {
+        super::duration::decimal(value).ok()?
+    };
+    speed.compare_integer(0).is_gt().then_some(speed)
 }
 
 /// `:ramp FROM TO [steps=N] [pitch=tape|preserve]`: a continuous speed ramp,

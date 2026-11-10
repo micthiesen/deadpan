@@ -14,6 +14,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "regions" => super::regions::run(d),
         "menus" => menus(d),
         "palette" => super::palette::run(d),
+        "command-arguments" => super::command_arguments::run(d),
         "delayed-preview" => delayed(d),
         "rapid-input" => rapid(d),
         "playback-feedback" => playback(d),

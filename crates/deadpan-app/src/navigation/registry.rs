@@ -764,5 +764,6 @@ pub fn reference_markdown(labels: &dyn KeyLabels) -> String {
         }
         out.push('\n');
     }
+    out.push_str(&super::command::schema::reference_markdown());
     out
 }

@@ -2334,7 +2334,7 @@ mod tests {
         }
         assert_eq!(
             completions(":cap"),
-            vec![":caption TEXT [at=top|center] [delay=4f]"]
+            vec![":caption TEXT [at=bottom|top|center] [delay=4f] [reveal=3]"]
         );
         assert!(completions("caption Hi").is_empty());
         // A complete verb and a space, as the Keys palette prefills it.

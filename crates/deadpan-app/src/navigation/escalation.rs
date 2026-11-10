@@ -378,7 +378,7 @@ pub fn parse(arguments: &[&str]) -> Result<Option<EscalationInput>, String> {
 }
 
 /// `3dB`, `-1.5dB` or `0dB`, at most three decimals, as exact millidecibels.
-fn gain(value: &str) -> Result<GainDb, String> {
+pub(super) fn gain(value: &str) -> Result<GainDb, String> {
     let number = value
         .len()
         .checked_sub(2)
@@ -400,7 +400,7 @@ fn gain(value: &str) -> Result<GainDb, String> {
 }
 
 /// A plain signed decimal such as `0.08`, `-0.25` or `1.5`.
-fn decimal(value: &str) -> Result<ExactRatio, String> {
+pub(super) fn decimal(value: &str) -> Result<ExactRatio, String> {
     let invalid = || format!("{value} is not a decimal number.");
     let (negative, digits) = match value.strip_prefix('-') {
         Some(rest) => (true, rest),

@@ -4230,7 +4230,7 @@ verb "audition-ai" usage ":audition-ai  hear the AI preview"
 verb "audition-context" usage ":audition-context lead=500ms follow=750ms"
 verb "bleep" usage ":bleep [880Hz] [level=-6dB]"
 verb "cancel-ai" usage ":cancel-ai"
-verb "caption" usage ":caption TEXT [at=top|center] [delay=4f]"
+verb "caption" usage ":caption TEXT [at=bottom|top|center] [delay=4f] [reveal=3]"
 verb "close" usage ":close  close this project"
 verb "correct" usage ":correct  fix transcript words and pauses"
 verb "creep" usage ":creep from=1 to=1.4 [target=current]"
@@ -4248,7 +4248,7 @@ verb "gag" usage ":gag NAME [key=value …]"
 verb "gag-inspect" usage ":gag-inspect NAME"
 verb "gag-presets" usage ":gag-presets"
 verb "gag-save" usage ":gag-save NAME"
-verb "gag-set" usage ":gag-set NAME key=value"
+verb "gag-set" usage ":gag-set key=value …"
 verb "gain" usage ":gain +3dB | +=3dB | mute | +3dB range=4-10"
 verb "gain-mute" usage ":gain-mute  mute or unmute the beat"
 verb "generate" usage ":generate [N] [mode=auto|bridge|extend-left|extend-right] [motion=still|subtle|moderate] [target=ID|none] [text=guidance]"
@@ -4369,7 +4369,7 @@ parse ":cancel-ai" = Ok(Action(Ai(Cancel)))
 parse ":caption" = Err("Use :caption Are we done? to caption the selected beat (or the Edit range inside it); \"quotes\" keep words like at= in the text. at=bottom|top|center places it, delay=12f starts it later in the beat and reveal=3 waits for the third play of a Repeat, counted in its current play order. :caption clear removes captions there.")
 parse ":CAPTION" = Err("Use :caption Are we done? to caption the selected beat (or the Edit range inside it); \"quotes\" keep words like at= in the text. at=bottom|top|center places it, delay=12f starts it later in the beat and reveal=3 waits for the third play of a Repeat, counted in its current play order. :caption clear removes captions there.")
 parse ":caption x y z" = Ok(Caption(Place { text: "x y z", placement: Bottom, delay: None, reveal: None }))
-parse ":caption TEXT at=top delay=4f" = Ok(Caption(Place { text: "TEXT", placement: Top, delay: Some(Frames(FrameDuration(4))), reveal: None }))
+parse ":caption TEXT at=bottom delay=4f reveal=3" = Ok(Caption(Place { text: "TEXT", placement: Bottom, delay: Some(Frames(FrameDuration(4))), reveal: Some(3) }))
 parse ":close" = Ok(Close)
 parse ":CLOSE" = Ok(Close)
 parse ":close x y z" = Err("Extra arguments are not supported by this command.")
@@ -4441,7 +4441,7 @@ parse ":gag-save NAME" = Ok(GagSave("NAME"))
 parse ":gag-set" = Ok(GagSet([]))
 parse ":GAG-SET" = Ok(GagSet([]))
 parse ":gag-set x y z" = Ok(GagSet(["x", "y", "z"]))
-parse ":gag-set NAME key=value" = Ok(GagSet(["NAME", "key=value"]))
+parse ":gag-set key=value …" = Ok(GagSet(["key=value", "…"]))
 parse ":gain" = Ok(Gain(None))
 parse ":GAIN" = Ok(Gain(None))
 parse ":gain x y z" = Err("Extra arguments are not supported by this command.")
@@ -4931,7 +4931,7 @@ parse "HOLD 1s" = Ok(Action(Edit(InsertHold(Seconds(ExactRatio { numerator: 1, d
 complete "" = []
 complete "s" = [":saturate 12dB | off", ":scope all | play N | plays 2-3", ":select role=audio|video|linked  or :select marks start=<exactMarkId> end=<exactMarkId>  or :select node=<exactNodeId>  or :select nodes=[\"id-a\",\"id-b\"]  or :select ranges=[{\"start\":2,\"end\":6}]  or :select search=\"hello world\"", ":sequence  Your edit", ":slip +5f", ":sound-allow  in this pause", ":sound-at 274000  start sample (48 kHz)", ":sound-channels mono|stereo|none", ":sound-cut  end the sound here", ":sound-delete  remove the placed sound", ":sound-edges soft|hard", ":sound-gain -3  dB", ":sound-place", ":sound-silence  in this pause", ":sounds  placed sounds", ":source  Original", ":splice  place a copy", ":split", ":sting  add a sting sound", ":storage  project storage and cleanup"]
 complete "so" = [":sound-allow  in this pause", ":sound-at 274000  start sample (48 kHz)", ":sound-channels mono|stereo|none", ":sound-cut  end the sound here", ":sound-delete  remove the placed sound", ":sound-edges soft|hard", ":sound-gain -3  dB", ":sound-place", ":sound-silence  in this pause", ":sounds  placed sounds", ":source  Original"]
-complete "gag" = [":gag NAME [key=value …]", ":gag-inspect NAME", ":gag-presets", ":gag-save NAME", ":gag-set NAME key=value"]
+complete "gag" = [":gag NAME [key=value …]", ":gag-inspect NAME", ":gag-presets", ":gag-save NAME", ":gag-set key=value …"]
 complete "re" = [":recipe a", ":recipe-inspect a", ":recipe-save a", ":record a", ":record-cancel", ":record-stop", ":recovery", ":redo", ":register a", ":registers", ":relink", ":render", ":renders", ":repeat 3 [gap=6f gap-step=-2f] [speed-step=10%] [pitch=preserve|tape]", ":retime 0.75 pitch=preserve", ":reverse 8f"]
 complete ":ho" = [":hold 0.5s [video=freeze|black|ai] [audio=silence]", ":hold-duration 11f", ":hold-silence"]
 complete "HO" = [":hold 0.5s [video=freeze|black|ai] [audio=silence]", ":hold-duration 11f", ":hold-silence"]

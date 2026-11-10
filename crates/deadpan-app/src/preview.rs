@@ -35,6 +35,7 @@ pub(crate) use camera::dispatch_debug as camera_dispatch_debug;
 mod camera_fields;
 mod captions;
 mod cards;
+mod command_guide;
 mod copied;
 mod corrections;
 mod cutaways;
@@ -310,6 +311,9 @@ pub struct DeadpanApp {
     jobs: jobs::State,
     /// The user's gag presets, shared by every project.
     gag_presets: crate::gag_presets::GagPresets,
+    /// Saved gag preset names read once per command entry for argument
+    /// completion; `None` while the command line is closed.
+    command_gag_presets: Option<Option<Vec<String>>>,
     /// Where bundled synthesized sounds are written before import.
     bundled_sounds: Option<PathBuf>,
 }
@@ -509,6 +513,7 @@ impl DeadpanApp {
             damaged: damaged::State::default(),
             jobs: jobs::State::default(),
             gag_presets: crate::gag_presets::GagPresets::native(),
+            command_gag_presets: None,
             bundled_sounds: crate::keymap_file::application_support_directory()
                 .ok()
                 .map(|directory| directory.join("Deadpan").join("Sounds")),
@@ -3995,13 +4000,21 @@ impl DeadpanApp {
         // that space on entry rather than inheriting Normal mode's short panel.
         // The completion line is one truncated row; measure it before the
         // first paint so the reserve already includes it.
-        let completion = self
-            .command_open
-            .then(|| command_completion_text(&self.command))
-            .flatten();
-        let completion_height = completion.as_ref().map_or(0.0, |_| {
-            ui.fonts_mut(|fonts| fonts.row_height(&egui::FontId::monospace(11.0))) + 4.0
-        });
+        let completion = if self.command_open {
+            let context = self.command_context();
+            command_completion(&self.command, &context)
+        } else {
+            self.command_gag_presets = None;
+            None
+        };
+        // Reserve the most completion rows for the whole entry, so the footer
+        // does not change height (and re-lay out) as rows come and go while typing.
+        let completion_height = if self.command_open {
+            MAX_COMPLETION_ROWS as f32
+                * (ui.fonts_mut(|fonts| fonts.row_height(&egui::FontId::monospace(11.0))) + 4.0)
+        } else {
+            0.0
+        };
         let minimum = if self.command_open {
             144.0 + completion_height
         } else {
@@ -4095,11 +4108,27 @@ impl DeadpanApp {
                         retain_text_escape(ui, COMMAND_ID);
                     });
                 });
-                if let Some((shown, full)) = &completion {
-                    // Completion teaching: the first few matching commands; the
-                    // accessible name and hover carry every match.
-                    let response = ui.add(egui::Label::new(egui::RichText::new(shown).monospace().size(11.0).color(style::LAVENDER)).truncate());
-                    accessibility::full_text(response, full).on_hover_text(full);
+                if let Some(completion) = &completion {
+                    // Completion teaching: matching commands, or the verb's
+                    // next argument, its values and what it acts on. Each row
+                    // is one truncated line; its accessible text is complete,
+                    // and a problem is announced as it appears.
+                    for (index, (text, tone)) in completion.rows.iter().enumerate() {
+                        let color = match tone {
+                            CompletionTone::Problem => style::ERROR,
+                            CompletionTone::Next => style::LAVENDER,
+                            CompletionTone::Values => ui.visuals().strong_text_color(),
+                            CompletionTone::Target => ui.visuals().weak_text_color(),
+                        };
+                        let response = ui.push_id(("command-completion", index), |ui| {
+                            ui.add(egui::Label::new(egui::RichText::new(text).monospace().size(11.0).color(color)).truncate())
+                        }).inner;
+                        let spoken = if index == 0 { &completion.spoken } else { text };
+                        let response = accessibility::full_text(response, spoken).on_hover_text(&completion.spoken);
+                        if index == 0 && completion.problem {
+                            accessibility::live(&response, false);
+                        }
+                    }
                 }
                 ui.horizontal_wrapped(|ui| {
                     style::key_hint(ui, "Enter", "apply command");
@@ -6507,28 +6536,48 @@ fn help_spec_row_with(
     .inner
 }
 
-/// The completion row for a partially typed verb: up to four usages, and
-/// the complete list for accessibility and hover.
-fn command_completion_text(command: &str) -> Option<(String, String)> {
+/// Problem, next value, values and target.
+const MAX_COMPLETION_ROWS: usize = 4;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum CompletionTone {
+    Problem,
+    Next,
+    Values,
+    Target,
+}
+
+#[derive(Debug)]
+struct Completion {
+    rows: Vec<(String, CompletionTone)>,
+    /// Everything the rows show, untruncated, for assistive technology.
+    spoken: String,
+    problem: bool,
+}
+
+/// Command-line completion: up to four matching verb usages while the verb
+/// is typed; once it is complete, its argument schema's guide.
+fn command_completion(
+    command: &str,
+    context: &navigation::command::schema::Context,
+) -> Option<Completion> {
     let matches = navigation::command::completions(command);
     if matches.is_empty() {
-        // Once arguments follow a known verb, its registry usage schema names
-        // the next typed argument, any value that does not fit, and the target.
-        let guide = navigation::command::schema::guide(command)?;
-        let shown = match &guide.problem {
-            Some(problem) => format!("{problem}  ·  {}", guide.shown),
-            None => format!("{}  ·  acts on {}", guide.shown, guide.target),
-        };
-        let full = format!(
-            "{}{}. Acts on {}.",
-            guide
-                .problem
-                .map(|problem| format!("{problem}. "))
-                .unwrap_or_default(),
-            guide.shown,
-            guide.target
-        );
-        return Some((shown, full));
+        let guide = navigation::command::schema::guide(command, context)?;
+        let mut rows = Vec::new();
+        if let Some(problem) = &guide.problem {
+            rows.push((problem.clone(), CompletionTone::Problem));
+        }
+        rows.push((format!("next: {}", guide.next), CompletionTone::Next));
+        if !guide.candidates.is_empty() {
+            rows.push((guide.candidates.join("  "), CompletionTone::Values));
+        }
+        rows.push((format!("acts on {}", guide.target), CompletionTone::Target));
+        return Some(Completion {
+            rows,
+            spoken: guide.spoken(),
+            problem: guide.problem.is_some(),
+        });
     }
     let mut shown = matches
         .iter()
@@ -6539,7 +6588,11 @@ fn command_completion_text(command: &str) -> Option<(String, String)> {
     if matches.len() > 4 {
         shown.push_str(&format!("  ·  +{} more", matches.len() - 4));
     }
-    Some((shown, format!("Matching commands: {}", matches.join(" · "))))
+    Some(Completion {
+        rows: vec![(shown, CompletionTone::Next)],
+        spoken: format!("Matching commands: {}", matches.join(" · ")),
+        problem: false,
+    })
 }
 
 fn pane_id(pane: Pane) -> egui::Id {
@@ -6640,26 +6693,59 @@ fn target_size(size: egui::Vec2, pixels_per_point: f32) -> (u32, u32) {
 mod tests {
     #[test]
     fn completion_row_truncates_to_four_and_names_every_match_accessibly() {
-        let (shown, full) = super::command_completion_text("caption hi ").unwrap();
-        assert_eq!(
-            shown,
-            "at=top|center  delay=duration in s, ms or f  ·  \
-             acts on the Visual selection, else the Edit cursor"
-        );
-        assert!(full.ends_with("Acts on the Visual selection, else the Edit cursor."));
-        let (shown, _) = super::command_completion_text(":hold 1.5x ").unwrap();
+        let context = crate::navigation::command::schema::Context::default();
+        let completion = super::command_completion("caption hi ", &context).unwrap();
+        let rows: Vec<_> = completion
+            .rows
+            .iter()
+            .map(|(text, tone)| (text.as_str(), *tone))
+            .collect();
+        assert_eq!(rows[0].1, super::CompletionTone::Next);
+        assert!(rows[0].0.starts_with("next: text the caption"), "{rows:?}");
         assert!(
-            shown.starts_with("1.5x is not a duration in s, ms or f"),
-            "{shown}"
+            rows[1].0.contains("at=bottom|top|center|middle (bottom)"),
+            "{rows:?}"
         );
-        let (shown, full) = super::command_completion_text(":cap").unwrap();
-        assert_eq!(shown, ":caption TEXT [at=top|center] [delay=4f]");
-        assert!(full.ends_with(":caption TEXT [at=top|center] [delay=4f]"));
-        let (shown, full) = super::command_completion_text("s").unwrap();
+        assert_eq!(
+            rows[2],
+            (
+                "acts on the selected beat (none selected)",
+                super::CompletionTone::Target
+            )
+        );
+        assert!(
+            completion
+                .spoken
+                .contains("Acts on the selected beat (none selected).")
+        );
+        let completion = super::command_completion(":hold 1.5x ", &context).unwrap();
+        assert!(completion.problem);
+        assert_eq!(
+            completion.rows[0],
+            (
+                "duration 1.5x is not a duration: use 12f, 250ms, 1.5s or 01:02.500".to_owned(),
+                super::CompletionTone::Problem
+            )
+        );
+        let completion = super::command_completion(":cap", &context).unwrap();
+        assert_eq!(
+            completion.rows[0].0,
+            ":caption TEXT [at=bottom|top|center] [delay=4f] [reveal=3]"
+        );
+        assert!(
+            completion
+                .spoken
+                .ends_with(":caption TEXT [at=bottom|top|center] [delay=4f] [reveal=3]")
+        );
+        let completion = super::command_completion("s", &context).unwrap();
         let total = crate::navigation::command::completions("s").len();
         assert!(total > 4);
-        assert!(shown.ends_with(&format!("+{} more", total - 4)));
-        assert_eq!(full.matches(" · ").count(), total - 1);
+        assert!(
+            completion.rows[0]
+                .0
+                .ends_with(&format!("+{} more", total - 4))
+        );
+        assert_eq!(completion.spoken.matches(" · ").count(), total - 1);
     }
 
     use super::*;

@@ -1,402 +1,1157 @@
-//! Argument schemas derived from each registry usage, so completion, typed-unit
-//! checks and the default target come from the one action table. A usage like
-//! `:hold 0.5s [video=freeze|black|ai] [audio=silence]` declares a positional
-//! duration, two choice options and, through its contexts, what it acts on.
+//! Declarative argument schemas for command verbs. Each schema names a verb's
+//! positional values and `key=value` parameters with their types, units and
+//! defaults, and the selector the command acts on. The command line completes
+//! and checks arguments from it while typing, the generated reference prints
+//! its usage line and parameter table, and the per-verb parsers that execute
+//! a command are tested to accept exactly the names and values it declares.
+//!
+//! Verbs not yet described here keep guidance inferred from their registry
+//! usage and must give a reason in [`table::REASONS`].
 
-use crate::navigation::registry::{Contexts, SPECS, Spec};
+use std::sync::LazyLock;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+use crate::navigation::registry::{Contexts, SPECS};
+
+mod table;
+#[cfg(test)]
+mod tests;
+mod types;
+
+#[cfg(test)]
+pub use table::REASONS;
+pub use table::SCHEMAS;
+pub use types::*;
+
+/// A typed value. `check` delegates to the same value parser the verb's
+/// execution path uses, so a value the guide accepts is one Enter accepts.
+pub struct Type {
+    pub name: &'static str,
+    /// The accepted forms, with units and range: `12f, 250ms, 1.5s or 01:02.500`.
+    pub units: &'static str,
+    pub check: fn(&str) -> bool,
+}
+
+impl std::fmt::Debug for Type {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.name)
+    }
+}
+
+impl PartialEq for Type {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name && self.units == other.units
+    }
+}
+
+/// Names the project or the user's library already holds. The command line
+/// offers the known ones as values.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Names {
+    /// Any register letter a–z, or `"` for the unnamed register.
+    Register,
+    /// A register holding a recorded macro.
+    Macro,
+    /// A register holding an edited copy (a local recipe).
+    Recipe,
+    /// A mark letter.
+    Mark,
+    /// A saved attention target, by id or label.
+    Target,
+    /// A built-in gag recipe or a saved preset.
+    Gag,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Kind {
-    /// Seconds, milliseconds or project frames: `0.5s`, `120ms`, `12f`.
-    Duration,
-    Decibels,
-    Semitones,
-    Number,
-    Choice(Vec<&'static str>),
-    /// Free text, names and placeholders. Never rejected here.
+    Typed(&'static Type),
+    Choice(&'static [&'static str]),
+    /// One of the words, or a typed value: `pitch=preserve|tape|+2st`.
+    ChoiceOr(&'static [&'static str], &'static Type),
+    Name(Names),
+    /// Free text; never rejected while typing.
     Text,
 }
 
-impl Kind {
-    fn infer(example: &'static str) -> Self {
-        if example.contains('|') {
-            return Self::Choice(
-                example
-                    .split('|')
-                    .filter(|choice| !choice.is_empty())
-                    .collect(),
-            );
-        }
-        let unsigned = example.trim_start_matches(['+', '-']);
-        let digits = unsigned.trim_end_matches(|c: char| c.is_ascii_alphabetic());
-        let unit = &unsigned[digits.len()..];
-        if digits.is_empty() || !is_number(digits) {
-            return Self::Text;
-        }
-        match unit {
-            "s" | "ms" | "f" => Self::Duration,
-            "dB" => Self::Decibels,
-            "st" => Self::Semitones,
-            "" => Self::Number,
-            _ => Self::Text,
+/// What omitting a parameter means.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Default {
+    Required,
+    Value(&'static str),
+    /// Omitted parameters keep the target's current value.
+    Keeps,
+    Means(&'static str),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Param {
+    pub name: &'static str,
+    pub kind: Kind,
+    pub default: Default,
+    pub help: &'static str,
+}
+
+pub const fn param(name: &'static str, kind: Kind, default: Default, help: &'static str) -> Param {
+    Param {
+        name,
+        kind,
+        default,
+        help,
+    }
+}
+
+/// Further values and parameters chosen by the first positional value, such
+/// as a gag recipe's parameters or `:scope play N`.
+#[derive(Clone, Copy, Debug)]
+pub struct Variant {
+    pub value: &'static str,
+    pub positional: &'static [Param],
+    pub options: &'static [Param],
+}
+
+/// What a command acts on when nothing more specific is named.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Selector {
+    /// The selected beat in Your edit.
+    Beat,
+    /// The Visual range, else the selected beat.
+    VisualOrBeat,
+    /// The selected Repeat, or the selected beat wrapped in a new one.
+    RepeatOrBeat,
+    /// A new Repeat around the Visual range or selected beat.
+    WrapVisualOrBeat,
+    /// Inserts at the Edit cursor.
+    Cursor,
+    /// The beat under the Edit cursor, cut at the cursor.
+    BeatAtCursor,
+    /// The selected beat, else the Edit cursor.
+    BeatOrCursor,
+    /// The selected pause.
+    Pause,
+    /// The selected Source beat (and its right neighbour for Roll).
+    SourceBeat,
+    /// The enclosing Repeat contents' plays.
+    Plays,
+    /// The selected inserted gag.
+    Gag,
+    /// The cursor of the focused timeline.
+    TimelineCursor,
+    /// The next copy, cut or paste.
+    NextRegister,
+    /// The Edit cursor and selection, as the macro recorded them.
+    Macro,
+    /// The selected placed sound.
+    Sound,
+    /// The whole project.
+    Project,
+    /// The view or panel only; nothing is edited.
+    View,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct ArgSchema {
+    pub selector: Selector,
+    pub positional: &'static [Param],
+    pub options: &'static [Param],
+    /// Whole alternative forms (`off`, `clear`) and what they do.
+    pub forms: &'static [(&'static str, &'static str)],
+    /// The last positional takes every remaining plain word (text, labels).
+    pub rest_text: bool,
+    pub variants: &'static [Variant],
+    /// Complete valid commands; tests run each through the parser.
+    #[cfg_attr(
+        not(test),
+        expect(dead_code, reason = "read by the parser agreement tests")
+    )]
+    pub examples: &'static [&'static str],
+}
+
+impl ArgSchema {
+    pub const fn none(selector: Selector) -> Self {
+        Self {
+            selector,
+            positional: &[],
+            options: &[],
+            forms: &[],
+            rest_text: false,
+            variants: &[],
+            examples: &[],
         }
     }
 
-    fn hint(&self) -> String {
+    #[cfg(test)]
+    pub fn takes_arguments(&self) -> bool {
+        !self.positional.is_empty() || !self.options.is_empty() || !self.forms.is_empty()
+    }
+
+    fn variant(&self, value: &str) -> Option<&'static Variant> {
+        self.variants.iter().find(|variant| variant.value == value)
+    }
+
+    /// Every parameter name the verb accepts, including every variant's.
+    pub fn option_names(&self) -> Vec<&'static str> {
+        let mut names: Vec<&'static str> = self.options.iter().map(|param| param.name).collect();
+        for variant in self.variants {
+            for param in variant.options {
+                if !names.contains(&param.name) {
+                    names.push(param.name);
+                }
+            }
+        }
+        names
+    }
+
+    /// The usage line: `:repeat [PLAYS] [gap=DURATION] …`.
+    pub fn usage(&self, verb: &str) -> String {
+        let mut parts = vec![format!(":{verb}")];
+        for param in self.positional {
+            let name = param.name.to_ascii_uppercase();
+            let name = if self.rest_text && std::ptr::eq(param, self.positional.last().unwrap()) {
+                format!("{name}…")
+            } else {
+                name
+            };
+            parts.push(match param.default {
+                Default::Required => name,
+                _ => format!("[{name}]"),
+            });
+        }
+        if !self.variants.is_empty() && self.variants.iter().any(|v| !v.options.is_empty()) {
+            parts.push("[key=value …]".into());
+        }
+        for param in self.options {
+            let value = format!("{}={}", param.name, short_hint(&param.kind));
+            parts.push(match param.default {
+                Default::Required => value,
+                _ => format!("[{value}]"),
+            });
+        }
+        let mut usage = parts.join(" ");
+        for (form, _) in self.forms {
+            usage.push_str(&format!(" | :{verb} {form}"));
+        }
+        usage
+    }
+}
+
+/// A schema for `verb`: declared, else inferred from its registry usage.
+pub fn lookup(verb: &str) -> Option<&'static ArgSchema> {
+    declared(verb).or_else(|| {
+        INFERRED
+            .iter()
+            .find(|(known, _)| known.eq_ignore_ascii_case(verb))
+            .map(|(_, schema)| schema)
+    })
+}
+
+pub fn declared(verb: &str) -> Option<&'static ArgSchema> {
+    SCHEMAS
+        .iter()
+        .find(|(known, _)| known.eq_ignore_ascii_case(verb))
+        .map(|(_, schema)| *schema)
+}
+
+/// Parameter names a migrated verb's parser admits. Parsers read this rather
+/// than keeping their own list.
+pub fn option_names(verb: &str) -> Vec<&'static str> {
+    declared(verb).map_or_else(Vec::new, ArgSchema::option_names)
+}
+
+/// The live state a command would act on, and the names it may use.
+#[derive(Clone, Debug, Default)]
+pub struct Context {
+    /// The Original pane has focus: Edit commands still act on Your edit.
+    pub original: bool,
+    /// The Visual range, as the footer names it.
+    pub visual: Option<String>,
+    pub beat: Option<Beat>,
+    /// The Edit cursor position, readable.
+    pub cursor: Option<String>,
+    /// Repeat contents scope, when open.
+    pub contents: Option<String>,
+    pub sound: Option<String>,
+    /// Filled registers with what they hold: `edited`, `Original`, `macro`.
+    pub registers: Vec<(char, &'static str)>,
+    /// Saved attention targets: id and label.
+    pub targets: Vec<(String, String)>,
+    /// Saved gag presets; `None` when they could not be read.
+    pub gag_presets: Option<Vec<String>>,
+    pub marks: Vec<char>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct Beat {
+    pub label: String,
+    /// The footer's kind text: `Source`, `Pause · freeze · silence`, `Repeat · 3 total plays`.
+    pub kind: String,
+    pub frames: u64,
+    /// The label pins a gag recipe.
+    pub gag: bool,
+}
+
+impl Beat {
+    fn text(&self) -> String {
+        format!("{} ({}, {} f)", self.label, self.kind, self.frames)
+    }
+    fn is(&self, kind: &str) -> bool {
+        self.kind.starts_with(kind)
+    }
+}
+
+impl Selector {
+    /// The selector without live context, for the reference.
+    pub fn generic(self) -> &'static str {
         match self {
-            Self::Duration => "duration in s, ms or f".into(),
-            Self::Decibels => "level in dB".into(),
-            Self::Semitones => "semitones, st".into(),
-            Self::Number => "number".into(),
-            Self::Choice(choices) => choices.join("|"),
+            Self::Beat => "the selected beat",
+            Self::VisualOrBeat => "the Visual range, else the selected beat",
+            Self::RepeatOrBeat => {
+                "the selected Repeat, else the selected beat wrapped in a new Repeat"
+            }
+            Self::WrapVisualOrBeat => {
+                "a new Repeat around the Visual range, else the selected beat"
+            }
+            Self::Cursor => "the Edit cursor",
+            Self::BeatAtCursor => "the beat under the Edit cursor, cut at the cursor",
+            Self::BeatOrCursor => "the selected beat, else the Edit cursor",
+            Self::Pause => "the selected pause",
+            Self::SourceBeat => "the selected Source beat",
+            Self::Plays => "the plays of the open Repeat contents",
+            Self::Gag => "the selected inserted gag",
+            Self::TimelineCursor => "the cursor of the focused timeline",
+            Self::NextRegister => "the next copy, cut or paste",
+            Self::Macro => "the Edit cursor and selection, as recorded",
+            Self::Sound => "the selected placed sound",
+            Self::Project => "this project",
+            Self::View => "the view only; nothing is edited",
+        }
+    }
+
+    /// What this command acts on now.
+    pub fn resolve(self, context: &Context) -> String {
+        let beat = context.beat.as_ref();
+        let none = "none selected";
+        let cursor = || match &context.cursor {
+            Some(cursor) => format!("the Edit cursor at {cursor}"),
+            None => "the Edit cursor".to_owned(),
+        };
+        let selected = |what: &str| match beat {
+            Some(beat) => format!("{what} {}", beat.text()),
+            None => format!("{what} ({none})"),
+        };
+        let text = match self {
+            Self::Beat => selected("the selected beat"),
+            Self::VisualOrBeat => match &context.visual {
+                Some(range) => format!("the Visual range {range}"),
+                None => selected("the selected beat"),
+            },
+            Self::RepeatOrBeat => match beat {
+                Some(beat) if beat.is("Repeat") => format!("the selected Repeat {}", beat.text()),
+                Some(beat) => format!("{}, wrapped in a new Repeat", beat.text()),
+                None => format!("the selected Repeat or beat ({none})"),
+            },
+            Self::WrapVisualOrBeat => match (&context.visual, beat) {
+                (Some(range), _) => format!("a new Repeat around the Visual range {range}"),
+                (None, Some(beat)) => format!("a new Repeat around {}", beat.text()),
+                (None, None) => format!("a new Repeat around the selected beat ({none})"),
+            },
+            Self::Cursor => cursor(),
+            Self::BeatAtCursor => format!("the beat under {}", cursor()),
+            Self::BeatOrCursor => match beat {
+                Some(beat) => format!("the selected beat {}", beat.text()),
+                None => cursor(),
+            },
+            Self::Pause => match beat {
+                Some(beat) if beat.is("Pause") => format!("the selected pause {}", beat.text()),
+                Some(beat) => format!(
+                    "the selected pause (the selected beat {} is not a pause)",
+                    beat.label
+                ),
+                None => format!("the selected pause ({none})"),
+            },
+            Self::SourceBeat => match beat {
+                Some(beat) if beat.is("Source") || beat.is("Fragment") => {
+                    format!("the selected Source beat {}", beat.text())
+                }
+                Some(beat) => format!(
+                    "the selected Source beat (the selected beat {} is a {})",
+                    beat.label, beat.kind
+                ),
+                None => format!("the selected Source beat ({none})"),
+            },
+            Self::Plays => match &context.contents {
+                Some(scope) => format!("the plays of {scope}"),
+                None => "the plays of Repeat contents (open them with Enter first)".to_owned(),
+            },
+            Self::Gag => match beat {
+                Some(beat) if beat.gag => format!("the selected gag {}", beat.label),
+                Some(beat) => format!(
+                    "the selected inserted gag (the selected beat {} is not one)",
+                    beat.label
+                ),
+                None => format!("the selected inserted gag ({none})"),
+            },
+            Self::Sound => match &context.sound {
+                Some(sound) => format!("the placed sound {sound}"),
+                None => format!("the selected placed sound ({none})"),
+            },
+            other => other.generic().to_owned(),
+        };
+        let edit = !matches!(
+            self,
+            Self::TimelineCursor
+                | Self::NextRegister
+                | Self::Project
+                | Self::View
+                | Self::Sound
+                | Self::Plays
+        );
+        if context.original && edit {
+            format!("{text}, in Your edit")
+        } else {
+            text
+        }
+    }
+}
+
+/// Guidance for a command line whose verb is complete. `None` before the
+/// verb is complete or for unknown verbs.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Guide {
+    /// The expected next value: name, meaning, type and units, default.
+    pub next: String,
+    /// Values or parameters to type next.
+    pub candidates: Vec<String>,
+    /// The first value or parameter that does not fit, naming it.
+    pub problem: Option<String>,
+    /// What the command acts on now.
+    pub target: String,
+    /// The verb's usage line.
+    pub usage: String,
+}
+
+impl Guide {
+    /// One sentence for assistive technology and hover.
+    pub fn spoken(&self) -> String {
+        let mut parts = Vec::new();
+        if let Some(problem) = &self.problem {
+            parts.push(format!("Problem: {problem}."));
+        }
+        parts.push(format!("Next: {}.", self.next));
+        if !self.candidates.is_empty() {
+            parts.push(format!("Choices: {}.", self.candidates.join(", ")));
+        }
+        parts.push(format!("Acts on {}.", self.target));
+        parts.push(format!("Usage: {}.", self.usage));
+        parts.join(" ")
+    }
+}
+
+fn short_hint(kind: &Kind) -> String {
+    match kind {
+        Kind::Typed(ty) => ty.name.replace(' ', "-"),
+        Kind::Choice(choices) => choices.join("|"),
+        Kind::ChoiceOr(choices, ty) => {
+            format!("{}|{}", choices.join("|"), ty.name.replace(' ', "-"))
+        }
+        Kind::Name(names) => names.hint().to_owned(),
+        Kind::Text => "text".into(),
+    }
+}
+
+impl Names {
+    fn hint(self) -> &'static str {
+        match self {
+            Self::Register => "register",
+            Self::Macro => "macro",
+            Self::Recipe => "recipe",
+            Self::Mark => "mark",
+            Self::Target => "target",
+            Self::Gag => "gag",
+        }
+    }
+
+    fn long(self) -> &'static str {
+        match self {
+            Self::Register => "register letter a–z",
+            Self::Macro => "macro register a–z",
+            Self::Recipe => "recipe register a–z",
+            Self::Mark => "mark letter a–z",
+            Self::Target => "target id or label, current, center, face:N or region:N",
+            Self::Gag => "built-in gag or saved preset",
+        }
+    }
+
+    fn known(self, context: &Context) -> Vec<(String, String)> {
+        let registers = |kind: Option<&str>| {
+            context
+                .registers
+                .iter()
+                .filter(|(_, held)| kind.is_none_or(|kind| *held == kind))
+                .map(|(name, held)| (name.to_string(), format!("{name} ({held})")))
+                .collect()
+        };
+        match self {
+            Self::Register => registers(None),
+            Self::Macro => registers(Some("macro")),
+            Self::Recipe => registers(Some("edited")),
+            Self::Mark => context
+                .marks
+                .iter()
+                .map(|mark| (mark.to_string(), mark.to_string()))
+                .collect(),
+            Self::Target => ["current", "center"]
+                .into_iter()
+                .map(|word| (word.to_owned(), word.to_owned()))
+                .chain(context.targets.iter().map(|(id, label)| {
+                    let value = if label.contains(char::is_whitespace) || label.is_empty() {
+                        id.clone()
+                    } else {
+                        label.clone()
+                    };
+                    (value, format!("{id} ({label})"))
+                }))
+                .collect(),
+            Self::Gag => crate::navigation::gag::BUILT_IN
+                .iter()
+                .map(|name| ((*name).to_owned(), (*name).to_owned()))
+                .chain(
+                    context
+                        .gag_presets
+                        .iter()
+                        .flatten()
+                        .map(|name| (name.clone(), format!("{name} (preset)"))),
+                )
+                .collect(),
+        }
+    }
+
+    fn check(self, value: &str, context: &Context) -> Result<(), String> {
+        let letter = |quote: bool| {
+            let mut chars = value.chars();
+            matches!((chars.next(), chars.next()), (Some(c), None) if c.is_ascii_alphabetic() || (quote && c == '"'))
+        };
+        match self {
+            Self::Register if letter(true) => Ok(()),
+            Self::Macro | Self::Recipe | Self::Mark if letter(false) => Ok(()),
+            Self::Register | Self::Macro | Self::Recipe | Self::Mark => {
+                Err(format!("is not a {}", self.long()))
+            }
+            Self::Target => crate::navigation::zoom::target(value)
+                .map(drop)
+                .map_err(|_| format!("is not a {}", self.long())),
+            Self::Gag => {
+                if crate::navigation::gag::BUILT_IN.contains(&value) {
+                    return Ok(());
+                }
+                match &context.gag_presets {
+                    Some(presets) if !presets.iter().any(|name| name == value) => Err(format!(
+                        "is not a built-in gag or saved preset: {}",
+                        self.known(context)
+                            .into_iter()
+                            .map(|(value, _)| value)
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    )),
+                    _ => Ok(()),
+                }
+            }
+        }
+    }
+}
+
+impl Kind {
+    fn long(&self) -> String {
+        match self {
+            Self::Typed(ty) => format!("{}: {}", ty.name, ty.units),
+            Self::Choice(choices) => format!("one of {}", choices.join(", ")),
+            Self::ChoiceOr(choices, ty) => {
+                format!("{}, or {}: {}", choices.join(", "), ty.name, ty.units)
+            }
+            Self::Name(names) => names.long().to_owned(),
             Self::Text => "text".into(),
         }
     }
 
-    /// Whether a complete typed value fits. Text and placeholders always fit.
-    fn accepts(&self, value: &str) -> bool {
-        let unsigned = value.trim_start_matches(['+', '-']);
-        let unit = |suffixes: &[&str]| {
-            suffixes
-                .iter()
-                .any(|suffix| unsigned.strip_suffix(suffix).is_some_and(is_number))
-        };
+    fn check(&self, value: &str, context: &Context) -> Result<(), String> {
         match self {
-            Self::Duration => unit(&["ms", "s", "f"]),
-            Self::Decibels => unit(&["dB", "db"]),
-            Self::Semitones => unit(&["st"]),
-            Self::Number => is_number(unsigned),
-            Self::Choice(choices) => choices
+            Self::Typed(ty) if (ty.check)(value) => Ok(()),
+            Self::Typed(ty) => Err(format!("is not a {}: use {}", ty.name, ty.units)),
+            Self::Choice(choices) if choices.contains(&value) => Ok(()),
+            Self::Choice(choices) => Err(format!("is not one of {}", choices.join(", "))),
+            Self::ChoiceOr(choices, ty) if choices.contains(&value) || (ty.check)(value) => Ok(()),
+            Self::ChoiceOr(choices, ty) => Err(format!(
+                "is not {} or a {}: use {}",
+                choices.join(", "),
+                ty.name,
+                ty.units
+            )),
+            Self::Name(names) => names.check(value, context),
+            Self::Text => Ok(()),
+        }
+    }
+
+    /// Complete values to offer for a typed prefix, with their labels.
+    fn candidates(&self, prefix: &str, context: &Context) -> Vec<String> {
+        let words: Vec<(String, String)> = match self {
+            Self::Choice(choices) | Self::ChoiceOr(choices, _) => choices
                 .iter()
-                .any(|choice| choice.eq_ignore_ascii_case(value)),
-            Self::Text => true,
-        }
-    }
-}
-
-/// Decimal or rational (`7/8`) digits without sign or unit.
-fn is_number(text: &str) -> bool {
-    let decimal = |part: &str| {
-        let mut halves = part.splitn(2, '.');
-        let whole = halves.next().unwrap_or_default();
-        let fraction = halves.next();
-        !whole.is_empty()
-            && whole.bytes().all(|byte| byte.is_ascii_digit())
-            && fraction.is_none_or(|fraction| {
-                !fraction.is_empty() && fraction.bytes().all(|byte| byte.is_ascii_digit())
-            })
-    };
-    match text.split_once('/') {
-        Some((numerator, denominator)) => decimal(numerator) && decimal(denominator),
-        None => decimal(text),
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Param {
-    /// `None` for a positional argument.
-    pub name: Option<&'static str>,
-    pub kind: Kind,
-    pub example: &'static str,
-}
-
-#[derive(Clone, Debug)]
-pub struct Schema {
-    pub verb: &'static str,
-    pub params: Vec<Param>,
-    pub contexts: Contexts,
-}
-
-impl Schema {
-    fn from_usage(verb: &'static str, usage: &'static str, contexts: Contexts) -> Self {
-        // A usage may list whole alternative forms (`:gain +3dB | mute`); the
-        // first form defines the arguments.
-        let syntax = usage.split("  ").next().unwrap_or(usage);
-        let syntax = syntax.split(" | ").next().unwrap_or(syntax);
-        let params = syntax
-            .split_whitespace()
-            .skip(1)
-            .map(|token| token.trim_matches(['[', ']']))
-            .filter(|token| !token.is_empty() && !token.contains("..."))
-            .map(|token| match token.split_once('=') {
-                Some((name, example)) => Param {
-                    name: Some(name),
-                    kind: Kind::infer(example),
-                    example,
-                },
-                None => Param {
-                    name: None,
-                    kind: Kind::infer(token),
-                    example: token,
-                },
-            })
-            .collect();
-        Self {
-            verb,
-            params,
-            contexts,
-        }
-    }
-
-    fn option(&self, name: &str) -> Option<&Param> {
-        self.params.iter().find(|param| {
-            param
-                .name
-                .is_some_and(|known| known.eq_ignore_ascii_case(name))
-        })
-    }
-
-    fn options(&self) -> impl Iterator<Item = &Param> {
-        self.params.iter().filter(|param| param.name.is_some())
-    }
-}
-
-/// The schema of `verb`, from the first registry usage that names it.
-pub fn schema(verb: &str) -> Option<Schema> {
-    SPECS.iter().find_map(|spec: &'static Spec| {
-        spec.commands
-            .iter()
-            .find(|command| command.verb.eq_ignore_ascii_case(verb))
-            .map(|command| Schema::from_usage(command.verb, command.usage, spec.contexts))
-    })
-}
-
-/// What a command acts on when nothing more specific is selected, from the
-/// contexts its registry entry admits.
-pub fn default_target(contexts: Contexts) -> &'static str {
-    let your_edit = contexts.intersects(Contexts::YOUR_EDIT);
-    if contexts.contains(Contexts::VISUAL) && your_edit {
-        "the Visual selection, else the Edit cursor"
-    } else if your_edit {
-        "the Edit cursor"
-    } else if contexts.contains(Contexts::CONTENTS) {
-        "the selected beat inside Repeat contents"
-    } else if contexts.contains(Contexts::ORIGINAL) {
-        "the Original cursor"
-    } else if contexts.contains(Contexts::PLACED) {
-        "the selected placed sound"
-    } else if contexts.contains(Contexts::CATALOG) {
-        "the selected catalog sound"
-    } else {
-        "this project"
-    }
-}
-
-/// Guidance for a command line whose verb is complete: the next argument or
-/// matching options, the first value that does not fit its typed unit, and
-/// the default target. `None` before the verb is complete or for unknown verbs.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Guide {
-    pub shown: String,
-    pub problem: Option<String>,
-    pub target: &'static str,
-}
-
-pub fn guide(input: &str) -> Option<Guide> {
-    let input = input.trim_start();
-    let input = input.strip_prefix(':').unwrap_or(input);
-    let (verb, rest) = input.split_once(char::is_whitespace)?;
-    let schema = schema(verb)?;
-    let ends_open = !rest.is_empty() && !rest.ends_with(char::is_whitespace);
-    let mut tokens: Vec<&str> = rest.split_whitespace().collect();
-    let partial = if ends_open { tokens.pop() } else { None };
-
-    let mut positionals = schema.params.iter().filter(|param| param.name.is_none());
-    let mut used = Vec::new();
-    let mut problem = None;
-    for token in &tokens {
-        let param = match token.split_once('=') {
-            Some((name, value)) => match schema.option(name) {
-                Some(param) => {
-                    used.push(param.name);
-                    Some((param, value))
-                }
-                None => {
-                    problem.get_or_insert_with(|| unknown_option(&schema, name));
-                    None
-                }
-            },
-            None => positionals.next().map(|param| (param, *token)),
+                .map(|choice| ((*choice).to_owned(), (*choice).to_owned()))
+                .collect(),
+            Self::Name(names) => names.known(context),
+            Self::Typed(_) | Self::Text => Vec::new(),
         };
-        if let Some((param, value)) = param
-            && !param.kind.accepts(value)
-        {
-            problem.get_or_insert_with(|| format!("{value} is not {}", describe(param)));
-        }
+        words
+            .into_iter()
+            .filter(|(value, _)| value.starts_with(prefix))
+            .map(|(_, label)| label)
+            .collect()
     }
 
-    let shown = match partial.map(|partial| (partial, partial.split_once('='))) {
-        Some((_, Some((name, value)))) => match schema.option(name) {
-            Some(param) => match &param.kind {
-                Kind::Choice(choices) => {
-                    let matching: Vec<_> = choices
-                        .iter()
-                        .filter(|choice| {
-                            choice
-                                .to_ascii_lowercase()
-                                .starts_with(&value.to_ascii_lowercase())
-                        })
-                        .copied()
-                        .collect();
-                    if matching.is_empty() {
-                        problem
-                            .get_or_insert_with(|| format!("{value} is not {}", describe(param)));
-                    }
-                    format!("{name}={}", matching.join("|"))
-                }
-                kind => format!("{name}=  {}, e.g. {}", kind.hint(), param.example),
-            },
-            None => {
-                problem.get_or_insert_with(|| unknown_option(&schema, name));
-                options_left(&schema, &used)
-            }
-        },
-        Some((partial, None)) => {
-            let matching: Vec<_> = schema
-                .options()
-                .filter(|param| !used.contains(&param.name))
-                .filter_map(|param| param.name)
-                .filter(|name| name.starts_with(&partial.to_ascii_lowercase()))
-                .map(|name| format!("{name}="))
-                .collect();
-            match positionals.next() {
-                Some(param) if matching.is_empty() => next_positional(param),
-                _ if !matching.is_empty() => matching.join("  "),
-                _ => options_left(&schema, &used),
-            }
-        }
-        None => match positionals.next() {
-            Some(param) => {
-                let mut shown = next_positional(param);
-                let options = options_left(&schema, &used);
-                if !options.is_empty() {
-                    shown.push_str("  ·  ");
-                    shown.push_str(&options);
-                }
-                shown
-            }
-            None => options_left(&schema, &used),
-        },
-    };
-    Some(Guide {
-        shown,
-        problem,
-        target: default_target(schema.contexts),
-    })
-}
-
-fn describe(param: &Param) -> String {
-    match (&param.kind, param.name) {
-        (Kind::Choice(choices), Some(name)) => format!("a {name} choice: {}", choices.join(", ")),
-        (Kind::Choice(choices), None) => format!("one of {}", choices.join(", ")),
-        (kind, _) => format!("a {}", kind.hint()),
+    fn lists_values(&self) -> bool {
+        matches!(self, Self::Choice(_) | Self::ChoiceOr(..) | Self::Name(_))
     }
 }
 
-fn next_positional(param: &Param) -> String {
-    format!("{}, e.g. {}", param.kind.hint(), param.example)
+impl Default {
+    fn short(self) -> String {
+        match self {
+            Self::Required => "required".into(),
+            Self::Value(value) => value.into(),
+            Self::Keeps => "keeps".into(),
+            Self::Means(meaning) => meaning.into(),
+        }
+    }
+
+    pub fn long(self) -> String {
+        match self {
+            Self::Required => "required".into(),
+            Self::Value(value) => format!("default {value}"),
+            Self::Keeps => "omitted keeps the current value".into(),
+            Self::Means(meaning) => format!("omitted: {meaning}"),
+        }
+    }
 }
 
-fn options_left(schema: &Schema, used: &[Option<&'static str>]) -> String {
-    schema
-        .options()
-        .filter(|param| !used.contains(&param.name))
-        .map(|param| {
-            let value = match param.kind {
-                Kind::Text => param.example.to_owned(),
-                ref kind => kind.hint(),
-            };
-            format!("{}={value}", param.name.unwrap_or_default())
-        })
-        .collect::<Vec<_>>()
-        .join("  ")
-}
-
-fn unknown_option(schema: &Schema, name: &str) -> String {
-    let known: Vec<_> = schema.options().filter_map(|param| param.name).collect();
-    if known.is_empty() {
-        format!(":{} takes no {name}= option", schema.verb)
-    } else {
+impl Param {
+    fn describe(&self, option: bool) -> String {
+        let name = if option {
+            format!("{}=", self.name)
+        } else {
+            self.name.to_owned()
+        };
         format!(
-            "Unknown option {name}=; :{} takes {}",
-            schema.verb,
-            known.join(", ")
+            "{name} {} · {} · {}",
+            self.help,
+            self.kind.long(),
+            self.default.long()
+        )
+    }
+
+    fn chip(&self) -> String {
+        format!(
+            "{}={} ({})",
+            self.name,
+            short_hint(&self.kind),
+            self.default.short()
         )
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+/// Split arguments into words, keeping `"quoted text"` (also after `key=`)
+/// together. The second value is whether the last word is still being typed.
+fn words(rest: &str) -> (Vec<&str>, bool) {
+    let mut words = Vec::new();
+    let mut start = None;
+    let mut quoted = false;
+    for (index, character) in rest.char_indices() {
+        if character == '"' {
+            quoted = !quoted;
+        }
+        match (start, character.is_whitespace() && !quoted) {
+            (None, false) => start = Some(index),
+            (Some(begin), true) => {
+                words.push(&rest[begin..index]);
+                start = None;
+            }
+            _ => {}
+        }
+    }
+    let open = start.is_some();
+    if let Some(begin) = start {
+        words.push(&rest[begin..]);
+    }
+    (words, open)
+}
 
-    #[test]
-    fn usages_declare_typed_positionals_and_choice_options() {
-        let hold = schema("hold").unwrap();
-        assert_eq!(hold.params[0].kind, Kind::Duration);
-        assert_eq!(
-            hold.option("video").unwrap().kind,
-            Kind::Choice(vec!["freeze", "black", "ai"])
-        );
-        assert_eq!(schema("gain").unwrap().params[0].kind, Kind::Decibels);
-        assert_eq!(schema("pitch").unwrap().params[0].kind, Kind::Semitones);
+/// `key=value` when `key` looks like a parameter name.
+fn split_option(word: &str) -> Option<(&str, &str)> {
+    let (key, value) = word.split_once('=')?;
+    (!key.is_empty()
+        && key
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+        && key.as_bytes()[0].is_ascii_alphabetic())
+    .then_some((key, value))
+}
+
+struct Walk<'s> {
+    verb: &'s str,
+    schema: &'static ArgSchema,
+    variant: Option<&'static Variant>,
+    /// A saved gag preset takes its own recipe's parameters.
+    free_options: bool,
+    index: usize,
+    used: Vec<&'static str>,
+    problem: Option<String>,
+}
+
+impl<'s> Walk<'s> {
+    fn positional(&self) -> Vec<&'static Param> {
+        self.schema
+            .positional
+            .iter()
+            .chain(
+                self.variant
+                    .into_iter()
+                    .flat_map(|variant| variant.positional),
+            )
+            .collect()
     }
 
-    #[test]
-    fn every_registry_usage_yields_a_schema() {
-        for spec in SPECS {
-            for command in spec.commands {
-                assert!(schema(command.verb).is_some(), "{}", command.verb);
-            }
+    fn options(&self) -> Vec<&'static Param> {
+        self.schema
+            .options
+            .iter()
+            .chain(self.variant.into_iter().flat_map(|variant| variant.options))
+            .collect()
+    }
+
+    fn option(&self, name: &str) -> Option<&'static Param> {
+        self.options().into_iter().find(|param| param.name == name)
+    }
+
+    fn rest(&self) -> bool {
+        self.schema.rest_text && self.index + 1 >= self.positional().len()
+    }
+
+    fn fail(&mut self, problem: String) {
+        self.problem.get_or_insert(problem);
+    }
+
+    fn unknown(&self, name: &str) -> String {
+        let known: Vec<_> = self.options().iter().map(|param| param.name).collect();
+        if known.is_empty() {
+            format!("{name}= is not a parameter of :{}", self.verb)
+        } else {
+            format!(
+                "{name}= is not a parameter of :{}; it takes {}",
+                self.verb,
+                known.join(", ")
+            )
         }
     }
 
-    #[test]
-    fn completion_follows_the_typed_position() {
-        let guide = guide(":hold ").unwrap();
-        assert!(
-            guide.shown.starts_with("duration in s, ms or f, e.g. 0.5s"),
-            "{}",
-            guide.shown
-        );
-        assert!(
-            guide.shown.contains("video=freeze|black|ai"),
-            "{}",
-            guide.shown
-        );
-        assert_eq!(guide.target, "the Edit cursor");
-
-        assert_eq!(guide_shown(":hold 1s v"), "video=");
-        assert_eq!(guide_shown(":hold 1s video=b"), "video=black");
-        assert_eq!(guide_shown(":hold 1s video=black "), "audio=silence");
+    fn take(&mut self, word: &str, option_like: bool, context: &Context) {
+        if option_like && let Some((name, value)) = split_option(word) {
+            if self.free_options {
+                return;
+            }
+            match self.option(name) {
+                None => {
+                    let problem = self.unknown(name);
+                    self.fail(problem);
+                }
+                Some(param) if self.used.contains(&param.name) => {
+                    self.fail(format!("{name}= is given twice"));
+                }
+                Some(param) => {
+                    self.used.push(param.name);
+                    if let Err(why) = param.kind.check(value, context) {
+                        self.fail(format!("{name}={value} {why}"));
+                    }
+                }
+            }
+            return;
+        }
+        let positional = self.positional();
+        let Some(param) = positional.get(self.index).copied() else {
+            let problem = if positional.is_empty() {
+                format!(":{} takes no value {word}", self.verb)
+            } else {
+                format!(
+                    "{word} is extra; :{} takes {}",
+                    self.verb,
+                    positional
+                        .iter()
+                        .map(|param| param.name)
+                        .collect::<Vec<_>>()
+                        .join(" then ")
+                )
+            };
+            self.fail(problem);
+            return;
+        };
+        if let Err(why) = param.kind.check(word, context) {
+            self.fail(format!("{} {word} {why}", param.name));
+        }
+        if self.index == 0 && !self.schema.variants.is_empty() {
+            self.variant = self.schema.variant(word);
+            // Only a saved gag preset brings parameters of its own.
+            self.free_options = self.variant.is_none() && param.kind == Kind::Name(Names::Gag);
+        }
+        if !self.rest() {
+            self.index += 1;
+        }
     }
 
-    #[test]
-    fn values_that_do_not_fit_their_unit_are_named_before_enter() {
-        assert_eq!(
-            guide(":hold 1.5x ").unwrap().problem.as_deref(),
-            Some("1.5x is not a duration in s, ms or f")
-        );
-        assert!(guide(":hold 12f ").unwrap().problem.is_none());
-        assert!(guide(":hold 120ms ").unwrap().problem.is_none());
-        assert_eq!(
-            guide(":hold 1s video=grey").unwrap().problem.as_deref(),
-            Some("grey is not a video choice: freeze, black, ai")
-        );
-        assert_eq!(
-            guide(":hold 1s colour=red ").unwrap().problem.as_deref(),
-            Some("Unknown option colour=; :hold takes video, audio")
-        );
-        assert!(guide(":gain -6dB ").unwrap().problem.is_none());
-        assert!(guide(":gain loud ").unwrap().problem.is_some());
+    fn options_left(&self) -> Vec<&'static Param> {
+        self.options()
+            .into_iter()
+            .filter(|param| !self.used.contains(&param.name))
+            .collect()
+    }
+}
+
+pub fn guide(input: &str, context: &Context) -> Option<Guide> {
+    let input = input.trim_start();
+    let input = input.strip_prefix(':').unwrap_or(input);
+    let (verb, rest) = input.split_once(char::is_whitespace)?;
+    let schema = lookup(verb)?;
+    let verb = verb.to_ascii_lowercase();
+    let verb = verb.as_str();
+    let target = schema.selector.resolve(context);
+    let (mut all, open) = words(rest);
+    let partial = if open { all.pop() } else { None };
+
+    // A whole alternative form such as `:zoom off` takes nothing else.
+    if let Some(form) = all
+        .first()
+        .and_then(|first| schema.forms.iter().find(|(word, _)| word == first))
+    {
+        let extra = all.len() > 1 || partial.is_some();
+        return Some(Guide {
+            next: format!(":{verb} {} {}", form.0, form.1),
+            candidates: Vec::new(),
+            problem: extra.then(|| format!(":{verb} {} takes nothing else", form.0)),
+            target,
+            usage: schema.usage(verb),
+        });
     }
 
-    #[test]
-    fn incomplete_verbs_have_no_argument_guide() {
-        assert!(guide(":ho").is_none());
-        assert!(guide(":unknown 1").is_none());
+    // Before a verb's trailing text ends, `at=` and the like are words of it.
+    let text_until = if schema.rest_text {
+        all.iter()
+            .rposition(|word| {
+                split_option(word).is_none_or(|(name, _)| !schema.option_names().contains(&name))
+            })
+            .map_or(0, |last| last + 1)
+    } else {
+        0
+    };
+    let mut walk = Walk {
+        verb,
+        schema,
+        variant: None,
+        free_options: false,
+        index: 0,
+        used: Vec::new(),
+        problem: None,
+    };
+    for (position, word) in all.iter().enumerate() {
+        walk.take(word, position >= text_until, context);
     }
 
-    fn guide_shown(input: &str) -> String {
-        guide(input).unwrap().shown
+    let positional = walk.positional();
+    let next_positional = positional.get(walk.index).copied();
+    let mut candidates = Vec::new();
+    let next = match partial {
+        Some(partial) if split_option(partial).is_some() && !walk.free_options => {
+            let (name, prefix) = split_option(partial).expect("checked");
+            match walk.option(name) {
+                Some(param) if !walk.used.contains(&param.name) => {
+                    candidates = param
+                        .kind
+                        .candidates(prefix, context)
+                        .into_iter()
+                        .map(|value| format!("{name}={value}"))
+                        .collect();
+                    if candidates.is_empty() && param.kind.lists_values() && !prefix.is_empty() {
+                        let why = param
+                            .kind
+                            .check(prefix, context)
+                            .err()
+                            .unwrap_or_else(|| format!("is not {}", param.kind.long()));
+                        walk.fail(format!("{name}={prefix} {why}"));
+                    }
+                    param.describe(true)
+                }
+                Some(_) => {
+                    walk.fail(format!("{name}= is given twice"));
+                    remaining(&walk, &mut candidates)
+                }
+                None if schema.rest_text && walk.rest() => text_next(&walk, &mut candidates),
+                None => {
+                    let problem = walk.unknown(name);
+                    walk.fail(problem);
+                    remaining(&walk, &mut candidates)
+                }
+            }
+        }
+        Some(partial) => {
+            let options: Vec<String> = walk
+                .options_left()
+                .into_iter()
+                .filter(|param| param.name.starts_with(partial))
+                .map(|param| format!("{}=", param.name))
+                .collect();
+            let forms = all.is_empty().then(|| {
+                schema
+                    .forms
+                    .iter()
+                    .filter(|(word, _)| word.starts_with(partial))
+                    .map(|(word, _)| (*word).to_owned())
+            });
+            match next_positional {
+                Some(param) => {
+                    candidates.extend(param.kind.candidates(partial, context));
+                    candidates.extend(forms.into_iter().flatten());
+                    candidates.extend(options);
+                    param.describe(false)
+                }
+                None if walk.free_options => {
+                    format!("parameters of the saved preset {}", all[0])
+                }
+                None => {
+                    candidates.extend(options);
+                    if candidates.is_empty() {
+                        let problem = format!(
+                            "{partial} is extra; :{verb} {}",
+                            if walk.options().is_empty() {
+                                "takes nothing more".to_owned()
+                            } else {
+                                format!(
+                                    "takes {}",
+                                    walk.options_left()
+                                        .iter()
+                                        .map(|param| format!("{}=", param.name))
+                                        .collect::<Vec<_>>()
+                                        .join(", ")
+                                )
+                            }
+                        );
+                        if !(schema.rest_text && walk.rest()) {
+                            walk.fail(problem);
+                        }
+                    }
+                    "parameter name".into()
+                }
+            }
+        }
+        None => match next_positional {
+            Some(param) if !(schema.rest_text && walk.rest() && walk.index > 0) => {
+                candidates.extend(param.kind.candidates("", context));
+                if all.is_empty() {
+                    candidates.extend(schema.forms.iter().map(|(word, _)| (*word).to_owned()));
+                }
+                candidates.extend(walk.options_left().iter().map(|param| param.chip()));
+                param.describe(false)
+            }
+            _ if walk.free_options => format!("parameters of the saved preset {}", all[0]),
+            _ => remaining(&walk, &mut candidates),
+        },
+    };
+    Some(Guide {
+        next,
+        candidates,
+        problem: walk.problem,
+        target,
+        usage: schema.usage(verb),
+    })
+}
+
+fn text_next(walk: &Walk<'_>, candidates: &mut Vec<String>) -> String {
+    candidates.extend(walk.options_left().iter().map(|param| param.chip()));
+    walk.positional()
+        .last()
+        .map_or_else(|| "text".into(), |param| param.describe(false))
+}
+
+/// The parameters left, required ones first.
+fn remaining(walk: &Walk<'_>, candidates: &mut Vec<String>) -> String {
+    let left = walk.options_left();
+    let required: Vec<_> = left
+        .iter()
+        .filter(|param| param.default == Default::Required)
+        .collect();
+    candidates.extend(left.iter().map(|param| param.chip()));
+    if let Some(param) = required.first() {
+        return param.describe(true);
     }
+    if left.is_empty() {
+        "nothing more; Enter applies".into()
+    } else if walk.schema.rest_text {
+        "more text, or optional parameters".into()
+    } else {
+        "optional parameters, each with what omitting it means".into()
+    }
+}
+
+/// Verbs without a declared schema: types inferred from the registry usage,
+/// which only checks units and choices.
+static INFERRED: LazyLock<Vec<(&'static str, ArgSchema)>> = LazyLock::new(|| {
+    SPECS
+        .iter()
+        .flat_map(|spec| spec.commands.iter().map(move |command| (spec, command)))
+        .filter(|(_, command)| declared(command.verb).is_none())
+        .map(|(spec, command)| (command.verb, infer(command.usage, spec.contexts)))
+        .collect()
+});
+
+fn infer(usage: &'static str, contexts: Contexts) -> ArgSchema {
+    // A usage may list whole alternative forms (`:eq … | off`); the first
+    // form defines the arguments.
+    let syntax = usage.split("  ").next().unwrap_or(usage);
+    let syntax = syntax.split(" | ").next().unwrap_or(syntax);
+    let mut positional = Vec::new();
+    let mut options = Vec::new();
+    for token in syntax
+        .split_whitespace()
+        .skip(1)
+        .map(|token| token.trim_matches(['[', ']']))
+        .filter(|token| !token.is_empty() && !token.contains("..."))
+    {
+        match token.split_once('=') {
+            Some((name, example)) => options.push(param(
+                name,
+                infer_kind(example),
+                Default::Means("unset"),
+                "",
+            )),
+            None => positional.push(param(
+                "value",
+                infer_kind(token),
+                Default::Means("unset"),
+                "",
+            )),
+        }
+    }
+    let selector = if contexts.contains(Contexts::VISUAL) && contexts.intersects(Contexts::EDIT) {
+        Selector::VisualOrBeat
+    } else if contexts.intersects(Contexts::YOUR_EDIT) {
+        Selector::BeatOrCursor
+    } else if contexts.contains(Contexts::CONTENTS) {
+        Selector::Plays
+    } else if contexts.contains(Contexts::ORIGINAL) {
+        Selector::TimelineCursor
+    } else if contexts.intersects(Contexts::PLACED.or(Contexts::CATALOG)) {
+        Selector::Sound
+    } else {
+        Selector::Project
+    };
+    ArgSchema {
+        selector,
+        // Inferred schemas are built once per verb and live for the process.
+        positional: Box::leak(positional.into_boxed_slice()),
+        options: Box::leak(options.into_boxed_slice()),
+        forms: &[],
+        rest_text: false,
+        variants: &[],
+        examples: &[],
+    }
+}
+
+fn infer_kind(example: &'static str) -> Kind {
+    if example.contains('|') {
+        let choices: Vec<&'static str> = example.split('|').filter(|c| !c.is_empty()).collect();
+        return Kind::Choice(Box::leak(choices.into_boxed_slice()));
+    }
+    let unsigned = example.trim_start_matches(['+', '-']);
+    let digits = unsigned.trim_end_matches(|c: char| c.is_ascii_alphabetic());
+    if digits.is_empty()
+        || !digits
+            .bytes()
+            .all(|b| b.is_ascii_digit() || b == b'.' || b == b'/')
+    {
+        return Kind::Text;
+    }
+    match &unsigned[digits.len()..] {
+        "s" | "ms" | "f" => Kind::Typed(&DURATION),
+        "dB" => Kind::Typed(&DECIBELS),
+        "st" => Kind::Typed(&SEMITONES),
+        "" => Kind::Typed(&NUMBER),
+        _ => Kind::Text,
+    }
+}
+
+/// The generated reference's argument section.
+#[cfg(test)]
+pub fn reference_markdown() -> String {
+    use std::fmt::Write as _;
+    let escape = |text: &str| text.replace('|', "\\|");
+    let mut out = String::from("## Command arguments\n\n");
+    out.push_str(
+        "Generated from the declarative argument schemas in\n\
+         [`command/schema/table.rs`](../crates/deadpan-app/src/navigation/command/schema/table.rs).\n\
+         The command line completes and checks arguments from the same schema while\n\
+         you type, and names what the command acts on in the current context.\n\n",
+    );
+    let mut verbs: Vec<_> = SCHEMAS.iter().collect();
+    verbs.sort_by_key(|(verb, _)| *verb);
+    let (plain, with): (Vec<_>, Vec<_>) = verbs
+        .into_iter()
+        .partition(|(_, schema)| !schema.takes_arguments());
+    for (verb, schema) in with {
+        let _ = writeln!(out, "### `:{verb}`\n");
+        let _ = writeln!(out, "`{}`\n", schema.usage(verb));
+        let _ = writeln!(out, "Acts on {}.\n", schema.selector.generic());
+        let mut rows = Vec::new();
+        for param in schema.positional {
+            rows.push((param.name.to_ascii_uppercase(), param, ""));
+        }
+        for param in schema.options {
+            rows.push((format!("{}=", param.name), param, ""));
+        }
+        for variant in schema.variants {
+            for param in variant.positional {
+                rows.push((param.name.to_ascii_uppercase(), param, variant.value));
+            }
+            for param in variant.options {
+                rows.push((format!("{}=", param.name), param, variant.value));
+            }
+        }
+        out.push_str("| Parameter | Type and units | Default | Meaning |\n");
+        out.push_str("| --- | --- | --- | --- |\n");
+        for (name, param, variant) in rows {
+            let name = if variant.is_empty() {
+                format!("`{name}`")
+            } else {
+                format!("`{name}` ({variant})")
+            };
+            let _ = writeln!(
+                out,
+                "| {name} | {} | {} | {} |",
+                escape(&param.kind.long()),
+                escape(&param.default.long()),
+                escape(param.help)
+            );
+        }
+        for (form, meaning) in schema.forms {
+            let _ = writeln!(out, "| `{form}` | whole form | - | {} |", escape(meaning));
+        }
+        out.push('\n');
+    }
+    out.push_str("### Commands without arguments\n\n");
+    for (verb, schema) in plain {
+        let _ = writeln!(out, "- `:{verb}` acts on {}.", schema.selector.generic());
+    }
+    out.push_str(
+        "\n### Verbs with usage-inferred arguments\n\n\
+         These verbs check units and choices inferred from their usage only.\n\n\
+         | Verb | Why it has no declared schema yet |\n| --- | --- |\n",
+    );
+    let mut reasons: Vec<_> = REASONS.iter().collect();
+    reasons.sort_by_key(|(verb, _)| *verb);
+    for (verb, reason) in reasons {
+        let _ = writeln!(out, "| `:{verb}` | {} |", escape(reason));
+    }
+    out
 }

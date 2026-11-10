@@ -89,7 +89,7 @@ pub fn parse(arguments: &str) -> Result<CaptionInput, String> {
 
 fn is_option(word: &str) -> bool {
     word.split_once('=')
-        .is_some_and(|(key, _)| matches!(key, "at" | "delay" | "reveal"))
+        .is_some_and(|(key, _)| super::command::schema::option_names("caption").contains(&key))
 }
 
 #[cfg(test)]

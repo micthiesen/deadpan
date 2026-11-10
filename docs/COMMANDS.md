@@ -199,10 +199,10 @@ Headless status links to [PARITY](PARITY.md).
 | --- | --- | --- | --- | --- | --- |
 | **Apply a gag** (`gag`)<br>Apply a built-in gag as one Undo: long-answer (pause=1.5s creep=1.35), escalator (plays=3 gain-step=3dB zoom-step=0.08), non-sequitur (register=r), one-more-time (plays=3 gap=500ms shorten=200ms, vary=20% seed=), nothing-happens (register=r tone=1s silence=1s) or are-we-done (register=r pause=1.5s). :gag NAME with a saved preset's name inserts that preset. The result is an ordinary group labelled with the recipe, its version and parameters: edit any part, or ungroup to detach it. | - | `:gag NAME [key=value …]` | Your edit | recorded; . repeats | [Equivalent](PARITY.md#captions-cutaways-and-gags): `gag instruction with the recipe` |
 | **Inspect a gag** (`gag.inspect`)<br>List the exact ordinary steps a gag expands to with these parameters, including its resolved gaps, pause lengths and pinned label, in this reference, without applying anything. | - | `:gag-inspect NAME` | Your edit | not recorded | [Equivalent](PARITY.md#captions-cutaways-and-gags): `gag-inspect <p> --json <recipe> [--visual]` |
-| **Change an inserted gag** (`gag.set`)<br>Change the selected inserted gag's parameters after insertion (:gag-set plays=4 gap=400ms): each given parameter edits the ordinary part the recipe made and the pinned label is rewritten, as one Undo. A gag whose parts were changed by hand refuses. The inspector pre-fills it with the current values. | - | `:gag-set NAME key=value` | Your edit | recorded; . repeats | [Equivalent](PARITY.md#captions-cutaways-and-gags): `set_gag instruction` |
+| **Change an inserted gag** (`gag.set`)<br>Change the selected inserted gag's parameters after insertion (:gag-set plays=4 gap=400ms): each given parameter edits the ordinary part the recipe made and the pinned label is rewritten, as one Undo. A gag whose parts were changed by hand refuses. The inspector pre-fills it with the current values. | - | `:gag-set key=value …` | Your edit | recorded; . repeats | [Equivalent](PARITY.md#captions-cutaways-and-gags): `set_gag instruction` |
 | **Gag presets** (`gag.presets`)<br>Keep the selected inserted gag's recipe and exact parameters as a named preset in Application Support, shared by every project; :gag NAME [key=value …] inserts it and :gag-presets lists them. | - | `:gag-save NAME`, `:gag-presets` | Your edit | not recorded | [GUI-only](PARITY.md#captions-cutaways-and-gags): `none: presets live in Application Support` |
 | **Local recipes** (`recipe`)<br>Keep the selected group, such as a gag you have modified, as local recipe a: its exact beats, timing and attachments are saved in this project's register a and survive reopening. :recipe a inserts a fresh copy at the cursor as one Undo; :recipe-inspect a lists what it inserts first. | - | `:recipe-save a`, `:recipe a`, `:recipe-inspect a` | Your edit | recorded in macros | [Equivalent](PARITY.md#selection-registers-and-copypaste): `yank around_group / paste instructions; macro inspect` |
-| **Caption** (`caption`)<br>Caption the selected beat, or the Edit range inside it, with one line of text drawn over the picture in preview and export. at= places it at the bottom (default), top or center; delay= starts it later; reveal=N waits for play N of an enclosing Repeat. :caption clear removes captions there. One Undo. | - | `:caption TEXT [at=top\|center] [delay=4f]` | Your edit (Normal and Visual) | recorded; . repeats | [Equivalent](PARITY.md#captions-cutaways-and-gags): `set_caption instruction; set_captions command` |
+| **Caption** (`caption`)<br>Caption the selected beat, or the Edit range inside it, with one line of text drawn over the picture in preview and export. at= places it at the bottom (default), top or center; delay= starts it later; reveal=N waits for play N of an enclosing Repeat. :caption clear removes captions there. One Undo. | - | `:caption TEXT [at=bottom\|top\|center] [delay=4f] [reveal=3]` | Your edit (Normal and Visual) | recorded; . repeats | [Equivalent](PARITY.md#captions-cutaways-and-gags): `set_caption instruction; set_captions command` |
 | **Cutaway** (`cutaway.pick`)<br>Show a copied Original moment over the Edit range (or the whole selected beat) while that beat's sound continues. ,r opens :cutaway register= on a register holding a copied moment and lists the others. fit=hold\|loop\|bounce\|gap chooses what a short moment does. The cutaway belongs to the beat and moves, splits and copies with it. :cutaway clear removes cutaways there. One Undo. | `,r` (`cutaway.pick`) | `:cutaway register=a` | Your edit (Normal and Visual) | recorded; . repeats | [Equivalent](PARITY.md#captions-cutaways-and-gags): `set_cutaway instruction; set_cutaways command` |
 
 ## Registers
@@ -374,3 +374,728 @@ Headless status links to [PARITY](PARITY.md).
 | **Scroll** (`help.scroll`)<br>Scroll by line, page or to the ends. | `j / k · PgUp / PgDn · Home / End` (fixed) | - | Keys | not recorded | [GUI-only](PARITY.md#navigation-view-and-audition): `none needed` |
 | **Close this reference** (`help.close`)<br>Close the reference; keys typed after Esc in the same moment reach the editor in order. | `Esc` (fixed) | - | Keys | not recorded | [GUI-only](PARITY.md#navigation-view-and-audition): `none needed` |
 
+## Command arguments
+
+Generated from the declarative argument schemas in
+[`command/schema/table.rs`](../crates/deadpan-app/src/navigation/command/schema/table.rs).
+The command line completes and checks arguments from the same schema while
+you type, and names what the command acts on in the current context.
+
+### `:ai-hold`
+
+`:ai-hold DURATION`
+
+Acts on the Edit cursor.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `DURATION` | duration: 12f, 250ms, 1.5s or 01:02.500 | required | pause length |
+
+### `:audio-lag`
+
+`:audio-lag OFFSET`
+
+Acts on the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `OFFSET` | signed duration: +80ms, -2f or 0 | required | sound later (+) or earlier (-) than its picture; 0 realigns |
+
+### `:audition-context`
+
+`:audition-context lead=duration follow=duration`
+
+Acts on the view only; nothing is edited.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `lead=` | duration: 12f, 250ms, 1.5s or 01:02.500 | required | heard before a selection |
+| `follow=` | duration: 12f, 250ms, 1.5s or 01:02.500 | required | heard after it |
+
+### `:balance`
+
+`:balance BALANCE`
+
+Acts on the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `BALANCE` | left, right, center, off, or signed percentage: -50% (left) or +50% (right), within ±100% | required | stereo balance; the opposite channel is attenuated |
+
+### `:caption`
+
+`:caption TEXT… [at=bottom|top|center|middle] [delay=duration] [reveal=whole-count] | :caption clear`
+
+Acts on the Visual range, else the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `TEXT` | text | required | the caption; "quotes" keep words like at= in it |
+| `at=` | one of bottom, top, center, middle | default bottom | where the caption sits |
+| `delay=` | duration: 12f, 250ms, 1.5s or 01:02.500 | omitted: starts with the beat | starts it later in the beat |
+| `reveal=` | whole count: 1 or more | omitted: every play | the first Repeat play that shows it |
+| `clear` | whole form | - | removes captions there |
+
+### `:compare-ai`
+
+`:compare-ai [SIDE]`
+
+Acts on the selected pause.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `SIDE` | before, or variant number: 1 to 255, as the inspector shows | omitted: toggles before and after | show the picture before the pause, or one variant |
+
+### `:creep`
+
+`:creep [from=scale] [to=scale] [target=target] [curve=smoothstep|smooth|linear]`
+
+Acts on the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `from=` | scale: 1.35 or 2x, from 1/64 to 64 | omitted: the current scale | scale at the start |
+| `to=` | scale: 1.35 or 2x, from 1/64 to 64 | default 1.35 | scale at the end |
+| `target=` | target id or label, current, center, face:N or region:N | omitted: keeps the current center | where to zoom: a saved target, current, center, face:N or region:N |
+| `curve=` | one of smoothstep, smooth, linear | default smoothstep | how the creep eases |
+
+### `:cutaway`
+
+`:cutaway [register=register] [fit=hold|loop|bounce|gap] [audio=keep] | :cutaway clear`
+
+Acts on the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `register=` | register letter a–z | omitted: the unnamed register | the copied pictures shown over the beat |
+| `fit=` | one of hold, loop, bounce, gap | default hold | what plays once the copy is shorter than the beat |
+| `audio=` | one of keep | default keep | a cutaway replaces picture only |
+| `clear` | whole form | - | removes the cutaway |
+
+### `:delete`
+
+`:delete [role=audio|video]`
+
+Acts on the Visual range, else the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `role=` | one of audio, video | omitted: deletes linked time | delete one role over the Visual range |
+
+### `:delete-frames`
+
+`:delete-frames [FRAMES]`
+
+Acts on the Edit cursor.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `FRAMES` | whole frames: 11f, above zero | default 1f | whole frames after the cursor |
+
+### `:edge`
+
+`:edge POLICY [SIDE]`
+
+Acts on the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `POLICY` | one of hard, auto | required | a hard cut, or the automatic short fade |
+| `SIDE` | one of both, start, end, plays, gaps | default both | which edges: a Repeat's loop seams (plays) or gap edges (gaps) |
+
+### `:framing-save`
+
+`:framing-save NAME`
+
+Acts on the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `NAME` | register letter a–z | required | the register the framing is kept in |
+
+### `:gag`
+
+`:gag GAG [key=value …]`
+
+Acts on the selected beat, else the Edit cursor.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `GAG` | built-in gag or saved preset | required | a built-in recipe or a saved preset |
+| `pause=` (long-answer) | duration: 12f, 250ms, 1.5s or 01:02.500 | default 1.5s | the pause length |
+| `creep=` (long-answer) | decimal: 1.35 | default 1.35 | the creep's final scale |
+| `plays=` (escalator) | whole count: 1 or more | default 3 | total plays |
+| `gain-step=` (escalator) | level step: 3dB or -1.5dB; 0dB removes it | default 3dB | each later play louder |
+| `zoom-step=` (escalator) | signed decimal: 0.08 or -0.05; 0 removes it | default 0.08 | each later play closer |
+| `register=` (non-sequitur) | register letter a–z | omitted: the unnamed register | the copied beat it uses |
+| `plays=` (one-more-time) | whole count: 2 or more | default 3 | total plays |
+| `gap=` (one-more-time) | duration: 12f, 250ms, 1.5s or 01:02.500 | default 0.5s | the first gap |
+| `shorten=` (one-more-time) | duration: 12f, 250ms, 1.5s or 01:02.500 | default 200ms | each later gap shorter by |
+| `vary=` (one-more-time) | percentage: 1% to 50% | omitted: no variation | random variation of each gap |
+| `seed=` (one-more-time) | whole number: 7 | omitted: a fresh pinned seed | the variation's seed; needs vary= |
+| `register=` (nothing-happens) | register letter a–z | omitted: the unnamed register | the copied beat it uses |
+| `tone=` (nothing-happens) | duration: 12f, 250ms, 1.5s or 01:02.500 | default 1s | the tone's length |
+| `silence=` (nothing-happens) | duration: 12f, 250ms, 1.5s or 01:02.500 | default 1s | the silence after it |
+| `register=` (are-we-done) | register letter a–z | omitted: the unnamed register | the copied beat it uses |
+| `pause=` (are-we-done) | duration: 12f, 250ms, 1.5s or 01:02.500 | default 1.5s | the pause length |
+
+### `:gag-inspect`
+
+`:gag-inspect GAG [key=value …]`
+
+Acts on the view only; nothing is edited.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `GAG` | built-in gag or saved preset | required | a built-in recipe or a saved preset |
+| `pause=` (long-answer) | duration: 12f, 250ms, 1.5s or 01:02.500 | default 1.5s | the pause length |
+| `creep=` (long-answer) | decimal: 1.35 | default 1.35 | the creep's final scale |
+| `plays=` (escalator) | whole count: 1 or more | default 3 | total plays |
+| `gain-step=` (escalator) | level step: 3dB or -1.5dB; 0dB removes it | default 3dB | each later play louder |
+| `zoom-step=` (escalator) | signed decimal: 0.08 or -0.05; 0 removes it | default 0.08 | each later play closer |
+| `register=` (non-sequitur) | register letter a–z | omitted: the unnamed register | the copied beat it uses |
+| `plays=` (one-more-time) | whole count: 2 or more | default 3 | total plays |
+| `gap=` (one-more-time) | duration: 12f, 250ms, 1.5s or 01:02.500 | default 0.5s | the first gap |
+| `shorten=` (one-more-time) | duration: 12f, 250ms, 1.5s or 01:02.500 | default 200ms | each later gap shorter by |
+| `vary=` (one-more-time) | percentage: 1% to 50% | omitted: no variation | random variation of each gap |
+| `seed=` (one-more-time) | whole number: 7 | omitted: a fresh pinned seed | the variation's seed; needs vary= |
+| `register=` (nothing-happens) | register letter a–z | omitted: the unnamed register | the copied beat it uses |
+| `tone=` (nothing-happens) | duration: 12f, 250ms, 1.5s or 01:02.500 | default 1s | the tone's length |
+| `silence=` (nothing-happens) | duration: 12f, 250ms, 1.5s or 01:02.500 | default 1s | the silence after it |
+| `register=` (are-we-done) | register letter a–z | omitted: the unnamed register | the copied beat it uses |
+| `pause=` (are-we-done) | duration: 12f, 250ms, 1.5s or 01:02.500 | default 1.5s | the pause length |
+
+### `:gag-save`
+
+`:gag-save NAME`
+
+Acts on the selected inserted gag.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `NAME` | text | required | one-word preset name, kept for every project |
+
+### `:gag-set`
+
+`:gag-set [pause=duration] [creep=decimal] [plays=whole-count] [gain-step=level-step] [zoom-step=signed-decimal] [gap=duration] [shorten=duration] [vary=percentage] [seed=whole-number] [tone=duration] [silence=duration] [register=register]`
+
+Acts on the selected inserted gag.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `pause=` | duration: 12f, 250ms, 1.5s or 01:02.500 | omitted keeps the current value | long-answer, are-we-done: the pause |
+| `creep=` | decimal: 1.35 | omitted keeps the current value | long-answer: the final scale |
+| `plays=` | whole count: 1 or more | omitted keeps the current value | escalator, one-more-time: total plays |
+| `gain-step=` | level step: 3dB or -1.5dB; 0dB removes it | omitted keeps the current value | escalator: each later play louder |
+| `zoom-step=` | signed decimal: 0.08 or -0.05; 0 removes it | omitted keeps the current value | escalator: each later play closer |
+| `gap=` | duration: 12f, 250ms, 1.5s or 01:02.500 | omitted keeps the current value | one-more-time: the first gap |
+| `shorten=` | duration: 12f, 250ms, 1.5s or 01:02.500 | omitted keeps the current value | one-more-time: each later gap shorter by |
+| `vary=` | percentage: 1% to 50% | omitted keeps the current value | one-more-time: random gap variation |
+| `seed=` | whole number: 7 | omitted keeps the current value | one-more-time: the variation's seed |
+| `tone=` | duration: 12f, 250ms, 1.5s or 01:02.500 | omitted keeps the current value | nothing-happens: the tone |
+| `silence=` | duration: 12f, 250ms, 1.5s or 01:02.500 | omitted keeps the current value | nothing-happens: the silence |
+| `register=` | register letter a–z | omitted keeps the current value | the copied beat the gag uses |
+
+### `:gain`
+
+`:gain [LEVEL] [range=local-frame-range]`
+
+Acts on the Visual range, else the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `LEVEL` | level: +3dB or -6dB sets the trim, +=3dB or -=3dB changes it | omitted: opens the gain draft | clip gain |
+| `range=` | local frame range: 4-10, start before end | omitted: the whole beat | a constant step over these local frames of the selected beat |
+
+### `:hold`
+
+`:hold DURATION [video=freeze|black|ai] [audio=silence]`
+
+Acts on the Edit cursor.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `DURATION` | duration: 12f, 250ms, 1.5s or 01:02.500 | required | pause length, rounded once to project frames |
+| `video=` | one of freeze, black, ai | default freeze | picture: freeze the last frame, black, or freeze and request AI pictures |
+| `audio=` | one of silence | default silence | a new pause is silent; choose room tone afterwards |
+
+### `:hold-duration`
+
+`:hold-duration LENGTH`
+
+Acts on the selected pause.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `LENGTH` | whole frames: 11f, above zero | required | the pause's new length in whole project frames |
+
+### `:hold-provider`
+
+`:hold-provider PROVIDER`
+
+Acts on the selected pause.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `PROVIDER` | one of ai, fallback | required | request AI pictures, or return to the saved fallback |
+
+### `:jcut`
+
+`:jcut [LENGTH]`
+
+Acts on the Edit cursor.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `LENGTH` | duration: 12f, 250ms, 1.5s or 01:02.500, above zero | default 6f | how far the sound crosses the cut |
+
+### `:jump`
+
+`:jump NAME`
+
+Acts on the cursor of the focused timeline.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `NAME` | mark letter a–z | required | the mark's letter |
+
+### `:lcut`
+
+`:lcut [LENGTH]`
+
+Acts on the Edit cursor.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `LENGTH` | duration: 12f, 250ms, 1.5s or 01:02.500, above zero | default 6f | how far the sound crosses the cut |
+
+### `:macro`
+
+`:macro NAME [COUNT]`
+
+Acts on the Edit cursor and selection, as recorded.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `NAME` | macro register a–z | required | the recorded macro to run |
+| `COUNT` | whole count: 1 or more | default 1 | how many times to run it |
+
+### `:mark`
+
+`:mark NAME`
+
+Acts on the cursor of the focused timeline.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `NAME` | mark letter a–z | required | the mark's letter |
+
+### `:monitor`
+
+`:monitor VOLUME`
+
+Acts on the view only; nothing is edited.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `VOLUME` | percentage: 25%, from 0 to 100 with at most one decimal | required | monitoring volume, independent of export gain |
+
+### `:pick-ai`
+
+`:pick-ai VARIANT`
+
+Acts on the selected pause.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `VARIANT` | variant number: 1 to 255, as the inspector shows | required | the AI variant to choose |
+
+### `:ping-pong`
+
+`:ping-pong [LENGTH]`
+
+Acts on the Edit cursor.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `LENGTH` | duration: 12f, 250ms, 1.5s or 01:02.500 | default 12f | how much plays backwards, then forwards again |
+
+### `:pitch`
+
+`:pitch SHIFT`
+
+Acts on the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `SHIFT` | pitch shift: +5st or -2st, whole semitones within ±24 | required | 0 removes the shift |
+
+### `:proxies`
+
+`:proxies STATE`
+
+Acts on this project.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `STATE` | one of on, off, retry | required | automatic seek proxies |
+
+### `:ramp`
+
+`:ramp FROM TO [pitch=preserve|tape] [steps=whole-count]`
+
+Acts on the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `FROM` | speed: 0.75 or 3/4, above zero | required | speed at the start |
+| `TO` | speed: 0.75 or 3/4, above zero | required | speed at the end |
+| `pitch=` | one of preserve, tape | default tape; required with steps= | keep pitch, or let it slide with speed |
+| `steps=` | whole count: 2 to 32 | omitted: one continuous ramp | equal parts, each its own constant speed |
+
+### `:recipe`
+
+`:recipe NAME`
+
+Acts on the Edit cursor.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `NAME` | recipe register a–z | required | the local recipe to insert |
+
+### `:recipe-inspect`
+
+`:recipe-inspect NAME`
+
+Acts on the view only; nothing is edited.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `NAME` | recipe register a–z | required | the local recipe to list |
+
+### `:recipe-save`
+
+`:recipe-save NAME`
+
+Acts on the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `NAME` | register letter a–z | required | the register the group's recipe is kept in |
+
+### `:record`
+
+`:record NAME`
+
+Acts on the Edit cursor and selection, as recorded.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `NAME` | register letter a–z | required | the register the macro is recorded into |
+
+### `:register`
+
+`:register NAME`
+
+Acts on the next copy, cut or paste.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `NAME` | register letter a–z | required | a–z, or " for the unnamed register |
+
+### `:repeat`
+
+`:repeat [PLAYS] [gap=duration] [gap-step=signed-duration] [speed-step=percent] [pitch=preserve|tape] [gain-step=level-step] [zoom-step=signed-decimal] [progression=add|multiply] [zoom-target=current|center] [role=audio|video] [overflow=trim] [extend=hold]`
+
+Acts on the selected Repeat, else the selected beat wrapped in a new Repeat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `PLAYS` | whole count: 1 or more | omitted keeps the current value | total plays, including the first |
+| `gap=` | duration: 6f, 120ms or 0 for no gaps | omitted keeps the current value | silent hold of each play's last picture between plays |
+| `gap-step=` | signed duration: -40ms or +2f | omitted: every gap the same | how much each later gap grows or shrinks; needs gap= |
+| `speed-step=` | percent: 10% faster, -10% slower, or 0.25; 0 removes it | omitted keeps the current value | each later play faster or slower than the one before |
+| `pitch=` | one of preserve, tape | omitted keeps the current value | whether a speed step keeps its pitch or lets it follow speed |
+| `gain-step=` | level step: 3dB or -1.5dB; 0dB removes it | omitted keeps the current value | each later play louder or quieter |
+| `zoom-step=` | signed decimal: 0.08 or -0.05; 0 removes it | omitted keeps the current value | each later play closer |
+| `progression=` | one of add, multiply | omitted keeps the current value | whether named zoom and speed steps add or compound |
+| `zoom-target=` | one of current, center | omitted keeps the current value | zoom toward the saved target on the picture, or the middle |
+| `role=` | one of audio, video | omitted: both roles, adding time | repeat one role of the Visual range without adding time |
+| `overflow=` | one of trim | omitted: refuses overflow | with role=: cut repeats at the last beat's end |
+| `extend=` | one of hold | omitted: refuses overflow | with role=audio: hold the last picture for the overflow |
+
+### `:retime`
+
+`:retime SPEED pitch=preserve|tape|pitch-shift`
+
+Acts on the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `SPEED` | speed: 0.75 or 3/4, above zero | required | input speed: 0.5 is half speed |
+| `pitch=` | preserve, tape, or pitch shift: +5st or -2st, whole semitones within ±24 | required | keep pitch, let it follow speed (tape), or shift it |
+
+### `:reverse`
+
+`:reverse [LENGTH]`
+
+Acts on the Edit cursor.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `LENGTH` | duration: 12f, 250ms, 1.5s or 01:02.500 | default 8f | how much of the passage before the cursor plays backwards |
+
+### `:roll`
+
+`:roll AMOUNT`
+
+Acts on the selected Source beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `AMOUNT` | signed whole frames: +5f or -3f | required | moves the cut after the beat, keeping both beats' total length |
+
+### `:saturate`
+
+`:saturate DRIVE | :saturate off`
+
+Acts on the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `DRIVE` | drive: 12dB, from 0 to 24 | required | soft-clipper drive |
+| `off` | whole form | - | removes the saturation stage |
+
+### `:scope`
+
+`:scope WHICH`
+
+Acts on the plays of the open Repeat contents.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `WHICH` | one of all, play, plays | required | every play, one play, or several plays |
+| `PLAY` (play) | whole count: 1 or more | required | one-based play number |
+| `PLAYS` (plays) | play list: 2-3 or 1,3, at least two plays | required | several one-based plays edited together |
+
+### `:slip`
+
+`:slip AMOUNT`
+
+Acts on the selected Source beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `AMOUNT` | signed whole frames: +5f or -3f | required | moves the picture and sound inside the beat |
+
+### `:sound-channels`
+
+`:sound-channels LAYOUT`
+
+Acts on this project.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `LAYOUT` | one of mono, stereo, none | required | how the next imported sound without a speaker layout is heard; none refuses it |
+
+### `:sound-mute`
+
+`:sound-mute MUTED`
+
+Acts on the selected placed sound.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `MUTED` | one of on, off | required | mute or unmute |
+
+### `:target-delete`
+
+`:target-delete TARGET`
+
+Acts on this project.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `TARGET` | target id or label, current, center, face:N or region:N | required | a saved target nothing uses, by id or one-word label |
+
+### `:target-rename`
+
+`:target-rename TARGET LABEL…`
+
+Acts on this project.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `TARGET` | target id or label, current, center, face:N or region:N | required | the saved target, by id or label |
+| `LABEL` | text | required | its new label |
+
+### `:timeline`
+
+`:timeline VIEW`
+
+Acts on the view only; nothing is edited.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `VIEW` | one of story, timing, detail | required | cards per beat, beats at their length, or with detail |
+
+### `:trim`
+
+`:trim [edge=in|out|slip|roll] [delta=signed-whole-frames] [mode=ripple|overwrite]`
+
+Acts on the selected Source beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `edge=` | one of in, out, slip, roll | omitted: opens Trim at zero; give all three or none | which value the draft adjusts |
+| `delta=` | signed whole frames: +5f, -3f or 0f | omitted: opens Trim at zero; give all three or none | the amount |
+| `mode=` | one of ripple, overwrite | omitted: opens Trim at zero; give all three or none | whether later beats move |
+
+### `:unmark`
+
+`:unmark NAME`
+
+Acts on the cursor of the focused timeline.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `NAME` | mark letter a–z | required | the mark's letter |
+
+### `:wrap-repeat`
+
+`:wrap-repeat PLAYS`
+
+Acts on a new Repeat around the Visual range, else the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `PLAYS` | whole count: 1 or more | required | total plays of the new Repeat |
+
+### `:wrap-retime`
+
+`:wrap-retime SPEED pitch=preserve|tape|pitch-shift`
+
+Acts on the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `SPEED` | speed: 0.75 or 3/4, above zero | required | input speed: 0.5 is half speed |
+| `pitch=` | preserve, tape, or pitch shift: +5st or -2st, whole semitones within ±24 | required | keep pitch, let it follow speed (tape), or shift it |
+
+### `:zoom`
+
+`:zoom SCALE [target=target] [curve=step|linear|smoothstep|smooth] | :zoom off`
+
+Acts on the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `SCALE` | scale: 1.35 or 2x, from 1/64 to 64 | required | how close: 2 is twice as close |
+| `target=` | target id or label, current, center, face:N or region:N | omitted: keeps the current center | where to zoom: a saved target, current, center, face:N or region:N |
+| `curve=` | one of step, linear, smoothstep, smooth | default step | a step cut, or an eased creep |
+| `off` | whole form | - | returns to the full picture |
+
+### Commands without arguments
+
+- `:accept-ai` acts on the selected pause.
+- `:audition` acts on the Visual range, else the selected beat.
+- `:audition-ai` acts on the selected pause.
+- `:backups` acts on the view only; nothing is edited.
+- `:cancel-ai` acts on the selected pause.
+- `:close` acts on this project.
+- `:correct` acts on the view only; nothing is edited.
+- `:diagnostics` acts on the view only; nothing is edited.
+- `:discard-ai` acts on the selected pause.
+- `:duplicate` acts on the Visual range, else the selected beat.
+- `:enter` acts on the selected beat.
+- `:explode` acts on the selected beat.
+- `:gag-presets` acts on the view only; nothing is edited.
+- `:gain-mute` acts on the selected beat.
+- `:help` acts on the view only; nothing is edited.
+- `:hold-silence` acts on the selected pause.
+- `:import` acts on this project.
+- `:insert` acts on the Edit cursor.
+- `:isolate-gap` acts on the plays of the open Repeat contents.
+- `:jobs` acts on the view only; nothing is edited.
+- `:jump-back` acts on the view only; nothing is edited.
+- `:jump-forward` acts on the view only; nothing is edited.
+- `:keep-ai` acts on the selected pause.
+- `:lift` acts on the Visual range, else the selected beat.
+- `:marks` acts on the view only; nothing is edited.
+- `:models` acts on the view only; nothing is edited.
+- `:moment-delete` acts on the cursor of the focused timeline.
+- `:new` acts on this project.
+- `:new-linked` acts on this project.
+- `:new-url` acts on this project.
+- `:next-ai` acts on the selected pause.
+- `:open` acts on this project.
+- `:original-linked` acts on this project.
+- `:parent` acts on the view only; nothing is edited.
+- `:paste` acts on the Edit cursor.
+- `:paste-before` acts on the Edit cursor.
+- `:play` acts on the cursor of the focused timeline.
+- `:portable-copy` acts on this project.
+- `:prev-ai` acts on the selected pause.
+- `:preview-ai` acts on the selected pause.
+- `:previous-ai` acts on the selected pause.
+- `:record-cancel` acts on the Edit cursor and selection, as recorded.
+- `:record-stop` acts on the Edit cursor and selection, as recorded.
+- `:recovery` acts on the view only; nothing is edited.
+- `:redo` acts on this project.
+- `:registers` acts on the view only; nothing is edited.
+- `:relink` acts on this project.
+- `:render` acts on this project.
+- `:renders` acts on the view only; nothing is edited.
+- `:revert-ai` acts on the selected pause.
+- `:room-tone` acts on the selected pause.
+- `:sequence` acts on the view only; nothing is edited.
+- `:sound-allow` acts on the selected placed sound.
+- `:sound-cut` acts on the selected placed sound.
+- `:sound-delete` acts on the selected placed sound.
+- `:sound-place` acts on the Edit cursor.
+- `:sound-relink` acts on this project.
+- `:sound-silence` acts on the selected placed sound.
+- `:sounds` acts on the view only; nothing is edited.
+- `:source` acts on the view only; nothing is edited.
+- `:splice` acts on the Edit cursor.
+- `:split` acts on the beat under the Edit cursor, cut at the cursor.
+- `:sting` acts on this project.
+- `:storage` acts on the view only; nothing is edited.
+- `:takes` acts on the view only; nothing is edited.
+- `:track-cancel` acts on this project.
+- `:undo` acts on this project.
+- `:ungroup` acts on the selected beat.
+- `:yank` acts on the Visual range, else the selected beat.
+- `:youtube` acts on this project.
+
+### Verbs with usage-inferred arguments
+
+These verbs check units and choices inferred from their usage only.
+
+| Verb | Why it has no declared schema yet |
+| --- | --- |
+| `:audio-shift` | Signed frames with mutually exclusive overflow words. |
+| `:bleep` | An optional bare frequency in Hz with a level, parsed by the bleep grammar. |
+| `:eq` | Equalizer bands are a set of band=level pairs or off, parsed by the equalizer grammar. |
+| `:generate` | AI generation options are parsed by the generation request grammar shared with headless generation. |
+| `:generate-ai` | Same grammar as :generate. |
+| `:group` | One JSON-quoted name= value parsed with the specification's JSON string grammar. |
+| `:moment` | Free-form moment names with spaces before a tags= list, validated by the moment store. |
+| `:moment-rename` | A free-form name, validated by the moment store. |
+| `:moment-tags` | A tag list validated by the moment store. |
+| `:moments` | A free filter string for the Original rail. |
+| `:select` | Exclusive selector forms (role, marks, node, JSON node and range sets, transcript search) each have their own strict grammar. |
+| `:sound-at` | A start sample on the 48 kHz clock, parsed by the placed-sound grammar. |
+| `:sound-balance` | Delegates to :balance. |
+| `:sound-edges` | A placed sound's edge choice, parsed by the placed-sound grammar. |
+| `:sound-envelope` | Point lists and a curve word, parsed by the envelope grammar. |
+| `:sound-eq` | Same grammar as :eq. |
+| `:sound-gain` | A placed sound's gain, parsed by the placed-sound grammar. |
+| `:sound-saturate` | Delegates to :saturate. |
+| `:sound-tail-send` | Same grammar as :wet-send. |
+| `:sound-wet-send` | Same grammar as :wet-send. |
+| `:source-interpret` | Colour interpretation choices are owned by the source interpretation grammar. |
+| `:tail` | An optional bare length before effect and input words, parsed by the tail grammar. |
+| `:tail-send` | Same grammar as :wet-send. |
+| `:track` | A target label may contain spaces before the trailing through-shots keyword. |
+| `:wet-send` | An effect word followed by a level or off, parsed by the send grammar. |

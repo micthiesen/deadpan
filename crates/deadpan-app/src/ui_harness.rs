@@ -20,6 +20,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "regions",
     "menus",
     "palette",
+    "command-arguments",
     "delayed-preview",
     "rapid-input",
     "keymap",

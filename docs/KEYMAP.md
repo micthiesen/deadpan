@@ -342,8 +342,8 @@ remains conservative:
 any composition event prevents editor submit/cancel for that batch.
 
 While the command line holds only a partial verb, the footer lists the
-matching commands with their usage (`:cap` shows `:caption TEXT [at=top|center]
-[delay=4f]`), from the [action registry](#action-registry) that also admits
+matching commands with their usage (`:cap` shows `:caption TEXT
+[at=bottom|top|center] [delay=4f] [reveal=3]`), from the [action registry](#action-registry) that also admits
 verbs in [`command.rs`](../crates/deadpan-app/src/navigation/command.rs). A unit
 test checks that every listed verb parses, and a drift test scans the parser's
 verb literals so a parsed verb missing from the registry fails. Commands without
@@ -426,12 +426,45 @@ retains startup, custom-map and native-input checks and their limits. The earlie
 [compiler qualification](qualification/declarative-bindings-2026-10-01.md)
 retains the original held-key regression.
 
+## Command arguments
+
+Once a verb is complete, its declarative argument schema
+([`command/schema/table.rs`](../crates/deadpan-app/src/navigation/command/schema/table.rs))
+drives the command line. Each schema lists positional values and `key=value`
+parameters with a type (durations in `f`, `ms` or `s`, speeds, scales, dB,
+semitones, percentages, counts, frame ranges, choices, register, mark, target
+and gag names, or free text), a default or what omitting it means, and the
+selector the command acts on. While typing, up to four rows sit under the field:
+an inline problem naming the offending parameter (`pitch=q is not one of
+preserve, tape`, `colour= is not a parameter of :hold; it takes video, audio`),
+the expected next value with its meaning, type, units and default, the values
+to type next (choices, filled registers, macros, recipes, marks, saved targets,
+built-in gags and saved presets, or the remaining parameters with their
+defaults, such as `gap=duration (keeps)`), and what the command acts on now
+(`the selected Repeat Hello (Repeat · 2 total plays, 48 f)`, `the Visual range
+[12..40) 28 f`). The first row's accessible text carries every row untruncated
+plus the usage line, and a problem row is a polite live region. Typing remains
+ordinary native text editing; nothing completes automatically.
+
+Value checks call the same value parsers the verbs execute with, so the guide
+and Enter agree. Per-verb parsers remain the execution path; `:zoom`, `:creep`
+and `:caption` read their parameter names from the schema. Unit tests run every
+schema example through the parser, require every declared parameter to appear in
+a parsed example, substitute every declared choice and an invalid value for
+every typed parameter into the parser and the guide, refuse an undeclared
+parameter in both, and require every registry verb to have a schema or an
+explicit reason. The generated [command reference](COMMANDS.md#command-arguments)
+prints each schema's usage line and parameter table. The `command-arguments`
+replay types `:repeat 3 `, `:ramp 1 2 pitch=`, an invalid value and an unknown
+parameter through the production command line.
+
 ## Remaining work
 
 Current configuration covers Normal and timeline Visual paths and their teaching.
 Mode keys are declared and verified in the registry but fixed. Command
-arguments still use per-verb parsers rather than a schema-driven typed-unit
-grammar, and completion lists verbs but not parameters or the default selector.
+arguments of the verbs listed under "Verbs with usage-inferred arguments" in
+[COMMANDS.md](COMMANDS.md#command-arguments) still check only units and choices
+inferred from their usage; each records why.
 The `layouts` replay drives German QWERTZ and French AZERTY presses, as
 egui-winit 0.36 delivers them on macOS, through the production router, and
 drives Russian ЙЦУКЕН letters at their physical positions, and composes

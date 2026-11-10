@@ -121,7 +121,7 @@ fn fresh_seed() -> u64 {
 }
 
 /// `vary=20%`: a whole percentage from 1 to 50.
-fn percent(value: &str) -> Result<u8, String> {
+pub(super) fn percent(value: &str) -> Result<u8, String> {
     value
         .strip_suffix('%')
         .unwrap_or(value)

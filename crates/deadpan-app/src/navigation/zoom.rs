@@ -100,7 +100,7 @@ fn words(text: &str) -> Result<Vec<String>, String> {
     Ok(words)
 }
 
-fn scale(value: &str) -> Result<ExactRatio, String> {
+pub(super) fn scale(value: &str) -> Result<ExactRatio, String> {
     let value = value
         .strip_suffix('x')
         .or_else(|| value.strip_suffix('×'))
@@ -115,7 +115,7 @@ fn scale(value: &str) -> Result<ExactRatio, String> {
     Ok(ratio)
 }
 
-fn target(value: &str) -> Result<TargetChoice, String> {
+pub(super) fn target(value: &str) -> Result<TargetChoice, String> {
     Ok(match value {
         "" => {
             return Err("target= needs current, center, face:N, region:N, or a target id or label.".into());
@@ -192,7 +192,11 @@ pub fn parse_zoom(text: &str) -> Result<ZoomInput, String> {
         return Err(format!("Give the scale first. {ZOOM_USAGE}"));
     }
     let to = scale(first)?;
-    let mut values = parameters(rest, &["target", "curve"], ZOOM_USAGE)?;
+    let mut values = parameters(
+        rest,
+        &super::command::schema::option_names("zoom"),
+        ZOOM_USAGE,
+    )?;
     let target = values
         .remove("target")
         .map_or(Ok(TargetChoice::Keep), |value| target(&value))?;
@@ -213,7 +217,11 @@ pub fn parse_zoom(text: &str) -> Result<ZoomInput, String> {
 /// `:creep [from=S] [to=S] [target=…] [curve=smoothstep|linear]`.
 pub fn parse_creep(text: &str) -> Result<ZoomInput, String> {
     let words = words(text)?;
-    let mut values = parameters(&words, &["from", "to", "target", "curve"], CREEP_USAGE)?;
+    let mut values = parameters(
+        &words,
+        &super::command::schema::option_names("creep"),
+        CREEP_USAGE,
+    )?;
     let from = values
         .remove("from")
         .map(|value| scale(&value))
