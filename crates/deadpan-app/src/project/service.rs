@@ -78,6 +78,12 @@ struct Service {
     import: Option<ImportStatus>,
     error: Option<recovery::CommandFailure>,
     message: Option<String>,
+    /// The message last published and its serial (`ProjectUpdate::message_serial`).
+    published_message: Option<String>,
+    message_serial: u64,
+    /// An ordinary command finished; its message counts as new even when its
+    /// text repeats the previous one.
+    message_fresh: bool,
     committed: Option<CommittedEdit>,
     source_interpretation_saved: Option<super::SourceInterpretationSaved>,
     semantic: semantic::State,
@@ -188,6 +194,9 @@ pub(super) fn run(
         import: None,
         error: None,
         message: None,
+        published_message: None,
+        message_serial: 0,
+        message_fresh: false,
         committed: None,
         source_interpretation_saved: None,
         semantic: semantic::State::default(),
@@ -422,11 +431,16 @@ impl Service {
         self.publish_preparation_notice();
         self.observe_semantic();
         self.observe_storage();
+        if std::mem::take(&mut self.message_fresh) || self.message != self.published_message {
+            self.message_serial = self.message_serial.wrapping_add(1);
+            self.published_message.clone_from(&self.message);
+        }
         let update = ProjectUpdate {
             workspace: self.workspace.clone(),
             import: self.import.clone(),
             error: self.error.as_ref().map(|error| error.message.clone()),
             message: self.message.clone(),
+            message_serial: self.message_serial,
             committed: self.committed.clone(),
             source_interpretation_saved: self.source_interpretation_saved.clone(),
             semantic: self.semantic.snapshot(),
@@ -677,6 +691,7 @@ impl Service {
         self.room_tone = None;
         self.room_tone_error = None;
         self.gain = None;
+        self.message_fresh = true;
         match request {
             ProjectRequest::OpenReported { .. } => {
                 unreachable!("reported Open uses dispatch feedback")

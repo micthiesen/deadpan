@@ -294,6 +294,8 @@ pub struct DeadpanApp {
     error: Option<String>,
     project_error: Option<String>,
     message: Option<String>,
+    /// The service message serial last applied to `message`.
+    service_message_serial: u64,
     recovery: recovery::RecoveryUi,
     models: model_packs::Models,
     /// `:diagnostics`: live process counters.
@@ -357,6 +359,7 @@ impl DeadpanApp {
         let thumbnails =
             thumbnails::Thumbnails::new(context.egui_ctx.clone(), render_state.clone())?;
         let mut app = Self {
+            service_message_serial: 0,
             #[cfg(feature = "ui-harness")]
             feedback: harness::Feedback::default(),
             smoke_frames: smoke_test.then_some(0),
@@ -1015,7 +1018,10 @@ impl DeadpanApp {
             self.receive_storage_retention(update.storage_retention.take());
             self.receive_backups(std::mem::take(&mut update.backups));
             self.project_error = update.error;
-            self.message = update.message;
+            if update.message_serial != self.service_message_serial {
+                self.service_message_serial = update.message_serial;
+                self.message = update.message;
+            }
             if let Some(note) = zoom_note {
                 self.message = Some(match self.message.take() {
                     Some(message) => format!("{message}. {note}"),

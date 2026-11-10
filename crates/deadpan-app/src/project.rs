@@ -471,6 +471,11 @@ pub struct ProjectUpdate {
     pub import: Option<ImportStatus>,
     pub error: Option<String>,
     pub message: Option<String>,
+    /// Changes when `message` is new: a different text, or any text after an
+    /// ordinary command finished. Updates from independent lanes (moments,
+    /// takes, marks, targets, analysis saves) repeat the old serial, so the
+    /// UI does not let them overwrite a newer local message.
+    pub message_serial: u64,
     /// Last selection-changing commit, retained through background progress.
     /// Cleared by the next user command; consumers deduplicate by revision.
     pub committed: Option<CommittedEdit>,
