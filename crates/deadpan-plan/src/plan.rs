@@ -1941,12 +1941,18 @@ impl RenderPlan {
                     child,
                     start,
                     scale,
+                    pitch,
                     ..
                 } => {
+                    let extent = self.nodes[current].extent;
                     if let Some(continuity) = continuity.as_deref_mut() {
-                        continuity.retime(*scale)?;
+                        if pitch.ramp().is_some() {
+                            continuity.ramp(local, extent)?;
+                        } else {
+                            continuity.retime(*scale)?;
+                        }
                     }
-                    local = start.checked_add(local.checked_mul(*scale)?)?;
+                    local = retime_local(*start, *scale, *pitch, extent, local)?;
                     current = *child;
                 }
                 CompiledKind::Repeat {
@@ -2188,5 +2194,23 @@ fn count_storage(
             storage.referenced_plays += u64::from(iterations.len());
         }
         _ => {}
+    }
+}
+
+/// A Retime's child-local coordinate at its output coordinate `local`: the
+/// affine map, or for a continuous ramp the exact quadratic integral of its
+/// rate. The ramp's own extent is its integral output duration.
+pub(crate) fn retime_local(
+    start: ExactRatio,
+    scale: ExactRatio,
+    pitch: PitchPolicy,
+    extent: ExactRatio,
+    local: ExactRatio,
+) -> Result<ExactRatio, TimeError> {
+    match pitch.ramp() {
+        Some(ramp) => {
+            start.checked_add(ramp.input_offset(local, extent, scale.checked_mul(extent)?)?)
+        }
+        None => start.checked_add(local.checked_mul(scale)?),
     }
 }

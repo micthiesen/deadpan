@@ -30,6 +30,8 @@ mod retime_follow_creep;
 mod scoped_follow_creep;
 #[path = "picture_plan/sequence_follow_creep.rs"]
 mod sequence_follow_creep;
+#[path = "picture_plan/speed_ramp.rs"]
+mod speed_ramp;
 #[path = "picture_plan/targeted_explode.rs"]
 mod targeted_explode;
 

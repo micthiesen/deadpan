@@ -160,14 +160,10 @@ impl AnchorIndex<'_> {
                     child,
                     mapping,
                     duration,
+                    pitch,
                     ..
                 } => {
-                    position = position
-                        .checked_mul(ExactRatio::new(
-                            i128::from(mapping.duration().frames()),
-                            i128::from(duration.frames()),
-                        )?)?
-                        .checked_add(ExactRatio::integer(mapping.start().0))?;
+                    position = crate::retime_child_position(*pitch, *mapping, *duration, position)?;
                     node = child;
                     entry = BoundaryEntry::Retime;
                 }

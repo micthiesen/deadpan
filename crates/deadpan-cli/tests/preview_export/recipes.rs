@@ -1157,6 +1157,50 @@ pub fn ramp(dir: &Path) -> Result<Fixture> {
     )
 }
 
+/// `:ramp 1 3` (continuous, tape pitch) on Edit [12, 24) (Original 24..36):
+/// one Retime lasting 2·12/(1+3) = 6 frames whose input position is the exact
+/// integral 6u + 6u² of its linear rate (u = output fraction). Output frame
+/// centers u = 1/12, 3/12, ... read input 0.54, 1.88, 3.54, 5.54, 7.88 and
+/// 10.54, so Edit 12..18 show Original 24, 25, 27, 29, 31, 34, and the rest
+/// follows from Original 36 at Edit 18. Its sound is one variable-rate tape
+/// stage that export must reproduce sample for sample.
+pub fn continuous_ramp(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "continuous-ramp")?;
+    project.shorten()?;
+    project.split_root(12)?;
+    let document = project.split_root(24)?;
+    let target = root_child_at(&document, 12)?.0;
+    let ratio = |numerator: &str| json!({"numerator": numerator, "denominator": "1"});
+    let saved = project.run_semantic(
+        json!([{"type":"ramp","from":ratio("1"),"to":ratio("3"),"pitch":"follow_speed"}]),
+        12,
+        Some(&target),
+    )?;
+    if saved.duration()?.frames() != BASE_FRAMES as i64 - 6 {
+        return Err(format!("unexpected ramp duration: {}", saved.duration()?.frames()).into());
+    }
+    let expectations = vec![
+        (0, base(0)),
+        (11, base(11)),
+        (12, original(24)),
+        (13, original(25)),
+        (14, original(27)),
+        (15, original(29)),
+        (16, original(31)),
+        (17, original(34)),
+        (18, original(36)),
+        (23, original(41)),
+    ];
+    project.finish(
+        vec!["Stretch / pitch", "Retime"],
+        expectations,
+        vec![
+            "continuous variable rate: one tape-pitch stage at exact per-sample positions"
+                .to_owned(),
+        ],
+    )
+}
+
 /// `:repeat 3 speed-step=50%` on Edit [12, 24) (Original 24..36) through the
 /// headless semantic path, with the default kept pitch: plays at 1, 1.5 and 2
 /// times speed last 12, 8 and 6 frames, each later play its own Preserve
@@ -3951,9 +3995,10 @@ pub fn partition_with_skips(
     partitions: usize,
 ) -> Result<(Vec<Fixture>, Vec<Skipped>)> {
     assert!(partitions > 0 && partition < partitions);
-    let builders: [(&str, Builder); 47] = [
+    let builders: [(&str, Builder); 48] = [
         ("audio-shift", audio_shift),
         ("ramp", ramp),
+        ("continuous-ramp", continuous_ramp),
         ("speed-step", speed_step),
         ("role-repeat-across", role_repeat_across),
         ("video-repeat-across", video_repeat_across),

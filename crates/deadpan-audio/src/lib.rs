@@ -21,6 +21,7 @@ mod matrix;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod persistent_pcm;
 mod progress;
+mod ramp_resample;
 mod reference_policy;
 mod resample;
 mod room_tone;

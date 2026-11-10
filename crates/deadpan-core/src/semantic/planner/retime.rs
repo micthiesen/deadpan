@@ -117,7 +117,7 @@ where
         trace_index: usize,
         from: ExactRatio,
         to: ExactRatio,
-        steps: u32,
+        steps: Option<u32>,
         pitch: PitchPolicy,
     ) -> Result<(), EditError> {
         if self.context.scoped.is_some() {
@@ -125,6 +125,9 @@ where
                 "a speed ramp acts on a beat in a group; leave the Repeat's contents first",
             ));
         }
+        let Some(steps) = steps else {
+            return self.continuous_ramp(trace_index, from, to, pitch);
+        };
         let (selected, start, end) = self.selected_direct_child("speed ramp")?;
         let length = end.0 - start.0;
         if length < i64::from(steps) {
@@ -175,9 +178,74 @@ where
         Ok(())
     }
 
+    /// `:ramp FROM TO` without steps: wrap the selected direct child in one
+    /// Retime whose rate changes continuously from `from` to `to`. Its
+    /// duration is the beat's length over the mean speed, `2L / (from + to)`,
+    /// rounded half-even once; every picture and sample then reads the
+    /// exact quadratic clock (see `crate::SpeedRamp`).
+    fn continuous_ramp(
+        &mut self,
+        trace_index: usize,
+        from: ExactRatio,
+        to: ExactRatio,
+        pitch: PitchPolicy,
+    ) -> Result<(), EditError> {
+        if pitch != PitchPolicy::FollowSpeed {
+            // The canonical stretcher schedules one fixed rate per stage; a
+            // pitch-preserving continuous ramp would need a qualified
+            // variable-rate schedule that does not exist yet.
+            return Err(invalid(
+                "a continuous ramp keeps tape pitch; for pitch=preserve use :ramp FROM TO steps=N",
+            ));
+        }
+        let (selected, start, end) = self.selected_direct_child("speed ramp")?;
+        let ramp = crate::SpeedRamp::new(from, to).map_err(|error| invalid(&error.message))?;
+        let input = ExactRatio::integer(end.0 - start.0);
+        if input == ExactRatio::ZERO {
+            return Err(invalid("an empty beat cannot be ramped"));
+        }
+        let overflow = |_| EditError::new(EditErrorCode::TimingOverflow, "ramp overflows");
+        // The beat's length at the mean of the two speeds, 2L / (from + to).
+        let frames = from
+            .checked_add(to)
+            .and_then(|sum| input.checked_mul(ExactRatio::integer(2))?.checked_div(sum))
+            .and_then(ExactRatio::round_even)
+            .map_err(overflow)?;
+        let frames = i64::try_from(frames).map_err(|_| invalid("ramp duration"))?;
+        if frames == 0 {
+            return Err(EditError::new(
+                EditErrorCode::InvalidDuration,
+                "this ramp resolves to 0 frames; choose slower speeds",
+            ));
+        }
+        let duration = FrameDuration::new(frames).map_err(crate::DocumentError::from)?;
+        if !ramp.speeds_in_range(ExactRatio::integer(frames), input) {
+            return Err(invalid(
+                "a continuous ramp's speeds must stay within 1/16x to 16x",
+            ));
+        }
+        self.apply_retime(
+            trace_index,
+            selected,
+            start,
+            Resolved {
+                duration,
+                update: false,
+            },
+            PitchPolicy::TapeRamp { ramp },
+        )
+    }
+
     pub(super) fn pitch(&mut self, trace_index: usize, semitones: i8) -> Result<(), EditError> {
         let (selected, start, end) = self.selected_direct_child("pitch")?;
         let pitch = PitchPolicy::shifted(semitones)?;
+        if matches!(&self.current.nodes()[&selected].kind,
+            NodeKind::Retime { pitch, .. } if pitch.ramp().is_some())
+        {
+            return Err(invalid(
+                "a continuous ramp keeps tape pitch; :retime SPEED pitch=... replaces it with one speed",
+            ));
+        }
         let speed = match &self.current.nodes()[&selected].kind {
             NodeKind::Retime {
                 duration,

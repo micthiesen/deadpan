@@ -41,6 +41,8 @@ mod read_signal_policy_before_trace;
 #[path = "read_signal_policy.rs"]
 mod read_signal_policy;
 
+#[path = "ramp_stage.rs"]
+mod ramp_stage;
 #[path = "stage_block_policy.rs"]
 mod stage_block_policy;
 
@@ -2442,6 +2444,9 @@ impl StageAudio {
             if let Some(entry) = result? {
                 return Ok(entry);
             }
+        }
+        if let Some(ramp) = stage.descriptor().pitch.ramp() {
+            return self.prepare_ramp_stage(stage, ramp, key, provider, control, depth);
         }
         let input_signal = stage.input_signal();
         let output_signal = stage.output_signal();

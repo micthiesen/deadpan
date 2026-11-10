@@ -213,6 +213,7 @@ fn pitch(value: PitchPolicy) -> Value {
         PitchPolicy::Preserve => json!({"tag":"Preserve"}),
         PitchPolicy::FollowSpeed => json!({"tag":"FollowSpeed"}),
         PitchPolicy::Shift { semitones } => json!({"tag":"Shift","semitones":semitones}),
+        PitchPolicy::TapeRamp { ramp } => json!({"tag":"TapeRamp","ramp":ramp}),
     }
 }
 pub(in crate::plan) fn input(value: &AudioOwnerInput<'_>) -> Value {

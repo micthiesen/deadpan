@@ -127,6 +127,12 @@ impl StageAudio {
             .map_err(|_| StageAudioError::Limit("input frames"))?;
         let output_frames = u32::try_from(output.sample_count()?.0)
             .map_err(|_| StageAudioError::Limit("output frames"))?;
+        if projection.stage().descriptor().pitch.ramp().is_some() {
+            // Projections retime a stage's input tape; a ramp's quadratic
+            // clock has no such projection, and validation keeps the pauses
+            // and derived clocks that would need one outside it.
+            return Err(PlanError::InvalidPlan("a speed ramp has no projected input").into());
+        }
         let rate = projection.stage().descriptor().rate;
         let recipe = StreamRecipe::new(
             input_frames,

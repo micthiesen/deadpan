@@ -167,10 +167,17 @@ impl RenderPlan {
                     child,
                     start,
                     scale,
+                    pitch,
                     ..
                 } => {
                     if *child != current || !scale.compare_integer(0).is_gt() {
                         return Err(invalid("the Retime does not own this child"));
+                    }
+                    if pitch.ramp().is_some() {
+                        // Its quadratic clock has no affine inverse to compose.
+                        return Err(invalid(
+                            "a beat inside a continuous speed ramp has no affine owner clock",
+                        ));
                     }
                     let inverse = ExactRatio::ONE.checked_div(*scale)?;
                     (

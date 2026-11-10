@@ -410,14 +410,17 @@ pub enum SemanticInstruction {
     /// again as a root sound event of the same Original audio, shifted. Sound
     /// pushed past the group's end refuses unless `trim` cuts it there or
     /// `extend` holds the last picture for exactly the shift.
-    /// `:ramp FROM TO`: a stepped speed ramp (variable rate). The selected
-    /// direct child splits into `steps` equal parts at exact frame
-    /// boundaries, and each part becomes its own speed change at the rate
-    /// interpolated at its middle, from `from` to `to`, in one Undo.
+    /// `:ramp FROM TO`: a speed ramp from `from` to `to`, in one Undo.
+    /// Without `steps` it is continuous: one Retime whose rate changes
+    /// linearly across its output (`PitchPolicy::TapeRamp`, tape pitch only).
+    /// With `steps` the selected direct child splits into that many equal
+    /// parts at exact frame boundaries, and each part becomes its own speed
+    /// change at the rate interpolated at its middle.
     Ramp {
         from: crate::ExactRatio,
         to: crate::ExactRatio,
-        steps: u32,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        steps: Option<u32>,
         #[serde(default = "preserve_pitch", skip_serializing_if = "is_preserve_pitch")]
         pitch: crate::PitchPolicy,
     },
@@ -948,7 +951,12 @@ impl SemanticProgram {
                         "ramp speeds must be positive",
                     ));
                 }
-                if !(2..=MAX_RAMP_STEPS).contains(steps) {
+                if steps.is_none() {
+                    crate::SpeedRamp::new(*from, *to).map_err(|error| {
+                        EditError::new(EditErrorCode::InvalidCommand, error.message)
+                    })?;
+                }
+                if steps.is_some_and(|steps| !(2..=MAX_RAMP_STEPS).contains(&steps)) {
                     return Err(EditError::new(
                         EditErrorCode::InvalidCommand,
                         format!("a ramp has 2 to {MAX_RAMP_STEPS} steps"),

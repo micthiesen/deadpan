@@ -3838,7 +3838,11 @@ pub(crate) fn check_preserve_bound(
     {
         return Err(EditError::new(
             EditErrorCode::LimitExceeded,
-            "pitch-preserving processing exceeds its preparation budget (30 minutes input or output, about 46 minutes combined); shorten the stage or choose pitch=tape",
+            if pitch.ramp().is_some() {
+                "a continuous ramp exceeds its preparation budget (30 minutes input or output, about 46 minutes combined); ramp a shorter beat"
+            } else {
+                "pitch-preserving processing exceeds its preparation budget (30 minutes input or output, about 46 minutes combined); shorten the stage or choose pitch=tape"
+            },
         ));
     }
     Ok(())

@@ -2174,7 +2174,7 @@
               "docs/qualification/clocked-speed-update-2026-10-20.md",
               "docs/qualification/preview-export-2026-10-04.md"
             ],
-            "remaining": "Variable rate is separately mandatory under §10.5/DP-09.",
+            "remaining": "Variable rate is separately mandatory under §10.5/DP-09; continuous tape-pitch ramps on one Original beat exist since 2026-11-09, pitch-preserving continuous ramps do not.",
             "normative": "8.1"
           },
           {
@@ -2375,7 +2375,7 @@
               "docs/RETIME_EDITING.md",
               "docs/REVERSE_AND_TAILS.md"
             ],
-            "remaining": "Variable rate is unimplemented; general composite/speed-transformed reverse still refuses. Existing fixed pitch, saturation and Preserve/Tape paths are verified.",
+            "remaining": "Pitch-preserving variable rate is unimplemented (continuous tape-pitch ramps on one Original beat use an exact per-sample variable-rate resampler since 2026-11-09; Preserve ramps are stepped only); continuous ramps over composite beats refuse; general composite/speed-transformed reverse still refuses. Existing fixed pitch, saturation and Preserve/Tape paths are verified.",
             "normative": "8.3,10.5"
           },
           {

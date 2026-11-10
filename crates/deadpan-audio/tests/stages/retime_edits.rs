@@ -381,7 +381,9 @@ fn wrapping_a_split_partition_retains_child_processing_history_for_both_policies
                     restarted_inner[usize::try_from(at).unwrap()]
                 }),
             ),
-            PitchPolicy::Shift { .. } => unreachable!("only the two speed policies wrap here"),
+            PitchPolicy::Shift { .. } | PitchPolicy::TapeRamp { .. } => {
+                unreachable!("only the two speed policies wrap here")
+            }
         };
         assert_ne!(expected_tail, restarted_tail, "pitch {pitch:?}");
         let mut expected = complete_inner[..1002].to_vec();

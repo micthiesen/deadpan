@@ -247,6 +247,88 @@ fn ramp(d: &mut Driver<'_>) -> Result<(), String> {
         d.app().sequence_length() == 120 && d.app().beat_rows.len() == 3,
         json!({"frames":120,"beats":3}),
         json!({"frames":d.app().sequence_length(),"beats":d.app().beat_rows.len()}),
+    )?;
+    // Without steps the ramp is continuous: one tape-pitch speed change whose
+    // rate rises evenly from 1x to 2x, lasting 2·40/3 = 26.67, so 27 frames.
+    at(d, 0)?;
+    edit(d, "ramp 1 2")?;
+    let first = selected(d)?;
+    let ramp_of = |document: &ProjectDocument, node: &NodeId| match document
+        .nodes()
+        .get(node)
+        .map(|node| &node.kind)
+    {
+        Some(NodeKind::Retime {
+            duration,
+            mapping,
+            pitch: PitchPolicy::TapeRamp { ramp },
+            ..
+        }) => Some((
+            duration.frames(),
+            mapping.duration().frames(),
+            ramp.weights().ok(),
+        )),
+        _ => None,
+    };
+    let continuous = ramp_of(&document(d)?, &first);
+    d.check(
+        ":ramp 1 2 wraps the beat in one continuous 27-frame ramp",
+        continuous == Some((27, 40, Some((1, 2))))
+            && d.app().sequence_length() == 107
+            && d.app().beat_rows.len() == 3,
+        json!({"duration":27,"input":40,"from":1,"to":2,"frames":107,"beats":3}),
+        json!({"ramp":format!("{continuous:?}"),"frames":d.app().sequence_length(),"beats":d.app().beat_rows.len(),"error":d.app().error}),
+    )?;
+    let expected = "Ramp 0.988× to 1.975× (40/27× mean)";
+    let fields = d
+        .app()
+        .inspector_description()
+        .map(|inspector| inspector.fields);
+    let painted = scenarios::text_paint_visibility(d, expected);
+    d.check(
+        "The inspector shows the realised start and end speeds of the ramp",
+        fields
+            .as_ref()
+            .is_some_and(|fields| fields.contains(&("Speed", expected.into())))
+            && painted.iter().any(|paint| paint["fully_visible"] == true),
+        json!({"Speed":expected}),
+        json!({"fields":fields,"painted":painted}),
+    )?;
+    d.capture("Continuous speed ramp")?;
+    at(d, 27)?;
+    dot(d, "Dot repeats the continuous ramp")?;
+    let second = selected(d)?;
+    let repeated = ramp_of(&document(d)?, &second);
+    d.check(
+        "Dot ramps the next beat continuously from its own length",
+        second != first
+            && repeated == Some((27, 40, Some((1, 2))))
+            && d.app().sequence_length() == 94,
+        json!({"duration":27,"frames":94}),
+        json!({"ramp":format!("{repeated:?}"),"frames":d.app().sequence_length(),"error":d.app().error}),
+    )?;
+    at(d, 60)?;
+    d.command("ramp 1 2 pitch=preserve")?;
+    d.wait_for("The refusal arrives", |app| {
+        !app.macros.is_pending() && !app.service.is_busy()
+    })?;
+    d.settled()?;
+    d.check(
+        "A continuous pitch-preserving ramp refuses and names the stepped form",
+        d.app().sequence_length() == 94
+            && d.app()
+                .error
+                .as_deref()
+                .is_some_and(|error| error.contains("steps=N")),
+        json!({"frames":94,"error":"... steps=N"}),
+        json!({"frames":d.app().sequence_length(),"error":d.app().error}),
+    )?;
+    undo(d, 2)?;
+    d.check(
+        "Two undos remove both continuous ramps",
+        d.app().sequence_length() == 120 && d.app().beat_rows.len() == 3,
+        json!({"frames":120,"beats":3}),
+        json!({"frames":d.app().sequence_length(),"beats":d.app().beat_rows.len()}),
     )
 }
 

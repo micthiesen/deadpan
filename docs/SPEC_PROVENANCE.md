@@ -95,6 +95,17 @@ beat boundary, and the repeated sound is the same root-sound construction as
 it again would contradict an earlier explicit edit. Video-only repeats span
 cuts the same way, one cutaway per beat stretch.
 
+On 2026-11-09 Section 10.5's "variable rate" was defined under the same
+delegated authority: a linear ramp of the rate in output time, whose exact
+integral fixes every picture and sample position, with the Retime's integral
+input range and output duration fixing the mean rate (the authored speeds are
+the shape, so one whole-frame rounding of the duration never accumulates).
+Linear in output time was chosen because its integral stays a rational
+quadratic, so no position needs an irrational or iterative evaluation; named
+easings would lose that unless they are polynomial, so none was added. The
+stepped form remains a second, explicitly chosen variable-rate construction.
+Pitch-preserving continuous ramps stay required and unimplemented.
+
 | File | Bytes | SHA-256 |
 | --- | ---: | --- |
 | [AGENT_HANDOFF.md](spec/archive/1.0/AGENT_HANDOFF.md) | 4,340 | `464f689e1eb5ad6b2905286e516259f07dc83fea8ebb2b0330663976b905ae6c` |

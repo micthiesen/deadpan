@@ -950,11 +950,11 @@ pub static SPECS: &[Spec] = &[
         name: "Ramp speed",
         section: Section::Repeat,
         keys: &[],
-        commands: &[verb("ramp", ":ramp 1 0.25 pitch=tape")],
+        commands: &[verb("ramp", ":ramp 1 0.25 [steps=8 pitch=tape]")],
         contexts: C::EDIT,
         replay: Replay::RecordedAndDot,
         headless: eq("ramp instruction", REP),
-        help: "Ramp the selected beat's speed from the first value to the second: it splits into equal parts (steps=8 by default, 2 to 32) and each part plays at the speed interpolated at its middle, each its own speed change you can adjust afterwards. pitch=tape lets pitch follow speed; pitch=preserve keeps it. The rate steps between parts; a continuously varying stretch is not available yet. One Undo.",
+        help: "Ramp the selected beat's speed from the first value to the second. Without steps the speed changes continuously and evenly through one speed change, with tape pitch (the sound slides with the speed); its length is the beat's length at the mean of the two speeds. With steps=N (2 to 32) the beat splits into equal parts, each its own constant speed change at the speed interpolated at its middle, and pitch=tape or pitch=preserve is required; a continuous pitch-preserving ramp is not available. One Undo.",
     },
     Spec {
         id: "retime",

@@ -646,7 +646,7 @@ impl<'a> AnchorIndex<'a> {
                     mapping,
                     duration,
                     purpose,
-                    ..
+                    pitch,
                 } => {
                     let selected = position.checked_sub(ExactRatio::integer(mapping.start().0))?;
                     within(
@@ -672,10 +672,28 @@ impl<'a> AnchorIndex<'a> {
                             "boundary bias selects the other side of a partition seam",
                         ));
                     }
-                    selected.checked_mul(ExactRatio::new(
-                        i128::from(duration.frames()),
-                        i128::from(mapping.duration().frames()),
-                    )?)?
+                    if pitch.ramp().is_some() {
+                        // The ramp's input clock is quadratic in its output;
+                        // only its exact endpoints have rational edit times.
+                        if selected == ExactRatio::ZERO {
+                            ExactRatio::ZERO
+                        } else if selected
+                            .compare_integer(mapping.duration().frames())
+                            .is_eq()
+                        {
+                            ExactRatio::integer(duration.frames())
+                        } else {
+                            return Err(AnchorError::new(
+                                AnchorErrorCode::OutsideMapping,
+                                "a position inside a continuous speed ramp has no exact edit time",
+                            ));
+                        }
+                    } else {
+                        selected.checked_mul(ExactRatio::new(
+                            i128::from(duration.frames()),
+                            i128::from(mapping.duration().frames()),
+                        )?)?
+                    }
                 }
                 _ => {
                     return Err(AnchorError::new(

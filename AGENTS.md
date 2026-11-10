@@ -1410,6 +1410,12 @@ preserving descendant inputs and unrelated bindings. Identical parameters retain
 all binding state. Native speed is exact decimal/rational input, resolved once
 with ties-to-even against the retained input range, with explicit preserve/tape
 pitch and displayed quantized duration. See [speed editing](docs/RETIME_EDITING.md).
+Continuous ramps (`PitchPolicy::TapeRamp`) map through the exact quadratic
+integral (`SpeedRamp::input_offset`, `retime_child_position`, the plan's
+`retime_local`, audio `RampSampler`) at every frame center and sample; never
+use a Retime's mean `scale` for them. Validation keeps exactly one Original
+beat inside; interior positions have no rational inverse, so inverse
+mappings refuse. See [continuous ramps](docs/RETIME_EDITING.md#continuous-ramps).
 
 Transparent Retime partitions are unity output selections over retained child
 domains, not ordinary authored trims. Keep allocation, source sampling support

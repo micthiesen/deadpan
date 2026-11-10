@@ -439,6 +439,13 @@ pub enum PitchPolicy {
     Shift {
         semitones: i8,
     },
+    /// Tape-pitch audio and pictures whose speed changes continuously and
+    /// linearly across the Retime's output; see [`crate::SpeedRamp`]. The
+    /// Retime still fixes the exact input range and output duration. Audio
+    /// is a processing stage resampled at the exact per-sample position.
+    TapeRamp {
+        ramp: crate::SpeedRamp,
+    },
 }
 
 /// The fixed pitch shift range of the canonical time/pitch processor.
@@ -454,15 +461,25 @@ impl PitchPolicy {
     pub const fn semitones(self) -> i8 {
         match self {
             Self::Shift { semitones } => semitones,
-            Self::Preserve | Self::FollowSpeed => 0,
+            Self::Preserve | Self::FollowSpeed | Self::TapeRamp { .. } => 0,
         }
     }
 
-    /// Whether a Retime with this policy runs the time/pitch processor:
-    /// pitch-preserving with a nonunity rate or a nonzero shift. Every other
+    /// The continuous speed ramp, when this Retime has one.
+    pub const fn ramp(self) -> Option<crate::SpeedRamp> {
+        match self {
+            Self::TapeRamp { ramp } => Some(ramp),
+            Self::Preserve | Self::FollowSpeed | Self::Shift { .. } => None,
+        }
+    }
+
+    /// Whether a Retime with this policy is an audio processing stage:
+    /// pitch-preserving with a nonunity rate or a nonzero shift, or a
+    /// continuous tape ramp (its own variable-rate resampler). Every other
     /// Retime maps samples transparently or as tape speed.
     pub const fn processes(self, unity_rate: bool) -> bool {
-        self.preserves() && (!unity_rate || self.semitones() != 0)
+        matches!(self, Self::TapeRamp { .. })
+            || (self.preserves() && (!unity_rate || self.semitones() != 0))
     }
 
     /// A shift of `semitones` on pitch-preserving processing; zero is plain
@@ -1223,6 +1240,7 @@ impl ProjectDocument {
             crate::caption::validate(&node.captions)?;
         }
         self.validate_tails_outside_speed_stages()?;
+        self.validate_speed_ramps()?;
         crate::target::validate_targets(&self.targets, &self.assets)?;
         crate::source_interpretation::validate(self)?;
         crate::audio_gain::validate_document(self, gain_limit)?;
@@ -1232,6 +1250,72 @@ impl ProjectDocument {
         let bindings = self.audio_bindings.validate_for_after(self, previous)?;
         crate::marks::validate_marks(self, &durations)?;
         Ok((durations, bindings))
+    }
+
+    /// A continuous ramp's quadratic clock has no exact inverse, and its
+    /// audio is one variable-rate stage read forward from its input. Only one
+    /// Original beat (possibly a split fragment's unity Partition, or inside
+    /// single-child groups) on an ordinary integral clock may sit inside: a
+    /// seam, pause, Repeat or other speed change there would need an inverse
+    /// or an affine sample clock. Edits that would create one refuse here.
+    fn validate_speed_ramps(&self) -> Result<(), DocumentError> {
+        for (id, node) in self.nodes.iter() {
+            let NodeKind::Retime { pitch, child, .. } = &node.kind else {
+                continue;
+            };
+            if pitch.ramp().is_none() {
+                continue;
+            }
+            let refuse =
+                |message: String| Err(DocumentError::new(DocumentErrorCode::InvalidTree, message));
+            if self.derived_clocks.contains_key(id) {
+                return refuse(format!(
+                    "speed ramp {id} cannot take a derived clock; a pause inside a ramp is not supported"
+                ));
+            }
+            let mut inner = child;
+            loop {
+                // Gain keys, mute ranges and edge policies below the ramp are
+                // flattened onto the output through the affine owner clock;
+                // treatments on the ramp itself use its own output clock.
+                if self.nodes.get(inner).is_some_and(|node| {
+                    !node.audio_treatments.is_empty()
+                        || !node.audio_edges.is_automatic()
+                        || !node.audio_editorial_edges.is_empty()
+                }) {
+                    return refuse(format!(
+                        "a continuous speed ramp cannot hold a beat with its own gain or edge settings ({inner} inside {id}); set them on the ramp instead"
+                    ));
+                }
+                let kind = self.nodes.get(inner).map(|node| &node.kind);
+                let single = match kind {
+                    _ if self.derived_clocks.contains_key(inner)
+                        || self.overrides.contains_key(inner) =>
+                    {
+                        None
+                    }
+                    Some(NodeKind::Source { .. }) => break,
+                    Some(NodeKind::Sequence { children }) if children.len() == 1 => {
+                        children.first()
+                    }
+                    // A split Original beat: a unity window of the complete
+                    // Source, transparent to both clocks.
+                    Some(NodeKind::Retime {
+                        child,
+                        purpose: RetimePurpose::Partition,
+                        ..
+                    }) => Some(child),
+                    _ => None,
+                };
+                let Some(next) = single else {
+                    return refuse(format!(
+                        "a continuous speed ramp holds exactly one Original beat (found {inner} inside {id}); use :ramp with steps= for a group, pause or repeat"
+                    ));
+                };
+                inner = next;
+            }
+        }
+        Ok(())
     }
 
     /// A hanging tail is fed by what is heard before it on the edit clock.
@@ -1248,7 +1332,9 @@ impl ProjectDocument {
                 kind,
                 NodeKind::Retime { duration, mapping, purpose, pitch, .. }
                     if purpose.is_edit()
-                        && (*duration != mapping.duration() || pitch.semitones() != 0)
+                        && (*duration != mapping.duration()
+                            || pitch.semitones() != 0
+                            || pitch.ramp().is_some())
             )
         };
         // Only a node below a speed stage can carry a tail into it.
@@ -1585,6 +1671,22 @@ impl ProjectDocument {
                     pitch,
                 } => {
                     positive(*duration, "retime")?;
+                    if let Some(ramp) = pitch.ramp() {
+                        ramp.validate()?;
+                        if *purpose != RetimePurpose::Edit
+                            || !ramp.speeds_in_range(
+                                crate::ExactRatio::integer(duration.frames()),
+                                crate::ExactRatio::integer(mapping.duration().frames()),
+                            )
+                        {
+                            return Err(DocumentError::new(
+                                DocumentErrorCode::InvalidTree,
+                                format!(
+                                    "speed ramp {id} must be an ordinary Retime whose speeds stay within 1/16x to 16x"
+                                ),
+                            ));
+                        }
+                    }
                     if let PitchPolicy::Shift { semitones } = pitch
                         && (PitchPolicy::shifted(*semitones)? != *pitch
                             || *purpose == RetimePurpose::Partition)

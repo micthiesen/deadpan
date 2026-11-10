@@ -212,18 +212,118 @@ tests, review findings and unavailable native evidence.
 
 ## Speed ramps
 
-`:ramp FROM TO [steps=N] pitch=tape|preserve` (semantic `Ramp`, since
-2026-11-08) splits the selected direct child into `N` equal parts (2 to 32,
-default 8) at boundaries rounded half-even once each, then wraps each part in
-its own ordinary Edit Retime at the speed interpolated at the part's middle,
-`FROM + (TO - FROM)·(2k + 1)/(2N)`, resolved exactly as `:retime` resolves it.
-The whole ramp is one Compound and one Undo; macros record it and `.` repeats
-it on another beat from that beat's own length. Each part stays an ordinary
-speed change that can be adjusted afterwards.
+`:ramp FROM TO [steps=N] [pitch=tape|preserve]` (semantic `Ramp`) changes the
+selected direct child's speed from `FROM` to `TO` as one Compound and one
+Undo. Macros record it and `.` repeats it on another beat from that beat's
+own length.
 
-The rate is piecewise constant: each part is its own processing stage, so
-Preserve parts start a fresh stretch context at each seam. A single stage whose
-rate varies continuously (and its time/pitch DSP) remains open. Evidence:
-`a_ramp_splits_a_beat_into_equal_parts_each_at_its_interpolated_speed` (core,
-including Compound replay and inverse), `ramps_take_two_speeds_optional_steps_and_an_explicit_pitch`
-and the `creative-dot` replay's three ramp checks.
+### Continuous ramps
+
+Without `steps` (since 2026-11-09) the ramp is continuous: `WrapRetime` with
+`PitchPolicy::TapeRamp { ramp: SpeedRamp { from, to } }`. The rate changes
+linearly across the Retime's output. For input length `L`, output duration
+`D` and reduced integer weights `A:B = from:to`, the rate at output fraction
+`u = t/D` is `r(u) = (L/D)·2(A + (B − A)u)/(A + B)` and the input position is
+its exact integral
+
+`x(u) = L·(2A·u + (B − A)·u²)/(A + B)`,
+
+a quadratic in rationals with `x(0) = 0` and `x(1) = L`
+(`deadpan_core::SpeedRamp::input_offset`). `D = 2L/(FROM + TO)` (the beat's
+length at the mean speed) is rounded half-even once; the stored speeds are
+the rate's shape, so the realised endpoint speeds are the authored ones times
+`2L/(D·(FROM + TO))`, and the inspector shows them (`Ramp 0.988× to 1.975×`
+for `:ramp 1 2` on 40 frames). Both realised endpoints stay within 1/16x to
+16x. The ramp stores only its shape, the reduced weights `A:B` (each at most
+65,535, so `:ramp 2 6` and `:ramp 1 3` store the same `{"start":1,"end":3}` and
+differ only in duration); two `u16`s keep `PitchPolicy` six bytes, so every
+plan and audio structure that embeds it keeps its measured layout, and the
+integer evaluation below stays inside `i128`.
+
+Pictures: every output frame center reads `x` exactly through the shared
+picture plan (`retime_local`), anchors descend through it
+(`retime_child_position`), and nothing is accumulated or rounded per frame.
+Picture coverage reports `PictureClockSlope::Varying` for spans below a ramp
+(consumers sample each position; ordinal-range shortcuts, transcript search
+inside the ramp and AI-pause conditioning across it decline). The quadratic
+has no rational inverse, so an interior child position has no exact edit time:
+anchor mapping and picture owner-clock composition refuse inside a ramp, and
+only its endpoints map.
+
+Audio: a ramp is an audio processing stage (`PitchPolicy::processes` is true),
+prepared whole like a Preserve stage and cached by its descriptor, which
+carries the ramp. `deadpan-audio`'s `RampSampler` evaluates every output
+sample's input position from one integer quotient,
+
+`q(j) = L·(2A·D·c·j + (B − A)·n·j²) / ((A + B)·D²·c)`
+
+for frame rate `n/den` and `c = 48000·den`, splits the integer floor before
+converting the remainder to `f64`, and never carries phase between samples or
+blocks. Its Blackman-Harris windowed sinc (half-width 64 input samples) widens
+and lowers its cutoff (`0.95/r`) with the local rate `q'(j)` above 1x, the same
+kernel and passband as constant tape speed. The child is read once through the
+ordinary stage-input path with a sliding window; outside the input it is zero.
+Each sample's taps start from two exact trigonometric evaluations and advance
+by rotation (`KernelTaps`), so a 16x ramp's 2,048 taps need no per-tap
+trigonometry. The stage reports `Stretching` progress like Preserve.
+
+Known approximation outside the PCM: structural policy inspection
+(`stop_at_preserve = false` walks such as Hold-policy flattening) still
+composes through a ramp with its mean rate. Its contents are one Original
+beat with no Holds, treatments or edges, so the only policy it can report is
+that beat's own audio exhaustion; an Original beat whose selected audio ends
+inside the ramp before its picture would have that boundary placed at the
+affine time. Ordinary Original beats carry audio across their whole picture;
+an `:audio-lag` applied before ramping can create this case, which is not
+separately refused.
+
+Scope, enforced by document validation so every edit that would break it
+refuses: a ramp holds exactly one Original beat (a Source, possibly a split
+fragment's unity Partition or inside single-child groups), on an ordinary
+integral clock with no derived clock, and with no gain treatments or edge
+policies of its own (those flatten onto the output through the affine owner
+clock; set them on the ramp, whose own clock is its output). A pause, Repeat,
+seam, other speed change or InsertTime inside it refuses, because each would
+need either the missing inverse or an affine sample clock. Marks descend
+through a ramp exactly; a mark whose host lies strictly inside one has no
+rational edit time and is lost as `OutsideMapping` by its ordinary loss
+policy, while marks at its endpoints survive. `:pitch` on a ramp refuses
+(`:retime SPEED pitch=...` explicitly replaces it with one speed). Split of a ramp beat is exact: each
+side is a unity Partition over a complete copy of the ramp. Undo, Redo, dot
+and macros carry it as ordinary Retime intent (tested). Repeat wrapping,
+Explode and occurrence isolation copy it as Retime intent like any other
+processing stage; they have no ramp-specific test yet.
+
+`pitch=preserve` without steps refuses ("a continuous ramp keeps tape pitch;
+for pitch=preserve use :ramp FROM TO steps=N"). Signalsmith Stretch itself
+accepts a different input/output ratio on each `process` call, but Deadpan's
+canonical schedule (`CanonicalRecipe`/`StreamRecipe`, native `canonical.hpp`)
+pins one exact rate per stage and its qualification covers only that; a
+variable-rate schedule with a documented deviation bound is the remaining
+work for pitch-preserving continuous ramps.
+
+Evidence: `speed_ramp::tests` (exact endpoints, monotonic mapping, bounds),
+`a_continuous_ramp_is_one_retime_on_the_exact_quadratic_clock` (planner,
+Compound replay and inverse, refusals, exact Split), the plan's
+`ramp_pictures_sample_the_exact_integral_at_every_frame_center` (all 72 frame
+centers at 30000/1001 fps, ordinals 0 to 89, `Varying` coverage) and
+`a_ramp_holds_exactly_one_original_beat`, the audio
+`ramp_resample::tests` (exact positions against the core rational; a 1 kHz
+tone through 1/2x to 2x and 3x to 1/3x ramps within 5e-7 of the analytic
+`sin(ω·q(j))`; arbitrary block sizes bit-identical to one render, no seam
+curvature), the `continuous-ramp` release preview/export fixture and the
+`creative-dot` replay's continuous ramp, dot and refusal checks.
+
+### Stepped ramps
+
+With `steps=N` (2 to 32, since 2026-11-08; `pitch=` is then required) the
+selected direct child splits into `N` equal parts at boundaries rounded
+half-even once each, then each part is wrapped in its own ordinary Edit
+Retime at the speed interpolated at the part's middle,
+`FROM + (TO - FROM)·(2k + 1)/(2N)`, resolved exactly as `:retime` resolves it.
+Each part stays an ordinary speed change that can be adjusted afterwards. The
+rate is piecewise constant: each part is its own processing stage, so
+Preserve parts start a fresh stretch context at each seam. Evidence:
+`a_ramp_splits_a_beat_into_equal_parts_each_at_its_interpolated_speed`,
+`ramps_take_two_speeds_optional_steps_and_an_explicit_pitch` and the
+`creative-dot` replay's stepped ramp checks.

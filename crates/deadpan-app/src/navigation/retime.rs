@@ -47,25 +47,27 @@ pub fn parse<'a>(
     Ok(RetimeInput { speed, pitch, wrap })
 }
 
-/// `:ramp FROM TO [steps=N] pitch=tape|preserve`: a stepped speed ramp.
+/// `:ramp FROM TO [steps=N] [pitch=tape|preserve]`: a continuous speed ramp,
+/// or with `steps=N` a stepped one.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RampInput {
     pub from: ExactRatio,
     pub to: ExactRatio,
-    pub steps: u32,
+    /// `None` is a continuous ramp.
+    pub steps: Option<u32>,
     pub pitch: PitchPolicy,
 }
 
-pub const RAMP_USAGE: &str = "Use :ramp 1 0.25 pitch=tape (or 3/4, steps=8 by default, at most 32) to ramp the selected beat's speed from the first to the second; choose a pitch policy explicitly.";
+pub const RAMP_USAGE: &str = "Use :ramp 1 0.25 for a continuous tape-pitch speed ramp of the selected beat, or :ramp 1 0.25 steps=8 pitch=preserve|tape (2 to 32 steps) for one speed change per part.";
 
 pub fn parse_ramp<'a>(words: impl Iterator<Item = &'a str>) -> Result<RampInput, String> {
     let invalid = || RAMP_USAGE.to_owned();
     let mut speeds = Vec::new();
-    let mut steps = 8_u32;
+    let mut steps = None;
     let mut pitch = None;
     for word in words {
         if let Some(value) = word.strip_prefix("steps=") {
-            steps = value.parse().map_err(|_| invalid())?;
+            steps = Some(value.parse().map_err(|_| invalid())?);
         } else if word.starts_with("pitch=") {
             let input = parse(["1", word].into_iter(), false).map_err(|_| invalid())?;
             pitch = Some(input.pitch);
@@ -77,12 +79,17 @@ pub fn parse_ramp<'a>(words: impl Iterator<Item = &'a str>) -> Result<RampInput,
             );
         }
     }
-    let ([from, to], Some(pitch)) = (speeds.as_slice(), pitch) else {
+    let [from, to] = speeds.as_slice() else {
         return Err(invalid());
     };
-    if !(2..=deadpan_core::MAX_RAMP_STEPS).contains(&steps) {
-        return Err(invalid());
-    }
+    let pitch = match (steps, pitch) {
+        (Some(steps), Some(pitch)) if (2..=deadpan_core::MAX_RAMP_STEPS).contains(&steps) => pitch,
+        // A stepped ramp still chooses its pitch explicitly.
+        (Some(_), _) => return Err(invalid()),
+        // A continuous ramp is tape pitch; the planner explains why
+        // pitch=preserve needs steps.
+        (None, pitch) => pitch.unwrap_or(PitchPolicy::FollowSpeed),
+    };
     Ok(RampInput {
         from: *from,
         to: *to,
@@ -91,11 +98,25 @@ pub fn parse_ramp<'a>(words: impl Iterator<Item = &'a str>) -> Result<RampInput,
     })
 }
 
+/// A ramp's realised speed for display: exact when short, otherwise three
+/// decimals.
+pub fn ramp_speed_text(speed: ExactRatio) -> String {
+    if speed.denominator() == 1 {
+        return speed.numerator().to_string();
+    }
+    let value = speed.numerator() as f64 / speed.denominator() as f64;
+    let text = format!("{value:.3}");
+    text.trim_end_matches('0').trim_end_matches('.').to_owned()
+}
+
 pub fn pitch_name(pitch: PitchPolicy) -> String {
     match pitch {
         PitchPolicy::Preserve => "preserve".into(),
         PitchPolicy::FollowSpeed => "tape".into(),
         PitchPolicy::Shift { semitones } => format!("{semitones:+}st"),
+        // A ramp's audio is tape pitch; `pitch=tape` on a constant speed
+        // replaces the ramp explicitly.
+        PitchPolicy::TapeRamp { .. } => "tape".into(),
     }
 }
 
@@ -247,18 +268,30 @@ mod ramp_tests {
             RampInput {
                 from: ExactRatio::ONE,
                 to: ExactRatio::new(3, 4).unwrap(),
-                steps: 4,
+                steps: Some(4),
+                pitch: PitchPolicy::FollowSpeed,
+            }
+        );
+        // Without steps the ramp is continuous and tape pitch by default.
+        assert_eq!(
+            parse_ramp("2 0.5".split_whitespace()).unwrap(),
+            RampInput {
+                from: ExactRatio::integer(2),
+                to: ExactRatio::new(1, 2).unwrap(),
+                steps: None,
                 pitch: PitchPolicy::FollowSpeed,
             }
         );
         assert_eq!(
             parse_ramp("2 0.5 pitch=preserve".split_whitespace())
                 .unwrap()
-                .steps,
-            8
+                .pitch,
+            PitchPolicy::Preserve
         );
+        assert_eq!(ramp_speed_text(ExactRatio::new(4, 3).unwrap()), "1.333");
+        assert_eq!(ramp_speed_text(ExactRatio::integer(2)), "2");
         for input in [
-            "1 2",
+            "1 2 steps=4",
             "1 pitch=tape",
             "1 2 steps=1 pitch=tape",
             "1 2 steps=33 pitch=tape",

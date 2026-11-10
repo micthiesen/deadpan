@@ -27,6 +27,10 @@ pub enum PictureClockSlope {
     SourceTicks(ExactRatio),
     AcceptedFrames(ExactRatio),
     Constant,
+    /// Below a continuous speed ramp the provider clock is quadratic in the
+    /// definition clock. The span covers the ramp's output from its start
+    /// sample; consumers must sample each position instead of extrapolating.
+    Varying,
 }
 
 /// A nonempty half-open definition interval. At position `p`, the raw provider
@@ -336,6 +340,9 @@ pub(in crate::plan) struct PictureContinuity {
     pub(in crate::plan) clock: PictureClockSlope,
     pub(in crate::plan) leaf_kind: Option<ProviderLeafKind>,
     pub(in crate::plan) in_repeat_gap: bool,
+    // Below a ramp, child-local limits have no exact definition position;
+    // the ramp's own output end bounds the span instead.
+    varying: bool,
 }
 
 impl PictureContinuity {
@@ -347,6 +354,7 @@ impl PictureContinuity {
             clock: PictureClockSlope::Constant,
             leaf_kind: None,
             in_repeat_gap: false,
+            varying: false,
         }
     }
 
@@ -355,6 +363,9 @@ impl PictureContinuity {
         local: ExactRatio,
         end: ExactRatio,
     ) -> Result<(), PlanError> {
+        if self.varying {
+            return Ok(());
+        }
         if !end.compare(local).is_gt() {
             return Err(PlanError::InvalidPlan(
                 "nonpositive picture validity neighborhood",
@@ -379,13 +390,33 @@ impl PictureContinuity {
         Ok(())
     }
 
+    /// Enter a continuous ramp at its output coordinate `local`; the span
+    /// ends no later than the ramp's output end `extent`.
+    pub(in crate::plan) fn ramp(
+        &mut self,
+        local: ExactRatio,
+        extent: ExactRatio,
+    ) -> Result<(), PlanError> {
+        self.limit(local, extent)?;
+        self.varying = true;
+        Ok(())
+    }
+
     pub(in crate::plan) fn source(&mut self, rate: ExactRatio) -> Result<(), PlanError> {
-        self.clock = PictureClockSlope::SourceTicks(rate.checked_mul(self.local_rate)?);
+        self.clock = if self.varying {
+            PictureClockSlope::Varying
+        } else {
+            PictureClockSlope::SourceTicks(rate.checked_mul(self.local_rate)?)
+        };
         Ok(())
     }
 
     pub(in crate::plan) fn accepted(&mut self) {
-        self.clock = PictureClockSlope::AcceptedFrames(self.local_rate);
+        self.clock = if self.varying {
+            PictureClockSlope::Varying
+        } else {
+            PictureClockSlope::AcceptedFrames(self.local_rate)
+        };
     }
 
     /// The caller has selected this cutaway using canonical range precedence.

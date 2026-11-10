@@ -1487,7 +1487,10 @@ where
                 // At least one mute and one shifted sound.
                 SemanticInstruction::AudioShift { .. } => 2,
                 // A split and a speed change per part.
-                SemanticInstruction::Ramp { steps, .. } => usize::try_from(*steps)
+                SemanticInstruction::Ramp { steps: None, .. } => 1,
+                SemanticInstruction::Ramp {
+                    steps: Some(steps), ..
+                } => usize::try_from(*steps)
                     .unwrap_or(usize::MAX)
                     .saturating_mul(2),
                 // A mute and one sound per later play, or one cutaway; an

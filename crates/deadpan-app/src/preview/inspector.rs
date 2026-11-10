@@ -292,7 +292,22 @@ impl Inspector {
             } => {
                 fields.push((
                     "Speed",
-                    format!("{}/{}×", mapping.duration().frames(), duration.frames()),
+                    match pitch.ramp().and_then(|ramp| {
+                        ramp.endpoint_rates(
+                            deadpan_core::ExactRatio::integer(duration.frames()),
+                            deadpan_core::ExactRatio::integer(mapping.duration().frames()),
+                        )
+                        .ok()
+                    }) {
+                        Some((first, last)) => format!(
+                            "Ramp {}× to {}× ({}/{}× mean)",
+                            crate::navigation::retime::ramp_speed_text(first),
+                            crate::navigation::retime::ramp_speed_text(last),
+                            mapping.duration().frames(),
+                            duration.frames()
+                        ),
+                        None => format!("{}/{}×", mapping.duration().frames(), duration.frames()),
+                    },
                 ));
                 fields.push((
                     "Pitch",
@@ -302,6 +317,7 @@ impl Inspector {
                         PitchPolicy::Shift { semitones } => {
                             format!("Shifted {semitones:+} semitones")
                         }
+                        PitchPolicy::TapeRamp { .. } => "Tape (follows the ramp)".into(),
                     },
                 ));
                 (

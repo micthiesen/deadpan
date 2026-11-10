@@ -283,14 +283,10 @@ impl<'a> Index<'a> {
                     child,
                     mapping,
                     duration,
+                    pitch,
                     ..
                 } => {
-                    position = position
-                        .checked_mul(ExactRatio::new(
-                            i128::from(mapping.duration().frames()),
-                            i128::from(duration.frames()),
-                        )?)?
-                        .checked_add(ExactRatio::integer(mapping.start().0))?;
+                    position = crate::retime_child_position(*pitch, *mapping, *duration, position)?;
                     node = child;
                 }
                 NodeKind::Repeat { .. } => {
@@ -406,7 +402,10 @@ impl<'a> Index<'a> {
                     position.checked_add(ExactRatio::integer(offset))?
                 }
                 NodeKind::Retime {
-                    mapping, duration, ..
+                    mapping,
+                    duration,
+                    pitch,
+                    ..
                 } => {
                     let selected = position.checked_sub(ExactRatio::integer(mapping.start().0))?;
                     within_content(
@@ -415,10 +414,25 @@ impl<'a> Index<'a> {
                         bias,
                         MarkLossReason::OutsideMapping,
                     )?;
-                    selected.checked_mul(ExactRatio::new(
-                        i128::from(duration.frames()),
-                        i128::from(mapping.duration().frames()),
-                    )?)?
+                    if pitch.ramp().is_some() {
+                        // A ramp's quadratic clock has no rational inverse;
+                        // only its endpoints keep an exact edit time.
+                        if selected == ExactRatio::ZERO {
+                            ExactRatio::ZERO
+                        } else if selected
+                            .compare_integer(mapping.duration().frames())
+                            .is_eq()
+                        {
+                            ExactRatio::integer(duration.frames())
+                        } else {
+                            return lost(MarkLossReason::OutsideMapping);
+                        }
+                    } else {
+                        selected.checked_mul(ExactRatio::new(
+                            i128::from(duration.frames()),
+                            i128::from(mapping.duration().frames()),
+                        )?)?
+                    }
                 }
                 _ => return lost(MarkLossReason::OutsideHost),
             };
