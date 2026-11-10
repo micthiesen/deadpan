@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-10T14:20:53Z",
+  "updated_at": "2026-11-10T20:41:22Z",
   "estimate_note": "Coarse acceptance-coverage score from 162 fixed criteria, equally weighted within each of 24 requirements. Not remaining effort, time or release readiness. Recalibrated October 25 from the legacy 89% estimate; earlier history uses a different method.",
-  "focus": "Remaining partial requirements: saturation/EQ group distribution, range and trim edits inside plays, placement into nested occurrences, full effect/mastering graph, plan reuse for sounds, analysis and tracking qualification corpora, and release acceptance.",
+  "focus": "Remaining partial requirements: saturation/EQ group distribution, range, trim and speed-change edits inside plays, full effect/mastering graph, plan reuse for sounds, analysis and tracking qualification corpora, and release acceptance.",
   "features": [
     {
       "id": "editing",
@@ -1576,6 +1576,15 @@
       "revision": "1937f07e1",
       "retrospective": false,
       "summary": "Pitch-preserving continuous ramps; reverse and ping-pong across cuts, pauses, groups and speed changes; declared argument schemas for all 148 command verbs with Tab completion, live conflicts and acts-on lines; full gate, 105 replays and all 74 preview/export fixtures pass"
+    },
+    {
+      "date": "2026-11-10",
+      "percent": 88,
+      "assessment_id": "acceptance-v1-2026-10-25",
+      "complete_sections": 10,
+      "revision": "d2796c357",
+      "retrospective": false,
+      "summary": "Sample-accurate waveform ranges for mute and gain (:wave); recovery and failure matrix with all 51 local cells tested and two store fixes; stings visible, detachable and split-safe; :splice inside one Repeat play; full gate (one timing test fixed), 106 replays and all 76 preview/export fixtures pass"
     }
   ],
   "assessment": {
@@ -2342,12 +2351,12 @@
           {
             "id": "DP-09.1",
             "deliverable": "Arbitrary word/breath/click emphasis and sudden silence with exact sample-level range control",
-            "score": 0.5,
+            "score": 1,
             "evidence": [
               "docs/AUDIO_GAIN.md",
               "docs/SECTION8_COVERAGE.md selective emphasis/sudden silence"
             ],
-            "remaining": "Exact-sample mute and gain-step ranges and keyboard/pointer waveform range editing (:wave) work for a beat of the current group; ranges inside one Repeat play, ranges spanning beats, curved envelopes drawn from a waveform selection and listening qualification remain open.",
+            "remaining": "Waveform ranges inside one Repeat play or across beat boundaries refuse; only constant steps apply from a selection; listening is To verify (owner).",
             "normative": "8.3,4.5"
           },
           {
@@ -3480,7 +3489,7 @@
           {
             "id": "DP-21.6",
             "deliverable": "Complete conflicts, recovery and failure acceptance with private diagnostic output",
-            "score": 0.5,
+            "score": 1,
             "evidence": [
               "docs/PARITY.md",
               "docs/qualification/readonly-controls-2026-10-08.md",
@@ -3489,7 +3498,7 @@
               "docs/qualification/recovery-matrix-2026-11-10.md",
               "crates/deadpan-cli/tests/failure_matrix.rs"
             ],
-            "remaining": "The normative recovery matrix (docs/qualification/recovery-matrix-2026-11-10.md) covers all 51 applicable failure/conflict cells across the native app, headless CLI and live endpoint, with private diagnostics; only physical power loss and sleep during a render remain, on the To verify (owner) list.",
+            "remaining": "Physical power loss during commits and render during physical sleep are To verify (owner).",
             "confidence": "medium"
           }
         ]
