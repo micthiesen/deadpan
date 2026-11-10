@@ -586,3 +586,128 @@ fn marked_fragment_seams_fade_or_cut_the_sound_and_a_split_seam_stays_continuous
     assert_pcm_close(&faded[400..500], &expected_cut[400..500]);
     assert_pcm_close(&faded[800..900], &expected_cut[800..900]);
 }
+
+/// Two cuts of speech, the second inside a group trimmed by -6 dB, a silent
+/// pause and a 2x pitch-preserving speed change: 600 frames at 48 kHz frames,
+/// then a rewind pause over them.
+fn rewind_plan(bounce: bool) -> Arc<RenderPlan> {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let mut group = BeatNode::sequence("Group", vec![id("second")]);
+    group.audio_treatments = trim(-6_000, false);
+    plan(
+        rate,
+        &["first", "group", "pause", "fast", "rewind"],
+        [
+            ("first", source(rate, 200, 0..200)),
+            ("second", source(rate, 200, 1_000..1_200)),
+            ("group", group),
+            ("pause", hold(50)),
+            (
+                "fast",
+                retime("fast_source", 150, 0..300, PitchPolicy::Preserve),
+            ),
+            ("fast_source", source(rate, 300, 2_000..2_300)),
+            (
+                "rewind",
+                BeatNode::hold(
+                    "Reversed passage",
+                    HoldRecipe {
+                        picture_context: None,
+                        duration: duration(if bounce { 599 } else { 600 }),
+                        video: HoldVideo::Rewind { bounce },
+                        audio: HoldAudio::Rewind { bounce },
+                    },
+                ),
+            ),
+        ],
+    )
+}
+
+#[test]
+fn a_rewind_reverses_the_rendered_passage_across_cuts_groups_pauses_and_speed() {
+    for bounce in [false, true] {
+        let planned = rewind_plan(bounce);
+        let mut renderer = StageAudio::new(Arc::clone(&planned));
+        let mut provider = FixtureProvider::new();
+        let heard = renderer
+            .prepare_authored_bus(
+                &mut provider,
+                AudioSample(0),
+                600,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .unwrap()
+            .samples;
+        let window = &heard[..600 - usize::from(bounce)];
+        let expected: Vec<_> = window.iter().rev().copied().collect();
+        assert!(expected.iter().any(|frame| *frame != [0.0; 2]));
+        for pieces in [&[256][..], &[17, 251, 3]] {
+            let mut renderer = StageAudio::new(Arc::clone(&planned));
+            let mut provider = FixtureProvider::new();
+            let all = read_all(&mut renderer, &mut provider, pieces);
+            // Output n is exactly the heard sample len - 1 - n.
+            assert_eq!(&all[600..], &expected[..], "bounce {bounce}");
+        }
+    }
+}
+
+#[test]
+fn a_tail_after_a_rewind_hears_it_as_silence() {
+    // A tail right after the rewind hears it as silence: they never chain.
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let planned = plan(
+        rate,
+        &["speech", "rewind", "tail"],
+        [
+            ("speech", source(rate, 100, 0..100)),
+            (
+                "rewind",
+                BeatNode::hold(
+                    "Reversed passage",
+                    HoldRecipe {
+                        picture_context: None,
+                        duration: duration(100),
+                        video: HoldVideo::Rewind { bounce: false },
+                        audio: HoldAudio::Rewind { bounce: false },
+                    },
+                ),
+            ),
+            (
+                "tail",
+                effect_hold(
+                    1_000,
+                    HoldAudio::Tail {
+                        input: Default::default(),
+                        maximum: duration(1_000),
+                        effect: TailEffect::Delay,
+                    },
+                ),
+            ),
+        ],
+    );
+    let mut renderer = StageAudio::new(Arc::clone(&planned));
+    let mut provider = FixtureProvider::new();
+    let heard = renderer
+        .prepare_authored_bus(
+            &mut provider,
+            AudioSample(0),
+            100,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        )
+        .unwrap()
+        .samples;
+    let all = read_all(&mut renderer, &mut provider, &[256]);
+    let speech: Vec<_> = heard.iter().rev().copied().collect();
+    assert_eq!(&all[100..200], &speech[..]);
+    let mut silent_rewind = heard.clone();
+    silent_rewind.resize(200, [0.0; 2]);
+    let expected = deadpan_audio::render_tail(
+        deadpan_audio::TailRecipe::new(TailEffect::Delay, 1_000, 1_000).unwrap(),
+        &silent_rewind,
+        &AtomicBool::new(false),
+    )
+    .unwrap();
+    assert_pcm_close(&all[200..], &expected);
+}

@@ -1157,7 +1157,9 @@ impl DeadpanApp {
             deadpan_core::HoldAudio::Silence => "silence",
             deadpan_core::HoldAudio::RoomTone { .. } => "room tone",
             deadpan_core::HoldAudio::Tail { .. } => "effect tail",
-            deadpan_core::HoldAudio::Reverse { .. } => "reversed sound",
+            deadpan_core::HoldAudio::Reverse { .. } | deadpan_core::HoldAudio::Rewind { .. } => {
+                "reversed sound"
+            }
             deadpan_core::HoldAudio::Tone { .. } => "tone",
         };
         let summary = format!("Shared gap · {} f · {sound}", recipe.duration.frames());

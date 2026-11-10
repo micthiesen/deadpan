@@ -1369,7 +1369,8 @@ fn validate_hold_audio_recipe(
     let source = match audio {
         deadpan_core::HoldAudio::Silence
         | deadpan_core::HoldAudio::Tone { .. }
-        | deadpan_core::HoldAudio::Tail { .. } => return Ok(()),
+        | deadpan_core::HoldAudio::Tail { .. }
+        | deadpan_core::HoldAudio::Rewind { .. } => return Ok(()),
         deadpan_core::HoldAudio::RoomTone { source }
         | deadpan_core::HoldAudio::Reverse { source } => source,
     };

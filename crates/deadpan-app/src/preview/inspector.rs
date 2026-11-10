@@ -99,6 +99,7 @@ impl Inspector {
                         HoldVideo::Accepted { .. } => "Accepted media",
                         HoldVideo::Generated { .. } => "Accepted AI",
                         HoldVideo::Reverse { .. } => "Reversed",
+                        HoldVideo::Rewind { .. } => "Reversed passage",
                         HoldVideo::Play { .. } => "Original",
                     }
                     .into(),
@@ -109,6 +110,7 @@ impl Inspector {
                         HoldAudio::Silence => "Silence".into(),
                         HoldAudio::RoomTone { .. } => "Room tone".into(),
                         HoldAudio::Reverse { .. } => "Reversed".into(),
+                        HoldAudio::Rewind { .. } => "Reversed passage".into(),
                         HoldAudio::Tone {
                             frequency_hz,
                             level,

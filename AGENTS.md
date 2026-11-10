@@ -726,9 +726,12 @@ or forward as exact `Picture::Source` points; `HoldAudio::Reverse`, `Tail` and
 `Tone` prepare one canonical cached block per Hold occurrence (Tone reads no
 media). Bleep and Lift resolve pictures before cutting, then refill the exact
 cut length at the join in the same compound.
-Resolve them only through the shared pause resolver; a passage that is not one
-continuous natural-rate Original leaf refuses, as does heard sound under a
-stretched mapping or speed stage. A Tail is a live reference with no stored
+Resolve them only through the shared pause resolver. For `:reverse`, a passage
+that is not one continuous natural-rate Original leaf becomes a live
+`HoldVideo::Rewind`/`HoldAudio::Rewind`: the root picture walk mirrors each
+frame through the shared plan, capturing only unshared framing, and the sound
+reverses the tail-input window (`read_heard_window`); rewinds and tails never
+chain and are invalid under a speed stage. Bleep keeps its own run rules. A Tail is a live reference with no stored
 source: on the root grid it reads the processed Original voice over the two
 seconds before its occurrence from the current plan, with other tails silent
 in that window so tails never chain. Owners shared with the tail apply their

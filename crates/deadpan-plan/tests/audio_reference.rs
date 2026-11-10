@@ -338,6 +338,7 @@ fn policy(content: &AudioContent) -> ReferenceAudioContent {
             effect: *effect,
         },
         AudioContent::Reverse { .. } => ReferenceAudioContent::Reverse,
+        AudioContent::Rewind { bounce, .. } => ReferenceAudioContent::Rewind { bounce: *bounce },
         AudioContent::Tone {
             frequency_hz,
             level,

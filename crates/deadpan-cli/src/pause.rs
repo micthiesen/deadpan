@@ -181,10 +181,17 @@ fn freeze(
     }
 }
 
-/// A pause at `at` that plays the `frames` before it backwards: the exact
-/// measured pictures of one continuous Original passage, played from its end,
-/// and the sound heard under them reversed. With `bounce` the last picture is
-/// left out, so a ping-pong does not show it twice.
+/// A pause at `at` that plays the `frames` before it backwards. With
+/// `bounce` the last picture is left out, so a ping-pong does not show it
+/// twice.
+///
+/// One continuous natural-rate Original passage keeps its exact measured
+/// pictures and source samples in the Hold (`HoldVideo::Reverse`,
+/// `HoldAudio::Reverse`), so later edits never change it. Any other passage
+/// the plan can show (cuts, pauses, groups, framing, speed changes, ramps)
+/// becomes a live rewind (`HoldVideo::Rewind`, `HoldAudio::Rewind`): every
+/// frame shows the evaluated picture of its mirrored frame with its framing,
+/// and the sound is the processed Original heard over the passage, reversed.
 pub fn reverse_provider(
     document: &ProjectDocument,
     plan: &RenderPlan,
@@ -193,20 +200,73 @@ pub fn reverse_provider(
     bounce: bool,
     index: &mut IndexLookup<'_>,
 ) -> Result<PauseProvider, String> {
-    let passage = passage(document, plan, at, frames, bounce, "Reverse", index)?;
+    check_extent(document, at, frames, bounce, "Reverse")?;
     let first = ProjectFrame(at.0 - frames.frames());
     let heard_end = ProjectFrame(at.0 - i64::from(bounce));
+    let captured = passage(document, plan, at, frames, bounce, "Reverse", index)
+        .and_then(|passage| Ok((passage, heard_source(plan, first, heard_end)?)));
+    match captured {
+        Ok((passage, heard)) => Ok(PauseProvider {
+            video: HoldVideo::Reverse {
+                asset: passage.asset,
+                span: passage.span,
+                origin: Some(passage.end),
+            },
+            picture_context: passage.picture_context,
+            audio: match heard {
+                Some(source) => HoldAudio::Reverse { source },
+                None => HoldAudio::Silence,
+            },
+            cutaways: Vec::new(),
+        }),
+        // Anything else this form refuses is reversed live.
+        Err(_) => rewind_provider(document, plan, at, frames, bounce),
+    }
+}
+
+/// The live rewind of a composite or speed-changed passage: refuse what it
+/// could not show faithfully, a passage holding another rewind or a tail
+/// (which a rewind hears as silence, so they never chain).
+fn rewind_provider(
+    document: &ProjectDocument,
+    plan: &RenderPlan,
+    at: ProjectFrame,
+    frames: FrameDuration,
+    bounce: bool,
+) -> Result<PauseProvider, String> {
+    let first = at.0 - frames.frames();
+    for frame in first..at.0 - i64::from(bounce) {
+        let sample = plan
+            .picture(ProjectFrame(frame))
+            .map_err(|error| error.to_string())?;
+        let hold = document
+            .nodes()
+            .get(&sample.instance.node)
+            .and_then(|node| match &node.kind {
+                deadpan_core::NodeKind::Hold { recipe } => Some(recipe),
+                _ => None,
+            });
+        if let Some(recipe) = hold {
+            if matches!(recipe.video, HoldVideo::Rewind { .. })
+                || matches!(recipe.audio, HoldAudio::Rewind { .. })
+            {
+                return Err(
+                    "The passage already holds a reversed passage, and reversals do not nest; reverse a shorter passage before it."
+                        .into(),
+                );
+            }
+            if matches!(recipe.audio, HoldAudio::Tail { .. }) {
+                return Err(
+                    "The passage holds a hanging tail, which a reversal cannot replay; reverse a shorter passage before it."
+                        .into(),
+                );
+            }
+        }
+    }
     Ok(PauseProvider {
-        video: HoldVideo::Reverse {
-            asset: passage.asset,
-            span: passage.span,
-            origin: Some(passage.end),
-        },
-        picture_context: passage.picture_context,
-        audio: match heard_source(plan, first, heard_end)? {
-            Some(source) => HoldAudio::Reverse { source },
-            None => HoldAudio::Silence,
-        },
+        video: HoldVideo::Rewind { bounce },
+        picture_context: None,
+        audio: HoldAudio::Rewind { bounce },
         cutaways: Vec::new(),
     })
 }
@@ -403,6 +463,32 @@ fn natural_runs(
     Ok(Some(runs))
 }
 
+/// The passage fits before the cursor and in one bounded block.
+fn check_extent(
+    document: &ProjectDocument,
+    at: ProjectFrame,
+    frames: FrameDuration,
+    bounce: bool,
+    action: &str,
+) -> Result<(), String> {
+    let rate = document.presentation_basis().frame_rate;
+    let count = frames.frames();
+    if count <= i64::from(bounce) || count > at.0 {
+        return Err(format!(
+            "There is not enough before the cursor to {}.",
+            action.to_lowercase()
+        ));
+    }
+    if i128::from(count) * i128::from(rate.denominator())
+        > i128::from(MAX_REVERSE_SECONDS) * i128::from(rate.numerator())
+    {
+        return Err(format!(
+            "{action} at most {MAX_REVERSE_SECONDS} s at a time."
+        ));
+    }
+    Ok(())
+}
+
 struct Passage {
     asset: AssetId,
     span: SourceSpan,
@@ -425,19 +511,7 @@ fn passage(
 ) -> Result<Passage, String> {
     let rate = document.presentation_basis().frame_rate;
     let count = frames.frames();
-    if count <= i64::from(bounce) || count > at.0 {
-        return Err(format!(
-            "There is not enough before the cursor to {}.",
-            action.to_lowercase()
-        ));
-    }
-    if i128::from(count) * i128::from(rate.denominator())
-        > i128::from(MAX_REVERSE_SECONDS) * i128::from(rate.numerator())
-    {
-        return Err(format!(
-            "{action} at most {MAX_REVERSE_SECONDS} s at a time."
-        ));
-    }
+    check_extent(document, at, frames, bounce, action)?;
     let first = at.0 - count;
     let not_continuous =
         || format!("{action} needs one continuous Original passage at its natural speed.");
@@ -693,6 +767,14 @@ mod tests {
 
     /// One 48 kHz Original beat of 4,800 frames at 48,000 fps with `mapping`.
     fn plan(mapping: impl FnOnce(SourceSpan, FrameRate) -> SourceAudioMapping) -> RenderPlan {
+        RenderPlan::compile(&document(mapping, None)).unwrap()
+    }
+
+    /// The same beat, optionally followed by a 100-frame Hold `after`.
+    fn document(
+        mapping: impl FnOnce(SourceSpan, FrameRate) -> SourceAudioMapping,
+        after: Option<deadpan_core::HoldRecipe>,
+    ) -> ProjectDocument {
         let rate = FrameRate::new(48_000, 1).unwrap();
         let clock = SourceTimeBase::new(1, 48_000).unwrap();
         let at = |ticks| SourceTimestamp {
@@ -738,14 +820,14 @@ mod tests {
         )
         .unwrap();
         let mut wire = serde_json::to_value(empty).unwrap();
-        wire["nodes"] = serde_json::to_value(BTreeMap::from([
-            (
-                id("root"),
-                BeatNode::sequence("Sequence", vec![id("speech")]),
-            ),
-            (id("speech"), beat),
-        ]))
-        .unwrap();
+        let mut nodes = BTreeMap::from([(id("speech"), beat)]);
+        let mut roots = vec![id("speech")];
+        if let Some(recipe) = after {
+            nodes.insert(id("after"), BeatNode::hold("After", recipe));
+            roots.push(id("after"));
+        }
+        nodes.insert(id("root"), BeatNode::sequence("Sequence", roots));
+        wire["nodes"] = serde_json::to_value(nodes).unwrap();
         wire["assets"] = serde_json::to_value(BTreeMap::from([(
             AssetId::new("media").unwrap(),
             AssetRecord {
@@ -759,7 +841,70 @@ mod tests {
             },
         )]))
         .unwrap();
-        RenderPlan::compile(&ProjectDocument::from_json(&wire.to_string()).unwrap()).unwrap()
+        ProjectDocument::from_json(&wire.to_string()).unwrap()
+    }
+
+    #[test]
+    fn a_passage_the_captured_form_cannot_hold_is_rewound_live_unless_it_nests() {
+        let natural = |span, rate| SourceAudioMapping::natural_rate(span, rate).unwrap();
+        let mut no_index =
+            |_: &AssetId| -> Result<Arc<SourceFrameIndex>, String> { Err("no pictures".into()) };
+        // Blank pictures are no measured Original passage: rewound live.
+        let plain = document(natural, None);
+        let provider = reverse_provider(
+            &plain,
+            &RenderPlan::compile(&plain).unwrap(),
+            ProjectFrame(2_000),
+            FrameDuration::new(1_000).unwrap(),
+            true,
+            &mut no_index,
+        )
+        .unwrap();
+        assert_eq!(provider.video, HoldVideo::Rewind { bounce: true });
+        assert_eq!(provider.audio, HoldAudio::Rewind { bounce: true });
+        assert!(provider.picture_context.is_none());
+        // More than precedes the cursor still refuses.
+        assert!(
+            reverse_provider(
+                &plain,
+                &RenderPlan::compile(&plain).unwrap(),
+                ProjectFrame(2_000),
+                FrameDuration::new(2_001).unwrap(),
+                false,
+                &mut no_index,
+            )
+            .unwrap_err()
+            .contains("not enough")
+        );
+        // A passage holding a rewind or a tail refuses: they never chain.
+        for audio in [
+            HoldAudio::Rewind { bounce: false },
+            HoldAudio::Tail {
+                maximum: FrameDuration::new(100).unwrap(),
+                effect: deadpan_core::TailEffect::Reverb,
+                input: Default::default(),
+            },
+        ] {
+            let nested = document(
+                natural,
+                Some(deadpan_core::HoldRecipe {
+                    picture_context: None,
+                    duration: FrameDuration::new(100).unwrap(),
+                    video: HoldVideo::Background,
+                    audio,
+                }),
+            );
+            let error = reverse_provider(
+                &nested,
+                &RenderPlan::compile(&nested).unwrap(),
+                ProjectFrame(4_900),
+                FrameDuration::new(200).unwrap(),
+                false,
+                &mut no_index,
+            )
+            .unwrap_err();
+            assert!(error.contains("reverse a shorter passage"), "{error}");
+        }
     }
 
     #[test]

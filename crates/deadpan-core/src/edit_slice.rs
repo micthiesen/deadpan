@@ -1121,13 +1121,16 @@ fn hold_assets(recipe: &HoldRecipe, output: &mut BTreeSet<AssetId>) {
                 output.insert(asset.clone());
             }
         }
-        HoldVideo::Background => {}
+        HoldVideo::Background | HoldVideo::Rewind { .. } => {}
     }
     match &recipe.audio {
         HoldAudio::RoomTone { source } | HoldAudio::Reverse { source } => {
             output.insert(source.asset.clone());
         }
-        HoldAudio::Silence | HoldAudio::Tone { .. } | HoldAudio::Tail { .. } => {}
+        HoldAudio::Silence
+        | HoldAudio::Tone { .. }
+        | HoldAudio::Tail { .. }
+        | HoldAudio::Rewind { .. } => {}
     }
 }
 fn invalid(message: &str) -> EditError {

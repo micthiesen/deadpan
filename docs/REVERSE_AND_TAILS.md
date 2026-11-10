@@ -12,6 +12,8 @@ reverse. All are Hold providers: inserted time with independent picture and soun
 | `HoldVideo::Reverse { asset, span, origin }` | Plays a measured Original picture span backwards at the project rate from an exact source-clock origin. Hold-local frame `k` samples `origin - (k + 1/2) × ticks_per_project_frame`. An omitted origin defaults to `span.end`; outside the selected span, its adjacent endpoint picture holds. |
 | `HoldVideo::Play { asset, span, origin }` | Plays forward with the same endpoint policy, sampling `origin + (k + 1/2) × ticks_per_project_frame`. An omitted origin defaults to `span.start`. |
 | `HoldAudio::Reverse { source }` | Plays the source span backwards from the Hold's start at its natural rate, then digital silence. The span is at most 1,048,576 samples at 48 kHz (about 21.8 s), the one-block limit, checked at document validation. |
+| `HoldVideo::Rewind { bounce }` | Rewinds the edit before the occurrence, live: Hold-local frame `k` shows the evaluated picture of root frame `S - 1 - k` (`S - 2 - k` with `bounce`), `S` the occurrence's first root frame, with the framing of every owner the Hold does not share, captured on the canvas exactly as a freeze captures it. Black before the project start. |
+| `HoldAudio::Rewind { bounce }` | The processed Original sound heard over the Hold's own length just before the occurrence (ending one frame earlier with `bounce`), played backwards from the Hold's start: output sample `n` is heard sample `len - 1 - n`. The window is at most 1,048,576 samples, checked at validation. |
 | `HoldAudio::Tail { maximum, effect, input }` | A live reference: the wet output of `effect` fed over the two seconds before this occurrence, ringing from the Hold's start for `maximum` frames, then exact silence. `effect` is `reverb` (default) or `delay`; `input` is `original` (default) or `sends`. It stores no source. |
 
 ## Selected sends
@@ -50,8 +52,59 @@ a nonunity Preserve treat a second opaque stage kind, and composite children
 whose sound is one self-contained recipe, like room tone, so the existing
 binding and reanchor machinery stays untouched, and the picture is an ordinary
 `Picture::Source` that every decoder, cache and export path already admits.
-The cost is scope: only one continuous Original passage at its natural speed
-can be reversed, not a framed group or a Repeat.
+The captured providers above cover one continuous Original passage at its
+natural speed.
+
+## Composite and speed-changed passages
+
+Any other passage (cuts, pauses, groups, framing, Repeats, speed changes
+and ramps of either pitch policy) becomes a `Rewind` Hold, a live structural
+reference to the frames just before the pause, the model hanging tails
+already use. The choice, against capturing:
+
+- Pictures could be captured as an explicit list (one decoded picture and
+  one captured framing per frame) and still be exact. Sound could not be
+  captured as safely. A frozen block of the rendered mix would have to be
+  rendered while the command is planned (media work inside macros, dot and
+  the headless path) and published as a verified generated object; a frozen
+  audio context cannot yet capture the binding state nearly every edited
+  project has. Capturing only the pictures would let them disagree with a
+  live sound after a later edit.
+- A live reference stores no media, needs no store admission or cleanup
+  reference, survives Undo/Redo and portable copies unchanged, and keeps
+  picture and sound consistent with each other: both always reverse what
+  now precedes the pause. Editing the passage changes its reversal, as it
+  changes a tail. The single natural-rate passage keeps its captured form
+  (and its existing evidence), since its source samples are exact without
+  any rendering.
+
+Rules, shared by the picture plan and `StageAudio`:
+
+- Pictures are evaluated through the shared picture plan: the root walk that
+  reaches a `Rewind` Hold at local `k` walks the root again at the mirrored
+  frame's center and returns that picture identity unchanged (Original
+  point, Freeze, Background, accepted footage). Framing scopes below the
+  deepest owner shared with the Hold, the evaluated picture's own captured
+  context and a Repeat-gap identity clip are captured with
+  `CapturedFraming::capture`, so shared groups frame the picture once, live
+  on the Hold. A Split fragment keeps the original occurrence's start.
+- Sound reads the same root window a tail with `input=original` would read
+  (`read_heard_window`): time mapping, Preserve and ramp processing, edges,
+  Hold gates and the gain, mute and treatments of owners the pause does not
+  share. Shared owners apply once, on the output, at the pause. Placed sounds
+  are excluded: they keep playing on their own clock. The window is the
+  exact round-even samples of the passage's frames, reserved against the
+  request's prepared-frame and residency budgets; the reversed block is
+  cached per occurrence like every Hold effect.
+- Rewinds never chain: inside another rewind's or a tail's window a rewind
+  shows black and is silent, and the host refuses a passage that holds one
+  (or a tail). A read without an edit position (a definition, a retained
+  clock or a point-grid read) is black and silent. A `Rewind` Hold inside a
+  nonunity Retime is an invalid document, refused at authoring ("put the
+  cursor outside the Retime"), and a Repeat's default gap cannot be one. It
+  captures no `picture_context`.
+- Frozen audio context schema 13 carries `rewind` (no input, like a tail);
+  schema 12 and older reject it.
 
 Validation requires the picture span inside the asset's video and the audio
 span inside its audio (and a reversed span within the one-block limit); a
@@ -198,8 +251,10 @@ The host resolves each pause from the staged document
 native app, macros and the headless semantic path:
 
 - `:reverse 8f` (default 8f) inserts at the Edit cursor a pause playing the
-  frames before it backwards. Every picture must be the same Original leaf at
-  its natural rate (exact source steps). The selected decoded-picture span runs
+  frames before it backwards. When every picture is the same Original leaf at
+  its natural rate (exact source steps) and its sound is one natural-rate
+  passage, the pause captures them as below; otherwise it is a live
+  `Rewind` (above). The selected decoded-picture span runs
   from the first picture's PTS to the end of the last, while a separate exact
   origin preserves the requested project passage's end. The sound heard over
   those frames, as exact inward-rounded source samples, is reversed (silence stays silence; a sound
@@ -223,7 +278,7 @@ native app, macros and the headless semantic path:
 Semantic instructions `InsertReverse { length, bounce }`, `Tail { length,
 effect }`, `Bleep`, `Lift` and `SetCutaway { register, fit }` record in macros (`,t`, `:tail`,
 `:reverse`, `:ping-pong` and whole-beat `:cutaway` record instead of refusing).
-The inspector shows `Reversed` picture and sound, and `Reverb tail 15 f` with
+The inspector shows `Reversed` (or `Reversed passage`) picture and sound, and `Reverb tail 15 f` with
 a `Tail of: Live 2 s before` row.
 
 ## Tests and evidence
@@ -258,6 +313,20 @@ a `Tail of: Live 2 s before` row.
   length and the wire defaults; the forward Play picture plan; the tone through
   `StageAudio` without reading media; frozen contexts of reversed and tone
   Holds render the live samples.
+- Rewind: plan tests (`picture_plan/rewind.rs`) check every picture and
+  captured framing of a passage with a cut, a freeze pause, a framed group
+  and a 2x Retime mirrored exactly, bounce, black before the start, no
+  nesting and invalidity inside a speed change; `StageAudio` tests check the
+  reversed block equals the forward authored bus over the same passage
+  (two cuts, a -6 dB group, a pause and a 2x Preserve Retime) reversed sample
+  for sample, with and without bounce, in several read sizes, and that a
+  tail after a rewind hears it as silence. The CLI resolver test covers the
+  fallback and the nesting refusals. The `hold-effects` replay cuts two
+  frames with `v l d`, runs `:reverse 8f` across the cut (every picture
+  mirrored, the inspector row), repeats it with `.` and undoes each step.
+  Export fixtures `reverse-across-cut` (pictures across the cut, the click
+  back at 38,485) and `reverse-ramp` (a pitch-kept continuous ramp
+  rewound).
 - Export (release, [verification](PREVIEW_EXPORT_VERIFICATION.md)):
   `reverse-hiccup` (the reversed click lands 3,250 samples into the pause),
   `ping-pong`, `hanging-tail` (reverb, 29 compared blocks), `tail-echo` (echo at
@@ -267,8 +336,8 @@ a `Tail of: Live 2 s before` row.
 ## Remaining
 
 A bleep mixed over the sound instead of replacing it, bleeping framed
-pictures across a cut, choosing the tail's source range by hand, reversing composite
-structure (groups, Repeats, framed scopes) or at other speeds, a reverse
-picture of edited (cutaway) content with its own sound, and listening
-qualification of the two effects. Selected sends from beats and placed sounds
+pictures across a cut, choosing the tail's source range by hand, a captured
+(edit-independent) reversal of composite passages, reversing placed sounds,
+a passage longer than 20 s, a reverse inside a speed change, and listening
+qualification of the effects. Selected sends from beats and placed sounds
 into a tail are implemented ([Selected sends](#selected-sends)).

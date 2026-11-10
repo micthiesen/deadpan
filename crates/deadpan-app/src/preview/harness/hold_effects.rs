@@ -24,6 +24,7 @@ fn describe(recipe: Option<&HoldRecipe>) -> Value {
                 HoldVideo::Reverse { span, .. } => json!({"reverse": [span.start().ticks, span.end().ticks]}),
                 HoldVideo::Freeze { .. } => json!("freeze"),
                 HoldVideo::Play { span, .. } => json!({"play": [span.start().ticks, span.end().ticks]}),
+                HoldVideo::Rewind { bounce } => json!({"rewind": bounce}),
                 _ => json!("other"),
             },
             "audio": match &recipe.audio {
@@ -32,6 +33,7 @@ fn describe(recipe: Option<&HoldRecipe>) -> Value {
                 HoldAudio::Silence => json!("silence"),
                 HoldAudio::RoomTone { .. } => json!("room tone"),
                 HoldAudio::Tone { frequency_hz, .. } => json!({"tone": frequency_hz}),
+                HoldAudio::Rewind { bounce } => json!({"rewind": bounce}),
             },
         })
     })
@@ -63,6 +65,88 @@ fn enter(d: &mut Driver<'_>, label: &str, text: &[&str]) -> Result<(), String> {
     events.push(key_event(Key::Enter, egui::Modifiers::NONE, true));
     events.push(key_event(Key::Enter, egui::Modifiers::NONE, false));
     d.events(label, events)
+}
+
+/// Cut Edit [25, 27) with `v`, `l`, `l`, `d`, then `:reverse 8f` at Edit 30: the
+/// passage [22, 30) crosses the cut, so the pause rewinds it live, every
+/// frame showing the evaluated picture of its mirrored frame. `.` at Edit 27
+/// rewinds [19, 27) across the same cut. Each is one Undo.
+fn reverse_across_cut(d: &mut Driver<'_>, duration: u64) -> Result<(), String> {
+    d.chord(&[
+        Key::G,
+        Key::G,
+        Key::Num2,
+        Key::Num5,
+        Key::L,
+        Key::V,
+        Key::L,
+        Key::L,
+    ])?;
+    let before = d.revision();
+    d.key(Key::D)?;
+    d.changed(&before)?;
+    d.settled()?;
+    let cut = d.app().sequence_length();
+    d.check(
+        "v l l d cuts the two frames Edit [25, 27)",
+        cut + 2 == duration,
+        json!(duration - 2),
+        json!(cut),
+    )?;
+    d.chord(&[Key::G, Key::G, Key::Num3, Key::Num0, Key::L])?;
+    let before = d.revision();
+    d.command("reverse 8f")?;
+    d.changed(&before)?;
+    d.settled()?;
+    let rewind = hold_at(d, 30);
+    let workspace = d.app().workspace.clone().ok_or("No project")?;
+    let plan = deadpan_plan::RenderPlan::compile(&workspace.document).map_err(|e| e.to_string())?;
+    let picture = |frame: i64| {
+        plan.picture(deadpan_core::ProjectFrame(frame))
+            .map(|sample| sample.picture)
+            .map_err(|error| error.to_string())
+    };
+    let mirrored = (0..8)
+        .map(|k| Ok(picture(30 + k)? == picture(29 - k)?))
+        .collect::<Result<Vec<bool>, String>>()?;
+    d.check(
+        ":reverse 8f across a cut rewinds the passage live, every picture mirrored",
+        rewind.as_ref().is_some_and(|recipe| {
+            recipe.duration.frames() == 8
+                && matches!(recipe.video, HoldVideo::Rewind { bounce: false })
+                && matches!(recipe.audio, HoldAudio::Rewind { bounce: false })
+        }) && mirrored.iter().all(|same| *same)
+            && d.app().sequence_length() == cut + 8
+            && d.app().error.is_none(),
+        json!({"frames":8,"video":{"rewind":false},"mirrored":vec![true; 8],"total":cut + 8}),
+        json!({"hold":describe(rewind.as_ref()),"mirrored":mirrored,"total":d.app().sequence_length(),"error":d.app().error}),
+    )?;
+    d.step("Paint the reversed passage in the inspector", true)?;
+    let inspector = scenarios::text_paint_visibility(d, "Reversed passage");
+    d.check(
+        "The inspector names the reversed passage",
+        !inspector.is_empty(),
+        json!("Reversed passage"),
+        json!(inspector),
+    )?;
+    d.capture("Reverse across a cut")?;
+    d.chord(&[Key::G, Key::G, Key::Num2, Key::Num7, Key::L])?;
+    let before = d.revision();
+    d.key(Key::Period)?;
+    d.changed(&before)?;
+    d.settled()?;
+    let repeated = hold_at(d, 27);
+    d.check(
+        ". repeats the reverse at the cursor, again across the cut",
+        repeated.as_ref().is_some_and(|recipe| {
+            recipe.duration.frames() == 8 && matches!(recipe.video, HoldVideo::Rewind { .. })
+        }) && d.app().sequence_length() == cut + 16,
+        json!({"frames":8,"video":{"rewind":false},"total":cut + 16}),
+        json!({"hold":describe(repeated.as_ref()),"total":d.app().sequence_length(),"error":d.app().error}),
+    )?;
+    undo(d, cut + 8, "One undo removes the repeated reverse")?;
+    undo(d, cut, "One undo removes the reverse across the cut")?;
+    undo(d, duration, "One undo restores the cut frames")
 }
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
@@ -137,6 +221,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.capture("Ping-pong")?;
     undo(d, duration, "One undo removes the ping-pong")?;
+    reverse_across_cut(d, duration)?;
 
     // ,t without a selected pause proposes a new one-second reverb tail.
     d.chord(&[Key::G, Key::G, Key::Num3, Key::Num0, Key::L])?;

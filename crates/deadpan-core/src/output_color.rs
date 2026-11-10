@@ -101,7 +101,8 @@ fn picture_providers(document: &ProjectDocument) -> (BTreeSet<AssetId>, bool) {
     let mut sdr_only = false;
     let hold = |video: &HoldVideo, assets: &mut BTreeSet<AssetId>, sdr_only: &mut bool| match video
     {
-        HoldVideo::Background => {}
+        // A rewind shows pictures the rest of the edit already shows.
+        HoldVideo::Background | HoldVideo::Rewind { .. } => {}
         HoldVideo::Freeze { asset, .. }
         | HoldVideo::Reverse { asset, .. }
         | HoldVideo::Play { asset, .. } => {

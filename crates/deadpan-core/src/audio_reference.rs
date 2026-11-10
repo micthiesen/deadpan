@@ -68,6 +68,11 @@ pub enum ReferenceAudibility {
         frequency_hz: u32,
         level: crate::GainDb,
     },
+    /// The live reversed passage before the occurrence; no source input.
+    Rewind {
+        #[serde(skip_serializing_if = "std::ops::Not::not")]
+        bounce: bool,
+    },
 }
 
 #[derive(Deserialize)]
@@ -87,6 +92,10 @@ enum AudibilityWire {
         frequency_hz: u32,
         level: crate::GainDb,
     },
+    Rewind {
+        #[serde(default)]
+        bounce: bool,
+    },
 }
 
 impl<'de> Deserialize<'de> for ReferenceAudibility {
@@ -104,6 +113,7 @@ impl<'de> Deserialize<'de> for ReferenceAudibility {
                 input,
             },
             AudibilityWire::Reverse {} => Self::Reverse,
+            AudibilityWire::Rewind { bounce } => Self::Rewind { bounce },
             AudibilityWire::Tone {
                 frequency_hz,
                 level,
@@ -159,6 +169,7 @@ impl From<&HoldAudio> for ReferenceAudibility {
                 input: *input,
             },
             HoldAudio::Reverse { .. } => Self::Reverse,
+            HoldAudio::Rewind { bounce } => Self::Rewind { bounce: *bounce },
             HoldAudio::Tone {
                 frequency_hz,
                 level,

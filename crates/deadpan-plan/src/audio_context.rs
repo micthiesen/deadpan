@@ -523,6 +523,7 @@ fn retained_hold_audio(
             input,
         },
         ReferenceAudibility::Reverse => HoldAudio::Reverse { source: source()? },
+        ReferenceAudibility::Rewind { bounce } => HoldAudio::Rewind { bounce },
         ReferenceAudibility::Tone {
             frequency_hz,
             level,

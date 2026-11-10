@@ -209,7 +209,9 @@ impl SequenceAudio {
             AudioContent::Tail { .. } => Err(unsupported(
                 "a hanging tail (an effect of the sound before it)",
             )),
-            AudioContent::Reverse { .. } => Err(unsupported("reversed Hold audio")),
+            AudioContent::Reverse { .. } | AudioContent::Rewind { .. } => {
+                Err(unsupported("reversed Hold audio"))
+            }
             AudioContent::Tone { .. } => Err(unsupported("synthesized tones")),
             AudioContent::Source {
                 source, duration, ..

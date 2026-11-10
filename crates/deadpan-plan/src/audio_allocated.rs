@@ -233,6 +233,10 @@ impl OwnedHeap for AudioContent {
                 duration: _,
             } => budget.visit(source),
             Self::Silence { reason: _ }
+            | Self::Rewind {
+                bounce: _,
+                duration: _,
+            }
             | Self::Tail {
                 maximum: _,
                 effect: _,

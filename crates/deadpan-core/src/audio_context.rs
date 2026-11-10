@@ -16,7 +16,7 @@ use crate::{
 };
 
 /// Schema 12 adds continuous owner wet returns.
-const AUDIO_CONTEXT_SCHEMA: u32 = 12;
+const AUDIO_CONTEXT_SCHEMA: u32 = 13;
 
 /// Full authored audio input. Source mapping and signed mix offset are retained
 /// because their effective placement need not fit SourceAudioMapping::Placement.
@@ -388,6 +388,23 @@ impl FrozenAudioContext {
                 "a schema-9 or older audio context cannot contain EQ",
             ));
         }
+        if self.schema_version < 13
+            && self.layout.nodes().values().any(|node| {
+                matches!(
+                    &node.kind,
+                    FrozenAudioKind::Hold {
+                        audio: ReferenceAudibility::Rewind { .. }
+                    } | FrozenAudioKind::Repeat {
+                        gap_audio: ReferenceAudibility::Rewind { .. },
+                        ..
+                    }
+                )
+            })
+        {
+            return Err(invalid(
+                "a schema-12 or older audio context cannot contain reversed passages",
+            ));
+        }
         if self.schema_version < 12
             && self
                 .audio_treatments
@@ -617,7 +634,10 @@ impl<'de> Deserialize<'de> for TreatmentMap {
 
 fn hold_source(audio: &HoldAudio) -> Option<&SourceAudio> {
     match audio {
-        HoldAudio::Silence | HoldAudio::Tone { .. } | HoldAudio::Tail { .. } => None,
+        HoldAudio::Silence
+        | HoldAudio::Tone { .. }
+        | HoldAudio::Tail { .. }
+        | HoldAudio::Rewind { .. } => None,
         HoldAudio::RoomTone { source } | HoldAudio::Reverse { source } => Some(source),
     }
 }

@@ -460,6 +460,7 @@ pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> O
                 // Program validation permits only Silence and RoomTone here.
                 deadpan_core::HoldAudio::Tail { .. }
                 | deadpan_core::HoldAudio::Reverse { .. }
+                | deadpan_core::HoldAudio::Rewind { .. }
                 | deadpan_core::HoldAudio::Tone { .. } => None,
             };
         }

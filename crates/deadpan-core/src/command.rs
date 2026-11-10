@@ -3248,12 +3248,13 @@ pub(crate) fn reverted_hold_video(video: &HoldVideo) -> Result<HoldVideo, EditEr
     match video {
         HoldVideo::Generated { accepted } => Ok(fallback_video(&accepted.fallback)),
         HoldVideo::Background | HoldVideo::Freeze { .. } => Ok(video.clone()),
-        HoldVideo::Accepted { .. } | HoldVideo::Reverse { .. } | HoldVideo::Play { .. } => {
-            Err(EditError::new(
-                EditErrorCode::InvalidCommand,
-                "this Hold has no saved generated-picture fallback to restore",
-            ))
-        }
+        HoldVideo::Accepted { .. }
+        | HoldVideo::Reverse { .. }
+        | HoldVideo::Play { .. }
+        | HoldVideo::Rewind { .. } => Err(EditError::new(
+            EditErrorCode::InvalidCommand,
+            "this Hold has no saved generated-picture fallback to restore",
+        )),
     }
 }
 
@@ -3276,7 +3277,7 @@ pub(crate) fn accept_generated_hold(
                 "legacy accepted Holds have no explicit fallback and cannot accept generated media",
             ));
         }
-        HoldVideo::Reverse { .. } | HoldVideo::Play { .. } => {
+        HoldVideo::Reverse { .. } | HoldVideo::Play { .. } | HoldVideo::Rewind { .. } => {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
                 "this Hold already plays Original pictures; it cannot accept generated media",

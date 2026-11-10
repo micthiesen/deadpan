@@ -131,6 +131,17 @@ or per analysis hop instead would need changes inside the pinned upstream
 stretcher. Its speeds stay within the stretcher's 1/8x to 8x rather than the
 tape resampler's 1/16x to 16x.
 
+Also on 2026-11-10, Section 10.5's reverse was extended to composite and
+speed-changed passages under the same delegated authority. A captured form
+would have needed either a stored PCM artifact rendered during command
+planning (asynchronous media work inside macros and dot-repeat) or a frozen
+audio context, which cannot yet capture the binding state almost every
+edited project has. A live reference to the frames before the pause, the
+model hanging tails already use, keeps picture and sound consistent with
+each other through every later edit, stores no media and needs no
+admission. One continuous natural-rate Original passage keeps its captured
+form, so existing reverses are unchanged.
+
 | File | Bytes | SHA-256 |
 | --- | ---: | --- |
 | [AGENT_HANDOFF.md](spec/archive/1.0/AGENT_HANDOFF.md) | 4,340 | `464f689e1eb5ad6b2905286e516259f07dc83fea8ebb2b0330663976b905ae6c` |

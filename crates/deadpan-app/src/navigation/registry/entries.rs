@@ -1047,7 +1047,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::EDIT,
         replay: Replay::RecordedAndDot,
         headless: eq("insert_reverse instruction", HOLDS),
-        help: "Insert a pause at the cursor that plays the stretch before it backwards, picture and sound; forward content then continues. :ping-pong bounces back without showing the turning picture twice, so the pause is one frame shorter. Needs one continuous Original passage at its natural speed. One Undo.",
+        help: "Insert a pause at the cursor that plays the stretch before it backwards, picture and sound; forward content then continues. :ping-pong bounces back without showing the turning picture twice, so the pause is one frame shorter. One continuous Original passage at its natural speed keeps its exact pictures and sound; any other passage (cuts, pauses, groups, framing, speed changes) is rewound live, picture by picture with its framing, with the processed sound heard over it reversed. At most 20 s; a passage holding a reversed passage or a tail, or a cursor inside a speed change, refuses. One Undo.",
     },
     Spec {
         id: "tail",

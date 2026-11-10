@@ -2385,7 +2385,7 @@
               "docs/RETIME_EDITING.md",
               "docs/REVERSE_AND_TAILS.md"
             ],
-            "remaining": "Continuous ramps over composite beats refuse (tape-pitch ramps on one Original beat resample per sample since 2026-11-09; pitch-preserving ones drive the canonical stretcher on the exact quadratic block schedule since 2026-11-10, within 1/8x to 8x); general composite/speed-transformed reverse still refuses; listening qualification of ramped stretch transients is owner work. Existing fixed pitch, saturation and Preserve/Tape paths are verified.",
+            "remaining": "Continuous ramps over composite beats refuse (tape-pitch ramps on one Original beat resample per sample since 2026-11-09; pitch-preserving ones drive the canonical stretcher on the exact quadratic block schedule since 2026-11-10, within 1/8x to 8x); composite and speed-transformed passages reverse as a live Rewind of the evaluated pictures and processed Original sound since 2026-11-10 (a captured, edit-independent form and reversing placed sounds remain); listening qualification of ramped stretch transients is owner work. Existing fixed pitch, saturation and Preserve/Tape paths are verified.",
             "normative": "8.3,10.5"
           },
           {

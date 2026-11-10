@@ -159,6 +159,13 @@ pub enum AudioContent {
         level: deadpan_core::GainDb,
         duration: FrameDuration,
     },
+    /// Live: the processed Original sound heard over `duration` just before
+    /// this occurrence's root position (one frame earlier with `bounce`),
+    /// played backwards from the Hold's local start.
+    Rewind {
+        bounce: bool,
+        duration: FrameDuration,
+    },
 }
 
 impl AudioContent {
@@ -183,6 +190,10 @@ impl AudioContent {
             },
             HoldAudio::Reverse { source } => Self::Reverse {
                 source: source.clone(),
+                duration,
+            },
+            HoldAudio::Rewind { bounce } => Self::Rewind {
+                bounce: *bounce,
                 duration,
             },
             HoldAudio::Tone {

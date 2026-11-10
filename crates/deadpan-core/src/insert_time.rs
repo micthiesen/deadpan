@@ -636,6 +636,7 @@ fn ordinary_hold(recipe: &HoldRecipe) -> bool {
             | HoldVideo::Freeze { .. }
             | HoldVideo::Reverse { .. }
             | HoldVideo::Play { .. }
+            | HoldVideo::Rewind { .. }
     )
 }
 

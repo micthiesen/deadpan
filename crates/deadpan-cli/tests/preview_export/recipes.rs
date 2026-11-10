@@ -2515,6 +2515,115 @@ pub fn reverse_hiccup(dir: &Path) -> Result<Fixture> {
     Ok(fixture)
 }
 
+fn rewind_pause(saved: &ProjectDocument, at: i64, frames: i64) -> Result<()> {
+    let (pause, start) = root_child_at(saved, at)?;
+    match &saved.nodes()[&pause].kind {
+        NodeKind::Hold { recipe }
+            if start == at
+                && recipe.duration.frames() == frames
+                && matches!(
+                    (&recipe.video, &recipe.audio),
+                    (
+                        HoldVideo::Rewind { bounce: false },
+                        HoldAudio::Rewind { bounce: false }
+                    )
+                ) =>
+        {
+            Ok(())
+        }
+        other => Err(format!("unexpected reversed passage {other:?}").into()),
+    }
+}
+
+/// `:reverse 8f` at Edit 20 after deleting Edit [15, 17) (Original 27, 28):
+/// the passage Edit [12, 20) crosses that cut (Original 24..26, then
+/// 29..33), so the pause rewinds it live: Edit 20..27 show Original 33 down
+/// to 29, then 26 down to 24, and the base resumes at Original 34: 28 + 8 =
+/// 36 frames.
+pub fn reverse_across_cut(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "reverse-across-cut")?;
+    project.shorten()?;
+    project.delete_range(15, 17)?;
+    let saved = project.run_semantic(
+        json!([{"type":"insert_reverse","length":{"unit":"frames","frames":8}}]),
+        20,
+        None,
+    )?;
+    rewind_pause(&saved, 20, 8)?;
+    let expectations = vec![
+        (0, base(0)),
+        (14, original(26)),
+        (15, original(29)),
+        (19, original(33)),
+        (20, original(33)),
+        (24, original(29)),
+        (25, original(26)),
+        (27, original(24)),
+        (28, original(34)),
+        (35, original(41)),
+    ];
+    let mut fixture = project.finish(
+        vec!["Reverse hiccup", "Stretch / pitch"],
+        expectations,
+        Vec::new(),
+    )?;
+    // The click (Original sample 48,000) is heard at 28,781 - 2 frames
+    // (3,203.2 samples) = 25,578 inside the passage [B(12), B(20)) =
+    // [19,219, 32,032). Output sample n of the pause plays heard sample
+    // 32,031 - n, so the click returns 6,453 samples in, at 38,485.
+    fixture.audio = vec![
+        (25_344, true),
+        (30_720, false),
+        (34_816, false),
+        (38_400, true),
+        (44_800, false),
+    ];
+    Ok(fixture)
+}
+
+/// `:ramp 1 3 pitch=preserve` on Edit [12, 24) (Edit 12..17 show Original
+/// 24, 25, 27, 29, 31, 34), then `:reverse 6f` at the ramp's end, Edit 18:
+/// the pause rewinds the ramped pictures and the processed, pitch-kept
+/// sound heard over them. Edit 18..23 show Original 34, 31, 29, 27, 25, 24
+/// and the base resumes at Original 36: 24 + 6 = 30 frames.
+pub fn reverse_ramp(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "reverse-ramp")?;
+    project.shorten()?;
+    project.split_root(12)?;
+    let document = project.split_root(24)?;
+    let target = root_child_at(&document, 12)?.0;
+    let ratio = |numerator: &str| json!({"numerator": numerator, "denominator": "1"});
+    project.run_semantic(
+        json!([{"type":"ramp","from":ratio("1"),"to":ratio("3"),"pitch":"preserve"}]),
+        12,
+        Some(&target),
+    )?;
+    let saved = project.run_semantic(
+        json!([{"type":"insert_reverse","length":{"unit":"frames","frames":6}}]),
+        18,
+        None,
+    )?;
+    rewind_pause(&saved, 18, 6)?;
+    let expectations = vec![
+        (0, base(0)),
+        (12, original(24)),
+        (17, original(34)),
+        (18, original(34)),
+        (19, original(31)),
+        (20, original(29)),
+        (21, original(27)),
+        (22, original(25)),
+        (23, original(24)),
+        (24, original(36)),
+        (29, original(41)),
+    ];
+    project.finish(
+        vec!["Reverse hiccup", "Stretch / pitch"],
+        expectations,
+        vec!["reverses the heard pitch-kept ramp output, not its source".to_owned()],
+    )
+}
+
 /// `:ping-pong 12f` at Edit 24 (Original 36): Edit [12, 24) (Original
 /// 24..36) bounces back without showing Original 35 twice, an 11-frame pause
 /// of Original 34 down to 24, then the base resumes at Original 36:
@@ -4187,7 +4296,7 @@ pub fn partition_with_skips(
     partitions: usize,
 ) -> Result<(Vec<Fixture>, Vec<Skipped>)> {
     assert!(partitions > 0 && partition < partitions);
-    let builders: [(&str, Builder); 53] = [
+    let builders: [(&str, Builder); 55] = [
         ("audio-shift", audio_shift),
         ("ramp", ramp),
         ("continuous-ramp", continuous_ramp),
@@ -4213,6 +4322,8 @@ pub fn partition_with_skips(
         ("are-we-done", are_we_done),
         ("delayed-caption", delayed_caption),
         ("reverse-hiccup", reverse_hiccup),
+        ("reverse-across-cut", reverse_across_cut),
+        ("reverse-ramp", reverse_ramp),
         ("ping-pong", ping_pong),
         ("hanging-tail", hanging_tail),
         ("tail-echo", tail_echo),

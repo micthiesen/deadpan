@@ -722,6 +722,10 @@ enum CompiledHold {
         reverse: bool,
         origin: ExactRatio,
     },
+    /// The edit before the occurrence, rewound live on the root walk.
+    Rewind {
+        bounce: bool,
+    },
 }
 
 impl CompiledHold {
@@ -732,6 +736,14 @@ impl CompiledHold {
     ) -> Result<(), PlanError> {
         match self {
             Self::Background | Self::Freeze { .. } => Ok(()),
+            // One evaluated picture per project frame.
+            Self::Rewind { .. } => {
+                let next = i64::try_from(local.floor())
+                    .map_err(|_| deadpan_core::TimeError::Overflow)?
+                    .checked_add(1)
+                    .ok_or(deadpan_core::TimeError::Overflow)?;
+                continuity.limit(local, ExactRatio::integer(next))
+            }
             Self::Accepted { .. } => {
                 continuity.accepted();
                 Ok(())
@@ -756,6 +768,7 @@ impl CompiledHold {
     fn compile(recipe: &HoldRecipe, document: &ProjectDocument) -> Result<Self, PlanError> {
         Ok(match &recipe.video {
             HoldVideo::Background => Self::Background,
+            HoldVideo::Rewind { bounce } => Self::Rewind { bounce: *bounce },
             HoldVideo::Freeze { asset, timestamp } => Self::Freeze {
                 asset: asset.clone(),
                 point: SourcePoint {
@@ -837,7 +850,8 @@ impl CompiledHold {
 
     fn picture(&self, local: ExactRatio) -> Result<Picture, PlanError> {
         Ok(match self {
-            Self::Background => Picture::Background,
+            // Without an edit position (a definition or gap read) a rewind is black.
+            Self::Background | Self::Rewind { .. } => Picture::Background,
             Self::Freeze { asset, point } => Picture::Freeze {
                 asset: asset.clone(),
                 point: *point,
@@ -1742,8 +1756,77 @@ impl RenderPlan {
         position: ExactRatio,
         cutaways: bool,
         budget: &mut PictureBudget,
-        mut continuity: Option<&mut PictureContinuity>,
+        continuity: Option<&mut PictureContinuity>,
     ) -> Result<PictureWalk, PlanError> {
+        self.walk_picture_rewinding(definition, position, cutaways, budget, continuity, true)
+    }
+
+    /// The picture a rewind Hold shows at its local `local`, when its
+    /// occurrence starts at root frame `start`: the evaluated root picture of
+    /// the mirrored frame with the framing of every owner it does not share
+    /// with the Hold (`chain`, root first), captured on the canvas exactly as
+    /// a freeze captures it. Black before the project start. Another rewind
+    /// inside the rewound passage is black too: rewinds never chain.
+    fn rewound_picture(
+        &self,
+        start: ExactRatio,
+        local: ExactRatio,
+        bounce: bool,
+        chain: &[PictureFraming],
+        cutaways: bool,
+        budget: &mut PictureBudget,
+    ) -> Result<(Picture, Option<Arc<CapturedFraming>>), PlanError> {
+        let frame = start
+            .checked_sub(ExactRatio::integer(i64::from(bounce)))?
+            .checked_sub(ExactRatio::integer(
+                i64::try_from(local.floor()).map_err(|_| deadpan_core::TimeError::Overflow)?,
+            ))?
+            .checked_sub(ExactRatio::integer(1))?;
+        if frame.compare_integer(0).is_lt() {
+            return Ok((Picture::Background, None));
+        }
+        let center = frame.checked_add(ExactRatio::new(1, 2)?)?;
+        let walk = self.walk_picture_rewinding(self.root, center, cutaways, budget, None, false)?;
+        // Leaf first: the scopes below the deepest owner shared with the Hold.
+        let lower = walk
+            .framing
+            .iter()
+            .position(|scope| chain.iter().any(|shared| shared.instance == scope.instance))
+            .unwrap_or(walk.framing.len());
+        let mut layers = Vec::with_capacity(lower + usize::from(walk.gap_after.is_some()));
+        if walk.gap_after.is_some() {
+            layers.push(None);
+        }
+        layers.extend(walk.framing[..lower].iter().map(|scope| scope.pose));
+        let context = match &walk.picture {
+            Picture::Background | Picture::Blank => None,
+            _ => {
+                let basis = &self.metadata.presentation_basis;
+                Some(Arc::new(CapturedFraming::capture(
+                    walk.picture_context.as_deref(),
+                    deadpan_core::CapturedCanvas {
+                        width: basis.width,
+                        height: basis.height,
+                        fit: deadpan_core::CapturedFit::Fit,
+                        layers,
+                    },
+                )?))
+            }
+        };
+        Ok((walk.picture, context))
+    }
+
+    fn walk_picture_rewinding(
+        &self,
+        definition: usize,
+        position: ExactRatio,
+        cutaways: bool,
+        budget: &mut PictureBudget,
+        mut continuity: Option<&mut PictureContinuity>,
+        rewind: bool,
+    ) -> Result<PictureWalk, PlanError> {
+        // Only a root walk with unit slope knows the edit position of a Hold.
+        let mut edit_clock = rewind && definition == self.root;
         if self.audio_context {
             return Err(PlanError::AudioOnlyContext);
         }
@@ -1920,6 +2003,19 @@ impl RenderPlan {
                         continuity.leaf_kind = Some(ProviderLeafKind::Hold);
                         video.picture_continuity(local, continuity)?;
                     }
+                    if let CompiledHold::Rewind { bounce } = video
+                        && edit_clock
+                    {
+                        let (picture, context) = self.rewound_picture(
+                            position.checked_sub(local)?,
+                            local,
+                            *bounce,
+                            &framing,
+                            cutaways,
+                            budget,
+                        )?;
+                        break (picture, context, None);
+                    }
                     break (video.picture(local)?, picture_context.clone(), None);
                 }
                 CompiledKind::Sequence { entries } => {
@@ -1951,6 +2047,9 @@ impl RenderPlan {
                         } else {
                             continuity.retime(*scale)?;
                         }
+                    }
+                    if *scale != ExactRatio::integer(1) || pitch.ramp().is_some() {
+                        edit_clock = false;
                     }
                     local = retime_local(*start, *scale, *pitch, extent, local)?;
                     current = *child;

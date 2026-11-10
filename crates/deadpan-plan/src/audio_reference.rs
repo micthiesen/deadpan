@@ -36,6 +36,10 @@ pub enum ReferenceAudioContent {
         frequency_hz: u32,
         level: deadpan_core::GainDb,
     },
+    /// The live reversed passage before the occurrence.
+    Rewind {
+        bounce: bool,
+    },
     Silence {
         reason: SilenceReason,
     },
@@ -826,6 +830,7 @@ fn content(audio: ReferenceAudibility) -> ReferenceAudioContent {
             input,
         },
         ReferenceAudibility::Reverse => ReferenceAudioContent::Reverse,
+        ReferenceAudibility::Rewind { bounce } => ReferenceAudioContent::Rewind { bounce },
         ReferenceAudibility::Tone {
             frequency_hz,
             level,

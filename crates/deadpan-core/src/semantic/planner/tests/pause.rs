@@ -966,6 +966,62 @@ fn reverse_and_ping_pong_insert_the_host_provider_with_their_exact_lengths() {
 }
 
 #[test]
+fn a_reversed_passage_inserts_one_live_rewind_with_an_exact_inverse() {
+    let document = tree(&["a", "b"], vec![("a", hold(6)), ("b", hold(4))]);
+    let planned = plan_semantic_with_speech(
+        &document,
+        &context("root", 8),
+        &program(vec![SemanticInstruction::InsertReverse {
+            length: frames_length(5),
+            bounce: true,
+        }]),
+        SemanticRegisterBank {
+            entries: &BTreeMap::new(),
+            version: 7,
+        },
+        revision("outer"),
+        allocate,
+        no_original,
+        |_| Err(crate::speech_unavailable()),
+        |_, _| {
+            Ok(PauseProvider {
+                video: HoldVideo::Rewind { bounce: true },
+                picture_context: None,
+                audio: crate::HoldAudio::Rewind { bounce: true },
+                cutaways: Vec::new(),
+            })
+        },
+    )
+    .unwrap();
+    // The ping-pong over a cut between two pauses is one frame shorter.
+    assert_eq!(planned.document.duration().unwrap().frames(), 14);
+    let rewinds: Vec<_> = planned
+        .document
+        .nodes()
+        .values()
+        .filter_map(|node| match &node.kind {
+            NodeKind::Hold { recipe } if matches!(recipe.video, HoldVideo::Rewind { .. }) => {
+                Some(recipe.clone())
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(rewinds.len(), 1);
+    assert_eq!(rewinds[0].duration.frames(), 4);
+    assert_eq!(rewinds[0].audio, crate::HoldAudio::Rewind { bounce: true });
+    let replay =
+        crate::replay_compound::<EditError>(&document, planned.request.as_ref().unwrap(), |_| {
+            Ok(())
+        })
+        .unwrap();
+    assert_eq!(replay.document, planned.document);
+    assert_eq!(
+        replay.edit.inverse.apply(&replay.document).unwrap(),
+        document
+    );
+}
+
+#[test]
 fn a_tail_sets_the_selected_hold_from_its_start_or_inserts_a_tail_pause() {
     let document = tree(&["a", "b"], vec![("a", hold(6)), ("b", hold(4))]);
     // With the second Hold selected, the tail rings from its start for at

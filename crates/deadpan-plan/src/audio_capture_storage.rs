@@ -105,6 +105,10 @@ pub(in crate::plan) fn hold<A: AudioSoundContextAdmission>(
             source: budget.source(memory, source)?,
             duration,
         },
+        HoldAudio::Rewind { bounce } => AudioContent::Rewind {
+            bounce: *bounce,
+            duration,
+        },
         HoldAudio::Tone {
             frequency_hz,
             level,

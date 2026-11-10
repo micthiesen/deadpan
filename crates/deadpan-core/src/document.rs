@@ -329,6 +329,20 @@ pub enum HoldVideo {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         origin: Option<crate::ExactRatio>,
     },
+    /// Rewinds the edit just before this occurrence: Hold-local frame `k`
+    /// shows the evaluated picture of the root frame `S - 1 - k` (with
+    /// `bounce`, `S - 2 - k`), where `S` is the occurrence's first root
+    /// frame, with the framing of every owner it does not share with this
+    /// Hold. A live structural reference, like a tail: it stores no pictures,
+    /// so it stays valid after any edit, and an edit before the pause changes
+    /// what it rewinds. It reverses any passage the plan can show (cuts,
+    /// pauses, groups, framing, speed changes). Only meaningful on the edit
+    /// clock: invalid inside a speed change, and black where a picture is
+    /// read without an edit position or inside another rewind's passage.
+    Rewind {
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        bounce: bool,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -380,6 +394,15 @@ pub enum HoldAudio {
     Tone {
         frequency_hz: u32,
         level: crate::GainDb,
+    },
+    /// The processed Original sound heard over the Hold's own length just
+    /// before this occurrence (with `bounce`, ending one frame earlier),
+    /// played backwards from the Hold's start: exactly the samples a tail
+    /// with `input=original` hears, reversed. A live reference like a tail
+    /// and [`HoldVideo::Rewind`]; the window is one bounded block.
+    Rewind {
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        bounce: bool,
     },
 }
 
@@ -1370,11 +1393,28 @@ impl ProjectDocument {
             return Ok(());
         }
         let tail = |audio: &HoldAudio| matches!(audio, HoldAudio::Tail { .. });
+        let rewind = |recipe: &HoldRecipe| {
+            matches!(recipe.audio, HoldAudio::Rewind { .. })
+                || matches!(recipe.video, HoldVideo::Rewind { .. })
+        };
         let mut stack = vec![(&self.root, false)];
         while let Some((id, inside)) = stack.pop() {
             let Some(node) = self.nodes.get(id) else {
                 continue;
             };
+            let rewound = match &node.kind {
+                NodeKind::Hold { recipe } => inside && rewind(recipe),
+                NodeKind::Repeat { gap, .. } => inside && gap.as_ref().is_some_and(rewind),
+                _ => false,
+            };
+            if rewound {
+                return Err(DocumentError::new(
+                    DocumentErrorCode::InvalidTree,
+                    format!(
+                        "a reversed passage pause cannot sit inside a speed change (at {id}); put the cursor outside the Retime"
+                    ),
+                ));
+            }
             let carried = match &node.kind {
                 NodeKind::Hold { recipe } => inside && tail(&recipe.audio),
                 NodeKind::Repeat { gap, .. } => {
@@ -1667,6 +1707,15 @@ impl ProjectDocument {
                     }
                     if let Some(gap) = gap {
                         self.validate_hold(gap)?;
+                        // A default gap has no single edit position to rewind from.
+                        if matches!(gap.video, HoldVideo::Rewind { .. })
+                            || matches!(gap.audio, HoldAudio::Rewind { .. })
+                        {
+                            return Err(DocumentError::new(
+                                DocumentErrorCode::InvalidTree,
+                                "a Repeat's default gap cannot be a reversed passage",
+                            ));
+                        }
                     }
                     // The layout reads only these evaluated branch roots.
                     let branches: BTreeMap<NodeId, FrameDuration> = self
@@ -1962,6 +2011,14 @@ impl ProjectDocument {
         }
         match &recipe.video {
             HoldVideo::Background => {}
+            HoldVideo::Rewind { .. } => {
+                if recipe.picture_context.is_some() {
+                    return Err(DocumentError::new(
+                        DocumentErrorCode::InvalidTree,
+                        "a reversed passage takes the framing of what it rewinds and captures none",
+                    ));
+                }
+            }
             HoldVideo::Freeze { asset, timestamp } => {
                 if !self
                     .asset(asset)?
@@ -2057,6 +2114,22 @@ impl ProjectDocument {
                     return Err(DocumentError::new(
                         DocumentErrorCode::SourceRangeInvalid,
                         "a reversed span is at most 1,048,576 samples at 48 kHz (about 21.8 s)",
+                    ));
+                }
+            }
+            HoldAudio::Rewind { .. } => {
+                // The rewound window is the Hold's own length, read in one block.
+                let samples = crate::ExactRatio::new(
+                    i128::from(recipe.duration.frames())
+                        * i128::from(crate::MIX_SAMPLE_RATE)
+                        * i128::from(self.presentation_basis.frame_rate.denominator()),
+                    i128::from(self.presentation_basis.frame_rate.numerator()),
+                )?
+                .ceil()?;
+                if samples > MAX_HOLD_EFFECT_INPUT_SAMPLES {
+                    return Err(DocumentError::new(
+                        DocumentErrorCode::SourceRangeInvalid,
+                        "a reversed passage is at most 1,048,576 samples at 48 kHz (about 21.8 s)",
                     ));
                 }
             }

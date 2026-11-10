@@ -859,7 +859,8 @@ impl WorkControl<'_> {
             | AudioContent::Reverse { source, .. } => self.admit_dependency(&source.asset),
             AudioContent::Silence { .. }
             | AudioContent::Tone { .. }
-            | AudioContent::Tail { .. } => Ok(()),
+            | AudioContent::Tail { .. }
+            | AudioContent::Rewind { .. } => Ok(()),
         }
     }
 
@@ -2284,6 +2285,7 @@ impl StageAudio {
                     content @ (AudioContent::RoomTone { .. }
                     | AudioContent::Reverse { .. }
                     | AudioContent::Tail { .. }
+                    | AudioContent::Rewind { .. }
                     | AudioContent::Tone { .. }),
                 ) => {
                     // The root sample where this occurrence's local clock is
@@ -2710,6 +2712,100 @@ impl StageAudio {
         Ok(entry)
     }
 
+    /// The processed Original sound heard over the root `window` before a
+    /// Hold occurrence: time mapping, edges, Hold gates, and the gain, mute
+    /// and treatments of owners the Hold does not share (`shared`), in the
+    /// current plan. With `Sends`, only explicitly sent contributions of
+    /// `effect`. Reads in bounded blocks; the caller reserves the window
+    /// against this request's prepared frames and sets `feeding_tail`.
+    #[allow(clippy::too_many_arguments)]
+    fn read_heard_window(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        window: Range<AudioSample>,
+        tail_input: deadpan_core::TailInput,
+        effect: deadpan_core::TailEffect,
+        shared: &[authored_gain::OwnerIdentity],
+        control: WorkControl<'_>,
+        depth: usize,
+    ) -> Result<(Vec<[f32; 2]>, Dependencies, usize), StageAudioError> {
+        let (start, origin) = (window.start, window.end);
+        let plan = Arc::clone(&self.plan);
+        let mut input = Vec::with_capacity(
+            usize::try_from(origin.0 - start.0).map_err(|_| StageAudioError::Range)?,
+        );
+        let mut dependencies = Dependencies::new();
+        let mut relative_depth = 0;
+        let mut cursor = start;
+        while cursor.0 < origin.0 {
+            // The root reader, resampler, edge and bound readers all
+            // work in blocks of at most MAX_OUTPUT_FRAMES.
+            let maximum = if plan.has_audio_equalizers()
+                || plan.has_audio_wet_sends()
+                || plan.has_sound_treatments()
+                || tail_input == deadpan_core::TailInput::Sends
+            {
+                i64::from(MAX_EDGE_PREPARATION_FRAMES)
+            } else {
+                i64::from(MAX_OUTPUT_FRAMES)
+            };
+            let count = u32::try_from((origin.0 - cursor.0).min(maximum))
+                .map_err(|_| StageAudioError::Range)?;
+            let (block, heard) = if tail_input == deadpan_core::TailInput::Sends
+                || plan.has_audio_wet_sends()
+            {
+                let block = self.read_shared_input(
+                    provider,
+                    cursor,
+                    count,
+                    control,
+                    shared_eq::InputSelection {
+                        depth: depth + 1,
+                        sends: (tail_input == deadpan_core::TailInput::Sends).then_some(effect),
+                        skip: shared,
+                        original_only: tail_input == deadpan_core::TailInput::Original,
+                    },
+                )?;
+                let heard = block
+                    .samples
+                    .iter()
+                    .map(|frame| frame.map(f64::from))
+                    .collect();
+                (block, heard)
+            } else if plan.has_audio_equalizers() {
+                let block = self.read_authored_equalizers(
+                    provider,
+                    cursor,
+                    count,
+                    control,
+                    depth + 1,
+                    shared,
+                )?;
+                let heard = block
+                    .samples
+                    .iter()
+                    .map(|frame| frame.map(f64::from))
+                    .collect();
+                (block, heard)
+            } else {
+                let block =
+                    self.read_controlled(provider, cursor, count, control, true, depth + 1)?;
+                let heard =
+                    authored_gain::original_samples_except(&plan, &block, control, true, shared)?;
+                (block, heard)
+            };
+            dependencies.extend(block.dependencies);
+            relative_depth = relative_depth.max(1 + block.relative_depth);
+            input.extend(
+                heard
+                    .into_iter()
+                    .map(|frame| [frame[0] as f32, frame[1] as f32]),
+            );
+            cursor.0 += i64::from(count);
+        }
+        Ok((input, dependencies, relative_depth))
+    }
+
     /// `origin` is the root sample where this Hold occurrence starts, known
     /// only on the root grid; a live tail needs it to read what precedes it.
     fn prepare_hold(
@@ -2727,7 +2823,7 @@ impl StageAudio {
         let samples_per_frame =
             samples_per_frame(self.plan.metadata().presentation_basis.frame_rate)?;
         if let PreparedKey::Hold {
-            content: AudioContent::Tail { duration, .. },
+            content: AudioContent::Tail { duration, .. } | AudioContent::Rewind { duration, .. },
             ..
         } = &key
             && (self.feeding_tail || origin.is_none())
@@ -2736,7 +2832,8 @@ impl StageAudio {
             // another tail's input it counts as silent (tails never chain),
             // and on a point grid (an audio definition, a retained clock or a
             // policy query) it has no edit position and is silent. Neither
-            // substitute is cached: the root occurrence is heard in full.
+            // substitute is cached: the root occurrence is heard in full. A
+            // rewind follows the same rule (rewinds and tails never chain).
             let frames = u32::try_from(
                 samples_per_frame
                     .checked_mul(ExactRatio::integer(duration.frames()))?
@@ -2789,6 +2886,56 @@ impl StageAudio {
             self.active_frames -= reservation;
             return self.publish(key, result?, control);
         }
+        if let AudioContent::Rewind { bounce, duration } = content {
+            let origin = origin.ok_or(PlanError::InvalidPlan("rewind origin"))?;
+            let output_frames = u32::try_from(
+                samples_per_frame
+                    .checked_mul(ExactRatio::integer(duration.frames()))?
+                    .ceil()?,
+            )
+            .map_err(|_| StageAudioError::Limit("output frames"))?;
+            let window = rewind_window(
+                self.plan.metadata().presentation_basis.frame_rate,
+                origin,
+                *bounce,
+                *duration,
+            )?;
+            let input_frames = u32::try_from(window.end.0 - window.start.0)
+                .map_err(|_| StageAudioError::Limit("input frames"))?;
+            if i128::from(input_frames) > deadpan_core::MAX_HOLD_EFFECT_INPUT_SAMPLES {
+                return Err(StageAudioError::Limit("reversed passage input frames"));
+            }
+            let reservation = self.reserve(input_frames.max(1), output_frames, control)?;
+            // Owners shared with the pause apply once, to its output.
+            let shared = authored_gain::owners_at(&Arc::clone(&self.plan), origin, control)?;
+            let feeding = std::mem::replace(&mut self.feeding_tail, true);
+            let result = (|| {
+                let (input, dependencies, relative_depth) = self.read_heard_window(
+                    provider,
+                    window,
+                    deadpan_core::TailInput::Original,
+                    deadpan_core::TailEffect::Reverb,
+                    &shared,
+                    control,
+                    depth,
+                )?;
+                let samples = if input.is_empty() {
+                    vec![[0.0; 2]; output_frames as usize]
+                } else {
+                    crate::hold_effects::reverse(&input, output_frames, control.cancelled)?
+                };
+                control.check()?;
+                Ok::<_, StageAudioError>(SignalBlock {
+                    samples,
+                    dependencies,
+                    suppressed: SignalSuppressionMask::default(),
+                    relative_depth,
+                })
+            })();
+            self.feeding_tail = feeding;
+            self.active_frames -= reservation;
+            return self.publish(key, result?, control);
+        }
         if let AudioContent::Tail {
             maximum,
             effect,
@@ -2824,84 +2971,15 @@ impl StageAudio {
                 // treatments of owners the tail does not share, in the
                 // current plan. The window counts toward this request's
                 // prepared frames through the reservation above.
-                let mut input = Vec::with_capacity(input_frames as usize);
-                let mut dependencies = Dependencies::new();
-                let mut relative_depth = 0;
-                let mut cursor = start;
-                while cursor.0 < origin.0 {
-                    // The root reader, resampler, edge and bound readers all
-                    // work in blocks of at most MAX_OUTPUT_FRAMES.
-                    let maximum = if plan.has_audio_equalizers()
-                        || plan.has_audio_wet_sends()
-                        || plan.has_sound_treatments()
-                        || *tail_input == deadpan_core::TailInput::Sends
-                    {
-                        i64::from(MAX_EDGE_PREPARATION_FRAMES)
-                    } else {
-                        i64::from(MAX_OUTPUT_FRAMES)
-                    };
-                    let count = u32::try_from((origin.0 - cursor.0).min(maximum))
-                        .map_err(|_| StageAudioError::Range)?;
-                    let (block, heard) = if *tail_input == deadpan_core::TailInput::Sends
-                        || plan.has_audio_wet_sends()
-                    {
-                        let block = self.read_shared_input(
-                            provider,
-                            cursor,
-                            count,
-                            control,
-                            shared_eq::InputSelection {
-                                depth: depth + 1,
-                                sends: (*tail_input == deadpan_core::TailInput::Sends)
-                                    .then_some(effect),
-                                skip: &shared,
-                                original_only: *tail_input == deadpan_core::TailInput::Original,
-                            },
-                        )?;
-                        let heard = block
-                            .samples
-                            .iter()
-                            .map(|frame| frame.map(f64::from))
-                            .collect();
-                        (block, heard)
-                    } else if plan.has_audio_equalizers() {
-                        let block = self.read_authored_equalizers(
-                            provider,
-                            cursor,
-                            count,
-                            control,
-                            depth + 1,
-                            &shared,
-                        )?;
-                        let heard = block
-                            .samples
-                            .iter()
-                            .map(|frame| frame.map(f64::from))
-                            .collect();
-                        (block, heard)
-                    } else {
-                        let block = self.read_controlled(
-                            provider,
-                            cursor,
-                            count,
-                            control,
-                            true,
-                            depth + 1,
-                        )?;
-                        let heard = authored_gain::original_samples_except(
-                            &plan, &block, control, true, &shared,
-                        )?;
-                        (block, heard)
-                    };
-                    dependencies.extend(block.dependencies);
-                    relative_depth = relative_depth.max(1 + block.relative_depth);
-                    input.extend(
-                        heard
-                            .into_iter()
-                            .map(|frame| [frame[0] as f32, frame[1] as f32]),
-                    );
-                    cursor.0 += i64::from(count);
-                }
+                let (input, dependencies, relative_depth) = self.read_heard_window(
+                    provider,
+                    start..origin,
+                    *tail_input,
+                    effect,
+                    &shared,
+                    control,
+                    depth,
+                )?;
                 let samples = if input.is_empty() {
                     vec![[0.0; 2]; output_frames as usize]
                 } else {
@@ -2929,6 +3007,7 @@ impl StageAudio {
             AudioContent::Source { .. }
             | AudioContent::Silence { .. }
             | AudioContent::Tail { .. }
+            | AudioContent::Rewind { .. }
             | AudioContent::Tone { .. } => {
                 return Err(PlanError::InvalidPlan("Hold audio preparation key").into());
             }
@@ -2975,6 +3054,7 @@ impl StageAudio {
                 AudioContent::Source { .. }
                 | AudioContent::Silence { .. }
                 | AudioContent::Tail { .. }
+                | AudioContent::Rewind { .. }
                 | AudioContent::Tone { .. } => {
                     return Err(PlanError::InvalidPlan("Hold audio preparation key").into());
                 }
@@ -4281,6 +4361,7 @@ impl StageAudio {
                         content @ (AudioContent::RoomTone { .. }
                         | AudioContent::Reverse { .. }
                         | AudioContent::Tail { .. }
+                        | AudioContent::Rewind { .. }
                         | AudioContent::Tone { .. }),
                     ) => {
                         let prepared = self.prepare_hold(
@@ -4557,6 +4638,7 @@ impl StageAudio {
                                 content @ (AudioContent::RoomTone { .. }
                                 | AudioContent::Reverse { .. }
                                 | AudioContent::Tail { .. }
+                                | AudioContent::Rewind { .. }
                                 | AudioContent::Tone { .. }),
                             ) => {
                                 let prepared = {
@@ -5069,6 +5151,47 @@ fn build_room_tone(
 /// A hanging tail is fed by at most two seconds of what precedes it.
 const TAIL_INPUT_FRAMES: i64 = 96_000;
 
+/// The root samples a rewind reverses: the Hold's own length of project
+/// frames ending at its occurrence's first frame `S` (`S - 1` with
+/// `bounce`), on the exact round-even frame boundaries. `origin` is the
+/// sample boundary of `S`; an origin between boundaries (only possible
+/// through a fractional retained clock) keeps the same sample length from
+/// it. Nothing before root zero is heard.
+pub(crate) fn rewind_window(
+    rate: deadpan_core::FrameRate,
+    origin: AudioSample,
+    bounce: bool,
+    duration: FrameDuration,
+) -> Result<Range<AudioSample>, StageAudioError> {
+    let guess = i64::try_from(
+        i128::from(origin.0) * i128::from(rate.numerator())
+            / (i128::from(deadpan_core::MIX_SAMPLE_RATE) * i128::from(rate.denominator())),
+    )
+    .map_err(|_| StageAudioError::Range)?;
+    let boundary = |frame: i64| rate.audio_boundary(deadpan_core::ProjectFrame(frame));
+    let frame = (guess - 1..=guess + 1)
+        .map(|frame| boundary(frame).map(|sample| (frame, sample)))
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        .find(|(_, sample)| *sample == origin)
+        .map(|(frame, _)| frame);
+    let (start, end) = match frame {
+        Some(frame) => {
+            let end = frame - i64::from(bounce);
+            (boundary(end - duration.frames())?, boundary(end)?)
+        }
+        None => {
+            let skip = boundary(i64::from(bounce))?.0;
+            let length = boundary(duration.frames())?.0;
+            (
+                AudioSample(origin.0 - skip - length),
+                AudioSample(origin.0 - skip),
+            )
+        }
+    };
+    Ok(AudioSample(start.0.max(0))..AudioSample(end.0.max(0)))
+}
+
 fn query_limits() -> AudioQueryLimits {
     AudioQueryLimits {
         maximum_spans: MAX_OUTPUT_FRAMES as usize,
@@ -5086,6 +5209,7 @@ fn preflight(content: &AudioContent, plan: &RenderPlan) -> Result<(), StageAudio
         AudioContent::RoomTone { .. }
         | AudioContent::Reverse { .. }
         | AudioContent::Tail { .. }
+        | AudioContent::Rewind { .. }
         | AudioContent::Tone { .. } => Ok(()),
         AudioContent::Source {
             source, duration, ..

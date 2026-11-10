@@ -6170,14 +6170,16 @@ fn beat_kind(kind: &NodeKind) -> String {
                 deadpan_core::HoldVideo::Freeze { .. } => "freeze",
                 deadpan_core::HoldVideo::Accepted { .. }
                 | deadpan_core::HoldVideo::Generated { .. } => "AI pictures",
-                deadpan_core::HoldVideo::Reverse { .. } => "reversed",
+                deadpan_core::HoldVideo::Reverse { .. }
+                | deadpan_core::HoldVideo::Rewind { .. } => "reversed",
                 deadpan_core::HoldVideo::Play { .. } => "replayed",
             },
             match &recipe.audio {
                 deadpan_core::HoldAudio::Silence => "silence",
                 deadpan_core::HoldAudio::RoomTone { .. } => "room tone",
                 deadpan_core::HoldAudio::Tail { .. } => "tail",
-                deadpan_core::HoldAudio::Reverse { .. } => "reversed sound",
+                deadpan_core::HoldAudio::Reverse { .. }
+                | deadpan_core::HoldAudio::Rewind { .. } => "reversed sound",
                 deadpan_core::HoldAudio::Tone { .. } => "tone",
             }
         ),
