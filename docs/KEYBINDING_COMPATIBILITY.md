@@ -5,6 +5,15 @@ binding is **`,i`**, with **`:insert`** retained. `⌘Return` belongs to Kestrel
 Ghostty launcher. Reuse runs once, rejects a count, does not repeat while held,
 and does not activate inside text entry or IME composition.
 
+Command-line Tab completion (2026-11-10) adds no editor path and no modified
+shortcut. Tab, Shift+Tab, Down and Up complete only while the open command line
+owns focus and no IME composition is active; the field claims Tab from egui's
+focus movement only then. Escape still cancels entry, and outside the command
+line Tab and Shift+Tab keep cycling panes (the `command-arguments` replay checks
+both). Kestrel's reserved `Cmd`, `Ctrl` and `Option` chords are untouched; the
+production-router audit in `cargo xtask check` passes unchanged and the routing
+baseline did not change.
+
 The comma prefix remains usable while browsing the Original so `,i` can copy it
 into Your edit. Other edit operators keep the Original non-destructive. Native
 text editing retains its own selection, clipboard, undo, and redo behavior.

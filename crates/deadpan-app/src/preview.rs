@@ -314,6 +314,12 @@ pub struct DeadpanApp {
     /// Saved gag preset names read once per command entry for argument
     /// completion; `None` while the command line is closed.
     command_gag_presets: Option<Option<Vec<String>>>,
+    /// The command line's active Tab completion cycle.
+    command_cycle: Option<navigation::command::complete::Cycle>,
+    /// A Tab, Shift+Tab, Down or Up the command line has not applied yet:
+    /// whether it steps backwards. Applied after the field has processed
+    /// the text typed before it in the same batch.
+    command_tab: Option<bool>,
     /// Where bundled synthesized sounds are written before import.
     bundled_sounds: Option<PathBuf>,
 }
@@ -514,6 +520,8 @@ impl DeadpanApp {
             jobs: jobs::State::default(),
             gag_presets: crate::gag_presets::GagPresets::native(),
             command_gag_presets: None,
+            command_cycle: None,
+            command_tab: None,
             bundled_sounds: crate::keymap_file::application_support_directory()
                 .ok()
                 .map(|directory| directory.join("Deadpan").join("Sounds")),
@@ -2860,6 +2868,27 @@ impl DeadpanApp {
                     });
                     continue;
                 }
+                if let Some(reverse) = self.command_tab_key(context, key, modifiers, ime) {
+                    // Like Enter, Tab completes only after the field has
+                    // processed the text typed before it; the later events
+                    // run in order in the next outer frame.
+                    self.command_tab = Some(reverse);
+                    self.bindings.clear();
+                    self.deferred_text_input = context.input_mut(|input| {
+                        editor_input::take_field_tail(
+                            &mut input.events,
+                            &egui::Event::Key {
+                                key,
+                                physical_key,
+                                modifiers,
+                                pressed,
+                                repeat,
+                            },
+                        )
+                    });
+                    context.request_repaint();
+                    break;
+                }
                 if let Some(text_action) = navigation::text_action(key, modifiers, focused, ime) {
                     text_result = Some((text_action, self.command_open));
                     self.deferred_text_input = context.input_mut(|input| {
@@ -4002,9 +4031,11 @@ impl DeadpanApp {
         // first paint so the reserve already includes it.
         let completion = if self.command_open {
             let context = self.command_context();
-            command_completion(&self.command, &context)
+            command_completion(&self.command, &context, self.command_cycle.as_ref())
         } else {
             self.command_gag_presets = None;
+            self.command_cycle = None;
+            self.command_tab = None;
             None
         };
         // Reserve the most completion rows for the whole entry, so the footer
@@ -4108,6 +4139,12 @@ impl DeadpanApp {
                         retain_text_escape(ui, COMMAND_ID);
                     });
                 });
+                let completion = if self.apply_command_tab(ui.ctx()) {
+                    let context = self.command_context();
+                    command_completion(&self.command, &context, self.command_cycle.as_ref())
+                } else {
+                    completion
+                };
                 if let Some(completion) = &completion {
                     // Completion teaching: matching commands, or the verb's
                     // next argument, its values and what it acts on. Each row
@@ -4132,6 +4169,7 @@ impl DeadpanApp {
                 }
                 ui.horizontal_wrapped(|ui| {
                     style::key_hint(ui, "Enter", "apply command");
+                    style::key_hint(ui, "Tab", "complete");
                     style::key_hint(ui, "Esc", "cancel entry");
                     let group_entry = self.command.trim_start().trim_start_matches(':').split_whitespace().next().is_some_and(|verb| verb.eq_ignore_ascii_case("group"));
                     ui.weak(if group_entry { "Name the selection · use quotes, for example name=\"the answer\"" } else { sound_events::command_hint(&self.command).unwrap_or("Whole project frames: 11f · repeat count: total plays") });
@@ -6414,7 +6452,9 @@ fn retain_text_escape(ui: &egui::Ui, id: &str) {
                 escape: true,
                 horizontal_arrows: true,
                 vertical_arrows: true,
-                tab: false,
+                // The command line completes on Tab; other fields leave it
+                // to native focus movement.
+                tab: id == egui::Id::new(COMMAND_ID),
             },
         )
     });
@@ -6556,43 +6596,107 @@ struct Completion {
 }
 
 /// Command-line completion: up to four matching verb usages while the verb
-/// is typed; once it is complete, its argument schema's guide.
+/// is typed; once it is complete, its argument schema's guide. The candidate
+/// Tab inserts is marked `▸`; during a Tab cycle the values row lists the
+/// cycle's candidates instead.
 fn command_completion(
     command: &str,
     context: &navigation::command::schema::Context,
+    cycle: Option<&navigation::command::complete::Cycle>,
 ) -> Option<Completion> {
-    let matches = navigation::command::completions(command);
-    if matches.is_empty() {
+    let cycling = cycle.and_then(|cycle| Some((cycle.items(), cycle.current(command)?)));
+    let tab = navigation::command::complete::candidates(command, context);
+    let cycle_row = |items: &[String], index: usize| {
+        items
+            .iter()
+            .enumerate()
+            .map(|(position, item)| {
+                if position == index {
+                    format!("▸{}", item.trim_end())
+                } else {
+                    item.trim_end().to_owned()
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("  ")
+    };
+    let tab_spoken = |item: &str| format!(" Tab inserts {}.", item.trim_end());
+    let mut matches = navigation::command::completions(command);
+    let mut completion = if matches.is_empty() {
         let guide = navigation::command::schema::guide(command, context)?;
         let mut rows = Vec::new();
         if let Some(problem) = &guide.problem {
             rows.push((problem.clone(), CompletionTone::Problem));
         }
         rows.push((format!("next: {}", guide.next), CompletionTone::Next));
-        if !guide.candidates.is_empty() {
-            rows.push((guide.candidates.join("  "), CompletionTone::Values));
+        if !guide.candidates.is_empty() && cycling.is_none() {
+            let mut candidates = guide.candidates.clone();
+            if tab.is_some() {
+                candidates[0] = format!("▸{}", candidates[0]);
+            }
+            rows.push((candidates.join("  "), CompletionTone::Values));
         }
         rows.push((format!("acts on {}", guide.target), CompletionTone::Target));
-        return Some(Completion {
+        let mut spoken = guide.spoken();
+        if let (Some(tab), None) = (&tab, cycling) {
+            spoken.push_str(&tab_spoken(&tab.items[0]));
+        }
+        Completion {
             rows,
-            spoken: guide.spoken(),
+            spoken,
             problem: guide.problem.is_some(),
-        });
+        }
+    } else {
+        // List first the verb Tab inserts.
+        if let (Some(tab), None) = (&tab, cycling) {
+            let verb = format!(":{}", tab.items[0].trim_end());
+            if let Some(position) = matches.iter().position(|usage| {
+                usage
+                    .strip_prefix(verb.as_str())
+                    .is_some_and(|rest| rest.is_empty() || rest.starts_with(' '))
+            }) {
+                let usage = matches.remove(position);
+                matches.insert(0, usage);
+            }
+        }
+        let mut shown = matches
+            .iter()
+            .take(4)
+            .copied()
+            .collect::<Vec<_>>()
+            .join("  ·  ");
+        if matches.len() > 4 {
+            shown.push_str(&format!("  ·  +{} more", matches.len() - 4));
+        }
+        let mut spoken = format!("Matching commands: {}", matches.join(" · "));
+        if let (Some(tab), None) = (&tab, cycling) {
+            shown = format!("▸{shown}");
+            spoken.push('.');
+            spoken.push_str(&tab_spoken(&tab.items[0]));
+        }
+        Completion {
+            rows: vec![(shown, CompletionTone::Next)],
+            spoken,
+            problem: false,
+        }
+    };
+    if let Some((items, index)) = cycling {
+        let row = (cycle_row(items, index), CompletionTone::Values);
+        let at = completion
+            .rows
+            .iter()
+            .position(|(_, tone)| *tone == CompletionTone::Target)
+            .unwrap_or(completion.rows.len());
+        completion.rows.insert(at, row);
+        completion.rows.truncate(MAX_COMPLETION_ROWS);
+        completion.spoken.push_str(&format!(
+            " Completing: {} of {}, {}.",
+            index + 1,
+            items.len(),
+            items[index].trim_end()
+        ));
     }
-    let mut shown = matches
-        .iter()
-        .take(4)
-        .copied()
-        .collect::<Vec<_>>()
-        .join("  ·  ");
-    if matches.len() > 4 {
-        shown.push_str(&format!("  ·  +{} more", matches.len() - 4));
-    }
-    Some(Completion {
-        rows: vec![(shown, CompletionTone::Next)],
-        spoken: format!("Matching commands: {}", matches.join(" · ")),
-        problem: false,
-    })
+    Some(completion)
 }
 
 fn pane_id(pane: Pane) -> egui::Id {
@@ -6694,7 +6798,7 @@ mod tests {
     #[test]
     fn completion_row_truncates_to_four_and_names_every_match_accessibly() {
         let context = crate::navigation::command::schema::Context::default();
-        let completion = super::command_completion("caption hi ", &context).unwrap();
+        let completion = super::command_completion("caption hi ", &context, None).unwrap();
         let rows: Vec<_> = completion
             .rows
             .iter()
@@ -6718,7 +6822,7 @@ mod tests {
                 .spoken
                 .contains("Acts on the selected beat (none selected).")
         );
-        let completion = super::command_completion(":hold 1.5x ", &context).unwrap();
+        let completion = super::command_completion(":hold 1.5x ", &context, None).unwrap();
         assert!(completion.problem);
         assert_eq!(
             completion.rows[0],
@@ -6727,17 +6831,20 @@ mod tests {
                 super::CompletionTone::Problem
             )
         );
-        let completion = super::command_completion(":cap", &context).unwrap();
+        let completion = super::command_completion(":cap", &context, None).unwrap();
+        // The verb Tab inserts is marked and spoken.
         assert_eq!(
             completion.rows[0].0,
-            ":caption TEXT [at=bottom|top|center] [delay=4f] [reveal=3]"
+            "▸:caption TEXT [at=bottom|top|center] [delay=4f] [reveal=3]"
         );
         assert!(
-            completion
-                .spoken
-                .ends_with(":caption TEXT [at=bottom|top|center] [delay=4f] [reveal=3]")
+            completion.spoken.ends_with(
+                ":caption TEXT [at=bottom|top|center] [delay=4f] [reveal=3]. Tab inserts caption."
+            ),
+            "{}",
+            completion.spoken
         );
-        let completion = super::command_completion("s", &context).unwrap();
+        let completion = super::command_completion("s", &context, None).unwrap();
         let total = crate::navigation::command::completions("s").len();
         assert!(total > 4);
         assert!(
@@ -6746,6 +6853,96 @@ mod tests {
                 .ends_with(&format!("+{} more", total - 4))
         );
         assert_eq!(completion.spoken.matches(" · ").count(), total - 1);
+    }
+
+    #[test]
+    fn a_tab_cycle_lists_its_candidates_with_the_current_one_marked() {
+        let context = crate::navigation::command::schema::Context::default();
+        let marked = super::command_completion(":ramp 1 2 pitch=", &context, None).unwrap();
+        assert!(
+            marked
+                .rows
+                .iter()
+                .any(|(text, _)| text == "▸pitch=preserve  pitch=tape"),
+            "{marked:?}"
+        );
+        assert!(marked.spoken.ends_with("Tab inserts pitch=preserve."));
+        let mut cycle = None;
+        let first = crate::navigation::command::complete::step(
+            &mut cycle,
+            ":ramp 1 2 pitch=",
+            &context,
+            false,
+        )
+        .unwrap();
+        let second =
+            crate::navigation::command::complete::step(&mut cycle, &first, &context, false)
+                .unwrap();
+        let completion = super::command_completion(&second, &context, cycle.as_ref()).unwrap();
+        assert!(
+            completion.rows.contains(&(
+                "pitch=preserve  ▸pitch=tape".to_owned(),
+                super::CompletionTone::Values
+            )),
+            "{completion:?}"
+        );
+        assert!(completion.rows.len() <= super::MAX_COMPLETION_ROWS);
+        assert!(
+            completion
+                .spoken
+                .ends_with("Completing: 2 of 2, pitch=tape.")
+        );
+        // Typing ends the cycle's row.
+        let typed =
+            super::command_completion(&format!("{second}s"), &context, cycle.as_ref()).unwrap();
+        assert!(!typed.spoken.contains("Completing"));
+    }
+
+    #[test]
+    fn command_tab_keys_step_forwards_and_backwards_only_unmodified() {
+        use super::command_guide::command_tab_step;
+        let shift = egui::Modifiers::SHIFT;
+        assert_eq!(
+            command_tab_step(egui::Key::Tab, egui::Modifiers::NONE),
+            Some(false)
+        );
+        assert_eq!(command_tab_step(egui::Key::Tab, shift), Some(true));
+        assert_eq!(
+            command_tab_step(egui::Key::ArrowDown, egui::Modifiers::NONE),
+            Some(false)
+        );
+        assert_eq!(
+            command_tab_step(egui::Key::ArrowUp, egui::Modifiers::NONE),
+            Some(true)
+        );
+        assert_eq!(
+            command_tab_step(egui::Key::Tab, egui::Modifiers::CTRL),
+            None
+        );
+        assert_eq!(command_tab_step(egui::Key::ArrowDown, shift), None);
+        assert_eq!(
+            command_tab_step(egui::Key::Enter, egui::Modifiers::NONE),
+            None
+        );
+        use super::command_guide::command_tab_admitted;
+        let none = egui::Modifiers::NONE;
+        assert_eq!(
+            command_tab_admitted(true, true, false, egui::Key::Tab, none),
+            Some(false)
+        );
+        // IME composition owns Tab and the arrows: nothing completes.
+        for key in [egui::Key::Tab, egui::Key::ArrowDown, egui::Key::ArrowUp] {
+            assert_eq!(command_tab_admitted(true, true, true, key, none), None);
+        }
+        // Outside the focused command line, Tab keeps cycling panes.
+        assert_eq!(
+            command_tab_admitted(false, false, false, egui::Key::Tab, none),
+            None
+        );
+        assert_eq!(
+            command_tab_admitted(true, false, false, egui::Key::Tab, none),
+            None
+        );
     }
 
     use super::*;

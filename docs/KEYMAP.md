@@ -432,9 +432,13 @@ Once a verb is complete, its declarative argument schema
 ([`command/schema/table.rs`](../crates/deadpan-app/src/navigation/command/schema/table.rs))
 drives the command line. Each schema lists positional values and `key=value`
 parameters with a type (durations in `f`, `ms` or `s`, speeds, scales, dB,
-semitones, percentages, counts, frame ranges, choices, register, mark, target
-and gag names, or free text), a default or what omitting it means, and the
-selector the command acts on. While typing, up to four rows sit under the field:
+semitones, percentages, counts, frame ranges, EQ band levels and cutoffs,
+envelope frames and levels, frequencies, 48 kHz samples, tag lists, JSON node,
+range and search selectors, choices such as color interpretations, register,
+mark, target and gag names, free text, or text to the end of the line such as
+`:generate text=`), a default or what omitting it means, the selector the
+command acts on, and rules between parameters. Every registry verb declares a
+schema; a test refuses a verb whose usage shows arguments its schema lacks. While typing, up to four rows sit under the field:
 an inline problem naming the offending parameter (`pitch=q is not one of
 preserve, tape`, `colour= is not a parameter of :hold; it takes video, audio`),
 the expected next value with its meaning, type, units and default, the values
@@ -443,8 +447,38 @@ built-in gags and saved presets, or the remaining parameters with their
 defaults, such as `gap=duration (keeps)`), and what the command acts on now
 (`the selected Repeat Hello (Repeat · 2 total plays, 48 f)`, `the Visual range
 [12..40) 28 f`). The first row's accessible text carries every row untruncated
-plus the usage line, and a problem row is a polite live region. Typing remains
-ordinary native text editing; nothing completes automatically.
+plus the usage line, and a problem row is a polite live region.
+
+A rule between parameters is declared once in the schema (`Excludes` or
+`Requires`) and reported as a live problem as soon as the second parameter is
+typed: `:repeat 3 gap=6f role=` reads `role= cannot be combined with gap=: a
+role repeat adds no gaps or per-play changes`. The same rules hide excluded
+parameters from the offered list (after `role=audio`, `:repeat` offers only
+`overflow=` and `extend=`). Declared rules cover `:repeat` (role against every
+escalation parameter, `gap-step=` needs `gap=`, `overflow=` and `extend=` need
+`role=` and exclude each other), `:audio-shift` (one overflow policy) and
+`:select` (one selector form). A test breaks each declared rule and requires
+both the parser's refusal and the guide's problem.
+
+Tab completes in the command line. The candidate Tab inserts is marked `▸`:
+the first matching verb (an exact verb, then shorter verbs first) while the verb
+is typed, otherwise the first value or parameter the guide offers. Tab replaces
+the word being typed, or adds a word after a space: a verb gains a trailing
+space, a parameter name its `=` (`:repeat 3 g` becomes `:repeat 3 gap=`), and a
+value or known name its trailing space, inserting the value rather than its
+label (`q`, not `q (macro)`). Repeated Tab or Down moves to the next candidate,
+Shift+Tab or Up to the previous, replacing the same word; the values row then
+lists the cycle's candidates with the current one marked, and its accessible
+text says `Completing: 2 of 2, pitch=tape`. Any other edit ends the cycle.
+Down and Up step only while something can complete, so they keep their native
+meaning otherwise. Like Enter, a Tab is applied after the field has processed
+the text typed before it in the same batch; the later events run in order in
+the next outer frame. Nothing completes during IME composition, Escape still
+cancels entry, and outside the focused command line Tab and Shift+Tab keep
+cycling panes. The field claims Tab from egui's focus movement only while the
+command line owns focus. Tab is a fixed native key of the command line, not a
+configurable path, and does not touch the Kestrel reservations (`Cmd`, `Ctrl`
+and `Option` chords).
 
 Value checks call the same value parsers the verbs execute with, so the guide
 and Enter agree. Per-verb parsers remain the execution path; `:zoom`, `:creep`
@@ -452,19 +486,21 @@ and `:caption` read their parameter names from the schema. Unit tests run every
 schema example through the parser, require every declared parameter to appear in
 a parsed example, substitute every declared choice and an invalid value for
 every typed parameter into the parser and the guide, refuse an undeclared
-parameter in both, and require every registry verb to have a schema or an
-explicit reason. The generated [command reference](COMMANDS.md#command-arguments)
-prints each schema's usage line and parameter table. The `command-arguments`
-replay types `:repeat 3 `, `:ramp 1 2 pitch=`, an invalid value and an unknown
-parameter through the production command line.
+parameter in both, break each declared rule in both, and require every
+registry verb to declare a schema. The generated [command reference](COMMANDS.md#command-arguments)
+prints each schema's usage line, parameter table and rules. The
+`command-arguments` replay types `:repeat 3 `, `:ramp 1 2 pitch=`, an invalid
+value and an unknown parameter through the production command line, completes
+`:rep<Tab>`, `:repeat 3 g<Tab>` and cycles `:ramp 1 2 pitch=<Tab>` with Tab,
+Shift+Tab, Down and Up, shows the `role=` conflict, and checks that Tab still
+cycles panes after Escape.
 
 ## Remaining work
 
 Current configuration covers Normal and timeline Visual paths and their teaching.
-Mode keys are declared and verified in the registry but fixed. Command
-arguments of the verbs listed under "Verbs with usage-inferred arguments" in
-[COMMANDS.md](COMMANDS.md#command-arguments) still check only units and choices
-inferred from their usage; each records why.
+Mode keys are declared and verified in the registry but fixed. Command-line
+completion does not yet complete inside JSON selector values or mark ids, and
+`:track` cannot offer its trailing `through-shots` word.
 The `layouts` replay drives German QWERTZ and French AZERTY presses, as
 egui-winit 0.36 delivers them on macOS, through the production router, and
 drives Russian ЙЦУКЕН letters at their physical positions, and composes

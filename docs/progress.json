@@ -2107,7 +2107,7 @@
               "docs/KEYMAP.md#command-arguments",
               "docs/COMMANDS.md#command-arguments"
             ],
-            "remaining": "Declarative schemas drive completion, inline validation, default-selector display and the generated reference for 123 verbs; 25 verbs (selectors, moments, equalizer, envelope, generation, sends, tail, bleep, audio-shift and placed-sound values) keep usage-inferred checks with recorded reasons. Tab completion is not offered.",
+            "remaining": "Every registry verb (148) declares its arguments; declarative schemas drive completion, Tab insertion and cycling, inline validation including declared cross-parameter rules, default-selector display and the generated reference. Completion inside JSON selector values and mark ids, :track's trailing through-shots word, and physical-keyboard, native IME and VoiceOver acceptance of Tab completion remain open.",
             "normative": "6.4"
           }
         ]

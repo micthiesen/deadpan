@@ -4,6 +4,7 @@ use deadpan_core::FrameDuration;
 
 use super::{Action, BeatEdit, duration::DurationInput};
 
+pub mod complete;
 mod equalizer;
 pub(crate) mod generate;
 pub(crate) mod interpretation;

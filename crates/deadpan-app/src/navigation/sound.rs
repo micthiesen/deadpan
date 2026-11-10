@@ -146,7 +146,7 @@ pub(super) fn parse(verb: &str, argument: Option<&str>) -> Result<SoundAction, S
     }
 }
 
-fn onset(argument: Option<&str>) -> Result<AudioSample, String> {
+pub(crate) fn onset(argument: Option<&str>) -> Result<AudioSample, String> {
     let invalid = || {
         "Use :sound-at N with a nonnegative whole number of 48 kHz samples, for example 274000."
             .to_owned()
@@ -158,7 +158,7 @@ fn onset(argument: Option<&str>) -> Result<AudioSample, String> {
     input.parse::<i64>().map(AudioSample).map_err(|_| invalid())
 }
 
-fn gain(argument: Option<&str>) -> Result<i32, String> {
+pub(crate) fn gain(argument: Option<&str>) -> Result<i32, String> {
     let invalid = || {
         "Use :sound-gain -3 with exact dB from -96 to 24 and at most three decimal places."
             .to_owned()

@@ -5,22 +5,17 @@
 //! its usage line and parameter table, and the per-verb parsers that execute
 //! a command are tested to accept exactly the names and values it declares.
 //!
-//! Verbs not yet described here keep guidance inferred from their registry
-//! usage and must give a reason in [`table::REASONS`].
+//! Every registry verb declares a schema; a test enforces it.
 
-use std::sync::LazyLock;
-
-use crate::navigation::registry::{Contexts, SPECS};
+#[cfg(test)]
+use crate::navigation::registry::SPECS;
 
 mod table;
 #[cfg(test)]
 mod tests;
 mod types;
 
-#[cfg(test)]
-pub use table::REASONS;
 pub use table::SCHEMAS;
-pub use types::*;
 
 /// A typed value. `check` delegates to the same value parser the verb's
 /// execution path uses, so a value the guide accepts is one Enter accepts.
@@ -70,6 +65,9 @@ pub enum Kind {
     Name(Names),
     /// Free text; never rejected while typing.
     Text,
+    /// Free text to the end of the line, spaces and `=` included
+    /// (`text=Keep the hands still.`); only as a parameter, and last.
+    Rest,
 }
 
 /// What omitting a parameter means.
@@ -127,6 +125,8 @@ pub enum Selector {
     BeatOrCursor,
     /// The selected pause.
     Pause,
+    /// The selected pause, else a new pause at the Edit cursor.
+    PauseOrCursor,
     /// The selected Source beat (and its right neighbour for Roll).
     SourceBeat,
     /// The enclosing Repeat contents' plays.
@@ -147,6 +147,49 @@ pub enum Selector {
     View,
 }
 
+/// A rule between parameters that each value check alone cannot see. The
+/// command line reports a broken rule while typing; tests prove the parser
+/// refuses the same combination.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Constraint {
+    /// The first parameter cannot be combined with any of the others; the
+    /// text says why.
+    Excludes(&'static str, &'static [&'static str], &'static str),
+    /// The first parameter needs the second.
+    Requires(&'static str, &'static str),
+}
+
+impl Constraint {
+    /// The first broken rule among the given parameter names.
+    fn broken(self, used: &[&str]) -> Option<String> {
+        match self {
+            Self::Excludes(name, others, why) if used.contains(&name) => others
+                .iter()
+                .find(|other| used.contains(other))
+                .map(|other| format!("{name}= cannot be combined with {other}=: {why}")),
+            Self::Requires(name, needed) if used.contains(&name) && !used.contains(&needed) => {
+                Some(format!("{name}= needs {needed}="))
+            }
+            _ => None,
+        }
+    }
+
+    #[cfg(test)]
+    pub fn describe(self) -> String {
+        match self {
+            Self::Excludes(name, others, why) => format!(
+                "`{name}=` cannot be combined with {}: {why}",
+                others
+                    .iter()
+                    .map(|other| format!("`{other}=`"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
+            Self::Requires(name, needed) => format!("`{name}=` needs `{needed}=`"),
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct ArgSchema {
     pub selector: Selector,
@@ -157,6 +200,8 @@ pub struct ArgSchema {
     /// The last positional takes every remaining plain word (text, labels).
     pub rest_text: bool,
     pub variants: &'static [Variant],
+    /// Rules between parameters.
+    pub constraints: &'static [Constraint],
     /// Complete valid commands; tests run each through the parser.
     #[cfg_attr(
         not(test),
@@ -174,6 +219,7 @@ impl ArgSchema {
             forms: &[],
             rest_text: false,
             variants: &[],
+            constraints: &[],
             examples: &[],
         }
     }
@@ -233,14 +279,9 @@ impl ArgSchema {
     }
 }
 
-/// A schema for `verb`: declared, else inferred from its registry usage.
+/// A verb's schema. Every registry verb declares one.
 pub fn lookup(verb: &str) -> Option<&'static ArgSchema> {
-    declared(verb).or_else(|| {
-        INFERRED
-            .iter()
-            .find(|(known, _)| known.eq_ignore_ascii_case(verb))
-            .map(|(_, schema)| schema)
-    })
+    declared(verb)
 }
 
 pub fn declared(verb: &str) -> Option<&'static ArgSchema> {
@@ -313,6 +354,7 @@ impl Selector {
             Self::BeatAtCursor => "the beat under the Edit cursor, cut at the cursor",
             Self::BeatOrCursor => "the selected beat, else the Edit cursor",
             Self::Pause => "the selected pause",
+            Self::PauseOrCursor => "the selected pause, else a new pause at the Edit cursor",
             Self::SourceBeat => "the selected Source beat",
             Self::Plays => "the plays of the open Repeat contents",
             Self::Gag => "the selected inserted gag",
@@ -367,6 +409,10 @@ impl Selector {
                 ),
                 None => format!("the selected pause ({none})"),
             },
+            Self::PauseOrCursor => match beat {
+                Some(beat) if beat.is("Pause") => format!("the selected pause {}", beat.text()),
+                _ => format!("a new pause at {}", cursor()),
+            },
             Self::SourceBeat => match beat {
                 Some(beat) if beat.is("Source") || beat.is("Fragment") => {
                     format!("the selected Source beat {}", beat.text())
@@ -418,8 +464,11 @@ impl Selector {
 pub struct Guide {
     /// The expected next value: name, meaning, type and units, default.
     pub next: String,
-    /// Values or parameters to type next.
+    /// Values or parameters to type next, as shown.
     pub candidates: Vec<String>,
+    /// For each candidate, the text Tab puts in place of the word being
+    /// typed (or after the last word): `gap=`, `preserve`, `q`.
+    pub inserts: Vec<String>,
     /// The first value or parameter that does not fit, naming it.
     pub problem: Option<String>,
     /// What the command acts on now.
@@ -453,7 +502,7 @@ fn short_hint(kind: &Kind) -> String {
             format!("{}|{}", choices.join("|"), ty.name.replace(' ', "-"))
         }
         Kind::Name(names) => names.hint().to_owned(),
-        Kind::Text => "text".into(),
+        Kind::Text | Kind::Rest => "text".into(),
     }
 }
 
@@ -568,6 +617,7 @@ impl Kind {
             }
             Self::Name(names) => names.long().to_owned(),
             Self::Text => "text".into(),
+            Self::Rest => "text to the end of the line".into(),
         }
     }
 
@@ -585,24 +635,23 @@ impl Kind {
                 ty.units
             )),
             Self::Name(names) => names.check(value, context),
-            Self::Text => Ok(()),
+            Self::Text | Self::Rest => Ok(()),
         }
     }
 
-    /// Complete values to offer for a typed prefix, with their labels.
-    fn candidates(&self, prefix: &str, context: &Context) -> Vec<String> {
+    /// Complete values to offer for a typed prefix: value and label.
+    fn candidates(&self, prefix: &str, context: &Context) -> Vec<(String, String)> {
         let words: Vec<(String, String)> = match self {
             Self::Choice(choices) | Self::ChoiceOr(choices, _) => choices
                 .iter()
                 .map(|choice| ((*choice).to_owned(), (*choice).to_owned()))
                 .collect(),
             Self::Name(names) => names.known(context),
-            Self::Typed(_) | Self::Text => Vec::new(),
+            Self::Typed(_) | Self::Text | Self::Rest => Vec::new(),
         };
         words
             .into_iter()
             .filter(|(value, _)| value.starts_with(prefix))
-            .map(|(_, label)| label)
             .collect()
     }
 
@@ -701,6 +750,8 @@ struct Walk<'s> {
     free_options: bool,
     index: usize,
     used: Vec<&'static str>,
+    /// A parameter that takes the rest of the line has begun.
+    rest_option: Option<&'static Param>,
     problem: Option<String>,
 }
 
@@ -717,11 +768,12 @@ impl<'s> Walk<'s> {
             .collect()
     }
 
+    /// A chosen variant's own parameters come first.
     fn options(&self) -> Vec<&'static Param> {
-        self.schema
-            .options
-            .iter()
-            .chain(self.variant.into_iter().flat_map(|variant| variant.options))
+        self.variant
+            .into_iter()
+            .flat_map(|variant| variant.options)
+            .chain(self.schema.options.iter())
             .collect()
     }
 
@@ -765,6 +817,9 @@ impl<'s> Walk<'s> {
                 }
                 Some(param) => {
                     self.used.push(param.name);
+                    if param.kind == Kind::Rest {
+                        self.rest_option = Some(param);
+                    }
                     if let Err(why) = param.kind.check(value, context) {
                         self.fail(format!("{name}={value} {why}"));
                     }
@@ -803,10 +858,22 @@ impl<'s> Walk<'s> {
         }
     }
 
+    /// Parameters not given yet that the given ones still permit.
     fn options_left(&self) -> Vec<&'static Param> {
         self.options()
             .into_iter()
             .filter(|param| !self.used.contains(&param.name))
+            .filter(|param| {
+                let mut used = self.used.clone();
+                used.push(param.name);
+                self.schema
+                    .constraints
+                    .iter()
+                    .all(|constraint| match constraint {
+                        Constraint::Excludes(..) => constraint.broken(&used).is_none(),
+                        Constraint::Requires(..) => true,
+                    })
+            })
             .collect()
     }
 }
@@ -831,6 +898,7 @@ pub fn guide(input: &str, context: &Context) -> Option<Guide> {
         return Some(Guide {
             next: format!(":{verb} {} {}", form.0, form.1),
             candidates: Vec::new(),
+            inserts: Vec::new(),
             problem: extra.then(|| format!(":{verb} {} takes nothing else", form.0)),
             target,
             usage: schema.usage(verb),
@@ -854,27 +922,69 @@ pub fn guide(input: &str, context: &Context) -> Option<Guide> {
         free_options: false,
         index: 0,
         used: Vec::new(),
+        rest_option: None,
         problem: None,
     };
     for (position, word) in all.iter().enumerate() {
+        if walk.rest_option.is_some() {
+            break;
+        }
         walk.take(word, position >= text_until, context);
+    }
+    let partial = match partial {
+        Some(partial) if walk.rest_option.is_none() => {
+            // The word being typed may itself begin the rest of the line.
+            if let Some((name, _)) = split_option(partial)
+                && let Some(param) = walk.option(name)
+                && param.kind == Kind::Rest
+                && !walk.used.contains(&param.name)
+            {
+                walk.used.push(param.name);
+                walk.rest_option = Some(param);
+            }
+            Some(partial)
+        }
+        _ => partial,
+    };
+    if let Some(param) = walk.rest_option {
+        let mut used = walk.used.clone();
+        used.push(param.name);
+        let problem = walk.problem.take().or_else(|| {
+            schema
+                .constraints
+                .iter()
+                .find_map(|constraint| constraint.broken(&used))
+        });
+        return Some(Guide {
+            next: param.describe(true),
+            candidates: Vec::new(),
+            inserts: Vec::new(),
+            problem,
+            target,
+            usage: schema.usage(verb),
+        });
     }
 
     let positional = walk.positional();
     let next_positional = positional.get(walk.index).copied();
-    let mut candidates = Vec::new();
+    // Each offer is what the row shows and what Tab inserts.
+    let mut offers: Vec<(String, String)> = Vec::new();
+    let mut typed_option = None;
     let next = match partial {
         Some(partial) if split_option(partial).is_some() && !walk.free_options => {
             let (name, prefix) = split_option(partial).expect("checked");
             match walk.option(name) {
                 Some(param) if !walk.used.contains(&param.name) => {
-                    candidates = param
+                    typed_option = Some(param.name);
+                    offers = param
                         .kind
                         .candidates(prefix, context)
                         .into_iter()
-                        .map(|value| format!("{name}={value}"))
+                        .map(|(value, label)| {
+                            (format!("{name}={label}"), format!("{name}={value}"))
+                        })
                         .collect();
-                    if candidates.is_empty() && param.kind.lists_values() && !prefix.is_empty() {
+                    if offers.is_empty() && param.kind.lists_values() && !prefix.is_empty() {
                         let why = param
                             .kind
                             .check(prefix, context)
@@ -886,43 +996,49 @@ pub fn guide(input: &str, context: &Context) -> Option<Guide> {
                 }
                 Some(_) => {
                     walk.fail(format!("{name}= is given twice"));
-                    remaining(&walk, &mut candidates)
+                    remaining(&walk, &mut offers)
                 }
-                None if schema.rest_text && walk.rest() => text_next(&walk, &mut candidates),
+                None if schema.rest_text && walk.rest() => text_next(&walk, &mut offers),
                 None => {
                     let problem = walk.unknown(name);
                     walk.fail(problem);
-                    remaining(&walk, &mut candidates)
+                    remaining(&walk, &mut offers)
                 }
             }
         }
         Some(partial) => {
-            let options: Vec<String> = walk
+            let options: Vec<(String, String)> = walk
                 .options_left()
                 .into_iter()
                 .filter(|param| param.name.starts_with(partial))
-                .map(|param| format!("{}=", param.name))
+                .map(|param| (format!("{}=", param.name), format!("{}=", param.name)))
                 .collect();
             let forms = all.is_empty().then(|| {
                 schema
                     .forms
                     .iter()
                     .filter(|(word, _)| word.starts_with(partial))
-                    .map(|(word, _)| (*word).to_owned())
+                    .map(|(word, _)| ((*word).to_owned(), (*word).to_owned()))
             });
             match next_positional {
                 Some(param) => {
-                    candidates.extend(param.kind.candidates(partial, context));
-                    candidates.extend(forms.into_iter().flatten());
-                    candidates.extend(options);
+                    offers.extend(
+                        param
+                            .kind
+                            .candidates(partial, context)
+                            .into_iter()
+                            .map(|(value, label)| (label, value)),
+                    );
+                    offers.extend(forms.into_iter().flatten());
+                    offers.extend(options);
                     param.describe(false)
                 }
                 None if walk.free_options => {
                     format!("parameters of the saved preset {}", all[0])
                 }
                 None => {
-                    candidates.extend(options);
-                    if candidates.is_empty() {
+                    offers.extend(options);
+                    if offers.is_empty() {
                         let problem = format!(
                             "{partial} is extra; :{verb} {}",
                             if walk.options().is_empty() {
@@ -948,41 +1064,69 @@ pub fn guide(input: &str, context: &Context) -> Option<Guide> {
         }
         None => match next_positional {
             Some(param) if !(schema.rest_text && walk.rest() && walk.index > 0) => {
-                candidates.extend(param.kind.candidates("", context));
+                offers.extend(
+                    param
+                        .kind
+                        .candidates("", context)
+                        .into_iter()
+                        .map(|(value, label)| (label, value)),
+                );
                 if all.is_empty() {
-                    candidates.extend(schema.forms.iter().map(|(word, _)| (*word).to_owned()));
+                    offers.extend(
+                        schema
+                            .forms
+                            .iter()
+                            .map(|(word, _)| ((*word).to_owned(), (*word).to_owned())),
+                    );
                 }
-                candidates.extend(walk.options_left().iter().map(|param| param.chip()));
+                offers.extend(walk.options_left().iter().map(|param| chip(param)));
                 param.describe(false)
             }
             _ if walk.free_options => format!("parameters of the saved preset {}", all[0]),
-            _ => remaining(&walk, &mut candidates),
+            _ => remaining(&walk, &mut offers),
         },
     };
+    if walk.problem.is_none() {
+        let mut used = walk.used.clone();
+        used.extend(typed_option);
+        if let Some(broken) = schema
+            .constraints
+            .iter()
+            .find_map(|constraint| constraint.broken(&used))
+        {
+            walk.fail(broken);
+        }
+    }
+    let (candidates, inserts) = offers.into_iter().unzip();
     Some(Guide {
         next,
         candidates,
+        inserts,
         problem: walk.problem,
         target,
         usage: schema.usage(verb),
     })
 }
 
-fn text_next(walk: &Walk<'_>, candidates: &mut Vec<String>) -> String {
-    candidates.extend(walk.options_left().iter().map(|param| param.chip()));
+fn chip(param: &Param) -> (String, String) {
+    (param.chip(), format!("{}=", param.name))
+}
+
+fn text_next(walk: &Walk<'_>, offers: &mut Vec<(String, String)>) -> String {
+    offers.extend(walk.options_left().iter().map(|param| chip(param)));
     walk.positional()
         .last()
         .map_or_else(|| "text".into(), |param| param.describe(false))
 }
 
 /// The parameters left, required ones first.
-fn remaining(walk: &Walk<'_>, candidates: &mut Vec<String>) -> String {
+fn remaining(walk: &Walk<'_>, offers: &mut Vec<(String, String)>) -> String {
     let left = walk.options_left();
     let required: Vec<_> = left
         .iter()
         .filter(|param| param.default == Default::Required)
         .collect();
-    candidates.extend(left.iter().map(|param| param.chip()));
+    offers.extend(left.iter().map(|param| chip(param)));
     if let Some(param) = required.first() {
         return param.describe(true);
     }
@@ -992,93 +1136,6 @@ fn remaining(walk: &Walk<'_>, candidates: &mut Vec<String>) -> String {
         "more text, or optional parameters".into()
     } else {
         "optional parameters, each with what omitting it means".into()
-    }
-}
-
-/// Verbs without a declared schema: types inferred from the registry usage,
-/// which only checks units and choices.
-static INFERRED: LazyLock<Vec<(&'static str, ArgSchema)>> = LazyLock::new(|| {
-    SPECS
-        .iter()
-        .flat_map(|spec| spec.commands.iter().map(move |command| (spec, command)))
-        .filter(|(_, command)| declared(command.verb).is_none())
-        .map(|(spec, command)| (command.verb, infer(command.usage, spec.contexts)))
-        .collect()
-});
-
-fn infer(usage: &'static str, contexts: Contexts) -> ArgSchema {
-    // A usage may list whole alternative forms (`:eq … | off`); the first
-    // form defines the arguments.
-    let syntax = usage.split("  ").next().unwrap_or(usage);
-    let syntax = syntax.split(" | ").next().unwrap_or(syntax);
-    let mut positional = Vec::new();
-    let mut options = Vec::new();
-    for token in syntax
-        .split_whitespace()
-        .skip(1)
-        .map(|token| token.trim_matches(['[', ']']))
-        .filter(|token| !token.is_empty() && !token.contains("..."))
-    {
-        match token.split_once('=') {
-            Some((name, example)) => options.push(param(
-                name,
-                infer_kind(example),
-                Default::Means("unset"),
-                "",
-            )),
-            None => positional.push(param(
-                "value",
-                infer_kind(token),
-                Default::Means("unset"),
-                "",
-            )),
-        }
-    }
-    let selector = if contexts.contains(Contexts::VISUAL) && contexts.intersects(Contexts::EDIT) {
-        Selector::VisualOrBeat
-    } else if contexts.intersects(Contexts::YOUR_EDIT) {
-        Selector::BeatOrCursor
-    } else if contexts.contains(Contexts::CONTENTS) {
-        Selector::Plays
-    } else if contexts.contains(Contexts::ORIGINAL) {
-        Selector::TimelineCursor
-    } else if contexts.intersects(Contexts::PLACED.or(Contexts::CATALOG)) {
-        Selector::Sound
-    } else {
-        Selector::Project
-    };
-    ArgSchema {
-        selector,
-        // Inferred schemas are built once per verb and live for the process.
-        positional: Box::leak(positional.into_boxed_slice()),
-        options: Box::leak(options.into_boxed_slice()),
-        forms: &[],
-        rest_text: false,
-        variants: &[],
-        examples: &[],
-    }
-}
-
-fn infer_kind(example: &'static str) -> Kind {
-    if example.contains('|') {
-        let choices: Vec<&'static str> = example.split('|').filter(|c| !c.is_empty()).collect();
-        return Kind::Choice(Box::leak(choices.into_boxed_slice()));
-    }
-    let unsigned = example.trim_start_matches(['+', '-']);
-    let digits = unsigned.trim_end_matches(|c: char| c.is_ascii_alphabetic());
-    if digits.is_empty()
-        || !digits
-            .bytes()
-            .all(|b| b.is_ascii_digit() || b == b'.' || b == b'/')
-    {
-        return Kind::Text;
-    }
-    match &unsigned[digits.len()..] {
-        "s" | "ms" | "f" => Kind::Typed(&DURATION),
-        "dB" => Kind::Typed(&DECIBELS),
-        "st" => Kind::Typed(&SEMITONES),
-        "" => Kind::Typed(&NUMBER),
-        _ => Kind::Text,
     }
 }
 
@@ -1138,20 +1195,16 @@ pub fn reference_markdown() -> String {
             let _ = writeln!(out, "| `{form}` | whole form | - | {} |", escape(meaning));
         }
         out.push('\n');
+        for constraint in schema.constraints {
+            let _ = writeln!(out, "- {}.", constraint.describe());
+        }
+        if !schema.constraints.is_empty() {
+            out.push('\n');
+        }
     }
     out.push_str("### Commands without arguments\n\n");
     for (verb, schema) in plain {
         let _ = writeln!(out, "- `:{verb}` acts on {}.", schema.selector.generic());
-    }
-    out.push_str(
-        "\n### Verbs with usage-inferred arguments\n\n\
-         These verbs check units and choices inferred from their usage only.\n\n\
-         | Verb | Why it has no declared schema yet |\n| --- | --- |\n",
-    );
-    let mut reasons: Vec<_> = REASONS.iter().collect();
-    reasons.sort_by_key(|(verb, _)| *verb);
-    for (verb, reason) in reasons {
-        let _ = writeln!(out, "| `:{verb}` | {} |", escape(reason));
     }
     out
 }

@@ -94,7 +94,7 @@ pub fn parse_bleep(words: &[&str]) -> Result<(u32, i32), String> {
     Ok((frequency, level))
 }
 
-fn hertz(value: &str) -> Result<u32, String> {
+pub(crate) fn hertz(value: &str) -> Result<u32, String> {
     value
         .strip_suffix("Hz")
         .or_else(|| value.strip_suffix("hz"))

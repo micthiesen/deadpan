@@ -16,27 +16,28 @@ fn verbs() -> Vec<&'static str> {
         .collect()
 }
 
+/// Every registry verb declares its arguments, or that it takes none; no
+/// verb falls back to guidance inferred from its usage line.
 #[test]
-fn every_registry_verb_has_a_schema_or_a_reason() {
+fn every_registry_verb_declares_a_schema() {
     let verbs = verbs();
     for verb in &verbs {
         let declared = SCHEMAS.iter().filter(|(known, _)| known == verb).count();
-        let reasons = REASONS.iter().filter(|(known, _)| known == verb).count();
-        assert_eq!(
-            declared + reasons,
-            1,
-            ":{verb} needs exactly one declared schema or one reason"
-        );
+        assert_eq!(declared, 1, ":{verb} needs exactly one declared schema");
     }
-    for verb in SCHEMAS
-        .iter()
-        .map(|(verb, _)| verb)
-        .chain(REASONS.iter().map(|(verb, _)| verb))
-    {
+    for (verb, _) in SCHEMAS {
         assert!(verbs.contains(verb), ":{verb} is not a registry verb");
     }
-    for (_, reason) in REASONS {
-        assert!(reason.ends_with('.') && reason.len() > 10, "{reason}");
+    // A verb whose usage shows arguments must declare them.
+    for spec in SPECS {
+        for command in spec.commands {
+            let shows_arguments = command.syntax().split_whitespace().count() > 1;
+            assert!(
+                !shows_arguments || declared(command.verb).unwrap().takes_arguments(),
+                ":{} shows arguments its schema does not declare",
+                command.verb
+            );
+        }
     }
 }
 
@@ -233,8 +234,14 @@ fn declared_values_agree_with_the_parser() {
                 }
                 if matches!(
                     param.kind,
-                    Kind::Text | Kind::Name(Names::Target | Names::Gag)
+                    Kind::Text | Kind::Rest | Kind::Name(Names::Target | Names::Gag)
                 ) {
+                    continue;
+                }
+                // Identifiers and tag words legitimately accept the probe.
+                if let Kind::Typed(ty) | Kind::ChoiceOr(_, ty) = param.kind
+                    && (ty.check)("x1y")
+                {
                     continue;
                 }
                 let input = with("x1y");
@@ -538,10 +545,7 @@ fn usage_lines_are_generated_from_the_schema() {
 }
 
 #[test]
-fn inferred_verbs_still_check_units() {
-    assert!(declared("bleep").is_none());
-    let bleep = guided(":bleep 880Hz level=x ");
-    assert!(bleep.problem.is_some(), "{bleep:?}");
+fn unknown_or_partial_verbs_have_no_guide() {
     assert!(guide(":ho", &empty()).is_none());
     assert!(guide(":unknown 1", &empty()).is_none());
 }
@@ -561,5 +565,174 @@ fn spoken_text_carries_every_part() {
     assert!(
         spoken.ends_with("Usage: :ramp FROM TO [pitch=preserve|tape] [steps=whole-count]."),
         "{spoken}"
+    );
+}
+
+/// Each declared rule between parameters is broken by one input here; the
+/// parser refuses it and the guide names the rule before Enter.
+#[test]
+fn declared_constraints_agree_with_the_parser() {
+    let broken = [
+        (
+            ":repeat 3 role=audio gap=6f",
+            "role= cannot be combined with gap=: a role repeat adds no gaps or per-play changes",
+        ),
+        (
+            ":repeat 3 speed-step=10% role=video",
+            "role= cannot be combined with speed-step=: a role repeat adds no gaps or per-play changes",
+        ),
+        (":repeat 3 gap-step=-2f", "gap-step= needs gap="),
+        (":repeat 3 overflow=trim", "overflow= needs role="),
+        (":repeat 3 extend=hold", "extend= needs role="),
+        (
+            ":repeat 3 role=audio overflow=trim extend=hold",
+            "overflow= cannot be combined with extend=: choose one overflow policy",
+        ),
+        (
+            ":audio-shift +5f overflow=trim extend=hold",
+            "overflow= cannot be combined with extend=: choose one overflow policy",
+        ),
+        (
+            ":select role=audio node=one",
+            "role= cannot be combined with node=: choose one way to select",
+        ),
+        (
+            ":select node=one nodes=[\"a\"]",
+            "node= cannot be combined with nodes=: choose one way to select",
+        ),
+        (
+            ":select nodes=[\"a\"] ranges=[{\"start\":2,\"end\":6}]",
+            "nodes= cannot be combined with ranges=: choose one way to select",
+        ),
+        (
+            ":select ranges=[{\"start\":2,\"end\":6}] role=audio",
+            "role= cannot be combined with ranges=: choose one way to select",
+        ),
+        (
+            ":select marks start=native-mark-a end=native-mark-b role=audio",
+            "role= cannot be combined with start=: choose one way to select",
+        ),
+        (
+            ":select search=\"hi\" node=one",
+            "node= cannot be combined with search=: choose one way to select",
+        ),
+    ];
+    for (input, problem) in broken {
+        assert!(parse(input).is_err(), "{input} parsed");
+        assert_eq!(
+            guided(&format!("{input} ")).problem.as_deref(),
+            Some(problem),
+            "{input}"
+        );
+    }
+    // Every declared rule is exercised above.
+    for (verb, schema) in SCHEMAS {
+        for constraint in schema.constraints {
+            let (name, needle) = match constraint {
+                Constraint::Excludes(name, ..) => (*name, format!("{name}= cannot")),
+                Constraint::Requires(name, needed) => (*name, format!("{name}= needs {needed}=")),
+            };
+            assert!(
+                broken
+                    .iter()
+                    .any(|(input, problem)| input.starts_with(&format!(":{verb} "))
+                        && problem.contains(&needle)
+                        || problem.contains(&format!("cannot be combined with {name}="))
+                            && input.starts_with(&format!(":{verb} "))),
+                ":{verb} rule {constraint:?} has no broken input"
+            );
+        }
+    }
+}
+
+#[test]
+fn the_role_conflict_shows_as_soon_as_the_parameter_is_typed() {
+    let guide = guided(":repeat 3 gap=6f role=");
+    assert_eq!(
+        guide.problem.as_deref(),
+        Some("role= cannot be combined with gap=: a role repeat adds no gaps or per-play changes")
+    );
+    assert_eq!(guide.candidates, ["role=audio", "role=video"]);
+    assert_eq!(guided(":repeat 3 role=audio ").problem, None);
+    assert_eq!(guided(":repeat 3 role=audio overflow=trim ").problem, None);
+}
+
+#[test]
+fn trailing_guidance_takes_the_rest_of_the_line() {
+    let guide = guided(":generate 2 mode=bridge text=Keep motion=still the hands");
+    assert_eq!(guide.problem, None);
+    assert!(guide.next.starts_with("text= guidance"), "{}", guide.next);
+    assert!(guide.candidates.is_empty());
+    assert_eq!(
+        guided(":generate 9 ").problem.as_deref(),
+        Some("variants 9 is not a variant count: use 1 to 4")
+    );
+    assert_eq!(
+        guided(":generate motion=").candidates,
+        ["motion=still", "motion=subtle", "motion=moderate"]
+    );
+}
+
+#[test]
+fn newly_declared_verbs_check_their_own_values() {
+    assert_eq!(
+        guided(":eq bass=3 ").problem.as_deref(),
+        Some("bass=3 is not a band level: use 3dB or -6dB, within ±24 dB, with dB")
+    );
+    assert_eq!(
+        guided(":sound-envelope 0f 30f -12dB 0dB l").candidates,
+        ["linear"]
+    );
+    assert_eq!(
+        guided(":source-interpret chroma=top").candidates,
+        ["chroma=top-left", "chroma=top"]
+    );
+    assert_eq!(
+        guided(":bleep 5Hz ").problem.as_deref(),
+        Some("frequency 5Hz is not a frequency: use 880Hz, from 20 Hz to 20 kHz")
+    );
+    assert_eq!(guided(":wet-send ").candidates, ["reverb", "delay"]);
+    assert_eq!(guided(":wet-send reverb o").candidates, ["off"]);
+    assert_eq!(
+        guided(":sound-at 1.5 ").problem.as_deref(),
+        Some("sample 1.5 is not a sample: use 274000, whole 48 kHz samples from 0")
+    );
+    assert!(guided(":audio-shift 0f ").problem.is_some());
+    assert_eq!(guided(":moment Big laugh tags=reaction ").problem, None);
+    assert_eq!(guided(":group name=\"the answer\" ").problem, None);
+    assert!(
+        guided(":group name=answer ")
+            .problem
+            .unwrap()
+            .starts_with("name=answer is not a JSON-quoted name")
+    );
+    assert_eq!(
+        guided(":select marks ").candidates[..2],
+        ["start=mark-id (required)", "end=mark-id (required)"]
+    );
+    assert_eq!(
+        guided(":select marks start=native-mark-a ").candidates,
+        ["end=mark-id (required)"]
+    );
+    // A role repeat no longer offers per-play parameters.
+    let left = guided(":repeat 3 role=audio ").candidates;
+    assert!(
+        left.iter().all(|chip| !chip.starts_with("gap=")),
+        "{left:?}"
+    );
+    assert!(
+        left.iter().any(|chip| chip.starts_with("overflow=")),
+        "{left:?}"
+    );
+    let mut context = empty();
+    context.targets = vec![("target-1".into(), "Speaker".into())];
+    assert_eq!(
+        super::guide(":track ", &context).unwrap().candidates,
+        ["current", "center", "target-1 (Speaker)"]
+    );
+    context.cursor = Some("frame 12".into());
+    assert_eq!(
+        super::guide(":tail ", &context).unwrap().target,
+        "a new pause at the Edit cursor at frame 12"
     );
 }

@@ -1,8 +1,8 @@
 //! Every command verb's argument schema, or why it has none yet.
 
 use super::{
-    ArgSchema, Default as D, Kind as K, Names as N, Param, Selector as S, Variant, param as p,
-    types::*,
+    ArgSchema, Constraint as C, Default as D, Kind as K, Names as N, Param, Selector as S, Variant,
+    param as p, types::*,
 };
 
 const fn schema(
@@ -18,6 +18,7 @@ const fn schema(
         forms: &[],
         rest_text: false,
         variants: &[],
+        constraints: &[],
         examples,
     }
 }
@@ -154,7 +155,7 @@ static COMPARE_AI: ArgSchema = schema(
 
 // REPEAT & SPEED
 
-static REPEAT: ArgSchema = schema(
+static REPEAT_ARGS: ArgSchema = schema(
     S::RepeatOrBeat,
     &[p(
         "plays",
@@ -240,6 +241,34 @@ static REPEAT: ArgSchema = schema(
         ":repeat 2 role=audio extend=hold",
     ],
 );
+
+/// Parameters a role repeat refuses: it repeats one role in place, so it has
+/// no gaps or per-play changes.
+const ESCALATION: &[&str] = &[
+    "gap",
+    "gap-step",
+    "speed-step",
+    "pitch",
+    "gain-step",
+    "zoom-step",
+    "progression",
+    "zoom-target",
+];
+
+static REPEAT: ArgSchema = ArgSchema {
+    constraints: &[
+        C::Excludes(
+            "role",
+            ESCALATION,
+            "a role repeat adds no gaps or per-play changes",
+        ),
+        C::Requires("gap-step", "gap"),
+        C::Requires("overflow", "role"),
+        C::Requires("extend", "role"),
+        C::Excludes("overflow", &["extend"], "choose one overflow policy"),
+    ],
+    ..REPEAT_ARGS
+};
 
 static WRAP_REPEAT: ArgSchema = schema(
     S::WrapVisualOrBeat,
@@ -1103,6 +1132,568 @@ static TARGET_DELETE: ArgSchema = schema(
     &[":target-delete target-1"],
 );
 
+// SELECTION AND NAMES
+
+/// One selector form at a time: they choose different things to select.
+const SELECTORS: &[&str] = &["role", "node", "nodes", "ranges", "search", "start", "end"];
+const ONE_SELECTOR: &str = "choose one way to select";
+
+static SELECT: ArgSchema = ArgSchema {
+    variants: &[Variant {
+        value: "marks",
+        positional: &[],
+        options: &[
+            p(
+                "start",
+                K::Typed(&MARK_ID),
+                D::Required,
+                "the mark the range starts at",
+            ),
+            p(
+                "end",
+                K::Typed(&MARK_ID),
+                D::Required,
+                "the mark the range ends at",
+            ),
+        ],
+    }],
+    constraints: &[
+        C::Excludes("role", &without(SELECTORS, 0), ONE_SELECTOR),
+        C::Excludes("node", &without(SELECTORS, 1), ONE_SELECTOR),
+        C::Excludes("nodes", &without(SELECTORS, 2), ONE_SELECTOR),
+        C::Excludes("ranges", &without(SELECTORS, 3), ONE_SELECTOR),
+        C::Excludes("search", &without(SELECTORS, 4), ONE_SELECTOR),
+    ],
+    ..schema(
+        S::TimelineCursor,
+        &[p(
+            "form",
+            K::Choice(&["marks"]),
+            D::Means("selects the Original moment, or by the parameter given"),
+            "marks selects Your edit between two marks",
+        )],
+        &[
+            p(
+                "role",
+                K::Choice(&["audio", "video", "linked"]),
+                D::Means("linked"),
+                "the media role the next Visual selection covers",
+            ),
+            p(
+                "node",
+                K::Typed(&NODE_ID),
+                D::Means("no node"),
+                "select one beat by its exact node id",
+            ),
+            p(
+                "nodes",
+                K::Typed(&NODE_LIST),
+                D::Means("no node set"),
+                "select several beats by exact node id",
+            ),
+            p(
+                "ranges",
+                K::Typed(&RANGE_LIST),
+                D::Means("no ranges"),
+                "select frame ranges relative to the Edit cursor",
+            ),
+            p(
+                "search",
+                K::Typed(&SEARCH_TEXT),
+                D::Means("no search"),
+                "select where the transcript says these words",
+            ),
+        ],
+        &[
+            ":select",
+            ":select role=audio",
+            ":select marks start=native-mark-a end=native-mark-b",
+            ":select node=one",
+            ":select nodes=[\"id-a\",\"id-b\"]",
+            ":select ranges=[{\"start\":2,\"end\":6}]",
+            ":select search=\"hello world\"",
+        ],
+    )
+};
+
+/// Every selector but one, for the rules that keep them exclusive.
+const fn without(all: &[&'static str], skip: usize) -> [&'static str; 6] {
+    let mut out = [""; 6];
+    let mut from = 0;
+    let mut to = 0;
+    while from < all.len() {
+        if from != skip {
+            out[to] = all[from];
+            to += 1;
+        }
+        from += 1;
+    }
+    out
+}
+
+static GROUP: ArgSchema = schema(
+    S::VisualOrBeat,
+    &[],
+    &[p(
+        "name",
+        K::Typed(&GROUP_NAME),
+        D::Required,
+        "the group's name, JSON-quoted so it may hold spaces",
+    )],
+    &[":group name=\"the answer\""],
+);
+
+// ORIGINAL MOMENTS
+
+static MOMENT: ArgSchema = ArgSchema {
+    rest_text: true,
+    ..schema(
+        S::TimelineCursor,
+        &[p(
+            "name",
+            K::Text,
+            D::Required,
+            "the selected Original moment's name, spaces allowed",
+        )],
+        &[p(
+            "tags",
+            K::Typed(&TAG_LIST),
+            D::Means("no tags"),
+            "comma-separated tags",
+        )],
+        &[
+            ":moment Big laugh",
+            ":moment Big laugh tags=reaction,breath",
+        ],
+    )
+};
+
+static MOMENTS: ArgSchema = ArgSchema {
+    rest_text: true,
+    ..schema(
+        S::View,
+        &[p(
+            "filter",
+            K::Text,
+            D::Means("every moment"),
+            "words that match names and tags loosely; tag:reaction keeps one tag",
+        )],
+        &[],
+        &[":moments", ":moments tag:reaction"],
+    )
+};
+
+static MOMENT_RENAME: ArgSchema = ArgSchema {
+    rest_text: true,
+    ..schema(
+        S::TimelineCursor,
+        &[p(
+            "name",
+            K::Text,
+            D::Required,
+            "the selected moment's new name, spaces allowed",
+        )],
+        &[],
+        &[":moment-rename Big laugh"],
+    )
+};
+
+static MOMENT_TAGS: ArgSchema = ArgSchema {
+    forms: &[("none", "clears the selected moment's tags")],
+    ..schema(
+        S::TimelineCursor,
+        &[p(
+            "tags",
+            K::Typed(&TAG_LIST),
+            D::Required,
+            "the selected moment's tags, replacing its current ones",
+        )],
+        &[],
+        &[":moment-tags reaction,breath", ":moment-tags none"],
+    )
+};
+
+// TARGETS AND AI
+
+static TRACK: ArgSchema = ArgSchema {
+    rest_text: true,
+    ..schema(
+        S::Project,
+        &[p(
+            "target",
+            K::Name(N::Target),
+            D::Means("the chosen target"),
+            "the saved target to track; end with through-shots to cross cuts",
+        )],
+        &[],
+        &[":track", ":track target-1", ":track target-1 through-shots"],
+    )
+};
+
+static GENERATE: ArgSchema = schema(
+    S::Pause,
+    &[p(
+        "variants",
+        K::Typed(&VARIANTS),
+        D::Value("1"),
+        "how many variants, each from a different seed; before the parameters",
+    )],
+    &[
+        p(
+            "mode",
+            K::Choice(&["auto", "bridge", "extend-left", "extend-right"]),
+            D::Means("keeps the mode, or auto"),
+            "which neighbouring pictures condition the pause",
+        ),
+        p(
+            "motion",
+            K::Choice(&["still", "subtle", "moderate"]),
+            D::Means("keeps the motion, or still"),
+            "how much the pictures should move",
+        ),
+        p(
+            "target",
+            K::ChoiceOr(&["none"], &TARGET_ID),
+            D::Means("keeps the captured target"),
+            "a saved target for region checks; none clears it",
+        ),
+        p(
+            "text",
+            K::Rest,
+            D::Means("keeps the guidance, or none"),
+            "guidance for the model, up to 512 bytes; always last",
+        ),
+    ],
+    &[
+        ":generate",
+        ":generate 3",
+        ":generate 2 mode=bridge motion=subtle target=none",
+        ":generate mode=auto motion=still text=Keep the hands still.",
+        ":generate target=target-1",
+    ],
+);
+
+static GENERATE_AI: ArgSchema = ArgSchema {
+    examples: &[":generate-ai 2 mode=extend-left"],
+    ..GENERATE
+};
+
+// AUDIO TREATMENTS
+
+static EQ: ArgSchema = ArgSchema {
+    forms: &[("off", "removes the equalizer")],
+    ..schema(
+        S::Beat,
+        &[],
+        &[
+            p(
+                "bass",
+                K::Typed(&EQ_BAND),
+                D::Required,
+                "low shelf level; all three bands together",
+            ),
+            p(
+                "middle",
+                K::Typed(&EQ_BAND),
+                D::Required,
+                "middle band level",
+            ),
+            p(
+                "treble",
+                K::Typed(&EQ_BAND),
+                D::Required,
+                "high shelf level",
+            ),
+            p(
+                "low-cut",
+                K::ChoiceOr(&["off"], &EQ_CUT),
+                D::Value("off"),
+                "high-pass cutoff",
+            ),
+            p(
+                "high-cut",
+                K::ChoiceOr(&["off"], &EQ_CUT),
+                D::Value("off"),
+                "low-pass cutoff, above the low cut",
+            ),
+        ],
+        &[
+            ":eq",
+            ":eq bass=3dB middle=-6dB treble=0dB",
+            ":eq bass=3dB middle=0dB treble=0dB low-cut=80Hz high-cut=12000Hz",
+            ":eq bass=0dB middle=0dB treble=0dB low-cut=off",
+            ":eq off",
+        ],
+    )
+};
+
+static SOUND_EQ: ArgSchema = ArgSchema {
+    selector: S::Sound,
+    examples: &[
+        ":sound-eq bass=3dB middle=0dB treble=0dB",
+        ":sound-eq bass=0dB middle=0dB treble=0dB low-cut=80Hz high-cut=12000Hz",
+        ":sound-eq off",
+    ],
+    ..EQ
+};
+
+static SOUND_ENVELOPE: ArgSchema = ArgSchema {
+    forms: &[("clear", "removes the sound's gain envelopes")],
+    ..schema(
+        S::Sound,
+        &[
+            p(
+                "start",
+                K::Typed(&ENVELOPE_FRAME),
+                D::Required,
+                "where the ramp starts, from the sound's onset",
+            ),
+            p(
+                "end",
+                K::Typed(&ENVELOPE_FRAME),
+                D::Required,
+                "where the ramp ends; a matching range is replaced",
+            ),
+            p(
+                "from",
+                K::Typed(&ENVELOPE_LEVEL),
+                D::Required,
+                "the level at the start",
+            ),
+            p(
+                "to",
+                K::Typed(&ENVELOPE_LEVEL),
+                D::Required,
+                "the level at the end",
+            ),
+            p(
+                "curve",
+                K::Choice(&["step", "linear", "smoothstep"]),
+                D::Required,
+                "the ramp's shape",
+            ),
+        ],
+        &[],
+        &[
+            ":sound-envelope 0f 30f -12dB 0dB linear",
+            ":sound-envelope 4f 8f 0dB -6dB smoothstep",
+            ":sound-envelope clear",
+        ],
+    )
+};
+
+static SOURCE_INTERPRET: ArgSchema = ArgSchema {
+    forms: &[("reset", "returns to the measured interpretation")],
+    ..schema(
+        S::Project,
+        &[],
+        &[
+            p(
+                "range",
+                K::Choice(&["auto", "limited", "full"]),
+                D::Keeps,
+                "the Original's color range",
+            ),
+            p(
+                "chroma",
+                K::Choice(&[
+                    "auto",
+                    "left",
+                    "center",
+                    "top-left",
+                    "top",
+                    "bottom-left",
+                    "bottom",
+                ]),
+                D::Keeps,
+                "where chroma samples sit",
+            ),
+        ],
+        &[
+            ":source-interpret",
+            ":source-interpret range=full chroma=left",
+            ":source-interpret reset",
+        ],
+    )
+};
+
+static BLEEP: ArgSchema = schema(
+    S::VisualOrBeat,
+    &[p(
+        "frequency",
+        K::Typed(&HERTZ),
+        D::Value("1000Hz"),
+        "the tone's frequency",
+    )],
+    &[p(
+        "level",
+        K::Typed(&BLEEP_LEVEL),
+        D::Value("-10dB"),
+        "the tone's level",
+    )],
+    &[":bleep", ":bleep 880Hz", ":bleep 880Hz level=-6dB"],
+);
+
+static TAIL: ArgSchema = schema(
+    S::PauseOrCursor,
+    &[p(
+        "length",
+        K::Typed(&DURATION),
+        D::Means("rings for the whole selected pause"),
+        "how long it rings, or the new pause's length",
+    )],
+    &[
+        p(
+            "effect",
+            K::Choice(&["reverb", "delay"]),
+            D::Value("reverb"),
+            "reverb, or a 300 ms echo",
+        ),
+        p(
+            "input",
+            K::Choice(&["original", "sends"]),
+            D::Value("original"),
+            "the processed Original, or only matching tail sends",
+        ),
+    ],
+    &[
+        ":tail",
+        ":tail 1s",
+        ":tail 1s effect=delay",
+        ":tail effect=reverb input=sends",
+    ],
+);
+
+static SEND: [Param; 2] = [
+    p(
+        "effect",
+        K::Choice(&["reverb", "delay"]),
+        D::Required,
+        "reverb, or a 300 ms echo; each has its own level",
+    ),
+    p(
+        "level",
+        K::ChoiceOr(&["off"], &SEND_LEVEL),
+        D::Required,
+        "the return level; off removes it",
+    ),
+];
+
+static WET_SEND: ArgSchema = schema(
+    S::Beat,
+    &SEND,
+    &[],
+    &[":wet-send reverb -6dB", ":wet-send delay off"],
+);
+
+static TAIL_SEND: ArgSchema = schema(
+    S::Beat,
+    &SEND,
+    &[],
+    &[":tail-send reverb -6dB", ":tail-send delay off"],
+);
+
+static SOUND_WET_SEND: ArgSchema = schema(
+    S::Sound,
+    &SEND,
+    &[],
+    &[":sound-wet-send reverb -6dB", ":sound-wet-send delay off"],
+);
+
+static SOUND_TAIL_SEND: ArgSchema = schema(
+    S::Sound,
+    &SEND,
+    &[],
+    &[
+        ":sound-tail-send delay -12dB",
+        ":sound-tail-send reverb off",
+    ],
+);
+
+static SOUND_SATURATE: ArgSchema = ArgSchema {
+    selector: S::Sound,
+    examples: &[":sound-saturate 6dB", ":sound-saturate off"],
+    ..SATURATE
+};
+
+static SOUND_BALANCE: ArgSchema = ArgSchema {
+    selector: S::Sound,
+    examples: &[":sound-balance -50%", ":sound-balance center"],
+    ..BALANCE_ARGS
+};
+
+static AUDIO_SHIFT: ArgSchema = ArgSchema {
+    constraints: &[C::Excludes(
+        "overflow",
+        &["extend"],
+        "choose one overflow policy",
+    )],
+    ..schema(
+        S::Cursor,
+        &[p(
+            "frames",
+            K::Typed(&SHIFT_FRAMES),
+            D::Required,
+            "how far sound slides, later (+) or earlier (-)",
+        )],
+        &[
+            p(
+                "overflow",
+                K::Choice(&["trim"]),
+                D::Means("refuses overflow"),
+                "cut sound pushed past the group's end",
+            ),
+            p(
+                "extend",
+                K::Choice(&["hold"]),
+                D::Means("refuses overflow"),
+                "hold the last picture for sound pushed past the end",
+            ),
+        ],
+        &[
+            ":audio-shift +5f",
+            ":audio-shift -3f overflow=trim",
+            ":audio-shift +5f extend=hold",
+        ],
+    )
+};
+
+static SOUND_AT: ArgSchema = schema(
+    S::Sound,
+    &[p(
+        "sample",
+        K::Typed(&SAMPLE),
+        D::Required,
+        "the sound's exact start on the 48 kHz clock",
+    )],
+    &[],
+    &[":sound-at 274000"],
+);
+
+static SOUND_GAIN: ArgSchema = schema(
+    S::Sound,
+    &[p(
+        "level",
+        K::Typed(&SOUND_LEVEL),
+        D::Required,
+        "the placed sound's gain in dB",
+    )],
+    &[],
+    &[":sound-gain -3", ":sound-gain 1.5"],
+);
+
+static SOUND_EDGES: ArgSchema = schema(
+    S::Sound,
+    &[p(
+        "edges",
+        K::Choice(&["soft", "hard"]),
+        D::Required,
+        "short fades at both ends, or none",
+    )],
+    &[],
+    &[":sound-edges soft", ":sound-edges hard"],
+);
+
 /// Every migrated verb. The parser executes these through its own typed
 /// code; tests run each schema's examples, parameter names and choices
 /// through it.
@@ -1160,6 +1751,31 @@ pub static SCHEMAS: &[(&str, &ArgSchema)] = &[
     ("audition-context", &AUDITION_CONTEXT),
     ("target-rename", &TARGET_RENAME),
     ("target-delete", &TARGET_DELETE),
+    ("select", &SELECT),
+    ("group", &GROUP),
+    ("moment", &MOMENT),
+    ("moments", &MOMENTS),
+    ("moment-rename", &MOMENT_RENAME),
+    ("moment-tags", &MOMENT_TAGS),
+    ("track", &TRACK),
+    ("generate", &GENERATE),
+    ("generate-ai", &GENERATE_AI),
+    ("eq", &EQ),
+    ("sound-eq", &SOUND_EQ),
+    ("sound-envelope", &SOUND_ENVELOPE),
+    ("source-interpret", &SOURCE_INTERPRET),
+    ("bleep", &BLEEP),
+    ("tail", &TAIL),
+    ("wet-send", &WET_SEND),
+    ("tail-send", &TAIL_SEND),
+    ("sound-wet-send", &SOUND_WET_SEND),
+    ("sound-tail-send", &SOUND_TAIL_SEND),
+    ("sound-saturate", &SOUND_SATURATE),
+    ("sound-balance", &SOUND_BALANCE),
+    ("audio-shift", &AUDIO_SHIFT),
+    ("sound-at", &SOUND_AT),
+    ("sound-gain", &SOUND_GAIN),
+    ("sound-edges", &SOUND_EDGES),
     // No arguments.
     ("split", &ArgSchema::none(S::BeatAtCursor)),
     ("room-tone", &ArgSchema::none(S::Pause)),
@@ -1231,82 +1847,4 @@ pub static SCHEMAS: &[(&str, &ArgSchema)] = &[
     ("open", &ArgSchema::none(S::Project)),
     ("close", &ArgSchema::none(S::Project)),
     ("moment-delete", &ArgSchema::none(S::TimelineCursor)),
-];
-
-/// Verbs that keep usage-inferred guidance, and why.
-#[cfg(test)]
-pub static REASONS: &[(&str, &str)] = &[
-    (
-        "select",
-        "Exclusive selector forms (role, marks, node, JSON node and range sets, transcript search) each have their own strict grammar.",
-    ),
-    (
-        "group",
-        "One JSON-quoted name= value parsed with the specification's JSON string grammar.",
-    ),
-    (
-        "moment",
-        "Free-form moment names with spaces before a tags= list, validated by the moment store.",
-    ),
-    ("moments", "A free filter string for the Original rail."),
-    (
-        "moment-rename",
-        "A free-form name, validated by the moment store.",
-    ),
-    ("moment-tags", "A tag list validated by the moment store."),
-    (
-        "track",
-        "A target label may contain spaces before the trailing through-shots keyword.",
-    ),
-    (
-        "generate",
-        "AI generation options are parsed by the generation request grammar shared with headless generation.",
-    ),
-    ("generate-ai", "Same grammar as :generate."),
-    (
-        "eq",
-        "Equalizer bands are a set of band=level pairs or off, parsed by the equalizer grammar.",
-    ),
-    ("sound-eq", "Same grammar as :eq."),
-    (
-        "sound-envelope",
-        "Point lists and a curve word, parsed by the envelope grammar.",
-    ),
-    (
-        "source-interpret",
-        "Colour interpretation choices are owned by the source interpretation grammar.",
-    ),
-    (
-        "bleep",
-        "An optional bare frequency in Hz with a level, parsed by the bleep grammar.",
-    ),
-    (
-        "tail",
-        "An optional bare length before effect and input words, parsed by the tail grammar.",
-    ),
-    (
-        "wet-send",
-        "An effect word followed by a level or off, parsed by the send grammar.",
-    ),
-    ("tail-send", "Same grammar as :wet-send."),
-    ("sound-wet-send", "Same grammar as :wet-send."),
-    ("sound-tail-send", "Same grammar as :wet-send."),
-    ("sound-saturate", "Delegates to :saturate."),
-    ("sound-balance", "Delegates to :balance."),
-    (
-        "audio-shift",
-        "Signed frames with mutually exclusive overflow words.",
-    ),
-    (
-        "sound-at",
-        "A start sample on the 48 kHz clock, parsed by the placed-sound grammar.",
-    ),
-    (
-        "sound-gain",
-        "A placed sound's gain, parsed by the placed-sound grammar.",
-    ),
-    (
-        "sound-edges",
-        "A placed sound's edge choice, parsed by the placed-sound grammar.",
-    ),
 ];

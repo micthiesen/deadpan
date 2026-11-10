@@ -34,7 +34,7 @@ Headless status links to [PARITY](PARITY.md).
 | **Seek proxies** (`proxies`)<br>Turn automatic seek proxies for 4K Originals off or on (:proxies on), or try a failed one again (:proxies retry). Exact pictures and export always use the Original. | - | `:proxies on\|off\|retry` | Every editor context | not recorded | [GUI-only](PARITY.md#audio-and-gain): `none (personal app setting)` |
 | **Timeline scale** (`timeline`)<br>Show the current group as one card per beat (:timeline story) or as beats at their exact length over the measured Edit mix waveform (:timeline timing), up to a minute around the Edit cursor; :timeline detail adds a lane of each beat's cutaways, captions, gain envelopes and mutes and the placed sounds. ,w steps story → timing → detail → story. Every view selects, moves the cursor and opens beats the same way; the sequence is unchanged. | `,w` (`timeline`) | `:timeline story\|timing\|detail` | Every editor context | not recorded | [GUI-only](PARITY.md#navigation-view-and-audition): `none (a view of the same sequence)` |
 | **Undo / redo** (`undo`)<br>Undo / redo one saved edit. Native ⌘Z / ⌘⇧Z also work. Undo never crosses the project's full-Original starting point. | `u` (`undo`), `Ctrl R · ⌘Z / ⌘⇧Z` (native) | `:undo`, `:redo` | Every editor context | not recorded | [Equivalent](PARITY.md#marks-and-history): `project undo\|redo <p> --expected <rev> [--dry-run]` |
-| **Command line** (`command`)<br>Enter a command / apply / cancel. Typing a verb's first letters lists matching commands and their usage. Text fields keep native editing and IME. | `:` (`command`), `Enter / Esc` (native) | - | Every editor context | not recorded | [GUI-only](PARITY.md#navigation-view-and-audition): `every verb has a headless form listed with its action` |
+| **Command line** (`command`)<br>Enter a command / apply / cancel. Typing a verb's first letters lists matching commands and their usage. Tab inserts the marked verb, parameter name or value; repeated Tab or Down/Up cycle the candidates and Shift+Tab goes back. Text fields keep native editing and IME, and nothing completes during composition. | `:` (`command`), `Enter / Tab / Esc` (native) | - | Every editor context | not recorded | [GUI-only](PARITY.md#navigation-view-and-audition): `every verb has a headless form listed with its action` |
 | **Leave, clear or cancel** (`escape`)<br>Clear the Visual selection, cancel a pending key or register choice, close entry, or leave an AI preview. It never cancels committed edits or AI generation. | `Esc` (`escape`) | - | Every editor context | not recorded | [GUI-only](PARITY.md#navigation-view-and-audition): `none needed` |
 | **Edit an inspector value** (`inspector.edit`)<br>Edit the selected Repeat count, Hold duration, Retime speed or placed sound's exact sample position. On the shared gap row after one play in Repeat contents, Enter changes that play's gap length. | `Enter in Inspector` (native) | - | Your edit, Placed sounds, Shared gap row | not recorded | [GUI-only](PARITY.md#navigation-view-and-audition): `each field prefills its command` |
 
@@ -401,6 +401,20 @@ Acts on the selected beat.
 | --- | --- | --- | --- |
 | `OFFSET` | signed duration: +80ms, -2f or 0 | required | sound later (+) or earlier (-) than its picture; 0 realigns |
 
+### `:audio-shift`
+
+`:audio-shift FRAMES [overflow=trim] [extend=hold]`
+
+Acts on the Edit cursor.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `FRAMES` | signed whole frames: +5f or -3f, not zero | required | how far sound slides, later (+) or earlier (-) |
+| `overflow=` | one of trim | omitted: refuses overflow | cut sound pushed past the group's end |
+| `extend=` | one of hold | omitted: refuses overflow | hold the last picture for sound pushed past the end |
+
+- `overflow=` cannot be combined with `extend=`: choose one overflow policy.
+
 ### `:audition-context`
 
 `:audition-context lead=duration follow=duration`
@@ -421,6 +435,17 @@ Acts on the selected beat.
 | Parameter | Type and units | Default | Meaning |
 | --- | --- | --- | --- |
 | `BALANCE` | left, right, center, off, or signed percentage: -50% (left) or +50% (right), within ±100% | required | stereo balance; the opposite channel is attenuated |
+
+### `:bleep`
+
+`:bleep [FREQUENCY] [level=level]`
+
+Acts on the Visual range, else the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `FREQUENCY` | frequency: 880Hz, from 20 Hz to 20 kHz | default 1000Hz | the tone's frequency |
+| `level=` | level: -6dB, at or below 0 dB | default -10dB | the tone's level |
 
 ### `:caption`
 
@@ -502,6 +527,21 @@ Acts on the selected beat.
 | --- | --- | --- | --- |
 | `POLICY` | one of hard, auto | required | a hard cut, or the automatic short fade |
 | `SIDE` | one of both, start, end, plays, gaps | default both | which edges: a Repeat's loop seams (plays) or gap edges (gaps) |
+
+### `:eq`
+
+`:eq bass=band-level middle=band-level treble=band-level [low-cut=off|cutoff] [high-cut=off|cutoff] | :eq off`
+
+Acts on the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `bass=` | band level: 3dB or -6dB, within ±24 dB, with dB | required | low shelf level; all three bands together |
+| `middle=` | band level: 3dB or -6dB, within ±24 dB, with dB | required | middle band level |
+| `treble=` | band level: 3dB or -6dB, within ±24 dB, with dB | required | high shelf level |
+| `low-cut=` | off, or cutoff: 80Hz or 12000Hz, with Hz | default off | high-pass cutoff |
+| `high-cut=` | off, or cutoff: 80Hz or 12000Hz, with Hz | default off | low-pass cutoff, above the low cut |
+| `off` | whole form | - | removes the equalizer |
 
 ### `:framing-save`
 
@@ -607,6 +647,44 @@ Acts on the Visual range, else the selected beat.
 | `LEVEL` | level: +3dB or -6dB sets the trim, +=3dB or -=3dB changes it | omitted: opens the gain draft | clip gain |
 | `range=` | local frame range: 4-10, start before end | omitted: the whole beat | a constant step over these local frames of the selected beat |
 
+### `:generate`
+
+`:generate [VARIANTS] [mode=auto|bridge|extend-left|extend-right] [motion=still|subtle|moderate] [target=none|target-id] [text=text]`
+
+Acts on the selected pause.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `VARIANTS` | variant count: 1 to 4 | default 1 | how many variants, each from a different seed; before the parameters |
+| `mode=` | one of auto, bridge, extend-left, extend-right | omitted: keeps the mode, or auto | which neighbouring pictures condition the pause |
+| `motion=` | one of still, subtle, moderate | omitted: keeps the motion, or still | how much the pictures should move |
+| `target=` | none, or target id: target-1 | omitted: keeps the captured target | a saved target for region checks; none clears it |
+| `text=` | text to the end of the line | omitted: keeps the guidance, or none | guidance for the model, up to 512 bytes; always last |
+
+### `:generate-ai`
+
+`:generate-ai [VARIANTS] [mode=auto|bridge|extend-left|extend-right] [motion=still|subtle|moderate] [target=none|target-id] [text=text]`
+
+Acts on the selected pause.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `VARIANTS` | variant count: 1 to 4 | default 1 | how many variants, each from a different seed; before the parameters |
+| `mode=` | one of auto, bridge, extend-left, extend-right | omitted: keeps the mode, or auto | which neighbouring pictures condition the pause |
+| `motion=` | one of still, subtle, moderate | omitted: keeps the motion, or still | how much the pictures should move |
+| `target=` | none, or target id: target-1 | omitted: keeps the captured target | a saved target for region checks; none clears it |
+| `text=` | text to the end of the line | omitted: keeps the guidance, or none | guidance for the model, up to 512 bytes; always last |
+
+### `:group`
+
+`:group name=JSON-quoted-name`
+
+Acts on the Visual range, else the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `name=` | JSON-quoted name: "the answer", up to 1024 bytes | required | the group's name, JSON-quoted so it may hold spaces |
+
 ### `:hold`
 
 `:hold DURATION [video=freeze|black|ai] [audio=silence]`
@@ -689,6 +767,48 @@ Acts on the cursor of the focused timeline.
 | Parameter | Type and units | Default | Meaning |
 | --- | --- | --- | --- |
 | `NAME` | mark letter a–z | required | the mark's letter |
+
+### `:moment`
+
+`:moment NAME… [tags=tag-list]`
+
+Acts on the cursor of the focused timeline.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `NAME` | text | required | the selected Original moment's name, spaces allowed |
+| `tags=` | tag list: reaction,breath: up to 16 lowercase words without spaces | omitted: no tags | comma-separated tags |
+
+### `:moment-rename`
+
+`:moment-rename NAME…`
+
+Acts on the cursor of the focused timeline.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `NAME` | text | required | the selected moment's new name, spaces allowed |
+
+### `:moment-tags`
+
+`:moment-tags TAGS | :moment-tags none`
+
+Acts on the cursor of the focused timeline.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `TAGS` | tag list: reaction,breath: up to 16 lowercase words without spaces | required | the selected moment's tags, replacing its current ones |
+| `none` | whole form | - | clears the selected moment's tags |
+
+### `:moments`
+
+`:moments [FILTER…]`
+
+Acts on the view only; nothing is edited.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `FILTER` | text | omitted: every moment | words that match names and tags loosely; tag:reaction keeps one tag |
 
 ### `:monitor`
 
@@ -824,6 +944,12 @@ Acts on the selected Repeat, else the selected beat wrapped in a new Repeat.
 | `overflow=` | one of trim | omitted: refuses overflow | with role=: cut repeats at the last beat's end |
 | `extend=` | one of hold | omitted: refuses overflow | with role=audio: hold the last picture for the overflow |
 
+- `role=` cannot be combined with `gap=`, `gap-step=`, `speed-step=`, `pitch=`, `gain-step=`, `zoom-step=`, `progression=`, `zoom-target=`: a role repeat adds no gaps or per-play changes.
+- `gap-step=` needs `gap=`.
+- `overflow=` needs `role=`.
+- `extend=` needs `role=`.
+- `overflow=` cannot be combined with `extend=`: choose one overflow policy.
+
 ### `:retime`
 
 `:retime SPEED pitch=preserve|tape|pitch-shift`
@@ -878,6 +1004,29 @@ Acts on the plays of the open Repeat contents.
 | `PLAY` (play) | whole count: 1 or more | required | one-based play number |
 | `PLAYS` (plays) | play list: 2-3 or 1,3, at least two plays | required | several one-based plays edited together |
 
+### `:select`
+
+`:select [FORM] [key=value …] [role=audio|video|linked] [node=node-id] [nodes=JSON-node-id-list] [ranges=JSON-range-list] [search=JSON-quoted-words]`
+
+Acts on the cursor of the focused timeline.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `FORM` | one of marks | omitted: selects the Original moment, or by the parameter given | marks selects Your edit between two marks |
+| `role=` | one of audio, video, linked | omitted: linked | the media role the next Visual selection covers |
+| `node=` | node id: an exact authored node id | omitted: no node | select one beat by its exact node id |
+| `nodes=` | JSON node id list: ["id-a","id-b"], 1 to 64 distinct ids | omitted: no node set | select several beats by exact node id |
+| `ranges=` | JSON range list: [{"start":2,"end":6}], 1 to 64 relative frame ranges | omitted: no ranges | select frame ranges relative to the Edit cursor |
+| `search=` | JSON-quoted words: "hello world" | omitted: no search | select where the transcript says these words |
+| `start=` (marks) | mark id: an exact mark id such as native-mark-a | required | the mark the range starts at |
+| `end=` (marks) | mark id: an exact mark id such as native-mark-a | required | the mark the range ends at |
+
+- `role=` cannot be combined with `node=`, `nodes=`, `ranges=`, `search=`, `start=`, `end=`: choose one way to select.
+- `node=` cannot be combined with `role=`, `nodes=`, `ranges=`, `search=`, `start=`, `end=`: choose one way to select.
+- `nodes=` cannot be combined with `role=`, `node=`, `ranges=`, `search=`, `start=`, `end=`: choose one way to select.
+- `ranges=` cannot be combined with `role=`, `node=`, `nodes=`, `search=`, `start=`, `end=`: choose one way to select.
+- `search=` cannot be combined with `role=`, `node=`, `nodes=`, `ranges=`, `start=`, `end=`: choose one way to select.
+
 ### `:slip`
 
 `:slip AMOUNT`
@@ -887,6 +1036,26 @@ Acts on the selected Source beat.
 | Parameter | Type and units | Default | Meaning |
 | --- | --- | --- | --- |
 | `AMOUNT` | signed whole frames: +5f or -3f | required | moves the picture and sound inside the beat |
+
+### `:sound-at`
+
+`:sound-at SAMPLE`
+
+Acts on the selected placed sound.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `SAMPLE` | sample: 274000, whole 48 kHz samples from 0 | required | the sound's exact start on the 48 kHz clock |
+
+### `:sound-balance`
+
+`:sound-balance BALANCE`
+
+Acts on the selected placed sound.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `BALANCE` | left, right, center, off, or signed percentage: -50% (left) or +50% (right), within ±100% | required | stereo balance; the opposite channel is attenuated |
 
 ### `:sound-channels`
 
@@ -898,6 +1067,56 @@ Acts on this project.
 | --- | --- | --- | --- |
 | `LAYOUT` | one of mono, stereo, none | required | how the next imported sound without a speaker layout is heard; none refuses it |
 
+### `:sound-edges`
+
+`:sound-edges EDGES`
+
+Acts on the selected placed sound.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `EDGES` | one of soft, hard | required | short fades at both ends, or none |
+
+### `:sound-envelope`
+
+`:sound-envelope START END FROM TO CURVE | :sound-envelope clear`
+
+Acts on the selected placed sound.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `START` | local frame: 30f, from the sound's onset, with f | required | where the ramp starts, from the sound's onset |
+| `END` | local frame: 30f, from the sound's onset, with f | required | where the ramp ends; a matching range is replaced |
+| `FROM` | level: -12dB or 0dB, with dB | required | the level at the start |
+| `TO` | level: -12dB or 0dB, with dB | required | the level at the end |
+| `CURVE` | one of step, linear, smoothstep | required | the ramp's shape |
+| `clear` | whole form | - | removes the sound's gain envelopes |
+
+### `:sound-eq`
+
+`:sound-eq bass=band-level middle=band-level treble=band-level [low-cut=off|cutoff] [high-cut=off|cutoff] | :sound-eq off`
+
+Acts on the selected placed sound.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `bass=` | band level: 3dB or -6dB, within ±24 dB, with dB | required | low shelf level; all three bands together |
+| `middle=` | band level: 3dB or -6dB, within ±24 dB, with dB | required | middle band level |
+| `treble=` | band level: 3dB or -6dB, within ±24 dB, with dB | required | high shelf level |
+| `low-cut=` | off, or cutoff: 80Hz or 12000Hz, with Hz | default off | high-pass cutoff |
+| `high-cut=` | off, or cutoff: 80Hz or 12000Hz, with Hz | default off | low-pass cutoff, above the low cut |
+| `off` | whole form | - | removes the equalizer |
+
+### `:sound-gain`
+
+`:sound-gain LEVEL`
+
+Acts on the selected placed sound.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `LEVEL` | level: -3 or 1.5 dB, from -96 to 24, at most three decimals | required | the placed sound's gain in dB |
+
 ### `:sound-mute`
 
 `:sound-mute MUTED`
@@ -907,6 +1126,74 @@ Acts on the selected placed sound.
 | Parameter | Type and units | Default | Meaning |
 | --- | --- | --- | --- |
 | `MUTED` | one of on, off | required | mute or unmute |
+
+### `:sound-saturate`
+
+`:sound-saturate DRIVE | :sound-saturate off`
+
+Acts on the selected placed sound.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `DRIVE` | drive: 12dB, from 0 to 24 | required | soft-clipper drive |
+| `off` | whole form | - | removes the saturation stage |
+
+### `:sound-tail-send`
+
+`:sound-tail-send EFFECT LEVEL`
+
+Acts on the selected placed sound.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `EFFECT` | one of reverb, delay | required | reverb, or a 300 ms echo; each has its own level |
+| `LEVEL` | off, or level: -6dB, from -96 to +24 dB | required | the return level; off removes it |
+
+### `:sound-wet-send`
+
+`:sound-wet-send EFFECT LEVEL`
+
+Acts on the selected placed sound.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `EFFECT` | one of reverb, delay | required | reverb, or a 300 ms echo; each has its own level |
+| `LEVEL` | off, or level: -6dB, from -96 to +24 dB | required | the return level; off removes it |
+
+### `:source-interpret`
+
+`:source-interpret [range=auto|limited|full] [chroma=auto|left|center|top-left|top|bottom-left|bottom] | :source-interpret reset`
+
+Acts on this project.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `range=` | one of auto, limited, full | omitted keeps the current value | the Original's color range |
+| `chroma=` | one of auto, left, center, top-left, top, bottom-left, bottom | omitted keeps the current value | where chroma samples sit |
+| `reset` | whole form | - | returns to the measured interpretation |
+
+### `:tail`
+
+`:tail [LENGTH] [effect=reverb|delay] [input=original|sends]`
+
+Acts on the selected pause, else a new pause at the Edit cursor.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `LENGTH` | duration: 12f, 250ms, 1.5s or 01:02.500 | omitted: rings for the whole selected pause | how long it rings, or the new pause's length |
+| `effect=` | one of reverb, delay | default reverb | reverb, or a 300 ms echo |
+| `input=` | one of original, sends | default original | the processed Original, or only matching tail sends |
+
+### `:tail-send`
+
+`:tail-send EFFECT LEVEL`
+
+Acts on the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `EFFECT` | one of reverb, delay | required | reverb, or a 300 ms echo; each has its own level |
+| `LEVEL` | off, or level: -6dB, from -96 to +24 dB | required | the return level; off removes it |
 
 ### `:target-delete`
 
@@ -939,6 +1226,16 @@ Acts on the view only; nothing is edited.
 | --- | --- | --- | --- |
 | `VIEW` | one of story, timing, detail | required | cards per beat, beats at their length, or with detail |
 
+### `:track`
+
+`:track [TARGET…]`
+
+Acts on this project.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `TARGET` | target id or label, current, center, face:N or region:N | omitted: the chosen target | the saved target to track; end with through-shots to cross cuts |
+
 ### `:trim`
 
 `:trim [edge=in|out|slip|roll] [delta=signed-whole-frames] [mode=ripple|overwrite]`
@@ -960,6 +1257,17 @@ Acts on the cursor of the focused timeline.
 | Parameter | Type and units | Default | Meaning |
 | --- | --- | --- | --- |
 | `NAME` | mark letter a–z | required | the mark's letter |
+
+### `:wet-send`
+
+`:wet-send EFFECT LEVEL`
+
+Acts on the selected beat.
+
+| Parameter | Type and units | Default | Meaning |
+| --- | --- | --- | --- |
+| `EFFECT` | one of reverb, delay | required | reverb, or a 300 ms echo; each has its own level |
+| `LEVEL` | off, or level: -6dB, from -96 to +24 dB | required | the return level; off removes it |
 
 ### `:wrap-repeat`
 
@@ -1067,35 +1375,3 @@ Acts on the selected beat.
 - `:ungroup` acts on the selected beat.
 - `:yank` acts on the Visual range, else the selected beat.
 - `:youtube` acts on this project.
-
-### Verbs with usage-inferred arguments
-
-These verbs check units and choices inferred from their usage only.
-
-| Verb | Why it has no declared schema yet |
-| --- | --- |
-| `:audio-shift` | Signed frames with mutually exclusive overflow words. |
-| `:bleep` | An optional bare frequency in Hz with a level, parsed by the bleep grammar. |
-| `:eq` | Equalizer bands are a set of band=level pairs or off, parsed by the equalizer grammar. |
-| `:generate` | AI generation options are parsed by the generation request grammar shared with headless generation. |
-| `:generate-ai` | Same grammar as :generate. |
-| `:group` | One JSON-quoted name= value parsed with the specification's JSON string grammar. |
-| `:moment` | Free-form moment names with spaces before a tags= list, validated by the moment store. |
-| `:moment-rename` | A free-form name, validated by the moment store. |
-| `:moment-tags` | A tag list validated by the moment store. |
-| `:moments` | A free filter string for the Original rail. |
-| `:select` | Exclusive selector forms (role, marks, node, JSON node and range sets, transcript search) each have their own strict grammar. |
-| `:sound-at` | A start sample on the 48 kHz clock, parsed by the placed-sound grammar. |
-| `:sound-balance` | Delegates to :balance. |
-| `:sound-edges` | A placed sound's edge choice, parsed by the placed-sound grammar. |
-| `:sound-envelope` | Point lists and a curve word, parsed by the envelope grammar. |
-| `:sound-eq` | Same grammar as :eq. |
-| `:sound-gain` | A placed sound's gain, parsed by the placed-sound grammar. |
-| `:sound-saturate` | Delegates to :saturate. |
-| `:sound-tail-send` | Same grammar as :wet-send. |
-| `:sound-wet-send` | Same grammar as :wet-send. |
-| `:source-interpret` | Colour interpretation choices are owned by the source interpretation grammar. |
-| `:tail` | An optional bare length before effect and input words, parsed by the tail grammar. |
-| `:tail-send` | Same grammar as :wet-send. |
-| `:track` | A target label may contain spaces before the trailing through-shots keyword. |
-| `:wet-send` | An effect word followed by a level or off, parsed by the send grammar. |
